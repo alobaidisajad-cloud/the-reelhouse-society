@@ -8,6 +8,9 @@ import { E2E_BUILD, e2eTrace } from '../utils/e2eTrace';
 // The anon key is public by design: RLS and column grants guard every table.
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'dummy';
+/** The house's address and public key, for a client of its own (endSession's owed sign-out). */
+export const SUPABASE_URL = supabaseUrl;
+export const SUPABASE_ANON_KEY = supabaseAnonKey;
 
 /** How long a request to the house may take, its whole answer received, before it counts as not reached. */
 export const REQUEST_LIMIT_MS = 15_000;

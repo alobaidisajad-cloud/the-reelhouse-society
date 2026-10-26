@@ -118,7 +118,9 @@ function declaredAs(name: ts.Identifier): ts.Expression | undefined {
   return init;
 }
 
-const AUTH_LOCAL =/auth\.(getSession|getUser|signOut|onAuthStateChange|startAutoRefresh|stopAutoRefresh)\b/;
+// The phone's own auth calls, whose answer may go unread. Not signOut: a sign-out the server never
+// heard keeps the session, so its answer is read (endSession).
+const AUTH_LOCAL =/auth\.(getSession|getUser|onAuthStateChange|startAutoRefresh|stopAutoRefresh)\b/;
 
 /** Every unread failure in one file, as `file · shape` (no line: lines move). */
 export function unreadErrors(rel: string, text: string): string[] {

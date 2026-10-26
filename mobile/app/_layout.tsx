@@ -30,6 +30,7 @@ import StandingNotice from '@/src/components/StandingNotice';
 import { KeyboardRoom } from '@/src/components/KeyboardRoom';
 import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
+import { settleOwedSignOut } from '@/src/lib/endSession';
 import { PathTracker } from '@/src/components/layout/PathTracker';
 import { LabFrameLog } from '@/src/components/layout/LabFrameLog';
 import { LAB_BUILD } from '@/src/utils/e2eTrace';
@@ -97,6 +98,8 @@ export default function RootLayout() {
           useBlockStore.getState().hydrateFromCache(userId);
           useSocialStore.getState().hydrateFromCache(userId);
         }
+        // A sign-out the server never heard is finished first, by a client of its own.
+        void settleOwedSignOut();
         restoreSession()
           .then(() => {
             // Once the session is confirmed, blocks are read again and synced.

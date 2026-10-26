@@ -1,12 +1,12 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, Linking, Platform } from 'react-native';
+import { Alert, View, StyleSheet, Linking, Platform } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { DEFAULT_DURATION } from '@/src/utils/enter';
 import {
   Crown, Lock, Eye, Bell, ChevronDown, ChevronUp, Star, Sparkles,
-  UserRound, AudioLines, BellOff, TriangleAlert, Mail, LifeBuoy, Copy,
+  UserRound, AudioLines, BellOff, TriangleAlert, Mail, LifeBuoy, Copy, MonitorSmartphone,
 } from 'lucide-react-native';
 import { SUPPORT_EMAIL } from '@/src/constants/support';
 import { colors, fonts, effects } from '@/src/theme/theme';
@@ -23,6 +23,7 @@ import { BAD_CREDENTIALS } from '@/src/utils/authSignals';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { AuthService } from '@/src/services/AuthService';
 import { supabase } from '@/src/lib/supabase';
+import { endOtherSessions } from '@/src/lib/endSession';
 import { isAuteurPlusTier, isArchivistPlusTier, getDisplayTier } from '@/src/utils/tier';
 import { firstPrivilegesOf } from '@/src/constants/membership';
 import { passwordIsAccepted, passwordFits, PASSWORD_TOO_LONG, PASSWORD_MAX_BYTES, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
@@ -298,6 +299,22 @@ export function PasswordChangePanel() {
   const pwStrong = passwordIsAccepted(newPassword);
   const canSubmit = !!currentPassword && pwStrong && newPassword === confirmPassword;
 
+  // Every other device signed out, this phone kept: asked first, and the answer said either way.
+  const [endingOthers, setEndingOthers] = React.useState(false);
+  const endOthers = async () => {
+    setEndingOthers(true);
+    const ended = await endOtherSessions();
+    if (isMountedRef.current) setEndingOthers(false);
+    if (ended) reelToast.success('Every other device is signed out.');
+    else reelToast.error('The house could not be reached. Nothing was signed out.');
+  };
+  const askToEndOthers = () => {
+    Alert.alert('Sign out of every other device?', 'This phone stays signed in. Every other phone, tablet and browser signed in as you is signed out.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: () => { void endOthers(); } },
+    ]);
+  };
+
   const handlePasswordChange = async () => {
     if (!currentPassword) { reelToast.error('Current cipher required.'); return; }
     if (!passwordFits(newPassword)) { reelToast.error(PASSWORD_TOO_LONG); return; }
@@ -392,6 +409,20 @@ export function PasswordChangePanel() {
           )}
         </View>
       )}
+      <PressableScale
+        style={st.actionBtnSpaced}
+        onPress={askToEndOthers}
+        disabled={endingOthers}
+        hitSlop={null}
+        haptic="selection"
+        pressedScale={0.97}
+        accessibilityLabel="Sign out of every other device"
+        accessibilityRole="button"
+        accessibilityState={{ disabled: endingOthers, busy: endingOthers }}
+      >
+        <MonitorSmartphone size={12} color={colors.fog} />
+        <Text style={st.actionBtnTextFlex} {...scaledTextProps}>{endingOthers ? 'SIGNING THEM OUT…' : 'SIGN OUT OF OTHER DEVICES'}</Text>
+      </PressableScale>
     </>
   );
 }

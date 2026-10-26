@@ -12,6 +12,7 @@ import { PUSH_TOKEN_KEY, registerForPushNotifications, setupNotificationResponse
 import { initRevenueCat, reconcileRank } from '../lib/revenueCat';
 import { addBreadcrumb, Sentry, setSentryUser } from '../lib/sentry';
 import { supabase } from '../lib/supabase';
+import { settleOwedSignOut } from '../lib/endSession';
 import { storage, useAuthStore } from '../stores/auth';
 import { answerAuthEvent } from '../stores/authEvents';
 import { hydrateFollowing } from '../stores/domain/socialSlice';
@@ -269,8 +270,10 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
     // ── Background Syncing Engines ──
     const unsubscribeNet = NetInfo.addEventListener(state => {
       e2eTrace('net', { type: state.type, connected: state.isConnected, reachable: state.isInternetReachable });
-      if (state.isConnected && state.isInternetReachable && useAuthStore.getState().isAuthenticated) {
-        flushOfflineQueue();
+      if (state.isConnected && state.isInternetReachable) {
+        // A sign-out the server never heard, whoever is signed in now.
+        void settleOwedSignOut();
+        if (useAuthStore.getState().isAuthenticated) flushOfflineQueue();
       }
     });
 

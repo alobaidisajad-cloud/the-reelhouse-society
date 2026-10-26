@@ -100,6 +100,7 @@ Decisions, as of 2026-09-28:
 | `src/components/__tests__/aTabDrawsItsIconOnce.test.tsx` | No file sets `tabBarIcon`, and every tab the bar shows names its own button: a spelling that brings back React Navigation's double icon. What a tab draws is rendered, in the same file. |
 | `src/components/__tests__/overlayElevation.test.ts` | Every overlay out-ranks what it covers in Android's elevation order (a browser paints in DOM order, so no drawing shows it). |
 | `src/components/__tests__/aLabelIsSpoken.test.ts` | Every View that carries an accessibility label or role is `accessible`, or a container whose children are. |
+| `src/lib/__tests__/everySignOutEndsTheSessionHere.test.ts` | Every app file: none but `src/lib/endSession.ts` calls `auth.signOut(`. A sign-out the server never heard keeps the session, so the one helper that ends it on the phone anyway is the only door; the ending itself is proven by running it (`aSignOutWithNoNetworkStillSignsOut.test.ts`). |
 | `src/lib/__tests__/aResolvedErrorIsRead.test.ts` | Every supabase answer whose `error` is not read — awaited, or taken out of a `Promise.all` — is read, or judged with its reason. |
 | `src/utils/__tests__/everyDoorGoesThroughNav.test.ts` | Every raw router call outside nav, counted exactly so the count only falls as features move to nav. |
 | `src/components/__tests__/textContrast.test.ts` | Every muted text's opacity against its ground, from the stylesheets. |

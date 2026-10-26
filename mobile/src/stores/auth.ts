@@ -9,6 +9,7 @@ import { keptAfterSignOutElsewhere, keptFromBefore } from '../utils/keptOnThisPh
 import { captureError, setSentryUser } from '../lib/sentry';
 import type { User as AuthUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { endSessionHere } from '../lib/endSession';
 import { PROFILE_SELECT_COLUMNS, ProfileService } from '../services/ProfileWriteService';
 import { User } from '../types';
 import { logger } from '../utils/logger';
@@ -204,7 +205,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       // signing them in with an unchanged password.
       if (storage.getString('recovery_pending') === 'true') {
         storage.delete('recovery_pending');
-        try { await raceDeadline(supabase.auth.signOut({ scope: 'local' }), 5000); } catch {}
+        await endSessionHere();
         set({ user: null, isAuthenticated: false, loading: false });
         return;
       }
@@ -480,12 +481,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       }
     } catch { cleanupErrors.push('push-token'); }
 
-    // 8. Revoke the Supabase session LAST among network ops. scope 'local'
-    //    ends only this device's session (web/other devices stay signed in).
-    //    Timeout-raced so no SDK or network behavior can ever strand logout.
-    try {
-      await raceDeadline(supabase.auth.signOut({ scope: 'local' }), 5000);
-    } catch { cleanupErrors.push('auth'); }
+    // 8. The session LAST among network ops, this device's only (web and other devices stay
+    //    signed in). Ended on the phone even when the server cannot be reached; what the server
+    //    still holds, the push token's row with it when step 7 failed, is owed (endSession).
+    if (!(await endSessionHere({ pushStillHeld: cleanupErrors.includes('push-token') }))) cleanupErrors.push('auth');
 
     // 9. The member's caches on disk, on every platform.
     if (previousUserId) storage.delete(`ironvault_user_cache_${previousUserId}`);

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { supabase } from '@/src/lib/supabase';
+import { endSessionHere } from '@/src/lib/endSession';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
 import reelToast from '@/src/utils/reelToast';
@@ -183,7 +184,7 @@ export default function ResetPasswordScreen() {
           onPress={async () => {
             if (storage.getString('recovery_pending') === 'true') {
               storage.delete('recovery_pending');
-              try { await supabase.auth.signOut({ scope: 'local' }); } catch {}
+              await endSessionHere();
             }
             nav.back(); // the Lobby when there is nothing to go back to
           }}
