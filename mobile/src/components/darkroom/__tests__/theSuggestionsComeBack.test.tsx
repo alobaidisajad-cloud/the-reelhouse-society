@@ -12,7 +12,7 @@ import { DarkroomHeader } from '../DarkroomHeader';
 import { useDiscoverStore } from '@/src/stores/discover';
 
 jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useRouter: () => ({ push: jest.fn() }) }));
-jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
+jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
 jest.mock('@/src/lib/tmdb', () => ({
   tmdb: {
     search: jest.fn(async () => ({

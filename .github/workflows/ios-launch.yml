@@ -27,10 +27,15 @@ permissions:
 jobs:
   launch:
     name: 📱 The app opens on an iPhone
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      # The Xcode the store build uses: EAS builds SDK 57 on its sdk-57 image, Xcode 26.6. Named,
+      # not the runner's default, which moves; on macos-15 (Xcode 16.4) the SDK 57 app's Swift did not compile.
+      - name: Xcode 26.6, as the store build
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
@@ -72,8 +77,7 @@ jobs:
         run: |
           set -u
           S="$RUNNER_TEMP/launch"; mkdir -p "$S"
-          DEV=$(xcrun simctl list devices available | grep -E 'iPhone 16 Pro \(' | head -n 1 | grep -oE '[0-9A-F-]{36}')
-          [ -n "$DEV" ] || DEV=$(xcrun simctl list devices available | grep -E 'iPhone' | head -n 1 | grep -oE '[0-9A-F-]{36}')
+          DEV=$(bash e2e/ios-simulator.sh)
           echo "SIM_DEVICE=$DEV" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEV"
           xcrun simctl bootstatus "$DEV" -b

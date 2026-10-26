@@ -39,7 +39,7 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, auteur }: {
 
   return (
     <View style={st.tabsContainer}>
-      <Animated.View style={[StyleSheet.absoluteFillObject, st.tabsActiveBg, pillStyle]} />
+      <Animated.View style={[StyleSheet.absoluteFill, st.tabsActiveBg, pillStyle]} />
       <PressableScale hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
         <View style={st.tabInner}>
           {/* Lit and still: a lamp that blinked every second was the Reel's light read as noise. */}

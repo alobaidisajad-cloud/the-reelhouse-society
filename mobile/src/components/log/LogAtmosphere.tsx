@@ -78,7 +78,7 @@ export default React.memo(function LogAtmosphere({ posterPath }: { posterPath: s
             <LinearGradient
                 colors={['rgba(13,11,9,0)', 'rgba(13,11,9,0.40)', 'rgba(13,11,9,0.95)', colors.ink]}
                 locations={[0, 0.38, 0.76, 1]}
-                style={StyleSheet.absoluteFillObject}
+                style={StyleSheet.absoluteFill}
             />
             <LinearGradient
                 colors={['rgba(13,11,9,0.72)', 'rgba(13,11,9,0.34)', 'rgba(13,11,9,0)']}
@@ -88,7 +88,7 @@ export default React.memo(function LogAtmosphere({ posterPath }: { posterPath: s
             {/* The house's own texture — a single view at 3% black, the same one
                 the record uses. Not the Skia grain shader, which is not mounted
                 anywhere and would cost far more than this is worth. */}
-            <View style={[StyleSheet.absoluteFillObject, s.texture]} />
+            <View style={[StyleSheet.absoluteFill, s.texture]} />
         </Animated.View>
     );
 });

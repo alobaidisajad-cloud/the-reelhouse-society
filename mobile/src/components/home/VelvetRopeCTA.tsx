@@ -9,7 +9,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming,
   Easing, interpolate, cancelAnimation, useReducedMotion
 } from 'react-native-reanimated';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from "expo-router/react-navigation";
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
@@ -42,7 +42,7 @@ export const ShimmerRule = memo(() => {
     return (
        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1.5, backgroundColor: 'rgba(184,137,26,0.1)', overflow: 'hidden' }}>
           <Animated.View style={[{ width: 60, height: '100%' }, shimmerStyle]}>
-             <LinearGradient colors={['transparent', 'rgba(218,165,32,0.8)', 'transparent']} start={{x:0,y:0}} end={{x:1,y:0}} style={StyleSheet.absoluteFillObject} />
+             <LinearGradient colors={['transparent', 'rgba(218,165,32,0.8)', 'transparent']} start={{x:0,y:0}} end={{x:1,y:0}} style={StyleSheet.absoluteFill} />
           </Animated.View>
        </View>
     );

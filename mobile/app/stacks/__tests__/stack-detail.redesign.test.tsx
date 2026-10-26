@@ -34,7 +34,7 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
 }));
 // Buster (in the failed state) pauses when its screen is not focused.
-jest.mock('@react-navigation/native', () => ({ ...jest.requireActual('@react-navigation/native'), useIsFocused: () => true }));
+jest.mock('expo-router/react-navigation', () => ({ ...jest.requireActual('expo-router/react-navigation'), useIsFocused: () => true }));
 const mockSetQueryData = jest.fn();
 /** What each query says after a pull: `error` when it reached nothing. */
 let mockQueryState: Record<string, { status: string } | undefined> = {};

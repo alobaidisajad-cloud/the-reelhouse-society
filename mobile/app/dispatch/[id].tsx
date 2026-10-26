@@ -47,7 +47,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { useDispatch } from '@/src/stores/dispatch';
-import ViewShot, { captureRef } from 'react-native-view-shot';
+import ViewShot, { captureRef, type ViewShotRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { supabase } from '@/src/lib/supabase';
 import { FILING_FULL_COLUMNS, parseFilingRows, paperTierOf } from '@/src/stores/dispatchTypes';
@@ -138,7 +138,7 @@ export default function FilingReader() {
   // Where the critiques begin, for the mark of a filing that is gone.
   const critiquesAt = useRef(0);
   /** The off-screen clipping, captured when an essay is shared out of the app. */
-  const cardRef = useRef<ViewShot>(null);
+  const cardRef = useRef<ViewShotRef>(null);
 
   const [actions, setActions] = useState(false);
   const [sharing, setSharing] = useState(false);

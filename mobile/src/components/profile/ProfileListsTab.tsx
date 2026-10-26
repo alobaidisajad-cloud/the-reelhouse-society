@@ -298,7 +298,7 @@ const s = StyleSheet.create({
   stackPosterWrap: { width: '100%', aspectRatio: 3 / 2, borderRadius: 2, overflow: 'hidden', backgroundColor: 'rgba(30,25,20,0.5)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(232,223,208,0.14)', position: 'relative' },
   stackPosterPanel: { position: 'absolute', top: 0, bottom: 0, height: '100%' },
   stackEmptyBg: { flex: 1, backgroundColor: 'rgba(30,25,20,0.7)' },
-  stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6,5,4,0.32)' },
+  stackOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(6,5,4,0.32)' },
   // A clasp hung from the top edge, square-cornered: nothing here is round.
   clasp: { position: 'absolute', top: 0, right: 10, paddingHorizontal: 5, paddingTop: 4, paddingBottom: 5, backgroundColor: colors.sepia, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 },
   stackContent: { paddingTop: 9 },

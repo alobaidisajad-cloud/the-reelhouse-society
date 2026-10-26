@@ -71,7 +71,7 @@ export const PosterFrame = React.memo(function PosterFrame({ filmId, filmTitle, 
       <LinearGradient
         colors={['rgba(255,255,255,0.05)', 'transparent', 'rgba(13,11,9,0.8)']}
         locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
       <View style={s.edgeHighlight} pointerEvents="none" />
@@ -115,7 +115,7 @@ const s = StyleSheet.create({
     shadowColor: '#000',
   },
   posterEmpty: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     borderStyle: 'dashed',
@@ -138,7 +138,7 @@ const s = StyleSheet.create({
     opacity: 0.6,
   },
   edgeHighlight: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 6,

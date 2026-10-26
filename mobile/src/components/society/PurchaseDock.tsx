@@ -75,7 +75,7 @@ export const PurchaseDock = memo(function PurchaseDock({
         <LinearGradient
           colors={auteur ? [colors.crimson, colors.bloodAged] : [colors.marqueeGold, colors.sepia]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
         <Text style={[s.btnText, auteur && s.btnTextAuteur]} {...deckLabelProps}>{busy ? 'PROCESSING…' : cta}</Text>
       </PressableScale>

@@ -38,8 +38,8 @@ jest.mock('react-native-safe-area-context', () => {
     useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
   };
 });
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
+jest.mock('expo-router/react-navigation', () => ({
+  ...jest.requireActual('expo-router/react-navigation'),
   useScrollToTop: jest.fn(),
   useIsFocused: () => true,
   useNavigation: () => ({ addListener: () => () => {}, setOptions: jest.fn(), navigate: jest.fn(), goBack: jest.fn() }),

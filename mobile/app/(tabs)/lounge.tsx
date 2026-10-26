@@ -15,7 +15,7 @@ import Animated, {
 import { Search, Plus, Globe, X } from 'lucide-react-native';
 import { MasterLogo } from '@/src/components/MasterLogo';
 import { useFocusEffect } from 'expo-router';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop } from "expo-router/react-navigation";
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { isMine, useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';

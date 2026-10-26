@@ -9,6 +9,8 @@
  * the phone), and this reads EVERY line of app/ and src/ for them, from the one
  * list both use: src/utils/runtimeLacks.json. Where each lack was read is in the
  * list; runtimeDump.contract.test.ts holds the list to the phone's own runtime.
+ * On SDK 57 the phone has AbortSignal.timeout and any; what its runtime lacks
+ * that Node has is the list now (Array.prototype.toSorted, Object.groupBy, …).
  */
 import { spawnSync } from 'child_process';
 import { readFileSync } from 'fs';
@@ -44,30 +46,30 @@ describe('the finder says NO', () => {
   const real = (file: string): Source => ({ file, text: readFileSync(join(MOBILE, file), 'utf8') });
   const where = (sources: Source[], apis = APIS) => findUses(sources, apis).map((u) => `${u.file}:${u.api}`);
 
-  it('to AbortSignal.timeout put back in withTimeout.ts, as build 41 shipped it', () => {
+  it('to AbortSignal.abort written into withTimeout.ts', () => {
     const now = real('src/utils/withTimeout.ts');
     expect(now.text).toContain('const controller = new AbortController();');
-    const back = { ...now, text: now.text.replace('const controller = new AbortController();', 'const signal = AbortSignal.timeout(ms);') };
+    const written = { ...now, text: now.text.replace('const controller = new AbortController();', 'const signal = AbortSignal.abort();') };
     expect(where([now])).toEqual([]);
-    expect(where([back])).toEqual(['src/utils/withTimeout.ts:AbortSignal.timeout']);
+    expect(where([written])).toEqual(['src/utils/withTimeout.ts:AbortSignal.abort']);
   });
 
-  it('to AbortSignal.any planted in a screen no test runs', () => {
+  it('to Object.groupBy planted in a screen no test runs', () => {
     const screen = real('app/+not-found.tsx');
-    const planted = { ...screen, text: `${screen.text}\nexport const either = (a: AbortSignal, b: AbortSignal) => AbortSignal.any([a, b]);\n` };
-    expect(where([planted])).toEqual(['app/+not-found.tsx:AbortSignal.any']);
+    const planted = { ...screen, text: `${screen.text}\nexport const byKind = (xs: { kind: string }[]) => Object.groupBy(xs, (x) => x.kind);\n` };
+    expect(where([planted])).toEqual(['app/+not-found.tsx:Object.groupBy']);
   });
 
   it('to every way of reaching a static, and to none of what only looks like one', () => {
     const plant = (text: string): Source[] => [{ file: 'src/planted.ts', text }];
     for (const text of [
-      'AbortSignal["timeout"](5)', '(AbortSignal as any).timeout(5)', 'globalThis.AbortSignal.any([])',
-      'const { timeout } = AbortSignal;', 'const { any: both } = AbortSignal;', 'AbortSignal?.timeout?.(5)',
+      'AbortSignal["abort"]()', '(AbortSignal as any).abort()', 'globalThis.Object.groupBy([], f)',
+      'const { abort } = AbortSignal;', 'const { groupBy: byKey } = Object;', 'AbortSignal?.abort?.()',
     ]) expect(`${text} → ${where(plant(text)).length}`).toBe(`${text} → 1`);
     for (const text of [
-      'function f(signal: AbortSignal) { return signal.aborted; }', 'const t = request.timeout;',
-      'const AbortSignal = { timeout: () => 1 }; AbortSignal.timeout();', '// AbortSignal.timeout(5)',
-      'const s = "AbortSignal.timeout";',
+      'function f(signal: AbortSignal) { return signal.aborted; }', 'const t = request.abort;',
+      'const AbortSignal = { abort: () => 1 }; AbortSignal.abort();', '// AbortSignal.abort()',
+      'const s = "AbortSignal.abort";',
     ]) expect(`${text} → ${where(plant(text)).length}`).toBe(`${text} → 0`);
   });
 

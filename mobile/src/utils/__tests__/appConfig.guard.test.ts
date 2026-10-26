@@ -107,7 +107,7 @@ it('no real build carries the development client\'s way in, or a route the house
   // a /_sitemap route; scripts/release-guard.cjs reads the built result.
   expect(entry('expo-dev-client')).toEqual(['expo-dev-client', expect.objectContaining({ addGeneratedScheme: false })]);
   expect(entry('expo-router')).toEqual(['expo-router', expect.objectContaining({ sitemap: false })]);
-  expect(entry('./plugins/withoutDevLauncherScanner')).toBe('./plugins/withoutDevLauncherScanner');
+  // The dev launcher's code scanner is its debug manifest's alone from SDK 57 (theScannerStaysInDebug).
 });
 
 it('iOS allows plain http to no host: the template\'s local-network exception is turned off', () => {

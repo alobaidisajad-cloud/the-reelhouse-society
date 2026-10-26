@@ -606,7 +606,7 @@ const s = StyleSheet.create({
   notFoundBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 22 },
   backdropWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 0 },
   backdrop: { width: '100%', height: '100%' },
-  sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.35)' },
+  sepiaTint: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(60,40,10,0.35)' },
   /**
    * z-index 50, the SAME level as the header it hands over to — they are two
    * forms of one control and must sit at one height — and under the tray (60)

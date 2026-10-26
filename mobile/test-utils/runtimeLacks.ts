@@ -200,8 +200,10 @@ function findAt(sf: ts.SourceFile, start: number, end: number): ts.Node | null {
 export function namesOnNode(source: string, reads: string[]): Record<string, string[] | null> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { spawnSync } = require('child_process') as typeof import('child_process');
-  // A module, so no CommonJS `require` or `module` stands on the global object.
-  const script = `const runtimeNames = ${source};\nprocess.stdout.write(JSON.stringify(runtimeNames(${JSON.stringify(reads)})));`;
+  // A module, so no CommonJS `require` or `module` stands on the global object. The source, a
+  // declaration, runs in a scope of its own, whatever prologue the compiler puts before it
+  // (TypeScript 6 always writes "use strict").
+  const script = `const runtimeNames = (() => {\n${source}\nreturn runtimeNames;\n})();\nprocess.stdout.write(JSON.stringify(runtimeNames(${JSON.stringify(reads)})));`;
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8', cwd: dirname(MOBILE) });
   if (r.status !== 0) throw new Error(`Node could not read its own runtime: ${r.stderr}`);
   return JSON.parse(r.stdout);

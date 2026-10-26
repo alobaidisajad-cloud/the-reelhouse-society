@@ -4,7 +4,7 @@ import { Text } from '@/src/components/text';
 import { useSharedValue, withTiming, withRepeat, Easing, cancelAnimation } from 'react-native-reanimated';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useFocusEffect } from 'expo-router';
-import { useScrollToTop, useIsFocused } from '@react-navigation/native';
+import { useScrollToTop, useIsFocused } from "expo-router/react-navigation";
 import { storage } from '@/src/stores/mmkv-storage';
 
 import { colors, fonts, spacing, effects } from '@/src/theme/theme';

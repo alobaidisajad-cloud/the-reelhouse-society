@@ -209,7 +209,7 @@ export default function SearchModal() {
 
   return (
     <Animated.View style={[st.root, animatedContainerStyle]}>
-      <BlurView intensity={Platform.OS === 'ios' ? 55 : 100} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <BlurView intensity={Platform.OS === 'ios' ? 55 : 100} tint="dark" style={StyleSheet.absoluteFill} />
 
       {/* ── SEARCH BAR ── */}
       <View style={[st.header, { paddingTop: headerTop }]}>

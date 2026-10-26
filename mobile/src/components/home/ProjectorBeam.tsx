@@ -63,7 +63,7 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
   });
 
   return (
-    <Animated.View style={[StyleSheet.absoluteFillObject, style, { alignItems: 'center', zIndex: 0 }]} pointerEvents="none">
+    <Animated.View style={[StyleSheet.absoluteFill, style, { alignItems: 'center', zIndex: 0 }]} pointerEvents="none">
       <LinearGradient
         colors={['rgba(218,165,32,0.15)', 'rgba(184,137,26,0.06)', 'transparent']}
         locations={[0, 0.4, 0.9]}

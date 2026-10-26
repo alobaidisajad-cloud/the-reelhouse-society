@@ -9,7 +9,7 @@ import Animated, {
   Easing, withRepeat, cancelAnimation, interpolate, Extrapolation, ReduceMotion,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { usePreventRemove, useNavigation } from '@react-navigation/native';
+import { usePreventRemove, useNavigation } from "expo-router/react-navigation";
 import { useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
 import { nav } from '@/src/utils/typedRouter';
@@ -480,7 +480,7 @@ export function SettingsScreen() {
       <RoomLight room="default" />
       {readyMark}
       <Animated.View style={[st.ambientGlow, glowStyle]} pointerEvents="none">
-        <LinearGradient colors={['rgba(184,137,26,0.15)', 'transparent', 'transparent']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={['rgba(184,137,26,0.15)', 'transparent', 'transparent']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
       </Animated.View>
       <View style={[st.navBar, { paddingTop: headerTop }]}>
         <PressableScale

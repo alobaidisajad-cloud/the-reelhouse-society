@@ -4,7 +4,7 @@ import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation, useReducedMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from "expo-router/react-navigation";
 import { nav } from '@/src/utils/typedRouter';
 import { Bookmark } from 'lucide-react-native';
 
@@ -49,11 +49,11 @@ export const DarkroomAtmo = React.memo(function DarkroomAtmo() {
   }, [isFocused, reducedMotion]);
   const style = useAnimatedStyle(() => ({ opacity: pulse.value }));
   return (
-    <Animated.View style={[StyleSheet.absoluteFillObject, style, { zIndex: 0 }]} pointerEvents="none">
+    <Animated.View style={[StyleSheet.absoluteFill, style, { zIndex: 0 }]} pointerEvents="none">
       <LinearGradient
         colors={['rgba(180,45,45,0.4)', 'rgba(184,137,26,0.1)', 'transparent']}
         locations={[0, 0.5, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
     </Animated.View>
   );
@@ -137,7 +137,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
       <View style={s.posterClip}>
       <PressableScale
         testID="film-card"
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         // No halo: the whole poster is the target, and a halo on a grid of
         // posters 8pt apart only reached onto the next one's face.
         hitSlop={null}
@@ -151,12 +151,12 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
             <>
               {/* THE DEVELOP — each print surfaces from its sepia ghost like
                   paper in the tray. Native GPU crossfade: zero JS cost. */}
-              <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={300} contentFit="cover" />
+              <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFill} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={300} contentFit="cover" />
               {/* Soft tactical tungsten edge mapping */}
               <LinearGradient
                 colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(13,11,9,0.9)']}
                 locations={[0, 0.4, 1]}
-                style={StyleSheet.absoluteFillObject}
+                style={StyleSheet.absoluteFill}
                 pointerEvents="none"
               />
               <View style={s.posterBorderEngrave} pointerEvents="none" />
@@ -228,7 +228,7 @@ export const DarkroomSuggestionRow = React.memo(({ item, onPress }: { item: Disc
     >
       {imgUri ? (
         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm]}>
-          <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" />
+          <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFill} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" />
         </View>
       ) : (
         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm, s.suggestionImgPlaceholder]} />
@@ -299,7 +299,7 @@ const s = StyleSheet.create({
     ...castOf({ shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.8, shadowRadius: 12 }),
   },
   posterClip: { ...EDGE_LIT,
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 6,
     overflow: 'hidden',
     backgroundColor: colors.soot,
@@ -308,7 +308,7 @@ const s = StyleSheet.create({
     ...liftOf({ elevation: 6 }),
   },
   posterBorderEngrave: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
     borderRadius: 6,
@@ -330,7 +330,7 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   undevelopedWrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 8,

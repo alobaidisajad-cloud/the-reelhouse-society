@@ -8,9 +8,9 @@
   },
   {
     "class": "RUNTIME-api-missing-on-phone",
-    "mutant": "past-abort-signal-timeout",
+    "mutant": "shape-lacked-api-used",
     "proof": "m1",
-    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "commit": "93d0e52f168fb6d73c6e66b7fd6ef3304d0422a3",
     "verdict": "caught"
   },
   {
@@ -218,9 +218,9 @@
   },
   {
     "class": "RUNTIME-api-missing-on-phone",
-    "mutant": "shape-any-signal-on-phone",
+    "mutant": "shape-group-by-on-phone",
     "proof": "m1",
-    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "commit": "6fc4113e7ab1bfa2f24945d34b6f5dc421504fd8",
     "verdict": "caught"
   },
   {
@@ -1330,6 +1330,13 @@
     "verdict": "caught"
   },
   {
+    "class": "TOOL-hook-reads-a-folder-out",
+    "mutant": "shape-hook-env-kept",
+    "proof": "m1",
+    "commit": "0442be263ace40fba38564fefc1a542b47f37451",
+    "verdict": "caught"
+  },
+  {
     "class": "E2E-runtime-held-to-a-moment",
     "mutant": "shape-late-global-held",
     "proof": "m1",
@@ -1372,6 +1379,34 @@
     "verdict": "caught"
   },
   {
+    "class": "BUILD-a-library-takes-another-ndk",
+    "mutant": "shape-one-ndk-unrun",
+    "proof": "m2",
+    "commit": "d1624c5f99fcfec69aa7e8b5fad9ae351b1657c9",
+    "verdict": "caught"
+  },
+  {
+    "class": "BUILD-a-library-takes-another-ndk",
+    "mutant": "shape-one-ndk-unset",
+    "proof": "m1",
+    "commit": "d1624c5f99fcfec69aa7e8b5fad9ae351b1657c9",
+    "verdict": "caught"
+  },
+  {
+    "class": "NET-a-body-outside-the-limit",
+    "mutant": "shape-body-read-outside-the-limit",
+    "proof": "m1",
+    "commit": "d1624c5f99fcfec69aa7e8b5fad9ae351b1657c9",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-a-contract-asks-a-stub",
+    "mutant": "shape-contract-asks-the-stub",
+    "proof": "m1",
+    "commit": "5726830f0856612ac38b6ed7690b5e753a1e9270",
+    "verdict": "caught"
+  },
+  {
     "class": "SPEED-a-mark-redraws-the-words",
     "mutant": "shape-row-handlers-made-anew",
     "proof": "m1",
@@ -1386,10 +1421,38 @@
     "verdict": "caught"
   },
   {
+    "class": "RUNTIME-gwp-asan-crashes-hermes",
+    "mutant": "shape-gwp-asan-unrun",
+    "proof": "m2",
+    "commit": "dd5b444693d23e43fb47dcf4a8d095f1a45235f5",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-gwp-asan-crashes-hermes",
+    "mutant": "shape-gwp-asan-left-on",
+    "proof": "m1",
+    "commit": "dd5b444693d23e43fb47dcf4a8d095f1a45235f5",
+    "verdict": "caught"
+  },
+  {
     "class": "TOOL-lab-default-names-a-retired-arm",
     "mutant": "shape-lab-default-retired",
     "proof": "m1",
     "commit": "2fe1d70b03889cd55b7f226e51783b2d42b58ece",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-simulator-gone-silently",
+    "mutant": "shape-simulator-16-pro",
+    "proof": "m1",
+    "commit": "cb8253c2b41d3de80ca101a13d1832ff1ba5d471",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-simulator-gone-silently",
+    "mutant": "shape-simulator-fails-silently",
+    "proof": "m2",
+    "commit": "cb8253c2b41d3de80ca101a13d1832ff1ba5d471",
     "verdict": "caught"
   }
 ]

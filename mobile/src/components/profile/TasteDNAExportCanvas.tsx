@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import ViewShot from 'react-native-view-shot';
+import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
 import Svg, { Defs, RadialGradient as SvgRadialGradient, Stop, Rect } from 'react-native-svg';
 import { colors, fonts } from '@/src/theme/theme';
 import { decorativeTextProps } from '@/src/constants/textScaling';
@@ -25,7 +25,7 @@ const CARD_WIDTH = 1080;
 const CARD_HEIGHT = 1350;
 
 // eslint-disable-next-line react/display-name
-export const TasteDNAExportCanvas = forwardRef<ViewShot, TasteDNAExportCanvasProps>(
+export const TasteDNAExportCanvas = forwardRef<ViewShotRef, TasteDNAExportCanvasProps>(
     ({ genres, username = 'CINEPHILE', memberNo }, ref) => {
         if (!genres || genres.length === 0) return null;
 
@@ -38,7 +38,7 @@ export const TasteDNAExportCanvas = forwardRef<ViewShot, TasteDNAExportCanvasPro
                     {/* Background */}
                     <View style={s.background}>
                         {/* A true radial vignette (a border fakes it with corners). */}
-                        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+                        <View style={StyleSheet.absoluteFill} pointerEvents="none">
                             <Svg width="100%" height="100%">
                                 <Defs>
                                     <SvgRadialGradient id="exportVignette" cx="50%" cy="50%" rx="72%" ry="60%">

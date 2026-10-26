@@ -29,8 +29,8 @@ jest.mock('@/src/hooks/useEditProfile', () => ({
 }));
 jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ held: true, standing: 'held', open: jest.fn() }) }));
 // The glow behind the form breathes only while the screen is focused.
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
+jest.mock('expo-router/react-navigation', () => ({
+  ...jest.requireActual('expo-router/react-navigation'),
   useIsFocused: () => true,
 }));
 

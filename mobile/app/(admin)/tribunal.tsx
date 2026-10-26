@@ -703,7 +703,7 @@ function TribunalScreen() {
       <RoomLight room="default" />
       <LinearGradient
         colors={['rgba(180,45,45,0.10)', colors.ink]}
-        style={[StyleSheet.absoluteFillObject, WASH]}
+        style={[StyleSheet.absoluteFill, WASH]}
       />
 
       <Arrive name="tribunal-1" duration={600} style={[s.header, { paddingTop: headerTop }]}>

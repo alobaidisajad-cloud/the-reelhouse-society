@@ -99,8 +99,8 @@ describe('what a record grants', () => {
 describe('applying a record', () => {
   const realFetch = global.fetch;
   afterEach(() => { global.fetch = realFetch; });
-  // Deno has AbortSignal.timeout; the test setup's stand-in AbortSignal does not.
-  // Each limit asked for is kept, and its signal never fires (the fetches here answer at once).
+  // The function runs on Deno, which has AbortSignal.timeout; here it is stood in for, so each
+  // limit asked for is kept, and its signal never fires (the fetches here answer at once).
   const limits: number[] = [];
   const signalTimeout = (AbortSignal as unknown as { timeout?: unknown }).timeout;
   beforeEach(() => {

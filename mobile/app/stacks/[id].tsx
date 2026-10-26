@@ -136,7 +136,7 @@ const StackDetailFilmCard = React.memo(({
         {item.poster_path ? (
           <Image
             source={{ uri: tmdb.poster(item.poster_path, 'w342')! }}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             contentFit="cover"
             cachePolicy="memory-disk"
             placeholder={{ blurhash }}
@@ -193,7 +193,7 @@ const StackNav = React.memo(function StackNav({
                 <LinearGradient
                     colors={['rgba(13,11,9,0.92)', 'rgba(13,11,9,0.78)', 'rgba(13,11,9,0.34)', 'rgba(13,11,9,0)']}
                     locations={[0, 0.46, 0.78, 1]}
-                    style={StyleSheet.absoluteFillObject}
+                    style={StyleSheet.absoluteFill}
                 />
                 {Platform.OS === 'ios' && blurStyle && (
                     <AnimatedBlurView intensity={80} tint="dark" style={[StyleSheet.absoluteFill, blurStyle]} />
@@ -868,7 +868,7 @@ export default function StackDetailScreen() {
                   over nothing is a dark block hiding the room's light. */}
               {heroPoster ? (
                 <>
-                  <Image source={heroPoster} style={StyleSheet.absoluteFillObject} contentFit="cover" blurRadius={20} cachePolicy="memory-disk" />
+                  <Image source={heroPoster} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={20} cachePolicy="memory-disk" />
                   <RoomVeil room="default" hem={HEADER_HEIGHT} art={heroPoster} stops={HERO_VEIL} lifted={heroLifted} />
                 </>
               ) : null}

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Pressable } from 'react-native';
-import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
+import { BottomTabBarButtonProps } from "expo-router/js-tabs";
 import TactileEngine from '../utils/TactileEngine';
 
 /**

@@ -707,11 +707,11 @@ export default function LogDetailScreen() {
       {readyMark}
       {/* ── IMMERSIVE FULL-BLEED BACKDROP (BEHIND SCROLLVIEW) ── */}
       {backdropUri && (
-          <View style={[StyleSheet.absoluteFillObject, s.backdropContainer]}>
+          <View style={[StyleSheet.absoluteFill, s.backdropContainer]}>
              <View style={s.fullSize}>
                 <Image 
                    source={{ uri: backdropUri }} 
-                   style={[StyleSheet.absoluteFillObject, log.editorial_header ? s.opacity30 : s.opacity20]}
+                   style={[StyleSheet.absoluteFill, log.editorial_header ? s.opacity30 : s.opacity20]}
                    contentFit="cover"
                    blurRadius={4}
                    cachePolicy="memory-disk" transition={150}
@@ -719,7 +719,7 @@ export default function LogDetailScreen() {
                 {/* Fades into the LIT room — see RoomVeil. */}
                 <RoomVeil room="film" hem={BACKDROP_H} art={backdropUri} stops={BACKDROP_VEIL} />
                 {/* Scan lines texture — Web: repeating-linear-gradient for film grain */}
-                <View style={[StyleSheet.absoluteFillObject, s.textureOverlay]} />
+                <View style={[StyleSheet.absoluteFill, s.textureOverlay]} />
                 
                 {log.editorial_header && (
                   <View style={[s.editorialBadge, { top: headerTop + BELOW_THE_HEADER }]}>
@@ -802,7 +802,7 @@ export default function LogDetailScreen() {
         <View style={[s.contentCardShadow, isAuteur && s.contentCardShadowAuteur]}>
         <View style={[s.contentCard, isAuteur && s.contentCardAuteur]}>
           {isAuteur && (
-            <LinearGradient colors={[colors.crimsonFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFillObject, WASH]} />
+            <LinearGradient colors={[colors.crimsonFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFill, WASH]} />
           )}
         
         {/* The record drops into place from above the screen, certain to arrive. */}

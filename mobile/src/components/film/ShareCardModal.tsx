@@ -7,7 +7,7 @@
 import React, { useRef, useState, memo, useEffect } from 'react';
 import { View, StyleSheet, Modal, Share, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { Text } from '@/src/components/text';
-import ViewShot from 'react-native-view-shot';
+import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts } from '@/src/theme/theme';
@@ -64,7 +64,7 @@ interface ShareCardModalProps {
 }
 
 export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, film, log, username, memberNo }: ShareCardModalProps) {
-  const viewShotRef = useRef<ViewShot>(null);
+  const viewShotRef = useRef<ViewShotRef>(null);
   const { width: winW, height: winH } = useWindowDimensions();
   const room = useOverlayRoomPadding().paddingTop;
   const [frame, setFrame] = useState(frameSeen);

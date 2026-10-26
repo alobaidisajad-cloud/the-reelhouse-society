@@ -18,7 +18,7 @@
  * is still waiting fails the file, by where it was started. Each is then
  * cleared, so a failing run still ends.
  */
-const ReactNativeEnvironment = require('react-native/jest/react-native-env');
+const ReactNativeEnvironment = require('@react-native/jest-preset/jest/react-native-env');
 
 /**
  * The timers the running file has started and not yet seen end (null between
@@ -125,6 +125,10 @@ function nameOf(test) {
 class TimerCheckingEnvironment extends ReactNativeEnvironment {
   constructor(config, context) {
     super(config, context);
+    // Node's own fetch, for the contracts that ask a real server (contractEnv's houseFetch): the
+    // file's global fetch is Expo's from its setup on, whose native module jest-expo stubs, so it
+    // answers every request, even one to a closed port, with no status.
+    this.global[Symbol.for('reelhouse.nodeFetch')] = globalThis.fetch;
     this.timers = new Map();
     shared.running = this.timers;
   }

@@ -61,10 +61,18 @@ describe('withTimeout', () => {
     }
   });
 
-  it('runs where AbortSignal has no timeout, as on the phone', async () => {
-    // jest's setup removes AbortSignal.timeout, as Hermes lacks it; the old line threw here.
-    expect(typeof (AbortSignal as unknown as { timeout?: unknown }).timeout).toBe('undefined');
-    await expect(withTimeout(async () => 'read', 5000, 'dispatch')).resolves.toBe('read');
+  it('runs where AbortSignal has no timeout, as build 41\'s phone had none', async () => {
+    // The old line called AbortSignal.timeout, which React Native 0.81's runtime lacked, and threw
+    // there. The SDK 57 phone has it; withTimeout still needs it nowhere, so here it is taken away.
+    const signal = AbortSignal as unknown as { timeout?: unknown };
+    const own = Object.getOwnPropertyDescriptor(AbortSignal, 'timeout');
+    delete signal.timeout;
+    try {
+      expect(typeof signal.timeout).toBe('undefined');
+      await expect(withTimeout(async () => 'read', 5000, 'dispatch')).resolves.toBe('read');
+    } finally {
+      if (own) Object.defineProperty(AbortSignal, 'timeout', own);
+    }
   });
 
   it('clears its timer once the request settles, so nothing is left waiting', async () => {

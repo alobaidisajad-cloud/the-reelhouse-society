@@ -19,10 +19,10 @@ export const s = StyleSheet.create({
   },
   // Clear, so the room's light reaches the plate: see RoomLight.
   headerArchivistBase: {
-    ...StyleSheet.absoluteFillObject, zIndex: 0,
+    ...StyleSheet.absoluteFill, zIndex: 0,
   },
   filmGrainOverlay: {
-    ...StyleSheet.absoluteFillObject, zIndex: 2, opacity: 0.03,
+    ...StyleSheet.absoluteFill, zIndex: 2, opacity: 0.03,
     backgroundColor: 'rgba(184,137,26,0.05)',
   },
   headerGoldEdge: {
@@ -158,7 +158,7 @@ export const s = StyleSheet.create({
   plateInitial: { fontFamily: fonts.display, fontSize: 40, color: 'rgba(232,223,208,0.28)' },
   // The grain sits INSIDE the frame, over the photograph — it is the print that
   // is old, not the screen.
-  plateGrain: { ...StyleSheet.absoluteFillObject, zIndex: 2, opacity: 0.05, backgroundColor: 'rgba(232,223,208,0.5)' },
+  plateGrain: { ...StyleSheet.absoluteFill, zIndex: 2, opacity: 0.05, backgroundColor: 'rgba(232,223,208,0.5)' },
 
   // Photo corners: four 15pt triangles, drawn the only way a phone can draw a
   // triangle — a zero-sized box with two coloured borders.

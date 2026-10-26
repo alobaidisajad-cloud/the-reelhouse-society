@@ -208,13 +208,13 @@ function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<Pick
   const lift = useKeyboardLift(bottomInset + 22, 22);
 
   return (
-    <View style={[StyleSheet.absoluteFillObject, { justifyContent: 'flex-end' }]}>
+    <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end' }]}>
       {/* The ground closes it, as every sheet in this app does. */}
       <PressableScale
-        style={StyleSheet.absoluteFillObject} onPress={onClose}
+        style={StyleSheet.absoluteFill} onPress={onClose}
         accessibilityRole="button" accessibilityLabel="Close, without setting a series"
       >
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(6,5,4,0.72)' }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(6,5,4,0.72)' }]} />
       </PressableScale>
 
       <Animated.View style={[x.sheet, lift]}>

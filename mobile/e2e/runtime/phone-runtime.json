@@ -1,6 +1,7 @@
 {
  "globalThis": [
   "$$require_external",
+  "$SHBuiltin",
   "AbortController",
   "AbortSignal",
   "AggregateError",
@@ -15,6 +16,8 @@
   "CharacterData",
   "Collator",
   "CountQueuingStrategy",
+  "CustomEvent",
+  "DOMException",
   "DOMRect",
   "DOMRectList",
   "DOMRectReadOnly",
@@ -26,6 +29,9 @@
   "Error",
   "ErrorUtils",
   "EvalError",
+  "Event",
+  "EventCounts",
+  "EventTarget",
   "ExpoModulesCore_CodedError",
   "File",
   "FileReader",
@@ -36,6 +42,7 @@
   "HTMLCollection",
   "HTMLElement",
   "Headers",
+  "HermesAsyncIteratorsInternal",
   "HermesInternal",
   "Infinity",
   "Int16Array",
@@ -51,6 +58,15 @@
   "Number",
   "NumberFormat",
   "Object",
+  "Performance",
+  "PerformanceEntry",
+  "PerformanceEventTiming",
+  "PerformanceLongTaskTiming",
+  "PerformanceMark",
+  "PerformanceMeasure",
+  "PerformanceObserver",
+  "PerformanceObserverEntryList",
+  "PerformanceResourceTiming",
   "Promise",
   "Proxy",
   "QuitError",
@@ -62,11 +78,11 @@
   "RN$LegacyInterop_UIManager_getConstantsForViewManager",
   "RN$LegacyInterop_UIManager_getDefaultEventTypes",
   "RN$SurfaceRegistry",
-  "RN$UnifiedNativeModuleProxy",
   "RN$enableMicrotasksInReact",
   "RN$handleException",
   "RN$hasHandledFatalException",
   "RN$inExceptionHandler",
+  "RN$isNativeEventTargetEventDispatchingEnabled",
   "RN$isRuntimeReady",
   "RN$notifyOfFatalException",
   "RN$registerCallableModule",
@@ -92,6 +108,7 @@
   "String",
   "Symbol",
   "SyntaxError",
+  "TaskAttributionTiming",
   "Text",
   "TextDecoder",
   "TextDecoderStream",
@@ -116,7 +133,6 @@
   "WritableStreamDefaultController",
   "WritableStreamDefaultWriter",
   "XMLHttpRequest",
-  "_IS_FABRIC",
   "_REANIMATED_IS_REDUCED_MOTION",
   "_REANIMATED_VERSION_CPP",
   "_REANIMATED_VERSION_JS",
@@ -130,6 +146,7 @@
   "__ExpoImportMetaRegistry",
   "__METRO_GLOBAL_PREFIX__",
   "__RUNTIME_KIND",
+  "__RUNTIME_NAME",
   "__SENTRY__",
   "__addDisposableResource",
   "__assign",
@@ -170,6 +187,7 @@
   "__read",
   "__reanimatedModuleProxy",
   "__registerSegment",
+  "__remoteFunctionUnpacker",
   "__reportFatalRemoteError",
   "__rest",
   "__rewriteRelativeImportExtension",
@@ -181,6 +199,8 @@
   "__spreadArray",
   "__spreadArrays",
   "__synchronizableUnpacker",
+  "__toggleSlowAnimationsOnUIRuntime",
+  "__valueUnpacker",
   "__values",
   "__webpack_chunk_load__",
   "__webpack_require__",
@@ -238,11 +258,11 @@
   "window"
  ],
  "AbortSignal": [
-  "arguments",
-  "caller",
+  "any",
   "length",
   "name",
-  "prototype"
+  "prototype",
+  "timeout"
  ],
  "AbortSignal.prototype": [
   "aborted",
@@ -250,8 +270,6 @@
   "onabort"
  ],
  "AbortController": [
-  "arguments",
-  "caller",
   "length",
   "name",
   "prototype"
@@ -262,8 +280,6 @@
   "signal"
  ],
  "URL": [
-  "arguments",
-  "caller",
   "canParse",
   "createObjectURL",
   "length",
@@ -289,8 +305,6 @@
   "username"
  ],
  "URLSearchParams": [
-  "arguments",
-  "caller",
   "length",
   "name",
   "prototype"
@@ -311,20 +325,20 @@
   "values"
  ],
  "Promise": [
-  "_l",
-  "_m",
-  "_n",
+  "_B",
+  "_C",
+  "_D",
   "all",
   "allSettled",
   "any",
-  "arguments",
-  "caller",
   "length",
   "name",
   "prototype",
   "race",
   "reject",
-  "resolve"
+  "resolve",
+  "try",
+  "withResolvers"
  ],
  "Promise.prototype": [
   "catch",
@@ -426,6 +440,7 @@
   "endsWith",
   "includes",
   "indexOf",
+  "isWellFormed",
   "lastIndexOf",
   "length",
   "localeCompare",
@@ -448,6 +463,7 @@
   "toLowerCase",
   "toString",
   "toUpperCase",
+  "toWellFormed",
   "trim",
   "trimEnd",
   "trimLeft",

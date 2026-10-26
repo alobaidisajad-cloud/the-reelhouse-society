@@ -58,7 +58,7 @@ export const st = StyleSheet.create({
   endMarkLine: { flex: 1, height: 1, backgroundColor: colors.sepia },
 
   // The save-seal ceremony — a stamped "DOSSIER AMENDED" beat on success.
-  sealOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(13,11,9,0.82)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
+  sealOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(13,11,9,0.82)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
   sealStamp: { alignItems: 'center', paddingVertical: 26, paddingHorizontal: 34, borderWidth: 2, borderColor: colors.bloodReel, borderRadius: 6, backgroundColor: 'rgba(20,8,5,0.4)', transform: [{ rotate: '-4deg' }] },
   sealRing: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: colors.crimson, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   sealTitle: { fontFamily: fonts.sub, fontSize: 15, letterSpacing: 4, color: colors.parchment },

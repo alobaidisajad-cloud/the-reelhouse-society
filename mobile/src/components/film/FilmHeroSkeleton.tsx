@@ -33,7 +33,7 @@ export const FilmHeroSkeleton = memo(function FilmHeroSkeleton({
   return (
     <>
       <View style={[styles.shimmerBackdrop, { height: backdropHeight }]}>
-        <Animated.View style={[styles.shimmer, StyleSheet.absoluteFillObject, skeletonAnimStyle]} />
+        <Animated.View style={[styles.shimmer, StyleSheet.absoluteFill, skeletonAnimStyle]} />
         {/* Fades into the LIT room, as the backdrop it stands in for does. */}
         <RoomVeil room="film" hem={backdropHeight} stops={PLACEHOLDER_VEIL} />
       </View>

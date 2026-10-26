@@ -38,7 +38,7 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ username: 'tomasreyes' }),
   useNavigation: () => ({ setParams: jest.fn(), addListener: () => () => {} }),
 }));
-jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
+jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));
 
 beforeEach(() => { mockToastError.mockClear(); });
 

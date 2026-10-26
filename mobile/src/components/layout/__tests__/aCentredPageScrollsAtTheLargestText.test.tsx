@@ -50,8 +50,8 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
   default: () => ({ width: 390, height: 844, scale: 3, fontScale: 3.1 }),
 }));
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
+jest.mock('expo-router/react-navigation', () => ({
+  ...jest.requireActual('expo-router/react-navigation'),
   useScrollToTop: jest.fn(),
   useIsFocused: () => true,
   useFocusEffect: jest.fn(),

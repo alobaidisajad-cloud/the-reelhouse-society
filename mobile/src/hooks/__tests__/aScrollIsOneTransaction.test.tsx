@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { act, renderHook } from '@testing-library/react-native';
-import { NavigationRouteContext } from '@react-navigation/native';
+import { NavigationRouteContext } from "expo-router/react-navigation";
 import { useAnimatedReaction } from 'react-native-reanimated';
 import { NO_SCREEN, SCROLL_SETTLE_MS, useScrollTrace, useScrollTraceOf } from '@/src/hooks/useScrollTrace';
 import { startScrollSpan } from '@/src/lib/sentry';

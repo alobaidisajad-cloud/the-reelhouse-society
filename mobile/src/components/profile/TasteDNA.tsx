@@ -10,7 +10,7 @@ import { Text } from '@/src/components/text';
 import TactileEngine from '@/src/utils/TactileEngine';
 import * as Sharing from 'expo-sharing';
 import { Share2 } from 'lucide-react-native';
-import ViewShot from 'react-native-view-shot';
+import type { ViewShotRef } from 'react-native-view-shot';
 import { colors, fonts } from '@/src/theme/theme';
 import { TasteDNAExportCanvas } from './TasteDNAExportCanvas';
 import PressableScale from '../PressableScale';
@@ -44,7 +44,7 @@ interface TasteDNAProps {
 
 export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSelf, failed, onRetry }: TasteDNAProps) {
     const [isSharing, setIsSharing] = useState(false);
-    const viewShotRef = React.useRef<ViewShot>(null);
+    const viewShotRef = React.useRef<ViewShotRef>(null);
 
     const ready = useMemo(() => tasteReadiness(taste), [taste]);
 

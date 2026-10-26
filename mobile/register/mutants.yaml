@@ -19,11 +19,13 @@ mutants:
         replace: "withTiming(1, { duration, easing, reduceMotion: ReduceMotion.System }));"
     proof: { file: src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts, test: "reads every animation config in the app, and each is a literal whose keys all hold a value" }
 
-  - id: past-abort-signal-timeout
+  - id: shape-lacked-api-used
     class: RUNTIME-api-missing-on-phone
-    source: past
-    commit: 11b420f1
-    files: [src/utils/withTimeout.ts]
+    source: shape
+    edits:
+      - file: src/utils/withTimeout.ts
+        find: "const controller = new AbortController();"
+        replace: "const controller = new AbortController(); void [ms].toSorted();"
     proof: { file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "no file in app/ or src/ uses an API the phone lacks" }
 
   - id: past-psql-reason-dropped
@@ -300,12 +302,12 @@ mutants:
         text: "import { withSpring } from 'react-native-reanimated';\n\nexport const settle = (to: number, damping?: number) => withSpring(to, { damping });\n"
     proof: { file: src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts, test: "reads every animation config in the app, and each is a literal whose keys all hold a value" }
 
-  - id: shape-any-signal-on-phone
+  - id: shape-group-by-on-phone
     class: RUNTIME-api-missing-on-phone
     source: shape
     plant:
-      - path: src/utils/mutantEither.ts
-        text: "export const either = (a: AbortSignal, b: AbortSignal): AbortSignal => (AbortSignal as unknown as { any: (s: AbortSignal[]) => AbortSignal }).any([a, b]);\n"
+      - path: src/utils/mutantGroupBy.ts
+        text: "export const byKind = (xs: { kind: string }[]): unknown => (Object as unknown as { groupBy: (x: { kind: string }[], f: (v: { kind: string }) => string) => unknown }).groupBy(xs, (v) => v.kind);\n"
     proof: { file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "no file in app/ or src/ uses an API the phone lacks" }
 
   # ── the E2E judges, each fed a bad log made from a good one (P0.69) ───────────
@@ -587,7 +589,7 @@ mutants:
     source: shape
     edits:
       - file: package.json
-        find: "\"react-native-reanimated\": \"~4.3.4\","
+        find: "\"react-native-reanimated\": \"4.5.1\","
         replace: "\"react-native-reanimated\": \"~4.1.1\","
     proof: { file: src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts, test: "the manifest asks for a Reanimated with both, not the SDK pin" }
 
@@ -1301,9 +1303,9 @@ mutants:
     source: shape
     edits:
       - file: src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx
-        find: "jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));"
-        replace: "jest.mock('@react-navigation/native', () => ({ useIsFocused: () => true }));"
-    proof: { file: test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts, test: "every mock of @react-navigation/native spreads the one base, or the real module, first" }
+        find: "jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useIsFocused: () => true }));"
+        replace: "jest.mock('expo-router/react-navigation', () => ({ useIsFocused: () => true }));"
+    proof: { file: test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts, test: "every mock of expo-router/react-navigation spreads the one base, or the real module, first" }
 
   - id: shape-transcript-empty-while-reading
     class: UI-read-drawn-as-empty
@@ -1776,6 +1778,15 @@ mutants:
         replace: "      : (p.allowFontScaling === false ? 1 : own ?? 0);"
     proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "frozen in a frozen line, whatever it asks for: React Native drops a nested allowFontScaling" }
 
+  - id: shape-hook-env-kept
+    class: TOOL-hook-reads-a-folder-out
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "const clearHookGitEnv = (env) => { for (const k of HOOK_GIT_ENV) delete env[k]; return env; };"
+        replace: "const clearHookGitEnv = (env) => env;"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "reads each file as git holds it once the hook's GIT_DIR is cleared, and reads it wrong under it" }
+
   - id: shape-late-global-held
     class: E2E-runtime-held-to-a-moment
     source: shape
@@ -1817,8 +1828,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/feed/ActivityCard.tsx
-        find: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />"
-        replace: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFillObject, WASH]} />"
+        find: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFill} />"
+        replace: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFill, WASH]} />"
     proof: { file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat paper: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
 
   - id: shape-card-edge-under-paper
@@ -1829,6 +1840,42 @@ mutants:
         find: "  card: {\n    backgroundColor: colors.soot,"
         replace: "  card: {\n    boxShadow: 'inset 0px 1px 0px 0px rgba(255,226,176,0.075)',\n    backgroundColor: colors.soot,"
     proof: { file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat paper: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
+
+  - id: shape-one-ndk-unrun
+    class: BUILD-a-library-takes-another-ndk
+    source: shape
+    edits:
+      - file: app.json
+        find: "      \"./plugins/withOneNdk\",\n"
+        replace: ""
+    proof: { file: plugins/__tests__/withOneNdk.test.ts, test: "runs the plugin at prebuild" }
+
+  - id: shape-one-ndk-unset
+    class: BUILD-a-library-takes-another-ndk
+    source: shape
+    edits:
+      - file: plugins/withOneNdk.js
+        find: "  '    sub.android.ndkVersion = rootProject.ext.ndkVersion',\n"
+        replace: ""
+    proof: { file: plugins/__tests__/withOneNdk.test.ts, test: "hands every Android library the project's NDK, after the root plugin that sets it" }
+
+  - id: shape-body-read-outside-the-limit
+    class: NET-a-body-outside-the-limit
+    source: shape
+    edits:
+      - file: src/lib/supabase.ts
+        find: "    const body = NO_BODY.has(res.status) ? null : await res.text();\n    traceRequest(init?.method, url, at, { status: res.status });\n    return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });\n"
+        replace: "    traceRequest(init?.method, url, at, { status: res.status });\n    return res;\n"
+    proof: { file: src/lib/__tests__/aRequestEndsInItsTime.test.ts, test: "is given up at its limit as not reached, its headers come or not" }
+
+  - id: shape-contract-asks-the-stub
+    class: TEST-a-contract-asks-a-stub
+    source: shape
+    edits:
+      - file: test-utils/contractEnv.ts
+        find: "export const houseFetch: typeof fetch = (globalThis as Record<symbol, unknown>)[Symbol.for('reelhouse.nodeFetch')] as typeof fetch;"
+        replace: "export const houseFetch: typeof fetch = (...args) => fetch(...args);"
+    proof: { file: test-utils/__tests__/aContractAsksTheServer.test.ts, test: "asks through Node's own fetch, which fails at a closed port, never answered" }
 
   - id: shape-row-handlers-made-anew
     class: SPEED-a-mark-redraws-the-words
@@ -1848,6 +1895,24 @@ mutants:
         replace: "const PostWords = (function PostWords({"
     proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
 
+  - id: shape-gwp-asan-unrun
+    class: RUNTIME-gwp-asan-crashes-hermes
+    source: shape
+    edits:
+      - file: app.json
+        find: "      \"./plugins/withGwpAsanOff\",\n"
+        replace: ""
+    proof: { file: plugins/__tests__/withGwpAsanOff.test.ts, test: "runs the plugin at prebuild" }
+
+  - id: shape-gwp-asan-left-on
+    class: RUNTIME-gwp-asan-crashes-hermes
+    source: shape
+    edits:
+      - file: plugins/withGwpAsanOff.js
+        find: "'android:gwpAsanMode': 'never'"
+        replace: "'android:gwpAsanMode': 'default'"
+    proof: { file: plugins/__tests__/withGwpAsanOff.test.ts, test: "tells the application never to run GWP-ASan, and keeps everything else it says" }
+
   - id: shape-lab-default-retired
     class: TOOL-lab-default-names-a-retired-arm
     source: shape
@@ -1856,3 +1921,21 @@ mutants:
         find: "A alone\"\n        type: string\n        default: ''\n"
         replace: "A alone\"\n        type: string\n        default: 'Rb Rw Rl Rt Rs Rp R0'\n"
     proof: { file: e2e/__tests__/speedLab.test.ts, test: "names by default, in each input, only arms that exist" }
+
+  - id: shape-simulator-16-pro
+    class: CI-simulator-gone-silently
+    source: shape
+    edits:
+      - file: e2e/ios-simulator.sh
+        find: "want='iPhone 17 Pro'"
+        replace: "want='iPhone 16 Pro'"
+    proof: { file: e2e/__tests__/iosSimulator.test.ts, test: "names the iPhone 17 Pro on the newest iOS, never the Pro Max beside it" }
+
+  - id: shape-simulator-fails-silently
+    class: CI-simulator-gone-silently
+    source: shape
+    edits:
+      - file: e2e/ios-simulator.sh
+        find: "  printf '%s\\n' \"$list\" | grep -F 'iPhone' >&2\n"
+        replace: ""
+    proof: { file: e2e/__tests__/iosSimulator.test.ts, test: "with no iPhone 17 Pro, fails and names the iPhones there are" }

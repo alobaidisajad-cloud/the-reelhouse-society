@@ -12,12 +12,19 @@
  * Expo SDK 54 pins ~4.1, so `npx expo install --fix` would quietly take this back to the crash.
  * This reads the installed library and the manifest, and fails if either loses the guard.
  */
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const LIB = join(MOBILE, 'node_modules', 'react-native-reanimated');
-const proxy = readFileSync(join(LIB, 'android', 'src', 'main', 'java', 'com', 'swmansion', 'reanimated', 'NativeProxy.java'), 'utf8');
+/** The installed library's file, in the language it ships it: Kotlin from Reanimated 4.5, Java and Groovy before. */
+const either = (...paths: string[][]) => {
+  const at = paths.map((p) => join(LIB, ...p)).find((p) => existsSync(p));
+  if (!at) throw new Error(`none of ${paths.map((p) => p.join('/')).join(', ')} in the installed Reanimated`);
+  return readFileSync(at, 'utf8');
+};
+const PROXY = ['android', 'src', 'main', 'java', 'com', 'swmansion', 'reanimated'];
+const proxy = either([...PROXY, 'NativeProxy.kt'], [...PROXY, 'NativeProxy.java']);
 const installed = JSON.parse(readFileSync(join(LIB, 'package.json'), 'utf8')).version as string;
 const asked = JSON.parse(readFileSync(join(MOBILE, 'package.json'), 'utf8')).dependencies['react-native-reanimated'] as string;
 
@@ -27,12 +34,12 @@ const atLeast = (v: string, [maj, min, pat]: [number, number, number]) => {
 };
 
 it('the installed Reanimated keeps only mounted views in a UI-thread pass', () => {
-  expect(proxy).toMatch(/public boolean preserveMountedTags\(int\[\] tags\)/);
+  expect(proxy).toMatch(/public boolean preserveMountedTags\(int\[\] tags\)|fun preserveMountedTags\(tags: IntArray\): Boolean/);
 });
 
 it('and treats a view still being made as not mounted, never throwing on it', () => {
   const body = proxy.slice(proxy.indexOf('preserveMountedTags('));
-  expect(body).toMatch(/catch \(IllegalViewOperationException e\)/);
+  expect(body).toMatch(/catch \(IllegalViewOperationException e\)|catch \(e: IllegalViewOperationException\)/);
 });
 
 it('the manifest asks for a Reanimated with both, not the SDK pin', () => {
@@ -51,6 +58,7 @@ it('the manifest asks for a Reanimated with both, not the SDK pin', () => {
 it('Android writes a frame\'s opacity and transform straight to the view, where a removed view is skipped', () => {
   const flags = (JSON.parse(readFileSync(join(MOBILE, 'package.json'), 'utf8')).reanimated ?? {}).staticFeatureFlags ?? {};
   expect(flags.ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS).toBe(true);
-  const gradle = readFileSync(join(LIB, 'android', 'build.gradle'), 'utf8');
-  expect(gradle).toMatch(/packageJson\.reanimated\?\.staticFeatureFlags/);
+  // The library's build reads the app's package.json for them: Groovy before 4.5, Kotlin from it.
+  const gradle = either(['android', 'build.gradle.kts'], ['android', 'build.gradle']);
+  expect(gradle).toMatch(/packageJson\.reanimated\?\.staticFeatureFlags|packageJson\["reanimated"\][^\n]*\n[^\n]*get\("staticFeatureFlags"\)/);
 });

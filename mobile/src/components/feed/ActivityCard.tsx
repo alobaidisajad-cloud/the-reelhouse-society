@@ -76,12 +76,12 @@ const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.
       <LinearGradient
         colors={paper.colors}
         locations={paper.locations}
-        style={[StyleSheet.absoluteFillObject, s.paperLine, { borderTopColor: paper.line }]}
+        style={[StyleSheet.absoluteFill, s.paperLine, { borderTopColor: paper.line }]}
       />
       {(isPremium || isAuteur) && (
         <>
-          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
-          <LinearGradient colors={[glow.far, 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={[glow.far, 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFill} />
         </>
       )}
       {children}
@@ -96,14 +96,14 @@ const ActivityEditorialHeader = React.memo(({ backdropUri }: { backdropUri: stri
       <View style={s.editorialHeaderImageWrap}>
         <Image
           source={{ uri: backdropUri }}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           recyclingKey={backdropUri}
           cachePolicy="memory-disk"
           placeholder={{ blurhash: SEPIA_HASH }}
           contentFit="cover"
           transition={200}
         />
-        <LinearGradient colors={['rgba(13,11,9,0.3)', 'rgba(13,11,9,0.95)']} style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={['rgba(13,11,9,0.3)', 'rgba(13,11,9,0.95)']} style={StyleSheet.absoluteFill} />
         <View style={s.editorialBadge}><Text style={s.editorialBadgeText}>✦ EDITORIAL</Text></View>
       </View>
       <LinearGradient
@@ -270,7 +270,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
         {/* ── BACK of the card (lazy — pays nothing until first flip) ── */}
         {backMounted && hasAutopsy && (
           <Animated.View
-            style={[StyleSheet.absoluteFillObject, s.backFace, backStyle]}
+            style={[StyleSheet.absoluteFill, s.backFace, backStyle]}
             pointerEvents={flipped ? 'auto' : 'none'}
             accessibilityElementsHidden={!flipped}
             importantForAccessibility={flipped ? 'auto' : 'no-hide-descendants'}

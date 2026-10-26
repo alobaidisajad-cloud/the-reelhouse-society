@@ -123,7 +123,7 @@ const s = StyleSheet.create({
     castCard: { width: 100 },
     castPhotoWrap: { width: 100, height: PHOTO_H, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', marginBottom: PHOTO_GAP },
     castPhoto: { width: '100%', height: '100%' },
-    sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.12)', zIndex: 1 },
+    sepiaTint: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(60,40,10,0.12)', zIndex: 1 },
     castPhotoPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
     castPhotoPlaceholderText: { fontFamily: fonts.display, fontSize: 32, color: colors.fog },
     /**

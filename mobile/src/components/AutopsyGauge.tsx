@@ -206,7 +206,7 @@ const s = StyleSheet.create({
         backgroundColor: colors.ink,
     },
     scanlines: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         opacity: 0.06,
         // Simulated via repeating thin lines
         borderTopWidth: 1,

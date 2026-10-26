@@ -28,7 +28,7 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
   useFocusEffect: () => {},
 }));
-jest.mock('@react-navigation/native', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn(), useIsFocused: () => true }));
+jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(), useScrollToTop: jest.fn(), useIsFocused: () => true }));
 jest.mock('react-native-safe-area-context', () => {
   const mockReact = require('react');
   const { View } = require('react-native');

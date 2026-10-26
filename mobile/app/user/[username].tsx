@@ -994,15 +994,15 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         {/* ═══ THE MEMBERSHIP PLATE — atmosphere ends at the stats grid ═══ */}
         <View style={s.headerWrap} onLayout={(e) => setPlateH(Math.round(e.nativeEvent.layout.y + e.nativeEvent.layout.height))}>
           {/* Tier atmosphere — breathes up as the plate develops */}
-          <AnimatedView style={[StyleSheet.absoluteFillObject, atmosphereDevelop]} pointerEvents="none">
+          <AnimatedView style={[StyleSheet.absoluteFill, atmosphereDevelop]} pointerEvents="none">
             {isAuteurPlus ? (
               <ProfileBackdrop user={targetUser as never} hem={plateH || undefined} scrollY={scrollY} />
             ) : isArchivistPlus ? (
               /* Brass fading to NOTHING, so the room's light shows through. */
               <View style={s.headerArchivistBase}>
-                 <LinearGradient colors={['rgba(196,150,26,0.15)', 'rgba(196,150,26,0)']} locations={[0, 0.4]} style={StyleSheet.absoluteFillObject} />
-                 <AnimatedView style={[StyleSheet.absoluteFillObject, pulseStyle]} pointerEvents="none">
-                   <LinearGradient colors={['rgba(196,150,26,0.1)', 'transparent']} style={StyleSheet.absoluteFillObject} />
+                 <LinearGradient colors={['rgba(196,150,26,0.15)', 'rgba(196,150,26,0)']} locations={[0, 0.4]} style={StyleSheet.absoluteFill} />
+                 <AnimatedView style={[StyleSheet.absoluteFill, pulseStyle]} pointerEvents="none">
+                   <LinearGradient colors={['rgba(196,150,26,0.1)', 'transparent']} style={StyleSheet.absoluteFill} />
                  </AnimatedView>
               </View>
             ) : null}

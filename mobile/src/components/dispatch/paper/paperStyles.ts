@@ -245,8 +245,8 @@ export const p = StyleSheet.create({
     ...effects.shadowSurface, ...effects.flat,
   },
   /** Held back: a raw frame at full strength would make this page look like another app. */
-  stillArt: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%', opacity: 0.46 },
-  stillScrim: { ...StyleSheet.absoluteFillObject },
+  stillArt: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.46 },
+  stillScrim: { ...StyleSheet.absoluteFill },
 
 
   // ── byline ────────────────────────────────────────────────────────────────

@@ -465,7 +465,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
             >
                 <Animated.View style={[s.modalOverlay, kbPad]} onAccessibilityEscape={closeSheet}>
                     <Pressable
-                        style={StyleSheet.absoluteFillObject}
+                        style={StyleSheet.absoluteFill}
                         onPress={() => { TactileEngine.selection(); setSheet(null); }}
                         accessibilityRole="button"
                         accessibilityLabel="Close"

@@ -36,7 +36,7 @@ export const FilterChip = memo(function FilterChip({ label, active, onPress }: {
     >
       {active && (
         <View style={st.filterChipInner}>
-          <LinearGradient colors={FILAMENT} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={FILAMENT} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
         </View>
       )}
       <Text style={[st.filterChipText, active && st.filterChipTextActive]}>{label}</Text>
@@ -74,14 +74,14 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
     >
       <View style={st.stackCardPosterWrap}>
         {posters.length === 0 ? (
-          <LinearGradient colors={gradientColors} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={gradientColors} style={StyleSheet.absoluteFill} />
         ) : (
           <View style={st.stackCardPosterRow}>
             {posters.map((f: StackFilm, i: number) => (
               <View key={i} style={[st.stackCardPosterPanel, { width: `${100 / posters.length}%` }]}>
                 <Image
                   source={{ uri: `${TMDB_IMG}${f.poster_path}` }}
-                  style={StyleSheet.absoluteFillObject}
+                  style={StyleSheet.absoluteFill}
                   contentFit="cover"
                   cachePolicy="memory-disk"
                   placeholder={{ blurhash: SEPIA_HASH }}
@@ -91,7 +91,7 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
                   <LinearGradient 
                     colors={['transparent', 'rgba(13,11,9,0.8)']} 
                     start={{ x: 0.8, y: 0 }} end={{ x: 1, y: 0 }} 
-                    style={StyleSheet.absoluteFillObject} 
+                    style={StyleSheet.absoluteFill} 
                   />
                 )}
               </View>
@@ -103,7 +103,7 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
       <LinearGradient 
         colors={['rgba(13,11,9,0)', 'rgba(6,5,4,0.9)', 'rgba(6,5,4,1)']} 
         locations={[0, 0.4, 0.9]} 
-        style={StyleSheet.absoluteFillObject} 
+        style={StyleSheet.absoluteFill} 
       />
 
       <View style={st.stackCardRef}>
@@ -237,7 +237,7 @@ const st = StyleSheet.create({
     borderColor: 'rgba(218,165,32,0.6)',
   },
   filterChipInner: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 12,
     overflow: 'hidden',
   },

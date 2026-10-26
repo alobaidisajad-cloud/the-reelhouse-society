@@ -54,7 +54,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
       <LinearGradient
         colors={['rgba(13,11,9,0.8)', 'rgba(6,5,4,0.9)', 'transparent']}
         locations={[0, 0.6, 1]}
-        style={[StyleSheet.absoluteFillObject, WASH]}
+        style={[StyleSheet.absoluteFill, WASH]}
       />
       <Animated.View style={[s.heroContent, arrival]}>
         {(() => {

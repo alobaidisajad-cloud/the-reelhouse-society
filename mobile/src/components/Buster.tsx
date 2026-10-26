@@ -20,7 +20,7 @@ import Animated, {
   cancelAnimation, Easing, ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue,
   withDelay, withRepeat, withSequence, withTiming,
 } from 'react-native-reanimated';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from "expo-router/react-navigation";
 import { Text } from '@/src/components/text';
 import { colors, fonts } from '@/src/theme/theme';
 import { MS, arrive } from '@/src/theme/motion';
@@ -331,7 +331,7 @@ const s = StyleSheet.create({
   root: { alignItems: 'center', justifyContent: 'center', flexShrink: 1, minHeight: 0 },
   // Gives way first when a screen is short of room: the words keep theirs.
   room: { flexShrink: 1, minHeight: 0 },
-  standing: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'flex-end' },
+  standing: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'flex-end' },
   aside: { opacity: 0 },
   fill: { width: '100%', height: '100%' },
   eyes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },

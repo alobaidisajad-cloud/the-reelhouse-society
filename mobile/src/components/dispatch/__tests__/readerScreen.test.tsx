@@ -140,6 +140,13 @@ jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
+// The share sheet, as each test sets it: expo-sharing's own exports cannot be spied on (SDK 57).
+// Read when called: the module is loaded with the screen, before this file's lines have run.
+const mockSharing = { isAvailableAsync: jest.fn(async () => true), shareAsync: jest.fn(async (_u: unknown) => undefined) };
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: () => mockSharing.isAvailableAsync(),
+  shareAsync: (u: unknown) => mockSharing.shareAsync(u),
+}));
 
 /** A row as PostgREST returns it, so `hydrate` parses it for real. */
 const row = (over: Record<string, unknown> = {}) => ({
@@ -805,10 +812,9 @@ describe('the reader', () => {
     // iOS: `Share.share` carries the picture AND the link. `shareAsync` would
     // send the file alone, and a stranger would have no way to the house.
     const viewShot = require('react-native-view-shot');
-    const sharing = require('expo-sharing');
     const capture = jest.spyOn(viewShot, 'captureRef').mockResolvedValue('file:///clipping.png');
-    const available = jest.spyOn(sharing, 'isAvailableAsync').mockResolvedValue(true);
-    const shareAsync = jest.spyOn(sharing, 'shareAsync').mockResolvedValue(undefined as never);
+    mockSharing.isAvailableAsync.mockResolvedValue(true);
+    const shareAsync = mockSharing.shareAsync.mockClear().mockResolvedValue(undefined);
     const shared: { url?: string; message?: string }[] = [];
     const plain = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
       shared.push(c as { url?: string; message?: string });
@@ -825,7 +831,7 @@ describe('the reader', () => {
     // One share, not two: the file-only path is not also taken.
     expect(shareAsync).not.toHaveBeenCalled();
 
-    capture.mockRestore(); available.mockRestore(); shareAsync.mockRestore(); plain.mockRestore();
+    capture.mockRestore(); plain.mockRestore();
   });
 
   it('sends the clipping on Android, where a file and a message cannot travel together', async () => {
@@ -836,12 +842,12 @@ describe('the reader', () => {
     Object.defineProperty(RN.Platform, 'OS', { value: 'android', configurable: true });
     const os = { mockRestore: () => Object.defineProperty(RN.Platform, 'OS', { value: realOS, configurable: true }) };
     const viewShot = require('react-native-view-shot');
-    const sharing = require('expo-sharing');
     const capture = jest.spyOn(viewShot, 'captureRef').mockResolvedValue('file:///clipping.png');
-    const available = jest.spyOn(sharing, 'isAvailableAsync').mockResolvedValue(true);
+    mockSharing.isAvailableAsync.mockResolvedValue(true);
     const shots: unknown[] = [];
-    const shareAsync = jest.spyOn(sharing, 'shareAsync').mockImplementation(async (u: unknown) => {
+    mockSharing.shareAsync.mockClear().mockImplementation(async (u: unknown) => {
       shots.push(u);
+      return undefined;
     });
     const plain = jest.spyOn(Share, 'share');
 
@@ -853,7 +859,7 @@ describe('the reader', () => {
     expect(plain).not.toHaveBeenCalled();
 
     os.mockRestore();
-    capture.mockRestore(); available.mockRestore(); shareAsync.mockRestore(); plain.mockRestore();
+    capture.mockRestore(); plain.mockRestore();
   });
 
   it('opens the lounge from the sheet, rather than the world', async () => {

@@ -127,7 +127,7 @@ export function ArchiveLockedLine({ onUnlocked }: { onUnlocked: () => void }) {
 
 const styles = StyleSheet.create({
     container: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: colors.ink,
         alignItems: 'center',
         justifyContent: 'center',

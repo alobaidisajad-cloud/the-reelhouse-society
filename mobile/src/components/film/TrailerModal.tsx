@@ -94,7 +94,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                     <View style={{ position: 'absolute', zIndex: 2, top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
                         <LinearGradient
                             colors={['rgba(184,137,26,0.25)', 'transparent', 'rgba(184,137,26,0.15)']}
-                            style={[StyleSheet.absoluteFillObject, WASH]}
+                            style={[StyleSheet.absoluteFill, WASH]}
                         />
                     </View>
                     <WebView
@@ -125,7 +125,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                         bounces={false}
                         scrollEnabled={false}
                         startInLoadingState
-                        renderLoading={() => <ActivityIndicator size="large" color={colors.sepia} style={StyleSheet.absoluteFillObject} />}
+                        renderLoading={() => <ActivityIndicator size="large" color={colors.sepia} style={StyleSheet.absoluteFill} />}
                     />
                 </View>
                 <Text style={s.trailerLabel} numberOfLines={2}>{label}</Text>

@@ -243,7 +243,7 @@ const SETTINGS_RISE = 320;
 
 const s = StyleSheet.create({
   backdrop: { flex: 1 },
-  frame: { ...StyleSheet.absoluteFillObject },
+  frame: { ...StyleSheet.absoluteFill },
   // Fills the sheet's fixed height, so the roster scrolls inside it.
   body: { flex: 1 },
   sheet: {

@@ -154,7 +154,7 @@ function TicketStock({ auteur }: { auteur: boolean }) {
       <LinearGradient
         colors={auteur ? [colors.ticketAuteurHead, colors.ticketAuteurFoot] : [colors.ticketHead, colors.frame]}
         start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.7 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
       {auteur ? <View style={s.innerRule} pointerEvents="none" /> : null}

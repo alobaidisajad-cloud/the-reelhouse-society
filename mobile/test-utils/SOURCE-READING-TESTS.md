@@ -80,7 +80,7 @@ Decisions, as of 2026-09-28:
 | `e2e/__tests__/variants.test.ts` | The phone's variants (e2e/variants.json) against the list e2e.yml's input names and the night's matrix in nightly.yml; their commands are asked of variants.mjs itself, and run-flows.sh runs them on a fake phone (runFlows.rehearsal.test.ts). |
 | `scripts/__tests__/keptDebs.test.ts` | Runs scripts/kept-debs.sh in bash against stand-in dpkg tools (the script is read from disk and run, not imported). |
 | `test-utils/__tests__/theRouterMockHasOneBase.guard.test.ts` | Every test's own mock of expo-router spreads the shared base (or the real module) first, and jest.setup.ts mocks it with that base. |
-| `test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts` | Every test's own mock of @react-navigation/native spreads the shared base (or the real module) first, and jest.setup.ts mocks it with that base. |
+| `test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts` | Every test's own mock of expo-router/react-navigation spreads the shared base (or the real module) first, and jest.setup.ts mocks it with that base. |
 | `e2e/__tests__/iosFlows.test.ts` | The iPhone's flow list (e2e/ios-flows.json) against the flows it names and the iPhone launch workflow that runs them: a flow that needs a seeded account, a sign-in or Android's airplane mode cannot be on it. |
 | `e2e/__tests__/speedLab.test.ts` | The speed lab's arms (e2e/lab/arm.mjs) checked against the app's files as committed, since each arm is an exact edit the lab's builds apply; and a copy of three of them, changed, to see an arm refused with nothing written. The judges themselves are run, on drawn shots, written starts and written scrolls; the lab seed reads the stand-in TMDB's recordings for its films. |
 | `e2e/__tests__/faultJudges.test.ts` | The fault flows in .maestro/faults against the fault runs' shard map (e2e/fault-shards.json) and the judges' own list; the judges themselves are run, on logs. |
@@ -234,9 +234,12 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/anAbsenceIsAnchored.guard.test.ts` | Every test file, parsed, for a test that only finds things absent on a screen: a sweep of the tests themselves. |
 | `src/utils/__tests__/revenuecatWebhookDecide.test.ts` | The app's limit on a call to the house (src/lib/supabase.ts), which the store's own limit, in Deno, must stay under: no one runtime holds both. |
 | `e2e/__tests__/startStack.test.ts` | The stack's start script, its workflows and the sealed world's config.toml. |
-| `plugins/__tests__/withoutDevLauncherScanner.test.ts` | The installed expo-dev-launcher's manifest, for the entry the plugin removes, and app.json's plugins. |
+| `e2e/__tests__/iosSimulator.test.ts` | The simulator script and the two iPhone workflows: what GitHub runs, which no render reaches. |
+| `plugins/__tests__/theScannerStaysInDebug.test.ts` | The installed expo-dev-launcher's main and debug manifests, for the code scanner a release build must not merge. |
 | `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |
 | `plugins/__tests__/withLinkDuringLaunch.test.ts` | The generated MainActivity fixture and app.json's plugins. |
+| `plugins/__tests__/withOneNdk.test.ts` | The generated root build.gradle fixture, app.json's plugins and the NDK the Android packages script names: Gradle files no render reaches. |
+| `plugins/__tests__/withGwpAsanOff.test.ts` | The generated AndroidManifest.xml fixture, app.json's plugins and the installed React Native's version: a manifest and a version no render reaches. |
 | `src/utils/__tests__/theBatchReportIsAnswered.test.ts` | The latest batch report in the private folder: a record of the work, which no render reaches. |
 | `src/utils/__tests__/heartbeatsAreKept.test.ts` | The workflows' schedules and heartbeat jobs, and register/alert-rules.json: what GitHub runs, which no render reaches. |
 | `src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts` | The installed Reanimated's Android NativeProxy and the manifest's range: native code and a version no render reaches. |

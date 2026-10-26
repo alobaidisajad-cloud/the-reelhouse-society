@@ -38,6 +38,12 @@ export const ANON_KEY = process.env.CONTRACT_SUPABASE_ANON_KEY;
 export const canRun = !!SUPABASE_URL && !!ANON_KEY;
 
 /**
+ * Node's own fetch, which reaches the server. The global one is Expo's, stubbed under jest: it
+ * answers without asking (test-utils/timerCheckingEnvironment.js keeps Node's for this).
+ */
+export const houseFetch: typeof fetch = (globalThis as Record<symbol, unknown>)[Symbol.for('reelhouse.nodeFetch')] as typeof fetch;
+
+/**
  * Headers for a request made as a signed-out visitor. Each connection closes with
  * its answer: one kept open for reuse holds Node's fetch timers past the test file.
  */

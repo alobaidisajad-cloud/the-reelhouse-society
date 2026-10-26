@@ -193,7 +193,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
 
 const s = StyleSheet.create({
     overlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: colors.ink,
         zIndex: 100005,
         justifyContent: 'center',
@@ -211,7 +211,7 @@ const s = StyleSheet.create({
         overflow: 'hidden',
     },
     grainOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(184,137,26,0.02)',
         zIndex: -1,
     },

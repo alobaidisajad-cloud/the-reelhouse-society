@@ -21,7 +21,7 @@ classes:
     area: runtime
     status: OPEN
     count: 0
-    source: { kind: history, ref: "build 41 (UF3), 11b420f1" }
+    source: { kind: history, ref: "build 41 (UF3): withTimeout called AbortSignal.timeout, which React Native 0.81's runtime lacked; the SDK 57 phone has it, and the list is what that phone lacks (e2e/runtime/phone-runtime.json)" }
     methods:
       - { kind: static, file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "no file in app/ or src/ uses an API the phone lacks" }
       - { kind: running, file: src/utils/__tests__/runtimeLacks.guard.test.ts, test: "each entry is there on Node, and gone in the tests' engine" }
@@ -817,7 +817,7 @@ classes:
     places: [emulator]
 
   - id: TEST-mock-written-from-scratch
-    title: "A test's own mock of a shared module, written from scratch, replaced the shared one whole and lacked what its screen came to call: the stack page's ready mark threw in its tests and its generator (expo-router); every screen with the room's light threw once it read NavigationContext (@react-navigation/native)"
+    title: "A test's own mock of a shared module, written from scratch, replaced the shared one whole and lacked what its screen came to call: the stack page's ready mark threw in its tests and its generator (expo-router); every screen with the room's light threw once it read NavigationContext (expo-router/react-navigation)"
     seriousness: code
     area: tests
     status: OPEN
@@ -825,8 +825,8 @@ classes:
     source: { kind: history, ref: "God-Tier 39836999393: zz-stacks.gen threw 'useFocusEffect is not a function' at every width, after the stack page gained its ready mark" }
     methods:
       - { kind: static, file: test-utils/__tests__/theRouterMockHasOneBase.guard.test.ts, test: "every mock of expo-router spreads the one base, or the real module, first" }
-      - { kind: static, file: test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts, test: "every mock of @react-navigation/native spreads the one base, or the real module, first" }
-    fix: "jest.setup.ts mocks expo-router with test-utils/expoRouterMock.ts, and every test's own mock (65) spreads that base first, or the real module, and changes only what it means to (mutant shape-router-mock-from-scratch); @react-navigation/native the same, with test-utils/navigationMock.ts, its 29 hand-written mocks given the base (mutant shape-navigation-mock-from-scratch)"
+      - { kind: static, file: test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts, test: "every mock of expo-router/react-navigation spreads the one base, or the real module, first" }
+    fix: "jest.setup.ts mocks expo-router with test-utils/expoRouterMock.ts, and every test's own mock (65) spreads that base first, or the real module, and changes only what it means to (mutant shape-router-mock-from-scratch); expo-router/react-navigation the same, with test-utils/navigationMock.ts, its 29 hand-written mocks given the base (mutant shape-navigation-mock-from-scratch)"
     places: [none]
 
   - id: E2E-ios-driver-start-unwaited
@@ -1449,6 +1449,18 @@ classes:
     fix: "the app's Text gives a nested Text nothing of the house's (React Native drops a nested allowFontScaling and gives it the parent's cap); a frozen Text tells the Texts inside it, so Android's spacing correction follows the parent. Jest's stand-in for React Native's Text tells nested Texts they are nested, as the real one does; the renderer draws a nested Text with its parent's scaling, through a capture run's source marks too (mutants shape-nested-text-housed, shape-render-nested-own-cap)"
     places: [none]
 
+  - id: TOOL-hook-reads-a-folder-out
+    title: "A push from a linked worktree ran the push gate under the GIT_DIR git exports to a hook, so each git call it made from mobile/ took mobile/ for the whole working tree: every mutant read 'not as committed', a patch's line-end attribute read 'unspecified', and the push was refused for faults the tree did not have"
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "the SDK 57 branch's push from its worktree, 2026-10-25: 43 of 43 mutants invalid, files shown untracked that the worktree held committed" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/hooks.guard.test.ts, test: "reads each file as git holds it once the hook's GIT_DIR is cleared, and reads it wrong under it" }
+    fix: "pre-push.cjs clears the variables git exports to a hook (HOOK_GIT_ENV: GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE, GIT_PREFIX, GIT_COMMON_DIR) before it runs anything, so every git call finds its repository from where it runs (mutant shape-hook-env-kept)"
+    places: [none]
+
   - id: E2E-runtime-held-to-a-moment
     title: "The runtime check held every global name to the committed copy, so a global a native module installs when it first starts (gesture-handler's isViewFlatteningDisabled) failed a Sealed E2E run whenever a launch's first screen wrote the runtime after that start instead of before"
     seriousness: code
@@ -1498,6 +1510,43 @@ classes:
     fix: "flatPaper (src/theme/light.ts) composites the paper, the edge's face light and the wash once, at the heights where their gradients turn, into one opaque gradient: the colours the eye was shown, within half a level of 255 at every height (paperIsFlattened), the edge's highlight its top line. A ranked card's corner glows carry the wash's strength in their colours (seenAt), so no view of the card is drawn through its opacity; the card's own style holds no edge light. Drawn before and after, the Reel's cards match pixel for pixel inside; only their 1pt translucent borders move, by at most 6 levels (17 at two corner pixels), the face light no longer under them (mutants shape-card-paper-seen-through, shape-card-edge-under-paper)"
     places: [emulator]
 
+  - id: BUILD-a-library-takes-another-ndk
+    title: "A library that builds native code and names no NDK took the Android plugin's own default, not the project's: expo-updates 57 builds C++ and asked for NDK 27.0.12077973 beside the project's 27.1.12297006, which CI does not install, and the E2E app's build stopped (\"NDK not configured\")"
+    seriousness: behaviour
+    area: android
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "Sealed E2E run 40226076302 on the sdk57 branch: the app was not built, ':expo-updates' asking for NDK 27.0.12077973" }
+    methods:
+      - { kind: running, file: plugins/__tests__/withOneNdk.test.ts, test: "hands every Android library the project's NDK, after the root plugin that sets it" }
+      - { kind: running, file: plugins/__tests__/withOneNdk.test.ts, test: "runs the plugin at prebuild" }
+    fix: "plugins/withOneNdk.js adds to the root build.gradle a block that sets each Android library's ndkVersion to rootProject.ext.ndkVersion (set by expo-root-project from React Native's catalogue) as its plugin is applied, so the whole build uses the one NDK scripts/android-packages.cjs installs (mutants shape-one-ndk-unrun, shape-one-ndk-unset)"
+    places: [emulator]
+
+  - id: NET-a-body-outside-the-limit
+    title: "On SDK 57 the app's fetch is Expo's, which settles once the headers arrive and streams the body; the client's time limit ended with fetch's promise, so an answer whose body stalled (a change of network mid-answer) waited with no limit, holding the queue behind it, where React Native's fetch had held the whole answer inside the limit"
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: static, ref: "expo/src/winter/runtime.native.ts on SDK 57 installs expo/fetch as the global fetch unless EXPO_PUBLIC_USE_RN_FETCH; fetchWithinLimit's own comment said React Native's fetch settles once the whole answer has arrived" }
+    methods:
+      - { kind: running, file: src/lib/__tests__/aRequestEndsInItsTime.test.ts, test: "is given up at its limit as not reached, its headers come or not" }
+    fix: "fetchWithinLimit reads the answer whole (text; none for 204, 205, 304) before the limit's timer is cleared, and hands on a Response made from it with its status, status text and headers (mutant shape-body-read-outside-the-limit)"
+    places: [none]
+
+  - id: TEST-a-contract-asks-a-stub
+    title: "On SDK 57 jest's global fetch is Expo's, whose native module jest-expo stubs: it answers every request, one to a closed port too, with no status, so the contracts that ask the local server for the app's embeds and reads failed on an answer never sent (and a stub's answer could pass where the server's would not)"
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "db-integration on PR #128: the contracts' fetch gave status undefined for every embed" }
+    methods:
+      - { kind: running, file: test-utils/__tests__/aContractAsksTheServer.test.ts, test: "asks through Node's own fetch, which fails at a closed port, never answered" }
+    fix: "test-utils/timerCheckingEnvironment.js keeps Node's own fetch on the file's global before any setup runs; test-utils/contractEnv exports it as houseFetch, and both contract suites ask through it: proved here at a closed port, which it fails and the stub answers, and in CI, where they reach the server (mutant shape-contract-asks-the-stub)"
+    places: [none]
+
   - id: SPEED-a-mark-redraws-the-words
     title: "The member's marks on the Dispatch (certified, saved) are read after the page; as they came, every filing on screen was drawn again whole, its words, byline and still with its bar, because each row made its handlers anew and the post took the marks with its words"
     seriousness: behaviour
@@ -1508,6 +1557,19 @@ classes:
     methods:
       - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the member's marks, read, redraw each filing's bar and none of its words" }
     fix: "PaperPost draws a filing's words in PostWords, a memo of their own that takes none of the marks; FilingRow keeps its handlers across redraws (useCallback on the filing's id, film and author), so a mark being read redraws the bar alone (mutants shape-row-handlers-made-anew, shape-words-unmemoised)"
+    places: [emulator]
+
+  - id: RUNTIME-gwp-asan-crashes-hermes
+    title: "On Android 14 and later, an app whose manifest names no gwpAsanMode runs GWP-ASan on a share of its launches; its frame-pointer chase ran off the end of a Hermes stack (React Native 0.86's) and the app died on its main thread (SIGSEGV, SEGV_ACCERR)"
+    seriousness: serious
+    area: android
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "Sealed E2E run 40232504480 on the sdk57 branch: auth_flow, the trace ending at hoost_make_fcontext in libhermesvm.so (facebook/hermes 1873, 2225)" }
+    methods:
+      - { kind: running, file: plugins/__tests__/withGwpAsanOff.test.ts, test: "tells the application never to run GWP-ASan, and keeps everything else it says" }
+      - { kind: running, file: plugins/__tests__/withGwpAsanOff.test.ts, test: "runs the plugin at prebuild" }
+    fix: "plugins/withGwpAsanOff.js sets android:gwpAsanMode=\"never\" on the application in the manifest prebuild writes; its test fails once React Native reaches 0.88, said to carry Hermes's fix, so it is read again then (mutants shape-gwp-asan-unrun, shape-gwp-asan-left-on)"
     places: [emulator]
 
   - id: TOOL-lab-default-names-a-retired-arm
@@ -1521,3 +1583,16 @@ classes:
       - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "names by default, in each input, only arms that exist" }
     fix: "scroll_arms defaults to none (A alone), and every arm either input names by default must be one arm.mjs builds (mutant shape-lab-default-retired)"
     places: [none]
+
+  - id: CI-simulator-gone-silently
+    title: "The iPhone jobs looked for an iPhone 16 Pro simulator, which the macos-26 image does not carry; under bash -e the failed lookup ended the step with no word, the iPhone launch check failing as if the app had"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "the iPhone launch check on PR #128: built with Xcode 26.6, then the launch step ended at its first line" }
+    methods:
+      - { kind: running, file: e2e/__tests__/iosSimulator.test.ts, test: "names the iPhone 17 Pro on the newest iOS, never the Pro Max beside it" }
+      - { kind: running, file: e2e/__tests__/iosSimulator.test.ts, test: "with no iPhone 17 Pro, fails and names the iPhones there are" }
+    fix: "e2e/ios-simulator.sh names the iPhone 17 Pro on the image's newest iOS, or names the iPhones there are and fails; both iPhone jobs choose by it, and no other line of theirs reads the simulator list (mutants shape-simulator-16-pro, shape-simulator-fails-silently)"
+    places: [simulator]

@@ -14,12 +14,28 @@
   ],
   "lacks": [
     {
-      "api": "AbortSignal.timeout",
-      "read": "Sentry, build 41: withTimeout.ts threw 'undefined is not a function' on every Dispatch read (fixed in 11b420f1). React Native 0.81's AbortSignal is abort-controller 3.0.0 (node_modules/abort-controller/dist/abort-controller.js, installed by Libraries/Core/setUpXHR.js), which defines no static timeout."
+      "api": "Array.prototype.toSorted",
+      "read": "The SDK 57 phone's own runtime (e2e/runtime/phone-runtime.json, written by Sealed E2E run 40232504480): Array.prototype holds no toSorted there."
     },
     {
-      "api": "AbortSignal.any",
-      "read": "React Native 0.81's AbortSignal is abort-controller 3.0.0 (node_modules/abort-controller/dist/abort-controller.js, installed by Libraries/Core/setUpXHR.js), which defines no static any."
+      "api": "Array.fromAsync",
+      "read": "The SDK 57 phone's own runtime (e2e/runtime/phone-runtime.json, written by Sealed E2E run 40232504480): Array holds no static fromAsync there."
+    },
+    {
+      "api": "Object.groupBy",
+      "read": "The SDK 57 phone's own runtime (e2e/runtime/phone-runtime.json, written by Sealed E2E run 40232504480): Object holds no static groupBy there."
+    },
+    {
+      "api": "URL.parse",
+      "read": "The SDK 57 phone's own runtime (e2e/runtime/phone-runtime.json, written by Sealed E2E run 40232504480): its URL has the statics canParse, createObjectURL and revokeObjectURL, and no parse."
+    },
+    {
+      "api": "AbortSignal.abort",
+      "read": "The SDK 57 phone's own runtime (e2e/runtime/phone-runtime.json, written by Sealed E2E run 40232504480): its AbortSignal has the statics any and timeout, and no abort."
+    },
+    {
+      "api": "AbortSignal.prototype.throwIfAborted",
+      "read": "The SDK 57 phone's own runtime (e2e/runtime/phone-runtime.json, written by Sealed E2E run 40232504480): AbortSignal.prototype holds aborted and onabort, and no throwIfAborted."
     }
   ]
 }
