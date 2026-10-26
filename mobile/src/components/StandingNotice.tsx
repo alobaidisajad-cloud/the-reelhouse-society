@@ -22,6 +22,9 @@ const ABOVE_THE_OFFLINE_PLATE = 44;
 /** The longest a timer is set for: past it, the notice looks again (a day is plenty). */
 const LOOK_AGAIN_MS = 24 * 60 * 60 * 1000;
 
+/** How long until the notice looks again: a second past the end, never past a day. */
+const lookAgainIn = (until: number) => Math.min(Math.max(until - Date.now(), 0) + 1000, LOOK_AGAIN_MS);
+
 export default function StandingNotice() {
   const user = useAuthStore((s) => s.user) as { is_banned?: boolean | null; suspended_until?: string | null } | null;
   const overlayBottom = useOverlayBottom();
@@ -32,7 +35,7 @@ export default function StandingNotice() {
   const until = standing?.kind === 'suspended' ? Date.parse(standing.until) : NaN;
   useEffect(() => {
     if (!Number.isFinite(until)) return;
-    const t = setTimeout(() => setNow(Date.now()), Math.min(Math.max(until - Date.now(), 0) + 1000, LOOK_AGAIN_MS));
+    const t = setTimeout(() => setNow(Date.now()), lookAgainIn(until));
     return () => clearTimeout(t);
   }, [until, now]);
 

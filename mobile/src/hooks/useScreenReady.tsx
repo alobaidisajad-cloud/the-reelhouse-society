@@ -14,7 +14,7 @@
  * goes in every tree the screen can return, so the clock survives a loading
  * branch giving way to the page.
  */
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 // The SDK itself, not src/lib/sentry: screens' tests replace that module whole.
@@ -34,16 +34,18 @@ export function useScreenReady(name: string, read: ScreenRead): React.ReactEleme
   // it), at a return to the screen, or when its content goes back to loading
   // (a new search, a refresh) — whichever came last. Timed from the focus alone,
   // a search a minute into the Darkroom was reported as a 77-second load.
-  const startedAt = useRef(Date.now());
+  // The first is read as the screen first renders; a later one as its frame is committed.
+  const [bornAt] = useState(Date.now);
+  const startedAt = useRef(bornAt);
   const mounted = useRef(false);
-  const wasReady = useRef(ready);
   // One component can be two screens (the welcome becomes the Lobby on sign-in):
   // a new name is a new wait. Its content already in, the Lobby was timed from
   // when the welcome opened, and reported a minute of typing as a 74 s load.
-  const timedAs = useRef(name);
-  if ((wasReady.current && !ready) || timedAs.current !== name) startedAt.current = Date.now();
-  wasReady.current = ready;
-  timedAs.current = name;
+  const last = useRef({ ready, name });
+  useLayoutEffect(() => {
+    if ((last.current.ready && !ready) || last.current.name !== name) startedAt.current = Date.now();
+    last.current = { ready, name };
+  }, [ready, name]);
   useFocusEffect(useCallback(() => {
     if (mounted.current) startedAt.current = Date.now();
     mounted.current = true;

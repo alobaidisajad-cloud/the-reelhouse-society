@@ -801,7 +801,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/society/SocietyPoster.tsx | 2026-10-02 | read; sound |
 | src/components/society/societyPricing.ts | 2026-10-02 | never a static dollar price for a product the store answered without |
 | src/components/SpoilerVeil.tsx | 2026-10-01 | veiled from the first frame |
-| src/components/StandingNotice.tsx | 2026-10-15 | stands above the offline plate (useOverlayBottom) |
+| src/components/StandingNotice.tsx | 2026-10-26 | edited: how long until it looks again, a named helper; stands above the offline plate (useOverlayBottom) |
 | src/components/text/__tests__/aCutLabelIsHeard.test.tsx | 2026-10-17 | new |
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | 2026-10-24 | edited: a nested text takes its parent's scaling; a nested label's spacing follows its parent |
 | src/components/text/AnimatedText.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -926,7 +926,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |
 | src/hooks/useProfileController.ts | 2026-10-26 | edited: the three latest reads made Effect Events; edited: the route's tab taken as it renders, once per tab; the handle repair begun in the render it is decided, ended by the member arriving or the four seconds; edited: followKnown and rereadFollows; a follow is never filed before the follow list is known |
 | src/hooks/useProfileData.ts | 2026-10-26 | edited: the shown member's id written after each commit; edited: a new member starts from nothing as it renders (your own file seeded there); the archive marks set in the logs read's then; edited: tabAnswered (a room's read came back, not asked) and answeredFilters (the filters a room's rows answer), both reset for a new member; a search overtaken lands neither its rows nor its filters nor lowers the newer one's flag; each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
-| src/hooks/useScreenReady.tsx | 2026-10-16 | edited: takes the read state; a failed read is screen.failed; a wait's start is screen.reading |
+| src/hooks/useScreenReady.tsx | 2026-10-26 | edited: the first wait read in a state first value as the screen first renders; a later one stamped as its frame commits; edited: takes the read state; a failed read is screen.failed; a wait's start is screen.reading |
 | src/hooks/useScrollTrace.ts | 2026-10-15 | new: a scroll is one Sentry transaction, begin to rest |
 | src/hooks/useSheetPresence.ts | 2026-10-26 | edited: the latest props written after each commit; edited: a visible sheet is a drawn one from the render that opens it; the effect keeps the motion; written: five sheets' rise and fall, once |
 | src/hooks/useStateSaid.ts | 2026-10-16 | new: which state a room drew, empty or failed, to the E2E log |

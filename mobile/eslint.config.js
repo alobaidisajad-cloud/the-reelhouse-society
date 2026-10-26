@@ -28,14 +28,15 @@ module.exports = defineConfig([
     // came): each on once its places are made right (immutability: every shared value written by
     // set; preserve-manual-memoization: each memo's inputs read before it, as it names them;
     // globals: a test's probe takes its hook in an effect; set-state-in-effect: a read's answer set in
-    // its then, a fresh start made as it renders), the rest off until theirs are and the
+    // its then, a fresh start made as it renders; purity: a clock read once, in a state's first value,
+    // or in an effect), the rest off until theirs are and the
     // compiler is turned on, measured (WORKLIST P0.117).
     rules: {
       'react-hooks/refs': 'off',
       'react-hooks/set-state-in-effect': 'error',
       'react-hooks/immutability': 'error',
       'react-hooks/preserve-manual-memoization': 'error',
-      'react-hooks/purity': 'off',
+      'react-hooks/purity': 'error',
       'react-hooks/globals': 'error',
     },
   },
