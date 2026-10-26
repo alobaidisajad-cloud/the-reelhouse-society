@@ -107,17 +107,17 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/list-modal.tsx | 2026-10-22 | edited: the unready bar is hollow (UNREADY); CLOSE centred on the title's first line; the large-stack notice in sentences |
 | app/(modals)/log-modal.tsx | 2026-10-23 | edited: an edit waiting for its record says so (retrieving, unreachable, No Such Record), never a blank form; the film's atmosphere hangs only over the docket |
 | app/(modals)/login.tsx | 2026-10-15 | header top from useModalTop; the page stops at the edge (useBottomEdge) |
-| app/(modals)/membership.tsx | 2026-10-15 | nav top from useModalTop; ends above the window and its fade, or at useContentBottom |
+| app/(modals)/membership.tsx | 2026-10-26 | edited: the billing shown is the year whenever no monthly price is sold, derived, not reset by an effect; nav top from useModalTop; ends above the window and its fade, or at useContentBottom |
 | app/(modals)/notifications-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
-| app/(modals)/search-modal.tsx | 2026-10-15 | header top from useModalTop; foot from useContentBottom |
-| app/(modals)/social-modal.tsx | 2026-10-15 | handle's top from useModalTop; foot from useContentBottom |
+| app/(modals)/search-modal.tsx | 2026-10-26 | edited: the held silence adjusted as it renders, React's own way to keep a value from a render before; header top from useModalTop; foot from useContentBottom |
+| app/(modals)/social-modal.tsx | 2026-10-26 | edited: the read split from its showing (readSocial, showRead, showFailure), wired by the effect's then; loading from the first frame when there is something to read; the wait's timeout cleared with its timer; handle's top from useModalTop; foot from useContentBottom |
 | app/(tabs)/_layout.tsx | 2026-10-24 | edited: the Lobby tab wears the house's eye, the logo's small cut on a clear ground, tinted as the other tabs are |
-| app/(tabs)/darkroom.tsx | 2026-10-22 | edited: the empty room's line in the house italic face, its note above the colour it explains |
+| app/(tabs)/darkroom.tsx | 2026-10-26 | edited: a failed next batch held with the search it failed for: a new search has nothing failed, with no effect to reset it; edited: the empty room's line in the house italic face, its note above the colour it explains |
 | app/(tabs)/dispatch.tsx | 2026-10-15 | edited: the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/(tabs)/index.tsx | 2026-10-24 | edited: the welcome's hairline row runs across the page, as the phone lays it |
 | app/(tabs)/lounge.tsx | 2026-10-23 | edited: reading until the salons have answered once (loungesRead): its first frame came before its read began; the corridor reads the salons' own flag (loungesLoading), not one a room's read lowered; the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/(tabs)/profile.tsx | 2026-10-15 | centred states in a CentredRoom: between the bars, and scrolled when taller; the bar clear on arrival before the file |
-| app/(tabs)/reels.tsx | 2026-10-23 | edited: the page's wash kept as a texture while the Reel is in front; following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
+| app/(tabs)/reels.tsx | 2026-10-26 | edited: the crossfade settled per section: a new section is mid-crossfade in the render it is chosen; edited: the page's wash kept as a texture while the Reel is in front; following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
 | app/auth-callback.tsx | 2026-10-26 | edited: the mount effect placed after handleCallback, the function it calls; edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
 | app/dispatch/[id].tsx | 2026-10-26 | edited: the film's id and the member's read before the callbacks that use them (the draft's key named as the member's id); the share card is exported at SHARE_CARD_WIDTH |
@@ -479,7 +479,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
 | src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/components/dispatch/ComposeDesks.tsx | 2026-10-15 | the pickers stand on the edge (useBottomEdge) |
+| src/components/dispatch/ComposeDesks.tsx | 2026-10-26 | edited: the search field emptied on close as it renders; the pickers stand on the edge (useBottomEdge) |
 | src/components/dispatch/dayLabel.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/dispatch/EssayBody.tsx | 2026-10-04 | edited: no letter is raised from a right-to-left opening |
 | src/components/dispatch/excerpt.ts | 2026-10-01 | true as written |
@@ -683,7 +683,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/motion/__tests__/Presence.test.tsx | 2026-10-15 | new: kept through its exit, removed after; reduced motion at once; frame, order, nesting |
 | src/components/motion/Presence.tsx | 2026-10-15 | new: a view plays its exit and is removed by state; Reanimated `exiting` is never used |
 | src/components/NitrateCalendar.tsx | 2026-10-01 | the header without a stale line count |
-| src/components/OfflineBanner.tsx | 2026-10-15 | rises away through Presence; stands above the tab bar (useOverlayBottom) |
+| src/components/OfflineBanner.tsx | 2026-10-26 | edited: the offline time counted from the period's own start and cleared as it ends (the effect's cleanup); rises away through Presence; stands above the tab bar (useOverlayBottom) |
 | src/components/person/canon.ts | 2026-10-01 | the order, not the sort it replaced |
 | src/components/person/PersonBio.tsx | 2026-10-01 | READ MORE named and its state said |
 | src/components/person/PersonDefining.tsx | 2026-10-01 | histories to the present |

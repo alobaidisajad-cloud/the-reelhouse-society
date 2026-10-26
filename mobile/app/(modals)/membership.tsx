@@ -129,15 +129,14 @@ export default function MembershipScreen() {
   // monthly product, the switch hides itself and the page sells yearly only —
   // a member can never pick a period the store can't honestly sell (see
   // selectPackageForTier's strict mode for the second half of that guarantee).
-  const [billing, setBilling] = useState<BillingPeriod>('annual');
+  const [chosenBilling, setBilling] = useState<BillingPeriod>('annual');
   // ── Founding seat cap (declared here so the AppState effect below can refresh it) ──
   const [foundingCount, setFoundingCount] = useState<number | null>(null);
   const monthlyKnownAbsent =
     Object.keys(pricing).length > 0 &&
     !Object.values(pricing).some((p) => !!p?.monthly);
-  useEffect(() => {
-    if (monthlyKnownAbsent && billing === 'monthly') setBilling('annual');
-  }, [monthlyKnownAbsent, billing]);
+  // With no monthly price sold, the year is the only billing there is.
+  const billing: BillingPeriod = monthlyKnownAbsent ? 'annual' : chosenBilling;
 
   /**
    * WHICH DOOR SENT THEM, if a door did.

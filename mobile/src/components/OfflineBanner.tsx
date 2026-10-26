@@ -13,25 +13,20 @@ export default function OfflineBanner() {
     const netInfo = useNetInfo();
     const overlayBottom = useOverlayBottom();
     const [checking, setChecking] = useState(false);
-    // Track elapsed offline time
-    const offlineSince = useRef<number | null>(null);
+    // How long this time offline has lasted: counted from its start, cleared as it ends.
     const [elapsed, setElapsed] = useState('');
     const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => () => { if (settle.current) clearTimeout(settle.current); }, []);
 
     useEffect(() => {
-        if (netInfo.isConnected === false) {
-            if (!offlineSince.current) offlineSince.current = Date.now();
-            const timer = setInterval(() => {
-                const mins = Math.floor((Date.now() - (offlineSince.current || Date.now())) / 60000);
-                // The house's own measure (timeAgo): "4 MIN.", never "4m".
-                setElapsed(mins > 0 ? ` · ${mins} MIN.` : '');
-            }, 30000);
-            return () => clearInterval(timer);
-        } else {
-            offlineSince.current = null;
-            setElapsed('');
-        }
+        if (netInfo.isConnected !== false) return;
+        const since = Date.now();
+        const timer = setInterval(() => {
+            const mins = Math.floor((Date.now() - since) / 60000);
+            // The house's own measure (timeAgo): "4 MIN.", never "4m".
+            setElapsed(mins > 0 ? ` · ${mins} MIN.` : '');
+        }, 30000);
+        return () => { clearInterval(timer); setElapsed(''); };
     }, [netInfo.isConnected]);
 
     const handleRetry = async () => {

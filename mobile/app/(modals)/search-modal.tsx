@@ -122,10 +122,9 @@ export default function SearchModal() {
   const reachable = !isError && !tabSourceDown;
   const settledSilence = searched && !searching && reachable && filtered.length === 0;
   const [heldSilence, setHeldSilence] = useState(false);
-  useEffect(() => {
-    if (settledSilence) setHeldSilence(true);
-    else if (!searched || !reachable || filtered.length > 0) setHeldSilence(false);
-  }, [settledSilence, searched, reachable, filtered.length]);
+  // Adjusted as it renders (React's own way to keep a value from a render before), never a frame late.
+  if (settledSilence && !heldSilence) setHeldSilence(true);
+  else if (heldSilence && !settledSilence && (!searched || !reachable || filtered.length > 0)) setHeldSilence(false);
   const silence = settledSilence || (heldSilence && searched && searching && reachable && filtered.length === 0);
 
   const counts = useMemo(() => ({

@@ -379,10 +379,8 @@ export function FilmPicker({
     : !search.searching && query.trim().length >= 2 && results.length === 0 ? 'none' as const
     : undefined;
 
-  // Emptied on close: the next search starts from a clean field.
-  useEffect(() => {
-    if (!visible) setQuery('');
-  }, [visible]);
+  // Emptied on close, as it renders: the next search starts from a clean field.
+  if (!visible && query !== '') setQuery('');
   // The field is focused on open and sits at the foot of the sheet.
   const lift = useKeyboardLift(bottomInset);
 

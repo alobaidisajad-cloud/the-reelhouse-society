@@ -154,10 +154,11 @@ export default function ReelScreen() {
   // Once the crossfade is over, each layer is drawn plainly, shown or hidden as its touches are:
   // an animated style that never reached its view (the film tray, Sealed E2E run 38790116312)
   // would leave a member seeing one section and touching the other.
-  const [crossfaded, setCrossfaded] = useState(true);
+  // Settled per section: a new section is mid-crossfade in the very render it is chosen.
+  const [settledOn, setSettledOn] = useState<ReelSection>(section);
+  const crossfaded = settledOn === section;
   useEffect(() => {
-    setCrossfaded(false);
-    const settled = setTimeout(() => setCrossfaded(true), CROSSFADE_MS + ARRIVAL_GRACE_MS);
+    const settled = setTimeout(() => setSettledOn(section), CROSSFADE_MS + ARRIVAL_GRACE_MS);
     return () => clearTimeout(settled);
   }, [section]);
 

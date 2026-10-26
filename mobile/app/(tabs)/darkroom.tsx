@@ -45,8 +45,11 @@ export default function DarkRoomScreen() {
   const [unreachable, setUnreachable] = useState(false);
   const [asked, setAsked] = useState(0);
   const askAgain = useCallback(() => setAsked((n) => n + 1), []);
-  /** The next batch could not be read: the grid says so instead of simply ending. */
-  const [moreFailed, setMoreFailed] = useState(false);
+  /**
+   * The search whose next batch could not be read: the grid says so instead of simply ending.
+   * Held with its search, a new search or filter is a new grid with nothing failed.
+   */
+  const [moreFailedFor, setMoreFailedFor] = useState<string | null>(null);
 
   const {
     page, mood, query, accumulatedFilms, filters,
@@ -136,8 +139,7 @@ export default function DarkRoomScreen() {
   const readyMark = useScreenReady('darkroom', showSkeleton ? 'reading'
     : displayData.length === 0 && (network.isConnected === false || unreachable) ? 'failed' : 'ready');
 
-  // A new search or filter is a new grid: what its last batch could not reach is not this one's.
-  useEffect(() => { setMoreFailed(false); }, [cacheKey]);
+  const moreFailed = moreFailedFor === cacheKey;
 
   // -- Main Fetching Logic --
   useEffect(() => {
@@ -219,7 +221,7 @@ export default function DarkRoomScreen() {
           // Detect network failure to prevent permanent page skipping
           if (isNetworkFailure && page > 1) {
             useDiscoverStore.getState().setPage(page - 1);
-            setMoreFailed(true);
+            setMoreFailedFor(cacheKey);
             return;
           }
 
@@ -246,7 +248,7 @@ export default function DarkRoomScreen() {
             setAccumulatedFilms(uniqueWithPosters);
             try { storage.set(cacheKey, JSON.stringify(uniqueWithPosters.slice(0, 60))); } catch { /* non-critical */ }
           } else {
-            setMoreFailed(false);
+            setMoreFailedFor(null);
             setAccumulatedFilms((prev) => {
               const currentKeys = new Set(prev.map(getFilmKey));
               const newUnique = uniqueWithPosters.filter(f => !currentKeys.has(getFilmKey(f)));
@@ -260,7 +262,7 @@ export default function DarkRoomScreen() {
         // Graceful Pagination Rollback on Hard Network Failure
         if (active && reqId === fetchRequestId.current && page > 1) {
           useDiscoverStore.getState().setPage(page - 1);
-          setMoreFailed(true);
+          setMoreFailedFor(cacheKey);
         }
         if (active && reqId === fetchRequestId.current && page === 1) setUnreachable(true);
         // Optimistic cache was already injected at the start of fetchContent.
@@ -292,7 +294,7 @@ export default function DarkRoomScreen() {
         <View style={s.footerLoading}>
           <Text style={s.paginationRetrieving}>THE NEXT BATCH COULD NOT BE DEVELOPED.</Text>
           <TryAgainLine
-            onPress={() => { setMoreFailed(false); setPage(useDiscoverStore.getState().page + 1); }}
+            onPress={() => { setMoreFailedFor(null); setPage(useDiscoverStore.getState().page + 1); }}
             accessibilityLabel="Develop the next batch again"
             style={s.moreRetry}
           />

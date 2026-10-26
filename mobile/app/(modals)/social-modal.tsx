@@ -147,7 +147,8 @@ export default function SocialModal() {
     /** Your own followers or following: said to you, not about "this member". */
     const isOwnCircle = !!user?.id && user.id === params.userId;
 
-    const [loading, setLoading] = useState(true);
+    // Loading from the first frame whenever there is something to read: a member's own lounges need the member.
+    const [loading, setLoading] = useState(() => mode === 'followers' || mode === 'following' || !!user?.id);
     const [profiles, setProfiles] = useState<SocialProfile[]>([]);
     const [lounges, setLounges] = useState<{ id: string; name: string }[]>([]);
     const [timedOut, setTimedOut] = useState(false);
@@ -167,53 +168,59 @@ export default function SocialModal() {
     }, []);
 
     // 15s timeout prevents permanent spinner on API hang
+    // Cleared as the wait ends, with its timer.
     useEffect(() => {
-        if (!loading) { setTimedOut(false); return; }
+        if (!loading) return;
         const timer = setTimeout(() => { if (isMounted.current) setTimedOut(true); }, 15000);
-        return () => clearTimeout(timer);
+        return () => { clearTimeout(timer); setTimedOut(false); };
     }, [loading]);
 
     // ── Data fetching ──────────────────────────────────────────────────────────
     const userId = user?.id;
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        setFailed(false);
-        try {
-            if (mode === 'followers' || mode === 'following') {
-                const result = await ProfileService.getSocialConnections(params.userId!, mode);
-                if (isMounted.current) {
-                    setProfiles(result.profiles || []);
-                    setCursor(result.hasMore ? result.nextCursor : undefined);
-                    setMoreFailed(false);
-                }
-            } else {
-                // Share mode — fetch user's lounges
-                if (!userId) {
-                    if (isMounted.current) { setLoading(false); }
-                    return;
-                }
-                const userLounges = await LoungeService.getUserLounges(userId);
-                if (isMounted.current) {
-                    const parsed = userLounges.map((ul: LoungeItem) => {
-                        const l = Array.isArray(ul.lounges) ? ul.lounges[0] : ul.lounges;
-                        return l ? { id: l.id, name: l.name } : null;
-                    }).filter(Boolean) as { id: string; name: string }[];
-                    setLounges(parsed);
-                }
-            }
-
-        } catch (err) {
-            // logger.debug, not warn: warn reaches Sentry in production ungated,
-            // and an offline member's failed read is expected. A genuine defect
-            // is one error-severity event.
-            logger.debug('[SocialModal] Fetch failed:', err);
-            addBreadcrumb('socialModal.fetchData failed', 'telemetry');
-            if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.fetchData', mode });
-            if (isMounted.current) setFailed(true);
-        } finally {
-            if (isMounted.current) setLoading(false);
+    /** What the sheet shows, read: a circle's page, a member's own lounges, or nothing to read. Nothing on screen changes here. */
+    type SocialRead = { profiles: SocialProfile[]; cursor: typeof cursor } | { lounges: { id: string; name: string }[] } | null;
+    const readSocial = useCallback(async (): Promise<SocialRead> => {
+        if (mode === 'followers' || mode === 'following') {
+            const result = await ProfileService.getSocialConnections(params.userId!, mode);
+            return { profiles: result.profiles || [], cursor: result.hasMore ? result.nextCursor : undefined };
         }
+        // Share mode — the member's own lounges
+        if (!userId) return null;
+        const userLounges = await LoungeService.getUserLounges(userId);
+        return {
+            lounges: userLounges.map((ul: LoungeItem) => {
+                const l = Array.isArray(ul.lounges) ? ul.lounges[0] : ul.lounges;
+                return l ? { id: l.id, name: l.name } : null;
+            }).filter(Boolean) as { id: string; name: string }[],
+        };
     }, [mode, params.userId, userId]);
+
+    /** The read's answer, on the sheet. */
+    const showRead = useCallback((read: SocialRead) => {
+        if (!isMounted.current) return;
+        if (read && 'profiles' in read) {
+            setProfiles(read.profiles);
+            setCursor(read.cursor);
+            setMoreFailed(false);
+        } else if (read) {
+            setLounges(read.lounges);
+        }
+        setLoading(false);
+    }, []);
+
+    /** A read that failed, said on the sheet. */
+    const showFailure = useCallback((err: unknown) => {
+        // logger.debug, not warn: warn reaches Sentry in production ungated,
+        // and an offline member's failed read is expected. A genuine defect
+        // is one error-severity event.
+        logger.debug('[SocialModal] Fetch failed:', err);
+        addBreadcrumb('socialModal.fetchData failed', 'telemetry');
+        if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.fetchData', mode });
+        if (isMounted.current) {
+            setFailed(true);
+            setLoading(false);
+        }
+    }, [mode]);
 
     useEffect(() => {
         if (!valid) {
@@ -223,8 +230,10 @@ export default function SocialModal() {
             return;
         }
 
-        fetchData();
-    }, [valid, fetchData]);
+        let live = true;
+        readSocial().then((read) => { if (live) showRead(read); }, (err) => { if (live) showFailure(err); });
+        return () => { live = false; };
+    }, [valid, readSocial, showRead, showFailure]);
 
     /** The next page of followers or following, appended; a failed one is said at the foot. */
     const loadMore = useCallback(async () => {
@@ -366,8 +375,10 @@ export default function SocialModal() {
 
     const retryFetch = useCallback(() => {
         setTimedOut(false);
-        fetchData();
-    }, [fetchData]);
+        setLoading(true);
+        setFailed(false);
+        readSocial().then(showRead, showFailure);
+    }, [readSocial, showRead, showFailure]);
 
     return (
         <BlurView intensity={90} tint="dark" style={styles.container}>
