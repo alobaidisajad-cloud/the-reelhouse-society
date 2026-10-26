@@ -1440,5 +1440,19 @@
     "proof": "m1",
     "commit": "2fe1d70b03889cd55b7f226e51783b2d42b58ece",
     "verdict": "caught"
+  },
+  {
+    "class": "CI-simulator-gone-silently",
+    "mutant": "shape-simulator-16-pro",
+    "proof": "m1",
+    "commit": "cb8253c2b41d3de80ca101a13d1832ff1ba5d471",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-simulator-gone-silently",
+    "mutant": "shape-simulator-fails-silently",
+    "proof": "m2",
+    "commit": "cb8253c2b41d3de80ca101a13d1832ff1ba5d471",
+    "verdict": "caught"
   }
 ]
