@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { colors, fonts } from '@/src/theme/theme';
@@ -8,6 +8,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
 import { useAuthStore } from '@/src/stores/auth';
+import { coverWhileAway } from '@/modules/room-cover';
 
 /**
  * The lock in front of a member's OWN Archive — every film they have logged —
@@ -28,11 +29,22 @@ import { useAuthStore } from '@/src/stores/auth';
  * past it either.)
  */
 
-/** The lock's state for one visit to a file: shut until opened, and only on your own. */
+/**
+ * The lock's state for one visit to a file: shut until opened, and only on your own. It shuts
+ * again the moment the app leaves, and while it stands open the room is covered whenever the
+ * app is away, out of the app switcher and Recents (modules/room-cover).
+ */
 export function useArchiveLock(isSelf: boolean): { locked: boolean; opened: () => void } {
     const on = useAuthStore((s) => s.user?.preferences?.biometric_lock === true);
     const [open, setOpen] = useState(false);
     const opened = useCallback(() => setOpen(true), []);
+    const standsOpen = isSelf && on && open;
+    useEffect(() => {
+        if (!standsOpen) return undefined;
+        coverWhileAway(true);
+        const sub = AppState.addEventListener('change', (next) => { if (next === 'background') setOpen(false); });
+        return () => { sub.remove(); coverWhileAway(false); };
+    }, [standsOpen]);
     return { locked: isSelf && on && !open, opened };
 }
 

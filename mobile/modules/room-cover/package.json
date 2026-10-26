@@ -1,0 +1,10 @@
+{
+  "name": "room-cover",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A locked room is covered while the app is away: out of the app switcher, and out of Recents.",
+  "license": "UNLICENSED",
+  "author": "The ReelHouse Society",
+  "homepage": "https://www.thereelhousesociety.com",
+  "main": "index.ts"
+}

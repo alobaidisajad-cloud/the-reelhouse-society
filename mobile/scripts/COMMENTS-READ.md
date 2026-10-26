@@ -297,6 +297,7 @@ without one). "Read" is the day its comments were last read against its code.
 | mockups/tools/selftest.cjs | 2026-10-24 | edited: a glow's negative margin widens its line (glowline); a paragraph taller than its window (scrolltall) and a line read between the scroll's ends (scrollpast) are not UNDER; a text's floor breaks a wrapping line in Yoga (yogawrapfloor) |
 | mockups/tools/shoot.cjs | 2026-10-24 | edited: --width, so a shot shows the width that was measured |
 | mockups/tools/yoga-parity.cjs | 2026-10-24 | edited: a leaf keeps its width and height limits in Yoga; a minWidth is what breaks a wrapping line |
+| modules/room-cover/index.ts | 2026-10-27 | new: a locked room covered while the app is away, natively (iOS: the house's ink as the app resigns active; Android 13+: kept out of Recents, the secure flag below 13) |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
 | register/classes.yaml | 2026-10-16 | edited: the E2E judges' classes, each with the test that refuses its bad log; the store call's limit among the request class's tests |
 | register/mutants.yaml | 2026-10-16 | new: every mutant, past, new-shape and judge, each with its class and the test that must fail on it |
@@ -696,6 +697,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/Preloader.tsx | 2026-10-15 | a digit's glow is a still style with room inside its box, out of the animated style |
 | src/components/PressableScale.tsx | 2026-10-02 | Read whole (launch audit). A suspected dropped disabled state was disproved (RN's Pressable merges it). Sound; left alone. |
 | src/components/profile/__tests__/aChosenChipKeepsItsRow.test.ts | 2026-10-26 | Written 2026-10-26: a chosen decade or format keeps the whole row of chips until it is let go. |
+| src/components/profile/__tests__/aLockedRoomShutsWhenTheAppLeaves.test.tsx | 2026-10-27 | Written 2026-10-27: an opened locked room shuts when the app goes to the background, and is covered only while it stands open (P4.3). |
 | src/components/profile/__tests__/aNameIsEarnedOnce.test.ts | 2026-10-02 | Written in the launch audit: no honour or stamp shares a name or borrows a rank's. |
 | src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx | 2026-10-01 | written: an empty ledger is said as one |
 | src/components/profile/__tests__/anHonourIsNeverBroken.test.tsx | — |  |
@@ -745,7 +747,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-render.lib.test.ts | 2026-10-24 | edited: a nested Text scales as its parent does |
 | src/components/profile/__tests__/zz-render.lib.ts | 2026-10-24 | edited: a text carries its side margins (--mx); a nested Text is drawn with its parent's scaling, through source marks too |
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
-| src/components/profile/ArchiveLock.tsx | 2026-10-26 | edited: the phone's answer shown in its then; enters and leaves as a PresenceView |
+| src/components/profile/ArchiveLock.tsx | 2026-10-26 | edited: the lock shuts again when the app goes to the background; while it stands open the room is covered when the app is away (modules/room-cover); edited: the phone's answer shown in its then; enters and leaves as a PresenceView |
 | src/components/profile/AvatarCropSheet.tsx | 2026-10-15 | enters and leaves as a PresenceView; foot from useSheetBottom |
 | src/components/profile/CinemaDNACard.tsx | 2026-10-15 | close from useOverlayTop |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
