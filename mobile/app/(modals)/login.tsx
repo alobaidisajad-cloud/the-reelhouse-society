@@ -85,8 +85,8 @@ export default function LoginScreen() {
     canAttempt, secondsRemaining, handleManualConfirmationCheck
   } = useAuthFlow();
 
-  // Memoize lore fragment so it doesn't change on every keystroke re-render
-  const loreQuote = useRef(pickAny()).current;
+  // Picked once, so it doesn't change on every keystroke re-render
+  const [loreQuote] = useState(pickAny);
 
   // Refs for input focus chaining
   const passwordRef = useRef<TextInput>(null);

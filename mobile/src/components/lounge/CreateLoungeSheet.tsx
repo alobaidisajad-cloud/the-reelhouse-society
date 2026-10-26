@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useEffectEvent, useRef } from 'react';
 import { View, StyleSheet, Modal, Switch, Keyboard, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
@@ -48,8 +48,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
    * room is actually founded.
    */
   const societyPending = useRef(false);
-  const openSocietyRef = useRef(privateRoom.open);
-  openSocietyRef.current = privateRoom.open;
+  const openSociety = useEffectEvent(() => privateRoom.open());
 
   const handleCreate = async () => {
     if (!name.trim()) return;
@@ -94,7 +93,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   useEffect(() => {
     if (isRendered || !societyPending.current) return;
     societyPending.current = false;
-    const frame = requestAnimationFrame(() => openSocietyRef.current());
+    const frame = requestAnimationFrame(() => openSociety());
     return () => cancelAnimationFrame(frame);
   }, [isRendered]);
 

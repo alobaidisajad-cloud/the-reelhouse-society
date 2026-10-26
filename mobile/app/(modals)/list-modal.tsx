@@ -60,11 +60,10 @@ interface SearchResult {
  
 const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove, onMove }: { item: ListFilm, index: number | undefined, drag: () => void, isActive: boolean, sealed: boolean, onRemove: (id: number) => void, onMove: (id: number, by: -1 | 1) => void }) => {
     // Cache the index during active drag so the number never flashes to a hyphen.
-    const lastIndex = React.useRef<number | undefined>(index);
-    if (index !== undefined) {
-        lastIndex.current = index;
-    }
-    const displayIndex = index !== undefined ? (index + 1).toString() : (lastIndex.current !== undefined ? (lastIndex.current + 1).toString() : '-');
+    const [lastIndex, setLastIndex] = React.useState<number | undefined>(index);
+    if (index !== undefined && index !== lastIndex) setLastIndex(index);
+    const shownIndex = index ?? lastIndex;
+    const displayIndex = shownIndex !== undefined ? (shownIndex + 1).toString() : '-';
     
     return (
         <ScaleDecorator>

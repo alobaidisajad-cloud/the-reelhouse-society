@@ -169,7 +169,7 @@ export function useEditProfile() {
     return isFormDirty || hasNewAvatar;
   }, [isFormDirty, avatarBase64, avatarPreview, user?.avatar_url]);
 
-  const handleSave = form.handleSubmit(async (data: any) => {
+  const save = async (data: any) => {
     if (!user) return;
     setSubmitError(null);
     setSaving(true);
@@ -320,10 +320,11 @@ export function useEditProfile() {
     } finally {
       setSaving(false);
     }
-  }, () => {
-    // A field the form refused may sit below the fold: SAVE says so at the top.
-    setSubmitError('Something below needs your attention before it can be saved.');
-  });
+  };
+  // A field the form refused may sit below the fold: SAVE says so at the top.
+  const refused = () => setSubmitError('Something below needs your attention before it can be saved.');
+  // The form's check is made at the press, not as the screen draws.
+  const handleSave = () => form.handleSubmit(save, refused)();
 
   const handleBack = () => {
     if (isDirty) {

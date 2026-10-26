@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useEffectEvent, useMemo, useRef } from 'react';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useIsFocused } from "expo-router/react-navigation";
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -236,12 +236,11 @@ export function useProfileController(usernameOverride?: string) {
   // the mount effect in useProfileData already performs the initial fetch.
   const isFocused = useIsFocused();
   const didInitialFocusRef = useRef(false);
-  const fetchUserDataRef = useRef(data.fetchUserData);
-  fetchUserDataRef.current = data.fetchUserData;
+  const fetchUserData = useEffectEvent(() => data.fetchUserData());
   useEffect(() => {
     if (!isFocused) return;
     if (!didInitialFocusRef.current) { didInitialFocusRef.current = true; return; }
-    if (isSelf) fetchUserDataRef.current();
+    if (isSelf) fetchUserData();
   }, [isFocused, isSelf]);
 
   // The member whose filters these are: a new one wipes them all.
@@ -249,17 +248,16 @@ export function useProfileController(usernameOverride?: string) {
 
   // The latest loadTabData, read without being a dependency (its identity changes
   // with every state change, and the effect would loop).
-  const loadTabDataRef = useRef(data.loadTabData);
-  loadTabDataRef.current = data.loadTabData;
+  const loadTabData = useEffectEvent((tab: ProfileTab) => data.loadTabData(tab));
 
   useEffect(() => {
     // Only fire when activeTab is selected and targetUser is fully populated
     if (activeTab && data.targetUser?.id) {
-      loadTabDataRef.current(activeTab);
+      loadTabData(activeTab);
 
       // Force analytics fetch for Ledger so halfLifeMap has full historical data
       if (activeTab === 'ledger' && !isSelf) {
-        loadTabDataRef.current('projector');
+        loadTabData('projector');
       }
 
       // Every filter is wiped when the MEMBER changes (and kept when only the
@@ -354,12 +352,11 @@ export function useProfileController(usernameOverride?: string) {
 
   // A room's filters, sent to the server's paged read whenever they or the room
   // change (useProfileData asks nothing when they stay at rest).
-  const refreshTabRef = useRef(data.refreshTabWithFilters);
-  refreshTabRef.current = data.refreshTabWithFilters;
+  const refreshTab = useEffectEvent((room: Room, filters: unknown) => data.refreshTabWithFilters(room, filters));
 
   useEffect(() => {
     const room = roomOf(activeTab);
-    if (data.targetUser && room) refreshTabRef.current(room, roomFilters[room]);
+    if (data.targetUser && room) refreshTab(room, roomFilters[room]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomFilters, activeTab, data.targetUser?.id]);
 

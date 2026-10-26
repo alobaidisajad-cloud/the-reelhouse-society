@@ -17,7 +17,7 @@
  *   · title shrinks to fit 2 lines; rating row renders only when > 0;
  *     MEMBER Nº renders only when the real serial reached this client.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useEffectEvent, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
@@ -70,9 +70,8 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
   // What each picture last drew: the poster's address, or true for the seal.
   const [drawn, setDrawn] = useState<{ ambient?: string; poster?: string; seal?: true }>({});
   const ready = !!drawn.seal && (!posterUrl || (drawn.ambient === posterUrl && drawn.poster === posterUrl));
-  const readyRef = useRef(onReady);
-  readyRef.current = onReady;
-  useEffect(() => { if (ready) readyRef.current?.(); }, [ready, posterUrl]);
+  const tellReady = useEffectEvent(() => onReady?.());
+  useEffect(() => { if (ready) tellReady(); }, [ready, posterUrl]);
   const drew = (part: 'ambient' | 'poster') => () => setDrawn((d) => ({ ...d, [part]: posterUrl ?? undefined }));
   const failed = () => setFailedUrl(posterUrl);
   const sealDrawn = () => setDrawn((d) => ({ ...d, seal: true }));

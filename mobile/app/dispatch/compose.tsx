@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 // The preview mounts `EssayBody`, which carries the link guard and the render cap.
@@ -261,12 +261,18 @@ function ComposeDossierScreen() {
     const inputRef = useRef<TextInput>(null);
 
     // Refs mirror state so the AppState flush reads the latest without re-subscribing.
-    const titleRef = useRef(title); titleRef.current = title;
-    const contentRef = useRef(content); contentRef.current = content;
+    const titleRef = useRef(title);
+    const contentRef = useRef(content);
     // The film and series ride the same flush: a background write must not save the words
     // and drop the two things beside them.
-    const filmRef = useRef(film); filmRef.current = film;
-    const seriesRef = useRef(series); seriesRef.current = series;
+    const filmRef = useRef(film);
+    const seriesRef = useRef(series);
+    useLayoutEffect(() => {
+        titleRef.current = title;
+        contentRef.current = content;
+        filmRef.current = film;
+        seriesRef.current = series;
+    });
 
     /** What the room opened with: an ISO time, 'unknown' (no time kept), 'unreadable', or null. */
     const [restored, setRestored] = useState<string | null>(null);

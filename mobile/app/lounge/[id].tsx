@@ -41,7 +41,7 @@ import {
     WifiOff,
     X,
 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
@@ -400,7 +400,7 @@ export default function LoungeRoomScreen() {
 
   // The room on screen NOW, for answers to compare against the room they were asked for.
   const shownRoomRef = useRef(id);
-  shownRoomRef.current = id;
+  useLayoutEffect(() => { shownRoomRef.current = id; });
 
   // ── Membership + roster refresh (also drives host's "At the Door") ──
   // Asked for, and shown when the answer comes: nothing changes on screen in the asking.

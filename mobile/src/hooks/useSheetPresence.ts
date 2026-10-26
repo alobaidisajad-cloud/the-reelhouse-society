@@ -13,7 +13,7 @@
  * the sheet is still meant to be closed, and runs `onGone` then, on the JS
  * thread. `onOpen` runs as it opens.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Easing, runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 
 export function useSheetPresence({ visible, offscreen = 800, onOpen, onGone }: {
@@ -28,7 +28,7 @@ export function useSheetPresence({ visible, offscreen = 800, onOpen, onGone }: {
   const translateY = useSharedValue(offscreen);
 
   const live = useRef({ visible, offscreen, onOpen, onGone });
-  live.current = { visible, offscreen, onOpen, onGone };
+  useLayoutEffect(() => { live.current = { visible, offscreen, onOpen, onGone }; });
 
   const gone = useCallback(() => {
     if (live.current.visible) return;

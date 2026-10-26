@@ -88,7 +88,7 @@ export function SettingsScreen() {
   const { section } = useLocalSearchParams<{ section?: string }>();
   const scrollRef = useRef<ScrollView>(null);
   const landedRef = useRef(false);
-  const landOn = (name: string) => (e: LayoutChangeEvent) => {
+  const landOn = (name: string, e: LayoutChangeEvent) => {
     if (section !== name || landedRef.current) return;
     landedRef.current = true;
     scrollRef.current?.scrollTo({ y: Math.max(0, e.nativeEvent.layout.y - 16), animated: true });
@@ -300,7 +300,7 @@ export function SettingsScreen() {
     }
   }, [currentPrefs, user?.is_social_private, isDirty, reset]);
 
-  const handleSave = handleSubmit(async (data) => {
+  const save = async (data: SettingsFormData) => {
     // Never over a profile not read: the form's defaults would be saved as the member's settings.
     if (!user || isUpdatingUser || !profileRead(user)) return;
     pendingSaveDataRef.current = data;
@@ -362,7 +362,9 @@ export function SettingsScreen() {
         }
       }
     } catch { /* surfaced by useUpdateUser's onError */ }
-  });
+  };
+  // The form's check is made at the press, not as the screen draws.
+  const handleSave = () => handleSubmit(save)();
 
   const saving = isUpdatingUser;
 
@@ -585,7 +587,7 @@ export function SettingsScreen() {
 
         <ExperienceSection />
 
-        <Arrive name="settingsscreen-2" duration={DEFAULT_DURATION} delay={300} onLayout={landOn('import')}>
+        <Arrive name="settingsscreen-2" duration={DEFAULT_DURATION} delay={300} onLayout={(e) => landOn('import', e)}>
           <SectionCard>
             <SectionHead icon={ArrowDownUp} label="IMPORT & EXPORT" />
             <DataVault />

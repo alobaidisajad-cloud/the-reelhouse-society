@@ -464,8 +464,10 @@ export default function StackDetailScreen() {
   }, [user, id, isCertified, certifyKnown, rereadStack, toggleListEndorse, isCertifying, queryClient]);
 
   // How many of the newest critiques the sheet reads: a page, and another each
-  // time the member asks for earlier ones. A ref, so the query keeps its key.
+  // time the member asks for earlier ones. A ref, so the query keeps its key;
+  // the same number as state for what the sheet draws.
   const critiqueLimit = useRef(STACK_COMMENT_PAGE);
+  const [critiquePage, setCritiquePage] = useState(STACK_COMMENT_PAGE);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
 
   // ── COMMENTS (CQRS) ──
@@ -527,10 +529,11 @@ export default function StackDetailScreen() {
 
   // Earlier critiques the house holds beyond the sheet's page. Offered only when
   // the page came back full, so a count still settling never offers an empty ask.
-  const earlier = queryComments && queryComments.length >= critiqueLimit.current && critiqueCount != null
+  const earlier = queryComments && queryComments.length >= critiquePage && critiqueCount != null
     ? Math.max(0, critiqueCount - queryComments.length) : 0;
   const loadEarlierCritiques = useCallback(() => {
     critiqueLimit.current += STACK_COMMENT_PAGE;
+    setCritiquePage(critiqueLimit.current);
     setLoadingEarlier(true);
     void rereadCritiques().finally(() => setLoadingEarlier(false));
   }, [rereadCritiques]);

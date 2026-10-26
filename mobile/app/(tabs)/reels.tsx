@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useMemo, useRef, memo } from 'react';
+import { useEffect, useCallback, useLayoutEffect, useState, useMemo, useRef, memo } from 'react';
 import { View, StyleSheet, Keyboard } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
@@ -163,7 +163,7 @@ export default function ReelScreen() {
   }, [section]);
 
   const activeSectionRef = useRef(section);
-  activeSectionRef.current = section;
+  useLayoutEffect(() => { activeSectionRef.current = section; });
 
   const proxyScrollRef = useRef({
     scrollToOffset: (options: any) => {

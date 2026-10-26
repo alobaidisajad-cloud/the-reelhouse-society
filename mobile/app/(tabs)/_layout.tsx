@@ -179,7 +179,7 @@ export default function TabLayout() {
   // Where the member stands now: the reopen moves only one still on the Lobby, never one a link
   // or their own tap has taken elsewhere while the launch link was read (admin flow, 2026-10-21).
   const here = React.useRef(pathname);
-  here.current = pathname;
+  React.useLayoutEffect(() => { here.current = pathname; });
   React.useEffect(() => {
     let gone = false;
     if (launchedAt.current === '/') {

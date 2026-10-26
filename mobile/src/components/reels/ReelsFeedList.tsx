@@ -11,6 +11,9 @@ import { tmdb } from '@/src/lib/tmdb';
 import { CinematicScrollbar } from '@/src/components/layout/CinematicScrollbar';
 import { useScrollTraceOf } from '@/src/hooks/useScrollTrace';
 
+/** A card counts as seen once 80% of it has stood still for 800 ms. */
+const viewabilityConfig = { minimumViewTime: 800, itemVisiblePercentThreshold: 80 };
+
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as any;
 
 interface ReelsFeedListProps {
@@ -53,11 +56,6 @@ export function ReelsFeedList({
     </View>
   ), []);
 
-  const viewabilityConfig = useRef({
-    minimumViewTime: 800,
-    itemVisiblePercentThreshold: 80,
-  }).current;
-
   const prefetchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interactionHandle = useRef<{ cancel: () => void } | null>(null);
 
@@ -74,7 +72,7 @@ export function ReelsFeedList({
     };
   }, []);
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: import('react-native').ViewToken[] }) => {
+  const onViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: import('react-native').ViewToken[] }) => {
     if (prefetchTimeout.current) clearTimeout(prefetchTimeout.current);
     
     prefetchTimeout.current = setTimeout(() => {
@@ -88,7 +86,7 @@ export function ReelsFeedList({
         });
       });
     }, 150);
-  }).current;
+  }, []);
 
   // Move scroll tracking 100% to the UI thread to stop bridge flooding
   const onScrollWorklet = useAnimatedScrollHandler({

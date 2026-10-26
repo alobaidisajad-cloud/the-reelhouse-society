@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useState } from 'react';
 import { isNarrowed } from '@/src/utils/roomFilters';
 import { matchesSearch } from '@/src/utils/searchPattern';
 import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
@@ -291,20 +291,22 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   }, [displayWatchlist, watchlistSearch, watchlistSort, watchlistDecade]);
 
   // The decade chips, newest first. `decadeCounts` alone decides server or page
-  // (a second test of it here could drift from the tested one); the page's
-  // count is a thunk, unevaluated when the server answered.
-  const decadeCountsRef = useRef<DecadeCount[]>([]);
-  const watchlistDecadeCounts = useMemo(() => {
-    return decadeCounts(serverDecades, () => {
-      // Held in a ref while a decade is selected: the filtered page contains
-      // only that decade, so recomputing would collapse the row to a single
-      // chip and leave no way back to the others.
-      if (watchlistDecade !== null) return decadeCountsRef.current;
-      const computed = decadesOfLoaded(displayWatchlist);
-      decadeCountsRef.current = computed;
-      return computed;
-    });
-  }, [displayWatchlist, watchlistDecade, serverDecades]);
+  // (a second test of it here could drift from the tested one).
+  // The page's count is held from the moment a decade is selected: the filtered page
+  // contains only that decade, so recomputing would collapse the row to a single chip
+  // and leave no way back to the others.
+  const pageDecades = useMemo(() => decadesOfLoaded(displayWatchlist), [displayWatchlist]);
+  const [heldDecades, setHeldDecades] = useState<DecadeCount[]>([]);
+  const [decadeWas, setDecadeWas] = useState(watchlistDecade);
+  if (decadeWas !== watchlistDecade) {
+    setDecadeWas(watchlistDecade);
+    if (decadeWas === null) setHeldDecades(pageDecades);
+  }
+  const shownDecades = watchlistDecade === null ? pageDecades : heldDecades;
+  const watchlistDecadeCounts = useMemo(
+    () => decadeCounts(serverDecades, () => shownDecades),
+    [serverDecades, shownDecades],
+  );
 
   /**
    * One A–Z for every room, close to the server's order so your own shelf
@@ -342,13 +344,8 @@ export function useProfileComputed(params: UseProfileComputedParams) {
    
   }, [displayVault, physicalFilter, physicalSort, physicalSearch]);
 
-  // Held while a format is chosen: the filtered page has only that format.
-  const formatCountsRef = useRef<any[]>([]);
-
-  const physicalFormatCounts = useMemo(() => {
-    if (physicalFilter) {
-      return formatCountsRef.current;
-    }
+  // Held from the moment a format is chosen: the filtered page has only that format.
+  const pageFormats = useMemo(() => {
     const fmtCounts: Record<string, number> = {};
     for (const item of displayVault) {
       if (!item.formats) continue;
@@ -356,13 +353,18 @@ export function useProfileComputed(params: UseProfileComputedParams) {
         fmtCounts[fmt] = (fmtCounts[fmt] || 0) + 1;
       }
     }
-    const computed = Object.entries(fmtCounts).map(([id, count]) => {
+    return Object.entries(fmtCounts).map(([id, count]) => {
       const meta = FORMAT_META[id] || { label: id.toUpperCase(), color: colors.fog };
       return { id, ...meta, count };
     });
-    formatCountsRef.current = computed;
-    return computed;
-  }, [displayVault, physicalFilter]);
+  }, [displayVault]);
+  const [heldFormats, setHeldFormats] = useState<typeof pageFormats>([]);
+  const [formatWas, setFormatWas] = useState(physicalFilter);
+  if (formatWas !== physicalFilter) {
+    setFormatWas(physicalFilter);
+    if (!formatWas) setHeldFormats(pageFormats);
+  }
+  const physicalFormatCounts = physicalFilter ? heldFormats : pageFormats;
 
   /** LATELY: the last three films, posters or not. */
   const recentLogs = useMemo(() => displayLogs.slice(0, 3), [displayLogs]);

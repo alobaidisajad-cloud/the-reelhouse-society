@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useEffect, useRef, useState } from 'react';
+import { useReducer, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { logger } from '@/src/utils/logger';
 import { useLogStore, useWatchlistStore, useArchiveStore, useListStore } from '@/src/stores/films';
 import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
@@ -357,7 +357,8 @@ export function useProfileData({
 
   // Track current target user ID to prevent cross-user data bleed
   const targetUserIdRef = useRef<string | undefined>(undefined);
-  targetUserIdRef.current = state.targetUser?.id;
+  const targetUserId = state.targetUser?.id;
+  useLayoutEffect(() => { targetUserIdRef.current = targetUserId; });
 
   const fetchUserData = useCallback(async (): Promise<boolean | void> => {
     if (!username) return;
