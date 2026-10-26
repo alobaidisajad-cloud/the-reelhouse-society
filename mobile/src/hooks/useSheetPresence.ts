@@ -36,13 +36,15 @@ export function useSheetPresence({ visible, offscreen = 800, onOpen, onGone }: {
     live.current.onGone?.();
   }, []);
 
+  // A visible sheet is a drawn one, from the very render that opens it.
+  if (visible && !isRendered) setIsRendered(true);
+
   const mounted = useRef(false);
   useEffect(() => {
     const first = !mounted.current;
     mounted.current = true;
     if (visible) {
       live.current.onOpen?.();
-      setIsRendered(true);
       translateY.value = live.current.offscreen;
       opacity.value = withTiming(1, { duration: 300 });
       translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });

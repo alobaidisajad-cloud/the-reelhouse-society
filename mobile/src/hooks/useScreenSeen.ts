@@ -3,20 +3,20 @@
  *
  * useIsFocused, but at home outside a navigator too (a modal of its own, the crash net,
  * a test), where it answers seen: nothing is in front of it. It changes only on focus and
- * blur, so a component reading it draws again only then.
+ * blur, so a component reading it draws again only then. Read from the navigator itself,
+ * as React reads any store outside it: never a frame behind.
  */
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useSyncExternalStore } from 'react';
 import { NavigationContext } from "expo-router/react-navigation";
 
 export function useScreenSeen(): boolean {
   const navigation = useContext(NavigationContext);
-  const [seen, setSeen] = useState(() => navigation?.isFocused() ?? true);
-  useEffect(() => {
-    if (!navigation) return;
-    setSeen(navigation.isFocused());
-    const focused = navigation.addListener('focus', () => setSeen(true));
-    const blurred = navigation.addListener('blur', () => setSeen(false));
+  const subscribe = useCallback((changed: () => void) => {
+    if (!navigation) return () => {};
+    const focused = navigation.addListener('focus', changed);
+    const blurred = navigation.addListener('blur', changed);
     return () => { focused(); blurred(); };
   }, [navigation]);
-  return seen;
+  const seen = useCallback(() => navigation?.isFocused() ?? true, [navigation]);
+  return useSyncExternalStore(subscribe, seen);
 }

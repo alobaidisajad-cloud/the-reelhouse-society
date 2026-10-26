@@ -389,7 +389,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/atmosphere/RoomBloom.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/components/atmosphere/RoomLight.tsx | 2026-10-23 | edited: the room's light kept as a texture while its screen is in front (useScreenSeen), let go behind; heldLift: the veil's light moves back only while any of it can show, and an unchanged lift writes nothing, so the canvas is not drawn on every frame of the page below; the room drawn as one native background (roomLightImage); no SVG |
 | src/components/atmosphere/__tests__/theLightRestsOutOfSight.test.ts | 2026-10-23 | edited: the room's light kept while in front, let go behind, kept outside any navigator; whether a screen is seen, with no navigator and behind another; the veil's light rests once the hem is out of sight: heldLift, and the veil drawn with its reaction run per frame |
-| src/components/atmosphere/useSharedImage.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/components/atmosphere/useSharedImage.ts | 2026-10-26 | edited: the picture held with the address it was read for: a new address shows nothing until its own comes; Read whole (launch audit). Sound; left alone. |
 | src/components/auth/AuthChrome.tsx | 2026-10-08 | the candlelight halo a native gradient; written as an ellipse (RN misreads circle <r> at) |
 | src/components/auth/EmailConfirmationScreen.tsx | 2026-10-15 | close from useModalTop |
 | src/components/auth/PasswordRecoveryModal.tsx | 2026-10-15 | edited: the card in a CentredCard, its scroll above the keyboard |
@@ -787,7 +787,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/search/SearchResultRow.tsx | 2026-10-22 | edited: arrives once, when the row is first made; a recycled row keeps its arrival |
 | src/components/search/SearchUnreachable.tsx | 2026-10-16 | edited: says failed (useStateSaid) |
 | src/components/SectionErrorBoundary.tsx | 2026-10-01 | retries; comments made true |
-| src/components/ShareToLoungeModal.tsx | 2026-10-23 | edited: fetching until the salons have answered once; its spinner says it reads the salons; the salons' own flag (loungesLoading); the sheet's foot clears the home indicator (useSheetBottom) |
+| src/components/ShareToLoungeModal.tsx | 2026-10-26 | edited: closing adjusted as it renders when the sheet opens; the effect keeps the timer that lets it slide away; edited: fetching until the salons have answered once; its spinner says it reads the salons; the salons' own flag (loungesLoading); the sheet's foot clears the home indicator (useSheetBottom) |
 | src/components/society/__tests__/theSocietySellsWhatItSays.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/society/BillingSwitch.tsx | 2026-10-02 | read; sound |
 | src/components/society/FoundingCertificate.tsx | 2026-10-02 | read; sound |
@@ -855,7 +855,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-23 | edited: a profile not yet read: no form, retrieved, asked again on failure; a read one draws the form and asks nothing; its navigation mock stands on the one base (test-utils/navigationMock); the Auteur manages a membership, not a rank to choose |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
 | src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written: the sign-out confirm counts unsent changes, drafts and failed words; online, the queue goes first |
-| src/features/settings/DataVault.tsx | 2026-10-02 | no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
+| src/features/settings/DataVault.tsx | 2026-10-26 | edited: the undo receipt read as the vault is made and again for another member, not by an effect; no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
 | src/features/settings/SettingsScreen.tsx | 2026-10-23 | edited: the form only over a read profile (profileRead): retrieved when not, said when it could not be, and no save without it; its ready mark (settings), ready at once: the lab's control page; nav top from usePushedHeaderTop; foot from useContentBottom; the code window in a CentredCard |
@@ -900,7 +900,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useScreenReady.test.tsx | 2026-10-15 | edited: a failed read writes screen.failed; the first screen writes the runtime |
 | src/hooks/useAmbientGlow.ts | 2026-10-01 |  |
 | src/hooks/useArrival.ts | 2026-10-08 | edited: the easing key only when one was given |
-| src/hooks/useAuthFlow.ts | 2026-10-03 | edited: joining refuses a password too long for the lock, first |
+| src/hooks/useAuthFlow.ts | 2026-10-26 | edited: the link's action applied as it renders, once per action, the first included; edited: joining refuses a password too long for the lock, first |
 | src/hooks/useAuthThrottle.ts | 2026-10-26 | edited: the mount read placed after evaluateLockout, which calls itself by its own name; a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | 2026-10-02 | says what it guards, and that the server guards every write |
 | src/hooks/useCatalogueSearch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
@@ -909,11 +909,11 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useDeviceThrottling.ts | 2026-10-02 | Read whole (launch audit). Answered in an effect, after the preloader had decided on the first render; known synchronously now. A settings override no screen ever wrote removed. |
 | src/hooks/useDispatchArchive.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useDoor.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/hooks/useEditProfile.ts | 2026-10-03 | a refusal for the member's standing is not reported as a fault |
+| src/hooks/useEditProfile.ts | 2026-10-26 | edited: the preview follows the stored portrait when it changes; a picture just chosen is kept through any other change; a refusal for the member's standing is not reported as a fault |
 | src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
 | src/hooks/useFilmAnimations.ts | 2026-10-01 | each loop only while seen |
 | src/hooks/useFilmDetail.ts | 2026-10-01 | an unread verdict is null, never silence |
-| src/hooks/useFollowRequests.ts | 2026-10-23 | edited: answeredFor: the door is reading while the search on screen is not the one it answered; failed + moreFailed + retry; the count never below 0; decline-all restores paging |
+| src/hooks/useFollowRequests.ts | 2026-10-26 | edited: shut, it answers for nothing: adjusted as it renders; edited: answeredFor: the door is reading while the search on screen is not the one it answered; failed + moreFailed + retry; the count never below 0; decline-all restores paging |
 | src/hooks/useInitiation.ts | 2026-10-02 | Read whole (launch audit). The breath was the effect's cleanup, so a user replaced inside it lost the welcome after the flag burned; a user without created_at was decided no for good. Both closed. |
 | src/hooks/useLater.ts | 2026-10-04 | written whole: a component's timer, gone with the component |
 | src/hooks/useLogFlow.ts | 2026-10-23 | edited: an edit reads a record the phone does not hold by its id, fills the form once per record, and hands that record to the seal and the delete; the seal refuses until it is in |
@@ -926,7 +926,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useProfileData.ts | 2026-10-23 | edited: tabAnswered (a room's read came back, not asked) and answeredFilters (the filters a room's rows answer), both reset for a new member; a search overtaken lands neither its rows nor its filters nor lowers the newer one's flag; each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
 | src/hooks/useScreenReady.tsx | 2026-10-16 | edited: takes the read state; a failed read is screen.failed; a wait's start is screen.reading |
 | src/hooks/useScrollTrace.ts | 2026-10-15 | new: a scroll is one Sentry transaction, begin to rest |
-| src/hooks/useSheetPresence.ts | 2026-10-01 | written: five sheets' rise and fall, once |
+| src/hooks/useSheetPresence.ts | 2026-10-26 | edited: a visible sheet is a drawn one from the render that opens it; the effect keeps the motion; written: five sheets' rise and fall, once |
 | src/hooks/useStateSaid.ts | 2026-10-16 | new: which state a room drew, empty or failed, to the E2E log |
 | src/hooks/useSecondKey.ts | 2026-10-17 | new: the door read from the session each time; register; give a code |
 | src/hooks/__tests__/theSecondKeyIsReadAsItIs.test.tsx | 2026-10-17 | new: each refusal the hook meets, handed back as what it is |
@@ -939,7 +939,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useUniversalSearch.ts | 2026-10-02 | @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
 | src/hooks/useUpdateUser.ts | 2026-10-02 | read; sound |
 | src/hooks/useVault.ts | 2026-10-01 | reload, for a Vault that could not open |
-| src/hooks/useScreenSeen.ts | 2026-10-23 | useIsFocused at home outside a navigator: seen when nothing is in front of it; changes only on focus and blur |
+| src/hooks/useScreenSeen.ts | 2026-10-26 | edited: read from the navigator by useSyncExternalStore, as React reads any store outside it: never a frame behind; useIsFocused at home outside a navigator: seen when nothing is in front of it; changes only on focus and blur |
 | src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts | 2026-10-03 | payments pass: queued for the store's account, with no network and no session |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | 2026-10-03 | payments pass: a stand-in store drives every answer a configured one gives |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | 2026-10-03 | payments pass: the source pins went; the paths they guarded now run |

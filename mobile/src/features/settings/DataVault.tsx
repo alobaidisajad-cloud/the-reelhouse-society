@@ -38,7 +38,16 @@ export default function DataVault() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   // How many rows the last import created, if it can still be taken back.
   // 0 means there is nothing to undo and the control stays hidden.
-  const [undoableRows, setUndoableRows] = useState(0);
+  // Undo must survive leaving this screen (transfer, go and look at the films, notice something
+  // is wrong, come back): the receipt lives in MMKV, read as the vault is made and again for
+  // another member, not only after an import.
+  const [undoableRows, setUndoableRows] = useState(() => { const r = loadReceipt(user?.id); return r ? receiptSize(r) : 0; });
+  const [receiptFor, setReceiptFor] = useState(user?.id);
+  if (receiptFor !== user?.id) {
+    setReceiptFor(user?.id);
+    const r = loadReceipt(user?.id);
+    setUndoableRows(r ? receiptSize(r) : 0);
+  }
   const [undoing, setUndoing] = useState(false);
 
   // ── Export State ──
@@ -110,15 +119,6 @@ export default function DataVault() {
     isMounted.current = true;
     return () => { isMounted.current = false; };
   }, []);
-
-  // Undo must survive leaving this screen. The natural sequence is: transfer,
-  // go and look at the films, notice something is wrong, come back. The receipt
-  // lives in MMKV, so read it on mount rather than only after an import —
-  // otherwise the control vanishes at exactly the moment it is wanted.
-  useEffect(() => {
-    const receipt = loadReceipt(user?.id);
-    setUndoableRows(receipt ? receiptSize(receipt) : 0);
-  }, [user?.id]);
 
   // ══════════════════════════════════════
   //  IMPORT HANDLER

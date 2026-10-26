@@ -41,15 +41,15 @@ function give(uri: string) {
 }
 
 export function useSharedImage(uri: string | null | undefined): SkImage | null {
-  const [image, setImage] = useState<SkImage | null>(null);
+  // Held with the address it was read for: a new address shows nothing until its own picture comes.
+  const [loaded, setLoaded] = useState<{ uri: string; image: SkImage | null } | null>(null);
   useEffect(() => {
-    setImage(null);
     if (!uri) return undefined;
     let live = true;
-    take(uri).image.then((img) => { if (live) setImage(img); });
+    take(uri).image.then((img) => { if (live) setLoaded({ uri, image: img }); });
     return () => { live = false; give(uri); };
   }, [uri]);
-  return image;
+  return loaded && loaded.uri === uri ? loaded.image : null;
 }
 
 /** How many pictures are held right now — for the test that proves they are let go. */

@@ -134,6 +134,13 @@ export function useEditProfile() {
   });
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null);
+  // The preview follows the stored portrait when it changes (a save, another device): a picture the
+  // member has just chosen is kept through any other change to their profile.
+  const [portraitSeen, setPortraitSeen] = useState(user?.avatar_url);
+  if (user && portraitSeen !== user.avatar_url) {
+    setPortraitSeen(user.avatar_url);
+    setAvatarPreview(user.avatar_url || null);
+  }
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
   const [showCropModal, setShowCropModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -152,7 +159,6 @@ export function useEditProfile() {
         bio: user.bio || '',
         links: parseLinks(user.social_links),
       });
-      setAvatarPreview(user.avatar_url || null);
     }
   }, [user, form]);
 

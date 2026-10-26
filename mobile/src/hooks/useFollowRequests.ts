@@ -42,6 +42,8 @@ export function useFollowRequests(enabled: boolean) {
    * debounce, came before any read began, and said "No one's at the door".
    */
   const [answeredFor, setAnsweredFor] = useState<string | null>(null);
+  // Shut, it answers for nothing: opened again, it reads afresh.
+  if (!enabled && answeredFor !== null) setAnsweredFor(null);
 
   const cursorRef = useRef<string | null>(null);
   const hasMoreRef = useRef(true);
@@ -108,8 +110,7 @@ export function useFollowRequests(enabled: boolean) {
 
   // Open / search changes → reset + reload (debounced for search).
   useEffect(() => {
-    // Shut, it answers for nothing: opened again, it reads afresh.
-    if (!enabled) { setAnsweredFor(null); return; }
+    if (!enabled) return;
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
     searchDebounce.current = setTimeout(() => {
       cursorRef.current = null;

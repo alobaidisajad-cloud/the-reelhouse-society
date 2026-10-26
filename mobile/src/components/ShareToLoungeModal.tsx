@@ -86,8 +86,9 @@ export default function ShareToLoungeModal(props: ShareToLoungeProps) {
     const { visible } = props;
     // Kept a moment after closing, for the slide down; unmounted after, to free it.
     const [closing, setClosing] = useState(false);
+    if (visible && !closing) setClosing(true);
     useEffect(() => {
-        if (visible) { setClosing(true); return; }
+        if (visible) return;
         const timer = setTimeout(() => setClosing(false), 350);
         return () => clearTimeout(timer);
     }, [visible]);

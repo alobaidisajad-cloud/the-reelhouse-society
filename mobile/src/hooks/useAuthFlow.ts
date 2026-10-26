@@ -154,7 +154,10 @@ export function useAuthFlow() {
   // isLogin=true default either way. `login` matters as much as `signup` —
   // without it, opening signup and then tapping "Already a member?" would land
   // on whichever mode happened to be left over.
-  useEffect(() => {
+  // Applied as it renders, once for each action a link brings (the first included): no frame in the wrong mode.
+  const [actionApplied, setActionApplied] = useState<string | undefined | null>(null);
+  if (actionApplied !== params.action) {
+    setActionApplied(params.action);
     if (params.action === 'signup') {
       setIsLogin(false);
     } else if (params.action === 'login') {
@@ -169,7 +172,7 @@ export function useAuthFlow() {
       setLinkPurpose('confirm');
       setForgotModalVisible(true);
     }
-  }, [params.action]);
+  }
 
   const checkUsernameAvailability = (value: string) => {
     const requestId = ++usernameCheckRequestId.current;
