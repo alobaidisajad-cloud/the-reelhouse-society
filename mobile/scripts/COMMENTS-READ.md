@@ -45,7 +45,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/e2e-old-clients.yml | 2026-10-22 | read whole: the train refuses until this run is green on its files |
 | ../.github/workflows/e2e.yml | 2026-10-22 | read whole: four jobs; the seal's name refused in every container with a shell, its addresses to all; the proxy's and the renderer's reasons beside their own lines; the verdict reads any run's three flow machines; a heartbeat when the schedule ran |
 | ../.github/workflows/god_tier_ci.yml | 2026-10-22 | read whole: the alert proved by the fire drill, not by the nightly; every frozen count named; the mutants' job and the add-only job each under its own head; every measuring tool named; a heartbeat when the schedule ran |
-| ../.github/workflows/ios-launch.yml | 2026-10-25 | edited: on macos-26 with Xcode 26.6 named, the store build's (EAS sdk-57); on macos-15's Xcode 16.4 the SDK 57 app's Swift did not compile; read whole: then, on the same simulator, the flows that need no server (e2e/ios-flows.json) by Maestro, their records kept (P0.89); a run is cancelled only by a newer run of its own kind |
+| ../.github/workflows/ios-launch.yml | 2026-10-25 | edited: the simulator named by e2e/ios-simulator.sh; edited: on macos-26 with Xcode 26.6 named, the store build's (EAS sdk-57); on macos-15's Xcode 16.4 the SDK 57 app's Swift did not compile; read whole: then, on the same simulator, the flows that need no server (e2e/ios-flows.json) by Maestro, their records kept (P0.89); a run is cancelled only by a newer run of its own kind |
 | ../.github/workflows/load.yml | 2026-10-22 | read whole: the pending train run on the full house, its locks timed, its report kept, the train left applied for the reads; the change under measurement and the reads timed whatever the locks said; a heartbeat when the schedule ran |
 | ../.github/workflows/nightly.yml | 2026-10-22 | read whole: a variant's machines as it runs them; a heartbeat when the schedule ran |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
@@ -183,6 +183,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/coldStart.test.ts | 2026-10-21 | written with cold-start.mjs, on run 39625257830's admin shard's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
+| e2e/__tests__/iosSimulator.test.ts | 2026-10-25 | new: the script against a stand-in xcrun listing macos-26's simulators, and one with no iPhone 17 Pro; both jobs choose by it |
 | e2e/__tests__/theRunKeepsWhatItWrites.test.ts | 2026-10-17 | new |
 | e2e/__tests__/variants.test.ts | 2026-10-17 | new |
 | e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
@@ -224,6 +225,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/grounds-judges.mjs | 2026-10-17 | edited: the dark walk read against the plain walk, whose emulator is light; a ground moved either way |
 | e2e/ios-crash.mjs | 2026-10-15 | new |
 | e2e/ios-launch.cjs | 2026-10-15 | true as written |
+| e2e/ios-simulator.sh | 2026-10-25 | new: the iPhone 17 Pro on the newest iOS, or the iPhones there are and a failure; read against the macos-26 image's simulators (no iPhone 16 Pro) and the iPhone launch check on PR #128 |
 | e2e/keyboard-room.mjs | 2026-10-01 | written with the keyboard probe |
 | e2e/load/probe.mjs | 2026-10-16 | edited: psql's error is shown beside a plan it could not make |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
@@ -1282,7 +1284,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-24 | edited: Android's sitemap link opened closed, iOS's closed or handed to the app running in that one shape |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts | 2026-10-16 | new: the next class is the one that matters most, a journal keeps what was written in it, every worktree finds the same journals, the next train is the pending migrations |
-| src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-16 | edited: the store is asked at the address the settings name, always with a time limit, and gives up before the app does |
+| src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-25 | edited: AbortSignal.timeout stood in for, as Deno has it (the test setup no longer takes it away); the store is asked at the address the settings name, always with a time limit, and gives up before the app does |
 | src/utils/__tests__/roomFilters.test.ts | 2026-10-01 | written: one answer to is-this-room-narrowed |
 | src/utils/__tests__/runtimeDump.contract.test.ts | 2026-10-15 | edited: runtimeNames read from its file (coverage-safe); says NO past global and declare global |
 | src/utils/__tests__/runtimeLacks.guard.test.ts | 2026-10-25 | edited: on SDK 57 the phone has AbortSignal.timeout and any: the finder says NO to AbortSignal.abort and Object.groupBy, the list's own entries now; new: no line uses an API the phone lacks; jest takes away exactly the list |
@@ -1322,7 +1324,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/whatThisPhoneHoldsIsSaid.test.ts | 2026-10-16 | new: keptOnThisPhone's words asked directly: nothing said of nothing, 'it' of one and 'all of them' of more, uncounted drafts said so, kinds named at the return |
 | src/utils/__tests__/withAbortSignal.test.ts | — |  |
 | src/utils/__tests__/withRetry.test.ts | — |  |
-| src/utils/__tests__/withTimeout.test.ts | 2026-10-15 | edited: the timeout case names withTimeout's own timer |
+| src/utils/__tests__/withTimeout.test.ts | 2026-10-25 | edited: AbortSignal.timeout taken away by the test itself, as build 41's phone lacked it (the SDK 57 phone has it); the timeout case names withTimeout's own timer |
 | src/utils/AppError.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/csv.ts | 2026-10-02 | read; sound |
 | src/utils/cutText.ts | 2026-10-17 | new: whether a Text's laid-out lines lost its words, ran out of its box or were clipped by it |
@@ -1447,7 +1449,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/lab/proofs.mjs | 2026-10-22 | written: each scene's shots judged: still, present against no light, main against SVG within the study's bar; a signed luma grid against none (P0.103) |
 | e2e/lab/analyze.mjs | 2026-10-22 | written: the timed starts per build; each against A by a permutation test, called at Holm's p under 0.01; the A/A pair must call nothing; the log read by cold-start.mjs (P0.104) |
 | e2e/lab/lab.sh | 2026-10-22 | written: one emulator boot, settled; the shots in two rounds of opposite order; the timed starts, each measured by one shell call; a trace per timed build (P0.104) |
-| ../.github/workflows/speed-lab.yml | 2026-10-25 | edited: scroll_arms defaults to none, A alone; the iOS job on macos-26 with Xcode 26.6 named, as the iPhone launch check; the salon among the arms' screens |
+| ../.github/workflows/speed-lab.yml | 2026-10-25 | edited: the iOS shots' simulator named by e2e/ios-simulator.sh; edited: scroll_arms defaults to none, A alone; the iOS job on macos-26 with Xcode 26.6 named, as the iPhone launch check; the salon among the arms' screens |
 | e2e/__tests__/speedLab.test.ts | 2026-10-25 | edited: names by default, in each input, only arms that exist (a dispatch given an empty input takes the default); the seed's counts as the seed now fills them |
 | e2e/db/lab-seed.mjs | 2026-10-25 | edited: the member's first log holds 60 critiques, each a few sentences long: the page shows twelve, then SHOW MORE, and twelve of a line each were three screen heights, the scroll judge's edge |
 | e2e/lab/scrolls.mjs | 2026-10-25 | edited: afterDataOf, each screen's time from its last answer to its ready, shown beside the budget, not judged; memOf, the App Summary's graphics and whole share in MB, two more measures a build is called on; costs() reads the arms' screen from arms/screen.txt, by its own ready mark; UNMEASURED: the JS lines shown, not judged, and why (Android timers fire on the UI frame); the Reel table without them; budgetOf: each busy screen held to e2e/lab/budget.json against the control; jsLongSplitOf at the scroll mark; the slow-UI count; the control exempt from three heights; rankDiff (ranks decide p: the lab's values tie); jsLongOf, the frame record's long JavaScript tasks; costs(): the Reel per build and arm against A (opened, frames, p50, p90; not the janky share, 100% on the lab's GPU), Holm; each screen's scroll judged: moved on each of the first five swipes (three screen heights) or failed by name; Android's own frame counts, this runner's, never a phone's (P0.104) |

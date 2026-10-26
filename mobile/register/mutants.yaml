@@ -1921,3 +1921,21 @@ mutants:
         find: "A alone\"\n        type: string\n        default: ''\n"
         replace: "A alone\"\n        type: string\n        default: 'Rb Rw Rl Rt Rs Rp R0'\n"
     proof: { file: e2e/__tests__/speedLab.test.ts, test: "names by default, in each input, only arms that exist" }
+
+  - id: shape-simulator-16-pro
+    class: CI-simulator-gone-silently
+    source: shape
+    edits:
+      - file: e2e/ios-simulator.sh
+        find: "want='iPhone 17 Pro'"
+        replace: "want='iPhone 16 Pro'"
+    proof: { file: e2e/__tests__/iosSimulator.test.ts, test: "names the iPhone 17 Pro on the newest iOS, never the Pro Max beside it" }
+
+  - id: shape-simulator-fails-silently
+    class: CI-simulator-gone-silently
+    source: shape
+    edits:
+      - file: e2e/ios-simulator.sh
+        find: "  printf '%s\\n' \"$list\" | grep -F 'iPhone' >&2\n"
+        replace: ""
+    proof: { file: e2e/__tests__/iosSimulator.test.ts, test: "with no iPhone 17 Pro, fails and names the iPhones there are" }

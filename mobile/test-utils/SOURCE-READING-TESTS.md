@@ -234,6 +234,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/anAbsenceIsAnchored.guard.test.ts` | Every test file, parsed, for a test that only finds things absent on a screen: a sweep of the tests themselves. |
 | `src/utils/__tests__/revenuecatWebhookDecide.test.ts` | The app's limit on a call to the house (src/lib/supabase.ts), which the store's own limit, in Deno, must stay under: no one runtime holds both. |
 | `e2e/__tests__/startStack.test.ts` | The stack's start script, its workflows and the sealed world's config.toml. |
+| `e2e/__tests__/iosSimulator.test.ts` | The simulator script and the two iPhone workflows: what GitHub runs, which no render reaches. |
 | `plugins/__tests__/theScannerStaysInDebug.test.ts` | The installed expo-dev-launcher's main and debug manifests, for the code scanner a release build must not merge. |
 | `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |
 | `plugins/__tests__/withLinkDuringLaunch.test.ts` | The generated MainActivity fixture and app.json's plugins. |

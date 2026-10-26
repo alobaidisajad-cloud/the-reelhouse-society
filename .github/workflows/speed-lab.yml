@@ -632,8 +632,7 @@ jobs:
           set -u
           S="$RUNNER_TEMP/lab/shots-ios"
           mkdir -p "$S"
-          DEV=$(xcrun simctl list devices available | grep -E 'iPhone 16 Pro \(' | head -n 1 | grep -oE '[0-9A-F-]{36}')
-          [ -n "$DEV" ] || DEV=$(xcrun simctl list devices available | grep -E 'iPhone' | head -n 1 | grep -oE '[0-9A-F-]{36}')
+          DEV=$(bash e2e/ios-simulator.sh)
           echo "device $DEV" > "$S/device.txt"
           xcrun simctl boot "$DEV"
           xcrun simctl bootstatus "$DEV" -b

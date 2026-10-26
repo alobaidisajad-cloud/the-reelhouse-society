@@ -1583,3 +1583,16 @@ classes:
       - { kind: running, file: e2e/__tests__/speedLab.test.ts, test: "names by default, in each input, only arms that exist" }
     fix: "scroll_arms defaults to none (A alone), and every arm either input names by default must be one arm.mjs builds (mutant shape-lab-default-retired)"
     places: [none]
+
+  - id: CI-simulator-gone-silently
+    title: "The iPhone jobs looked for an iPhone 16 Pro simulator, which the macos-26 image does not carry; under bash -e the failed lookup ended the step with no word, the iPhone launch check failing as if the app had"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "the iPhone launch check on PR #128: built with Xcode 26.6, then the launch step ended at its first line" }
+    methods:
+      - { kind: running, file: e2e/__tests__/iosSimulator.test.ts, test: "names the iPhone 17 Pro on the newest iOS, never the Pro Max beside it" }
+      - { kind: running, file: e2e/__tests__/iosSimulator.test.ts, test: "with no iPhone 17 Pro, fails and names the iPhones there are" }
+    fix: "e2e/ios-simulator.sh names the iPhone 17 Pro on the image's newest iOS, or names the iPhones there are and fails; both iPhone jobs choose by it, and no other line of theirs reads the simulator list (mutants shape-simulator-16-pro, shape-simulator-fails-silently)"
+    places: [simulator]
