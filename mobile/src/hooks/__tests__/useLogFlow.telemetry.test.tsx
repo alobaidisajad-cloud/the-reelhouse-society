@@ -6,7 +6,7 @@
  * write actually surfaces. The fix was verified by reading; this drives the
  * real hook and fails the real write.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { render, act } from '@testing-library/react-native';
 
 import { useLogFlow } from '../useLogFlow';
@@ -52,7 +52,8 @@ jest.mock('@/src/utils/requestReview', () => ({ maybeRequestReview: jest.fn() })
 /** Exposes the hook's API so handleLog can be driven directly. */
 let api: ReturnType<typeof useLogFlow> | null = null;
 function Probe() {
-    api = useLogFlow();
+    const flow = useLogFlow();
+    useEffect(() => { api = flow; });
     return null;
 }
 

@@ -13,7 +13,7 @@
  * This drives the real hook: the phone's idle queue is held in the test's hand,
  * so "the member left before it ran" is something that actually happens here.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { InteractionManager } from 'react-native';
 import { render, act } from '@testing-library/react-native';
 
@@ -72,7 +72,8 @@ const idle = async () => {
 };
 
 let api: ReturnType<typeof useLogFlow> | null = null;
-function Probe() { api = useLogFlow(); return null; }
+// Taken in an effect, which render runs before it returns: never written during render.
+function Probe() { const flow = useLogFlow(); useEffect(() => { api = flow; }); return null; }
 
 const file = async () => {
   const r = render(<Probe />);

@@ -8,7 +8,7 @@
  * flag was spent. And a user that arrived before its created_at was decided
  * "no" for the session.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { act, render } from '@testing-library/react-native';
 import { useInitiation } from '../useInitiation';
 
@@ -35,7 +35,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
 
 /** The hook, mounted: what it last said. */
 let said: ReturnType<typeof useInitiation> | null = null;
-function Probe() { said = useInitiation(); return null; }
+function Probe() { const now = useInitiation(); useEffect(() => { said = now; }); return null; }
 const mount = () => { render(<Probe />); return { get visible() { return said!.visible; } }; };
 
 const setUser = (u: U) => act(async () => { mockUser = u; mockListeners.forEach((l) => l()); });

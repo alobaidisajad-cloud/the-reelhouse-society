@@ -261,7 +261,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |
 | e2e/supabase/functions/tmdb-proxy/normalize.mjs | 2026-09-29 | true as written |
 | e2e/tmdb/record.mjs | 2026-09-29 | true as written |
-| eslint.config.js | 2026-10-26 | edited: the React Compiler's preserve-manual-memoization rule on (each memo's inputs read before it); its immutability rule on (every shared value written by set), the rest off until their places are right; 3 findings; the crash and logo stories reduced to the rule each enforces |
+| eslint.config.js | 2026-10-26 | edited: the React Compiler's globals rule on (a test's probe takes its hook in an effect); its preserve-manual-memoization rule on (each memo's inputs read before it); its immutability rule on (every shared value written by set), the rest off until their places are right; 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
 | jest.setup.ts | 2026-10-26 | edited: the shared value's mock has get and set as Reanimated's (set takes a value or an updater); edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |
@@ -879,10 +879,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/hooks/__tests__/theCalendarReadsItsOwnYear.test.ts | — |  |
 | src/hooks/__tests__/theNoteWaitsForItsViewing.test.tsx | — |  |
-| src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx | — |  |
+| src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx | 2026-10-26 | edited: the probe takes its hook in an effect, which render runs before it returns;  |
 | src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx | 2026-10-02 | @handles, exact first, plain excerpts, half reels, named tabs, partial note, emptied box |
 | src/hooks/__tests__/theSearchKnowsWhichSourceWasDown.test.tsx | — |  |
-| src/hooks/__tests__/theWelcomeIsNotLostInTheBreath.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the welcome survives the user being replaced inside its 600ms breath. |
+| src/hooks/__tests__/theWelcomeIsNotLostInTheBreath.test.tsx | 2026-10-26 | edited: the probe takes its hook in an effect, never during render; Written 2026-10-02 (launch audit): the welcome survives the user being replaced inside its 600ms breath. |
 | src/hooks/__tests__/useAuthFlow.validation.test.ts | — |  |
 | src/hooks/__tests__/useAuthThrottle.pbt.test.ts | 2026-10-01 | the countdown keeps the rule |
 | src/hooks/__tests__/useBanCheck.test.ts | — |  |
@@ -892,7 +892,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/useInitiation.test.ts | — |  |
 | src/hooks/__tests__/useLater.test.tsx | 2026-10-04 | written whole |
 | src/hooks/__tests__/useLogFlow.payload.test.ts | — |  |
-| src/hooks/__tests__/useLogFlow.telemetry.test.tsx | — |  |
+| src/hooks/__tests__/useLogFlow.telemetry.test.tsx | 2026-10-26 | edited: the probe takes its hook in an effect, never during render;  |
 | src/hooks/__tests__/useLogFlow.validation.test.ts | — |  |
 | src/hooks/__tests__/useOfflineAware.test.ts | — |  |
 | src/hooks/__tests__/useProfileController.logic.test.ts | — |  |
