@@ -132,7 +132,7 @@ export default function DispatchScreen() {
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
-      scrollY.value = e.contentOffset.y;
+      scrollY.set(e.contentOffset.y);
       globalScrollY.value = e.contentOffset.y;
       scrollHeight.value = e.contentSize.height;
       viewHeight.value = e.layoutMeasurement.height;

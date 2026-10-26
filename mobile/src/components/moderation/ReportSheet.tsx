@@ -105,10 +105,10 @@ function ReasonChip({ reason, selected, onSelect }: ReasonChipProps) {
   }));
 
   const handlePress = useCallback(() => {
-    scale.value = withSequence(
+    scale.set(withSequence(
       withTiming(1.02, { duration: MS.strike, easing: arrive() }),
       withTiming(1, { duration: MS.quick, easing: arrive() }),
-    );
+    ));
     TactileEngine.selection();
     onSelect(reason);
   }, [reason, onSelect, scale]);
@@ -188,13 +188,13 @@ function ReportSheet({
   // ── Gesture Dismiss ─────────────────────────────────────────────────────
   const pan = Gesture.Pan()
     .onChange((e) => {
-      if (e.translationY > 0) translateY.value = e.translationY;
+      if (e.translationY > 0) translateY.set(e.translationY);
     })
     .onEnd((e) => {
       if (e.translationY > 100 || e.velocityY > 500) {
         runOnJS(handleDismiss)();
       } else {
-        translateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
+        translateY.set(withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) }));
       }
     });
 

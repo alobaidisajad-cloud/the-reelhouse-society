@@ -46,22 +46,7 @@ export function useAuthThrottle() {
   const [secondsRemaining, setSecondsRemaining] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Read initial attempts from storage on mount
   const attemptsRef = useRef<number[]>([]);
-  
-  useEffect(() => {
-    try {
-      const stored = storage.getString(STORAGE_KEY);
-      if (stored) {
-        attemptsRef.current = JSON.parse(stored);
-        evaluateLockout();
-      }
-    } catch {
-      // Corrupt JSON, reset
-      attemptsRef.current = [];
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) {
@@ -72,7 +57,7 @@ export function useAuthThrottle() {
 
   useEffect(() => cleanup, [cleanup]);
 
-  const evaluateLockout = useCallback(() => {
+  const evaluateLockout = useCallback(function evaluate() {
     const now = Date.now();
     // The rule itself lives in evaluateAuthThrottle (pure, directly tested).
     // This hook is now only the plumbing around it: storage and the countdown.
@@ -94,13 +79,28 @@ export function useAuthThrottle() {
           setSecondsRemaining(0);
           cleanup();
           // The rule again, not a clean slate: attempts still in the window count.
-          evaluateLockout();
+          evaluate();
         } else {
           setSecondsRemaining(left);
         }
       }, 1000);
     }
   }, [cleanup]);
+
+  // Read initial attempts from storage on mount
+  useEffect(() => {
+    try {
+      const stored = storage.getString(STORAGE_KEY);
+      if (stored) {
+        attemptsRef.current = JSON.parse(stored);
+        evaluateLockout();
+      }
+    } catch {
+      // Corrupt JSON, reset
+      attemptsRef.current = [];
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const canAttempt = secondsRemaining <= 0;
 

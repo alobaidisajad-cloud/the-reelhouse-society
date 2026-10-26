@@ -119,7 +119,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/profile.tsx | 2026-10-15 | centred states in a CentredRoom: between the bars, and scrolled when taller; the bar clear on arrival before the file |
 | app/(tabs)/reels.tsx | 2026-10-23 | edited: the page's wash kept as a texture while the Reel is in front; following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
-| app/auth-callback.tsx | 2026-10-22 | edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
+| app/auth-callback.tsx | 2026-10-26 | edited: the mount effect placed after handleCallback, the function it calls; edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
 | app/dispatch/[id].tsx | 2026-10-24 | edited: the share card is exported at SHARE_CARD_WIDTH |
 | app/dispatch/archive.tsx | 2026-10-15 | foot from useContentBottom |
 | app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop; feet from navMetrics; the essay's footer never on the edge |
@@ -261,10 +261,10 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |
 | e2e/supabase/functions/tmdb-proxy/normalize.mjs | 2026-09-29 | true as written |
 | e2e/tmdb/record.mjs | 2026-09-29 | true as written |
-| eslint.config.js | 2026-09-29 | 3 findings; the crash and logo stories reduced to the rule each enforces |
+| eslint.config.js | 2026-10-26 | edited: the React Compiler's immutability rule on (every shared value written by set), the rest off until their places are right; 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
-| jest.setup.ts | 2026-10-24 | edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |
+| jest.setup.ts | 2026-10-26 | edited: the shared value's mock has get and set as Reanimated's (set takes a value or an updater); edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |
 | jest.stryker.config.js | 2026-10-16 | new: the tests' config in Stryker's own process, its environment by its whole path |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -901,7 +901,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useAmbientGlow.ts | 2026-10-01 |  |
 | src/hooks/useArrival.ts | 2026-10-08 | edited: the easing key only when one was given |
 | src/hooks/useAuthFlow.ts | 2026-10-03 | edited: joining refuses a password too long for the lock, first |
-| src/hooks/useAuthThrottle.ts | 2026-10-01 | a lifted lock keeps the rule |
+| src/hooks/useAuthThrottle.ts | 2026-10-26 | edited: the mount read placed after evaluateLockout, which calls itself by its own name; a lifted lock keeps the rule |
 | src/hooks/useBanCheck.ts | 2026-10-02 | says what it guards, and that the server guards every write |
 | src/hooks/useCatalogueSearch.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useKeyboardLift.ts | 2026-10-01 | written: a sheet over a screen rises with the keyboard |

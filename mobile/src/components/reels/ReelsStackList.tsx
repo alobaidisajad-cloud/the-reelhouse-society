@@ -64,15 +64,15 @@ export function ReelsStackList({
 
   const onScrollWorklet = useAnimatedScrollHandler({
     onScroll: (e) => {
-      stacksScrollY.value = e.contentOffset.y;
+      stacksScrollY.set(e.contentOffset.y);
       if (activeTabSV.value === 'stacks') {
         globalScrollY.value = e.contentOffset.y;
       }
     },
-    onBeginDrag: () => { isScrolling.value = true; },
-    onMomentumBegin: () => { isScrolling.value = true; },
-    onMomentumEnd: () => { isScrolling.value = false; },
-    onEndDrag: () => { isScrolling.value = false; },
+    onBeginDrag: () => { isScrolling.set(true); },
+    onMomentumBegin: () => { isScrolling.set(true); },
+    onMomentumEnd: () => { isScrolling.set(false); },
+    onEndDrag: () => { isScrolling.set(false); },
   });
 
   return (

@@ -385,6 +385,14 @@ jest.mock('expo-constants', () => ({
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
   const { View, Text, ScrollView } = require('react-native');
+  const mockSharedValue = (initial: any) => {
+    const shared = {
+      value: initial,
+      get: () => shared.value,
+      set: (next: any) => { shared.value = typeof next === 'function' ? next(shared.value) : next; },
+    };
+    return shared;
+  };
 
   const animatedComponent = (Component: any) => React.forwardRef((props: any, ref: any) =>
     React.createElement(Component, { ...props, ref })
@@ -413,13 +421,15 @@ jest.mock('react-native-reanimated', () => {
     },
     // STABLE across renders, as the real one is: a fresh one each render re-runs
     // every effect that lists it, a loop the app cannot have.
+    // With get and set as the real one has them (set takes a value or an updater): the app writes
+    // by set, which the React Compiler can follow, where `.value =` it cannot.
     useSharedValue: jest.fn((v: any) => {
       const ref: { current: { value: any } | null } = React.useRef(null);
-      if (ref.current === null) ref.current = { value: v };
+      if (ref.current === null) ref.current = mockSharedValue(v);
       return ref.current;
     }),
     useAnimatedStyle: jest.fn((fn: any) => fn()),
-    useDerivedValue: jest.fn((fn: any) => ({ value: fn() })),
+    useDerivedValue: jest.fn((fn: any) => mockSharedValue(fn())),
     useAnimatedScrollHandler: jest.fn(() => jest.fn()),
     withTiming: jest.fn((v: any, config?: any) => { strictConfig('withTiming', config); return v; }),
     withSpring: jest.fn((v: any, config?: any) => { strictConfig('withSpring', config); return v; }),

@@ -151,13 +151,13 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
   const turnOver = useCallback(() => {
     setBackMounted(true);
     setFlipped(true);
-    flip.value = withTiming(1, { duration: reducedMotion ? CROSSFADE_MS : FLIP_MS, easing: FLIP_EASING });
+    flip.set(withTiming(1, { duration: reducedMotion ? CROSSFADE_MS : FLIP_MS, easing: FLIP_EASING }));
     AccessibilityInfo.announceForAccessibility('Autopsy revealed');
   }, [flip, reducedMotion]);
 
   const turnBack = useCallback(() => {
     setFlipped(false);
-    flip.value = withTiming(0, { duration: reducedMotion ? CROSSFADE_MS : FLIP_MS, easing: FLIP_EASING });
+    flip.set(withTiming(0, { duration: reducedMotion ? CROSSFADE_MS : FLIP_MS, easing: FLIP_EASING }));
     AccessibilityInfo.announceForAccessibility('Returned to the log');
   }, [flip, reducedMotion]);
 

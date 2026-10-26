@@ -278,7 +278,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   useEffect(() => {
     if (!showsPulse || reducedMotion) return;
     // 20 half-breaths of 1.8s, about 36 seconds, then the UI thread rests.
-    breatheAnim.value = withRepeat(withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }), 20, true);
+    breatheAnim.set(withRepeat(withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }), 20, true));
     return () => cancelAnimation(breatheAnim);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showsPulse, reducedMotion]);

@@ -116,8 +116,8 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     }));
     useEffect(() => {
         if (result) {
-            reveal.value = 0;
-            reveal.value = withTiming(1, { duration: 520, easing: CURVE });
+            reveal.set(0);
+            reveal.set(withTiming(1, { duration: 520, easing: CURVE }));
         }
     }, [result, reveal]);
 

@@ -194,7 +194,7 @@ export default function LoungeScreen() {
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
+      scrollY.set(event.contentOffset.y);
       globalScrollY.value = event.contentOffset.y;
       scrollHeight.value = event.contentSize.height;
       viewHeight.value = event.layoutMeasurement.height;

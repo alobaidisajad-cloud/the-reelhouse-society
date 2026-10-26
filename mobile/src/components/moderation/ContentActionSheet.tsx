@@ -90,13 +90,13 @@ export function ContentActionSheet({
 
   const pan = Gesture.Pan()
     .onChange((e) => {
-      if (e.translationY > 0) translateY.value = e.translationY;
+      if (e.translationY > 0) translateY.set(e.translationY);
     })
     .onEnd((e) => {
       if (e.translationY > 100 || e.velocityY > 500) {
         runOnJS(onClose)();
       } else {
-        translateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
+        translateY.set(withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) }));
       }
     });
 

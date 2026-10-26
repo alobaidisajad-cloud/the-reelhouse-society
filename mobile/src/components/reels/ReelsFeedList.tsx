@@ -93,15 +93,15 @@ export function ReelsFeedList({
   // Move scroll tracking 100% to the UI thread to stop bridge flooding
   const onScrollWorklet = useAnimatedScrollHandler({
     onScroll: (e) => {
-      overallLogsScrollY.value = e.contentOffset.y;
+      overallLogsScrollY.set(e.contentOffset.y);
       if (activeTabSV.value === 'logs') {
         globalScrollY.value = e.contentOffset.y;
       }
     },
-    onBeginDrag: () => { isScrolling.value = true; },
-    onMomentumBegin: () => { isScrolling.value = true; },
-    onMomentumEnd: () => { isScrolling.value = false; },
-    onEndDrag: () => { isScrolling.value = false; },
+    onBeginDrag: () => { isScrolling.set(true); },
+    onMomentumBegin: () => { isScrolling.set(true); },
+    onMomentumEnd: () => { isScrolling.set(false); },
+    onEndDrag: () => { isScrolling.set(false); },
   });
 
   return (

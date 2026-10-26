@@ -57,7 +57,7 @@ export function LabFrameLog() {
     raf = requestAnimationFrame(tick);
     // Counted from this page's first moment: the totals so far are another page's.
     let seen = { frames: uiFrames.value, slow: uiSlow.value };
-    uiWorst.value = 0;
+    uiWorst.set(0);
     const every = setInterval(() => {
       const frames = uiFrames.value - seen.frames;
       const slow = uiSlow.value - seen.slow;

@@ -199,11 +199,11 @@ function ToastPill({ toast, leaving, slide, inSheet = false }: {
   useEffect(() => {
     if (!leaving) return;
     if (reducedMotion) {
-      opacity.value = 0;
-      translateY.value = -80;
+      opacity.set(0);
+      translateY.set(-80);
     } else {
-      opacity.value = withTiming(0, { duration: 400, easing: Easing.in(Easing.quad) });
-      translateY.value = withTiming(-80, { duration: 400 });
+      opacity.set(withTiming(0, { duration: 400, easing: Easing.in(Easing.quad) }));
+      translateY.set(withTiming(-80, { duration: 400 }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaving]);

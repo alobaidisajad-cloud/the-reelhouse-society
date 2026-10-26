@@ -39,12 +39,6 @@ export default function AuthCallbackScreen() {
     }), afterMs);
   };
 
-  useEffect(() => {
-    handleCallback();
-    return () => { if (onward.current) clearTimeout(onward.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   async function handleSuccessfulVerification(session: Session, type: string) {
     setResolvedType(type);
     if (type === 'recovery') {
@@ -118,6 +112,12 @@ export default function AuthCallbackScreen() {
       setStatus('error');
     }
   }
+
+  useEffect(() => {
+    handleCallback();
+    return () => { if (onward.current) clearTimeout(onward.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <View style={s.container}>

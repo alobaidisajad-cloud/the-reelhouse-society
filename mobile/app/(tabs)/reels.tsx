@@ -249,7 +249,7 @@ export default function ReelScreen() {
   const switchSection = useCallback((s: ReelSection) => {
     if (s === section) return;
     TactileEngine.mutate();
-    activeTabSV.value = s;
+    activeTabSV.set(s);
     setSection(s);
     
     // Instantly sync the global scroll variables to prevent nav bar glitching
@@ -276,7 +276,7 @@ export default function ReelScreen() {
     
     // Synchronously kill momentum before batching state updates
     logsFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
-    overallLogsScrollY.value = 0;
+    overallLogsScrollY.set(0);
     globalScrollY.value = 0;
 
     setFeedFilter(f);
@@ -290,7 +290,7 @@ export default function ReelScreen() {
     
     // Synchronously kill momentum before batching state updates
     stacksFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
-    stacksScrollY.value = 0;
+    stacksScrollY.set(0);
     globalScrollY.value = 0;
 
     setStackFilter(f);
@@ -300,7 +300,7 @@ export default function ReelScreen() {
 
   const handleStackSearchChange = useCallback((text: string) => {
     stacksFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
-    stacksScrollY.value = 0;
+    stacksScrollY.set(0);
     globalScrollY.value = 0;
 
     setStackSearch(text);
@@ -308,7 +308,7 @@ export default function ReelScreen() {
 
   const handleClearSearch = useCallback(() => {
     stacksFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
-    stacksScrollY.value = 0;
+    stacksScrollY.set(0);
     globalScrollY.value = 0;
 
     setStackSearch('');

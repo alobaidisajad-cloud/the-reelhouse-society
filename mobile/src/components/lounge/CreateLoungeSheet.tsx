@@ -109,16 +109,16 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
 
   const pan = Gesture.Pan()
     .onChange((e) => {
-      if (e.translationY > 0) translateY.value = e.translationY;
+      if (e.translationY > 0) translateY.set(e.translationY);
     })
     .onEnd((e) => {
       if (e.translationY > 100 || e.velocityY > 500) {
-        opacity.value = withTiming(0, { duration: 250 });
-        translateY.value = withTiming(800, { duration: 250, easing: Easing.out(Easing.cubic) }, () => {
+        opacity.set(withTiming(0, { duration: 250 }));
+        translateY.set(withTiming(800, { duration: 250, easing: Easing.out(Easing.cubic) }, () => {
           runOnJS(onClose)();
-        });
+        }));
       } else {
-        translateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
+        translateY.set(withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) }));
       }
     });
 

@@ -307,14 +307,14 @@ export function PresenceView({
       if (done) runOnJS(leave)();
     };
     [opacity, x, y].forEach((v) => cancelAnimation(v));
-    if (fades(e.kind)) opacity.value = 1;
-    x.value = 0;
-    y.value = 0;
-    if (e.kind === 'SlideOutRight') x.value = timing(to.x, e, ended);
-    else if (e.kind === 'FadeOut') opacity.value = timing(0, e, ended);
+    if (fades(e.kind)) opacity.set(1);
+    x.set(0);
+    y.set(0);
+    if (e.kind === 'SlideOutRight') x.set(timing(to.x, e, ended));
+    else if (e.kind === 'FadeOut') opacity.set(timing(0, e, ended));
     else {
-      if (fades(e.kind)) opacity.value = timing(0, e);
-      y.value = timing(to.y, e, ended);
+      if (fades(e.kind)) opacity.set(timing(0, e));
+      y.set(timing(to.y, e, ended));
     }
     // Certain to go: an exit whose end never arrives still lets the view leave.
     const fallback = setTimeout(leave, (e.delay ?? 0) + (e.duration ?? PRESET_MS) + ARRIVAL_GRACE_MS);

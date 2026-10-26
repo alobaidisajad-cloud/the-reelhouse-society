@@ -127,7 +127,7 @@ function LobbyBody() {
     }, [scrollY]),
   );
   // The other side of the door is a new page, at its top.
-  useEffect(() => { scrollY.value = 0; }, [isAuthenticated, scrollY]);
+  useEffect(() => { scrollY.set(0); }, [isAuthenticated, scrollY]);
 
   // Below the top bar, as it measured itself; the welcome starts there too.
   const topPad = useTabContentTop();

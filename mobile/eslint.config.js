@@ -25,12 +25,12 @@ module.exports = defineConfig([
   },
   {
     // The React Compiler's rules, which eslint-config-expo carries from SDK 56 (166 places when it
-    // came): off until each place is made right and the compiler turned on, as one measured change
-    // of its own after the SDK's (WORKLIST P0.117), not dragged in by it.
+    // came): each on once its places are made right (immutability: every shared value written by
+    // set), the rest off until theirs are and the compiler is turned on, measured (WORKLIST P0.117).
     rules: {
       'react-hooks/refs': 'off',
       'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/immutability': 'off',
+      'react-hooks/immutability': 'error',
       'react-hooks/preserve-manual-memoization': 'off',
       'react-hooks/purity': 'off',
       'react-hooks/globals': 'off',
