@@ -174,6 +174,7 @@ export default function SocialModal() {
     }, [loading]);
 
     // ── Data fetching ──────────────────────────────────────────────────────────
+    const userId = user?.id;
     const fetchData = useCallback(async () => {
         setLoading(true);
         setFailed(false);
@@ -187,11 +188,11 @@ export default function SocialModal() {
                 }
             } else {
                 // Share mode — fetch user's lounges
-                if (!user?.id) {
+                if (!userId) {
                     if (isMounted.current) { setLoading(false); }
                     return;
                 }
-                const userLounges = await LoungeService.getUserLounges(user.id);
+                const userLounges = await LoungeService.getUserLounges(userId);
                 if (isMounted.current) {
                     const parsed = userLounges.map((ul: LoungeItem) => {
                         const l = Array.isArray(ul.lounges) ? ul.lounges[0] : ul.lounges;
@@ -212,7 +213,7 @@ export default function SocialModal() {
         } finally {
             if (isMounted.current) setLoading(false);
         }
-    }, [mode, params.userId, user?.id]);
+    }, [mode, params.userId, userId]);
 
     useEffect(() => {
         if (!valid) {

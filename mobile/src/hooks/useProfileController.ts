@@ -365,6 +365,7 @@ export function useProfileController(usernameOverride?: string) {
     return JSON.stringify(data.answeredFilters?.[room]) === JSON.stringify(roomFilters[room]);
   }, [activeTab, isSelf, data.answeredFilters, roomFilters]);
 
+  const targetId = data.targetUser?.id;
   return {
     username,
     isSelf,
@@ -411,13 +412,13 @@ export function useProfileController(usernameOverride?: string) {
       toSettings: useCallback(() => nav.push('/settings'), []),
       toMembership: useCallback(() => nav.push('/membership'), []),
       toFollowers: useCallback(() => {
-        if (!data.targetUser?.id) return;
-        nav.push('/social-modal', { userId: data.targetUser.id, type: 'followers' });
-      }, [data.targetUser?.id]),
+        if (!targetId) return;
+        nav.push('/social-modal', { userId: targetId, type: 'followers' });
+      }, [targetId]),
       toFollowing: useCallback(() => {
-        if (!data.targetUser?.id) return;
-        nav.push('/social-modal', { userId: data.targetUser.id, type: 'following' });
-      }, [data.targetUser?.id]),
+        if (!targetId) return;
+        nav.push('/social-modal', { userId: targetId, type: 'following' });
+      }, [targetId]),
       toCalendar: useCallback(() => { if (username) nav.push(`/user/${encodeURIComponent(username)}`, { tab: 'calendar' }); }, [username]),
       openSocialLink: useCallback((url: string) => {
         // Same rule the write-time validator uses (utils/linking.ts) — a link accepted

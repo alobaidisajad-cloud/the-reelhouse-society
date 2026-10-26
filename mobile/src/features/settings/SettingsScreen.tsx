@@ -139,8 +139,9 @@ export function SettingsScreen() {
   }, [otpModalVisible, resendIn]);
 
   /** Sends the cipher and reports the outcome IN the box. */
+  const email = user?.email;
   const sendOtp = useCallback(async (): Promise<boolean> => {
-    if (!user?.email) {
+    if (!email) {
       setOtpError('This account has no email address, so a code cannot be sent.');
       return false;
     }
@@ -149,10 +150,10 @@ export function SettingsScreen() {
     try {
       // shouldCreateUser: false — this is a re-auth challenge for an existing
       // account; the OTP endpoint must never be able to mint a new user.
-      const { error } = await supabase.auth.signInWithOtp({ email: user.email, options: { shouldCreateUser: false } });
+      const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
       if (error) throw error;
       if (isMountedRef.current) setResendIn(OTP_RESEND_SECONDS);
-      reelToast.success(`Security code sent to ${user.email}`);
+      reelToast.success(`Security code sent to ${email}`);
       return true;
     } catch (e: unknown) {
       // The box stays open, with the reason and a way to send again.
@@ -166,7 +167,7 @@ export function SettingsScreen() {
     } finally {
       if (isMountedRef.current) setOtpSending(false);
     }
-  }, [user?.email]);
+  }, [email, setOtpError]);
 
   const requestOtpAuth = useCallback(async (action: 'deleteAccount' | 'toggleBiometric') => {
     setOtpAction(action);
@@ -175,7 +176,7 @@ export function SettingsScreen() {
     setResendIn(0);
     setOtpModalVisible(true);
     await sendOtp();
-  }, [sendOtp]);
+  }, [sendOtp, setOtpCode, setOtpError, setOtpModalVisible]);
 
   /** The one erasure, whichever check (the phone's lock or the emailed code) let the member through. */
   const completeAccountDeletion = useCallback(async (): Promise<void> => {

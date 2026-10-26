@@ -390,9 +390,10 @@ function ComposeDossierScreen() {
     if (hadLocal.current === null) {
         hadLocal.current = readDraft(user?.id, edit ? 'edit' : 'dossier', edit ?? '') !== null;
     }
+    const memberId = user?.id;
     const reconcile = useCallback(async () => {
-        if (!user?.id || settled.current || asking.current) return;
-        const remote = await pullDraft<DossierDraft>(user.id, edit ? 'edit' : 'dossier', edit ?? '');
+        if (!memberId || settled.current || asking.current) return;
+        const remote = await pullDraft<DossierDraft>(memberId, edit ? 'edit' : 'dossier', edit ?? '');
         if (!isMounted.current || settled.current || asking.current) return;
         if (remote === 'unreachable') { late.current = true; return; }
         const t = titleRef.current, c = contentRef.current;
@@ -404,13 +405,13 @@ function ComposeDossierScreen() {
             setRestored(remote.savedAt);
             settled.current = true;
         } else if (!hadLocal.current || late.current
-            || whichCopy(readDraft(user.id, edit ? 'edit' : 'dossier', edit ?? '')?.savedAt, remote.savedAt) === 'ask') {
+            || whichCopy(readDraft(memberId, edit ? 'edit' : 'dossier', edit ?? '')?.savedAt, remote.savedAt) === 'ask') {
             asking.current = true;
             setElsewhere(remote);
         } else {
             settled.current = true;
         }
-    }, [user?.id, edit, applyDraft]);
+    }, [memberId, edit, applyDraft]);
     /** The member's answer to the question settles it, either way. */
     const answer = useCallback((take: boolean) => {
         if (take && elsewhere) { applyDraft(elsewhere.data); setRestored(elsewhere.savedAt); }

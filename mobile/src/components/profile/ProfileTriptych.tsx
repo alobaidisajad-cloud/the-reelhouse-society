@@ -184,7 +184,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
     const isAuteurPlus = isAuteurPlusTier(userRole);
 
     // Positional — a cleared mount stays a hole. See ./favourites.ts.
-    const mounts = useMemo(() => readMounts(user?.preferences?.favorites), [user?.preferences?.favorites]);
+    const favorites = user?.preferences?.favorites;
+    const mounts = useMemo(() => readMounts(favorites), [favorites]);
     const edge = useBottomEdge();
     const sheetFoot = useSheetBottom();
 
@@ -228,7 +229,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
     const handleSearchQueryChange = useCallback((text: string) => {
         setSearchQuery(text);
-    }, []);
+    }, [setSearchQuery]);
 
 
     /**
@@ -270,7 +271,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         };
         setSheet(null);
         await commit(next);
-    }, [sheet, mounts, commit]);
+    }, [sheet, mounts, commit, setSheet]);
 
     const handleRemove = useCallback(async (index: number) => {
         TactileEngine.rigid();
@@ -278,7 +279,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         next[index] = null;
         setSheet(null);
         await commit(next);
-    }, [mounts, commit]);
+    }, [mounts, commit, setSheet]);
 
     /** A wing changes places with the centre. Nothing else moves. */
     const handleMoveToCentre = useCallback(async (index: number) => {
@@ -289,7 +290,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         next[index] = mounts[CENTRE_MOUNT];
         setSheet(null);
         await commit(next);
-    }, [mounts, commit]);
+    }, [mounts, commit, setSheet]);
 
     const openMount = useCallback((index: number, film: FavouriteFilm | null) => {
         if (!isOwnProfile) {
@@ -300,7 +301,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         setSearchQuery('');
         // An empty mount has nothing to manage — go straight to the search.
         setSheet({ index, mode: film ? 'plate' : 'search' });
-    }, [isOwnProfile]);
+    }, [isOwnProfile, setSearchQuery, setSheet]);
 
     const hasAnything = mounts.some(Boolean);
     if (!hasAnything && !isOwnProfile) {

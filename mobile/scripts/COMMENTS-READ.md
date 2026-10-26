@@ -120,7 +120,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(tabs)/reels.tsx | 2026-10-23 | edited: the page's wash kept as a texture while the Reel is in front; following nobody only of a list read: an unread follow list spools, a failed one says so and reads it again (both reels); the screen says its read failed; ends above the tab bar (useTabContentBottom) |
 | app/+not-found.tsx | 2026-10-15 | the page in a CentredRoom: between the edges, and scrolled when taller |
 | app/auth-callback.tsx | 2026-10-26 | edited: the mount effect placed after handleCallback, the function it calls; edited: a spent link raised in Supabase's own words, so the member reads the house's sentence |
-| app/dispatch/[id].tsx | 2026-10-24 | edited: the share card is exported at SHARE_CARD_WIDTH |
+| app/dispatch/[id].tsx | 2026-10-26 | edited: the film's id and the member's read before the callbacks that use them (the draft's key named as the member's id); the share card is exported at SHARE_CARD_WIDTH |
 | app/dispatch/archive.tsx | 2026-10-15 | foot from useContentBottom |
 | app/dispatch/compose.tsx | 2026-10-15 | header and door from useModalTop; feet from navMetrics; the essay's footer never on the edge |
 | app/dispatch/room/[username].tsx | 2026-10-15 | foot from useContentBottom, scrollbar from useBottomEdge |
@@ -261,7 +261,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/supabase/functions/tmdb-proxy/index.ts | 2026-09-29 | history reduced to the rule |
 | e2e/supabase/functions/tmdb-proxy/normalize.mjs | 2026-09-29 | true as written |
 | e2e/tmdb/record.mjs | 2026-09-29 | true as written |
-| eslint.config.js | 2026-10-26 | edited: the React Compiler's immutability rule on (every shared value written by set), the rest off until their places are right; 3 findings; the crash and logo stories reduced to the rule each enforces |
+| eslint.config.js | 2026-10-26 | edited: the React Compiler's preserve-manual-memoization rule on (each memo's inputs read before it); its immutability rule on (every shared value written by set), the rest off until their places are right; 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
 | jest.setup.ts | 2026-10-26 | edited: the shared value's mock has get and set as Reanimated's (set takes a value or an updater); edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |

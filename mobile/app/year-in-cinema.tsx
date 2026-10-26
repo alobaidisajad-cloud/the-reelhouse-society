@@ -72,12 +72,13 @@ export default function YearInCinemaScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const reqId = useRef(0);
 
+  const memberId = user?.id;
   const load = useCallback(async () => {
-    if (!user?.id) { setPhase('error'); return; }
+    if (!memberId) { setPhase('error'); return; }
     const myReq = ++reqId.current;
     setPhase('loading');
     try {
-      const logs = await fetchYearLogs(user.id, currentYear);
+      const logs = await fetchYearLogs(memberId, currentYear);
       if (myReq !== reqId.current) return; // a newer load supersedes this one
       setStats(computeYearStats(logs, currentYear));
       setPhase('ready');
@@ -85,7 +86,7 @@ export default function YearInCinemaScreen() {
       if (myReq !== reqId.current) return;
       setPhase('error');
     }
-  }, [user?.id, currentYear]);
+  }, [memberId, currentYear]);
 
   useEffect(() => { load(); }, [load]);
 

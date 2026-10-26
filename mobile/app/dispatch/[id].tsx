@@ -206,9 +206,10 @@ export default function FilingReader() {
     if (username) nav.push(roomOf(username));
   }, []);
 
+  const subjectId = live?.subjectId;
   const openFilm = useCallback(() => {
-    if (live?.subjectId) nav.push(`/film/${live.subjectId}`);
-  }, [live?.subjectId]);
+    if (subjectId) nav.push(`/film/${subjectId}`);
+  }, [subjectId]);
 
   /**
    * ELSEWHERE, the world (the sheet offers the house's LOUNGE first). An essay
@@ -250,19 +251,19 @@ export default function FilingReader() {
     }
   }, [live]);
 
+  const memberId = me?.id;
   const fileCritique = useCallback(async () => {
     if (!live || sending) return;
     setSending(true);
     try {
       const res = await useDispatch.getState().addCritique(live.id, draft);
       setDraft('');
-      clearDraft(me?.id, 'critique', live.id); // once the house or the queue has it
+      clearDraft(memberId, 'critique', live.id); // once the house or the queue has it
       setComposing(false);
       // Queued without a connection: said, as a filing says it — it was drawn as
       // though it had gone.
       if (res?.offline) reelToast.success('Filed. It goes out when the wire is back.');
       // Filed, where members may certify or answer it: the moment to ask to send word.
-      const memberId = me?.id;
       if (memberId) void offerWord('critique', memberId);
     } catch {
       // The store rolls the row back and keeps the text for another try.
@@ -270,9 +271,9 @@ export default function FilingReader() {
     } finally {
       setSending(false);
     }
-    // `me?.id` is the draft's KEY: without it, after a change of member, the
+    // The member's id is the draft's KEY: without it, after a change of member, the
     // wrong member's draft would be the one cleared.
-  }, [live, draft, sending, me?.id]);
+  }, [live, draft, sending, memberId]);
 
   // Never a ballot (a changed question makes the votes answer something else), nor
   // a withheld or ended filing, which the database refuses too (20260905_02).
