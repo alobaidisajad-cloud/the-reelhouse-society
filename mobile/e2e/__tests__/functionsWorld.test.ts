@@ -216,7 +216,8 @@ describe("the House's emails (P0.80)", () => {
     expect(letter).toContain('{{ .Token }}');
     expect(letter).not.toMatch(/ConfirmationURL|TokenHash|RedirectTo/);
     const settings = readFileSync(join(__dirname, '..', '..', 'src', 'features', 'settings', 'SettingsScreen.tsx'), 'utf8');
-    expect(settings).toContain('supabase.auth.signInWithOtp({ email: user.email, options: { shouldCreateUser: false } })');
+    expect(settings).toContain('const email = user?.email;');
+    expect(settings).toContain('supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })');
     expect(settings).toContain("supabase.auth.verifyOtp({ email: user.email, token: otpCode, type: 'email' })");
   });
 
