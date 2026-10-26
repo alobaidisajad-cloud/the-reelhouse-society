@@ -75,10 +75,9 @@ export default function YearInCinemaScreen() {
   const memberId = user?.id;
   // No member, no year to read.
   const phase = memberId ? phaseRead : 'error';
-  const read = useCallback(() => {
-    if (!memberId) return;
+  const read = useCallback((member: string) => {
     const myReq = ++reqId.current;
-    fetchYearLogs(memberId, currentYear).then((logs) => {
+    fetchYearLogs(member, currentYear).then((logs) => {
       if (myReq !== reqId.current) return; // a newer load supersedes this one
       setStats(computeYearStats(logs, currentYear));
       setPhase('ready');
@@ -86,10 +85,13 @@ export default function YearInCinemaScreen() {
       if (myReq !== reqId.current) return;
       setPhase('error');
     });
-  }, [memberId, currentYear]);
+  }, [currentYear]);
 
-  useEffect(() => { read(); }, [read]);
-  const load = useCallback(() => { setPhase('loading'); read(); }, [read]);
+  useEffect(() => { if (memberId) read(memberId); }, [memberId, read]);
+  const load = useCallback(() => {
+    setPhase('loading');
+    if (memberId) read(memberId);
+  }, [memberId, read]);
 
   // The story adapts to the data — no hollow slides for stats you don't have.
   const slides = useMemo<SlideType[]>(() => {

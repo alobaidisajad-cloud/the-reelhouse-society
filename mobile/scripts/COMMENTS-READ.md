@@ -148,7 +148,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
 | app/stacks/[id].tsx | 2026-10-23 | edited: certifiedKnown from the stack's read; drawn from the phone, the heart is uninked, its count unknown, and a press asks again; seen ticks from the ledger whole |
 | app/user/[username].tsx | 2026-10-23 | edited: sealed only when the follow list says they do not follow; while it is read, the rooms are retrieved and the follow button is hollow, READING or ASK AGAIN |
-| app/year-in-cinema.tsx | 2026-10-26 | edited: no member is said as the error, derived; the year read shown in its then; TRY AGAIN shows loading, then reads; edited: a plain paging ScrollView for the six slides, the note saying why not a list |
+| app/year-in-cinema.tsx | 2026-10-26 | edited: the year read is handed its member; the effect and TRY AGAIN ask only with one, no member said as the error; edited: no member is said as the error, derived; the year read shown in its then; TRY AGAIN shows loading, then reads; edited: a plain paging ScrollView for the six slides, the note saying why not a list |
 | ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
