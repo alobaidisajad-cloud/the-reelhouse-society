@@ -889,7 +889,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/theWelcomeIsNotLostInTheBreath.test.tsx | 2026-10-26 | edited: the probe takes its hook in an effect, never during render; Written 2026-10-02 (launch audit): the welcome survives the user being replaced inside its 600ms breath. |
 | src/hooks/__tests__/useAuthFlow.validation.test.ts | — |  |
 | src/hooks/__tests__/useAuthThrottle.pbt.test.ts | 2026-10-01 | the countdown keeps the rule |
-| src/hooks/__tests__/useBanCheck.test.ts | — |  |
+| src/hooks/__tests__/useBanCheck.test.ts | 2026-10-26 | edited: the hook rendered, as every hook is called;  |
 | src/hooks/__tests__/useClearance.test.ts | 2026-10-16 | new |
 | src/hooks/__tests__/useEditProfile.logic.test.ts | — |  |
 | src/hooks/__tests__/useFeeds.test.ts | 2026-10-01 | rewritten: drives the real hooks |
@@ -1150,7 +1150,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/theGroundLadder.test.ts | 2026-10-24 | edited: the drawn eye's file left the art list with the file |
 | src/theme/__tests__/theLightIsReadable.test.ts | 2026-10-08 | written: every light gradient read back through React Native's own parser |
 | src/theme/__tests__/theRoomIsLit.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-10-26 | edited: the two scale hooks rendered, not called bare; edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/theTypeFloor.test.ts | 2026-10-22 | edited: no settled exemption; the profile's marks named; a size written as an attribute read; its floor test titled literally, so a proof can name it |
 | src/theme/__tests__/theVeilMeetsTheLight.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |

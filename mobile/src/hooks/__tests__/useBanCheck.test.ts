@@ -6,10 +6,11 @@
  * copy, so it would have passed even if the hook were deleted (and the hook
  * duly measured 0% coverage). This calls the actual hook.
  *
- * No renderHook: useBanCheck holds no state and runs no effects — it reads the
- * store and returns two values — so with the store mocked it is a plain call.
- * (renderHook is async in this environment; see useAuthThrottle.pbt.test.ts.)
+ * Rendered, as every hook is called: a hook outside a component holds no cache to
+ * read, and the compiler's own hooks keep one. (renderHook is async in this
+ * environment; see useAuthThrottle.pbt.test.ts.)
  */
+import { renderHook } from '@testing-library/react-native';
 import { useBanCheck } from '../useBanCheck';
 import { useAuthStore } from '../../stores/auth';
 import reelToast from '../../utils/reelToast';
@@ -25,23 +26,25 @@ jest.mock('../../utils/reelToast', () => {
 
 const mockStore = useAuthStore as unknown as jest.Mock;
 const asUser = (user: unknown) => mockStore.mockReturnValue({ user });
+/** The hook as a screen holds it. */
+const banCheck = async () => (await renderHook(() => useBanCheck())).result.current;
 
 beforeEach(() => jest.clearAllMocks());
 
 describe('useBanCheck — isBanned', () => {
-  it('is true only for an explicitly banned member', () => {
+  it('is true only for an explicitly banned member', async () => {
     asUser({ id: 'u1', is_banned: true });
-    expect(useBanCheck().isBanned).toBe(true);
+    expect((await banCheck()).isBanned).toBe(true);
   });
 
-  it('is false for a normal member', () => {
+  it('is false for a normal member', async () => {
     asUser({ id: 'u1', is_banned: false });
-    expect(useBanCheck().isBanned).toBe(false);
+    expect((await banCheck()).isBanned).toBe(false);
   });
 
-  it('is false when signed out, and does not throw', () => {
+  it('is false when signed out, and does not throw', async () => {
     asUser(null);
-    expect(useBanCheck().isBanned).toBe(false);
+    expect((await banCheck()).isBanned).toBe(false);
   });
 
   // Strict === true: a truthy string or a missing column must not silence
@@ -52,39 +55,39 @@ describe('useBanCheck — isBanned', () => {
     ['the string "true"', { id: 'u1', is_banned: 'true' }],
     ['the number 1', { id: 'u1', is_banned: 1 }],
     ['an explicit null', { id: 'u1', is_banned: null }],
-  ])('never guesses from %s', (_label, user) => {
+  ])('never guesses from %s', async (_label, user) => {
     asUser(user);
-    expect(useBanCheck().isBanned).toBe(false);
+    expect((await banCheck()).isBanned).toBe(false);
   });
 });
 
 describe('useBanCheck — checkBan (the guard callers use)', () => {
-  it('returns true so the caller aborts, and tells the member why', () => {
+  it('returns true so the caller aborts, and tells the member why', async () => {
     asUser({ id: 'u1', is_banned: true });
-    expect(useBanCheck().checkBan()).toBe(true);
+    expect((await banCheck()).checkBan()).toBe(true);
     expect((reelToast as any).error).toHaveBeenCalledWith('Your account has been silenced by The Society.');
   });
 
-  it('the message is an ERROR, not a bare info toast', () => {
+  it('the message is an ERROR, not a bare info toast', async () => {
     // A bare reelToast(...) routes to 'info', and emitToast fires
     // TactileEngine.success() for anything that is not 'error' — so being told
     // you are silenced would arrive with a congratulatory buzz.
     asUser({ id: 'u1', is_banned: true });
-    useBanCheck().checkBan();
+    (await banCheck()).checkBan();
     expect((reelToast as any).error).toHaveBeenCalledTimes(1);
     expect(reelToast).not.toHaveBeenCalled();
   });
 
-  it('returns false and stays silent for a normal member', () => {
+  it('returns false and stays silent for a normal member', async () => {
     asUser({ id: 'u1', is_banned: false });
-    expect(useBanCheck().checkBan()).toBe(false);
+    expect((await banCheck()).checkBan()).toBe(false);
     expect((reelToast as any).error).not.toHaveBeenCalled();
     expect(reelToast).not.toHaveBeenCalled();
   });
 
-  it('does not block a signed-out visitor', () => {
+  it('does not block a signed-out visitor', async () => {
     asUser(null);
-    expect(useBanCheck().checkBan()).toBe(false);
+    expect((await banCheck()).checkBan()).toBe(false);
     expect((reelToast as any).error).not.toHaveBeenCalled();
   });
 });
@@ -92,14 +95,14 @@ describe('useBanCheck — checkBan (the guard callers use)', () => {
 describe('useBanCheck — a suspension', () => {
   // It read a ban and never a suspension: a suspended member wrote, and was
   // refused by the server into a "could not save" that no retry could answer.
-  it('stops a suspended member and says until when', () => {
+  it('stops a suspended member and says until when', async () => {
     asUser({ id: 'u1', is_banned: false, suspended_until: new Date(Date.now() + 3_600_000).toISOString() });
-    expect(useBanCheck().checkBan()).toBe(true);
+    expect((await banCheck()).checkBan()).toBe(true);
     expect((reelToast as any).error).toHaveBeenCalledWith(expect.stringMatching(/^Your account is suspended until .+, \d{2}:\d{2} (AM|PM)\.$/));
   });
 
-  it('a suspension that has ended stops nothing', () => {
+  it('a suspension that has ended stops nothing', async () => {
     asUser({ id: 'u1', is_banned: false, suspended_until: new Date(Date.now() - 3_600_000).toISOString() });
-    expect(useBanCheck().checkBan()).toBe(false);
+    expect((await banCheck()).checkBan()).toBe(false);
   });
 });

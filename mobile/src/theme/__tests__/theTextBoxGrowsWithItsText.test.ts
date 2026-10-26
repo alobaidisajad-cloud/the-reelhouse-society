@@ -25,6 +25,7 @@
  *      Whether a style is a field is read from the code (a `<TextInput>` that
  *      wears it), never from its name.
  */
+import { renderHook } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { stripComments } from '@/test-utils/readCode';
@@ -81,29 +82,30 @@ describe('the text-size setting is read in one place', () => {
   /** What each hook returns, on each platform, at each setting that matters. */
   describe.each(['ios', 'android'] as const)('on %s', (os) => {
     const RN = require('react-native');
-    const at = (fontScale: number, fn: (c?: number) => number, ceiling?: number) => {
+    // Rendered, as a hook is called: one outside a component holds no cache to read.
+    const at = async (fontScale: number, fn: (c?: number) => number, ceiling?: number) => {
       const was = RN.Platform.OS;
       const dims = jest.spyOn(RN, 'useWindowDimensions').mockReturnValue({ width: 390, height: 844, scale: 3, fontScale });
       RN.Platform.OS = os;
-      try { return fn(ceiling); } finally { RN.Platform.OS = was; dims.mockRestore(); }
+      try { return (await renderHook(() => fn(ceiling))).result.current; } finally { RN.Platform.OS = was; dims.mockRestore(); }
     };
     const { useTextScale, useLineScale } = require('@/src/hooks/useTextScale');
 
-    it('both are 1 at the default size', () => {
-      expect(at(1, useTextScale)).toBe(1);
-      expect(at(1, useLineScale)).toBe(1);
+    it('both are 1 at the default size', async () => {
+      expect(await at(1, useTextScale)).toBe(1);
+      expect(await at(1, useLineScale)).toBe(1);
     });
 
-    it('a font-height line stops at the app\'s ceiling', () => {
-      expect(at(2, useTextScale)).toBe(1.35);
-      expect(at(2, useTextScale, 1.2)).toBe(1.2);
-      expect(at(1.1, useTextScale)).toBe(1.1);
+    it('a font-height line stops at the app\'s ceiling', async () => {
+      expect(await at(2, useTextScale)).toBe(1.35);
+      expect(await at(2, useTextScale, 1.2)).toBe(1.2);
+      expect(await at(1.1, useTextScale)).toBe(1.1);
     });
 
-    it(os === 'android' ? 'a SET line keeps growing past the ceiling' : 'a SET line stops at the ceiling too', () => {
-      expect(at(2, useLineScale)).toBe(os === 'android' ? 2 : 1.35);
-      expect(at(2, useLineScale, 1.2)).toBe(os === 'android' ? 2 : 1.2);
-      expect(at(1.1, useLineScale)).toBe(1.1);
+    it(os === 'android' ? 'a SET line keeps growing past the ceiling' : 'a SET line stops at the ceiling too', async () => {
+      expect(await at(2, useLineScale)).toBe(os === 'android' ? 2 : 1.35);
+      expect(await at(2, useLineScale, 1.2)).toBe(os === 'android' ? 2 : 1.2);
+      expect(await at(1.1, useLineScale)).toBe(1.1);
     });
   });
 });
