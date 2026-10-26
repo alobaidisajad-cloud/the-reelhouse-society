@@ -265,20 +265,28 @@ export function useLogFlow() {
     const [editAsked, setEditAsked] = useState(0);
     const memberId = user?.id;
     const holdsEdit = !!heldEdit;
-    useEffect(() => {
+    // Each ask starts unread, as it renders: the last record's answer is not this one's.
+    const editAskKey = `${editLogId ?? ''}:${holdsEdit}:${memberId ?? ''}:${editAsked}`;
+    const [editAskFor, setEditAskFor] = useState(editAskKey);
+    if (editAskFor !== editAskKey) {
+        setEditAskFor(editAskKey);
         setReadEdit(null);
         setEditRead('reading');
+    }
+    useEffect(() => {
         if (!editLogId || holdsEdit || !memberId) return;
         let live = true;
-        (async () => {
-            // Theirs alone: a record of another member's is not one to amend.
-            const { data, error } = await supabase.from('logs').select(LOG_SELECT_COLUMNS)
-                .eq('id', editLogId).eq('user_id', memberId).maybeSingle();
-            if (!live) return;
-            if (error) { setEditRead('failed'); return; }
-            if (!data) { setEditRead('withdrawn'); return; }
-            setReadEdit(mapLogRow(data as unknown as LogRow));
-        })().catch(() => { if (live) setEditRead('failed'); });
+        // Theirs alone: a record of another member's is not one to amend.
+        void Promise.resolve()
+            .then(() => supabase.from('logs').select(LOG_SELECT_COLUMNS)
+                .eq('id', editLogId).eq('user_id', memberId).maybeSingle())
+            .then(({ data, error }) => {
+                if (!live) return;
+                if (error) { setEditRead('failed'); return; }
+                if (!data) { setEditRead('withdrawn'); return; }
+                setReadEdit(mapLogRow(data as unknown as LogRow));
+            })
+            .catch(() => { if (live) setEditRead('failed'); });
         return () => { live = false; };
     }, [editLogId, holdsEdit, memberId, editAsked]);
     const rereadEdit = useCallback(() => setEditAsked((n) => n + 1), []);
@@ -286,20 +294,29 @@ export function useLogFlow() {
 
     // The form is filled ONCE per record. Filled again whenever the pages were
     // read, it threw away what the member had typed under a refresh.
-    const [filledFor, setFilledFor] = useState<string | null>(null);
     /** The record the form was filled from: what a seal or a delete acts on. */
-    const editedRef = useRef<DomainLog | null>(null);
+    const [edited, setEdited] = useState<DomainLog | null>(null);
+    const filledFor = edited?.id ?? null;
     const editReady = !editLogId || filledFor === editLogId;
 
-    // ── A new record, or another one: the form starts clean ──
-    useEffect(() => {
-        // Reset all form state first to prevent stale data flash
-        // when editLogId changes without unmounting (e.g. edit log A → edit log B)
-        setFilledFor(null);
-        editedRef.current = null;
+    // A film already logged opens as a rewatch. The default follows the film,
+    // and a status the member chose stays theirs.
+    const statusDefault = isRewatchMode ? 'rewatched' : 'watched';
+    const [defaultWas, setDefaultWas] = useState<'watched' | 'rewatched'>(statusDefault);
+    if (!editLogId && defaultWas !== statusDefault) {
+        setDefaultWas(statusDefault);
+        if (status === defaultWas) setStatus(statusDefault);
+    }
+
+    // ── A new record, or another one: the form starts clean, as it renders ──
+    // (edit log A → edit log B keeps the screen: no frame shows A's fields under B).
+    const [formFor, setFormFor] = useState(editLogId);
+    if (formFor !== editLogId) {
+        setFormFor(editLogId);
+        setEdited(null);
         setRating(0);
         setReview('');
-        setStatus('watched');
+        setStatus(statusDefault);
         setIsSpoiler(false);
         setAbandonedReason('');
         setDate(localCalendarDate());
@@ -313,15 +330,12 @@ export function useLogFlow() {
         setPullQuote('');
         setAutopsyOpen(false);
         setMoreOpen(false);
-    }, [editLogId]);
+    }
 
-    // ── Populate form from the record, once it is in hand ──
-    useEffect(() => {
-        if (!editLogId || filledFor === editLogId) return;
+    // ── Populate form from the record, once it is in hand (as it renders) ──
+    if (editLogId && filledFor !== editLogId && editLog && editLog.id === editLogId) {
         const log = editLog;
-        if (!log || log.id !== editLogId) return;
-        editedRef.current = log;
-        setFilledFor(editLogId);
+        setEdited(log);
         setStatus((log.status ?? 'watched') as 'watched' | 'rewatched' | 'abandoned');
         setRating(log.rating ?? 0);
         setReview(log.review ?? '');
@@ -347,11 +361,11 @@ export function useLogFlow() {
         setAutopsyOpen(Object.values(loadedAutopsy).some(v => typeof v === 'number'));
         // Never hide populated data: open the LOGISTICS drawer when the log
         // already carries a companion or physical media. A note opens it too,
-        // once the Vault answers — see the effect below.
+        // once the Vault answers — see below.
         setMoreOpen(!!(log.watchedWith || (log.physicalMedia && log.physicalMedia !== 'None')));
         setFilm({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year?.toString() });
         setStep(1);
-    }, [editLogId, editLog, filledFor]);
+    }
 
     // The note is the VIEWING's: read from the Vault by the viewing's id, not the log.
     const storeViewingId = editLog?.viewingId ?? null;
@@ -360,14 +374,20 @@ export function useLogFlow() {
     // the form would open EMPTY over a note that exists.
     const [fetchedViewingId, setFetchedViewingId] = useState<string | null>(null);
     const [viewingLookupFailed, setViewingLookupFailed] = useState(false);
-    useEffect(() => {
+    // Each lookup starts unasked, as it renders.
+    const lookupKey = `${editLogId ?? ''}:${storeViewingId ?? ''}`;
+    const [lookupFor, setLookupFor] = useState(lookupKey);
+    if (lookupFor !== lookupKey) {
+        setLookupFor(lookupKey);
         setFetchedViewingId(null);
         setViewingLookupFailed(false);
+    }
+    useEffect(() => {
         if (!editLogId || storeViewingId) return;
         let live = true;
-        (async () => {
-            try {
-                const { data, error } = await supabase.from('logs').select('viewing_id').eq('id', editLogId).maybeSingle();
+        void Promise.resolve()
+            .then(() => supabase.from('logs').select('viewing_id').eq('id', editLogId).maybeSingle())
+            .then(({ data, error }) => {
                 if (!live) return;
                 const found = (data as { viewing_id?: string } | null)?.viewing_id ?? null;
                 if (error || !found) { setViewingLookupFailed(true); return; }
@@ -380,10 +400,8 @@ export function useLogFlow() {
                     }
                     return { logs, _loggedIndex: idx };
                 });
-            } catch {
-                if (live) setViewingLookupFailed(true);
-            }
-        })();
+            })
+            .catch(() => { if (live) setViewingLookupFailed(true); });
         return () => { live = false; };
     }, [editLogId, storeViewingId]);
 
@@ -400,31 +418,34 @@ export function useLogFlow() {
         void loadVault(editLogId);
     }, [editLogId, loadVault]);
 
-    useEffect(() => {
-        // Both are needed: the Vault's answer, and the name of the viewing to
-        // read it by. Either missing, and the field stays shut.
-        if (!editLogId || !vaultLoaded || !editViewingId) return;
-        if (noteHydratedFor === editLogId) return;
+    // Both are needed: the Vault's answer, and the name of the viewing to
+    // read it by. Either missing, and the field stays shut. Taken in as it renders.
+    if (editLogId && vaultLoaded && editViewingId && noteHydratedFor !== editLogId) {
         setPrivateNotes(storedNote);
         setNoteHydratedFor(editLogId);
         setNoteTouched(false);
         if (storedNote) setMoreOpen(true);
-    }, [editLogId, vaultLoaded, editViewingId, storedNote, noteHydratedFor]);
+    }
 
     /**
      * The film a restored draft's note was written for. That note is the
      * member's own writing, waiting to be sent: untouched-and-unsent was right
      * for an empty field, and it silently dropped a restored note at the seal.
      */
-    const draftNoteFor = useRef<number | null>(null);
+    const [draftNoteFor, setDraftNoteFor] = useState<number | null>(null);
 
     // A new log, or a rewatch, begins with an empty note — and an empty note
     // that has not been touched is never sent, so nothing is cleared by it.
-    useEffect(() => {
-        if (editLogId) return;
-        setNoteHydratedFor(null);
-        setNoteTouched(draftNoteFor.current !== null && draftNoteFor.current === film?.id);
-    }, [editLogId, film?.id]);
+    // Once per film, as it renders.
+    const newNoteKey = `${editLogId ?? ''}:${film?.id ?? ''}`;
+    const [newNoteFor, setNewNoteFor] = useState<string | null>(null);
+    if (newNoteFor !== newNoteKey) {
+        setNewNoteFor(newNoteKey);
+        if (!editLogId) {
+            setNoteHydratedFor(null);
+            setNoteTouched(draftNoteFor !== null && draftNoteFor === film?.id);
+        }
+    }
 
     /**
      * Take the note back from inside the form — for a member whose rank has
@@ -444,8 +465,10 @@ export function useLogFlow() {
 
     // Restore this member's draft (it holds PRIVATE notes, so it is keyed by
     // member in `memberDrafts`, never shared by whoever holds the phone).
-    useEffect(() => {
-        if (editLogId) return;
+    // Taken up as the form renders, once per member: its first frame is the draft.
+    const [draftFor, setDraftFor] = useState<string | null>(null);
+    if (!editLogId && draftFor !== (user?.id ?? '')) {
+        setDraftFor(user?.id ?? '');
         adoptLegacyDrafts(user?.id);
         const held = readDraft<Record<string, unknown>>(user?.id, 'log');
         if (held) {
@@ -464,7 +487,7 @@ export function useLogFlow() {
                     if (parsed.review) setReview(parsed.review);
                     if (parsed.rating) setRating(parsed.rating);
                     if (parsed.privateNotes) {
-                        draftNoteFor.current = parsed.filmId;
+                        setDraftNoteFor(parsed.filmId);
                         setPrivateNotes(parsed.privateNotes);
                         setNoteTouched(true);
                     }
@@ -474,15 +497,14 @@ export function useLogFlow() {
                     if (parsed.review) setReview(parsed.review);
                     if (parsed.rating) setRating(parsed.rating);
                     if (parsed.privateNotes) {
-                        draftNoteFor.current = parsed.filmId;
+                        setDraftNoteFor(parsed.filmId);
                         setPrivateNotes(parsed.privateNotes);
                         setNoteTouched(true);
                     }
                 }
             } catch (err: unknown) { if (__DEV__) console.warn('[LogModal] draft restore failed:', err); }
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id]);
+    }
 
     // ── Draft auto-save ── on the film's fields, not the object (a new object
     // on every setFilm would restart the debounce).
@@ -551,7 +573,7 @@ export function useLogFlow() {
                 altPoster, editorialHeader, dropCap, pullQuote,
             });
             const isNewEntry = !(isEditing && editLogId);
-            if (isEditing && editLogId) { await updateLog(editLogId, logData, editedRef.current ?? undefined); }
+            if (isEditing && editLogId) { await updateLog(editLogId, logData, edited ?? undefined); }
             else { await addLog(logData); }
             clearDraft(user?.id, 'log');
             TactileEngine.success();
@@ -595,7 +617,7 @@ export function useLogFlow() {
     const handleDelete = async () => {
         if (!editLogId || !editReady) return;
         try {
-            await removeLog(editLogId, false, editedRef.current ?? undefined);
+            await removeLog(editLogId, false, edited ?? undefined);
             TactileEngine.warn();
             deferUntilIdle(() => {
                 nav.back();

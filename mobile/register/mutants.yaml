@@ -1294,8 +1294,8 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useScreenSeen.ts
-        find: "    const blurred = navigation.addListener('blur', () => setSeen(false));\n"
-        replace: "    const blurred = navigation.addListener('blur', () => setSeen(true));\n"
+        find: "    const blurred = navigation.addListener('blur', changed);\n"
+        replace: "    const blurred = () => {};\n"
     proof: { file: src/components/atmosphere/__tests__/theLightRestsOutOfSight.test.ts, test: "as a texture while its screen is in front, let go when it is behind, kept again on its return" }
 
   - id: shape-navigation-mock-from-scratch
@@ -1555,8 +1555,8 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useLogFlow.ts
-        find: "        if (!editLogId || filledFor === editLogId) return;\n"
-        replace: "        if (!editLogId) return;\n"
+        find: "    if (editLogId && filledFor !== editLogId && editLog && editLog.id === editLogId) {\n"
+        replace: "    if (editLogId && edited !== editLog && editLog && editLog.id === editLogId) {\n"
     proof: { file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "keeps what the member typed when the pages are read again under it" }
 
   - id: shape-edit-sealed-unread

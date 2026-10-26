@@ -866,6 +866,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aNewMemberStartsUnfiltered.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the rooms answered, as the hook hands them; written: every filter wiped for a new member |
 | src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx | 2026-10-01 | written: each read cancelled only by what makes it stale |
 | src/hooks/__tests__/aRestoredNoteIsSent.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a draft's restored private note is sealed with the record. |
+| src/hooks/__tests__/aRewatchIsFiledAsOne.test.tsx | 2026-10-26 | Written 2026-10-26: a logged film opens as a rewatch and stays one; a status the member chose stays theirs. |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/aScrollIsOneTransaction.test.tsx | 2026-10-15 | new |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -916,7 +917,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useFollowRequests.ts | 2026-10-26 | edited: shut, it answers for nothing: adjusted as it renders; edited: answeredFor: the door is reading while the search on screen is not the one it answered; failed + moreFailed + retry; the count never below 0; decline-all restores paging |
 | src/hooks/useInitiation.ts | 2026-10-02 | Read whole (launch audit). The breath was the effect's cleanup, so a user replaced inside it lost the welcome after the flag burned; a user without created_at was decided no for good. Both closed. |
 | src/hooks/useLater.ts | 2026-10-04 | written whole: a component's timer, gone with the component |
-| src/hooks/useLogFlow.ts | 2026-10-23 | edited: an edit reads a record the phone does not hold by its id, fills the form once per record, and hands that record to the seal and the delete; the seal refuses until it is in |
+| src/hooks/useLogFlow.ts | 2026-10-26 | edited: the record's read shown in its then; a new record, the record's fill, the note and the draft taken up as the form renders; a logged film defaults to rewatch, a chosen status stays; the record filled from is state; edited: an edit reads a record the phone does not hold by its id, fills the form once per record, and hands that record to the seal and the delete; the seal refuses until it is in |
 | src/hooks/useMemberRoom.ts | 2026-10-26 | edited: a new member or another try starts from nothing as it renders; the effect only reads; read whole in the Dispatch audit; comments checked true |
 | src/hooks/useMembershipPricing.ts | 2026-10-02 | read; sound |
 | src/hooks/useModalKeyboardPadding.ts | 2026-10-15 | edited: the eased height is its own hook, for a centred card's scroll |

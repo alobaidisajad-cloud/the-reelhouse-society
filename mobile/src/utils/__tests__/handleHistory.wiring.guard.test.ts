@@ -127,7 +127,7 @@ describe('useProfileController repairs the route', () => {
     // A hanging "RETRIEVING DOSSIER" with no way out would be a worse failure than the
     // bug. Two independent releases: the profile arriving, and a hard timeout.
     expect(controller).toMatch(/setTimeout\(\(\) => setRepairingHandle\(false\), \d+\)/);
-    expect(controller).toMatch(/if \(data\.targetUser\) setRepairingHandle\(false\)/);
+    expect(controller).toMatch(/if \(repairingHandle && data\.targetUser\) setRepairingHandle\(false\)/);
   });
 
   it('uses the route-bound navigation object, NOT router.setParams', () => {
