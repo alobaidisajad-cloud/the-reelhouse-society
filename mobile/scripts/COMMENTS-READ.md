@@ -1478,7 +1478,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/profileRead.ts | 2026-10-23 | whether the member's profile has been read: its own columns on the user, never the auth user alone |
 | src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; new: the room and roster asked once while the session settles, again for another member |
 | src/features/settings/__tests__/everyOtherDeviceSignsOut.test.tsx | 2026-10-26 | Written 2026-10-27: Settings signs every other device out, asked first, the answer said either way |
-| src/lib/__tests__/aSignOutWithNoNetworkStillSignsOut.test.ts | 2026-10-26 | Written 2026-10-27: the real client signs out over a dead network and the session is gone; the owed half settles once, apart from this phone's session (P4.1) |
+| src/lib/__tests__/aSignOutWithNoNetworkStillSignsOut.test.ts | 2026-10-26 | edited: the unmock below the imports; the owed half named as settled apart; Written 2026-10-27: the real client signs out over a dead network and the session is gone; the owed half settles once, apart from this phone's session (P4.1) |
 | src/lib/__tests__/everySignOutEndsTheSessionHere.test.ts | 2026-10-26 | Written 2026-10-27: no file but endSession calls signOut |
 | src/lib/endSession.ts | 2026-10-26 | new: every sign-out ends the session on the phone, the server reached or not; the server's half owed and settled in three plain requests |
 | src/utils/__tests__/everyDrawingIsMeasured.guard.test.ts | 2026-10-24 | written: every drawing of the app lands where CI measures it |

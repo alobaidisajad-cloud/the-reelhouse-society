@@ -5,13 +5,14 @@
  * session, and the app's next launch signed the member back in. Here the real client signs out
  * over a network that is down: the session is gone from the phone all the same, and what the
  * server still holds is owed. When the network returns, the owed sign-out is sent once: the old
- * session refreshed by a client of its own, its push token's row deleted, the session ended.
+ * session refreshed apart from this phone's, its push token's row deleted, the session ended.
  */
-jest.unmock('@supabase/supabase-js');
-
 import { supabase } from '@/src/lib/supabase';
 import { endSessionHere, settleOwedSignOut, __owedForTests } from '@/src/lib/endSession';
 import { PUSH_TOKEN_KEY } from '@/src/lib/pushNotifications';
+
+// The real client: its own sign-out, over the network this test plays.
+jest.unmock('@supabase/supabase-js');
 
 const mockDisk = new Map<string, string>();
 jest.mock('@/src/stores/mmkv-storage', () => ({
