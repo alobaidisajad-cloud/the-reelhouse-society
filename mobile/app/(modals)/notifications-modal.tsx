@@ -22,6 +22,7 @@ import FollowRequestsPanel from '@/src/components/profile/FollowRequestsPanel';
 import { refreshFollowRequestCount } from '@/src/hooks/useFollowRequests';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useTimeAgo } from '@/src/hooks/useClock';
+import { useOfflineAware } from '@/src/hooks/useOfflineAware';
 import { Award, Bell, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
@@ -186,6 +187,9 @@ export default function NotificationsModal() {
   const handleTop = useModalTop();
   const end = useContentBottom();
   const { notifications, loading, fetchFailed, markAllRead, fetchNotifications, loadMoreNotifications } = useNotificationStore();
+  // Online, but the notices' live channel is down: said quietly at the head of the board.
+  const noticesLive = useNotificationStore((st) => st.noticesLive);
+  const { isOffline } = useOfflineAware();
   const allRead = useNotificationStore(s => s._unreadCount) === 0;
   const moreFailed = useNotificationStore(s => s.moreFailed);
 
@@ -311,6 +315,10 @@ export default function NotificationsModal() {
             <View style={s.loadingWrap}>
               <ActivityIndicator size="small" color={colors.sepia} />
               <Text style={s.loadingText}>GATHERING NOTICES…</Text>
+            </View>
+          ) : !noticesLive && !isOffline ? (
+            <View style={s.loadingWrap}>
+              <Text style={s.loadingText}>NOT LIVE — NOTICES ARE READ AGAIN EVERY FEW SECONDS</Text>
             </View>
           ) : null
         }

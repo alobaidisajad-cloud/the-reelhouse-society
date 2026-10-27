@@ -159,7 +159,9 @@ out.phone = [
   await control('POST', '/phone', { set: 'force_stopped', to: true }),
   await control('POST', '/phone', { set: 'keyboard', to: true }),
   await control('POST', '/phone', { set: 'keyboard', to: false }),
+  await control('POST', '/phone', { set: 'clock_ahead', to: 1560 }),
   await control('POST', '/phone', { set: 'keyboard', to: 'on' }),
+  await control('POST', '/phone', { set: 'clock_ahead', to: 0 }),
   await control('POST', '/phone', { set: 'font_scale', to: 9 }),
   await control('POST', '/phone', { set: 'density', to: '560; reboot' }),
   await control('POST', '/phone', { set: 'airplane', to: true }),
@@ -303,11 +305,13 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     { status: 200, done: { set: 'force_stopped', to: true } },
     { status: 200, done: { set: 'keyboard', to: true } },
     { status: 200, done: { set: 'keyboard', to: false } },
+    { status: 200, done: { set: 'clock_ahead', to: 1560 } },
     { status: 400, refused: 'keyboard to true or false' },
+    { status: 400, refused: 'clock_ahead to whole minutes from 1 to 2880' },
     { status: 400, refused: 'font_scale to a number from 0.85 to 2' },
     { status: 400, refused: 'density to a whole number from 240 to 640, or "reset"' },
-    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, keyboard, and to' },
-    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, keyboard, and to' },
+    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, keyboard, clock_ahead, and to' },
+    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, keyboard, clock_ahead, and to' },
     { status: 500, failed: 'Android never listed the keyboard once its package was enabled: adb shell ime list -a -s said "com.android.other/.Ime"' },
   ]);
   expect(out.ran.slice(out.ranParts.length, out.ranPhone)).toEqual([
@@ -327,12 +331,23 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     'adb shell pm disable com.google.android.inputmethod.latin',
     'adb shell settings delete secure enabled_input_methods',
     'adb shell settings delete secure default_input_method',
+    // The clock: as root, its network time off, then set in UTC, 26 hours on.
+    'adb root',
+    'adb wait-for-device',
+    'adb shell settings put global auto_time 0',
+    expect.stringMatching(/^adb shell date -u \d{12}\.\d{2}$/),
     // Never listed: asked as often as the proxy waits (three times here), and nothing set.
     'adb shell pm enable com.google.android.inputmethod.latin',
     'adb shell ime list -a -s',
     'adb shell ime list -a -s',
     'adb shell ime list -a -s',
   ]);
+});
+
+it('writes an instant as toybox date sets one, in UTC', () => {
+  const code = `const m = await import(${JSON.stringify(SCRIPT)}); console.log(JSON.stringify([m.phoneDate(Date.UTC(2026, 9, 28, 14, 5, 9)), m.phoneDate(Date.UTC(2027, 0, 1, 0, 0, 0))]));`;
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', code], { encoding: 'utf8' });
+  expect(JSON.parse(r.stdout)).toEqual(['102814052026.09', '010100002027.00']);
 });
 
 it('gives the code an authenticator shows for a key, by RFC 6238\'s own vectors, and nothing for what is no key', () => {

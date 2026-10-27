@@ -123,7 +123,7 @@ export const GBOARD = 'com.google.android.inputmethod.latin/com.android.inputmet
  * What a flow may change on the phone mid-flow (.maestro/lifecycle, and the route walk's keyboard
  * moment; WORKLIST P0.86): the text size and the display density live, Android's "don't keep
  * activities", the system killing the app in the background, the app stopped dead in the foreground
- * (mid-write), and the keyboard on or off. Each a fixed command of a checked value; run-flows.sh puts
+ * (mid-write), the keyboard on or off, and the phone's clock moved on (its network time off; P4.7). Each a fixed command of a checked value; run-flows.sh puts
  * the settings back before every lifecycle flow.
  */
 export const PHONE = {
@@ -149,7 +149,19 @@ export const PHONE = {
         ['adb', ['shell', 'ime', 'enable', GBOARD]], ['adb', ['shell', 'ime', 'set', GBOARD]],
         ['adb', ['shell', 'settings', 'get', 'secure', 'default_input_method'], { until: (said) => said.trim() === GBOARD, what: 'made it the phone\'s keyboard' }]]
       : [['adb', ['shell', 'pm', 'disable', GBOARD.split('/')[0]]], ['adb', ['shell', 'settings', 'delete', 'secure', 'enabled_input_methods']], ['adb', ['shell', 'settings', 'delete', 'secure', 'default_input_method']]]) },
+  // Whole minutes ahead of now, set as root in UTC (toybox date's MMDDhhmmCCYY.ss); the network time
+  // off first, or the phone would take it back. run-flows.sh puts both back before every lifecycle flow.
+  clock_ahead: { says: 'whole minutes from 1 to 2880', valid: (v) => Number.isInteger(v) && v >= 1 && v <= 2880,
+    commands: (v) => [['adb', ['root']], ['adb', ['wait-for-device']],
+      ['adb', ['shell', 'settings', 'put', 'global', 'auto_time', '0']], ['adb', ['shell', 'date', '-u', phoneDate(Date.now() + v * 60_000)]]] },
 };
+
+/** An instant as toybox `date -u` sets one: MMDDhhmmCCYY.ss, in UTC. */
+export function phoneDate(ms) {
+  const d = new Date(ms);
+  const two = (n) => String(n).padStart(2, '0');
+  return `${two(d.getUTCMonth() + 1)}${two(d.getUTCDate())}${two(d.getUTCHours())}${two(d.getUTCMinutes())}${d.getUTCFullYear()}.${two(d.getUTCSeconds())}`;
+}
 commandsFor.phone = ({ set, to }) => PHONE[set].commands(to);
 const refusalOfPhone = (b) => {
   const p = PHONE[b?.set];

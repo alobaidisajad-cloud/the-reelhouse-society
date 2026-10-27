@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
+import { watchChannel } from '../lib/watchChannel';
 import { useAuthStore } from './auth';
 import { useBlockStore } from './blockStore';
 import { zustandMMKVStorage, zustandMMKVStorageSensitive } from './mmkv-storage';
@@ -121,6 +122,8 @@ export interface NotificationState {
     unreadCount: () => number;
     /** How many notices arrived live this session: a room waiting on its door listens for it (never persisted). */
     noticesHeard: number;
+    /** The notices' live channel is answering; false once it has been down past a beat (watchChannel). Never persisted. */
+    noticesLive: boolean;
     setupRealtime: () => void | (() => void);
 }
 
@@ -136,6 +139,7 @@ export const useNotificationStore = create<NotificationState>()(
     _fetchingMore: false,
     _unreadCount: 0,
     noticesHeard: 0,
+    noticesLive: true,
 
     _hasMore: true,
     _cursor: null,
@@ -468,6 +472,13 @@ export const useNotificationStore = create<NotificationState>()(
         // One subscription, however often this is called (StrictMode calls twice).
         if (_realtimeCleanup) return _realtimeCleanup;
 
+        // Back after a drop, the notices missed in the gap are read; down past a beat, they are
+        // said not to be live and read again on a fixed interval until the channel answers.
+        const watch = watchChannel({
+            reread: () => { void get().fetchNotifications(); },
+            onLive: (live) => set((s) => (s.noticesLive === live ? s : { noticesLive: live })),
+        });
+
         // Private: realtime.messages admits a signed-in member; each row still
         // reaches only its own member, by the notifications table's rules.
         const channel = supabase
@@ -494,11 +505,14 @@ export const useNotificationStore = create<NotificationState>()(
                     set((state) => ({ ...applyIncomingNotification(state, newNotif), noticesHeard: state.noticesHeard + 1 }));
                 }
             )
-            .subscribe();
+            .subscribe((status) => { watch.status(status); });
 
         const cleanup = () => {
+            // Left on purpose: its CLOSED is not a drop.
+            watch.end();
             supabase.removeChannel(channel);
             _realtimeCleanup = null;
+            set({ noticesLive: true });
         };
 
         // Module-scoped cleanup so resetAllStores can call it

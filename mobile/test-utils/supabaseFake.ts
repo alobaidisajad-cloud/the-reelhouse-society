@@ -62,6 +62,8 @@ export type Ask = {
   values: Row[] | null; count: boolean; head: boolean; selects: boolean;
   /** The embeds the select names, resolved by their keys (embedsOf). */
   embeds?: Embed[];
+  /** Each `or()` filter's text, as the client wrote it: read by a test that answers the table itself. */
+  ors?: string[];
 };
 type Options = {
   /** What each table holds: checked against its columns. A table not named here cannot be read. */
@@ -350,7 +352,7 @@ export function supabaseFake(options: Options = {}) {
       eq: filter('eq'), neq: filter('neq'), gt: filter('gt'), gte: filter('gte'), lt: filter('lt'), lte: filter('lte'),
       is: filter('is'), in: filter('in'), like: filter('like'), ilike: filter('ilike'),
       not: (col, op, val) => { mustHave(table, col, 'not'); ask.filters.push([`not.${op}`, col, val]); return chain; },
-      or: refuse('or'),
+      or: (filters: string) => { ask.ors = [...(ask.ors ?? []), filters]; return refuse('or')(); },
       contains: refuse('contains'),
       order: (col, opts = {}) => { mustHave(table, col, 'order'); ask.order.push([col, opts.ascending !== false]); return chain; },
       range: (a, b) => { ask.range = [a, b]; return chain; },

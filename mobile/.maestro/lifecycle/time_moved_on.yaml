@@ -1,0 +1,62 @@
+appId: com.reelhouse.society
+env:
+  WORDS: "E2E: a day passes with the app waiting."
+---
+# A day passes with the app in the background (WORKLIST P4.7): a film logged
+# today reads TODAY in the member's LATELY. The phone's clock is moved on 26
+# hours while the app waits; back in front, the same row says YESTERDAY, read
+# again from the shared clock, and the member is still signed in with their
+# file drawn: no sign-out and no false empty after the jump.
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- runFlow:
+    file: ../subflows/open_a_film.yaml
+    env:
+      FILM: "The Matrix"
+- runFlow: ../subflows/open_the_stub.yaml
+- tapOn:
+    id: "film-act-log"
+- extendedWaitUntil:
+    visible:
+      id: "review-input"
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: "review-input"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
+- tapOn:
+    id: "review-input"
+- inputText: ${WORDS}
+- tapOn:
+    id: "submit-log-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "submit-log-button"
+    timeout: 15000
+- tapOn:
+    id: "profile-tab"
+- scrollUntilVisible:
+    element:
+      text: "TODAY"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
+- pressKey: Home
+- runFlow:
+    file: ../subflows/phone.yaml
+    env:
+      SET: clock_ahead
+      TO: "1560"
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      text: "YESTERDAY"
+    timeout: 20000
+- assertNotVisible:
+    text: "TODAY"
+- assertVisible:
+    id: "profile-tab"

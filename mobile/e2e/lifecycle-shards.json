@@ -9,9 +9,10 @@
         "killed_in_background",
         "killed_mid_write",
         "live_config",
+        "time_moved_on",
         "upgrade"
       ],
-      "minutes": 36
+      "minutes": 39
     }
   ]
 }

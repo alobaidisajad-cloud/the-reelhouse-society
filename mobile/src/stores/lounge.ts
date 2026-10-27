@@ -1,8 +1,10 @@
 import * as Crypto from 'expo-crypto';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { create } from 'zustand';
+import { onlineManager } from '@tanstack/react-query';
 import { queryClient } from '../lib/queryClient';
 import { supabase } from '../lib/supabase';
+import { watchChannel } from '../lib/watchChannel';
 import { LoungeMessagePayloadSchema } from '../services/LoungeService';
 import { logger } from '../utils/logger';
 import { isNetworkError } from '../utils/networkError';
@@ -113,6 +115,8 @@ export interface LoungeState {
    */
   messagesLoading: boolean;
   messagesFailed: boolean;
+  /** The open room's live channel is answering; false once it has been down past a beat (watchChannel). */
+  roomLive: boolean;
   sending: boolean;
   /** THE HOUSE PULSE — members present on this salon's channel right now. */
   presentCount: number;
@@ -121,6 +125,8 @@ export interface LoungeState {
 
   fetchLounges: () => Promise<void>;
   fetchMessages: (loungeId: string) => Promise<void>;
+  /** What the open room missed, read and merged into what is held: never a replacement. */
+  catchUpMessages: (loungeId: string) => Promise<void>;
   loadMoreMessages: (loungeId: string) => Promise<void>;
   sendMessage: (loungeId: string, content: string, type?: string, meta?: LoungeMessageMeta) => Promise<boolean>;
   createLounge: (name: string, description: string, isPrivate: boolean) => Promise<string | null>;
@@ -172,6 +178,23 @@ export const MESSAGE_WINDOW = 400;
 // appending: a cap on the prepend would fight the scroll back.
 export const capMessages = (msgs: LoungeMessage[]): LoungeMessage[] =>
   msgs.length > MESSAGE_WINDOW ? msgs.slice(msgs.length - MESSAGE_WINDOW) : msgs;
+
+/** One read of a room's words. */
+const MESSAGE_PAGE = 100;
+
+/** The messages held as the house gave them: not one still sending, failed, or waiting in the offline queue. */
+function serverHeld(msgs: LoungeMessage[]): LoungeMessage[] {
+  const queued = new Set(getOfflineQueue().filter((q) => q.type === 'send_lounge_message').map((q) => q.payload._tempId));
+  return msgs.filter((m) => (m.status === undefined || m.status === 'sent') && !queued.has(m.id) && !m.id.startsWith('offline-'));
+}
+
+/** A message's place in the (created_at, id) order every read of a room keeps. */
+const placeOf = (m: { created_at: string; id: string }) => [Date.parse(m.created_at), m.id] as const;
+const before = (a: { created_at: string; id: string }, b: { created_at: string; id: string }) => {
+  const [at, aid] = placeOf(a);
+  const [bt, bid] = placeOf(b);
+  return at !== bt ? at - bt : aid < bid ? -1 : aid > bid ? 1 : 0;
+};
 
 /** A salon as the corridor draws it: its cover too, or a cover set by its host
  *  showed until the next refresh and then nowhere. */
@@ -414,6 +437,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   currentLoungeId: null,
   messagesLoading: false,
   messagesFailed: false,
+  roomLive: true,
   sending: false,
   presentCount: 0,
   typingUsers: [],
@@ -567,6 +591,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   },
 
   fetchMessages: async (loungeId: string) => {
+    // The room already open, with words from the house held: what it missed is read and merged,
+    // quietly. Read whole, it replaced them, and a failed bubble or an older page went with them.
+    if (get().currentLoungeId === loungeId && serverHeld(get().currentMessages).length > 0) return get().catchUpMessages(loungeId);
         const startedAs = useAuthStore.getState().user?.id ?? null;
     // Another room's words go at once: kept, they stood under this room's name until its own
     // came, and for good when its read failed. The same room's stay while it is read again.
@@ -687,6 +714,109 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }
     } catch {
       reelToast.error('Could not load older messages.');
+    }
+  },
+
+  catchUpMessages: async (loungeId: string) => {
+    // Quiet: no spinner and no toast. A catch-up that fails leaves what is held, and the room's
+    // own line (not live, offline) says the rest; offline, none is tried.
+    if (!onlineManager.isOnline() || get().currentLoungeId !== loungeId) return;
+    const held = serverHeld(get().currentMessages);
+    if (held.length === 0) return;
+    const startedAs = useAuthStore.getState().user?.id ?? null;
+    const myId = useAuthStore.getState().user?.id;
+    const newestHeld = held.reduce((a, b) => (before(a, b) >= 0 ? a : b));
+    const oldestHeld = held.reduce((a, b) => (before(a, b) <= 0 ? a : b));
+
+    const fresh: LoungeMessage[] = [];
+    let cursor = { created_at: newestHeld.created_at, id: newestHeld.id };
+    let whole = true;
+    try {
+      // Page after page from the newest held, on the same (created_at, id) cursor loadMoreMessages
+      // pages back with, until a short page; past the window, the rest is not chased.
+      for (let page = 0; page < MESSAGE_WINDOW / MESSAGE_PAGE; page++) {
+        const { data, error } = await supabase
+          .from('lounge_messages')
+          .select(MESSAGE_COLUMNS)
+          .eq('lounge_id', loungeId)
+          .or(`created_at.gt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.gt.${cursor.id})`)
+          .order('created_at', { ascending: true })
+          .order('id', { ascending: true })
+          .limit(MESSAGE_PAGE);
+        if (error) return;
+        const rows = (data ?? []) as unknown as LoungeMessageRow[];
+        // messagesOf takes a page newest first, as every other read has it.
+        fresh.push(...messagesOf([...rows].reverse(), myId));
+        if (rows.length < MESSAGE_PAGE) { whole = true; break; }
+        whole = false;
+        const last = rows.at(-1);
+        if (!last) break;
+        cursor = { created_at: last.created_at, id: last.id };
+      }
+      if (!whole) {
+        // More was missed than the room holds: it is read again from its newest, and only this
+        // phone's own words (sending, failed, queued) are kept.
+        const { data, error } = await supabase
+          .from('lounge_messages')
+          .select(MESSAGE_COLUMNS)
+          .eq('lounge_id', loungeId)
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .limit(MESSAGE_PAGE);
+        if (error || !data) return;
+        const newest = messagesOf(data as unknown as LoungeMessageRow[], myId);
+        if (!memberUnchanged(startedAs)) return;
+        set((s) => {
+          if (s.currentLoungeId !== loungeId) return s;
+          const fromHouse = new Set(serverHeld(s.currentMessages).map((m) => m.id));
+          const own = s.currentMessages.filter((m) => !fromHouse.has(m.id));
+          return { currentMessages: [...newest.filter((m) => !useBlockStore.getState().isHidden(m.user_id)), ...own].sort(before) };
+        });
+        return;
+      }
+
+      // What is held, read again light: withdrawn or gone since, and its reactions now.
+      const { data: marks, error: marksError } = await supabase
+        .from('lounge_messages')
+        .select('id, deleted_at, lounge_message_reactions!lounge_message_reactions_message_id_fkey(message_id, reaction, user_id)')
+        .eq('lounge_id', loungeId)
+        .gte('created_at', oldestHeld.created_at)
+        .lte('created_at', newestHeld.created_at)
+        .limit(1000);
+      if (!memberUnchanged(startedAs)) return;
+      type Mark = { id: string; deleted_at: string | null; lounge_message_reactions?: ReactionRow[] };
+      const read = !marksError && marks ? (marks as unknown as Mark[]) : null;
+      const byId = new Map((read ?? []).map((r) => [r.id, r]));
+      const reactions = summarizeReactions((read ?? []).flatMap((r) => r.lounge_message_reactions ?? []), myId);
+      // Absent from a whole answer, a held message was taken down; a cut answer proves nothing.
+      const answeredWhole = !!read && read.length < 1000;
+      const heldIds = new Set(held.map((m) => m.id));
+
+      set((s) => {
+        if (s.currentLoungeId !== loungeId) return s;
+        // A message the read leaves as it was keeps its own object, so its row is not drawn again.
+        let changed = false;
+        const kept = !read ? s.currentMessages : s.currentMessages.flatMap((m) => {
+          if (!heldIds.has(m.id)) return [m];
+          const mark = byId.get(m.id);
+          if (!mark) {
+            if (!answeredWhole) return [m];
+            changed = true;
+            return [];
+          }
+          const r = reactions.get(m.id);
+          const withdrawn = !!mark.deleted_at && !m.deleted_at;
+          if (!withdrawn && JSON.stringify(r ?? null) === JSON.stringify(m.reactions ?? null)) return [m];
+          changed = true;
+          return [{ ...m, ...(withdrawn ? { content: '', deleted_at: mark.deleted_at } : {}), reactions: r }];
+        });
+        const have = new Set(kept.map((m) => m.id));
+        const add = fresh.filter((m) => !have.has(m.id) && !useBlockStore.getState().isHidden(m.user_id));
+        if (add.length === 0 && !changed) return s;
+        return { currentMessages: add.length === 0 ? kept : [...kept, ...add].sort(before) };
+      });
+    } catch {
+      // Not reached: what is held stays, and the room's line says so.
     }
   },
 
@@ -1247,6 +1377,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   subscribeToLounge: (loungeId: string, opts?: { onMembership?: () => void; seated?: boolean }) => {
     const me = useAuthStore.getState().user;
     const seated = !!opts?.seated;
+    // Back after a drop, what was said in the gap is read; down past a beat, the room says it is
+    // not live and is read again on a fixed interval until the channel answers.
+    const watch = watchChannel({
+      reread: () => { void get().catchUpMessages(loungeId); },
+      onLive: (live) => set((s) => (s.roomLive === live ? s : { roomLive: live })),
+    });
     const channel = supabase
       .channel(`lounge-${loungeId}`, {
         // Private: the salon's rules decide who receives it (realtime.messages); own echoes muted.
@@ -1405,6 +1541,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         set(s => s.typingUsers.includes(username) ? s : { typingUsers: [...s.typingUsers, username] });
       })
       .subscribe((status) => {
+        watch.status(status);
         // Presence once the channel is live, from a seated member only: a reader
         // without a seat is in the room unseen.
         if (status === 'SUBSCRIBED' && me && seated) {
@@ -1415,11 +1552,14 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     _activeChannel = channel;
     _seatedInActive = seated;
     return () => {
+      // Left on purpose: its CLOSED is not a drop.
+      watch.end();
       supabase.removeChannel(channel);
       if (_activeChannel === channel) {
         _activeChannel = null;
         _seatedInActive = false;
       }
+      set({ roomLive: true });
       clearTypingState(set);
     };
   },

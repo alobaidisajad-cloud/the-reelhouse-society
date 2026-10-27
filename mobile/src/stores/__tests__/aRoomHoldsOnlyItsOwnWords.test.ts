@@ -71,17 +71,15 @@ describe('a room holds only its own words', () => {
     expect(mockToast.error).not.toHaveBeenCalled();
   });
 
-  it('a room read again that could not be: its words kept, a toast over them, and a read that then comes clears the failure', async () => {
+  it('a room read again that could not be: its words kept, and nothing said over them (the room\'s own line says it is not live, or offline)', async () => {
     mockHouse = supabaseFake({ rows: { lounge_messages: [msg(1, A, ANA)], profiles: PEOPLE, lounge_message_reactions: [] } });
     await useLoungeStore.getState().fetchMessages(A);
     mockHouse = supabaseFake({ fail: { lounge_messages: { code: '', message: 'Failed to fetch' } } });
     await useLoungeStore.getState().fetchMessages(A);
-    expect({ words: words(), failed: useLoungeStore.getState().messagesFailed }).toEqual({ words: ['words 1'], failed: true });
-    expect(mockToast.error).toHaveBeenCalledTimes(1);
-
-    mockHouse = supabaseFake({ rows: { lounge_messages: [msg(1, A, ANA)], profiles: PEOPLE, lounge_message_reactions: [] } });
-    await useLoungeStore.getState().fetchMessages(A);
-    expect(useLoungeStore.getState().messagesFailed).toBe(false);
+    // A catch-up that failed: every return to the app toasted it, and marked a room it still drew failed.
+    expect({ words: words(), failed: useLoungeStore.getState().messagesFailed }).toEqual({ words: ['words 1'], failed: false });
+    expect(mockToast.error).not.toHaveBeenCalled();
+    // What the next read brings is merged in: aSalonCatchesUpWithoutLosingAWord.test.ts.
   });
 });
 

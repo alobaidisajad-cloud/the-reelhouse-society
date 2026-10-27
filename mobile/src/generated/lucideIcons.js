@@ -87,6 +87,7 @@ export { default as Play } from '../../node_modules/lucide-react-native/dist/esm
 export { default as Plus } from '../../node_modules/lucide-react-native/dist/esm/icons/plus.js';
 export { default as Projector } from '../../node_modules/lucide-react-native/dist/esm/icons/projector.js';
 export { default as Quote } from '../../node_modules/lucide-react-native/dist/esm/icons/quote.js';
+export { default as Radio } from '../../node_modules/lucide-react-native/dist/esm/icons/radio.js';
 export { default as Replace } from '../../node_modules/lucide-react-native/dist/esm/icons/replace.js';
 export { default as Reply } from '../../node_modules/lucide-react-native/dist/esm/icons/reply.js';
 export { default as RotateCcw } from '../../node_modules/lucide-react-native/dist/esm/icons/rotate-ccw.js';

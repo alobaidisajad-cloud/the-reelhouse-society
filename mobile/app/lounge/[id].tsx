@@ -34,6 +34,7 @@ import {
     Hourglass,
     Lock,
     MinusCircle,
+    Radio,
     Send,
     Settings,
     Sparkles,
@@ -371,6 +372,7 @@ export default function LoungeRoomScreen() {
     requestMembership, joinPublicLounge, fetchMembers,
     presentCount, typingUsers, broadcastTyping,
   } = useLoungeStore();
+  const roomLive = useLoungeStore((st) => st.roomLive);
 
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<LoungeMessage | null>(null);
@@ -755,6 +757,14 @@ export default function LoungeRoomScreen() {
         <View style={s.offlineBanner}>
           <WifiOff size={14} color={colors.sepia} strokeWidth={1.5} />
           <Text style={s.offlineText}>You&apos;re offline — dispatches will send when you reconnect.</Text>
+        </View>
+      )}
+      {/* Online, but the room's live channel is down: said quietly, and the room is read again
+          every few seconds until it answers (watchChannel). */}
+      {!isOffline && !roomLive && canRead && (
+        <View style={s.offlineBanner}>
+          <Radio size={14} color={colors.sepia} strokeWidth={1.5} />
+          <Text style={s.offlineText}>Not live — the room is read again every few seconds.</Text>
         </View>
       )}
 
