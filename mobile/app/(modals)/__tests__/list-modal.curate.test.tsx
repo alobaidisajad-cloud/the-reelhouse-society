@@ -37,6 +37,8 @@ jest.mock('@/src/utils/typedRouter', () => ({
 }));
 jest.mock('@tanstack/react-query', () => ({
   QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); },
+  // The auth store (who is signed in) loads the app's query client, which listens for the network.
+  onlineManager: { setEventListener: () => {} },
   useQueryClient: () => ({
     getQueryData: (k: unknown[]) => (k[0] === 'stack' ? mockCachedStack : undefined),
     setQueryData: jest.fn(), removeQueries: jest.fn(), invalidateQueries: jest.fn(),
@@ -631,5 +633,35 @@ describe('a stack can be ordered, and its terms read, without sight', () => {
     expect(r.getByLabelText('Set stack to private').props.accessibilityState).toMatchObject({ selected: false });
     expect(r.getByLabelText('Set stack to unranked').props.accessibilityState).toMatchObject({ selected: true });
     expect(r.getByLabelText('Set stack to ranked').props.accessibilityState).toMatchObject({ selected: false });
+  });
+});
+
+// A link may name any stack (P4.4): one cached from viewing another member's page is theirs, and
+// the amend form is never drawn for it.
+describe('a stack named by a link', () => {
+  const asMember = (id: string | null) => {
+    const { useAuthStore } = require('@/src/stores/auth');
+    useAuthStore.setState({ user: id ? { id } : null });
+  };
+  afterEach(() => asMember(null));
+
+  it("another member's stack, cached from viewing it, is not offered to amend", async () => {
+    asMember('me');
+    mockParams = { editId: STACK_ID };
+    mockCachedStack = { list: { ...STACK, userId: 'them', films: FILMS, filmCount: 2 } };
+    const r = await mount();
+    expect(r.getByText('Not Yours to Amend')).toBeTruthy();
+    expect(r.queryByLabelText('Stack title')).toBeNull();
+    expect(r.queryByText('SAVE THE AMENDMENTS')).toBeNull();
+    expect(r.getByLabelText('Close')).toBeTruthy();
+  });
+
+  it('a stack of their own opens to amend', async () => {
+    asMember('me');
+    mockParams = { editId: STACK_ID };
+    mockCachedStack = { list: { ...STACK, userId: 'me', films: FILMS, filmCount: 2 } };
+    const r = await mount();
+    expect(r.queryByText('Not Yours to Amend')).toBeNull();
+    expect(r.getByLabelText('Stack title').props.value).toBe('Neon Noir Masterpieces');
   });
 });

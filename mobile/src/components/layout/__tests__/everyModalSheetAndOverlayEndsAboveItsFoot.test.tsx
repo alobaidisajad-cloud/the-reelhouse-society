@@ -137,7 +137,9 @@ const MODALS: Drawn[] = [
   { file: 'app/(modals)/log-modal.tsx', name: 'log a film', draw: route('app/(modals)/log-modal.tsx') },
   { file: 'app/(modals)/notifications-modal.tsx', name: 'notices', draw: route('app/(modals)/notifications-modal.tsx') },
   { file: 'app/(modals)/list-modal.tsx', name: 'a new stack', draw: route('app/(modals)/list-modal.tsx') },
-  { file: 'app/(modals)/cover-picker.tsx', name: 'a salon cover', params: { loungeId: 'room' }, draw: route('app/(modals)/cover-picker.tsx') },
+  // The picker is the host's alone: the member hosts the salon it names.
+  { file: 'app/(modals)/cover-picker.tsx', name: 'a salon cover', params: { loungeId: 'room' }, draw: route('app/(modals)/cover-picker.tsx'),
+    arrange: () => { require('@/src/stores/lounge').useLoungeStore.setState({ lounges: [ROOM] }); } },
   { file: 'app/(modals)/login.tsx', name: 'sign in', draw: route('app/(modals)/login.tsx') },
   { file: 'app/(modals)/social-modal.tsx', name: 'followers', params: { userId: 'me', type: 'followers' }, draw: route('app/(modals)/social-modal.tsx') },
   { file: 'app/(modals)/membership.tsx', name: 'the Society', draw: route('app/(modals)/membership.tsx') },

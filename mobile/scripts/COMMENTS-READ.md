@@ -100,11 +100,11 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-23 | edited: each docket rebuilt from its read during the render that brings it, never an effect after; read whole: reads source through readCode; no regex stripper |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
 | app/(admin)/tribunal.tsx | 2026-10-23 | edited: both dockets rebuilt during the render that brings their read: no frame of "The docket is clear" over an answered read; header top from usePushedHeaderTop; foot from useContentBottom, the sheet's from useSheetBottom |
-| app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-15 | edited: the bar's foot and the scroll above it read from navMetrics |
+| app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-27 | edited: a stack named by a link: another member's is not offered, one's own opens; the query stand-in has onlineManager; edited: the bar's foot and the scroll above it read from navMetrics |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
-| app/(modals)/cover-picker.tsx | 2026-10-15 | top from useModalTop |
-| app/(modals)/list-modal.tsx | 2026-10-26 | edited: the last number shown during a drag held as state; edited: the unready bar is hollow (UNREADY); CLOSE centred on the title's first line; the large-stack notice in sentences |
+| app/(modals)/cover-picker.tsx | 2026-10-27 | edited: the picker the host's alone; anyone else told NOT YOURS TO CHANGE (P4.4); top from useModalTop |
+| app/(modals)/list-modal.tsx | 2026-10-27 | edited: a stack cached from another member's page is never theirs to amend: NOT YOURS TO AMEND, no form (P4.4); edited: the last number shown during a drag held as state; edited: the unready bar is hollow (UNREADY); CLOSE centred on the title's first line; the large-stack notice in sentences |
 | app/(modals)/log-modal.tsx | 2026-10-23 | edited: an edit waiting for its record says so (retrieving, unreachable, No Such Record), never a blank form; the film's atmosphere hangs only over the docket |
 | app/(modals)/login.tsx | 2026-10-26 | edited: the lore line picked once, as state; header top from useModalTop; the page stops at the edge (useBottomEdge) |
 | app/(modals)/membership.tsx | 2026-10-26 | edited: the billing shown is the year whenever no monthly price is sold, derived, not reset by an effect; nav top from useModalTop; ends above the window and its fade, or at useContentBottom |
@@ -561,8 +561,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/__tests__/aSwipeBackIsHeard.test.tsx | 2026-10-02 | nav's history hears the swipe back |
 | src/components/layout/__tests__/ConciergeButton.test.tsx | — |  |
 | src/components/layout/__tests__/everyListChoosesItsAnchor.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/components/layout/__tests__/everyModalAndOverlayStartsAtItsTop.test.tsx | 2026-10-15 | new: modals and overlays at three insets, both platforms |
-| src/components/layout/__tests__/everyModalSheetAndOverlayEndsAboveItsFoot.test.tsx | 2026-10-15 | new: every modal, sheet and overlay foot, at 0, 21 and 34 |
+| src/components/layout/__tests__/everyModalAndOverlayStartsAtItsTop.test.tsx | 2026-10-27 | edited: the cover picker drawn for the salon's host; new: modals and overlays at three insets, both platforms |
+| src/components/layout/__tests__/everyModalSheetAndOverlayEndsAboveItsFoot.test.tsx | 2026-10-27 | edited: the cover picker drawn for the salon's host; new: every modal, sheet and overlay foot, at 0, 21 and 34 |
 | src/components/layout/__tests__/everyPushedHeaderStartsAtItsTop.test.tsx | 2026-10-23 | edited: its member's profile read (is_social_private), as a loaded member's is; its files come from the shared file list (test-utils/universe.js) |
 | src/components/layout/__tests__/everyPushedScreenEndsAboveItsFoot.test.tsx | 2026-10-23 | edited: its member's profile read (is_social_private), as a loaded member's is; new: every pushed route's foot, at 0, 21 and 34 |
 | src/components/layout/__tests__/everyTabEndsAboveTheTabBar.test.tsx | 2026-10-15 | new: every tab ends above the tab bar, at 0, 21 and 34 |
@@ -1464,6 +1464,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/iosFlows.test.ts | 2026-10-24 | edited: the iOS sitemap link handed to the app running |
 | e2e/no-keyboard.sh | 2026-10-22 | moved whole from run-flows.sh: the phone with no keyboard apps, no input method and no autofill, sourced by run-flows.sh and the speed lab's scrolls.sh; a keyboard left stops the run |
 | .maestro/subflows/open_link_on_ios.yaml | 2026-10-22 | written: iOS's own "Open in ...?" before a link opens the app, answered as a member does; nothing if it never came |
+| app/(modals)/__tests__/theCoverIsTheHostsToChoose.test.tsx | 2026-10-27 | Written 2026-10-27: the cover picker drawn for the host alone; anyone else, or a salon not known, told plainly (P4.4) |
 | scripts/kept-debs.sh | 2026-10-22 | new: the kept packages by dpkg alone, those installed left, its exit tells the caller to let apt fetch |
 | scripts/__tests__/keptDebs.test.ts | 2026-10-22 | new: run against stand-in dpkg tools |
 | src/components/lobby/__tests__/theBillsArePrintedOnPaper.guard.test.ts | 2026-10-22 | new: no parchment ground in the Lobby; the three bills on the paper token |

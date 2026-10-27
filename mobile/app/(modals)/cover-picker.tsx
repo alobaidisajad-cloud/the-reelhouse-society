@@ -6,6 +6,9 @@
  * cross-platform-proven presentation as list-modal — and reuses the shipped
  * LogSearchEngine, so it renders identically on iOS and Android. Pick a film →
  * its TMDB backdrop becomes the salon's cover via the host-gated set_lounge_cover RPC.
+ *
+ * Offered only to the salon's host: a link may name any salon (P4.4), and a pick changes the cover
+ * on screen at once, before the house could refuse it.
  */
 import React, { useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -20,11 +23,16 @@ import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { nav } from '@/src/utils/typedRouter';
+import { useAuthStore } from '@/src/stores/auth';
+import { EmptyState } from '@/src/components/EmptyStates';
+import { WayOut } from '@/src/components/TryAgain';
 
 export default function CoverPicker() {
   const { loungeId } = useLocalSearchParams<{ loungeId: string }>();
   const top = useModalTop();
   const setLoungeCover = useLoungeStore(s => s.setLoungeCover);
+  const me = useAuthStore((st) => st.user?.id);
+  const hosts = useLoungeStore((st) => !!me && st.lounges.some((l) => l.id === loungeId && l.creator_id === me));
 
   const handlePick = useCallback((film: LogSearchResult) => {
     if (!loungeId) { nav.back(); return; }
@@ -36,6 +44,16 @@ export default function CoverPicker() {
     setLoungeCover(loungeId, film.backdrop_path);
     nav.back();
   }, [loungeId, setLoungeCover]);
+
+  if (!hosts) {
+    return (
+      <View style={[s.container, s.notYours, { paddingTop: top }]}>
+        <RoomLight room="default" />
+        <EmptyState buster="suspicious" title="Not Yours to Change" subtitle="Only a salon's host may choose its cover." />
+        <WayOut label="Close" onPress={() => nav.back()} belowTryAgain={false} />
+      </View>
+    );
+  }
 
   return (
     <View style={[s.container, { paddingTop: top }]}>
@@ -65,6 +83,8 @@ export default function CoverPicker() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink, paddingHorizontal: 20 },
+  /** Not the host: the notice, centred where the picker would stand. */
+  notYours: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 },
   headerText: { flex: 1 },
   eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.9, color: colors.sepia, marginBottom: 6, includeFontPadding: false },

@@ -32,6 +32,9 @@ import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Arrive } from '@/src/components/Arrive';
+import { EmptyState } from '@/src/components/EmptyStates';
+import { WayOut } from '@/src/components/TryAgain';
+import { useAuthStore } from '@/src/stores/auth';
 
 // At module scope: made inside the component, it would be a new type, and remount, each render.
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -162,8 +165,14 @@ export default function ListModal() {
         return () => { isMounted.current = false; };
     }, []);
 
-    // Edit mode
-    const editList = params.editId ? lists.find((l: any) => l.id === params.editId) || queryClient.getQueryData<any>(['stack', params.editId])?.list : null;
+    // Edit mode: a stack of the member's own. One cached from viewing another member's page is
+    // never theirs to amend, whatever a link names (P4.4): the form is not drawn for it.
+    const me = useAuthStore((s) => s.user?.id);
+    const cachedStack = params.editId ? queryClient.getQueryData<any>(['stack', params.editId])?.list : undefined;
+    const notYours = !!cachedStack && !!me && cachedStack.userId !== me && !lists.some((l: any) => l.id === params.editId);
+    const editList = params.editId
+        ? lists.find((l: any) => l.id === params.editId) || (cachedStack && !notYours ? cachedStack : null)
+        : null;
 
     const [title, setTitle] = useState(editList?.title || '');
     const [description, setDescription] = useState(editList?.description || '');
@@ -565,6 +574,16 @@ export default function ListModal() {
         </>
     );
 
+    // Another member's stack, named by a link: never offered to amend, and said plainly.
+    if (notYours) {
+        return (
+            <View style={[s.container, s.notYours, { paddingTop: handleTop }]}>
+                <EmptyState buster="suspicious" title="Not Yours to Amend" subtitle="This stack is another member's. Only its curator may change it." />
+                <WayOut label="Close" onPress={() => nav.back()} belowTryAgain={false} />
+            </View>
+        );
+    }
+
     return (
         <Animated.View style={[s.container, animatedContainerStyle]}>
             <DraggableFlatList
@@ -613,6 +632,8 @@ export default function ListModal() {
 
 const s = StyleSheet.create({
     container: { ...EDGE_LIT, flex: 1, backgroundColor: colors.soot },
+    /** Another member's stack: the notice, centred where the form would stand. */
+    notYours: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
     handleWrap: { alignItems: 'center', paddingBottom: 8 },
     handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.sepia },
     header: {
