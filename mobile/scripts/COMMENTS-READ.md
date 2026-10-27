@@ -853,7 +853,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/__tests__/aLinkSaysWhyBeforeItVanishes.test.tsx | 2026-10-03 | edited: the override written as an escape |
 | src/features/profile/__tests__/linksEditor.test.tsx | — |  |
 | src/features/profile/__tests__/theDossierSealIsSpoken.test.tsx | — |  |
-| src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-01 | written: the edit desk says what went wrong |
+| src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-27 | edited: the leaving guard stood in for: the desk is drawn with no navigator; written: the edit desk says what went wrong |
 | src/features/profile/EditProfileScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop; foot from useContentBottom |
 | src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
 | src/features/profile/profile.styles.ts | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
@@ -915,7 +915,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useDeviceThrottling.ts | 2026-10-02 | Read whole (launch audit). Answered in an effect, after the preloader had decided on the first render; known synchronously now. A settings override no screen ever wrote removed. |
 | src/hooks/useDispatchArchive.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useDoor.ts | 2026-10-26 | edited: the door's answer held with the member it was read for and shown in the read's then; loading is the answer not yet come; the unused refresh gone; read whole in the Dispatch audit; comments checked true |
-| src/hooks/useEditProfile.ts | 2026-10-26 | edited: the save checked at the press; edited: the preview follows the stored portrait when it changes; a picture just chosen is kept through any other change; a refusal for the member's standing is not reported as a fault |
+| src/hooks/useEditProfile.ts | 2026-10-27 | edited: every way out asks while something is unsaved (useAskBeforeLeaving), a landed save leaving freely; edited: the save checked at the press; edited: the preview follows the stored portrait when it changes; a picture just chosen is kept through any other change; a refusal for the member's standing is not reported as a fault |
 | src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
 | src/hooks/useFilmAnimations.ts | 2026-10-01 | each loop only while seen |
 | src/hooks/useFilmDetail.ts | 2026-10-01 | an unread verdict is null, never silence |
@@ -1479,6 +1479,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/profileRead.ts | 2026-10-23 | whether the member's profile has been read: its own columns on the user, never the auth user alone |
 | src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; new: the room and roster asked once while the session settles, again for another member |
 | src/features/settings/__tests__/everyOtherDeviceSignsOut.test.tsx | 2026-10-26 | Written 2026-10-27: Settings signs every other device out, asked first, the answer said either way |
+| src/hooks/__tests__/unsavedWorkAsksBeforeLeaving.test.tsx | 2026-10-27 | Written 2026-10-27: through a real router, a pop over unsaved work is stopped and asks; Cancel stays, Discard leaves (P4.12) |
+| src/hooks/useAskBeforeLeaving.ts | 2026-10-27 | new: a screen holding unsaved work asks before any way out (usePreventRemove): stay, or discard and leave |
 | src/lib/__tests__/aSignOutWithNoNetworkStillSignsOut.test.ts | 2026-10-26 | edited: the unmock below the imports; the owed half named as settled apart; Written 2026-10-27: the real client signs out over a dead network and the session is gone; the owed half settles once, apart from this phone's session (P4.1) |
 | src/lib/__tests__/everySignOutEndsTheSessionHere.test.ts | 2026-10-26 | Written 2026-10-27: no file but endSession calls signOut |
 | src/lib/endSession.ts | 2026-10-26 | new: every sign-out ends the session on the phone, the server reached or not; the server's half owed and settled in three plain requests |

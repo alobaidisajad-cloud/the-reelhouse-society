@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Alert } from 'react-native';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,6 +14,7 @@ import { isStandingRefusal } from '@/src/utils/standing';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { WALL_KEY } from '@/src/components/lobby/wallRead';
 import { nav } from '@/src/utils/typedRouter';
+import { useAskBeforeLeaving } from '@/src/hooks/useAskBeforeLeaving';
 import { normalizeSocialUrl } from '@/src/utils/linking';
 
 /** The most links a profile carries; the editor stops offering more there. */
@@ -326,20 +326,10 @@ export function useEditProfile() {
   // The form's check is made at the press, not as the screen draws.
   const handleSave = () => form.handleSubmit(save, refused)();
 
-  const handleBack = () => {
-    if (isDirty) {
-      Alert.alert(
-        'Discard Changes?',
-        'You have unsaved changes. Are you sure you want to discard them?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Discard', style: 'destructive', onPress: () => nav.back() }
-        ]
-      );
-    } else {
-      nav.back();
-    }
-  };
+  // Every way out asks while something is unsaved, the back button, an edge swipe and Android's
+  // back alike; a save that landed leaves freely (sealed).
+  useAskBeforeLeaving(isDirty && !sealed);
+  const handleBack = () => nav.back();
 
   return {
     user,
