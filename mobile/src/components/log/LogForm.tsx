@@ -1,10 +1,10 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { View, ScrollView, Alert } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import VaultNote from '@/src/components/log/VaultNote';
 import reelToast from '@/src/utils/reelToast';
 
-import { Image } from 'expo-image';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -193,7 +193,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                 ? 'Choose an alternate poster'
                                 : 'Curatorial Control. Choose an alternate poster. Opens with The Auteur.'}
                         >
-                            <Image source={{ uri: tmdb.poster(altPoster ?? film.poster_path, 'w342') }} style={st.poster} contentFit="cover" cachePolicy="memory-disk" transition={150} />
+                            <RemoteImage uri={tmdb.poster(altPoster ?? film.poster_path, 'w342')} style={st.poster} contentFit="cover" transition={150} fallback={<PosterMark style={st.poster} size={24} />} />
                             {altPoster && <View style={st.altBadge}><Text style={st.altBadgeText}>ALT</Text></View>}
                         </PressableScale>
                     )}
@@ -222,7 +222,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                             </PressableScale>
                             {availablePosters.map(p => (
                                 <PressableScale key={p.file_path} hitSlop={null} onPress={() => { setAltPoster(p.file_path); }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityState={{ selected: altPoster === p.file_path }} accessibilityLabel="Select this alternate poster">
-                                    <Image source={{ uri: tmdb.poster(p.file_path, 'w92') }} style={[st.pImg, altPoster === p.file_path && st.pImgActive, altPoster && altPoster !== p.file_path && st.pImgFaded]} contentFit="cover" cachePolicy="memory-disk" transition={150} />
+                                    <RemoteImage uri={tmdb.poster(p.file_path, 'w92')} style={[st.pImg, altPoster === p.file_path && st.pImgActive, altPoster && altPoster !== p.file_path && st.pImgFaded]} contentFit="cover" transition={150} fallback={<PosterMark style={[st.pImg, altPoster === p.file_path && st.pImgActive, altPoster && altPoster !== p.file_path && st.pImgFaded]} size={12} />} />
                                 </PressableScale>
                             ))}
                         </ScrollView>

@@ -1,9 +1,9 @@
 import { memo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
 import type { AnimatedStyle } from 'react-native-reanimated';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film as FilmIcon } from 'lucide-react-native';
 import { tmdb, formatRuntime, getYear } from '@/src/lib/tmdb';
@@ -91,20 +91,9 @@ export const FilmHero = memo(function FilmHero({
       {/* Poster */}
       <View style={styles.posterWrap}>
         <Animated.View style={[styles.posterGlow, posterGlowStyle]} />
-        {film.poster_path ? (
-          <Image
-            source={{ uri: tmdb.poster(film.poster_path, 'w342') }}
-            style={styles.poster}
-            cachePolicy="memory-disk"
-            placeholder={{ blurhash: SEPIA_HASH }}
-            transition={300}
-            accessibilityLabel={`${film.title} movie poster`}
-          />
-        ) : (
-          <View style={[styles.poster, styles.posterPlaceholder]}>
+        <RemoteImage uri={tmdb.poster(film.poster_path, 'w342')} style={styles.poster} placeholder={{ blurhash: SEPIA_HASH }} transition={300} accessibilityLabel={`${film.title} movie poster`} fallback={<View style={[styles.poster, styles.posterPlaceholder]}>
             <Text style={styles.posterPlaceholderText}>NO POSTER</Text>
-          </View>
-        )}
+          </View>} />
         <View style={styles.scanlines} />
         {existingLog && (
           /**

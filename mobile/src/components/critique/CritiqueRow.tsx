@@ -19,11 +19,11 @@
  * copy never reached the other.
  */
 import { s } from '@/src/components/log/logDetailStyles';
+import { RemoteImage } from '@/src/components/Picture';
 import PressableScale from '@/src/components/PressableScale';
 import { formatDate } from '@/src/utils/timeAgo';
 import { initialOf, isRTLText } from '@/src/utils/text';
 import { scaledTextProps } from '@/src/constants/textScaling';
-import { Image } from 'expo-image';
 import React from 'react';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -96,14 +96,10 @@ export const CritiqueRow = React.memo(function CritiqueRow({
           accessibilityRole={linked ? 'link' : undefined}
           accessibilityLabel={linked ? `View profile of @${c.username}` : `Critique by ${authorName(c.user_id, c.username)}`}
         >
-          {c.avatar_url ? (
-            <Image source={{ uri: c.avatar_url }} style={s.commentAvatar} cachePolicy="memory-disk" contentFit="cover" transition={150} />
-          ) : (
-            <View style={s.commentAvatar}>
+          <RemoteImage uri={c.avatar_url} style={s.commentAvatar} contentFit="cover" transition={150} fallback={<View style={s.commentAvatar}>
               {/* A departed member's disc is empty, as on every card: no letter of a mark. */}
               {departed || !c.username ? null : <Text style={s.commentAvatarText}>{initialOf(c.username)}</Text>}
-            </View>
-          )}
+            </View>} />
           <Text style={s.commUsername} numberOfLines={1}>{linked ? `@${c.username}` : authorName(c.user_id, c.username)}</Text>
         </PressableScale>
         {/* The archive's own date shape — this printed the device's short form,

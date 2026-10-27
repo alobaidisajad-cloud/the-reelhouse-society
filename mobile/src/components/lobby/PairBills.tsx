@@ -14,8 +14,8 @@
  * No counts: the Lobby names the honoured; the log's own page counts them.
  */
 import React, { memo } from 'react';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
@@ -138,10 +138,7 @@ export const LogBill = memo(function LogBill({ log, plan, scale, admin }: {
       >
         <View style={[s.filmRow, rtl && s.filmRowRtl]}>
           <View style={s.thumb}>
-            {log.film.poster_path ? (
-              <Image source={{ uri: tmdb.poster(log.film.poster_path, 'w92') ?? undefined }} style={StyleSheet.absoluteFill}
-                contentFit="cover" cachePolicy="memory-disk" accessible={false} />
-            ) : null}
+            <RemoteImage uri={tmdb.poster(log.film.poster_path, 'w92')} style={StyleSheet.absoluteFill} contentFit="cover" accessible={false} fallback={<PosterMark style={StyleSheet.absoluteFill} size={12} ground={false} />} />
           </View>
           <View style={s.filmMeta}>
             {film.beside ? filmName : null}
@@ -195,12 +192,7 @@ export const StackBill = memo(function StackBill({ stack, plan, scale, admin }: 
           const p = order[i];
           return (
             <View key={i} style={[s.fanPoster, { zIndex: f.z, transform: [{ translateX: f.side * shift }, { rotate: `${f.turn}deg` }] }]}>
-              {p?.poster_path ? (
-                <Image source={{ uri: tmdb.poster(p.poster_path, 'w185') ?? undefined }} style={StyleSheet.absoluteFill}
-                  contentFit="cover" cachePolicy="memory-disk" accessible={false} />
-              ) : (
-                <Text style={s.void} {...UNSPOKEN} maxFontSizeMultiplier={1}>✦</Text>
-              )}
+              <RemoteImage uri={tmdb.poster(p?.poster_path, 'w185')} style={StyleSheet.absoluteFill} contentFit="cover" accessible={false} fallback={<Text style={s.void} {...UNSPOKEN} maxFontSizeMultiplier={1}>✦</Text>} />
             </View>
           );
         })}

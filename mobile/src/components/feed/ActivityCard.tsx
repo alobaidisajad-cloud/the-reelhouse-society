@@ -17,9 +17,9 @@
  * get a plain crossfade.
  */
 import React, { useCallback, useState, useEffect } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, AccessibilityInfo, PixelRatio } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
 import Animated, {
@@ -94,15 +94,7 @@ const ActivityEditorialHeader = React.memo(({ backdropUri }: { backdropUri: stri
   return (
     <View style={s.editorialHeaderContainer}>
       <View style={s.editorialHeaderImageWrap}>
-        <Image
-          source={{ uri: backdropUri }}
-          style={StyleSheet.absoluteFill}
-          recyclingKey={backdropUri}
-          cachePolicy="memory-disk"
-          placeholder={{ blurhash: SEPIA_HASH }}
-          contentFit="cover"
-          transition={200}
-        />
+        <RemoteImage uri={backdropUri} style={StyleSheet.absoluteFill} recyclingKey={backdropUri} placeholder={{ blurhash: SEPIA_HASH }} contentFit="cover" transition={200} fallback={null} />
         <LinearGradient colors={['rgba(13,11,9,0.3)', 'rgba(13,11,9,0.95)']} style={StyleSheet.absoluteFill} />
         <View style={s.editorialBadge}><Text style={s.editorialBadgeText}>✦ EDITORIAL</Text></View>
       </View>

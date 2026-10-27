@@ -4,10 +4,10 @@
  * never stars — the Society has its own instruments.
  */
 import { useCallback, memo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, PixelRatio } from 'react-native';
 import { Text } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb, obscurityScore } from '@/src/lib/tmdb';
@@ -61,13 +61,9 @@ const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }
       accessibilityLabel={`${film.title || film.name}${film.release_date ? `, ${film.release_date.slice(0, 4)}` : ''}`}
     >
       <View style={st.defPosterWrap}>
-        {posterUri ? (
-          <Image source={{ uri: posterUri }} style={st.defPoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
-        ) : (
-          <View style={[st.defPoster, st.defPosterPlaceholder]}>
+        <RemoteImage uri={posterUri} style={st.defPoster} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={50} fallback={<View style={[st.defPoster, st.defPosterPlaceholder]}>
             <FilmIcon size={20} color={colors.fog} strokeWidth={1} />
-          </View>
-        )}
+          </View>} />
         <LinearGradient
           colors={['transparent', 'rgba(13,11,9,0.5)', 'rgba(13,11,9,0.92)']}
           locations={[0, 0.45, 1]}

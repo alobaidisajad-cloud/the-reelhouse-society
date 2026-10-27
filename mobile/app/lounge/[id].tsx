@@ -1,4 +1,5 @@
 import Buster, { BusterEyes } from '@/src/components/Buster';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { ActionSheet } from '@/src/components/lounge/ActionSheet';
 import { AtTheDoorPanel } from '@/src/components/lounge/AtTheDoorPanel';
 import { LoungeSettingsPanel } from '@/src/components/lounge/LoungeSettingsPanel';
@@ -24,7 +25,6 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { safeOpenURL } from '@/src/utils/linking';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { FlashList } from '@shopify/flash-list';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
     AlertTriangle,
@@ -174,13 +174,11 @@ const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
       accessible={false}
       importantForAccessibility="no-hide-descendants"
     >
-      {posterUrl ? (
-        <Image source={{ uri: posterUrl }} style={s.sharedPoster} contentFit="cover" cachePolicy="memory-disk" transition={150} />
-      ) : msg.type === 'dossier_share' ? (
+      <RemoteImage uri={posterUrl} style={s.sharedPoster} contentFit="cover" transition={150} fallback={msg.type === 'dossier_share' ? (
         <View style={s.sharedGlyphSlot}>
           <Text style={s.sharedGlyph}>§</Text>
         </View>
-      ) : null}
+      ) : <PosterMark style={s.sharedPoster} size={14} />} />
       <View style={s.sharedInfo}>
         <View style={s.sharedTypeBadge}>
           <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
@@ -262,11 +260,10 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
           <View style={s.authorRow}>
             {!isSelf && (
               <View style={s.authorAvatar}>
-                {msg.avatar_url
-                  ? <Image source={{ uri: msg.avatar_url }} style={s.authorAvatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
+                <RemoteImage uri={msg.avatar_url} style={s.authorAvatarImg} contentFit="cover" transition={150} fallback={!msg.user_id || isDepartedHandle(msg.username) || !msg.username
                   // A departed member's disc is empty, as on every card: no letter of a mark.
-                  : !msg.user_id || isDepartedHandle(msg.username) || !msg.username ? null
-                  : <Text style={s.authorAvatarLetter} {...UNSPOKEN}>{initialOf(msg.username)}</Text>}
+                  ? null
+                  : <Text style={s.authorAvatarLetter} {...UNSPOKEN}>{initialOf(msg.username)}</Text>} />
               </View>
             )}
             <Text style={[s.authorName, isSelf && s.authorNameSelf]} numberOfLines={1}>

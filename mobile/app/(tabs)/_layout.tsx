@@ -1,4 +1,5 @@
 import { router, Tabs, usePathname, type Href } from 'expo-router';
+import { AssetImage } from '@/src/components/Picture';
 import React from 'react';
 import { AppState, Linking, View, StyleSheet, Platform } from 'react-native';
 import { pageOfLaunch, rememberTab, stampTab, TABS_HOME, tabToReopenAfter } from '@/src/utils/lastTab';
@@ -13,7 +14,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   Newspaper, Film, Clapperboard, User,
 } from 'lucide-react-native';
-import { Image } from 'expo-image';
 import { HapticTab } from '@/src/components/HapticTab';
 import type { BottomTabBarButtonProps } from "expo-router/js-tabs";
 import { colors, effects } from '@/src/theme/theme';
@@ -87,7 +87,7 @@ function LobbyTabIcon({ focused }: { focused: boolean }) {
   return (
     <View style={s.tabIconRoot}>
       <Animated.View collapsable={false} style={[s.tabIconInner, iconStyle]}>
-        <Image source={HOUSE_EYE} style={s.houseEye} tintColor={iconColor} contentFit="contain" cachePolicy="memory-disk" accessible={false} />
+        <AssetImage source={HOUSE_EYE} style={s.houseEye} tintColor={iconColor} contentFit="contain" accessible={false} />
       </Animated.View>
       <View style={s.indicatorSlot}>
         <Animated.View collapsable={false} style={[

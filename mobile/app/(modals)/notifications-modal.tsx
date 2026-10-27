@@ -1,7 +1,7 @@
 import { nav } from '@/src/utils/typedRouter';
+import { RemoteImage } from '@/src/components/Picture';
 import { FlashList } from '@shopify/flash-list';
 import { ANCHORED_BELOW_THE_TOP } from '@/src/components/layout/CinematicFlashList';
-import { Image } from 'expo-image';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, InteractionManager, Platform, RefreshControl, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -104,13 +104,11 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
         </View>
 
         {/* Mini poster thumbnail */}
-        {posterUri ? (
-          <Image source={{ uri: posterUri }} style={s.miniPoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
-        ) : item.film_id ? (
+        <RemoteImage uri={posterUri} style={s.miniPoster} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={200} fallback={item.film_id ? (
           <View style={[s.miniPoster, s.miniPosterEmpty]}>
             <Star size={10} color={colors.fog} />
           </View>
-        ) : null}
+        ) : null} />
 
         {/* TactileEngine.warn() before dismiss for destructive-action feedback */}
         <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_DISMISS} onPress={() => {
@@ -170,9 +168,11 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
         </View>
 
         {/* Mini poster thumbnail */}
-        {posterUri ? (
-          <Image source={{ uri: posterUri }} style={s.miniPoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
-        ) : null}
+        <RemoteImage uri={posterUri} style={s.miniPoster} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={200} fallback={item.film_id ? (
+          <View style={[s.miniPoster, s.miniPosterEmpty]}>
+            <Star size={10} color={colors.fog} />
+          </View>
+        ) : null} />
 
         {/* Dismiss button */}
         <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_DISMISS} onPress={handleDismiss} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss grouped notice">

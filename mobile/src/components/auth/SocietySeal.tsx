@@ -18,8 +18,8 @@
  * Everything is transform/opacity only — GPU-composited, zero layout.
  */
 import React, { useEffect } from 'react';
+import { AssetImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, withDelay,
   withSequence, withRepeat, cancelAnimation,
@@ -105,23 +105,10 @@ export function SocietySeal({ size = 92 }: { size?: number }) {
 
       {/* The mark itself — untinted, untouched, unframed */}
       <Animated.View style={[{ width: size, height: size }, logoStyle]}>
-        <Image
-          source={LOGO}
-          style={{ width: size, height: size }}
-          contentFit="contain"
-          cachePolicy="memory-disk"
-          transition={0}
-          accessibilityLabel="The ReelHouse Society seal"
-        />
+        <AssetImage source={LOGO} style={{ width: size, height: size }} contentFit="contain" transition={0} accessibilityLabel="The ReelHouse Society seal" />
         {/* Sheen: the logo's own silhouette in candle-flicker, one pass */}
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, sheenStyle]}>
-          <Image
-            source={LOGO}
-            style={{ width: size, height: size, tintColor: colors.flicker }}
-            contentFit="contain"
-            cachePolicy="memory-disk"
-            transition={0}
-          />
+          <AssetImage source={LOGO} style={{ width: size, height: size, tintColor: colors.flicker }} contentFit="contain" transition={0} />
         </Animated.View>
       </Animated.View>
     </View>

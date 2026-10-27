@@ -1,11 +1,11 @@
 import React, { memo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import { PresenceView } from '@/src/components/motion/Presence';
 import { X } from 'lucide-react-native';
 import { useOverlayTop } from '@/src/components/layout/navMetrics';
-import { Image } from 'expo-image';
 import { initialOf } from '@/src/utils/text';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { RadarChart } from '@/src/components/profile/RadarChart';
@@ -114,11 +114,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
                 <View style={s.header}>
                     {/* The member's real portrait; without one, the letter their file shows */}
                     <View style={s.avatarWrap}>
-                        {user?.avatar_url ? (
-                            <Image source={{ uri: user.avatar_url }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
-                        ) : (
-                            <Text {...decorativeTextProps} {...UNSPOKEN} style={s.avatarInitial}>{initialOf(user?.username ?? 'cinephile')}</Text>
-                        )}
+                        <RemoteImage uri={user?.avatar_url} style={s.avatarImg} contentFit="cover" transition={150} fallback={<Text {...decorativeTextProps} {...UNSPOKEN} style={s.avatarInitial}>{initialOf(user?.username ?? 'cinephile')}</Text>} />
                     </View>
                     <View style={s.userInfoWrap}>
                         <Text {...scaledTextProps} style={s.username} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>@{user?.username ?? 'cinephile'}</Text>

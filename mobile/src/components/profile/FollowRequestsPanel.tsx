@@ -8,12 +8,12 @@
  * so it behaves identically at 3 requests or 3,000.
  */
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { Alert, Modal, View, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { BlurView } from 'expo-blur';
-import { Image } from 'expo-image';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { KeyRound, X, Check, Search, User } from 'lucide-react-native';
@@ -41,9 +41,7 @@ const RequestRow = React.memo(function RequestRow({
   return (
     <View style={s.row}>
       <View style={s.avatar}>
-        {item.avatarUrl
-          ? <Image source={{ uri: item.avatarUrl }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} recyclingKey={item.requesterId} />
-          : <User size={15} color={colors.fog} strokeWidth={1.5} />}
+        <RemoteImage uri={item.avatarUrl} style={s.avatarImg} contentFit="cover" transition={150} recyclingKey={item.requesterId} fallback={<User size={15} color={colors.fog} strokeWidth={1.5} />} />
       </View>
       <Text {...scaledTextProps} style={s.name} numberOfLines={1}>@{item.username?.toUpperCase()}</Text>
       <PressableScale

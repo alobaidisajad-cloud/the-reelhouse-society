@@ -1,7 +1,7 @@
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { Check } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
@@ -49,7 +49,7 @@ export default React.memo(function EditorialDesk({
     ) : (
         <PressableScale onPress={() => { setEditorialHeader(p.file_path); }} haptic="selection" pressedScale={0.96} hitSlop={null}
             accessibilityRole="button" accessibilityLabel={`Header still ${index}`} accessibilityState={{ selected: editorialHeader === p.file_path }}>
-            <Image source={{ uri: tmdb.backdrop(p.file_path, 'w300') }} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && st.stillImgFaded]} contentFit="cover" cachePolicy="memory-disk" transition={150} />
+            <RemoteImage uri={tmdb.backdrop(p.file_path, 'w300')} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && st.stillImgFaded]} contentFit="cover" transition={150} fallback={null} />
         </PressableScale>
     ), [editorialHeader, setEditorialHeader]);
 

@@ -1,8 +1,8 @@
 import { useCallback, memo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
-import { Image } from 'expo-image';
 import { tmdb } from '@/src/lib/tmdb';
 import { initialOf } from '@/src/utils/text';
 import { nav } from '@/src/utils/typedRouter';
@@ -38,7 +38,7 @@ const CastCard = memo(function CastCard({ item, nameBlock }: { item: CastMember;
             <View style={s.castPhotoWrap}>
                 {photoUri ? (
                     <>
-                        <Image source={{ uri: photoUri }} style={s.castPhoto} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
+                        <RemoteImage uri={photoUri} style={s.castPhoto} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={50} fallback={null} />
                         {/* Sepia tint — matches web filter: sepia(0.15) */}
                         <View style={s.sepiaTint} />
                     </>

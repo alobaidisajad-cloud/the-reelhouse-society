@@ -1,5 +1,5 @@
 import TactileEngine from '@/src/utils/TactileEngine';
-import { Image } from 'expo-image';
+import { RemoteImage } from '@/src/components/Picture';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film, X } from 'lucide-react-native';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -172,13 +172,9 @@ export default function YearInCinemaScreen() {
               <View style={s.topWrap}>
                 {stats.topFilms.map((f, i) => (
                   <Arrive key={f.id} name="year-in-cinema-7" duration={600} delay={i * 140} style={s.topCard}>
-                    {f.poster ? (
-                      <Image source={{ uri: tmdb.poster(f.poster, 'w342') }} style={s.topPoster} cachePolicy="memory-disk" transition={150} />
-                    ) : (
-                      <View style={[s.topPoster, s.topPosterBlank]}>
+                    <RemoteImage uri={tmdb.poster(f.poster, 'w342')} style={s.topPoster} transition={150} fallback={<View style={[s.topPoster, s.topPosterBlank]}>
                         <Film size={18} color={colors.sepia} />
-                      </View>
-                    )}
+                      </View>} />
                     <View style={s.topInfo}>
                       <Text style={s.topTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{f.title}</Text>
                       <ReelRating rating={f.rating} size={13} />

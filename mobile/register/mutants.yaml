@@ -1738,7 +1738,7 @@ mutants:
         find: "  Newspaper, Film, Clapperboard, User,\n"
         replace: "  Newspaper, Film, Clapperboard, User, Eye,\n"
       - file: app/(tabs)/_layout.tsx
-        find: "<Image source={HOUSE_EYE} style={s.houseEye} tintColor={iconColor} contentFit=\"contain\" cachePolicy=\"memory-disk\" accessible={false} />"
+        find: "<AssetImage source={HOUSE_EYE} style={s.houseEye} tintColor={iconColor} contentFit=\"contain\" accessible={false} />"
         replace: "<Eye size={26} color={iconColor} />"
     proof: { file: src/components/__tests__/theHouseSignsWithItsLogo.test.tsx, test: "imports one only where the list keeps it, and every kept place still does" }
 

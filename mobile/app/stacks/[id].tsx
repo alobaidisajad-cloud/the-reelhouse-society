@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import * as Crypto from 'expo-crypto';
  
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BlurView } from 'expo-blur';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, X } from 'lucide-react-native';
@@ -134,22 +134,11 @@ const StackDetailFilmCard = React.memo(({
         accessibilityRole="link"
         accessibilityLabel={item.title}
       >
-        {item.poster_path ? (
-          <Image
-            source={{ uri: tmdb.poster(item.poster_path, 'w342')! }}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-            placeholder={{ blurhash }}
-            transition={200}
-            recyclingKey={item.poster_path}
-          />
-        ) : (
+        <RemoteImage uri={tmdb.poster(item.poster_path, 'w342')} style={StyleSheet.absoluteFill} contentFit="cover" placeholder={{ blurhash }} transition={200} recyclingKey={item.poster_path} fallback={
           // A mark, not the title again: the caption beneath already names it.
           <View style={s.posterPlaceholder}>
             <Text style={s.placeholderMark}>✦</Text>
-          </View>
-        )}
+          </View>} />
         {isLogged && (
           <View style={s.loggedBadge}>
             <CheckCircle2 size={12} color={colors.sepia} />
@@ -865,7 +854,7 @@ export default function StackDetailScreen() {
                   over nothing is a dark block hiding the room's light. */}
               {heroPoster ? (
                 <>
-                  <Image source={heroPoster} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={20} cachePolicy="memory-disk" />
+                  <RemoteImage uri={heroPoster} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={20} fallback={null} />
                   <RoomVeil room="default" hem={HEADER_HEIGHT} art={heroPoster} stops={HERO_VEIL} lifted={heroLifted} />
                 </>
               ) : null}

@@ -97,7 +97,7 @@ production shows only its id, area, seriousness and count here.
 | DB-standing-stands-in-the-way-out | database | behaviour | OPEN | 1 | A banned or suspended member could not close their own account |
 | DB-applied-bytes-differ | database | code | OPEN | 0 | The train applied a migration with the line ends of the checkout it ran from, so production held other bytes than CI rehearsed |
 | CODE-promise-not-awaited | code | behaviour | OPEN | 289 | A promise nobody waits for, so its failure goes unheard and what follows may run first |
-| CODE-index-read-unchecked | code | behaviour | OPEN | 1462 | A value read by index or key used as if it is always there |
+| CODE-index-read-unchecked | code | behaviour | OPEN | 1461 | A value read by index or key used as if it is always there |
 | EDGE-function-static-fault | server | code | OPEN | 4 | An edge function's type error or lint finding, where no gate read the functions |
 | DATA-one-flag-for-two-reads | lounge | serious | OPEN | 1 | The salons' read and the open room's read shared one loading flag: whichever ended first lowered it for the other, so a room called itself read with its words still coming, and an empty room waited out the whole salons' read (six round trips) to say so |
 | DATA-another-rooms-words-shown | lounge | serious | OPEN | 2 | Opening a salon kept the last salon's words: they stood under the new salon's name until its own came, and for good when its read failed; the screen drew whatever words the store held, whichever room they were |

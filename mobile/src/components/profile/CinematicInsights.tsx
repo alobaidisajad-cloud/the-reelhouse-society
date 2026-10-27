@@ -3,9 +3,9 @@
  * most, counted by the server over their whole archive.
  */
 import { useMemo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { colors, fonts } from '@/src/theme/theme';
 // The URL builder only — the fetching half of this module is no longer used here.
 import { tmdb } from '@/src/lib/tmdb';
@@ -108,11 +108,7 @@ export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
                             </View>
                             {/* Photo */}
                             <View style={[s.avatar, i === 0 && { borderColor: colors.sepia, borderWidth: 2 }]}>
-                                {actor.profile_path ? (
-                                <Image source={{ uri: tmdb.profile(actor.profile_path) }} style={s.avatarImg} cachePolicy="memory-disk" transition={150} />
-                                ) : (
-                                    <Text {...scaledTextProps} style={s.avatarFallback}>✦</Text>
-                                )}
+                                <RemoteImage uri={tmdb.profile(actor.profile_path)} style={s.avatarImg} transition={150} fallback={<Text {...scaledTextProps} style={s.avatarFallback}>✦</Text>} />
                             </View>
                             {/* Name + Bar */}
                             <View style={s.personInfo}>
@@ -138,11 +134,7 @@ export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
                                 <Text {...scaledTextProps} style={[s.rankText, i === 0 && { color: colors.ink }]}>{i + 1}</Text>
                             </View>
                             <View style={[s.avatar, i === 0 && { borderColor: colors.sepia, borderWidth: 2 }]}>
-                                {director.profile_path ? (
-                                <Image source={{ uri: tmdb.profile(director.profile_path) }} style={s.avatarImg} cachePolicy="memory-disk" transition={150} />
-                                ) : (
-                                    <Text {...scaledTextProps} style={s.avatarFallback}>✦</Text>
-                                )}
+                                <RemoteImage uri={tmdb.profile(director.profile_path)} style={s.avatarImg} transition={150} fallback={<Text {...scaledTextProps} style={s.avatarFallback}>✦</Text>} />
                             </View>
                             <View style={s.personInfo}>
                                 <Text {...scaledTextProps} style={[s.personName, i === 0 && { color: colors.parchment }]} numberOfLines={1}>{director.name}</Text>

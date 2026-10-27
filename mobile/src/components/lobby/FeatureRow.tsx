@@ -12,8 +12,8 @@
  * picture cannot be seen, only collided with.
  */
 import React, { memo } from 'react';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, type Href } from 'expo-router';
 import { Text } from '@/src/components/text';
@@ -88,10 +88,7 @@ export const FeatureRow = memo(function FeatureRow({ plan, sheet, bill, dark, on
             accessibilityRole="link"
             accessibilityLabel={`${film.title ?? film.name ?? 'A film'}. Open the film.`}
           >
-            {film.poster_path ? (
-              <Image source={{ uri: tmdb.poster(film.poster_path, 'w185') ?? undefined }} style={StyleSheet.absoluteFill}
-                contentFit="cover" contentPosition="top" cachePolicy="memory-disk" transition={150} accessible={false} />
-            ) : null}
+            <RemoteImage uri={tmdb.poster(film.poster_path, 'w185')} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition="top" transition={150} accessible={false} fallback={<PosterMark style={StyleSheet.absoluteFill} size={16} ground={false} />} />
           </PressableScale>
         ))}
         {/* 48 tall: past the line under which a halo is added, so it can never reach the poster above */}
@@ -174,17 +171,21 @@ const OneSheet = memo(function OneSheet({ sheet, width, height, plan }: {
       accessibilityRole="link"
       accessibilityLabel={`Now showing: ${label}. Open the film.`}
     >
-      {!sheet.art.titled && sheet.art.path ? (
-        <Image source={{ uri: tmdb.poster(sheet.art.path, 'w780') ?? undefined }} style={StyleSheet.absoluteFill}
-          contentFit="cover" contentPosition={{ top: '30%' }} cachePolicy="memory-disk" transition={200} accessible={false} />
-      ) : null}
+      {/* Wordless key art: lost, the sheet's own colour shows, and its foot prints the title. */}
+      <RemoteImage uri={!sheet.art.titled && sheet.art.path ? tmdb.poster(sheet.art.path, 'w780') : null} style={StyleSheet.absoluteFill}
+        contentFit="cover" contentPosition={{ top: '30%' }} transition={200} accessible={false} fallback={null} />
       <View style={s.border} pointerEvents="none" />
       {tagline}
       {snipe}
-      {sheet.art.titled && sheet.art.path ? (
-        <Image source={{ uri: tmdb.poster(sheet.art.path, 'w500') ?? undefined }} style={s.titledArt}
-          contentFit="contain" cachePolicy="memory-disk" transition={200} accessible={false} />
-      ) : null}
+      {/* Art that carries the title, and no title printed for it: lost, the title is printed in its place. */}
+      <RemoteImage uri={sheet.art.titled && sheet.art.path ? tmdb.poster(sheet.art.path, 'w500') : null} style={s.titledArt}
+        contentFit="contain" transition={200} accessible={false}
+        fallback={sheet.art.titled ? (
+          <View style={[s.titledArt, s.titledLost]}>
+            <Text numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.6} maxFontSizeMultiplier={1.35}
+              style={[s.title, s.titledLostTitle]} accessibilityRole="header">{sheet.title}</Text>
+          </View>
+        ) : null} />
       {foot}
     </PressableScale>
   );
@@ -244,6 +245,8 @@ const s = StyleSheet.create({
   nowRule: { flex: 1, minWidth: 0, height: 1, backgroundColor: colors.sepiaBorderStrong },
   now: { color: colors.marqueeGold, lineHeight: SHEET_FOOT.nowLine, paddingLeft: 4 },
   titledArt: { flex: 1, minHeight: 0, marginTop: 10, marginBottom: 2 },
+  titledLost: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+  titledLostTitle: { fontSize: 30, lineHeight: 34 },
   dark: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 20 },
   darkName: { color: colors.silverScreen, textAlign: 'center' },
   darkSub: { color: colors.fog, textAlign: 'center' },

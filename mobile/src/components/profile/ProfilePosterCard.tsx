@@ -1,6 +1,6 @@
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
 import { Sparkles, X, Film as FilmIcon } from 'lucide-react-native';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
@@ -118,20 +118,9 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
       ].filter(Boolean).join(', ')}
       accessibilityHint="Opens the film"
     >
-      {posterUri ? (
-        <Image
-          source={{ uri: posterUri }}
-          style={[s.posterImg, hasGlow && s.posterImgGlowed]}
-          recyclingKey={posterUri}
-          cachePolicy="memory-disk"
-          placeholder={{ blurhash: SEPIA_HASH }}
-          transition={200}
-        />
-      ) : (
-        <View style={[s.posterImg, hasGlow && s.posterImgGlowed, s.posterPlaceholder]}>
+      <RemoteImage uri={posterUri} style={[s.posterImg, hasGlow && s.posterImgGlowed]} recyclingKey={posterUri} placeholder={{ blurhash: SEPIA_HASH }} transition={200} fallback={<View style={[s.posterImg, hasGlow && s.posterImgGlowed, s.posterPlaceholder]}>
           <FilmIcon size={18} color={colors.sepia} strokeWidth={1} />
-        </View>
-      )}
+        </View>} />
       {/* RN has no ::after — the mount board is a real view, and it must never
           intercept the tap that belongs to the frame beneath it. */}
       <View style={s.mountBoard} pointerEvents="none" />

@@ -1,4 +1,5 @@
 import TactileEngine from '@/src/utils/TactileEngine';
+import { RemoteImage } from '@/src/components/Picture';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -15,7 +16,6 @@ import {
     Trash2,
     X,
 } from 'lucide-react-native';
-import { Image } from 'expo-image';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -914,9 +914,7 @@ function TribunalScreen() {
                         accessibilityLabel={`View the accused, ${accused.username}`}
                       >
                         <View style={s.accusedAvatar}>
-                          {accused.avatar_url
-                            ? <Image source={{ uri: accused.avatar_url }} style={s.accusedAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
-                            : <Text style={s.accusedAvatarLetter}>{initialOf(accused.username)}</Text>}
+                          <RemoteImage uri={accused.avatar_url} style={s.accusedAvatarImg} contentFit="cover" fallback={<Text style={s.accusedAvatarLetter}>{initialOf(accused.username)}</Text>} />
                         </View>
                         <View style={s.accusedInfo}>
                           <Text style={s.accusedLabel}>THE ACCUSED</Text>

@@ -18,6 +18,18 @@ const TEXT_RULE = {
   message: "Import Text / TextInput from '@/src/components/text'. React Native's own grow to the system's largest size (3.1x on iOS) and double Android's letter spacing: the app's carry the 1.35 ceiling and iOS's spacing.",
 };
 
+// Every picture is drawn through src/components/Picture.tsx (P4.10): there a missing or failed one
+// draws its fallback in its own box, and the cache is the house's. Drawn anywhere else, it was a hole.
+const PICTURE_RULE = {
+  name: 'expo-image',
+  importNames: ['Image', 'ImageBackground'],
+  message: "Draw pictures through '@/src/components/Picture': RemoteImage (a fetched picture, with the fallback its box draws when there is none or it could not be had) or AssetImage (one bundled with the app).",
+};
+const RN_IMAGE_RULE = {
+  name: 'react-native',
+  importNames: ['Image', 'ImageBackground'],
+  message: "Draw pictures through '@/src/components/Picture': React Native's Image has no fallback for a picture that could not be had.",
+};
 module.exports = defineConfig([
   expoConfig,
   {
@@ -53,7 +65,7 @@ module.exports = defineConfig([
         varsIgnorePattern: '^_',
       }],
       'no-restricted-imports': ['error', {
-        paths: [FLASH_LIST_RULE, TEXT_RULE],
+        paths: [FLASH_LIST_RULE, TEXT_RULE, PICTURE_RULE, RN_IMAGE_RULE],
       }],
       'no-restricted-syntax': ['error', {
         selector: "MemberExpression[object.name='Animated'][property.name='Text']",
@@ -90,7 +102,19 @@ module.exports = defineConfig([
     // CinematicFlashList is the sanctioned Reanimated wrapper around FlashList —
     // it may import AnimatedFlashList, and nothing else changes.
     files: ['src/components/layout/CinematicFlashList.tsx'],
-    rules: { 'no-restricted-imports': ['error', { paths: [TEXT_RULE] }] },
+    rules: { 'no-restricted-imports': ['error', { paths: [TEXT_RULE, PICTURE_RULE, RN_IMAGE_RULE] }] },
+  },
+  {
+    // Where expo-image's Image may be named: Picture itself, and the two that only call its cache
+    // (prefetching to disk, clearing memory), drawing nothing.
+    files: ['src/components/Picture.tsx', 'src/utils/prefetchPictures.ts', 'src/utils/memoryManager.ts'],
+    rules: { 'no-restricted-imports': ['error', { paths: [FLASH_LIST_RULE, TEXT_RULE, RN_IMAGE_RULE] }] },
+  },
+  {
+    // React Native's Image, with no address to fail: the rating marks and the seal bar's logo are
+    // bundled art, and the Dispatch reader only asks a bundled mark for its address.
+    files: ['src/components/Decorative.tsx', 'src/components/log/LogSealBar.tsx', 'app/dispatch/[[]id].tsx'],
+    rules: { 'no-restricted-imports': ['error', { paths: [FLASH_LIST_RULE, TEXT_RULE, PICTURE_RULE] }] },
   },
   {
     files: ['scripts/**/*.js', 'scripts/**/*.cjs', 'supabase/diagnostics/**/*.cjs', 'test-utils/**/*.js', 'mockups/tools/**/*.cjs', '.claude/hooks/**/*.cjs'],

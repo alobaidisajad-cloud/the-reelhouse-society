@@ -1,7 +1,7 @@
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
@@ -38,12 +38,12 @@ export const PosterFrame = React.memo(function PosterFrame({ filmId, filmTitle, 
     <View style={s.wrap}>
       {/* Premium glow shadow layer */}
       {posterUri && (isPremium || isAuteur) && (
-        <Image
+        <RemoteImage
+          uri={posterUri}
+          fallback={null}
           {...{
-            source: { uri: posterUri },
             style: [s.poster, s.premiumShadow, { tintColor: isAuteur ? colors.bloodReel : colors.tarnish }],
             blurRadius: 15,
-            cachePolicy: "memory-disk",
             recyclingKey: `blur-${filmId}`,
             placeholder: { blurhash: SEPIA_HASH },
             transition: 100,
@@ -52,20 +52,9 @@ export const PosterFrame = React.memo(function PosterFrame({ filmId, filmTitle, 
       )}
 
       {/* Main poster — or the Society's mark when the archive holds no still */}
-      {posterUri ? (
-        <Image
-          source={{ uri: posterUri }}
-          style={s.poster}
-          cachePolicy="memory-disk"
-          recyclingKey={`poster-${filmId}`}
-          placeholder={{ blurhash: SEPIA_HASH }}
-          transition={100}
-        />
-      ) : (
-        <View style={s.posterEmpty}>
+      <RemoteImage uri={posterUri} style={s.poster} recyclingKey={`poster-${filmId}`} placeholder={{ blurhash: SEPIA_HASH }} transition={100} fallback={<View style={s.posterEmpty}>
           <Text style={s.posterEmptyMark}>✦</Text>
-        </View>
-      )}
+        </View>} />
 
       {/* Tactile lighting overlay */}
       <LinearGradient

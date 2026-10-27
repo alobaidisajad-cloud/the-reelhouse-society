@@ -9,11 +9,11 @@
  * feed does not have, it is written here rather than bent into `paperStyles`.
  */
 import { memo } from 'react';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { useReducedMotion } from 'react-native-reanimated';
 import { PresenceView } from '@/src/components/motion/Presence';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, ChevronUp, Search, ArrowLeft, Lock, ExternalLink, MoreHorizontal } from 'lucide-react-native';
 
@@ -327,9 +327,7 @@ export const PaperArchive = memo(function PaperArchive({
       {film ? (
         <View style={m.found}>
           <View style={m.foundPlate}>
-            {film.posterPath ? (
-              <Image source={{ uri: film.posterPath }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
-            ) : null}
+            <RemoteImage uri={film.posterPath} style={p.plateArt} contentFit="cover" fallback={<PosterMark style={p.plateArt} size={16} ground={false} />} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={m.foundTitle} numberOfLines={2} {...displayTextProps}>{film.title}</Text>
@@ -365,9 +363,7 @@ export const ArchiveFilm = memo(function ArchiveFilm({
       accessibilityLabel={`${film.title}. ${counted(filings, 'filing', 'filings')}`}
     >
       <View style={m.archivePlate}>
-        {film.posterPath ? (
-          <Image source={{ uri: film.posterPath }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
-        ) : null}
+        <RemoteImage uri={film.posterPath} style={p.plateArt} contentFit="cover" fallback={<PosterMark style={p.plateArt} size={12} ground={false} />} />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={m.archiveTitle} numberOfLines={1} {...scaledTextProps}>{film.title}</Text>
@@ -575,7 +571,7 @@ export const DossierShareCard = memo(function DossierShareCard({
       {/* The inner rule: a second border set in, which makes it read as printed. */}
       <View style={m.shareInner} pointerEvents="none" />
 
-      {logo ? <Image source={{ uri: logo }} style={m.shareLogo} contentFit="contain" cachePolicy="memory-disk" /> : null}
+      <RemoteImage uri={logo} style={m.shareLogo} contentFit="contain" fallback={null} />
 
       {/* The nameplate rule is the house's brass ramp, as on every rule that matters. */}
       <LinearGradient colors={BRASS} locations={BRASS_STOPS}
@@ -619,9 +615,7 @@ export const DossierShareCard = memo(function DossierShareCard({
       {/* Not the page's Byline: its 8.5pt name would smear under recompression. */}
       <View style={m.shareFoot}>
         <View style={m.shareByWrap}>
-          {author?.avatar ? (
-            <Image source={{ uri: author.avatar }} style={m.shareAvatar} contentFit="cover" cachePolicy="memory-disk" />
-          ) : null}
+          <RemoteImage uri={author?.avatar} style={m.shareAvatar} contentFit="cover" fallback={<View style={[m.shareAvatar, m.loungeAvatarNone]} />} />
           <Text style={m.shareBy} numberOfLines={1} {...decorativeTextProps}>
             {author ? author.name.toUpperCase() : DEPARTED_NAME.toUpperCase()}
             {author ? <Text style={m.shareByNo}>{`  ·  No. ${author.memberNo}`}</Text> : null}
@@ -747,11 +741,7 @@ export const LoungeCard = memo(function LoungeCard({
 
         {/* The WRITER, with a face (the lounge already names who shared it). */}
         <View style={m.loungeByRow}>
-          {author?.avatar ? (
-            <Image source={{ uri: author.avatar }} style={m.loungeAvatar} contentFit="cover" cachePolicy="memory-disk" />
-          ) : (
-            <View style={[m.loungeAvatar, m.loungeAvatarNone]} />
-          )}
+          <RemoteImage uri={author?.avatar} style={m.loungeAvatar} contentFit="cover" fallback={<View style={[m.loungeAvatar, m.loungeAvatarNone]} />} />
           {/* No house number: that belongs on the share card, which leaves the app. */}
           <Text style={m.loungeBy} {...deckLabelProps}>
             {author ? author.name.toUpperCase() : DEPARTED_NAME.toUpperCase()}

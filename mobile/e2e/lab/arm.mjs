@@ -461,7 +461,7 @@ const STACK_FILE = 'app/stacks/[id].tsx';
 const stackVeilStill = [edit(STACK_FILE, ' lifted={heroLifted} />', ' />')];
 const stackHeroStill = [edit(STACK_FILE, '        { translateY: heroDrift.value },\n', '        { translateY: 0 },\n')];
 const stackCardsUnclipped = [edit(STACK_FILE, "  filmCard: { ...EDGE_LIT, borderRadius: 2, overflow: 'hidden', ", '  filmCard: { ...EDGE_LIT, borderRadius: 2, ')];
-const stackNoPosters = [edit(STACK_FILE, '        {item.poster_path ? (\n', '        {false && item.poster_path ? (\n')];
+const stackNoPosters = [edit(STACK_FILE, "<RemoteImage uri={tmdb.poster(item.poster_path, 'w342')}", '<RemoteImage uri={null}')];
 
 // The house's lit edge (EDGE_LIT, on some fifty kinds of surface), in its two parts, each taken off
 // everywhere: Android draws the inset highlight by clipping to the surface's rounded outline on

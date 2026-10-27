@@ -54,7 +54,7 @@ describe('the reel is the advertisement', () => {
       // The layer nobody can see from the screen. If the feed hooks were
       // conditional on a member, removing the wall would ship a blank page and
       // nothing on it would say why.
-      for (const hook of ['useCommunityFeed()', 'useStacksFeed(']) {
+      for (const hook of ['useCommunityFeed(', 'useStacksFeed(']) {
         expect(reel).toContain(hook);
       }
       expect(reel).not.toMatch(/isAuthenticated\s*&&\s*use(Community|Stacks)Feed/);

@@ -1,6 +1,11 @@
 /**
- * everyPictureStatesItsCache.guard.test.ts — every expo-image picture in the app
- * says how it is cached.
+ * everyPictureStatesItsCache.guard.test.ts — every picture in the app says how it is
+ * cached.
+ *
+ * The app draws its pictures through src/components/Picture.tsx (RemoteImage, AssetImage),
+ * whose own default is the house's policy: a picture drawn through it with no `cachePolicy`
+ * keeps memory-disk, and Picture's defaults are held here too. expo-image's own tags are
+ * read wherever they are (ESLint keeps them inside Picture).
  *
  * A picture with no `cachePolicy` takes expo-image's default, `'disk'`, which never
  * keeps the decoded picture in memory: each time a screen is opened again, every such
@@ -20,6 +25,11 @@ const OTHER_POLICY: Record<string, { policy: string; sites: number; why: string 
 
 /** expo-image's components that draw a picture and take a `cachePolicy`. */
 const PICTURES = new Set(['Image', 'ImageBackground']);
+/** The house's, whose policy is memory-disk unless a site says otherwise. */
+const HOUSE = '@/src/components/Picture';
+const HOUSE_PICTURES = new Set(['RemoteImage', 'AssetImage']);
+/** Picture.tsx itself: its expo-image tags pass on the policy its components default. */
+const PICTURE_FILE = 'src/components/Picture.tsx';
 
 /** What a picture's policy is when the source does not say it in words. */
 const NOT_STATED = '(not stated)';
@@ -79,9 +89,14 @@ function picturesIn(files: string[]) {
     const sf = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true, path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
     const at = (n: ts.Node) => `${file}:${sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1}`;
     const named = new Set<string>();
+    const house = new Set<string>();
     const spaces = new Set<string>();
     for (const s of sf.statements) {
       if (ts.isExportDeclaration(s) && s.moduleSpecifier && written(s.moduleSpecifier) === 'expo-image') escapes.push(at(s));
+      if (ts.isImportDeclaration(s) && written(s.moduleSpecifier) === HOUSE && s.importClause?.namedBindings
+        && ts.isNamedImports(s.importClause.namedBindings)) {
+        for (const e of s.importClause.namedBindings.elements) if (HOUSE_PICTURES.has((e.propertyName ?? e.name).text)) house.add(e.name.text);
+      }
       if (!ts.isImportDeclaration(s) || written(s.moduleSpecifier) !== 'expo-image' || !s.importClause) continue;
       const b = s.importClause.namedBindings;
       if (b && ts.isNamespaceImport(b)) spaces.add(b.name.text);
@@ -96,7 +111,13 @@ function picturesIn(files: string[]) {
           && spaces.has(e.expression.text) && PICTURES.has(e.name.text);
     const visit = (n: ts.Node) => {
       if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && isPicture(n.tagName)) {
-        pictures.push({ file, site: at(n), policy: policyOf(n.attributes) });
+        if (file !== PICTURE_FILE) pictures.push({ file, site: at(n), policy: policyOf(n.attributes) });
+        ts.forEachChild(n.attributes, visit);
+        return;
+      }
+      if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && ts.isIdentifier(n.tagName) && house.has(n.tagName.text)) {
+        const policy = policyOf(n.attributes);
+        pictures.push({ file, site: at(n), policy: policy === NOT_STATED ? 'memory-disk' : policy });
         ts.forEachChild(n.attributes, visit);
         return;
       }
@@ -145,6 +166,12 @@ describe('every expo-image picture in app/ and src/', () => {
 
   it('is drawn as a tag, where this walk can read it, and nowhere else', () => {
     expect(escapes).toEqual([]);
+  });
+
+  it('is memory-disk through Picture when its site says nothing: both of its components default to it, and pass it on', () => {
+    const source = readFileSync(join(MOBILE, PICTURE_FILE), 'utf8');
+    const defaults = source.match(/\bcachePolicy = 'memory-disk'/g) ?? [];
+    expect([defaults.length, (source.match(/cachePolicy=\{cachePolicy\}/g) ?? []).length]).toEqual([2, 2]);
   });
 });
 

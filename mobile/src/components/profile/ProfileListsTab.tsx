@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback, useState, useRef } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { LayoutList, Lock, ListOrdered, Search } from 'lucide-react-native';
 import { nav } from '@/src/utils/typedRouter';
@@ -81,14 +81,7 @@ const ProfileListCard = React.memo(({ list, edge }: { list: ProfileList, edge: s
       <View style={s.stackPosterWrap}>
         {posters.length > 0 ? (
           posters.map((uri: any, i: number) => (
-            <Image
-              key={i}
-              source={{ uri }}
-              style={[s.stackPosterPanel, { left: `${(i * 100) / posters.length}%` as import('react-native').DimensionValue, width: `${100 / posters.length}%` as import('react-native').DimensionValue }]}
-              cachePolicy="memory-disk"
-              placeholder={{ blurhash: SEPIA_HASH }}
-              transition={200}
-            />
+            <RemoteImage uri={uri} fallback={null} key={i} style={[s.stackPosterPanel, { left: `${(i * 100) / posters.length}%` as import('react-native').DimensionValue, width: `${100 / posters.length}%` as import('react-native').DimensionValue }]} placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
           ))
         ) : (
           <View style={s.stackEmptyBg} />

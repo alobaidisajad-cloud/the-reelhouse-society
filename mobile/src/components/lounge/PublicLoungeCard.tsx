@@ -6,9 +6,9 @@
  * No fake lights — a plaque never lies.
  */
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { nav } from '@/src/utils/typedRouter';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Users, KeyRound, ChevronRight } from 'lucide-react-native';
@@ -44,7 +44,7 @@ export const PublicLoungeCard = React.memo(({ lounge, index: _index, onReport }:
 
         {coverUrl && (
           <View style={s.publicImgTop}>
-            <Image source={{ uri: coverUrl }} style={s.publicImgContent} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
+            <RemoteImage uri={coverUrl} style={s.publicImgContent} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={300} fallback={null} />
             <LinearGradient
               colors={['transparent', 'rgba(13,11,9,0.35)']}
               style={StyleSheet.absoluteFill}

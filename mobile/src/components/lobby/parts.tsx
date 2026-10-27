@@ -4,8 +4,8 @@
  * slanted slab. Every colour is the theme's own.
  */
 import React, { memo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
-import { Image } from 'expo-image';
 import Svg, { Circle, Defs, Path, Pattern, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
@@ -70,15 +70,11 @@ export const HouseLine = memo(function HouseLine({ type, text, room, style, head
 // ── A MEMBER ────────────────────────────────────────────────────────────────
 export const Avatar = memo(function Avatar({ author, size }: { author: WallAuthor; size: number }) {
   const box = { width: size, height: size, borderRadius: size / 2 };
-  return author.avatar_url ? (
-    <Image source={{ uri: author.avatar_url }} style={[s.avatar, box]} contentFit="cover" cachePolicy="memory-disk" accessible={false} />
-  ) : (
-    <View style={[s.avatar, box]} {...UNSPOKEN}>
+  return <RemoteImage uri={author.avatar_url} style={[s.avatar, box]} contentFit="cover" accessible={false} fallback={<View style={[s.avatar, box]} {...UNSPOKEN}>
       <Text style={[s.initial, { fontSize: Math.round(size * 0.45) }]} maxFontSizeMultiplier={1}>
         {initialOf(author.username)}
       </Text>
-    </View>
-  );
+    </View>} />;
 });
 
 /**

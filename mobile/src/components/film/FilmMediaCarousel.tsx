@@ -1,8 +1,8 @@
 import React, { memo, useCallback } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
-import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import { Play } from 'lucide-react-native';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -34,7 +34,7 @@ const VideoThumb = memo(function VideoThumb({ video, onPlay }: VideoThumbProps) 
   return (
     <PressableScale onPress={handlePlay} style={sub.videoThumb} hitSlop={{top: 10, bottom: 10}}
       accessibilityRole="button" accessibilityLabel={`Play ${video.type ?? 'video'}${video.name ? `: ${video.name}` : ''}`}>
-      <Image source={{ uri: thumb }} style={sub.videoImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
+      <RemoteImage uri={thumb} style={sub.videoImg} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={50} fallback={null} />
       <View style={sub.videoPlayOverlay}>
         <View style={sub.videoPlayCircle}>
           <Play size={14} color={colors.parchment} fill={colors.parchment} />

@@ -1104,7 +1104,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1462
+    count: 1461
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }

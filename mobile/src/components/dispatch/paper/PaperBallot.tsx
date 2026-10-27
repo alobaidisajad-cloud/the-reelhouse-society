@@ -1,7 +1,7 @@
 import { memo } from 'react';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
@@ -191,9 +191,7 @@ export const PaperBallot = memo(function PaperBallot({
               record deserves the object rather than a rectangle. */}
           <View style={p.plateGlow}>
             <View style={p.wonPoster}>
-              {options[top].posterPath ? (
-                <Image source={{ uri: options[top].posterPath }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
-              ) : null}
+              <RemoteImage uri={options[top].posterPath} style={p.plateArt} contentFit="cover" fallback={<PosterMark style={p.plateArt} size={22} ground={false} />} />
             </View>
           </View>
           <Text style={p.wonTitle} {...displayTextProps}>{options[top].title.toUpperCase()}</Text>
@@ -296,9 +294,7 @@ export const PaperBallot = memo(function PaperBallot({
                 </View>
               )}
               <View style={[p.optionPoster, closed && { width: 22, height: 33 }]}>
-                {o.posterPath ? (
-                  <Image source={{ uri: o.posterPath }} style={[p.plateArt, p.artHeld]} contentFit="cover" cachePolicy="memory-disk" />
-                ) : null}
+                <RemoteImage uri={o.posterPath} style={[p.plateArt, p.artHeld]} contentFit="cover" fallback={<PosterMark style={[p.plateArt, p.artHeld]} size={12} ground={false} />} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 {revealed ? (

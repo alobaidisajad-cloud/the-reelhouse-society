@@ -8,9 +8,9 @@
  * named for what it costs — a subscription service is never called "free".
  */
 import React, { useMemo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { countryLabel, countryName } from '@/src/utils/countryName';
 import PressableScale from '@/src/components/PressableScale';
@@ -62,20 +62,9 @@ const ProviderLogo = React.memo(function ProviderLogo({ p, providerLink }: { p: 
     }
   }, [providerLink]);
 
-  const face = p.logo_path ? (
-    <Image
-      source={{ uri: tmdb.logo(p.logo_path, 'w154') }}
-      style={s.logo}
-      contentFit="cover"
-      cachePolicy="memory-disk"
-      placeholder={{ blurhash: SEPIA_HASH }}
-      transition={50}
-    />
-  ) : (
-    <View style={s.logoFallback}>
+  const face = <RemoteImage uri={tmdb.logo(p.logo_path, 'w154')} style={s.logo} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={50} fallback={<View style={s.logoFallback}>
       <Text style={s.logoFallbackText} numberOfLines={1}>{monogram(p.provider_name)}</Text>
-    </View>
-  );
+    </View>} />;
 
   // A logo is a picture: the service is named for a screen reader either way,
   // and it is a control only where there is somewhere to go.

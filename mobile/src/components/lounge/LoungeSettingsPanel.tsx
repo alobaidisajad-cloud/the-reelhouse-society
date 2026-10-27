@@ -1,4 +1,5 @@
 import PressableScale from '@/src/components/PressableScale';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import { LoungeMember } from '@/src/types/social.types';
@@ -6,7 +7,6 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { BlurView } from 'expo-blur';
-import { Image } from 'expo-image';
 import { Ban, Crown, DoorClosed, Image as ImageIcon, LogOut, MoreHorizontal, Trash2, Users, Volume2, VolumeX, X } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import React, { useCallback, useState } from 'react';
@@ -99,9 +99,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
       <View style={s.memberBlock}>
         <View style={s.memberRow}>
           <View style={s.memberAvatar}>
-            {item.avatar_url
-              ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
-              : <Users size={13} color={colors.fog} strokeWidth={1.5} />}
+            <RemoteImage uri={item.avatar_url} style={s.memberAvatarImg} contentFit="cover" transition={150} fallback={<Users size={13} color={colors.fog} strokeWidth={1.5} />} />
           </View>
           <Text style={s.memberName} numberOfLines={1}>@{uname}</Text>
           {muted && <View style={s.statusTag}><VolumeX size={9} color={colors.fog} strokeWidth={2} /><Text style={s.statusTagText}>MUTED</Text></View>}
@@ -194,7 +192,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
                   <Text style={s.label}>SALON COVER</Text>
                   {lounge.cover_image ? (
                     <View style={s.coverRow}>
-                      <Image source={{ uri: tmdb.backdrop(lounge.cover_image, 'w500') }} style={s.coverThumb} contentFit="cover" cachePolicy="memory-disk" transition={150} />
+                      <RemoteImage uri={tmdb.backdrop(lounge.cover_image, 'w500')} style={s.coverThumb} contentFit="cover" transition={150} fallback={<PosterMark style={s.coverThumb} size={14} />} />
                       <View style={s.coverActions}>
                         <PressableScale style={s.coverBtn} onPress={handleChangeCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Change salon cover"><Text style={s.coverBtnText}>CHANGE</Text></PressableScale>
                         <PressableScale style={[s.coverBtn, s.coverBtnRemove]} onPress={handleRemoveCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Remove salon cover"><Text style={[s.coverBtnText, s.coverBtnTextRemove]}>REMOVE</Text></PressableScale>

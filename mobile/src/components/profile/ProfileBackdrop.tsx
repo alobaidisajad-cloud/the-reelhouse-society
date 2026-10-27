@@ -1,5 +1,5 @@
 import { View, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
+import { RemoteImage } from '@/src/components/Picture';
 import { type SharedValue } from 'react-native-reanimated';
 import { RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -67,13 +67,7 @@ export function ProfileBackdrop({ user, hem, scrollY }: {
     return (
         <Arrive testID="profile-backdrop" name="profilebackdrop-1" duration={1200} rise={0} style={s.container}>
             {/* Poster image */}
-            <Image
-                source={{ uri: posterSrc }}
-                style={s.image}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                transition={150}
-            />
+            <RemoteImage uri={posterSrc} style={s.image} contentFit="cover" transition={150} fallback={null} />
 
             {/* A dark wash, so the poster sits behind the page and not on it. */}
             <View style={s.darkWash} />

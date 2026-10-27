@@ -1,7 +1,7 @@
 import { memo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { FilmIcon, ImageIcon, AlertTriangle } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -140,11 +140,7 @@ export const PaperComposer = memo(function PaperComposer({
           <View style={p.column}>
             <View style={p.byline}>
               <View style={p.avatar}>
-                {me.avatar ? (
-                  <Image source={{ uri: me.avatar }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
-                ) : (
-                  <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(me.name)}</Text>
-                )}
+                <RemoteImage uri={me.avatar} style={p.plateArt} contentFit="cover" fallback={<Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(me.name)}</Text>} />
               </View>
               <Text
                 style={[p.bylineName, tier === 'auteur' && { color: CRIMSON_INK, opacity: 1 }]}

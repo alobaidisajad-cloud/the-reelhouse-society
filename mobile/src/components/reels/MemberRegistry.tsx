@@ -13,9 +13,9 @@
  * stays exactly as it was.
  */
 import React, { useCallback, useMemo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { User } from 'lucide-react-native';
 import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
@@ -85,11 +85,7 @@ function MemberRow({ member }: { member: NotableMember }) {
         accessibilityLabel={`View @${member.username}'s profile`}
       >
         <View style={s.avatar}>
-          {member.avatar_url ? (
-            <Image source={{ uri: member.avatar_url }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={150} />
-          ) : (
-            <View style={s.avatarEmpty}><User size={16} color={colors.fog} /></View>
-          )}
+          <RemoteImage uri={member.avatar_url} style={s.avatarImg} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={150} fallback={<View style={s.avatarEmpty}><User size={16} color={colors.fog} /></View>} />
         </View>
 
         <View style={s.rowText}>

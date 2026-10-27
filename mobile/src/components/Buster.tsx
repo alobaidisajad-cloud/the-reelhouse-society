@@ -13,8 +13,8 @@
  * never in a list's rows.
  */
 import React, { memo, useCallback, useEffect, useState } from 'react';
+import { AssetImage } from '@/src/components/Picture';
 import { View, StyleSheet, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
-import { Image } from 'expo-image';
 import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 import Animated, {
   cancelAnimation, Easing, ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue,
@@ -213,13 +213,13 @@ const Buster = memo(function Buster({ message, style, ...picture }: BusterPictur
           <Animated.View testID="buster-figure" style={[{ height: '100%', aspectRatio: w / h }, settled ? SHOWN : appear]}>
             {!seated && <Animated.View style={[StyleSheet.absoluteFill, floor]}><Shadow art={art} /></Animated.View>}
             <Animated.View style={[StyleSheet.absoluteFill, { transformOrigin: [`${art.pivot.x * 100}%`, `${art.pivot.y * 100}%`, 0] }, body]}>
-              <Image testID="buster-picture" source={art.picture} style={s.fill} contentFit="fill" cachePolicy="memory-disk" onLoad={() => setPictureIn(true)} accessible={false} />
+              <AssetImage source={art.picture} testID="buster-picture" style={s.fill} contentFit="fill" onLoad={() => setPictureIn(true)} accessible={false} />
               {hasEyes && (
                 <Animated.View style={[StyleSheet.absoluteFill, eyes]}><Points art={art} /></Animated.View>
               )}
               {/* What the drawing paints over his points: a low lid cuts a point to a half-moon. */}
               {art.over && (
-                <Image testID="buster-over" source={art.over} style={StyleSheet.absoluteFill} contentFit="fill" cachePolicy="memory-disk" onLoad={() => setOverIn(true)} accessible={false} />
+                <AssetImage source={art.over} testID="buster-over" style={StyleSheet.absoluteFill} contentFit="fill" onLoad={() => setOverIn(true)} accessible={false} />
               )}
             </Animated.View>
           </Animated.View>
@@ -258,9 +258,9 @@ export function BusterStill(picture: BusterPicture) {
   return (
     <View testID={`buster-still-${picture.mood}`} style={size} {...UNSPOKEN}>
       <View testID="buster-still-whole" style={[StyleSheet.absoluteFill, !whole && s.aside]}>
-        <Image testID="buster-picture" source={art.picture} style={size} contentFit="fill" cachePolicy="memory-disk" onLoad={() => setPictureIn(true)} accessible={false} />
+        <AssetImage source={art.picture} testID="buster-picture" style={size} contentFit="fill" onLoad={() => setPictureIn(true)} accessible={false} />
         {whole && art.eyes.length > 0 ? <Points art={art} /> : null}
-        {art.over && <Image testID="buster-over" source={art.over} style={StyleSheet.absoluteFill} contentFit="fill" cachePolicy="memory-disk" onLoad={() => setOverIn(true)} accessible={false} />}
+        {art.over && <AssetImage source={art.over} testID="buster-over" style={StyleSheet.absoluteFill} contentFit="fill" onLoad={() => setOverIn(true)} accessible={false} />}
       </View>
     </View>
   );

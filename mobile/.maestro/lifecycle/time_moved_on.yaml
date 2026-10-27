@@ -40,6 +40,12 @@ env:
     id: "profile-tab"
 - scrollUntilVisible:
     element:
+      id: "collection-card-watchlist"
+    direction: DOWN
+    timeout: 60000
+    centerElement: true
+- scrollUntilVisible:
+    element:
       text: "TODAY"
     direction: DOWN
     centerElement: true

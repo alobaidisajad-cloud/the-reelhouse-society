@@ -12,9 +12,9 @@
  * timing only, never a spring (the house no-bounce law).
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, Modal } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import Animated, { Easing } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
@@ -233,16 +233,12 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                 <View style={s.gate}>
                                     <Perforations />
                                     <View style={s.gateWindow}>
-                                        {flickerItem && posterUri(flickerItem) ? (
-                                            <Image
-                                                source={{ uri: posterUri(flickerItem)! }}
-                                                style={s.poster}
-                                                cachePolicy="memory-disk"
-                                                blurRadius={3}
-                                            />
-                                        ) : (
-                                            <View style={s.posterBlank} />
-                                        )}
+                                        <RemoteImage
+                                            uri={flickerItem ? posterUri(flickerItem) : null}
+                                            style={s.poster}
+                                            blurRadius={3}
+                                            fallback={<View style={s.posterBlank} />}
+                                        />
                                     </View>
                                     <Perforations />
                                 </View>
@@ -257,13 +253,9 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                 <View style={s.gate}>
                                     <Perforations />
                                     <Animated.View style={[s.gateWindow, s.resultPosterWrap, plateStyle]}>
-                                        {posterUri(result) ? (
-                                            <Image source={{ uri: posterUri(result)! }} style={s.poster} cachePolicy="memory-disk" transition={150} />
-                                        ) : (
-                                            <View style={[s.posterBlank, s.posterBlankResult]}>
+                                        <RemoteImage uri={posterUri(result)} style={s.poster} transition={150} fallback={<View style={[s.posterBlank, s.posterBlankResult]}>
                                                 <Text {...scaledTextProps} style={s.posterBlankTitle} numberOfLines={3}>{result.title ?? result.name}</Text>
-                                            </View>
-                                        )}
+                                            </View>} />
                                     </Animated.View>
                                     <Perforations />
                                 </View>

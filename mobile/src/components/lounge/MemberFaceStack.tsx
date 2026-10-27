@@ -14,9 +14,9 @@
  *     in the same spot.
  */
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { Users, Lock } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { initialOf } from '@/src/utils/text';
@@ -71,19 +71,7 @@ export const MemberFaceStack = React.memo(function MemberFaceStack({
       <View style={s.stack}>
         {shown.map((f, i) => (
           <View key={`${f.username}-${i}`} style={[s.avatar, i > 0 && s.avatarOverlap]}>
-            {f.avatar_url ? (
-              <Image
-                source={{ uri: f.avatar_url }}
-                style={s.avatarImg}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                placeholder={{ blurhash: SEPIA_HASH }}
-                transition={150}
-                recyclingKey={f.username}
-              />
-            ) : (
-              <Text style={s.initial}>{initialOf(f.username) || '?'}</Text>
-            )}
+            <RemoteImage uri={f.avatar_url} style={s.avatarImg} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={150} recyclingKey={f.username} fallback={<Text style={s.initial}>{initialOf(f.username) || '?'}</Text>} />
           </View>
         ))}
       </View>

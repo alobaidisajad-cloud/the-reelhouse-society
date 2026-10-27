@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, Pressable, Modal, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import { Image } from 'expo-image';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -155,13 +155,9 @@ const TriptychResultRow = React.memo(({ film, handleSetFilm }: { film: TriptychS
         accessibilityRole="button"
         accessibilityLabel={`Choose ${film.title}${film.release_date ? `, ${film.release_date.slice(0, 4)}` : ''}`}
     >
-        {film.poster_path ? (
-            <Image source={{ uri: tmdb.poster(film.poster_path, 'w92') }} style={s.resultPoster} contentFit="cover" cachePolicy="memory-disk" transition={150} />
-        ) : (
-            <View style={[s.resultPoster, s.resultPosterPlaceholder]}>
+        <RemoteImage uri={tmdb.poster(film.poster_path, 'w92')} style={s.resultPoster} contentFit="cover" transition={150} fallback={<View style={[s.resultPoster, s.resultPosterPlaceholder]}>
                 <Search size={16} color={colors.ash} />
-            </View>
-        )}
+            </View>} />
         <View style={s.resultInfo}>
             <Text {...scaledTextProps} style={s.resultTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.title}</Text>
             {film.release_date && <Text {...scaledTextProps} style={s.resultYear} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.release_date.slice(0, 4)}</Text>}
@@ -352,22 +348,12 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                 accessibilityLabel={label}
                 haptic
             >
-                {film ? (
-                    film.poster_path ? (
-                        <Image
-                            source={{ uri: tmdb.poster(film.poster_path, isCentre ? 'w342' : 'w185') }}
-                            style={s.poster}
-                            contentFit="cover"
-                            cachePolicy="memory-disk" transition={150}
-                        />
-                    ) : (
-                        // A favourite stored by an old build as a bare title has
-                        // no artwork: it is shown as a titled plate.
-                        <View style={s.titlePlate}>
+                {film ? <RemoteImage uri={tmdb.poster(film.poster_path, isCentre ? 'w342' : 'w185')} style={s.poster} contentFit="cover" transition={150} fallback={
+                  // A favourite stored by an old build as a bare title has
+                  // no artwork: it is shown as a titled plate.
+                  <View style={s.titlePlate}>
                             <Text {...scaledTextProps} style={[s.titlePlateText, isCentre && s.titlePlateTextLg]} numberOfLines={4}>{film.title}</Text>
-                        </View>
-                    )
-                ) : (
+                        </View>} /> : (
                     // An empty mount is still a frame — the dashed rectangle sits
                     // INSIDE it, the way a gallery leaves a hanging space marked.
                     <View style={s.emptyMount}>

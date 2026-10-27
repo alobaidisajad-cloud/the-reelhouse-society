@@ -1,7 +1,7 @@
 import { memo } from 'react';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, MessageSquare, Share2, Bookmark } from 'lucide-react-native';
 
@@ -96,15 +96,19 @@ export const Byline = memo(function Byline({
       ]}>
         {/* `recyclingKey`: in a recycled row the reused <Image> would show the
             previous member's face for a frame. */}
-        {!departed && author.avatar ? (
-          <Image source={{ uri: author.avatar }} style={p.plateArt} contentFit="cover"
-            recyclingKey={author.avatar} transition={0} cachePolicy="memory-disk" />
-        ) : !departed ? (
-          // UNSPOKEN: the name is beside it, and "T. TOMASREYES" is a stutter.
-          <Text style={p.avatarMark} {...UNSPOKEN} {...decorativeTextProps}>
-            {initialOf(author.name)}
-          </Text>
-        ) : null}
+        <RemoteImage
+          uri={departed ? null : author.avatar}
+          style={p.plateArt}
+          contentFit="cover"
+          recyclingKey={departed ? undefined : author.avatar}
+          transition={0}
+          fallback={departed ? null : (
+            // UNSPOKEN: the name is beside it, and "T. TOMASREYES" is a stutter.
+            <Text style={p.avatarMark} {...UNSPOKEN} {...decorativeTextProps}>
+              {initialOf(author.name)}
+            </Text>
+          )}
+        />
       </View>
       {/* The name truncates; the rank and the trailing facts sit in their own
           boxes. Measured: a 14-letter name with its facts needs 292pt of 256.
@@ -468,12 +472,7 @@ const PostWords = memo(function PostWords({
             <>
               {still ? (
                 <View style={[p.still, { height: stillHeight(measureWidth) }]}>
-                  {film?.backdropPath ? (
-                    <Image
-                      source={{ uri: film.backdropPath }} style={p.stillArt} contentFit="cover"
-                      recyclingKey={film.backdropPath} transition={0} cachePolicy="memory-disk"
-                    />
-                  ) : null}
+                  <RemoteImage uri={film?.backdropPath} style={p.stillArt} contentFit="cover" recyclingKey={film?.backdropPath} transition={0} fallback={null} />
                   {/* One scrim, darkening toward the words below. */}
                   <LinearGradient
                     colors={['rgba(30,25,20,0.48)', 'rgba(13,11,9,0.70)', 'rgba(13,11,9,0.93)']}
@@ -528,10 +527,7 @@ const PostWords = memo(function PostWords({
             <View style={p.answer}>
               <View style={p.answerTop}>
                 <View style={p.creditArt}>
-                  {answer.film.posterPath ? (
-                    <Image source={{ uri: answer.film.posterPath }} style={p.plateArt} contentFit="cover"
-                      recyclingKey={answer.film.posterPath} transition={0} cachePolicy="memory-disk" />
-                  ) : null}
+                  <RemoteImage uri={answer.film.posterPath} style={p.plateArt} contentFit="cover" recyclingKey={answer.film.posterPath} transition={0} fallback={<PosterMark style={p.plateArt} size={9} ground={false} />} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={p.creditText} numberOfLines={1} {...scaledTextProps}>

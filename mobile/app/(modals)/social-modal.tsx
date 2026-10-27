@@ -1,7 +1,7 @@
 import { nav } from '@/src/utils/typedRouter';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
-import { Image } from 'expo-image';
+import { RemoteImage } from '@/src/components/Picture';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, InteractionManager, StyleSheet, View } from 'react-native';
@@ -323,11 +323,11 @@ export default function SocialModal() {
         <Arrive name="social-modal-1" duration={300} delay={Math.min(index * 40, 400)} rise={-25}>
             <PressableScale onPress={() => handleProfilePress(item.username)} hitSlop={null} accessibilityRole="button" accessibilityLabel={`View ${item.username}'s profile`}>
                 <View style={styles.userRow}>
-                    {item.avatar_url && item.avatar_url.startsWith('http') ? (
-                        <Image source={{ uri: item.avatar_url }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" transition={150} />
-                    ) : (
-                        <View style={styles.avatarPlaceholder}><User size={20} color={colors.parchment} /></View>
-                    )}
+                    <RemoteImage
+                        uri={item.avatar_url?.startsWith('http') ? item.avatar_url : null}
+                        style={styles.avatar} contentFit="cover" transition={150}
+                        fallback={<View style={styles.avatarPlaceholder}><User size={20} color={colors.parchment} /></View>}
+                    />
                     <View style={styles.userInfo}>
                         <Text style={styles.username}>@{item.username.toUpperCase()}</Text>
                         <Text style={styles.role}>{(item.role ?? 'member').toUpperCase()}</Text>

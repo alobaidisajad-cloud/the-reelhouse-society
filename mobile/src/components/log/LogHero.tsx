@@ -1,8 +1,8 @@
 
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { Film as FilmIcon, X } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
@@ -85,13 +85,9 @@ export default function LogHero({
         )}
         <PressableScale onPress={onPressFilm} style={[s.posterBoundsShadow, isAuteur && s.posterBoundsShadowAuteur]} pressedScale={0.95} haptic="selection" accessibilityRole="link" accessibilityLabel={`${log.film_title} poster. Open the film.`}>
         <View style={[s.posterBounds, isAuteur && s.posterBoundsAuteur]}>
-          {posterUri ? (
-            <Image source={{ uri: posterUri }} style={s.posterCentered} contentFit="cover" cachePolicy="memory-disk" transition={150} onLoadEnd={onPosterLoaded} />
-          ) : (
-            <View style={[s.posterCentered, s.posterPlaceholder]}>
+          <RemoteImage uri={posterUri} style={s.posterCentered} contentFit="cover" transition={150} onLoadEnd={onPosterLoaded} fallback={<View style={[s.posterCentered, s.posterPlaceholder]}>
               <FilmIcon size={20} color={colors.sepia} strokeWidth={1} />
-            </View>
-          )}
+            </View>} />
         </View>
         </PressableScale>
       </View>

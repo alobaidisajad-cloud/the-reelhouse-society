@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
-import { Image } from 'expo-image';
 import Animated, { Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, cancelAnimation } from 'react-native-reanimated';
 import { Search, Sparkles } from 'lucide-react-native';
 import { Arrive } from '@/src/components/Arrive';
@@ -62,7 +62,7 @@ const LogSearchResultRow = React.memo(({ r, onSelectFilm }: { r: LogSearchResult
     return (
         <PressableScale style={st.resultRow} onPress={() => onSelectFilm(r)} hitSlop={ROW_SLOP} haptic="selection" pressedScale={0.96}
             accessibilityRole="button" accessibilityLabel={`Log ${title}${year ? `, ${year}` : ''}`}>
-            {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={st.resultPoster} contentFit="cover" cachePolicy="memory-disk" transition={150} />}
+            <RemoteImage uri={tmdb.poster(r.poster_path, 'w92')} style={st.resultPoster} contentFit="cover" transition={150} fallback={<PosterMark style={st.resultPoster} size={12} />} />
             <View style={st.resultFlex}>
                 <Text style={st.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{title}</Text>
                 {meta ? (

@@ -1,9 +1,9 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Film as FilmIcon, Search, X } from 'lucide-react-native';
-import { Image } from 'expo-image';
 import { colors, fonts, SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
 import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
@@ -84,9 +84,7 @@ const WalkoutRow = React.memo(function WalkoutRow({ log, onPress }: { log: Profi
       accessibilityHint="Opens the entry"
     >
       <View style={s.walkPlateWrap}>
-        {posterUri
-          ? <Image source={{ uri: posterUri }} style={s.walkPlate} recyclingKey={posterUri} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={180} />
-          : <View style={[s.walkPlate, s.walkPlateEmpty]} />}
+        <RemoteImage uri={posterUri} style={s.walkPlate} recyclingKey={posterUri} placeholder={{ blurhash: SEPIA_HASH }} transition={180} fallback={<View style={[s.walkPlate, s.walkPlateEmpty]} />} />
       </View>
       <View style={s.walkBody}>
         <View style={s.walkHead}>

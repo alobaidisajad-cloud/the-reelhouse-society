@@ -28,6 +28,7 @@
  * promise you are not keeping.
  */
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { Text } from '@/src/components/text';
@@ -35,7 +36,6 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import type { AnimatedStyle } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
 import {
   Plus, Pencil, RotateCcw, Bookmark, Play, Share2, MessageCircle, ArrowUpRight,
 } from 'lucide-react-native';
@@ -247,12 +247,7 @@ export const FilmActionTray = memo(function FilmActionTray({
         {/* THE HEAD — this film's poster and title, so the sheet is bespoke and
             you never have to close it to remember what you are acting on. */}
         <View style={s.head}>
-          {poster ? (
-            <Image source={{ uri: poster }} style={s.headPoster} contentFit="cover"
-              cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
-          ) : (
-            <View style={[s.headPoster, s.headPosterEmpty]} />
-          )}
+          <RemoteImage uri={poster} style={s.headPoster} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={50} fallback={<View style={[s.headPoster, s.headPosterEmpty]} />} />
           <View style={s.headText}>
             {/* Two lines: a long title truncated to one is a sheet that cannot
                 say which film it belongs to. */}

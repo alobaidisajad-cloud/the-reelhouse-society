@@ -35,6 +35,7 @@ const ALLOWED: Record<string, string> = {
   'src/components/dispatch/paper/paperStyles.ts · endMark': 'the end-of-article mark',
   'src/components/EmptyStates.tsx · glyph': 'the empty state’s emblem',
   'src/components/feed/PosterFrame.tsx · posterEmptyMark': 'a mark in an empty poster',
+  'src/components/Picture.tsx · markText': 'the house mark in a poster there is none of, or that could not be had',
   'src/components/film/NitrateFileCard.tsx · posterFallbackMark': 'a mark on a missing poster',
   'src/components/film/NitrateFileCard.tsx · metaDot': '· between two facts',
   'src/components/profile/ProfileArchiveTab.tsx · importDividerMark': 'the ornament on a divider',

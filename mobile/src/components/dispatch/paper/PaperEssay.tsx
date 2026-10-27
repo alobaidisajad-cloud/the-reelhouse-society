@@ -23,9 +23,9 @@
  * marks, the same spine when the head scrolls away.
  */
 import { memo, type ReactNode } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight } from 'lucide-react-native';
 
@@ -86,8 +86,7 @@ export const EssayHead = memo(function EssayHead({
     <View>
       {film?.backdropPath ? (
         <View style={e.cover}>
-          <Image source={{ uri: film.backdropPath }} style={p.plateArt} contentFit="cover"
-            recyclingKey={film.backdropPath} cachePolicy="memory-disk" />
+          <RemoteImage uri={film.backdropPath} style={p.plateArt} contentFit="cover" recyclingKey={film.backdropPath} fallback={null} />
           <LinearGradient
             colors={['rgba(30,25,20,0.30)', 'rgba(13,11,9,0.72)', 'rgba(30,25,20,0.99)']}
             locations={[0, 0.55, 1]} style={StyleSheet.absoluteFill}

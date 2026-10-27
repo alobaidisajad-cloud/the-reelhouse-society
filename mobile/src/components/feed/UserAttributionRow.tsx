@@ -1,7 +1,7 @@
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts } from '@/src/theme/theme';
@@ -38,13 +38,9 @@ export const UserAttributionRow = React.memo(function UserAttributionRow({ usern
     <View>
       <View style={s.row}>
         <PressableScale onPress={onUserPress} hitSlop={s.hitSlop} haptic="selection" pressedScale={0.96} style={s.pressable} accessibilityLabel={`View profile of @${username}`}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={s.avatar} cachePolicy="memory-disk" transition={150} />
-          ) : (
-            <View style={s.avatar}>
+          <RemoteImage uri={avatarUrl} style={s.avatar} transition={150} fallback={<View style={s.avatar}>
               <Text style={s.avatarText}>{initialOf(username)}</Text>
-            </View>
-          )}
+            </View>} />
           <Text style={s.username} numberOfLines={1} ellipsizeMode="tail">
             @{username.toUpperCase()}
           </Text>

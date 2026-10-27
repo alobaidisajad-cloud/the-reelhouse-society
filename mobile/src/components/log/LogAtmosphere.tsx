@@ -1,6 +1,6 @@
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, InteractionManager } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, ReduceMotion } from 'react-native-reanimated';
 
@@ -66,15 +66,7 @@ export default React.memo(function LogAtmosphere({ posterPath }: { posterPath: s
 
     return (
         <Animated.View style={[s.film, style]} pointerEvents="none">
-            <Image
-                source={{ uri: tmdb.poster(posterPath, 'w342') }}
-                style={s.image}
-                contentFit="cover"
-                blurRadius={4}
-                cachePolicy="memory-disk"
-                transition={0}
-                accessible={false}
-            />
+            <RemoteImage uri={tmdb.poster(posterPath, 'w342')} style={s.image} contentFit="cover" blurRadius={4} transition={0} accessible={false} fallback={null} />
             <LinearGradient
                 colors={['rgba(13,11,9,0)', 'rgba(13,11,9,0.40)', 'rgba(13,11,9,0.95)', colors.ink]}
                 locations={[0, 0.38, 0.76, 1]}

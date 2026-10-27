@@ -1,8 +1,8 @@
 import React, { memo, useCallback } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
-import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import { Film as FilmIcon } from 'lucide-react-native';
 import { nav } from '@/src/utils/typedRouter';
@@ -35,13 +35,9 @@ const SimilarCard = memo(function SimilarCard({ film, onPress }: SimilarCardProp
 
   return (
     <PressableScale onPress={handlePress} style={s.similarCard} accessibilityRole="button" accessibilityLabel={`From the same shelf: ${film.title || film.name}`}>
-      {posterUri ? (
-        <Image source={{ uri: posterUri }} style={s.similarPoster} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
-      ) : (
-        <View style={[s.similarPoster, s.similarPosterPlaceholder]}>
+      <RemoteImage uri={posterUri} style={s.similarPoster} placeholder={{ blurhash: SEPIA_HASH }} transition={50} fallback={<View style={[s.similarPoster, s.similarPosterPlaceholder]}>
           <FilmIcon size={16} color={colors.fog} strokeWidth={1} />
-        </View>
-      )}
+        </View>} />
       <Text style={s.similarTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{film.title || film.name}</Text>
     </PressableScale>
   );

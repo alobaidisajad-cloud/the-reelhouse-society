@@ -1379,10 +1379,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const seated = !!opts?.seated;
     // Back after a drop, what was said in the gap is read; down past a beat, the room says it is
     // not live and is read again on a fixed interval until the channel answers.
-    const watch = watchChannel({
-      reread: () => { void get().catchUpMessages(loungeId); },
-      onLive: (live) => set((s) => (s.roomLive === live ? s : { roomLive: live })),
-    });
+    const watch = watchChannel({ reread: () => { void get().catchUpMessages(loungeId); }, onLive: (live) => set((s) => (s.roomLive === live ? s : { roomLive: live })) });
     const channel = supabase
       .channel(`lounge-${loungeId}`, {
         // Private: the salon's rules decide who receives it (realtime.messages); own echoes muted.

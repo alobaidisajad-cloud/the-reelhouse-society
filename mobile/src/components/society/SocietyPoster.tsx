@@ -17,9 +17,9 @@
  * has said what it is would be the poster getting in the way of itself.
  */
 import { memo } from 'react';
+import { AssetImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import Svg, { Defs, RadialGradient, Stop, Path, G } from 'react-native-svg';
 
 import { colors, fonts } from '@/src/theme/theme';
@@ -106,7 +106,7 @@ export const SocietyPoster = memo(function SocietyPoster({
           <Text style={s.ruleText} {...deckLabelProps}>ADMISSION FREE</Text>
         </View>
 
-        <Image source={LOGO} style={[s.mark, compact && s.markCompact, { width: mark, height: mark }]} contentFit="contain" cachePolicy="memory-disk" transition={0} />
+        <AssetImage source={LOGO} style={[s.mark, compact && s.markCompact, { width: mark, height: mark }]} contentFit="contain" transition={0} />
 
         <Text style={[s.the, compact && s.theCompact]} {...displayTextProps} maxFontSizeMultiplier={1.1} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
           The Society

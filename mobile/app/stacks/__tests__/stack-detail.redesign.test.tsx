@@ -112,7 +112,7 @@ jest.mock('@/src/utils/offlineQueue', () => ({
 }));
 const mockBackHandlers: (() => boolean)[] = [];
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
-jest.mock('@/src/lib/tmdb', () => ({ tmdb: { poster: (p: string, size: string) => `https://img/${size}${p}` } }));
+jest.mock('@/src/lib/tmdb', () => ({ tmdb: { poster: (p: string | null, size: string) => (p ? `https://img/${size}${p}` : undefined) } }));
 jest.mock('@/src/components/layout/CinematicFlashList', () => {
   const React = require('react');
   const { View } = require('react-native');

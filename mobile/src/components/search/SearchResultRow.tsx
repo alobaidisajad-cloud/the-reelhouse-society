@@ -1,8 +1,8 @@
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Arrive } from '@/src/components/Arrive';
-import { Image } from 'expo-image';
 import { Bookmark, ScrollText, User, Clapperboard, ArrowRight } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -65,16 +65,12 @@ export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR;
         </View>
 
         <View style={[st.rowImg, isPerson && st.rowImgRound]}>
-          {item.image ? (
-            <Image source={{ uri: item.image }} style={st.img} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={150} />
-          ) : (
-            <View style={st.imgEmpty}>
+          <RemoteImage uri={item.image} style={st.img} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={150} fallback={<View style={st.imgEmpty}>
               {item.type === 'list' ? <Bookmark size={14} color={colors.fog} /> :
                item.type === 'log' ? <ScrollText size={14} color={colors.fog} /> :
                item.type === 'user' ? <User size={14} color={colors.fog} /> :
                <Clapperboard size={14} color={colors.fog} />}
-            </View>
-          )}
+            </View>} />
         </View>
 
         <View style={st.rowText}>

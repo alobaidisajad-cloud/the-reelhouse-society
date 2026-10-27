@@ -1,6 +1,6 @@
 
 import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
-import { Image } from 'expo-image';
+import { RemoteImage } from '@/src/components/Picture';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -910,10 +910,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                                 accessibilityRole="button"
                                 accessibilityLabel={`${log.title}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}
                               >
-                                {posterUri
-                                  ? <Image source={{ uri: posterUri }} style={s.favPosterThumb} transition={50} cachePolicy="memory-disk" />
-                                  /* A blank frame keeps every row at one indent. */
-                                  : <View style={[s.favPosterThumb, s.favPosterEmpty]} />}
+                                <RemoteImage uri={posterUri} style={s.favPosterThumb} transition={50}
+                                  // A blank frame keeps every row at one indent.
+                                  fallback={<View style={[s.favPosterThumb, s.favPosterEmpty]} />} />
                                 <View style={s.favTextWrap}>
                                   <Text {...scaledTextProps} style={s.favTitle} numberOfLines={1}>{log.title}</Text>
                                   <View style={s.favRatingRow}>
@@ -1031,20 +1030,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             <AnimatedView style={[s.identRow, portraitDevelop]}>
               <View style={s.portraitWrap}>
                 <View style={s.plate}>
-                  {targetUser.avatar_url ? (
-                    <Image
-                      source={{ uri: targetUser.avatar_url }}
-                      style={s.plateImage}
-                      contentFit="cover"
-                      cachePolicy="memory-disk"
-                      transition={150}
-                      accessibilityIgnoresInvertColors
-                    />
-                  ) : (
-                    <View style={s.plateInitialWrap}>
+                  <RemoteImage uri={targetUser.avatar_url} style={s.plateImage} contentFit="cover" transition={150} accessibilityIgnoresInvertColors fallback={<View style={s.plateInitialWrap}>
                       <Text {...decorativeTextProps} {...UNSPOKEN} style={s.plateInitial}>{avatarInitial}</Text>
-                    </View>
-                  )}
+                    </View>} />
                   {/* The grain is inside the frame, over the photograph — it is
                       the PRINT that is old, not the screen. */}
                   <View style={s.plateGrain} pointerEvents="none" />
@@ -1241,11 +1229,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   >
                     <Text {...decorativeTextProps} style={s.latelyIndex}>{String(i + 1).padStart(2, '0')}</Text>
                     <View style={[s.latelyPoster, !log.poster && s.latelyPosterEmpty]}>
-                      {log.poster ? (
-                        <Image source={{ uri: tmdb.poster(log.poster, 'w185') }} style={s.latelyPosterImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
-                      ) : (
-                        <FilmIcon size={14} color={colors.sepia} strokeWidth={1.4} opacity={0.4} />
-                      )}
+                      <RemoteImage uri={tmdb.poster(log.poster, 'w185')} style={s.latelyPosterImg} contentFit="cover" transition={150} fallback={<FilmIcon size={14} color={colors.sepia} strokeWidth={1.4} opacity={0.4} />} />
                     </View>
                     <View style={s.latelyText}>
                       <Text {...scaledTextProps} style={s.latelyTitle} numberOfLines={1}>{(log.title || '').toUpperCase()}</Text>

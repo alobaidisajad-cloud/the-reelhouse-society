@@ -4,8 +4,8 @@
  * (public or private, ranked or not), filed from a bar docked at the foot.
  */
 import { nav } from '@/src/utils/typedRouter';
+import { RemoteImage } from '@/src/components/Picture';
 import { useQueryClient } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
@@ -108,11 +108,7 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove
                         {displayIndex}
                     </Text>
                 </View>
-                {item.poster_path ? (
-                    <Image source={{ uri: tmdb.poster(item.poster_path, 'w92') }} style={s.filmPoster} cachePolicy="memory-disk" transition={150} recyclingKey={item.poster_path} />
-                ) : (
-                    <View style={[s.filmPoster, s.filmPosterEmpty]} />
-                )}
+                <RemoteImage uri={tmdb.poster(item.poster_path, 'w92')} style={s.filmPoster} transition={150} recyclingKey={item.poster_path} fallback={<View style={[s.filmPoster, s.filmPosterEmpty]} />} />
                 <Text style={s.filmTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{item.title}</Text>
                 {!sealed && (
                     <PressableScale onPress={() => onRemove(item.id)} style={s.removeBtn} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel={`Remove ${item.title}`}>
@@ -129,11 +125,7 @@ const DropdownResultRow = React.memo(({ r, onAdd }: { r: SearchResult, onAdd: (r
     // Stacked too, and a mis-tap here adds the wrong film without a word.
     return (
         <PressableScale style={s.dropRow} onPress={() => onAdd(r)} hitSlop={null} accessibilityRole="button" accessibilityLabel={`Add ${r.title ?? r.name}`}>
-            {r.poster_path ? (
-                <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={s.dropPoster} cachePolicy="memory-disk" transition={150} />
-            ) : (
-                <View style={[s.dropPoster, s.filmPosterEmpty]} />
-            )}
+            <RemoteImage uri={tmdb.poster(r.poster_path, 'w92')} style={s.dropPoster} transition={150} fallback={<View style={[s.dropPoster, s.filmPosterEmpty]} />} />
             <View style={s.dropFlex}>
                 <Text style={s.dropTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{r.title ?? r.name}</Text>
                 <Text style={s.dropMeta}>{r.release_date?.slice(0, 4) ?? '—'}</Text>

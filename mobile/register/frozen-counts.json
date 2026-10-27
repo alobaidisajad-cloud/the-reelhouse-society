@@ -183,7 +183,7 @@
     "mobile/src/components/dispatch/__tests__/theRailFitsOneScreen.test.ts": 2,
     "mobile/src/components/dispatch/__tests__/theSeriesSheet.test.tsx": 1,
     "mobile/src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx": 10,
-    "mobile/src/components/dispatch/paper/PaperBallot.tsx": 11,
+    "mobile/src/components/dispatch/paper/PaperBallot.tsx": 10,
     "mobile/src/components/dispatch/paper/PaperFrame.tsx": 1,
     "mobile/src/components/dispatch/paper/paperMetrics.ts": 1,
     "mobile/src/components/dispatch/paper/paperText.ts": 4,

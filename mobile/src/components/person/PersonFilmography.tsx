@@ -8,9 +8,9 @@
  * marked-up contact sheet of the artist's career.
  */
 import { useCallback, memo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, PixelRatio, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { nav } from '@/src/utils/typedRouter';
@@ -78,20 +78,9 @@ export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: {
       accessibilityLabel={`${film.title || film.name}${screened ? ', screened' : ''}`}
     >
       <View style={st.gridPosterWrap}>
-        {posterUri ? (
-          <Image
-            source={{ uri: posterUri }}
-            style={st.gridPoster}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-            placeholder={{ blurhash: SEPIA_HASH }}
-            transition={50}
-          />
-        ) : (
-          <View style={[st.gridPoster, st.gridPosterPlaceholder]}>
+        <RemoteImage uri={posterUri} style={st.gridPoster} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={50} fallback={<View style={[st.gridPoster, st.gridPosterPlaceholder]}>
             <FilmIcon size={16} color={colors.fog} strokeWidth={1} />
-          </View>
-        )}
+          </View>} />
         {screened && (
           <View style={st.screenedTick}>
             <Check size={10} color={colors.marqueeGold} strokeWidth={2.5} />

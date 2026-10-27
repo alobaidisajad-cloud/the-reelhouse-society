@@ -48,7 +48,7 @@ describe('the Lobby tab', () => {
   it('wears the house\'s eye, tinted as the other tabs are', () => {
     const src = readCode('app/(tabs)/_layout.tsx');
     expect(src).toContain("require('../../assets/images/reelhouse-eye.png')");
-    expect(src).toMatch(/<Image source=\{HOUSE_EYE\}[^>]*tintColor=\{iconColor\}/);
+    expect(src).toMatch(/<AssetImage source=\{HOUSE_EYE\}[^>]*tintColor=\{iconColor\}/);
   });
 
   // The logo's small cut on a clear ground: the tab tints whatever is not clear,

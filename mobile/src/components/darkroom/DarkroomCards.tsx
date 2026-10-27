@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation, useReducedMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from "expo-router/react-navigation";
@@ -151,7 +151,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
             <>
               {/* THE DEVELOP — each print surfaces from its sepia ghost like
                   paper in the tray. Native GPU crossfade: zero JS cost. */}
-              <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFill} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={300} contentFit="cover" />
+              <RemoteImage uri={posterUri} style={StyleSheet.absoluteFill} recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={300} contentFit="cover" fallback={null} />
               {/* Soft tactical tungsten edge mapping */}
               <LinearGradient
                 colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(13,11,9,0.9)']}
@@ -228,7 +228,7 @@ export const DarkroomSuggestionRow = React.memo(({ item, onPress }: { item: Disc
     >
       {imgUri ? (
         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm]}>
-          <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFill} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" />
+          <RemoteImage uri={imgUri} style={StyleSheet.absoluteFill} recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" fallback={null} />
         </View>
       ) : (
         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm, s.suggestionImgPlaceholder]} />

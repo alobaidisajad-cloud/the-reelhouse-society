@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { PenTool, Search, TrendingUp, TrendingDown, Minus, Stethoscope } from 'lucide-react-native';
 import { nav } from '@/src/utils/typedRouter';
@@ -155,18 +155,7 @@ const LedgerRow = React.memo(function LedgerRow({
       accessibilityHint="Opens the entry"
     >
       <View style={s.plateWrap}>
-        {posterUri ? (
-          <Image
-            source={{ uri: posterUri }}
-            style={s.plate}
-            recyclingKey={posterUri}
-            cachePolicy="memory-disk"
-            placeholder={{ blurhash: SEPIA_HASH }}
-            transition={180}
-          />
-        ) : (
-          <View style={[s.plate, s.plateEmpty]} />
-        )}
+        <RemoteImage uri={posterUri} style={s.plate} recyclingKey={posterUri} placeholder={{ blurhash: SEPIA_HASH }} transition={180} fallback={<View style={[s.plate, s.plateEmpty]} />} />
       </View>
 
       <View style={s.rowBody}>

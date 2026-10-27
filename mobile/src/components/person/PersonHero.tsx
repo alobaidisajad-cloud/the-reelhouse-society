@@ -9,9 +9,9 @@
  * the dagger (†) in crimson for the departed. No skulls in this house.
  */
 import { memo, useCallback, useMemo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -195,7 +195,7 @@ export const PersonHero = memo(function PersonHero({
       <View style={[s.heroWrap, heroDynStyle]}>
         {heroBackdrop ? (
           <>
-            <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
+            <RemoteImage uri={heroBackdrop} style={s.heroBg} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={300} fallback={null} />
             <View style={s.heroSepia} />
             {/* Fades into the LIT room, and carries the room's light still
                 while the page scrolls — see RoomVeil. */}
@@ -224,13 +224,9 @@ export const PersonHero = memo(function PersonHero({
         <View style={s.portraitWrap}>
           <View style={s.portraitGlow} />
           <View style={s.portraitCard}>
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={s.portrait} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} accessibilityLabel={`${person.name} portrait photo`} />
-            ) : (
-              <View style={[s.portrait, s.portraitPlaceholder]}>
+            <RemoteImage uri={photoUri} style={s.portrait} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={300} accessibilityLabel={`${person.name} portrait photo`} fallback={<View style={[s.portrait, s.portraitPlaceholder]}>
                 <Text style={s.portraitInitial} {...UNSPOKEN}>{initialOf(person.name) || '?'}</Text>
-              </View>
-            )}
+              </View>} />
           </View>
         </View>
 

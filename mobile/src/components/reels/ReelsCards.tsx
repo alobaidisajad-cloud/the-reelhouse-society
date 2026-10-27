@@ -1,8 +1,8 @@
 import React, { memo } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { BusterEyes } from '@/src/components/Buster';
@@ -79,14 +79,7 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
           <View style={st.stackCardPosterRow}>
             {posters.map((f: StackFilm, i: number) => (
               <View key={i} style={[st.stackCardPosterPanel, { width: `${100 / posters.length}%` }]}>
-                <Image
-                  source={{ uri: `${TMDB_IMG}${f.poster_path}` }}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  placeholder={{ blurhash: SEPIA_HASH }}
-                  transition={100}
-                />
+                <RemoteImage uri={`${TMDB_IMG}${f.poster_path}`} style={StyleSheet.absoluteFill} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={100} fallback={null} />
                 {i < posters.length - 1 && (
                   <LinearGradient 
                     colors={['transparent', 'rgba(13,11,9,0.8)']} 

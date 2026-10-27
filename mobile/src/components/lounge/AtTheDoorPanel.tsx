@@ -1,10 +1,10 @@
 import PressableScale from '@/src/components/PressableScale';
+import { RemoteImage } from '@/src/components/Picture';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import { LoungeMember } from '@/src/types/social.types';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { BlurView } from 'expo-blur';
-import { Image } from 'expo-image';
 import { Check, DoorOpen, Users, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
@@ -74,9 +74,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
             {pending.map(m => (
               <View key={m.user_id} style={s.row}>
                 <View style={s.avatar}>
-                  {m.avatar_url
-                    ? <Image source={{ uri: m.avatar_url }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
-                    : <Users size={14} color={colors.fog} strokeWidth={1.5} />}
+                  <RemoteImage uri={m.avatar_url} style={s.avatarImg} contentFit="cover" transition={150} fallback={<Users size={14} color={colors.fog} strokeWidth={1.5} />} />
                 </View>
                 <Text style={s.name} numberOfLines={1}>@{m.username?.toUpperCase()}</Text>
                 <PressableScale hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}

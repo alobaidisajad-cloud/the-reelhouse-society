@@ -1,5 +1,6 @@
  
 import { useAuthStore } from '@/src/stores/auth';
+import { RemoteImage } from '@/src/components/Picture';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useFilmStore, useInteractionStore } from '@/src/stores/films';
 import { beginTap, queueTap, settleTap, useMarkCount, withdrawTap } from '@/src/stores/markCounts';
@@ -8,7 +9,6 @@ import { markCount, mineMark } from '@/src/schemas/feed.schema';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
@@ -710,13 +710,7 @@ export default function LogDetailScreen() {
       {backdropUri && (
           <View style={[StyleSheet.absoluteFill, s.backdropContainer]}>
              <View style={s.fullSize}>
-                <Image 
-                   source={{ uri: backdropUri }} 
-                   style={[StyleSheet.absoluteFill, log.editorial_header ? s.opacity30 : s.opacity20]}
-                   contentFit="cover"
-                   blurRadius={4}
-                   cachePolicy="memory-disk" transition={150}
-                />
+                <RemoteImage uri={backdropUri} style={[StyleSheet.absoluteFill, log.editorial_header ? s.opacity30 : s.opacity20]} contentFit="cover" blurRadius={4} transition={150} fallback={null} />
                 {/* Fades into the LIT room — see RoomVeil. */}
                 <RoomVeil room="film" hem={BACKDROP_H} art={backdropUri} stops={BACKDROP_VEIL} />
                 {/* Scan lines texture — Web: repeating-linear-gradient for film grain */}

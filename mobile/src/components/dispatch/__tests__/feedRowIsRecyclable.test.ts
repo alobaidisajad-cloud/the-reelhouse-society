@@ -72,10 +72,12 @@ describe('the feed row can actually be recycled', () => {
     // `style={[a, b]}` and an arrow function both contain characters that end a
     // lazy match early, and this project has twice had a scan report working
     // code as broken for exactly that reason.
+    // Its pictures are RemoteImage (src/components/Picture.tsx), which hands recyclingKey to expo-image.
+    const TAG = '<RemoteImage';
     const tags: string[] = [];
     let i = 0;
-    while ((i = ROW.indexOf('<Image', i)) !== -1) {
-      let j = i + 6;
+    while ((i = ROW.indexOf(TAG, i)) !== -1) {
+      let j = i + TAG.length;
       let brace = 0, paren = 0, bracket = 0;
       let quote: string | null = null;
       for (; j < ROW.length; j++) {

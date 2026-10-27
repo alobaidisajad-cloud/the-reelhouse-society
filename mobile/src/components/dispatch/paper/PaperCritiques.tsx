@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { ArrowLeft, ChevronUp, Heart, MessageSquare, MoreHorizontal, Share2, Bookmark } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -172,11 +172,12 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
   return (
     <View style={[p.comment, c.mine && p.commentMine]}>
       <View style={p.avatar}>
-        {c.author && c.author.avatar ? (
-          <Image source={{ uri: c.author.avatar }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
-        ) : c.author ? (
-          <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(c.author.name)}</Text>
-        ) : null}
+        <RemoteImage
+          uri={c.author?.avatar}
+          style={p.plateArt}
+          contentFit="cover"
+          fallback={c.author ? <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(c.author.name)}</Text> : null}
+        />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={p.commentName} numberOfLines={1} {...scaledTextProps}>
@@ -373,9 +374,7 @@ export const CritiqueComposer = memo(function CritiqueComposer({
   return (
     <View style={[p.dockCompose, { paddingBottom: bottomInset }]}>
       <View style={p.avatar}>
-        {me.avatar ? (
-          <Image source={{ uri: me.avatar }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
-        ) : <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(me.name)}</Text>}
+        <RemoteImage uri={me.avatar} style={p.plateArt} contentFit="cover" fallback={<Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(me.name)}</Text>} />
       </View>
       <TextInput
         style={p.dockInput}

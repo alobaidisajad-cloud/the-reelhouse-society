@@ -11,9 +11,9 @@
  * aDeskControlNeverAnswersWithNothing.test.tsx.
  */
 import { memo } from 'react';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import { Image } from 'expo-image';
 import {
   FilmIcon, ImageIcon, AlertTriangle, Search, X, Plus, Calendar,
   Send, Bookmark, Share2,
@@ -230,9 +230,7 @@ export const BallotDesk = memo(function BallotDesk({
                   {o ? (
                     <>
                       <View style={d.slotArt}>
-                        {o.posterPath ? (
-                          <Image source={{ uri: o.posterPath }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
-                        ) : null}
+                        <RemoteImage uri={o.posterPath} style={p.plateArt} contentFit="cover" fallback={<PosterMark style={p.plateArt} size={11} ground={false} />} />
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={d.slotTitle} numberOfLines={1} {...scaledTextProps}>
@@ -407,9 +405,7 @@ export const FilmFinder = memo(function FilmFinder({
             accessibilityRole="button" accessibilityState={{ disabled: !onPick }}
             accessibilityLabel={`${f.title}${f.year ? `, ${f.year}` : ''}`}>
             <View style={d.resultArt}>
-              {f.posterPath ? (
-                <Image source={{ uri: f.posterPath }} style={p.plateArt} contentFit="cover" cachePolicy="memory-disk" />
-              ) : null}
+              <RemoteImage uri={f.posterPath} style={p.plateArt} contentFit="cover" fallback={<PosterMark style={p.plateArt} size={12} ground={false} />} />
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={d.resultTitle} numberOfLines={1} {...scaledTextProps}>

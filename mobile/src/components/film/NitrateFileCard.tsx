@@ -18,9 +18,9 @@
  *     MEMBER Nº renders only when the real serial reached this client.
  */
 import React, { useEffect, useEffectEvent, useState } from 'react';
+import { RemoteImage, AssetImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts, castOf, liftOf } from '@/src/theme/theme';
@@ -95,16 +95,12 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
   return (
     <View style={s.canvas}>
       {/* Ambient nitrate glow behind the slab */}
-      {posterUrl ? (
-        <Image source={{ uri: posterUrl }} style={s.ambient} contentFit="cover" cachePolicy="memory-disk" blurRadius={40} onDisplay={drew('ambient')} onError={failed} />
-      ) : (
-        <LinearGradient
+      <RemoteImage uri={posterUrl} style={s.ambient} contentFit="cover" blurRadius={40} onDisplay={drew('ambient')} onError={failed} fallback={<LinearGradient
           colors={['rgba(184,137,26,0.08)', 'rgba(6,5,4,0)']}
           start={{ x: 0.5, y: 0.5 }}
           end={{ x: 0.5, y: 1 }}
           style={s.ambient}
-        />
-      )}
+        />} />
       <View style={s.vignette} />
 
       {/* The perforation rail — sprocket holes of the strip */}
@@ -124,7 +120,7 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
 
         {/* The lockup — the eye above the name */}
         <View style={s.lockup}>
-          <Image source={require('@/assets/images/reelhouse-logo.png')} style={s.lockupSeal} cachePolicy="memory-disk" onDisplay={sealDrawn} onError={sealDrawn} />
+          <AssetImage source={require('@/assets/images/reelhouse-logo.png')} style={s.lockupSeal} onDisplay={sealDrawn} onError={sealDrawn} />
           <Text {...decorativeTextProps} style={s.lockupWordmark}>✦ THE REELHOUSE SOCIETY ✦</Text>
         </View>
 
@@ -132,16 +128,12 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
         <View style={s.posterZone}>
           <View style={s.posterFrame}>
             <View style={s.posterClip}>
-            {posterUrl ? (
-              <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" onDisplay={drew('poster')} onError={failed} />
-            ) : (
-              <LinearGradient colors={['#15120e', '#0D0B09']} style={s.posterFallback}>
+            <RemoteImage uri={posterUrl} style={StyleSheet.absoluteFill} contentFit="cover" onDisplay={drew('poster')} onError={failed} fallback={<LinearGradient colors={['#15120e', '#0D0B09']} style={s.posterFallback}>
                 <View style={s.posterFallbackRule} />
                 <Text {...decorativeTextProps} style={s.posterFallbackMark}>✦</Text>
                 <Text {...decorativeTextProps} style={s.posterFallbackTitle} numberOfLines={3}>{data.title}</Text>
                 {!!data.year && <Text {...decorativeTextProps} style={s.posterFallbackYear}>{data.year}</Text>}
-              </LinearGradient>
-            )}
+              </LinearGradient>} />
             </View>
           </View>
 

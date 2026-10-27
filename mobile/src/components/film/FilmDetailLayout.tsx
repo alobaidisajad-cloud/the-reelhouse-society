@@ -1,4 +1,5 @@
 import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, useWindowDimensions, InteractionManager } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useBottomEdge, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
@@ -6,7 +7,6 @@ import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withT
 import { arrive, MARK_PULSE, MS } from '@/src/theme/motion';
 import { useScrollTraceOf } from '@/src/hooks/useScrollTrace';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image } from 'expo-image';
 import { ArrowLeft, RotateCcw, Check, XCircle } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH, metrics } from '@/src/theme/theme';
@@ -392,7 +392,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
           picture to show, the room itself is the picture. */}
       {backdropUri ? (
         <Animated.View testID="film-backdrop" style={[s.backdropWrap, { height: BACKDROP_H }, backdropAnimatedStyle]}>
-          <Image source={{ uri: backdropUri }} style={s.backdrop} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
+          <RemoteImage uri={backdropUri} style={s.backdrop} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={300} fallback={null} />
           <View style={s.sepiaTint} />
           <RoomVeil room="film" hem={BACKDROP_H} art={backdropUri} stops={BACKDROP_VEIL} lifted={backdropLifted} />
         </Animated.View>

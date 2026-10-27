@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, ScrollView, ActivityIndicator, InteractionManager, Platform, AccessibilityInfo } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useContentBottom, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
@@ -33,7 +34,6 @@ import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
 import { LinksEditor } from '@/src/features/profile/LinksEditor';
 import { portraitInitial } from '@/src/components/profile/portraitInitial';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
-import { Image } from 'expo-image';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import reelToast from '@/src/utils/reelToast';
 import { logger } from '@/src/utils/logger';
@@ -221,11 +221,7 @@ export function EditProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Change profile picture"
               >
-                {avatarPreview ? (
-                    <Image source={{ uri: avatarPreview }} style={st.avatarImg} contentFit="cover" cachePolicy="memory-disk" transition={150} />
-                ) : (
-                    <Text {...decorativeTextProps} {...UNSPOKEN} style={st.avatarInitial}>{portraitInitial(user)}</Text>
-                )}
+                <RemoteImage uri={avatarPreview} style={st.avatarImg} contentFit="cover" transition={150} fallback={<Text {...decorativeTextProps} {...UNSPOKEN} style={st.avatarInitial}>{portraitInitial(user)}</Text>} />
                 <View style={st.avatarOverlay}>
                     <Camera size={24} color={colors.parchment} />
                 </View>

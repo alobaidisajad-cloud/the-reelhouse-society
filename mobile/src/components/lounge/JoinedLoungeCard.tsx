@@ -5,9 +5,9 @@
  * AWAITING while the host considers you. Nothing pulses, nothing lies.
  */
 import React from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { nav } from '@/src/utils/typedRouter';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film as FilmIcon, DoorOpen, Hourglass } from 'lucide-react-native';
@@ -47,16 +47,12 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
               : hasUnread ? `, ${unreadSpoken} new dispatches` : ''}`}
       >
         <View style={s.joinedImgWrap}>
-          {coverUrl ? (
-            <Image source={{ uri: coverUrl }} style={s.joinedImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
-          ) : (
-            <LinearGradient
+          <RemoteImage uri={coverUrl} style={s.joinedImg} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={300} fallback={<LinearGradient
               colors={['rgba(184,137,26,0.06)', 'rgba(13,11,9,0.95)']}
               style={s.joinedImgPlaceholder}
             >
               <FilmIcon size={22} color={colors.sepia} strokeWidth={1} />
-            </LinearGradient>
-          )}
+            </LinearGradient>} />
 
           <LinearGradient
             colors={['transparent', 'rgba(13,11,9,0.85)']}

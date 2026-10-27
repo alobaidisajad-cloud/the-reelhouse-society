@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback, useState, useRef } from 'react';
+import { RemoteImage } from '@/src/components/Picture';
 import { View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Image } from 'expo-image';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Disc, Film as FilmIcon, Search } from 'lucide-react-native';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
@@ -111,20 +111,9 @@ const VaultCase = React.memo(function VaultCase({
       ].filter(Boolean).join(', ')}
       accessibilityHint="Opens the film"
     >
-      {posterUri ? (
-        <Image
-          source={{ uri: posterUri }}
-          style={s.caseFace}
-          recyclingKey={posterUri}
-          cachePolicy="memory-disk"
-          placeholder={{ blurhash: SEPIA_HASH }}
-          transition={200}
-        />
-      ) : (
-        <View style={[s.caseFace, s.caseEmpty]}>
+      <RemoteImage uri={posterUri} style={s.caseFace} recyclingKey={posterUri} placeholder={{ blurhash: SEPIA_HASH }} transition={200} fallback={<View style={[s.caseFace, s.caseEmpty]}>
           <FilmIcon size={14} color={colors.sepia} strokeWidth={1} />
-        </View>
-      )}
+        </View>} />
       {/* The spine and its seam — drawn after the face so they sit on top of
           it, and inert so neither can swallow the tap. */}
       <View style={[r.spine, { backgroundColor: tint, opacity: 0.9 }]} pointerEvents="none" />
