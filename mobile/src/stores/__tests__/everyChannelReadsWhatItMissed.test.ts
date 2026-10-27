@@ -21,7 +21,7 @@ jest.mock('../../lib/queryClient', () => ({ queryClient: { invalidateQueries: je
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: { id: '33333333-3333-4333-8333-333333333333', username: 'me' } }) } }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }) } }));
-jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [] }));
+jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [] }));
 
 const dropAndReturn = () => { mockStatus?.('SUBSCRIBED'); mockStatus?.('CHANNEL_ERROR'); mockStatus?.('SUBSCRIBED'); };
 

@@ -28,7 +28,7 @@ jest.mock('../auth', () => ({
   useAuthStore: { getState: jest.fn().mockReturnValue({ user: { id: 'u1', username: 'me' } }) },
 }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
-jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn() }));
+jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn() }));
 jest.mock('../../lib/sentry', () => ({
   captureError: (_e: unknown, ctx: { where?: string }) => { mockCaptured.push(ctx); },
 }));

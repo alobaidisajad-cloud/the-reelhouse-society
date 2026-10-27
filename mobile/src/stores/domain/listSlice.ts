@@ -225,14 +225,15 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             if (isNetworkError(error)) {
                 // Queued whole: the replay is the same save, and a replay of one that
                 // did land is a no-op.
-                enqueueMutation({ type: 'create_list', payload: {
+                if (enqueueMutation({ type: 'create_list', payload: {
                     id: listId, user_id: user.id, title: title || 'Untitled', description,
                     is_private: list.isPrivate ?? false, is_ranked: list.isRanked ?? false, films,
-                } });
-                const filmEntries = inputFilms.map(f => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? f.poster ?? null }));
-                set((state) => ({ lists: [{ id: listId, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: new Date().toISOString(), userId: user.id }, ...state.lists] }));
-                reelToast('List saved offline. Will sync when connected.');
-                return;
+                } })) {
+                    const filmEntries = inputFilms.map(f => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? f.poster ?? null }));
+                    set((state) => ({ lists: [{ id: listId, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: new Date().toISOString(), userId: user.id }, ...state.lists] }));
+                    reelToast('List saved offline. Will sync when connected.');
+                    return;
+                }
             }
             throw error;
         }
@@ -299,10 +300,11 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                     const newFilmIds = new Set(inputFilms.map(f => f.id));
                     removedIds = prevList.films.filter(f => !newFilmIds.has(f.id)).map(f => f.id);
                 }
-                enqueueMutation({ type: 'update_list', payload: { list_id: listId, user_id: user.id, updates: dbUpdates, films: inputFilms, removed_film_ids: removedIds } });
-                queryClient.invalidateQueries({ queryKey: ['stack', listId] });
-                reelToast('List updated offline. Will sync when connected.');
-                return;
+                if (enqueueMutation({ type: 'update_list', payload: { list_id: listId, user_id: user.id, updates: dbUpdates, films: inputFilms, removed_film_ids: removedIds } })) {
+                    queryClient.invalidateQueries({ queryKey: ['stack', listId] });
+                    reelToast('List updated offline. Will sync when connected.');
+                    return;
+                }
             }
             if (prevList) {
                 set((state) => ({
@@ -354,9 +356,10 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             if (!stillSignedIn(user.id)) return;
             if (isNetworkError(e)) {
                 // Queue for offline sync
-                enqueueMutation({ type: 'delete_list', payload: { list_id: listId, user_id: user.id } });
-                reelToast('List removed offline. Will sync when connected.');
-                return;
+                if (enqueueMutation({ type: 'delete_list', payload: { list_id: listId, user_id: user.id } })) {
+                    reelToast('List removed offline. Will sync when connected.');
+                    return;
+                }
             }
             if (listToRemoveIndex !== -1 && listToRemove) {
                 set((state) => {
@@ -410,17 +413,18 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             if (!stillSignedIn(startedAs)) return;
             if (isNetworkError(e)) {
                 // Queue for offline sync
-                enqueueMutation({ 
+                if (enqueueMutation({ 
                     type: 'add_film_to_list', 
                     payload: {
                         // Same as the online path: no position — the server
                         // assigns it when the queue drains.
                         list_id: listId, film_id: film.id, film_title: newFilm.title, poster_path: newFilm.poster,
                     }
-                });
-                queryClient.invalidateQueries({ queryKey: ['stack', listId] });
-                reelToast('Film added offline. Will sync when connected.');
-                return;
+                })) {
+                    queryClient.invalidateQueries({ queryKey: ['stack', listId] });
+                    reelToast('Film added offline. Will sync when connected.');
+                    return;
+                }
             }
             set((state) => ({
                 lists: state.lists.map((l) => l.id === listId ? { ...l, films: l.films.filter(f => f.id !== film.id) } : l),
@@ -463,10 +467,11 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             // A throw skips the check in the try: neither queued nor undone once they have left.
             if (!stillSignedIn(startedAs)) return;
             if (isNetworkError(e)) {
-                enqueueMutation({ type: 'remove_film_from_list', payload: { list_id: listId, film_id: filmId } });
-                queryClient.invalidateQueries({ queryKey: ['stack', listId] });
-                reelToast('Film removed offline. Will sync when connected.');
-                return;
+                if (enqueueMutation({ type: 'remove_film_from_list', payload: { list_id: listId, film_id: filmId } })) {
+                    queryClient.invalidateQueries({ queryKey: ['stack', listId] });
+                    reelToast('Film removed offline. Will sync when connected.');
+                    return;
+                }
             }
             set((state) => ({
                 lists: state.lists.map((l) => {

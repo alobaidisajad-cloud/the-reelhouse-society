@@ -20,10 +20,15 @@ appId: com.reelhouse.society
     timeout: 10000
 - assertVisible: "SESSION EXPIRED"
 
-# Return to the app from the rescue screen.
+# Return to the app from the rescue screen. The replace builds the tabs
+# afresh, which on the iPhone runner outlasted a bare assert's wait
+# (iPhone launch 40501819810: the reset screen still showing at the
+# assert, the Lobby drawn a moment after).
 - tapOn: "RETURN TO LOBBY"
-- assertVisible:
-    id: "dispatch-tab"
+- extendedWaitUntil:
+    visible:
+      id: "dispatch-tab"
+    timeout: 15000
 
 # reelhouse://_sitemap, opened with the app closed: expo-router makes that
 # route unless app.json turns its sitemap off, and with it off the path is

@@ -38,7 +38,7 @@ jest.mock('@/src/stores/auth', () => {
   return { useAuthStore };
 });
 jest.mock('@/src/utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
+  enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 jest.mock('@/src/utils/reelToast', () => {
   const t = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn(), info: jest.fn() });

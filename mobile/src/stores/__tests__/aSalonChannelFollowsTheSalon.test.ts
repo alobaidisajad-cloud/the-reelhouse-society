@@ -37,7 +37,7 @@ jest.mock('../../lib/supabase', () => ({
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: { id: ME, username: 'me' } }) } }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }) } }));
-jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [] }));
+jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [] }));
 jest.mock('../../lib/queryClient', () => ({ queryClient: { invalidateQueries: jest.fn() } }));
 
 let now = 1_000_000;

@@ -949,13 +949,14 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Neither queued as the next member nor marked in their transcript.
       if (!memberUnchanged(startedAs)) return false;
       if (isNetworkError(error)) {
-        enqueueMutation({
+        if (enqueueMutation({
           type: 'send_lounge_message',
           payload: { ...payload, _tempId: payload.id }
-        });
-        flushOfflineQueue();
-        reelToast('Message saved offline. Will send when connected.');
-        return true;
+        })) {
+          flushOfflineQueue();
+          reelToast('Message saved offline. Will send when connected.');
+          return true;
+        }
       }
       // Keep the dispatch and mark it failed so the transcript shows a discreet
       // "Failed · tap to retry" line (lifecycle state) instead of it vanishing.
@@ -1251,10 +1252,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // when the connection returns. Snapping the message back would resurrect
       // something the member deliberately took down, on a dropped bar of signal.
       if (isNetworkError(e)) {
-        enqueueMutation({ type: 'withdraw_lounge_message', payload: { message_id: messageId } });
-        flushOfflineQueue();
-        reelToast('Withdrawal saved offline. Will complete when connected.');
-        return;
+        if (enqueueMutation({ type: 'withdraw_lounge_message', payload: { message_id: messageId } })) {
+          flushOfflineQueue();
+          reelToast('Withdrawal saved offline. Will complete when connected.');
+          return;
+        }
       }
       // A real refusal (not yours to withdraw, row gone) — restore it intact.
       logger.error('[LoungeStore.withdrawMessage] failed, reverting:', e);

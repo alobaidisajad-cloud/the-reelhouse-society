@@ -12,7 +12,7 @@ import { followUser } from '../domain/socialSlice';
 import { useSocialStore } from '../followStore';
 import { captureError } from '../../lib/sentry';
 
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 
 jest.mock('../auth', () => ({
   useAuthStore: {

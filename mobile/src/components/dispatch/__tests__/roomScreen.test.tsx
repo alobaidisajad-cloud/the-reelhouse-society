@@ -124,7 +124,7 @@ jest.mock('@/src/components/PressableScale', () => {
 });
 
 jest.mock('@/src/utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
+  enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
 

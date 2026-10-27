@@ -123,7 +123,7 @@ jest.mock('@/src/components/PressableScale', () => {
   };
 });
 jest.mock('@/src/utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
+  enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 
 const at = (y: number, m: number, d: number) => new Date(y, m - 1, d, 12).toISOString();

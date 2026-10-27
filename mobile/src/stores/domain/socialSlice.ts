@@ -257,12 +257,13 @@ export async function followUser(targetUsername: string): Promise<boolean> {
       
       // Privacy unknown, it is queued as a follow; the database turns a follow of a
       // private member into a request (enforce_privacy_on_follow).
-      enqueueMutation({
+      if (enqueueMutation({
         type: interactionType === 'follow_request' ? 'follow_request_user' : 'follow_user',
         payload: { user_id: userId, target_username: targetUsername, target_user_id: cached?.id ?? null },
-      });
-      reelToast('Follow saved offline. Will sync when connected.');
-      return true;
+      })) {
+        reelToast('Follow saved offline. Will sync when connected.');
+        return true;
+      }
     }
     logger.warn(`[socialSlice.followUser] FAILED for @${targetUsername}: ${msg}`);
     
@@ -328,12 +329,13 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
     // No signal: the screen keeps the unfollow and the queue sends it, with the id if known.
     if (isNetworkError(msg) || isNetworkError(err)) {
       const cachedId = _usernameProfileCache.get(targetUsername)?.id ?? null;
-      enqueueMutation({
+      if (enqueueMutation({
         type: 'unfollow_user',
         payload: { user_id: userId, target_username: targetUsername, target_user_id: cachedId },
-      });
-      reelToast('Unfollow saved offline. Will sync when connected.');
-      return true;
+      })) {
+        reelToast('Unfollow saved offline. Will sync when connected.');
+        return true;
+      }
     }
     logger.warn(`[socialSlice.unfollowUser] FAILED for @${targetUsername}: ${msg}`);
     useSocialStore.getState().setFollowing(prevFollowing);

@@ -190,15 +190,20 @@ export function readQueue(): QueuedMutation[] {
 }
 
 /** The one writer of the live queue: the screens' copy is set here and nowhere else. */
-export function writeQueue(queue: QueuedMutation[]): void {
+export function writeQueue(queue: QueuedMutation[]): boolean {
   try {
     if (onDisk()) storage.set(QUEUE_KEY, JSON.stringify(queue));
     else unwritten.set(QUEUE_KEY, [...queue]);
     useOfflineQueueStore.setState({ queued: queue });
+    return true;
   } catch (e) {
     logger.warn(`[OfflineSync] could not write the queue: ${String(e)}`);
+    return false;
   }
 }
+
+/** What the member is told when the phone had no room to keep a write: never "saved". */
+export const NOT_KEPT = 'This phone has no room left: a change made offline could not be kept, and will not be sent.';
 
 /**
  * Writes whose member is not the one signed in, put where only that member's

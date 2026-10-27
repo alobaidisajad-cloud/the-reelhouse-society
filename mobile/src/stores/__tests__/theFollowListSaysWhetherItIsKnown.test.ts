@@ -18,7 +18,7 @@ jest.mock('../../lib/supabase', () => ({ get supabase() { return mockHouse.clien
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: { id: '11111111-1111-4111-8111-111111111111' } }) } }));
 jest.mock('../../lib/sentry', () => ({ captureError: jest.fn() }));
 jest.mock('../../lib/queryClient', () => ({ queryClient: { invalidateQueries: jest.fn(), clear: jest.fn() } }));
-jest.mock('../../utils/offlineQueue', () => ({ getOfflineQueue: () => [], enqueueMutation: jest.fn() }));
+jest.mock('../../utils/offlineQueue', () => ({ getOfflineQueue: () => [], enqueueMutation: jest.fn(() => true) }));
 
 const follows = (who: { id: string; username: string }[]) => supabaseFake({
   rows: {

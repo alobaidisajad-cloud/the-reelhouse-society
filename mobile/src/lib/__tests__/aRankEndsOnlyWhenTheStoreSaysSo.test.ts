@@ -21,7 +21,7 @@ const mockStore = {
   getAppUserID: jest.fn(),
 };
 jest.mock('react-native-purchases', () => ({ __esModule: true, default: mockStore }));
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: (...a: unknown[]) => mockEnqueue(...a),
   flushOfflineQueue: jest.fn(),
@@ -46,7 +46,7 @@ function fresh(key?: string): Module {
 
 beforeEach(() => {
   mockRpc.mockReset();
-  mockEnqueue.mockReset();
+  mockEnqueue.mockReset().mockReturnValue(true);
   for (const f of Object.values(mockStore)) f.mockReset();
 });
 
@@ -103,7 +103,7 @@ describe('with a store to ask, its answer decides', () => {
     expect(await rc.restorePurchases()).toMatchObject({ storeReachable: true, isActive: true, tier: 'archivist' });
     expect(mockEnqueue).toHaveBeenCalledWith({ type: 'sync_entitlement', payload: { tier: 'archivist', user_id: '11111111-1111-4111-8111-111111111111' } });
 
-    mockEnqueue.mockReset();
+    mockEnqueue.mockReset().mockReturnValue(true);
     mockStore.restorePurchases.mockRejectedValue(new Error('offline'));
     expect(await rc.restorePurchases()).toMatchObject({ storeReachable: false });
     expect(mockEnqueue).not.toHaveBeenCalled();

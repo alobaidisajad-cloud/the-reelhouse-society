@@ -54,7 +54,7 @@ jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ held: true
 jest.mock('@/src/hooks/useVault', () => ({ useVault: () => ({ note: null, loaded: true, unreachable: false }) }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 jest.mock('@/src/utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: jest.fn(() => []),
+  enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: jest.fn(() => []),
 }));
 jest.mock('@/src/components/ShareToLoungeModal', () => () => null);
 jest.mock('@/src/components/moderation/ReportSheet', () => () => null);

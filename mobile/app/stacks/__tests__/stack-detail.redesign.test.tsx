@@ -105,7 +105,7 @@ jest.mock('@/src/services/StackService', () => ({
     deleteStackComment: (...a: unknown[]) => mockDeleteComment(...a),
   },
 }));
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: (...a: unknown[]) => mockEnqueue(...a),
   flushOfflineQueue: jest.fn(), getOfflineQueue: jest.fn(() => []),

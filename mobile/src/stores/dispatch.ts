@@ -538,10 +538,11 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       // Neither queued as the next member nor taken off their page.
       if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
-        enqueueMutation({ type: 'add_filing', payload: { _tempId: id, ...row } });
-        flushOfflineQueue();
-        reelToast.success('Filed. It goes out when the wire is back.');
-        return { id, offline: true };
+        if (enqueueMutation({ type: 'add_filing', payload: { _tempId: id, ...row } })) {
+          flushOfflineQueue();
+          reelToast.success('Filed. It goes out when the wire is back.');
+          return { id, offline: true };
+        }
       }
       set((st) => ({ filings: st.filings.filter((f) => f.id !== id) }));
       throw e;
@@ -594,12 +595,13 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       // Neither queued as the next member nor put back on their page.
       if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
-        enqueueMutation({
+        if (enqueueMutation({
           type: 'update_filing',
           payload: { id, user_id: user.id, kind: filing.kind, updates: dbUpdates },
-        });
-        flushOfflineQueue();
-        return { offline: true };
+        })) {
+          flushOfflineQueue();
+          return { offline: true };
+        }
       }
       set((st) => patchFiling(st, id, () => before));
       throw e;
@@ -639,9 +641,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       // Neither queued as the next member nor put back on their page.
       if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
-        enqueueMutation({ type: 'end_filing', payload: { id, user_id: user.id } });
-        flushOfflineQueue();
-        return { offline: true };
+        if (enqueueMutation({ type: 'end_filing', payload: { id, user_id: user.id } })) {
+          flushOfflineQueue();
+          return { offline: true };
+        }
       }
       set((st) => patchFiling(st, id, () => before));
       throw e;
@@ -888,9 +891,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       // Neither queued as the next member nor taken off their page.
       if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
-        enqueueMutation({ type: 'add_critique', payload: { _tempId: id, ...row } });
-        flushOfflineQueue();
-        return { offline: true };
+        if (enqueueMutation({ type: 'add_critique', payload: { _tempId: id, ...row } })) {
+          flushOfflineQueue();
+          return { offline: true };
+        }
       }
       set((st) => ({
         critiques: { ...st.critiques, [postId]: (st.critiques[postId] ?? []).filter((c) => c.id !== id) },

@@ -392,9 +392,8 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             // end of this block says it is. See the note there.
             let queuedOffline = false;
             if (error) {
-                // Use shared network error detection
-                if (isNetworkError(error)) {
-                    enqueueMutation({ type: 'add_log', payload: payload });
+                // Kept for the network's return; one the phone had no room to keep is thrown as it came.
+                if (isNetworkError(error) && enqueueMutation({ type: 'add_log', payload: payload })) {
                     reelToast('Archived offline. Will sync when connected.');
                     queuedOffline = true;
                     finalData = { ...payload, created_at: new Date().toISOString(), id: payload.id };
@@ -699,12 +698,11 @@ export const updateLogOp = async (
             // A queued edit is not a saved one (it falls through to the announcement).
             let queuedOffline = false;
             if (error) {
-                if (isNetworkError(error)) {
-                    enqueueMutation(opts?.viewingOp
+                if (isNetworkError(error) && enqueueMutation(opts?.viewingOp
                         ? (opts.viewingOp.kind === 'add'
                             ? { type: 'add_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, fields: viewingFieldsOf(dbUpdates) } }
                             : { type: 'remove_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId } })
-                        : { type: 'update_log', payload: { id, updates: dbUpdates } });
+                        : { type: 'update_log', payload: { id, updates: dbUpdates } })) {
                     // A STEP shows no toast either: its caller is told it queued, and
                     // says one true thing in its own verb.
                     if (!opts?.silentAnnounce) reelToast('Saved offline. Will sync when connected.');
@@ -895,8 +893,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             if (!stillSignedIn(startedAs)) return;
             if (error) {
                 // Use shared network error detection
-                if (isNetworkError(error)) {
-                    enqueueMutation({ type: 'remove_log', payload: { log_id: id, user_id: user.id } });
+                if (isNetworkError(error) && enqueueMutation({ type: 'remove_log', payload: { log_id: id, user_id: user.id } })) {
                     reelToast('Removed offline. Will sync when connected.');
                     return;
                 }

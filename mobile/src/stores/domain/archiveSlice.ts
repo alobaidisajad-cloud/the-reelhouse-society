@@ -194,9 +194,10 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             if (!stillSignedIn(user.id)) return;
             if (isNetworkError(e)) {
                 // Queued as what to ADD; the replay merges it with the server's entry the same way.
-                enqueueMutation({ type: 'add_archive', payload: { ...entry, formats } });
-                reelToast('Archive saved offline. Will sync when connected.');
-                return;
+                if (enqueueMutation({ type: 'add_archive', payload: { ...entry, formats } })) {
+                    reelToast('Archive saved offline. Will sync when connected.');
+                    return;
+                }
             }
             set((state) => {
                 const filtered = state.physicalArchive.filter(i => i.filmId !== film.id);
@@ -242,9 +243,10 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
             if (!stillSignedIn(user.id)) return;
             if (isNetworkError(e)) {
                 // Queue for offline sync
-                enqueueMutation({ type: 'remove_archive', payload: { user_id: user.id, film_id: filmId } });
-                reelToast('Removed offline. Will sync when connected.');
-                return;
+                if (enqueueMutation({ type: 'remove_archive', payload: { user_id: user.id, film_id: filmId } })) {
+                    reelToast('Removed offline. Will sync when connected.');
+                    return;
+                }
             }
             set((state) => ({
                 physicalArchive: [itemToRemove, ...state.physicalArchive]
@@ -280,9 +282,10 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
                 if (updates.formats) dbUpdates.formats = updates.formats;
                 if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
                 if (updates.condition !== undefined) dbUpdates.condition = updates.condition;
-                enqueueMutation({ type: 'update_archive', payload: { user_id: user.id, film_id: filmId, updates: dbUpdates } });
-                reelToast('Archive updated offline. Will sync when connected.');
-                return;
+                if (enqueueMutation({ type: 'update_archive', payload: { user_id: user.id, film_id: filmId, updates: dbUpdates } })) {
+                    reelToast('Archive updated offline. Will sync when connected.');
+                    return;
+                }
             }
             if (prevItem) {
                 set((state) => ({ physicalArchive: state.physicalArchive.map(a => a.filmId === filmId ? prevItem : a) }));

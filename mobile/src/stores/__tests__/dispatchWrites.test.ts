@@ -108,7 +108,7 @@ jest.mock('../auth', () => ({
 }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 jest.mock('../../utils/offlineQueue', () => ({
-  enqueueMutation: (m: { type: string; payload: Record<string, unknown> }) => { mockQueued.push(m); },
+  enqueueMutation: (m: { type: string; payload: Record<string, unknown> }) => { mockQueued.push(m); return true; },
   flushOfflineQueue: jest.fn(),
   getOfflineQueue: () => [],
 }));

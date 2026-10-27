@@ -49,7 +49,7 @@ jest.mock('../../lib/supabase', () => ({
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: mockUser }) } }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 jest.mock('../../utils/offlineQueue', () => ({
   enqueueMutation: (...a: unknown[]) => mockEnqueue(...a),
   flushOfflineQueue: jest.fn(),
@@ -100,7 +100,7 @@ const reset = () => {
     on: jest.fn().mockReturnThis(), subscribe: jest.fn().mockReturnThis(),
     send: jest.fn(), unsubscribe: jest.fn(), track: jest.fn(),
   });
-  mockEnqueue.mockReset();
+  mockEnqueue.mockReset().mockReturnValue(true);
   useLoungeStore.setState({
     lounges: [], currentMessages: [], currentLoungeId: null, sending: false,
     members: {}, messagesLoading: false, typingUsers: {},

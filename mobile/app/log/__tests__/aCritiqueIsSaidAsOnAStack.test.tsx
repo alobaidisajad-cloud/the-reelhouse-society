@@ -54,7 +54,7 @@ jest.mock('@/src/stores/auth', () => {
 jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ held: true, standing: 'held', open: jest.fn() }) }));
 jest.mock('@/src/hooks/useVault', () => ({ useVault: () => ({ note: null, loaded: true, unreachable: false }) }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: (...a: unknown[]) => mockEnqueue(...a), flushOfflineQueue: jest.fn(), getOfflineQueue: jest.fn(() => []),
 }));

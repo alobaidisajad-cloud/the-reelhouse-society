@@ -48,7 +48,7 @@ jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.clien
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: { id: '33333333-3333-4333-8333-333333333333', username: 'me' } }) } }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }) } }));
-jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [] }));
+jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [] }));
 jest.mock('../../utils/reelToast', () => ({ __esModule: true, get default() { return mockToast; } }));
 
 /** A send that failed after the 250th message, its words kept for TRY AGAIN. */

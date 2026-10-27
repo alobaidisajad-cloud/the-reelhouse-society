@@ -97,7 +97,7 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 jest.mock('../../utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(),
+  enqueueMutation: jest.fn(() => true),
   flushOfflineQueue: jest.fn(),
   clearOfflineQueue: jest.fn(),
   holdQueue: jest.fn(() => ({ kept: 0, lapsed: 0 })),

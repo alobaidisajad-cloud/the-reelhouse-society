@@ -111,7 +111,7 @@ jest.mock('../../src/utils/reelToast', () => {
     return { __esModule: true, default: fn };
 });
 jest.mock('../../src/utils/offlineQueue', () => ({
-    enqueueMutation: jest.fn(),
+    enqueueMutation: jest.fn(() => true),
     getOfflineQueue: jest.fn(() => []),
 }));
 jest.mock('../../src/utils/networkError', () => ({

@@ -41,7 +41,7 @@ jest.mock('../../utils/reelToast', () => {
   return { __esModule: true, default: fn };
 });
 jest.mock('../../utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
+  enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 
 const toast = () => jest.requireMock('../../utils/reelToast').default;

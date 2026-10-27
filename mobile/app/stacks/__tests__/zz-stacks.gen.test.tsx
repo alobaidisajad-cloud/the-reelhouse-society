@@ -59,7 +59,7 @@ jest.mock('@/src/services/StackService', () => ({
   StackService: { getStackFullPayload: jest.fn(), getStackComments: jest.fn(), addStackComment: jest.fn() },
 }));
 jest.mock('@/src/utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: jest.fn(() => []),
+  enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: jest.fn(() => []),
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 // The real address shape, so the renderer finds each poster's art by its path.

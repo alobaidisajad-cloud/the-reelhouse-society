@@ -30,7 +30,7 @@ jest.mock('../auth', () => ({
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 
 jest.mock('../../utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(),
+  enqueueMutation: jest.fn(() => true),
   flushOfflineQueue: jest.fn(),
   getOfflineQueue: jest.fn().mockReturnValue([]),
 }));

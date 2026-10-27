@@ -91,7 +91,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
 jest.mock('@/src/utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
+  enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 
 const mount = async () => {

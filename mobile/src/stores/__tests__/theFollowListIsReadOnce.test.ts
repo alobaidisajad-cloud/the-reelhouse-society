@@ -48,7 +48,7 @@ jest.mock('../followStore', () => ({
 }));
 jest.mock('../../lib/sentry', () => ({ captureError: jest.fn() }));
 jest.mock('../../lib/queryClient', () => ({ queryClient: { invalidateQueries: jest.fn() } }));
-jest.mock('../../utils/offlineQueue', () => ({ getOfflineQueue: () => [], enqueueMutation: jest.fn() }));
+jest.mock('../../utils/offlineQueue', () => ({ getOfflineQueue: () => [], enqueueMutation: jest.fn(() => true) }));
 
 const row = (name: string) => ({
   id: `r-${name}`, target_user_id: `t-${name}`, created_at: '2026-10-08T00:00:00.000Z', type: 'follow',

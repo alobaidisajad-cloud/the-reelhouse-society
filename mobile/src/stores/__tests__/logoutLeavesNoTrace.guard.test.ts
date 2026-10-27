@@ -69,7 +69,7 @@ jest.mock('../auth', () => ({
   useAuthStore: { getState: jest.fn(() => ({ user: { id: 'u1', username: 'cinephile', role: 'member' } })) },
 }));
 jest.mock('@/src/utils/reelToast', () => { const t: unknown = Object.assign(jest.fn(), { success: jest.fn(), error: jest.fn() }); return { __esModule: true, default: t }; });
-jest.mock('@/src/utils/offlineQueue', () => ({ enqueueMutation: jest.fn(), getOfflineQueue: jest.fn(() => []) }));
+jest.mock('@/src/utils/offlineQueue', () => ({ enqueueMutation: jest.fn(() => true), getOfflineQueue: jest.fn(() => []) }));
 jest.mock('@/src/utils/networkError', () => ({ isNetworkError: jest.fn(() => false) }));
 jest.mock('@/src/utils/logger', () => ({ logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn(), alert: jest.fn() } }));
 jest.mock('@/src/lib/sentry', () => ({ addBreadcrumb: jest.fn(), captureError: jest.fn(), Sentry: { captureException: jest.fn() } }));

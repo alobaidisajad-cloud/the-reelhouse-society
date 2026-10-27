@@ -17,7 +17,7 @@
 import { unfollowUser } from '../domain/socialSlice';
 import { useSocialStore } from '../followStore';
 
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 const mockDeleteFilters: Record<string, unknown>[] = [];
 
 jest.mock('../auth', () => ({

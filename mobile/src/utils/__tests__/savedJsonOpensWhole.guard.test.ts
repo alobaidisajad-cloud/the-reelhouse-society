@@ -94,7 +94,8 @@ type Write = { file: string; line: number; key: string };
 
 /** Every write of JSON to the phone's storage in a file: a stringified value, or a name the file stringifies into. */
 export function jsonWritesIn(file: string, text: string): Write[] {
-  const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  // By its extension: a .ts file's `<T>x` cast read as TSX hides what follows it.
+  const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const out: Write[] = [];
   const stringifies = (n: ts.Node | undefined) => !!n && ts.isCallExpression(n) && n.expression.getText(sf) === 'JSON.stringify';
   const stringified = new Set<string>();

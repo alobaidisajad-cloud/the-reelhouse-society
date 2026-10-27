@@ -500,16 +500,16 @@ export default function LogDetailScreen() {
         throw new Error('Insert failed');
       }
     } catch (error: unknown) {
-      if (isNetworkError(error)) {
-        enqueueMutation({
-           type: 'add_log_comment',
-           payload: {
-               id: commentId,
-               log_id: id as string,
-               user_id: user?.id,
-               body: commentBody
-           }
-        });
+      // Kept for the network's return; one the phone had no room to keep comes off the page.
+      if (isNetworkError(error) && enqueueMutation({
+         type: 'add_log_comment',
+         payload: {
+             id: commentId,
+             log_id: id as string,
+             user_id: user?.id,
+             body: commentBody
+         }
+      })) {
         flushOfflineQueue();
         // Queued, not delivered: it stays on top of every count until the
         // queue delivers it (markCounts.settleDelivered).
@@ -540,16 +540,17 @@ export default function LogDetailScreen() {
     const tap = targetComment ? beginTap('critique', id, -1) : null;
 
     const keepForLater = () => {
-      enqueueMutation({
+      if (enqueueMutation({
           type: 'remove_log_comment',
           // log_id rides along so the queue can say WHICH log's count its
           // delivery settles (markCounts.settleDelivered).
           payload: { comment_id: commentId, user_id: user?.id, log_id: id }
-      });
-      flushOfflineQueue();
-      if (tap) queueTap('critique', id, tap);
-      TactileEngine.success();
-      reelToast('Removed offline. Will sync when connected.');
+      })) {
+        flushOfflineQueue();
+        if (tap) queueTap('critique', id, tap);
+        TactileEngine.success();
+        reelToast('Removed offline. Will sync when connected.');
+      }
     };
 
     // Not sent yet: the house has no row to delete (it would find none, and

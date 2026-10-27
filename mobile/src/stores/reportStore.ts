@@ -85,16 +85,19 @@ export const useReportStore = create<ReportState>()((set, get) => ({
 
       if (!(netState.isConnected && netState.isInternetReachable)) {
         // Offline: enqueue
-        enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
-        set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
-        TactileEngine.success();
-        reelToast('Report saved offline. Will be filed when connected.');
+        if (enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> })) {
+          set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
+          TactileEngine.success();
+          reelToast('Report saved offline. Will be filed when connected.');
 
-        if (payload.block_target && payload.target_user_id) {
-          await useBlockStore.getState().blockUser(payload.target_user_id);
+          if (payload.block_target && payload.target_user_id) {
+            await useBlockStore.getState().blockUser(payload.target_user_id);
+          }
+
+          return { status: 'queued' };
         }
-
-        return { status: 'queued' };
+        // No room on the phone to keep it (the member has been told): not filed, and not tried again here.
+        return { status: 'error', message: 'The report could not be kept to file later.' };
       }
 
       // Online: submit via RPC
@@ -122,11 +125,12 @@ export const useReportStore = create<ReportState>()((set, get) => ({
         if (isNetworkError(error)) {
           if (!stillSignedIn(startedAs)) return LEFT;
           // Fall back to offline queue
-          enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> });
-          set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
-          TactileEngine.success();
-          reelToast('Report saved offline. Will be filed when connected.');
-          return { status: 'queued' };
+          if (enqueueMutation({ type: 'submit_report', payload: { ...payload, details: cleanDetails } as unknown as Record<string, unknown> })) {
+            set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
+            TactileEngine.success();
+            reelToast('Report saved offline. Will be filed when connected.');
+            return { status: 'queued' };
+          }
         }
         throw error;
       }

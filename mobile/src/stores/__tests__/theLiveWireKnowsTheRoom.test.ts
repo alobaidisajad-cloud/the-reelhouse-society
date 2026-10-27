@@ -48,7 +48,7 @@ jest.mock('../auth', () => ({
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }) } }));
 jest.mock('../../utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
+  enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 jest.mock('../../lib/queryClient', () => ({ queryClient: { invalidateQueries: jest.fn() } }));
 jest.mock('../../utils/reelToast', () => {

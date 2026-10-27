@@ -12,7 +12,7 @@
 import { supabase } from '@/src/lib/supabase';
 import { initRevenueCat, syncEntitlementToSupabase } from '@/src/lib/revenueCat';
 
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: (...a: unknown[]) => mockEnqueue(...a),
   flushOfflineQueue: jest.fn(),

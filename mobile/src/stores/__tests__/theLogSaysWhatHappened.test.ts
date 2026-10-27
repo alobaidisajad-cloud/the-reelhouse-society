@@ -61,7 +61,7 @@ jest.mock('@/src/utils/reelToast', () => {
   return { __esModule: true, default: fn };
 });
 jest.mock('@/src/utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), getOfflineQueue: jest.fn(() => []), flushOfflineQueue: jest.fn(),
+  enqueueMutation: jest.fn(() => true), getOfflineQueue: jest.fn(() => []), flushOfflineQueue: jest.fn(),
 }));
 jest.mock('@/src/lib/sentry', () => ({ addBreadcrumb: jest.fn(), captureError: jest.fn(), Sentry: { captureException: jest.fn() } }));
 jest.mock('@/src/services/VaultService', () => ({ VaultService: { addViewing: jest.fn(), removeViewing: jest.fn() } }));

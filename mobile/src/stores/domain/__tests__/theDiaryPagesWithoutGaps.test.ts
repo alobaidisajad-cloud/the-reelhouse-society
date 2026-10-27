@@ -25,7 +25,7 @@ jest.mock('@/src/lib/supabase', () => ({
 }));
 jest.mock('@/src/stores/auth', () => ({ useAuthStore: { getState: () => ({ user: { id: 'me' } }) } }));
 jest.mock('@/src/stores/domain/helpers/sessionGuard', () => ({ stillSignedIn: () => true, memberUnchanged: () => true }));
-jest.mock('@/src/utils/offlineQueue', () => ({ getOfflineQueue: () => [], enqueueMutation: jest.fn() }));
+jest.mock('@/src/utils/offlineQueue', () => ({ getOfflineQueue: () => [], enqueueMutation: jest.fn(() => true) }));
 
 it('orders a page as the next one is asked for: watched date (undated last), then id', async () => {
   const state: Record<string, unknown> = { logs: [], _fetchingLogs: false, logsHasMore: true, _logsCursor: null };

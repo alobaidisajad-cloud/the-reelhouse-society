@@ -31,7 +31,7 @@ jest.mock('../resetAllStores', () => ({
   registerStoreReset: jest.fn(),
 }));
 
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 const mockFlush = jest.fn();
 jest.mock('../../utils/offlineQueue', () => ({
   enqueueMutation: (...args: unknown[]) => mockEnqueue(...args),

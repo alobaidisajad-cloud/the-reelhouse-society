@@ -32,7 +32,7 @@ jest.mock('../auth', () => ({
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
 jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }) } }));
 jest.mock('../../utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
+  enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 jest.mock('../../utils/reelToast', () => {
   const fn = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn() });

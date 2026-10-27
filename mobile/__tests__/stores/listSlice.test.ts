@@ -23,7 +23,7 @@ jest.mock('../../src/stores/auth', () => ({
     },
 }));
 
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 const mockGetOfflineQueue = jest.fn(() => []);
 jest.mock('../../src/utils/offlineQueue', () => ({
     __esModule: true,

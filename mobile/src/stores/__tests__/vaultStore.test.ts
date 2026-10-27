@@ -30,7 +30,7 @@ jest.mock('../../services/VaultService', () => ({
   },
 }));
 
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 jest.mock('../../utils/offlineQueue', () => ({
   enqueueMutation: (...a: unknown[]) => mockEnqueue(...a),
   getOfflineQueue: () => [],

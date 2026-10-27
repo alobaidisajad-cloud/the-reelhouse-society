@@ -27,7 +27,7 @@ jest.mock('@/src/stores/auth', () => {
   (useAuthStore as any).subscribe = () => () => {};
   return { useAuthStore };
 });
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: (...a: unknown[]) => mockEnqueue(...a),
   flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
@@ -49,7 +49,7 @@ const saves = () => mockRpc.mock.calls.filter((c) => c[0] === 'save_stack');
 beforeEach(() => {
   mockRpc.mockReset().mockResolvedValue({ data: { id: 'x', created_at: '2026-09-30T00:00:00Z' }, error: null });
   mockFrom.mockReset();
-  mockEnqueue.mockReset();
+  mockEnqueue.mockReset().mockReturnValue(true);
   useFilmStore.setState({ lists: [] } as never);
 });
 

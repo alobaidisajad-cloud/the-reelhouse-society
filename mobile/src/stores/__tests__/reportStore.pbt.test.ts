@@ -42,7 +42,7 @@ jest.mock('../../utils/reelToast', () => {
 });
 
 jest.mock('../../utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(),
+  enqueueMutation: jest.fn(() => true),
 }));
 
 jest.mock('../../utils/logger', () => ({

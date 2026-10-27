@@ -26,7 +26,7 @@ import { settleDelivered } from '../stores/markCounts';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 import {
     DEAD_LETTER_KEY, QUEUE_KEY, changesMadeOffline, heldKey, heldOwnerOf, keepForOwners, kindOf,
-    marksLetGo, queueKeys, readList, readQueue, writeList, writeQueue,
+    marksLetGo, NOT_KEPT, queueKeys, readList, readQueue, writeList, writeQueue,
 } from './queueOwnership';
 
 export interface QueuedMutation {
@@ -176,11 +176,16 @@ export function getOfflineQueue(): QueuedMutation[] {
  * Queue a write to be sent later, as the member signed in now. Synchronous:
  * MMKV. With nobody signed in there is no one to send it as, so it is not queued.
  */
-export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp' | 'owner'>) {
+/**
+ * Keeps a write to send when the network returns. Returns whether it was kept: with nobody
+ * signed in, or no room on the phone (the member is told, here), it was not, and the caller
+ * says nothing of it being saved or queued.
+ */
+export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp' | 'owner'>): boolean {
     const owner = signedInMember();
     if (!owner) {
         logger.warn(`[OfflineSync] ${mutation.type} not queued: nobody is signed in.`);
-        return;
+        return false;
     }
     let queue = readQueue();
 
@@ -209,8 +214,12 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
 
     queue.push(newMutation);
 
-    writeQueue(queue);
+    if (!writeQueue(queue)) {
+        reelToast.error(NOT_KEPT);
+        return false;
+    }
     logger.debug(`[OfflineSync] Queued ${mutation.type} for background sync.`);
+    return true;
 }
 
 /** The send running now, with any asked for while it ran; null when none runs. */

@@ -617,11 +617,11 @@ export default function StackDetailScreen() {
       void offerWord('critique', user.id);
 
     } catch (err: unknown) {
-      if (isNetworkError(err)) {
-        enqueueMutation({
-          type: 'add_list_comment',
-          payload: { id: commentId, list_id: id, user_id: user.id, content }
-        });
+      // Kept for the network's return; one the phone had no room to keep comes off the page.
+      if (isNetworkError(err) && enqueueMutation({
+        type: 'add_list_comment',
+        payload: { id: commentId, list_id: id, user_id: user.id, content }
+      })) {
         flushOfflineQueue();
         // Leave the optimistic comment in cache since it's queued
         reelToast('Critique saved offline. Will sync when connected.');
@@ -655,19 +655,21 @@ export default function StackDetailScreen() {
     // Not sent yet: the house has no row to delete, so the removal waits in the
     // queue behind its filing, and the two go out in that order.
     if (stillQueued('add_list_comment', commentId)) {
-      enqueueMutation({ type: 'remove_list_comment', payload: { comment_id: commentId, user_id: user.id } });
-      flushOfflineQueue();
-      reelToast('Removed offline. Will sync when connected.');
-      return;
+      if (enqueueMutation({ type: 'remove_list_comment', payload: { comment_id: commentId, user_id: user.id } })) {
+        flushOfflineQueue();
+        reelToast('Removed offline. Will sync when connected.');
+        return;
+      }
     }
     try {
       await StackService.deleteStackComment(commentId, user.id);
     } catch (err: unknown) {
       if (isNetworkError(err)) {
-        enqueueMutation({ type: 'remove_list_comment', payload: { comment_id: commentId, user_id: user.id } });
-        flushOfflineQueue();
-        reelToast('Removed offline. Will sync when connected.');
-        return;
+        if (enqueueMutation({ type: 'remove_list_comment', payload: { comment_id: commentId, user_id: user.id } })) {
+          flushOfflineQueue();
+          reelToast('Removed offline. Will sync when connected.');
+          return;
+        }
       }
       captureError(err, { scope: 'stacks.deleteComment', stackId: id });
       // Refused: it is back where it was, and said so.

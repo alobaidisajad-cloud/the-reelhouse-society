@@ -22,7 +22,7 @@ jest.mock('../../src/stores/auth', () => ({
     },
 }));
 
-const mockEnqueue = jest.fn();
+const mockEnqueue = jest.fn((..._args: unknown[]) => true);
 jest.mock('../../src/utils/offlineQueue', () => ({
     enqueueMutation: (...args: unknown[]) => mockEnqueue(...args),
     flushOfflineQueue: jest.fn(),

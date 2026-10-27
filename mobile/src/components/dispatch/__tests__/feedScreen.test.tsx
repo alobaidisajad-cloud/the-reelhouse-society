@@ -104,7 +104,7 @@ jest.mock('@/src/lib/supabase', () => ({
   },
 }));
 jest.mock('@/src/utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
+  enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
 /** What the screen tells the E2E run (silent in a member's build). */
