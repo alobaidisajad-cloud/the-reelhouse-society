@@ -271,8 +271,7 @@ export default function DataVault() {
       } else {
         reelToast.error('File sharing is unavailable on this device.');
       }
-
-      if (isMounted.current) TactileEngine.success();
+      // No success said: the share sheet cannot tell a share from a cancel, and is its own answer.
     } catch (err: unknown) {
       if (!isMounted.current) return;
       const msg = err instanceof Error ? err.message : 'Export failed';
@@ -358,7 +357,7 @@ export default function DataVault() {
       } else {
         reelToast.error('File sharing is unavailable on this device.');
       }
-      if (isMounted.current) TactileEngine.success();
+      // No success said: the share sheet cannot tell a share from a cancel, and is its own answer.
     } catch (err: unknown) {
       if (!isMounted.current) return;
       const msg = err instanceof Error ? err.message : 'Export failed';

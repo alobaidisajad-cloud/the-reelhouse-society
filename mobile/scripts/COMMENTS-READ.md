@@ -546,7 +546,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/LogShareCard.tsx | 2026-10-08 | passes the card's onReady through |
 | src/components/film/NitrateFileCard.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; edited: readiness told through an Effect Event; says when every picture is drawn (onReady); a failed poster turns to the no-poster face; the house's domain, not REELHOUSE.APP |
 | src/components/film/pickCertificate.ts | 2026-10-01 | the member's own region is real now |
-| src/components/film/ShareCardModal.tsx | 2026-10-15 | edited: the card in a CentredCard; its ground closes it; the preview sized to the room less its measured frame |
+| src/components/film/ShareCardModal.tsx | 2026-10-27 | edited: edited: no success after the share sheet, which cannot tell a share from a cancel; edited: the card in a CentredCard; its ground closes it; the preview sized to the room less its measured frame |
 | src/components/film/TrailerModal.tsx | 2026-10-15 | close from useOverlayTop |
 | src/components/film/WatchProviders.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; edited: the monogram takes each initial whole |
 | src/components/HapticTab.tsx | 2026-10-15 | edited: given an icon, the button draws it once, chosen by aria-selected; why tabBarIcon is not used |
@@ -860,7 +860,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-23 | edited: a profile not yet read: no form, retrieved, asked again on failure; a read one draws the form and asks nothing; its navigation mock stands on the one base (test-utils/navigationMock); the Auteur manages a membership, not a rank to choose |
 | src/features/settings/__tests__/anExportIsWhole.test.ts | 2026-10-01 | written: an export holds every row once |
 | src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written: the sign-out confirm counts unsent changes, drafts and failed words; online, the queue goes first |
-| src/features/settings/DataVault.tsx | 2026-10-26 | edited: the undo receipt read as the vault is made and again for another member, not by an effect; no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
+| src/features/settings/DataVault.tsx | 2026-10-27 | edited: edited: no success after either export's share sheet; edited: the undo receipt read as the vault is made and again for another member, not by an effect; no dead store subscriptions; mount re-armed; progress spoken; undo counts what is left |
 | src/features/settings/readAllRows.ts | 2026-10-01 | written: the export's ordered paging, out of the screen |
 | src/features/settings/settings.styles.ts | 2026-10-02 | read; sound |
 | src/features/settings/SettingsScreen.tsx | 2026-10-27 | edited: the email's code field tells the phone it holds a one-time code; edited: the copyright's year from the shared clock; edited: the save checked at the press; the section landed on at its layout; edited: a failed profile read held with the member it was for; the read sets nothing until it answers; edited: the form only over a read profile (profileRead): retrieved when not, said when it could not be, and no save without it; its ready mark (settings), ready at once: the lab's control page; nav top from usePushedHeaderTop; foot from useContentBottom; the code window in a CentredCard |
@@ -1515,6 +1515,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/savedVersion.ts | 2026-10-27 | new: every saved store's version, and the step that carries the last release's unversioned shape forward |
 | src/utils/__tests__/everyDrawingIsMeasured.guard.test.ts | 2026-10-24 | written: every drawing of the app lands where CI measures it |
 | src/theme/__tests__/paperIsFlattened.test.ts | 2026-10-25 | written: the flat paper is the colour its three layers made, at every height |
+| src/utils/__tests__/aCancelledShareSaysNothing.guard.test.ts | 2026-10-27 | Written 2026-10-27: every function opening a share sheet, and no claim of success in it (P4.43) |
 | src/utils/__tests__/aPushCarriesNoPrivateWords.guard.test.ts | 2026-10-27 | Written 2026-10-27: every writer of a notice's message read from the schema snapshot, each value in it judged for a lock screen (P4.5) |
 | src/utils/__tests__/everyPasswordFieldSaysWhatItHolds.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: every secure field names its content and autofill, every code field the one-time-code pair (P4.37) |
 | src/utils/__tests__/nothingSaysQueuedUnlessItWas.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder (no claim of saving after a bare enqueueMutation) and the queue on a full phone (P4.14) |

@@ -114,7 +114,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
           message: `${film.title}${ratingText}${reviewLine}\n\n• view on ReelHouse: ${deepLink}`.trim(),
         });
       }
-      TactileEngine.success();
+      // No success said: neither sheet can tell a share from a cancel, and the sheet is its own answer.
       onClose();
     } catch (err: unknown) {
       if (__DEV__) console.warn('[NitrateFile] Share failed:', err);
