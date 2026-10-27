@@ -29,6 +29,8 @@ const EXEMPT = [
   'src/components/darkroom/constants.ts',
   'src/constants/formats.ts',
   'src/components/profile/TasteDNAExportCanvas.tsx',
+  // TMDB's own wordmark: another house's mark, its pigments as TMDB publishes them, never ours to name.
+  'src/components/TmdbCredit.tsx',
 ];
 
 // #RGB / #RRGGBB / #RRGGBBAA — pure black is allowed anywhere (it is what

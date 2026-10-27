@@ -13,7 +13,7 @@ without one). "Read" is the day its comments were last read against its code.
 |---|---|---|
 | __tests__/animationMockCoverage.test.ts | 2026-10-22 | edited: every name the app imports from Reanimated is in the mock, hooks and all; the entrances are Arrive's own values; the layout transitions remain |
 | __tests__/backendContract.test.ts | 2026-10-16 | edited: the tables and buckets read from the code, those passed through the export's and the import's helpers included |
-| __tests__/colorLock.test.ts | 2026-10-24 | edited: the drawn eye's file left the exempt list with the file |
+| __tests__/colorLock.test.ts | 2026-10-27 | edited: edited: TMDB's wordmark on the artwork list, its pigments as published; edited: the drawn eye's file left the exempt list with the file |
 | __tests__/components/feed/ActivityCard.test.tsx | 2026-10-25 | edited: the card is drawn as flat paper: an opaque ground, nothing seen through an opacity, no edge light under it |
 | __tests__/deletionIntegrity.test.ts | — |  |
 | __tests__/integration/errorBoundaryRecovery.test.tsx | — |  |
