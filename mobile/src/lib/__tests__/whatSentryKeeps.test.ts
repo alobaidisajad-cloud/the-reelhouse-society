@@ -70,9 +70,9 @@ it('is what Sentry is started with: the sampler, no flat rate, and the thinning 
 });
 
 /** sentry.ts in production, with this phone's crash-report choice as saved in the boot store (undefined: never chosen). */
-function withChoice(saved: boolean | undefined): { m: SentryModule; Sentry: Record<string, jest.Mock>; disk: Map<string, boolean> } {
+function withChoice(saved: boolean | undefined): { m: SentryModule; Sentry: { init: jest.Mock; close: jest.Mock }; disk: Map<string, boolean> } {
   let m!: SentryModule;
-  let Sentry!: Record<string, jest.Mock>;
+  let Sentry!: { init: jest.Mock; close: jest.Mock };
   const disk = new Map<string, boolean>();
   if (saved !== undefined) disk.set('share_crash_reports', saved);
   const dev = (global as { __DEV__?: boolean }).__DEV__;
@@ -115,7 +115,7 @@ describe('the member\'s choice to share crash reports (P4.46)', () => {
     expect([Sentry.close.mock.calls.length, disk.get('share_crash_reports'), m.crashReportsShared()]).toEqual([1, false, false]);
     m.shareCrashReports(true);
     expect(Sentry.init).toHaveBeenCalledTimes(2);
-    expect(Sentry.init.mock.calls[1][0].release).toBe('r');
+    expect(Sentry.init.mock.calls.at(1)?.[0]?.release).toBe('r');
   });
 });
 
