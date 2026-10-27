@@ -39,6 +39,8 @@ const REGISTER: Record<string, Count> = {
   'app/log/[id].tsx': { empty: 1, eyes: 1, offline: 1, why: 'a log not found (the empty state carries Buster); being read, or not reached' },
   'app/(modals)/notifications-modal.tsx': { offline: 1, why: 'the notices could not be reached' },
   'app/(modals)/log-modal.tsx': { empty: 1, why: 'an edit opened on a record that is not theirs, or was withdrawn (the empty state carries Buster)' },
+  'app/(modals)/list-modal.tsx': { empty: 1, why: "a link to another member's stack: not yours to amend (the empty state carries Buster)" },
+  'app/(modals)/cover-picker.tsx': { empty: 1, why: 'a link to a salon not yours to change (the empty state carries Buster)' },
   'src/components/lobby/LobbyWall.tsx': { offline: 1, why: 'the Lobby wall could not be reached' },
   'app/+not-found.tsx': { buster: 1, why: 'a link to nowhere' },
   'app/(modals)/search-modal.tsx': { buster: 1, why: 'a search that found nothing' },

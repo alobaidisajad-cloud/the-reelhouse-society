@@ -357,7 +357,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/aTabDrawsItsIconOnce.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/aTabIsTouchedWhereItIs.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a tab reaches no further than its own edges. |
 | src/components/__tests__/Buster.test.tsx | 2026-10-04 | edited: the lids lie beside the picture, outside the points’ layer, over the whole figure; the still one shows whole |
-| src/components/__tests__/busterRegister.test.ts | 2026-10-23 | edited: the salon's Buster also says its words being read, or not read; its files come from the shared file list (test-utils/universe.js) |
+| src/components/__tests__/busterRegister.test.ts | 2026-10-27 | edited: the two not-yours notices registered (the stack editor, the cover picker); edited: the salon's Buster also says its words being read, or not read; its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/theHouseSignsWithItsLogo.test.tsx | 2026-10-24 | edited: the Lobby tab wears the logo's small cut, on a clear ground (read by e2e/png.mjs); no stand-in eye is kept there |
 | src/components/__tests__/theInitiationLeavesAfterItsFade.test.tsx | 2026-10-15 | new: a beat and the door leave after their fade |
 | src/components/__tests__/theInitiationTellsTheTruth.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): the induction promises only what a new member has. |
