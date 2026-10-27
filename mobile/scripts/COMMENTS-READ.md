@@ -1433,7 +1433,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/testQueryClient.ts | 2026-10-04 | written whole: the one client a test builds — the app's rules, no collection timer, errors heard |
 | test-utils/timerCheckingEnvironment.js | 2026-10-25 | edited: keeps Node's own fetch for the contracts before the setup replaces the global with Expo's; written whole: the environment that fails a file ending with a timer still waiting; edited: timers Node starts for itself (startedByNode) are not counted |
 | test-utils/topEdge.ts | 2026-10-15 | new: where a drawn page puts its top |
-| test-utils/universe.js | 2026-10-16 | new: the one list of the files each sweep reads, the route closure, and what each supabase/ file is; the scripts a flow runs (flowScripts) |
+| test-utils/universe.js | 2026-10-27 | edited: a local native module's config files named as read by autolinking, not swept; new: the one list of the files each sweep reads, the route closure, and what each supabase/ file is; the scripts a flow runs (flowScripts) |
 | types/react-test-renderer.d.ts | 2026-09-29 | history reduced to the reason |
 | plugins/__tests__/withHouseDialogs.test.ts | 2026-10-22 | written: on a real styles.xml and colors.xml, the dialog theme and accents set beside what the app theme had |
 | plugins/withHouseDialogs.js | 2026-10-22 | written: Android's own dialogs in the house's card, parchment and brass; read against AppCompat's AlertDialog theme attributes |

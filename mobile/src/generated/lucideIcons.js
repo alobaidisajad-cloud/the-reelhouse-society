@@ -76,6 +76,7 @@ export { default as MessageSquare } from '../../node_modules/lucide-react-native
 export { default as MessageSquareText } from '../../node_modules/lucide-react-native/dist/esm/icons/message-square-text.js';
 export { default as Minus } from '../../node_modules/lucide-react-native/dist/esm/icons/minus.js';
 export { default as MinusCircle } from '../../node_modules/lucide-react-native/dist/esm/icons/circle-minus.js';
+export { default as MonitorSmartphone } from '../../node_modules/lucide-react-native/dist/esm/icons/monitor-smartphone.js';
 export { default as MoreHorizontal } from '../../node_modules/lucide-react-native/dist/esm/icons/ellipsis.js';
 export { default as MoreVertical } from '../../node_modules/lucide-react-native/dist/esm/icons/ellipsis-vertical.js';
 export { default as Newspaper } from '../../node_modules/lucide-react-native/dist/esm/icons/newspaper.js';

@@ -196,6 +196,7 @@ const NOT_SWEPT = [
   { why: 'files git and the env read at the top of mobile/', match: (r) => /^mobile\/(\.gitignore|\.env\.example)$/.test(r) },
   { why: 'the E2E world configuration the Supabase CLI reads', match: (r) => r === 'mobile/e2e/supabase/config.toml' },
   { why: 'the recordings the stand-in TMDB answers from', match: (r) => r.startsWith('mobile/e2e/supabase/functions/tmdb-proxy/fixtures/') },
+  { why: "a local native module's own config, read by Expo's autolinking", match: (r) => /^mobile\/modules\/[^/]+\/(expo-module\.config|package)\.json$/.test(r) },
 ];
 
 /**
