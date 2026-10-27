@@ -141,7 +141,8 @@ describe('paperPerf is wired, all of it', () => {
     // The corpus must genuinely exclude the definitions, or the next test
     // passes vacuously — every name would match its own `export const` line.
     // Built by concatenation so this assertion is not itself a match.
-    for (const n of names) expect(corpus).not.toContain('export const ' + n);
+    // The whole name: `TMDB` is not `TMDB_NOTICE`.
+    for (const n of names) expect(corpus).not.toMatch(new RegExp('export const ' + n + '\\b'));
   });
 
   it('has no export that nothing imports', () => {
