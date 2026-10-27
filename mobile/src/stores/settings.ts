@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { carriedForward, SAVED_VERSION } from './savedVersion';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandMMKVStorage as zustandStorage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
@@ -16,6 +17,9 @@ export const useSettingsStore = create<SettingsState>()(
         }),
         {
             name: 'reelhouse-settings',
+            // What the last release saved, named and carried (savedVersion.ts).
+            version: SAVED_VERSION,
+            migrate: carriedForward,
             storage: createJSONStorage(() => zustandStorage),
             // Hydration is deferred until after initEncryptedStorage() (LIB-5);
             // _layout calls rehydrateSettingsStore() once the key is resolved.

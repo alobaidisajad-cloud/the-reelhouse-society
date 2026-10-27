@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { carriedForward, SAVED_VERSION } from './savedVersion';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { zustandMMKVStorageSensitive } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
@@ -204,6 +205,9 @@ export const useVaultStore = create<VaultState>()(
     }),
     {
       name: STORAGE_KEY,
+      // What the last release saved, named and carried (savedVersion.ts).
+      version: SAVED_VERSION,
+      migrate: carriedForward,
       storage: createJSONStorage(() => zustandMMKVStorageSensitive),
       // Only the writing itself survives a restart. What was loaded, what was in
       // flight and what could not be reached all belong to one run of the app:

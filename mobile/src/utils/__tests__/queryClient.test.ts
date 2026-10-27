@@ -301,3 +301,37 @@ describe('the app coming back to the front, as React Query hears it', () => {
     }
   });
 });
+
+// P4.11: a cache is painted only by the build and the update that wrote it.
+describe('a saved cache, across builds and updates', () => {
+  const { persistQueryClientRestore, persistQueryClientSave } = jest.requireActual('@tanstack/react-query-persist-client') as typeof import('@tanstack/react-query-persist-client');
+  const { testQueryClient } = jest.requireActual('@/test-utils/testQueryClient') as typeof import('@/test-utils/testQueryClient');
+
+  it('one saved by another build or update is never painted, and one saved by this one is', async () => {
+    const writer = testQueryClient();
+    writer.setQueryData(['film', 1], { title: 'Sunrise' });
+    await persistQueryClientSave({ queryClient: writer, persister: mmkvPersister, buster: 'ios:41:update-a' });
+
+    const after = testQueryClient();
+    await persistQueryClientRestore({ queryClient: after, persister: mmkvPersister, buster: 'ios:42:update-b' });
+    expect(after.getQueryData(['film', 1])).toBeUndefined();
+
+    await persistQueryClientSave({ queryClient: writer, persister: mmkvPersister, buster: 'ios:41:update-a' });
+    const same = testQueryClient();
+    await persistQueryClientRestore({ queryClient: same, persister: mmkvPersister, buster: 'ios:41:update-a' });
+    expect(same.getQueryData(['film', 1])).toEqual({ title: 'Sunrise' });
+  });
+
+  it('the cache\'s mark is the platform, its store build and the running update, never the app version alone', () => {
+    const { CACHE_BUSTER } = jest.requireActual('@/src/lib/cacheBuster') as typeof import('@/src/lib/cacheBuster');
+    const parts = CACHE_BUSTER.split(':');
+    expect(parts).toHaveLength(3);
+    expect(parts[0]).toBe(require('react-native').Platform.OS);
+    expect(parts[2]).not.toBe('');
+  });
+});
+
+it('is restored at launch with that mark: the root hands it to the cache\'s provider (P4.11)', () => {
+  const { readCode } = jest.requireActual('@/test-utils/readCode') as typeof import('@/test-utils/readCode');
+  expect(readCode('app/_layout.tsx')).toMatch(/persistOptions=\{\{[^}]*buster: CACHE_BUSTER[^}]*\}\}/);
+});

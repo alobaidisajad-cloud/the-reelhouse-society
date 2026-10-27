@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { carriedForward, SAVED_VERSION } from './savedVersion';
 import { persist } from 'zustand/middleware';
 import { createAsyncMMKVStorage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
@@ -27,6 +28,9 @@ const useFilmStoreBase = create<FilmState>()(
         }),
         {
             name: 'reelhouse-films',
+            // What the last release saved, named and carried (savedVersion.ts).
+            version: SAVED_VERSION,
+            migrate: carriedForward,
             storage: createAsyncMMKVStorage({ sensitive: true }),
             // Deferred hydration until the encryption key is resolved (LIB-5).
             skipHydration: true,

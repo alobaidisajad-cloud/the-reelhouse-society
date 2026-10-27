@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { carriedForward, SAVED_VERSION } from './savedVersion';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandMMKVStorage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
@@ -129,6 +130,9 @@ export const useDiscoverStore = create<DiscoverState>()(
     }),
     {
       name: 'reelhouse-discover',
+      // What the last release saved, named and carried (savedVersion.ts).
+      version: SAVED_VERSION,
+      migrate: carriedForward,
       storage: createJSONStorage(() => zustandMMKVStorage),
       // What the member chose (filters, mood, search) — not accumulatedFilms, fetched again (handled manually by cacheKey)
       partialize: (state) => ({

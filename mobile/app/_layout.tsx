@@ -1,4 +1,5 @@
 import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
+import { CACHE_BUSTER } from '@/src/lib/cacheBuster';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack, ErrorBoundary as RouterErrorBoundary } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -145,7 +146,7 @@ export default function RootLayout() {
         <KeyboardRoom>
           <PersistQueryClientProvider
           client={queryClient}
-          persistOptions={{ persister: mmkvPersister, maxAge: 24 * 60 * 60 * 1000 }}
+          persistOptions={{ persister: mmkvPersister, maxAge: 24 * 60 * 60 * 1000, buster: CACHE_BUSTER }}
         >
         <AppBootstrapper>
           {/* Whether the preloader has gone, for the E2E build's route marks (each screen's, drawn by toastScreenLayout). */}

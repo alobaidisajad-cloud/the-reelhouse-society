@@ -1,4 +1,5 @@
 import { logger } from '@/src/utils/logger';
+import { carriedForward, SAVED_VERSION } from './savedVersion';
 import { z } from 'zod';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -523,6 +524,9 @@ export const useNotificationStore = create<NotificationState>()(
         }),
         {
             name: 'reelhouse-notifications',
+            // What the last release saved, named and carried (savedVersion.ts).
+            version: SAVED_VERSION,
+            migrate: carriedForward,
             storage: createJSONStorage(() => zustandMMKVStorageSensitive),
             // The data and its paging, so a cold start need not refetch.
             partialize: (state) => ({

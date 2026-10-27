@@ -1,0 +1,21 @@
+{
+  "state": {
+    "filters": {
+      "genreId": 18,
+      "decade": {
+        "label": "2000s",
+        "from": "2000-01-01",
+        "to": "2009-12-31"
+      },
+      "sortBy": "vote_average.desc",
+      "language": "ja",
+      "minRating": 7,
+      "yearFrom": null,
+      "yearTo": null
+    },
+    "mood": null,
+    "query": "ozu",
+    "inputVal": "ozu"
+  },
+  "version": 0
+}

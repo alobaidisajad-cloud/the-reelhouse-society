@@ -1,0 +1,88 @@
+{
+  "state": {
+    "logs": [
+      {
+        "id": "44444444-4444-4444-8444-444444444441",
+        "filmId": 18148,
+        "title": "Tokyo Story",
+        "poster": "/tokyo.jpg",
+        "altPoster": null,
+        "year": 1953,
+        "rating": 5,
+        "status": "watched",
+        "review": "The quietest film about everything.",
+        "pullQuote": null,
+        "director": "Yasujirō Ozu",
+        "genres": [
+          {
+            "id": 18,
+            "name": "Drama"
+          }
+        ],
+        "runtime": 136,
+        "createdAt": "2026-10-09T20:15:00.000Z",
+        "userId": "33333333-3333-4333-8333-333333333333",
+        "watchedDate": "2026-10-09",
+        "isSpoiler": false,
+        "watchedWith": null,
+        "privateNotes": null,
+        "abandonedReason": null,
+        "physicalMedia": null,
+        "isAutopsied": false,
+        "autopsy": null,
+        "editorialHeader": null,
+        "dropCap": false,
+        "videoUrl": null,
+        "viewCount": 1,
+        "viewingId": "55555555-5555-4555-8555-555555555551"
+      }
+    ],
+    "watchlist": [
+      {
+        "id": 11216,
+        "title": "Cinema Paradiso",
+        "poster": "/paradiso.jpg",
+        "year": 1988
+      }
+    ],
+    "lists": [
+      {
+        "id": "66666666-6666-4666-8666-666666666661",
+        "title": "Rooms with Silence",
+        "description": "Films that wait.",
+        "films": [
+          {
+            "id": 18148,
+            "title": "Tokyo Story",
+            "poster": "/tokyo.jpg"
+          }
+        ],
+        "userId": "33333333-3333-4333-8333-333333333333",
+        "createdAt": "2026-10-09T20:15:00.000Z",
+        "isPrivate": false,
+        "isRanked": true
+      }
+    ],
+    "interactions": [
+      {
+        "type": "endorse",
+        "targetId": "44444444-4444-4444-8444-444444444442",
+        "timestamp": "2026-10-09T20:15:00.000Z"
+      }
+    ],
+    "physicalArchive": [
+      {
+        "id": "aa1",
+        "filmId": 18148,
+        "title": "Tokyo Story",
+        "poster": "/tokyo.jpg",
+        "year": 1953,
+        "formats": [
+          "bluray"
+        ],
+        "createdAt": "2026-10-09T20:15:00.000Z"
+      }
+    ]
+  },
+  "version": 0
+}
