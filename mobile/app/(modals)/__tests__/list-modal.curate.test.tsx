@@ -86,9 +86,10 @@ const FILMS = [
   { id: 1, title: 'Blade Runner', poster_path: '/br.jpg' },
   { id: 2, title: 'Chinatown', poster_path: '/ct.jpg' },
 ];
+// The member's own stack: the form is a member's, and amends only what they curate (P4.4, P4.19).
 const STACK = {
   id: STACK_ID, title: 'Neon Noir Masterpieces', description: 'A note.',
-  isPrivate: false, isRanked: false, films: FILMS,
+  isPrivate: false, isRanked: false, films: FILMS, userId: 'me',
 };
 
 const mount = () => render(<ListModal />);
@@ -120,7 +121,10 @@ beforeEach(() => {
   mockParams = {};
   mockLists = [];
   mockCachedStack = undefined;
+  require('@/src/stores/auth').useAuthStore.setState({ user: { id: 'me' } });
+  require('@/src/utils/memberDrafts').clearDraft('me', 'stack');
 });
+afterEach(() => { require('@/src/stores/auth').useAuthStore.setState({ user: null }); });
 
 describe('the form can never destroy a stack', () => {
   it('waits for the stack rather than filing the blank form it opened with', async () => {
@@ -219,7 +223,7 @@ describe('the form can never destroy a stack', () => {
     expect(r.queryByLabelText('Remove Blade Runner')).toBeNull();
     expect(r.queryByLabelText('Search films to add to stack')).toBeNull();
     expect(r.queryByLabelText('Reorder Blade Runner')).toBeNull();
-    expect(r.queryByText(/DRAG TO ORDER/)).toBeNull();
+    expect(r.queryByText(/TAP OR HOLD TO ORDER/)).toBeNull();
   });
 
   it('sends them when it does hold all of them', async () => {
@@ -412,17 +416,17 @@ describe('what the page says, and stops saying', () => {
   it('says the order is kept, and only once there is an order to speak of', async () => {
     const blank = mount();
     await waitFor(() => expect(blank.getByText('HOLDINGS')).toBeTruthy());
-    expect(blank.queryByText(/DRAG TO ORDER/)).toBeNull();
+    expect(blank.queryByText(/TAP OR HOLD TO ORDER/)).toBeNull();
 
     mockParams = { editId: STACK_ID };
     mockLists = [{ ...STACK, films: [FILMS[0]] }];          // one reel has no order
     const single = mount();
     await waitFor(() => expect(single.getByText('Blade Runner')).toBeTruthy());
-    expect(single.queryByText(/DRAG TO ORDER/)).toBeNull();
+    expect(single.queryByText(/TAP OR HOLD TO ORDER/)).toBeNull();
 
     mockLists = [STACK];
     const filled = mount();
-    await waitFor(() => expect(filled.getByText(/DRAG TO ORDER/)).toBeTruthy());
+    await waitFor(() => expect(filled.getByText(/TAP OR HOLD TO ORDER/)).toBeTruthy());
     expect(filled.getByText(/THE ORDER IS KEPT EITHER WAY/)).toBeTruthy();
   });
 
@@ -433,9 +437,9 @@ describe('what the page says, and stops saying', () => {
     mockParams = { editId: STACK_ID };
     mockLists = [STACK];
     const r = mount();
-    await waitFor(() => expect(r.getByText(/DRAG TO ORDER/)).toBeTruthy());
+    await waitFor(() => expect(r.getByText(/TAP OR HOLD TO ORDER/)).toBeTruthy());
     const order = (needle: string) => JSON.stringify(r.toJSON()).indexOf(needle);
-    expect(order('DRAG TO ORDER')).toBeLessThan(order('Blade Runner'));
+    expect(order('TAP OR HOLD TO ORDER')).toBeLessThan(order('Blade Runner'));
   });
 
   it('spends no words on (OPTIONAL), and does not say STACK twice', async () => {
@@ -629,6 +633,29 @@ describe('a stack can be ordered, and its terms read, without sight', () => {
     expect(mockUpdateList.mock.calls[0][1].films.map((f: { title: string }) => f.title)).toEqual(['Chinatown', 'Blade Runner']);
   });
 
+  it('the drag has a sighted twin too: a tap takes a film up, and its arrows move it a step (P4.36)', async () => {
+    mockParams = { editId: STACK_ID };
+    mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: 2 } };
+    const r = mount();
+    await waitFor(() => expect(r.getByLabelText('Reorder Blade Runner')).toBeTruthy());
+    expect(r.queryByLabelText('Move Blade Runner down')).toBeNull();
+    await act(async () => { await fireEvent.press(r.getByLabelText('Reorder Blade Runner')); });
+    // Taken up: its arrows in the remove mark's place; the first cannot go higher.
+    expect(r.getByLabelText('Reorder Blade Runner').props.accessibilityState).toMatchObject({ selected: true });
+    expect(r.queryByLabelText('Remove Blade Runner')).toBeNull();
+    expect(r.getByLabelText('Move Blade Runner up').props.accessibilityState).toMatchObject({ disabled: true });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Move Blade Runner down')); });
+    // Still held, now last: down is closed, up open.
+    expect(r.getByLabelText('Move Blade Runner down').props.accessibilityState).toMatchObject({ disabled: true });
+    // The row's second press waits out its debounce, as a finger's does.
+    await act(async () => { await new Promise((done) => setTimeout(done, 400)); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Reorder Blade Runner')); });
+    expect(r.getByLabelText('Remove Blade Runner')).toBeTruthy();
+    await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+    await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
+    expect(mockUpdateList.mock.calls[0][1].films.map((f: { title: string }) => f.title)).toEqual(['Chinatown', 'Blade Runner']);
+  });
+
   it('each of the terms says whether it is the one chosen', async () => {
     const r = mount();
     expect(r.getByLabelText('Set stack to public').props.accessibilityState).toMatchObject({ selected: true });
@@ -656,6 +683,17 @@ describe('a stack named by a link', () => {
     expect(r.queryByLabelText('Stack title')).toBeNull();
     expect(r.queryByText('SAVE THE AMENDMENTS')).toBeNull();
     expect(r.getByLabelText('Close')).toBeTruthy();
+  });
+
+  it('opened signed out: asked in, never told "not yours"; signed in as its curator, it opens to amend (P4.19)', async () => {
+    asMember(null);
+    mockParams = { editId: STACK_ID };
+    mockCachedStack = { list: { ...STACK, userId: 'me', films: FILMS, filmCount: 2 } };
+    const r = await mount();
+    expect(r.getByText('For Members')).toBeTruthy();
+    expect(r.queryByText('Not Yours to Amend')).toBeNull();
+    await act(async () => { asMember('me'); });
+    expect(r.getByLabelText('Stack title').props.value).toBe('Neon Noir Masterpieces');
   });
 
   it('a stack of their own opens to amend', async () => {

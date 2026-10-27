@@ -7,12 +7,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useAuthStore } from '@/src/stores/auth';
-import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts } from '@/src/theme/theme';
-import { LogIn } from 'lucide-react-native';
+import { IdentifyYourself } from '@/src/components/MembersOnly';
 import UserProfileScreen from '../user/[username]';
 import Buster, { BusterEyes } from '@/src/components/Buster';
-import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline } from '@/src/components/EmptyStates';
@@ -42,11 +40,7 @@ export default function ProfileTab() {
           <CentredRoom kind="tab" style={s.centre}>
             <Buster size={80} mood="unimpressed" message="The archive awaits your identity." />
             <Text style={s.prompt}>Identify yourself to access your dossier</Text>
-            <PressableScale testID="profile-sign-in-prompt" style={s.ctaBtn} onPress={() => nav.push('/login')} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="medium"
-              accessibilityRole="button" accessibilityLabel="Identify yourself. Sign in.">
-              <LogIn size={11} color={colors.sepia} strokeWidth={1.5} />
-              <Text style={s.ctaBtnText}>IDENTIFY YOURSELF</Text>
-            </PressableScale>
+            <IdentifyYourself testID="profile-sign-in-prompt" />
           </CentredRoom>
         </View>
       </FrozenTab>
@@ -104,13 +98,6 @@ const s = StyleSheet.create({
   centre: { alignItems: 'center' },
   // Room above as well as below: under Buster's line it read as part of the bubble.
   prompt: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, marginTop: 20, marginBottom: 16 },
-  ctaBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 24, paddingVertical: 10,
-    borderWidth: 1, borderColor: colors.sepia, borderRadius: 2,
-    backgroundColor: 'rgba(184,137,26,0.1)',
-  },
-  ctaBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia },
   retrievingEyes: { marginBottom: 14 },
   retrieving: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia },
 });

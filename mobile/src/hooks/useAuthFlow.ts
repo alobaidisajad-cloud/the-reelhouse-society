@@ -3,6 +3,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { BAD_CREDENTIALS, authLink } from '@/src/utils/authSignals';
 import { useLocalSearchParams } from 'expo-router';
+import { returnAfterSignIn } from '@/src/components/MembersOnly';
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
 import reelToast from '@/src/utils/reelToast';
@@ -103,7 +104,9 @@ export function initialIsLogin(action?: string): boolean {
 export type EmailLinkPurpose = 'reset' | 'confirm';
 
 export function useAuthFlow() {
-  const params = useLocalSearchParams<{ action?: string }>();
+  const params = useLocalSearchParams<{ action?: string; next?: string }>();
+  // Where a sign-in lands: the member-only screen that sent the stranger here, or the Lobby.
+  const landing = returnAfterSignIn(params.next);
   const { login, signup } = useAuthStore();
 
   // Right on the first frame; the effect below follows the route changing after.
@@ -210,7 +213,7 @@ export function useAuthFlow() {
       await login(creds.email, creds.password);
       credentialsRef.current.password = '';
       setAwaitingConfirmation(false);
-      nav.replace('/(tabs)');
+      nav.replace(landing);
     } catch (err: unknown) {
       const raw = messageOf(err);
       reelToast.error(raw ? mapAuthError(raw).message : 'Verification check failed.');
@@ -278,7 +281,7 @@ export function useAuthFlow() {
     try {
       if (isLogin) {
         await login(emailOrUsername.trim(), password);
-        nav.replace('/(tabs)');
+        nav.replace(landing);
       } else {
         const formattedUsername = usernameCheck!.sanitized;
         const result = await signup(emailOrUsername.trim(), password, formattedUsername);
@@ -286,7 +289,7 @@ export function useAuthFlow() {
           setConfirmedEmail(emailOrUsername.trim());
           setAwaitingConfirmation(true);
         } else {
-          nav.replace('/(tabs)');
+          nav.replace(landing);
         }
       }
     } catch (error: unknown) {

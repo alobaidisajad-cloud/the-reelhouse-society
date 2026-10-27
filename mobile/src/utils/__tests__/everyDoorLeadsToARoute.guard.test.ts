@@ -92,6 +92,7 @@ const COMPUTED: { at: string; text: string; from: string }[] = [
   { at: 'src/components/dispatch/FilingRow.tsx', text: 'roomOf(authorName)', from: 'roomOf: checked below' },
   { at: 'src/components/layout/ConciergeButton.tsx', text: 'route', from: 'handleAction\'s callers: /log-modal, /list-modal, /dispatch/compose: checked below' },
   { at: 'src/utils/openNoticeFromPush.ts', text: 'route', from: 'noticeRoute, or the notices sheet: checked below' },
+  { at: 'src/hooks/useAuthFlow.ts', text: 'landing', from: 'returnAfterSignIn (MembersOnly.tsx): the three member-only screens\' own shapes, or /(tabs) (aStrangerIsAskedInAndBroughtBack)' },
 ];
 
 it('reads the routes app/ makes and the targets the code writes', () => {

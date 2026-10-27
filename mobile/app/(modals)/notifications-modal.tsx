@@ -23,6 +23,8 @@ import { refreshFollowRequestCount } from '@/src/hooks/useFollowRequests';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useTimeAgo } from '@/src/hooks/useClock';
 import { useOfflineAware } from '@/src/hooks/useOfflineAware';
+import { useAuthStore } from '@/src/stores/auth';
+import { MembersOnly } from '@/src/components/MembersOnly';
 import { Award, Bell, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
@@ -198,6 +200,7 @@ export default function NotificationsModal() {
   // follow_request notices so a request can never be orphaned by a dismiss.
   const pendingCount = useSocialStore(s => s.pendingRequestCount);
   const [doorOpen, setDoorOpen] = useState(false);
+  const member = useAuthStore((st) => !!st.user?.id);
 
   // Pure view-layer grouping transformation — recomputes only when notifications[] changes
   const displayItems = useMemo(() => groupNotifications(notifications.filter(n => n.type !== 'follow_request')), [notifications]);
@@ -242,6 +245,9 @@ export default function NotificationsModal() {
     }
     return <NotificationItem item={item.notification} index={index} />;
   }, []);
+
+  // A stranger has no notices to be told are none: they are asked in, and brought back here.
+  if (!member) return <MembersOnly next="/notifications-modal" style={{ paddingTop: handleTop }} />;
 
   return (
     <View style={s.container}>

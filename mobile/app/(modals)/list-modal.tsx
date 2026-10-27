@@ -26,7 +26,7 @@ import { useListStore } from '@/src/stores/films';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
 import reelToast from '@/src/utils/reelToast';
-import { Globe, GripVertical, List, ListOrdered, Lock, Plus, Search, X } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Globe, GripVertical, List, ListOrdered, Lock, Plus, Search, X } from 'lucide-react-native';
 import { EDGE_LIT } from '@/src/theme/light';
 import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
@@ -35,6 +35,7 @@ import { Arrive } from '@/src/components/Arrive';
 import { EmptyState } from '@/src/components/EmptyStates';
 import { WayOut } from '@/src/components/TryAgain';
 import { useAuthStore } from '@/src/stores/auth';
+import { MembersOnly } from '@/src/components/MembersOnly';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 
 // At module scope: made inside the component, it would be a new type, and remount, each render.
@@ -62,7 +63,7 @@ interface SearchResult {
 }
 
  
-const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove, onMove }: { item: ListFilm, index: number | undefined, drag: () => void, isActive: boolean, sealed: boolean, onRemove: (id: number) => void, onMove: (id: number, by: -1 | 1) => void }) => {
+const ListFilmItem = React.memo(({ item, index, count, drag, isActive, moving, sealed, onRemove, onMove, onTake }: { item: ListFilm, index: number | undefined, count: number, drag: () => void, isActive: boolean, moving: boolean, sealed: boolean, onRemove: (id: number) => void, onMove: (id: number, by: -1 | 1) => void, onTake: (id: number) => void }) => {
     // Cache the index during active drag so the number never flashes to a hyphen.
     const [lastIndex, setLastIndex] = React.useState<number | undefined>(index);
     if (index !== undefined && index !== lastIndex) setLastIndex(index);
@@ -72,12 +73,14 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove
     return (
         <ScaleDecorator>
             <PressableScale
+                // A tap takes the film up, to be moved by its arrows; a hold, to be dragged.
+                onPress={sealed ? undefined : () => onTake(item.id)}
                 onLongPress={sealed ? undefined : drag}
                 disabled={isActive}
                 style={[
                     s.filmRow,
                     s.filmRowMargin,
-                    isActive ? s.filmRowActive : undefined
+                    isActive || moving ? s.filmRowActive : undefined
                 ]}
                 // Stacked rows: a halo would reach into the next, and the later wins.
                 hitSlop={null}
@@ -87,6 +90,7 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove
                 // A drag a screen reader cannot make: the same order, one step
                 // at a time. Without these a ranked stack could not be ordered
                 // by a member who cannot see it.
+                accessibilityState={sealed ? undefined : { selected: moving }}
                 accessibilityHint={sealed ? undefined : `Number ${displayIndex}. Its actions move it up or down.`}
                 accessibilityActions={sealed ? undefined : [
                     { name: 'moveUp', label: 'Move up' },
@@ -97,10 +101,10 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove
                     else if (e.nativeEvent.actionName === 'moveDown') onMove(item.id, 1);
                 }}
             >
-                {!sealed && <GripVertical size={16} color={isActive ? colors.sepia : colors.fog} style={s.gripOpacity} />}
-                <View style={[s.rankWrap, isActive && s.rankWrapActive]}>
+                {!sealed && <GripVertical size={16} color={isActive || moving ? colors.sepia : colors.fog} style={s.gripOpacity} />}
+                <View style={[s.rankWrap, (isActive || moving) && s.rankWrapActive]}>
                     <Text 
-                        style={[s.rankText, isActive && s.rankTextActive]} 
+                        style={[s.rankText, (isActive || moving) && s.rankTextActive]} 
                         numberOfLines={1} 
                         adjustsFontSizeToFit 
                         minimumFontScale={0.3}
@@ -110,11 +114,21 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, sealed, onRemove
                 </View>
                 <RemoteImage uri={tmdb.poster(item.poster_path, 'w92')} style={s.filmPoster} transition={150} recyclingKey={item.poster_path} fallback={<View style={[s.filmPoster, s.filmPosterEmpty]} />} />
                 <Text style={s.filmTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{item.title}</Text>
-                {!sealed && (
+                {!sealed && moving ? (
+                    // Taken up: one step at a time, as the screen reader's actions move it.
+                    <View style={s.stepPair}>
+                        <PressableScale onPress={() => onMove(item.id, -1)} disabled={shownIndex === 0} style={s.stepBtn} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel={`Move ${item.title} up`} accessibilityState={{ disabled: shownIndex === 0 }}>
+                            <ChevronUp size={16} color={shownIndex === 0 ? colors.ash : colors.sepia} />
+                        </PressableScale>
+                        <PressableScale onPress={() => onMove(item.id, 1)} disabled={shownIndex === count - 1} style={s.stepBtn} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel={`Move ${item.title} down`} accessibilityState={{ disabled: shownIndex === count - 1 }}>
+                            <ChevronDown size={16} color={shownIndex === count - 1 ? colors.ash : colors.sepia} />
+                        </PressableScale>
+                    </View>
+                ) : !sealed ? (
                     <PressableScale onPress={() => onRemove(item.id)} style={s.removeBtn} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel={`Remove ${item.title}`}>
                         <X size={14} color={colors.crimson} />
                     </PressableScale>
-                )}
+                ) : null}
             </PressableScale>
         </ScaleDecorator>
     );
@@ -299,7 +313,15 @@ export default function ListModal() {
         TactileEngine.selection();
     }, []);
 
+    /** The film taken up to be moved by its arrows; a tap on it again sets it down. */
+    const [movingId, setMovingId] = useState<number | null>(null);
+    const takeFilm = useCallback((filmId: number) => {
+        setMovingId((id) => (id === filmId ? null : filmId));
+        TactileEngine.selection();
+    }, []);
+
     const removeFilm = useCallback((filmId: number) => {
+        setMovingId((id) => (id === filmId ? null : id));
         const gone = filmsRef.current.find(f => f.id === filmId);
         setFilms(prev => prev.filter(f => f.id !== filmId));
         if (gone) {
@@ -380,14 +402,17 @@ export default function ListModal() {
             <ListFilmItem
                 item={item}
                 index={getIndex()}
+                count={films.length}
                 drag={drag}
                 isActive={isActive}
+                moving={movingId === item.id}
                 sealed={holdingsAreSealed}
                 onRemove={removeFilm}
                 onMove={moveFilm}
+                onTake={takeFilm}
             />
         );
-    }, [removeFilm, moveFilm, holdingsAreSealed]);
+    }, [removeFilm, moveFilm, takeFilm, holdingsAreSealed, movingId, films.length]);
 
     const ListHeader = (
         <>
@@ -491,7 +516,7 @@ export default function ListModal() {
 
             {/* Above the films it describes, once there are two to order. */}
             {!holdingsAreSealed && films.length > 1 && (
-                <Text style={s.dragLine} {...scaledTextProps}>DRAG TO ORDER  ·  THE ORDER IS KEPT EITHER WAY</Text>
+                <Text style={s.dragLine} {...scaledTextProps}>TAP OR HOLD TO ORDER  ·  THE ORDER IS KEPT EITHER WAY</Text>
             )}
         </>
     );
@@ -589,6 +614,11 @@ export default function ListModal() {
         </>
     );
 
+    // A stranger is asked in, and brought back to the stack they were sent to.
+    if (!me) {
+        return <MembersOnly next={params.editId ? `/list-modal?editId=${params.editId}` : '/list-modal'} style={{ paddingTop: handleTop }} />;
+    }
+
     // Another member's stack, named by a link: never offered to amend, and said plainly.
     if (notYours) {
         return (
@@ -603,7 +633,7 @@ export default function ListModal() {
         <Animated.View style={[s.container, animatedContainerStyle]}>
             <DraggableFlatList
                 data={films}
-                onDragBegin={() => TactileEngine.navigate()}
+                onDragBegin={() => { setMovingId(null); TactileEngine.navigate(); }}
                 onDragEnd={({ data }) => setFilms(data)}
                 keyExtractor={(item) => String(item.id)}
                 renderItem={renderFilmItem}
@@ -711,6 +741,9 @@ const s = StyleSheet.create({
     // 48pt, reaching past the row's padding: a child wins the touch over its row,
     // so a small ✕ inside would take the area grabbed to reorder.
     removeBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginVertical: -8, marginRight: -8 },
+    // The two steps take the remove mark's place: each a whole 44 by 48, the row's height unchanged.
+    stepPair: { flexDirection: 'row', marginVertical: -8, marginRight: -8 },
+    stepBtn: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center' },
     filmRowMargin: { marginHorizontal: 20, marginBottom: 6 },
     filmRowActive: {
         backgroundColor: 'rgba(184,137,26,0.2)',

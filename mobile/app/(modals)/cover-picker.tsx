@@ -26,6 +26,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { useAuthStore } from '@/src/stores/auth';
 import { EmptyState } from '@/src/components/EmptyStates';
 import { WayOut } from '@/src/components/TryAgain';
+import { MembersOnly } from '@/src/components/MembersOnly';
 
 export default function CoverPicker() {
   const { loungeId } = useLocalSearchParams<{ loungeId: string }>();
@@ -44,6 +45,11 @@ export default function CoverPicker() {
     setLoungeCover(loungeId, film.backdrop_path);
     nav.back();
   }, [loungeId, setLoungeCover]);
+
+  // A stranger is not told "not yours" of a salon: they are asked in, and brought back here.
+  if (!me) {
+    return <MembersOnly next={`/cover-picker?loungeId=${loungeId ?? ''}`} style={{ paddingTop: top }} />;
+  }
 
   if (!hosts) {
     return (

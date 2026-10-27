@@ -5,7 +5,7 @@
  * could refuse it: the picker is drawn for the host alone, and anyone else is told plainly.
  */
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 import CoverPicker from '../cover-picker';
 import { useAuthStore } from '@/src/stores/auth';
 import { useLoungeStore } from '@/src/stores/lounge';
@@ -35,6 +35,17 @@ it('tells a member who does not host it, and draws no picker', async () => {
   expect(r.getByText('Not Yours to Change')).toBeTruthy();
   expect(r.queryByTestId('cover-search')).toBeNull();
   expect(r.getByLabelText('Close')).toBeTruthy();
+});
+
+it('opened signed out: asked in, never told "not yours"; signed in as its host, the picker is drawn (P4.19)', async () => {
+  useAuthStore.setState({ user: null });
+  useLoungeStore.setState({ lounges: [salon('me')] as never });
+  const r = await render(<CoverPicker />);
+  expect(r.getByText('For Members')).toBeTruthy();
+  expect(r.getByLabelText('Identify yourself. Sign in.')).toBeTruthy();
+  expect(r.queryByText('Not Yours to Change')).toBeNull();
+  await act(async () => { useAuthStore.setState({ user: { id: 'me' } as never }); });
+  expect(r.getByTestId('cover-search')).toBeTruthy();
 });
 
 it('draws no picker for a salon it does not know at all', async () => {
