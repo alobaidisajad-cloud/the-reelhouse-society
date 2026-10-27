@@ -110,6 +110,29 @@ it('no real build carries the development client\'s way in, or a route the house
   // The dev launcher's code scanner is its debug manifest's alone from SDK 57 (theScannerStaysInDebug).
 });
 
+it('asks for only what it uses, and says plainly why (P4.25)', () => {
+  // Never used: the microphone (the portrait is a photo), drawing over other apps, and the two
+  // legacy storage permissions (the system's photo picker needs none). Each is removed from the
+  // merged manifest, wherever a library declares it.
+  expect(appJson.android.blockedPermissions).toEqual([
+    'android.permission.RECORD_AUDIO',
+    'android.permission.SYSTEM_ALERT_WINDOW',
+    'android.permission.READ_EXTERNAL_STORAGE',
+    'android.permission.WRITE_EXTERNAL_STORAGE',
+  ]);
+  // expo-image-picker's plugin runs whether listed or not, and adds the microphone unless told.
+  expect(entry('expo-image-picker')).toEqual(['expo-image-picker', { microphonePermission: false }]);
+  // Each purpose in the house's words: what is used, and why.
+  expect(entry('expo-local-authentication')).toEqual(['expo-local-authentication', {
+    faceIDPermission: 'Face ID opens your locked Archive, and confirms it is you before its lock changes or your account closes.',
+  }]);
+  const purposes = Object.fromEntries(Object.entries(appJson.ios.infoPlist).filter(([k]) => k.endsWith('UsageDescription')));
+  expect(purposes).toEqual({
+    NSPhotoLibraryUsageDescription: 'Your Society portrait is chosen from your photos. Only the photo you pick is used.',
+    NSCameraUsageDescription: 'The camera takes your Society portrait, when you ask it to.',
+  });
+});
+
 it('iOS allows plain http to no host: the template\'s local-network exception is turned off', () => {
   expect(appJson.ios.infoPlist.NSAppTransportSecurity).toEqual({ NSAllowsArbitraryLoads: false, NSAllowsLocalNetworking: false });
 });

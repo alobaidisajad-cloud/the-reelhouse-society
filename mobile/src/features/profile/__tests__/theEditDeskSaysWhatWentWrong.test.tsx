@@ -56,12 +56,22 @@ it('the backdrop switch, refused, flips back and says so', async () => {
   expect(mockState.updateUser).toHaveBeenLastCalledWith({ preferences: { backdrop: true } });
 });
 
-it('a refused photo permission offers the way to grant it', async () => {
+it('a refused photo permission never blocks a portrait: the library opens, unasked', async () => {
+  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValueOnce({ canceled: true, assets: null });
+  const r = render(<AvatarCropSheet onClose={jest.fn()} onSuccess={jest.fn()} />);
+  await act(async () => { await fireEvent.press(r.getByLabelText('Choose a photo from your library')); });
+  expect(ImagePicker.launchImageLibraryAsync).toHaveBeenCalled();
+  expect([(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mock.calls.length, alert.mock.calls.length]).toEqual([0, 0]);
+  alert.mockRestore();
+});
+
+it('a refused camera offers the way to grant it', async () => {
   const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   const open = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined as never);
   const r = render(<AvatarCropSheet onClose={jest.fn()} onSuccess={jest.fn()} />);
-  await act(async () => { await fireEvent.press(r.getByLabelText('Choose a photo from your library')); });
-  expect(ImagePicker.requestMediaLibraryPermissionsAsync).toHaveBeenCalled();
+  await act(async () => { await fireEvent.press(r.getByLabelText('Take a photo with the camera')); });
+  expect([(ImagePicker.requestCameraPermissionsAsync as jest.Mock).mock.calls.length, (ImagePicker.launchCameraAsync as jest.Mock).mock.calls.length]).toEqual([1, 0]);
   const buttons = alert.mock.calls[0][2] as { text: string; onPress?: () => void }[];
   buttons.find((b) => b.text === 'Open Settings')!.onPress!();
   expect(open).toHaveBeenCalled();

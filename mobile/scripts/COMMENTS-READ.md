@@ -748,7 +748,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-render.lib.ts | 2026-10-24 | edited: a text carries its side margins (--mx); a nested Text is drawn with its parent's scaling, through source marks too |
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
 | src/components/profile/ArchiveLock.tsx | 2026-10-26 | edited: the lock shuts again when the app goes to the background; while it stands open the room is covered when the app is away (modules/room-cover); edited: the phone's answer shown in its then; enters and leaves as a PresenceView |
-| src/components/profile/AvatarCropSheet.tsx | 2026-10-27 | edited: a kept portrait prepared as the sheet opens, as if just picked; edited: Android's back closes the sheet, not Edit Profile beneath it; enters and leaves as a PresenceView; foot from useSheetBottom |
+| src/components/profile/AvatarCropSheet.tsx | 2026-10-27 | edited: edited: the library opens unasked (the system's picker needs no permission); only the camera asks; edited: a kept portrait prepared as the sheet opens, as if just picked; edited: Android's back closes the sheet, not Edit Profile beneath it; enters and leaves as a PresenceView; foot from useSheetBottom |
 | src/components/profile/CinemaDNACard.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; edited: Android's back closes the card, not the member's file beneath it; close from useOverlayTop |
 | src/components/profile/CinematicInsights.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; says retrieving or failed; whose-words; no history comments |
 | src/components/profile/favourites.ts | 2026-10-01 | comments say what is true now |
@@ -853,7 +853,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/__tests__/aLinkSaysWhyBeforeItVanishes.test.tsx | 2026-10-03 | edited: the override written as an escape |
 | src/features/profile/__tests__/linksEditor.test.tsx | — |  |
 | src/features/profile/__tests__/theDossierSealIsSpoken.test.tsx | — |  |
-| src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-27 | edited: the leaving guard stood in for: the desk is drawn with no navigator; written: the edit desk says what went wrong |
+| src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-27 | edited: edited: a refused photo permission never blocks a portrait; a refused camera offers Settings; edited: the leaving guard stood in for: the desk is drawn with no navigator; written: the edit desk says what went wrong |
 | src/features/profile/EditProfileScreen.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; edited: the crop sheet handed the kept portrait, and it is let go once used or closed; nav top from usePushedHeaderTop; foot from useContentBottom |
 | src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
 | src/features/profile/profile.styles.ts | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
@@ -1215,7 +1215,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everySecretIsInventoried.test.ts | 2026-10-16 | new: every secret and setting the code reads is in register/secrets.json, with its holders and a secret's rotation; nothing listed that no code reads but the dashboard-held ones; never a value |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
-| src/utils/__tests__/appConfig.guard.test.ts | 2026-10-22 | edited: LAB=1 adds extra.lab beside E2E=1 and nothing alone; only the speed lab sets it; the root mounts the record behind it; the workflows that build with E2E=1 are those app.config.js names; the project, update feed, store ids and Sentry project as the services hold them; the maps written and their upload left on |
+| src/utils/__tests__/appConfig.guard.test.ts | 2026-10-27 | edited: edited: the blocked permissions, the picker's microphone off, and each purpose string pinned (P4.25); edited: LAB=1 adds extra.lab beside E2E=1 and nothing alone; only the speed lab sets it; the root mounts the record behind it; the workflows that build with E2E=1 are those app.config.js names; the project, update feed, store ids and Sentry project as the services hold them; the maps written and their upload left on |
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-10-16 | edited: a write refused for a suspension waits, the standing read failed or the suspension begun mid-send; a silenced one is given up |
 | src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |

@@ -12,8 +12,8 @@
       "bundleIdentifier": "com.reelhouse.society",
       "buildNumber": "41",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "The ReelHouse requires access to your archives to set your Society portrait.",
-        "NSCameraUsageDescription": "The ReelHouse requires the camera to capture your Society portrait.",
+        "NSPhotoLibraryUsageDescription": "Your Society portrait is chosen from your photos. Only the photo you pick is used.",
+        "NSCameraUsageDescription": "The camera takes your Society portrait, when you ask it to.",
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
@@ -31,7 +31,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "output": "static",
@@ -78,6 +84,18 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Face ID opens your locked Archive, and confirms it is you before its lock changes or your account closes."
+        }
+      ],
       "expo-web-browser",
       "expo-image",
       "expo-sharing",

@@ -56,8 +56,8 @@ export default function AvatarCropSheet({ onClose, onSuccess, pending }: Props) 
         quality: 1,
       });
     } else {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) return askForSettings('photo library access');
+      // The system's picker (PHPicker, Android's photo picker) hands back only the photo chosen
+      // and needs no permission: asking first let a refusal block a portrait for nothing.
       result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
         aspect: [1, 1],
