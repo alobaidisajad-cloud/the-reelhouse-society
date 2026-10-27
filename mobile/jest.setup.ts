@@ -198,6 +198,8 @@ jest.mock('@sentry/react-native', () => ({
     require('react').createElement('SentryFullDisplay', props),
   captureException: jest.fn(),
   captureMessage: jest.fn(),
+  nativeCrash: jest.fn(),
+  close: jest.fn(() => Promise.resolve(true)),
   setUser: jest.fn(),
   setTag: jest.fn(),
   addBreadcrumb: jest.fn(),

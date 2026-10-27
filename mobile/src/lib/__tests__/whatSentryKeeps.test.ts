@@ -69,6 +69,71 @@ it('is what Sentry is started with: the sampler, no flat rate, and the thinning 
   expect(kept).toBeLessThan(120);
 });
 
+/** sentry.ts in production, with this phone's crash-report choice as saved in the boot store (undefined: never chosen). */
+function withChoice(saved: boolean | undefined): { m: SentryModule; Sentry: Record<string, jest.Mock>; disk: Map<string, boolean> } {
+  let m!: SentryModule;
+  let Sentry!: Record<string, jest.Mock>;
+  const disk = new Map<string, boolean>();
+  if (saved !== undefined) disk.set('share_crash_reports', saved);
+  const dev = (global as { __DEV__?: boolean }).__DEV__;
+  process.env.EXPO_PUBLIC_SENTRY_DSN = 'https://key@o0.ingest.sentry.io/0';
+  (global as { __DEV__?: boolean }).__DEV__ = false;
+  try {
+    jest.isolateModules(() => {
+      jest.doMock('@/src/lib/bootStore', () => ({
+        bootStore: () => ({ getBoolean: (k: string) => disk.get(k), set: (k: string, v: boolean) => { disk.set(k, v); } }),
+      }));
+      Sentry = require('@sentry/react-native');
+      m = require('@/src/lib/sentry');
+    });
+  } finally {
+    (global as { __DEV__?: boolean }).__DEV__ = dev;
+    delete process.env.EXPO_PUBLIC_SENTRY_DSN;
+  }
+  return { m, Sentry, disk };
+}
+
+describe('the member\'s choice to share crash reports (P4.46)', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('saved as off, Sentry is never started: no crash, no trace, no breadcrumb', () => {
+    const { m, Sentry } = withChoice(false);
+    m.initSentry({ release: 'r', dist: 'd' });
+    expect(Sentry.init).not.toHaveBeenCalled();
+  });
+
+  it('never chosen, it is on: Sentry starts', () => {
+    const { m, Sentry } = withChoice(undefined);
+    m.initSentry({ release: 'r', dist: 'd' });
+    expect(Sentry.init).toHaveBeenCalledTimes(1);
+  });
+
+  it('turned off in the open app, Sentry closes at once and the choice is kept; on again, it starts again', () => {
+    const { m, Sentry, disk } = withChoice(undefined);
+    m.initSentry({ release: 'r', dist: 'd' });
+    m.shareCrashReports(false);
+    expect([Sentry.close.mock.calls.length, disk.get('share_crash_reports'), m.crashReportsShared()]).toEqual([1, false, false]);
+    m.shareCrashReports(true);
+    expect(Sentry.init).toHaveBeenCalledTimes(2);
+    expect(Sentry.init.mock.calls[1][0].release).toBe('r');
+  });
+});
+
+it('files every report under its release and build, states its rates, and counts sessions (P4.45)', () => {
+  const { m, init } = production();
+  m.initSentry({ release: 'com.reelhouse.society@1.0.0+41', dist: 'build-41' });
+  const options = init.mock.calls.at(-1)[0];
+  expect([options.release, options.dist, options.sampleRate, options.enableAutoSessionTracking, options.environment])
+    .toEqual(['com.reelhouse.society@1.0.0+41', 'build-41', 1, true, 'production']);
+});
+
+it('names the release from the app: its id, version and store build; the dist from the update running', () => {
+  const name = jest.requireActual('@/src/lib/releaseName') as typeof import('@/src/lib/releaseName');
+  expect(name.SENTRY_RELEASE).toMatch(/^com\.reelhouse\.society@\d+\.\d+\.\d+\+\d+$/);
+  const running = (jest.requireMock('expo-updates') as { updateId?: string | null }).updateId;
+  expect(name.SENTRY_DIST).toEqual(running ?? expect.stringMatching(/^build-\d+$/));
+});
+
 it('drops a phone with no network and a member\'s own cancel, and keeps a request past its deadline (P4.6)', () => {
   const { m, init } = production();
   m.initSentry();

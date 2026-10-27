@@ -16,6 +16,7 @@ export { default as BellOff } from '../../node_modules/lucide-react-native/dist/
 export { default as Bold } from '../../node_modules/lucide-react-native/dist/esm/icons/bold.js';
 export { default as BookOpen } from '../../node_modules/lucide-react-native/dist/esm/icons/book-open.js';
 export { default as Bookmark } from '../../node_modules/lucide-react-native/dist/esm/icons/bookmark.js';
+export { default as Bug } from '../../node_modules/lucide-react-native/dist/esm/icons/bug.js';
 export { default as Calendar } from '../../node_modules/lucide-react-native/dist/esm/icons/calendar.js';
 export { default as CalendarDays } from '../../node_modules/lucide-react-native/dist/esm/icons/calendar-days.js';
 export { default as Camera } from '../../node_modules/lucide-react-native/dist/esm/icons/camera.js';

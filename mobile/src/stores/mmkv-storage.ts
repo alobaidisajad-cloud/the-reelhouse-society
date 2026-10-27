@@ -9,6 +9,7 @@ import * as Crypto from 'expo-crypto';
 import { logger } from '@/src/utils/logger';
 import { captureError } from '@/src/lib/sentry';
 import { e2eTrace } from '@/src/utils/e2eTrace';
+import { bootStore } from '@/src/lib/bootStore';
 
 // ── Encryption-at-rest (LIB-5) ───────────────────────────────────────────────
 // MMKV needs its encryption key *synchronously at construction*, but the key is
@@ -147,15 +148,14 @@ function generateKey(): string {
  * encrypted on this install. It travels with the store's files (a backup restores both), and the
  * keychain's key may not: a launch that finds the mark and no key knows the store is unreadable.
  */
-const BOOT_ID = 'reelhouse-boot';
 const ENCRYPTED_MARK = 'store_encrypted';
 
 function wasEncryptedHere(): boolean {
-  try { return new MMKV({ id: BOOT_ID }).getBoolean(ENCRYPTED_MARK) === true; } catch { return false; }
+  try { return bootStore().getBoolean(ENCRYPTED_MARK) === true; } catch { return false; }
 }
 
 function markEncryptedHere(): void {
-  try { new MMKV({ id: BOOT_ID }).set(ENCRYPTED_MARK, true); } catch { /* read again next launch */ }
+  try { bootStore().set(ENCRYPTED_MARK, true); } catch { /* read again next launch */ }
 }
 
 let _keyWasLost = false;

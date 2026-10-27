@@ -14,6 +14,7 @@
  */
 import React, { act } from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { stripComments } from '@/test-utils/readCode';
@@ -205,6 +206,65 @@ describe('a profile not yet read', () => {
     const r = await settle(mount());
     expect(r.getByText('PRIVACY')).toBeTruthy();
     expect(mockReread).not.toHaveBeenCalled();
+  });
+});
+
+describe('Share crash reports, this phone\'s own choice (P4.46)', () => {
+  it('sits in the privacy card with its line, reads on, and is obeyed when flipped', async () => {
+    const sentry = require('@/src/lib/sentry') as typeof import('@/src/lib/sentry');
+    const share = jest.spyOn(sentry, 'shareCrashReports').mockImplementation(() => {});
+    const r = await settle(mount());
+    const row = r.getByLabelText('Share crash reports');
+    expect(row.props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
+    expect(r.getByText('When the projector jams, a note goes to the booth: the reel and the frame, never your words.')).toBeTruthy();
+    // In the privacy card: after its last group, before the next card's heading.
+    const text = JSON.stringify(r.toJSON());
+    expect(text.indexOf('WHO CAN ANNOTATE YOUR LOGS')).toBeLessThan(text.indexOf('Share Crash Reports'));
+    expect(text.indexOf('Share Crash Reports')).toBeLessThan(text.indexOf('NOTIFICATIONS'));
+    await act(async () => { await fireEvent(row, 'valueChange', false); });
+    expect(share).toHaveBeenCalledWith(false);
+    expect(r.getByLabelText('Share crash reports').props.accessibilityState).toEqual(expect.objectContaining({ checked: false }));
+    share.mockRestore();
+  });
+});
+
+describe('the test crash, the admin\'s alone (P4.45)', () => {
+  it('is offered to the admin, and each choice raises its own kind', async () => {
+    const sentry = require('@/src/lib/sentry') as typeof import('@/src/lib/sentry');
+    const report = jest.spyOn(sentry.testCrash, 'report').mockImplementation(() => {});
+    const native = jest.spyOn(sentry.testCrash, 'native').mockImplementation(() => {});
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    mockUser = { ...BASE, role: 'admin' };
+    const r = await settle(mount());
+    await act(async () => { await fireEvent.press(r.getByLabelText('SEND A TEST CRASH')); });
+    const choices = alert.mock.calls[0]![2] as { text: string; onPress?: () => void }[];
+    expect(choices.map((c) => c.text)).toEqual(['A reported error', 'A JavaScript crash', 'A native crash', 'Cancel']);
+    choices[0]!.onPress!();
+    choices[2]!.onPress!();
+    expect([report.mock.calls.length, native.mock.calls.length]).toEqual([1, 1]);
+    expect(() => choices[1]!.onPress!()).toThrow('[test] a JavaScript crash');
+    report.mockRestore(); native.mockRestore(); alert.mockRestore();
+  });
+
+  it.each([
+    ['a cinephile', { ...BASE }],
+    ['an auteur', { ...BASE, tier: 'auteur' }],
+    ['a founding member', { ...BASE, tier: 'founding' }],
+    ['a moderator', { ...BASE, role: 'moderator' }],
+  ])('is never drawn for %s', async (_who, user) => {
+    mockUser = user;
+    const r = await settle(mount());
+    // The page is drawn to its foot (its legal card), and the admin's card is not on it.
+    expect(r.getByLabelText('PRIVACY POLICY')).toBeTruthy();
+    expect(r.queryByLabelText('SEND A TEST CRASH')).toBeNull();
+    expect(r.queryByText('ADMINISTRATION')).toBeNull();
+  });
+
+  it('signed out, the page draws nothing at all, the test crash among it', async () => {
+    mockUser = null;
+    const r = mount();
+    await act(async () => {});
+    expect(r.toJSON()).toBeNull();
   });
 });
 

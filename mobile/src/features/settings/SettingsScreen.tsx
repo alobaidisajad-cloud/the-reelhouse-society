@@ -16,14 +16,14 @@ import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
 import {
   ChevronLeft, LogOut, Trash2, Scale, Gavel, Shield, Scroll, FileText,
-  ArrowDownUp, Sparkles, DoorOpen, KeyRound,
+  ArrowDownUp, Sparkles, DoorOpen, KeyRound, Bug,
 } from 'lucide-react-native';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { profileRead } from '@/src/utils/profileRead';
 import { useSettingsStore } from '@/src/stores/settings';
 import { supabase } from '@/src/lib/supabase';
-import { captureAuthRefusal } from '@/src/lib/sentry';
+import { captureAuthRefusal, testCrash } from '@/src/lib/sentry';
 import { isNetworkError } from '@/src/utils/networkError';
 import reelToast from '@/src/utils/reelToast';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -115,6 +115,13 @@ export function SettingsScreen() {
   // ── The Tribunal door (proprietor only) ──
   // role === 'admin' comes from the profiles row; members never render this.
   const isAdmin = user?.role === 'admin';
+  // The admin's proof that each kind of crash reaches Sentry readable (P4.45): one of three, chosen.
+  const askTestCrash = () => Alert.alert('Send a test crash', 'Each is sent to Sentry, to be read there under this build.', [
+    { text: 'A reported error', onPress: testCrash.report },
+    { text: 'A JavaScript crash', style: 'destructive', onPress: () => { testCrash.javascript(); } },
+    { text: 'A native crash', style: 'destructive', onPress: testCrash.native },
+    { text: 'Cancel', style: 'cancel' },
+  ]);
   const [tribunalWaiting, setTribunalWaiting] = useState<number | null>(null);
   useEffect(() => {
     if (!isAdmin) return;
@@ -634,6 +641,8 @@ export function SettingsScreen() {
                   label={tribunalWaiting ? `ENTER THE TRIBUNAL · ${tribunalWaiting} WAITING` : 'ENTER THE TRIBUNAL'}
                   onPress={() => nav.push('/tribunal' as never)}
                 />
+                <View style={st.divider} />
+                <ActionBtn icon={Bug} label="SEND A TEST CRASH" onPress={askTestCrash} />
               </View>
             </SectionCard>
           </Arrive>

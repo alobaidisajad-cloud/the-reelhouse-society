@@ -23,7 +23,7 @@ import { BAD_CREDENTIALS } from '@/src/utils/authSignals';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { AuthService } from '@/src/services/AuthService';
 import { supabase } from '@/src/lib/supabase';
-import { captureAuthRefusal } from '@/src/lib/sentry';
+import { captureAuthRefusal, crashReportsShared, shareCrashReports } from '@/src/lib/sentry';
 import { isNetworkError } from '@/src/utils/networkError';
 import { endOtherSessions } from '@/src/lib/endSession';
 import { isAuteurPlusTier, isArchivistPlusTier, getDisplayTier } from '@/src/utils/tier';
@@ -520,7 +520,7 @@ export function PrivacySection({ control, saving }: { control: Control<SettingsF
             )}
           />
         </View>
-        <View style={[st.privacyGroup, st.privacyGroupLast]} accessibilityRole="radiogroup">
+        <View style={st.privacyGroup} accessibilityRole="radiogroup">
           <Text style={st.privacyGroupLabel} {...scaledTextProps}>WHO CAN ANNOTATE YOUR LOGS</Text>
           <Controller
             control={control}
@@ -536,8 +536,31 @@ export function PrivacySection({ control, saving }: { control: Control<SettingsF
             )}
           />
         </View>
+        <CrashReportsRow />
       </SectionCard>
     </Arrive>
+  );
+}
+
+/**
+ * This phone's own choice, kept outside the form: it is not the account's, and it is obeyed at once
+ * (sentry.ts, shareCrashReports). On by default; off, nothing of Sentry starts.
+ */
+function CrashReportsRow() {
+  const [shared, setShared] = React.useState(crashReportsShared);
+  const flip = () => {
+    const next = !shared;
+    setShared(next);
+    shareCrashReports(next);
+  };
+  return (
+    <View style={[st.notifRow, st.notifRowLast]}>
+      <View style={st.notifTextWrap}>
+        <Text style={st.notifLabel} {...scaledTextProps}>Share Crash Reports</Text>
+        <Text style={st.rowDesc} {...scaledTextProps}>When the projector jams, a note goes to the booth: the reel and the frame, never your words.</Text>
+      </View>
+      <Toggle active={shared} onToggle={flip} label="Share crash reports" />
+    </View>
   );
 }
 
@@ -752,7 +775,6 @@ const st = StyleSheet.create({
   saveFieldBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
 
   privacyGroup: { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
-  privacyGroupLast: { borderBottomWidth: 0 },
   privacyGroupLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog, marginBottom: 6, includeFontPadding: false },
   radioOption: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 },
   radioDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 1, borderColor: colors.ash, backgroundColor: 'transparent' },

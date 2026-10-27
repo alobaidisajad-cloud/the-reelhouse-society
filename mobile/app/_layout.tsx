@@ -1,5 +1,6 @@
 import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
 import { CACHE_BUSTER } from '@/src/lib/cacheBuster';
+import { SENTRY_DIST, SENTRY_RELEASE } from '@/src/lib/releaseName';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack, ErrorBoundary as RouterErrorBoundary } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -41,7 +42,7 @@ export { RouterErrorBoundary as ErrorBoundary };
 
 // Before the first render: the app's start and any error in it are measured,
 // and a rope met while the app is still waking is counted (gateMetricsSink.ts).
-initSentry();
+initSentry({ release: SENTRY_RELEASE, dist: SENTRY_DIST });
 installGateMetricsSink();
 
 // The splash stays until the fonts and the cached session are ready.

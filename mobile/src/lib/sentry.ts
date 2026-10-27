@@ -9,6 +9,7 @@
 import * as Sentry from '@sentry/react-native';
 import { logger } from '../utils/logger';
 import { scrubBreadcrumb, scrubEvent } from './sentryScrub';
+import { bootStore } from './bootStore';
 
 // ── Configuration ──
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
@@ -60,14 +61,54 @@ export function keepTransaction<E extends Sent>(event: E, random: () => number =
  * so the app's start and any error in it are seen. Nothing is sent in
  * development.
  */
-export function initSentry() {
+/** The release a report is filed under and the JavaScript that ran (releaseName.ts, handed by the root layout). */
+export type ReleaseName = { release: string; dist: string };
+
+const SHARE_KEY = 'share_crash_reports';
+
+/**
+ * Whether this phone shares crash reports (P4.46, Settings → Privacy): on unless the member turned
+ * it off. Kept in the boot store, a plain mark that names nobody, so it is read before Sentry starts
+ * and before the member's store is open. Off, Sentry never starts: no crash, no trace, no breadcrumb.
+ * The gate counter (gateMetricsSink, record_gate_event) keeps counting: it names nobody, and
+ * gate_metrics has no member column (theCounterNamesNobody).
+ */
+export function crashReportsShared(): boolean {
+  try { return bootStore().getBoolean(SHARE_KEY) !== false; } catch { return true; }
+}
+
+let startedWith: ReleaseName | undefined;
+let running = false;
+
+/** The member's choice, kept and obeyed at once: off closes Sentry now; on starts it again. */
+export function shareCrashReports(on: boolean) {
+  try { bootStore().set(SHARE_KEY, on); } catch { /* asked again next launch */ }
+  if (!on && running) {
+    running = false;
+    try { void Sentry.close(); } catch { /* telemetry must never break the caller — see captureError */ }
+  } else if (on && !running) {
+    initSentry(startedWith);
+  }
+}
+
+export function initSentry(name?: ReleaseName) {
+  startedWith = name;
   if (!SENTRY_DSN) {
     logger.debug('[Sentry] No DSN configured — skipping initialization');
     return;
   }
+  // The member said no: nothing of Sentry starts.
+  if (!crashReportsShared()) return;
+  running = true;
 
   Sentry.init({
     dsn: SENTRY_DSN,
+    release: name?.release,
+    dist: name?.dist,
+    // Every error reported (sampleRate 1); traces as tracesSampler says. Sessions counted, for
+    // the crash-free share of each release (release health).
+    sampleRate: 1,
+    enableAutoSessionTracking: true,
     tracesSampler,
     // Every request address in a trace cut to scheme, host and path (sentryScrub).
     beforeSendTransaction: (event) => {
@@ -249,6 +290,19 @@ export function captureAuthRefusal(kind: AuthRefusal) {
     });
   } catch { /* telemetry must never break the caller — see captureError */ }
 }
+
+/**
+ * The admin's test crashes (P4.45, Settings → Administration): one of each kind, raised on purpose,
+ * to see each arrive in Sentry readable, under its release and build. Never offered to a member.
+ */
+export const testCrash = {
+  /** A reported error, no crash (P7.6's reported-error alert). */
+  report: () => captureError(new Error('[test] a reported error, sent on purpose from Settings')),
+  /** A JavaScript crash: thrown where nothing catches it. */
+  javascript: (): never => { throw new Error('[test] a JavaScript crash, raised on purpose from Settings'); },
+  /** A native crash, from the SDK's own native layer. */
+  native: () => Sentry.nativeCrash(),
+};
 
 /** The boot finished: tagged on what follows in this session. */
 export function markBootComplete() {
