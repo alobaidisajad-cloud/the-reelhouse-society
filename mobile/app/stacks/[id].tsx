@@ -337,6 +337,28 @@ export default function StackDetailScreen() {
 
   const list = stackQueryData?.list ?? null;
   const loading = stackQueryLoading;
+
+  // The films past the first page, read as the page is scrolled (P4.9): a stack of any size is
+  // drawn whole, in its rank order. Held beside the read they follow; a stack read again starts over.
+  const [later, setLater] = useState<{ after: ListDetail | null; films: FilmItem[] }>({ after: null, films: [] });
+  const films = useMemo(
+    () => (list ? [...list.films, ...(later.after === list ? later.films : [])] : []),
+    [list, later],
+  );
+  const readingMore = useRef(false);
+  const readMoreFilms = useCallback(async () => {
+    if (!list || readingMore.current || films.length >= (list.filmCount ?? 0)) return;
+    readingMore.current = true;
+    try {
+      const page = await StackService.getStackItemsPage(id, films.length);
+      const held = new Set(films.map((f) => f.id));
+      setLater((was) => ({ after: list, films: [...(was.after === list ? was.films : []), ...page.filter((f) => !held.has(f.id))] }));
+    } catch (e) {
+      logger.warn('[stacks] reading more films failed', e);
+    } finally {
+      readingMore.current = false;
+    }
+  }, [list, films, id]);
   // The stack in, or said out of reach: its mark goes in every tree below.
   const readyMark = useScreenReady('stack', loading ? 'reading' : isError && !list ? 'failed' : 'ready');
 
@@ -838,8 +860,10 @@ export default function StackDetailScreen() {
       </StackNav>
 
       <CinematicFlashList
-        data={list.films}
+        data={films}
         keyExtractor={(item: any) => String(item.id)}
+        onEndReached={() => { void readMoreFilms(); }}
+        onEndReachedThreshold={0.6}
         numColumns={COLUMNS}
         contentContainerStyle={{ ...s.scrollContent, paddingBottom: end }}
         externalScrollY={scrollY}
@@ -972,7 +996,7 @@ export default function StackDetailScreen() {
               {/* The critiques open in an overlay, never between here and the films. */}
               <View style={s.trackRow}>
                 <Text style={s.trackLabel}>
-                  INDEXED REELS{(list.filmCount ?? 0) > list.films.length ? `  ·  FIRST ${list.films.length}` : ''}
+                  INDEXED REELS{(list.filmCount ?? 0) > films.length ? `  ·  FIRST ${films.length}` : ''}
                 </Text>
                 <LinearGradient colors={[colors.sepiaBorder, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.trackLine} />
               </View>

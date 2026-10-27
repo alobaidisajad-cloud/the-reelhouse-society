@@ -6,6 +6,8 @@
 import { nav } from '@/src/utils/typedRouter';
 import { RemoteImage } from '@/src/components/Picture';
 import { useQueryClient } from '@tanstack/react-query';
+import { StackService } from '@/src/services/StackService';
+import { logger } from '@/src/utils/logger';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
@@ -233,17 +235,42 @@ export default function ListModal() {
     // beside it; with no count, the store's copy (read whole) is taken as whole.
     const trueFilmCount: number | undefined =
         params.editId ? queryClient.getQueryData<any>(['stack', params.editId])?.list?.filmCount : undefined;
+    /** The stack this sheet has read whole, past its first page (below). */
+    const [readWhole, setReadWhole] = useState<string | null>(null);
     const holdingsAreComplete =
         !params.editId ? true
         : !editList ? false
         : trueFilmCount === undefined ? true
-        : (editList.films?.length ?? 0) >= trueFilmCount;
+        : readWhole === params.editId || (editList.films?.length ?? 0) >= trueFilmCount;
 
     /** An editId that resolves to nothing must never quietly become a create. */
     const editTargetMissing = !!params.editId && !editList;
 
     /** A sheet that cannot write the films does not offer to edit them (✕, grip, search). */
     const holdingsAreSealed = !!params.editId && !editTargetMissing && !holdingsAreComplete;
+
+    // A stack opened with its first page alone (a link, before the member's own stacks are read)
+    // has the rest read, in its order, and then its films may be moved (P4.9). Sealed until then,
+    // nothing was moved, so the films the sheet holds are the first page as read.
+    useEffect(() => {
+        const stackId = params.editId;
+        if (!holdingsAreSealed || !stackId || !trueFilmCount) return;
+        let live = true;
+        void (async () => {
+            const all = [...films];
+            while (all.length < trueFilmCount) {
+                const page = await StackService.getStackItemsPage(stackId, all.length);
+                if (page.length === 0) break;
+                all.push(...page);
+            }
+            if (!live || all.length < trueFilmCount) return;
+            queryClient.setQueryData(['stack', stackId], (was: any) => (was ? { ...was, list: { ...was.list, films: all } } : was));
+            setFilms(all);
+            setReadWhole(stackId);
+        })().catch((e) => logger.warn('[list-modal] the rest of the stack could not be read', e));
+        return () => { live = false; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- read once a sealed stack is held; `films` is that first page
+    }, [holdingsAreSealed, params.editId, trueFilmCount]);
 
     // The bar names what it waits for, then the stack's mark (its count confirms an add).
     const canFile = !!title.trim() && !saving && !editTargetMissing;

@@ -48,6 +48,7 @@ const mockRereadCritiques = jest.fn();
 const mockDeleteComment = jest.fn();
 /** The list's pull, as the screen hands it over. */
 let mockRefresh: { props: { onRefresh: () => Promise<void> } } | null = null;
+let mockEndReached: (() => Promise<void>) | null = null;
 const mockToastError = jest.fn();
 jest.mock('@/src/utils/reelToast', () => {
   const fn = Object.assign(jest.fn(), { error: (...a: unknown[]) => mockToastError(...a), success: jest.fn(), info: jest.fn() });
@@ -100,7 +101,7 @@ const mockAddComment = jest.fn();
 jest.mock('@/src/services/StackService', () => ({
   STACK_COMMENT_PAGE: 50,
   StackService: {
-    getStackFullPayload: jest.fn(), getStackComments: jest.fn(),
+    getStackFullPayload: jest.fn(), getStackComments: jest.fn(), getStackItemsPage: jest.fn(),
     addStackComment: (...a: unknown[]) => mockAddComment(...a),
     deleteStackComment: (...a: unknown[]) => mockDeleteComment(...a),
   },
@@ -117,11 +118,11 @@ jest.mock('@/src/components/layout/CinematicFlashList', () => {
   const React = require('react');
   const { View } = require('react-native');
   const render = (c: React.ReactNode) => (typeof c === 'function' ? React.createElement(c as never) : c);
-  return { CinematicFlashList: ({ ListHeaderComponent, ListEmptyComponent, data, renderItem, refreshControl }: {
+  return { CinematicFlashList: ({ ListHeaderComponent, ListEmptyComponent, data, renderItem, refreshControl, onEndReached }: {
     ListHeaderComponent?: React.ReactNode; ListEmptyComponent?: React.ReactNode;
     data?: unknown[]; renderItem?: (a: { item: unknown; index: number }) => React.ReactNode;
-    refreshControl?: unknown;
-  }) => (mockRefresh = refreshControl as never, React.createElement(View, null,
+    refreshControl?: unknown; onEndReached?: () => Promise<void>;
+  }) => (mockRefresh = refreshControl as never, mockEndReached = onEndReached ?? null, React.createElement(View, null,
     render(ListHeaderComponent),
     // Every row rendered, so the index is tested as drawn.
     ...(data ?? []).map((item, index) =>
@@ -1150,5 +1151,27 @@ describe('the critiques as they stand, sent or waiting', () => {
     const sent = mockAddComment.mock.calls[0][0] as { id: string };
     expect(sent.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(mockEnqueue).toHaveBeenCalledWith({ type: 'add_list_comment', payload: expect.objectContaining({ id: sent.id, content: 'Filed from a tunnel.' }) });
+  });
+});
+
+describe('a stack past its first page (P4.9)', () => {
+  it('is drawn whole as it is scrolled: the 501st film after the 500, in rank order, read once', async () => {
+    const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
+    StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 501, title: 'Film 501', poster_path: null }]);
+    const first = Array.from({ length: 500 }, (_, i) => ({ id: i + 1, title: `Film ${i + 1}`, poster_path: null }));
+    const r = mount({ films: first, filmCount: 501 });
+    await act(async () => {});
+    expect(r.getByText(/FIRST 500/)).toBeTruthy();
+
+    await act(async () => { await mockEndReached?.(); });
+    expect(StackService.getStackItemsPage.mock.calls).toEqual([[STACK_ID, 500]]);
+    expect(r.queryByText(/FIRST/)).toBeNull();
+    const drawn = JSON.stringify(r.toJSON());
+    expect(drawn.indexOf('Film 500')).toBeLessThan(drawn.indexOf('Film 501'));
+    expect(drawn.indexOf('Film 501')).toBeGreaterThan(-1);
+
+    // The whole stack held: scrolling further asks for nothing.
+    await act(async () => { await mockEndReached?.(); });
+    expect(StackService.getStackItemsPage).toHaveBeenCalledTimes(1);
   });
 });

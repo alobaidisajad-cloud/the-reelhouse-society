@@ -76,6 +76,16 @@ describe('mmkvPersister — cache size ceiling', () => {
     expect(storage.delete).toHaveBeenCalled();
   });
 
+  it('a whale\'s 3 MB cache over a saved one leaves nothing, whole or partial, and the next start reads afresh (P4.9)', async () => {
+    const disk = (storage as unknown as { __store: Map<string, string> }).__store;
+    await mmkvPersister.persistClient(client());
+    expect(disk.has('REELHOUSE_QUERY_CACHE')).toBe(true);
+    const whale = { timestamp: Date.now(), buster: '', clientState: { mutations: [], queries: [{ big: 'x'.repeat(3 * 1024 * 1024) }] } };
+    await mmkvPersister.persistClient(whale as never);
+    expect(disk.has('REELHOUSE_QUERY_CACHE')).toBe(false);
+    await expect(mmkvPersister.restoreClient()).resolves.toBeUndefined();
+  });
+
   /** A cache whose serialised form is `fill` plus a fixed frame; and that frame's UTF-8 size. */
   const filled = (fill: string) => client({ clientState: { mutations: [], queries: [{ big: fill }] } });
   const MAX = 2 * 1024 * 1024;

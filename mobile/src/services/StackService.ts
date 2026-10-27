@@ -54,12 +54,34 @@ const StackCommentRowSchema = z.object({
  * is 96 — and the TRUE size travels separately as filmCount, so the number on
  * screen stays right even if a stack ever passes this.
  */
-const STACK_ITEMS_LIMIT = 500;
+/** A stack's films per read: the first page with the stack, the rest as its page is scrolled (P4.9). */
+export const STACK_ITEMS_LIMIT = 500;
 
 /** Critiques per page of a stack's sheet, and per ask for earlier ones. */
 export const STACK_COMMENT_PAGE = 50;
 
 export const StackService = {
+  /**
+   * The stack's films from `offset`, a page at a time, in the order its page draws them (rank, then
+   * when added): the films past the first page, so a stack of any size is drawn whole. A failed read
+   * is thrown, never answered as a stack that ends here.
+   */
+  async getStackItemsPage(stackId: string, offset: number): Promise<{ id: number; title: string; poster_path: string | null }[]> {
+    const { data, error } = await supabase.from('list_items')
+      .select('film_id, film_title, poster_path')
+      .eq('list_id', stackId)
+      .order('rank_position', { ascending: true })
+      .order('created_at', { ascending: true })
+      .range(offset, offset + STACK_ITEMS_LIMIT - 1);
+    if (error) throw error;
+    return (data ?? []).flatMap((item) => {
+      const parsed = StackItemSchema.safeParse(item);
+      return parsed.success
+        ? [{ id: parsed.data.film_id, title: parsed.data.film_title || 'Unknown', poster_path: parsed.data.poster_path || null }]
+        : [];
+    });
+  },
+
   async getStackFullPayload(stackId: string) {
     const viewer = useAuthStore.getState().user?.id ?? null;
     const [listRes, itemsRes, filmCountRes, endorseRes, critiqueCountRes, mineRes] = await Promise.all([

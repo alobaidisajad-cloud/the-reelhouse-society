@@ -226,6 +226,22 @@ describe('the form can never destroy a stack', () => {
     expect(r.queryByText(/TAP OR HOLD TO ORDER/)).toBeNull();
   });
 
+  it('reads the rest of a stack past its first page, and then its films may be moved and are sent whole (P4.9)', async () => {
+    const { StackService } = require('@/src/services/StackService') as typeof import('@/src/services/StackService');
+    const rest = jest.spyOn(StackService, 'getStackItemsPage').mockResolvedValueOnce([{ id: 999, title: 'The Third Man', poster_path: null }]);
+    mockParams = { editId: STACK_ID };
+    mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: FILMS.length + 1 } };
+    const r = mount();
+    await waitFor(() => expect(r.getByText('The Third Man')).toBeTruthy());
+    expect(rest.mock.calls).toEqual([[STACK_ID, FILMS.length]]);
+    expect(r.queryByText(/larger than this sheet can hold/)).toBeNull();
+    expect(r.getByLabelText('Remove Blade Runner')).toBeTruthy();
+    await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+    await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
+    expect(mockUpdateList.mock.calls[0][1].films.map((f: { id: number }) => f.id)).toEqual([...FILMS.map((f: { id: number }) => f.id), 999]);
+    rest.mockRestore();
+  });
+
   it('sends them when it does hold all of them', async () => {
     mockParams = { editId: STACK_ID };
     mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: 2 } };
