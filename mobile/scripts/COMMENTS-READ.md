@@ -1493,6 +1493,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aPageIsCurrentOnReturn.test.tsx | 2026-10-27 | Written 2026-10-27: a film page and a member's file are read again on return once older than a read stays fresh; a glance away reads nothing (P4.7) |
 | src/hooks/__tests__/backClosesTheOverlay.test.tsx | 2026-10-27 | Written 2026-10-27: the hook, newest first, and the crop sheet and Cinema DNA card closing on back (P4.12) |
 | src/hooks/__tests__/everyDrawnTimeReadsTheClock.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: timeAgo and timeUntil from the clock alone; every read of the time where a screen draws is through the clock, an act's own moment, or registered with its reason (P4.7) |
+| src/hooks/__tests__/everyEffectTearsDownWhatItStarts.guard.test.ts | 2026-10-27 | Written 2026-10-27: every effect's listeners and timers followed to a cleanup that names them (P4.41) |
 | src/hooks/__tests__/unsavedWorkAsksBeforeLeaving.test.tsx | 2026-10-27 | Written 2026-10-27: through a real router, a pop over unsaved work is stopped and asks; Cancel stays, Discard leaves (P4.12) |
 | src/hooks/useAskBeforeLeaving.ts | 2026-10-27 | new: a screen holding unsaved work asks before any way out (usePreventRemove): stay, or discard and leave |
 | src/hooks/useBackCloses.ts | 2026-10-27 | new: Android's back closes an overlay drawn inside its screen, not the screen beneath; newest first |
