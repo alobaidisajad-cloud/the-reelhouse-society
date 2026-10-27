@@ -16,6 +16,7 @@ import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
 import FeedScreen from '@/app/(tabs)/dispatch';
+import { focusManager } from '@tanstack/react-query';
 import { useDispatch } from '@/src/stores/dispatch';
 import type { Filing } from '@/src/stores/dispatchTypes';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
@@ -718,6 +719,23 @@ describe('the page keeps itself current', () => {
     expect(spy).toHaveBeenCalledTimes(4);
 
     jest.useRealTimers();
+  });
+
+  it('back in the app, counts the new filings on the pill and moves no row', async () => {
+    // A return was not heard: the count waited for the next ninety seconds, or for the tab.
+    const spy = jest.fn(async () => { useDispatch.setState({ newCount: 1 }); });
+    const ten = Array.from({ length: 10 }, (_, i) => filing({ id: `f${i}`, body: `Take ${i}.` }));
+    put({ filings: ten, checkForNew: spy });
+    const { getByLabelText } = await mount();
+    const asked = spy.mock.calls.length;
+    mockRowRenders.length = 0;
+    await act(async () => { focusManager.setFocused(false); focusManager.setFocused(true); });
+    focusManager.setFocused(undefined);
+    // Asked again (at least once: an earlier test's page stays subscribed here, its blur never run).
+    expect(spy.mock.calls.length).toBeGreaterThan(asked);
+    expect(getByLabelText(/new filings/)).toBeTruthy();
+    expect(mockRowRenders).toHaveLength(0);
+    expect(useDispatch.getState().filings.map((f) => f.id)).toEqual(ten.map((f) => f.id));
   });
 });
 

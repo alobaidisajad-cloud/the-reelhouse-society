@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase';
 import { settleOwedSignOut } from '../lib/endSession';
 import { storage, useAuthStore } from '../stores/auth';
 import { answerAuthEvent } from '../stores/authEvents';
+import { QUERY_POLICY } from '../lib/queryPolicy';
 import { hydrateFollowing } from '../stores/domain/socialSlice';
 import { readMarks } from '../stores/domain/marksLedger';
 import { useNotificationStore } from '../stores/notificationStore';
@@ -280,6 +281,9 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
     // Track when app was last backgrounded to throttle
     // foreground reconciliation (prevents noise from brief app switches).
     let lastBackgroundedAt = 0;
+    // When the member's own row (their rank) was last read: read again on a return once older
+    // than a read stays fresh, so a rank gained or lapsed elsewhere is seen (P4.17).
+    let rankReadAt = Date.now();
 
     const appStateSub = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'background' || nextAppState === 'inactive') {
@@ -303,6 +307,10 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         const wasBackgroundedLong = Date.now() - lastBackgroundedAt > 5000;
         if (wasBackgroundedLong && useAuthStore.getState().isAuthenticated) {
           useNotificationStore.getState().fetchNotifications();
+        }
+        if (useAuthStore.getState().isAuthenticated && Date.now() - rankReadAt > QUERY_POLICY.queries.staleTime) {
+          rankReadAt = Date.now();
+          void useAuthStore.getState().rereadProfile();
         }
 
         // Notices allowed from the phone's own Settings while the app was away:

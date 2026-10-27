@@ -1,4 +1,6 @@
 import { useReducer, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { focusManager } from '@tanstack/react-query';
+import { QUERY_POLICY } from '@/src/lib/queryPolicy';
 import { logger } from '@/src/utils/logger';
 import { useLogStore, useWatchlistStore, useArchiveStore, useListStore } from '@/src/stores/films';
 import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
@@ -360,6 +362,9 @@ export function useProfileData({
   const targetUserId = state.targetUser?.id;
   useLayoutEffect(() => { targetUserIdRef.current = targetUserId; });
 
+  /** When the member's file was last read whole: a return to the app reads it again once older than a read stays fresh. */
+  const readAt = useRef(0);
+
   const fetchUserData = useCallback(async (): Promise<boolean | void> => {
     if (!username) return;
 
@@ -391,6 +396,7 @@ export function useProfileData({
             if (lockedCounts.following != null) typedProfile.following_count = lockedCounts.following;
             dispatch({ type: 'SET_USER', payload: { ...typedProfile } });
             dispatch({ type: 'SET_COUNTS', payload: lockedCounts });
+            readAt.current = Date.now();
           }
         } catch { /* non-fatal: the sealed profile still renders without counts */ }
         return;
@@ -427,6 +433,7 @@ export function useProfileData({
 
         // Background refresh: fetch fresh logs without blocking the spinner.
         // fetchLogs() has its own _fetchingLogs mutex so this is safe.
+        readAt.current = Date.now();
         if (storeHasLogs) fetchLogs();
         return;
       }
@@ -450,6 +457,7 @@ export function useProfileData({
         logs: result.items,
         logsCursor: result.nextCursor,
       });
+      readAt.current = Date.now();
     } catch (err: unknown) {
         if (signal.aborted) return; // cancelled by a newer read, or by leaving
         logger.warn('[ProfileFetch] fetchUserData error:', err);
@@ -460,6 +468,12 @@ export function useProfileData({
         return false;
     }
   }, [username, isSelf, fetchLogs]);
+
+  // Back in the app once the file is older than a read stays fresh, it is read again, silently, as
+  // the focus reread does: never a spinner over what is drawn.
+  useEffect(() => focusManager.subscribe((focused) => {
+    if (focused && readAt.current > 0 && Date.now() - readAt.current > QUERY_POLICY.queries.staleTime) void fetchUserData();
+  }), [fetchUserData]);
 
   useEffect(() => {
     if (state.targetUser?.is_social_private && !isSelf && isFollowing && !state.tabDataLoaded.archive) {

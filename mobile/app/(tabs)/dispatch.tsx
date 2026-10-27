@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useToday } from '@/src/hooks/useClock';
 import { ActivityIndicator, RefreshControl, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { focusManager } from '@tanstack/react-query';
 import { useScrollToTop } from "expo-router/react-navigation";
 import { useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -150,13 +151,15 @@ export default function DispatchScreen() {
     if (unread && !loading) void useDispatch.getState().fetch();
   }, [unread, loading]);
 
-  // Is there new paper? Asked on focus and every 90s while focused, never on a
-  // screen nobody is looking at: blurring the tab clears the interval at once.
+  // Is there new paper? Asked on focus, every 90s while focused, and as the app comes back to the
+  // front; never on a screen nobody is looking at: blurring the tab ends all three at once. New
+  // filings are counted on the pill, never put above the member's place.
   useFocusEffect(
     useCallback(() => {
       void useDispatch.getState().checkForNew();
       const t = setInterval(() => { void useDispatch.getState().checkForNew(); }, 90_000);
-      return () => clearInterval(t);
+      const back = focusManager.subscribe((focused) => { if (focused) void useDispatch.getState().checkForNew(); });
+      return () => { clearInterval(t); back(); };
     }, []),
   );
 

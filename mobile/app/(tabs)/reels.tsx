@@ -34,6 +34,7 @@ import {
   TungstenSpooling, FilterChip, FILTER_GAP,
 } from '@/src/components/reels/ReelsCards';
 import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/useFeeds';
+import { useFeedTop } from '@/src/hooks/useFeedTop';
 import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
 import { ReelsStackList } from '@/src/components/reels/ReelsStackList';
 import { MemberRegistry } from '@/src/components/reels/MemberRegistry';
@@ -110,6 +111,10 @@ const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: str
 AutonomousSearchBar.displayName = 'AutonomousSearchBar';
 
 
+/** The feeds each list draws, by the heads of their keys. */
+const LOG_FEEDS = [['feed', 'community'], ['feed', 'following']] as const;
+const STACK_FEEDS = [['feed', 'stacks']] as const;
+
 export default function ReelScreen() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
@@ -181,11 +186,15 @@ export default function ReelScreen() {
   const [stackSearch, setStackSearch] = useState('');
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
+  // Each list's feeds are fetched again on return or reconnect only while it stands at its top.
+  const { whenBack: logsBack } = useFeedTop(overallLogsScrollY, LOG_FEEDS);
+  const { whenBack: stacksBack } = useFeedTop(stacksScrollY, STACK_FEEDS);
+
   // isRefetching is deliberately not taken: the pull gesture drives
   // isManualRefreshing above, so the screen owns its own spinner.
-  const { data: communityData, isLoading: communityLoading, isError: communityFailed, refetch: refetchCommunity, fetchNextPage: fetchNextCommunity, hasNextPage: hasNextCommunity, isFetchingNextPage: isFetchingNextCommunity } = useCommunityFeed();
-  const { data: followingData, isLoading: followingLoading, isError: followingFailed, refetch: refetchFollowing, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing } = useFollowingFeed();
-  const { data: stacksData, isLoading: stacksLoading, isError: stacksFailed, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks } = useStacksFeed(stackFilter, stackSearch);
+  const { data: communityData, isLoading: communityLoading, isError: communityFailed, refetch: refetchCommunity, fetchNextPage: fetchNextCommunity, hasNextPage: hasNextCommunity, isFetchingNextPage: isFetchingNextCommunity } = useCommunityFeed(logsBack);
+  const { data: followingData, isLoading: followingLoading, isError: followingFailed, refetch: refetchFollowing, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing } = useFollowingFeed(logsBack);
+  const { data: stacksData, isLoading: stacksLoading, isError: stacksFailed, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks } = useStacksFeed(stackFilter, stackSearch, stacksBack);
 
   const followingCount = useSocialStore((s) => s.following.length);
   // Following nobody is a fact only of a list read: one unread or failed follows someone, perhaps.

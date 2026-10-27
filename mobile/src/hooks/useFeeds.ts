@@ -4,6 +4,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useSocialStore } from '@/src/stores/followStore';
 import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
+import type { FeedReturn } from '@/src/hooks/useFeedTop';
 
 /** A full page continues from its last row; a short one is the last. The id breaks a tied time. */
 function nextCursor<T extends { id: string }>(page: T[], size: number, at: (row: T) => string) {
@@ -12,8 +13,10 @@ function nextCursor<T extends { id: string }>(page: T[], size: number, at: (row:
   return `${at(last)}|${last.id}`;
 }
 
-export function useCommunityFeed() {
+/** `whenBack`: fetched again on return and reconnect only while its list is at its top (useFeedTop). */
+export function useCommunityFeed(whenBack?: FeedReturn) {
   return useInfiniteQuery({
+    ...whenBack,
     queryKey: ['feed', 'community'],
     queryFn: async ({ pageParam, signal }) => {
       return FeedService.getCommunityFeed({ pageParam, signal });
@@ -32,11 +35,12 @@ export function useCommunityFeed() {
   });
 }
 
-export function useFollowingFeed() {
+export function useFollowingFeed(whenBack?: FeedReturn) {
   const userId = useAuthStore((s) => s.user?.id);
   const followingForEnabled = useSocialStore((s) => s.following);
 
   return useInfiniteQuery({
+    ...whenBack,
     queryKey: ['feed', 'following', userId],
     queryFn: async ({ pageParam, signal }) => FeedService.getFollowingFeed({ pageParam, signal }),
     getNextPageParam: (lastPage) => nextCursor(lastPage, FEED_PAGE, (row) => row.created_at),
@@ -52,12 +56,13 @@ export function useFollowingFeed() {
   });
 }
 
-export function useStacksFeed(filter: 'all' | 'following' = 'all', search: string = '') {
+export function useStacksFeed(filter: 'all' | 'following' = 'all', search: string = '', whenBack?: FeedReturn) {
   const userId = useAuthStore((s) => s.user?.id);
 
   // No follow-graph subscription: socialSlice invalidates this key on follow and unfollow.
 
   return useInfiniteQuery({
+    ...whenBack,
     queryKey: ['feed', 'stacks', filter, search, userId],
     queryFn: async ({ pageParam, signal }) => {
       const followingCount = useSocialStore.getState().following.length;

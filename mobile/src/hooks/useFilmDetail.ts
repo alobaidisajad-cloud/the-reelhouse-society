@@ -73,6 +73,8 @@ export function useFilmDetail(filmId: number, validFilmId: boolean) {
       };
     },
     staleTime: 30 * 60 * 1000,  // 30 min
+    // Not a feed: back in the app once older than that, the page is read again (P4.7).
+    refetchOnWindowFocus: true,
     enabled: validFilmId,
   });
 }
