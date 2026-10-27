@@ -642,7 +642,7 @@ export function SettingsScreen() {
                   onPress={() => nav.push('/tribunal' as never)}
                 />
                 <View style={st.divider} />
-                <ActionBtn icon={Bug} label="SEND A TEST CRASH" onPress={askTestCrash} />
+                <ActionBtn icon={Bug} label="Send a test crash" onPress={askTestCrash} />
               </View>
             </SectionCard>
           </Arrive>

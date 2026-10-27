@@ -808,6 +808,7 @@ const st = StyleSheet.create({
   deskAddress: { flex: 1, fontFamily: fonts.body, fontSize: 14, color: colors.parchment, includeFontPadding: false },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, minHeight: 48, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
   actionBtnDanger: { borderBottomColor: 'transparent' },
-  actionBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.bone, includeFontPadding: false },
+  // Drawn in capitals whatever the label is written in: the test crash's words stay as the release guard writes them.
+  actionBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.bone, includeFontPadding: false, textTransform: 'uppercase' },
   actionBtnTextDanger: { color: colors.crimsonInk },
 });

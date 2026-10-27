@@ -236,7 +236,7 @@ describe('the test crash, the admin\'s alone (P4.45)', () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     mockUser = { ...BASE, role: 'admin' };
     const r = await settle(mount());
-    await act(async () => { await fireEvent.press(r.getByLabelText('SEND A TEST CRASH')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Send a test crash')); });
     const choices = alert.mock.calls[0]![2] as { text: string; onPress?: () => void }[];
     expect(choices.map((c) => c.text)).toEqual(['A reported error', 'A JavaScript crash', 'A native crash', 'Cancel']);
     choices[0]!.onPress!();
@@ -256,7 +256,7 @@ describe('the test crash, the admin\'s alone (P4.45)', () => {
     const r = await settle(mount());
     // The page is drawn to its foot (its legal card), and the admin's card is not on it.
     expect(r.getByLabelText('PRIVACY POLICY')).toBeTruthy();
-    expect(r.queryByLabelText('SEND A TEST CRASH')).toBeNull();
+    expect(r.queryByLabelText('Send a test crash')).toBeNull();
     expect(r.queryByText('ADMINISTRATION')).toBeNull();
   });
 
