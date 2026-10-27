@@ -67,8 +67,9 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     // If this defaulted to true, everything written before init resolved would
     // leak, and a failed init would leak everything after it too.
     expect(mmkv).toMatch(/let _encrypted = false;/);
-    // And it is only ever raised on a path that actually succeeded.
-    expect((mmkv.match(/_encrypted = true;/g) ?? []).length).toBe(3);
+    // And it is only ever raised on a path that actually succeeded: the store opened with its
+    // key, a fresh one begun where the key was lost, a recrypt, and a recrypt's clean fallback.
+    expect((mmkv.match(/_encrypted = true;/g) ?? []).length).toBe(4);
     expect(mmkv).not.toMatch(/_encrypted = true[\s\S]{0,80}catch \(e\)/);
   });
 

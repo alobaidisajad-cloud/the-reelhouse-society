@@ -15,6 +15,7 @@ type Mod = typeof import('../mmkv-storage');
 
 const DEADLINE = 10_000;
 const opened: { id?: string; encryptionKey?: string }[] = [];
+const recrypted: string[] = [];
 /** Each store's contents by its id, as the disk holds them. */
 const disk = new Map<string, Map<string, string>>();
 const onDisk = (id: string) => disk.get(id) ?? disk.set(id, new Map()).get(id)!;
@@ -27,8 +28,9 @@ function load(getItemAsync: () => Promise<string | null>): Mod {
         opened.push(config ?? {});
         const store = onDisk(config?.id ?? 'mmkv.default');
         return {
-          set: (k: string, v: string) => { store.set(k, v); }, getString: (k: string) => store.get(k), delete: (k: string) => { store.delete(k); },
-          clearAll: () => store.clear(), recrypt: () => {}, contains: (k: string) => store.has(k), getAllKeys: () => [...store.keys()],
+          set: (k: string, v: string | boolean) => { store.set(k, String(v)); }, getString: (k: string) => store.get(k), delete: (k: string) => { store.delete(k); },
+          getBoolean: (k: string) => (store.has(k) ? store.get(k) === 'true' : undefined),
+          clearAll: () => store.clear(), recrypt: (key: string) => { recrypted.push(key); }, contains: (k: string) => store.has(k), getAllKeys: () => [...store.keys()],
         };
       }),
     }));
@@ -43,6 +45,7 @@ const KEY = 'k'.repeat(16);
 
 beforeEach(() => {
   opened.length = 0;
+  recrypted.length = 0;
   disk.clear();
   jest.useFakeTimers();
 });
@@ -74,13 +77,38 @@ describe('the keystore\'s deadline', () => {
     const init = mod.initEncryptedStorage();
     await jest.advanceTimersByTimeAsync(DEADLINE - 50);
     await init;
-    expect([mod.isStorageEncrypted(), mod.keystoreWasSilent(), opened.at(-1)]).toEqual([true, false, { id: mod.STORE_ID, encryptionKey: KEY }]);
+    expect([mod.isStorageEncrypted(), mod.keystoreWasSilent(), opened.find((o) => o.encryptionKey)]).toEqual([true, false, { id: mod.STORE_ID, encryptionKey: KEY }]);
   });
 
   it('an error from the keystore is not a silence: the placeholder, but no "did not answer"', async () => {
     const mod = load(() => Promise.reject(new Error('keystore unavailable')));
     await mod.initEncryptedStorage();
     expect([mod.isStorageEncrypted(), mod.keystoreWasSilent()]).toEqual([false, false]);
+  });
+});
+
+describe('a store come back without its key', () => {
+  it('is cleared, never recrypted over its old bytes; a fresh store begins, and the member is told', async () => {
+    onDisk('reelhouse-boot').set('store_encrypted', 'true');
+    onDisk('mmkv.default').set('ironvault_user_cache_m', 'bytes only the lost key could read');
+    const mod = load(async () => null);
+    await mod.initEncryptedStorage();
+    expect([recrypted, onDisk('mmkv.default').size, mod.isStorageEncrypted(), mod.storeKeyWasLost()]).toEqual([[], 0, true, true]);
+    expect(opened.find((o) => o.id === mod.STORE_ID && o.encryptionKey)?.encryptionKey).toHaveLength(16);
+  });
+
+  it('a first launch (no mark) still encrypts what is there, in place, and says nothing', async () => {
+    onDisk('mmkv.default').set('last_tab', 'plain');
+    const mod = load(async () => null);
+    await mod.initEncryptedStorage();
+    expect([recrypted.length, onDisk('mmkv.default').get('last_tab'), mod.storeKeyWasLost(), onDisk('reelhouse-boot').get('store_encrypted')])
+      .toEqual([1, 'plain', false, 'true']);
+  });
+
+  it('a launch that opens the store marks it, so a later restore without the key is known', async () => {
+    const mod = load(async () => KEY);
+    await mod.initEncryptedStorage();
+    expect(onDisk('reelhouse-boot').get('store_encrypted')).toBe('true');
   });
 });
 

@@ -157,6 +157,8 @@ jest.mock('./src/stores/mmkv-storage', () => ({
   withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   keystoreWasSilent: () => false,
   KEYSTORE_SILENT_NOTICE: "The phone's secure store did not answer.",
+  storeKeyWasLost: () => false,
+  STORE_KEY_LOST_NOTICE: "This phone's saved copy could not be opened after a restore, so it was cleared.",
   createAsyncMMKVStorage: jest.fn(() => ({
     getItem: jest.fn(() => null),
     setItem: jest.fn(),

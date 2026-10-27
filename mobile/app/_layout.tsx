@@ -13,7 +13,7 @@ import AppBootstrapper from '@/src/providers/AppBootstrapper';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useSocialStore } from '@/src/stores/followStore';
-import { initEncryptedStorage, KEYSTORE_SILENT_NOTICE, keystoreWasSilent } from '@/src/stores/mmkv-storage';
+import { initEncryptedStorage, KEYSTORE_SILENT_NOTICE, keystoreWasSilent, STORE_KEY_LOST_NOTICE, storeKeyWasLost } from '@/src/stores/mmkv-storage';
 import reelToast from '@/src/utils/reelToast';
 import { rehydrateFilmStore } from '@/src/stores/films';
 import { rehydrateSettingsStore } from '@/src/stores/settings';
@@ -81,6 +81,8 @@ export default function RootLayout() {
         await initEncryptedStorage();
         // The keystore never answered: this launch runs without the member's own store, and says so.
         if (keystoreWasSilent()) reelToast.error(KEYSTORE_SILENT_NOTICE);
+        // A restore brought the store back without its key: cleared, a fresh one begun, and said.
+        if (storeKeyWasLost()) reelToast.error(STORE_KEY_LOST_NOTICE);
         // Persisted stores skip auto-hydration; rehydrate them now that the
         // encrypted instance is live.
         await Promise.all([

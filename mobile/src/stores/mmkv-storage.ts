@@ -142,6 +142,33 @@ function generateKey(): string {
   return Array.from(Crypto.getRandomBytes(MMKV_KEY_BYTES), (b) => KEY_ALPHABET[b % 64]).join('');
 }
 
+/**
+ * A plain mark, in a store of its own beside the member's, that the member's store was opened
+ * encrypted on this install. It travels with the store's files (a backup restores both), and the
+ * keychain's key may not: a launch that finds the mark and no key knows the store is unreadable.
+ */
+const BOOT_ID = 'reelhouse-boot';
+const ENCRYPTED_MARK = 'store_encrypted';
+
+function wasEncryptedHere(): boolean {
+  try { return new MMKV({ id: BOOT_ID }).getBoolean(ENCRYPTED_MARK) === true; } catch { return false; }
+}
+
+function markEncryptedHere(): void {
+  try { new MMKV({ id: BOOT_ID }).set(ENCRYPTED_MARK, true); } catch { /* read again next launch */ }
+}
+
+let _keyWasLost = false;
+
+/** Whether this launch found the store's key gone and began a fresh store (the member is told). */
+export function storeKeyWasLost(): boolean {
+  return _keyWasLost;
+}
+
+/** What the member is told when it was: one plain line, never a silent sign-out. */
+export const STORE_KEY_LOST_NOTICE =
+  "This phone's saved copy could not be opened after a restore, so it was cleared. Sign in, and the house brings it all back.";
+
 /** The member's work an earlier launch may have left on the placeholder (queueOwnership's QUEUE_KEY, memberDrafts' DRAFT_PREFIX). */
 export const PLACEHOLDER_KEEPS = { queue: 'reelhouse-offline-mutations', drafts: 'reelhouse_draft_' } as const;
 
@@ -203,6 +230,21 @@ export function initEncryptedStorage(): Promise<void> {
         _encrypted = true;
         return;
       }
+      if (wasEncryptedHere()) {
+        step = 'key-lost';
+        // The store was encrypted on this install, and its key is gone: a restore that brought
+        // the files back without the keychain (an unencrypted Mac backup). Its bytes cannot be
+        // read, so they are never recrypted: cleared, and a fresh store begun. The member is told;
+        // the house holds everything that mattered, and signing in brings it back.
+        const key = generateKey();
+        await withinKeystoreDeadline(SecureStore.setItemAsync(KEY_NAME, key), step);
+        try { new MMKV({ id: STORE_ID }).clearAll(); } catch { /* opened with the key below, a fresh store either way */ }
+        storage = new MMKV({ id: STORE_ID, encryptionKey: key });
+        _encrypted = true;
+        _keyWasLost = true;
+        captureError(new Error('the store\'s key was gone; the store was cleared'), { scope: 'mmkv.keyLost' });
+        return;
+      }
       step = 'first-key';
       // First encryption. Persist the key FIRST so it can never be lost after a
       // successful recrypt, then open the existing plaintext default store and
@@ -262,7 +304,10 @@ export function initEncryptedStorage(): Promise<void> {
       captureError(e, { scope: 'mmkv.initEncryptedStorage', degraded: true, step });
       e2eTrace('storage.failed', { step, message: String((e as { message?: unknown })?.message ?? e).slice(0, 160) });
     } finally {
-      if (_encrypted) adoptThePlaceholder(placeholder, storage);
+      if (_encrypted) {
+        markEncryptedHere();
+        adoptThePlaceholder(placeholder, storage);
+      }
       e2eTrace('storage.opened', { encrypted: _encrypted });
       _markReady();
     }
