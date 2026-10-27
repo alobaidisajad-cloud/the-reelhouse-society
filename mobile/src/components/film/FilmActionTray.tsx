@@ -16,7 +16,7 @@
  * managed. What it costs is three things a `<Modal>` would have given free,
  * each done deliberately below:
  *
- *   · Android hardware back        → BackHandler while open
+ *   · Android hardware back        → useBackCloses while open
  *   · the reader beneath is hidden → accessibilityViewIsModal + the page's own
  *                                    importantForAccessibility, set by the caller
  *   · the page must not scroll     → the caller freezes its ScrollView
@@ -28,7 +28,8 @@
  * promise you are not keeping.
  */
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, BackHandler, Pressable, ScrollView } from 'react-native';
+import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { Text } from '@/src/components/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -171,19 +172,8 @@ const ActRow = memo(function ActRow({ act }: { act: TrayAct }) {
 export const FilmActionTray = memo(function FilmActionTray({
   visible, onDismiss, film, subtitle, acts, windowHeight, dockHeight,
 }: FilmActionTrayProps) {
-  /**
-   * Android's hardware back closes the tray instead of leaving the film — the
-   * behaviour a `<Modal>` would have given us and an overlay must earn.
-   * Subscribed only while open, so it never swallows a back press otherwise.
-   */
-  useEffect(() => {
-    if (!visible) return undefined;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      onDismiss();
-      return true;
-    });
-    return () => sub.remove();
-  }, [visible, onDismiss]);
+  // Android's back closes the tray instead of leaving the film.
+  useBackCloses(visible, onDismiss);
 
   const rise = useSharedValue(0); // 0 gone, 1 risen: the scrim's fade and the tray's rise
   const [shown, setShown] = useState(visible);

@@ -434,10 +434,8 @@ describe('the critiques overlay', () => {
   });
 
   it('an overlay gets no back button for free, so it takes one by hand', () => {
-    expect(SOURCE).toMatch(/BackHandler\.addEventListener\('hardwareBackPress'/);
-    // Consumed, or Android would leave the page as well as the sheet.
-    const h = SOURCE.slice(SOURCE.indexOf("hardwareBackPress"));
-    expect(h.slice(0, 220)).toMatch(/return true;/);
+    // The press is taken, the page staying put: useBackCloses, proven in backClosesTheOverlay.
+    expect(SOURCE).toMatch(/useBackCloses\(showComments, \(\) => setShowComments\(false\)\)/);
   });
 
   it('the strip of page left showing is a way out', async () => {

@@ -143,10 +143,10 @@ without one). "Read" is the day its comments were last read against its code.
 | app/person/[id].tsx | 2026-10-23 | edited: the auteur hunt counted only over the ledger held whole; the share label while the rank is read |
 | app/reset-password.tsx | 2026-10-26 | edited: Back over an abandoned reset ends the session through endSessionHere; back and form from usePushedHeaderTop; foot from useContentBottom |
 | app/settings.tsx | 2026-10-02 | read; sound |
-| app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-10-23 | edited: the critiques sheet reading, then empty only once read; the router mock answers useFocusEffect as jest.setup.ts's does; each event waited for; the close inside the keyboard's moment is the sheet's own, each press shown to land |
+| app/stacks/__tests__/stack-detail.redesign.test.tsx | 2026-10-27 | edited: the critiques' back read as useBackCloses; edited: the critiques sheet reading, then empty only once read; the router mock answers useFocusEffect as jest.setup.ts's does; each event waited for; the close inside the keyboard's moment is the sheet's own, each press shown to land |
 | app/stacks/__tests__/stack-detail.telemetry.test.tsx | 2026-10-22 | edited: the router mock answers useFocusEffect as jest.setup.ts's does;  |
 | app/stacks/__tests__/zz-stacks.gen.test.tsx | — |  |
-| app/stacks/[id].tsx | 2026-10-26 | edited: the sheet's page size: a ref for the query, state for what is drawn; edited: certifiedKnown from the stack's read; drawn from the phone, the heart is uninked, its count unknown, and a press asks again; seen ticks from the ledger whole |
+| app/stacks/[id].tsx | 2026-10-27 | edited: the critiques close on Android's back through useBackCloses; edited: the sheet's page size: a ref for the query, state for what is drawn; edited: certifiedKnown from the stack's read; drawn from the phone, the heart is uninked, its count unknown, and a press asks again; seen ticks from the ledger whole |
 | app/user/[username].tsx | 2026-10-26 | edited: the developing plate's beats rest on plain styles once developed; edited: sealed only when the follow list says they do not follow; while it is read, the rooms are retrieved and the follow button is hollow, READING or ASK AGAIN |
 | app/year-in-cinema.tsx | 2026-10-26 | edited: the year read is handed its member; the effect and TRY AGAIN ask only with one, no member said as the error; edited: no member is said as the error, derived; the year read shown in its then; TRY AGAIN shows loading, then reads; edited: a plain paging ScrollView for the six slides, the note saying why not a list |
 | ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
@@ -531,7 +531,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/__tests__/zz-film.gen.test.tsx | — |  |
 | src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the critiques unread while the page is drawn from the warm catalogue; written: the critiques' failure reaches the page; an unread verdict is unknown |
 | src/components/film/CastCarousel.tsx | 2026-10-04 | edited: an actor without a photograph is drawn by initialOf |
-| src/components/film/FilmActionTray.tsx | 2026-10-23 | edited: an act may be uninked |
+| src/components/film/FilmActionTray.tsx | 2026-10-27 | edited: Android's back through useBackCloses; edited: an act may be uninked |
 | src/components/film/FilmDetailLayout.tsx | 2026-10-23 | edited: the log and watchlist rows of a film the ledger does not hold ask for the ledger, never file |
 | src/components/film/FilmDossier.tsx | 2026-10-01 | what it holds, not what it absorbed |
 | src/components/film/FilmHero.tsx | 2026-10-01 | an unknown verdict claims nothing; histories to the present |
@@ -748,8 +748,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-render.lib.ts | 2026-10-24 | edited: a text carries its side margins (--mx); a nested Text is drawn with its parent's scaling, through source marks too |
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
 | src/components/profile/ArchiveLock.tsx | 2026-10-26 | edited: the lock shuts again when the app goes to the background; while it stands open the room is covered when the app is away (modules/room-cover); edited: the phone's answer shown in its then; enters and leaves as a PresenceView |
-| src/components/profile/AvatarCropSheet.tsx | 2026-10-15 | enters and leaves as a PresenceView; foot from useSheetBottom |
-| src/components/profile/CinemaDNACard.tsx | 2026-10-15 | close from useOverlayTop |
+| src/components/profile/AvatarCropSheet.tsx | 2026-10-27 | edited: Android's back closes the sheet, not Edit Profile beneath it; enters and leaves as a PresenceView; foot from useSheetBottom |
+| src/components/profile/CinemaDNACard.tsx | 2026-10-27 | edited: Android's back closes the card, not the member's file beneath it; close from useOverlayTop |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
 | src/components/profile/favourites.ts | 2026-10-01 | comments say what is true now |
 | src/components/profile/FollowRequestsPanel.tsx | 2026-10-23 | edited: its spinner says it reads the door; rises and slides away through Presence; foot from useSheetBottom |
@@ -1479,8 +1479,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/profileRead.ts | 2026-10-23 | whether the member's profile has been read: its own columns on the user, never the auth user alone |
 | src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; new: the room and roster asked once while the session settles, again for another member |
 | src/features/settings/__tests__/everyOtherDeviceSignsOut.test.tsx | 2026-10-26 | Written 2026-10-27: Settings signs every other device out, asked first, the answer said either way |
+| src/hooks/__tests__/backClosesTheOverlay.test.tsx | 2026-10-27 | Written 2026-10-27: the hook, newest first, and the crop sheet and Cinema DNA card closing on back (P4.12) |
 | src/hooks/__tests__/unsavedWorkAsksBeforeLeaving.test.tsx | 2026-10-27 | Written 2026-10-27: through a real router, a pop over unsaved work is stopped and asks; Cancel stays, Discard leaves (P4.12) |
 | src/hooks/useAskBeforeLeaving.ts | 2026-10-27 | new: a screen holding unsaved work asks before any way out (usePreventRemove): stay, or discard and leave |
+| src/hooks/useBackCloses.ts | 2026-10-27 | new: Android's back closes an overlay drawn inside its screen, not the screen beneath; newest first |
 | src/lib/__tests__/aSignOutWithNoNetworkStillSignsOut.test.ts | 2026-10-26 | edited: the unmock below the imports; the owed half named as settled apart; Written 2026-10-27: the real client signs out over a dead network and the session is gone; the owed half settles once, apart from this phone's session (P4.1) |
 | src/lib/__tests__/everySignOutEndsTheSessionHere.test.ts | 2026-10-26 | Written 2026-10-27: no file but endSession calls signOut |
 | src/lib/endSession.ts | 2026-10-26 | new: every sign-out ends the session on the phone, the server reached or not; the server's half owed and settled in three plain requests |

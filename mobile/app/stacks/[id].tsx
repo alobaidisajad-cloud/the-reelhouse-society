@@ -8,7 +8,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, X } from 'lucide-react-native';
-import { Alert, BackHandler, Platform, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Alert, Platform, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import {
@@ -560,14 +561,7 @@ export default function StackDetailScreen() {
 
   // Android's back closes the critiques: an overlay (not a Modal, so the
   // moderation sheet over it never nests) gets no back button for free.
-  React.useEffect(() => {
-    if (!showComments) return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      setShowComments(false);
-      return true;                       // consumed: the page stays put
-    });
-    return () => sub.remove();
-  }, [showComments]);
+  useBackCloses(showComments, () => setShowComments(false));
 
   /**
    * Moves the number on the button in step with the list beneath it.

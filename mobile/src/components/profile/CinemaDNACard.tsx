@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
 import { PresenceView } from '@/src/components/motion/Presence';
@@ -39,6 +40,8 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
     onClose: () => void;
 }) {
     const closeTop = useOverlayTop();
+    // Android's back closes the card, not the member's file beneath it.
+    useBackCloses(true, onClose);
     const { width: windowWidth } = useWindowDimensions();
 
     const stamps = analytics?.stamps;

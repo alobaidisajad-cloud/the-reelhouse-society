@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { View, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { Text } from '@/src/components/text';
 import { PresenceView } from '@/src/components/motion/Presence';
@@ -37,6 +38,8 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   const { user } = useAuthStore();
   const [uploading, setUploading] = useState(false);
   const sheetFoot = useSheetBottom();
+  // Android's back closes the sheet, not Edit Profile beneath it.
+  useBackCloses(true, onClose);
 
   const handlePick = async (source: 'camera' | 'library') => {
     TactileEngine.selection();
