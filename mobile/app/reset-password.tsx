@@ -224,6 +224,9 @@ export default function ResetPasswordScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                // A new password: the phone offers a strong one, and saves it.
+                textContentType="newPassword"
+                autoComplete="new-password"
                 selectionColor={colors.sepia}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -261,6 +264,8 @@ export default function ResetPasswordScreen() {
                 value={confirm}
                 onChangeText={setConfirm}
                 secureTextEntry={!showPassword}
+                textContentType="newPassword"
+                autoComplete="new-password"
                 selectionColor={colors.sepia}
                 autoCapitalize="none"
                 autoCorrect={false}

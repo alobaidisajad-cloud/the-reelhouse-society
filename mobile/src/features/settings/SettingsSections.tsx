@@ -378,7 +378,7 @@ export function PasswordChangePanel() {
             <>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>CURRENT PASSWORD</Text>
-                <TextInput style={st.fieldInput} value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry textContentType="password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => newPasswordRef.current?.focus()} placeholder="Your current password" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Current password" {...scaledTextProps} />
+                <TextInput style={st.fieldInput} value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry textContentType="password" autoComplete="password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => newPasswordRef.current?.focus()} placeholder="Your current password" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Current password" {...scaledTextProps} />
               </View>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>NEW PASSWORD</Text>

@@ -679,6 +679,9 @@ export function SettingsScreen() {
                 value={otpCode}
                 onChangeText={(t) => { setOtpCode(t); if (otpError) setOtpError(null); }}
                 keyboardType="number-pad"
+                // The code from the email: the phone offers it from the message as it arrives.
+                textContentType="oneTimeCode"
+                autoComplete="one-time-code"
                 maxLength={EMAIL_CODE_DIGITS}
                 placeholder="000000"
                 placeholderTextColor={colors.fog}
