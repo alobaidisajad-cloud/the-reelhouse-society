@@ -42,6 +42,7 @@ jest.mock('@/src/stores/mmkv-storage', () => {
     // case; the refusal has its own test in encryptionAtRest.guard.test.ts.
     setSensitive: jest.fn((k: string, v: string) => store.set(k, v)),
     isStorageEncrypted: () => true,
+    withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   };
 });
 

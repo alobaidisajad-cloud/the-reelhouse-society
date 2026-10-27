@@ -23,7 +23,8 @@ import { useDispatch } from '@/src/stores/dispatch';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { toFiling } from '@/src/stores/dispatchTypes';
-import { clearDraft, writeDraft } from '@/src/utils/memberDrafts';
+import { clearDraft, draftKey, writeDraft } from '@/src/utils/memberDrafts';
+import { storage } from '@/src/stores/mmkv-storage';
 
 let mockRow: Record<string, unknown> | null = null;
 /** The filing's own read fails, as it does offline. */
@@ -395,6 +396,15 @@ describe('the reader', () => {
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     expect(r.queryByLabelText('Your critique')).toBeNull();
     expect(r.getByLabelText('Write a critique')).toBeTruthy();
+    clearDraft('u1', 'critique', 'f1');
+  });
+
+  it('opens on a critique draft as build 41 saved it (savedJsonOpensWhole)', async () => {
+    const { saved } = require('@/src/utils/__tests__/fixtures/saved-json/drafts.json') as { saved: Record<string, unknown> };
+    const envelope = Object.entries(saved).find(([k]) => /_critique_/.test(k))![1];
+    storage.set(draftKey('u1', 'critique', 'f1'), JSON.stringify(envelope));
+    const r = await mount();
+    expect(r.getByLabelText('Your critique').props.value).toBe('Half a critique.');
     clearDraft('u1', 'critique', 'f1');
   });
 

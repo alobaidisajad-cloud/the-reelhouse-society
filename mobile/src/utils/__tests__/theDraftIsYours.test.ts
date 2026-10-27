@@ -44,6 +44,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
     },
   },
   isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
 }));
 
 const ANA = 'ana-uuid';

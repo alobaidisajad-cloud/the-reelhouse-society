@@ -153,6 +153,10 @@ jest.mock('./src/stores/mmkv-storage', () => ({
   },
   setSensitive: jest.fn((key: string, value: string) => { _mockMMKVStore[key] = value; }),
   isStorageEncrypted: jest.fn(() => true),
+  // The keystore answers at once here; its deadline has its own test, on the real module.
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
+  keystoreWasSilent: () => false,
+  KEYSTORE_SILENT_NOTICE: "The phone's secure store did not answer.",
   createAsyncMMKVStorage: jest.fn(() => ({
     getItem: jest.fn(() => null),
     setItem: jest.fn(),

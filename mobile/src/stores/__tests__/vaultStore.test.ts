@@ -41,6 +41,7 @@ jest.mock('../mmkv-storage', () => ({
   storage: { set: jest.fn(), getString: () => undefined, delete: jest.fn(), contains: () => false, getAllKeys: () => [], clearAll: jest.fn() },
   setSensitive: jest.fn(),
   isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   initEncryptedStorage: jest.fn().mockResolvedValue(undefined),
   zustandMMKVStorage: { getItem: () => null, setItem: jest.fn(), removeItem: jest.fn() },
   zustandMMKVStorageSensitive: { getItem: () => null, setItem: jest.fn(), removeItem: (k: string) => mockRemoveItem(k) },

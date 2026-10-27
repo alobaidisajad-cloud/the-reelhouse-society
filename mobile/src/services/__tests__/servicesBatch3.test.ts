@@ -12,6 +12,8 @@ jest.mock('@/src/utils/logger', () => ({
     logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn() },
 }));
 jest.mock('@/src/stores/mmkv-storage', () => ({
+    isStorageEncrypted: () => true,
+    withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
     storage: {
         getString: jest.fn(),
         set: jest.fn(),

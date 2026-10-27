@@ -52,6 +52,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
     delete: (k: string) => { mockStore.delete(k); },
   },
   isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
 }));
 jest.mock('@/src/lib/supabase', () => ({
   supabase: {

@@ -19,6 +19,8 @@ import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../offlineQ
 
 const mockStorage = new Map<string, string>();
 jest.mock('../../stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: {
     getString: jest.fn((key: string) => mockStorage.get(key)),
     set: jest.fn((key: string, value: string) => mockStorage.set(key, value)),
@@ -668,7 +670,7 @@ describe('Offline Queue — Integration Tests', () => {
   });
 
   describe('Queue cap enforcement', () => {
-    it('caps queue at MAX_QUEUE_SIZE (100), dropping oldest', () => {
+    it('caps queue at MAX_QUEUE_SIZE (100), letting the oldest marks go', () => {
       for (let i = 0; i < 110; i++) {
         enqueueMutation({ type: 'endorse_log', payload: { user_id: 'u1', type: 'endorse_log', target_log_id: `item-${i}` } });
       }

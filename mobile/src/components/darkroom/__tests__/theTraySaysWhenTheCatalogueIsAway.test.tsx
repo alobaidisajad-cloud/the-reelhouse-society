@@ -73,6 +73,25 @@ it('TRY AGAIN asks again, and the films are developed', async () => {
   expect(r.getAllByLabelText(/Sunrise/).length).toBeGreaterThan(0);
 });
 
+it('opens on the films build 41 kept for its filters, the catalogue away (savedJsonOpensWhole)', async () => {
+  // The key is the tray's own for its filters: a catalogue that answered writes it once.
+  mockTmdb.discover.mockResolvedValue({ results: [{ id: 1, title: 'Nosferatu', poster_path: '/n.jpg', release_date: '1922-03-04' }], total_pages: 1 });
+  let first!: ReturnType<typeof render>;
+  await act(async () => { first = render(<DarkroomScreen />); await settle(); });
+  first.unmount();
+  const key = storage.getAllKeys().find((k) => k.startsWith('darkroom_cache_'));
+  expect(key).toBeDefined();
+  const kept = require('@/src/utils/__tests__/fixtures/saved-json/darkroom-films.json').saved.darkroom_films;
+  storage.set(key!, JSON.stringify(kept));
+  useDiscoverStore.setState({ page: 1, accumulatedFilms: [] } as never);
+  mockTmdb.discover.mockImplementation(away);
+  let r!: ReturnType<typeof render>;
+  await act(async () => { r = render(<DarkroomScreen />); await settle(); });
+  expect(r.getAllByLabelText(/Metropolis/).length).toBeGreaterThan(0);
+  expect(r.getAllByLabelText(/Sunrise: A Song of Two Humans/).length).toBeGreaterThan(0);
+  expect(r.queryByLabelText(/Nosferatu/)).toBeNull();
+});
+
 it('a catalogue that answered with nothing is still "nothing surfaced"', async () => {
   mockTmdb.discover.mockResolvedValue({ results: [], total_pages: 1 });
   let r!: ReturnType<typeof render>;

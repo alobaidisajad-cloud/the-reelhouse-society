@@ -20,6 +20,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
   storage: { getString: () => undefined, set: () => {}, delete: () => {}, getAllKeys: () => [], contains: () => false },
   setSensitive: () => {},
   isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storageReady: () => Promise.resolve(),
 }));
 

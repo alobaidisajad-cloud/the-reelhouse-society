@@ -96,11 +96,91 @@ export function mmkvKey(stored: string): string {
  */
 export const STORE_ID = 'mmkv.default';
 
+/**
+ * How long the keystore may take to answer before the launch goes on without it. Measured as
+ * launch to `storage.opened` over 25 emulator launches (Sealed E2E run 40492844027, 2026-10-27):
+ * p50 1.15 s, slowest 2.43 s, the whole of JavaScript's start included (`storage.asking` now
+ * marks the keystore's own share). Ten seconds is four times the slowest, so an honest slow
+ * keystore is never cut off; past it, the launch settles on the placeholder as a keystore error
+ * does, where it waited on the splash for ever.
+ */
+export const KEYSTORE_DEADLINE_MS = 10_000;
+
+/** The keystore did not answer within KEYSTORE_DEADLINE_MS. */
+export class KeystoreSilent extends Error {
+  constructor(what: string) {
+    super(`KeystoreSilent: ${what} had no answer in ${KEYSTORE_DEADLINE_MS} ms`);
+    this.name = 'KeystoreSilent';
+  }
+}
+
+/** A keystore call, or KeystoreSilent at the deadline: an answer after it is never read. */
+export function withinKeystoreDeadline<T>(ask: Promise<T>, what: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const silent = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new KeystoreSilent(what)), KEYSTORE_DEADLINE_MS);
+  });
+  return Promise.race([ask, silent]).finally(() => clearTimeout(timer));
+}
+
+let _keystoreSilent = false;
+
+/** Whether this launch's keystore never answered (the member is told; their session waits for the next). */
+export function keystoreWasSilent(): boolean {
+  return _keystoreSilent;
+}
+
+/** What the member is told when it did not: never a silent sign-out. */
+export const KEYSTORE_SILENT_NOTICE =
+  "The phone's secure store did not answer. Your session and drafts come back the next time the app opens; "
+  + 'what you change now is sent while it stays open, and lost if it closes first.';
+
 const KEY_ALPHABET ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
 function generateKey(): string {
   // 16 characters of 64 symbols: 96 bits, the most a 16-byte key holds as text.
   return Array.from(Crypto.getRandomBytes(MMKV_KEY_BYTES), (b) => KEY_ALPHABET[b % 64]).join('');
+}
+
+/** The member's work an earlier launch may have left on the placeholder (queueOwnership's QUEUE_KEY, memberDrafts' DRAFT_PREFIX). */
+export const PLACEHOLDER_KEEPS = { queue: 'reelhouse-offline-mutations', drafts: 'reelhouse_draft_' } as const;
+
+const listIn = (raw: string | undefined): { id?: unknown; timestamp?: number }[] => {
+  try { const parsed: unknown = raw ? JSON.parse(raw) : []; return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+};
+const savedAtOf = (raw: string | undefined): number => {
+  try { return Date.parse((JSON.parse(raw ?? '{}') as { savedAt?: string }).savedAt ?? '') || 0; } catch { return 0; }
+};
+
+/**
+ * On a launch that opens the member's encrypted store, what an earlier launch left on the
+ * placeholder is carried in, and the placeholder emptied: an older build wrote its offline queue
+ * there while its store was not encrypted, and any build its drafts, both in plain text. A queued
+ * write the store already holds is not doubled (by id), and the queue keeps the order the writes
+ * were made in; of two drafts under one key, the later stays.
+ */
+function adoptThePlaceholder(from: MMKV, into: MMKV): void {
+  try {
+    const keys = from.getAllKeys();
+    if (keys.length === 0) return;
+    for (const key of keys) {
+      const value = from.getString(key);
+      if (value === undefined) continue;
+      if (key.startsWith(PLACEHOLDER_KEEPS.queue)) {
+        const held = listIn(into.getString(key));
+        const ids = new Set(held.map((m) => m.id));
+        const merged = [...held, ...listIn(value).filter((m) => !ids.has(m.id))].sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
+        if (merged.length > 0) into.set(key, JSON.stringify(merged));
+      } else if (key.startsWith(PLACEHOLDER_KEEPS.drafts)) {
+        const had = into.getString(key);
+        if (had === undefined || savedAtOf(value) > savedAtOf(had)) into.set(key, value);
+      }
+    }
+    from.clearAll();
+    e2eTrace('storage.adopted', { keys: keys.length });
+  } catch (e) {
+    captureError(e, { scope: 'mmkv.adoptThePlaceholder' });
+  }
 }
 
 /**
@@ -112,8 +192,10 @@ export function initEncryptedStorage(): Promise<void> {
   if (_initPromise) return _initPromise;
   _initPromise = (async () => {
     let step = 'read-key';
+    const placeholder = storage;
+    e2eTrace('storage.asking');
     try {
-      const existingKey = await SecureStore.getItemAsync(KEY_NAME);
+      const existingKey = await withinKeystoreDeadline(SecureStore.getItemAsync(KEY_NAME), step);
       if (existingKey) {
         step = 'open';
         // Data on disk is already encrypted — open the default store WITH the key.
@@ -126,7 +208,7 @@ export function initEncryptedStorage(): Promise<void> {
       // successful recrypt, then open the existing plaintext default store and
       // encrypt it in place (preserves all existing data — no loss).
       const key = generateKey();
-      await SecureStore.setItemAsync(KEY_NAME, key);
+      await withinKeystoreDeadline(SecureStore.setItemAsync(KEY_NAME, key), step);
       const plain = new MMKV({ id: STORE_ID }); // currently plaintext
       try {
         plain.recrypt(key);
@@ -175,10 +257,12 @@ export function initEncryptedStorage(): Promise<void> {
       //
       // Reported rather than whispered: this used to be `if (__DEV__)`, which
       // meant a member could run permanently degraded and nobody would ever know.
+      if (e instanceof KeystoreSilent) _keystoreSilent = true;
       logger.error('[mmkv] encryption init failed; running on the isolated placeholder store');
       captureError(e, { scope: 'mmkv.initEncryptedStorage', degraded: true, step });
       e2eTrace('storage.failed', { step, message: String((e as { message?: unknown })?.message ?? e).slice(0, 160) });
     } finally {
+      if (_encrypted) adoptThePlaceholder(placeholder, storage);
       e2eTrace('storage.opened', { encrypted: _encrypted });
       _markReady();
     }

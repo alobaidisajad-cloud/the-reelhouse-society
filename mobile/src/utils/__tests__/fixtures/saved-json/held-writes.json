@@ -1,0 +1,19 @@
+{
+  "written": "new since build 41: the shape this build writes",
+  "saved": {
+    "reelhouse-offline-mutations_held_77777777-7777-4777-8777-777777777777": [
+      {
+        "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee9",
+        "type": "add_critique",
+        "payload": {
+          "_tempId": "temp-crit-2",
+          "post_id": "dddddddd-dddd-4ddd-8ddd-ddddddddddd1",
+          "user_id": "77777777-7777-4777-8777-777777777777",
+          "body": "Held for their return."
+        },
+        "timestamp": 1792999999000,
+        "owner": "77777777-7777-4777-8777-777777777777"
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "written": "build 41 (ae569c0f)",
+  "saved": {
+    "import_receipt_last": {
+      "v": 1,
+      "at": "2026-10-26T07:33:20.000Z",
+      "userId": "77777777-7777-4777-8777-777777777777",
+      "sourceLabel": "letterboxd-export.zip",
+      "logIds": [
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1"
+      ],
+      "watchlistIds": [
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2"
+      ],
+      "physicalArchiveIds": [],
+      "listsCreated": [
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3"
+      ],
+      "listItemsAdded": [
+        {
+          "listId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3",
+          "filmIds": [
+            603,
+            19
+          ]
+        }
+      ]
+    }
+  }
+}

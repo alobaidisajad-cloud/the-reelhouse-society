@@ -13,6 +13,7 @@ import { useLogFlow } from '@/src/hooks/useLogFlow';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import { writeDraft, clearDraft } from '@/src/utils/memberDrafts';
+import { storage } from '@/src/stores/mmkv-storage';
 
 const ME = '33333333-3333-4333-8333-333333333333';
 
@@ -34,6 +35,24 @@ it('the note in a restored draft is sent when the record is sealed', async () =>
 
   await act(async () => { await result.current.handleLog(); });
   expect(addLog).toHaveBeenCalledWith(expect.objectContaining({ privateNotes: 'Saw it with Dad.' }));
+});
+
+it('a log draft as build 41 saved it opens whole, and is sealed as written (savedJsonOpensWhole)', async () => {
+  const addLog = jest.fn().mockResolvedValue(undefined);
+  useFilmStore.setState({ logs: [], _loggedIndex: {}, addLog } as never);
+  const { saved } = require('@/src/utils/__tests__/fixtures/saved-json/drafts.json') as { saved: Record<string, unknown> };
+  const [key, envelope] = Object.entries(saved).find(([k]) => k.endsWith('_log'))!;
+  const member = key.slice('reelhouse_draft_'.length, -'_log'.length);
+  useAuthStore.setState({ user: { id: member, username: 'member', tier: 'archivist', role: 'cinephile' } as never });
+  storage.set(key, JSON.stringify(envelope));
+
+  const { result } = await renderHook(() => useLogFlow());
+  await waitFor(() => expect(result.current.film?.id).toBe(19));
+  const r = result.current;
+  expect([r.film?.title, r.review, r.rating, r.privateNotes]).toEqual(['Metropolis', 'The machine.', 4.5, 'Saw it at the Castro.']);
+  await act(async () => { await result.current.handleLog(); });
+  expect(addLog).toHaveBeenCalledWith(expect.objectContaining({ review: 'The machine.', rating: 4.5, privateNotes: 'Saw it at the Castro.' }));
+  clearDraft(member, 'log');
 });
 
 it('a draft with no note still sends none — an untouched empty field clears nothing', async () => {

@@ -38,7 +38,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/tmdbMockCoverage.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | __tests__/utils/mappers.test.ts | — |  |
 | __tests__/utils/mutationExecutor.test.ts | 2026-10-03 | edited: the duplicate merge is a server rewatch under the device viewing id; the insert keeps it |
-| __tests__/utils/offlineQueue.test.ts | 2026-10-15 | edited: a member is signed in; the clear names who leaves |
+| __tests__/utils/offlineQueue.test.ts | 2026-10-27 | edited: edited: the cap lets the oldest marks go; logged films are queued over it; edited: a member is signed in; the clear names who leaves |
 | ../.github/workflows/ci-alert.yml | 2026-10-22 | edited: watches the nightly and the speed lab too |
 | ../.github/workflows/ci.yml | 2026-09-29 | history reduced to the rule each step keeps |
 | ../.github/workflows/db-integration.yml | 2026-10-22 | read whole: its time and the mutants' time as the runs take them; the weekly run's reason; a heartbeat when the schedule ran |
@@ -95,7 +95,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app.config.js | 2026-10-22 | edited: LAB=1 beside E2E=1: extra.lab, the lab's frame record; names every workflow that builds with E2E=1; the development profile gets back the dev client's scheme and iOS local networking; every other build is app.json |
 | app/__tests__/boot-structure.test.tsx | — |  |
 | app/__tests__/yourFileWaitsForYourHandle.test.tsx | 2026-10-03 | new: the Profile tab never calls you a stranger |
-| app/_layout.tsx | 2026-10-27 | edited: the saved cache is restored only under the build and update that wrote it; edited: an owed sign-out settled at launch, before the session is restored; edited: the lab's frame record mounted behind LAB_BUILD alone; PathTracker moved out, and now tells nav too |
+| app/_layout.tsx | 2026-10-27 | edited: edited: a silent keystore is told to the member at launch; edited: the saved cache is restored only under the build and update that wrote it; edited: an owed sign-out settled at launch, before the session is restored; edited: the lab's frame record mounted behind LAB_BUILD alone; PathTracker moved out, and now tells nav too |
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-23 | edited: each docket rebuilt from its read during the render that brings it, never an effect after; read whole: reads source through readCode; no regex stripper |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
@@ -264,7 +264,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-10-27 | edited: expo-image's Image and React Native's refused outside Picture, each exception with its reason; edited: the React Compiler's globals rule on (a test's probe takes its hook in an effect); its preserve-manual-memoization rule on (each memo's inputs read before it); its immutability rule on (every shared value written by set), the rest off until their places are right; 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
-| jest.setup.ts | 2026-10-27 | edited: Sentry's scope stand-in has setTag; edited: Sentry's stand-in has setTag, which boot calls; edited: the drawings draw every arrival and ignition at rest; edited: the shared value's mock has get and set as Reanimated's (set takes a value or an updater); edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |
+| jest.setup.ts | 2026-10-27 | edited: edited: the storage stand-in answers the keystore's deadline at once; edited: Sentry's scope stand-in has setTag; edited: Sentry's stand-in has setTag, which boot calls; edited: the drawings draw every arrival and ignition at rest; edited: the shared value's mock has get and set as Reanimated's (set takes a value or an updater); edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |
 | jest.stryker.config.js | 2026-10-16 | new: the tests' config in Stryker's own process, its environment by its whole path |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -412,7 +412,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/__tests__/theNextBatchSaysWhenItCouldNotBeDeveloped.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the next batch says it could not be developed; moods are buttons with state and keys |
 | src/components/darkroom/__tests__/theSuggestionsComeBack.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); read with the Darkroom focus fix / E2E probe |
 | src/components/darkroom/__tests__/theSuggestionsSayWhenTheCatalogueIsAway.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); new |
-| src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | — |  |
+| src/components/darkroom/__tests__/theTraySaysWhenTheCatalogueIsAway.test.tsx | 2026-10-27 | edited: edited: the tray opens on the films build 41 kept, the catalogue away;  |
 | src/components/darkroom/constants.ts | 2026-10-02 | read; sound |
 | src/components/darkroom/DarkroomCards.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; edited: the quick save uninked while the ledger is not held |
 | src/components/darkroom/DarkroomFilterPanel.tsx | 2026-10-15 | enters and leaves as a PresenceView |
@@ -430,8 +430,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/aNewerOneWasWrittenElsewhere.test.tsx | — |  |
 | src/components/dispatch/__tests__/archiveScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/aSeriesIsReadInOrder.test.ts | — |  |
-| src/components/dispatch/__tests__/ballotDesk.test.tsx | — |  |
-| src/components/dispatch/__tests__/composeScreen.test.tsx | — |  |
+| src/components/dispatch/__tests__/ballotDesk.test.tsx | 2026-10-27 | edited: edited: a ballot draft as build 41 saved it opens with its question, films and closing; edited: edited: a ballot draft as build 41 saved it opens with its question, films and closing;  |
+| src/components/dispatch/__tests__/composeScreen.test.tsx | 2026-10-27 | edited: edited: an amend as build 41 kept it opens over the published words;  |
 | src/components/dispatch/__tests__/dayLabel.test.ts | — |  |
 | src/components/dispatch/__tests__/dispatchNoDeadControls.test.ts | 2026-10-15 | edited: every Dispatch component and screen, from the shared file list |
 | src/components/dispatch/__tests__/duplicateRows.test.tsx | — |  |
@@ -450,7 +450,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/oneCapNotThree.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/oneWordNamesOneThing.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/paperTextLogic.test.ts | 2026-10-03 | edited: hidden characters written as escapes |
-| src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-10-27 | edited: a ballot that closes while it is read is drawn CLOSED on return; edited: the marks once, in the dock, on a ballot and a short filing |
+| src/components/dispatch/__tests__/readerScreen.test.tsx | 2026-10-27 | edited: edited: a critique draft as build 41 saved it opens in its box; edited: a ballot that closes while it is read is drawn CLOSED on return; edited: the marks once, in the dock, on a ballot and a short filing |
 | src/components/dispatch/__tests__/roomScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/rulesScreen.test.tsx | — |  |
 | src/components/dispatch/__tests__/seriesScreen.test.tsx | — |  |
@@ -461,7 +461,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theDispatchAtItsLimits.test.tsx | 2026-10-03 | edited: hidden characters written as escapes |
 | src/components/dispatch/__tests__/theDispatchSaysEssay.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/dispatch/__tests__/theDoorIsShown.test.tsx | — |  |
-| src/components/dispatch/__tests__/theDraftIsTheWholePiece.test.tsx | — |  |
+| src/components/dispatch/__tests__/theDraftIsTheWholePiece.test.tsx | 2026-10-27 | edited: edited: an essay draft as build 41 saved it opens with its film and series;  |
 | src/components/dispatch/__tests__/theEssayAtLargeType.test.tsx | — |  |
 | src/components/dispatch/__tests__/theHardcodedWidthIsHarmless.test.ts | — |  |
 | src/components/dispatch/__tests__/theInvitationHasAnAddress.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -870,7 +870,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aMemberFilePullSaysWhatItReached.test.tsx | — |  |
 | src/hooks/__tests__/aNewMemberStartsUnfiltered.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); the rooms answered, as the hook hands them; written: every filter wiped for a new member |
 | src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx | 2026-10-01 | written: each read cancelled only by what makes it stale |
-| src/hooks/__tests__/aRestoredNoteIsSent.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a draft's restored private note is sealed with the record. |
+| src/hooks/__tests__/aRestoredNoteIsSent.test.tsx | 2026-10-27 | edited: edited: a log draft as build 41 saved it opens whole and is sealed as written; Written 2026-10-02 (launch audit): a draft's restored private note is sealed with the record. |
 | src/hooks/__tests__/aRewatchIsFiledAsOne.test.tsx | 2026-10-26 | Written 2026-10-26: a logged film opens as a rewatch and stays one; a status the member chose stays theirs. |
 | src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx | — |  |
 | src/hooks/__tests__/aScrollIsOneTransaction.test.tsx | 2026-10-15 | new |
@@ -958,16 +958,16 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/theCounterNamesNobody.test.ts | — |  |
 | src/lib/__tests__/theHouseAsksToSendWordWhenItMeansSomething.test.ts | 2026-10-01 | new |
 | src/lib/__tests__/thePriceIsTheStores.test.ts | — |  |
-| src/lib/__tests__/theSessionIsKeptWhole.test.ts | 2026-10-01 | written with the session store |
+| src/lib/__tests__/theSessionIsKeptWhole.test.ts | 2026-10-27 | edited: edited: its storage stand-in answers the keystore's deadline; written with the session store |
 | src/lib/__tests__/theTokenMustNotSurviveLogout.test.ts | — |  |
 | src/lib/__tests__/tmdb.test.ts | 2026-10-27 | edited: the stand-in answers as the phone's fetch does, a Response read once per call;  |
 | src/lib/__tests__/whatSentryKeeps.test.ts | 2026-10-27 | edited: drops no network and a member's cancel, keeps a request past its deadline; edited: its files come from the shared file list (test-utils/universe.js) |
-| src/lib/authSessionStorage.ts | 2026-10-15 | edited: the first session read stamps an older build's ownerless writes |
+| src/lib/authSessionStorage.ts | 2026-10-27 | edited: edited: each keystore call within the launch's deadline; edited: the first session read stamps an older build's ownerless writes |
 | src/lib/gateMetricsSink.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/nativeOnly/revenuecatWebStub.js | 2026-10-03 | read whole: sound |
 | src/lib/pushNotifications.ts | 2026-10-02 | the foreground handler is set as the module loads; comments say what is true |
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
-| src/lib/queryClient.ts | 2026-10-27 | edited: needs no native module: the cache buster lives in cacheBuster.ts; edited: CACHE_BUSTER: the platform, the store build and the running update a saved cache was written by; edited: React Query hears the app come back to the front (focusManager on AppState); edited: the rules live in queryPolicy.ts; the header still true |
+| src/lib/queryClient.ts | 2026-10-27 | edited: React Query hears the app come back to the front (focusManager on AppState); edited: the rules live in queryPolicy.ts; the header still true |
 | src/lib/queryPolicy.ts | 2026-10-04 | written whole: the rules moved out of queryClient.ts, word for word, so tests read them too |
 | src/lib/refusalEvents.ts | 2026-10-02 | Written in the launch audit: every refusal's sentence, for whoever listens. |
 | src/lib/revenueCat.ts | 2026-10-03 | payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
@@ -1052,7 +1052,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/aSalonChannelFollowsTheSalon.test.ts | 2026-10-15 | new |
 | src/stores/__tests__/aSalonKeepsItsCoverAndItsDoor.test.ts | 2026-10-01 | written: the corridor reads covers; a rank refusal is a door |
 | src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts | 2026-10-23 | edited: the salons' flag by its own name; written whole: a seat taken or given up is drawn as the next read gives it |
-| src/stores/__tests__/aSessionEndedElsewhereKeepsTheirWork.test.ts | 2026-10-15 | written: a sign-out from elsewhere keeps the queue and drafts for their member alone |
+| src/stores/__tests__/aSessionEndedElsewhereKeepsTheirWork.test.ts | 2026-10-27 | edited: edited: its storage stand-in answers the keystore's deadline; written: a sign-out from elsewhere keeps the queue and drafts for their member alone |
 | src/stores/__tests__/aStackIsSavedWhole.test.ts | — |  |
 | src/stores/__tests__/auth.test.ts | 2026-10-15 | edited: the queue mock carries the hold and the release; storage lists its keys |
 | src/stores/__tests__/blockEnforcement.test.ts | — |  |
@@ -1063,7 +1063,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/dispatchReads.test.ts | — |  |
 | src/stores/__tests__/dispatchRefusals.test.ts | — |  |
 | src/stores/__tests__/dispatchWrites.test.ts | — |  |
-| src/stores/__tests__/encryptionAtRest.guard.test.ts | 2026-10-15 | edited: every persisted store wherever it lives, from the shared file list |
+| src/stores/__tests__/encryptionAtRest.guard.test.ts | 2026-10-27 | edited: edited: a queued write is never skipped; held in memory while the store is not encrypted; edited: every persisted store wherever it lives, from the shared file list |
 | src/stores/__tests__/everyPersistedStoreWaitsForTheKey.guard.test.ts | 2026-10-15 | edited: every persisted store wherever it lives, from the shared file list |
 | src/stores/__tests__/films.test.ts | — |  |
 | src/stores/__tests__/followGraph.wiring.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
@@ -1100,7 +1100,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/watchlistSlice.test.ts | 2026-10-03 | edited: the header names what the file tests |
 | src/stores/__tests__/aProfileIsReadBeforeItIsSettings.test.ts | 2026-10-23 | profileRead tells a read profile from the auth user alone; rereadProfile lays a read on the member, says a failure, and lands nothing for a member gone (P0.112) |
 | src/stores/__tests__/theBlocksAreReadAtSignIn.test.ts | 2026-10-23 | a sign-in reads the member's blocks: known, and a block a block; a failed read leaves them unknown; sign-out makes them unknown (P0.112) |
-| src/stores/auth.ts | 2026-10-26 | edited: every sign-out through endSessionHere: the abandoned reset and logout; logout owes the push token's row when step 7 failed; edited: a sign-in asks for the marks ledger, lazily (the film store is never loaded with the session) |
+| src/stores/auth.ts | 2026-10-27 | edited: edited: the edits and preferences not yet sent are read by readPendingProfile and readPendingPrefs, each named and exported; edited: every sign-out through endSessionHere: the abandoned reset and logout; logout owes the push token's row when step 7 failed; edited: a sign-in asks for the marks ledger, lazily (the film store is never loaded with the session) |
 | src/stores/authEvents.ts | 2026-10-15 | written: the auth listener's answers, out of the component |
 | src/stores/blockStore.ts | 2026-10-23 | edited: blocksKnown: the lists the member's, from a saved copy or a read; cleared at sign-out; sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -1131,7 +1131,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/followStore.ts | 2026-10-23 | edited: followingKnown: held, unread or failed; the phone's copy of a read is held; sign-out makes it unread; comments cut to the why |
 | src/stores/lounge.ts | 2026-10-27 | edited: the room's channel watcher written as one expression, so the stale-write guard reads subscribeToLounge whole; edited: every read of an open room again is a catch-up merged into what is held (catchUpMessages); its channel heard by watchChannel (roomLive); edited: loungesRead: the salons answered once since sign-in; the salons' read and the room's keep their own flags; another room's words go when a room opens, a failed read is said by the room; a page and its reactions in one request (MESSAGE_COLUMNS, messagesOf), the page above with them too, ordered as the cursor; the salons read in two waves, not five; a salon read or send answered after its member left writes and queues nothing |
 | src/stores/markCounts.ts | 2026-10-02 | read; sound |
-| src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
+| src/stores/mmkv-storage.ts | 2026-10-27 | edited: edited: KEYSTORE_DEADLINE_MS (measured, its run beside it), withinKeystoreDeadline, KeystoreSilent, keystoreWasSilent and the member's notice; the placeholder's queue and drafts carried into the encrypted store, the placeholder emptied (adoptThePlaceholder); storageReady added; opens with the 16 bytes recrypt took |
 | src/stores/notificationStore.ts | 2026-10-27 | edited: names its version and migration (savedVersion.ts); edited: the notices' channel heard by watchChannel: read again after a drop, not live past a beat (noticesLive); edited: the notices channel joined privately; the notices heard live are counted |
 | src/stores/offlineQueueStore.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/reportStore.ts | 2026-10-15 | edited: a report answered after its reporter left is not kept, queued or blocked as the next member |
@@ -1211,7 +1211,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyCheckRuns.guard.test.ts | 2026-10-16 | edited: every script file is run by a workflow, a hook, an npm script, another script or a test, or named as run by hand with why; every store build runs the preflight before it asks EAS |
 | src/utils/__tests__/everyDoorLeadsToARoute.guard.test.ts | 2026-10-27 | edited: the sign-in landing named: returnAfterSignIn decides it; new |
 | src/utils/__tests__/everyEventIsAwaited.guard.test.ts | 2026-10-16 | new: no test leaves a fireEvent, act or renderHook unwaited; each unwaited shape is found, each waited one is not; the fix makes the test async and leaves a helper to a hand |
-| src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-15 | written: every enqueue call site's type has its kind in the map; its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/everyQueuedWriteHasItsKind.test.ts | 2026-10-27 | edited: edited: every mark has its noun, and only marks; written: every enqueue call site's type has its kind in the map; its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everySecretIsInventoried.test.ts | 2026-10-16 | new: every secret and setting the code reads is in register/secrets.json, with its holders and a secret's rotation; nothing listed that no code reads but the dashboard-held ones; never a value |
 | src/utils/__tests__/fixtures/animationConfigs.fixture.ts | 2026-10-15 | new |
 | src/utils/__tests__/fixtures/imageCache.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
@@ -1275,7 +1275,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/noPageAddsToTheInset.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/notificationColumns.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/offlineIsSaidOneWay.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/utils/__tests__/offlineQueue.integration.test.ts | 2026-10-16 | edited: its house answers the standing read every send makes |
+| src/utils/__tests__/offlineQueue.integration.test.ts | 2026-10-27 | edited: edited: the cap's title says marks; edited: its house answers the standing read every send makes |
 | src/utils/__tests__/offlineQueue.test.ts | 2026-10-15 | edited: a queued write carries its member |
 | src/utils/__tests__/profileCountsCache.test.ts | — |  |
 | src/utils/__tests__/profileCountsCache.wiring.guard.test.ts | — |  |
@@ -1312,7 +1312,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/theDraftIsYours.test.ts | — |  |
 | src/utils/__tests__/theFrontDeskAnswers.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/theFunnelHasOneSeam.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
-| src/utils/__tests__/theQueueAtEveryTurn.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/theQueueAtEveryTurn.test.ts | 2026-10-27 | edited: edited: a full queue lets marks go, never a critique or a log; with no mark, queues over the cap; new |
 | src/utils/__tests__/theQueueAtLaunch.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/theRecordingsTravel.test.ts | — |  |
 | src/utils/__tests__/theSendAsksWhoIsSendingFirst.test.ts | 2026-10-16 | new |
@@ -1361,12 +1361,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/mutationExecutor.ts | 2026-10-27 | edited: the rank sync within the house's deadline; edited: an empty place in a queued history is dropped, not sorted (it threw); a log's decade and genres and a Lounge message's username, columns neither table has, are never written; a rewatch's conflict reads the log's id alone |
 | src/utils/networkError.ts | 2026-10-27 | edited: a deadline is not reached, thrown by its name or resolved by its message; Read whole (launch audit). Sound; left alone. |
 | src/utils/noticeRoute.ts | 2026-10-02 | Read whole (launch audit). Follows groupRoute's one argument. |
-| src/utils/offlineQueue.ts | 2026-10-16 | edited: a write refused for a suspension waits with the rest (the standing read failed, or the suspension began mid-send); the standing read's error is read (its catch could never run); at sign-out another member's writes stay wherever they are |
+| src/utils/offlineQueue.ts | 2026-10-27 | edited: edited: a full queue lets only its oldest marks go, named; never words or records; every list through writeList; edited: a write refused for a suspension waits with the rest (the standing read failed, or the suspension began mid-send); the standing read's error is read (its catch could never run); at sign-out another member's writes stay wherever they are |
 | src/utils/openNoticeFromPush.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/openSociety.ts | 2026-10-02 | Read whole (launch audit). URLSearchParams.set is implemented in RN 0.81's polyfill (checked). Sound. |
 | src/utils/prefetchPictures.ts | 2026-10-15 | new: the one caller of expo-image's prefetch |
 | src/utils/profileCountsCache.ts | 2026-10-02 | read; sound |
-| src/utils/queueOwnership.ts | 2026-10-15 | written: the typed kind map, the owner-keyed hold and release, the older build's stamp |
+| src/utils/queueOwnership.ts | 2026-10-27 | edited: edited: in memory alone while the store is not encrypted (queueKeys, readList, writeList, writeQueue); MARK_NOUN and marksLetGo; held writes through writeList; written: the typed kind map, the owner-keyed hold and release, the older build's stamp |
 | src/utils/raceDeadline.ts | 2026-10-04 | written whole: the one deadline race; its timer cleared when the race is decided |
 | src/utils/recommendations.ts | 2026-10-01 | the shelf's own name |
 | src/utils/reelToast.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -1476,6 +1476,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts | 2026-10-23 | every mock of @react-navigation/native spreads the one base or the real module; jest.setup.ts uses it |
 | test-utils/navigationMock.ts | 2026-10-23 | @react-navigation/native as every test meets it: the real module, focus answered outside a navigator; the one base every mock spreads |
 | e2e/no-error-dialogs.sh | 2026-10-23 | new: Android's error dialogs hidden and closed, for the flows and the lab alike |
+| plugins/__tests__/theStoreIsNeverBackedUp.test.ts | 2026-10-27 | Written 2026-10-27: the backup rules expo-secure-store ships, and this app keeping them: the store is in no backup (P4.14) |
 | src/components/MembersOnly.tsx | 2026-10-27 | edited: edited: the way in and Close share ACTS_GAP, each reaching half of it; new: a member-only screen opened signed out says so, offers the way in carrying where it was, and a sign-in returns there (returnAfterSignIn: three shapes, else the Lobby) |
 | src/components/Picture.tsx | 2026-10-27 | new: the one place a picture is drawn: RemoteImage (a missing or failed picture draws its fallback in its own box; offline failures tried once more online, a 404 never), AssetImage (bundled art), PosterMark (the house mark for no poster) |
 | src/components/__tests__/aPictureThatCannotBeHadLeavesNoHole.test.tsx | 2026-10-27 | Written 2026-10-27: no address and a failed load draw the same fallback; offline, tried once more online and no more; a 404 never; a new address tried afresh; a card told of the failure (P4.10) |
@@ -1508,9 +1509,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/watchChannel.ts | 2026-10-27 | new: what a live channel's status means for its screen: back after a drop, read what was missed; down past a beat, not live, read again on a fixed interval until it answers; nothing offline |
 | src/providers/__tests__/aRankGainedElsewhereIsSeen.test.tsx | 2026-10-27 | Written 2026-10-27: back in the app once the member's row is older than a read stays fresh, their rank is read again; a glance away reads nothing (P4.7, P4.17) |
 | src/stores/__tests__/aSalonCatchesUpWithoutLosingAWord.test.ts | 2026-10-27 | Written 2026-10-27: 250 held and a failed send, 150 new on the house: all 400 in order and the bubble kept; the held read again light; nothing offline; a failure says nothing (P4.8) |
+| src/stores/__tests__/aSilentKeystoreNeverHoldsTheLaunch.test.ts | 2026-10-27 | Written 2026-10-27: the keystore's deadline on the real module (silent, just inside, an error), and the placeholder's leftovers carried in (P4.14) |
 | src/stores/__tests__/everyChannelReadsWhatItMissed.test.ts | 2026-10-27 | Written 2026-10-27: per channel, SUBSCRIBED, CHANNEL_ERROR, SUBSCRIBED reads its data again (P4.8) |
 | src/stores/__tests__/savedStoresAreVersioned.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder (version, migrate, a last-release fixture for every persist), and each store opening build 41's saved shape (P4.11) |
 | src/stores/savedVersion.ts | 2026-10-27 | new: every saved store's version, and the step that carries the last release's unversioned shape forward |
 | src/utils/__tests__/everyDrawingIsMeasured.guard.test.ts | 2026-10-24 | written: every drawing of the app lands where CI measures it |
 | src/theme/__tests__/paperIsFlattened.test.ts | 2026-10-25 | written: the flat paper is the colour its three layers made, at every height |
+| src/utils/__tests__/aPushCarriesNoPrivateWords.guard.test.ts | 2026-10-27 | Written 2026-10-27: every writer of a notice's message read from the schema snapshot, each value in it judged for a lock screen (P4.5) |
 | src/utils/__tests__/everyPasswordFieldSaysWhatItHolds.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: every secure field names its content and autofill, every code field the one-time-code pair (P4.37) |
+| src/utils/__tests__/savedJsonOpensWhole.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder (every JSON write in one family, each family with build 41's fixture and its opener), and each family opened by its own reader (P4.11) |
+| src/utils/__tests__/theQueueStaysOffAnOpenDisk.test.ts | 2026-10-27 | Written 2026-10-27: the queue, its dead letter and held writes in memory while the store is not encrypted, and still sent (P4.14) |

@@ -20,6 +20,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
     getAllKeys: () => Object.keys(mockStore),
   },
   isStorageEncrypted: () => mockEncrypted,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
 }));
 
 beforeEach(() => { for (const k of Object.keys(mockStore)) delete mockStore[k]; });

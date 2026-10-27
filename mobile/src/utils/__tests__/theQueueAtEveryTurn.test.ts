@@ -48,6 +48,8 @@ jest.mock('expo-crypto', () => { let n = 0; return { randomUUID: () => `id-${++n
 jest.mock('@/src/stores/mmkv-storage', () => {
   const store = new Map<string, string>();
   return {
+    isStorageEncrypted: () => true,
+    withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
     storage: {
       set: jest.fn((k: string, v: string) => store.set(k, v)),
       getString: jest.fn((k: string) => store.get(k)),
@@ -107,17 +109,37 @@ describe('queuing', () => {
     expect(logger.debug).toHaveBeenCalledWith('[OfflineSync] Queued follow_user for background sync.');
   });
 
-  it('when full, drops the oldest to make room, names what it dropped, and tells the member', () => {
-    const full = [stored({ id: 'a', type: 'endorse_log' }), stored({ id: 'b', type: 'follow_user' }), stored({ id: 'c', type: 'endorse_log' }),
-      ...Array.from({ length: 99 }, (_, i) => stored({ id: `k${i}`, type: 'mark_watched' }))];
+  it('when full, lets the oldest marks go to make room, names them, and tells the member', () => {
+    const full = [stored({ id: 'k0', type: 'mark_watched' }), stored({ id: 'a', type: 'endorse_log' }), stored({ id: 'b', type: 'follow_user' }),
+      stored({ id: 'c', type: 'endorse_log' }), ...Array.from({ length: 98 }, (_, i) => stored({ id: `k${i + 1}`, type: 'mark_watched' }))];
     put(QUEUE_KEY, full);
     enqueueMutation(follow());
     const q = getOfflineQueue();
     expect(q).toHaveLength(100);
-    expect(q[0]?.id).toBe('k0');
+    expect([q[0]?.id, q[1]?.id]).toEqual(['k0', 'k1']);
     expect(q[99]?.type).toBe('follow_user');
-    expect(warned()).toEqual(['[OfflineSync] Queue cap reached (100). Dropped 3 oldest: [endorse_log, follow_user]']);
-    expect(toast.error).toHaveBeenCalledWith('Offline queue full — oldest action dropped.');
+    expect(warned()).toEqual(['[OfflineSync] Queue cap reached (100). Let go 3 oldest mark(s): [endorse_log, follow_user]']);
+    expect(toast.error).toHaveBeenCalledWith('3 marks made offline were let go to make room.');
+  });
+
+  it('when full, never lets go of the member\'s words or a record: the two oldest, a critique and a log, stay', () => {
+    const full = [stored({ id: 'crit', type: 'add_critique' }), stored({ id: 'log', type: 'add_log' }),
+      stored({ id: 'mark', type: 'certify_filing' }), ...Array.from({ length: 97 }, (_, i) => stored({ id: `k${i}`, type: 'mark_watched' }))];
+    put(QUEUE_KEY, full);
+    enqueueMutation(follow());
+    const q = getOfflineQueue();
+    expect([q.length, q[0]?.id, q[1]?.id, q.some((m) => m.id === 'mark'), q[99]?.type]).toEqual([100, 'crit', 'log', false, 'follow_user']);
+    expect(toast.error).toHaveBeenCalledWith('A certification made offline was let go to make room.');
+  });
+
+  it('when full with no mark to let go, queues the new write over the cap and lets nothing go', () => {
+    put(QUEUE_KEY, [stored({ id: 'crit', type: 'add_critique' }), stored({ id: 'log', type: 'add_log' }),
+      ...Array.from({ length: 98 }, (_, i) => stored({ id: `k${i}`, type: 'mark_watched' }))]);
+    enqueueMutation(follow());
+    const q = getOfflineQueue();
+    expect([q.length, q[0]?.id, q[1]?.id, q[100]?.type]).toEqual([101, 'crit', 'log', 'follow_user']);
+    expect(warned()).toEqual(['[OfflineSync] Queue cap reached (100) with no mark to let go: queued over it.']);
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
   it('at ninety-nine, drops nothing', () => {

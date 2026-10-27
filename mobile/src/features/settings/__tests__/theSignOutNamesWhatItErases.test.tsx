@@ -36,6 +36,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
     clearAll: () => mockDisk.clear(),
   },
   isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   setSensitive: (k: string, v: string) => { mockDisk.set(k, v); },
 }));
 jest.mock('@/src/stores/auth', () => {

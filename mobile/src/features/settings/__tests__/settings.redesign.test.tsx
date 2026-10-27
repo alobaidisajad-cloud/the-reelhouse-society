@@ -66,6 +66,8 @@ jest.mock('@/src/stores/settings', () => {
   return { useSettingsStore };
 });
 jest.mock('@/src/stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: { clearAll: () => mockClearAll(), set: jest.fn(), getString: jest.fn(), delete: jest.fn(), getAllKeys: () => [] },
 }));
 jest.mock('@/src/services/AuthService', () => ({ AuthService: { requestAccountDeletion: () => mockRequestDeletion(), updatePassword: jest.fn() } }));

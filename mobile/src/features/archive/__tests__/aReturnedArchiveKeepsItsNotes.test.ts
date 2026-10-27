@@ -43,6 +43,8 @@ jest.mock('@/src/lib/supabase', () => ({
 }));
 jest.mock('@/src/stores/auth', () => ({ useAuthStore: { getState: () => ({ user: { id: 'member-1', tier: mockTier, role: 'cinephile' } }) } }));
 jest.mock('@/src/stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: { set: (_k: string, v: string) => mockSaved.push(v), delete: jest.fn(), getString: jest.fn() },
 }));
 

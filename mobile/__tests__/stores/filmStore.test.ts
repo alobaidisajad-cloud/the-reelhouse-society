@@ -40,6 +40,8 @@ jest.mock('react-native-mmkv', () => ({
 /** What the phone holds for the store, by key — read back by a rehydrate. */
 const mockPersisted: Record<string, unknown> = {};
 jest.mock('../../src/stores/mmkv-storage', () => ({
+    isStorageEncrypted: () => true,
+    withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
     storage: {
         getString: jest.fn(() => undefined),
         set: jest.fn(),

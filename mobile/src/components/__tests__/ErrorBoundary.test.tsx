@@ -17,6 +17,8 @@ jest.mock('../../utils/TactileEngine', () => ({
   default: { mutate: jest.fn(), destroy: jest.fn() },
 }));
 jest.mock('../../stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: { clearAll: jest.fn(), getString: jest.fn(), set: jest.fn(), delete: jest.fn() },
   getSecureStorage: jest.fn().mockResolvedValue({ clearAll: jest.fn() }),
 }));

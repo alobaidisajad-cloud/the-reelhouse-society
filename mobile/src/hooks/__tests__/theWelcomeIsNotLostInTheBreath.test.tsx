@@ -27,6 +27,8 @@ jest.mock('@/src/stores/auth', () => {
 });
 const mockSeen = new Map<string, boolean>();
 jest.mock('@/src/stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: {
     getBoolean: (k: string) => mockSeen.get(k),
     set: (k: string, v: boolean) => { mockSeen.set(k, v); },

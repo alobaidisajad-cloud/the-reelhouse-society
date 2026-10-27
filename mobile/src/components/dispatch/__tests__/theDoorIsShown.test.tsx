@@ -85,6 +85,8 @@ jest.mock('@/src/lib/supabase', () => ({
   },
 }));
 jest.mock('@/src/stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: { getString: () => undefined, set: jest.fn(), delete: jest.fn(), getBoolean: () => false },
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));

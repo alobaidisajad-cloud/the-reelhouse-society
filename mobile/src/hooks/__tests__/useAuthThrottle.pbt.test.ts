@@ -14,6 +14,8 @@ import { act, renderHook } from '@testing-library/react-native';
 import { evaluateAuthThrottle, MAX_ATTEMPTS, WINDOW_MS, useAuthThrottle } from '../useAuthThrottle';
 
 jest.mock('@/src/stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: { getString: jest.fn(), set: jest.fn(), delete: jest.fn() },
 }));
 

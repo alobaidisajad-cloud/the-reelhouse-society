@@ -1,0 +1,75 @@
+{
+  "written": "build 41 (ae569c0f)",
+  "saved": {
+    "reelhouse_draft_77777777-7777-4777-8777-777777777777_dossier": {
+      "v": 2,
+      "savedAt": "2026-10-26T07:33:20.000Z",
+      "data": {
+        "title": "On Sunrise",
+        "content": "The swamp at night…",
+        "film": {
+          "id": 603,
+          "title": "The Matrix",
+          "sub": "1999",
+          "image": "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+          "backdrop": null
+        },
+        "series": {
+          "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1",
+          "title": "Murnau",
+          "part": 2
+        }
+      }
+    },
+    "reelhouse_draft_77777777-7777-4777-8777-777777777777_edit_cccccccc-cccc-4ccc-8ccc-ccccccccccc1": {
+      "v": 2,
+      "savedAt": "2026-10-26T07:33:20.000Z",
+      "data": {
+        "title": "Revised",
+        "content": "A second look."
+      }
+    },
+    "reelhouse_draft_77777777-7777-4777-8777-777777777777_log": {
+      "v": 2,
+      "savedAt": "2026-10-26T07:33:20.000Z",
+      "data": {
+        "filmId": 19,
+        "filmTitle": "Metropolis",
+        "filmName": null,
+        "filmPoster": "/metropolis.jpg",
+        "filmYear": "1927-01-10",
+        "review": "The machine.",
+        "rating": 4.5,
+        "privateNotes": "Saw it at the Castro."
+      }
+    },
+    "reelhouse_draft_77777777-7777-4777-8777-777777777777_critique_dddddddd-dddd-4ddd-8ddd-ddddddddddd1": {
+      "v": 2,
+      "savedAt": "2026-10-26T07:33:20.000Z",
+      "data": {
+        "body": "Half a critique."
+      }
+    },
+    "reelhouse_draft_77777777-7777-4777-8777-777777777777_ballot": {
+      "v": 2,
+      "savedAt": "2026-10-26T07:33:20.000Z",
+      "data": {
+        "question": "Best of 1927?",
+        "closes": "2 DAYS",
+        "slots": [
+          {
+            "film": {
+              "title": "Metropolis",
+              "year": 1927,
+              "director": "Fritz Lang",
+              "posterPath": "/metropolis.jpg",
+              "backdropPath": null
+            },
+            "id": 19
+          },
+          null
+        ]
+      }
+    }
+  }
+}

@@ -12,7 +12,7 @@
 import { relative } from 'path';
 import { readCode, MOBILE } from '@/test-utils/readCode';
 import { files as universe } from '@/test-utils/universe';
-import { QUEUED_WRITE_KIND, WORDS_NOUN } from '../queueOwnership';
+import { MARK_NOUN, QUEUED_WRITE_KIND, WORDS_NOUN } from '../queueOwnership';
 
 /** The text between a call's parentheses, from the `(` at `open`. */
 function argumentsAt(src: string, open: number): string {
@@ -89,5 +89,12 @@ describe('every queued write has its kind', () => {
     const words = Object.entries(QUEUED_WRITE_KIND).filter(([, k]) => k === 'words').map(([t]) => t);
     expect(words.length).toBeGreaterThan(0);
     expect(words.filter((t) => !WORDS_NOUN[t as keyof typeof WORDS_NOUN])).toEqual([]);
+  });
+
+  it('and what each mark is, the only kind a full queue may let go', () => {
+    const marks = Object.entries(QUEUED_WRITE_KIND).filter(([, k]) => k === 'toggle').map(([t]) => t);
+    expect(marks.length).toBeGreaterThan(0);
+    expect(marks.filter((t) => !MARK_NOUN[t as keyof typeof MARK_NOUN])).toEqual([]);
+    expect(Object.keys(MARK_NOUN).filter((t) => QUEUED_WRITE_KIND[t as keyof typeof QUEUED_WRITE_KIND] !== 'toggle')).toEqual([]);
   });
 });

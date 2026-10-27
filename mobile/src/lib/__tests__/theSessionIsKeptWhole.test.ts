@@ -17,6 +17,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
   },
   storageReady: () => mockState.ready,
   isStorageEncrypted: () => mockState.encrypted,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
 }));
 jest.mock('expo-secure-store', () => ({
   AFTER_FIRST_UNLOCK: 'afterFirstUnlock',

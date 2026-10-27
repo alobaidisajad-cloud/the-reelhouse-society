@@ -21,6 +21,8 @@ import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
 import { ComposeBallotScreen, FilmPicker } from '@/src/components/dispatch/ComposeDesks';
+import { storage } from '@/src/stores/mmkv-storage';
+import { clearDraft, draftKey } from '@/src/utils/memberDrafts';
 
 let mockResults: Record<string, unknown>[] = [];
 const mockFiled: Record<string, unknown>[] = [];
@@ -207,6 +209,20 @@ describe('the ballot desk', () => {
     // A ballot that splits its own vote between two copies of one film produces
     // a result that means nothing, and the database would have accepted it.
     expect(mockToast.error).toHaveBeenCalledWith('That film is already on this ballot.');
+  });
+
+  it('opens a ballot as build 41 saved it: the question, the films, the closing (savedJsonOpensWhole)', async () => {
+    const { saved } = require('@/src/utils/__tests__/fixtures/saved-json/drafts.json') as { saved: Record<string, unknown> };
+    const envelope = Object.entries(saved).find(([k]) => k.endsWith('_ballot'))![1];
+    storage.set(draftKey('u1', 'ballot'), JSON.stringify(envelope));
+    try {
+      const r = render(<ComposeBallotScreen />);
+      expect(r.getByDisplayValue('Best of 1927?')).toBeTruthy();
+      expect([r.getByText('METROPOLIS'), r.getByLabelText('Remove Metropolis')].every(Boolean)).toBe(true);
+      expect(r.getByLabelText('Closes in 2 days').props.accessibilityState?.selected).toBe(true);
+    } finally {
+      clearDraft('u1', 'ballot');
+    }
   });
 
   it('will not open until there is a question and two films', async () => {

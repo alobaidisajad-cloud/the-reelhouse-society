@@ -15,6 +15,8 @@ import { offerWord, PRIMER_ASKED_KEY, PRIMER_BODY, PRIMER_TITLE, PRIMER_WAIT_MS 
 
 const mockStore = new Map<string, string>();
 jest.mock('@/src/stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: {
     set: (k: string, v: string) => { mockStore.set(k, v); },
     getString: (k: string) => mockStore.get(k),

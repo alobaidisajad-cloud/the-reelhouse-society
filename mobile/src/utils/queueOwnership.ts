@@ -9,10 +9,11 @@
  *   • that member's next sign-in here moves them back; no one else's reads them
  *   • a write an older build queued with no owner is stamped at the first read
  *     of the stored session, before any refresh can end that session
+ *   • while the store is not encrypted, all of it is held in memory, never on disk
  *
  * Storage alone, no Supabase: authSessionStorage calls in here, beneath the client.
  */
-import { storage } from '@/src/stores/mmkv-storage';
+import { isStorageEncrypted, storage } from '@/src/stores/mmkv-storage';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import type { QueuedMutation } from './offlineQueue';
 import { logger } from './logger';
@@ -120,8 +121,46 @@ export const WORDS_NOUN: Partial<Record<QueuedMutation['type'], readonly [string
 export const changesMadeOffline = (n: number) =>
   n === 1 ? 'A change made offline' : `${n} changes made offline`;
 
+/** What the member is told a 'toggle' write is: a mark they can simply make again. */
+export const MARK_NOUN: Partial<Record<QueuedMutation['type'], string>> = {
+  endorse_log: 'A certification',
+  endorse_list: 'A certification',
+  toggle_dossier_certify: 'A certification',
+  certify_filing: 'A certification',
+  certify_critique: 'A certification',
+  remove_endorsement: 'A withdrawn certification',
+  follow_user: 'A follow',
+  follow_request_user: 'A follow request',
+  unfollow_user: 'An unfollow',
+  increment_dossier_views: 'A reading',
+  save_filing: 'A saved filing',
+  unsave_filing: 'An unsaved filing',
+  save_stub: 'A saved ticket stub',
+};
+
+/** "A follow made offline was let go to make room.", "3 marks made offline were let go to make room." */
+export const marksLetGo = (dropped: readonly Pick<QueuedMutation, 'type'>[]) =>
+  dropped.length === 1
+    ? `${MARK_NOUN[dropped[0]!.type] ?? 'A mark'} made offline was let go to make room.`
+    : `${dropped.length} marks made offline were let go to make room.`;
+
+/**
+ * While the store is not encrypted (a keystore that failed, or never answered), the queue, its
+ * dead letter and the writes kept for a member live here alone: never on the placeholder's disk,
+ * in plain text. They are sent while the app stays open and lost if it closes first, as the
+ * member is told (KEYSTORE_SILENT_NOTICE).
+ */
+const unwritten = new Map<string, QueuedMutation[]>();
+const onDisk = (): boolean => isStorageEncrypted();
+
+/** Every key the queue holds something under: on disk, or in memory while the store is not encrypted. */
+export function queueKeys(): string[] {
+  return onDisk() ? storage.getAllKeys().filter((k) => k.startsWith(QUEUE_KEY)) : [...unwritten.keys()];
+}
+
 export function readList(key: string): QueuedMutation[] {
   try {
+    if (!onDisk()) return [...(unwritten.get(key) ?? [])];
     const stored = storage.getString(key);
     if (stored) {
       const parsed: unknown = JSON.parse(stored);
@@ -136,7 +175,10 @@ export function readList(key: string): QueuedMutation[] {
 /** An empty list leaves no key behind. */
 export function writeList(key: string, list: readonly QueuedMutation[]): void {
   try {
-    if (list.length === 0) storage.delete(key);
+    if (!onDisk()) {
+      if (list.length === 0) unwritten.delete(key);
+      else unwritten.set(key, [...list]);
+    } else if (list.length === 0) storage.delete(key);
     else storage.set(key, JSON.stringify(list));
   } catch (e) {
     logger.warn(`[OfflineSync] could not write ${key}: ${String(e)}`);
@@ -150,7 +192,8 @@ export function readQueue(): QueuedMutation[] {
 /** The one writer of the live queue: the screens' copy is set here and nowhere else. */
 export function writeQueue(queue: QueuedMutation[]): void {
   try {
-    storage.set(QUEUE_KEY, JSON.stringify(queue));
+    if (onDisk()) storage.set(QUEUE_KEY, JSON.stringify(queue));
+    else unwritten.set(QUEUE_KEY, [...queue]);
     useOfflineQueueStore.setState({ queued: queue });
   } catch (e) {
     logger.warn(`[OfflineSync] could not write the queue: ${String(e)}`);
@@ -179,13 +222,7 @@ export function keepForOwners(writes: readonly QueuedMutation[]): { kept: number
       kept++;
     }
   }
-  for (const [owner, list] of byOwner) {
-    try {
-      storage.set(heldKey(owner), JSON.stringify([...readList(heldKey(owner)), ...list]));
-    } catch (e) {
-      logger.warn(`[OfflineSync] could not keep writes for their member: ${String(e)}`);
-    }
-  }
+  for (const [owner, list] of byOwner) writeList(heldKey(owner), [...readList(heldKey(owner)), ...list]);
   return { kept, lapsed };
 }
 
@@ -211,9 +248,7 @@ export function releaseHeldWrites(memberId: string): QueuedMutation[] {
   const others = live.filter((m) => m.owner !== memberId);
   if (others.length > 0) keepForOwners(others);
   const held = readList(heldKey(memberId));
-  if (held.length > 0) {
-    try { storage.delete(heldKey(memberId)); } catch { /* read again at the next sign-in */ }
-  }
+  if (held.length > 0) writeList(heldKey(memberId), []);
   if (others.length > 0 || held.length > 0) {
     writeQueue([...held, ...live.filter((m) => m.owner === memberId)]);
   }

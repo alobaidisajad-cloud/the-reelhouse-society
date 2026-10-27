@@ -21,6 +21,8 @@
 
 const mockStore = new Map<string, string>();
 jest.mock('@/src/stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: {
     set: (k: string, v: string) => { mockStore.set(k, v); },
     getString: (k: string) => mockStore.get(k),

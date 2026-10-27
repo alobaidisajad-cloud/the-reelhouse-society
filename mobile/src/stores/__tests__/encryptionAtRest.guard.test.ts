@@ -237,10 +237,13 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     const auth = readCode('src/stores/auth.ts');
     expect(auth).toMatch(/storage\.set\(`dirty_profile_/);
     expect(auth).toMatch(/storage\.set\(`dirty_prefs_/);
-    // The queue's one writer, and the writes kept for a member who is not signed in.
+    // The queue's one writer, and the writes kept for a member who is not signed in: never
+    // skipped. While the store is not encrypted they are held in memory instead of written in
+    // plain text (theQueueStaysOffAnOpenDisk), and still sent.
     const queue = readCode('src/utils/queueOwnership.ts');
     expect(queue).toMatch(/storage\.set\(QUEUE_KEY/);
-    expect(queue).toMatch(/storage\.set\(heldKey\(owner\)/);
+    expect(queue).toMatch(/writeList\(heldKey\(owner\)/);
+    expect(queue).toMatch(/unwritten\.set\(QUEUE_KEY/);
     expect(queue).not.toMatch(/setSensitive/);
   });
 });

@@ -44,6 +44,8 @@ jest.mock('expo-crypto', () => { let n = 0; return { randomUUID: () => `id-${++n
 jest.mock('@/src/stores/mmkv-storage', () => {
   const store = new Map<string, string>();
   return {
+    isStorageEncrypted: () => true,
+    withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
     storage: {
       set: jest.fn((k: string, v: string) => store.set(k, v)),
       getString: jest.fn((k: string) => store.get(k)),

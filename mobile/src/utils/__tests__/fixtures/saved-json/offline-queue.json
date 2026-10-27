@@ -1,0 +1,98 @@
+{
+  "written": "build 41 (ae569c0f)",
+  "member": "77777777-7777-4777-8777-777777777777",
+  "saved": {
+    "reelhouse-offline-mutations": [
+      {
+        "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee1",
+        "type": "add_log",
+        "payload": {
+          "user_id": "77777777-7777-4777-8777-777777777777",
+          "film_id": 19,
+          "rating": 4.5,
+          "review": "The machine.",
+          "watched_date": "2026-10-25",
+          "_tempId": "temp-log-1"
+        },
+        "timestamp": 1792999991000
+      },
+      {
+        "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2",
+        "type": "follow_user",
+        "payload": {
+          "user_id": "77777777-7777-4777-8777-777777777777",
+          "target_username": "another_member",
+          "target_user_id": "88888888-8888-4888-8888-888888888888"
+        },
+        "timestamp": 1792999992000
+      },
+      {
+        "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee3",
+        "type": "send_lounge_message",
+        "payload": {
+          "id": "temp-msg-1",
+          "_tempId": "temp-msg-1",
+          "lounge_id": "ffffffff-ffff-4fff-8fff-fffffffffff1",
+          "user_id": "77777777-7777-4777-8777-777777777777",
+          "content": "Who else saw it?",
+          "created_at": "2026-10-26T07:33:20.000Z"
+        },
+        "timestamp": 1792999993000
+      },
+      {
+        "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee4",
+        "type": "add_critique",
+        "payload": {
+          "_tempId": "temp-crit-1",
+          "post_id": "dddddddd-dddd-4ddd-8ddd-ddddddddddd1",
+          "user_id": "77777777-7777-4777-8777-777777777777",
+          "body": "A critique sent offline."
+        },
+        "timestamp": 1792999994000
+      },
+      {
+        "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee5",
+        "type": "cast_vote",
+        "payload": {
+          "post_id": "dddddddd-dddd-4ddd-8ddd-ddddddddddd2",
+          "user_id": "77777777-7777-4777-8777-777777777777",
+          "option_index": 1
+        },
+        "timestamp": 1792999995000
+      },
+      {
+        "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee6",
+        "type": "add_viewing",
+        "payload": {
+          "log_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
+          "viewing_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4",
+          "fields": {
+            "watched_on": "2026-10-25"
+          }
+        },
+        "timestamp": 1792999996000
+      },
+      {
+        "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee7",
+        "type": "remove_log",
+        "payload": {
+          "log_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa5"
+        },
+        "timestamp": 1792999997000
+      }
+    ],
+    "reelhouse-offline-mutations_dead_letter": [
+      {
+        "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee8",
+        "type": "add_watchlist",
+        "payload": {
+          "user_id": "77777777-7777-4777-8777-777777777777",
+          "film_id": 603,
+          "_failReason": "schema: film_id",
+          "_failedAt": "2026-10-26T07:33:20.000Z"
+        },
+        "timestamp": 1792999998000
+      }
+    ]
+  }
+}

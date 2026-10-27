@@ -23,6 +23,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import ComposeScreen from '@/app/dispatch/compose';
+import { draftKey } from '@/src/utils/memberDrafts';
 
 /**
  * The router, with `setParams` — which the shared setup mock does not carry, so
@@ -92,6 +93,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
     delete: (k: string) => { mockStore.delete(k); },
   },
   isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
 }));
 
 jest.mock('@/src/stores/dispatch', () => ({
@@ -501,6 +503,14 @@ describe('amending a dossier that already exists', () => {
     const { getByDisplayValue } = await openEdit();
     expect(getByDisplayValue('The Empty Room')).toBeTruthy();
     expect(getByDisplayValue('The first version.')).toBeTruthy();
+  });
+
+  it('opens on an amend as build 41 kept it, over the published words (savedJsonOpensWhole)', async () => {
+    const { saved } = require('@/src/utils/__tests__/fixtures/saved-json/drafts.json') as { saved: Record<string, unknown> };
+    const envelope = Object.entries(saved).find(([k]) => /_edit_/.test(k))![1];
+    mockStore.set(draftKey('u1', 'edit', 'f1'), JSON.stringify(envelope));
+    const { getByDisplayValue } = await openEdit();
+    expect([getByDisplayValue('Revised'), getByDisplayValue('A second look.')].every(Boolean)).toBe(true);
   });
 
   it('amends rather than filing a second one', async () => {

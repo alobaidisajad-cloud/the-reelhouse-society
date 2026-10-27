@@ -33,6 +33,7 @@ jest.mock('../mmkv-storage', () => {
     zustandMMKVStorageSensitive: kv,
     setSensitive: (k: string, v: string) => { disk.set(k, v); },
     isStorageEncrypted: () => true,
+    withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
     createAsyncMMKVStorage: () => ({
       getItem: (k: string) => { const s = disk.get(k); return s ? JSON.parse(s) : null; },
       setItem: (k: string, v: unknown) => { disk.set(k, JSON.stringify(v)); },

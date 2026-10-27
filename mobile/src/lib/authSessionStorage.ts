@@ -9,14 +9,16 @@
  * With no encrypted store (a broken keystore), SecureStore is used as before.
  */
 import * as SecureStore from 'expo-secure-store';
-import { storage, storageReady, isStorageEncrypted } from '@/src/stores/mmkv-storage';
+import { storage, storageReady, isStorageEncrypted, withinKeystoreDeadline } from '@/src/stores/mmkv-storage';
 import { logger } from '@/src/utils/logger';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 import { stampOwnerlessWrites } from '@/src/utils/queueOwnership';
 
+// Each keystore call has the launch's deadline (mmkv-storage.ts): a keystore that never answers
+// leaves no read, sign-in or sign-out waiting for ever.
 async function readSecure(key: string): Promise<string | null> {
   try {
-    return await SecureStore.getItemAsync(key);
+    return await withinKeystoreDeadline(SecureStore.getItemAsync(key), 'session read');
   } catch (e) {
     logger.error('Failed to get item from SecureStore (device might be locked)', e);
     return null;
@@ -24,7 +26,7 @@ async function readSecure(key: string): Promise<string | null> {
 }
 
 async function forgetSecure(key: string): Promise<void> {
-  try { await SecureStore.deleteItemAsync(key); } catch { /* nothing there to keep */ }
+  try { await withinKeystoreDeadline(SecureStore.deleteItemAsync(key), 'session forget'); } catch { /* nothing there to keep */ }
 }
 
 /** The member a stored session belongs to, or null. */
@@ -79,7 +81,7 @@ export const authSessionStorage = {
     await storageReady();
     const kind = key.endsWith('-code-verifier') ? 'verifier' : 'session';
     if (!isStorageEncrypted()) {
-      await SecureStore.setItemAsync(key, value, { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK });
+      await withinKeystoreDeadline(SecureStore.setItemAsync(key, value, { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK }), 'session write');
       e2eTrace('auth.storage.write', { kind, to: 'secure', bytes: value.length });
       return;
     }

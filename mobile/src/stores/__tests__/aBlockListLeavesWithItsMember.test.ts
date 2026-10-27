@@ -9,6 +9,8 @@
  */
 const mockDeleted: string[] = [];
 jest.mock('@/src/stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: { delete: (k: string) => mockDeleted.push(k), getString: jest.fn(), set: jest.fn() },
   setSensitive: jest.fn(),
 }));

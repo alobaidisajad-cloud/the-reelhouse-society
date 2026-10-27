@@ -169,20 +169,20 @@ describe('offlineQueue', () => {
     // ── 3. Queue cap enforcement ──
 
     describe('queue cap enforcement', () => {
-        it('should cap queue at MAX_QUEUE_SIZE (100)', () => {
+        it('caps the queue at MAX_QUEUE_SIZE (100) by letting the oldest marks go', () => {
             for (let i = 0; i < 110; i++) {
-                enqueueMutation(makeMutation('add_log', { film_id: i }));
+                enqueueMutation(makeMutation('endorse_log', { type: 'endorse_log', target_log_id: `log-${i}` }));
             }
             expect(getQueueLength()).toBe(100);
+            expect(useOfflineQueueStore.getState().queued[0]?.payload.target_log_id).toBe('log-10');
         });
 
-        it('should drop oldest mutations when cap is exceeded', () => {
+        it('never lets a logged film go: records are queued over the cap', () => {
             for (let i = 0; i < 105; i++) {
                 enqueueMutation(makeMutation('add_log', { film_id: i }));
             }
-            // After cap enforcement, queue should have the 100 NEWEST mutations
-            expect(getQueueLength()).toBe(100);
-            expect(useOfflineQueueStore.getState().queued.length).toBe(100);
+            expect(getQueueLength()).toBe(105);
+            expect(useOfflineQueueStore.getState().queued.length).toBe(105);
         });
     });
 

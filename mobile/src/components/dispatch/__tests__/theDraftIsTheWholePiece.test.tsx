@@ -47,6 +47,8 @@ jest.mock('@/src/stores/auth', () => ({
   ),
 }));
 jest.mock('@/src/stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: {
     getString: (k: string) => mockStore.get(k),
     getAllKeys: () => [...mockStore.keys()],
@@ -156,6 +158,17 @@ describe('a restored draft is the whole piece', () => {
     // before filing, and the reader numbers parts off this field.
     expect(getByLabelText(/Part 3 of Ozu/)).toBeTruthy();
     expect(queryByLabelText(/Part 2 of Ozu/)).toBeNull();
+  });
+
+  it('opens one as build 41 saved it: the words, the film and the series (savedJsonOpensWhole)', async () => {
+    const { saved } = require('@/src/utils/__tests__/fixtures/saved-json/drafts.json') as { saved: Record<string, unknown> };
+    const [key, envelope] = Object.entries(saved).find(([k]) => k.endsWith('_dossier'))!;
+    mockUser = { id: key.slice('reelhouse_draft_'.length, -'_dossier'.length), username: 'ana', tier: 'auteur', member_no: 17 };
+    mockStore.set(key, JSON.stringify(envelope));
+    const { getByLabelText, getByDisplayValue } = await mount();
+    expect(getByLabelText(/The film is The Matrix/)).toBeTruthy();
+    expect(getByLabelText(/Murnau/)).toBeTruthy();
+    expect([getByDisplayValue('On Sunrise'), getByDisplayValue('The swamp at night…')].every(Boolean)).toBe(true);
   });
 
   it('leaves the part alone when the series is untouched', async () => {

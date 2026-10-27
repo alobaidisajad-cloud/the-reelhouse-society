@@ -43,6 +43,8 @@ jest.mock('react-native-mmkv', () => ({
 }));
 const deleted: string[] = [];
 jest.mock('../mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: {
     getString: jest.fn(), set: jest.fn(),
     delete: jest.fn((k: string) => { deleted.push(k); }),

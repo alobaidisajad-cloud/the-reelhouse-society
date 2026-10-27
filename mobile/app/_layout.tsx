@@ -13,7 +13,8 @@ import AppBootstrapper from '@/src/providers/AppBootstrapper';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useSocialStore } from '@/src/stores/followStore';
-import { initEncryptedStorage } from '@/src/stores/mmkv-storage';
+import { initEncryptedStorage, KEYSTORE_SILENT_NOTICE, keystoreWasSilent } from '@/src/stores/mmkv-storage';
+import reelToast from '@/src/utils/reelToast';
 import { rehydrateFilmStore } from '@/src/stores/films';
 import { rehydrateSettingsStore } from '@/src/stores/settings';
 import { rehydrateDiscoverStore } from '@/src/stores/discover';
@@ -78,6 +79,8 @@ export default function RootLayout() {
         // Resolve the MMKV encryption key (and run the one-time plaintext→
         // encrypted migration) BEFORE any persisted store reads from disk.
         await initEncryptedStorage();
+        // The keystore never answered: this launch runs without the member's own store, and says so.
+        if (keystoreWasSilent()) reelToast.error(KEYSTORE_SILENT_NOTICE);
         // Persisted stores skip auto-hydration; rehydrate them now that the
         // encrypted instance is live.
         await Promise.all([

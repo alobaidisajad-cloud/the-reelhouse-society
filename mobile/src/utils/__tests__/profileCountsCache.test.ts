@@ -30,6 +30,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
   // itself is covered by its own test in encryptionAtRest.guard.test.ts.
   setSensitive: (k: string, v: string) => { mockStore.set(k, v); },
   isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
 }));
 
 // Deliberately after the mock — the factory runs the moment the module is required.

@@ -10,6 +10,8 @@ import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../offlineQ
 
 const mockStorage = new Map<string, string>();
 jest.mock('../../stores/mmkv-storage', () => ({
+  isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: {
     getString: jest.fn((key: string) => mockStorage.get(key)),
     set: jest.fn((key: string, value: string) => mockStorage.set(key, value)),

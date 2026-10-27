@@ -30,6 +30,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
   setSensitive: (k: string, v: string) => { mockDisk.set(k, v); },
   isStorageEncrypted: () => true,
   storageReady: () => Promise.resolve(),
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   zustandMMKVStorage: { getItem: () => null, setItem: () => undefined, removeItem: () => undefined },
   // The film store's, which a sign-in reaches through the marks ledger.
   createAsyncMMKVStorage: () => ({ getItem: () => null, setItem: () => undefined, removeItem: () => undefined }),

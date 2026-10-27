@@ -14,7 +14,6 @@
 import * as Crypto from 'expo-crypto';
 import { supabase } from '../lib/supabase';
 import { captureError } from '../lib/sentry';
-import { storage } from '../stores/mmkv-storage';
 import { MutationSchemaMap } from '../types/mutations';
 import { logger } from './logger';
 import { applyIdMapToPayload, executeMutation } from './mutationExecutor';
@@ -27,7 +26,7 @@ import { settleDelivered } from '../stores/markCounts';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 import {
     DEAD_LETTER_KEY, QUEUE_KEY, changesMadeOffline, heldKey, heldOwnerOf, keepForOwners, kindOf,
-    readList, readQueue, writeQueue,
+    marksLetGo, queueKeys, readList, readQueue, writeList, writeQueue,
 } from './queueOwnership';
 
 export interface QueuedMutation {
@@ -119,9 +118,7 @@ function addToDeadLetter(failed: readonly QueuedMutation[]): void {
     if (failed.length === 0) return;
     const weekAgo = Date.now() - DEAD_LETTER_DAYS * 24 * 60 * 60 * 1000;
     const kept = readList(DEAD_LETTER_KEY).filter((m) => m.timestamp > weekAgo);
-    try {
-        storage.set(DEAD_LETTER_KEY, JSON.stringify([...kept, ...failed].slice(-DEAD_LETTER_MAX)));
-    } catch { /* the dead letter is for diagnosis: losing it changes nothing sent */ }
+    writeList(DEAD_LETTER_KEY, [...kept, ...failed].slice(-DEAD_LETTER_MAX));
 }
 
 /** Get current queue length (synchronous) */
@@ -140,18 +137,17 @@ export function getQueueLength(): number {
  */
 export function clearOfflineQueue(memberId: string | null): void {
     try {
-        for (const key of storage.getAllKeys()) {
-            if (!key.startsWith(QUEUE_KEY)) continue;
+        for (const key of queueKeys()) {
             const heldFor = heldOwnerOf(key);
             if (heldFor && heldFor !== memberId) continue;
             const others = readList(key).filter((m) => m.owner && m.owner !== memberId);
             if (key === QUEUE_KEY) {
                 keepForOwners(others);
             } else if (others.length > 0) {
-                storage.set(key, JSON.stringify(others));
+                writeList(key, others);
                 continue;
             }
-            storage.delete(key);
+            writeList(key, []);
         }
     } catch (e) {
         logger.warn(`[OfflineSync] could not clear the queue on logout: ${String(e)}`);
@@ -195,14 +191,20 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
         owner,
     };
 
-    // Full: the oldest goes, and the member is told.
+    // Full: the oldest marks go to make room, and the member is told which. Never their words
+    // or a record of what they did: with no mark to let go, the write is queued over the cap.
     if (queue.length >= MAX_QUEUE_SIZE) {
-        const droppedCount = queue.length - MAX_QUEUE_SIZE + 1;
-        const dropped = queue.slice(0, droppedCount);
-        queue = queue.slice(droppedCount);
-        const droppedTypes = [...new Set(dropped.map(m => m.type))].join(', ');
-        logger.warn(`[OfflineSync] Queue cap reached (${MAX_QUEUE_SIZE}). Dropped ${droppedCount} oldest: [${droppedTypes}]`);
-        reelToast.error(`Offline queue full — oldest action dropped.`);
+        const over = queue.length - MAX_QUEUE_SIZE + 1;
+        const letGo = new Set(queue.filter((m) => kindOf(m) === 'toggle').slice(0, over).map((m) => m.id));
+        const dropped = queue.filter((m) => letGo.has(m.id));
+        queue = queue.filter((m) => !letGo.has(m.id));
+        if (dropped.length > 0) {
+            const droppedTypes = [...new Set(dropped.map(m => m.type))].join(', ');
+            logger.warn(`[OfflineSync] Queue cap reached (${MAX_QUEUE_SIZE}). Let go ${dropped.length} oldest mark(s): [${droppedTypes}]`);
+            reelToast.error(marksLetGo(dropped));
+        } else {
+            logger.warn(`[OfflineSync] Queue cap reached (${MAX_QUEUE_SIZE}) with no mark to let go: queued over it.`);
+        }
     }
 
     queue.push(newMutation);

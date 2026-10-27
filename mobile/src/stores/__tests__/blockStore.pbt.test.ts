@@ -21,6 +21,7 @@ jest.mock('../mmkv-storage', () => ({
   // Block lists are member content — written through setSensitive now.
   setSensitive: jest.fn((key: string, value: string) => { mockStorage[key] = value; }),
   isStorageEncrypted: () => true,
+  withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
 }));
 
 const mockUser = { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', username: 'testuser', role: 'cinephile' };

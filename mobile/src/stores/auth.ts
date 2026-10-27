@@ -79,7 +79,7 @@ let _logoutInFlight: Promise<void> | null = null;
  * carry them). An older install may hold the bare 'true' of an earlier
  * version, its values in the cache: read as it was, never discarded.
  */
-function readPendingPrefs(userId: string): Record<string, unknown> | null {
+export function readPendingPrefs(userId: string): Record<string, unknown> | null {
   const raw = storage.getString(`dirty_prefs_${userId}`);
   if (!raw) return null;
 
@@ -97,6 +97,19 @@ function readPendingPrefs(userId: string): Record<string, unknown> | null {
     const prefs = JSON.parse(raw);
     return prefs && typeof prefs === 'object' ? prefs as Record<string, unknown> : null;
   } catch { return null; }
+}
+
+/**
+ * The member's profile edits the server has not yet confirmed (`dirty_profile_<id>`),
+ * or none: a restore lays them over the server's copy, so it never reverts one in flight.
+ */
+export function readPendingProfile(userId: string): Partial<User> {
+  const raw = storage.getString(`dirty_profile_${userId}`);
+  if (!raw) return {};
+  try {
+    const edits: unknown = JSON.parse(raw);
+    return edits && typeof edits === 'object' ? edits as Partial<User> : {};
+  } catch { return {}; }
 }
 
 /**
@@ -250,11 +263,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           const finalPrefs = stillPending ?? profile.preferences;
           // Profile edits updateUser has not yet had confirmed, so this restore
           // (post-purchase polling runs it) never reverts one in flight.
-          let pendingProfileEdits: Partial<User> = {};
-          const dirtyProfile = storage.getString(`dirty_profile_${session.user.id}`);
-          if (dirtyProfile) {
-            try { pendingProfileEdits = JSON.parse(dirtyProfile); } catch {}
-          }
+          const pendingProfileEdits = readPendingProfile(session.user.id);
           // The cached following list is kept, never replaced by an empty one.
           // The rank history is not in the profile; the one already known stands until readRankHistory answers.
           const knownHistory = get().user?.id === session.user.id ? get().user?.entitlement_source : undefined;

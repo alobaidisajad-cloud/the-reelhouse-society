@@ -1,0 +1,10 @@
+{
+  "written": "new since build 41: the shape this build writes",
+  "saved": {
+    "sign_out_owed": {
+      "refreshToken": "refresh-token-of-the-ended-session",
+      "userId": "77777777-7777-4777-8777-777777777777",
+      "pushToken": "ExponentPushToken[test]"
+    }
+  }
+}
