@@ -23,6 +23,8 @@ import { BAD_CREDENTIALS } from '@/src/utils/authSignals';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { AuthService } from '@/src/services/AuthService';
 import { supabase } from '@/src/lib/supabase';
+import { captureAuthRefusal } from '@/src/lib/sentry';
+import { isNetworkError } from '@/src/utils/networkError';
 import { endOtherSessions } from '@/src/lib/endSession';
 import { isAuteurPlusTier, isArchivistPlusTier, getDisplayTier } from '@/src/utils/tier';
 import { firstPrivilegesOf } from '@/src/constants/membership';
@@ -331,6 +333,7 @@ export function PasswordChangePanel() {
       });
       // Only a refusal of the password says the password is wrong.
       if (verifyError) {
+        if (!isNetworkError(verifyError)) captureAuthRefusal('sign_in');
         throw new Error(verifyError.message.includes(BAD_CREDENTIALS) ? 'Incorrect current cipher.' : mapAuthError(verifyError.message).message);
       }
 

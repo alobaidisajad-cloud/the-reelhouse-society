@@ -8,6 +8,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/src/lib/supabase';
+import { captureAuthRefusal } from '@/src/lib/sentry';
 import { doorOf, type Door, type Factor } from '@/src/utils/secondKey';
 
 export type KeyState = { kind: 'checking' } | { kind: 'failed' } | ({ kind: 'door' } & Door);
@@ -73,7 +74,10 @@ export function useSecondKey(userId: string | undefined) {
   const give = useCallback(async (factorId: string, code: string): Promise<CodeRefusal | null> => {
     try {
       const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
-      if (error) return error.code === 'mfa_verification_failed' ? 'wrong' : 'unchecked';
+      if (error) {
+        if (error.code === 'mfa_verification_failed') captureAuthRefusal('code');
+        return error.code === 'mfa_verification_failed' ? 'wrong' : 'unchecked';
+      }
     } catch {
       return 'unchecked';
     }

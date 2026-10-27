@@ -52,6 +52,7 @@ const TAG_KEYS: Record<string, (v: unknown) => boolean> = {
   path: (v) => typeof v === 'string' && HOUSE_PATH.test(v),
   boot_complete: (v) => v === 'true' || v === 'false' || typeof v === 'boolean',
   tier: (v) => typeof v === 'string' && LABEL.test(v),
+  auth_refused: (v) => v === 'sign_in' || v === 'refresh' || v === 'code',
 };
 const SDK_TAG = /^(event\.|os(\.|$)|device(\.|$)|app(\.|$)|expo|expo_router\.|runtime|mechanism|level$|release$|dist$|environment$|handled$)/;
 

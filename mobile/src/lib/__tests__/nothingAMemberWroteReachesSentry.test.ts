@@ -115,6 +115,27 @@ describe('the reporting itself', () => {
     expect(kept === null || leaks(kept).length === 0).toBe(true);
   });
 
+  it('each auth refusal is one report, tagged by its kind alone, and the tag survives the allow-list', () => {
+    const tags: [string, string][] = [];
+    Sentry.withScope!.mockImplementation((cb: (s: object) => void) => cb({ setLevel: () => {}, setExtras: () => {}, setTag: (k: string, v: string) => tags.push([k, v]) }));
+    for (const kind of ['sign_in', 'refresh', 'code'] as const) mod.captureAuthRefusal(kind);
+    expect(Sentry.captureMessage!.mock.calls).toEqual([['[auth] refused'], ['[auth] refused'], ['[auth] refused']]);
+    expect(tags).toEqual([['auth_refused', 'sign_in'], ['auth_refused', 'refresh'], ['auth_refused', 'code']]);
+    expect(scrubEvent({ tags: { auth_refused: 'code' } }).tags).toEqual({ auth_refused: 'code' });
+    expect(scrubEvent({ tags: { auth_refused: HANDLE } }).tags).toEqual({});
+  });
+
+  it('a session ended without the member\'s hand is reported as a refused refresh', async () => {
+    const { answerAuthEvent } = require('../../stores/authEvents') as typeof import('../../stores/authEvents');
+    const { useAuthStore } = require('../../stores/auth') as typeof import('../../stores/auth');
+    const logout = jest.fn(async () => {});
+    useAuthStore.setState({ isAuthenticated: true, logout } as never);
+    const refused = jest.spyOn(require('../sentry'), 'captureAuthRefusal');
+    await answerAuthEvent('SIGNED_OUT', false);
+    expect([refused.mock.calls, logout.mock.calls.length]).toEqual([[['refresh']], 1]);
+    refused.mockRestore();
+  });
+
   it('never names the member: no user, no id', () => {
     mod.setSentryUser({ id: MEMBER, username: HANDLE, role: 'archivist' });
     expect(Sentry.setUser!.mock.calls).toEqual([[null]]);

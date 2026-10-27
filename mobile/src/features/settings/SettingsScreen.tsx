@@ -23,6 +23,8 @@ import { useAuthStore } from '@/src/stores/auth';
 import { profileRead } from '@/src/utils/profileRead';
 import { useSettingsStore } from '@/src/stores/settings';
 import { supabase } from '@/src/lib/supabase';
+import { captureAuthRefusal } from '@/src/lib/sentry';
+import { isNetworkError } from '@/src/utils/networkError';
 import reelToast from '@/src/utils/reelToast';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useUpdateUser } from '@/src/hooks/useUpdateUser';
@@ -223,7 +225,10 @@ export function SettingsScreen() {
     setOtpError(null);
     try {
       const { error } = await supabase.auth.verifyOtp({ email: user.email, token: otpCode, type: 'email' });
-      if (error) throw error;
+      if (error) {
+        if (!isNetworkError(error)) captureAuthRefusal('code');
+        throw error;
+      }
       setOtpModalVisible(false);
       setOtpCode('');
       await executePendingOtpAction();

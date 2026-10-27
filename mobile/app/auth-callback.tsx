@@ -4,6 +4,8 @@ import { Text } from '@/src/components/text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { nav } from '@/src/utils/typedRouter';
 import { supabase } from '@/src/lib/supabase';
+import { captureAuthRefusal } from '@/src/lib/sentry';
+import { isNetworkError } from '@/src/utils/networkError';
 import { useAuthStore } from '@/src/stores/auth';
 import { storage } from '@/src/stores/mmkv-storage';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
@@ -91,7 +93,10 @@ export default function AuthCallbackScreen() {
         token_hash: tokenHash,
         type: type as EmailOtpType,
       });
-      if (error) throw error;
+      if (error) {
+        if (!isNetworkError(error)) captureAuthRefusal('code');
+        throw error;
+      }
       if (data?.session) return { session: data.session, type };
     }
 

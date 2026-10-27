@@ -5,12 +5,15 @@
  */
 import type { AuthChangeEvent } from '@supabase/supabase-js';
 import { storage, useAuthStore } from './auth';
+import { captureAuthRefusal } from '../lib/sentry';
 
 export async function answerAuthEvent(event: AuthChangeEvent, hasSessionUser: boolean): Promise<void> {
   if (event === 'SIGNED_OUT') {
     // Still signed in here, so not by the member's own hand: their own sign-out
     // clears the store before it ends the session.
     if (useAuthStore.getState().isAuthenticated) {
+      // The session's refresh was refused (or it ended everywhere): counted for the house's alert.
+      captureAuthRefusal('refresh');
       await useAuthStore.getState().logout({ endedElsewhere: true });
     }
   } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY') {

@@ -71,6 +71,7 @@ jest.mock('../../lib/sentry', () => ({
   setSentryUser: jest.fn(),
   addBreadcrumb: jest.fn(),
   captureError: jest.fn(),
+  captureAuthRefusal: jest.fn(),
 }));
 
 jest.mock('../../utils/withRetry', () => ({

@@ -77,7 +77,7 @@ jest.mock('@/src/utils/reelToast', () => {
 });
 jest.mock('@/src/lib/revenueCat', () => ({ identifyUser: jest.fn(), logoutRevenueCat: jest.fn() }));
 jest.mock('@/src/lib/pushNotifications', () => ({ removePushToken: jest.fn(() => Promise.resolve(true)) }));
-jest.mock('@/src/lib/sentry', () => ({ setSentryUser: jest.fn(), addBreadcrumb: jest.fn(), captureError: jest.fn(), captureWarning: jest.fn() }));
+jest.mock('@/src/lib/sentry', () => ({ setSentryUser: jest.fn(), addBreadcrumb: jest.fn(), captureError: jest.fn(), captureWarning: jest.fn(), captureAuthRefusal: jest.fn() }));
 jest.mock('@/src/lib/queryClient', () => ({ queryClient: { clear: jest.fn(), invalidateQueries: jest.fn() } }));
 jest.mock('@/src/stores/notificationStore', () => ({ teardownNotificationRealtime: jest.fn() }));
 jest.mock('@/src/stores/domain/socialSlice', () => ({ hydrateFollowing: jest.fn() }));

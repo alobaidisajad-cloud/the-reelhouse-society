@@ -6,7 +6,8 @@ import { rememberRequestedHandle, clearRequestedHandle } from '../utils/handleNo
 import { clearHandleHistory } from '../utils/handleHistory';
 import { clearAllDrafts, countDrafts } from '../utils/memberDrafts';
 import { keptAfterSignOutElsewhere, keptFromBefore } from '../utils/keptOnThisPhone';
-import { captureError, setSentryUser } from '../lib/sentry';
+import { captureAuthRefusal, captureError, setSentryUser } from '../lib/sentry';
+import { isNetworkError } from '../utils/networkError';
 import type { User as AuthUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { endSessionHere } from '../lib/endSession';
@@ -320,7 +321,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       const { data: fnData, error: fnError } = await supabase.functions.invoke('sign-in-with-username', {
         body: { username: identifier.replace(/^@/, ''), password },
       });
-      if (fnError) throw usernameRefusal(fnError);
+      if (fnError) {
+        if (!isNetworkError(fnError)) captureAuthRefusal('sign_in');
+        throw usernameRefusal(fnError);
+      }
       if (!fnData?.access_token || !fnData?.refresh_token) throw usernameRefusal(null);
       const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
         access_token: fnData.access_token,
@@ -331,7 +335,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       authedUser = sessionData.user;
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email: identifier, password });
-      if (error) throw error;
+      if (error) {
+        if (!isNetworkError(error)) captureAuthRefusal('sign_in');
+        throw error;
+      }
       authedUser = data.user;
     }
 

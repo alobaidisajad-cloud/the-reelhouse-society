@@ -235,6 +235,21 @@ export function addBreadcrumb(message: string, category: string = 'navigation') 
   } catch { /* telemetry must never break the caller — see captureError */ }
 }
 
+/** The auth refusals the house's alert counts (P3.7): a sign-in, a token refresh, a code. */
+export type AuthRefusal = 'sign_in' | 'refresh' | 'code';
+
+/** One report for each refusal, tagged by its kind alone: no email, no handle, no member. */
+export function captureAuthRefusal(kind: AuthRefusal) {
+  if (!SENTRY_DSN) return;
+  try {
+    Sentry.withScope((scope) => {
+      scope.setLevel('warning');
+      scope.setTag('auth_refused', kind);
+      Sentry.captureMessage('[auth] refused');
+    });
+  } catch { /* telemetry must never break the caller — see captureError */ }
+}
+
 /** The boot finished: tagged on what follows in this session. */
 export function markBootComplete() {
   if (!SENTRY_DSN) return;
