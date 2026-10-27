@@ -345,7 +345,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         e2eTrace('dispatch.read', { rows: rows.length, parseMs: Date.now() - parsing });
         set({ filings, hasMore: gotFullPage(rows.length), droppedRows: dropped, newCount: 0, pageState: 'read' });
         if (dropped > 0) {
-          logger.warn(`[dispatch] dropped ${dropped} malformed filing row(s)`);
+          logger.warn('[dispatch] dropped malformed filing rows', dropped);
         }
         // Not waited for: the filings are the page, and each mark is drawn unknown until its
         // read answers (marksKnown). Waited for, the page stood 1.3 s longer (speed lab

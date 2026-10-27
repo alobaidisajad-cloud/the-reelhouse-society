@@ -31,7 +31,8 @@ describe('#48 — an unrecognised tier is reported, not swallowed', () => {
   it('warns for a value nobody expects', () => {
     normalizeTier('archivistt');
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0][0]).toContain('archivistt');
+    // Named after the fixed line, where it stays on the phone (P4.44).
+    expect(warn.mock.calls[0][1]).toBe('archivistt');
   });
 
   it('warns for a tier that was removed from the product', () => {
@@ -104,7 +105,7 @@ describe('the real-world case that prompted this', () => {
     // still resolves to cinephile exactly as before.
     expect(resolveTier({ tier: 'projectionist', role: 'admin', is_founding: false })).toBe('cinephile');
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0][0]).toContain('projectionist');
+    expect(warn.mock.calls[0][1]).toBe('projectionist');
   });
 
   it('a paying auteur is unaffected and silent', () => {

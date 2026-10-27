@@ -165,7 +165,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       }
 
       logger.error('[BlockStore] blockUser failed:', err);
-      captureError(err, { action: 'blockUser', targetId });
+      captureError(err, { action: 'blockUser' });
       reelToast.error('Failed to block user. Try again.');
     }
   },
@@ -222,7 +222,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       }
 
       logger.error('[BlockStore] unblockUser failed:', err);
-      captureError(err, { action: 'unblockUser', targetId });
+      captureError(err, { action: 'unblockUser' });
       reelToast.error('Failed to unblock user. Try again.');
     }
   },
@@ -294,7 +294,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       }
 
       logger.error('[BlockStore] muteUser failed:', err);
-      captureError(err, { action: 'muteUser', targetId });
+      captureError(err, { action: 'muteUser' });
       reelToast.error('Failed to mute user. Try again.');
     }
   },
@@ -351,7 +351,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       }
 
       logger.error('[BlockStore] unmuteUser failed:', err);
-      captureError(err, { action: 'unmuteUser', targetId });
+      captureError(err, { action: 'unmuteUser' });
       reelToast.error('Failed to unmute user. Try again.');
     }
   },
@@ -368,7 +368,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       if (!Array.isArray(parsed.blocked) || !Array.isArray(parsed.muted)) {
         // Corrupted data — clear and proceed empty
         storage.delete(MMKV_KEY(userId));
-        captureError(new Error('[BlockStore] Corrupted cache — cleared'), { userId });
+        captureError(new Error('[BlockStore] Corrupted cache — cleared'));
         return;
       }
 
@@ -382,7 +382,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
     } catch (e) {
       // Corrupted JSON — clear key, log to Sentry, proceed empty
       storage.delete(MMKV_KEY(userId));
-      captureError(e, { action: 'hydrateFromCache', userId });
+      captureError(e, { action: 'hydrateFromCache' });
       logger.warn('[BlockStore] hydrateFromCache failed — cleared corrupted cache:', e);
     }
   },

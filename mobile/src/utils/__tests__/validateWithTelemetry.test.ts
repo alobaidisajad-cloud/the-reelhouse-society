@@ -85,15 +85,13 @@ describe('validateWithTelemetry', () => {
 
     // Sentry captureWarning called exactly once with correct context
     expect(mockCaptureWarning).toHaveBeenCalledTimes(1);
-    expect(mockCaptureWarning).toHaveBeenCalledWith(
-      expect.stringContaining('TestService.getMixed'),
-      expect.objectContaining({
-        context: 'TestService.getMixed',
-        totalRows: 4,
-        invalidCount: 2,
-        ratio: 0.5,
-      }),
-    );
+    // A fixed line; the where and the counts as typed values (P4.44).
+    expect(mockCaptureWarning).toHaveBeenCalledWith('[Validation] rows invalid', {
+      context: 'TestService.getMixed',
+      totalRows: 4,
+      invalidCount: 2,
+      ratio: 0.5,
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────
@@ -156,8 +154,7 @@ describe('validateWithTelemetry', () => {
   // ─────────────────────────────────────────────────────────────────
   // 8. Sample errors capped at 3
   // ─────────────────────────────────────────────────────────────────
-  it('caps sample errors at 3 even with many invalid rows', () => {
-    // Generate 10 invalid rows
+  it('sends no sample of what failed: a validation message can echo a value (P4.44)', () => {
     const data = Array.from({ length: 10 }, (_, i) => ({ id: i, name: i * 2 }));
 
     validateWithTelemetry({
@@ -167,9 +164,7 @@ describe('validateWithTelemetry', () => {
     });
 
     expect(mockCaptureWarning).toHaveBeenCalledTimes(1);
-    const callArgs = mockCaptureWarning.mock.calls[0][1];
-    expect(callArgs.sampleIssues).toBeDefined();
-    expect(callArgs.sampleIssues.length).toBeLessThanOrEqual(3);
+    expect(mockCaptureWarning.mock.calls[0][1]).not.toHaveProperty('sampleIssues');
   });
 
   // ─────────────────────────────────────────────────────────────────
@@ -234,50 +229,16 @@ describe('reportValidationTelemetry', () => {
 
     // Logger called in __DEV__ mode
     expect(mockLoggerWarn).toHaveBeenCalledTimes(1);
-    expect(mockLoggerWarn).toHaveBeenCalledWith(
-      expect.stringContaining('LogService.getComments'),
-      expect.anything(),
-    );
+    // On the phone's console: the line, then where and how many.
+    expect(mockLoggerWarn.mock.calls[0].slice(0, 2)).toEqual(['[validate] rows invalid', 'LogService.getComments']);
 
-    // Sentry captureWarning called with correct context
+    // To Sentry: a fixed line and typed values, never the issues themselves.
     expect(mockCaptureWarning).toHaveBeenCalledTimes(1);
-    expect(mockCaptureWarning).toHaveBeenCalledWith(
-      expect.stringContaining('LogService.getComments'),
-      expect.objectContaining({
-        context: 'LogService.getComments',
-        totalRows: 20,
-        invalidCount: 5,
-        ratio: 0.25,
-        sampleIssues: expect.any(Array),
-      }),
-    );
-
-    // sampleIssues capped at 3
-    const sentryContext = mockCaptureWarning.mock.calls[0][1];
-    expect(sentryContext.sampleIssues.length).toBeLessThanOrEqual(3);
-  });
-
-  // ─────────────────────────────────────────────────────────────────
-  // 8 (for reportValidationTelemetry). Samples capped at 3
-  // ─────────────────────────────────────────────────────────────────
-  it('caps sampleIssues at 3 even when more sampleErrors are provided', () => {
-    const sampleErrors: z.ZodIssue[] = [
-      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'err1' },
-      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'err2' },
-      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'err3' },
-      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'err4' },
-      { code: 'invalid_type', expected: 'string', path: ['id'], message: 'err5' },
-    ];
-
-    reportValidationTelemetry({
-      context: 'TestService.capped',
-      totalRows: 100,
-      invalidCount: 10,
-      sampleErrors,
+    expect(mockCaptureWarning).toHaveBeenCalledWith('[Validation] rows invalid', {
+      context: 'LogService.getComments',
+      totalRows: 20,
+      invalidCount: 5,
+      ratio: 0.25,
     });
-
-    const sentryContext = mockCaptureWarning.mock.calls[0][1];
-    expect(sentryContext.sampleIssues).toHaveLength(3);
-    expect(sentryContext.sampleIssues).toEqual(['err1', 'err2', 'err3']);
   });
 });

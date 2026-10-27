@@ -59,10 +59,8 @@ export function normalizeTier(tierStr?: string | null): ReelHouseTier {
 
   if (!EXPECTED_NON_TIER_VALUES.has(t) && !reportedUnknownValues.has(t)) {
     reportedUnknownValues.add(t);
-    logger.warn(
-      `[tier] Unrecognised value "${tierStr}" treated as cinephile. ` +
-      `If this belongs to a paying member they have been silently downgraded to free.`
-    );
+    // A fixed line, the value after it (kept on the phone).
+    logger.warn('[tier] an unrecognised value was treated as cinephile: a paying member would be downgraded to free', tierStr);
   }
 
   return 'cinephile';

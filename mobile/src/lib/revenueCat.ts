@@ -44,7 +44,7 @@ export async function initRevenueCat(userId?: string): Promise<void> {
 
   if (!apiKey) {
     // No key: nothing can be sold. Said to Sentry, so the build is not silent.
-    logger.warn('[revenueCat] No API key configured — monetization disabled', { platform: Platform.OS });
+    logger.warn('[revenueCat] No API key configured — monetization disabled', Platform.OS);
     return;
   }
 
@@ -170,7 +170,7 @@ export async function reconcileRank(): Promise<RankReconciliation> {
   try {
     const { data, error } = await supabase.rpc('relinquish_rank');
     if (error) {
-      logger.warn(`[revenueCat] reconcileRank: ${error.message}`);
+      logger.warn('[revenueCat] reconcileRank failed', error);
       return 'unknown';
     }
     const row = Array.isArray(data) ? data[0] : data;
@@ -182,7 +182,7 @@ export async function reconcileRank(): Promise<RankReconciliation> {
     }
     return 'already-current'; // the store held no grant of theirs to end
   } catch (e) {
-    logger.warn(`[revenueCat] reconcileRank: ${String(e)}`);
+    logger.warn('[revenueCat] reconcileRank failed', e);
     return 'unknown';
   }
 }

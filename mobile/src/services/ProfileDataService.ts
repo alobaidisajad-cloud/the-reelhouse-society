@@ -580,7 +580,7 @@ export const ProfileDataService = {
         await new Promise(r => setTimeout(r, 0));
 
         if (validBatch.length < batch.length) {
-          logger.warn(`[ProfileDataService] Dropped ${batch.length - validBatch.length} invalid analytics logs`);
+          logger.warn('[ProfileDataService] dropped invalid analytics logs', batch.length - validBatch.length);
         }
         allRows.push(...validBatch);
 

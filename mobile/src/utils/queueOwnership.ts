@@ -197,7 +197,7 @@ export function writeQueue(queue: QueuedMutation[]): boolean {
     useOfflineQueueStore.setState({ queued: queue });
     return true;
   } catch (e) {
-    logger.warn(`[OfflineSync] could not write the queue: ${String(e)}`);
+    logger.warn('[OfflineSync] could not write the queue', e);
     return false;
   }
 }
@@ -216,7 +216,7 @@ export function keepForOwners(writes: readonly QueuedMutation[]): { kept: number
   let lapsed = 0;
   for (const m of writes) {
     if (!m.owner) {
-      logger.warn(`[OfflineSync] erased an unowned ${m.type}, unsent`);
+      logger.warn('[OfflineSync] erased an unowned write, unsent', m.type);
       lapsed++;
     } else if (kindOf(m) === 'toggle') {
       lapsed++;
@@ -295,7 +295,7 @@ export function stampOwnerlessWrites(sessionUserId: string | null): void {
     else writeList(key, next);
   }
   if (untraced > 0) {
-    logger.warn(`[OfflineSync] ${untraced} write(s) from an older build had no member; erased unsent`);
+    logger.warn('[OfflineSync] writes from an older build had no member: erased unsent', untraced);
     reelToast.error(`${changesMadeOffline(untraced)} on an earlier version of the app named no member, `
       + `and ${untraced === 1 ? 'was' : 'were'} not sent.`);
   }

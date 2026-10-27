@@ -51,19 +51,11 @@ export function reportValidationTelemetry(options: TelemetryOptions): void {
   const ratio = invalidCount / totalRows;
 
   if (__DEV__) {
-    logger.warn(
-      `[${context}] ${invalidCount}/${totalRows} rows invalid (${(ratio * 100).toFixed(1)}%)`,
-      sampleErrors?.slice(0, 2),
-    );
+    logger.warn('[validate] rows invalid', context, invalidCount, totalRows, (ratio * 100).toFixed(1), sampleErrors?.slice(0, 2));
   }
 
-  captureWarning(`[Validation] ${context}: ${invalidCount}/${totalRows} invalid`, {
-    context,
-    totalRows,
-    invalidCount,
-    ratio,
-    sampleIssues: sampleErrors?.slice(0, 3).map(e => e.message),
-  });
+  // A fixed line and typed values (sentryScrub's list): a validation message can echo a value.
+  captureWarning('[Validation] rows invalid', { context, totalRows, invalidCount, ratio });
 }
 
 // ── Full Validate + Report ──

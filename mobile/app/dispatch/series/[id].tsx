@@ -102,7 +102,7 @@ export default function SeriesScreen() {
         // rows in hand is the only honest default: it claims nothing extra.
         setTotal(count ?? got.length);
       } catch (e) {
-        logger.warn(`[series] ${e instanceof Error ? e.message : String(e)}`);
+        logger.warn('[series] read failed', e);
         if (!cancelled) { setParts([]); setFailed(true); }
       } finally {
         if (!cancelled) setLoading(false);

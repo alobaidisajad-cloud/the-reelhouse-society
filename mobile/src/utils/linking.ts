@@ -44,7 +44,7 @@ export function normalizeSocialUrl(raw: string | null | undefined): string | nul
  */
 export async function safeOpenURL(url: string, fallbackMessage?: string): Promise<boolean> {
   if (!isSafeDeepLinkUrl(url)) {
-    logger.warn('Refused to open URL with disallowed scheme', { url });
+    logger.warn('[linking] refused a link with a disallowed scheme');
     Alert.alert(
       'Link Unavailable',
       fallbackMessage || 'This link uses an unsupported or unsafe address and cannot be opened.',
@@ -67,7 +67,7 @@ export async function safeOpenURL(url: string, fallbackMessage?: string): Promis
       return false;
     }
   } catch (error) {
-    logger.error('Failed to open URL', { url, error });
+    logger.error('[linking] the link could not be opened', error);
     Alert.alert(
       'Error',
       'An unexpected error occurred while trying to open this link.',

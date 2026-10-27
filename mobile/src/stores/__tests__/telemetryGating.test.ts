@@ -492,7 +492,7 @@ describe('follows — the last uncovered store paths', () => {
         mockDbQueue = [profileRow, empty, { data: null, error: GENUINE_DEFECT }];
         await followUser('alpha');
         expect(captureError).toHaveBeenCalledWith(
-            expect.anything(), expect.objectContaining({ scope: 'socialSlice', targetUsername: 'alpha' }),
+            expect.anything(), { scope: 'socialSlice' },
         );
     });
 
@@ -507,7 +507,7 @@ describe('follows — the last uncovered store paths', () => {
         mockDbQueue = [profileRow, { data: null, error: GENUINE_DEFECT }];
         await unfollowUser('charlie');
         expect(captureError).toHaveBeenCalledWith(
-            expect.anything(), expect.objectContaining({ scope: 'socialSlice', targetUsername: 'charlie' }),
+            expect.anything(), { scope: 'socialSlice' },
         );
     });
 

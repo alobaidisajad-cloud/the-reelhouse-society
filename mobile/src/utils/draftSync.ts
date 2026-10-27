@@ -72,10 +72,10 @@ export async function pushDraft<T>(
         { user_id: userId, kind, scope, payload: data, saved_at: savedAt },
         { onConflict: 'user_id,kind,scope' },
       );
-    if (error) { logger.warn(`[draftSync] push: ${error.message}`); return false; }
+    if (error) { logger.warn('[draftSync] push failed', error); return false; }
     return true;
   } catch (e) {
-    logger.warn(`[draftSync] push: ${String(e)}`);
+    logger.warn('[draftSync] push failed', e);
     return false;
   }
 }
@@ -125,9 +125,9 @@ export async function dropDraft(
       .from('member_drafts')
       .delete()
       .eq('user_id', userId).eq('kind', kind).eq('scope', scope);
-    if (error) logger.warn(`[draftSync] drop refused: ${error.message}`);
+    if (error) logger.warn('[draftSync] drop refused', error);
   } catch (e) {
-    logger.warn(`[draftSync] drop: ${String(e)}`);
+    logger.warn('[draftSync] drop failed', e);
   }
 }
 

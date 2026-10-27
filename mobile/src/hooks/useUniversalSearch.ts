@@ -180,12 +180,12 @@ export function useUniversalSearch(query: string) {
       // hiccups. Only a total failure is reported as one — see below.
       const failed = (label: string, res: PromiseSettledResult<{ error?: unknown } | unknown>) => {
         if (res.status === 'rejected') {
-          logger.error(`[useUniversalSearch] ${label} rejected:`, res.reason);
+          logger.error('[useUniversalSearch] a source was rejected', label, res.reason);
           return true;
         }
         const err = (res.value as { error?: unknown } | null)?.error;
         if (err) {
-          logger.error(`[useUniversalSearch] ${label} failed:`, err);
+          logger.error('[useUniversalSearch] a source failed', label, err);
           return true;
         }
         return false;

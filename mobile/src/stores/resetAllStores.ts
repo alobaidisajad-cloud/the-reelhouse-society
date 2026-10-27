@@ -56,6 +56,6 @@ export async function resetAllStores(previousUserId: string | null = null): Prom
     // may have left the last member's records on the device for the next one.
     const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
     if (failed.length > 0) {
-        logger.warn(`[resetAllStores] ${failed.length}/${results.length} handlers failed`, failed.map((r) => r.reason));
+        logger.warn('[resetAllStores] some handlers failed', failed.length, results.length, failed.map((r) => r.reason));
     }
 }

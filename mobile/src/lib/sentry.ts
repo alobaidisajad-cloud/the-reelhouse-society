@@ -235,5 +235,10 @@ export function addBreadcrumb(message: string, category: string = 'navigation') 
   } catch { /* telemetry must never break the caller — see captureError */ }
 }
 
-// Sentry itself, for a caller that tags the session (AppBootstrapper).
-export { Sentry };
+/** The boot finished: tagged on what follows in this session. */
+export function markBootComplete() {
+  if (!SENTRY_DSN) return;
+  try {
+    Sentry.setTag('boot_complete', 'true');
+  } catch { /* telemetry must never break the caller — see captureError */ }
+}

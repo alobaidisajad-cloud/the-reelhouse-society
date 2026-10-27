@@ -150,7 +150,7 @@ export function clearOfflineQueue(memberId: string | null): void {
             writeList(key, []);
         }
     } catch (e) {
-        logger.warn(`[OfflineSync] could not clear the queue on logout: ${String(e)}`);
+        logger.warn('[OfflineSync] could not clear the queue on logout', e);
     }
     writeQueue([]);
 }
@@ -184,7 +184,7 @@ export function getOfflineQueue(): QueuedMutation[] {
 export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp' | 'owner'>): boolean {
     const owner = signedInMember();
     if (!owner) {
-        logger.warn(`[OfflineSync] ${mutation.type} not queued: nobody is signed in.`);
+        logger.warn('[OfflineSync] not queued: nobody is signed in', mutation.type);
         return false;
     }
     let queue = readQueue();
@@ -205,10 +205,10 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
         queue = queue.filter((m) => !letGo.has(m.id));
         if (dropped.length > 0) {
             const droppedTypes = [...new Set(dropped.map(m => m.type))].join(', ');
-            logger.warn(`[OfflineSync] Queue cap reached (${MAX_QUEUE_SIZE}). Let go ${dropped.length} oldest mark(s): [${droppedTypes}]`);
+            logger.warn('[OfflineSync] Queue cap reached: let go the oldest marks', MAX_QUEUE_SIZE, dropped.length, droppedTypes);
             reelToast.error(marksLetGo(dropped));
         } else {
-            logger.warn(`[OfflineSync] Queue cap reached (${MAX_QUEUE_SIZE}) with no mark to let go: queued over it.`);
+            logger.warn('[OfflineSync] Queue cap reached with no mark to let go: queued over it', MAX_QUEUE_SIZE);
         }
     }
 
@@ -275,7 +275,7 @@ async function sendOnce(): Promise<void> {
         const live = readQueue();
         const others = live.filter((m) => m.owner !== authenticatedUserId);
         if (others.length > 0) {
-            logger.warn(`[OfflineSync] ${others.length} write(s) of another member kept for them, unsent.`);
+            logger.warn('[OfflineSync] writes of another member kept for them, unsent', others.length);
             keepForOwners(others);
             writeQueue(live.filter((m) => m.owner === authenticatedUserId));
         }
@@ -343,7 +343,7 @@ async function sendOnce(): Promise<void> {
     for (const m of staleMutations) processedIds.add(m.id);
     const stalePruned = preFilterLength - queue.length;
     if (stalePruned > 0) {
-        logger.warn(`[OfflineSync] Pruned ${stalePruned} stale mutations (>24h old)`);
+        logger.warn('[OfflineSync] pruned writes over a day old', stalePruned);
         reelToast.error(`${changesMadeOffline(stalePruned)} ${stalePruned === 1 ? 'was' : 'were'} over a day old, and not sent.`);
     }
 
@@ -366,7 +366,7 @@ async function sendOnce(): Promise<void> {
             if (schema) {
                 const parseResult = schema.safeParse(mutation.payload);
                 if (!parseResult.success) {
-                    logger.warn(`[OfflineSync] Schema violation in ${mutation.type}: ${parseResult.error.message}`);
+                    logger.warn('[OfflineSync] schema violation', mutation.type, parseResult.error);
                     deadLetterQueue.push({
                         ...mutation,
                         payload: { ...mutation.payload, _failReason: `schema: ${parseResult.error.message}`, _failedAt: new Date().toISOString() }
@@ -395,21 +395,21 @@ async function sendOnce(): Promise<void> {
             // No network: stop here and keep the rest, in order. A later write may
             // depend on this one (a critique on a filing not yet sent).
             if (isNetworkError(error)) {
-                logger.warn(`[OfflineSync] Network failure on ${mutation.type}. Halting queue to preserve causality.`);
+                logger.warn('[OfflineSync] network failure: halting the queue to keep its order', mutation.type);
                 e2eTrace('queue.flush.halted', { type: mutation.type, why: errMsg.slice(0, 80) });
                 break;
             } else if (isSuspensionRefusal(errMsg)) {
                 // Refused for a suspension, which ends: this write and the rest wait for it, as the
                 // standing read above holds them, never given up (that read failed, or the
                 // suspension began while this send ran).
-                logger.warn(`[OfflineSync] ${mutation.type} refused for a suspension. Holding the queue until it ends.`);
+                logger.warn('[OfflineSync] refused for a suspension: holding the queue until it ends', mutation.type);
                 e2eTrace('queue.flush.halted', { type: mutation.type, why: 'suspended' });
                 break;
             } else if (errorClass === 'schema') {
                 // The STATEMENT is wrong (a missing column, a bad ON CONFLICT
                 // target), not the data: retrying cannot help and dropping it would
                 // hide the fault, so it is dead-lettered and reported.
-                logger.warn(`[OfflineSync] Permanent schema error on ${mutation.type} (code=${code}). Dead-lettering.`);
+                logger.warn('[OfflineSync] permanent schema error: dead-lettered', mutation.type, code);
                 captureError(error, {
                     scope: 'offlineQueue.schemaError',
                     mutationType: mutation.type,
@@ -430,13 +430,13 @@ async function sendOnce(): Promise<void> {
                 const attempts = (mutation._retryCount ?? 0) + 1;
                 if (attempts >= MAX_TRANSIENT_RETRIES) {
                     // Given up on, so one write that always fails cannot hold back the rest.
-                    logger.warn(`[OfflineSync] Transient failure on ${mutation.type} exhausted ${MAX_TRANSIENT_RETRIES} retries (status=${status}, code=${code}). Dead-lettering.`);
+                    logger.warn('[OfflineSync] transient failure, retries used up: dead-lettered', mutation.type, MAX_TRANSIENT_RETRIES, status, code);
                     deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: `transient-exhausted: ${errMsg}`, _failedAt: new Date().toISOString() } });
                     finished(mutation);
                 } else {
                     // Stop here, as for no network: what follows may depend on it.
                     retryBumps[mutation.id] = attempts;
-                    logger.warn(`[OfflineSync] Transient failure on ${mutation.type} (status=${status}, code=${code}), attempt ${attempts}/${MAX_TRANSIENT_RETRIES}. Halting to retry on next flush.`);
+                    logger.warn('[OfflineSync] transient failure: halting to retry on the next send', mutation.type, status, code, attempts, MAX_TRANSIENT_RETRIES);
                     break;
                 }
             } else {

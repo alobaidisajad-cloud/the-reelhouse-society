@@ -380,7 +380,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         }
       }).catch((err) => {
         logger.warn('[auth.login] Profile enrichment failed after retries:', err);
-        captureError(err instanceof Error ? err : new Error(String(err)), { context: 'login_enrichment', userId: authedUser.id });
+        captureError(err instanceof Error ? err : new Error(String(err)), { context: 'login_enrichment' });
       });
 
     hydrateFollowing();
@@ -418,7 +418,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       const { error: renameError } = await supabase
         .from('profiles').update({ username, persona }).eq('id', data.user!.id);
       if (renameError) {
-        logger.warn('[signup] could not claim the requested handle', { requested: username, code: renameError.code });
+        logger.warn('[signup] could not claim the requested handle', renameError);
       }
 
       // Read for the handle it was given. Unread, the one door below reads it again

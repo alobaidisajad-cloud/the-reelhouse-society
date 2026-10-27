@@ -25,7 +25,8 @@ it('a failed reset reaches the logger (Sentry, in production), with what went wr
     registerStoreReset(ran);
     await resetAllStores('u1');
     expect(ran).toHaveBeenCalledWith('u1');
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringMatching(/1\/\d+ handlers failed/), [boom]);
+    // A fixed line; how many failed of how many, and why, after it.
+    expect(logger.warn).toHaveBeenCalledWith('[resetAllStores] some handlers failed', 1, expect.any(Number), [boom]);
   } finally {
     (global as { __DEV__?: boolean }).__DEV__ = dev;
   }

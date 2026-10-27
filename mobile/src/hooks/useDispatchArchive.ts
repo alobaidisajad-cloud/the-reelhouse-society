@@ -160,7 +160,7 @@ export function useDispatchArchive(): DispatchArchive {
         .order('created_at', { ascending: false })
         .limit(SEARCH_ROWS);
       if (mine !== searchSeq.current) return;
-      if (error) { logger.warn(`[archive] search: ${error.message}`); setMatches([]); setSearchFailed(true); return; }
+      if (error) { logger.warn('[archive] search failed', error); setMatches([]); setSearchFailed(true); return; }
 
       /**
        * Grouped by subject_id, and the NEWEST row wins for the poster and the
@@ -188,7 +188,7 @@ export function useDispatchArchive(): DispatchArchive {
       setMatches([...byFilm.values()].sort((a, b) => b.filings - a.filings));
       setAnswered(term);
     } catch (e) {
-      if (mine === searchSeq.current) { logger.warn(`[archive] ${String(e)}`); setMatches([]); setSearchFailed(true); }
+      if (mine === searchSeq.current) { logger.warn('[archive] read failed', e); setMatches([]); setSearchFailed(true); }
     } finally {
       if (mine === searchSeq.current) setSearching(false);
     }
@@ -226,11 +226,11 @@ export function useDispatchArchive(): DispatchArchive {
         .range(from, from + ARCHIVE_PAGE - 1);
       if (mine !== filmSeq.current) return;
       // A later page: the rows drawn stay, and scrolling on asks again.
-      if (rows.error) { logger.warn(`[archive] filings: ${rows.error.message}`); if (from === 0) setFilmFailed(true); return; }
+      if (rows.error) { logger.warn('[archive] filings read failed', rows.error); if (from === 0) setFilmFailed(true); return; }
 
       const raw = rows.data?.length ?? 0;
       const { filings: got, dropped } = parseFilingRows(rows.data ?? []);
-      if (dropped > 0) logger.warn(`[archive] ${dropped} filing(s) failed to parse`);
+      if (dropped > 0) logger.warn('[archive] filings failed to parse', dropped);
       // Count what the SERVER gave, not what survived parsing — see `fetched`.
       fetched.current = from === 0 ? raw : fetched.current + raw;
       setFilings((prev) => (from === 0 ? got : [...prev, ...got]));
@@ -268,7 +268,7 @@ export function useDispatchArchive(): DispatchArchive {
         return next;
       });
     } catch (e) {
-      if (mine === filmSeq.current) { logger.warn(`[archive] ${String(e)}`); if (from === 0) setFilmFailed(true); }
+      if (mine === filmSeq.current) { logger.warn('[archive] read failed', e); if (from === 0) setFilmFailed(true); }
     } finally {
       if (mine === filmSeq.current) setLoading(false);
     }

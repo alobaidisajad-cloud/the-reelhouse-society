@@ -118,7 +118,7 @@ describe('#84 · the LOGS tab asks for columns that exist', () => {
   });
 
   it('a failure is recorded, and only a TOTAL failure is shown as one', () => {
-    expect(hook.code).toMatch(/logger\.error\(`\[useUniversalSearch\]/);
+    expect(hook.code).toMatch(/logger\.error\('\[useUniversalSearch\] a source (failed|was rejected)'/);
     expect(hook.code).toMatch(/allFailed/);
   });
 

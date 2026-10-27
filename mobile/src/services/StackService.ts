@@ -142,7 +142,7 @@ export const StackService = {
           poster_path: parsed.data.poster_path || null,
         });
       } else {
-        logger.warn(`[StackService.getStackFullPayload] list_item failed schema validation: ${parsed.error.message}`);
+        logger.warn('[StackService.getStackFullPayload] list_item failed schema validation', parsed.error);
       }
       return acc;
     }, [] as { id: number; title: string; poster_path: string | null }[]);
@@ -207,7 +207,7 @@ export const StackService = {
           avatar_url: profile?.avatar_url ?? null,
         });
       } else {
-        logger.warn(`[StackService.getStackComments] row failed schema validation: ${parsed.error.message}`);
+        logger.warn('[StackService.getStackComments] row failed schema validation', parsed.error);
       }
       return acc;
     }, [] as { id: string; list_id: string; user_id: string; content: string; created_at: string; username: string; avatar_url: string | null }[]);

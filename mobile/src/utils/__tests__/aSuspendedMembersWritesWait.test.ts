@@ -82,7 +82,7 @@ it('a suspension that begins while the queue sends holds the rest from the write
   expect(mockStorage.get(DEAD)).toBeUndefined();
   const { logger } = jest.requireMock('../logger') as { logger: { warn: jest.Mock } };
   const { e2eTrace } = jest.requireMock('../e2eTrace') as { e2eTrace: jest.Mock };
-  expect(logger.warn).toHaveBeenCalledWith('[OfflineSync] watchlist_add refused for a suspension. Holding the queue until it ends.');
+  expect(logger.warn).toHaveBeenCalledWith('[OfflineSync] refused for a suspension: holding the queue until it ends', 'watchlist_add');
   expect(e2eTrace).toHaveBeenCalledWith('queue.flush.halted', { type: 'watchlist_add', why: 'suspended' });
 });
 

@@ -176,7 +176,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     if (mine !== gen.current) return;
 
     if (rows.error) {
-      logger.warn(`[room] filings: ${rows.error.message}`);
+      logger.warn('[room] filings read failed', rows.error);
       // The first page: the room says it could not be read. A later one: the
       // pages already drawn stay, and the foot says the rest could not be had
       // (the list asks for more once per length, so scrolling would not).
@@ -187,7 +187,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
     const { filings: got, dropped } = parseFilingRows(rows.data ?? []);
     // A row the parser refuses is a row the screen cannot draw. Saying so is the
     // difference between finding a schema change and calling the room "short".
-    if (dropped > 0) logger.warn(`[room] ${dropped} filing(s) failed to parse`);
+    if (dropped > 0) logger.warn('[room] filings failed to parse', dropped);
 
     const raw = rows.data?.length ?? 0;
     fetched.current = from + raw;
@@ -208,7 +208,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
      */
     if (from === 0) {
       const r = totals as { data?: { filed: number; certified: number }[] | null; error?: { message: string } | null };
-      if (r.error) logger.warn(`[room] totals: ${r.error.message}`);
+      if (r.error) logger.warn('[room] totals read failed', r.error);
       const t = r.data?.[0];
       if (t) { setFiled(t.filed ?? 0); setCertified(Number(t.certified ?? 0)); setTotalsKnown(true); }
     }
@@ -245,7 +245,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
           .eq('username', username)
           .maybeSingle();
         if (mine !== gen.current) return;
-        if (error) { logger.warn(`[room] member: ${error.message}`); setFailed(true); return; }
+        if (error) { logger.warn('[room] member read failed', error); setFailed(true); return; }
         if (!who?.id) { setMissing(true); return; }
 
         userId.current = who.id as string;
@@ -261,7 +261,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
 
         await page(0, mine);
       } catch (e) {
-        if (mine === gen.current) { logger.warn(`[room] ${String(e)}`); setFailed(true); }
+        if (mine === gen.current) { logger.warn('[room] read failed', e); setFailed(true); }
       } finally {
         if (mine === gen.current) setLoading(false);
       }
@@ -281,7 +281,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
       try {
         await page(fetched.current, mine);
       } catch (e) {
-        if (mine === gen.current) { logger.warn(`[room] more: ${String(e)}`); setMoreFailed(true); }
+        if (mine === gen.current) { logger.warn('[room] reading more failed', e); setMoreFailed(true); }
       } finally {
         if (mine === gen.current) setLoadingMore(false);
       }

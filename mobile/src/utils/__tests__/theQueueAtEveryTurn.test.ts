@@ -100,7 +100,7 @@ describe('queuing', () => {
     mockSignedIn = null;
     enqueueMutation(follow());
     expect(getOfflineQueue()).toEqual([]);
-    expect(warned()).toEqual(['[OfflineSync] follow_user not queued: nobody is signed in.']);
+    expect(warned()).toEqual(['[OfflineSync] not queued: nobody is signed in follow_user']);
   });
 
   it('queues as the member signed in, and says so', () => {
@@ -118,7 +118,7 @@ describe('queuing', () => {
     expect(q).toHaveLength(100);
     expect([q[0]?.id, q[1]?.id]).toEqual(['k0', 'k1']);
     expect(q[99]?.type).toBe('follow_user');
-    expect(warned()).toEqual(['[OfflineSync] Queue cap reached (100). Let go 3 oldest mark(s): [endorse_log, follow_user]']);
+    expect(warned()).toEqual(['[OfflineSync] Queue cap reached: let go the oldest marks 100 3 endorse_log, follow_user']);
     expect(toast.error).toHaveBeenCalledWith('3 marks made offline were let go to make room.');
   });
 
@@ -138,7 +138,7 @@ describe('queuing', () => {
     enqueueMutation(follow());
     const q = getOfflineQueue();
     expect([q.length, q[0]?.id, q[1]?.id, q[100]?.type]).toEqual([101, 'crit', 'log', 'follow_user']);
-    expect(warned()).toEqual(['[OfflineSync] Queue cap reached (100) with no mark to let go: queued over it.']);
+    expect(warned()).toEqual(['[OfflineSync] Queue cap reached with no mark to let go: queued over it 100']);
     expect(toast.error).not.toHaveBeenCalled();
   });
 
@@ -172,7 +172,7 @@ describe('a send, before anything goes', () => {
     expect(executeMutation.mock.calls.map(([m]) => m.id)).toEqual(['mine']);
     expect(read(heldKey(OTHER)).map((m) => m.id)).toEqual(['theirs']);
     expect(getOfflineQueue()).toEqual([]);
-    expect(warned()).toContain('[OfflineSync] 1 write(s) of another member kept for them, unsent.');
+    expect(warned()).toContain('[OfflineSync] writes of another member kept for them, unsent 1');
   });
 
   it('holds a suspended member\'s writes until the suspension ends, and sends them once it has', async () => {
@@ -206,7 +206,7 @@ describe('a send, before anything goes', () => {
     executeMutation.mockRejectedValue(new TypeError('Network request failed'));
     await flushOfflineQueue();
     expect(executeMutation).toHaveBeenCalledTimes(1);
-    expect(warned()).toEqual(['[OfflineSync] Network failure on follow_user. Halting queue to preserve causality.']);
+    expect(warned()).toEqual(['[OfflineSync] network failure: halting the queue to keep its order follow_user']);
   });
 
   it('goes on past a ban check that failed otherwise, and says so', async () => {
@@ -221,7 +221,7 @@ describe('a send, before anything goes', () => {
     put(QUEUE_KEY, [stored({ id: 'old', type: 'follow_user', timestamp: NOW - DAY }), stored({ id: 'young', type: 'follow_user', timestamp: NOW - DAY + 1 })]);
     await flushOfflineQueue();
     expect(executeMutation.mock.calls.map(([m]) => m.id)).toEqual(['young']);
-    expect(warned()).toContain('[OfflineSync] Pruned 1 stale mutations (>24h old)');
+    expect(warned()).toContain('[OfflineSync] pruned writes over a day old 1');
     expect(toast.error).toHaveBeenCalledWith('A change made offline was over a day old, and not sent.');
     put(QUEUE_KEY, [stored({ type: 'follow_user', timestamp: NOW - 2 * DAY }), stored({ type: 'follow_user', timestamp: NOW - 3 * DAY })]);
     await flushOfflineQueue();
@@ -269,7 +269,7 @@ describe('each write, as it goes', () => {
     expect(executeMutation).not.toHaveBeenCalled();
     const [dead] = read(DEAD_LETTER_KEY);
     expect(String(dead?.payload._failReason)).toMatch(/^schema: /);
-    expect(warned()[0]).toMatch(/^\[OfflineSync\] Schema violation in endorse_log: /);
+    expect(warned()[0]).toMatch(/^\[OfflineSync\] schema violation endorse_log /);
     expect(toast.error).toHaveBeenCalledWith('A change made offline could not be sent.');
   });
 
@@ -308,7 +308,7 @@ describe('each failure', () => {
     await failing(Object.assign(new Error('column "nope" does not exist'), { code: '42703' }));
     expect(read(DEAD_LETTER_KEY).map((m) => [m.id, m.payload._failReason])).toEqual([['w', 'schema: column "nope" does not exist']]);
     expect(captureError).toHaveBeenCalledWith(expect.any(Error), { scope: 'offlineQueue.schemaError', mutationType: 'follow_user', pgCode: '42703' });
-    expect(warned()).toEqual(['[OfflineSync] Permanent schema error on follow_user (code=42703). Dead-lettering.']);
+    expect(warned()).toEqual(['[OfflineSync] permanent schema error: dead-lettered follow_user 42703']);
     expect(executeMutation).toHaveBeenCalledTimes(2);
     expect(getOfflineQueue()).toEqual([]);
   });
@@ -323,13 +323,13 @@ describe('each failure', () => {
   it('keeps a write the server failed for a moment, counts the attempt, and stops there', async () => {
     await failing(Object.assign(new Error('Internal Server Error'), { status: 500 }));
     expect(getOfflineQueue().map((m) => [m.id, m._retryCount])).toEqual([['w', 1], ['next', undefined]]);
-    expect(warned()).toEqual(['[OfflineSync] Transient failure on follow_user (status=500, code=undefined), attempt 1/5. Halting to retry on next flush.']);
+    expect(warned()).toEqual(['[OfflineSync] transient failure: halting to retry on the next send follow_user 500 undefined 1 5']);
   });
 
   it('gives up on the fifth such failure, dead-letters it, and sends what follows', async () => {
     await failing(Object.assign(new Error('Internal Server Error'), { status: 500 }), 4);
     expect(read(DEAD_LETTER_KEY).map((m) => [m.id, m.payload._failReason])).toEqual([['w', 'transient-exhausted: Internal Server Error']]);
-    expect(warned()).toEqual(['[OfflineSync] Transient failure on follow_user exhausted 5 retries (status=500, code=undefined). Dead-lettering.']);
+    expect(warned()).toEqual(['[OfflineSync] transient failure, retries used up: dead-lettered follow_user 5 500 undefined']);
     expect(getOfflineQueue()).toEqual([]);
   });
 
@@ -383,7 +383,7 @@ describe('the member\'s own', () => {
   it('at sign-out, says why when the phone\'s store could not be swept', () => {
     storage.getAllKeys.mockImplementationOnce(() => { throw new Error('locked'); });
     clearOfflineQueue(ME);
-    expect(warned()).toEqual(['[OfflineSync] could not clear the queue on logout: Error: locked']);
+    expect(warned()).toEqual(['[OfflineSync] could not clear the queue on logout Error: locked']);
   });
 });
 

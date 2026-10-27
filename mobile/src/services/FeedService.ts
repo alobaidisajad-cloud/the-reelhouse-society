@@ -43,7 +43,7 @@ function parseRowsSafely<T>(data: unknown[], schema: z.ZodType<T>, context: stri
 
   // Batch failed — salvage valid rows individually
   if (__DEV__) {
-    logger.warn(`[FeedService.${context}] Batch parse failed, salvaging per-row`, batchResult.error.issues.slice(0, 3));
+    logger.warn('[FeedService] batch parse failed, salvaging per row', context, batchResult.error.issues.slice(0, 3));
   }
 
   const valid: T[] = [];

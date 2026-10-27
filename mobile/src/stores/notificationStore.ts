@@ -306,7 +306,7 @@ export const useNotificationStore = create<NotificationState>()(
                 .eq('user_id', user.id);
             if (error) throw error;
         } catch (e) {
-            logger.warn(`[markRead] Failed for ${id}:`, e);
+            logger.warn('[markRead] failed', id, e);
             // Only while still signed in: after a logout it would restore the last member's.
             if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousUnread });
         }
@@ -382,7 +382,7 @@ export const useNotificationStore = create<NotificationState>()(
             const { error } = await supabase.from('notifications').delete().eq('id', id).eq('user_id', user.id);
             if (error) throw error;
         } catch (e) {
-            logger.warn(`[dismiss] Failed for ${id}:`, e);
+            logger.warn('[dismiss] failed', id, e);
             // Rolled back only while still signed in, as in markRead.
             if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousUnread });
         }
@@ -417,7 +417,7 @@ export const useNotificationStore = create<NotificationState>()(
                 .eq('user_id', user.id);
             if (error) throw error;
         } catch (e) {
-            logger.warn(`[markGroupRead] Failed for ${ids.length} items:`, e);
+            logger.warn('[markGroupRead] failed', ids.length, e);
             if (stillSignedIn(startedAs)) set({ // see markRead
                 notifications: previousState,
                 _unreadCount: previousUnread,
@@ -456,7 +456,7 @@ export const useNotificationStore = create<NotificationState>()(
                 .eq('user_id', user.id);
             if (error) throw error;
         } catch (e) {
-            logger.warn(`[dismissGroup] Failed for ${ids.length} items:`, e);
+            logger.warn('[dismissGroup] failed', ids.length, e);
             if (stillSignedIn(startedAs)) set({ // see markRead
                 notifications: previousState,
                 _unreadCount: previousUnread,

@@ -31,7 +31,6 @@ const NEVER_ONE: Record<string, string> = {
   'src/components/society/RankTicket.tsx · {count.toUpperCase()} PRIVILEGES': 'the count is a word, four or more, from the rank\'s list',
   'src/components/society/societyPricing.ts · ${FOUNDING.seats} MEMBERS': 'the founding seats, a constant of hundreds',
   'src/features/archive/archiveImport.ts · ${uniqueEntries.size} films': 'a fraction ("1 / 1 films matched"), read as a tally',
-  'src/stores/notificationStore.ts · ${ids.length} items': 'a developer\'s log line, never shown',
   'src/utils/timeAgo.ts · ${days} DAYS': 'drawn only past YESTERDAY: two days up',
   'app/(modals)/list-modal.tsx · ${trueFilmCount} reels': 'said only of an index larger than the sheet can hold',
   'app/dispatch/series/[id].tsx · ${total} PARTS': 'said only when the series has more parts than the page shows (MOST_PARTS)',

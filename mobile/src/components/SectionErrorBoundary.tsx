@@ -42,7 +42,7 @@ export class SectionErrorBoundary extends Component<Props, State> {
     const section = this.props.section ?? 'unknown';
     
     if (__DEV__) {
-      logger.error(`[SectionErrorBoundary:${section}] Render crash:`, error);
+      logger.error('[SectionErrorBoundary] render crash', section, error);
     } else {
       captureError(error, {
         boundary: 'section',

@@ -10,7 +10,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { resolveHandleNotice } from '../utils/handleNotice';
 import { PUSH_TOKEN_KEY, registerForPushNotifications, setupNotificationResponseHandler } from '../lib/pushNotifications';
 import { initRevenueCat, reconcileRank } from '../lib/revenueCat';
-import { addBreadcrumb, Sentry, setSentryUser } from '../lib/sentry';
+import { addBreadcrumb, markBootComplete, setSentryUser } from '../lib/sentry';
 import { supabase } from '../lib/supabase';
 import { settleOwedSignOut } from '../lib/endSession';
 import { storage, useAuthStore } from '../stores/auth';
@@ -149,7 +149,7 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         addBreadcrumb('Background hydration started', 'boot');
 
         // ── Boot complete ──
-        Sentry.setTag('boot_complete', 'true');
+        markBootComplete();
       } catch (err) {
         logger.warn('[Bootstrapper] Error during boot:', err);
       }

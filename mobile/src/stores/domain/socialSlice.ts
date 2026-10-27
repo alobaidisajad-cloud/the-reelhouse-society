@@ -247,7 +247,7 @@ export async function followUser(targetUsername: string): Promise<boolean> {
     // Mirrors the network check below exactly (both msg and err) so an offline
     // failure — which is queued, not lost — is never reported as a defect.
     if (!isNetworkError(msg) && !isNetworkError(err)) {
-      captureError(err, { scope: 'socialSlice', targetUsername });
+      captureError(err, { scope: 'socialSlice' });
     }
     // Neither queued nor undone for a member who has left: both would land on the next.
     if (!stillSignedIn(userId)) return false;
@@ -322,7 +322,7 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
     // Mirrors the network check below exactly (both msg and err) so an offline
     // failure — which is queued, not lost — is never reported as a defect.
     if (!isNetworkError(msg) && !isNetworkError(err)) {
-      captureError(err, { scope: 'socialSlice', targetUsername });
+      captureError(err, { scope: 'socialSlice' });
     }
     // Neither their lists put back nor their unfollow queued, once they have left.
     if (!stillSignedIn(userId)) return false;
@@ -410,7 +410,7 @@ async function readFollowing(userId: string, current: () => boolean): Promise<vo
     while (hasMore) {
       // Past the cap the list is only part-read, and a part is not the list.
       if (pageCount >= MAX_HYDRATE_PAGES) {
-        logger.warn(`[socialSlice.hydrateFollowing] more than ${MAX_HYDRATE_PAGES * HYDRATE_PAGE_SIZE} follows; kept the list as it was`);
+        logger.warn('[socialSlice.hydrateFollowing] more follows than one read holds: kept the list as it was', MAX_HYDRATE_PAGES * HYDRATE_PAGE_SIZE);
         captureError(new Error('follow list past the hydrate cap'), { scope: 'socialSlice.hydrateFollowing', pages: pageCount });
         unread();
         return;

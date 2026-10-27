@@ -167,7 +167,7 @@ export function writeDraft<T>(
     if (scope) evictOldest(userId, kind);
     return true;
   } catch (e) {
-    logger.warn(`[drafts] could not save ${kind}: ${String(e)}`);
+    logger.warn('[drafts] could not save', kind, e);
     return false;
   }
 }
@@ -177,7 +177,7 @@ export function clearDraft(
 ): void {
   if (!userId) return;
   try { storage.delete(draftKey(userId, kind, scope)); } catch (e) {
-    logger.warn(`[drafts] could not clear ${kind}: ${String(e)}`);
+    logger.warn('[drafts] could not clear', kind, e);
   }
 }
 
@@ -192,7 +192,7 @@ export function countDrafts(userId: string | null | undefined): number | null {
     const mine = `${DRAFT_PREFIX}${userId}_`;
     return storage.getAllKeys().filter((key) => key.startsWith(mine)).length;
   } catch (e) {
-    logger.warn(`[drafts] could not count: ${String(e)}`);
+    logger.warn('[drafts] could not count', e);
     return null;
   }
 }
@@ -213,7 +213,7 @@ export function clearAllDrafts(userId: string | null | undefined): void {
       if (key.startsWith(mine)) storage.delete(key);
     }
   } catch (e) {
-    logger.warn(`[drafts] could not clear on logout: ${String(e)}`);
+    logger.warn('[drafts] could not clear on logout', e);
   }
 }
 
@@ -245,7 +245,7 @@ export function evictOldest(userId: string, kind: DraftKind, keep = SCOPED_KEPT)
     held.sort((a, b) => b.at - a.at);
     for (const { key } of held.slice(keep)) storage.delete(key);
   } catch (e) {
-    logger.warn(`[drafts] could not evict ${kind}: ${String(e)}`);
+    logger.warn('[drafts] could not evict', kind, e);
   }
 }
 

@@ -30,8 +30,9 @@ it('reads a value it does not know as the free rank, and says so once a session,
   expect(normalizeTier('Projectionist')).toBe('cinephile');
   expect(normalizeTier('projectionist')).toBe('cinephile');
   expect(normalizeTier('PROJECTIONIST')).toBe('cinephile');
+  // The value named as written, after the fixed line (kept on the phone, never sent: P4.44).
   expect(logger.warn.mock.calls).toEqual([[
-    '[tier] Unrecognised value "Projectionist" treated as cinephile. If this belongs to a paying member they have been silently downgraded to free.',
+    '[tier] an unrecognised value was treated as cinephile: a paying member would be downgraded to free', 'Projectionist',
   ]]);
   normalizeTier('patron');
   expect(logger.warn).toHaveBeenCalledTimes(2);

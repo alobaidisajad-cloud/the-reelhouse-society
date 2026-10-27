@@ -45,7 +45,7 @@ export function withTimeout<T>(
     // an EXTERNAL abort (e.g. component unmount) and propagates unchanged, never
     // mislabeled "timed out". A TimeoutError from the request itself is a timeout.
     if (error.name === 'TimeoutError' || (error.name === 'AbortError' && timedOut)) {
-      logger.warn(`[withTimeout] ${label ?? 'request'} timed out after ${ms}ms`);
+      logger.warn('[withTimeout] timed out', label ?? 'request', ms);
       throw new AppError(
         'TIMEOUT',
         `Request timed out after ${ms}ms`,

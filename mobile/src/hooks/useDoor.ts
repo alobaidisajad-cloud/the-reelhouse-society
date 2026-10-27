@@ -65,7 +65,7 @@ const UNANSWERED: DoorRead = { open: true, films: null, filmsNeeded: FILMS_NEEDE
 async function readDoor(): Promise<DoorRead> {
   try {
     const { data, error } = await supabase.rpc('dispatch_door');
-    if (error) { logger.warn(`[door] ${error.message}`); return UNANSWERED; }
+    if (error) { logger.warn('[door] read failed', error); return UNANSWERED; }
     const row = (data as { films: number; films_needed: number; days: number; days_needed: number; may_file: boolean }[] | null)?.[0];
     if (!row) return UNANSWERED;
     /**
@@ -88,7 +88,7 @@ async function readDoor(): Promise<DoorRead> {
       daysNeeded: row.days_needed ?? DAYS_NEEDED,
     };
   } catch (e) {
-    logger.warn(`[door] ${String(e)}`);
+    logger.warn('[door] read failed', e);
     return UNANSWERED;
   }
 }
