@@ -548,7 +548,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
                 user_id, target_user_id: resolvedId, type: 'follow',
             }], { onConflict: 'user_id,target_user_id,type', ignoreDuplicates: true }));
         } else {
-            logger.warn(`[MutationExecutor] follow_user: Could not resolve @${target_username} — skipping.`);
+            logger.warn('[MutationExecutor] follow_user: no such member, skipped.');
         }
         return {};
     },
@@ -567,7 +567,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
                 user_id, target_user_id: resolvedId, type: 'follow_request',
             }], { onConflict: 'user_id,target_user_id,type', ignoreDuplicates: true }));
         } else {
-            logger.warn(`[MutationExecutor] follow_request_user: Could not resolve @${target_username} — skipping.`);
+            logger.warn('[MutationExecutor] follow_request_user: no such member, skipped.');
         }
         return {};
     },

@@ -299,7 +299,7 @@ export function adoptLegacyDrafts(userId: string | null | undefined): void {
           v: DRAFT_VERSION, savedAt: new Date().toISOString(), data: JSON.parse(legacy),
         }));
       } catch (e) {
-        logger.warn(`[drafts] could not adopt ${key}: ${String(e)}`);
+        logger.warn('[drafts] could not adopt an older draft', e);
         continue;   // leave it so a later launch can try again
       }
     }

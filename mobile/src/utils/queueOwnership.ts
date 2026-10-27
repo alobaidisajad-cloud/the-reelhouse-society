@@ -167,7 +167,7 @@ export function readList(key: string): QueuedMutation[] {
       return Array.isArray(parsed) ? parsed as QueuedMutation[] : [];
     }
   } catch (e) {
-    logger.warn(`[OfflineSync] could not read ${key}: ${String(e)}`);
+    logger.warn('[OfflineSync] could not read a list', e);
   }
   return [];
 }
@@ -181,7 +181,7 @@ export function writeList(key: string, list: readonly QueuedMutation[]): void {
     } else if (list.length === 0) storage.delete(key);
     else storage.set(key, JSON.stringify(list));
   } catch (e) {
-    logger.warn(`[OfflineSync] could not write ${key}: ${String(e)}`);
+    logger.warn('[OfflineSync] could not write a list', e);
   }
 }
 

@@ -230,7 +230,7 @@ export async function followUser(targetUsername: string): Promise<boolean> {
       .maybeSingle();
 
     if (existing) {
-      logger.warn(`[socialSlice.followUser] Already interacted with @${targetUsername} in DB, syncing state`);
+      logger.warn('[socialSlice.followUser] Already interacted in the database: syncing state');
       refreshFollowGraphFeeds();
       return true;
     }
@@ -265,7 +265,7 @@ export async function followUser(targetUsername: string): Promise<boolean> {
         return true;
       }
     }
-    logger.warn(`[socialSlice.followUser] FAILED for @${targetUsername}: ${msg}`);
+    logger.warn('[socialSlice.followUser] failed', err);
     
     useSocialStore.getState().removeFollowing(targetUsername);
     useSocialStore.getState().removeRequested(targetUsername);
@@ -305,7 +305,7 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
     if (!stillSignedIn(userId)) return false;
     if (!targetProfile) {
       // The handle did not resolve: queued, so the unfollow the member saw still happens.
-      logger.warn(`[socialSlice.unfollowUser] Could not resolve ID for @${targetUsername} — queuing for retry`);
+      logger.warn('[socialSlice.unfollowUser] Could not resolve the member: queued for retry');
       enqueueMutation({
         type: 'unfollow_user',
         payload: { user_id: userId, target_username: targetUsername },
@@ -337,7 +337,7 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
         return true;
       }
     }
-    logger.warn(`[socialSlice.unfollowUser] FAILED for @${targetUsername}: ${msg}`);
+    logger.warn('[socialSlice.unfollowUser] failed', err);
     useSocialStore.getState().setFollowing(prevFollowing);
     useSocialStore.getState().setRequested(prevRequested);
     persistFollowingToCache(userId);

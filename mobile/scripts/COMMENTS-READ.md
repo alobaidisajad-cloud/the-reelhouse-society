@@ -1125,7 +1125,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/marksDisk.ts | 2026-10-23 | new: the ledger as the phone keeps it, light, and read back |
 | src/stores/domain/marksLedger.ts | 2026-10-23 | new: every log and save read whole, the queue and the pages laid over, read again once a write overlapped, failed never none |
 | src/stores/domain/marksWrites.ts | 2026-10-23 | new: each write of marks counted |
-| src/stores/domain/socialSlice.ts | 2026-10-27 | edited: edited: a follow or unfollow saved offline only when the queue kept it; else undone; edited: the follow list held once read whole; a failed read of a list never held marks it failed; follow and unfollow write, save and queue only for the member who asked |
+| src/stores/domain/socialSlice.ts | 2026-10-27 | edited: edited: its log lines say what happened without the member's handle; edited: edited: a follow or unfollow saved offline only when the queue kept it; else undone; edited: the follow list held once read whole; a failed read of a list never held marks it failed; follow and unfollow write, save and queue only for the member who asked |
 | src/stores/domain/watchlistSlice.ts | 2026-10-23 | edited: a page read laid over the ledger, never in its place; add and remove by the index, so a film saved before the pages comes off; each counted as a write of marks |
 | src/stores/films.ts | 2026-10-27 | edited: names its version and migration (savedVersion.ts); edited: the marks ledger kept light once held, and read back as held at launch, beside the records kept |
 | src/stores/followStore.ts | 2026-10-23 | edited: followingKnown: held, unread or failed; the phone's copy of a read is held; sign-out makes it unread; comments cut to the why |
@@ -1194,7 +1194,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/anOlderBuildsDossierStillLands.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aQueuedFilingIsCutToEachColumn.test.ts | 2026-10-16 | new |
-| src/utils/__tests__/aQueuedFollowFindsItsMember.test.ts | 2026-10-27 | edited: the rank sync's request through the shared fetch, here the test's own; new |
+| src/utils/__tests__/aQueuedFollowFindsItsMember.test.ts | 2026-10-27 | edited: edited: the line is said without the handle; edited: the rank sync's request through the shared fetch, here the test's own; new |
 | src/utils/__tests__/aQueuedLogIsFiledAsTheMemberWroteIt.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aQueuedStackIsSavedAsTheMemberLeftIt.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aQueueSendsOnlyItsOwnMembersWrites.test.ts | 2026-10-16 | new |
@@ -1352,13 +1352,13 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/keptOnThisPhone.ts | 2026-10-15 | written: what the phone holds for a member, and the words for it |
 | src/utils/keysetCursor.ts | 2026-10-02 | quotes escaped with a backslash, as PostgREST reads them (measured 2026-10-02) |
 | src/utils/lastTab.ts | 2026-10-22 | edited: TABS_HOME, the Lobby as the tab navigator's first tab and its Back |
-| src/utils/linking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/utils/linking.ts | 2026-10-27 | edited: edited: a link the device cannot open is logged without the link; Read whole (launch audit). Sound; left alone. |
 | src/utils/logger.ts | 2026-10-27 | edited: edited: a line forwarded as its leading message and a server error's code alone, never the values after it; Read whole (launch audit). Sound; left alone. |
 | src/utils/mappers.ts | 2026-10-02 | dead mappers removed (dossier, lounge message, watchlist, archive) |
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/utils/memberDrafts.ts | 2026-10-27 | edited: a stack is a kind of draft; edited: countDrafts; drafts are erased only at the member's own sign-out |
+| src/utils/memberDrafts.ts | 2026-10-27 | edited: edited: a draft that could not be adopted is logged without its key; edited: a stack is a kind of draft; edited: countDrafts; drafts are erased only at the member's own sign-out |
 | src/utils/memoryManager.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/utils/mutationExecutor.ts | 2026-10-27 | edited: the rank sync within the house's deadline; edited: an empty place in a queued history is dropped, not sorted (it threw); a log's decade and genres and a Lounge message's username, columns neither table has, are never written; a rewatch's conflict reads the log's id alone |
+| src/utils/mutationExecutor.ts | 2026-10-27 | edited: edited: a follow that finds no member is logged without the handle; edited: the rank sync within the house's deadline; edited: an empty place in a queued history is dropped, not sorted (it threw); a log's decade and genres and a Lounge message's username, columns neither table has, are never written; a rewatch's conflict reads the log's id alone |
 | src/utils/networkError.ts | 2026-10-27 | edited: a deadline is not reached, thrown by its name or resolved by its message; Read whole (launch audit). Sound; left alone. |
 | src/utils/noticeRoute.ts | 2026-10-02 | Read whole (launch audit). Follows groupRoute's one argument. |
 | src/utils/offlineQueue.ts | 2026-10-27 | edited: edited: enqueueMutation answers whether the write was kept, and tells the member when the phone had no room (NOT_KEPT); edited: edited: a full queue lets only its oldest marks go, named; never words or records; every list through writeList; edited: a write refused for a suspension waits with the rest (the standing read failed, or the suspension began mid-send); the standing read's error is read (its catch could never run); at sign-out another member's writes stay wherever they are |
@@ -1366,7 +1366,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/openSociety.ts | 2026-10-02 | Read whole (launch audit). URLSearchParams.set is implemented in RN 0.81's polyfill (checked). Sound. |
 | src/utils/prefetchPictures.ts | 2026-10-15 | new: the one caller of expo-image's prefetch |
 | src/utils/profileCountsCache.ts | 2026-10-02 | read; sound |
-| src/utils/queueOwnership.ts | 2026-10-27 | edited: edited: writeQueue answers whether it kept the queue; NOT_KEPT; edited: edited: in memory alone while the store is not encrypted (queueKeys, readList, writeList, writeQueue); MARK_NOUN and marksLetGo; held writes through writeList; written: the typed kind map, the owner-keyed hold and release, the older build's stamp |
+| src/utils/queueOwnership.ts | 2026-10-27 | edited: edited: a list that could not be read or written is logged without its key (a member's id); edited: edited: writeQueue answers whether it kept the queue; NOT_KEPT; edited: edited: in memory alone while the store is not encrypted (queueKeys, readList, writeList, writeQueue); MARK_NOUN and marksLetGo; held writes through writeList; written: the typed kind map, the owner-keyed hold and release, the older build's stamp |
 | src/utils/raceDeadline.ts | 2026-10-04 | written whole: the one deadline race; its timer cleared when the race is decided |
 | src/utils/recommendations.ts | 2026-10-01 | the shelf's own name |
 | src/utils/reelToast.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |

@@ -88,7 +88,8 @@ describe.each([
   it('skips a handle that names no one, writes nothing, and says so', async () => {
     await expect(replay(type, { user_id: ME, target_username: 'nobody' })).resolves.toStrictEqual({});
     expect(asked().map((a) => a.op)).toEqual(['select']);
-    expect(logger.warn.mock.calls).toEqual([[`[MutationExecutor] ${type}: Could not resolve @nobody — skipping.`]]);
+    // Said without the handle: it would leave the phone in a report (P4.44).
+    expect(logger.warn.mock.calls).toEqual([[`[MutationExecutor] ${type}: no such member, skipped.`]]);
   });
 });
 

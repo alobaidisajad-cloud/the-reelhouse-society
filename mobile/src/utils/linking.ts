@@ -58,7 +58,7 @@ export async function safeOpenURL(url: string, fallbackMessage?: string): Promis
       await Linking.openURL(url);
       return true;
     } else {
-      logger.warn(`Device cannot open URL: ${url}`);
+      logger.warn('[linking] the device cannot open the link');
       Alert.alert(
         'Link Unavailable',
         fallbackMessage || 'Your device does not have an app installed that can open this link.',
