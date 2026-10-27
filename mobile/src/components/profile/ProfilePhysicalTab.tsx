@@ -35,6 +35,17 @@ const SHELF_SORTS: { id: ShelfSort; label: string }[] = [
   { id: 'za', label: 'Z–A' },
 ];
 
+/**
+ * The grading words a case's condition is spoken as. No screen sets a condition; an imported file
+ * may carry any text there, and this shelf is read by other members: anything not a grading word
+ * stays unspoken, never another member's words in someone's ears with no way to report them.
+ */
+const CONDITION_WORDS = new Set(['mint', 'near mint', 'very good', 'good', 'fair', 'poor']);
+export const spokenCondition = (condition: string | null | undefined): string => {
+  const word = condition?.trim().toLowerCase();
+  return word && CONDITION_WORDS.has(word) ? `condition ${word}` : '';
+};
+
 const CASE_BADGE: Record<string, string> = { '4k': '4K', bluray: 'BD', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LD', steelbook: 'SB', criterion: 'CC' };
 
 interface ProfilePhysicalTabProps {
@@ -107,7 +118,7 @@ const VaultCase = React.memo(function VaultCase({
       accessibilityLabel={[
         vaultItem.title ?? 'Untitled film',
         FORMAT_META[format]?.label ?? format,
-        vaultItem.condition ? `condition ${vaultItem.condition}` : '',
+        spokenCondition(vaultItem.condition),
       ].filter(Boolean).join(', ')}
       accessibilityHint="Opens the film"
     >
