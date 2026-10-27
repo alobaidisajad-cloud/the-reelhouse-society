@@ -9,6 +9,7 @@ import { Text } from '@/src/components/text';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { useOfflineAware } from '@/src/hooks/useOfflineAware';
+import { useClock } from '@/src/hooks/useClock';
 import { tmdb } from '@/src/lib/tmdb';
 import { computeYearStats, fetchYearLogs, YearStats } from '@/src/services/YearInCinemaService';
 import { useAuthStore } from '@/src/stores/auth';
@@ -66,7 +67,7 @@ export default function YearInCinemaScreen() {
   const { isOffline } = useOfflineAware();
   const { width, height } = useWindowDimensions();
 
-  const currentYear = new Date().getFullYear();
+  const currentYear = useClock((now) => new Date(now).getFullYear());
   const [phaseRead, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
   const [stats, setStats] = useState<YearStats | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);

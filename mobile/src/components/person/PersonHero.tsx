@@ -98,9 +98,8 @@ export function formatDossierDate(dateStr: string | null): string {
 }
 
 // ── Utility — career span in years ──────────────────────────
-export function calcCareerSpan(person: PersonDetail | null, credits: PersonCredit[]): number {
+export function calcCareerSpan(person: PersonDetail | null, credits: PersonCredit[], currentYear: number): number {
   if (credits.length === 0) return 0;
-  const currentYear = new Date().getFullYear();
   const birthYear = person?.birthday ? parseInt(person.birthday.substring(0, 4), 10) : undefined;
   const deathYear = person?.deathday ? parseInt(person.deathday.substring(0, 4), 10) : undefined;
 

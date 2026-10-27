@@ -45,7 +45,7 @@ import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils
 import { stillQueued } from '@/src/stores/offlineQueueStore';
 import reelToast from '@/src/utils/reelToast';
 import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
-import { timeAgo } from '@/src/utils/timeAgo';
+import { useTimeAgo } from '@/src/hooks/useClock';
 import { ChevronLeft, MoreHorizontal, Share2, Sparkles } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { z } from 'zod';
@@ -297,6 +297,7 @@ export default function LogDetailScreen() {
   });
 
   const log = logQueryData?.log ?? null;
+  const filedAgo = useTimeAgo(log?.created_at);
   const profile = logQueryData?.profile ?? null;
   const comments = logQueryData?.comments ?? [];
   const commentTotal = logQueryData?.commentTotal ?? comments.length;
@@ -814,7 +815,7 @@ export default function LogDetailScreen() {
             posterUri={posterUri}
             isAuteur={isAuteur}
             isArchivist={isArchivist}
-            timeAgo={timeAgo(log.created_at)}
+            timeAgo={filedAgo}
             onPosterLoaded={() => setPosterLoaded(true)}
             onPressUser={() => { if (profile?.username) nav.push(`/user/${encodeURIComponent(profile.username)}`); }}
             onPressFilm={() => { nav.push(`/film/${log.film_id}`); }}

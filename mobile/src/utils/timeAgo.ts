@@ -54,8 +54,8 @@ const CALENDAR_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
  * Lives here, not in useLogFlow, so the store layer can use it without importing a
  * hook — same reason it takes no dependency on Intl.
  */
-export function localCalendarDate(offsetDays = 0): string {
-  const d = new Date();
+export function localCalendarDate(offsetDays = 0, now: number = Date.now()): string {
+  const d = new Date(now);
   if (offsetDays !== 0) d.setDate(d.getDate() + offsetDays);
   const mo = String(d.getMonth() + 1).padStart(2, '0');
   const da = String(d.getDate()).padStart(2, '0');
@@ -159,8 +159,11 @@ function echo(value: string | Date | undefined | null): string {
  * Society, and dossiers — the terse form saves four characters and costs the thing
  * that makes the product sound like itself. Three near-copies of this function each
  * had their own phrasing (#75); this is the one that remains.
+ *
+ * `now` is the instant it is measured to: a drawn label is handed the shared clock's
+ * (useClock), so it is worked out again as time passes.
  */
-export function timeAgo(dateStr: string | Date | undefined | null): string {
+export function timeAgo(dateStr: string | Date | undefined | null, now: number = Date.now()): string {
   if (!dateStr) return '';
 
   // ── A calendar date speaks in DAYS, never in hours ──────────────────────────
@@ -177,8 +180,8 @@ export function timeAgo(dateStr: string | Date | undefined | null): string {
     if (cal) {
       const DAY = 86_400_000;
       const thatDay = Date.UTC(cal.year, cal.month, cal.day);
-      const now = new Date();
-      const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+      const at = new Date(now);
+      const today = Date.UTC(at.getFullYear(), at.getMonth(), at.getDate());
       const days = Math.round((today - thatDay) / DAY);
 
       if (days <= 0) return 'TODAY';          // future dates read as today, never negative
@@ -196,7 +199,7 @@ export function timeAgo(dateStr: string | Date | undefined | null): string {
   if (then === null) return echo(dateStr);
 
   // Clamped at zero: a clock skew or a future date must never read as a negative age.
-  const diff = Math.max(0, Date.now() - then);
+  const diff = Math.max(0, now - then);
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'MOMENTS AGO';
   if (mins < 60) return `${mins} MIN. AGO`;
@@ -220,11 +223,11 @@ export function timeAgo(dateStr: string | Date | undefined | null): string {
  * timeAgo is for the past and clamps a future instant to now, so an open
  * ballot asked it when it closes and read "CLOSES MOMENTS AGO" for days.
  */
-export function timeUntil(value: string | Date | undefined | null): string {
+export function timeUntil(value: string | Date | undefined | null, now: number = Date.now()): string {
   if (!value) return '';
   const then = toInstant(value);
   if (then === null) return '';
-  const ahead = then - Date.now();
+  const ahead = then - now;
   if (ahead <= 0) return '';
   const mins = Math.floor(ahead / 60000);
   if (mins < 1) return 'IN MOMENTS';

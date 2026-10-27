@@ -16,6 +16,7 @@
  * document: one frame, virtualised content, and the rails run the whole height.
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useToday } from '@/src/hooks/useClock';
 import { ActivityIndicator, RefreshControl, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useScrollToTop } from "expo-router/react-navigation";
@@ -240,7 +241,9 @@ export default function DispatchScreen() {
   }, [sort, width, certifiedIds, savedIds, unsent, member]);
 
   const empty = EMPTY[section];
-  const today = new Date();
+  // The paper's date turns at the member's midnight, with the paper open.
+  const todayIs = useToday();
+  const today = useMemo(() => new Date(`${todayIs}T12:00:00`), [todayIs]);
   // The empty BALLOTS and ESSAYS pages' "WHAT AN AUTEUR CAN DO →": each its own
   // rope, so the tap names the form reached for; never shown to who holds it.
   const ballots = useClearance('ballots', '/dispatch');

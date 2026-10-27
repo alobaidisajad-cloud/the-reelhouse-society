@@ -9,6 +9,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
 import { calendarDateString } from '@/src/utils/timeAgo';
+import { useToday } from '@/src/hooks/useClock';
 import { Arrive } from '@/src/components/Arrive';
 
 interface CalendarGridLog {
@@ -37,6 +38,8 @@ const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padSt
  * timezone edges, and nothing outside the grid is counted.
  */
 export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
+  // The grid ends on the member's today, and moves on at their midnight.
+  const todayIs = useToday();
   const { gridData, drawn } = useMemo(() => {
     const countsMap = new Map<string, number>();
     for (const log of logs) {
@@ -45,8 +48,7 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
     }
 
     // The first cell is 52 weeks less a day ago, so the last is today.
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(`${todayIs}T00:00:00`);
     const startDate = new Date(today);
     startDate.setDate(today.getDate() - (WEEKS * DAYS_PER_WEEK - 1));
 
@@ -65,7 +67,7 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
       weeksData.push(week);
     }
     return { gridData: weeksData, drawn: total };
-  }, [logs]);
+  }, [logs, todayIs]);
 
   const flickerAnim = useSharedValue(0.6);
   useEffect(() => {

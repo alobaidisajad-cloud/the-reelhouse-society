@@ -20,10 +20,11 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { Brackets, FieldLabel } from '@/src/components/log/LogFormBody';
 import { X, Eye, History, Trash2, Check, ListOrdered, Lock, Feather, Sparkles } from 'lucide-react-native';
 import { Arrive } from '@/src/components/Arrive';
-import { PHYSICAL_OPTIONS, ABANDONED_REASONS, getLocalDateString } from '@/src/hooks/useLogFlow';
+import { PHYSICAL_OPTIONS, ABANDONED_REASONS } from '@/src/hooks/useLogFlow';
+import { useClock, useToday } from '@/src/hooks/useClock';
 import { hasPhysicalFormat } from '@/src/components/log/logRecord';
 import { stripHTML, isRTLText } from '@/src/utils/text';
-import { dateParts, formatDate, formatLongCalendarDate } from '@/src/utils/timeAgo';
+import { dateParts, formatDate, formatLongCalendarDate, localCalendarDate } from '@/src/utils/timeAgo';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { st } from './LogModalStyles';
 import type { useLogFlow } from '@/src/hooks/useLogFlow';
@@ -87,8 +88,9 @@ export default function LogForm({ flow, user }: LogFormProps) {
         lists
     } = flow;
 
-    const yesterday = useMemo(() => getLocalDateString(-1), []);
-    const todayStr = useMemo(() => getLocalDateString(0), []);
+    // TODAY and YESTERDAY move on at the member's midnight, with the composer open.
+    const yesterday = useClock((now) => localCalendarDate(-1, now));
+    const todayStr = useToday();
     const deskName = (user?.username || 'you').toUpperCase();
 
     /**

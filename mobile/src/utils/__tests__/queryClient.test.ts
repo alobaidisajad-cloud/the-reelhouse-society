@@ -4,7 +4,8 @@
  * tried again, and the persister's safety rules, which stop a cold start
  * stalling on a huge or stale cache, bound to the code that runs at launch.
  */
-import { onlineManager, QueryObserver } from '@tanstack/react-query';
+import { AppState } from 'react-native';
+import { focusManager, onlineManager, QueryObserver } from '@tanstack/react-query';
 import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
 import { QUERY_POLICY, shouldRetry } from '@/src/lib/queryPolicy';
 import { TmdbUnreachable } from '@/src/lib/tmdbErrors';
@@ -273,5 +274,30 @@ describe('queryClient — launch defaults', () => {
     const d = queryClient.getDefaultOptions().queries;
     expect(d?.staleTime).toBeGreaterThan(0);
     expect(d?.gcTime).toBeGreaterThan(d?.staleTime as number);
+  });
+});
+
+describe('the app coming back to the front, as React Query hears it', () => {
+  it('hears the app leave and return, so a read that asks to be current on return is read again', () => {
+    // A phone has no window to focus: without the app's own word, React Query never heard a
+    // return, and no read could ask to be fetched again on one.
+    const heard: ((next: string) => void)[] = [];
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
+      heard.push(listener as (next: string) => void);
+      return { remove: () => { heard.splice(heard.indexOf(listener as (next: string) => void), 1); } } as ReturnType<typeof AppState.addEventListener>;
+    });
+    try {
+      // The client's own setup, run again as React Query runs it: the last listener gone, a new one.
+      focusManager.subscribe(() => {})();
+      const off = focusManager.subscribe(() => {});
+      expect(heard).toHaveLength(1);
+      heard.forEach((l) => l('background'));
+      expect(focusManager.isFocused()).toBe(false);
+      heard.forEach((l) => l('active'));
+      expect(focusManager.isFocused()).toBe(true);
+      off();
+    } finally {
+      jest.restoreAllMocks();
+    }
   });
 });

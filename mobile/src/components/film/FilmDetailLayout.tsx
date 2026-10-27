@@ -12,6 +12,7 @@ import { ArrowLeft, RotateCcw, Check, XCircle } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH, metrics } from '@/src/theme/theme';
 import { tmdb, getYear, formatRuntime } from '@/src/lib/tmdb';
 import { formatDate, formatDateMonthDay } from '@/src/utils/timeAgo';
+import { useClock } from '@/src/hooks/useClock';
 import { stripHtml } from '@/src/utils/html';
 
 
@@ -195,6 +196,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
    * when the film was watched in a DIFFERENT year, which is the one case where
    * the year is the interesting part.
    */
+  const thisYear = useClock((now) => new Date(now).getFullYear());
   const watchedLabel = useMemo(() => {
     if (!existingLog?.watchedDate) return null;
     const watched = new Date(existingLog.watchedDate);
@@ -203,10 +205,10 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     // ago, the YEAR is the whole point and the day is noise. Both forms are
     // short, which is what lets the row survive a rewatch count and five reels
     // beside them (`JUL 21, 2025` would not).
-    return watched.getFullYear() === new Date().getFullYear()
+    return watched.getFullYear() === thisYear
       ? formatDateMonthDay(existingLog.watchedDate).toUpperCase()
       : String(watched.getFullYear());
-  }, [existingLog?.watchedDate]);
+  }, [existingLog?.watchedDate, thisYear]);
 
   const trayActs = useMemo<TrayAct[]>(() => {
     // Whether a film is logged, or saved, that the ledger does not hold is not yet known:

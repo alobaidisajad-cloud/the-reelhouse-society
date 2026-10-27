@@ -29,7 +29,7 @@ import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
 import { stripHtml } from '@/src/utils/html';
 import { extractDropCap, isRTLText, RTL_MARK } from '@/src/utils/text';
-import { timeAgo } from '@/src/utils/timeAgo';
+import { useTimeAgo } from '@/src/hooks/useClock';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
 import { TryAgainLine } from '@/src/components/TryAgain';
@@ -83,6 +83,7 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
   const handleOpenProfile = React.useCallback(() => {
     if (review.username) nav.push(`/user/${encodeURIComponent(review.username)}`);
   }, [review.username]);
+  const ago = useTimeAgo(review.created_at);
 
   return (
     <View style={s.reviewCard}>
@@ -95,7 +96,7 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
         username={review.username ?? 'anonymous'}
         avatarUrl={review.avatar_url}
         role={review.role}
-        timeAgo={timeAgo(review.created_at)}
+        timeAgo={ago}
         onUserPress={handleOpenProfile}
       />
 

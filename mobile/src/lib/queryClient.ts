@@ -7,7 +7,8 @@
  */
 
 import NetInfo from '@react-native-community/netinfo';
-import { onlineManager, QueryClient } from '@tanstack/react-query';
+import { AppState } from 'react-native';
+import { focusManager, onlineManager, QueryClient } from '@tanstack/react-query';
 // Not from auth.ts, which imports this file: that would be a cycle.
 import { storage, setSensitive } from '../stores/mmkv-storage';
 import { e2eTrace } from '../utils/e2eTrace';
@@ -24,6 +25,14 @@ export const queryClient = new QueryClient({ defaultOptions: QUERY_POLICY });
 onlineManager.setEventListener((setOnline) =>
   NetInfo.addEventListener((state) => setOnline(state.isConnected !== false)),
 );
+
+// Nor does it hear the app come back to the front, which a browser tells it by the window's
+// focus. Heard here, once: a read that asks to be current on return (refetchOnWindowFocus)
+// is fetched again then; the house rule (queryPolicy.ts) keeps every other read as it is.
+focusManager.setEventListener((setFocused) => {
+  const sub = AppState.addEventListener('change', (state) => setFocused(state === 'active'));
+  return () => sub.remove();
+});
 
 // ── MMKV Persister ──────────────────────────────────────────
 const CACHE_KEY = 'REELHOUSE_QUERY_CACHE';

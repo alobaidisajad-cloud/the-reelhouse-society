@@ -54,7 +54,8 @@ import { FILING_FULL_COLUMNS, parseFilingRows, paperTierOf } from '@/src/stores/
 import type { CritiqueOrder, Filing } from '@/src/stores/dispatchTypes';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
-import { timeAgo, timeUntil, formatDateMonthDay } from '@/src/utils/timeAgo';
+import { formatDateMonthDay } from '@/src/utils/timeAgo';
+import { useHasPassed, useTimesAgo, useTimeUntil } from '@/src/hooks/useClock';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
@@ -155,6 +156,9 @@ export default function FilingReader() {
 
   // The store's copies first (`opened`: reached from a notification), so a mark shows.
   const live = filings.find((f) => f.id === id) ?? opened[id] ?? filing;
+  // A ballot open as the page was drawn closes while it is read: both from the shared clock.
+  const closesIn = useTimeUntil(live?.closesAt);
+  const closesPassed = useHasPassed(live?.closesAt);
   // Filed on this phone while the wire was down, and not gone yet.
   const pending = useUnsent('add_filing').has(id);
 
@@ -208,6 +212,7 @@ export default function FilingReader() {
 
   /** In the server's order, never re-sorted here: the critiques come in pages. */
   const rows = critiques[id] ?? [];
+  const ages = useTimesAgo(rows.map((c) => c.createdAt));
 
   /** Their Dispatch ROOM, which the byline promises; the room links their file. */
   const openAuthor = useCallback((username?: string | null) => {
@@ -526,8 +531,8 @@ export default function FilingReader() {
               voteKnown={voteKnown}
               certifyKnown={certifyKnown}
               saveKnown={saveKnown}
-              closed={!!live.closesAt && new Date(live.closesAt) <= new Date()}
-              closesLabel={live.closesAt && timeUntil(live.closesAt) ? `closes ${timeUntil(live.closesAt)}` : ''}
+              closed={closesPassed}
+              closesLabel={closesIn ? `closes ${closesIn}` : ''}
               // Whether the result has actually been COUNTED, not merely whether
               // the ballot has closed. Without it every option reads 0 and the
               // page announced NO BALLOTS WERE CAST under a question members had
@@ -613,7 +618,7 @@ export default function FilingReader() {
                 certifyCount: c.certifyCount,
                 certified: certifiedCritiqueIds.has(c.id),
                 certifyKnown: !me || critiqueMarksKnown.has(c.id),
-                age: timeAgo(c.createdAt).toUpperCase(),
+                age: (ages[i] ?? '').toUpperCase(),
                 mine: !!me && c.authorId === me.id,
                 taken: live.answerId === c.id,
               }}

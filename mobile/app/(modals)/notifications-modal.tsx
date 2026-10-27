@@ -21,7 +21,7 @@ import PressableScale from '@/src/components/PressableScale';
 import FollowRequestsPanel from '@/src/components/profile/FollowRequestsPanel';
 import { refreshFollowRequestCount } from '@/src/hooks/useFollowRequests';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { timeAgo } from '@/src/utils/timeAgo';
+import { useTimeAgo } from '@/src/hooks/useClock';
 import { Award, Bell, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
@@ -49,12 +49,13 @@ const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
 };
 
 /** What a screen reader says for a notice: whether it is new, who, what and when. */
-function noticeLabel(unread: boolean, who: string | null | undefined, message: string, at: string): string {
-  return `${unread ? 'Unread. ' : ''}${who ? `@${who} ` : ''}${message}, ${timeAgo(at).toLowerCase()}`;
+function noticeLabel(unread: boolean, who: string | null | undefined, message: string, ago: string): string {
+  return `${unread ? 'Unread. ' : ''}${who ? `@${who} ` : ''}${message}, ${ago.toLowerCase()}`;
 }
 
 const NotificationItem = React.memo(function NotificationItem({ item, index }: { item: AppNotification; index: number }) {
   const isRead = item.read;
+  const ago = useTimeAgo(item.created_at);
 
   const typeInfo = TYPE_ICONS[item.type] || TYPE_ICONS.default;
   const TypeIcon = typeInfo.Icon;
@@ -81,7 +82,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
         onPress={handlePress}
         haptic="light"
         pressedScale={0.96}
-        accessibilityLabel={noticeLabel(!isRead, item.from_username, item.message, item.created_at)}
+        accessibilityLabel={noticeLabel(!isRead, item.from_username, item.message, ago)}
       >
         {/* Action icon */}
         <View style={[s.iconCircle, { borderColor: typeInfo.color }]}>
@@ -97,7 +98,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
             {item.from_username ? <><Text style={s.itemUser}>@{item.from_username}</Text>{' '}</> : null}{item.message}
           </Text>
           <Text style={s.itemTime} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-            {timeAgo(item.created_at)}
+            {ago}
           </Text>
         </View>
 
@@ -123,6 +124,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
 });
 
 const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ item, index }: { item: GroupedDisplayItem; index: number }) {
+  const ago = useTimeAgo(item.created_at);
   const posterUri = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : null;
 
   const handlePress = () => {
@@ -149,7 +151,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
         onPress={handlePress}
         haptic="light"
         pressedScale={0.96}
-        accessibilityLabel={noticeLabel(item.hasUnread, null, item.message, item.created_at)}
+        accessibilityLabel={noticeLabel(item.hasUnread, null, item.message, ago)}
       >
         {/* Count badge */}
         <View style={s.groupBadge}>
@@ -162,7 +164,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
             {item.message}
           </Text>
           <Text style={s.itemTime} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-            {timeAgo(item.created_at)}
+            {ago}
           </Text>
         </View>
 

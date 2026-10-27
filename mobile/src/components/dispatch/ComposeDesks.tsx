@@ -43,12 +43,13 @@ import { showTierDoor } from '@/src/utils/tierDoor';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 import { useKeyboardLift } from '@/src/hooks/useKeyboardLift';
+import { useClock } from '@/src/hooks/useClock';
 import Animated from 'react-native-reanimated';
 import { nav } from '@/src/utils/typedRouter';
 
-/** Set when the desk OPENS; a ticking clock would re-render the desk mid-typing. */
+/** The hour the filing will carry: from the shared clock, the desk is drawn again only when the hour turns. */
 function useOpeningHour(): string {
-  return useMemo(() => hourLabel(new Date().toISOString()), []);
+  return useClock((now) => hourLabel(new Date(now).toISOString()));
 }
 
 /** The four facts a byline draws, for the member at the desk. */

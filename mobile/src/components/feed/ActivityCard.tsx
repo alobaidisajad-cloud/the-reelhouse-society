@@ -16,7 +16,7 @@
  * FlashList recycles the row onto a different log. Reduce-motion users
  * get a plain crossfade.
  */
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { View, StyleSheet, AccessibilityInfo, PixelRatio } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Image } from 'expo-image';
@@ -35,7 +35,7 @@ import { ReviewContent, VerdictBlock } from './ReviewContent';
 import { UserAttributionRow } from './UserAttributionRow';
 import { PosterFrame } from './PosterFrame';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
-import { timeAgo } from '@/src/utils/timeAgo';
+import { useTimeAgo } from '@/src/hooks/useClock';
 
 // Single source of truth: Zod schema
 import type { FeedItem } from '@/src/schemas/feed.schema';
@@ -128,8 +128,9 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 
   const editorialUri = item.editorial_header ? `${TMDB_IMG_EDITORIAL}${item.editorial_header}` : null;
 
-  // The shared timeAgo: past a month it gives the date, never "104w AGO".
-  const relativeTime = useMemo(() => timeAgo(item.created_at), [item.created_at]);
+  // The shared timeAgo: past a month it gives the date, never "104w AGO". Read from the
+  // shared clock, so a card drawn MOMENTS AGO does not say so a day later.
+  const relativeTime = useTimeAgo(item.created_at);
 
   // ── The confidential back ──
   const [flipped, setFlipped] = useState(false);

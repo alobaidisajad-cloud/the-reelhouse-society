@@ -28,6 +28,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { useArchiveStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { useClearance } from '@/src/hooks/useClearance';
+import { useClock, useToday } from '@/src/hooks/useClock';
 import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
@@ -45,7 +46,6 @@ import { PersonBio } from '@/src/components/person/PersonBio';
 import { PersonDefining } from '@/src/components/person/PersonDefining';
 import { FilmPosterCard, FilmographyHeader, GridColumn } from '@/src/components/person/PersonFilmography';
 import { sortCanon } from '@/src/components/person/canon';
-import { localCalendarDate } from '@/src/utils/timeAgo';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import Buster from '@/src/components/Buster';
 import reelToast from '@/src/utils/reelToast';
@@ -109,7 +109,7 @@ const SELF_RE = /^self\b/i;
 /** The veil reaches past the back button: its 36pt and 10pt of fall below it. */
 const VEIL_BELOW_BACK = 46;
 
-// "Today" is the member's OWN calendar day — timeAgo.localCalendarDate, the
+// "Today" is the member's OWN calendar day — the shared clock's useToday, the
 // app's one answer, and the one the time-zone suite checks. Not
 // `toISOString().slice(0, 10)`: that is UTC, so a member in Los Angeles at 5pm
 // would already be "tomorrow" and see tomorrow's releases ranked as released.
@@ -323,9 +323,13 @@ export default function PersonDetailScreen() {
   const heroBackdrop = definingFilm?.backdrop_path ? tmdb.backdrop(definingFilm.backdrop_path) : null;
 
   // THE CANON — the record first, newest first (src/components/person/canon.ts).
-  const canonSorted = useMemo(() => sortCanon(canon, localCalendarDate()), [canon]);
+  // Today and this year from the shared clock: a film released while the page is open moves
+  // out of the upcoming, and a living career's span grows at the new year.
+  const today = useToday();
+  const thisYear = useClock((now) => new Date(now).getFullYear());
+  const canonSorted = useMemo(() => sortCanon(canon, today), [canon, today]);
 
-  const careerSpan = useMemo(() => calcCareerSpan(person, canon), [person, canon]);
+  const careerSpan = useMemo(() => calcCareerSpan(person, canon, thisYear), [person, canon, thisYear]);
 
   const craftLabel = useMemo(() => {
     const dept = person?.known_for_department ?? '';
@@ -338,7 +342,6 @@ export default function PersonDetailScreen() {
 
   const huntFilms = useMemo(() => {
     if (!isDirectingFile) return [];
-    const today = localCalendarDate();
 
     return canon.filter((c) => {
       const isLogged = _loggedIndex[c.id] !== undefined;
@@ -346,7 +349,7 @@ export default function PersonDetailScreen() {
       const hasVotes = (c.vote_count ?? 0) > 0;
       return isReleased || isLogged || hasVotes;
     });
-  }, [isDirectingFile, canon, _loggedIndex]);
+  }, [isDirectingFile, canon, _loggedIndex, today]);
 
   const seenCount = useMemo(() => {
     if (huntFilms.length === 0) return 0;

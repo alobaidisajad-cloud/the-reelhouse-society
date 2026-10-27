@@ -19,6 +19,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { EDGE_LIT } from '@/src/theme/light';
 import { formatLongCalendarDate } from '@/src/utils/timeAgo';
+import { useToday } from '@/src/hooks/useClock';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -29,14 +30,11 @@ interface NitrateCalendarProps {
 }
 
 export default function NitrateCalendar({ value, onChange }: NitrateCalendarProps) {
-    const selected = value ? new Date(value + 'T12:00:00') : new Date();
+    const today = useToday();
+    const selected = new Date(`${value || today}T12:00:00`);
     const [viewYear, setViewYear] = useState(selected.getFullYear());
     const [viewMonth, setViewMonth] = useState(selected.getMonth());
 
-    const today = useMemo(() => {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    }, []);
 
     // Build the grid: ISO week starts on Monday
     const days = useMemo(() => {

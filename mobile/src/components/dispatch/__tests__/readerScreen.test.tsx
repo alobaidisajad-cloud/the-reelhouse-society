@@ -14,7 +14,7 @@
  * screen is tested against the store, not against an idea of it.
  */
 import React, { act } from 'react';
-import { Alert, ScrollView, Share } from 'react-native';
+import { Alert, AppState, ScrollView, Share } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -324,6 +324,33 @@ describe('the reader', () => {
     const { getByText, queryByText } = await mount();
     expect(getByText('CLOSES IN 3 DAYS')).toBeTruthy();
     expect(queryByText(/MOMENTS AGO/)).toBeNull();
+  });
+
+  it('a ballot that closes while it is read is drawn CLOSED on return, with no "closes …" left', async () => {
+    // The closing was worked out once, as the page drew: back after it had passed, the
+    // same rows drew nothing again, and the ballot still offered its options.
+    const heard: ((next: string) => void)[] = [];
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
+      heard.push(listener as (next: string) => void);
+      return { remove: () => {} } as ReturnType<typeof AppState.addEventListener>;
+    });
+    const opened = Date.now();
+    mockRow = row({
+      kind: 'ballot', title: 'What tonight?', body: 'What tonight?',
+      options: [
+        { film_id: 1, title: 'Tokyo Story', poster_path: null },
+        { film_id: 2, title: 'Late Spring', poster_path: null },
+      ],
+      closes_at: new Date(opened + 90 * 60_000).toISOString(),
+    });
+    const { getByText, queryByText } = await mount();
+    expect(getByText('CLOSES IN 1 HR.')).toBeTruthy();
+
+    jest.spyOn(Date, 'now').mockReturnValue(opened + 26 * 3_600_000);
+    await act(async () => { heard.forEach((l) => l('active')); });
+    expect(getByText('CLOSED')).toBeTruthy();
+    expect(queryByText(/^CLOSES/)).toBeNull();
+    jest.restoreAllMocks();
   });
 
   it('moves the marks from the docked bar', async () => {

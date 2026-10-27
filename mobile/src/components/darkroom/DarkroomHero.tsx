@@ -2,6 +2,7 @@
 // DarkroomHero — the Darkroom's title and its search, with suggestions
 // ============================================================
 import React from 'react';
+import { useClock } from '@/src/hooks/useClock';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
@@ -46,6 +47,8 @@ export const DarkroomHero = React.memo(function DarkroomHero({
   animatedSearchProps, animatedSearchStyle, setFieldFocused,
 }: DarkroomHeroProps) {
   const arrival = useArrival({ duration: MS.considered, easing: arrive(), name: 'darkroom.hero' });
+  // The small hours are told as they come, with the tray open.
+  const isLateNight = useClock((now) => { const h = new Date(now).getHours(); return h >= 2 && h < 6; });
   return (
     <View style={s.heroContainer}>
       <DarkroomAtmo />
@@ -58,8 +61,6 @@ export const DarkroomHero = React.memo(function DarkroomHero({
       />
       <Animated.View style={[s.heroContent, arrival]}>
         {(() => {
-          const h = new Date().getHours();
-          const isLateNight = h >= 2 && h < 6;
           return (
             <>
               {/* A display heading, so the house's display cap (1.2). At 320pt and the

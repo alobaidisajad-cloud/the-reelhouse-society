@@ -52,6 +52,7 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatClockTime, formatDateMonthDay } from '@/src/utils/timeAgo';
+import { useClock } from '@/src/hooks/useClock';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import { authorName, isDepartedHandle, quotedName } from '@/src/constants/departed';
@@ -240,6 +241,8 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
   const isWithdrawn = !!msg.deleted_at;
   const isSending = msg.status === 'sending';
   const isFailed = msg.status === 'failed';
+  // TODAY turns to YESTERDAY at the member's midnight, with the room still open.
+  const day = useClock((now) => (showDate ? formatDay(msg.created_at, now) : ''));
 
   return (
     <View>
@@ -247,7 +250,7 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
         <View style={s.dateDivider}>
           <View style={s.dateLine} />
           <View style={s.dateSprocket} />
-          <Text style={s.dateText}>{formatDay(msg.created_at)}</Text>
+          <Text style={s.dateText}>{day}</Text>
           <View style={s.dateSprocket} />
           <View style={s.dateLine} />
         </View>
@@ -330,10 +333,10 @@ Dispatch.displayName = 'Dispatch';
 /** Between the composer, or a bar in its place, and the home indicator's edge. */
 export const BAR_FOOT_GAP = 8;
 
-function formatDay(iso: string): string {
+function formatDay(iso: string, now: number): string {
   const d = new Date(iso);
-  const today = new Date();
-  const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+  const today = new Date(now);
+  const yesterday = new Date(now); yesterday.setDate(today.getDate() - 1);
   const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   if (sameDay(d, today)) return 'TODAY';
   if (sameDay(d, yesterday)) return 'YESTERDAY';

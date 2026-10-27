@@ -55,7 +55,8 @@ import ProfileListsTab from '@/src/components/profile/ProfileListsTab';
 import ProfilePhysicalTab from '@/src/components/profile/ProfilePhysicalTab';
 import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
 import { RankBadge, rankOf } from '@/src/components/RankBadge';
-import { formatDateMonthYear, timeAgo } from '@/src/utils/timeAgo';
+import { formatDateMonthYear } from '@/src/utils/timeAgo';
+import { useTimesAgo } from '@/src/hooks/useClock';
 import {
     ArrowLeft,
     CalendarDays,
@@ -408,6 +409,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     listsSort,
     serverDecades: analyticsShape?.watchlist_decades,
   });
+  const latelyAgo = useTimesAgo(recentLogs.map((log: ProfileLog) => log.watchedDate ?? (log as any).createdAt));
 
   // The reading lamp hangs from the backdrop's hem (the plate's laid-out height),
   // and the same film's colour blooms onto the page beneath.
@@ -1255,7 +1257,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       {log.status === 'rewatched' ? (
                         <Text {...scaledTextProps} style={s.latelyRewatch} numberOfLines={1}>↺ REWATCHED</Text>
                       ) : (
-                        <Text {...scaledTextProps} style={s.latelyWhen} numberOfLines={1}>{timeAgo(log.watchedDate ?? (log as any).createdAt).toUpperCase()}</Text>
+                        <Text {...scaledTextProps} style={s.latelyWhen} numberOfLines={1}>{(latelyAgo[i] ?? '').toUpperCase()}</Text>
                       )}
                     </View>
                   </PressableScale>

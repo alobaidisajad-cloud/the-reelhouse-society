@@ -17,11 +17,12 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { MONTHS } from '@/src/components/dispatch/dayLabel';
+import { useClock } from '@/src/hooks/useClock';
 
 export type HonourKind = 'log' | 'list' | 'post';
 
 /** `2026-09-30` → `30 SEPTEMBER`; with the year when it is not this year's. Never Intl (Hermes). */
-export function honourDay(edition: string, now: Date = new Date()): string | null {
+export function honourDay(edition: string, now: Date): string | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(edition);
   if (!m) return null;
   const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
@@ -30,7 +31,7 @@ export function honourDay(edition: string, now: Date = new Date()): string | nul
   return year === now.getFullYear() ? date : `${date} ${year}`;
 }
 
-export const honourLine = (edition: string, now?: Date) => {
+export const honourLine = (edition: string, now: Date) => {
   const day = honourDay(edition, now);
   return day ? `✦ FEATURED IN THE LOBBY · ${day}` : null;
 };
@@ -65,7 +66,9 @@ export const LobbyHonour = memo(function LobbyHonour({ kind, id, style }: {
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });
-  const line = data ? honourLine(data) : null;
+  // The year is named only when it is not this one: this one, from the shared clock.
+  const year = useClock((now) => new Date(now).getFullYear());
+  const line = data ? honourLine(data, new Date(year, 0, 1)) : null;
   if (!line || !member) return null;
   return (
     // two lines at most: at the largest text on the narrowest phone the day wraps under, never ends in …

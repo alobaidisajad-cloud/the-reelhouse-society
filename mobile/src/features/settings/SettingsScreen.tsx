@@ -38,6 +38,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { isArchivistPlusTier, resolveTier } from '@/src/utils/tier';
 import { STORE } from '@/src/components/society/SmallPrint';
 import { formatDateMonthYear } from '@/src/utils/timeAgo';
+import { useClock } from '@/src/hooks/useClock';
 import { DEFAULT_DURATION } from '@/src/utils/enter';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -81,6 +82,7 @@ const TITLE_FADE_TO = 210;
 
 export function SettingsScreen() {
   const { user, logout } = useAuthStore();
+  const thisYear = useClock((now) => new Date(now).getFullYear());
   const { mutateAsync: updateUserMutation, isPending: isUpdatingUser } = useUpdateUser();
   const end = useContentBottom();
   const headerTop = usePushedHeaderTop();
@@ -650,7 +652,7 @@ export function SettingsScreen() {
           <View style={st.endMarkRow}>
             <View style={st.endMarkLine} /><Sparkles size={8} color={colors.sepia} strokeWidth={1.5} /><View style={st.endMarkLine} />
           </View>
-          <Text style={st.heritageCopyright} {...scaledTextProps}>© 1924–{new Date().getFullYear()} The ReelHouse Society. All dossiers are classified.</Text>
+          <Text style={st.heritageCopyright} {...scaledTextProps}>© 1924–{thisYear} The ReelHouse Society. All dossiers are classified.</Text>
           {!!appVersion && <Text style={st.edition} {...scaledTextProps}>EDITION {appVersion}</Text>}
         </Arrive>
       </Animated.ScrollView>

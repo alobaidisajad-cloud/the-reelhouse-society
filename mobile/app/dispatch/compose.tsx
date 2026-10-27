@@ -30,6 +30,7 @@ import { readMinutes, readTimeOf } from '@/src/components/dispatch/readTime';
 import { WEEKDAYS, hourLabel } from '@/src/components/dispatch/dayLabel';
 import { paperTierOf } from '@/src/stores/dispatchTypes';
 import { formatDateMonthDay } from '@/src/utils/timeAgo';
+import { useClock } from '@/src/hooks/useClock';
 import { useDoor } from '@/src/hooks/useDoor';
 import {
   pullDraft, pushDraft, dropDraft, whichCopy, SYNC_EVERY_MS, type RemoteDraft,
@@ -218,6 +219,8 @@ function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
 }
 
 function ComposeDossierScreen() {
+    // The day the proof is dated: it turns at midnight, with the desk open.
+    const filedOn = useClock((now) => formatDateMonthDay(new Date(now).toISOString()).toUpperCase());
     const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
     const { user } = useAuthStore();
     const edge = useBottomEdge();
@@ -726,7 +729,7 @@ function ComposeDossierScreen() {
                                 avatar: user?.avatar_url ?? null,
                             }}
                             readTime={readTimeOf(content)}
-                            filed={formatDateMonthDay(new Date().toISOString()).toUpperCase()}
+                            filed={filedOn}
                             film={film ? {
                                 title: film.title,
                                 director: film.sub,
