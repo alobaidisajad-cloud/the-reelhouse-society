@@ -34,6 +34,7 @@ import { useAmbientGlow } from '@/src/hooks/useAmbientGlow';
 import { colors } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
+import { TmdbCredit } from '@/src/components/TmdbCredit';
 import DataVault from '@/src/features/settings/DataVault';
 import { storage } from '@/src/stores/mmkv-storage';
 import PressableScale from '@/src/components/PressableScale';
@@ -659,6 +660,7 @@ export function SettingsScreen() {
           </View>
           <Text style={st.heritageCopyright} {...scaledTextProps}>© 1924–{thisYear} The ReelHouse Society. All dossiers are classified.</Text>
           {!!appVersion && <Text style={st.edition} {...scaledTextProps}>EDITION {appVersion}</Text>}
+          <TmdbCredit />
         </Arrive>
       </Animated.ScrollView>
 

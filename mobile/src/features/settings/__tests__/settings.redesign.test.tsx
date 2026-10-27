@@ -208,6 +208,23 @@ describe('a profile not yet read', () => {
   });
 });
 
+describe('TMDB, credited as its terms require (P4.47)', () => {
+  it('draws TMDB\'s logo and its sentence at the foot, under the house\'s own colophon', async () => {
+    const r = await settle(mount());
+    expect(r.getByTestId('tmdb-logo')).toBeTruthy();
+    expect(r.getByText('This product uses the TMDB API but is not endorsed or certified by TMDB.')).toBeTruthy();
+    expect(r.getByLabelText('TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.')).toBeTruthy();
+  });
+
+  it('draws the wordmark TMDB publishes, path for path (assets/images/tmdb-short.svg, its own file)', () => {
+    const { readFileSync } = jest.requireActual('fs') as typeof import('fs');
+    const { join } = jest.requireActual('path') as typeof import('path');
+    const root = join(__dirname, '..', '..', '..', '..');
+    const official = /<path[^>]* d="([^"]+)"/.exec(readFileSync(join(root, 'assets/images/tmdb-short.svg'), 'utf8'))![1];
+    expect(readFileSync(join(root, 'src/components/TmdbCredit.tsx'), 'utf8')).toContain(`'${official}'`);
+  });
+});
+
 describe('the page says what it is', () => {
   it('is called Settings, and the title is centred', async () => {
     const r = await settle(mount());
