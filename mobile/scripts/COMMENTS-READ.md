@@ -100,11 +100,11 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-23 | edited: each docket rebuilt from its read during the render that brings it, never an effect after; read whole: reads source through readCode; no regex stripper |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
 | app/(admin)/tribunal.tsx | 2026-10-23 | edited: both dockets rebuilt during the render that brings their read: no frame of "The docket is clear" over an answered read; header top from usePushedHeaderTop; foot from useContentBottom, the sheet's from useSheetBottom |
-| app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-27 | edited: a stack named by a link: another member's is not offered, one's own opens; the query stand-in has onlineManager; edited: the bar's foot and the scroll above it read from navMetrics |
+| app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-27 | edited: a new stack half-built: it opens on what was left, and goes once filed; edited: a stack named by a link: another member's is not offered, one's own opens; the query stand-in has onlineManager; edited: the bar's foot and the scroll above it read from navMetrics |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
 | app/(modals)/cover-picker.tsx | 2026-10-27 | edited: the picker the host's alone; anyone else told NOT YOURS TO CHANGE (P4.4); top from useModalTop |
-| app/(modals)/list-modal.tsx | 2026-10-27 | edited: a stack cached from another member's page is never theirs to amend: NOT YOURS TO AMEND, no form (P4.4); edited: the last number shown during a drag held as state; edited: the unready bar is hollow (UNREADY); CLOSE centred on the title's first line; the large-stack notice in sentences |
+| app/(modals)/list-modal.tsx | 2026-10-27 | edited: a new stack half-built kept as a draft, taken up as the sheet renders, gone once filed; edited: a stack cached from another member's page is never theirs to amend: NOT YOURS TO AMEND, no form (P4.4); edited: the last number shown during a drag held as state; edited: the unready bar is hollow (UNREADY); CLOSE centred on the title's first line; the large-stack notice in sentences |
 | app/(modals)/log-modal.tsx | 2026-10-23 | edited: an edit waiting for its record says so (retrieving, unreachable, No Such Record), never a blank form; the film's atmosphere hangs only over the docket |
 | app/(modals)/login.tsx | 2026-10-26 | edited: the lore line picked once, as state; header top from useModalTop; the page stops at the edge (useBottomEdge) |
 | app/(modals)/membership.tsx | 2026-10-26 | edited: the billing shown is the year whenever no monthly price is sold, derived, not reset by an effect; nav top from useModalTop; ends above the window and its fade, or at useContentBottom |
@@ -748,7 +748,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/zz-render.lib.ts | 2026-10-24 | edited: a text carries its side margins (--mx); a nested Text is drawn with its parent's scaling, through source marks too |
 | src/components/profile/Achievements.tsx | 2026-10-01 | every honour from the whole record; said while unread or failed |
 | src/components/profile/ArchiveLock.tsx | 2026-10-26 | edited: the lock shuts again when the app goes to the background; while it stands open the room is covered when the app is away (modules/room-cover); edited: the phone's answer shown in its then; enters and leaves as a PresenceView |
-| src/components/profile/AvatarCropSheet.tsx | 2026-10-27 | edited: Android's back closes the sheet, not Edit Profile beneath it; enters and leaves as a PresenceView; foot from useSheetBottom |
+| src/components/profile/AvatarCropSheet.tsx | 2026-10-27 | edited: a kept portrait prepared as the sheet opens, as if just picked; edited: Android's back closes the sheet, not Edit Profile beneath it; enters and leaves as a PresenceView; foot from useSheetBottom |
 | src/components/profile/CinemaDNACard.tsx | 2026-10-27 | edited: Android's back closes the card, not the member's file beneath it; close from useOverlayTop |
 | src/components/profile/CinematicInsights.tsx | 2026-10-01 | says retrieving or failed; whose-words; no history comments |
 | src/components/profile/favourites.ts | 2026-10-01 | comments say what is true now |
@@ -854,7 +854,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/features/profile/__tests__/linksEditor.test.tsx | — |  |
 | src/features/profile/__tests__/theDossierSealIsSpoken.test.tsx | — |  |
 | src/features/profile/__tests__/theEditDeskSaysWhatWentWrong.test.tsx | 2026-10-27 | edited: the leaving guard stood in for: the desk is drawn with no navigator; written: the edit desk says what went wrong |
-| src/features/profile/EditProfileScreen.tsx | 2026-10-15 | nav top from usePushedHeaderTop; foot from useContentBottom |
+| src/features/profile/EditProfileScreen.tsx | 2026-10-27 | edited: the crop sheet handed the kept portrait, and it is let go once used or closed; nav top from usePushedHeaderTop; foot from useContentBottom |
 | src/features/profile/LinksEditor.tsx | 2026-10-03 | edited: the link title and address name their caps |
 | src/features/profile/profile.styles.ts | 2026-10-15 | the title's glow has room inside the box a phone cuts it at |
 | src/features/settings/__tests__/settings.redesign.test.tsx | 2026-10-23 | edited: a profile not yet read: no form, retrieved, asked again on failure; a read one draws the form and asks nothing; its navigation mock stands on the one base (test-utils/navigationMock); the Auteur manages a membership, not a rank to choose |
@@ -915,7 +915,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useDeviceThrottling.ts | 2026-10-02 | Read whole (launch audit). Answered in an effect, after the preloader had decided on the first render; known synchronously now. A settings override no screen ever wrote removed. |
 | src/hooks/useDispatchArchive.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/hooks/useDoor.ts | 2026-10-26 | edited: the door's answer held with the member it was read for and shown in the read's then; loading is the answer not yet come; the unused refresh gone; read whole in the Dispatch audit; comments checked true |
-| src/hooks/useEditProfile.ts | 2026-10-27 | edited: every way out asks while something is unsaved (useAskBeforeLeaving), a landed save leaving freely; edited: the save checked at the press; edited: the preview follows the stored portrait when it changes; a picture just chosen is kept through any other change; a refusal for the member's standing is not reported as a fault |
+| src/hooks/useEditProfile.ts | 2026-10-27 | edited: a portrait picked while Android ended the app reopens the crop sheet holding it; edited: every way out asks while something is unsaved (useAskBeforeLeaving), a landed save leaving freely; edited: the save checked at the press; edited: the preview follows the stored portrait when it changes; a picture just chosen is kept through any other change; a refusal for the member's standing is not reported as a fault |
 | src/hooks/useFeeds.ts | 2026-10-01 | one cursor rule; the fallback note gone with the fallback |
 | src/hooks/useFilmAnimations.ts | 2026-10-01 | each loop only while seen |
 | src/hooks/useFilmDetail.ts | 2026-10-01 | an unread verdict is null, never silence |
@@ -1356,7 +1356,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/logger.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/mappers.ts | 2026-10-02 | dead mappers removed (dossier, lounge message, watchlist, archive) |
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/utils/memberDrafts.ts | 2026-10-15 | edited: countDrafts; drafts are erased only at the member's own sign-out |
+| src/utils/memberDrafts.ts | 2026-10-27 | edited: a stack is a kind of draft; edited: countDrafts; drafts are erased only at the member's own sign-out |
 | src/utils/memoryManager.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/utils/mutationExecutor.ts | 2026-10-16 | edited: an empty place in a queued history is dropped, not sorted (it threw); a log's decade and genres and a Lounge message's username, columns neither table has, are never written; a rewatch's conflict reads the log's id alone |
 | src/utils/networkError.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -1478,6 +1478,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aReadIsKeyedOnWhoNotTheObject.guard.test.ts | 2026-10-23 | new: every hook keyed on the auth user object judged no read; a new one fails |
 | src/utils/profileRead.ts | 2026-10-23 | whether the member's profile has been read: its own columns on the user, never the auth user alone |
 | src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; new: the room and roster asked once while the session settles, again for another member |
+| src/features/profile/__tests__/aPortraitPickedAsAndroidLeftComesBack.test.tsx | 2026-10-27 | Written 2026-10-27: on Android, Edit Profile opens the crop sheet holding the portrait the system kept, and the sheet prepares it (P4.12) |
 | src/features/settings/__tests__/everyOtherDeviceSignsOut.test.tsx | 2026-10-26 | Written 2026-10-27: Settings signs every other device out, asked first, the answer said either way |
 | src/hooks/__tests__/backClosesTheOverlay.test.tsx | 2026-10-27 | Written 2026-10-27: the hook, newest first, and the crop sheet and Cinema DNA card closing on back (P4.12) |
 | src/hooks/__tests__/unsavedWorkAsksBeforeLeaving.test.tsx | 2026-10-27 | Written 2026-10-27: through a real router, a pop over unsaved work is stopped and asks; Cancel stays, Discard leaves (P4.12) |

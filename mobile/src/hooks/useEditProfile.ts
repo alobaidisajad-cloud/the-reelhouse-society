@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { Platform } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -143,6 +145,21 @@ export function useEditProfile() {
   }
   const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
   const [showCropModal, setShowCropModal] = useState(false);
+  // A portrait chosen while Android ended the app: the system keeps the picker's answer, and the
+  // crop sheet opens again holding it, as if it had just been picked.
+  const [pendingPortrait, setPendingPortrait] = useState<string | null>(null);
+  useEffect(() => {
+    if (Platform.OS !== 'android') return undefined;
+    let live = true;
+    ImagePicker.getPendingResultAsync().then((result) => {
+      if (!live || !result || 'code' in result || result.canceled) return;
+      const uri = result.assets.at(0)?.uri;
+      if (!uri) return;
+      setPendingPortrait(uri);
+      setShowCropModal(true);
+    }, () => { /* nothing kept: the sheet stays shut */ });
+    return () => { live = false; };
+  }, []);
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | Error | null>(null);
   // The one-beat "DOSSIER AMENDED" seal shown on a successful save before we
@@ -341,6 +358,8 @@ export function useEditProfile() {
     setAvatarBase64,
     showCropModal,
     setShowCropModal,
+    pendingPortrait,
+    clearPendingPortrait: () => setPendingPortrait(null),
     handleRemoveAvatar: () => {
       setAvatarPreview(null);
       setAvatarBase64(null);

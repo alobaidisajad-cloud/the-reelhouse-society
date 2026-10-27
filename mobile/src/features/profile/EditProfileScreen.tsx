@@ -124,7 +124,7 @@ export function EditProfileScreen() {
     avatarPreview, setAvatarPreview,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     avatarBase64, setAvatarBase64,
-    showCropModal, setShowCropModal,
+    showCropModal, setShowCropModal, pendingPortrait, clearPendingPortrait,
     handleRemoveAvatar,
     fields, handleAddLink, handleRemoveLink,
     saving, sealed, submitError,
@@ -388,10 +388,12 @@ export function EditProfileScreen() {
         {showCropModal && (
           <AvatarCropSheet
              key="crop"
-             onClose={() => setShowCropModal(false)}
+             pending={pendingPortrait}
+             onClose={() => { clearPendingPortrait(); setShowCropModal(false); }}
              onSuccess={(base64: string) => {
                  setAvatarBase64(base64);
                  setAvatarPreview(`data:image/jpeg;base64,${base64}`);
+                 clearPendingPortrait();
                  setShowCropModal(false);
              }}
           />

@@ -665,3 +665,27 @@ describe('a stack named by a link', () => {
     expect(r.getByLabelText('Stack title').props.value).toBe('Neon Noir Masterpieces');
   });
 });
+
+// A new stack half-built is kept (P4.12): swiped away, the sheet opens on it again; filed, it goes.
+describe('a new stack half-built', () => {
+  const { useAuthStore } = require('@/src/stores/auth');
+  const { readDraft, writeDraft, clearDraft } = require('@/src/utils/memberDrafts');
+  beforeEach(() => { useAuthStore.setState({ user: { id: 'me' } }); clearDraft('me', 'stack'); });
+  afterEach(() => { useAuthStore.setState({ user: null }); clearDraft('me', 'stack'); });
+
+  it('opens on what the member left', async () => {
+    writeDraft('me', 'stack', { title: 'Rooms With No Exit', description: 'Walls close in.', films: FILMS });
+    const r = await mount();
+    expect(r.getByLabelText('Stack title').props.value).toBe('Rooms With No Exit');
+    expect(r.getByText('Blade Runner')).toBeTruthy();
+  });
+
+  it('is gone once the stack is filed', async () => {
+    writeDraft('me', 'stack', { title: 'Rooms With No Exit', films: FILMS });
+    mockCreateList.mockResolvedValue(undefined);
+    const r = await mount();
+    await act(async () => { await fireEvent.press(r.getByText('FILE THE STACK')); });
+    expect(mockCreateList).toHaveBeenCalledTimes(1);
+    expect(readDraft('me', 'stack')).toBeNull();
+  });
+});

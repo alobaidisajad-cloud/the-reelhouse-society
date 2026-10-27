@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { View, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -21,6 +21,8 @@ import { useSheetBottom } from '@/src/components/layout/navMetrics';
 interface Props {
   onClose: () => void;
   onSuccess: (url: string) => void;
+  /** A portrait picked while Android ended the app, prepared as the sheet opens. */
+  pending?: string | null;
 }
 
 /**
@@ -34,9 +36,9 @@ function askForSettings(what: string) {
   ]);
 }
 
-export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
+export default function AvatarCropSheet({ onClose, onSuccess, pending }: Props) {
   const { user } = useAuthStore();
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(!!pending);
   const sheetFoot = useSheetBottom();
   // Android's back closes the sheet, not Edit Profile beneath it.
   useBackCloses(true, onClose);
@@ -71,8 +73,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   // Re-encode every chosen image before it leaves the device. This strips all
   // embedded metadata (EXIF — including GPS coordinates the photo may carry),
   // normalizes the output to a square 512px JPEG, and bounds the upload size.
-  const processAndUpload = async (uri: string) => {
-    setUploading(true);
+  const prepare = async (uri: string) => {
     try {
       const rendered = await ImageManipulator.manipulate(uri).resize({ width: 512 }).renderAsync();
       const out = await rendered.saveAsync({ compress: 0.7, format: SaveFormat.JPEG, base64: true });
@@ -83,10 +84,20 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       logger.warn('[AvatarCropSheet] the photo could not be prepared:', err);
       reelToast.error('That photo could not be prepared. Try another.');
       TactileEngine.error();
-    } finally {
-      setUploading(false);
     }
   };
+  const processAndUpload = async (uri: string) => {
+    setUploading(true);
+    await prepare(uri);
+    setUploading(false);
+  };
+
+  // The portrait the system kept for us: prepared once, as the sheet opens.
+  useEffect(() => {
+    if (!pending) return;
+    void prepare(pending).then(() => setUploading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <View style={StyleSheet.absoluteFill}>

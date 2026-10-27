@@ -35,6 +35,7 @@ import { Arrive } from '@/src/components/Arrive';
 import { EmptyState } from '@/src/components/EmptyStates';
 import { WayOut } from '@/src/components/TryAgain';
 import { useAuthStore } from '@/src/stores/auth';
+import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 
 // At module scope: made inside the component, it would be a new type, and remount, each render.
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -182,6 +183,27 @@ export default function ListModal() {
         editList?.films?.map((f: { id: number; title?: string; poster_path?: string | null; poster?: string | null }) => ({ id: f.id, title: f.title ?? '', poster_path: f.poster_path ?? f.poster ?? null })) ?? []
     );
     const [saving, setSaving] = useState(false);
+
+    // A new stack half-built is kept as the member left it: swiped away, the sheet opens on it
+    // again. Taken up as it renders, once per member; kept a beat after each change; gone once filed.
+    const [draftFor, setDraftFor] = useState<string | null>(null);
+    if (!params.editId && me && draftFor !== me) {
+        setDraftFor(me);
+        const kept = readDraft<{ title?: string; description?: string; isPrivate?: boolean; isRanked?: boolean; films?: ListFilm[] }>(me, 'stack')?.data;
+        if (kept?.title) setTitle(kept.title);
+        if (kept?.description) setDescription(kept.description);
+        if (kept?.isPrivate) setIsPrivate(true);
+        if (kept?.isRanked) setIsRanked(true);
+        if (Array.isArray(kept?.films)) setFilms(kept.films);
+    }
+    useEffect(() => {
+        if (params.editId || !me || saving) return undefined;
+        const t = setTimeout(() => {
+            if (title.trim() || description.trim() || films.length) writeDraft(me, 'stack', { title, description, isPrivate, isRanked, films });
+            else clearDraft(me, 'stack');
+        }, 600);
+        return () => clearTimeout(t);
+    }, [params.editId, me, saving, title, description, isPrivate, isRanked, films]);
 
     // The form fills when the stack first ARRIVES, not only at mount: a stack
     // not yet loaded would open an empty form whose save deletes every film.
@@ -343,6 +365,7 @@ export default function ListModal() {
                     isRanked,
                     films: films.map(f => ({ id: f.id, title: f.title, poster: f.poster_path ?? null })),
                 });
+                if (me) clearDraft(me, 'stack');
             }
             queryClient.invalidateQueries({ queryKey: ['stacks'] });
             TactileEngine.success();
