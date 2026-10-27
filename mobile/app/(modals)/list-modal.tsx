@@ -624,7 +624,7 @@ export default function ListModal() {
         return (
             <View style={[s.container, s.notYours, { paddingTop: handleTop }]}>
                 <EmptyState buster="suspicious" title="Not Yours to Amend" subtitle="This stack is another member's. Only its curator may change it." />
-                <WayOut label="Close" onPress={() => nav.back()} belowTryAgain={false} />
+                <WayOut label="Close" onPress={() => nav.back()} belowAnAct={false} />
             </View>
         );
     }

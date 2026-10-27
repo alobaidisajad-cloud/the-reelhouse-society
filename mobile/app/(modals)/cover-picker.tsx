@@ -56,7 +56,7 @@ export default function CoverPicker() {
       <View style={[s.container, s.notYours, { paddingTop: top }]}>
         <RoomLight room="default" />
         <EmptyState buster="suspicious" title="Not Yours to Change" subtitle="Only a salon's host may choose its cover." />
-        <WayOut label="Close" onPress={() => nav.back()} belowTryAgain={false} />
+        <WayOut label="Close" onPress={() => nav.back()} belowAnAct={false} />
       </View>
     );
   }

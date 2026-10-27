@@ -63,22 +63,22 @@ export function TryAgainLine({ onPress, accessibilityLabel = 'Try again', hitSlo
 
 /**
  * The quiet way out beside the act, one weight down from TRY AGAIN: back, or to
- * the Lobby. Placed 14pt below a TRY AGAIN, each claims half that gap (7pt), so
- * neither touch area takes the other's — the crash net's arithmetic, kept here
- * so every failed page has it without doing it again.
+ * the Lobby. Placed ACTS_GAP below an act (TRY AGAIN, IDENTIFY YOURSELF), each
+ * claims half that gap, so neither touch area takes the other's — the crash
+ * net's arithmetic, kept here so every page has it without doing it again.
  */
-export function WayOut({ label, onPress, belowTryAgain = true }: {
+export function WayOut({ label, onPress, belowAnAct = true }: {
   /** Title case, as spoken: 'Go back', 'Return to the Lobby'. Drawn in capitals. */
   label: string;
   onPress: () => void;
-  belowTryAgain?: boolean;
+  belowAnAct?: boolean;
 }) {
   return (
     <PressableScale
       onPress={onPress}
       style={s.wayOut}
       haptic="selection"
-      hitSlop={belowTryAgain ? { top: 7 } : undefined}
+      hitSlop={belowAnAct ? WAY_OUT_BELOW_AN_ACT : undefined}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
@@ -87,9 +87,10 @@ export function WayOut({ label, onPress, belowTryAgain = true }: {
   );
 }
 
-/** The gap between TRY AGAIN and the way out; each claims half of it. */
+/** The gap between an act and the way out below it; each claims half of it. */
 export const ACTS_GAP = 14;
 export const TRY_AGAIN_ABOVE_A_WAY_OUT = { bottom: ACTS_GAP / 2 } as const;
+const WAY_OUT_BELOW_AN_ACT = { top: ACTS_GAP / 2 } as const;
 
 export const s = StyleSheet.create({
   btn: { ...EDGE_LIT,

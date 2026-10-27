@@ -12,7 +12,7 @@ import { LogIn } from 'lucide-react-native';
 import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { EmptyState } from '@/src/components/EmptyStates';
-import { WayOut } from '@/src/components/TryAgain';
+import { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/TryAgain';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { colors, fonts } from '@/src/theme/theme';
 import { nav } from '@/src/utils/typedRouter';
@@ -34,14 +34,18 @@ export function returnAfterSignIn(next: string | null | undefined): string {
   return next && RETURNS.some((r) => r.test(next)) ? next : '/(tabs)';
 }
 
+const SLOP = { top: 15, bottom: 15, left: 15, right: 15 } as const;
+/** Above a way out, the way in reaches down only half the gap between them (TryAgain.tsx). */
+const SLOP_ABOVE_A_WAY_OUT = { ...SLOP, ...TRY_AGAIN_ABOVE_A_WAY_OUT } as const;
+
 /** The way in, as every door that asks a stranger to identify themselves draws it. */
-export function IdentifyYourself({ next, testID }: { next?: string; testID?: string }) {
+export function IdentifyYourself({ next, testID, aboveAWayOut = false }: { next?: string; testID?: string; aboveAWayOut?: boolean }) {
   return (
     <PressableScale
       testID={testID}
       style={s.cta}
       onPress={() => nav.push(next ? `/login?next=${encodeURIComponent(next)}` : '/login')}
-      hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+      hitSlop={aboveAWayOut ? SLOP_ABOVE_A_WAY_OUT : SLOP}
       haptic="medium"
       accessibilityRole="button"
       accessibilityLabel="Identify yourself. Sign in."
@@ -58,17 +62,17 @@ export function MembersOnly({ next, style }: { next: string; style?: StyleProp<V
     <View style={[s.room, style]}>
       <RoomLight room="default" />
       <EmptyState buster="unimpressed" title="For Members" subtitle="Identify yourself, and the house brings you straight back here." />
-      <View style={s.way}>
-        <IdentifyYourself next={next} testID="members-only-sign-in" />
+      <View style={s.acts}>
+        <IdentifyYourself next={next} testID="members-only-sign-in" aboveAWayOut />
+        <WayOut label="Close" onPress={() => nav.back()} />
       </View>
-      <WayOut label="Close" onPress={() => nav.back()} belowTryAgain={false} />
     </View>
   );
 }
 
 const s = StyleSheet.create({
   room: { flex: 1, justifyContent: 'center', backgroundColor: colors.ink },
-  way: { alignItems: 'center', marginBottom: 8 },
+  acts: { alignItems: 'center', gap: ACTS_GAP },
   cta: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 24, paddingVertical: 10,

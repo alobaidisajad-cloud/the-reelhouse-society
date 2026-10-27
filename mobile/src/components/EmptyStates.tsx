@@ -133,7 +133,7 @@ export function EmptyOffline({ onRetry, wayOut }: {
             {(onRetry || wayOut) && (
                 <View style={s.acts}>
                     {onRetry && <TryAgain onPress={onRetry} hitSlop={wayOut ? TRY_AGAIN_ABOVE_A_WAY_OUT : undefined} />}
-                    {wayOut && <WayOut label={wayOut.label} onPress={wayOut.onPress} belowTryAgain={!!onRetry} />}
+                    {wayOut && <WayOut label={wayOut.label} onPress={wayOut.onPress} belowAnAct={!!onRetry} />}
                 </View>
             )}
         </View>

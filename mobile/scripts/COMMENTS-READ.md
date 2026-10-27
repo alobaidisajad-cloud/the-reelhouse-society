@@ -95,7 +95,7 @@ without one). "Read" is the day its comments were last read against its code.
 | app.config.js | 2026-10-22 | edited: LAB=1 beside E2E=1: extra.lab, the lab's frame record; names every workflow that builds with E2E=1; the development profile gets back the dev client's scheme and iOS local networking; every other build is app.json |
 | app/__tests__/boot-structure.test.tsx | — |  |
 | app/__tests__/yourFileWaitsForYourHandle.test.tsx | 2026-10-03 | new: the Profile tab never calls you a stranger |
-| app/_layout.tsx | 2026-10-26 | edited: an owed sign-out settled at launch, before the session is restored; edited: the lab's frame record mounted behind LAB_BUILD alone; PathTracker moved out, and now tells nav too |
+| app/_layout.tsx | 2026-10-27 | edited: the saved cache is restored only under the build and update that wrote it; edited: an owed sign-out settled at launch, before the session is restored; edited: the lab's frame record mounted behind LAB_BUILD alone; PathTracker moved out, and now tells nav too |
 | app/(admin)/__tests__/tribunal.test.tsx | — |  |
 | app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts | 2026-10-23 | edited: each docket rebuilt from its read during the render that brings it, never an effect after; read whole: reads source through readCode; no regex stripper |
 | app/(admin)/_layout.tsx | 2026-10-02 | read; sound |
@@ -103,8 +103,8 @@ without one). "Read" is the day its comments were last read against its code.
 | app/(modals)/__tests__/list-modal.curate.test.tsx | 2026-10-27 | edited: the form's member signed in for each case and the sample stack theirs; a tap takes a film up and its arrows move it; signed out, asked in; edited: signed out, asked in; signed in as curator, the stack opens to amend; edited: the stand-in client hears the app return too; edited: a new stack half-built: it opens on what was left, and goes once filed; edited: a stack named by a link: another member's is not offered, one's own opens; the query stand-in has onlineManager; edited: the bar's foot and the scroll above it read from navMetrics |
 | app/(modals)/__tests__/social-modal.telemetry.test.tsx | — |  |
 | app/(modals)/__tests__/yourCircleIsSaidToYou.test.tsx | 2026-10-03 | new: your own circle is said to you |
-| app/(modals)/cover-picker.tsx | 2026-10-27 | edited: a stranger is asked in, never told a salon is not theirs; edited: the picker the host's alone; anyone else told NOT YOURS TO CHANGE (P4.4); top from useModalTop |
-| app/(modals)/list-modal.tsx | 2026-10-27 | edited: a tap takes a film up and its arrows move it a step, the drag's twin for a member who cannot hold and drag; a stranger is asked in; edited: a stranger is asked in, never told a stack is not theirs; edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; edited: a new stack half-built kept as a draft, taken up as the sheet renders, gone once filed; edited: a stack cached from another member's page is never theirs to amend: NOT YOURS TO AMEND, no form (P4.4); edited: the last number shown during a drag held as state; edited: the unready bar is hollow (UNREADY); CLOSE centred on the title's first line; the large-stack notice in sentences |
+| app/(modals)/cover-picker.tsx | 2026-10-27 | edited: edited: the way out's prop is belowAnAct; edited: a stranger is asked in, never told a salon is not theirs; edited: the picker the host's alone; anyone else told NOT YOURS TO CHANGE (P4.4); top from useModalTop |
+| app/(modals)/list-modal.tsx | 2026-10-27 | edited: edited: the way out's prop is belowAnAct; edited: a tap takes a film up and its arrows move it a step, the drag's twin for a member who cannot hold and drag; a stranger is asked in; edited: a stranger is asked in, never told a stack is not theirs; edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; edited: a new stack half-built kept as a draft, taken up as the sheet renders, gone once filed; edited: a stack cached from another member's page is never theirs to amend: NOT YOURS TO AMEND, no form (P4.4); edited: the last number shown during a drag held as state; edited: the unready bar is hollow (UNREADY); CLOSE centred on the title's first line; the large-stack notice in sentences |
 | app/(modals)/log-modal.tsx | 2026-10-23 | edited: an edit waiting for its record says so (retrieving, unreachable, No Such Record), never a blank form; the film's atmosphere hangs only over the docket |
 | app/(modals)/login.tsx | 2026-10-26 | edited: the lore line picked once, as state; header top from useModalTop; the page stops at the edge (useBottomEdge) |
 | app/(modals)/membership.tsx | 2026-10-26 | edited: the billing shown is the year whenever no monthly price is sold, derived, not reset by an effect; nav top from useModalTop; ends above the window and its fade, or at useContentBottom |
@@ -505,7 +505,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/readTime.ts | 2026-10-01 | true as written |
 | src/components/dispatch/roomLink.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/components/dispatch/SeriesPicker.tsx | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
-| src/components/EmptyStates.tsx | 2026-10-22 | edited: StateWords, the state's words still, shared with the crash nets; its title a header |
+| src/components/EmptyStates.tsx | 2026-10-27 | edited: edited: the way out's prop is belowAnAct; edited: StateWords, the state's words still, shared with the crash nets; its title a header |
 | src/components/ErrorBoundary.tsx | 2026-10-22 | edited: the whole app's crash in the failure family (StateWords, the house TRY AGAIN, RESTART THE APP in its plate); the tries left and the reference as quiet facts |
 | src/components/feed/__tests__/theKeyLeadsWhereItSays.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/feed/ActionDeck.tsx | 2026-10-23 | edited: the share key's label, reading: said, asked again |
@@ -817,7 +817,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/theme/OrnamentalRule.tsx | 2026-10-01 | no comments |
 | src/components/ToastHost.tsx | 2026-10-15 | pill from useOverlayTop; screens say if a sheet |
 | src/components/Toggle.tsx | 2026-10-01 | comments say what is true now |
-| src/components/TryAgain.tsx | 2026-10-22 | edited: a label for the act where it is more than asking again (RESTART THE APP) |
+| src/components/TryAgain.tsx | 2026-10-27 | edited: edited: the way out sits ACTS_GAP below any act (belowAnAct), claiming half the gap; edited: a label for the act where it is more than asking again (RESTART THE APP) |
 | src/components/__tests__/aLabelIsSpoken.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/__tests__/theKeyboardHasRoom.test.tsx | 2026-10-01 | written with the keyboard's room |
 | src/components/reels/__tests__/theReelSaysWhatEachControlIs.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written with the Reel's controls |
@@ -967,7 +967,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/nativeOnly/revenuecatWebStub.js | 2026-10-03 | read whole: sound |
 | src/lib/pushNotifications.ts | 2026-10-02 | the foreground handler is set as the module loads; comments say what is true |
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
-| src/lib/queryClient.ts | 2026-10-27 | edited: React Query hears the app come back to the front (focusManager on AppState); edited: the rules live in queryPolicy.ts; the header still true |
+| src/lib/queryClient.ts | 2026-10-27 | edited: needs no native module: the cache buster lives in cacheBuster.ts; edited: CACHE_BUSTER: the platform, the store build and the running update a saved cache was written by; edited: React Query hears the app come back to the front (focusManager on AppState); edited: the rules live in queryPolicy.ts; the header still true |
 | src/lib/queryPolicy.ts | 2026-10-04 | written whole: the rules moved out of queryClient.ts, word for word, so tests read them too |
 | src/lib/refusalEvents.ts | 2026-10-02 | Written in the launch audit: every refusal's sentence, for whoever listens. |
 | src/lib/revenueCat.ts | 2026-10-03 | payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
@@ -1104,7 +1104,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/authEvents.ts | 2026-10-15 | written: the auth listener's answers, out of the component |
 | src/stores/blockStore.ts | 2026-10-23 | edited: blocksKnown: the lists the member's, from a saved copy or a read; cleared at sign-out; sign-out erases the leaving member's saved list |
 | src/stores/createSelectors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/stores/discover.ts | 2026-10-02 | Read whole (launch audit). Its comment said the Darkroom's results survive a restart; the films found are not persisted, only the mood, filters and search. |
+| src/stores/discover.ts | 2026-10-27 | edited: names its version and migration (savedVersion.ts); Read whole (launch audit). Its comment said the Darkroom's results survive a restart; the films found are not persisted, only the mood, filters and search. |
 | src/stores/dispatch.ts | 2026-10-24 | edited: critiqueMarksKnown, the critiques whose certification the house answered (and one filed here); unknown is never not certified |
 | src/stores/dispatchTypes.ts | 2026-10-02 | Read whole (launch audit): row shapes match the live schema (body NOT NULL DEFAULT '', so an ended filing parses). Sound; left alone. |
 | src/stores/domain/__tests__/aFilmAlreadyQueuedStaysQueued.test.ts | 2026-10-02 | a film already on the watchlist stays, and is said to be |
@@ -1127,19 +1127,19 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/domain/marksWrites.ts | 2026-10-23 | new: each write of marks counted |
 | src/stores/domain/socialSlice.ts | 2026-10-23 | edited: the follow list held once read whole; a failed read of a list never held marks it failed; follow and unfollow write, save and queue only for the member who asked |
 | src/stores/domain/watchlistSlice.ts | 2026-10-23 | edited: a page read laid over the ledger, never in its place; add and remove by the index, so a film saved before the pages comes off; each counted as a write of marks |
-| src/stores/films.ts | 2026-10-23 | edited: the marks ledger kept light once held, and read back as held at launch, beside the records kept |
+| src/stores/films.ts | 2026-10-27 | edited: names its version and migration (savedVersion.ts); edited: the marks ledger kept light once held, and read back as held at launch, beside the records kept |
 | src/stores/followStore.ts | 2026-10-23 | edited: followingKnown: held, unread or failed; the phone's copy of a read is held; sign-out makes it unread; comments cut to the why |
 | src/stores/lounge.ts | 2026-10-27 | edited: the room's channel watcher written as one expression, so the stale-write guard reads subscribeToLounge whole; edited: every read of an open room again is a catch-up merged into what is held (catchUpMessages); its channel heard by watchChannel (roomLive); edited: loungesRead: the salons answered once since sign-in; the salons' read and the room's keep their own flags; another room's words go when a room opens, a failed read is said by the room; a page and its reactions in one request (MESSAGE_COLUMNS, messagesOf), the page above with them too, ordered as the cursor; the salons read in two waves, not five; a salon read or send answered after its member left writes and queues nothing |
 | src/stores/markCounts.ts | 2026-10-02 | read; sound |
 | src/stores/mmkv-storage.ts | 2026-10-01 | storageReady added; opens with the 16 bytes recrypt took |
-| src/stores/notificationStore.ts | 2026-10-27 | edited: the notices' channel heard by watchChannel: read again after a drop, not live past a beat (noticesLive); edited: the notices channel joined privately; the notices heard live are counted |
+| src/stores/notificationStore.ts | 2026-10-27 | edited: names its version and migration (savedVersion.ts); edited: the notices' channel heard by watchChannel: read again after a drop, not live past a beat (noticesLive); edited: the notices channel joined privately; the notices heard live are counted |
 | src/stores/offlineQueueStore.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/stores/reportStore.ts | 2026-10-15 | edited: a report answered after its reporter left is not kept, queued or blocked as the next member |
 | src/stores/resetAllStores.ts | 2026-10-02 | Read whole (launch audit). Failures were counted only in development: reported through logger.warn now. |
-| src/stores/settings.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/stores/settings.ts | 2026-10-27 | edited: names its version and migration (savedVersion.ts); Read whole (launch audit). Sound; left alone. |
 | src/stores/socialStore.ts | 2026-10-01 | the header says where the store lives |
 | src/stores/tellMarks.ts | 2026-10-01 | true as written |
-| src/stores/vaultStore.ts | 2026-10-03 | edited: the note is cleaned by its own cap on the live save |
+| src/stores/vaultStore.ts | 2026-10-27 | edited: names its version and migration (savedVersion.ts); edited: the note is cleaned by its own cap on the live save |
 | src/test-support/swallowedTypeError.ts | 2026-10-03 | read whole: sound |
 | src/theme/__tests__/aGlowFadesInsideItsBox.guard.test.ts | 2026-10-15 | written: no radial glow keeps strength on an edge of its box that can show; the welcome seal no longer kept |
 | src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -1282,7 +1282,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/profileMappers.test.ts | — |  |
 | src/utils/__tests__/prefetchPictures.test.ts | 2026-10-15 | new: Android to disk only; iOS skips what is on disk |
 | src/utils/__tests__/prose-handlers.guard.test.ts | — |  |
-| src/utils/__tests__/queryClient.test.ts | 2026-10-27 | edited: React Query hears the app leave and return; edited: the exact freshness, keeping and retry waits; a retry made after the connection left fails, never pauses |
+| src/utils/__tests__/queryClient.test.ts | 2026-10-27 | edited: a cache saved by another build or update is never painted; the root hands its mark to the provider; edited: React Query hears the app leave and return; edited: the exact freshness, keeping and retry waits; a retry made after the connection left fails, never pauses |
 | src/utils/__tests__/queueErrorClassification.test.ts | — |  |
 | src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
@@ -1476,7 +1476,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/__tests__/theNavigationMockHasOneBase.guard.test.ts | 2026-10-23 | every mock of @react-navigation/native spreads the one base or the real module; jest.setup.ts uses it |
 | test-utils/navigationMock.ts | 2026-10-23 | @react-navigation/native as every test meets it: the real module, focus answered outside a navigator; the one base every mock spreads |
 | e2e/no-error-dialogs.sh | 2026-10-23 | new: Android's error dialogs hidden and closed, for the flows and the lab alike |
-| src/components/MembersOnly.tsx | 2026-10-27 | new: a member-only screen opened signed out says so, offers the way in carrying where it was, and a sign-in returns there (returnAfterSignIn: three shapes, else the Lobby) |
+| src/components/MembersOnly.tsx | 2026-10-27 | edited: edited: the way in and Close share ACTS_GAP, each reaching half of it; new: a member-only screen opened signed out says so, offers the way in carrying where it was, and a sign-in returns there (returnAfterSignIn: three shapes, else the Lobby) |
 | src/components/Picture.tsx | 2026-10-27 | new: the one place a picture is drawn: RemoteImage (a missing or failed picture draws its fallback in its own box; offline failures tried once more online, a 404 never), AssetImage (bundled art), PosterMark (the house mark for no poster) |
 | src/components/__tests__/aPictureThatCannotBeHadLeavesNoHole.test.tsx | 2026-10-27 | Written 2026-10-27: no address and a failed load draw the same fallback; offline, tried once more online and no more; a 404 never; a new address tried afresh; a card told of the failure (P4.10) |
 | src/components/__tests__/aStrangerIsAskedInAndBroughtBack.test.tsx | 2026-10-27 | Written 2026-10-27: a sign-in lands on the member-only screen that asked and nowhere a link could choose; the door carries where it was (P4.19) |
@@ -1503,11 +1503,14 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/everyChannelHearsItsStatus.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: every supabase.channel(...).subscribe( hands its status to watchChannel, found through the syntax tree (P4.8) |
 | src/lib/__tests__/everyRequestHasItsDeadline.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: fetch( is called in the shared fetch alone, found through the syntax tree (P4.6) |
 | src/lib/__tests__/everySignOutEndsTheSessionHere.test.ts | 2026-10-26 | Written 2026-10-27: no file but endSession calls signOut |
+| src/lib/cacheBuster.ts | 2026-10-27 | new: CACHE_BUSTER, the platform, store build and running update a saved cache was written by; read by the root layout alone |
 | src/lib/endSession.ts | 2026-10-26 | new: every sign-out ends the session on the phone, the server reached or not; the server's half owed and settled in three plain requests |
 | src/lib/watchChannel.ts | 2026-10-27 | new: what a live channel's status means for its screen: back after a drop, read what was missed; down past a beat, not live, read again on a fixed interval until it answers; nothing offline |
 | src/providers/__tests__/aRankGainedElsewhereIsSeen.test.tsx | 2026-10-27 | Written 2026-10-27: back in the app once the member's row is older than a read stays fresh, their rank is read again; a glance away reads nothing (P4.7, P4.17) |
 | src/stores/__tests__/aSalonCatchesUpWithoutLosingAWord.test.ts | 2026-10-27 | Written 2026-10-27: 250 held and a failed send, 150 new on the house: all 400 in order and the bubble kept; the held read again light; nothing offline; a failure says nothing (P4.8) |
 | src/stores/__tests__/everyChannelReadsWhatItMissed.test.ts | 2026-10-27 | Written 2026-10-27: per channel, SUBSCRIBED, CHANNEL_ERROR, SUBSCRIBED reads its data again (P4.8) |
+| src/stores/__tests__/savedStoresAreVersioned.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder (version, migrate, a last-release fixture for every persist), and each store opening build 41's saved shape (P4.11) |
+| src/stores/savedVersion.ts | 2026-10-27 | new: every saved store's version, and the step that carries the last release's unversioned shape forward |
 | src/utils/__tests__/everyDrawingIsMeasured.guard.test.ts | 2026-10-24 | written: every drawing of the app lands where CI measures it |
 | src/theme/__tests__/paperIsFlattened.test.ts | 2026-10-25 | written: the flat paper is the colour its three layers made, at every height |
 | src/utils/__tests__/everyPasswordFieldSaysWhatItHolds.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: every secure field names its content and autofill, every code field the one-time-code pair (P4.37) |
