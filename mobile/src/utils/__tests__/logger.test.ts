@@ -55,14 +55,11 @@ describe('logger — telemetry can never throw into the caller', () => {
         });
     });
 
-    it('still reports a readable message for an ordinary supabase error', () => {
+    it('reports a server error as its line and its code alone, never its message (P4.44)', () => {
         asProduction(() => {
-            logger.warn('[Stack] Delete failed:', { message: 'permission denied', code: '42501' });
+            logger.warn('[Stack] Delete failed:', { message: 'permission denied for a row holding words', code: '42501' });
         });
-        expect(captureWarning).toHaveBeenCalledWith(
-            expect.stringContaining('permission denied'),
-            expect.any(Object),
-        );
+        expect(captureWarning).toHaveBeenCalledWith('[Stack] Delete failed:', { pgCode: '42501' });
     });
 
     it('does not reach Sentry in development', () => {

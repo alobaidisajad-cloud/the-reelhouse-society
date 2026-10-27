@@ -2,11 +2,13 @@
  * Sentry: crash reports and performance, measured on members' phones.
  *
  * The DSN comes from EXPO_PUBLIC_SENTRY_DSN; without one, every function here
- * does nothing. A member is sent only as a pseudonymous id (setSentryUser).
+ * does nothing. The member is not named (setSentryUser), and every event, breadcrumb and trace
+ * passes sentryScrub's allow-list before it leaves the phone.
  */
 
 import * as Sentry from '@sentry/react-native';
 import { logger } from '../utils/logger';
+import { scrubBreadcrumb, scrubEvent } from './sentryScrub';
 
 // ── Configuration ──
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
@@ -67,7 +69,14 @@ export function initSentry() {
   Sentry.init({
     dsn: SENTRY_DSN,
     tracesSampler,
-    beforeSendTransaction: (event) => keepTransaction(event),
+    // Every request address in a trace cut to scheme, host and path (sentryScrub).
+    beforeSendTransaction: (event) => {
+      const kept = keepTransaction(event);
+      return kept ? scrubEvent(kept) : null;
+    },
+    // The native iOS SDK's own record of every request, with its whole address, is not kept:
+    // a native crash never passes the hooks below to be cut.
+    enableNetworkBreadcrumbs: false,
     // What a member waits for, measured on their phone: the app's start, cold
     // and warm (ended by markAppLoaded, when the first screen shows); each
     // screen until its first frame and until its content is in (useScreenReady);
@@ -95,7 +104,8 @@ export function initSentry() {
       if (breadcrumb.category === 'console' && msg.includes('RevenueCat') && /offering/i.test(msg)) {
         return null;
       }
-      return breadcrumb;
+      // No typed text: addresses cut, a console line's words not kept (sentryScrub).
+      return scrubBreadcrumb(breadcrumb);
     },
     // Filter noisy errors
     beforeSend(event) {
@@ -104,11 +114,11 @@ export function initSentry() {
       // cancel by its name, since both carry ABORT_ERR.
       const first = event.exception?.values?.[0];
       const message = first?.value ?? '';
-      if (first?.type === 'DeadlineExceeded') return event;
       if (message.includes('Network request failed') || first?.type === 'AbortError' || message.includes('AbortError')) {
-        return null;
+        if (first?.type !== 'DeadlineExceeded') return null;
       }
-      return event;
+      // What leaves the phone is the allow-list's, and nothing a member wrote (sentryScrub).
+      return scrubEvent(event);
     },
     // Environment tagging
     environment: IS_DEV ? 'development' : 'production',
@@ -152,13 +162,12 @@ export function markAppLoaded() {
  */
 export function setSentryUser(user: { id: string; username: string; role: string } | null) {
   if (!SENTRY_DSN) return;
-  if (user) {
-    // Privacy: send only the pseudonymous id — username is a public-facing handle
-    // we choose not to forward to a third-party error tracker.
-    Sentry.setUser({ id: user.id });
-  } else {
+  try {
+    // The member is not named to a third party at all: no id, no handle. Their rank alone,
+    // a word of the house's, groups what they meet.
     Sentry.setUser(null);
-  }
+    Sentry.setTag('tier', user ? user.role : 'none');
+  } catch { /* telemetry must never break the caller — see captureError */ }
 }
 
 /**

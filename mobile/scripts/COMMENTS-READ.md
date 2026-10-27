@@ -961,7 +961,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/theSessionIsKeptWhole.test.ts | 2026-10-27 | edited: edited: its storage stand-in answers the keystore's deadline; written with the session store |
 | src/lib/__tests__/theTokenMustNotSurviveLogout.test.ts | — |  |
 | src/lib/__tests__/tmdb.test.ts | 2026-10-27 | edited: the stand-in answers as the phone's fetch does, a Response read once per call;  |
-| src/lib/__tests__/whatSentryKeeps.test.ts | 2026-10-27 | edited: drops no network and a member's cancel, keeps a request past its deadline; edited: its files come from the shared file list (test-utils/universe.js) |
+| src/lib/__tests__/whatSentryKeeps.test.ts | 2026-10-27 | edited: edited: a request past its deadline is kept as the allow-list hands it on; edited: drops no network and a member's cancel, keeps a request past its deadline; edited: its files come from the shared file list (test-utils/universe.js) |
 | src/lib/authSessionStorage.ts | 2026-10-27 | edited: edited: each keystore call within the launch's deadline; edited: the first session read stamps an older build's ownerless writes |
 | src/lib/gateMetricsSink.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/nativeOnly/revenuecatWebStub.js | 2026-10-03 | read whole: sound |
@@ -972,7 +972,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/refusalEvents.ts | 2026-10-02 | Written in the launch audit: every refusal's sentence, for whoever listens. |
 | src/lib/revenueCat.ts | 2026-10-03 | payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/lib/sentry.ts | 2026-10-27 | edited: captureDeadline tags host and path alone; beforeSend tells a deadline from a member's cancel by its name; edited: tracesSampler keeps every scroll and screen opening, keepTransaction thins the rest; MAIN_ROUTES; startScrollSpan |
+| src/lib/sentry.ts | 2026-10-27 | edited: edited: every event, breadcrumb and trace through sentryScrub; the native request record off; the member not named (tier alone); edited: captureDeadline tags host and path alone; beforeSend tells a deadline from a member's cancel by its name; edited: tracesSampler keeps every scroll and screen opening, keepTransaction thins the rest; MAIN_ROUTES; startScrollSpan |
 | src/lib/supabase.ts | 2026-10-27 | edited: a request past its deadline ends as the house's DeadlineExceeded, coded ABORT_ERR so postgrest-js ends the whole call; one in ten told to Sentry by host and path; edited: the house's address and public key exported, for endSession's owed sign-out; edited: Expo's fetch settles with the headers on SDK 57: the answer read whole inside the limit, handed on as a Response made from it; edited: in the E2E build, each request and how it ended written to the device log |
 | src/lib/tmdb.ts | 2026-10-27 | edited: the catalogue's reads within the house's deadline; a deadline hit is not tried again; read; sound |
 | src/lib/tmdbErrors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -1259,7 +1259,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/inputTrustBoundary.test.ts | 2026-10-03 | edited: a pasted separator stays a break; hidden test characters written as escapes |
 | src/utils/__tests__/keysetCursor.test.ts | 2026-10-16 | edited: a missing primary or id is built empty |
-| src/utils/__tests__/logger.test.ts | — |  |
+| src/utils/__tests__/logger.test.ts | 2026-10-27 | edited: edited: a server error is reported as its line and code, never its message;  |
 | src/utils/__tests__/logScreenPolish.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
 | src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-16 | edited: a flow's steps include those inside an inline runFlow |
@@ -1353,7 +1353,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/keysetCursor.ts | 2026-10-02 | quotes escaped with a backslash, as PostgREST reads them (measured 2026-10-02) |
 | src/utils/lastTab.ts | 2026-10-22 | edited: TABS_HOME, the Lobby as the tab navigator's first tab and its Back |
 | src/utils/linking.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/utils/logger.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/utils/logger.ts | 2026-10-27 | edited: edited: a line forwarded as its leading message and a server error's code alone, never the values after it; Read whole (launch audit). Sound; left alone. |
 | src/utils/mappers.ts | 2026-10-02 | dead mappers removed (dossier, lounge message, watchlist, archive) |
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/memberDrafts.ts | 2026-10-27 | edited: a stack is a kind of draft; edited: countDrafts; drafts are erased only at the member's own sign-out |
@@ -1505,8 +1505,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/everyChannelHearsItsStatus.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: every supabase.channel(...).subscribe( hands its status to watchChannel, found through the syntax tree (P4.8) |
 | src/lib/__tests__/everyRequestHasItsDeadline.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: fetch( is called in the shared fetch alone, found through the syntax tree (P4.6) |
 | src/lib/__tests__/everySignOutEndsTheSessionHere.test.ts | 2026-10-26 | Written 2026-10-27: no file but endSession calls signOut |
+| src/lib/__tests__/nothingAMemberWroteReachesSentry.test.ts | 2026-10-27 | Written 2026-10-27: an essay, an email and a handle planted in every place a report carried them, and none of it sent (P4.44) |
 | src/lib/cacheBuster.ts | 2026-10-27 | new: CACHE_BUSTER, the platform, store build and running update a saved cache was written by; read by the root layout alone |
 | src/lib/endSession.ts | 2026-10-26 | new: every sign-out ends the session on the phone, the server reached or not; the server's half owed and settled in three plain requests |
+| src/lib/sentryScrub.ts | 2026-10-27 | new: the allow-list of what may leave the phone in a report or a trace; addresses cut to scheme, host and path; a check failure's row and any email cut (P4.44) |
 | src/lib/watchChannel.ts | 2026-10-27 | new: what a live channel's status means for its screen: back after a drop, read what was missed; down past a beat, not live, read again on a fixed interval until it answers; nothing offline |
 | src/providers/__tests__/aRankGainedElsewhereIsSeen.test.tsx | 2026-10-27 | Written 2026-10-27: back in the app once the member's row is older than a read stays fresh, their rank is read again; a glance away reads nothing (P4.7, P4.17) |
 | src/stores/__tests__/aSalonCatchesUpWithoutLosingAWord.test.ts | 2026-10-27 | Written 2026-10-27: 250 held and a failed send, 150 new on the house: all 400 in order and the bubble kept; the held read again light; nothing offline; a failure says nothing (P4.8) |

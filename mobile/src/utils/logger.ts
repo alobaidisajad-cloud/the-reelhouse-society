@@ -11,21 +11,18 @@
 import { captureError, captureWarning } from '../lib/sentry';
 
 /**
- * Stringify an argument for a production log line WITHOUT ever throwing.
- *
- * The previous inline JSON.stringify threw a TypeError on any object holding a
- * circular reference — and because logger calls sit at the top of catch blocks,
- * that throw would skip the rollback or offline-queue recovery underneath it.
- * A logger must never be able to break the code that is reporting to it.
+ * A log line as it may leave the phone: its leading message, never the values after it. Nothing
+ * is stringified, so nothing can throw into the catch block that is reporting.
  */
-const safeString = (a: unknown): string => {
-    if (a instanceof Error) return a.message;
-    if (typeof a !== 'object' || a === null) return String(a);
-    try {
-        return JSON.stringify(a) ?? String(a);
-    } catch {
-        return '[unserializable]';
+const leadingLine = (args: unknown[]): string => (typeof args[0] === 'string' ? args[0] : '[log]');
+
+/** A server error's code among the arguments (its SQLSTATE, or PostgREST's), and nothing else of it. */
+const serverCode = (args: unknown[]): { pgCode: string } | undefined => {
+    for (const a of args) {
+        const code = a && typeof a === 'object' ? (a as { code?: unknown }).code : undefined;
+        if (typeof code === 'string' && /^([0-9A-Z]{5}|PGRST\d{3})$/.test(code)) return { pgCode: code };
     }
+    return undefined;
 };
 
 export const logger = {
@@ -43,12 +40,10 @@ export const logger = {
         if (__DEV__) {
             console.warn(...args);
         } else {
-            // Forward warnings to Sentry in production
+            // Forwarded as its leading line alone: the arguments after it (an object, a row, a reply)
+            // are never copied out of the phone (sentryScrub cuts the line too).
             try {
-                const msg = args.map(safeString).join(' ');
-                const context: Record<string, unknown> = {};
-                args.forEach((arg, i) => { context[`arg_${i}`] = arg; });
-                captureWarning(msg, Object.keys(context).length > 0 ? context : undefined);
+                captureWarning(leadingLine(args), serverCode(args));
             } catch { /* telemetry must never break the caller's recovery path */ }
         }
     },
@@ -58,23 +53,9 @@ export const logger = {
         } else {
             // Forward actual Error objects to Sentry in production to preserve stack traces
             try {
-                let err: Error | undefined;
-                const context: Record<string, unknown> = {};
-
-                for (let i = 0; i < args.length; i++) {
-                    const arg = args[i];
-                    if (!err && arg instanceof Error) {
-                        err = arg;
-                    } else {
-                        context[`arg_${i}`] = arg;
-                    }
-                }
-
-                if (!err) {
-                    err = new Error(args.map(safeString).join(' '));
-                }
-
-                captureError(err, Object.keys(context).length > 0 ? context : undefined);
+                // The first Error keeps its class and stack; the other arguments are never copied in.
+                const err = args.find((a): a is Error => a instanceof Error) ?? new Error(leadingLine(args));
+                captureError(err, serverCode(args));
             } catch { /* telemetry must never break the caller's recovery path */ }
         }
     }

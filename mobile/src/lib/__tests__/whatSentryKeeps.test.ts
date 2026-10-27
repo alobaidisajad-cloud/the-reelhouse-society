@@ -77,7 +77,8 @@ it('drops a phone with no network and a member\'s own cancel, and keeps a reques
   expect(options.beforeSend(event('TypeError', 'Network request failed'))).toBeNull();
   expect(options.beforeSend(event('AbortError', 'Aborted'))).toBeNull();
   const late = event('DeadlineExceeded', 'The request timed out after 15000 ms');
-  expect(options.beforeSend(late)).toBe(late);
+  // Kept, as the allow-list hands it on (a copy: nothing in it was cut).
+  expect(options.beforeSend(late)).toEqual(late);
 });
 
 /** Every route the router names, from app/'s files: folders and file, groups and the extension left out. */
