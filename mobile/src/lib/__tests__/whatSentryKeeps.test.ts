@@ -69,6 +69,17 @@ it('is what Sentry is started with: the sampler, no flat rate, and the thinning 
   expect(kept).toBeLessThan(120);
 });
 
+it('drops a phone with no network and a member\'s own cancel, and keeps a request past its deadline (P4.6)', () => {
+  const { m, init } = production();
+  m.initSentry();
+  const options = init.mock.calls.at(-1)[0];
+  const event = (type: string, value: string) => ({ exception: { values: [{ type, value }] } });
+  expect(options.beforeSend(event('TypeError', 'Network request failed'))).toBeNull();
+  expect(options.beforeSend(event('AbortError', 'Aborted'))).toBeNull();
+  const late = event('DeadlineExceeded', 'The request timed out after 15000 ms');
+  expect(options.beforeSend(late)).toBe(late);
+});
+
 /** Every route the router names, from app/'s files: folders and file, groups and the extension left out. */
 function routes(): string[] {
   return universe('routes')

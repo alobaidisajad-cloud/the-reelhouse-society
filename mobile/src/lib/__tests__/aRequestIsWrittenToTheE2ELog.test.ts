@@ -62,10 +62,10 @@ it('writes a request given up at its limit as timed out', async () => {
     init?.signal?.addEventListener('abort', () => reject(Object.assign(new Error('Aborted'), { name: 'AbortError' })));
   })) as unknown as Fetch;
   const pending = loadFetch(true)('http://10.0.2.2:54330/rest/v1/logs', { method: 'PATCH' });
-  const settled = expect(pending).rejects.toMatchObject({ name: 'TimeoutError' });
+  const settled = expect(pending).rejects.toMatchObject({ name: 'DeadlineExceeded' });
   await jest.advanceTimersByTimeAsync(15_000);
   await settled;
-  expect(requests()).toEqual([{ method: 'PATCH', path: '/rest/v1/logs', at: expect.any(String), ms: expect.any(Number), error: 'TimeoutError: The request timed out after 15000 ms' }]);
+  expect(requests()).toEqual([{ method: 'PATCH', path: '/rest/v1/logs', at: expect.any(String), ms: expect.any(Number), error: 'DeadlineExceeded: The request timed out after 15000 ms' }]);
 });
 
 it('writes nothing in any other build', async () => {

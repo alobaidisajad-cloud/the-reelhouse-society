@@ -264,7 +264,7 @@ without one). "Read" is the day its comments were last read against its code.
 | eslint.config.js | 2026-10-27 | edited: expo-image's Image and React Native's refused outside Picture, each exception with its reason; edited: the React Compiler's globals rule on (a test's probe takes its hook in an effect); its preserve-manual-memoization rule on (each memo's inputs read before it); its immutability rule on (every shared value written by set), the rest off until their places are right; 3 findings; the crash and logo stories reduced to the rule each enforces |
 | jest.afterEnv.ts | 2026-10-03 | read whole: the mock-gap comment now sits on the check it explains; no count that drifts |
 | jest.config.js | 2026-10-16 | edited: Stryker's sandbox (.stryker-tmp) is never read as tests or modules |
-| jest.setup.ts | 2026-10-27 | edited: Sentry's stand-in has setTag, which boot calls; edited: the drawings draw every arrival and ignition at rest; edited: the shared value's mock has get and set as Reanimated's (set takes a value or an updater); edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |
+| jest.setup.ts | 2026-10-27 | edited: Sentry's scope stand-in has setTag; edited: Sentry's stand-in has setTag, which boot calls; edited: the drawings draw every arrival and ignition at rest; edited: the shared value's mock has get and set as Reanimated's (set takes a value or an updater); edited: React Native's Text stand-in tells the Texts inside it they are nested, as the real one does |
 | jest.stryker.config.js | 2026-10-16 | new: the tests' config in Stryker's own process, its environment by its whole path |
 | metro.config.js | 2026-09-29 | true as written (the ../public watch folder feeds Decorative's rating images) |
 | mockups/capture.ts | 2026-09-29 | true as written |
@@ -949,8 +949,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts | 2026-10-03 | payments pass: queued for the store's account, with no network and no session |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | 2026-10-03 | payments pass: a stand-in store drives every answer a configured one gives |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | 2026-10-03 | payments pass: the source pins went; the paths they guarded now run |
-| src/lib/__tests__/aRequestEndsInItsTime.test.ts | 2026-10-25 | edited: an answer whose words never finish arriving is given up at its limit; an answer in time comes back whole (status, headers, words), one with no body with none; new: a request with no answer is given up at its limit as not reached (storage waits longer); a caller's own cancel stays the caller's; an answer in time comes back untouched with no timer left |
-| src/lib/__tests__/aRequestIsWrittenToTheE2ELog.test.ts | 2026-10-25 | edited: its fake answers are Responses, read whole as the client now reads them; new |
+| src/lib/__tests__/aRequestEndsInItsTime.test.ts | 2026-10-27 | edited: a request given up at its limit ends as DeadlineExceeded; edited: an answer whose words never finish arriving is given up at its limit; an answer in time comes back whole (status, headers, words), one with no body with none; new: a request with no answer is given up at its limit as not reached (storage waits longer); a caller's own cancel stays the caller's; an answer in time comes back untouched with no timer left |
+| src/lib/__tests__/aRequestIsWrittenToTheE2ELog.test.ts | 2026-10-27 | edited: a request given up at its limit is written as DeadlineExceeded; edited: its fake answers are Responses, read whole as the client now reads them; new |
 | src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-26 | edited: signOut is no longer a call whose answer may go unread; edited: a read handed on by .catch()/.then() is seen (Promise.resolve(supabase.rpc(…)).catch(…)), in the probe too; the salon's faces read judged by its new name; the queue's standing read is no longer judged; it reads its error |
 | src/lib/__tests__/revenueCat.selectPackage.test.ts | — |  |
 | src/lib/__tests__/sentryMeasures.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -960,8 +960,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/thePriceIsTheStores.test.ts | — |  |
 | src/lib/__tests__/theSessionIsKeptWhole.test.ts | 2026-10-01 | written with the session store |
 | src/lib/__tests__/theTokenMustNotSurviveLogout.test.ts | — |  |
-| src/lib/__tests__/tmdb.test.ts | — |  |
-| src/lib/__tests__/whatSentryKeeps.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/lib/__tests__/tmdb.test.ts | 2026-10-27 | edited: the stand-in answers as the phone's fetch does, a Response read once per call;  |
+| src/lib/__tests__/whatSentryKeeps.test.ts | 2026-10-27 | edited: drops no network and a member's cancel, keeps a request past its deadline; edited: its files come from the shared file list (test-utils/universe.js) |
 | src/lib/authSessionStorage.ts | 2026-10-15 | edited: the first session read stamps an older build's ownerless writes |
 | src/lib/gateMetricsSink.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lib/nativeOnly/revenuecatWebStub.js | 2026-10-03 | read whole: sound |
@@ -972,9 +972,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/refusalEvents.ts | 2026-10-02 | Written in the launch audit: every refusal's sentence, for whoever listens. |
 | src/lib/revenueCat.ts | 2026-10-03 | payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/lib/sentry.ts | 2026-10-15 | edited: tracesSampler keeps every scroll and screen opening, keepTransaction thins the rest; MAIN_ROUTES; startScrollSpan |
-| src/lib/supabase.ts | 2026-10-26 | edited: the house's address and public key exported, for endSession's owed sign-out; edited: Expo's fetch settles with the headers on SDK 57: the answer read whole inside the limit, handed on as a Response made from it; edited: in the E2E build, each request and how it ended written to the device log |
-| src/lib/tmdb.ts | 2026-10-02 | read; sound |
+| src/lib/sentry.ts | 2026-10-27 | edited: captureDeadline tags host and path alone; beforeSend tells a deadline from a member's cancel by its name; edited: tracesSampler keeps every scroll and screen opening, keepTransaction thins the rest; MAIN_ROUTES; startScrollSpan |
+| src/lib/supabase.ts | 2026-10-27 | edited: a request past its deadline ends as the house's DeadlineExceeded, coded ABORT_ERR so postgrest-js ends the whole call; one in ten told to Sentry by host and path; edited: the house's address and public key exported, for endSession's owed sign-out; edited: Expo's fetch settles with the headers on SDK 57: the answer read whole inside the limit, handed on as a Response made from it; edited: in the E2E build, each request and how it ended written to the device log |
+| src/lib/tmdb.ts | 2026-10-27 | edited: the catalogue's reads within the house's deadline; a deadline hit is not tried again; read; sound |
 | src/lib/tmdbErrors.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/lore/fragments.ts | 2026-10-02 | Read whole in the launch audit: the false 'Ledger is encrypted' line replaced. |
 | src/providers/__tests__/androidTracking.test.ts | — |  |
@@ -1194,7 +1194,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |
 | src/utils/__tests__/anOlderBuildsDossierStillLands.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aQueuedFilingIsCutToEachColumn.test.ts | 2026-10-16 | new |
-| src/utils/__tests__/aQueuedFollowFindsItsMember.test.ts | 2026-10-16 | new |
+| src/utils/__tests__/aQueuedFollowFindsItsMember.test.ts | 2026-10-27 | edited: the rank sync's request through the shared fetch, here the test's own; new |
 | src/utils/__tests__/aQueuedLogIsFiledAsTheMemberWroteIt.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aQueuedStackIsSavedAsTheMemberLeftIt.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aQueueSendsOnlyItsOwnMembersWrites.test.ts | 2026-10-16 | new |
@@ -1268,7 +1268,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/memoryManager.test.ts | — |  |
 | src/utils/__tests__/migrationSafety.guard.test.ts | 2026-10-22 | read whole: its pieces named, the train among them; the train builds an index first, alone, drops and rebuilds one not whole, and touches production only once its four workflows passed on its files; a shipped client's flows wait as long as this checkout's |
 | src/utils/__tests__/mutationExecutor.pbt.test.ts | 2026-10-03 | read whole: the remappable keys match the executor |
-| src/utils/__tests__/mutationExecutor.test.ts | 2026-10-03 | payments pass: a failed rank sync carries its status |
+| src/utils/__tests__/mutationExecutor.test.ts | 2026-10-27 | edited: the rank sync's request through the shared fetch, here the test's own; payments pass: a failed rank sync carries its status |
 | src/utils/__tests__/networkError.test.ts | — |  |
 | src/utils/__tests__/noControlCharacters.guard.test.ts | 2026-10-15 | edited: every text file a person writes, from the shared file list |
 | src/utils/__tests__/noMachinePaths.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -1358,8 +1358,8 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/markdownSafety.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/memberDrafts.ts | 2026-10-27 | edited: a stack is a kind of draft; edited: countDrafts; drafts are erased only at the member's own sign-out |
 | src/utils/memoryManager.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/utils/mutationExecutor.ts | 2026-10-16 | edited: an empty place in a queued history is dropped, not sorted (it threw); a log's decade and genres and a Lounge message's username, columns neither table has, are never written; a rewatch's conflict reads the log's id alone |
-| src/utils/networkError.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
+| src/utils/mutationExecutor.ts | 2026-10-27 | edited: the rank sync within the house's deadline; edited: an empty place in a queued history is dropped, not sorted (it threw); a log's decade and genres and a Lounge message's username, columns neither table has, are never written; a rewatch's conflict reads the log's id alone |
+| src/utils/networkError.ts | 2026-10-27 | edited: a deadline is not reached, thrown by its name or resolved by its message; Read whole (launch audit). Sound; left alone. |
 | src/utils/noticeRoute.ts | 2026-10-02 | Read whole (launch audit). Follows groupRoute's one argument. |
 | src/utils/offlineQueue.ts | 2026-10-16 | edited: a write refused for a suspension waits with the rest (the standing read failed, or the suspension began mid-send); the standing read's error is read (its catch could never run); at sign-out another member's writes stay wherever they are |
 | src/utils/openNoticeFromPush.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -1495,8 +1495,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useClock.ts | 2026-10-27 | new: the one clock every drawn time reads; read again on return and every half minute in front, a screen drawn again only when its words change; one timer, resting in the background |
 | src/hooks/useFeedTop.ts | 2026-10-27 | new: a feed read again on return or reconnect only while its list stands at its top; a fetch missed below the top runs once when the member reaches it |
 | src/lib/__tests__/aChannelSaysWhenItIsNotLive.test.ts | 2026-10-27 | Written 2026-10-27: back after a drop the missed is read; a short drop says nothing; down past a beat, not live and read on the interval until it answers; offline, nothing read (P4.8, P4.10) |
+| src/lib/__tests__/aRequestEndsAtItsDeadline.test.ts | 2026-10-27 | Written 2026-10-27: a request that never answers ends at its deadline as DeadlineExceeded; a read and a write over the real client end once and are not reached; one in ten told by host and path, never the query (P4.6) |
 | src/lib/__tests__/aSignOutWithNoNetworkStillSignsOut.test.ts | 2026-10-26 | edited: the unmock below the imports; the owed half named as settled apart; Written 2026-10-27: the real client signs out over a dead network and the session is gone; the owed half settles once, apart from this phone's session (P4.1) |
 | src/lib/__tests__/everyChannelHearsItsStatus.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: every supabase.channel(...).subscribe( hands its status to watchChannel, found through the syntax tree (P4.8) |
+| src/lib/__tests__/everyRequestHasItsDeadline.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: fetch( is called in the shared fetch alone, found through the syntax tree (P4.6) |
 | src/lib/__tests__/everySignOutEndsTheSessionHere.test.ts | 2026-10-26 | Written 2026-10-27: no file but endSession calls signOut |
 | src/lib/endSession.ts | 2026-10-26 | new: every sign-out ends the session on the phone, the server reached or not; the server's half owed and settled in three plain requests |
 | src/lib/watchChannel.ts | 2026-10-27 | new: what a live channel's status means for its screen: back after a drop, read what was missed; down past a beat, not live, read again on a fixed interval until it answers; nothing offline |

@@ -91,10 +91,8 @@ describe('tmdb image URL builders', () => {
 
 describe('tmdb.search', () => {
   const mockFetchOnce = (body: unknown, ok = true, status = 200) => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok, status,
-      json: async () => body,
-    });
+    // An answer as the phone's fetch gives one: the shared fetch reads its body whole (P4.6).
+    (global.fetch as jest.Mock).mockResolvedValueOnce(new Response(JSON.stringify(body), { status: ok ? status : (status >= 400 ? status : 500) }));
   };
 
   beforeEach(() => {
@@ -114,7 +112,7 @@ describe('tmdb.search', () => {
   }, 10000);
 
   it('a search the catalogue answered with nothing is "failed", after every tier', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({ ok: true, status: 200, json: async () => ({ results: [] }) });
+    (global.fetch as jest.Mock).mockImplementation(async () => new Response(JSON.stringify({ results: [] }), { status: 200 }));
     const result = await tmdb.search('zzqxv');
     expect(result.searchType).toBe('failed');
     expect(result.results).toEqual([]);
@@ -210,7 +208,7 @@ describe('tmdb.search', () => {
     };
     (global.fetch as jest.Mock).mockImplementation(async (_url: string, init: { body: string }) => {
       const asked = new URL('https://proxy' + JSON.parse(init.body).path).searchParams.get('query') ?? '';
-      return { ok: true, status: 200, json: async () => ({ results: answers[asked] ?? [] }) };
+      return new Response(JSON.stringify({ results: answers[asked] ?? [] }), { status: 200 });
     });
     const result = await tmdb.search('teh matrix');
     expect(result.searchType).toBe('typo');
@@ -220,11 +218,11 @@ describe('tmdb.search', () => {
 });
 
 describe('a catalogue read tells "not there" from "could not ask"', () => {
-  const answer = (status: number, body: unknown = {}) => ({ ok: status < 400, status, json: async () => body });
+  const answer = (status: number, body: unknown = {}) => new Response(JSON.stringify(body), { status });
   beforeEach(() => { global.fetch = jest.fn(); });
 
   it('a film the catalogue does not have is an answer: null', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue(answer(404));
+    (global.fetch as jest.Mock).mockImplementation(async () => answer(404));
     await expect(tmdb.detail(910001)).resolves.toBeNull();
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
@@ -238,13 +236,13 @@ describe('a catalogue read tells "not there" from "could not ask"', () => {
   }, 10000);
 
   it('one that keeps failing is unreachable, after three tries — never an empty answer', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue(answer(502));
+    (global.fetch as jest.Mock).mockImplementation(async () => answer(502));
     await expect(tmdb.trending('day')).rejects.toMatchObject({ name: 'TmdbUnreachable' });
     expect(global.fetch).toHaveBeenCalledTimes(3);
   }, 10000);
 
   it('the proxy refusing the app is unreachable at once, not a missing film', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue(answer(401));
+    (global.fetch as jest.Mock).mockImplementation(async () => answer(401));
     await expect(tmdb.detail(910003)).rejects.toMatchObject({ name: 'TmdbUnreachable' });
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
@@ -252,25 +250,25 @@ describe('a catalogue read tells "not there" from "could not ask"', () => {
   it('a failure is not remembered: the next read asks again', async () => {
     (global.fetch as jest.Mock).mockRejectedValue(new Error('offline'));
     await expect(tmdb.detail(910004)).rejects.toMatchObject({ name: 'TmdbUnreachable' });
-    (global.fetch as jest.Mock).mockReset().mockResolvedValue(answer(200, { id: 910004, title: 'Greed' }));
+    (global.fetch as jest.Mock).mockReset().mockImplementation(async () => answer(200, { id: 910004, title: 'Greed' }));
     await expect(tmdb.detail(910004)).resolves.toMatchObject({ title: 'Greed' });
   }, 10000);
 });
 
 describe('tmdb.keyArt — the Lobby one-sheet’s art', () => {
-  const answer = (status: number, body: unknown = {}) => ({ ok: status < 400, status, json: async () => body });
+  const answer = (status: number, body: unknown = {}) => new Response(JSON.stringify(body), { status });
   beforeEach(() => { global.fetch = jest.fn(); });
 
   it('asks the proxy for the art filed under NO language — the art with no words on it', async () => {
     const art = { posters: [{ file_path: '/plain.jpg', iso_639_1: null }], backdrops: [] };
-    (global.fetch as jest.Mock).mockResolvedValue(answer(200, art));
+    (global.fetch as jest.Mock).mockImplementation(async () => answer(200, art));
     await expect(tmdb.keyArt(910005)).resolves.toEqual(art);
     const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
     expect(body.path).toBe('/movie/910005/images?include_image_language=null');
   });
 
   it('a film with no art is an answer (none), not a failure', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue(answer(404));
+    (global.fetch as jest.Mock).mockImplementation(async () => answer(404));
     await expect(tmdb.keyArt(910006)).resolves.toEqual({ posters: [], backdrops: [] });
   });
 

@@ -13,7 +13,11 @@ import { sanitizeInput } from '../sanitizeInput';
 
 // ── Mocks ──────────────────────────────────────────────────────────
 
-jest.mock('../../lib/supabase');
+// Made from the module, as before; the rank sync's request goes to the test's own fetch.
+jest.mock('../../lib/supabase', () => ({
+  ...jest.createMockFromModule<Record<string, unknown>>('../../lib/supabase'),
+  fetchWithinLimit: (...a: Parameters<typeof fetch>) => fetch(...a),
+}));
 jest.mock('../../services/InteractionService');
 const mockFileOnShelf = jest.fn(async () => ({ id: 'row', formats: [] }));
 jest.mock('../../services/ShelfService', () => ({

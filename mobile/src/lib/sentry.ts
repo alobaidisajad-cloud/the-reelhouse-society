@@ -99,9 +99,13 @@ export function initSentry() {
     },
     // Filter noisy errors
     beforeSend(event) {
-      // Don't report network timeouts (they're expected on poor connections)
-      const message = event.exception?.values?.[0]?.value ?? '';
-      if (message.includes('Network request failed') || message.includes('AbortError')) {
+      // A phone with no network, and a member's own cancel, are expected, never reported. A
+      // request past its deadline (DeadlineExceeded, sampled where it ends) is: told from a
+      // cancel by its name, since both carry ABORT_ERR.
+      const first = event.exception?.values?.[0];
+      const message = first?.value ?? '';
+      if (first?.type === 'DeadlineExceeded') return event;
+      if (message.includes('Network request failed') || first?.type === 'AbortError' || message.includes('AbortError')) {
         return null;
       }
       return event;
@@ -176,6 +180,21 @@ export function captureError(error: unknown, context?: Record<string, unknown>) 
       Sentry.captureException(error);
     }
   } catch { /* swallowed on purpose — see above */ }
+}
+
+/**
+ * A request that ran out of its time (supabase.ts's DeadlineExceeded), told by its host and its
+ * path alone: never the query, which may carry a member's words or an id.
+ */
+export function captureDeadline(error: Error, host: string, path: string) {
+  if (!SENTRY_DSN) return;
+  try {
+    Sentry.withScope((scope) => {
+      scope.setTag('host', host);
+      scope.setTag('path', path);
+      Sentry.captureException(error);
+    });
+  } catch { /* telemetry must never break the caller — see captureError */ }
 }
 
 /**

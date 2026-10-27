@@ -10,7 +10,7 @@
  *   • the JS thread breathes (a 0ms macrotask) between mutations
  */
 
-import { supabase } from '../lib/supabase';
+import { fetchWithinLimit, supabase } from '../lib/supabase';
 import { wallMayHaveChanged } from '../components/lobby/wallRead';
 import { useAuthStore } from '../stores/auth';
 import { InteractionService } from '../services/InteractionService';
@@ -662,7 +662,8 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         }
 
         const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-        const response = await fetch(`${supabaseUrl}/functions/v1/sync-entitlement`, {
+        // Within the house's deadline, as every request is (supabase.ts).
+        const response = await fetchWithinLimit(`${supabaseUrl}/functions/v1/sync-entitlement`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${session.access_token}`,

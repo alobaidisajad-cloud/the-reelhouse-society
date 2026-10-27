@@ -43,6 +43,8 @@ let mockHouse = build();
 let mockSession: Row | null = null;
 jest.mock('@/src/lib/supabase', () => ({
   get supabase() { return { ...mockHouse.client, auth: { getSession: async () => ({ data: { session: mockSession } }) } }; },
+  // The rank sync's request, within the house's deadline: here, the test's own fetch.
+  fetchWithinLimit: (...a: Parameters<typeof fetch>) => fetch(...a),
 }));
 jest.mock('@/src/components/lobby/wallRead', () => ({ wallMayHaveChanged: jest.fn() }));
 jest.mock('@/src/stores/auth', () => ({ useAuthStore: { getState: () => ({ user: null }) } }));

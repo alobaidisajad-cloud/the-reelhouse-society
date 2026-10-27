@@ -49,17 +49,17 @@ describe('a request with no answer', () => {
     jest.advanceTimersByTime(1);
     await settle();
     expect(seen.state).toBe('failed');
-    expect((seen.error as Error).name).toBe('TimeoutError');
+    expect((seen.error as Error).name).toBe('DeadlineExceeded');
     expect(isNetworkError(seen.error)).toBe(true);
-    // supabase-js answers it as { error: { message: "TimeoutError: …" } }: the same.
-    expect(isNetworkError({ message: `TimeoutError: ${(seen.error as Error).message}` })).toBe(true);
+    // supabase-js answers it as { error: { message: "DeadlineExceeded: …" } }: the same.
+    expect(isNetworkError({ message: `DeadlineExceeded: ${(seen.error as Error).message}` })).toBe(true);
   });
 
   it('through the client\'s own fetch too', async () => {
     const seen = watch(fetchHearingRefusals('https://house.test/rest/v1/rpc/x', { method: 'POST' }));
     jest.advanceTimersByTime(REQUEST_LIMIT_MS);
     await settle();
-    expect((seen.error as Error).name).toBe('TimeoutError');
+    expect((seen.error as Error).name).toBe('DeadlineExceeded');
   });
 
   it('to storage, where a picture goes up, waits longer', async () => {
@@ -69,7 +69,7 @@ describe('a request with no answer', () => {
     expect(seen.state).toBe('pending');
     jest.advanceTimersByTime(STORAGE_LIMIT_MS - REQUEST_LIMIT_MS);
     await settle();
-    expect((seen.error as Error).name).toBe('TimeoutError');
+    expect((seen.error as Error).name).toBe('DeadlineExceeded');
   });
 });
 
@@ -131,7 +131,7 @@ describe('an answer whose words never finish arriving', () => {
     jest.advanceTimersByTime(1);
     await settle();
     expect(seen.state).toBe('failed');
-    expect((seen.error as Error).name).toBe('TimeoutError');
+    expect((seen.error as Error).name).toBe('DeadlineExceeded');
     expect(isNetworkError(seen.error)).toBe(true);
   });
 });

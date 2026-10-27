@@ -4,6 +4,7 @@ import { Platform, AppState } from 'react-native';
 import { authSessionStorage } from './authSessionStorage';
 import { heardRefusal } from './refusalEvents';
 import { E2E_BUILD, e2eTrace } from '../utils/e2eTrace';
+import { captureDeadline } from './sentry';
 
 // The anon key is public by design: RLS and column grants guard every table.
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co';
@@ -20,8 +21,30 @@ export const STORAGE_LIMIT_MS = 90_000;
 /** The statuses an answer has no body with (a Response made with one throws). */
 const NO_BODY = new Set([204, 205, 304]);
 
-/** The error a request that ran out of time ends with: read by isNetworkError as not reached. */
-const timedOut = (ms: number) => Object.assign(new Error(`The request timed out after ${ms} ms`), { name: 'TimeoutError' });
+/**
+ * The error a request that ran out of time ends with: never a bare AbortError (a member's own
+ * cancel), and coded ABORT_ERR, so postgrest-js ends the whole call at the deadline. Coded
+ * otherwise, it tried a read three more times, a second, two and four apart: a read on a hung
+ * connection spun 67 seconds before its screen could say it was not reached. isNetworkError reads
+ * it as not reached, thrown or (as postgrest-js resolves it) by its message.
+ */
+export class DeadlineExceeded extends Error {
+  readonly code = 'ABORT_ERR';
+  constructor(ms: number) {
+    super(`The request timed out after ${ms} ms`);
+    this.name = 'DeadlineExceeded';
+  }
+}
+
+/** One deadline hit in ten is told to Sentry, by its host and path alone: a slow road seen, never a flood. */
+const DEADLINE_TOLD = 0.1;
+function tellDeadline(url: string, e: DeadlineExceeded) {
+  if (Math.random() >= DEADLINE_TOLD) return;
+  try {
+    const u = new URL(url);
+    captureDeadline(e, u.host, u.pathname);
+  } catch { /* an address that does not parse is not told */ }
+}
 
 /**
  * In the E2E build alone, each request the app made and how it ended: its status, or the error it
@@ -63,7 +86,8 @@ export const fetchWithinLimit: typeof fetch = async (input, init) => {
     traceRequest(init?.method, url, at, { status: res.status });
     return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
   } catch (e) {
-    const ended = ranOut ? timedOut(ms) : e;
+    const ended = ranOut ? new DeadlineExceeded(ms) : e;
+    if (ended instanceof DeadlineExceeded) tellDeadline(url, ended);
     traceRequest(init?.method, url, at, { error: ended instanceof Error ? `${ended.name}: ${ended.message}` : String(ended) });
     throw ended;
   } finally {

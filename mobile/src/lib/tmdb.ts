@@ -3,6 +3,7 @@
 // Resilient, cached, deduplicated — ported from web
 // ============================================================
 import { isTmdbUnreachable, TmdbUnreachable } from './tmdbErrors';
+import { DeadlineExceeded, fetchWithinLimit } from './supabase';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -195,23 +196,17 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
     let why = 'no answer';
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 10000);
-        let res: Response;
-        try {
-          res = await fetch(PROXY_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            },
-            body: JSON.stringify({ path }),
-            signal: controller.signal,
-          });
-        } finally {
-          clearTimeout(timer);
-        }
+        // Within the house's deadline (supabase.ts): a request that runs out of it is not tried
+        // again, so a hung connection is said at the deadline, not after three of them.
+        const res = await fetchWithinLimit(PROXY_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ path }),
+        });
 
         // A server failing for a moment: tried again, then unreachable.
         if (res.status === 429 || res.status >= 500) {
@@ -227,6 +222,7 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
         return data as T;
       } catch (e: unknown) {
         if (isTmdbUnreachable(e)) throw e;
+        if (e instanceof DeadlineExceeded) throw new TmdbUnreachable(path, e.message);
         why = e instanceof Error ? e.message : String(e);
         if (attempt < 2) await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
       }

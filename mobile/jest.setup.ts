@@ -195,7 +195,7 @@ jest.mock('@sentry/react-native', () => ({
   setUser: jest.fn(),
   setTag: jest.fn(),
   addBreadcrumb: jest.fn(),
-  withScope: jest.fn((cb) => cb({ setExtras: jest.fn(), setLevel: jest.fn() })),
+  withScope: jest.fn((cb) => cb({ setExtras: jest.fn(), setLevel: jest.fn(), setTag: jest.fn() })),
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
