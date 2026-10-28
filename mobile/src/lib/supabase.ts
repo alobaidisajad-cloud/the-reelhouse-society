@@ -23,10 +23,9 @@ const NO_BODY = new Set([204, 205, 304]);
 
 /**
  * The error a request that ran out of time ends with: never a bare AbortError (a member's own
- * cancel), and coded ABORT_ERR, so postgrest-js ends the whole call at the deadline. Coded
- * otherwise, it tried a read three more times, a second, two and four apart: a read on a hung
- * connection spun 67 seconds before its screen could say it was not reached. isNetworkError reads
- * it as not reached, thrown or (as postgrest-js resolves it) by its message.
+ * cancel), and coded ABORT_ERR, which postgrest-js never asks again, whatever its retries are set
+ * to (the client turns them off, below). isNetworkError reads it as not reached, thrown or (as
+ * postgrest-js resolves it) by its message.
  */
 export class DeadlineExceeded extends Error {
   readonly code = 'ABORT_ERR';
@@ -122,6 +121,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     flowType: 'pkce',
   },
 });
+
+/**
+ * One layer of retries, the app's own: a read tried again once, never with no connection
+ * (queryPolicy.ts), and a write kept by the offline queue. postgrest-js tried every failed read
+ * three more times beneath it, a second, two and four apart, and supabase-js gives no option to
+ * stop it: a log sealed with no connection waited on a read asked again into a dead network, 16
+ * seconds before it was queued. Set on the client, it reaches every table, function and schema.
+ */
+(supabase as unknown as { rest: { retry: boolean } }).rest.retry = false;
 
 // Tells Supabase Auth to continuously refresh the session automatically if
 // the app is in the foreground. When this is added, you will continue to receive

@@ -8,6 +8,9 @@
  * whole call at one deadline; isNetworkError reads it as not reached, thrown or resolved, so a
  * write goes to the offline queue rather than being shown as failed; and one hit in ten is told to
  * Sentry by its host and path alone.
+ *
+ * Nor does postgrest-js ask a failed read again at all: the app keeps one layer of retries, its
+ * own. A log sealed with no connection waited 16 seconds on a read asked again into a dead network.
  */
 import { DeadlineExceeded, fetchWithinLimit, REQUEST_LIMIT_MS, supabase } from '@/src/lib/supabase';
 import { captureDeadline } from '@/src/lib/sentry';
@@ -88,4 +91,46 @@ it('a deadline is told to Sentry one time in ten, by its host and path alone, ne
 it('isNetworkError reads a deadline in both its shapes', () => {
   expect(isNetworkError(new DeadlineExceeded(15_000))).toBe(true);
   expect(isNetworkError({ message: 'DeadlineExceeded: The request timed out after 15000 ms', code: '' })).toBe(true);
+});
+
+describe('one layer of retries, the app\'s own', () => {
+  /** A network with no connection: every request fails at once, as Android's does. */
+  const refuse = jest.fn((_input: unknown, _init?: RequestInit) =>
+    Promise.reject(new TypeError('fetch failed: java.net.ConnectException: Failed to connect')));
+
+  it('a read that cannot connect is asked once, and ends at once as not reached', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(refuse as unknown as typeof fetch);
+    refuse.mockClear();
+    let answer: { error: unknown } | null = null;
+    void supabase.from('logs').select('id').eq('film_id', 1).then((r) => { answer = r; });
+    await jest.advanceTimersByTimeAsync(0);
+    // With postgrest-js's own retries, it was asked three more times, seven seconds on.
+    expect(answer).not.toBeNull();
+    expect(refuse).toHaveBeenCalledTimes(1);
+    expect(isNetworkError((answer as unknown as { error: unknown }).error)).toBe(true);
+    await jest.advanceTimersByTimeAsync(10_000);
+    expect(refuse).toHaveBeenCalledTimes(1);
+  });
+
+  it('a function call and a read of another schema are asked once too', async () => {
+    jest.spyOn(globalThis, 'fetch').mockImplementation(refuse as unknown as typeof fetch);
+    refuse.mockClear();
+    const answers: unknown[] = [];
+    void supabase.rpc('get_lobby_wall').then((r) => { answers.push(r); });
+    void supabase.schema('public').from('logs').select('id').then((r) => { answers.push(r); });
+    await jest.advanceTimersByTimeAsync(10_000);
+    expect(answers).toHaveLength(2);
+    expect(refuse).toHaveBeenCalledTimes(2);
+  });
+
+  it('an answer of "busy" (503) is given to the caller as it came, never asked again beneath it', async () => {
+    const busy = jest.fn((_input: unknown, _init?: RequestInit) =>
+      Promise.resolve(new Response(JSON.stringify({ message: 'busy' }), { status: 503 })));
+    jest.spyOn(globalThis, 'fetch').mockImplementation(busy as unknown as typeof fetch);
+    let answer: { status: number } | null = null;
+    void supabase.from('logs').select('id').then((r) => { answer = r; });
+    await jest.advanceTimersByTimeAsync(10_000);
+    expect(busy).toHaveBeenCalledTimes(1);
+    expect(answer).toMatchObject({ status: 503 });
+  });
 });

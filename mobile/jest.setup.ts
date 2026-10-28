@@ -271,6 +271,8 @@ const mockSupabaseClient = {
   })),
   removeChannel: jest.fn(),
   realtime: { disconnect: jest.fn() },
+  // The client's rest half: supabase.ts turns its own retries off on it.
+  rest: { retry: true },
 };
 
 jest.mock('@supabase/supabase-js', () => ({
