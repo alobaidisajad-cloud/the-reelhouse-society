@@ -33,6 +33,7 @@ import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { EDGE_LIT } from '@/src/theme/light';
 import { Arrive } from '@/src/components/Arrive';
 import { useModalTop, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
  * The brass ＋ opens this: five forms, each in its own ink, so the colour code is
@@ -308,6 +309,7 @@ export const PaperArchive = memo(function PaperArchive({
             style={[m.searchText, { flex: 1, minWidth: 0, padding: 0 }]}
             value={query}
             onChangeText={onQuery}
+            maxLength={SEARCH_MAX}
             placeholder="Name a film"
             placeholderTextColor={colors.fog}
             autoCorrect={false}

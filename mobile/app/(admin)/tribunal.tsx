@@ -42,6 +42,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { initialOf } from '@/src/utils/text';
 import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
 import { Arrive } from '@/src/components/Arrive';
+import { HOURS_DIGITS } from '@/src/constants/inputLimits';
 
 interface TribunalTarget {
   id: string;
@@ -269,6 +270,7 @@ function ActionModal({
                 style={s.textInput}
                 value={durationHours}
                 onChangeText={setDurationHours}
+                maxLength={HOURS_DIGITS}
                 keyboardType="numeric"
                 placeholder="e.g. 24, 48, 72"
                 placeholderTextColor={colors.fog}

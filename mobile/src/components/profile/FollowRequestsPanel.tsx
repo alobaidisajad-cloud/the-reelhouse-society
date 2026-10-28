@@ -29,6 +29,7 @@ import TryAgain from '@/src/components/TryAgain';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 import { useSocialStore } from '@/src/stores/followStore';
 import { useSheetBottom } from '@/src/components/layout/navMetrics';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 const HITSLOP = { top: 10, bottom: 10, left: 10, right: 10 } as const;
 /** The row's gap (10) halved between DECLINE and ADMIT, so neither takes the other's tap. */
@@ -129,6 +130,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
                 style={s.searchInput}
                 value={search}
                 onChangeText={setSearch}
+                maxLength={SEARCH_MAX}
                 placeholder="Find a petitioner…"
                 placeholderTextColor={colors.fog}
                 selectionColor={colors.sepia}

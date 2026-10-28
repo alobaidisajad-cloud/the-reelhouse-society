@@ -71,6 +71,16 @@
  *
  * Every claim above was executed against the live database, not reasoned about.
  */
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
+import { characterStart } from './text';
+
+/**
+ * A member's search, at most SEARCH_MAX long, cut where a character ends: a page pasted into a box
+ * asks the house for a phrase. Every box holds SEARCH_MAX on the phone; this holds the request too.
+ */
+export function boundedSearch(raw: string): string {
+  return raw.length <= SEARCH_MAX ? raw : raw.slice(0, characterStart(raw, SEARCH_MAX));
+}
 
 /**
  * Build the body of an ILIKE pattern from a member's search text.
@@ -83,7 +93,7 @@
  *          in which case the caller must not run a query at all.
  */
 export function buildSearchPattern(raw: string | null | undefined): string | null {
-  const trimmed = (raw ?? '').trim();
+  const trimmed = boundedSearch((raw ?? '').trim());
 
   // The structural characters become wildcards below, so a term made only of
   // them would match everything. Refuse it rather than run it.
@@ -107,7 +117,7 @@ export function buildSearchPattern(raw: string | null | undefined): string | nul
  * every row for "noir ", the space a phone keyboard leaves after a word).
  */
 export function matchesSearch(raw: string | null | undefined, ...texts: (string | null | undefined)[]): boolean {
-  const term = (raw ?? '').trim();
+  const term = boundedSearch((raw ?? '').trim());
   if (!term) return true;
   const body = [...term].map((c) => ('(),'.includes(c) ? '.' : c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).join('');
   const found = new RegExp(body, 'isu');

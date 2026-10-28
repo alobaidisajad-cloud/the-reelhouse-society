@@ -9,6 +9,8 @@ interface ControlledInputProps extends TextInputProps {
   name: string;
   /** Required: a field is found and named by a screen reader through this alone. */
   accessibilityLabel: string;
+  /** Required: each field holds what its column holds (MAX_LENGTHS), never a pasted page. */
+  maxLength: number;
 }
 
 /** A form field bound to the form by name: typing redraws this field, not the screen. */
@@ -27,8 +29,8 @@ export const ControlledInput = React.memo(function ControlledInput({ name, style
   );
 });
 
-/** The bio, with its count of characters beside it (redrawn with the field alone). */
-export const ControlledBioInput = React.memo(function ControlledBioInput({ name, maxLength = MAX_LENGTHS.bio, ...props }: ControlledInputProps) {
+/** The bio, with its count of characters beside it (redrawn with the field alone); its limit the bio's own unless named. */
+export const ControlledBioInput = React.memo(function ControlledBioInput({ name, maxLength = MAX_LENGTHS.bio, ...props }: Omit<ControlledInputProps, 'maxLength'> & { maxLength?: number }) {
   const { control } = useFormContext();
   const { field } = useController({ name, control });
 

@@ -40,6 +40,7 @@ import { EDGE_LIT } from '@/src/theme/light';
 import { PaperEmpty } from './PaperFrame';
 import { useModalTop } from '@/src/components/layout/navMetrics';
 import { counted } from '@/src/utils/counted';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 /**
  * The head every desk wears, one component so the desks cannot drift. BACK and
@@ -381,6 +382,7 @@ export const FilmFinder = memo(function FilmFinder({
             style={[d.searchText, { flex: 1, minWidth: 0, padding: 0 }]}
             value={query}
             onChangeText={onQuery}
+            maxLength={SEARCH_MAX}
             placeholder="Name a film"
             placeholderTextColor={colors.fog}
             autoFocus

@@ -33,6 +33,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import SearchUnreachable, { SearchPartly } from '@/src/components/search/SearchUnreachable';
 import Buster from '@/src/components/Buster';
 import { Arrive } from '@/src/components/Arrive';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
@@ -221,6 +222,7 @@ export default function SearchModal() {
             placeholderTextColor={colors.fog}
             value={query}
             onChangeText={handleQueryChange}
+            maxLength={SEARCH_MAX}
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"

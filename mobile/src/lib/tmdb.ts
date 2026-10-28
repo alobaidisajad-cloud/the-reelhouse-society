@@ -3,6 +3,7 @@
 // Resilient, cached, deduplicated — ported from web
 // ============================================================
 import { isTmdbUnreachable, TmdbUnreachable } from './tmdbErrors';
+import { boundedSearch } from '../utils/searchPattern';
 import { DeadlineExceeded, fetchWithinLimit } from './supabase';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -238,7 +239,9 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
 
 export const tmdb = {
   // ── Search ──
-  search: async (query: string, page = 1) => {
+  search: async (asked: string, page = 1) => {
+    // A phrase, whatever was pasted: every request below, the fallbacks' too, is made from it.
+    const query = boundedSearch(asked);
     const searchStart = Date.now();
     const SEARCH_BUDGET_MS = 6000;
 

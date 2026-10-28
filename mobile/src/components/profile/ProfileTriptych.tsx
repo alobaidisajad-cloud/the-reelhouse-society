@@ -27,6 +27,7 @@ import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 import { useBottomEdge, useSheetBottom } from '@/src/components/layout/navMetrics';
 import { Arrive } from '@/src/components/Arrive';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 // Module-scoped: prevents remount on every render cycle
@@ -497,6 +498,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                         placeholderTextColor={colors.fog}
                                         value={searchQuery}
                                         onChangeText={handleSearchQueryChange}
+                                        maxLength={SEARCH_MAX}
                                         style={s.searchInput}
                                         selectionColor={colors.sepia}
                                         keyboardAppearance="dark"

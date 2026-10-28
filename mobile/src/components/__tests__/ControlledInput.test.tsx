@@ -27,7 +27,7 @@ describe('ControlledInput', () => {
   it('shows the current form value', () => {
     const { getByDisplayValue } = render(
       <Harness defaultValues={{ displayName: 'Sajad' }}>
-        <ControlledInput name="displayName" accessibilityLabel="Display name" />
+        <ControlledInput name="displayName" accessibilityLabel="Display name" maxLength={50} />
       </Harness>,
     );
     expect(getByDisplayValue('Sajad')).toBeTruthy();
@@ -36,7 +36,7 @@ describe('ControlledInput', () => {
   it('writes typing back into the form', async () => {
     const { getByTestId, getByDisplayValue } = render(
       <Harness defaultValues={{ displayName: '' }}>
-        <ControlledInput name="displayName" accessibilityLabel="Display name" testID="f" />
+        <ControlledInput name="displayName" accessibilityLabel="Display name" maxLength={50} testID="f" />
       </Harness>,
     );
     await fireEvent.changeText(getByTestId('f'), 'Kurosawa');
@@ -46,7 +46,7 @@ describe('ControlledInput', () => {
   it('passes accessibility props through to the input', () => {
     const { getByLabelText } = render(
       <Harness defaultValues={{ displayName: '' }}>
-        <ControlledInput name="displayName" accessibilityLabel="Display name" />
+        <ControlledInput name="displayName" accessibilityLabel="Display name" maxLength={50} />
       </Harness>,
     );
     expect(getByLabelText('Display name')).toBeTruthy();
@@ -88,7 +88,7 @@ describe('ControlledUsernameInput — sanitises as you type', () => {
   const typeUsername = async (raw: string) => {
     const r = render(
       <Harness defaultValues={{ username: '' }}>
-        <ControlledUsernameInput name="username" accessibilityLabel="Username" testID="u" />
+        <ControlledUsernameInput name="username" accessibilityLabel="Username" maxLength={30} testID="u" />
       </Harness>,
     );
     await fireEvent.changeText(r.getByTestId('u'), raw);
@@ -119,7 +119,7 @@ describe('ControlledUsernameInput — sanitises as you type', () => {
   it('renders the @ prefix', () => {
     const { getByText } = render(
       <Harness defaultValues={{ username: 'x' }}>
-        <ControlledUsernameInput name="username" accessibilityLabel="Username" />
+        <ControlledUsernameInput name="username" accessibilityLabel="Username" maxLength={30} />
       </Harness>,
     );
     // Drawn, and not spoken: the field's name says what it holds.

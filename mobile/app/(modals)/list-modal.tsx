@@ -39,6 +39,7 @@ import { WayOut } from '@/src/components/TryAgain';
 import { useAuthStore } from '@/src/stores/auth';
 import { MembersOnly } from '@/src/components/MembersOnly';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 // At module scope: made inside the component, it would be a new type, and remount, each render.
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -510,6 +511,7 @@ export default function ListModal() {
                                 placeholderTextColor={colors.fog}
                                 value={query}
                                 onChangeText={setQuery}
+                                maxLength={SEARCH_MAX}
                                 returnKeyType="search"
                                 selectionColor={'rgba(218,165,32,0.3)'}
                                 cursorColor={colors.sepia}

@@ -11,6 +11,9 @@ export const EMAIL_MAX = 254;
 /** A search is a phrase, not a page. */
 export const SEARCH_MAX = 120;
 
+/** A suspension's length in hours, as the tribunal asks for it: at most 9999, over a year. */
+export const HOURS_DIGITS = 4;
+
 /** A year, as the filters ask for it. */
 export const YEAR_DIGITS = 4;
 

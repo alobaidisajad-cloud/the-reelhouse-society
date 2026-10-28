@@ -9,6 +9,7 @@ import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScalin
 import { r, roomTier, chipSlop } from './roomStyles';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { useStateSaid } from '@/src/hooks/useStateSaid';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 /**
  * RoomParts — the furniture every room is built from.
@@ -165,6 +166,7 @@ export function RoomSearch({ value, onChange, onClear, placeholder, a11y, ember 
         style={r.searchInput}
         value={value}
         onChangeText={onChange}
+        maxLength={SEARCH_MAX}
         placeholder={placeholder}
         placeholderTextColor={colors.fog}
         selectionColor={colors.sepia}

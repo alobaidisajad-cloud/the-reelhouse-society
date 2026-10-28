@@ -47,6 +47,7 @@ import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
 import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
 import { CROSSFADE_MS, HIDDEN, SHOWN } from '@/src/components/reels/sectionLayers';
+import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: string; onChangeText: (text: string) => void; onClear: () => void }) => {
   const [localText, setLocalText] = useState(value);
@@ -90,6 +91,7 @@ const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: str
         placeholderTextColor={colors.fog}
         value={localText}
         onChangeText={handleChange}
+        maxLength={SEARCH_MAX}
         returnKeyType="search"
         onSubmitEditing={() => Keyboard.dismiss()}
         selectionColor={colors.sepia}
