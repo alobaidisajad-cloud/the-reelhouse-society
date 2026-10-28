@@ -267,7 +267,7 @@ describe('the log’s ropes are the house’s ropes', () => {
       const images = tmdb.movieImages as jest.Mock;
       images.mockRejectedValueOnce(new Error('offline'));
       const r = mount('auteur');
-      await fireEvent.press(r.getByLabelText('Choose an alternate poster'));
+      await fireEvent.press(r.getByLabelText('Alt: choose an alternate poster'));
       await waitFor(() =>
         expect(r.getByText('The posters could not be reached.', { includeHiddenElements: true })).toBeTruthy());
       images.mockResolvedValueOnce({ posters: [], backdrops: [] });
@@ -308,7 +308,7 @@ describe('the log’s ropes are the house’s ropes', () => {
 
     it('an Auteur meets the picker with no rope', async () => {
       const r = mount('auteur');
-      await fireEvent.press(r.getByLabelText('Choose an alternate poster'));
+      await fireEvent.press(r.getByLabelText('Alt: choose an alternate poster'));
       await waitFor(() => expect(r.getByText('CURATORIAL CONTROL')).toBeTruthy());
       expect(r.queryByText('[ CLEARANCE REQUIRED ]')).toBeNull();
     });

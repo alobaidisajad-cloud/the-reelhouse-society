@@ -224,7 +224,7 @@ describe('TribunalScreen Integration', () => {
       // And none of the Tribunal's own chrome is drawn — the query is gated on its
       // own, so its silence alone would not show the screen was refused. Each of
       // these is found on an admin's screen by the tests below.
-      expect(queryByLabelText('Priority queue view')).toBeNull();
+      expect(queryByLabelText('Urgent: the priority queue')).toBeNull();
       expect(queryByLabelText('Enter multi-select mode')).toBeNull();
       expect(queryByText(/matters? awaits? judgment/)).toBeNull();
     });
@@ -267,11 +267,11 @@ describe('TribunalScreen Integration', () => {
       const { getAllByLabelText, getByText } = renderTribunal();
 
       await waitFor(() => {
-        expect(getAllByLabelText('Issue warning').length).toBeGreaterThan(0);
+        expect(getAllByLabelText('Warn: issue a warning').length).toBeGreaterThan(0);
       });
 
       await act(async () => {
-        await fireEvent.press(getAllByLabelText('Issue warning')[0]);
+        await fireEvent.press(getAllByLabelText('Warn: issue a warning')[0]);
       });
 
       await waitFor(() => {
@@ -296,12 +296,12 @@ describe('TribunalScreen Integration', () => {
 
       // Wait for reports to load
       await waitFor(() => {
-        expect(getAllByLabelText('Issue warning').length).toBeGreaterThan(0);
+        expect(getAllByLabelText('Warn: issue a warning').length).toBeGreaterThan(0);
       });
 
       // Open warn modal on first report
       await act(async () => {
-        await fireEvent.press(getAllByLabelText('Issue warning')[0]);
+        await fireEvent.press(getAllByLabelText('Warn: issue a warning')[0]);
       });
 
       // Type reason
@@ -559,7 +559,7 @@ describe('TribunalScreen Integration', () => {
 
       // Press PRIORITY tab
       await act(async () => {
-        await fireEvent.press(getByLabelText('Priority queue view'));
+        await fireEvent.press(getByLabelText('Urgent: the priority queue'));
       });
 
       await waitFor(() => {
@@ -589,7 +589,7 @@ describe('TribunalScreen Integration', () => {
       });
 
       await act(async () => {
-        await fireEvent.press(getByLabelText('Priority queue view'));
+        await fireEvent.press(getByLabelText('Urgent: the priority queue'));
       });
 
       await waitFor(() => {
@@ -631,7 +631,7 @@ describe('TribunalScreen Integration', () => {
       const { getByLabelText, findByLabelText, getByText } = renderTribunal();
 
       // Switch to priority view, once the door has checked the second key
-      const priority = await findByLabelText('Priority queue view');
+      const priority = await findByLabelText('Urgent: the priority queue');
       await act(async () => {
         await fireEvent.press(priority);
       });

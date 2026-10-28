@@ -294,7 +294,7 @@ export const DarkroomHeader = React.memo(() => {
               // The badge's number was read alone, after the words: said with them.
               accessibilityRole="button"
               accessibilityState={{ expanded: filtersVisible }}
-              accessibilityLabel={`${filtersVisible ? 'Hide' : 'Show'} the filters${activeFilterCount > 0 ? `, ${activeFilterCount} applied` : ''}`}
+              accessibilityLabel={`${filtersVisible ? 'Hide filters' : 'Expand filters'}${activeFilterCount > 0 ? `, ${activeFilterCount} applied` : ''}`}
             >
               <SlidersHorizontal size={14} color={filtersVisible ? colors.sepia : colors.fog} />
               <Text style={[s.filterToggleText, filtersVisible && s.filterToggleTextActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>

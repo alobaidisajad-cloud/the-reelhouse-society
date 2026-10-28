@@ -319,7 +319,7 @@ describe('the writing room', () => {
     const { getByLabelText } = await open();
     await type(getByLabelText("Essay content body"), 'Ozu frames a room.');
     await press(getByLabelText('Preview the essay'));
-    expect(getByLabelText('Back to editing')).toBeTruthy();
+    expect(getByLabelText('Edit: back to editing')).toBeTruthy();
   });
 });
 
@@ -425,7 +425,7 @@ describe('the formatting toolbar', () => {
 
   it('carries every mark the desk offers', async () => {
     const { getByLabelText } = await open();
-    for (const label of ['Bold', 'Italic', 'Heading', 'Block quote', 'Horizontal rule', 'Insert link']) {
+    for (const label of ['Bold', 'Italic', 'Heading', 'Block quote', 'Break: a horizontal rule', 'Insert link']) {
       expect(getByLabelText(label)).toBeTruthy();
     }
   });
@@ -600,7 +600,7 @@ describe('the tools that edit what the member wrote', () => {
     ['Italic', '*', '*'],
     ['Heading', '\n## ', '\n'],
     ['Block quote', '\n> ', '\n'],
-    ['Horizontal rule', '\n---\n', ''],
+    ['Break: a horizontal rule', '\n---\n', ''],
     ['Insert link', '[', '](url)'],
   ];
 

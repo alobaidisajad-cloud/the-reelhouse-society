@@ -70,7 +70,7 @@ it('a refused camera offers the way to grant it', async () => {
   const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   const open = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined as never);
   const r = render(<AvatarCropSheet onClose={jest.fn()} onSuccess={jest.fn()} />);
-  await act(async () => { await fireEvent.press(r.getByLabelText('Take a photo with the camera')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Use camera: take a photo')); });
   expect([(ImagePicker.requestCameraPermissionsAsync as jest.Mock).mock.calls.length, (ImagePicker.launchCameraAsync as jest.Mock).mock.calls.length]).toEqual([1, 0]);
   const buttons = alert.mock.calls[0][2] as { text: string; onPress?: () => void }[];
   buttons.find((b) => b.text === 'Open Settings')!.onPress!();

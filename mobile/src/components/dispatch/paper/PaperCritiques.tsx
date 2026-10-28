@@ -176,7 +176,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
           uri={c.author?.avatar}
           style={p.plateArt}
           contentFit="cover"
-          fallback={c.author ? <Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(c.author.name)}</Text> : null}
+          fallback={c.author ? <Text style={p.avatarMark} {...decorativeTextProps} {...UNSPOKEN}>{initialOf(c.author.name)}</Text> : null}
         />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -374,7 +374,7 @@ export const CritiqueComposer = memo(function CritiqueComposer({
   return (
     <View style={[p.dockCompose, { paddingBottom: bottomInset }]}>
       <View style={p.avatar}>
-        <RemoteImage uri={me.avatar} style={p.plateArt} contentFit="cover" fallback={<Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(me.name)}</Text>} />
+        <RemoteImage uri={me.avatar} style={p.plateArt} contentFit="cover" fallback={<Text style={p.avatarMark} {...decorativeTextProps} {...UNSPOKEN}>{initialOf(me.name)}</Text>} />
       </View>
       <TextInput
         style={p.dockInput}

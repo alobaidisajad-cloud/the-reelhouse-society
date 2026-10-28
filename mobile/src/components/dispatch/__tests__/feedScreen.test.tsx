@@ -69,7 +69,7 @@ jest.mock('@/src/components/PressableScale', () => {
     __esModule: true,
     default: (props: { accessibilityLabel?: string }) => {
       if (props.accessibilityLabel === 'Share this filing') mockRowRenders.push('row');
-      if (props.accessibilityLabel === 'Open this filing') mockWordRenders.push('words');
+      if (typeof props.accessibilityLabel === 'string' && props.accessibilityLabel.endsWith('Open this filing.')) mockWordRenders.push('words');
       return ReactActual.createElement(Real, props);
     },
   };
@@ -276,7 +276,7 @@ describe('the Dispatch feed', () => {
   it('opens a filing from its writing, its marks and its share', async () => {
     put({ filings: [filing()] });
     const { getByLabelText } = await mount();
-    for (const label of ['Open this filing', /^Critique\./, 'Share this filing']) {
+    for (const label of [/Open this filing\.$/, /^Critique\./, 'Share this filing']) {
       mockPushed.length = 0;
       await act(async () => { await fireEvent.press(getByLabelText(label as never)); });
       // Share and the film both open from the READER, where the sheet and the

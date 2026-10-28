@@ -71,7 +71,7 @@ export const HouseLine = memo(function HouseLine({ type, text, room, style, head
 export const Avatar = memo(function Avatar({ author, size }: { author: WallAuthor; size: number }) {
   const box = { width: size, height: size, borderRadius: size / 2 };
   return <RemoteImage uri={author.avatar_url} style={[s.avatar, box]} contentFit="cover" accessible={false} fallback={<View style={[s.avatar, box]} {...UNSPOKEN}>
-      <Text style={[s.initial, { fontSize: Math.round(size * 0.45) }]} maxFontSizeMultiplier={1}>
+      <Text style={[s.initial, { fontSize: Math.round(size * 0.45) }]} maxFontSizeMultiplier={1} {...UNSPOKEN}>
         {initialOf(author.username)}
       </Text>
     </View>} />;

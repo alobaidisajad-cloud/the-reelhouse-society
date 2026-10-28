@@ -190,7 +190,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                             accessibilityRole="button"
                             accessibilityState={{ expanded: posterOpen }}
                             accessibilityLabel={curation.held
-                                ? 'Choose an alternate poster'
+                                ? 'Alt: choose an alternate poster'
                                 : 'Curatorial Control. Choose an alternate poster. Opens with The Auteur.'}
                         >
                             <RemoteImage uri={tmdb.poster(altPoster ?? film.poster_path, 'w342')} style={st.poster} contentFit="cover" transition={150} fallback={<PosterMark style={st.poster} size={24} />} />

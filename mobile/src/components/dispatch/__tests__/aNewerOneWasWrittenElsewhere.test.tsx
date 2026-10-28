@@ -136,7 +136,7 @@ describe('a newer one written elsewhere', () => {
 
     const r = await mount();
     await act(async () => {
-      await fireEvent.press(r.getByLabelText('Take the one written elsewhere'));
+      await fireEvent.press(r.getByLabelText('Take that one: the one written elsewhere'));
     });
 
     expect(r.getByLabelText('Essay content body').props.value).toBe('Written elsewhere.');

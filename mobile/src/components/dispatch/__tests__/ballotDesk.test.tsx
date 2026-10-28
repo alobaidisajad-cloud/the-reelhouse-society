@@ -193,7 +193,7 @@ describe('the ballot desk', () => {
     getByLabelText: (m: string | RegExp) => unknown,
     slot: number, film: ReturnType<typeof tmdbFilm>,
   ) => {
-    await press(getByLabelText('Choose film ' + slot));
+    await press(getByLabelText(new RegExp(`: film ${slot}$`)));
     mockResults = [film];
     await search(getByLabelText as never, film.title);
     await press(getByLabelText(`${film.title}, ${film.release_date.slice(0, 4)}`));

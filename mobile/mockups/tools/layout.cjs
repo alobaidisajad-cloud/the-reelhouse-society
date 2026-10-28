@@ -26,6 +26,8 @@
  *            platforms give the overlap to the LATER control;
  *   NAMELESS a screen reader can call it nothing but "button": no label, and
  *            no words inside it;
+ *   UNSAID   (only with `--kinds UNSAID`) it shows six words or fewer of its own, and its
+ *            name does not hold them: a voice-control user says what they see;
  *   SMALL    (only with `--kinds SMALL`) its own box is under 48pt a side.
  *
  * And every view (by its React Native style, drawn with MOCKUPS_YOGA=1):
@@ -421,6 +423,27 @@ async function audit(page) {
         found.push({ kind: 'NAMELESS', text: c.e.dataset.t || '(a control with no name)', size: 0, by: `${c.r.width.toFixed(0)}×${c.r.height.toFixed(0)} at ${c.r.left.toFixed(0)},${c.r.top.toFixed(0)}` });
       }
     }
+    // UNSAID: a control that shows a few words of its own (a button's label, not a card's
+    // content) and is named something that does not hold them. A voice-control user says
+    // what they see ("tap Ascend the ranks"), and the phone listens for the control's name.
+    const words = (s) => s.toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    const shown = (e) => {
+      if (e.nodeType === 3) return e.textContent;
+      if (e.nodeType !== 1 || e.getAttribute('aria-hidden') === 'true') return '';
+      return [...e.childNodes].map(shown).join(' ');
+    };
+    for (const c of controls) {
+      if (c.e.closest('[aria-hidden="true"]') || c.e.parentElement?.closest('[data-accessible][aria-label]')) continue;
+      const label = c.e.getAttribute('aria-label');
+      const seen = words(shown(c.e));
+      if (!label || !seen || seen.split(' ').length > 6) continue;
+      // Each word shown is a word of the name: the words a voice-control user can say.
+      const named = new Set(words(label).split(' '));
+      const missing = seen.split(' ').filter((w) => !named.has(w));
+      if (missing.length) {
+        found.push({ kind: 'UNSAID', text: `"${missing.join(' ')}" of "${seen}" is not in "${label}"` + (c.e.dataset.src ? ` [${c.e.dataset.src}]` : ''), size: 0, by: `${c.r.width.toFixed(0)}×${c.r.height.toFixed(0)} at ${c.r.left.toFixed(0)},${c.r.top.toFixed(0)}` });
+      }
+    }
     // SMALL (`--kinds SMALL`): a control whose OWN box is under 48pt a side. A halo is
     // invisible to both accessibility layers (iOS reports the frame; RN installs no
     // Android touch delegate). Part of a larger named control is not one.
@@ -552,7 +575,7 @@ async function audit(page) {
       await page.setViewportSize({ width: PHONE_W, height: Math.min(h, 16000) });
       const r = await audit(page);
       // SMALL is reported only when asked for by name (see the check).
-      r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL'));
+      r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID'));
       await page.close();
       // iOS keeps the plain key, so reports written before Android was measured still compare.
       report[platform === 'ios' ? `${name}@${f}` : `${name}@${platform}-${f}`] = r;

@@ -149,7 +149,7 @@ export default function LogActionDeck({
                pressedScale={0.92}
                accessibilityRole="button"
                accessibilityState={{ selected: filmSaved }}
-               accessibilityLabel={filmSaved ? 'Remove film from your watchlist' : 'Save film to your watchlist'}
+               accessibilityLabel={filmSaved ? 'Saved: remove the film from your watchlist' : 'Save film to your watchlist'}
              >
                 <Bookmark size={16} strokeWidth={2} color={filmSaved ? colors.sepia : colors.fog} fill={filmSaved ? colors.sepia : 'transparent'}
                   strokeDasharray={saveKnown ? undefined : UNINKED} />

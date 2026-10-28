@@ -707,7 +707,7 @@ function ComposeDossierScreen() {
                     accessibilityRole="button"
                     // The label says what a press does; the state says where you are.
                     accessibilityState={{ selected: isPreview }}
-                    accessibilityLabel={isPreview ? 'Back to editing' : 'Preview the essay'}
+                    accessibilityLabel={isPreview ? 'Edit: back to editing' : 'Preview the essay'}
                 >
                     <Text style={styles.previewBtn} {...deckLabelProps}>{isPreview ? 'EDIT' : 'PREVIEW'}</Text>
                 </PressableScale>
@@ -770,7 +770,7 @@ function ComposeDossierScreen() {
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
                                         onPress={() => answer(true)}
                                         accessibilityRole="button"
-                                        accessibilityLabel="Take the one written elsewhere"
+                                        accessibilityLabel="Take that one: the one written elsewhere"
                                     >
                                         <Text style={styles.elsewhereTake} {...scaledTextProps}>TAKE THAT ONE</Text>
                                     </PressableScale>
@@ -907,7 +907,7 @@ function ComposeDossierScreen() {
                                 <Quote size={15} color={colors.parchment} />
                                 <Text style={styles.toolWord} {...scaledTextProps}>QUOTE</Text>
                             </PressableScale>
-                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Horizontal rule">
+                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Break: a horizontal rule">
                                 <Minus size={15} color={colors.parchment} />
                                 <Text style={styles.toolWord} {...scaledTextProps}>BREAK</Text>
                             </PressableScale>

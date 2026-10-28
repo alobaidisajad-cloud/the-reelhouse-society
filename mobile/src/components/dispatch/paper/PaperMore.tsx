@@ -681,7 +681,8 @@ export const LoungeCard = memo(function LoungeCard({
   if (ended) {
     return (
       <PressableScale style={[m.bubble, m.bubbleEnded]} haptic="selection" pressedScale={0.98} onPress={onOpen} hitSlop={null}
-        accessibilityRole="button" accessibilityLabel="Open this filing">
+        accessibilityRole="button"
+        accessibilityLabel={`${ended === 'author' ? 'This filing was withdrawn by its author.' : 'This filing was removed by the house.'} Open this filing.`}>
         <View style={[m.loungeRule, { backgroundColor: colors.fog, opacity: 0.4 }]} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={m.loungeGone} {...scaledTextProps}>

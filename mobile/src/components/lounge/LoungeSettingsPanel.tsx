@@ -199,7 +199,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
                       </View>
                     </View>
                   ) : (
-                    <PressableScale style={s.coverEmpty} onPress={handleChangeCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Choose a salon cover">
+                    <PressableScale style={s.coverEmpty} onPress={handleChangeCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Choose a film for the cover">
                       <ImageIcon size={15} color={colors.sepia} strokeWidth={1.5} />
                       <Text style={s.coverEmptyText}>CHOOSE A FILM FOR THE COVER</Text>
                     </PressableScale>

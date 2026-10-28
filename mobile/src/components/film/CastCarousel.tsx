@@ -9,6 +9,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { useTextScale } from '@/src/hooks/useTextScale';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 interface CastMember {
     id: number;
@@ -44,7 +45,7 @@ const CastCard = memo(function CastCard({ item, nameBlock }: { item: CastMember;
                     </>
                 ) : (
                     <View style={[s.castPhoto, s.castPhotoPlaceholder]}>
-                        <Text style={s.castPhotoPlaceholderText}>
+                        <Text style={s.castPhotoPlaceholderText} {...UNSPOKEN}>
                             {initialOf(item.name) || '?'}
                         </Text>
                     </View>

@@ -67,8 +67,8 @@ export const ClearanceGate = React.memo(function ClearanceGate({
   const spoken = reading
     ? `${names}. Your rank is being read. Ask again.`
     : lapsed
-    ? `${names}. Your dues have lapsed. ${nameFor(rank)} opens this again. Opens the Society.`
-    : `${names}. Clearance required. ${nameFor(rank)} opens this. Opens the Society.`;
+    ? `${names}. Your dues have lapsed. ${nameFor(rank)} opens this again. Resume your standing. Opens the Society.`
+    : `${names}. Clearance required. ${nameFor(rank)} opens this. Ascend the ranks. Opens the Society.`;
 
   return (
     <PressableScale

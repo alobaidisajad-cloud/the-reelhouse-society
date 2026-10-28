@@ -22,7 +22,7 @@
  *   A DISABLED CONTROL SAYS SO `accessibilityState.disabled`, or it is offered
  *                              and then silently does nothing.
  *   NO TWO CONTROLS SHARE A NAME
- *                              "Open this filing" twenty times is navigable;
+ *                              "Share this filing" twenty times is navigable;
  *                              two DIFFERENT acts with one name is not. Checked
  *                              per screen, allowing the repeats a list makes.
  */

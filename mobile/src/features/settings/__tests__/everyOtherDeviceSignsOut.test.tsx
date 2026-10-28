@@ -28,7 +28,7 @@ afterEach(() => jest.restoreAllMocks());
 async function choose(answer: 'Cancel' | 'Sign out') {
   const asked = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   const r = await render(<PasswordChangePanel />);
-  await fireEvent.press(r.getByLabelText('Sign out of every other device'));
+  await fireEvent.press(r.getByLabelText('Sign out of other devices: every one but this phone'));
   expect(asked).toHaveBeenCalledTimes(1);
   const [title, , buttons] = asked.mock.calls[0] as [string, string, Button[]];
   expect(title).toBe('Sign out of every other device?');

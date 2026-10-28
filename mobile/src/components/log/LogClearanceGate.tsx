@@ -48,8 +48,8 @@ export default React.memo(function LogClearanceGate({
       accessibilityLabel={reading
         ? `${names}. Your rank is being read. Ask again.`
         : lapsed
-        ? `${names}. Your dues have lapsed. ${label} opens this again. Opens the Society.`
-        : `${names}. Clearance required. ${label} opens this. Opens the Society.`}
+        ? `${names}. Your dues have lapsed. ${label} opens this again. Resume your standing. Opens the Society.`
+        : `${names}. Clearance required. ${label} opens this. Ascend the ranks. Opens the Society.`}
     >
       <View pointerEvents="none">
         <Text style={st.gateSub} {...scaledTextProps}>

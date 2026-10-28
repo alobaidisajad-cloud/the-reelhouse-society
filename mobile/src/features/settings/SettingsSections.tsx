@@ -419,7 +419,7 @@ export function PasswordChangePanel() {
         hitSlop={null}
         haptic="selection"
         pressedScale={0.97}
-        accessibilityLabel="Sign out of every other device"
+        accessibilityLabel="Sign out of other devices: every one but this phone"
         accessibilityRole="button"
         accessibilityState={{ disabled: endingOthers, busy: endingOthers }}
       >

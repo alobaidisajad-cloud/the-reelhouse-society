@@ -252,7 +252,7 @@ export const BallotDesk = memo(function BallotDesk({
                     <PressableScale style={d.slotEmpty} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
                       onPress={onChoose && (() => onChoose(i))} disabled={!onChoose}
                       accessibilityRole="button" accessibilityState={{ disabled: !onChoose }}
-                      accessibilityLabel={`Choose film ${i + 1}`}>
+                      accessibilityLabel={`${i < 2 ? 'Choose a film' : 'Another, if you like'}: film ${i + 1}`}>
                       <Plus size={12} strokeWidth={2} color={colors.sepia} />
                       <Text style={d.slotAdd} {...scaledTextProps}>
                         {i < 2 ? 'CHOOSE A FILM' : 'ANOTHER, IF YOU LIKE'}

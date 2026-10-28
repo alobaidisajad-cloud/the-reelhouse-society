@@ -159,7 +159,7 @@ describe('SocialModal share, opened by its route without the rank to speak (P4.1
         mockParams = params;
         (LoungeService.getUserLounges as jest.Mock).mockResolvedValue([{ lounge_id: 'l1', lounges: { id: 'l1', name: 'The Booth' } }]);
         const screen = render(<SocialModal />);
-        const rope = await screen.findByLabelText('Share to a salon. Clearance required. THE ARCHIVIST opens this. Opens the Society.');
+        const rope = await screen.findByLabelText('Share to a salon. Clearance required. THE ARCHIVIST opens this. Ascend the ranks. Opens the Society.');
         expect(screen.queryByLabelText('Share to The Booth')).toBeNull();
         expect(LoungeService.getUserLounges).not.toHaveBeenCalled();
         await act(async () => { await fireEvent.press(rope); });

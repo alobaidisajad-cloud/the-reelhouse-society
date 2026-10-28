@@ -43,7 +43,7 @@ export default React.memo(function EditorialDesk({
     // Each still is a picture, so it is NAMED, and says whether it is chosen.
     const renderBackdropItem = React.useCallback(({ item: p, index }: { item: { file_path: string }; index: number }) => p.file_path === '__none__' ? (
         <PressableScale onPress={() => { setEditorialHeader(null); }} style={[st.stillThumb, editorialHeader === null && st.stillActive]} haptic="selection" pressedScale={0.96} hitSlop={null}
-            accessibilityRole="button" accessibilityLabel="No header still" accessibilityState={{ selected: editorialHeader === null }}>
+            accessibilityRole="button" accessibilityLabel="None: no header still" accessibilityState={{ selected: editorialHeader === null }}>
             <Text style={[st.stillNone, editorialHeader === null && st.stillNoneActive]}>NONE</Text>
         </PressableScale>
     ) : (
@@ -61,7 +61,7 @@ export default React.memo(function EditorialDesk({
                 <Text style={st.editLabel}>STYLIZED DROP CAP</Text>
                 {/* Named, and said to be on or off — never "ENABLE, button". */}
                 <PressableScale style={st.spoilerRow} onPress={() => { setDropCap(!dropCap); }} hitSlop={null} haptic="selection" pressedScale={0.96}
-                    accessibilityRole="checkbox" accessibilityLabel="Stylized drop cap" accessibilityState={{ checked: dropCap }}>
+                    accessibilityRole="checkbox" accessibilityLabel="Enable: stylized drop cap" accessibilityState={{ checked: dropCap }}>
                     <View style={[st.cbox, dropCap && st.cboxSepia]}>{dropCap && <Check size={10} color={colors.ink} />}</View>
                     <Text style={st.editToggleText}>ENABLE</Text>
                 </PressableScale>

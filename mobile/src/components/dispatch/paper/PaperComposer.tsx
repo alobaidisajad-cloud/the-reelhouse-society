@@ -140,7 +140,7 @@ export const PaperComposer = memo(function PaperComposer({
           <View style={p.column}>
             <View style={p.byline}>
               <View style={p.avatar}>
-                <RemoteImage uri={me.avatar} style={p.plateArt} contentFit="cover" fallback={<Text style={p.avatarMark} {...decorativeTextProps}>{initialOf(me.name)}</Text>} />
+                <RemoteImage uri={me.avatar} style={p.plateArt} contentFit="cover" fallback={<Text style={p.avatarMark} {...decorativeTextProps} {...UNSPOKEN}>{initialOf(me.name)}</Text>} />
               </View>
               <Text
                 style={[p.bylineName, tier === 'auteur' && { color: CRIMSON_INK, opacity: 1 }]}

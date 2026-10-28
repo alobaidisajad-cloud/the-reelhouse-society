@@ -20,8 +20,8 @@ it('the toggle is a button that says it is closed, and how many filters it holds
     filters: { genreId: 18, decade: null, sortBy: 'popularity.desc', language: 'fr', minRating: 0, yearFrom: null, yearTo: null },
   } as never);
   const r = render(<DarkroomHeader />);
-  const toggle = r.getByRole('button', { name: /^Show the filters/ });
-  expect(toggle.props.accessibilityLabel).toMatch(/^Show the filters, \d+ applied$/);
+  const toggle = r.getByRole('button', { name: /^Expand filters/ });
+  expect(toggle.props.accessibilityLabel).toMatch(/^Expand filters, \d+ applied$/);
   expect(toggle.props.accessibilityState).toMatchObject({ expanded: false });
   expect(r.getByLabelText('Clear the filters')).toBeTruthy();
 });

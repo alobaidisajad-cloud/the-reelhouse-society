@@ -376,7 +376,7 @@ describe('the critiques action', () => {
     const r = mount({ critiqueCount: 12 });
     await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
     expect(r.getByText('12', { includeHiddenElements: true })).toBeTruthy();
-    expect(r.getByLabelText('Critiques. 12 critiques')).toBeTruthy();
+    expect(r.getByLabelText('Critique. 12 critiques')).toBeTruthy();
   });
 
   it('says nothing rather than a confident zero when the count failed', async () => {
@@ -384,7 +384,7 @@ describe('the critiques action', () => {
     const r = mount({ critiqueCount: null });
     await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
     expect(r.queryByText('0', { includeHiddenElements: true })).toBeNull();
-    expect(r.getByLabelText('Critiques')).toBeTruthy();
+    expect(r.getByLabelText('Critique')).toBeTruthy();
   });
 
   it('carries the server’s count from the service to the screen', async () => {
@@ -574,7 +574,7 @@ describe('the critiques overlay', () => {
     expect(r.queryByText('THE CRITIQUES')).toBeNull();
     await pastTheDebounce();
     focus.mockClear();
-    await act(async () => { await fireEvent.press(r.getByLabelText('Critiques')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Critique')); });
     expect(r.getByText('THE CRITIQUES')).toBeTruthy();
     await act(async () => { await fireEvent.press(close()); });
     expect(r.queryByText('THE CRITIQUES')).toBeNull();

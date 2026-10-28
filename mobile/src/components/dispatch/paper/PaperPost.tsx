@@ -13,7 +13,7 @@ import {
   scaledTextProps, decorativeTextProps, displayTextProps,
 } from '@/src/constants/textScaling';
 import { p } from './paperStyles';
-import { stillHeight, KIND_RULE, KIND_NAME, actionLabelProps, CRIMSON_INK, UNSPOKEN } from './paperMetrics';
+import { stillHeight, KIND_RULE, KIND_NAME, actionLabelProps, CRIMSON_INK, UNSPOKEN, nameOf } from './paperMetrics';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { LEAD_STYLE } from './paperPerf';
@@ -460,7 +460,10 @@ const PostWords = memo(function PostWords({
             // No sideways reach under the rank rule and the margin.
             hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
             accessibilityRole="button"
-            accessibilityLabel={spoiler ? `Uncover: ${spoiler}` : 'Open this filing'}
+            // Named by its writing, as it reads: "Open this filing" alone, twenty times down a
+            // page, read a screen-reader member no word of any of them.
+            accessibilityLabel={spoiler ? `${spoiler}. Uncover it.`
+              : `${nameOf(kind)}: ${body}. Open this filing.`}
           >
           {spoiler ? (
             <View style={p.veil}>

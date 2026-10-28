@@ -184,7 +184,7 @@ export const ActionDeck = React.memo(function ActionDeck({
           <Text style={s.actionLabel} {...deckLabelProps}>CRITIQUE</Text>
         </PressableScale>
 
-        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: !isOwner && filmSaved }} accessibilityLabel={isOwner ? 'Edit this log' : filmSaved ? 'Remove film from your watchlist' : 'Save film to your watchlist'}>
+        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: !isOwner && filmSaved }} accessibilityLabel={isOwner ? 'Edit this log' : filmSaved ? 'Saved: remove the film from your watchlist' : 'Save film to your watchlist'}>
           <Animated.View style={animatedBookmarkStyle}>
             {isOwner ? (
               <Edit3 size={15} strokeWidth={2} color={colors.fog} />

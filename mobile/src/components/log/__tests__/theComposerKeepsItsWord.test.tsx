@@ -116,9 +116,9 @@ describe('every control the composer owns is there, by name', () => {
       await press(r.getByText(entry));
     }
     for (const name of [
-      'Choose an alternate poster', 'watched', 'rewatched', 'abandoned', 'Your rating',
+      'Alt: choose an alternate poster', 'watched', 'rewatched', 'abandoned', 'Your rating',
       'Write your film review', 'Contains spoilers',
-      'Stylized drop cap', 'Pull quote', 'No header still', 'Header still 1',
+      'Enable: stylized drop cap', 'Pull quote', 'None: no header still', 'Header still 1',
       'STORY score 7', 'DVD', 'Film Print', 'Private notes',
       'Watched today', 'Watched yesterday', /Change the date\.$/, 'Watched with companion',
     ]) {
@@ -170,7 +170,7 @@ describe('every control the composer owns is there, by name', () => {
     expect(del).toBeGreaterThan(-1);
     // Past every entry of the record — it used to be the FIRST thing on this
     // page when editing. (The seal is docked; it is not in the scroll.)
-    for (const entry of [/^Choose an alternate poster/, /^THE AUTOPSY/, /^THE VAULT/, /^FILED/]) {
+    for (const entry of [/^Alt: choose an alternate poster/, /^THE AUTOPSY/, /^THE VAULT/, /^FILED/]) {
       const at = all.findIndex((l) => entry.test(l));
       expect(at).toBeGreaterThan(-1);
       expect(at).toBeLessThan(del);
@@ -227,13 +227,13 @@ describe('the record reads as one document', () => {
     for (const entry of [/^THE AUTOPSY/, /^THE PHYSICAL ARCHIVE/, /^THE VAULT/, /^FILED/]) {
       expect(stateOf(r, entry).expanded).toBe(false);
     }
-    expect(r.queryByLabelText('Stylized drop cap')).toBeNull();
+    expect(r.queryByLabelText('Enable: stylized drop cap')).toBeNull();
   });
 
   it('an amended record opens every entry that already holds something', async () => {
     // Editing last year's record must never make a member hunt for their own words.
     const r = await mount('auteur', { editLogId: 'log-1' });
-    expect(r.getByLabelText('Stylized drop cap').props.accessibilityState.checked).toBe(true);   // the desk: a drop cap
+    expect(r.getByLabelText('Enable: stylized drop cap').props.accessibilityState.checked).toBe(true);   // the desk: a drop cap
     expect(stateOf(r, /^THE AUTOPSY/).expanded).toBe(true);                                     // a score
     expect(stateOf(r, /^THE PHYSICAL ARCHIVE/).expanded).toBe(true);                            // VHS
     expect(stateOf(r, /^FILED/).expanded).toBe(true);                                           // with Anna

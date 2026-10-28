@@ -20,6 +20,7 @@ import { Text } from '@/src/components/text';
 import { Users, Lock } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { initialOf } from '@/src/utils/text';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 export interface SalonFace {
   username: string;
@@ -71,7 +72,7 @@ export const MemberFaceStack = React.memo(function MemberFaceStack({
       <View style={s.stack}>
         {shown.map((f, i) => (
           <View key={`${f.username}-${i}`} style={[s.avatar, i > 0 && s.avatarOverlap]}>
-            <RemoteImage uri={f.avatar_url} style={s.avatarImg} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={150} recyclingKey={f.username} fallback={<Text style={s.initial}>{initialOf(f.username) || '?'}</Text>} />
+            <RemoteImage uri={f.avatar_url} style={s.avatarImg} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={150} recyclingKey={f.username} fallback={<Text style={s.initial} {...UNSPOKEN}>{initialOf(f.username) || '?'}</Text>} />
           </View>
         ))}
       </View>

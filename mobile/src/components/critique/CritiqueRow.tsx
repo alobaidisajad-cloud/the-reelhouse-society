@@ -29,6 +29,7 @@ import { View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { askToWithdrawCritique } from './withdraw';
 import { authorName } from '@/src/constants/departed';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 export interface Critique {
   id: string;
@@ -98,7 +99,7 @@ export const CritiqueRow = React.memo(function CritiqueRow({
         >
           <RemoteImage uri={c.avatar_url} style={s.commentAvatar} contentFit="cover" transition={150} fallback={<View style={s.commentAvatar}>
               {/* A departed member's disc is empty, as on every card: no letter of a mark. */}
-              {departed || !c.username ? null : <Text style={s.commentAvatarText}>{initialOf(c.username)}</Text>}
+              {departed || !c.username ? null : <Text style={s.commentAvatarText} {...UNSPOKEN}>{initialOf(c.username)}</Text>}
             </View>} />
           <Text style={s.commUsername} numberOfLines={1}>{linked ? `@${c.username}` : authorName(c.user_id, c.username)}</Text>
         </PressableScale>

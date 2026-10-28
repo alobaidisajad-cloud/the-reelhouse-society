@@ -117,7 +117,7 @@ const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof rende
   // Curatorial Control open: the alternate posters under the docket.
   ['composer-posters', 'auteur', FILM, async (r) => {
     await settle();
-    await fireEvent.press(r.getByLabelText('Choose an alternate poster'));
+    await fireEvent.press(r.getByLabelText('Alt: choose an alternate poster'));
   }],
   // Naming a companion: the members you follow, offered as you type "@".
   ['composer-companion', 'auteur', FILM, async (r) => {

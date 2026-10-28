@@ -403,13 +403,13 @@ describe('the record offers what the card offers', () => {
   it('a visitor can save the film, and take it back', async () => {
     const r = await page();
     await act(async () => { await fireEvent.press(r.getByLabelText('Save film to your watchlist')); });
-    expect(r.getByLabelText('Remove film from your watchlist')).toBeTruthy();
+    expect(r.getByLabelText('Saved: remove the film from your watchlist')).toBeTruthy();
     // A second tap on the same control inside 400ms is swallowed on purpose
     // (PressableScale's debounce): a member's second tap comes later than that.
     const now = Date.now();
     const clock = jest.spyOn(Date, 'now').mockReturnValue(now + 1000);
     try {
-      await act(async () => { await fireEvent.press(r.getByLabelText('Remove film from your watchlist')); });
+      await act(async () => { await fireEvent.press(r.getByLabelText('Saved: remove the film from your watchlist')); });
     } finally {
       clock.mockRestore();
     }

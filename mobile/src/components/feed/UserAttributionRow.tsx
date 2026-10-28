@@ -9,6 +9,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { initialOf } from '@/src/utils/text';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import { RankBadge, rankOf } from '@/src/components/RankBadge';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 interface Props {
   username: string;
@@ -39,7 +40,7 @@ export const UserAttributionRow = React.memo(function UserAttributionRow({ usern
       <View style={s.row}>
         <PressableScale onPress={onUserPress} hitSlop={s.hitSlop} haptic="selection" pressedScale={0.96} style={s.pressable} accessibilityLabel={`View profile of @${username}`}>
           <RemoteImage uri={avatarUrl} style={s.avatar} transition={150} fallback={<View style={s.avatar}>
-              <Text style={s.avatarText}>{initialOf(username)}</Text>
+              <Text style={s.avatarText} {...UNSPOKEN}>{initialOf(username)}</Text>
             </View>} />
           <Text style={s.username} numberOfLines={1} ellipsizeMode="tail">
             @{username.toUpperCase()}

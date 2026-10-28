@@ -49,7 +49,7 @@ describe('OfflineBanner', () => {
   it('says it is offline, not only what pressing it does', () => {
     mockUseNetInfo.mockReturnValue({ isConnected: false });
     const { getByLabelText } = render(<OfflineBanner />);
-    expect(getByLabelText('Offline. Check the connection again')).toBeTruthy();
+    expect(getByLabelText('Operating in isolation. Offline. Check the connection again')).toBeTruthy();
   });
 
   it('counts the time offline in the house measure', async () => {
@@ -59,6 +59,8 @@ describe('OfflineBanner', () => {
       const r = render(<OfflineBanner />);
       await act(async () => { jest.advanceTimersByTime(150_000); });
       expect(r.getByText('OPERATING IN ISOLATION · 2 MIN.')).toBeTruthy();
+      // Named by the words on the plate, the minutes with them: what a voice-control member says.
+      expect(r.getByLabelText('Operating in isolation, 2 min. Offline. Check the connection again')).toBeTruthy();
     } finally {
       jest.useRealTimers();
     }
@@ -87,7 +89,7 @@ describe('OfflineBanner', () => {
       mockUseNetInfo.mockReturnValue({ isConnected: false });
       const set = jest.spyOn(global, 'setTimeout');
       const r = render(<OfflineBanner />);
-      await act(async () => { await fireEvent.press(r.getByLabelText('Offline. Check the connection again')); });
+      await act(async () => { await fireEvent.press(r.getByLabelText('Operating in isolation. Offline. Check the connection again')); });
       expect(r.getByLabelText('Checking the connection')).toBeTruthy();
       const settle = set.mock.calls.findIndex((c) => c[1] === 1000);
       expect(settle).toBeGreaterThan(-1);

@@ -983,7 +983,7 @@ export default function StackDetailScreen() {
                 {/* The count is null when the server could not be asked — the
                     bar then draws no number rather than a confident 0, since
                     "none" and "we could not count" are different statements. */}
-                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: showComments }} accessibilityLabel={critiqueLabel(critiqueCount, 'Critiques')}>
+                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: showComments }} accessibilityLabel={critiqueLabel(critiqueCount)}>
                   <MarkFigure iconSize={16} count={critiqueCount} style={[s.actionLabel, showComments && s.actionLabelOpen]}>
                     <MessageSquare size={16} strokeWidth={2} color={showComments ? colors.sepia : colors.fog} />
                   </MarkFigure>

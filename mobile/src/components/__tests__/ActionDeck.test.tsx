@@ -91,7 +91,7 @@ describe('the acts', () => {
     mockWatch._watchlistIndex = { 603: true };
     const saved = render(deck({ itemId: 'log-2' }));
     expect(saved.getByText('SAVED')).toBeTruthy();
-    await fireEvent.press(saved.getByLabelText('Remove film from your watchlist'));
+    await fireEvent.press(saved.getByLabelText('Saved: remove the film from your watchlist'));
     expect(mockWatch.removeFromWatchlist).toHaveBeenCalledWith(603);
   });
 

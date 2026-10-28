@@ -43,6 +43,7 @@ import { initialOf } from '@/src/utils/text';
 import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
 import { Arrive } from '@/src/components/Arrive';
 import { HOURS_DIGITS } from '@/src/constants/inputLimits';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 interface TribunalTarget {
   id: string;
@@ -740,7 +741,7 @@ function TribunalScreen() {
             pressedScale={0.95}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeView === 'pending' }}
-            accessibilityLabel="Pending reports view"
+            accessibilityLabel="The docket: pending reports"
           >
             <List size={14} color={activeView === 'pending' ? colors.parchment : colors.fog} />
             <Text style={[s.viewTabText, activeView === 'pending' && s.viewTabTextActive]}>
@@ -756,7 +757,7 @@ function TribunalScreen() {
             pressedScale={0.95}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeView === 'priority' }}
-            accessibilityLabel="Priority queue view"
+            accessibilityLabel="Urgent: the priority queue"
           >
             <Layers size={14} color={activeView === 'priority' ? colors.parchment : colors.fog} />
             <Text style={[s.viewTabText, activeView === 'priority' && s.viewTabTextActive]}>
@@ -916,7 +917,7 @@ function TribunalScreen() {
                         accessibilityLabel={`View the accused, ${accused.username}`}
                       >
                         <View style={s.accusedAvatar}>
-                          <RemoteImage uri={accused.avatar_url} style={s.accusedAvatarImg} contentFit="cover" fallback={<Text style={s.accusedAvatarLetter}>{initialOf(accused.username)}</Text>} />
+                          <RemoteImage uri={accused.avatar_url} style={s.accusedAvatarImg} contentFit="cover" fallback={<Text style={s.accusedAvatarLetter} {...UNSPOKEN}>{initialOf(accused.username)}</Text>} />
                         </View>
                         <View style={s.accusedInfo}>
                           <Text style={s.accusedLabel}>THE ACCUSED</Text>
@@ -1008,7 +1009,7 @@ function TribunalScreen() {
                               haptic="selection"
                               pressedScale={0.95}
                               accessibilityRole="button"
-                              accessibilityLabel="Issue warning"
+                              accessibilityLabel="Warn: issue a warning"
                             >
                               <AlertTriangle size={14} color={colors.sepia} />
                               <Text style={[s.actionText, { color: colors.sepia }]}>WARN</Text>
@@ -1079,7 +1080,7 @@ function TribunalScreen() {
                               haptic="heavy"
                               pressedScale={0.95}
                               accessibilityRole="button"
-                              accessibilityLabel="Permanently exile member"
+                              accessibilityLabel="Permanent exile: ban this member for good"
                             >
                               <Skull size={14} color={colors.crimson} />
                               <Text style={[s.actionText, { color: colors.crimsonInk }]}>PERMANENT EXILE</Text>
