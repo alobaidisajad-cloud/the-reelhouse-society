@@ -563,7 +563,10 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
     expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
     expect(order(r)).toEqual(['adb: cmd uimode night', 'adb: cmd uimode night yes', 'maestro: walk', 'adb: cmd uimode night no']);
     expect(file(r, 'variant.txt')).toMatch(
-      /^read: cmd uimode night -> no\nset: cmd uimode night yes -> Night mode: yes\nsettled: load 0\.42 after [01] s\nput back: cmd uimode night no -> Night mode: no\n$/);
+      /^read: cmd uimode night -> no\nset: cmd uimode night yes -> Night mode: yes\nsettled: load 0\.42 after [0-4] s\nput back: cmd uimode night no -> Night mode: no\n$/);
+    // Settled at the first look: the load read once, never waited on. The seconds are the
+    // runner's own (a loaded machine took 2 to start the fake phone's answers); one wait is 5.
+    expect(order(r, /loadavg/)).toEqual(['adb: cat /proc/loadavg']);
     expect(titled(r, 'notice', 'The phone as the dark run had it')).toContain('put back: cmd uimode night no');
     expect(titled(r, 'notice', 'Every route  opened cold and captured')).toMatch(/every route captured: \d+/);
     always(r);
@@ -573,7 +576,8 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
     // Busy, then quiet: asked until its load falls under 1.0, five seconds apart, before the walk.
     const busy = await walk('dark', { walk: ['captures'] }, { loads: '2.31\n1.06\n0.74\n' });
     expect({ status: busy.status, errors: annotations(busy, 'error') }).toEqual({ status: 0, errors: [] });
-    expect(file(busy, 'variant.txt')).toMatch(/\nsettled: load 0\.74 after 1\d s\n/);
+    // Two waits of five seconds: ten at least, more on a loaded runner.
+    expect(file(busy, 'variant.txt')).toMatch(/\nsettled: load 0\.74 after [1-9]\d s\n/);
     const asked = readFileSync(join(busy.T, 'state', 'order'), 'utf8').split('\n');
     expect(asked.filter((l) => l === 'adb: cat /proc/loadavg')).toHaveLength(3);
     expect(asked.lastIndexOf('adb: cat /proc/loadavg')).toBeLessThan(asked.indexOf('maestro: walk'));
