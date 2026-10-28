@@ -1537,6 +1537,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/__tests__/everyWritingHasAReportDoor.guard.test.ts | 2026-10-27 | Written 2026-10-28: every reportable kind has a door or a reason, every table of cleaned member text a kind or a reason it reaches no other member (P4.50) |
 | src/utils/__tests__/aCancelledShareSaysNothing.guard.test.ts | 2026-10-27 | Written 2026-10-27: every function opening a share sheet, and no claim of success in it (P4.43) |
 | src/utils/__tests__/aPushCarriesNoPrivateWords.guard.test.ts | 2026-10-27 | Written 2026-10-27: every writer of a notice's message read from the schema snapshot, each value in it judged for a lock screen (P4.5) |
+| src/utils/__tests__/aTimeIsTheHouses.guard.test.ts | 2026-10-28 | new: every write that sends an _at from the phone's clock is one the house dates itself, its trigger in 20261028_02 |
 | src/utils/__tests__/everyBoxIsBounded.guard.test.ts | 2026-10-28 | new: every TextInput holds a maxLength or is listed with why; a 20,000-character paste asks for SEARCH_MAX, cut whole |
 | src/utils/__tests__/everyPasswordFieldSaysWhatItHolds.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder: every secure field names its content and autofill, every code field the one-time-code pair (P4.37) |
 | src/utils/__tests__/nothingSaysQueuedUnlessItWas.guard.test.ts | 2026-10-27 | Written 2026-10-27: the finder (no claim of saving after a bare enqueueMutation) and the queue on a full phone (P4.14) |
