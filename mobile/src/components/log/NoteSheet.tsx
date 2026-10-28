@@ -17,7 +17,7 @@
  *
  * Same ink, handle, backdrop and gesture as the house's other sheets.
  */
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { Lock, Pencil, Trash2 } from 'lucide-react-native';
 import React from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
@@ -81,11 +81,11 @@ export default function NoteSheet({
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
-          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
+          <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
             <PressableScale style={styles.backdrop} onPress={onClose} accessibilityLabel="Close the note" accessibilityRole="button">
               <View style={StyleSheet.absoluteFill} />
             </PressableScale>
-          </BlurView>
+          </HouseBlur>
         </Animated.View>
 
         <GestureDetector gesture={pan}>

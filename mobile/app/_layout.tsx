@@ -32,6 +32,7 @@ import OfflineBanner from '@/src/components/OfflineBanner';
 import StandingNotice from '@/src/components/StandingNotice';
 import { KeyboardRoom } from '@/src/components/KeyboardRoom';
 import { FloorGate } from '@/src/components/PleaseUpdate';
+import { BoldTextProvider } from '@/src/hooks/useBoldText';
 import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import { settleOwedSignOut } from '@/src/lib/endSession';
@@ -145,6 +146,7 @@ export default function RootLayout() {
 
   // A build under the house's floor draws "please update", and nothing else (src/lib/houseFloor.ts).
   return (
+    <BoldTextProvider>
     <FloorGate onLayout={onLayoutReady}>
     <GlobalErrorBoundary>
       <SafeAreaProvider>
@@ -214,6 +216,7 @@ export default function RootLayout() {
       </SafeAreaProvider>
     </GlobalErrorBoundary>
     </FloorGate>
+    </BoldTextProvider>
   );
 }
 

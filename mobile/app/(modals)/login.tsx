@@ -6,7 +6,7 @@ import { X, Sparkles, Check } from 'lucide-react-native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import Animated, { LinearTransition, useSharedValue, useAnimatedStyle, withTiming, withRepeat, Easing, interpolate } from 'react-native-reanimated';
 import { useBottomEdge, useModalTop } from '@/src/components/layout/navMetrics';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
 import { useIsFocused } from "expo-router/react-navigation";
@@ -182,7 +182,7 @@ export default function LoginScreen() {
       <AuthBackdrop />
 
       {/* ── Pinned Header / Close (0-Overlap) ── */}
-      <BlurView intensity={80} tint="dark" style={[s.fixedHeader, { paddingTop: headerTop, height: headerBottom }]}>
+      <HouseBlur intensity={80} tint="dark" style={[s.fixedHeader, { paddingTop: headerTop, height: headerBottom }]}>
         <PressableScale
           style={s.closeBtn}
           onPress={() => {
@@ -194,7 +194,7 @@ export default function LoginScreen() {
         >
           <X size={18} color={colors.bone} strokeWidth={2} />
         </PressableScale>
-      </BlurView>
+      </HouseBlur>
 
       {/* The header's lower edge was a hard line that content met and was cut
           by. Correct padding stops the guillotine; this makes the boundary a

@@ -18,7 +18,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { logger } from '@/src/utils/logger';
 import { isNetworkError } from '@/src/utils/networkError';
 import reelToast from '@/src/utils/reelToast';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { Check, Film as FilmIcon, Send, User, UserCircle2, Users, X } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
@@ -389,7 +389,7 @@ export default function SocialModal() {
     }, [readSocial, showRead, showFailure]);
 
     return (
-        <BlurView intensity={90} tint="dark" style={styles.container}>
+        <HouseBlur intensity={90} tint="dark" style={styles.container}>
             <RoomLight room="default" />
             {/* Drag handle */}
             <View style={[styles.dragHandleWrap, { paddingTop: handleTop }]}><View style={styles.dragHandle} /></View>
@@ -473,7 +473,7 @@ export default function SocialModal() {
                     }
                 />
             )}
-        </BlurView>
+        </HouseBlur>
     );
 }
 

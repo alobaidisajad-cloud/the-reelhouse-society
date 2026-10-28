@@ -7,7 +7,7 @@
 import { nav } from '@/src/utils/typedRouter';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -209,7 +209,7 @@ export default function SearchModal() {
 
   return (
     <Animated.View style={[st.root, animatedContainerStyle]}>
-      <BlurView intensity={Platform.OS === 'ios' ? 55 : 100} tint="dark" style={StyleSheet.absoluteFill} />
+      <HouseBlur intensity={Platform.OS === 'ios' ? 55 : 100} tint="dark" style={StyleSheet.absoluteFill} />
 
       {/* ── SEARCH BAR ── */}
       <View style={[st.header, { paddingTop: headerTop }]}>

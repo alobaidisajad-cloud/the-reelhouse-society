@@ -4,7 +4,7 @@ import * as Crypto from 'expo-crypto';
  
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, X } from 'lucide-react-native';
@@ -71,7 +71,7 @@ const ABOVE_THE_KEYBOARD = 16;
 /** The hero's fade into the room: how much house it lays down, top to hem. */
 const HERO_VEIL: VeilStops = [[0, 0.4], [0.6, 0.9], [1, 1]];
 
-const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
+const AnimatedBlurView = Animated.createAnimatedComponent(HouseBlur);
 
 
 interface FilmItem {

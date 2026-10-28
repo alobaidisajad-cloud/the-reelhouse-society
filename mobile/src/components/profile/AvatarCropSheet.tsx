@@ -3,7 +3,7 @@ import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { View, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { Text } from '@/src/components/text';
 import { PresenceView } from '@/src/components/motion/Presence';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -101,7 +101,7 @@ export default function AvatarCropSheet({ onClose, onSuccess, pending }: Props) 
 
   return (
     <View style={StyleSheet.absoluteFill}>
-      <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+      <HouseBlur intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
       <PresenceView name="avatar-crop" style={[s.sheet, { paddingBottom: sheetFoot }]}
         enter={{ kind: 'FadeInUp', duration: MS.considered, easing: arrive() }}
         exit={{ kind: 'FadeOutDown', duration: MS.quick, easing: leave() }}>

@@ -1,6 +1,6 @@
 import React, { useCallback, memo } from 'react';
 import { View, StyleSheet, Pressable, Platform, type LayoutChangeEvent } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { Search, Bell, MessageSquareText } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, withTiming, useSharedValue, useAnimatedProps } from 'react-native-reanimated';
 import { arrive, MS } from '@/src/theme/motion';
@@ -24,7 +24,7 @@ import {
 import { useNotificationStore } from '@/src/stores/notificationStore';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
+const AnimatedBlurView = Animated.createAnimatedComponent(HouseBlur);
 
 // The press as PressableScale presses: down at once, back without a bounce.
 const NavIconButton = memo(function NavIconButton({

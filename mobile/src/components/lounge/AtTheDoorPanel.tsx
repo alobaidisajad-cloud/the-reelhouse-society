@@ -4,7 +4,7 @@ import { useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import { LoungeMember } from '@/src/types/social.types';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { Check, DoorOpen, Users, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
@@ -43,10 +43,10 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
     <Presence>
     {visible ? (
     <Modal key="door" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
-      <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
+      <HouseBlur intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants"><View /></PressableScale>
-      </BlurView>
+      </HouseBlur>
       {/* Arrive, rising from below, not a mount-time `entering`: one that stalls
           leaves the host a blurred screen and nobody to admit. */}
       <PresenceView name="lounge.door.leave" style={s.frame} pointerEvents="box-none"

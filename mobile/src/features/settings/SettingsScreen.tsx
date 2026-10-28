@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Alert, Modal, type LayoutChangeEvent, type ScrollView } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { useContentBottom, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated, {
   useSharedValue, useAnimatedStyle, useAnimatedScrollHandler, withTiming,
@@ -674,7 +674,7 @@ export function SettingsScreen() {
       </Animated.ScrollView>
 
       <Modal statusBarTranslucent visible={otpModalVisible} animationType="fade" transparent onRequestClose={closeOtp}>
-        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+        <HouseBlur intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
         {/* RN Modal windows never resize for the keyboard, so the screen's
             automaticallyAdjustKeyboardInsets cannot reach inside one: the card's
             own scroll ends above the keys (CentredCard), on both platforms. */}

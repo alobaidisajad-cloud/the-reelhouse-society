@@ -45,7 +45,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { nav } from '@/src/utils/typedRouter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, Film, ListPlus, PenLine } from 'lucide-react-native';
@@ -373,7 +373,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
         {/* Backdrop — iOS: native blur; Android: plain scrim */}
         <Animated.View style={[StyleSheet.absoluteFill, risen ? RISEN_BACKDROP : backdropStyle]}>
           {Platform.OS === 'ios' ? (
-            <BlurView tint="dark" intensity={40} style={StyleSheet.absoluteFill} />
+            <HouseBlur tint="dark" intensity={40} style={StyleSheet.absoluteFill} />
           ) : null}
           <View style={[StyleSheet.absoluteFill, s.scrim]} />
           <Pressable

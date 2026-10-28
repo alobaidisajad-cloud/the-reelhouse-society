@@ -16,7 +16,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 // Reanimated's: it knows the setting on the first frame, so a member who asked
 // for less motion never sees the entrance begin.
 import Animated, { Easing, useSharedValue, useAnimatedStyle, useReducedMotion, withDelay, withTiming } from 'react-native-reanimated';
@@ -136,7 +136,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
     <Modal key="initiation" statusBarTranslucent visible transparent animationType="fade" onRequestClose={handleQuiet}>
       <PresenceView name="initiation" style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={handleQuiet}>
         {/* The house is real, behind the door — the living Lobby, blurred. */}
-        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+        <HouseBlur intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
         <View style={s.dim} />
 
         <CentredCard style={s.room}>

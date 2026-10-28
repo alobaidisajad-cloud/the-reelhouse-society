@@ -19,6 +19,8 @@ const mockAccessibilityInfo = {
   isReduceMotionEnabled: jest.fn().mockResolvedValue(false),
   addEventListener: jest.fn(() => ({ remove: jest.fn() })),
   isBoldTextEnabled: jest.fn().mockResolvedValue(false),
+  // Read by HouseBlur, every glass's (Reduce Transparency).
+  isReduceTransparencyEnabled: jest.fn().mockResolvedValue(false),
   isScreenReaderEnabled: jest.fn().mockResolvedValue(false),
   // An action toast moves VoiceOver focus onto its message (ToastHost).
   sendAccessibilityEvent: jest.fn(),

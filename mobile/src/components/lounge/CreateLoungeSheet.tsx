@@ -8,7 +8,7 @@ import Animated, {
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { useSheetPresence } from '@/src/hooks/useSheetPresence';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { Lock, Globe } from 'lucide-react-native';
 import { useLoungeStore } from '@/src/stores/lounge';
@@ -131,9 +131,9 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
       <GestureHandlerRootView style={{ flex: 1 }} onAccessibilityEscape={handleClose}>
       <Animated.View style={[s.sheetKeyboard, animatedContainerStyle]}>
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
-          <BlurView intensity={90} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(6,5,4,0.6)' }]}>
+          <HouseBlur intensity={90} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(6,5,4,0.6)' }]}>
             <PressableScale style={s.sheetBackdrop} onPress={handleClose} accessibilityLabel="Close sheet" />
-          </BlurView>
+          </HouseBlur>
         </Animated.View>
 
           <Animated.View 

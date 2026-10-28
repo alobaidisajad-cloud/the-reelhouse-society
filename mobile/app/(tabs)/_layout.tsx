@@ -5,7 +5,7 @@ import { AppState, Linking, View, StyleSheet, Platform } from 'react-native';
 import { pageOfLaunch, rememberTab, stampTab, TABS_HOME, tabToReopenAfter } from '@/src/utils/lastTab';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import Animated, {
   useAnimatedStyle, useSharedValue, withTiming,
 } from 'react-native-reanimated';
@@ -115,7 +115,7 @@ function TabBarBackground() {
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       {Platform.OS === 'ios' ? (
         <>
-          <BlurView intensity={65} tint="dark" style={StyleSheet.absoluteFill} />
+          <HouseBlur intensity={65} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, s.tabBarTint]} />
         </>
       ) : (

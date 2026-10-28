@@ -44,6 +44,7 @@ import { useFontScale } from '@/src/hooks/useTextScale';
 import { androidTracking } from '@/src/providers/androidTracking';
 import { cutOf, stillCut, type Box, type LaidLine } from '@/src/utils/cutText';
 import { E2E_BUILD, e2eTrace } from '@/src/utils/e2eTrace';
+import { boldFace, BoldTextContext } from '@/src/hooks/useBoldText';
 
 /** Props as the phone should receive them: the house ceiling unless the text sets its own, and iOS's spacing on Android. */
 function housed<P extends TextProps | TextInputProps>(props: P, scale: number): P {
@@ -102,6 +103,14 @@ const MARK_PILES = /(\p{M}{4})\p{M}+/gu;
  */
 export function marksKept(words: string): string {
   return MARK_PILE.test(words) ? words.replace(MARK_PILES, '$1') : words;
+}
+
+/** A Text in its face's heavier weight while Bold Text is on (useBoldText); the props themselves otherwise. */
+function emboldened(props: TextProps, bold: boolean): TextProps {
+  if (!bold) return props;
+  const face = StyleSheet.flatten(props.style)?.fontFamily;
+  const heavier = face ? boldFace(face, true) : face;
+  return heavier && heavier !== face ? { ...props, style: [props.style, { fontFamily: heavier }] } : props;
 }
 
 /** A Text's own strings with their piles kept to four; the children themselves when none has one. */
@@ -257,7 +266,8 @@ export const Text = forwardRef<Text, TextProps>(function Text(props, ref) {
   const said = spoken(props);
   const asked = said ? { ...props, ...said } : props;
   const kept = marksKeptIn(asked.children);
-  const own = kept === asked.children ? asked : { ...asked, children: kept };
+  const plain = kept === asked.children ? asked : { ...asked, children: kept };
+  const own = emboldened(plain, useContext(BoldTextContext) > 0);
   const housedProps = nested ? nestedProps(own, parentScales, scale) : housed(own, scale);
   const minimumFontScale = flooredMinimumScale(housedProps, scale);
   const shown = minimumFontScale !== undefined ? { ...housedProps, minimumFontScale } : housedProps;

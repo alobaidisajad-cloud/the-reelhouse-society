@@ -4,7 +4,7 @@ import { Text, TextInput } from '@/src/components/text';
 // The preview mounts `EssayBody`, which carries the link guard and the render cap.
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { useBottomEdge, useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 import { Bold, Italic, Type, Quote, Minus, Link2 } from 'lucide-react-native';
 import { EssayBody } from '@/src/components/dispatch/EssayBody';
@@ -918,7 +918,7 @@ function ComposeDossierScreen() {
                         </ScrollView>
                     </View>
 
-                    <BlurView intensity={90} tint="dark" style={[styles.footer, { paddingBottom: Math.max(ESSAY_FOOT, edge + ESSAY_FOOT_GAP) }]}>
+                    <HouseBlur intensity={90} tint="dark" style={[styles.footer, { paddingBottom: Math.max(ESSAY_FOOT, edge + ESSAY_FOOT_GAP) }]}>
                         <View style={styles.stats}>
                             {/* A fixed strip of three: the deck cap, inherited by the values. */}
                             <Text style={styles.statText} {...deckLabelProps}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
@@ -949,7 +949,7 @@ function ComposeDossierScreen() {
                             {/* The screen's longest label: shrink-to-fit, under the ceiling. */}
                             <Text style={[styles.publishBtnText, !ready && UNREADY.words]} {...scaledTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE ESSAY' : 'FILE THE ESSAY')}</Text>
                         </PressableScale>
-                    </BlurView>
+                    </HouseBlur>
                 </Animated.View>
             )}
 

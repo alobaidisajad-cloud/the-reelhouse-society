@@ -5,7 +5,7 @@
  * a blurred backdrop, a sheet that rises and falls with useSheetPresence and
  * closes on a downward drag.
  */
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { Ban, ShieldAlert, Unlock, Volume2, VolumeX } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
@@ -205,7 +205,7 @@ export function ContentActionSheet({
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
         {/* Backdrop */}
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
-          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
+          <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
             <PressableScale
               style={styles.backdrop}
               onPress={onClose}
@@ -214,7 +214,7 @@ export function ContentActionSheet({
             >
               <View style={StyleSheet.absoluteFill} />
             </PressableScale>
-          </BlurView>
+          </HouseBlur>
         </Animated.View>
 
         {/* Sheet */}

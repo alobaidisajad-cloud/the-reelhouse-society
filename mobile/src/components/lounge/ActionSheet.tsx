@@ -2,7 +2,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { LoungeMessage, ReactionSummary } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import { REACTION_META, REACTION_ORDER } from './reactions';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import * as ExpoClipboard from 'expo-clipboard';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { Ban, Copy, MinusCircle, Reply, ShieldAlert } from 'lucide-react-native';
@@ -78,12 +78,12 @@ function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReaction
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
       <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
-        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
+        <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
           {/* The sheet's only close besides a drag, so a screen reader is given it by name. */}
           <PressableScale style={s.actionBackdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
             <View style={StyleSheet.absoluteFill} />
           </PressableScale>
-        </BlurView>
+        </HouseBlur>
       </Animated.View>
       
       <GestureDetector gesture={pan}>

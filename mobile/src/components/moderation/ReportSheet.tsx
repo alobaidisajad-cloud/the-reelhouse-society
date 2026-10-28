@@ -9,7 +9,7 @@
  * cinematic typography. Feels like filing a classified report in a 1940s film
  * noir bureau.
  */
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import React, { useCallback, useState } from 'react';
 import { useWindowDimensions, Modal, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -249,7 +249,7 @@ function ReportSheet({
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={handleDismiss}>
         {/* Backdrop: closes it for a finger; a screen reader has the named DISMISS. */}
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
-          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
+          <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
             <PressableScale
               style={styles.backdrop}
               onPress={handleDismiss}
@@ -259,7 +259,7 @@ function ReportSheet({
             >
               <View style={StyleSheet.absoluteFill} />
             </PressableScale>
-          </BlurView>
+          </HouseBlur>
         </Animated.View>
 
         {/* Sheet */}

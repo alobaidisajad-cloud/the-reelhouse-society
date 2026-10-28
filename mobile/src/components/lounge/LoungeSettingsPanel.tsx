@@ -6,7 +6,7 @@ import { LoungeMember } from '@/src/types/social.types';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { Ban, Crown, DoorClosed, Image as ImageIcon, LogOut, MoreHorizontal, Trash2, Users, Volume2, VolumeX, X } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import React, { useCallback, useState } from 'react';
@@ -159,10 +159,10 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
     <Presence>
     {visible ? (
     <Modal key="settings" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
-      <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
+      <HouseBlur intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants"><View /></PressableScale>
-      </BlurView>
+      </HouseBlur>
       {/* Arrive, rising from below, not a mount-time `entering` that can stall. */}
       <PresenceView name="lounge.settings.leave" style={s.frame} pointerEvents="box-none"
         exit={{ kind: 'SlideOutDown', duration: MS.quick, easing: leave() }}>

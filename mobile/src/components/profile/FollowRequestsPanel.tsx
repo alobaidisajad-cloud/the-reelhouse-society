@@ -13,7 +13,7 @@ import { Alert, Modal, View, StyleSheet, ActivityIndicator, Pressable } from 're
 import { Text, TextInput } from '@/src/components/text';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
-import { BlurView } from 'expo-blur';
+import { HouseBlur } from '@/src/components/HouseBlur';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { KeyRound, X, Check, Search, User } from 'lucide-react-native';
@@ -105,7 +105,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
     {visible ? (
     <Modal key="door" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <View style={s.host} onAccessibilityEscape={onClose}>
-        <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
+        <HouseBlur intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
         <Pressable style={s.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
         <PresenceView name="follow-requests" style={[s.sheet, kbPad]}
           enter={{ kind: 'SlideInDown', duration: MS.considered, easing: arrive() }}
