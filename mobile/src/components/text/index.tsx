@@ -90,6 +90,29 @@ const ORNAMENTS = /[←-⇿∀-⋿⌀-⏿■-◿☀-➿⤀-⯿]/gu;
 const ONLY_SEPARATORS = /^[\s·•—–|/…]+$/u;
 const HAS_WORDS = /[\p{L}\p{N}]/u;
 
+/** Five or more combining marks on one character: a pile (Zalgo). */
+const MARK_PILE = /\p{M}{5}/u;
+const MARK_PILES = /(\p{M}{4})\p{M}+/gu;
+
+/**
+ * Words with no character carrying more than four combining marks. A pile of them, stacked on a
+ * letter (Zalgo), paints over the lines above and below; every script's own writing (vowelled
+ * Arabic, pointed Hebrew, Vietnamese written decomposed, Thai) carries fewer, and stays whole.
+ * Drawn here, so words stored before, or written on the website, are kept to four too.
+ */
+export function marksKept(words: string): string {
+  return MARK_PILE.test(words) ? words.replace(MARK_PILES, '$1') : words;
+}
+
+/** A Text's own strings with their piles kept to four; the children themselves when none has one. */
+function marksKeptIn(children: React.ReactNode): React.ReactNode {
+  if (typeof children === 'string') return marksKept(children);
+  if (Array.isArray(children) && children.some((c) => typeof c === 'string' && MARK_PILE.test(c))) {
+    return children.map((c) => (typeof c === 'string' ? marksKept(c) : c));
+  }
+  return children;
+}
+
 /** A Text's words as one string, through nested Texts; null if it holds anything else. */
 function wordsOf(children: React.ReactNode): string | null {
   if (children == null || typeof children === 'boolean') return '';
@@ -232,7 +255,9 @@ export const Text = forwardRef<Text, TextProps>(function Text(props, ref) {
   const nested = useContext(TextAncestorContext) === true;
   const parentScales = useContext(ParentScales);
   const said = spoken(props);
-  const own = said ? { ...props, ...said } : props;
+  const asked = said ? { ...props, ...said } : props;
+  const kept = marksKeptIn(asked.children);
+  const own = kept === asked.children ? asked : { ...asked, children: kept };
   const housedProps = nested ? nestedProps(own, parentScales, scale) : housed(own, scale);
   const minimumFontScale = flooredMinimumScale(housedProps, scale);
   const shown = minimumFontScale !== undefined ? { ...housedProps, minimumFontScale } : housedProps;

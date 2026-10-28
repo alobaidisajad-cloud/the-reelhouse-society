@@ -809,7 +809,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/text/__tests__/aCutLabelIsHeard.test.tsx | 2026-10-17 | new |
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | 2026-10-24 | edited: a nested text takes its parent's scaling; a nested label's spacing follows its parent |
 | src/components/text/AnimatedText.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/text/index.tsx | 2026-10-24 | edited: a nested Text takes nothing of the house's and scales as its parent does; a frozen Text tells the Texts inside it |
+| src/components/text/index.tsx | 2026-10-28 | edited: edited: marksKept, at most four combining marks on any one character, in every Text's own strings; edited: a nested Text takes nothing of the house's and scales as its parent does; a frozen Text tells the Texts inside it |
 | src/components/theme/__tests__/oneBrassSheen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written whole: the sheen sweeps only in front, and both plates draw it |
 | src/components/theme/BrassSheen.tsx | 2026-10-03 | written whole: the one sheen both brass plates draw; still behind another tab and under Reduce Motion |
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
@@ -1490,6 +1490,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aReadIsKeyedOnWhoNotTheObject.guard.test.ts | 2026-10-28 | edited: edited: the stack's share handler judged with its rope; new: every hook keyed on the auth user object judged no read; a new one fails |
 | src/utils/profileRead.ts | 2026-10-23 | whether the member's profile has been read: its own columns on the user, never the auth user alone |
 | src/components/lounge/__tests__/theRoomIsAskedForOnce.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; new: the room and roster asked once while the session settles, again for another member |
+| src/components/text/__tests__/aPileOfMarksIsKeptToFour.test.tsx | 2026-10-28 | new: Arabic, Hebrew, Vietnamese and Thai drawn exactly as written; a pile of thirty kept to four |
 | src/constants/__tests__/everyWayIntoASalonIsRoped.guard.test.ts | 2026-10-28 | new: every salon list and share-mode push is a listed lounge-speaking rope |
 | src/features/profile/__tests__/aPortraitPickedAsAndroidLeftComesBack.test.tsx | 2026-10-27 | Written 2026-10-27: on Android, Edit Profile opens the crop sheet holding the portrait the system kept, and the sheet prepares it (P4.12) |
 | src/features/settings/__tests__/everyOtherDeviceSignsOut.test.tsx | 2026-10-26 | Written 2026-10-27: Settings signs every other device out, asked first, the answer said either way |

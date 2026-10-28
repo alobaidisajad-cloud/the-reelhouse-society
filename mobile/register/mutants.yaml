@@ -618,6 +618,15 @@ mutants:
         text: "import { fonts } from '@/src/theme/theme';\n\nexport const s = { line: { fontFamily: fonts.body, fontStyle: 'italic' as const } };\n"
     proof: { file: src/utils/__tests__/anItalicIsTheHouseItalic.guard.test.ts, test: "asks for no slant anywhere: an italic is a face of its own" }
 
+  - id: shape-marks-piled
+    class: TYPE-marks-pile-over-rows
+    source: shape
+    edits:
+      - file: src/components/text/index.tsx
+        find: "  return MARK_PILE.test(words) ? words.replace(MARK_PILES, '$1') : words;"
+        replace: "  return words;"
+    proof: { file: src/components/text/__tests__/aPileOfMarksIsKeptToFour.test.tsx, test: "draws a letter with thirty marks with its first four" }
+
   - id: shape-seats-uncounted
     class: COPY-count-before-plural
     source: shape

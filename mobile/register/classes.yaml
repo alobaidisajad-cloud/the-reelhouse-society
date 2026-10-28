@@ -570,6 +570,18 @@ classes:
     fix: "every word raised to 10pt, its tracking × (old/new)² and its set line height with it (the first floor pass's method); the marks named; a wing's poster title gives up just enough size to stay whole at the largest sizes, never under 10; the floor guard has no settled exemption and reads a size written as an attribute (mutant shape-radar-labels-small)"
     places: [none]
 
+  - id: TYPE-marks-pile-over-rows
+    title: "Combining marks stacked on one letter (Zalgo) drawn whole: a critique, a salon line or a name painted far above and below its own line, over the rows around it"
+    seriousness: layout
+    area: type
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "WORKLIST P4.31, hostile text" }
+    methods:
+      - { kind: static, file: src/components/text/__tests__/aPileOfMarksIsKeptToFour.test.tsx, test: "draws a letter with thirty marks with its first four" }
+    fix: "the house Text, which draws every word, keeps at most four combining marks on any one character, so words stored before and words written on the website are kept too; fully vowelled Arabic, pointed and cantillated Hebrew, decomposed Vietnamese and Thai are drawn exactly as written (mutant shape-marks-piled)"
+    places: [none]
+
   - id: CI-schedule-stops-unheard
     title: "A scheduled workflow GitHub stopped (after 60 days without activity) sends no failure, so the nightly and weekly checks could end in silence"
     seriousness: code
