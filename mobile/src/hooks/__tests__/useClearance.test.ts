@@ -13,7 +13,10 @@ import TactileEngine from '@/src/utils/TactileEngine';
 
 let mockUser: Record<string, unknown> | null = null;
 const mockReread = jest.fn();
+/** How long ago the member's rank was read from the house: just now, unless a case says not. */
+let mockRankAge = 0;
 jest.mock('@/src/stores/auth', () => ({
+  rankAge: () => mockRankAge,
   useAuthStore: Object.assign(
     (select: (s: { user: unknown }) => unknown) => select({ user: mockUser }),
     { getState: () => ({ user: mockUser, rereadProfile: mockReread }) },
@@ -46,6 +49,7 @@ it('a member whose profile is not yet read is "reading": nothing held, and a tap
 
 beforeEach(() => {
   mockUser = null;
+  mockRankAge = 0;
   jest.clearAllMocks();
 });
 
@@ -134,4 +138,68 @@ it('answers a change of feature or member at once, its tap included', async () =
   await hook.rerender({ id: AUTEUR });
   hook.result.current.open();
   expect(recordGateEvent).toHaveBeenLastCalledWith('gate_tapped', { featureId: AUTEUR, rank: 'auteur', standing: 'lapsed' });
+});
+
+/** The read's answer, through the deadline it raced, taken in. */
+const settled = () => new Promise((done) => setTimeout(done, 0));
+describe('a rank bought elsewhere is read again at the rope (P4.17)', () => {
+  afterEach(() => { jest.useRealTimers(); });
+
+  it('read over a minute ago and now held: the act opens, never the Society page', async () => {
+    mockUser = member('cinephile');
+    mockRankAge = 61_000;
+    mockReread.mockImplementation(async () => { mockUser = member('archivist'); return true; });
+    const act = jest.fn();
+    (await clearance(ARCHIVIST)).openOr(act);
+    await settled();
+    expect(mockReread).toHaveBeenCalledTimes(1);
+    expect(act).toHaveBeenCalledTimes(1);
+    expect(openSociety).not.toHaveBeenCalled();
+  });
+
+  it('read over a minute ago and still not held: the Society page, once the read answers', async () => {
+    mockUser = member('cinephile');
+    mockRankAge = 61_000;
+    mockReread.mockResolvedValue(true);
+    const act = jest.fn();
+    (await clearance(ARCHIVIST)).openOr(act);
+    expect(openSociety).not.toHaveBeenCalled();
+    await settled();
+    expect(openSociety).toHaveBeenCalledWith('/membership?reason=the-lounge&rank=archivist');
+    expect(act).not.toHaveBeenCalled();
+  });
+
+  it('a read that does not answer holds the page back a second and a half, no longer', async () => {
+    jest.useFakeTimers();
+    mockUser = member('cinephile');
+    mockRankAge = Infinity;
+    mockReread.mockReturnValue(new Promise(() => {}));
+    (await clearance(ARCHIVIST)).open();
+    await jest.advanceTimersByTimeAsync(1_499);
+    expect(openSociety).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(1);
+    expect(openSociety).toHaveBeenCalledTimes(1);
+  });
+
+  it('read within the minute: the page opens at once, and nothing is asked', async () => {
+    mockUser = member('cinephile');
+    mockRankAge = 59_000;
+    (await clearance(ARCHIVIST)).open();
+    expect(openSociety).toHaveBeenCalledTimes(1);
+    expect(mockReread).not.toHaveBeenCalled();
+  });
+
+  it('a second tap while the rank is read asks nothing more, and opens one page', async () => {
+    mockUser = member('cinephile');
+    mockRankAge = Infinity;
+    let answer!: (v: boolean) => void;
+    mockReread.mockReturnValue(new Promise<boolean>((done) => { answer = done; }));
+    const rope = await clearance(ARCHIVIST);
+    rope.open();
+    rope.open();
+    expect(mockReread).toHaveBeenCalledTimes(1);
+    answer(true);
+    await settled();
+    expect(openSociety).toHaveBeenCalledTimes(1);
+  });
 });

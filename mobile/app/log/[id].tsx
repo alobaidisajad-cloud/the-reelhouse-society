@@ -878,7 +878,7 @@ export default function LogDetailScreen() {
                focusCritique.later(() => { critiqueInputRef.current?.focus(); }, 300);
             }}
             onEditPress={() => { if (log.film_id) openEditor(); }}
-            onLoungePress={() => { if (loungeClearance.held) setShowLoungeShare(true); else loungeClearance.open(); }}
+            onLoungePress={() => { if (loungeClearance.held) setShowLoungeShare(true); else loungeClearance.openOr(() => setShowLoungeShare(true)); }}
             lounge={loungeDeck}
           />
 

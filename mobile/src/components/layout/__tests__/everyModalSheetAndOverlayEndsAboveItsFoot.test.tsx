@@ -103,6 +103,7 @@ jest.mock('@/src/stores/auth', () => {
     isAuthenticated: true,
     user: { id: 'me', username: 'kane', role: 'archivist', tier: 'auteur', preferences: {}, created_at: '2024-01-01T00:00:00Z' },
     restoreSession: () => Promise.resolve(),
+    rereadProfile: () => Promise.resolve(true),
     updateUser: () => Promise.resolve(),
   };
   const useAuthStore = (sel?: (x: unknown) => unknown) => (sel ? sel(state) : state);

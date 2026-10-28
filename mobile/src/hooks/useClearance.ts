@@ -16,9 +16,9 @@
  * A rope inside a React Native <Modal> sheet is the one case this cannot see:
  * the sheet must close itself and call `open()` once it is gone.
  */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
-import { useAuthStore } from '@/src/stores/auth';
+import { rankAge, useAuthStore } from '@/src/stores/auth';
 import { getTierWeight, resolveTier } from '@/src/utils/tier';
 import { GATED_FEATURES, RANK_WEIGHT, type Rank } from '@/src/constants/gatedFeatures';
 import type { Standing } from '@/src/components/clearance/Clearance';
@@ -26,6 +26,12 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { recordGateEvent } from '@/src/utils/gateTelemetry';
 import { openSociety, societyHref } from '@/src/utils/openSociety';
 import { profileRead } from '@/src/utils/profileRead';
+import { raceDeadline } from '@/src/utils/raceDeadline';
+
+/** A rank read this recently is trusted at a rope: the Society page opens at once. */
+const ROPE_TRUSTS_MS = 60_000;
+/** How long a rope waits for an older rank to be read again before the Society page opens all the same. */
+const ROPE_ASKS_MS = 1_500;
 
 export interface Clearance {
   /** True when the member holds the rank this feature needs. */
@@ -36,9 +42,13 @@ export interface Clearance {
   standing: Standing;
   /**
    * Opens the Society page, told why they came and where to return them (the law above);
-   * while the rank is `reading`, asks for the member's profile again instead.
+   * while the rank is `reading`, asks for the member's profile again instead. A rank read over a
+   * minute ago is read again first (a rank bought on the web, or on another phone): held now,
+   * nothing is sold, and the rope gives way to the control it stood for.
    */
   open: () => void;
+  /** As `open`, and when the rank read again is now held, the act itself: the rope's own press, done. */
+  openOr: (act: () => void) => void;
 }
 
 /**
@@ -75,7 +85,9 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
   // Only `grant_entitlement` writes `entitlement_source`: one without the weight is "come back".
   const standing: Standing = rankUnread ? 'reading' : onceHeldARank ? 'lapsed' : 'stranger';
 
-  const open = useCallback(() => {
+  /** A rank being read again for a tap: a second tap meanwhile asks nothing more. */
+  const asking = useRef(false);
+  const openOr = useCallback((act?: () => void) => {
     TactileEngine.selection();
     // A rank not yet read: the profile is asked for again, never the Society's page, which
     // would offer a member the rank they may already hold.
@@ -83,8 +95,18 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
     // Every rope in the app reports here, the one way through.
     recordGateEvent('gate_tapped', { featureId, rank, standing });
     // openSociety dismisses only a PRESENTED screen: a pushed one (a salon) stays behind the page.
-    openSociety(societyHref(featureId, rank, returnTo));
+    const toSociety = () => openSociety(societyHref(featureId, rank, returnTo));
+    if (rankAge() < ROPE_TRUSTS_MS) { toSociety(); return; }
+    if (asking.current) return;
+    asking.current = true;
+    void raceDeadline(useAuthStore.getState().rereadProfile(), ROPE_ASKS_MS).catch(() => false).then(() => {
+      asking.current = false;
+      const now = getTierWeight(resolveTier(useAuthStore.getState().user));
+      if (now >= RANK_WEIGHT[rank]) { act?.(); return; }
+      toSociety();
+    });
   }, [featureId, rank, returnTo, standing]);
+  const open = useCallback(() => { openOr(); }, [openOr]);
 
-  return { held, rank, standing, open };
+  return { held, rank, standing, open, openOr };
 }

@@ -29,6 +29,8 @@ jest.mock('@/src/stores/auth', () => ({
       (typeof sel === 'function' ? sel({ user: mockUser }) : { user: mockUser }),
     { getState: () => ({ user: mockUser }), setState: jest.fn(), subscribe: jest.fn() },
   ),
+  // The rank read a moment ago: a rope opens the Society at once.
+  rankAge: () => 0,
 }));
 // `useScrollToTop` reaches for a route object, which only exists inside a real
 // navigator. It is the tab-bar double-tap behaviour, not anything this screen

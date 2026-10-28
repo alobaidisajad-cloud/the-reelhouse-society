@@ -19,7 +19,8 @@ import { readCode } from '@/test-utils/readCode';
 
 jest.mock('@/src/stores/auth', () => {
   const { create } = jest.requireActual('zustand');
-  return { useAuthStore: create(() => ({ user: null })) };
+  // The rank read a moment ago: a rope opens the Society at once.
+  return { useAuthStore: create(() => ({ user: null })), rankAge: () => 0 };
 });
 jest.mock('@/src/stores/films', () => {
   const state = {
@@ -120,7 +121,8 @@ describe('the other two places that promised a locked corridor', () => {
     const page = readCode('app/person/[id].tsx');
     const share = page.slice(page.indexOf('const handleLoungeShare'), page.indexOf('}, [user, canShare'));
     expect(share).toMatch(/nav\.push\('\/social-modal'/); // tripwire: the real handler
-    expect(share).toMatch(/if \(!canShare\) \{\s*openShare\(\);/);
+    // The rope, handed the share itself for a rank found held when it is read again (P4.17).
+    expect(share).toMatch(/if \(!canShare\) \{\s*openShare\(shareThem\);/);
     expect(share).not.toMatch(/'\/lounge'/);
     expect(page).toMatch(/useClearance\('lounge-speaking', `\/person\/\$\{id\}`\)/);
     // And the button says where it leads, instead of "requires a higher rank".

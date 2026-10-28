@@ -157,7 +157,7 @@ export default function PersonDetailScreen() {
    * Sharing an artist into a salon is posting a message there, so the rope is
    * `lounge-speaking` (the corridor itself is open to every member).
    */
-  const { held: canShare, rank: shareRank, standing: shareStanding, open: openShare } = useClearance('lounge-speaking', `/person/${id}`);
+  const { held: canShare, rank: shareRank, standing: shareStanding, openOr: openShare } = useClearance('lounge-speaking', `/person/${id}`);
   const isArchivist = canShare;
   const shareLabel = canShare ? 'Share to lounge'
     : !user ? 'Share to lounge. Sign in first.'
@@ -249,18 +249,19 @@ export default function PersonDetailScreen() {
       nav.push('/login');
       return;
     }
-    if (!canShare) {
-      openShare();
-      return;
-    }
-    if (!person) return;
-    // '/social-modal', not '/(modals)/social-modal': nav.push keys its
-    // circular-navigation history off the string it is given, and one screen
-    // has one spelling. Social-modal infers share-person from personId.
-    nav.push('/social-modal', {
-      personId: String(id),
-      personName: person.name,
-    });
+    const shareThem = () => {
+      if (!person) return;
+      // '/social-modal', not '/(modals)/social-modal': nav.push keys its
+      // circular-navigation history off the string it is given, and one screen
+      // has one spelling. Social-modal infers share-person from personId.
+      nav.push('/social-modal', {
+        personId: String(id),
+        personName: person.name,
+      });
+    };
+    // A rank read again at the rope and found held shares at once.
+    if (!canShare) { openShare(shareThem); return; }
+    shareThem();
   }, [user, canShare, openShare, person, id]);
 
   // ── THE CANON — the department cut ──

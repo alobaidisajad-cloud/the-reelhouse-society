@@ -707,14 +707,15 @@ export default function StackDetailScreen() {
   }, [user, id, queryClient, bumpCritiqueCount]);
 
   // Sharing a stack into a salon is speaking there: without the rank, LOUNGE opens the rope.
-  const { held: canShare, rank: shareRank, standing: shareStanding, open: openShare } = useClearance('lounge-speaking', `/stacks/${id}`);
+  const { held: canShare, rank: shareRank, standing: shareStanding, openOr: openShare } = useClearance('lounge-speaking', `/stacks/${id}`);
   const handleOpenShareLounge = useCallback(async () => {
     if (!user) {
       TactileEngine.selection();
       reelToast.error('You must be logged in to access the lounge.');
       return;
     }
-    if (!canShare) { openShare(); return; }
+    // A rank read again at the rope and found held opens the salon list at once.
+    if (!canShare) { openShare(() => setShowLoungeShare(true)); return; }
     TactileEngine.selection();
     setShowLoungeShare(true);
   }, [user, canShare, openShare]);

@@ -135,7 +135,7 @@ jest.mock('@/src/components/ShareToLoungeModal', () => (p: { visible: boolean })
 /** The member's clearance to speak in a salon, and its rope. */
 let mockSpeaking: { held: boolean; standing: 'stranger' | 'lapsed' | 'reading' } = { held: true, standing: 'stranger' };
 const mockRope = jest.fn();
-jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ ...mockSpeaking, rank: 'archivist', open: mockRope }) }));
+jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ ...mockSpeaking, rank: 'archivist', open: mockRope, openOr: mockRope }) }));
 jest.mock('@/src/components/moderation/ReportSheet', () => () => null);
 jest.mock('@/src/components/moderation/ContentActionSheet', () => ({ ContentActionSheet: () => null }));
 jest.mock('expo-blur', () => {

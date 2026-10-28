@@ -775,7 +775,7 @@ export default function FilingReader() {
               {live.title || live.body}
             </Text>}
             onDest={(label) => {
-              if (label === 'TO THE LOUNGE') { setSharing(false); if (speaking.held) setToLounge(true); else speaking.open(); }
+              if (label === 'TO THE LOUNGE') { setSharing(false); if (speaking.held) setToLounge(true); else speaking.openOr(() => setToLounge(true)); }
               else void shareElsewhere();
             }}
           />

@@ -219,6 +219,10 @@ export default function MembershipScreen() {
     return () => sub.remove();
   }, []);
 
+  // The member's rank, read again as the page opens: one bought on the web or on another phone
+  // shows as held, and is never offered to them again.
+  useEffect(() => { void useAuthStore.getState().rereadProfile(); }, []);
+
   // The seats taken, read once on arrival (and again on return, above). Unread,
   // the certificate stays away: a seat is never offered that may be gone.
   useEffect(() => {

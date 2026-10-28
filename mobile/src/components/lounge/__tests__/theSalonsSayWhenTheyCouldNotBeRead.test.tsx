@@ -17,7 +17,8 @@ jest.mock('@/src/stores/auth', () => {
   const build = () => ({ user: { id: 'me', username: 'kane', role: mockTier === 'archivist' ? 'archivist' : null, tier: mockTier, preferences: {}, is_social_private: false }, isAuthenticated: true });
   const useAuthStore = (sel?: (s: unknown) => unknown) => (sel ? sel(build()) : build());
   (useAuthStore as any).getState = () => build();
-  return { useAuthStore };
+  // The rank read a moment ago: a rope opens the Society at once.
+  return { useAuthStore, rankAge: () => 0 };
 });
 /** Where the rope sent the member (openSociety travels by the module router). */
 const mockPushed: string[] = [];

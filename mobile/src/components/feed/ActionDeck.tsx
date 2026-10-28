@@ -57,7 +57,7 @@ export const ActionDeck = React.memo(function ActionDeck({
   const isOwner = useAuthStore(s => !!ownerId && s.user?.id === ownerId);
   const signedIn = useAuthStore(s => !!s.user);
   /** Sharing to a salon posts a message there: the rope is speaking, not the Lounge's door. */
-  const { held: canShare, rank: shareRank, standing: shareStanding, open: openShare } = useClearance('lounge-speaking');
+  const { held: canShare, rank: shareRank, standing: shareStanding, openOr: openShare } = useClearance('lounge-speaking');
 
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -155,7 +155,8 @@ export const ActionDeck = React.memo(function ActionDeck({
     }
     if (!canShare) {
       // To the Society, told what they reached for — never the open corridor.
-      openShare();
+      // A rank read again at the rope and found held opens the share sheet at once.
+      openShare(() => { TactileEngine.mutate(); setShowShareModal(true); });
       return;
     }
     TactileEngine.mutate();

@@ -75,11 +75,13 @@ let mockUser: Record<string, unknown> | null = null;
 // ONE of each, held for the whole file: a fresh jest.fn per read would make
 // "was never called" true of every function, whatever the page did.
 const mockRestoreSession = jest.fn();
+/** The member's row read again from the house: what it finds, the test says. */
+const mockReread = jest.fn(async () => true);
 const mockTierHint = jest.fn();
 jest.mock('@/src/stores/auth', () => {
   const state = () => ({
     user: mockUser, isAuthenticated: !!mockUser,
-    restoreSession: mockRestoreSession, setLocalTierHint: mockTierHint,
+    restoreSession: mockRestoreSession, setLocalTierHint: mockTierHint, rereadProfile: mockReread,
   });
   const useAuthStore = Object.assign(() => state(), { getState: state });
   return { useAuthStore };
@@ -118,6 +120,7 @@ beforeEach(() => {
   mockReadHeld.mockReset();
   mockHeld = null;
   [mockRestore, mockPurchase, mockShowManage, mockOpenBrowser, mockOpenURL, mockPush, mockRestoreSession, mockTierHint].forEach((m) => m.mockReset());
+  mockReread.mockReset().mockResolvedValue(true);
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -254,6 +257,21 @@ describe('what each member is offered', () => {
     expect(r.getByText('YOUR RANK')).toBeTruthy();
     expect(r.getAllByRole('radio').filter((n) => /^The (Archivist|Auteur)/.test(n.props.accessibilityLabel)).length).toBe(1);
     expect(r.getByText('EVERYTHING YOU HAVE, AND —')).toBeTruthy();
+    expect(r.getByText('BECOME AN AUTEUR')).toBeTruthy();
+  });
+
+  it('a rank bought elsewhere, read again as the page opens, is held: never offered again (P4.17)', async () => {
+    // Read as a free member when the app last asked; the web sold them the Archivist since.
+    mockReread.mockImplementation(async () => {
+      mockUser = { id: '11111111-1111-4111-8111-111111111111', tier: 'archivist', role: 'cinephile' };
+      return true;
+    });
+    const r = await mount();
+    expect(mockReread).toHaveBeenCalledTimes(1);
+    // The store tells the page its member changed: drawn again, from the row just read.
+    r.rerender(<MembershipScreen />);
+    expect(r.getByText('YOUR RANK')).toBeTruthy();
+    expect(r.queryByText('BECOME AN ARCHIVIST')).toBeNull();
     expect(r.getByText('BECOME AN AUTEUR')).toBeTruthy();
   });
 

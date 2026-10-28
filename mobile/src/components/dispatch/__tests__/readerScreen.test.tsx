@@ -68,7 +68,7 @@ let mockSpeaking: { held: boolean; standing: 'stranger' | 'lapsed' | 'reading' }
 const mockRope = jest.fn();
 jest.mock('@/src/hooks/useClearance', () => ({
   useClearance: (feature: string) => (feature === 'lounge-speaking'
-    ? { ...mockSpeaking, rank: 'archivist', open: mockRope }
+    ? { ...mockSpeaking, rank: 'archivist', open: mockRope, openOr: mockRope }
     : jest.requireActual('@/src/hooks/useClearance').useClearance(feature)),
 }));
 

@@ -296,7 +296,9 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, canReact, onLo
               <Text style={s.tombstoneText}>dispatch withdrawn</Text>
             </View>
           ) : (
-            <PressableScale onLongPress={() => onLongPress(msg)} haptic="medium" disabled={isSending || isFailed}
+            // No reach past its words: a whole block of text needs none, and the default 15pt ran
+            // 11pt into the reaction chips under it.
+            <PressableScale onLongPress={() => onLongPress(msg)} haptic="medium" disabled={isSending || isFailed} hitSlop={null}
               // One element to a screen reader, whose long press and whose card
               // inside are out of its reach: they are offered as named actions.
               accessibilityRole="text"
@@ -910,7 +912,7 @@ export default function LoungeRoomScreen() {
           </Text>
           <PressableScale
             style={s.previewBtn}
-            onPress={seat.held ? handleTakeSeat : seat.open}
+            onPress={seat.held ? handleTakeSeat : () => seat.openOr(() => { void handleTakeSeat(); })}
             haptic="medium"
             accessibilityRole="button"
             accessibilityLabel={seat.held

@@ -180,6 +180,15 @@ function welcomeBack(memberId: string): void {
   void flushOfflineQueue();
 }
 
+/** When a member's own row, their rank in it, was last read from the house, and whose it was. */
+let rankRead: { at: number; of: string } | null = null;
+const rankWasRead = (memberId: string) => { rankRead = { at: Date.now(), of: memberId }; };
+/** How long ago the signed-in member's rank was read from the house; Infinity when it has not been, this launch. */
+export function rankAge(): number {
+  const id = useAuthStore.getState().user?.id;
+  return rankRead && id && rankRead.of === id ? Date.now() - rankRead.at : Infinity;
+}
+
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   isAuthenticated: false,
@@ -259,6 +268,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         const { data: profile } = await supabase
           .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', session.user.id).single();
         if (profile) {
+          rankWasRead(session.user.id);
           // Unsynced preferences win over the server's copy (see setPreference).
           const stillPending = readPendingPrefs(session.user.id);
           const finalPrefs = stillPending ?? profile.preferences;
@@ -349,6 +359,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // Signed in on screen at once, and remembered for the next launch — with the
     // profile when the caller already holds it (signup reads it for the handle).
     const completeUser = { ...authedUser, ...(profile ?? {}), following: [] } as unknown as User;
+    if (profile) rankWasRead(authedUser.id);
     storage.set('last_user_id', authedUser.id);
     setSensitive(`ironvault_user_cache_${authedUser.id}`, JSON.stringify(completeUser));
     set({ user: completeUser, isAuthenticated: true, loading: false });
@@ -376,6 +387,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     ).then((profileData) => {
         // Only onto the member it was read for: not after they left, nor onto the next.
         if (profileData && memberUnchanged(authedUser.id)) {
+           rankWasRead(authedUser.id);
            set((s) => {
              const updatedUser = s.user ? { ...s.user, ...profileData } : null;
              if (updatedUser) {
@@ -400,6 +412,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const { data, error } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', id).single();
     // Only onto the member it was read for, as the login's read lands.
     if (error || !data || !memberUnchanged(id)) return profileRead(get().user);
+    rankWasRead(id);
     set((s) => {
       const updatedUser = s.user ? ({ ...s.user, ...data } as User) : null;
       if (updatedUser) setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
