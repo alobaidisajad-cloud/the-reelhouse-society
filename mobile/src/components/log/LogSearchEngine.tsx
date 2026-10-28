@@ -57,7 +57,6 @@ export function resultMeta(r: Pick<LogSearchResult, 'release_date' | 'vote_avera
 
 const LogSearchResultRow = React.memo(({ r, onSelectFilm }: { r: LogSearchResult, onSelectFilm: (film: LogSearchResult) => void }) => {
     const title = r.title || r.name || 'Untitled';
-    const year = r.release_date?.slice(0, 4);
     const meta = resultMeta(r);
     return (
         <PressableScale style={st.resultRow} onPress={() => onSelectFilm(r)} hitSlop={ROW_SLOP} haptic="selection" pressedScale={0.96}
