@@ -449,7 +449,7 @@ describe('the archive', () => {
     mockSearchError = null;
     mockSearchRows = [hit()];
     await act(async () => {
-      await fireEvent.press(r.getByLabelText('Search the archive again'));
+      await fireEvent.press(r.getByLabelText('Try again: search the archive'));
       await Promise.resolve(); await Promise.resolve();
     });
     expect(r.getByText('Stalker')).toBeTruthy();
@@ -472,7 +472,7 @@ describe('the archive', () => {
     mockFilingError = null;
     mockFilingRows = [filing()];
     await act(async () => {
-      await fireEvent.press(r.getByLabelText('Read this film again'));
+      await fireEvent.press(r.getByLabelText('Try again: read this film'));
       await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
     });
     expect(r.getByLabelText('Filed on the 28th')).toBeTruthy();

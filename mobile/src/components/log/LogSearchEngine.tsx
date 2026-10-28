@@ -61,7 +61,7 @@ const LogSearchResultRow = React.memo(({ r, onSelectFilm }: { r: LogSearchResult
     const meta = resultMeta(r);
     return (
         <PressableScale style={st.resultRow} onPress={() => onSelectFilm(r)} hitSlop={ROW_SLOP} haptic="selection" pressedScale={0.96}
-            accessibilityRole="button" accessibilityLabel={`Log ${title}${year ? `, ${year}` : ''}`}>
+            accessibilityRole="button" accessibilityLabel={`Log ${title}${meta ? `, ${meta.split(' · ').join(', ')}` : ''}`}>
             <RemoteImage uri={tmdb.poster(r.poster_path, 'w92')} style={st.resultPoster} contentFit="cover" transition={150} fallback={<PosterMark style={st.resultPoster} size={12} />} />
             <View style={st.resultFlex}>
                 <Text style={st.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{title}</Text>

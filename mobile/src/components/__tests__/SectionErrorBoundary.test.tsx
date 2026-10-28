@@ -65,12 +65,12 @@ describe('SectionErrorBoundary', () => {
         <Bomb shouldThrow={true} />
       </SectionErrorBoundary>
     );
-    await act(async () => { await fireEvent.press(getByLabelText('Retry loading the reels')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Retry, 2 left: load the reels again')); });
     expect(getByText(/RETRY \(1 LEFT\)/)).toBeTruthy();
-    await act(async () => { await fireEvent.press(getByLabelText('Retry loading the reels')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Retry, 1 left: load the reels again')); });
 
     expect(getByText('This section could not recover. Try restarting the app.')).toBeTruthy();
-    expect(queryByLabelText('Retry loading the reels')).toBeNull();
+    expect(queryByLabelText(/^Retry, \d left: load the reels again$/)).toBeNull();
     expect(queryByText(/encountered an error/i)).toBeNull();
   });
 

@@ -17,13 +17,15 @@ interface SpoilerVeilProps {
   revealKey?: string | number;
   /** Denser veil for tight surfaces like the feed preview. */
   compact?: boolean;
+  /** The reach of the door it stands before, so veiled or not a tap lands the same. */
+  hitSlop?: { top?: number; bottom?: number; left?: number; right?: number };
   children: React.ReactNode;
 }
 
 /** Revealed nothing yet: no key, not even `undefined`, equals it. */
 const NONE = Symbol('none');
 
-export default function SpoilerVeil({ isSpoiler, bypass, revealKey, compact, children }: SpoilerVeilProps) {
+export default function SpoilerVeil({ isSpoiler, bypass, revealKey, compact, hitSlop, children }: SpoilerVeilProps) {
   // WHICH item was revealed: another log in this row is veiled from its very first frame.
   const [revealedFor, setRevealedFor] = React.useState<string | number | undefined | typeof NONE>(NONE);
 
@@ -36,6 +38,7 @@ export default function SpoilerVeil({ isSpoiler, bypass, revealKey, compact, chi
       onPress={() => { setRevealedFor(revealKey); }}
       haptic="selection"
       pressedScale={0.98}
+      hitSlop={hitSlop}
       accessibilityRole="button"
       accessibilityLabel="This review contains spoilers. Tap to reveal."
       style={[s.veil, compact && s.veilCompact]}

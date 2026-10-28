@@ -953,7 +953,7 @@ export default function StackDetailScreen() {
                     {list.description}
                   </Text>
                   {descNeedsFold && (
-                    <PressableScale onPress={() => { TactileEngine.selection(); setDescExpanded(p => !p); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel={descExpanded ? 'Collapse description' : 'Expand description'}>
+                    <PressableScale onPress={() => { TactileEngine.selection(); setDescExpanded(p => !p); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel={descExpanded ? 'Fold: collapse the description' : 'Read more: expand the description'}>
                       <Text style={s.descToggle}>{descExpanded ? 'FOLD ▴' : 'READ MORE ▾'}</Text>
                     </PressableScale>
                   )}
@@ -1059,7 +1059,7 @@ export default function StackDetailScreen() {
               {nothingRead ? (
                 <View style={s.critiquesUnread}>
                   <Text style={s.commentEmpty}>The critiques could not be reached.</Text>
-                  <TryAgainLine onPress={() => { void rereadCritiques(); }} accessibilityLabel="Read the critiques again" />
+                  <TryAgainLine onPress={() => { void rereadCritiques(); }} what="read the critiques" />
                 </View>
               ) : null}
               {/* The oldest are at the top, so the earlier ones are asked for there. */}

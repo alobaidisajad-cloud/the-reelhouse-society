@@ -13,12 +13,18 @@ import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { EDGE_LIT } from '@/src/theme/light';
 
-export default function TryAgain({ onPress, label = 'TRY AGAIN', accessibilityLabel = 'Try again', hitSlop, style }: {
+/** The words it shows come first, as said (`TRY AGAIN`: "Try again"), then what it asks for again. */
+export function spokenAs(shown: string, what?: string): string {
+  const said = shown.charAt(0) + shown.slice(1).toLowerCase();
+  return what ? `${said}: ${what}` : said;
+}
+
+export default function TryAgain({ onPress, label = 'TRY AGAIN', what, hitSlop, style }: {
   onPress: () => void;
   /** The act in capitals, where it is more than asking again: RESTART THE APP. */
   label?: string;
-  /** What is asked for again, when the screen can say it better than "try again". */
-  accessibilityLabel?: string;
+  /** What is asked for again ("read the critiques"), said after the words it shows. */
+  what?: string;
   hitSlop?: Insets;
   style?: StyleProp<ViewStyle>;
 }) {
@@ -29,7 +35,7 @@ export default function TryAgain({ onPress, label = 'TRY AGAIN', accessibilityLa
       haptic="medium"
       hitSlop={hitSlop}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={spokenAs(label, what)}
     >
       <Text style={s.text}>{label}</Text>
     </PressableScale>
@@ -40,9 +46,9 @@ export default function TryAgain({ onPress, label = 'TRY AGAIN', accessibilityLa
  * The same act one weight down: a line of small caps, for a panel too small to
  * hold the plate (a picker's pictures, a record inside a card).
  */
-export function TryAgainLine({ onPress, accessibilityLabel = 'Try again', hitSlop, style }: {
+export function TryAgainLine({ onPress, what, hitSlop, style }: {
   onPress: () => void;
-  accessibilityLabel?: string;
+  what?: string;
   /** How far it reaches, where a neighbour sits closer than the default. */
   hitSlop?: Insets;
   style?: StyleProp<ViewStyle>;
@@ -54,7 +60,7 @@ export function TryAgainLine({ onPress, accessibilityLabel = 'Try again', hitSlo
       style={style}
       haptic="selection"
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={spokenAs('TRY AGAIN', what)}
     >
       <Text style={s.line}>TRY AGAIN</Text>
     </PressableScale>

@@ -42,7 +42,7 @@ export default function LogModalScreen() {
         return (
             <Arrive name="log.identify" duration={400} style={[st.root, st.centerAuthPrompt]}>
                 <Text style={st.identifyText}>Identify yourself to file records</Text>
-                <PressableScale style={st.signInBtn} onPress={() => { nav.replace('/login'); }} haptic="medium" accessibilityLabel="Sign in">
+                <PressableScale style={st.signInBtn} onPress={() => { nav.replace('/login'); }} haptic="medium" accessibilityLabel="Identify yourself: sign in">
                     <Text style={st.signInBtnText}>IDENTIFY YOURSELF</Text>
                 </PressableScale>
             </Arrive>

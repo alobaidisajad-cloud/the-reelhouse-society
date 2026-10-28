@@ -751,9 +751,9 @@ jobs:
         run: |
           set +e
           node mockups/tools/layout.cjs --src mockups/out/captured --passes ios@1 \
-            --kinds STEAL,NAMELESS,UNDER,SHADOW --sites sites.txt > captures.txt 2>&1
+            --kinds STEAL,NAMELESS,UNSAID,UNDER,SHADOW --sites sites.txt > captures.txt 2>&1
           rc=$?
-          grep -E "^\s+(STEAL|NAMELESS|UNDER|SHADOW)|finding|CLEAN" captures.txt
+          grep -E "^\s+(STEAL|NAMELESS|UNSAID|UNDER|SHADOW)|finding|CLEAN" captures.txt
           [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, name, bar or shadow fault (part ${{ matrix.part }} of 3)" captures.txt error --drop 'clean +\('
           exit $rc
 

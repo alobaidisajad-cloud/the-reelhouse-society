@@ -146,7 +146,7 @@ describe('a filter says whether it is ON, not just what it is called', () => {
       halfLifeMap: {}, groupByMonth: () => ({}), POSTER_COL_4: 100,
     };
     const r = await mount(<ProfileLedgerTab {...(props as any)} />);
-    expect(r.getByLabelText('Show every rating')).toBeTruthy();
+    expect(r.getByLabelText('All: show every rating')).toBeTruthy();
     expect(selectedOf(r, 'Show entries rated 3 or 3.5 of 5')).toBe(true);
     expect(selectedOf(r, 'Show entries rated 5 of 5')).toBe(false);
   });

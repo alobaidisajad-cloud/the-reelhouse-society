@@ -156,7 +156,7 @@ describe('the four states the page can be in', () => {
       { targetUser: baseUser({ is_social_private: true }) },
     );
     expect(r.getByText('ASK AGAIN')).toBeTruthy();
-    await fireEvent.press(r.getAllByLabelText('Ask for your follows again')[0]!);
+    await fireEvent.press(r.getAllByLabelText('Try again: ask for your follows')[0]!);
     expect(rereadFollows).toHaveBeenCalled();
   });
 
@@ -171,7 +171,7 @@ describe('the four states the page can be in', () => {
     expect(r.queryByText('THE TRIPTYCH')).toBeNull();
     // But their identity and the follow button are still there to act on.
     expect(r.getByText('TOMAS')).toBeTruthy();
-    expect(r.getByLabelText(/Follow request sent|Follow this member/)).toBeTruthy();
+    expect(r.getByLabelText(/^(Requested: the follow request is sent|Request to follow this member|Follow this member)$/)).toBeTruthy();
   });
 
   it('an open dossier shows every section in order', async () => {
@@ -523,7 +523,7 @@ describe('a visitor\'s room whose read failed', () => {
     const r = await mount({ activeTab: 'watchlist' }, { tabFailed: { watchlist: true }, retryRoom });
     expect(r.queryByLabelText('Retrieving the queue')).toBeNull();
     expect(r.getByText('The queue could not be reached.')).toBeTruthy();
-    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the queue again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: ask for the queue')); });
     expect(retryRoom).toHaveBeenCalledWith('watchlist');
   });
 
@@ -552,7 +552,7 @@ describe('a visitor\'s room whose read failed', () => {
     let r = await mount({ activeTab: 'calendar' }, { calendarData: null, tabFailed: { calendar: true }, retryRoom });
     expect(r.getByText('The calendar could not be reached.')).toBeTruthy();
     expect(r.queryByText(/IN THE PAST YEAR/)).toBeNull();
-    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the calendar again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: ask for the calendar')); });
     expect(retryRoom).toHaveBeenCalledWith('calendar');
     r.unmount();
     r = await mount({ activeTab: 'calendar' }, { calendarData: null, tabFailed: {} });
@@ -569,7 +569,7 @@ describe('HIGHEST RATED', () => {
     const best = { id: 'l1', filmId: 1, title: 'Mirror', poster: null, year: 1975, rating: 4.5, status: 'watched', watchedDate: '2024-02-11' };
     const r = await mount({ activeTab: 'projector' }, { mainLogs: [loadedOnly], archiveLogs: [loadedOnly], ledgerLogs: [loadedOnly], highestRated: [best] });
     expect(r.getByText('HIGHEST RATED', { exact: false })).toBeTruthy();
-    expect(r.getByLabelText('Mirror, rated 4.5 of 5')).toBeTruthy();
+    expect(r.getByLabelText(/^Mirror, \d{4}, rated 4\.5 of 5$/)).toBeTruthy();
     expect(r.queryByText('Loaded Only')).toBeNull();
   });
 });

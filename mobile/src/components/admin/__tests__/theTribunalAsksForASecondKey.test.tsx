@@ -106,7 +106,7 @@ it('says a failed check as a failure and asks again, never taking it for an admi
   expect(r.getByText(/The house could not check your key/)).toBeTruthy();
   expect(r.queryByTestId('second-key-register')).toBeNull();
   mockHouse = supabaseFake({ mfa: { code: '246810', factors: [KEY] } });
-  await act(async () => { await fireEvent.press(r.getByLabelText('Check the key again')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Try again: check the key')); });
   await settle();
   expect(r.getByText(/Give the six figures your authenticator shows/)).toBeTruthy();
 });

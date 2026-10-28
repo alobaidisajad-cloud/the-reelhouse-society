@@ -15,6 +15,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { FORMAT_META, shelfRank } from '@/src/constants/formats';
 import { r, posterColumns, countLabel } from './roomStyles';
 import { scrollEndAbove } from '@/src/components/layout/navMetrics';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore, RoomMoreFailed } from './RoomParts';
 
 /**
@@ -130,7 +131,8 @@ const VaultCase = React.memo(function VaultCase({
       <View style={[r.spine, { backgroundColor: tint, opacity: 0.9 }]} pointerEvents="none" />
       <View style={r.spineSeam} pointerEvents="none" />
       <View style={[s.caseBadge, { borderColor: tint }]} pointerEvents="none">
-        <Text {...scaledTextProps} style={[s.caseBadgeText, { color: tint }]} numberOfLines={1}>{badge}</Text>
+        {/* The format's mark (BD): the case's name says it whole (Blu-ray). */}
+        <Text {...scaledTextProps} {...UNSPOKEN} style={[s.caseBadgeText, { color: tint }]} numberOfLines={1}>{badge}</Text>
       </View>
     </PressableScale>
   );

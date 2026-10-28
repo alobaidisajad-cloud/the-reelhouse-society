@@ -125,8 +125,7 @@ function ReasonChip({ reason, selected, onSelect }: ReasonChipProps) {
         hitSlop={REASON_SLOP}
         pressedScale={0.98}
         accessibilityRole="radio"
-        accessibilityLabel={label}
-        accessibilityHint={sublabel}
+        accessibilityLabel={`${label}. ${sublabel}`}
         accessibilityState={{ selected }}
       >
         <View style={styles.chipContent}>

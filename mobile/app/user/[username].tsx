@@ -908,7 +908,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                                 hitSlop={{ top: 5, bottom: 5, left: 8, right: 8 }}
                                 haptic
                                 accessibilityRole="button"
-                                accessibilityLabel={`${log.title}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}
+                                accessibilityLabel={`${log.title}${log.year ? `, ${log.year}` : ''}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}
                               >
                                 <RemoteImage uri={posterUri} style={s.favPosterThumb} transition={50}
                                   // A blank frame keeps every row at one indent.
@@ -1145,8 +1145,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   accessibilityRole="button"
                   accessibilityState={{ busy: !followKnown && followingKnown !== 'failed' }}
                   accessibilityLabel={!followKnown
-                    ? (followingKnown === 'failed' ? 'Your follows could not be read. Ask again' : 'Reading whether you follow this member')
-                    : isFollowing ? 'Unfollow this member' : isRequested ? 'Follow request sent' : 'Follow this member'}
+                    ? (followingKnown === 'failed' ? 'Ask again: your follows could not be read' : 'Reading whether you follow this member')
+                    : isFollowing ? 'Following: unfollow this member' : isRequested ? 'Requested: the follow request is sent' : targetUser.is_social_private ? 'Request to follow this member' : 'Follow this member'}
                 >
                   <Text
                     {...scaledTextProps}
@@ -1225,9 +1225,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     hitSlop={{ top: 0, bottom: 0, left: 12, right: 12 }}
                     haptic
                     accessibilityRole="button"
-                    accessibilityLabel={`${log.title}${log.year ? `, ${log.year}` : ''}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}`}
+                    accessibilityLabel={`${log.title}${log.year ? `, ${log.year}` : ''}${log.rating > 0 ? `, rated ${log.rating} of 5` : ''}${log.status === 'rewatched' ? ', rewatched' : latelyAgo[i] ? `, ${latelyAgo[i]}` : ''}`}
                   >
-                    <Text {...decorativeTextProps} style={s.latelyIndex}>{String(i + 1).padStart(2, '0')}</Text>
+                    <Text {...decorativeTextProps} {...UNSPOKEN} style={s.latelyIndex}>{String(i + 1).padStart(2, '0')}</Text>
                     <View style={[s.latelyPoster, !log.poster && s.latelyPosterEmpty]}>
                       <RemoteImage uri={tmdb.poster(log.poster, 'w185')} style={s.latelyPosterImg} contentFit="cover" transition={150} fallback={<FilmIcon size={14} color={colors.sepia} strokeWidth={1.4} opacity={0.4} />} />
                     </View>

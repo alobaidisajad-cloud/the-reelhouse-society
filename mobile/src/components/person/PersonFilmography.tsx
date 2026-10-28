@@ -75,7 +75,7 @@ export const FilmPosterCard = memo(function FilmPosterCard({ film, screened }: {
       // overlap on both platforms: half the real gap is the most either may
       // claim, or the edge of one poster would open the film beside it.
       hitSlop={{ top: 9, bottom: 9, left: 5, right: 5 }}
-      accessibilityLabel={`${film.title || film.name}${screened ? ', screened' : ''}`}
+      accessibilityLabel={`${film.title || film.name}, ${film.release_date ? film.release_date.slice(0, 4) : 'TBA'}${screened ? ', screened' : ''}`}
     >
       <View style={st.gridPosterWrap}>
         <RemoteImage uri={posterUri} style={st.gridPoster} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={50} fallback={<View style={[st.gridPoster, st.gridPosterPlaceholder]}>

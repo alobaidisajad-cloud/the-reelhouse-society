@@ -222,7 +222,7 @@ function ShareSheet({
                         // Not "you have joined none": the salons could not be asked.
                         <View style={s.unreachable}>
                             <Text style={s.emptyText}>The salons could not be reached.</Text>
-                            <TryAgainLine onPress={() => { void useLoungeStore.getState().fetchLounges(); }} accessibilityLabel="Ask for the salons again" />
+                            <TryAgainLine onPress={() => { void useLoungeStore.getState().fetchLounges(); }} what="ask for the salons" />
                         </View>
                     ) : lounges.length === 0 ? (
                         <Text style={s.emptyText}>No seat yet. Take a seat in a salon in the Lounge, and you can carry this to it.</Text>

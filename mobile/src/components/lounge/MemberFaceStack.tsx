@@ -76,7 +76,8 @@ export const MemberFaceStack = React.memo(function MemberFaceStack({
           </View>
         ))}
       </View>
-      {overflowLabel && <Text style={s.overflow} numberOfLines={1}>{overflowLabel}</Text>}
+      {/* The faces past three: the card's name says the whole count. */}
+      {overflowLabel && <Text style={s.overflow} numberOfLines={1} {...UNSPOKEN}>{overflowLabel}</Text>}
       {isPrivate && <Lock size={10} color={colors.sepia} strokeWidth={1.5} style={s.lock} />}
     </View>
   );

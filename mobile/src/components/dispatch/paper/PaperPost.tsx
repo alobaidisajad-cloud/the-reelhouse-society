@@ -82,7 +82,7 @@ export const Byline = memo(function Byline({
       hitSlop: { top: 4, bottom: 4, left: 0, right: 0 },
       accessibilityRole: 'link' as const,
       // The rank rides the ROW's label: a labelled iOS control silences its children.
-      accessibilityLabel: `${author.name}${word ? `, ${word}` : ''}. Open their room.`,
+      accessibilityLabel: `${author.name}${word ? `, ${word}` : ''}${trailing ? `, ${trailing}` : ''}. Open their room.`,
     }
     : {};
   return (

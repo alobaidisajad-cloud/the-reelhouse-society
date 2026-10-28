@@ -222,7 +222,8 @@ describe('the form can never destroy a stack', () => {
     await waitFor(() => expect(r.getByText('Blade Runner')).toBeTruthy());
     expect(r.queryByLabelText('Remove Blade Runner')).toBeNull();
     expect(r.queryByLabelText('Search films to add to stack')).toBeNull();
-    expect(r.queryByLabelText('Reorder Blade Runner')).toBeNull();
+    // Read, never moved: its place and its name, and no control.
+    expect(r.getByLabelText(/^\d+\. Blade Runner$/).props.accessibilityRole).toBe('text');
     expect(r.queryByText(/TAP OR HOLD TO ORDER/)).toBeNull();
   });
 
@@ -640,8 +641,8 @@ describe('a stack can be ordered, and its terms read, without sight', () => {
     mockParams = { editId: STACK_ID };
     mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: 2 } };
     const r = mount();
-    await waitFor(() => expect(r.getByLabelText('Reorder Blade Runner')).toBeTruthy());
-    const row = r.getByLabelText('Reorder Blade Runner');
+    await waitFor(() => expect(r.getByLabelText(/^\d+\. Blade Runner$/)).toBeTruthy());
+    const row = r.getByLabelText(/^\d+\. Blade Runner$/);
     expect(row.props.accessibilityActions.map((a: { name: string }) => a.name)).toEqual(['moveUp', 'moveDown']);
     await act(async () => { await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'moveDown' } }); });
     await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
@@ -653,11 +654,11 @@ describe('a stack can be ordered, and its terms read, without sight', () => {
     mockParams = { editId: STACK_ID };
     mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: 2 } };
     const r = mount();
-    await waitFor(() => expect(r.getByLabelText('Reorder Blade Runner')).toBeTruthy());
+    await waitFor(() => expect(r.getByLabelText(/^\d+\. Blade Runner$/)).toBeTruthy());
     expect(r.queryByLabelText('Move Blade Runner down')).toBeNull();
-    await act(async () => { await fireEvent.press(r.getByLabelText('Reorder Blade Runner')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/^\d+\. Blade Runner$/)); });
     // Taken up: its arrows in the remove mark's place; the first cannot go higher.
-    expect(r.getByLabelText('Reorder Blade Runner').props.accessibilityState).toMatchObject({ selected: true });
+    expect(r.getByLabelText(/^\d+\. Blade Runner$/).props.accessibilityState).toMatchObject({ selected: true });
     expect(r.queryByLabelText('Remove Blade Runner')).toBeNull();
     expect(r.getByLabelText('Move Blade Runner up').props.accessibilityState).toMatchObject({ disabled: true });
     await act(async () => { await fireEvent.press(r.getByLabelText('Move Blade Runner down')); });
@@ -665,7 +666,7 @@ describe('a stack can be ordered, and its terms read, without sight', () => {
     expect(r.getByLabelText('Move Blade Runner down').props.accessibilityState).toMatchObject({ disabled: true });
     // The row's second press waits out its debounce, as a finger's does.
     await act(async () => { await new Promise((done) => setTimeout(done, 400)); });
-    await act(async () => { await fireEvent.press(r.getByLabelText('Reorder Blade Runner')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(/^\d+\. Blade Runner$/)); });
     expect(r.getByLabelText('Remove Blade Runner')).toBeTruthy();
     await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
     await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());

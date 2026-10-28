@@ -71,7 +71,7 @@ describe('the series sheet', () => {
     await flush();
     mockError = null;
     mockRows = [row(1)];
-    await act(async () => { await fireEvent.press(r.getByLabelText('Read your series again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: read your series')); });
     await flush();
     expect(r.getByText('Series 1')).toBeTruthy();
     expect(r.queryByText('Your series could not be read.')).toBeNull();

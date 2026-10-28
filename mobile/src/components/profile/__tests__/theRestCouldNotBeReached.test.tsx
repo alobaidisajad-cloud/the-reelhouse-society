@@ -101,7 +101,7 @@ describe.each(ROOMS)('%s', (_name, room) => {
     const more = jest.fn();
     const r = await settle(room(more));
     expect(r.getByText('The rest could not be reached.')).toBeTruthy();
-    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the rest again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: ask for the rest')); });
     expect(more).toHaveBeenCalledTimes(1);
   });
 });

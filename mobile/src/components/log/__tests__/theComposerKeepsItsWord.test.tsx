@@ -177,9 +177,9 @@ describe('every control the composer owns is there, by name', () => {
     }
     await press(r.getByLabelText('Delete this entire log'));
     expect(r.getByText('DELETE THIS LOG? THIS CANNOT BE UNDONE.')).toBeTruthy();
-    expect(r.getByLabelText('Confirm deletion')).toBeTruthy();
-    await press(r.getByLabelText('Keep this log'));
-    expect(r.queryByLabelText('Confirm deletion')).toBeNull();
+    expect(r.getByLabelText('Confirm delete: this log is gone for good')).toBeTruthy();
+    await press(r.getByLabelText('Cancel: keep this log'));
+    expect(r.queryByLabelText('Confirm delete: this log is gone for good')).toBeNull();
   });
 });
 

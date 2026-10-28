@@ -295,7 +295,7 @@ export default function DarkRoomScreen() {
           <Text style={s.paginationRetrieving}>THE NEXT BATCH COULD NOT BE DEVELOPED.</Text>
           <TryAgainLine
             onPress={() => { setMoreFailedFor(null); setPage(useDiscoverStore.getState().page + 1); }}
-            accessibilityLabel="Develop the next batch again"
+            what="develop the next batch"
             style={s.moreRetry}
           />
         </View>

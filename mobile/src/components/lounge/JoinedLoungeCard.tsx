@@ -17,6 +17,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
 import { MemberFaceStack } from '@/src/components/lounge/MemberFaceStack';
 import { EDGE_LIT } from '@/src/theme/light';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 /** Where the server stops counting a salon's unread dispatches. */
 export const UNREAD_COUNTED_TO = 100;
@@ -41,7 +42,7 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
         haptic="light"
         accessibilityRole="button"
         // Every seal the card draws, said: the door and AWAITING were only seen.
-        accessibilityLabel={`Enter salon ${lounge.name}${
+        accessibilityLabel={`Enter salon ${lounge.name}, ${lounge.member_count || 0} ${(lounge.member_count || 0) === 1 ? 'member' : 'members'}${
           isAwaiting ? ', awaiting the host'
             : atDoor > 0 ? `, ${atDoor} at your door`
               : hasUnread ? `, ${unreadSpoken} new dispatches` : ''}`}
@@ -61,7 +62,8 @@ export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge:
 
           {hasUnread && !isAwaiting && atDoor === 0 && (
             <View style={s.unreadSeal}>
-              <Text style={s.unreadSealText}>{unreadLabel}</Text>
+              {/* 9+ past nine: the card's name says the whole count. */}
+              <Text style={s.unreadSealText} {...UNSPOKEN}>{unreadLabel}</Text>
             </View>
           )}
 

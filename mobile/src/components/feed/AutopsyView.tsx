@@ -152,7 +152,7 @@ export const AutopsyBack = React.memo(function AutopsyBack({
         haptic="selection"
         pressedScale={0.98}
         accessibilityRole="button"
-        accessibilityLabel="Return to the log"
+        accessibilityLabel="Return to the record"
       >
         <Text style={s.returnText}>✦ RETURN TO THE RECORD</Text>
       </PressableScale>

@@ -134,7 +134,7 @@ export const LogBill = memo(function LogBill({ log, plan, scale, admin }: {
         onPress={() => nav.push(`/film/${log.film.id}`)}
         haptic="selection"
         accessibilityRole="link"
-        accessibilityLabel={`${log.film.title}${log.rating ? `, rated ${log.rating} of 5` : ''}. Open the film.`}
+        accessibilityLabel={`${LOG_BILL.on(log.film.title)}${log.rating ? `, rated ${log.rating} of 5` : ''}. Open the film.`}
       >
         <View style={[s.filmRow, rtl && s.filmRowRtl]}>
           <View style={s.thumb}>

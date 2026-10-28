@@ -144,7 +144,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
         onPress={handlePress}
         haptic
         accessibilityRole="button"
-        accessibilityLabel={isPerson ? item.name : (item.title || 'Film')}
+        accessibilityLabel={isPerson ? item.name : `${item.title || 'Film'}${item.release_date ? `, ${item.release_date.slice(0, 4)}` : ''}`}
       >
         <View style={[s.posterImg, !posterUri && s.posterPlaceholder]}>
           {posterUri ? (
@@ -224,7 +224,7 @@ export const DarkroomSuggestionRow = React.memo(({ item, onPress }: { item: Disc
       haptic="light"
       pressedScale={0.98}
       accessibilityRole="button"
-      accessibilityLabel={isPerson ? `${item.name}, artist` : `${item.title}, ${item.release_date?.slice(0, 4) ?? 'TBA'}`}
+      accessibilityLabel={isPerson ? `${item.name}, artist` : `${item.title}, ${item.release_date?.slice(0, 4) ?? 'TBA'}, film`}
     >
       {imgUri ? (
         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm]}>

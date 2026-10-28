@@ -9,7 +9,7 @@ import { BusterEyes } from '@/src/components/Buster';
 import { StackData, StackFilm } from './types';
 import { Heart } from 'lucide-react-native';
 import { useMarkCount } from '@/src/stores/markCounts';
-import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
+import { formatCount, UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { counted } from '@/src/components/dispatch/paper/paperText';
 
 
@@ -100,7 +100,7 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
       />
 
       <View style={st.stackCardRef}>
-        <Text style={st.stackCardRefText}>{refCode}</Text>
+        <Text style={st.stackCardRefText} {...UNSPOKEN}>{refCode}</Text>
       </View>
 
       <View style={st.stackCardContent}>

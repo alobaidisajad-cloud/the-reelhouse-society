@@ -47,11 +47,12 @@ const FADE = 32;
 export const DOCK_REACH = DOCK_HEIGHT + FADE;
 
 export const PurchaseDock = memo(function PurchaseDock({
-  summary, cta, spoken, auteur, busy, onBuy, bottomInset,
+  summary, cta, price, auteur, busy, onBuy, bottomInset,
 }: {
   summary: string;
   cta: string;
-  spoken: string;
+  /** The price as said ("$4.99 a month"); the button is named by its own words, then it. */
+  price: string;
   auteur: boolean;
   busy: boolean;
   onBuy: () => void;
@@ -69,7 +70,7 @@ export const PurchaseDock = memo(function PurchaseDock({
         pressedScale={0.98}
         hitSlop={null}
         accessibilityRole="button"
-        accessibilityLabel={busy ? 'Processing purchase' : spoken}
+        accessibilityLabel={busy ? 'Processing purchase' : `${cta.charAt(0)}${cta.slice(1).toLowerCase()}, ${price}`}
         accessibilityState={{ disabled: busy, busy }}
       >
         <LinearGradient

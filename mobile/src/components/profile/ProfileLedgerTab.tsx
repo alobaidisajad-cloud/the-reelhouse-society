@@ -145,12 +145,11 @@ const LedgerRow = React.memo(function LedgerRow({
         log.title ?? 'Untitled film',
         log.year ? String(log.year) : '',
         log.rating > 0 ? `rated ${log.rating} of 5` : 'unrated',
-        log.isAutopsied ? 'autopsied' : '',
+        log.isAutopsied ? 'with an autopsy' : '',
         halfLife && halfLife.count > 1 ? `seen ${halfLife.count} times` : '',
-        // The words themselves are NOT read out: a row is a way in, and a
-        // screen reader that recites 180 characters of prose per row makes the
-        // list impossible to move through. The log page reads the review.
-        words ? 'with a written entry' : '',
+        // The words the row shows, as it shows them (180 characters at most):
+        // its name holds what is drawn, and the log page reads the whole.
+        words,
       ].filter(Boolean).join(', ')}
       accessibilityHint="Opens the entry"
     >
@@ -261,7 +260,7 @@ function rungSpoken(v: number): string {
 }
 
 function ratingSpoken(v: LedgerRating): string {
-  if (v === 'all') return 'Show every rating';
+  if (v === 'all') return 'All: show every rating';
   if (v === 'high') return `Show entries rated ${LEDGER_HIGH_FLOOR} of 5 or better`;
   return `Show entries ${rungSpoken(v)}`;
 }
@@ -434,25 +433,24 @@ export default function ProfileLedgerTab({
           ember={<AnimatedSearchIcon size={13} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />}
         />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={r.chipRow}>
-          {RATINGS.map(v => (
-            <RoomChip
-              key={String(v)}
-              label={ratingLabel(v)}
-              on={ledgerRatingFilter === v}
-              onPress={() => { setLedgerRatingFilter(v); }}
-              gap={8}
-              a11y={ratingSpoken(v)}
-              /* From `rating_distribution`, over every log; the high chip sums
-                 its rungs from the shared floor up. ALL is the room's own total. */
-              count={
-                v === 'all' ? undefined
-                  : v === 'high' ? ratingTotal(HIGH_RUNGS)
-                  : ratings.get(v)
-              }
-            >
-              {typeof v === 'number' ? <ReelRating rating={v} size={8} /> : undefined}
-            </RoomChip>
-          ))}
+          {RATINGS.map(v => {
+            /* From `rating_distribution`, over every log; the high chip sums
+               its rungs from the shared floor up. ALL is the room's own total. */
+            const count = v === 'all' ? undefined : v === 'high' ? ratingTotal(HIGH_RUNGS) : ratings.get(v);
+            return (
+              <RoomChip
+                key={String(v)}
+                label={ratingLabel(v)}
+                on={ledgerRatingFilter === v}
+                onPress={() => { setLedgerRatingFilter(v); }}
+                gap={8}
+                a11y={count !== undefined ? `${ratingSpoken(v)}, ${count}` : ratingSpoken(v)}
+                count={count}
+              >
+                {typeof v === 'number' ? <ReelRating rating={v} size={8} /> : undefined}
+              </RoomChip>
+            );
+          })}
         </ScrollView>
       </View>
     );

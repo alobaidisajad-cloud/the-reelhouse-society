@@ -329,7 +329,7 @@ export default function SocialModal() {
     // ── Render helpers ────────────────────────────────────────────────────────
     const renderSocialItem = useCallback(({ item, index }: { item: SocialProfile; index: number }) => (
         <Arrive name="social-modal-1" duration={300} delay={Math.min(index * 40, 400)} rise={-25}>
-            <PressableScale onPress={() => handleProfilePress(item.username)} hitSlop={null} accessibilityRole="button" accessibilityLabel={`View ${item.username}'s profile`}>
+            <PressableScale onPress={() => handleProfilePress(item.username)} hitSlop={null} accessibilityRole="button" accessibilityLabel={`${item.username}, ${(item.role ?? 'member')}. Open their room.`}>
                 <View style={styles.userRow}>
                     <RemoteImage
                         uri={item.avatar_url?.startsWith('http') ? item.avatar_url : null}
@@ -467,7 +467,7 @@ export default function SocialModal() {
                         : moreFailed ? (
                             <View style={styles.moreSpace}>
                                 <Text style={styles.timeoutSubtext}>The rest could not be reached.</Text>
-                                <TryAgainLine onPress={loadMore} accessibilityLabel="Ask for the rest again" />
+                                <TryAgainLine onPress={loadMore} what="ask for the rest" />
                             </View>
                         ) : null
                     }

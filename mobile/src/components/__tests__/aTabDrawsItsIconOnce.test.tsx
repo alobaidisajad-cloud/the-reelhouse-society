@@ -21,7 +21,10 @@ import { files as universe } from '@/test-utils/universe';
 
 const Tab = createBottomTabNavigator();
 const Page = () => <Text>page</Text>;
-const mark = (name: string) => (focused: boolean) => <Text testID={`icon-${name}`}>{focused ? 'chosen' : 'not'}</Text>;
+// A word standing in for a picture: unspoken, as the drawing it stands for is.
+const mark = (name: string) => (focused: boolean) => (
+  <Text testID={`icon-${name}`} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{focused ? 'chosen' : 'not'}</Text>
+);
 
 /** Two tabs, their icons given the way `how` says. */
 function Bar({ how }: { how: 'tabBarIcon' | 'button' }) {

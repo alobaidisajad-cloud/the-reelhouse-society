@@ -89,12 +89,12 @@ const ListFilmItem = React.memo(({ item, index, count, drag, isActive, moving, s
                 hitSlop={null}
                 haptic="light"
                 accessibilityRole={sealed ? 'text' : 'button'}
-                accessibilityLabel={sealed ? item.title : `Reorder ${item.title}`}
+                accessibilityLabel={`${displayIndex}. ${item.title}`}
                 // A drag a screen reader cannot make: the same order, one step
                 // at a time. Without these a ranked stack could not be ordered
                 // by a member who cannot see it.
                 accessibilityState={sealed ? undefined : { selected: moving }}
-                accessibilityHint={sealed ? undefined : `Number ${displayIndex}. Its actions move it up or down.`}
+                accessibilityHint={sealed ? undefined : 'Reorder it: its actions move it up or down.'}
                 accessibilityActions={sealed ? undefined : [
                     { name: 'moveUp', label: 'Move up' },
                     { name: 'moveDown', label: 'Move down' },

@@ -88,7 +88,7 @@ export default React.memo(function EditorialDesk({
                 ) : imagesFailed ? (
                     <View>
                         <Text style={st.noData}>The stills could not be reached.</Text>
-                        <TryAgainLine onPress={onRetryImages} accessibilityLabel="Ask for the stills again" style={st.retrySpace} />
+                        <TryAgainLine onPress={onRetryImages} what="ask for the stills" style={st.retrySpace} />
                     </View>
                 ) : imagesLoaded ? (
                     // Said once TMDB has answered — never while the request is

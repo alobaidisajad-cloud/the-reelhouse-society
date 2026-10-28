@@ -6,7 +6,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
-import { extractDropCap, stripHTML, isRTLText } from '@/src/utils/text';
+import { extractDropCap, stripHTML, isRTLText, spokenExcerpt } from '@/src/utils/text';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 
 import type { FeedItem } from '@/src/schemas/feed.schema';
@@ -84,17 +84,20 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
   const cap = extractDropCap(cleanReview);
 
   return (
-    <PressableScale
-      onPress={onPress}
-      haptic="selection"
-      pressedScale={0.98}
-      style={s.pressable}
-      // 10pt under the title at its tightest (no year, no rating) and 14pt above
-      // the deck. At the default 15 a tap just below the review certified it.
-      hitSlop={{ top: 5, bottom: 7, left: 15, right: 15 }}
-      accessibilityLabel="Read full review"
-    >
-      <SpoilerVeil isSpoiler={item.is_spoiler} revealKey={item.id} compact>
+    // The veil stands before the door, never inside it: a control inside a control is
+    // one a screen reader cannot reach.
+    <SpoilerVeil isSpoiler={item.is_spoiler} revealKey={item.id} compact hitSlop={REVIEW_SLOP}>
+      <PressableScale
+        onPress={onPress}
+        haptic="selection"
+        pressedScale={0.98}
+        style={s.pressable}
+        hitSlop={REVIEW_SLOP}
+        // The review itself, as the card draws it: a name of its own ("Read full
+        // review") silenced every word of it.
+        accessibilityLabel={`${spokenExcerpt(item.pull_quote, cleanReview)}${truncated ? ' Read more.' : ''}`}
+        accessibilityHint="Opens the whole log"
+      >
         {/* Pull quote — capped at 4 lines so no quote can swallow the card */}
         {item.pull_quote && (
           <View style={s.pullQuoteWrap}>
@@ -130,10 +133,14 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
             <Text style={s.readMoreText}>Read more</Text>
           </View>
         )}
-      </SpoilerVeil>
-    </PressableScale>
+      </PressableScale>
+    </SpoilerVeil>
   );
 });
+
+// 10pt under the title at its tightest (no year, no rating) and 14pt above
+// the deck. At the default 15 a tap just below the review certified it.
+const REVIEW_SLOP = { top: 5, bottom: 7, left: 15, right: 15 };
 
 const s = StyleSheet.create({
   pressable: { width: '100%' },

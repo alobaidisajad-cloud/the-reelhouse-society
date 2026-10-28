@@ -257,7 +257,7 @@ describe('the reader', () => {
     expect(getByText('The rest of this essay could not be reached.')).toBeTruthy();
 
     mockRowFails = false;
-    await act(async () => { await fireEvent.press(getByLabelText('Read the whole essay again')); });
+    await act(async () => { await fireEvent.press(getByLabelText('Try again: read the whole essay')); });
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     expect(queryByText('The rest of this essay could not be reached.')).toBeNull();
@@ -805,7 +805,7 @@ describe('the reader', () => {
       body: 'Critique ' + (i + 30), certify_count: 0,
       created_at: '2026-08-28T21:00:00Z', edited_at: null, profiles: null,
     }));
-    await act(async () => { await fireEvent.press(getByLabelText(/more critiques/)); });
+    await act(async () => { await fireEvent.press(getByLabelText(/more, \d+ at a time: read the next critiques/)); });
     await act(async () => { await Promise.resolve(); });
     expect(useDispatch.getState().critiques.f1).toHaveLength(60);
   }, 10000);   // sixty critiques drawn: ~2.5 s alone, past 5 s under a full run

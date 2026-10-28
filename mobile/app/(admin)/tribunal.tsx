@@ -105,7 +105,7 @@ export function EnforcementHistory({ history, isLoading, failed, onRetry }: {
         <Text style={s.historyLabel}>ENFORCEMENT RECORD</Text>
         <Text style={s.historyEmpty}>The record could not be read.</Text>
         {onRetry && (
-          <TryAgainLine onPress={onRetry} accessibilityLabel="Read the enforcement record again" style={s.historyRetry} />
+          <TryAgainLine onPress={onRetry} what="read the enforcement record" style={s.historyRetry} />
         )}
       </View>
     );
@@ -840,7 +840,7 @@ function TribunalScreen() {
               pressedScale={0.97}
               haptic="medium"
               accessibilityRole="button"
-              accessibilityLabel="Retry loading the docket"
+              accessibilityLabel="Try again: read the docket"
             >
               <Text style={s.retryBtnText}>TRY AGAIN</Text>
             </PressableScale>
@@ -914,7 +914,7 @@ function TribunalScreen() {
                         haptic="selection"
                         pressedScale={0.98}
                         accessibilityRole="button"
-                        accessibilityLabel={`View the accused, ${accused.username}`}
+                        accessibilityLabel={`The accused: ${accused.username}${warningCount ? `, ${warningCount} ${warningCount === 1 ? 'warning' : 'warnings'}` : ''}. Open their file.`}
                       >
                         <View style={s.accusedAvatar}>
                           <RemoteImage uri={accused.avatar_url} style={s.accusedAvatarImg} contentFit="cover" fallback={<Text style={s.accusedAvatarLetter} {...UNSPOKEN}>{initialOf(accused.username)}</Text>} />

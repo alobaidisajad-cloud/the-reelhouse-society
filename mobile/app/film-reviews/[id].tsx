@@ -196,7 +196,7 @@ export default function FilmReviewsScreen() {
               : moreFailed ? (
                 <View style={s.moreFailed}>
                   <Text style={s.moreFailedText}>More critiques could not be reached.</Text>
-                  <TryAgainLine onPress={() => fetchLogs(true)} accessibilityLabel="Ask for more critiques" style={s.moreRetry} />
+                  <TryAgainLine onPress={() => fetchLogs(true)} what="ask for more critiques" style={s.moreRetry} />
                 </View>
               ) : null
           }

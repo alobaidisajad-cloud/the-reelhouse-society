@@ -95,7 +95,7 @@ export const CritiqueSpine = memo(function CritiqueSpine({
         style={p.spineBody} onPress={onTop} haptic="selection"
         hitSlop={{ top: 8, bottom: 8, left: 0, right: 6 }}
         accessibilityRole="button"
-        accessibilityLabel={`Back to the top of the ${nameOf(kind).toLowerCase()}. ${counted(count ?? 0, 'critique', 'critiques')}.`}
+        accessibilityLabel={`${nameOf(kind)}: ${opening}. Back to the top. ${counted(count ?? 0, 'critique', 'critiques')}.`}
       >
         <ChevronUp size={13} strokeWidth={2} color={colors.sepia} />
         <Text style={p.spineKind} {...deckLabelProps}>{nameOf(kind)}</Text>
@@ -232,7 +232,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
             <PressableScale
               style={{ paddingVertical: 8 }} hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic="medium"
               onPress={onTake}
-              accessibilityRole="button" accessibilityLabel={`Take ${c.film?.title} as your answer`}
+              accessibilityRole="button" accessibilityLabel={`Take this one${c.film?.title ? `, ${c.film.title},` : ''} as your answer`}
             >
               <Text style={[p.commentMeta, { marginTop: 0, color: colors.sepia, letterSpacing: 1.6 }]} {...scaledTextProps}>
                 TAKE THIS ONE
@@ -323,7 +323,7 @@ export const CritiqueFooter = memo(function CritiqueFooter({
       disabled={!!loadingMore}
       accessibilityRole="button"
       accessibilityState={{ busy: !!loadingMore }}
-      accessibilityLabel={`Read ${left} more critiques`}
+      accessibilityLabel={`${left} more, ${COMMENT_PAGE_SIZE} at a time: read the next critiques`}
     >
       {loadingMore ? (
         <ActivityIndicator size="small" color={colors.sepia} />

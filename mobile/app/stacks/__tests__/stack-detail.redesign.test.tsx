@@ -1112,7 +1112,7 @@ describe('the critiques as they stand, sent or waiting', () => {
     const r = await open();
     r.getByText('The critiques could not be reached.');
     expect(r.queryByText('No critiques yet. Be the first to speak.')).toBeNull();
-    await act(async () => { await fireEvent.press(r.getByLabelText('Read the critiques again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: read the critiques')); });
     expect(mockRereadCritiques).toHaveBeenCalled();
   });
 

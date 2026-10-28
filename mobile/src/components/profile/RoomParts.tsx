@@ -269,7 +269,7 @@ export function RoomUnreachable({ room, onRetry }: { room: string; onRetry: () =
   return (
     <View style={r.state}>
       <Text {...scaledTextProps} style={r.stateBody}>{`${room[0].toUpperCase()}${room.slice(1)} could not be reached.`}</Text>
-      <TryAgainLine onPress={onRetry} accessibilityLabel={`Ask for ${room} again`} style={r.stateRetry} />
+      <TryAgainLine onPress={onRetry} what={`ask for ${room}`} style={r.stateRetry} />
     </View>
   );
 }
@@ -339,7 +339,7 @@ export function RoomMoreFailed({ onRetry }: { onRetry?: () => void }) {
   return (
     <View style={r.state}>
       <Text {...scaledTextProps} style={r.stateBody}>The rest could not be reached.</Text>
-      {!!onRetry && <TryAgainLine onPress={onRetry} accessibilityLabel="Ask for the rest again" style={r.stateRetry} />}
+      {!!onRetry && <TryAgainLine onPress={onRetry} what="ask for the rest" style={r.stateRetry} />}
     </View>
   );
 }

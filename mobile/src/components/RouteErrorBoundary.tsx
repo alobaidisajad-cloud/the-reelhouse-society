@@ -62,7 +62,7 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
           onPress={retry}
           // Half the 14pt gap to the way out below, each side of it.
           hitSlop={TRY_AGAIN_ABOVE_A_WAY_OUT}
-          accessibilityLabel="Try loading this screen again"
+          what="load this screen"
         />
         {/* The way out the words promise: back, or to the Lobby when there is no back. */}
         <WayOut onPress={leave} label={canGoBack ? 'Go back' : 'Return to the Lobby'} />

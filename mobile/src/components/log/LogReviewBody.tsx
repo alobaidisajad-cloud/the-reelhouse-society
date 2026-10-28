@@ -128,7 +128,7 @@ export default function LogReviewBody({
       {vaultUnread && (
         <View style={s.vaultUnread}>
           <Text style={s.vaultUnreadText} {...scaledTextProps}>The Vault could not be opened.</Text>
-          {onRereadNote ? <TryAgainLine onPress={onRereadNote} accessibilityLabel="Open the Vault again" /> : null}
+          {onRereadNote ? <TryAgainLine onPress={onRereadNote} what="open the Vault" /> : null}
         </View>
       )}
     </View>

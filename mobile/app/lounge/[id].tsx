@@ -874,7 +874,10 @@ export default function LoungeRoomScreen() {
             onPress={speaking.open}
             haptic="medium"
             accessibilityRole="button"
-            accessibilityLabel={ropeSpoken('Speak in this salon', speaking.rank, speaking.standing)}
+            // Its own words first: the rope says what it opens after them.
+            accessibilityLabel={speaking.standing === 'reading'
+              ? ropeSpoken('Speak in this salon', speaking.rank, speaking.standing)
+              : `Ascend the ranks. ${ropeSpoken('Speak in this salon', speaking.rank, speaking.standing)}`}
           >
             <Text style={s.previewBtnText}>{speaking.standing === 'reading' ? '✦ ASK AGAIN' : '✦ ASCEND THE RANKS'}</Text>
           </PressableScale>

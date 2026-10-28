@@ -28,7 +28,7 @@ import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
 import { stripHtml } from '@/src/utils/html';
-import { extractDropCap, isRTLText, RTL_MARK } from '@/src/utils/text';
+import { extractDropCap, isRTLText, RTL_MARK, spokenExcerpt } from '@/src/utils/text';
 import { useTimeAgo } from '@/src/hooks/useClock';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
@@ -114,9 +114,14 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
         ) : null}
       </View>
 
-      <PressableScale onPress={handleOpenLog} pressedScale={0.99} accessibilityLabel={`Open the full log by ${review.username ?? 'anonymous'}`}>
-        {/* COMP-SPOILER-1: veil flagged critiques. */}
-        <SpoilerVeil isSpoiler={review.is_spoiler} revealKey={review.id}>
+      {/* COMP-SPOILER-1: veil flagged critiques. The veil stands before the door, never
+          inside it: a control inside a control is one a screen reader cannot reach. */}
+      <SpoilerVeil isSpoiler={review.is_spoiler} revealKey={review.id}>
+        <PressableScale
+          onPress={handleOpenLog} pressedScale={0.99}
+          // The critique itself, as the card draws it, then the door's own words.
+          accessibilityLabel={`${spokenExcerpt(review.pull_quote, strippedReview)} ${strippedReview.length > 250 ? 'Read full critique. ' : ''}Open log, by ${review.username ?? 'anonymous'}.`}
+        >
           {review.pull_quote && (
             <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isArchivist && s.pullQuoteWrapPremium]}>
               <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur]}>
@@ -145,8 +150,8 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
             ) : <View />}
             <Text style={s.openLogText}>OPEN LOG →</Text>
           </View>
-        </SpoilerVeil>
-      </PressableScale>
+        </PressableScale>
+      </SpoilerVeil>
     </View>
   );
 });
@@ -169,7 +174,7 @@ export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, review
         {failed && clippings.length === 0 ? (
           <View style={s.emptyReviewBox}>
             <Text style={s.emptyReviewTitle}>The critiques could not be reached.</Text>
-            {onRetry ? <TryAgainLine onPress={onRetry} accessibilityLabel="Ask for the critiques again" style={s.retry} /> : null}
+            {onRetry ? <TryAgainLine onPress={onRetry} what="ask for the critiques" style={s.retry} /> : null}
           </View>
         ) : clippings.length === 0 ? (
           <View style={s.emptyReviewBox}>

@@ -526,7 +526,7 @@ export default function MembershipScreen() {
         <PurchaseDock
           summary={selectedPrice.summary}
           cta={selectedRank.cta}
-          spoken={`${selectedRank.cta.charAt(0)}${selectedRank.cta.slice(1).toLowerCase()}, ${selectedPrice.spoken}`}
+          price={selectedPrice.spoken}
           auteur={selected === 'auteur'}
           busy={isRedirecting || isRestoring}
           onBuy={() => selected && handleCheckout(selected)}

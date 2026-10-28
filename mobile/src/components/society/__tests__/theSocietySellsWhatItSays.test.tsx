@@ -240,7 +240,7 @@ describe('what each member is offered', () => {
     const r = await mount();
     const group = r.getByLabelText('Choose a rank');
     expect(group.props.accessibilityRole).toBe('radiogroup');
-    expect(r.getByLabelText("Show the Auteur's six privileges")).toBeTruthy();
+    expect(r.getByLabelText('Show its six privileges: the Auteur’s')).toBeTruthy();
   });
 
   it('a visitor is sent to sign in rather than to the store', async () => {
@@ -553,7 +553,7 @@ describe('the window is as tall as it says, and the page makes room for it', () 
   const flat = (n: any) => StyleSheet.flatten(n.props.style) ?? {};
 
   it('DOCK_HEIGHT is the sum of what is actually drawn', async () => {
-    const r = render(<PurchaseDock summary="$19.99 a year · renews yearly" cta="BECOME AN ARCHIVIST" spoken="x" auteur={false} busy={false} onBuy={() => {}} bottomInset={34} />);
+    const r = render(<PurchaseDock summary="$19.99 a year · renews yearly" cta="BECOME AN ARCHIVIST" price="x" auteur={false} busy={false} onBuy={() => {}} bottomInset={34} />);
     const dock = flat(r.getByTestId('purchase-dock'));
     const summary = flat(r.getByText('$19.99 a year · renews yearly'));
     const sub = flat(r.getByText('Cancel any time. No hard feelings.'));
@@ -568,7 +568,7 @@ describe('the window is as tall as it says, and the page makes room for it', () 
   });
 
   it('on a phone with no inset it still stands clear of the edge', () => {
-    const r = render(<PurchaseDock summary="s" cta="c" spoken="x" auteur={false} busy={false} onBuy={() => {}} bottomInset={0} />);
+    const r = render(<PurchaseDock summary="s" cta="c" price="x" auteur={false} busy={false} onBuy={() => {}} bottomInset={0} />);
     expect(flat(r.getByTestId('purchase-dock')).paddingBottom).toBe(HOME_INDICATOR_FLOOR + DOCK.padBottom);
   });
 

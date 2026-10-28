@@ -32,7 +32,7 @@ describe('the net under a screen that crashed', () => {
     expect(getByText('This Reel Jammed')).toBeTruthy();
     expect(mockCapture).toHaveBeenCalledTimes(1);
     expect(mockCapture.mock.calls[0][0]).toBe(fail);
-    await fireEvent.press(getByLabelText('Try loading this screen again'));
+    await fireEvent.press(getByLabelText('Try again: load this screen'));
     expect(retry).toHaveBeenCalledTimes(1);
   });
 

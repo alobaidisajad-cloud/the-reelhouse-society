@@ -528,7 +528,6 @@
     "mobile/src/components/film/FilmSimilar.tsx": 1,
     "mobile/src/components/home/ProjectorBeam.tsx": 1,
     "mobile/src/components/lobby/KeepOff.tsx": 1,
-    "mobile/src/components/person/PersonOrnaments.tsx": 1,
     "mobile/src/components/profile/RadarChart.tsx": 4,
     "mobile/src/components/society/RankTicket.tsx": 1,
     "mobile/src/components/society/purchaseStop.ts": 1,

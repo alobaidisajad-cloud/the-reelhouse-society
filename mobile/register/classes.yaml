@@ -539,7 +539,7 @@ classes:
     seriousness: code
     area: tests
     status: OPEN
-    count: 26
+    count: 25
     source: { kind: reviewer, ref: "P0.63, TST-27" }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }

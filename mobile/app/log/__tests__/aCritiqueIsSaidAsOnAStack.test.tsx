@@ -164,7 +164,7 @@ describe('critiques that could not be read', () => {
     const r = await mount();
     r.getByText('The critiques could not be reached.');
     expect(r.queryByText('No critiques yet. Leave a mark on this record.')).toBeNull();
-    await act(async () => { await fireEvent.press(r.getByLabelText('Read the critiques again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: read the critiques')); });
     expect(rereadLog).toHaveBeenCalled();
   });
 

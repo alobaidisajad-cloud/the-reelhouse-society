@@ -126,7 +126,7 @@ export default function LogComments({
         {unread ? (
           <View style={s.critiquesUnread}>
             <Text style={s.emptyComments}>The critiques could not be reached.</Text>
-            {onReread ? <TryAgainLine onPress={onReread} accessibilityLabel="Read the critiques again" /> : null}
+            {onReread ? <TryAgainLine onPress={onReread} what="read the critiques" /> : null}
           </View>
         ) : null}
         {comments.length === 0 ? (

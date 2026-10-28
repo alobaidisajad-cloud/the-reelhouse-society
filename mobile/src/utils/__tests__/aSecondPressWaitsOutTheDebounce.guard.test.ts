@@ -17,10 +17,7 @@ const finder = require('../../../scripts/press-again.cjs') as {
 const MOBILE = join(__dirname, '..', '..', '..');
 
 /** A second press with no time passed that reaches its control all the same, and why. */
-const JUDGED: Record<string, string> = {
-  "src/components/__tests__/SectionErrorBoundary.test.tsx :: getByLabelText('Retry loading the reels')":
-    'a plain Pressable, with no debounce; the check after each press shows it landed',
-};
+const JUDGED: Record<string, string> = {};
 
 describe('a second press of a control waits out its debounce', () => {
   const found = finder.testFiles().flatMap((f) => finder.sitesIn(f, readFileSync(f, 'utf8'))

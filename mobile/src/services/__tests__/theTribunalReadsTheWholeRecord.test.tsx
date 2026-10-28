@@ -167,7 +167,7 @@ describe("the accused's record", () => {
     const retry = jest.fn();
     const { getByText, getByLabelText } = render(<EnforcementHistory history={[]} isLoading={false} failed onRetry={retry} />);
     expect(getByText('The record could not be read.')).toBeTruthy();
-    await fireEvent.press(getByLabelText('Read the enforcement record again'));
+    await fireEvent.press(getByLabelText('Try again: read the enforcement record'));
     expect(retry).toHaveBeenCalledTimes(1);
   });
 

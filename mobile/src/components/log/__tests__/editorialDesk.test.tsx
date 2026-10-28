@@ -103,7 +103,7 @@ describe('the stills actually draw', () => {
     const r = desk({ availableBackdrops: [], imagesLoaded: false, imagesFailed: true, onRetryImages });
     expect(r.getByText('The stills could not be reached.')).toBeTruthy();
     expect(r.queryByText('No stills found.')).toBeNull();
-    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the stills again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: ask for the stills')); });
     expect(onRetryImages).toHaveBeenCalledTimes(1);
   });
 

@@ -90,7 +90,7 @@ describe('the chips', () => {
 
   it('4+ counts its 4½s', async () => {
     const r = await mount({ ratingCounts: [{ rating: 3.5, count: 36 }, { rating: 4, count: 74 }, { rating: 4.5, count: 27 }, { rating: 5, count: 49 }] });
-    expect(r.getByLabelText('Show entries rated 4 of 5 or better')).toBeTruthy();
+    expect(r.getByLabelText('Show entries rated 4 of 5 or better, 150')).toBeTruthy();
     expect(r.getByText(/^ *150$/)).toBeTruthy();
   });
 

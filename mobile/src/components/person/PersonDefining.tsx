@@ -15,7 +15,7 @@ import { nav } from '@/src/utils/typedRouter';
 import PressableScale from '@/src/components/PressableScale';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { Film as FilmIcon } from 'lucide-react-native';
-import { ObscurityBadge } from '@/src/components/person/PersonOrnaments';
+import { ObscurityBadge, obscurityWord } from '@/src/components/person/PersonOrnaments';
 import { s, st } from '@/src/components/person/personStyles';
 import { displayTextProps } from '@/src/constants/textScaling';
 
@@ -45,6 +45,7 @@ const DEF_POSTER_SIZE = PixelRatio.get() >= 3 ? 'w500' : 'w342';
 const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }) {
   const posterUri = film.poster_path ? tmdb.poster(film.poster_path, DEF_POSTER_SIZE) : null;
   const score = obscurityScore(film);
+  const word = obscurityWord(score);
 
   const handlePress = useCallback(() => {
     nav.push(`/film/${film.id}`);
@@ -58,7 +59,7 @@ const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }
       // The shelf's separator is 12pt, so 6 is the most either card may claim;
       // more would overlap, and the later card takes an overlap.
       hitSlop={{ top: 15, bottom: 15, left: 6, right: 6 }}
-      accessibilityLabel={`${film.title || film.name}${film.release_date ? `, ${film.release_date.slice(0, 4)}` : ''}`}
+      accessibilityLabel={`${film.title || film.name}${film.release_date ? `, ${film.release_date.slice(0, 4)}` : ''}${word ? `, ${word.toLowerCase()}` : ''}`}
     >
       <View style={st.defPosterWrap}>
         <RemoteImage uri={posterUri} style={st.defPoster} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={50} fallback={<View style={[st.defPoster, st.defPosterPlaceholder]}>

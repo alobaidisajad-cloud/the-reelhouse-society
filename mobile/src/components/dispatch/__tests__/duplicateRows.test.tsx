@@ -176,7 +176,7 @@ describe('the foot of the critiques', () => {
     );
 
     expect(getByText(new RegExp(String(COMMENT_PAGE_SIZE) + ' AT A TIME'))).toBeTruthy();
-    await fireEvent.press(getByLabelText('Read 162 more critiques'));
+    await fireEvent.press(getByLabelText('162 more, 30 at a time: read the next critiques'));
     expect(asked).toHaveLength(1);
   });
 
@@ -185,7 +185,7 @@ describe('the foot of the critiques', () => {
     const { getByLabelText } = render(
       <CritiqueFooter shown={30} total={192} loadingMore onMore={() => asked.push(1)} />,
     );
-    await fireEvent.press(getByLabelText('Read 162 more critiques'));
+    await fireEvent.press(getByLabelText('162 more, 30 at a time: read the next critiques'));
     expect(asked).toHaveLength(0);
   });
 

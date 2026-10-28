@@ -281,7 +281,8 @@ export const SeriesList = memo(function SeriesList({
             disabled={x.toCome} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
             accessibilityRole="button"
             accessibilityState={{ disabled: !!x.toCome, selected: !!x.current }}
-            accessibilityLabel={x.toCome ? `Part ${x.n}. ${x.title}. To come.` : `Part ${x.n}. ${x.title}.`}
+            accessibilityLabel={x.toCome ? `Part ${x.n}. ${x.title}. To come.`
+              : `Part ${x.n}. ${[x.title, x.readTime, x.certified ? `${x.certified} certified` : null, x.current ? 'You are here' : null].filter(Boolean).join('. ')}.`}
           >
             <View style={p.margin}>
               <Text style={[p.marginValue, x.toCome && { color: TO_COME_INK.numeral }]} {...decorativeTextProps}>{x.n}</Text>

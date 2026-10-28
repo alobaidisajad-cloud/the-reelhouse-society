@@ -125,7 +125,7 @@ describe('a restored draft is the whole piece', () => {
     const { getByLabelText, toJSON } = await mount();
 
     // The slot names the film it holds.
-    expect(getByLabelText(/The film is Tokyo Story/)).toBeTruthy();
+    expect(getByLabelText(/^Film: Tokyo Story/)).toBeTruthy();
 
     // And the essay's cover travelled with it: the preview draws the head, and
     // the head draws a band only when there is a backdrop. Read off the ROOM,
@@ -156,8 +156,8 @@ describe('a restored draft is the whole piece', () => {
 
     // III, not II — the line that names the part is the one a member reads
     // before filing, and the reader numbers parts off this field.
-    expect(getByLabelText(/Part 3 of Ozu/)).toBeTruthy();
-    expect(queryByLabelText(/Part 2 of Ozu/)).toBeNull();
+    expect(getByLabelText(/^Series: Ozu.*, part 3\./)).toBeTruthy();
+    expect(queryByLabelText(/^Series: Ozu.*, part 2\./)).toBeNull();
   });
 
   it('opens one as build 41 saved it: the words, the film and the series (savedJsonOpensWhole)', async () => {
@@ -166,7 +166,7 @@ describe('a restored draft is the whole piece', () => {
     mockUser = { id: key.slice('reelhouse_draft_'.length, -'_dossier'.length), username: 'ana', tier: 'auteur', member_no: 17 };
     mockStore.set(key, JSON.stringify(envelope));
     const { getByLabelText, getByDisplayValue } = await mount();
-    expect(getByLabelText(/The film is The Matrix/)).toBeTruthy();
+    expect(getByLabelText(/^Film: The Matrix/)).toBeTruthy();
     expect(getByLabelText(/Murnau/)).toBeTruthy();
     expect([getByDisplayValue('On Sunrise'), getByDisplayValue('The swamp at night…')].every(Boolean)).toBe(true);
   });
@@ -178,7 +178,7 @@ describe('a restored draft is the whole piece', () => {
     });
     mockPartsOnServer = [1];
     const { getByLabelText } = await mount();
-    expect(getByLabelText(/Part 2 of Ozu/)).toBeTruthy();
+    expect(getByLabelText(/^Series: Ozu.*, part 2\./)).toBeTruthy();
   });
 });
 

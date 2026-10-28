@@ -141,7 +141,7 @@ describe('more critiques', () => {
     expect(r.getAllByText('Film 100').length).toBeGreaterThan(0);
     expect(r.getByText('More critiques could not be reached.')).toBeTruthy();
     mockAnswers = [{ data: [row(1, '2026-08-01T00:00:00+00:00')], error: null }];
-    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for more critiques')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: ask for more critiques')); });
     expect(r.queryByText('More critiques could not be reached.')).toBeNull();
     expect(r.getAllByText('Film 1').length).toBeGreaterThan(0);
   });

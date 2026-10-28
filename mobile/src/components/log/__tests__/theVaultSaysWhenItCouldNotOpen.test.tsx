@@ -18,7 +18,7 @@ describe('the Vault, on the record', () => {
     const reread = jest.fn();
     const r = render(<LogReviewBody {...base} isOwner note="" noteUnreachable onRereadNote={reread} />);
     expect(r.getByText('The Vault could not be opened.')).toBeTruthy();
-    await act(async () => { await fireEvent.press(r.getByLabelText('Open the Vault again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: open the Vault')); });
     expect(reread).toHaveBeenCalled();
   });
 

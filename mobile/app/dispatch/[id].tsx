@@ -504,7 +504,7 @@ export default function FilingReader() {
                   </Text>
                   <TryAgainLine
                     onPress={() => { setLoading(true); setAttempt((n) => n + 1); }}
-                    accessibilityLabel="Read the whole essay again"
+                    what="read the whole essay"
                   />
                 </View>
               ) : null}

@@ -153,7 +153,7 @@ export default function ArchiveScreen() {
               <Text style={p.emptyBody} {...scaledTextProps}>
                 {film ? 'This film’s filings could not be reached.' : 'The archive could not be reached.'}
               </Text>
-              <TryAgainLine onPress={retry} accessibilityLabel={film ? 'Read this film again' : 'Search the archive again'} />
+              <TryAgainLine onPress={retry} what={film ? 'read this film' : 'search the archive'} />
             </View>
           ) : null}
           {!film && typed && settled && !searching && !searchFailed && matches.length === 0 ? (

@@ -271,7 +271,7 @@ describe('the log’s ropes are the house’s ropes', () => {
       await waitFor(() =>
         expect(r.getByText('The posters could not be reached.', { includeHiddenElements: true })).toBeTruthy());
       images.mockResolvedValueOnce({ posters: [], backdrops: [] });
-      await fireEvent.press(r.getByLabelText('Ask for the posters again', { includeHiddenElements: true }));
+      await fireEvent.press(r.getByLabelText('Try again: ask for the posters', { includeHiddenElements: true }));
       await waitFor(() =>
         expect(r.getByText('The archive holds no other poster for this film.', { includeHiddenElements: true })).toBeTruthy());
       expect(r.queryByText('The posters could not be reached.', { includeHiddenElements: true })).toBeNull();

@@ -368,7 +368,7 @@ describe('the Dispatch feed', () => {
   it('shows no pill when nothing has arrived', async () => {
     put({ filings: [filing()], newCount: 0 });
     const { queryByLabelText, getByText } = await mount();
-    expect(queryByLabelText(/new filings/)).toBeNull();
+    expect(queryByLabelText(/new filings?\. Go to the top/)).toBeNull();
     expect(getByText(/A take about a film/)).toBeTruthy();
   });
 
@@ -690,7 +690,7 @@ describe('what a change redraws (a render budget)', () => {
     await act(async () => { useDispatch.setState({ newCount: 2 }); });
     expect(mockRowRenders).toHaveLength(0);
     // …and the paper did arrive: the pill says so.
-    expect(getByLabelText(/new filings/)).toBeTruthy();
+    expect(getByLabelText(/new filings?\. Go to the top/)).toBeTruthy();
   });
 });
 
@@ -735,7 +735,7 @@ describe('the page keeps itself current', () => {
     focusManager.setFocused(undefined);
     // Asked again (at least once: an earlier test's page stays subscribed here, its blur never run).
     expect(spy.mock.calls.length).toBeGreaterThan(asked);
-    expect(getByLabelText(/new filings/)).toBeTruthy();
+    expect(getByLabelText(/new filings?\. Go to the top/)).toBeTruthy();
     expect(mockRowRenders).toHaveLength(0);
     expect(useDispatch.getState().filings.map((f) => f.id)).toEqual(ten.map((f) => f.id));
   });

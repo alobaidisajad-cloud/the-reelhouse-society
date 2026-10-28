@@ -243,7 +243,7 @@ export default function ProfileWatchlistTab({
                     on={watchlistDecade === null}
                     onPress={() => setWatchlistDecade(null)}
                     gap={8}
-                    a11y="Show films from every decade"
+                    a11y="Any era: show films from every decade"
                   />
                   {decades.map(d => (
                     <RoomChip

@@ -105,7 +105,7 @@ describe('ErrorBoundary', () => {
     // presses, which are debounced against it.
     const spend = async (r: ReturnType<typeof render>) => {
       for (let i = 0; i < 3; i++) {
-        await act(async () => { await fireEvent.press(r.getByLabelText('Try loading the screen again')); });
+        await act(async () => { await fireEvent.press(r.getByLabelText('Try again: load the screen')); });
         await act(async () => { jest.advanceTimersByTime(1000); });
       }
     };
@@ -114,7 +114,7 @@ describe('ErrorBoundary', () => {
       mockReload.mockResolvedValue(undefined);
       const r = render(<ErrorBoundary><Bomb shouldThrow={true} /></ErrorBoundary>);
       await spend(r);
-      expect(r.queryByLabelText('Try loading the screen again')).toBeNull();
+      expect(r.queryByLabelText('Try again: load the screen')).toBeNull();
       await act(async () => { await fireEvent.press(r.getByLabelText('Restart the app')); });
       expect(mockReload).toHaveBeenCalledTimes(1);
     });
@@ -135,6 +135,6 @@ describe('ErrorBoundary', () => {
         <Bomb shouldThrow={true} />
       </ErrorBoundary>
     );
-    expect(getByLabelText('Try loading the screen again')).toBeTruthy();
+    expect(getByLabelText('Try again: load the screen')).toBeTruthy();
   });
 });

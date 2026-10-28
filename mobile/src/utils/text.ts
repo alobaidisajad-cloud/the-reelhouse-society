@@ -354,6 +354,16 @@ export function stripHTML(html: string): string {
  * share card (Dossier, ShareCardModal, LogShareCard) and matched to the web
  * card, so the same review yields the same truncated text on both platforms.
  */
+/**
+ * Writing said aloud by the control that opens it: the pull quote, then as much of the
+ * writing as a card shows (cut at a word), each a sentence. A labelled control silences
+ * its children on iOS, so its name is all a screen reader hears of what it holds.
+ */
+export function spokenExcerpt(quote: string | null | undefined, writing: string): string {
+    const sentence = (s: string) => (/[.!?…»"'”’)]$/.test(s) ? s : `${s}.`);
+    return [quote?.trim() ?? '', truncateReview(writing)].filter(Boolean).map(sentence).join(' ');
+}
+
 export function truncateReview(text: string, max = 350): string {
     const raw = String(text || '').trim();
     if (raw.length <= max) return raw;

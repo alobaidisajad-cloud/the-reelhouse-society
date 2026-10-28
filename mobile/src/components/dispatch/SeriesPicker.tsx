@@ -242,7 +242,7 @@ function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<Pick
           {failed ? (
             <View style={x.unread}>
               <Text style={x.unreadText} {...scaledTextProps}>Your series could not be read.</Text>
-              <TryAgainLine onPress={() => setAttempt((n) => n + 1)} accessibilityLabel="Read your series again" />
+              <TryAgainLine onPress={() => setAttempt((n) => n + 1)} what="read your series" />
             </View>
           ) : null}
 

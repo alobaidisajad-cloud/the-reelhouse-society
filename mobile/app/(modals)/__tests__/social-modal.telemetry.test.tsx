@@ -231,7 +231,7 @@ describe('the circle, read and failed, and read a page at a time', () => {
         expect(await screen.findByText('@MEMBER1')).toBeTruthy();
         await act(async () => { mockList.onEndReached?.(); });
         expect(await screen.findByText('The rest could not be reached.')).toBeTruthy();
-        await act(async () => { await fireEvent.press(screen.getByLabelText('Ask for the rest again')); });
+        await act(async () => { await fireEvent.press(screen.getByLabelText('Try again: ask for the rest')); });
         expect(await screen.findByText('@MEMBER2')).toBeTruthy();
     });
 });

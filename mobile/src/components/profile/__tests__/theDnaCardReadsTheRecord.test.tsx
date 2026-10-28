@@ -63,6 +63,6 @@ it('until the record is read it says so — and if it could not be, offers to as
   const retry = jest.fn();
   const r = render(<CinemaDNACard user={{}} analytics={null} failed onRetry={retry} onClose={jest.fn()} />);
   expect(r.getByText('The reading could not be reached.')).toBeTruthy();
-  await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the reading again')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Try again: ask for the reading')); });
   expect(retry).toHaveBeenCalled();
 });

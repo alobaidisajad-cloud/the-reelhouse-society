@@ -112,9 +112,11 @@ describe('ReportSheet', () => {
       const { getAllByRole } = render(<ReportSheet {...defaultProps} />);
 
       const chips = getAllByRole('radio');
-      const expectedLabels = (ReportReason.options as readonly string[]).map(
-        (reason) => REPORT_REASON_LABELS[reason as keyof typeof REPORT_REASON_LABELS].label
-      );
+      // Named by both lines it shows: what the reason is, then what it means.
+      const expectedLabels = (ReportReason.options as readonly string[]).map((reason) => {
+        const { label, sublabel } = REPORT_REASON_LABELS[reason as keyof typeof REPORT_REASON_LABELS];
+        return `${label}. ${sublabel}`;
+      });
 
       chips.forEach((chip, index) => {
         expect(chip.props.accessibilityLabel).toBe(expectedLabels[index]);

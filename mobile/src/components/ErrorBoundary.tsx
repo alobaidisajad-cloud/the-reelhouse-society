@@ -150,11 +150,11 @@ export default class ErrorBoundary extends Component<Props, State> {
             <View style={styles.acts}>
               {!retriesExhausted ? (
                 <>
-                  <TryAgain onPress={this.handleRetry} accessibilityLabel="Try loading the screen again" />
+                  <TryAgain onPress={this.handleRetry} what="load the screen" />
                   <Text style={styles.factText}>{`${counted(MAX_RETRIES - this.state.retryCount, 'TRY', 'TRIES')} LEFT`}</Text>
                 </>
               ) : this.state.restartFailed ? null : (
-                <TryAgain onPress={this.handleRestart} label="RESTART THE APP" accessibilityLabel="Restart the app" />
+                <TryAgain onPress={this.handleRestart} label="RESTART THE APP" />
               )}
               {this.state.errorId && <Text style={styles.factText}>{`REF ${this.state.errorId}`}</Text>}
             </View>

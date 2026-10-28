@@ -254,6 +254,9 @@ export const PaperBallot = memo(function PaperBallot({
       {options.map((o, i) => {
         if (i === top) return null;
         const marked = !voteReading && myVote === i;
+        // Before the count is shown, an option shows its year and director: said with its title.
+        const facts = revealed ? '' : [o.year, o.director].filter(Boolean).join(', ');
+        const named = `${o.title}${facts ? `, ${facts}` : ''}`;
         return (
           <View key={i}>
             {i > 0 && !closed && <View style={[p.hair, { opacity: 0.6 }]} />}
@@ -283,8 +286,8 @@ export const PaperBallot = memo(function PaperBallot({
               // said on a closed ballot and on the option already marked.
               accessibilityLabel={
                 showPercent
-                  ? `Option ${i + 1} of ${options.length}. ${o.title}. ${pct[i]} percent, ${counted(o.votes ?? 0, 'ballot', 'ballots')}.${marked ? ' Your mark.' : ''}`
-                  : `Option ${i + 1} of ${options.length}. ${o.title}.${marked ? ' Your mark.' : voteReading ? ' Reading your mark.' : locked ? '' : ' Mark this.'}`
+                  ? `Option ${i + 1} of ${options.length}. ${named}. ${pct[i]} percent, ${counted(o.votes ?? 0, 'ballot', 'ballots')}.${marked ? ' Your mark.' : ''}`
+                  : `Option ${i + 1} of ${options.length}. ${named}.${marked ? ' Your mark.' : voteReading ? ' Reading your mark.' : locked ? '' : ' Mark this.'}`
               }
             >
               <Text style={p.optionNo} {...decorativeTextProps}>{ROMAN[i]}</Text>

@@ -414,7 +414,7 @@ export const PaperRoom = memo(function PaperRoom({
           /* All four sides: a partial hitSlop sets the missing ones to 0, not 15pt. */
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="link"
-          accessibilityLabel={`Open the member file of ${author.name}`}
+          accessibilityLabel={`The member’s file: ${author.name}`}
         >
           <Text style={m.roomFileText} {...deckLabelProps}>THE MEMBER’S FILE</Text>
           <ChevronRight size={10} strokeWidth={2} color={colors.sepia} />
@@ -459,12 +459,12 @@ export const PaperCase = memo(function PaperCase({
       <View style={m.verdicts}>
         <PressableScale style={m.verdict} haptic hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
           onPress={onStand}
-          accessibilityRole="button" accessibilityLabel="Let this filing stand">
+          accessibilityRole="button" accessibilityLabel="Let it stand: the filing stays">
           <Text style={m.verdictText} {...scaledTextProps}>LET IT STAND</Text>
         </PressableScale>
         <PressableScale style={[m.verdict, m.verdictStrike]} haptic="medium" hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
           onPress={onStrike}
-          accessibilityRole="button" accessibilityLabel="Strike this filing">
+          accessibilityRole="button" accessibilityLabel="Strike it: the filing is removed">
           <Text style={[m.verdictText, { color: CRIMSON_INK }]} {...scaledTextProps}>STRIKE IT</Text>
         </PressableScale>
       </View>
@@ -775,7 +775,7 @@ export const NewFilings = memo(function NewFilings({
         <Arrive name="new-filings" duration={MS.base} rise={-PILL_Y}>
           <PressableScale style={m.newPill} haptic="medium" onPress={onPress}
             accessibilityRole="button"
-            accessibilityLabel={`${count} new filings. Go to the top.`}>
+            accessibilityLabel={`${count} new ${count === 1 ? 'filing' : 'filings'}. Go to the top.`}>
             <ChevronUp size={11} strokeWidth={2.5} color={colors.ink} />
             <Text style={m.newText} {...deckLabelProps}>
               {count} NEW {count === 1 ? 'FILING' : 'FILINGS'}

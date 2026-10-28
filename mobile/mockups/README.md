@@ -154,7 +154,7 @@ a finding names its source line, and the tool can say what it MEASURED:
 # every test and generator screen, with sites (the CI `captures` job)
 $env:MOCKUPS=1; $env:MOCKUPS_OUT='mockups/out/cap-gens'; $env:MOCKUPS_CAPTURE=1; $env:RNTL_SKIP_AUTO_CLEANUP='true'; $env:MOCKUPS_YOGA=1; $env:MOCKUPS_CAPTURED_OUT='mockups/out/captured'; npx jest
 Copy-Item mockups/out/cap-gens/*.html mockups/out/captured/
-node mockups/tools/layout.cjs --src mockups/out/captured --passes ios@1 --kinds STEAL,NAMELESS,UNDER,SHADOW --sites mockups/out/sites.txt --require mockups/touch-measured.txt
+node mockups/tools/layout.cjs --src mockups/out/captured --passes ios@1 --kinds STEAL,NAMELESS,UNSAID,UNDER,SHADOW --sites mockups/out/sites.txt --require mockups/touch-measured.txt
 ```
 
 - `--sites OUT` writes every control site (`file:line`) measured beside a

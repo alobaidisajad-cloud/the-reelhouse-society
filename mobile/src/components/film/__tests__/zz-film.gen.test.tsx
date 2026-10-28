@@ -230,7 +230,7 @@ describe('the film page', () => {
     const r = page({ reviewsFailed: true, retry });
     expect(r.getByText('The critiques could not be reached.')).toBeTruthy();
     expect(r.queryByText('The projection box awaits.')).toBeNull();
-    await fireEvent.press(r.getByLabelText('Ask for the critiques again'));
+    await fireEvent.press(r.getByLabelText('Try again: ask for the critiques'));
     expect(retry).toHaveBeenCalled();
   });
 

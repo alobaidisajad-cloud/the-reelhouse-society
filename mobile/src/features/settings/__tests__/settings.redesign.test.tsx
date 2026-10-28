@@ -198,7 +198,7 @@ describe('a profile not yet read', () => {
     mockUser = { ...UNREAD };
     const r = await settle(mount());
     await waitFor(() => expect(r.getByText('Your settings could not be reached.')).toBeTruthy());
-    await act(async () => { await fireEvent.press(r.getByLabelText('Ask for your settings again')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: ask for your settings')); });
     expect(mockReread).toHaveBeenCalledTimes(2);
   });
 

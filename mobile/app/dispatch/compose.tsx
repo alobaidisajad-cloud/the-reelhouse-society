@@ -851,7 +851,7 @@ function ComposeDossierScreen() {
                                 // The two slots touch: neither reaches into the other.
                                 hitSlop={{ top: 6, bottom: 0, left: 0, right: 0 }}
                                 accessibilityRole="button"
-                                accessibilityLabel={film ? `The film is ${film.title}. Change it.` : 'Name the film this is about'}
+                                accessibilityLabel={film ? `Film: ${[film.title, film.sub].filter(Boolean).join(', ')}. Change it.` : 'Film: name the film this is about'}
                             >
                                 <Text style={styles.slotLabel} {...actionLabelProps}>FILM</Text>
                                 <Text style={[styles.slotValue, film && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
@@ -862,7 +862,7 @@ function ComposeDossierScreen() {
                                 style={styles.slot} onPress={() => setSeriesOpen(true)} haptic="selection"
                                 hitSlop={{ top: 0, bottom: 6, left: 0, right: 0 }}
                                 accessibilityRole="button"
-                                accessibilityLabel={series ? `Part ${series.part} of ${series.title}. Change it.` : 'Make this part of a series'}
+                                accessibilityLabel={series ? `Series: ${series.title}, part ${series.part}. Change it.` : 'Series: part of a series? Choose one'}
                             >
                                 <Text style={styles.slotLabel} {...actionLabelProps}>SERIES</Text>
                                 <Text style={[styles.slotValue, series && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>

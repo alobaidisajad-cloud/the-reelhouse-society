@@ -45,7 +45,7 @@ it('salons it could not read are not "you have joined none" — and it asks agai
   expect(r.queryByText(/^No seat yet. Take a seat/)).toBeNull();
   expect(r.getByText('The salons could not be reached.')).toBeTruthy();
   fetchLounges.mockClear();
-  await act(async () => { await fireEvent.press(r.getByLabelText('Ask for the salons again')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Try again: ask for the salons')); });
   expect(fetchLounges).toHaveBeenCalledTimes(1);
 });
 

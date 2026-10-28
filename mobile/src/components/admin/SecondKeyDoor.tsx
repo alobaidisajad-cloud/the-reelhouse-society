@@ -80,7 +80,7 @@ function Failed({ onRetry }: { onRetry: () => void }) {
   return (
     <View style={s.block}>
       <Text style={s.body}>The house could not check your key, so the door stays shut. Nothing about your key has changed.</Text>
-      <TryAgain onPress={onRetry} accessibilityLabel="Check the key again" style={s.retry} />
+      <TryAgain onPress={onRetry} what="check the key" style={s.retry} />
     </View>
   );
 }

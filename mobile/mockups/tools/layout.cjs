@@ -427,6 +427,10 @@ async function audit(page) {
     // content) and is named something that does not hold them. A voice-control user says
     // what they see ("tap Ascend the ranks"), and the phone listens for the control's name.
     const words = (s) => s.toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    // The same word said another way: a numeral in Roman is its number (PART III, part 3),
+    // and MIN is the minutes a screen reader says.
+    const ROMAN = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9, x: 10, xi: 11, xii: 12 };
+    const alike = (w) => [w, ROMAN[w] && String(ROMAN[w]), w === 'min' && 'minutes', w === 'min' && 'minute'].filter(Boolean);
     const shown = (e) => {
       if (e.nodeType === 3) return e.textContent;
       if (e.nodeType !== 1 || e.getAttribute('aria-hidden') === 'true') return '';
@@ -439,7 +443,7 @@ async function audit(page) {
       if (!label || !seen || seen.split(' ').length > 6) continue;
       // Each word shown is a word of the name: the words a voice-control user can say.
       const named = new Set(words(label).split(' '));
-      const missing = seen.split(' ').filter((w) => !named.has(w));
+      const missing = seen.split(' ').filter((w) => !alike(w).some((a) => named.has(a)));
       if (missing.length) {
         found.push({ kind: 'UNSAID', text: `"${missing.join(' ')}" of "${seen}" is not in "${label}"` + (c.e.dataset.src ? ` [${c.e.dataset.src}]` : ''), size: 0, by: `${c.r.width.toFixed(0)}×${c.r.height.toFixed(0)} at ${c.r.left.toFixed(0)},${c.r.top.toFixed(0)}` });
       }

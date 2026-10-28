@@ -234,7 +234,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         <View>
                             <Text style={st.noData}>The posters could not be reached.</Text>
                             {/* Only with the tool held: under the rope the panel is a preview, and opening the tool again asks again. */}
-                            {curation.held && <TryAgainLine onPress={flow.loadImages} accessibilityLabel="Ask for the posters again" style={st.retrySpace} />}
+                            {curation.held && <TryAgainLine onPress={flow.loadImages} what="ask for the posters" style={st.retrySpace} />}
                         </View>
                     ) : null}
                     </View>
@@ -530,7 +530,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                 </View>
                             </PressableScale>
                         </View>
-                        <PressableScale style={st.ruledRow} onPress={() => { setCalendarOpen(!calendarOpen); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: calendarOpen }} accessibilityLabel={`Watched on ${formatLongCalendarDate(date)}. Change the date.`}>
+                        <PressableScale style={st.ruledRow} onPress={() => { setCalendarOpen(!calendarOpen); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: calendarOpen }} accessibilityLabel={`Watched on ${formatLongCalendarDate(date)}. ${calendarOpen ? 'Close' : 'Change'} the date.`}>
                             <Text style={st.ruledValue}>{formatLongCalendarDate(date)}</Text>
                             <Text style={st.ruledAction}>{calendarOpen ? 'CLOSE' : 'CHANGE'}</Text>
                         </PressableScale>
@@ -625,8 +625,8 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     <View style={st.deleteConfirm}>
                         <Text style={st.deleteConfirmText}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</Text>
                         <View style={st.deleteConfirmRow}>
-                            <PressableScale style={st.deleteYes} onPress={() => { TactileEngine.destroy(); handleDelete(); }} hitSlop={null} accessibilityRole="button" accessibilityLabel="Confirm deletion"><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></PressableScale>
-                            <PressableScale style={st.deleteNo} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Keep this log"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
+                            <PressableScale style={st.deleteYes} onPress={() => { TactileEngine.destroy(); handleDelete(); }} hitSlop={null} accessibilityRole="button" accessibilityLabel="Confirm delete: this log is gone for good"><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></PressableScale>
+                            <PressableScale style={st.deleteNo} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Cancel: keep this log"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
                         </View>
                     </View>
                 )}

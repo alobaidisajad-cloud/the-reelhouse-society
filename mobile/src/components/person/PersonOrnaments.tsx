@@ -38,9 +38,15 @@ export function ShimmerBlock({ style }: { style: StyleProp<ViewStyle> }) {
 }
 
 // ── Obscurity Badge ──────────────────────────────────────────
-export const ObscurityBadge = memo(function ObscurityBadge({ score }: { score: number }) {
+/** The word the badge shows for a score, or none (no badge) at 0. */
+export function obscurityWord(score: number): string | null {
   if (score <= 0) return null;
-  const label = score > 80 ? 'GHOST REEL' : score > 60 ? 'DEEP CUT' : score > 40 ? 'INDIE' : score > 20 ? 'KNOWN' : 'MAINSTREAM';
+  return score > 80 ? 'GHOST REEL' : score > 60 ? 'DEEP CUT' : score > 40 ? 'INDIE' : score > 20 ? 'KNOWN' : 'MAINSTREAM';
+}
+
+export const ObscurityBadge = memo(function ObscurityBadge({ score }: { score: number }) {
+  const label = obscurityWord(score);
+  if (!label) return null;
   const color = score > 70 ? colors.sepia : score > 40 ? colors.bone : colors.fog;
   return (
     <View style={[st.obsBadge, { borderColor: color }]}>
