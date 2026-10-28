@@ -34,6 +34,7 @@ CREATE TABLE public.house_settings (
 INSERT INTO public.house_settings DEFAULT VALUES;
 
 ALTER TABLE public.house_settings ENABLE ROW LEVEL SECURITY;
+-- add-only (1): no shipped client uses it: a table this migration makes, named by no client before it (TestFlight build 41 and the website checked)
 REVOKE ALL ON public.house_settings FROM anon, authenticated;
 -- The floors and the row's key, to everyone: the switches are the house's to read.
 GRANT SELECT (id, min_build_ios, min_build_android) ON public.house_settings TO anon, authenticated;
