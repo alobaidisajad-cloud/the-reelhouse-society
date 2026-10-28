@@ -434,6 +434,13 @@
     "verdict": "caught"
   },
   {
+    "class": "TYPE-marks-pile-over-rows",
+    "mutant": "shape-marks-piled",
+    "proof": "m1",
+    "commit": "f3c1dda5e6162515cbc5ca3ddf820d844acd5691",
+    "verdict": "caught"
+  },
+  {
     "class": "COPY-count-before-plural",
     "mutant": "shape-seats-uncounted",
     "proof": "m1",
