@@ -64,7 +64,6 @@
     "mobile/app/(tabs)/index.tsx": 1,
     "mobile/app/(tabs)/lounge.tsx": 2,
     "mobile/app/(tabs)/reels.tsx": 2,
-    "mobile/app/_layout.tsx": 1,
     "mobile/app/auth-callback.tsx": 1,
     "mobile/app/dispatch/[id].tsx": 3,
     "mobile/app/dispatch/compose.tsx": 1,

@@ -213,6 +213,11 @@ serve(async (req) => {
   const db = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } })
 
   try {
+    // Switched off by the owner (house_settings.films_synced): nothing is claimed, and TMDB is
+    // asked nothing. Unread (the floor not there yet, or the read failed), it stands as on.
+    const { data: house, error: houseError } = await db.from('house_settings').select('films_synced').maybeSingle()
+    if (!houseError && house?.films_synced === false) return json({ synced: 0, failed: 0, switchedOff: true })
+
     const { data: claimed, error: claimError } = await db.rpc('claim_films_to_sync', { p_limit: BATCH })
     if (claimError) return json({ error: 'claim failed', detail: claimError.message }, 500)
 

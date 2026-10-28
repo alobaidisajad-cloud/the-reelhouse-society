@@ -24,6 +24,11 @@
       "touch": { "seats_claimed": 99 }, "read": "none",
       "why": "Only the house counts the hundred seats."
     },
+    "house_settings": {
+      "owner": "house", "key": ["id"], "specimen": { "id": true, "min_build_ios": 0, "min_build_android": 0 }, "variant": "none",
+      "touch": { "min_build_ios": 99 }, "read": "everyone",
+      "why": "The house's one floor: everyone reads the lowest build it runs, signed in or not; only the owner raises it or turns a switch."
+    },
     "gate_metrics": {
       "owner": "house", "key": ["day", "event", "feature_id", "rank", "standing"],
       "specimen": { "day": "2026-01-01", "event": "gate_tapped", "feature_id": "rh", "rank": "", "standing": "", "count": 1 },

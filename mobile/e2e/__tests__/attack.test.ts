@@ -77,7 +77,9 @@ const answers: Answers = (() => {
     const done = u.applied();
     globalThis.__pending = u.migrations().filter((m) => !done.has(m.name)).map((m) => fs.readFileSync(m.path, 'utf8').replace(/\\r/g, ''));
     const matrix = JSON.parse(fs.readFileSync(${JSON.stringify(join(DIR, 'matrix.json'))}, 'utf8'));
-    const tables = a.snapshotTables(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, ''));
+    // Production's tables and views, and those a migration not yet applied makes: the attack runs
+    // on production as the train leaves it.
+    const tables = a.snapshotTables(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, '') + '\\n' + globalThis.__pending.join('\\n'));
     const fixtureTables = a.snapshotTables(${JSON.stringify(FIXTURE_SNAPSHOT)});
     const cases = a.plan(matrix);
     const sql = a.script(matrix, cases.slice(0, 3));
@@ -130,7 +132,7 @@ const answers: Answers = (() => {
 })();
 
 describe('the written table covers every relation a client can name', () => {
-  it('has an entry for each table and view of the snapshot, and none besides', () => {
+  it('has an entry for each table and view of the snapshot and the pending migrations, and none besides', () => {
     expect(answers.tables.length).toBeGreaterThan(40);
     expect(answers.tables).toEqual(expect.arrayContaining(['logs', 'dispatch_dossiers', 'dossier_comments']));
     expect(answers.coverage).toEqual({ unjudged: [], gone: [] });

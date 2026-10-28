@@ -3,10 +3,12 @@
  * snapshot (mobile/supabase/schema/live-schema.sql, which `npm run
  * schema:check` keeps equal to production). The one reader of it for the
  * tests: aQueryAsksOnlyForWhatExists holds the app's queries to it, and
- * supabaseFake holds every fake query and fixture row to it.
+ * supabaseFake holds every fake query and fixture row to it, and to the
+ * tables a migration not yet applied makes (PENDING_SQL).
  */
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { basename, join } from 'path';
+import { files as universe } from './universe';
 
 /** Split at commas (or `sep`) outside brackets and quotes. */
 export function topLevel(s: string, sep = ','): string[] {
@@ -117,3 +119,16 @@ export function readForeignKeys(sql: string): ForeignKey[] {
 }
 
 export const SNAPSHOT_SQL = (): string => readFileSync(join(__dirname, '..', 'supabase', 'schema', 'live-schema.sql'), 'utf8').replace(/\r/g, '');
+
+/**
+ * Every migration production has not had yet (neither tree's name in supabase/APPLIED.txt), in
+ * name order, as one text: what a build ships beside, since its pre-flight refuses to ship while
+ * any is pending (aBuildNamesOnlyWhatProductionHas).
+ */
+export const PENDING_SQL = (): string => {
+  const applied = new Set(readFileSync(join(__dirname, '..', 'supabase', 'APPLIED.txt'), 'utf8')
+    .split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#')));
+  return universe('migrations').filter((f) => !applied.has(basename(f)))
+    .sort((a, b) => basename(a).localeCompare(basename(b)))
+    .map((f) => readFileSync(f, 'utf8').replace(/\r/g, '')).join('\n');
+};

@@ -31,6 +31,7 @@ import { StyleSheet } from 'react-native';
 import OfflineBanner from '@/src/components/OfflineBanner';
 import StandingNotice from '@/src/components/StandingNotice';
 import { KeyboardRoom } from '@/src/components/KeyboardRoom';
+import { FloorGate } from '@/src/components/PleaseUpdate';
 import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import { settleOwedSignOut } from '@/src/lib/endSession';
@@ -134,18 +135,17 @@ export default function RootLayout() {
 
   // The root view lays out only once the app is ready, so its first layout is
   // the first screen: the splash goes, and the app's start ends there.
-  const onLayoutReady = useCallback(async () => {
-    try {
-      await SplashScreen.hideAsync();
-    } catch {
-      // already hidden
-    }
-    markAppLoaded();
+  const onLayoutReady = useCallback(() => {
+    void SplashScreen.hideAsync()
+      .catch(() => { /* already hidden */ })
+      .then(() => { markAppLoaded(); });
   }, []);
 
   if (!appReady || !fontsSettled) return null;
 
+  // A build under the house's floor draws "please update", and nothing else (src/lib/houseFloor.ts).
   return (
+    <FloorGate onLayout={onLayoutReady}>
     <GlobalErrorBoundary>
       <SafeAreaProvider>
         <GestureHandlerRootView style={styles.root} onLayout={onLayoutReady}>
@@ -213,6 +213,7 @@ export default function RootLayout() {
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </GlobalErrorBoundary>
+    </FloorGate>
   );
 }
 

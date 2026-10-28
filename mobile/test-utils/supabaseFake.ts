@@ -8,7 +8,8 @@
  * PostgREST sends a thousand. Each passed a test while the app was wrong in
  * production (the salon roster read a missing column for three months). This
  * fake refuses what production refuses:
- *   · a table, view or column the schema snapshot does not have, in a select,
+ *   · a table, view or column the schema snapshot does not have (nor a table a
+ *     migration not yet applied makes, which a build ships beside), in a select,
  *     a filter, an order or a row written; an rpc whose arguments no overload
  *     takes; a fixture row with a column the table lacks, or an id that is not
  *     a uuid where the column is one (each throws, naming it);
@@ -30,7 +31,7 @@
  * Its `auth.mfa` is the account's second factors (`mfa: { code, factors, level }`),
  * refusing what the auth server refuses (mfaFake, below).
  */
-import { fitsAnOverload, readColumns, readForeignKeys, readFunctions, SNAPSHOT_SQL, topLevel, type Column, type ForeignKey } from './schema';
+import { fitsAnOverload, PENDING_SQL, readColumns, readForeignKeys, readFunctions, SNAPSHOT_SQL, topLevel, type Column, type ForeignKey } from './schema';
 
 type Row = Record<string, unknown>;
 type Failure = { code: string; message: string };
@@ -172,7 +173,8 @@ const NOT_ONE: Failure = { code: 'PGRST116', message: 'JSON object requested, mu
 
 let schema: { tables: Map<string, Map<string, Column>>; functions: ReturnType<typeof readFunctions>; keys: ForeignKey[] } | null = null;
 const house = () => {
-  if (!schema) { const sql = SNAPSHOT_SQL(); schema = { tables: readColumns(sql), functions: readFunctions(sql), keys: readForeignKeys(sql) }; }
+  // Production, and the tables a migration not yet applied makes: the app ships beside them.
+  if (!schema) { const sql = `${SNAPSHOT_SQL()}\n${PENDING_SQL()}`; schema = { tables: readColumns(sql), functions: readFunctions(sql), keys: readForeignKeys(sql) }; }
   return schema;
 };
 

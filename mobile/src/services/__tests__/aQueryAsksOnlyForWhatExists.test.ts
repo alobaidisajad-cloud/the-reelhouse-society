@@ -28,7 +28,7 @@
 import { readFileSync } from 'fs';
 import { join, relative } from 'path';
 import { readCode, stripComments } from '@/test-utils/readCode';
-import { closingOf, readFunctions, readSchema, topLevel, type Param } from '@/test-utils/schema';
+import { closingOf, PENDING_SQL, readFunctions, readSchema, topLevel, type Param } from '@/test-utils/schema';
 import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
@@ -427,7 +427,9 @@ export function readCalls(src: string, where: string, functions: Map<string, Par
   return found;
 }
 
-const tables = readSchema(SCHEMA);
+// And the tables a migration not yet applied makes: the app ships beside them (a build's pre-flight
+// refuses while one is pending), and a function that reads one is deployed with its train.
+const tables = readSchema(`${SCHEMA}\n${PENDING_SQL()}`);
 const functions = readFunctions(SCHEMA);
 /** Every caller of the server: the app, the edge functions in both trees, and the website. */
 const files = universe(['appCode', 'functions', 'website']);
