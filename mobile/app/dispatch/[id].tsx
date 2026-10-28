@@ -61,6 +61,7 @@ import { TryAgainLine } from '@/src/components/TryAgain';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { BusterEyes } from '@/src/components/Buster';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { useClearance } from '@/src/hooks/useClearance';
 import { useUnsent } from '@/src/stores/offlineQueueStore';
 import { HOUSE_WEB } from '@/src/constants/support';
 import { useAboveDockedBar, useBottomEdge } from '@/src/components/layout/navMetrics';
@@ -149,6 +150,8 @@ export default function FilingReader() {
   const [actions, setActions] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [toLounge, setToLounge] = useState(false);
+  // Sharing a filing into a salon is speaking there: without the rank, TO THE LOUNGE opens the rope.
+  const speaking = useClearance('lounge-speaking', `/dispatch/${id}`);
   // WHAT is reported: reporting a critique must not report the page it is on.
   const [report, setReport] = useState<
     { type: 'dispatch_post' | 'dispatch_comment'; id: string; userId: string; username: string } | null
@@ -767,11 +770,12 @@ export default function FilingReader() {
             accessibilityLabel="Close, without sharing"
           />
           <ShareSheet
+            lounge={speaking}
             preview={<Text style={p.sharePreview} numberOfLines={2} {...scaledTextProps}>
               {live.title || live.body}
             </Text>}
             onDest={(label) => {
-              if (label === 'TO THE LOUNGE') { setSharing(false); setToLounge(true); }
+              if (label === 'TO THE LOUNGE') { setSharing(false); if (speaking.held) setToLounge(true); else speaking.open(); }
               else void shareElsewhere();
             }}
           />

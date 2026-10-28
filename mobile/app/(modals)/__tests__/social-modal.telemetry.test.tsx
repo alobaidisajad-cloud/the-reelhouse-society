@@ -46,6 +46,10 @@ jest.mock('@/src/stores/auth', () => ({
     useAuthStore: () => ({ user: { id: 'u1', username: 'cinephile' } }),
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
+/** The member's clearance to speak in a salon, and its rope: an Archivist unless a case says not. */
+let mockSpeaking: { held: boolean; standing: 'stranger' | 'lapsed' | 'reading' } = { held: true, standing: 'stranger' };
+const mockRope = jest.fn();
+jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ ...mockSpeaking, rank: 'archivist', open: mockRope }) }));
 jest.mock('expo-blur', () => {
     const React = require('react');
     const { View } = require('react-native');
@@ -141,6 +145,41 @@ describe('SocialModal share — the handler brought in line with it', () => {
             expect(useLoungeStore.getState).toHaveBeenCalled();
         });
         expect(captureError).not.toHaveBeenCalled();
+    });
+});
+
+describe('SocialModal share, opened by its route without the rank to speak (P4.16)', () => {
+    afterEach(() => { mockSpeaking = { held: true, standing: 'stranger' }; });
+
+    it.each([
+        ['a film', { shareFilmId: '550', shareFilmTitle: 'Fight Club' }],
+        ['an artist', { personId: '287', personName: 'Brad Pitt' }],
+    ])('sharing %s shows the rope, never the salons, and reads none', async (_what, params) => {
+        mockSpeaking = { held: false, standing: 'stranger' };
+        mockParams = params;
+        (LoungeService.getUserLounges as jest.Mock).mockResolvedValue([{ lounge_id: 'l1', lounges: { id: 'l1', name: 'The Booth' } }]);
+        const screen = render(<SocialModal />);
+        const rope = await screen.findByLabelText('Share to a salon. Clearance required. THE ARCHIVIST opens this. Opens the Society.');
+        expect(screen.queryByLabelText('Share to The Booth')).toBeNull();
+        expect(LoungeService.getUserLounges).not.toHaveBeenCalled();
+        await act(async () => { await fireEvent.press(rope); });
+        expect(mockRope).toHaveBeenCalledTimes(1);
+    });
+
+    it('tells a member whose dues have lapsed', async () => {
+        mockSpeaking = { held: false, standing: 'lapsed' };
+        mockParams = { shareFilmId: '550', shareFilmTitle: 'Fight Club' };
+        const screen = render(<SocialModal />);
+        expect(await screen.findByText('[ YOUR DUES HAVE LAPSED ]')).toBeTruthy();
+    });
+
+    it('a follower list is never roped', async () => {
+        mockSpeaking = { held: false, standing: 'stranger' };
+        mockParams = { userId: 'u2', type: 'followers' };
+        (ProfileService.getSocialConnections as jest.Mock).mockResolvedValue({ profiles: [{ id: 'u3', username: 'reel', avatar_url: null }], hasMore: false });
+        const screen = render(<SocialModal />);
+        expect(await screen.findByText(/reel/i)).toBeTruthy();
+        expect(screen.queryByText('[ CLEARANCE REQUIRED ]')).toBeNull();
     });
 });
 

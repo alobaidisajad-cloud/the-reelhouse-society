@@ -64,7 +64,7 @@ const BARS: Record<string, Bar> = {
   'the log page': (c, k, on) => (
     <LogActionDeck log={{ film_id: 603, film_title: 'The Matrix', poster_path: null }}
       isOwner={false} endorsed={on} certifyCount={c} critiqueCount={k} filmSaved={false} autopsyOpen={false}
-      onToggleEndorse={noop} onToggleAutopsy={noop} onCritiquePress={noop} onSavePress={noop} onEditPress={noop} onLoungePress={noop} />
+      onToggleEndorse={noop} onToggleAutopsy={noop} onCritiquePress={noop} onSavePress={noop} onEditPress={noop} onLoungePress={noop} lounge={{ held: true, spoken: 'Share to a lounge' }} />
   ),
   'a filing': (c, k, on) => (
     <PaperActions certifyCount={c ?? 0} commentCount={k ?? 0} certified={on} onCertify={noop} onCritique={noop} onShare={noop} onSave={noop} />

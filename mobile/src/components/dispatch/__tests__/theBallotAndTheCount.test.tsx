@@ -154,7 +154,7 @@ describe('nothing in the feature glues a count to a plural again', () => {
   /** English words ending in S that are not plural nouns. */
   const NOT_PLURAL = new Set([
     'as', 'is', 'was', 'has', 'this', 'its', 'his', 'us', 'plus', 'less',
-    'yes', 'thus', 'across', 'across', 'always', 'perhaps', 'unless', 'press',
+    'yes', 'thus', 'across', 'across', 'always', 'perhaps', 'unless', 'press', 'opens',
   ]);
 
   it('finds none, in any component of the paper', () => {

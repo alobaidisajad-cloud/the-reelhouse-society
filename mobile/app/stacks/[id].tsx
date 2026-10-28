@@ -54,6 +54,8 @@ import { nav } from '@/src/utils/typedRouter';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { Arrive } from '@/src/components/Arrive';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { useClearance } from '@/src/hooks/useClearance';
+import { ropeSpoken } from '@/src/components/clearance/Clearance';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
@@ -704,14 +706,18 @@ export default function StackDetailScreen() {
     }
   }, [user, id, queryClient, bumpCritiqueCount]);
 
+  // Sharing a stack into a salon is speaking there: without the rank, LOUNGE opens the rope.
+  const { held: canShare, rank: shareRank, standing: shareStanding, open: openShare } = useClearance('lounge-speaking', `/stacks/${id}`);
   const handleOpenShareLounge = useCallback(async () => {
-    TactileEngine.selection();
     if (!user) {
+      TactileEngine.selection();
       reelToast.error('You must be logged in to access the lounge.');
       return;
     }
+    if (!canShare) { openShare(); return; }
+    TactileEngine.selection();
     setShowLoungeShare(true);
-  }, [user]);
+  }, [user, canShare, openShare]);
 
   const handleDelete = useCallback(() => {
     TactileEngine.destroy();
@@ -987,9 +993,13 @@ export default function StackDetailScreen() {
 
                 <View style={s.actionDivider} />
 
-                <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Share to lounge">
-                  <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
-                  <Text style={s.actionLabel} pointerEvents="none" {...deckLabelProps}>LOUNGE</Text>
+                {/* Who may not speak in a salon holds the brass key; its label says it opens the Society. */}
+                <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={null} haptic="selection" accessibilityRole="button"
+                  accessibilityLabel={canShare || !user ? 'Share to lounge' : ropeSpoken('Share to lounge', shareRank, shareStanding)}>
+                  {canShare || !user
+                    ? <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
+                    : <KeyRound size={15} strokeWidth={2} color={colors.sepia} style={s.actionKeyDim} />}
+                  <Text style={[s.actionLabel, !canShare && !!user && s.actionLabelKey]} pointerEvents="none" {...deckLabelProps}>LOUNGE</Text>
                 </PressableScale>
               </Arrive>
 
@@ -1219,6 +1229,8 @@ const s = StyleSheet.create({
   // Each item IS the 48pt target, icon over word, as every bar in the house.
   actionItem: { flex: 1, minHeight: 48, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 5 },
   actionLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
+  actionLabelKey: { color: colors.sepia },
+  actionKeyDim: { opacity: 0.75 },
   actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
 
   // ── Critiques Panel ──

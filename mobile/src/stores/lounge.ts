@@ -8,7 +8,8 @@ import { watchChannel } from '../lib/watchChannel';
 import { LoungeMessagePayloadSchema } from '../services/LoungeService';
 import { logger } from '../utils/logger';
 import { isNetworkError } from '../utils/networkError';
-import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../utils/offlineQueue';
+import { enqueueMutation, flushOfflineQueue, getOfflineQueue, letHeldGo, sendHeldAgain } from '../utils/offlineQueue';
+import { stillHeld } from './offlineQueueStore';
 import reelToast from '../utils/reelToast';
 import { showTierDoor } from '../utils/tierDoor';
 import { sanitizeInput, MAX_LENGTHS } from '../utils/sanitizeInput';
@@ -1271,7 +1272,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     const startedAs = user?.id ?? null;
     const msg = get().currentMessages.find(m => m.id === messageId);
-    if (!user || !msg || msg.status !== 'failed') return;
+    // Held in the queue, refused for the rank while offline: drawn failed in its room, sent again here.
+    const held = stillHeld('send_lounge_message', messageId);
+    if (!user || !msg || (msg.status !== 'failed' && !held)) return;
     set(s => ({
       currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m),
     }));
@@ -1295,6 +1298,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .select('id, created_at')
         .single();
       if (error) throw error;
+      // Sent: the queue holds it no longer, for this member or the next.
+      if (held) letHeldGo(messageId);
       if (!memberUnchanged(startedAs)) return;
       set(s => ({
         currentMessages: s.currentMessages.map(m =>
@@ -1305,7 +1310,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Neither queued as the next member nor marked in their transcript.
       if (!memberUnchanged(startedAs)) return;
       if (isNetworkError(e)) {
-        enqueueMutation({ type: 'send_lounge_message', payload: { ...payload, _tempId: payload.id } });
+        // Already in the queue when held: it waits to be sent, never queued twice.
+        if (held) sendHeldAgain(messageId);
+        else enqueueMutation({ type: 'send_lounge_message', payload: { ...payload, _tempId: payload.id } });
         flushOfflineQueue();
         set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m) }));
         return;

@@ -13,6 +13,7 @@ import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing } from 'react-native-reanimated';
 import { useClearance } from '@/src/hooks/useClearance';
+import { ropeSpoken } from '@/src/components/clearance/Clearance';
 import { useLater } from '@/src/hooks/useLater';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { useMarkCount } from '@/src/stores/markCounts';
@@ -56,7 +57,7 @@ export const ActionDeck = React.memo(function ActionDeck({
   const isOwner = useAuthStore(s => !!ownerId && s.user?.id === ownerId);
   const signedIn = useAuthStore(s => !!s.user);
   /** Sharing to a salon posts a message there: the rope is speaking, not the Lounge's door. */
-  const { held: canShare, standing: shareStanding, open: openShare } = useClearance('lounge-speaking');
+  const { held: canShare, rank: shareRank, standing: shareStanding, open: openShare } = useClearance('lounge-speaking');
 
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -197,9 +198,7 @@ export const ActionDeck = React.memo(function ActionDeck({
         <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityLabel={
           canShare ? 'Share to a lounge'
             : !signedIn ? 'Share to a lounge. Sign in first.'
-            : shareStanding === 'reading' ? 'Share to a lounge. Your rank is being read. Ask again.'
-            : shareStanding === 'lapsed' ? 'Share to a lounge. Your dues have lapsed. The Archivist opens this again. Opens the Society.'
-            : 'Share to a lounge. Clearance required. The Archivist opens this. Opens the Society.'
+            : ropeSpoken('Share to a lounge', shareRank, shareStanding)
         }>
           {canShare ? (
             <MessageCircle size={15} strokeWidth={2} color={colors.fog} />

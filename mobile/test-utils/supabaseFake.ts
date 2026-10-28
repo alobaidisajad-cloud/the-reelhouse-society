@@ -81,6 +81,8 @@ type Options = {
   rpc?: Record<string, unknown>;
   /** The account's second factors (supabase.auth.mfa). A test that never says cannot ask. */
   mfa?: MfaWorld;
+  /** Whose session the phone holds (supabase.auth.getSession), or none. A test that never says cannot ask. */
+  session?: { userId: string } | null;
 };
 
 /** One second factor, as the auth server lists it. */
@@ -384,9 +386,15 @@ export function supabaseFake(options: Options = {}) {
     return Promise.resolve({ data: out ?? null, error: null });
   };
 
+  const getSession = () => {
+    if (!('session' in options)) throw new Error('supabaseFake: the test never said whose session the phone holds');
+    const held = options.session;
+    return Promise.resolve({ data: { session: held ? { user: { id: held.userId }, access_token: 'fake-access-token' } : null }, error: null });
+  };
+
   const second = mfaFake(options.mfa);
   return {
-    client: { from, rpc, auth: { mfa: second.mfa } },
+    client: { from, rpc, auth: { mfa: second.mfa, getSession } },
     asked,
     rows: (table: string) => tables.get(table) ?? [],
     /** The second factors as the calls left them: every call asked, the factors, the session's level. */

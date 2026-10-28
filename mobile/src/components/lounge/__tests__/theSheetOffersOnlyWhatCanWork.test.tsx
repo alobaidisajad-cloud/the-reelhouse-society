@@ -67,7 +67,7 @@ const message = (over: Partial<LoungeMessage>) => ({
 
 const sheet = (msg: LoungeMessage) => render(
   <ActionSheet
-    visible msg={msg} isSelf={false} canReact={false} currentReactions={[]}
+    visible msg={msg} isSelf={false} canReact={false} canReply currentReactions={[]}
     onClose={jest.fn()} onReply={jest.fn()} onReact={jest.fn()} onDelete={jest.fn()}
     onReport={jest.fn()} onBlock={jest.fn()}
   />,
@@ -90,4 +90,16 @@ it('never reads "BLOCK @" with no name after it', () => {
   const t = sheet(message({ username: '' }));
   expect(t.getByText('BLOCK THIS MEMBER')).toBeTruthy();
   expect(t.queryByText('BLOCK @')).toBeNull();
+});
+
+it('offers REPLY and the reactions only to a member who may speak and react (P4.16)', () => {
+  const props = { visible: true, msg: message({}), isSelf: false, currentReactions: [], onClose: jest.fn(), onReply: jest.fn(), onReact: jest.fn(), onDelete: jest.fn() };
+  const without = render(<ActionSheet {...props} canReact={false} canReply={false} />);
+  expect(without.getByText('COPY TEXT')).toBeTruthy();
+  expect(without.queryByText('REPLY')).toBeNull();
+  expect(without.queryByLabelText('BRAVO')).toBeNull();
+  without.unmount();
+  const archivist = render(<ActionSheet {...props} canReact canReply />);
+  expect(archivist.getByText('REPLY')).toBeTruthy();
+  expect(archivist.getByLabelText('BRAVO')).toBeTruthy();
 });

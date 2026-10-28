@@ -50,13 +50,22 @@ jest.mock('@/src/stores/auth', () => {
   (useAuthStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useAuthStore };
 });
-jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ held: true, standing: 'held', open: jest.fn() }) }));
+/** The reader's clearance to speak in a salon, and its rope; every other rank is held here. */
+let mockSpeaking: { held: boolean; standing: 'stranger' | 'lapsed' | 'reading' } = { held: true, standing: 'stranger' };
+const mockRope = jest.fn();
+jest.mock('@/src/hooks/useClearance', () => ({
+  useClearance: (feature: string) => (feature === 'lounge-speaking'
+    ? { ...mockSpeaking, rank: 'archivist', open: mockRope }
+    : { held: true, standing: 'held', open: jest.fn() }),
+}));
 jest.mock('@/src/hooks/useVault', () => ({ useVault: () => ({ note: null, loaded: true, unreachable: false }) }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: jest.fn(() => []),
 }));
-jest.mock('@/src/components/ShareToLoungeModal', () => () => null);
+/** Whether the salon list was opened: sharing a log into a salon is speaking there. */
+let mockSalonsShown = false;
+jest.mock('@/src/components/ShareToLoungeModal', () => (p: { visible: boolean }) => { mockSalonsShown = p.visible; return null; });
 jest.mock('@/src/components/moderation/ReportSheet', () => () => null);
 jest.mock('@/src/components/moderation/ContentActionSheet', () => ({ ContentActionSheet: () => null }));
 jest.mock('@/src/services/LogService', () => ({
@@ -169,4 +178,34 @@ it('while the record loads, the page shows a spinner that says what it is waitin
   let r!: ReturnType<typeof render>;
   await act(async () => { r = render(<LogDetailScreen />); });
   expect(r.getByLabelText('Loading record')).toBeTruthy();
+});
+
+describe('LOUNGE, sharing the log into a salon (P4.16)', () => {
+  const pressLounge = async (standing: typeof mockSpeaking, label: string) => {
+    mockSpeaking = standing;
+    mockSalonsShown = false;
+    let r!: ReturnType<typeof render>;
+    await act(async () => { r = render(<LogDetailScreen />); });
+    await act(async () => { await fireEvent.press(r.getByLabelText(label)); });
+    return r;
+  };
+  afterAll(() => { mockSpeaking = { held: true, standing: 'stranger' }; });
+
+  it('opens the rope for a member without the rank, and no salon list', async () => {
+    await pressLounge({ held: false, standing: 'stranger' }, 'Share to a lounge. Clearance required. The Archivist opens this. Opens the Society.');
+    expect(mockRope).toHaveBeenCalledTimes(1);
+    expect(mockSalonsShown).toBe(false);
+  });
+
+  it('opens the rope for a member whose dues have lapsed, said as theirs', async () => {
+    await pressLounge({ held: false, standing: 'lapsed' }, 'Share to a lounge. Your dues have lapsed. The Archivist opens this again. Opens the Society.');
+    expect(mockRope).toHaveBeenCalledTimes(1);
+    expect(mockSalonsShown).toBe(false);
+  });
+
+  it('opens the salon list for an Archivist', async () => {
+    await pressLounge({ held: true, standing: 'stranger' }, 'Share to a lounge');
+    expect(mockRope).not.toHaveBeenCalled();
+    expect(mockSalonsShown).toBe(true);
+  });
 });

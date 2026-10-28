@@ -16,8 +16,10 @@ import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import {
   FilmIcon, ImageIcon, AlertTriangle, Search, X, Plus, Calendar,
-  Send, Bookmark, Share2,
+  Send, Bookmark, Share2, KeyRound,
 } from 'lucide-react-native';
+import { ropeSpoken, type Standing } from '@/src/components/clearance/Clearance';
+import type { Rank } from '@/src/constants/gatedFeatures';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
@@ -441,18 +443,23 @@ export const FilmFinder = memo(function FilmFinder({
  * page pretending to be the app.
  */
 export const ShareSheet = memo(function ShareSheet({
-  preview, card, onDest,
+  preview, card, onDest, lounge,
 }: {
   /** Which destination was chosen, by its label — the row's own words. */
   onDest?: (label: string) => void;
+  /** The member's clearance to speak in a salon: without it, TO THE LOUNGE holds the brass key and opens the rope. */
+  lounge?: { held: boolean; rank: Rank; standing: Standing };
   preview: React.ReactNode;
   /** A dossier's card to save; unset in the app (supabase/DEFERRED-ACTIONS.md, SAVE THE CARD). */
   card?: boolean;
 }) {
   // Only what the phone's own sheet cannot do (the house's rooms, a dossier's
   // card); ELSEWHERE hands the rest to it, ordered as this member uses them.
+  const roped = !!lounge && !lounge.held;
   const rows: [typeof Send, string, string][] = [
-    [Send, 'TO THE LOUNGE', 'Drop it into a room'],
+    [roped ? KeyRound : Send, 'TO THE LOUNGE', roped
+      ? lounge.standing === 'reading' ? 'Your rank is being read' : lounge.standing === 'lapsed' ? 'Your dues have lapsed' : `${lounge.rank === 'auteur' ? 'The Auteur' : 'The Archivist'} opens this`
+      : 'Drop it into a room'],
     ...(card
       ? ([[Bookmark, 'SAVE THE CARD', 'A picture, to your photos']] as [typeof Send, string, string][])
       : []),
@@ -468,7 +475,7 @@ export const ShareSheet = memo(function ShareSheet({
           <PressableScale style={d.dest} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
             onPress={onDest && (() => onDest(String(label)))} disabled={!onDest}
             accessibilityRole="button" accessibilityState={{ disabled: !onDest }}
-            accessibilityLabel={`${label}. ${sub}.`}>
+            accessibilityLabel={roped && label === 'TO THE LOUNGE' ? ropeSpoken('To the lounge', lounge.rank, lounge.standing) : `${label}. ${sub}.`}>
             <Icon size={15} strokeWidth={2} color={colors.sepia} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={d.destLabel} {...deckLabelProps}>{label}</Text>

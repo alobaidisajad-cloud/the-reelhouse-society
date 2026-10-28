@@ -21,6 +21,7 @@ import { isNetworkError, isTransientError } from './networkError';
 import reelToast from './reelToast';
 import { e2eTrace } from './e2eTrace';
 import { isSuspensionRefusal } from './refusedForStanding';
+import { asTierRefusal } from './tierRefusal';
 import { queryClient } from '../lib/queryClient';
 import { settleDelivered } from '../stores/markCounts';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
@@ -59,6 +60,11 @@ export interface QueuedMutation {
     owner?: string;
     /** Moments the server failed it so far; beside the payload, never sent or validated. */
     _retryCount?: number;
+    /**
+     * Refused for the member's rank: kept for them, never sent on its own, never aged out. A
+     * salon message held so is drawn in its room, failed, for the member to send again.
+     */
+    _held?: 'rank';
 }
 
 /** The types that change who a member follows: delivering one refreshes the following feeds. */
@@ -170,6 +176,26 @@ export function unsentFor(memberId: string): { unsent: number; failedWords: numb
 /** Read queue from MMKV (synchronous C++) */
 export function getOfflineQueue(): QueuedMutation[] {
     return readQueue();
+}
+
+/** A write held for the member, made with this id: the one their retry stands for. */
+const heldWith = (m: QueuedMutation, tempId: string) => !!m._held && m.payload._tempId === tempId;
+
+/** The member's held write, sent now by their own hand: it leaves the queue. */
+export function letHeldGo(tempId: string): void {
+    const queue = readQueue();
+    if (queue.some((m) => heldWith(m, tempId))) writeQueue(queue.filter((m) => !heldWith(m, tempId)));
+}
+
+/** The member's held write, asked again with no connection: it waits to be sent like any other. */
+export function sendHeldAgain(tempId: string): void {
+    const queue = readQueue();
+    if (!queue.some((m) => heldWith(m, tempId))) return;
+    writeQueue(queue.map((m) => {
+        if (!heldWith(m, tempId)) return m;
+        const { _held: _wasHeld, ...waiting } = m;
+        return waiting;
+    }));
 }
 
 /**
@@ -338,8 +364,9 @@ async function sendOnce(): Promise<void> {
     // Prune stale mutations (>24h old)
     const now = Date.now();
     const preFilterLength = queue.length;
-    const staleMutations = queue.filter(m => now - m.timestamp >= STALE_THRESHOLD_MS);
-    queue = queue.filter(m => now - m.timestamp < STALE_THRESHOLD_MS);
+    // Held for the member is not waiting to be sent: it does not age out.
+    const staleMutations = queue.filter(m => !m._held && now - m.timestamp >= STALE_THRESHOLD_MS);
+    queue = queue.filter(m => m._held || now - m.timestamp < STALE_THRESHOLD_MS);
     for (const m of staleMutations) processedIds.add(m.id);
     const stalePruned = preFilterLength - queue.length;
     if (stalePruned > 0) {
@@ -358,8 +385,12 @@ async function sendOnce(): Promise<void> {
     const idMap: Record<string, string> = {};
     // Each write's new retry count, stored with the queue at the end (as idMap is).
     const retryBumps: Record<string, number> = {};
+    // Salon messages refused for the rank, held for the member at the end, with the refusal.
+    const heldForRank: { mutation: QueuedMutation; error: unknown }[] = [];
 
     for (const mutation of queue) {
+        // Held for the member: sent again only when they ask (the lounge store's retry).
+        if (mutation._held) continue;
         try {
             // A payload that fails its schema is dead-lettered unsent.
             const schema = MutationSchemaMap[mutation.type];
@@ -405,6 +436,11 @@ async function sendOnce(): Promise<void> {
                 logger.warn('[OfflineSync] refused for a suspension: holding the queue until it ends', mutation.type);
                 e2eTrace('queue.flush.halted', { type: mutation.type, why: 'suspended' });
                 break;
+            } else if (mutation.type === 'send_lounge_message' && asTierRefusal(error)) {
+                // Refused for the rank: the member's words stay in their room, failed, as a live
+                // send refused so does, for them to send again once they hold it. Never retried
+                // on its own, and never said to be lost.
+                heldForRank.push({ mutation, error });
             } else if (errorClass === 'schema') {
                 // The STATEMENT is wrong (a missing column, a bad ON CONFLICT
                 // target), not the data: retrying cannot help and dropping it would
@@ -455,6 +491,23 @@ async function sendOnce(): Promise<void> {
         reelToast.error(`${changesMadeOffline(deadLetterQueue.length)} could not be sent.`);
     }
 
+    const held = new Set(heldForRank.map(({ mutation }) => mutation.id));
+    const [first] = heldForRank;
+    if (first) {
+        // A copy for diagnosis; the words themselves stay in the queue, held.
+        addToDeadLetter(heldForRank.map(({ mutation, error }) => ({
+            ...mutation,
+            payload: { ...mutation.payload, _failReason: `held for the rank: ${(error as { message?: string })?.message ?? ''}`, _failedAt: new Date().toISOString() },
+        })));
+        // Required here, not imported: the tier door reads the auth store, which imports this file.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { showTierDoor } = require('./tierDoor') as typeof import('./tierDoor');
+        showTierDoor(first.error, {
+            returnTo: `/lounge/${String(first.mutation.payload.lounge_id)}`,
+            also: 'Your words are kept in the salon',
+        });
+    }
+
     // Read again, not the snapshot above: a write queued while this send waited
     // must survive it. What remains learns the real ids of rows made just now.
     const freshQueue = readQueue();
@@ -463,6 +516,7 @@ async function sendOnce(): Promise<void> {
         .map(m => {
             const next = { ...m, payload: applyIdMapToPayload(m.payload, idMap) };
             if (retryBumps[m.id] !== undefined) next._retryCount = retryBumps[m.id];
+            if (held.has(m.id)) next._held = 'rank';
             return next;
         });
     writeQueue(finalQueue);

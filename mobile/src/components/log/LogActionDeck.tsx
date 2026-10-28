@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Arrive } from '@/src/components/Arrive';
-import { Heart, MessageSquare, Edit3, MessageCircle, ChevronDown, Bookmark } from 'lucide-react-native';
+import { Heart, MessageSquare, Edit3, MessageCircle, ChevronDown, Bookmark, KeyRound } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
 import { UNINKED } from '@/src/theme/unready';
 import { deckLabelProps } from '@/src/constants/textScaling';
@@ -55,6 +55,8 @@ interface LogActionDeckProps {
   onSavePress: () => void;
   onEditPress: () => void;
   onLoungePress: () => void;
+  /** Whether the reader may share into a salon, and what LOUNGE says aloud: without the rank, the press opens the rope. */
+  lounge: { held: boolean; spoken: string };
 }
 
 export default function LogActionDeck({
@@ -73,6 +75,7 @@ export default function LogActionDeck({
   onSavePress,
   onEditPress,
   onLoungePress,
+  lounge,
 }: LogActionDeckProps) {
   return (
     <>
@@ -154,11 +157,13 @@ export default function LogActionDeck({
              </PressableScale>
            )}
 
-           {/* LOUNGE — opens ShareToLoungeModal with this log's film */}
+           {/* LOUNGE — shares this log into a salon; who may not speak there holds the brass key. */}
            <PressableScale style={s.deckBtn} onPress={onLoungePress} hitSlop={{ top: 4, bottom: 8, left: 0, right: 0 }} haptic="medium" pressedScale={0.92}
-             accessibilityRole="button" accessibilityLabel="Share to a lounge">
-              <MessageCircle size={16} strokeWidth={2} color={colors.fog} />
-              <Text style={s.deckLabel} {...deckLabelProps}>LOUNGE</Text>
+             accessibilityRole="button" accessibilityLabel={lounge.spoken}>
+              {lounge.held
+                ? <MessageCircle size={16} strokeWidth={2} color={colors.fog} />
+                : <KeyRound size={16} strokeWidth={2} color={colors.sepia} style={s.deckKeyDim} />}
+              <Text style={[s.deckLabel, !lounge.held && s.deckLabelActive]} {...deckLabelProps}>LOUNGE</Text>
            </PressableScale>
         </View>
       </View>

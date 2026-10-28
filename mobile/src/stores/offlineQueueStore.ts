@@ -42,6 +42,26 @@ export function stillQueued(type: QueuedMutation['type'], id: string): boolean {
     .some((m) => m.type === type && (m.payload.id === id || m.payload._tempId === id));
 }
 
+/** The ids rows of this type were made with, for the writes held for their member. */
+function heldIdsKey(queued: readonly QueuedMutation[], type: QueuedMutation['type']): string {
+  return unsentKey(queued.filter((m) => !!m._held), type);
+}
+
+/** Whether this row's write is held for its member (refused for the rank): theirs to send again. */
+export function stillHeld(type: QueuedMutation['type'], id: string): boolean {
+  return useOfflineQueueStore.getState().queued
+    .some((m) => !!m._held && m.type === type && m.payload._tempId === id);
+}
+
+/**
+ * The rows of one kind held for the member — `send_lounge_message` gives the salon messages
+ * refused for the rank, drawn failed in their room. Re-renders only when that set changes.
+ */
+export function useHeld(type: QueuedMutation['type']): ReadonlySet<string> {
+  const key = useOfflineQueueStore((s) => heldIdsKey(s.queued, type));
+  return useMemo(() => new Set(key ? key.split(' ') : []), [key]);
+}
+
 /**
  * The rows of one kind written on this phone and not yet sent — `add_filing`
  * gives the filings still in the queue, which say NOT SENT YET. Re-renders only

@@ -129,7 +129,13 @@ jest.mock('@/src/components/layout/CinematicFlashList', () => {
       React.createElement(React.Fragment, { key: index }, renderItem ? renderItem({ item, index }) : null)),
     (data ?? []).length === 0 ? render(ListEmptyComponent) : null)) };
 });
-jest.mock('@/src/components/ShareToLoungeModal', () => () => null);
+/** Whether the salon list was opened: sharing a stack into a salon is speaking there. */
+let mockSalonsShown = false;
+jest.mock('@/src/components/ShareToLoungeModal', () => (p: { visible: boolean }) => { mockSalonsShown = p.visible; return null; });
+/** The member's clearance to speak in a salon, and its rope. */
+let mockSpeaking: { held: boolean; standing: 'stranger' | 'lapsed' | 'reading' } = { held: true, standing: 'stranger' };
+const mockRope = jest.fn();
+jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ ...mockSpeaking, rank: 'archivist', open: mockRope }) }));
 jest.mock('@/src/components/moderation/ReportSheet', () => () => null);
 jest.mock('@/src/components/moderation/ContentActionSheet', () => ({ ContentActionSheet: () => null }));
 jest.mock('expo-blur', () => {
@@ -327,6 +333,39 @@ describe('the certification, when it is not known', () => {
     StackService.getStackFullPayload.mockRejectedValueOnce(new TypeError('Network request failed'));
     expect(await mockStackOpts!.queryFn()).toMatchObject({ endorseCount: null, certifiedKnown: false });
     lists.length = 0;
+  });
+});
+
+describe('LOUNGE, sharing the stack into a salon (P4.16)', () => {
+  const pressLounge = async (standing: typeof mockSpeaking) => {
+    mockSpeaking = standing;
+    mockSalonsShown = false;
+    mockRope.mockClear();
+    const r = mount();
+    await waitFor(() => expect(r.getByText('LOUNGE')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByText('LOUNGE')); });
+    return r;
+  };
+  afterAll(() => { mockSpeaking = { held: true, standing: 'stranger' }; });
+
+  it('opens the rope for a member without the rank, and no salon list', async () => {
+    const r = await pressLounge({ held: false, standing: 'stranger' });
+    expect(mockRope).toHaveBeenCalledTimes(1);
+    expect(mockSalonsShown).toBe(false);
+    expect(r.getByLabelText('Share to lounge. Clearance required. The Archivist opens this. Opens the Society.')).toBeTruthy();
+  });
+
+  it('opens the rope for a member whose dues have lapsed, said as theirs', async () => {
+    const r = await pressLounge({ held: false, standing: 'lapsed' });
+    expect(mockRope).toHaveBeenCalledTimes(1);
+    expect(mockSalonsShown).toBe(false);
+    expect(r.getByLabelText('Share to lounge. Your dues have lapsed. The Archivist opens this again. Opens the Society.')).toBeTruthy();
+  });
+
+  it('opens the salon list for an Archivist', async () => {
+    await pressLounge({ held: true, standing: 'stranger' });
+    expect(mockRope).not.toHaveBeenCalled();
+    expect(mockSalonsShown).toBe(true);
   });
 });
 
@@ -1173,5 +1212,7 @@ describe('a stack past its first page (P4.9)', () => {
     // The whole stack held: scrolling further asks for nothing.
     await act(async () => { await mockEndReached?.(); });
     expect(StackService.getStackItemsPage).toHaveBeenCalledTimes(1);
-  });
+  // It draws all 501 rows (the list stand-in renders every one): 1.4 s alone, past 5 s under the
+  // whole suite's eight workers.
+  }, 20_000);
 });

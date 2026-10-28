@@ -23,8 +23,10 @@ interface ActionSheetProps {
   visible: boolean;
   msg: LoungeMessage | null;
   isSelf: boolean;
-  /** Whether the current user is an approved (non-muted) member who may react. */
+  /** Whether the current user is seated, not muted, and holds the rank to react. */
   canReact?: boolean;
+  /** Whether they may speak here: REPLY only begins a message they may send. */
+  canReply?: boolean;
   /** The message's current reactions, so the picker can highlight your own. */
   currentReactions?: ReactionSummary[];
   onClose: () => void;
@@ -36,7 +38,7 @@ interface ActionSheetProps {
   onBlock?: (userId: string) => void;
 }
 
-function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose, onReply, onReact, onDelete, onReport, onBlock }: ActionSheetProps) {
+function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReactions, onClose, onReply, onReact, onDelete, onReport, onBlock }: ActionSheetProps) {
   const sheetFoot = useSheetBottom();
   
   const [internalMsg, setInternalMsg] = React.useState<LoungeMessage | null>(null);
@@ -119,7 +121,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose
               Here that meant the bottom of REPORT MESSAGE fired BLOCK @user:
               a destructive action stolen by a benign one. The rows are ~50pt
               tall and need no help. */}
-          {!internalMsg.id.startsWith('optimistic-') && (
+          {canReply && !internalMsg.id.startsWith('optimistic-') && (
             <PressableScale style={s.actionBtn} hitSlop={null} onPress={() => { onReply(internalMsg); onClose(); }} haptic="selection" accessibilityRole="button">
               <Reply size={18} color={colors.bone} strokeWidth={1.5} />
               <Text style={s.actionBtnText}>REPLY</Text>

@@ -28,6 +28,17 @@ const nameFor = (rank: Rank) => (rank === 'auteur' ? 'THE AUTEUR' : 'THE ARCHIVI
  */
 export type Standing = 'stranger' | 'lapsed' | 'reading';
 
+/**
+ * What a control roped by its rank says aloud, for a control drawn whole with a key in its
+ * icon's place (a deck's LOUNGE) rather than a rope at its foot: its name first, then the rope.
+ */
+export function ropeSpoken(names: string, rank: Rank, standing: Standing): string {
+  const name = rank === 'auteur' ? 'The Auteur' : 'The Archivist';
+  return standing === 'reading' ? `${names}. Your rank is being read. Ask again.`
+    : standing === 'lapsed' ? `${names}. Your dues have lapsed. ${name} opens this again. Opens the Society.`
+    : `${names}. Clearance required. ${name} opens this. Opens the Society.`;
+}
+
 export interface ClearanceProps {
   rank: Rank;
   standing?: Standing;

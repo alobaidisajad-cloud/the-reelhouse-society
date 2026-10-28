@@ -178,6 +178,8 @@ export const s = StyleSheet.create({
   deckBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 18, gap: 6, backgroundColor: colors.ink, borderRadius: 1 },
   deckLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog, includeFontPadding: false },
   deckLabelActive: { color: colors.sepia },
+  // The brass key in LOUNGE's place, for a reader without the rank to speak in a salon.
+  deckKeyDim: { opacity: 0.75 },
   deckLabelCertified: { color: colors.crimsonInk },
 
   // ── Critiques ──

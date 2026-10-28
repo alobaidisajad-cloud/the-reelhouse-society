@@ -50,6 +50,7 @@ import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { useBottomEdge, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
+import { ropeSpoken } from '@/src/components/clearance/Clearance';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatClockTime, formatDateMonthDay } from '@/src/utils/timeAgo';
@@ -59,6 +60,7 @@ import { EmptyOffline } from '@/src/components/EmptyStates';
 import { authorName, isDepartedHandle, quotedName } from '@/src/constants/departed';
 import { useScrollTrace } from '@/src/hooks/useScrollTrace';
 import { counted } from '@/src/utils/counted';
+import { useHeld } from '@/src/stores/offlineQueueStore';
 import { Arrive } from '@/src/components/Arrive';
 
 
@@ -195,8 +197,11 @@ SharedCard.displayName = 'SharedCard';
 // ════════════════════════════════════════════════════════════
 // REACTION CHIPS — compact row beneath a dispatch
 // ════════════════════════════════════════════════════════════
-const ReactionChips = React.memo(({ reactions, onToggle }: {
-  reactions: ReactionSummary[]; onToggle: (reaction: string) => void;
+const ReactionChips = React.memo(({ reactions, canReact, onToggle }: {
+  reactions: ReactionSummary[];
+  /** May add a reaction. A member without the rank may still take back their own; another chip is only read. */
+  canReact: boolean;
+  onToggle: (reaction: string) => void;
 }) => {
   if (!reactions.length) return null;
   return (
@@ -205,6 +210,14 @@ const ReactionChips = React.memo(({ reactions, onToggle }: {
         const meta = REACTION_META[r.reaction as keyof typeof REACTION_META];
         const Icon = meta?.Icon;
         const tint = meta?.tint ?? colors.fog;
+        if (!canReact && !r.mine) {
+          return (
+            <View key={r.reaction} style={s.reactionChip} accessible accessibilityLabel={`${meta?.label ?? r.reaction}, ${r.count}`}>
+              {Icon && <Icon size={11} color={tint} strokeWidth={2} />}
+              <Text style={s.reactionChipCount}>{r.count}</Text>
+            </View>
+          );
+        }
         return (
           <PressableScale
             key={r.reaction}
@@ -230,8 +243,9 @@ ReactionChips.displayName = 'ReactionChips';
 // ════════════════════════════════════════════════════════════
 // DISPATCH — one transcript entry (Editorial Salon, bubble-less)
 // ════════════════════════════════════════════════════════════
-const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, onOpenShare, onReactToggle, onRetry }: {
+const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, canReact, onLongPress, onOpenShare, onReactToggle, onRetry }: {
   msg: LoungeMessage; isSelf: boolean; showAuthor: boolean; showDate: boolean;
+  canReact: boolean;
   onLongPress: (msg: LoungeMessage) => void;
   onOpenShare: (msg: LoungeMessage) => void;
   onReactToggle: (messageId: string, reaction: string) => void;
@@ -319,7 +333,7 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
           )}
 
           {!isWithdrawn && !!msg.reactions?.length && (
-            <ReactionChips reactions={msg.reactions} onToggle={(r) => onReactToggle(msg.id, r)} />
+            <ReactionChips reactions={msg.reactions} canReact={canReact} onToggle={(r) => onReactToggle(msg.id, r)} />
           )}
         </View>
       </View>
@@ -466,6 +480,12 @@ export default function LoungeRoomScreen() {
   const currentMessages = useLoungeStore((s) => (s.currentLoungeId === id ? s.currentMessages : NO_WORDS));
   const messagesLoading = useLoungeStore((s) => s.currentLoungeId !== id || s.messagesLoading);
   const messagesFailed = useLoungeStore((s) => s.currentLoungeId === id && s.messagesFailed);
+  // Written offline and refused for the rank when sent: held for the member, drawn failed with its
+  // words and 'tap to retry', as a live send refused so is; after a restart too, as the queue keeps it.
+  const heldWords = useHeld('send_lounge_message');
+  const shownMessages = useMemo(() => (heldWords.size === 0 ? currentMessages
+    : currentMessages.map((m) => (heldWords.has(m.id) && m.status !== 'failed' ? { ...m, status: 'failed' as const } : m))),
+  [currentMessages, heldWords]);
   // Failed: the room could not be asked for, and nothing of it is held to show.
   const roomLost = !notFound && loadFailed && !lounges.some((l) => l.id === id);
   const readyMark = useScreenReady('room',
@@ -476,6 +496,13 @@ export default function LoungeRoomScreen() {
   const isMuted = myStatus === 'muted';
   const canRead = isApproved || isMuted || (activeLounge ? !activeLounge.is_private : false);
   const canPost = isApproved && !isMuted;
+  // Speaking and reacting are the Archivist's (DECISIONS 3.4). A seated member without the rank
+  // keeps the seat, reads, and takes back their own words and reactions; nothing more is offered.
+  const roomHref = id ? `/lounge/${id}` : '/lounge';
+  const speaking = useClearance('lounge-speaking', roomHref);
+  const reacting = useClearance('lounge-reacting', roomHref);
+  const canSpeak = canPost && speaking.held;
+  const canReact = canPost && reacting.held;
   const pendingMembers = useMemo(() => members.filter(m => m.status === 'pending'), [members]);
   // Seated: the roster's, or the room's own count until the roster is read.
   const seated = members.filter(m => m.status !== 'pending').length || activeLounge?.member_count || 0;
@@ -654,7 +681,7 @@ export default function LoungeRoomScreen() {
           <Text style={s.headerTitle} numberOfLines={1}>{activeLounge.name}</Text>
           <View style={s.headerMeta}>
             <Text style={s.headerMetaText} numberOfLines={1}>
-              {seated} {seated === 1 ? 'MEMBER' : 'MEMBERS'}
+              {counted(seated, 'MEMBER', 'MEMBERS')}
             </Text>
             {/* THE HOUSE PULSE — the ember glows only when the room truly breathes */}
             {presentCount >= 2 && (
@@ -690,7 +717,8 @@ export default function LoungeRoomScreen() {
       {/* ── Body: transcript or gate ── */}
       {canRead ? (
         <FlashList
-          data={currentMessages}
+          data={shownMessages}
+          extraData={canReact}
           keyExtractor={(item) => item.id}
           {...traceProps}
           contentContainerStyle={s.list}
@@ -701,7 +729,7 @@ export default function LoungeRoomScreen() {
           onStartReachedThreshold={0.5}
           renderItem={({ item, index }) => {
             const isSelf = item.user_id === user?.id;
-            const prev = currentMessages[index - 1];
+            const prev = shownMessages[index - 1];
             const gap = prev ? new Date(item.created_at).getTime() - new Date(prev.created_at).getTime() : Infinity;
             const showAuthor = !prev || prev.user_id !== item.user_id || gap > 300000;
             const showDate = !prev || new Date(item.created_at).toDateString() !== new Date(prev.created_at).toDateString();
@@ -711,6 +739,7 @@ export default function LoungeRoomScreen() {
                 isSelf={isSelf}
                 showAuthor={showAuthor}
                 showDate={showDate}
+                canReact={canReact}
                 onLongPress={handleLongPress}
                 onOpenShare={handleOpenShare}
                 onReactToggle={toggleReaction}
@@ -766,7 +795,7 @@ export default function LoungeRoomScreen() {
       )}
 
       {/* ── Composer / preview / muted ── */}
-      {gate === 'chat' && canPost && (
+      {gate === 'chat' && canSpeak && (
         <View style={[s.composer, { paddingBottom: barFoot }]}>
           {/* THE HOUSE PULSE — the typewriter line. Reserved height: the
               composer never shifts a pixel when a typist appears or goes quiet. */}
@@ -824,6 +853,29 @@ export default function LoungeRoomScreen() {
               <Send size={16} color={input.trim() ? colors.ink : UNREADY_INK} strokeWidth={2} />
             </PressableScale>
           </View>
+        </View>
+      )}
+
+      {/* Seated without the rank to speak: their seat and their words are kept, and the rope
+          stands where the composer would. */}
+      {gate === 'chat' && canPost && !speaking.held && (
+        <View style={[s.previewBar, { paddingBottom: barFoot }]}>
+          <Text style={s.speakText}>
+            {speaking.standing === 'reading'
+              ? 'You keep your seat. Your rank is being read.'
+              : `You keep your seat and every word you wrote. ${speaking.standing === 'lapsed'
+                ? 'Your dues have lapsed.'
+                : `Speaking is for ${speaking.rank === 'auteur' ? 'Auteurs' : 'Archivists'}.`}`}
+          </Text>
+          <PressableScale
+            style={s.previewBtn}
+            onPress={speaking.open}
+            haptic="medium"
+            accessibilityRole="button"
+            accessibilityLabel={ropeSpoken('Speak in this salon', speaking.rank, speaking.standing)}
+          >
+            <Text style={s.previewBtnText}>{speaking.standing === 'reading' ? '✦ ASK AGAIN' : '✦ ASCEND THE RANKS'}</Text>
+          </PressableScale>
         </View>
       )}
 
@@ -890,7 +942,8 @@ export default function LoungeRoomScreen() {
         visible={!!actionSheetMsg}
         msg={actionSheetMsg}
         isSelf={actionSheetMsg?.user_id === user?.id}
-        canReact={canPost}
+        canReact={canReact}
+        canReply={canSpeak}
         currentReactions={actionSheetMsg?.reactions}
         onClose={() => setActionSheetMsg(null)}
         onReply={setReplyTo}
@@ -944,7 +997,7 @@ export function GateView({ gate, lounge, memberCount, onRequest, onRetry, pendin
         <Text style={s.gatePrivateLabel}>PRIVATE SALON</Text>
       </View>
       {!!lounge.description && <Text style={s.gateDesc}>{lounge.description}</Text>}
-      <Text style={s.gateMembers}>{memberCount} {memberCount === 1 ? 'member' : 'members'} behind the door</Text>
+      <Text style={s.gateMembers}>{counted(memberCount, 'member', 'members')} behind the door</Text>
 
       {gate === 'request' && (
         <>
@@ -1144,6 +1197,8 @@ const s = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash, alignItems: 'center', gap: 12,
   },
   previewText: { fontFamily: fonts.serifItalic, fontSize: 13, color: colors.fog },
+  // Two sentences, centred over the rope: they may wrap.
+  speakText: { fontFamily: fonts.serifItalic, fontSize: 13, lineHeight: 19, color: colors.fog, textAlign: 'center' },
   previewBtn: { backgroundColor: colors.sepia, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 4, width: '100%', alignItems: 'center' },
   previewBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
 

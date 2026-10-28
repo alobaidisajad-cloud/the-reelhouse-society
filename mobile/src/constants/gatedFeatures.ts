@@ -135,14 +135,20 @@ export const GATED_FEATURES: GatedFeature[] = [
     promise: 'The Lounge',
     enforcement: { kind: 'refuses', table: 'lounge_messages', trigger: 'tr_tier_gate_lounge_messages' },
     gates: [
-      // Sharing a critique or an artist INTO a salon is posting a message, so
-      // these two ropes are speaking, not entering.
+      // The room: a seated member without the rank keeps the seat and reads, and
+      // the rope stands where the composer and REPLY would.
+      'app/lounge/[id].tsx',
+      // Sharing a critique, an artist, a log, a stack or a filing INTO a salon is
+      // posting a message, so these ropes are speaking, not entering. The share
+      // sheet reads the rank itself too, because its route opens directly.
       'src/components/feed/ActionDeck.tsx',
       'app/person/[id].tsx',
-      // The door AFTER the act: a member already seated whose rank has ended.
-      // No rope can stand in front of a composer they are entitled to see, so
-      // the refusal itself is read to them. The corridor tab was listed here and
-      // gated neither speaking nor reacting.
+      'app/log/[id].tsx',
+      'app/stacks/[id].tsx',
+      'app/dispatch/[id].tsx',
+      'app/(modals)/social-modal.tsx',
+      // The door AFTER the act, only a backstop now: a rank that ends while the
+      // member is in the room, the composer still drawn. The refusal is read to them.
       'src/stores/lounge.ts',
     ],
   },
@@ -151,8 +157,10 @@ export const GATED_FEATURES: GatedFeature[] = [
     rank: 'archivist',
     promise: 'The Lounge',
     enforcement: { kind: 'refuses', table: 'lounge_message_reactions', trigger: 'tr_tier_gate_lounge_reactions' },
-    // Only the door after the act — a reaction is offered only to the seated.
-    gates: ['src/stores/lounge.ts'],
+    // The room offers the picker, and a chip that adds, only with the rank; a
+    // member's own chip still takes their reaction back. The store's door is the
+    // backstop for a rank that ends mid-session.
+    gates: ['app/lounge/[id].tsx', 'src/stores/lounge.ts'],
   },
   {
     id: 'vault-editing',
@@ -285,7 +293,8 @@ export const GATED_FEATURES: GatedFeature[] = [
     // WHEN clause — the same shape tr_tier_gate_dispatch uses to demand the
     // Auteur rank for a ballot or an essay while leaving the free forms alone.
     // Only founding is gated: request_lounge_membership is untouched, so a
-    // host may admit anyone they like.
+    // host may admit anyone they like. The admitted read; speaking there is
+    // lounge-speaking's, the Archivist's.
     enforcement: { kind: 'refuses', table: 'lounges', trigger: 'tr_tier_gate_private_lounges' },
     gates: ['src/components/lounge/CreateLoungeSheet.tsx'],
   },

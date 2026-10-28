@@ -12,7 +12,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Platform, RefreshControl, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { Easing, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
@@ -32,6 +32,7 @@ import LogReviewBody from '@/src/components/log/LogReviewBody';
 import NoteSheet from '@/src/components/log/NoteSheet';
 import { useVault } from '@/src/hooks/useVault';
 import { useClearance } from '@/src/hooks/useClearance';
+import { ropeSpoken } from '@/src/components/clearance/Clearance';
 import { useLater } from '@/src/hooks/useLater';
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
@@ -323,6 +324,12 @@ export default function LogDetailScreen() {
    * like every rank decision in the app: never the log author's profile.
    */
   const vaultClearance = useClearance('vault-editing');
+  /** Sharing this log into a salon is speaking there: without the rank, LOUNGE opens the rope. */
+  const loungeClearance = useClearance('lounge-speaking', `/log/${id}`);
+  const loungeDeck = useMemo(() => ({
+    held: loungeClearance.held,
+    spoken: loungeClearance.held ? 'Share to a lounge' : ropeSpoken('Share to a lounge', loungeClearance.rank, loungeClearance.standing),
+  }), [loungeClearance.held, loungeClearance.rank, loungeClearance.standing]);
 
   /**
    * The ONE way this screen changes the critique list.
@@ -871,7 +878,8 @@ export default function LogDetailScreen() {
                focusCritique.later(() => { critiqueInputRef.current?.focus(); }, 300);
             }}
             onEditPress={() => { if (log.film_id) openEditor(); }}
-            onLoungePress={() => { setShowLoungeShare(true); }}
+            onLoungePress={() => { if (loungeClearance.held) setShowLoungeShare(true); else loungeClearance.open(); }}
+            lounge={loungeDeck}
           />
 
         </Arrive>

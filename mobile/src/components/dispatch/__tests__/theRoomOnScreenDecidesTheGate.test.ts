@@ -110,7 +110,7 @@ describe('the standing waits for the roster', () => {
 
   it('the header counts one member as one MEMBER', () => {
     // It printed `1 MEMBERS`; the gate below it already said "1 member".
-    expect(CODE).toMatch(/\{seated\} \{seated === 1 \? 'MEMBER' : 'MEMBERS'\}/);
+    expect(CODE).toMatch(/counted\(seated, 'MEMBER', 'MEMBERS'\)/);
     expect(CODE).not.toMatch(/\|\| 0\)\} MEMBERS/);
   });
 

@@ -28,6 +28,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { useArchiveStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { useClearance } from '@/src/hooks/useClearance';
+import { ropeSpoken } from '@/src/components/clearance/Clearance';
 import { useClock, useToday } from '@/src/hooks/useClock';
 import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -156,13 +157,11 @@ export default function PersonDetailScreen() {
    * Sharing an artist into a salon is posting a message there, so the rope is
    * `lounge-speaking` (the corridor itself is open to every member).
    */
-  const { held: canShare, standing: shareStanding, open: openShare } = useClearance('lounge-speaking', `/person/${id}`);
+  const { held: canShare, rank: shareRank, standing: shareStanding, open: openShare } = useClearance('lounge-speaking', `/person/${id}`);
   const isArchivist = canShare;
   const shareLabel = canShare ? 'Share to lounge'
     : !user ? 'Share to lounge. Sign in first.'
-    : shareStanding === 'reading' ? 'Share to lounge. Your rank is being read. Ask again.'
-    : shareStanding === 'lapsed' ? 'Share to lounge. Your dues have lapsed. The Archivist opens this again. Opens the Society.'
-    : 'Share to lounge. Clearance required. The Archivist opens this. Opens the Society.';
+    : ropeSpoken('Share to lounge', shareRank, shareStanding);
 
   const {
     data,

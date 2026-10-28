@@ -623,8 +623,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/lounge/PublicLoungeCard.tsx
-        find: "{counted(lounge.member_count || 0, 'SEAT', 'SEATS')} TAKEN"
-        replace: "{lounge.member_count || 0} SEATS TAKEN"
+        find: "{counted(lounge.member_count || 0, 'MEMBER', 'MEMBERS')}</Text>"
+        replace: "{lounge.member_count || 0} MEMBERS</Text>"
     proof: { file: src/utils/__tests__/aCountSaysItsWord.guard.test.ts, test: "prints no count before its word but through counted(), or one that can never be one" }
 
   - id: shape-reader-undocked

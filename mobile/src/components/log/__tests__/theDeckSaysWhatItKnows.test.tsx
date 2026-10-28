@@ -15,7 +15,7 @@ const deck = (over: Partial<React.ComponentProps<typeof LogActionDeck>> = {}) =>
   <LogActionDeck log={{ film_id: 603, film_title: 'The Matrix', poster_path: null }}
     isOwner={false} endorsed={false} certifyCount={4} critiqueCount={2} filmSaved={false} autopsyOpen={false}
     onToggleEndorse={jest.fn()} onToggleAutopsy={jest.fn()} onCritiquePress={jest.fn()} onSavePress={jest.fn()}
-    onEditPress={jest.fn()} onLoungePress={jest.fn()} {...over} />,
+    onEditPress={jest.fn()} onLoungePress={jest.fn()} lounge={{ held: true, spoken: 'Share to a lounge' }} {...over} />,
 );
 const uninked = (r: ReturnType<typeof render>) => (JSON.stringify(r.toJSON()).match(new RegExp(UNINKED, 'g')) ?? []).length;
 

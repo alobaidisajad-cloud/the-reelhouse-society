@@ -24,6 +24,8 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 import TryAgain, { TryAgainLine } from '@/src/components/TryAgain';
 import { Arrive } from '@/src/components/Arrive';
+import { useClearance } from '@/src/hooks/useClearance';
+import { ClearanceGate } from '@/src/components/clearance/Clearance';
 
 interface SocialProfile {
     id: string;
@@ -143,6 +145,10 @@ export default function SocialModal() {
     }), [rawParams.userId, rawParams.type, rawParams.shareFilmId, rawParams.shareFilmTitle, rawParams.shareFilmPoster, rawParams.shareFilmYear, rawParams.personId, rawParams.personName]);
 
     const { mode, valid } = useMemo(() => resolveMode(params), [params]);
+    // Sharing a film or an artist into a salon is speaking there. The route can be opened
+    // directly, so the sheet reads the rank itself: without it, the rope, never the salons.
+    const speaking = useClearance('lounge-speaking');
+    const roped = (mode === 'share-film' || mode === 'share-person') && !speaking.held;
     const { user } = useAuthStore();
     /** Your own followers or following: said to you, not about "this member". */
     const isOwnCircle = !!user?.id && user.id === params.userId;
@@ -230,10 +236,12 @@ export default function SocialModal() {
             return;
         }
 
+        // Roped: the salons are not read, for a sheet that will not offer them.
+        if (roped) return;
         let live = true;
         readSocial().then((read) => { if (live) showRead(read); }, (err) => { if (live) showFailure(err); });
         return () => { live = false; };
-    }, [valid, readSocial, showRead, showFailure]);
+    }, [valid, roped, readSocial, showRead, showFailure]);
 
     /** The next page of followers or following, appended; a failed one is said at the foot. */
     const loadMore = useCallback(async () => {
@@ -397,7 +405,11 @@ export default function SocialModal() {
             {/* Share context banner */}
             {shareBanner}
 
-            {failed ? (
+            {roped ? (
+                <View style={styles.center}>
+                    <ClearanceGate rank={speaking.rank} standing={speaking.standing} names="Share to a salon" onPress={speaking.open} />
+                </View>
+            ) : failed ? (
                 <View style={styles.center}>
                     <Text style={[styles.username, styles.timeoutTitle]}>COULD NOT BE REACHED</Text>
                     <Text style={styles.timeoutSubtext}>The telegraph to the archive is disrupted.</Text>

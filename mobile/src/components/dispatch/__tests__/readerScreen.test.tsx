@@ -63,6 +63,15 @@ jest.mock('@/src/stores/auth', () => ({
   ),
 }));
 
+/** The reader's clearance to speak in a salon, and its rope: an Archivist unless a case says not. */
+let mockSpeaking: { held: boolean; standing: 'stranger' | 'lapsed' | 'reading' } = { held: true, standing: 'stranger' };
+const mockRope = jest.fn();
+jest.mock('@/src/hooks/useClearance', () => ({
+  useClearance: (feature: string) => (feature === 'lounge-speaking'
+    ? { ...mockSpeaking, rank: 'archivist', open: mockRope }
+    : jest.requireActual('@/src/hooks/useClearance').useClearance(feature)),
+}));
+
 jest.mock('@/src/lib/supabase', () => ({
   supabase: {
     from: (table: string) => {
@@ -930,6 +939,30 @@ describe('the reader', () => {
     expect(getByText('Share to Lounge')).toBeTruthy();
     expect(getByText('SHARING ESSAY: THE EMPTY ROOM')).toBeTruthy();
     plain.mockRestore();
+  });
+
+  describe('TO THE LOUNGE, for a reader without the rank to speak in a salon (P4.16)', () => {
+    afterEach(() => { mockSpeaking = { held: true, standing: 'stranger' }; mockRope.mockClear(); });
+
+    it('holds the key, says why, and opens the rope, never the salon picker', async () => {
+      mockSpeaking = { held: false, standing: 'stranger' };
+      const { getByLabelText, queryByText, getByText } = await mount();
+      await act(async () => { await fireEvent.press(getByLabelText('Share')); });
+      expect(getByText('The Archivist opens this')).toBeTruthy();
+      await act(async () => { await fireEvent.press(getByLabelText('To the lounge. Clearance required. The Archivist opens this. Opens the Society.')); });
+      expect(mockRope).toHaveBeenCalledTimes(1);
+      expect(queryByText('Share to Lounge')).toBeNull();
+    });
+
+    it('tells a member whose dues have lapsed, and opens the rope', async () => {
+      mockSpeaking = { held: false, standing: 'lapsed' };
+      const { getByLabelText, queryByText, getByText } = await mount();
+      await act(async () => { await fireEvent.press(getByLabelText('Share')); });
+      expect(getByText('Your dues have lapsed')).toBeTruthy();
+      await act(async () => { await fireEvent.press(getByLabelText(/^To the lounge\. Your dues have lapsed\./)); });
+      expect(mockRope).toHaveBeenCalledTimes(1);
+      expect(queryByText('Share to Lounge')).toBeNull();
+    });
   });
 
   it('offers no SAVE THE CARD row, because nothing can save one', async () => {

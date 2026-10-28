@@ -71,7 +71,7 @@ export const PublicLoungeCard = React.memo(({ lounge, index: _index, onReport }:
           <View style={s.publicFooter}>
             <View style={s.publicMetaRow}>
               <Users size={11} color={colors.fog} strokeWidth={1.5} />
-              <Text style={s.publicMetaText} numberOfLines={1}>{counted(lounge.member_count || 0, 'SEAT', 'SEATS')} TAKEN</Text>
+              <Text style={s.publicMetaText} numberOfLines={1}>{counted(lounge.member_count || 0, 'MEMBER', 'MEMBERS')}</Text>
             </View>
             <View style={s.publicEnterTag}>
               <Text style={s.publicEnterText} numberOfLines={1}>
