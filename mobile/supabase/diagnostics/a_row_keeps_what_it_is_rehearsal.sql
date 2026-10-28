@@ -96,7 +96,8 @@ DO $$ BEGIN
   PERFORM pg_temp.rh_case('a private member''s file opens as the house decides', 'false', current_setting('rh.sees', true));
   PERFORM pg_temp.rh_case('a seat keeps its salon and the day it was taken', pg_temp.rh_row('open salon')::text || '|true',
     (SELECT lounge_id || '|' || (joined_at > '2000-01-02')::text FROM public.lounge_members WHERE id = (SELECT pg_temp.rh_row('seat'))));
-  PERFORM pg_temp.rh_case('a seat''s reading place is the member''s to move', '2001-01-01',
+  -- Moved, never frozen; dated by the house's clock, whatever the phone sent (20261028_02).
+  PERFORM pg_temp.rh_case('a seat''s reading place is the member''s to move, to the house''s now', now()::date::text,
     (SELECT last_read_at::date::text FROM public.lounge_members WHERE id = (SELECT pg_temp.rh_row('seat'))));
   PERFORM pg_temp.rh_case('a message keeps its salon, its words, its quote and its time', pg_temp.rh_row('open salon')::text || '|rh said|true|',
     (SELECT lounge_id || '|' || content || '|' || (created_at > '2000-01-02')::text || '|' || coalesce(reply_to_content, '')

@@ -263,13 +263,13 @@
     },
     "lounge_members": {
       "owner": "user_id", "key": ["id"],
-      "specimen": { "id": "{id}", "lounge_id": "{ref:lounges}", "user_id": "{owner}", "status": "approved" },
+      "specimen": { "id": "{id}", "lounge_id": "{ref:lounges}", "user_id": "{owner}", "status": "approved", "last_read_at": "2001-01-01" },
       "variant": "none",
-      "touch": { "last_read_at": "2026-01-02" },
+      "touch": { "last_read_at": "now" },
       "forbidden": [{ "lounge_id": "{ref:lounges@P}" }, { "status": "approved", "lounge_id": "{ref:lounges@V}" }],
       "read": "owner",
       "self": { "insert": "none", "update": "all", "delete": "all" },
-      "why": "A seat is taken through the house's functions; its member moves their reading place and may leave."
+      "why": "A seat is taken through the house's functions; its member moves their reading place, to the house's now, and may leave."
     },
     "lounge_messages": {
       "reach": { "set": {"lounge_id": "{ref:lounges}"}, "V": "none", "P": "none", "BK": "none", "BY": "none" },
@@ -834,7 +834,7 @@
     {"name":"a second interaction within a second is refused","table":"interactions","as":["free","auteur"],"kind":"insert","lay":{"interactions":{"id":"{id#9}","user_id":"{owner}","target_user_id":"{uid@X2}","type":"follow","created_at":"now"}},"row":{"id":"{new}","user_id":"{owner}","target_user_id":"{uid@V}","type":"follow"},"expect":"refused","why":"A member's interactions are kept a second apart (check_interaction_rate_limit), against floods."},
     {"name":"a member's 201st error report of a day is refused","table":"error_logs","as":["free"],"kind":"insert","laySql":"INSERT INTO public.error_logs (user_id, error_type, error_message, created_at) SELECT '{owner}', 'rh', 'rh', now() FROM generate_series(1, 200)","row":{"id":"{new}","user_id":"{owner}","error_type":"rh","error_message":"rh"},"expect":"refused","why":"A member's error reports are kept to 200 a day (20261015_07)."},
     {"name":"a muted member does not unmute themselves","table":"lounge_members","as":["free","auteur"],"kind":"update","lay":{"lounge_members":{"id":"{new}","lounge_id":"{ref:lounges@V}","user_id":"{owner}","status":"muted"}},"id":"{new}","set":{"status":"approved"},"expect":"refused","why":"A seat's standing in a salon is its host's to set."},
-    {"name":"a seated member moves their own reading place","table":"lounge_members","as":["free"],"kind":"update","lay":{"lounge_members":{"id":"{new}","lounge_id":"{ref:lounges@V}","user_id":"{owner}","status":"muted"}},"id":"{new}","set":{"last_read_at":"2026-01-02"},"expect":"ok","why":"The control beside the case above."},
+    {"name":"a seated member moves their own reading place","table":"lounge_members","as":["free"],"kind":"update","lay":{"lounge_members":{"id":"{new}","lounge_id":"{ref:lounges@V}","user_id":"{owner}","status":"muted","last_read_at":"2001-01-01"}},"id":"{new}","set":{"last_read_at":"now"},"expect":"ok","why":"The control beside the case above."},
     {"name":"turning a salon private is an Auteur feature","table":"lounges","as":["archivist"],"kind":"update","id":"{ref:lounges}","set":{"is_private":true},"expect":"refused","why":"A private salon is an Auteur feature, made or turned."},
     {"name":"an Auteur turns their salon private","table":"lounges","as":["auteur"],"kind":"update","id":"{ref:lounges}","set":{"is_private":true},"expect":"ok","why":"The control beside the case above."},
     {"name":"a handle the house keeps is not taken","table":"profiles","as":["free"],"kind":"update","id":"{owner}","set":{"username":"admin"},"expect":"refused","why":"Reserved handles, and handles not of lowercase letters, digits and single underscores, are refused (enforce_username_policy)."},
