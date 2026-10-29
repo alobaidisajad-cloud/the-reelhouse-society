@@ -27,6 +27,7 @@ import { SocietySeal } from '@/src/components/auth/SocietySeal';
 import { PasswordStrengthMeter, PASSWORD_MAX_BYTES } from '@/src/components/auth/PasswordStrengthMeter';
 import { EmailConfirmationScreen } from '@/src/components/auth/EmailConfirmationScreen';
 import { PasswordRecoveryModal } from '@/src/components/auth/PasswordRecoveryModal';
+import { FieldError, focusField } from '@/src/components/FieldError';
 import { arrive, MS } from '@/src/theme/motion';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 import { EMAIL_MAX } from '@/src/constants/inputLimits';
@@ -82,15 +83,22 @@ export default function LoginScreen() {
     awaitingConfirmation, setAwaitingConfirmation, confirmedEmail, resending, resendCooldown,
     usernameStatus, checkUsernameAvailability, handleResend,
     handleLoginSubmit, handleEmailLink, toggleMode,
-    canAttempt, secondsRemaining, handleManualConfirmationCheck
+    canAttempt, secondsRemaining, handleManualConfirmationCheck, fieldError
   } = useAuthFlow();
 
   // Picked once, so it doesn't change on every keystroke re-render
   const [loreQuote] = useState(pickAny);
 
   // Refs for input focus chaining
+  const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const usernameRef = useRef<TextInput>(null);
+  // A refused press sends the member to the field it is about.
+  useEffect(() => {
+    if (!fieldError) return;
+    focusField({ email: emailRef, username: usernameRef, password: passwordRef }[fieldError.field].current);
+  }, [fieldError]);
+  const wrongWith = (field: 'email' | 'username' | 'password') => (fieldError?.field === field ? fieldError.message : undefined);
 
   const isFocused = useIsFocused();
 
@@ -262,6 +270,7 @@ export default function LoginScreen() {
             <View style={s.inputWrap}>
               <TextInput
                 testID="email-input"
+                ref={emailRef}
                 style={[s.input, focusedField === 'email' && s.inputFocused, submitting && s.inputDisabled]}
                 placeholder={isLogin ? 'patron@cinema.org' : 'your@email.com'}
                 placeholderTextColor={colors.fog}
@@ -288,10 +297,12 @@ export default function LoginScreen() {
                 maxLength={EMAIL_MAX}
                 keyboardAppearance="dark"
                 accessibilityLabel={isLogin ? 'Email or username' : 'Email address'}
+                accessibilityHint={wrongWith('email')}
                 textContentType={isLogin ? 'username' : 'emailAddress'}
                 autoComplete={isLogin ? 'username' : 'email'}
               />
             </View>
+            <FieldError message={wrongWith('email')} />
           </View>
 
           {/* Username (signup only) */}
@@ -323,6 +334,7 @@ export default function LoginScreen() {
                   maxLength={MAX_LENGTHS.username}
                   keyboardAppearance="dark"
                   accessibilityLabel="Username handle"
+                  accessibilityHint={wrongWith('username')}
                 />
                 {/* Status indicator */}
                 {usernameStatus !== 'idle' && (
@@ -339,6 +351,7 @@ export default function LoginScreen() {
               {usernameStatus === 'taken' && (
                 <Text style={[s.fieldHint, { color: colors.crimsonInk }]}>USERNAME ALREADY TAKEN</Text>
               )}
+              <FieldError message={wrongWith('username')} />
             </Arrive>
           )}
 
@@ -372,6 +385,7 @@ export default function LoginScreen() {
                 maxLength={PASSWORD_MAX_BYTES}
                 keyboardAppearance="dark"
                 accessibilityLabel="Password"
+                accessibilityHint={wrongWith('password')}
                 textContentType={isLogin ? 'password' : 'newPassword'}
                 autoComplete={isLogin ? 'password' : 'new-password'}
               />
@@ -385,6 +399,7 @@ export default function LoginScreen() {
                 <Text style={s.showText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{showPassword ? 'HIDE' : 'SHOW'}</Text>
               </PressableScale>
             </View>
+            <FieldError message={wrongWith('password')} />
           </View>
 
           {/* Password strength meter (signup only) */}

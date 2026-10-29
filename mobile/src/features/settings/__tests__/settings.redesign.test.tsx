@@ -502,6 +502,28 @@ describe('changing the password says what went wrong', () => {
     expect(said).toHaveLength(1);
     expect(said[0]).toMatch(/connection/);
   });
+
+  // P4.39: a refusal about a field is said under it, with it, and the member is sent there.
+  it('two ciphers that differ: said under the confirmation, with it, and focused; mended, gone', async () => {
+    const { AccessibilityInfo } = require('react-native');
+    const toast = jest.requireMock('@/src/utils/reelToast').default as { error: jest.Mock };
+    toast.error.mockClear();
+    jest.mocked(AccessibilityInfo.sendAccessibilityEvent).mockClear();
+    const r = await settle(mount());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Change password')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Current password'), 'Old#Pass12'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('New password'), 'New#Pass123'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Confirm password'), 'New#Pass124'); });
+    await act(async () => { await fireEvent(r.getByLabelText('Confirm password'), 'submitEditing'); });
+    expect(r.getByLabelText('Confirm password').props.accessibilityHint).toBe('Ciphers do not match.');
+    expect(r.getByText('Ciphers do not match.')).toBeTruthy();
+    expect(r.queryByText('The two ciphers do not match.')).toBeNull();
+    expect(AccessibilityInfo.sendAccessibilityEvent).toHaveBeenCalledWith(expect.anything(), 'focus');
+    expect(toast.error).not.toHaveBeenCalled();
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Confirm password'), 'New#Pass123'); });
+    expect(r.queryByText('Ciphers do not match.')).toBeNull();
+    expect(r.getByLabelText('Confirm password').props.accessibilityHint).toBeUndefined();
+  });
 });
 
 describe('privacy', () => {

@@ -80,6 +80,8 @@ export interface ToastSnapshot {
    * slides in. False when it was handed over mid-display — so it simply stays.
    */
   arrived: boolean;
+  /** It asks for a response and a screen reader is on: no clock, it waits to be answered or dismissed. */
+  held: boolean;
 }
 
 // ── State ───────────────────────────────────────────────────────────────────
@@ -92,9 +94,10 @@ let current: ToastPayload | null = null;
 let waiting: ToastPayload[] = [];
 let leaving = false;
 let arrived = false;
+let held = false;
 let clock: ReturnType<typeof setTimeout> | null = null;
 
-let snapshot: ToastSnapshot = { toast: null, leaving: false, host: null, arrived: false };
+let snapshot: ToastSnapshot = { toast: null, leaving: false, host: null, arrived: false, held: false };
 const subscribers = new Set<() => void>();
 
 // ── Choosing the host ──────────────────────────────────────────────────────
@@ -127,18 +130,65 @@ function publish() {
   const host = current ? chooseHost() : null;
   // A change of host with the toast already up is a handover, not an arrival.
   if (current && host !== snapshot.host && snapshot.toast?.id === current.id) arrived = false;
-  const next: ToastSnapshot = { toast: current, leaving, host, arrived };
+  const next: ToastSnapshot = { toast: current, leaving, host, arrived, held };
   if (next.toast === snapshot.toast && next.leaving === snapshot.leaving
-    && next.host === snapshot.host && next.arrived === snapshot.arrived) return;
+    && next.host === snapshot.host && next.arrived === snapshot.arrived && next.held === snapshot.held) return;
   snapshot = next;
   subscribers.forEach(fn => fn());
 }
 
-// ── The queue ──────────────────────────────────────────────────────────────
+// ── The clock, and the member who cannot race it ──────────────────────────
+/**
+ * A toast that asks for a response does not leave on a clock while a screen
+ * reader is on: a member moving by swipes cannot reach a button that goes in
+ * five seconds. It stays until its action is pressed or it is dismissed. And
+ * Android keeps a member's own "time to take action": every toast stays at
+ * least that long there.
+ */
+let readerOn = false;
+let listening = false;
+
+function listen() {
+  if (listening) return;
+  listening = true;
+  // Its answer arrives when it arrives; a failed read leaves the reader taken as off.
+  void AccessibilityInfo.isScreenReaderEnabled().then(readerChanged, () => {});
+  AccessibilityInfo.addEventListener('screenReaderChanged', readerChanged);
+}
+
+function readerChanged(on: boolean) {
+  readerOn = on;
+  if (!current?.action || leaving) return;
+  if (on && !held) {
+    stopClock();
+    held = true;
+    publish();
+  } else if (!on && held) {
+    held = false;
+    startClock(current);
+    publish();
+  }
+}
+
 function stopClock() {
   if (clock) clearTimeout(clock);
   clock = null;
 }
+
+function startClock(toast: ToastPayload) {
+  const ms = toastDuration(toast);
+  if (Platform.OS !== 'android') {
+    clock = setTimeout(leave, ms);
+    return;
+  }
+  const run = (wait: number) => {
+    if (current?.id === toast.id && !leaving && !held && !clock) clock = setTimeout(leave, Math.max(ms, wait));
+  };
+  // The clock starts when the answer comes; with none, on the toast's own length.
+  void AccessibilityInfo.getRecommendedTimeoutMillis(ms).then(run, () => run(ms));
+}
+
+// ── The queue ──────────────────────────────────────────────────────────────
 
 function begin(toast: ToastPayload) {
   current = toast;
@@ -151,11 +201,13 @@ function begin(toast: ToastPayload) {
   if (Platform.OS === 'ios' && !toast.action) {
     AccessibilityInfo.announceForAccessibility(toast.message);
   }
-  clock = setTimeout(leave, toastDuration(toast));
+  held = Boolean(toast.action) && readerOn;
+  if (!held) startClock(toast);
   publish();
 }
 
 function leave() {
+  held = false;
   leaving = true;
   publish();
   clock = setTimeout(() => {
@@ -175,6 +227,7 @@ function clear() {
   waiting = [];
   leaving = false;
   arrived = false;
+  held = false;
   publish();
 }
 
@@ -191,6 +244,13 @@ export function showToast(message: string, type: ToastType, action?: ToastPayloa
   return toast.id;
 }
 
+/** The toast `id` goes now: its action was taken, or it was dismissed. */
+export function dismissToast(id: number): void {
+  if (current?.id !== id || leaving) return;
+  stopClock();
+  leave();
+}
+
 /** A fresh host id — taken once, when a host first renders. */
 export function nextToastHostId(): number {
   return ++lastHostId;
@@ -198,6 +258,7 @@ export function nextToastHostId(): number {
 
 /** Register a host. The returned function releases it. */
 export function registerToastHost(id: number, entry: ToastHostEntry): () => void {
+  listen();
   hosts.set(id, { ...entry, order: ++registrations });
   publish();
   return () => {

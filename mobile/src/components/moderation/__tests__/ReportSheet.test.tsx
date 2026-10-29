@@ -203,6 +203,24 @@ describe('ReportSheet', () => {
     });
   });
 
+  // P4.39: the refusal is said under the details, with them, and the member is sent there.
+  describe('"other" with no description, pressed', () => {
+    it('says why under the details, in their hint, focuses them, and files nothing; described, the reason goes', async () => {
+      const { AccessibilityInfo } = require('react-native');
+      jest.mocked(AccessibilityInfo.sendAccessibilityEvent).mockClear();
+      const r = render(<ReportSheet {...defaultProps} />);
+      await act(async () => { await fireEvent.press(r.getByLabelText(/^OTHER\./)); });
+      await act(async () => { await fireEvent.press(r.getByLabelText('File report')); });
+      expect(mockSubmitReport).not.toHaveBeenCalled();
+      expect(r.getByText('Please describe the infraction.')).toBeTruthy();
+      expect(r.getByLabelText('Additional details').props.accessibilityHint).toBe('Please describe the infraction.');
+      expect(AccessibilityInfo.sendAccessibilityEvent).toHaveBeenCalledWith(expect.anything(), 'focus');
+      await act(async () => { await fireEvent.changeText(r.getByLabelText('Additional details'), 'A stolen review.'); });
+      expect(r.queryByText('Please describe the infraction.')).toBeNull();
+      expect(r.getByLabelText('Additional details').props.accessibilityHint).toBe('Describe the infraction in more detail');
+    });
+  });
+
   describe('Character counter', () => {
     it('the details field stops at 500 characters, and its counter says so', async () => {
       // The field opens only once a reason is chosen.

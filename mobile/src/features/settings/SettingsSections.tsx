@@ -29,6 +29,7 @@ import { endOtherSessions } from '@/src/lib/endSession';
 import { isAuteurPlusTier, isArchivistPlusTier, getDisplayTier } from '@/src/utils/tier';
 import { firstPrivilegesOf } from '@/src/constants/membership';
 import { passwordIsAccepted, passwordFits, PASSWORD_TOO_LONG, PASSWORD_MAX_BYTES, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
+import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 import { STORE } from '@/src/components/society/SmallPrint';
 import { Toggle } from '@/src/components/Toggle';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
@@ -279,8 +280,14 @@ export function PasswordChangePanel() {
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [changingPassword, setChangingPassword] = React.useState(false);
   const [isOAuth, setIsOAuth] = React.useState(false);
+  const currentPasswordRef = useRef<TextInput>(null);
   const newPasswordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
+  // A refused press says why under its field, with it, and goes there.
+  const { refuse, wrongWith } = useFieldRefusal(
+    [currentPassword, newPassword, confirmPassword],
+    { current: currentPasswordRef, next: newPasswordRef, confirm: confirmPasswordRef },
+  );
   const isMountedRef = useRef(true);
 
   React.useEffect(() => {
@@ -318,10 +325,10 @@ export function PasswordChangePanel() {
   };
 
   const handlePasswordChange = async () => {
-    if (!currentPassword) { reelToast.error('Current cipher required.'); return; }
-    if (!passwordFits(newPassword)) { reelToast.error(PASSWORD_TOO_LONG); return; }
-    if (!pwStrong) { reelToast.error('Your cipher does not meet Society encryption standards.'); return; }
-    if (newPassword !== confirmPassword) { reelToast.error('Ciphers do not match.'); return; }
+    if (!currentPassword) { refuse('current', 'Current cipher required.'); return; }
+    if (!passwordFits(newPassword)) { refuse('next', PASSWORD_TOO_LONG); return; }
+    if (!pwStrong) { refuse('next', 'Your cipher does not meet Society encryption standards.'); return; }
+    if (newPassword !== confirmPassword) { refuse('confirm', 'Ciphers do not match.'); return; }
     setChangingPassword(true);
     try {
       // The address the phone already holds: asking the server for it fails offline.
@@ -381,19 +388,22 @@ export function PasswordChangePanel() {
             <>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>CURRENT PASSWORD</Text>
-                <TextInput style={st.fieldInput} value={currentPassword} onChangeText={setCurrentPassword} maxLength={PASSWORD_MAX_BYTES} secureTextEntry textContentType="password" autoComplete="password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => newPasswordRef.current?.focus()} placeholder="Your current password" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Current password" {...scaledTextProps} />
+                <TextInput ref={currentPasswordRef} style={st.fieldInput} value={currentPassword} onChangeText={setCurrentPassword} maxLength={PASSWORD_MAX_BYTES} secureTextEntry textContentType="password" autoComplete="password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => newPasswordRef.current?.focus()} placeholder="Your current password" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Current password" accessibilityHint={wrongWith('current')} {...scaledTextProps} />
+                <FieldError message={wrongWith('current')} />
               </View>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>NEW PASSWORD</Text>
-                <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} maxLength={PASSWORD_MAX_BYTES} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="To the Society's standard" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="New password" {...scaledTextProps} />
+                <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} maxLength={PASSWORD_MAX_BYTES} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="To the Society's standard" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="New password" accessibilityHint={wrongWith('next')} {...scaledTextProps} />
+                <FieldError message={wrongWith('next')} />
                 <PasswordStrengthMeter password={newPassword} />
               </View>
               <View style={st.panelField}>
                 <Text style={st.fieldLabel} {...scaledTextProps}>CONFIRM PASSWORD</Text>
-                <TextInput ref={confirmPasswordRef} style={st.fieldInput} value={confirmPassword} onChangeText={setConfirmPassword} maxLength={PASSWORD_MAX_BYTES} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="done" onSubmitEditing={handlePasswordChange} placeholder="Repeat password" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Confirm password" {...scaledTextProps} />
-                {confirmPassword.length > 0 && newPassword !== confirmPassword && (
+                <TextInput ref={confirmPasswordRef} style={st.fieldInput} value={confirmPassword} onChangeText={setConfirmPassword} maxLength={PASSWORD_MAX_BYTES} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="done" onSubmitEditing={handlePasswordChange} placeholder="Repeat password" placeholderTextColor={colors.fog} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Confirm password" accessibilityHint={wrongWith('confirm')} {...scaledTextProps} />
+                {confirmPassword.length > 0 && newPassword !== confirmPassword && !wrongWith('confirm') && (
                   <Text style={st.pwMismatch} {...scaledTextProps}>The two ciphers do not match.</Text>
                 )}
+                <FieldError message={wrongWith('confirm')} />
               </View>
               <PressableScale
                 style={[st.saveFieldBtn, !canSubmit && st.dimmed]}

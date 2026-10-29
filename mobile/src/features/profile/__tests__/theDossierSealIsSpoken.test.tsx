@@ -20,7 +20,7 @@ jest.mock('@/src/hooks/useEditProfile', () => ({
     const form = useForm({ defaultValues: { username: 'cinephile', display_name: '', bio: '', links: [] } });
     return {
       user: { id: 'u1', username: 'cinephile', created_at: '2026-01-01T00:00:00Z' },
-      form, errors: {}, avatarPreview: null, setAvatarPreview: jest.fn(), avatarBase64: null, setAvatarBase64: jest.fn(),
+      form, avatarPreview: null, setAvatarPreview: jest.fn(), avatarBase64: null, setAvatarBase64: jest.fn(),
       showCropModal: false, setShowCropModal: jest.fn(), handleRemoveAvatar: jest.fn(),
       fields: [], handleAddLink: jest.fn(), handleRemoveLink: jest.fn(),
       saving: false, sealed: true, submitError: null, handleSave: jest.fn(), handleBack: jest.fn(), isDirty: false,

@@ -292,7 +292,7 @@ describe('the writing room', () => {
   });
 
   it('refuses an over-length essay before touching anything', async () => {
-    const { getByLabelText } = await open();
+    const { getByLabelText, getByText } = await open();
     await type(getByLabelText("Essay headline"), 'Too Long');
     await type(getByLabelText("Essay content body"), 'x'.repeat(25001));
     await act(async () => { jest.advanceTimersByTime(1200); });
@@ -300,10 +300,13 @@ describe('the writing room', () => {
     await press(getByLabelText('File the essay'));
     await flush();
 
-    // Nothing written, nothing deleted, and the member told by how much.
+    // Nothing written, nothing deleted, and the member told by how much: under the
+    // writing, with it, and sent there (P4.39), not in a toast that leaves.
     expect(mockFiled).toHaveLength(0);
     expect(mockStore.has(DRAFT_KEY)).toBe(true);
-    expect(String(mockToast.error.mock.calls[0][0])).toMatch(/over the limit/);
+    expect(getByLabelText('Essay content body').props.accessibilityHint).toMatch(/over the limit/);
+    expect(getByText(/characters over the limit/)).toBeTruthy();
+    expect(mockToast.error).not.toHaveBeenCalled();
   });
 
   it('shows the counter only near the fence', async () => {

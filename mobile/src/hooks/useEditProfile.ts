@@ -351,7 +351,6 @@ export function useEditProfile() {
   return {
     user,
     form,
-    errors: form.formState.errors,
     avatarPreview,
     setAvatarPreview,
     avatarBase64,

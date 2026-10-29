@@ -5,7 +5,7 @@
  * before calling login/signup) and mapAuthError (the raw-error -> copy
  * mapping in the catch block), both extracted as pure functions.
  */
-import { validateLoginSubmission, mapAuthError, initialIsLogin, LoginSubmissionInput } from '../useAuthFlow';
+import { validateLoginSubmission, refusalOf, mapAuthError, initialIsLogin, LoginSubmissionInput } from '../useAuthFlow';
 
 /**
  * Which form the screen opens on, decided from the route before first paint.
@@ -147,5 +147,25 @@ describe('mapAuthError', () => {
     const result = mapAuthError('Teapot refused the brew');
     expect(result.message).toBe('Teapot refused the brew');
     expect(result.isInvalidCredentials).toBe(false);
+  });
+});
+
+// P4.39: each reason names the field it is about, so the screen can say it there.
+describe('refusalOf — the field a reason is about', () => {
+  it.each([
+    ['an empty address', { emailOrUsername: '' }, 'email'],
+    ['an empty handle, signing up', { isLogin: false, username: '' }, 'username'],
+    ['an empty password', { password: '' }, 'password'],
+    ['a weak cipher', { isLogin: false, username: 'newuser', pwStrong: false }, 'password'],
+    ['a handle the rules refuse', { isLogin: false, username: 'x', usernameCheck: { valid: false, error: 'No.' } }, 'username'],
+    ['a handle already claimed', { isLogin: false, username: 'newuser', usernameStatus: 'taken' as const }, 'username'],
+    ['attempts suspended: about no field', { canAttempt: false, secondsRemaining: 9 }, null],
+  ])('%s', (_name, over, field) => {
+    expect(refusalOf(baseInput(over as Partial<LoginSubmissionInput>))?.field).toBe(field);
+  });
+
+  it('says the same words as before, and nothing when nothing stands in the way', () => {
+    expect(refusalOf(baseInput({ password: '' }))?.message).toBe(validateLoginSubmission(baseInput({ password: '' })));
+    expect(refusalOf(baseInput())).toBeNull();
   });
 });

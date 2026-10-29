@@ -33,6 +33,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { colors, fonts } from '@/src/theme/theme';
 import {
+  dismissToast,
   getToastSnapshot,
   nextToastHostId,
   registerToastHost,
@@ -97,7 +98,7 @@ export function ToastHost({ layer = 'sheet' }: { layer?: 'sheet' | 'root' }) {
   const depth = useContext(ScreenDepth);
   const showing = useHost(layer, depth);
   if (!showing?.toast) return null;
-  return <ToastPill key={showing.toast.id} toast={showing.toast} leaving={showing.leaving} slide={showing.arrived} />;
+  return <ToastPill key={showing.toast.id} toast={showing.toast} leaving={showing.leaving} held={showing.held} slide={showing.arrived} />;
 }
 
 type ScreenLayout = NonNullable<React.ComponentProps<typeof Stack>['screenLayout']>;
@@ -133,6 +134,7 @@ function ToastScreen({ children, navigation, presentation }: {
       key={showing.toast.id}
       toast={showing.toast}
       leaving={showing.leaving}
+      held={showing.held}
       slide={showing.arrived}
       inSheet={inSheet}
     />
@@ -173,9 +175,11 @@ function ToastScreen({ children, navigation, presentation }: {
   );
 }
 
-function ToastPill({ toast, leaving, slide, inSheet = false }: {
+function ToastPill({ toast, leaving, held = false, slide, inSheet = false }: {
   toast: ToastPayload;
   leaving: boolean;
+  /** Waiting for an answer, with a screen reader on: it offers DISMISS beside its act. */
+  held?: boolean;
   /** Slide in — false when the toast was handed here mid-display. */
   slide: boolean;
   /** Drawn in an iOS sheet, whose top is not the screen's. */
@@ -278,15 +282,30 @@ function ToastPill({ toast, leaving, slide, inSheet = false }: {
                 {toast.message}
               </Text>
             </View>
-            <Pressable
-              onPress={action.onPress}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityRole="button"
-              accessibilityLabel={spokenLabel(action.label)}
-              style={({ pressed }) => [styles.actionChip, pressed && styles.actionChipPressed]}
-            >
-              <Text style={styles.actionLabel} numberOfLines={1} {...scaledTextProps}>{action.label}</Text>
-            </Pressable>
+            <View style={styles.actionRow}>
+              {/* Held for a screen reader, it leaves only when answered: so it can be put away too. */}
+              {held ? (
+                <Pressable
+                  onPress={() => { dismissToast(toast.id); }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Dismiss"
+                  style={({ pressed }) => [styles.dismissChip, pressed && styles.actionChipPressed]}
+                >
+                  <Text style={styles.dismissLabel} numberOfLines={1} {...scaledTextProps}>DISMISS</Text>
+                </Pressable>
+              ) : null}
+              {/* Answered, the toast has done its work and goes. */}
+              <Pressable
+                onPress={() => { action.onPress(); dismissToast(toast.id); }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel={spokenLabel(action.label)}
+                style={({ pressed }) => [styles.actionChip, pressed && styles.actionChipPressed]}
+              >
+                <Text style={styles.actionLabel} numberOfLines={1} {...scaledTextProps}>{action.label}</Text>
+              </Pressable>
+            </View>
           </>
         ) : (
           <>
@@ -358,8 +377,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  dismissChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(196,150,26,0.15)',
+  },
+  dismissLabel: {
+    fontFamily: fonts.sub,
+    fontSize: 10,
+    letterSpacing: 2,
+    color: colors.bone,
+  },
   actionChip: {
-    alignSelf: 'flex-end',
     paddingVertical: 6,
     paddingHorizontal: 10,
     backgroundColor: 'rgba(196,150,26,0.1)',

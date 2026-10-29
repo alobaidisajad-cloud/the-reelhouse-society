@@ -120,7 +120,6 @@ export function EditProfileScreen() {
   const {
     user,
     form,
-    errors,
     avatarPreview, setAvatarPreview,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     avatarBase64, setAvatarBase64,
@@ -252,7 +251,6 @@ export function EditProfileScreen() {
                 name="username"
                 placeholderTextColor={colors.fog} maxLength={MAX_LENGTHS.username} keyboardAppearance="dark" accessibilityLabel="Username" selectionColor={colors.sepia}
               />
-              {!!errors.username && <Text {...scaledTextProps} style={st.errorText}>{errors.username.message}</Text>}
               <Text {...scaledTextProps} style={st.helperText}>Lowercase letters, numbers, and underscores only · 3-30 characters</Text>
             </View>
 
@@ -263,7 +261,6 @@ export function EditProfileScreen() {
                 style={st.fieldInput}
                 placeholderTextColor={colors.fog} placeholder="Your name in the credits..." maxLength={MAX_LENGTHS.displayName} keyboardAppearance="dark" accessibilityLabel="Display name" selectionColor={colors.sepia}
               />
-              {!!errors.displayName && <Text {...scaledTextProps} style={st.errorText}>{errors.displayName.message}</Text>}
             </View>
 
             <View style={st.fieldWrap}>
@@ -274,7 +271,6 @@ export function EditProfileScreen() {
                 maxLength={MAX_LENGTHS.bio}
                 placeholderTextColor={colors.fog} placeholder="A brief dispatch about your cinematic journey..." keyboardAppearance="dark" accessibilityLabel="Bio" selectionColor={colors.sepia} returnKeyType="done" blurOnSubmit={true}
               />
-              {!!errors.bio && <Text {...scaledTextProps} style={st.errorText}>{errors.bio.message}</Text>}
             </View>
           </BureauCard>
         </Arrive>
@@ -340,7 +336,6 @@ export function EditProfileScreen() {
                     links={fields}
                     handleAddLink={handleAddLink}
                     handleRemoveLink={handleRemoveLink}
-                    errors={errors as unknown as import('@/src/features/profile/LinksEditor').LinksEditorProps['errors']}
                   />
               </BureauCard>
           </Arrive>

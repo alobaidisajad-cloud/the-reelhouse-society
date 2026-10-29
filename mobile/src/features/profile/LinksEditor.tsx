@@ -13,10 +13,9 @@ export interface LinksEditorProps {
   links: { id: string; title: string; url: string }[];
   handleAddLink: () => void;
   handleRemoveLink: (index: number) => void;
-  errors: { links?: ({ title?: { message?: string }; url?: { message?: string } } | undefined)[] };
 }
 
-export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: LinksEditorProps) {
+export function LinksEditor({ links, handleAddLink, handleRemoveLink }: LinksEditorProps) {
   return (
     <View>
       <Text {...scaledTextProps} style={st.fieldBody}>Add links to your profile. They will be visible to anyone who visits your page.</Text>
@@ -49,7 +48,6 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                         name={`links.${index}.title` as const}
                         style={st.fieldInput} placeholder="Portfolio, Blog, Channel…" placeholderTextColor={colors.fog} maxLength={MAX_LENGTHS.linkTitle} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia}
                       />
-                      {!!errors.links?.[index]?.title && <Text {...scaledTextProps} style={st.errorText}>{errors.links[index]?.title?.message}</Text>}
                   </View>
                   
                   <View style={st.fieldWrap}>
@@ -58,7 +56,6 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink, errors }: 
                         name={`links.${index}.url` as const}
                         style={st.fieldInput} placeholder="https://..." placeholderTextColor={colors.fog} maxLength={MAX_LENGTHS.linkUrl} keyboardType="url" autoCapitalize="none" autoCorrect={false} keyboardAppearance="dark" accessibilityLabel="Link URL" selectionColor={colors.sepia}
                       />
-                      {!!errors.links?.[index]?.url && <Text {...scaledTextProps} style={st.errorText}>{errors.links[index]?.url?.message}</Text>}
                   </View>
               </View>
           ))}
@@ -95,7 +92,6 @@ const st = StyleSheet.create({
   fieldWrap: { marginBottom: 16 },
   fieldLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, marginBottom: 6 },
   fieldInput: { width: '100%', paddingHorizontal: 14, paddingVertical: 11, backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 3, color: colors.parchment, fontFamily: fonts.body, fontSize: 14 },
-  errorText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.crimsonInk, marginTop: 4 },
   addLinkBtn: { width: '100%', padding: 14, backgroundColor: 'rgba(184,137,26,0.05)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderStyle: 'dashed', borderRadius: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
   addLinkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
   linksCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fogQuiet, textAlign: 'center', marginTop: 10 },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
+import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 // The preview mounts `EssayBody`, which carries the link guard and the render cap.
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
@@ -262,6 +263,8 @@ function ComposeDossierScreen() {
     const [forcedSelection, setForcedSelection] = useState<{ start: number; end: number } | null>(null);
 
     const inputRef = useRef<TextInput>(null);
+    // A refused filing says why under the writing, with it, and goes there.
+    const { refuse, wrongWith } = useFieldRefusal([content], { body: inputRef });
 
     // Refs mirror state so the AppState flush reads the latest without re-subscribing.
     const titleRef = useRef(title);
@@ -602,9 +605,7 @@ function ComposeDossierScreen() {
         if (limit.over) {
             // "essay", the word a member reads (dossier is the database's), written plainly:
             // nameOf() gives the label form, in capitals.
-            reelToast.error(
-                `This essay is ${groupDigits(Math.abs(limit.remaining))} characters over the limit. Trim it and file again — nothing has been lost.`
-            );
+            refuse('body', `This essay is ${groupDigits(Math.abs(limit.remaining))} characters over the limit. Trim it and file again — nothing has been lost.`);
             return;
         }
 
@@ -886,7 +887,9 @@ function ComposeDossierScreen() {
                             selectionColor="rgba(184,137,26,0.3)"
                             keyboardAppearance="dark"
                             accessibilityLabel="Essay content body"
+                            accessibilityHint={wrongWith('body')}
                         />
+                        <FieldError message={wrongWith('body')} />
                     </CinematicScrollView>
 
                     <View style={styles.toolbar}>

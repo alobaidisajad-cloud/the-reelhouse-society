@@ -12,6 +12,7 @@ import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
+import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import Animated, { cancelAnimation, ReduceMotion, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
@@ -185,6 +186,9 @@ export default function ListModal() {
         : null;
 
     const [title, setTitle] = useState(editList?.title || '');
+    const titleRef = useRef<TextInput>(null);
+    // A refused save says why under the title, with it, and goes there.
+    const { refuse, wrongWith } = useFieldRefusal([title], { title: titleRef });
     const [description, setDescription] = useState(editList?.description || '');
     const [isPrivate, setIsPrivate] = useState(editList?.isPrivate || false);
     const [isRanked, setIsRanked] = useState(editList?.isRanked || false);
@@ -377,7 +381,7 @@ export default function ListModal() {
         // leave the button spinning. A silenced member may neither create nor amend.
         if (checkBan()) return;
         if (!title.trim()) {
-            reelToast.error('Every stack requires a title. Name your thesis.');
+            refuse('title', 'Every stack requires a title. Name your thesis.');
             return;
         }
         // Never a create in its place: that files a second stack.
@@ -466,6 +470,7 @@ export default function ListModal() {
             <View style={s.sec}>
                 <Text style={s.label}>TITLE</Text>
                 <TextInput
+                    ref={titleRef}
                     style={s.plate}
                     // Wraps, never shrinks (see the plate's style).
                     multiline
@@ -481,9 +486,11 @@ export default function ListModal() {
                     disableFullscreenUI={true}
                     keyboardAppearance="dark"
                     accessibilityLabel="Stack title"
+                    accessibilityHint={wrongWith('title')}
                     // Capped: 26pt uncapped passes 70 at iOS's largest text setting.
                     {...displayTextProps}
                 />
+                <FieldError message={wrongWith('title')} />
             </View>
 
             <View style={[s.sec, { marginBottom: films.length > 0 ? 12 : 0 }]}>

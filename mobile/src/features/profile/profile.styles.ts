@@ -39,7 +39,6 @@ export const st = StyleSheet.create({
   fieldInput: { width: '100%', paddingHorizontal: 14, paddingVertical: 11, backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 3, color: colors.parchment, fontFamily: fonts.body, fontSize: 14 },
   fieldBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, marginBottom: 12 },
   
-  errorText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.crimsonInk, marginTop: 4 },
   helperText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fogQuiet, marginTop: 4 },
 
   // Avatar

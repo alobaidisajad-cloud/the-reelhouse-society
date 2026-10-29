@@ -280,6 +280,23 @@ describe('the form can never destroy a stack', () => {
   });
 });
 
+// P4.39: a refusal about the title is said under it, with it, and the member is sent there.
+describe('a stack with no name, pressed', () => {
+  it('says why under the title, in its hint, focuses it, and files nothing; named, the reason goes', async () => {
+    const { AccessibilityInfo } = require('react-native');
+    jest.mocked(AccessibilityInfo.sendAccessibilityEvent).mockClear();
+    const r = mount();
+    await waitFor(() => expect(r.getByText('Curate a Stack')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText(/^FILE THE STACK/)); });
+    expect(r.getByText('Every stack requires a title. Name your thesis.')).toBeTruthy();
+    expect(r.getByLabelText('Stack title').props.accessibilityHint).toBe('Every stack requires a title. Name your thesis.');
+    expect(AccessibilityInfo.sendAccessibilityEvent).toHaveBeenCalledWith(expect.anything(), 'focus');
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack title'), 'Rain'); });
+    expect(r.queryByText('Every stack requires a title. Name your thesis.')).toBeNull();
+    expect(r.getByLabelText('Stack title').props.accessibilityHint).toBeUndefined();
+  });
+});
+
 describe('the header tells the truth', () => {
   it('says it is amending, and does not repeat the title the plate holds', async () => {
     // It said NEW STACK beside a button reading SAVE CHANGES. Naming the stack

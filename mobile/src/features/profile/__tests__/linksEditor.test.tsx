@@ -35,7 +35,7 @@ const LINKS = [
 ];
 
 const mount = () => render(
-  <LinksEditor links={LINKS} handleAddLink={jest.fn()} handleRemoveLink={jest.fn()} errors={{}} />,
+  <LinksEditor links={LINKS} handleAddLink={jest.fn()} handleRemoveLink={jest.fn()} />,
 );
 
 const removeButtons = (r: ReturnType<typeof mount>) => r.getAllByLabelText('Remove link');
@@ -65,7 +65,7 @@ describe('the remove control clears the floor by its own geometry', () => {
   it('there is one per link, and it removes that link', async () => {
     const handleRemoveLink = jest.fn();
     const r = render(
-      <LinksEditor links={LINKS} handleAddLink={jest.fn()} handleRemoveLink={handleRemoveLink} errors={{}} />,
+      <LinksEditor links={LINKS} handleAddLink={jest.fn()} handleRemoveLink={handleRemoveLink} />,
     );
     const btns = r.getAllByLabelText('Remove link');
     expect(btns).toHaveLength(LINKS.length);

@@ -22,6 +22,8 @@ const mockAccessibilityInfo = {
   // Read by HouseBlur, every glass's (Reduce Transparency).
   isReduceTransparencyEnabled: jest.fn().mockResolvedValue(false),
   isScreenReaderEnabled: jest.fn().mockResolvedValue(false),
+  // Android's "time to take action", which the toast clock keeps (toastBus).
+  getRecommendedTimeoutMillis: jest.fn((ms: number) => Promise.resolve(ms)),
   // An action toast moves VoiceOver focus onto its message (ToastHost).
   sendAccessibilityEvent: jest.fn(),
   setAccessibilityFocus: jest.fn(),

@@ -10,9 +10,10 @@
  * noir bureau.
  */
 import { HouseBlur } from '@/src/components/HouseBlur';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useWindowDimensions, Modal, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
+import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
 import { useSheetPresence } from '@/src/hooks/useSheetPresence';
@@ -37,7 +38,6 @@ import {
     type ReportReason,
     ReportReason as ReportReasonEnum,
 } from '@/src/types/moderation';
-import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
 import { arrive, MS } from '@/src/theme/motion';
@@ -160,6 +160,9 @@ function ReportSheet({
   // ── Local State ─────────────────────────────────────────────────────────
   const [selectedReason, setSelectedReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState('');
+  const detailsRef = useRef<TextInput>(null);
+  // A refused filing says why under the details, with them, and goes there.
+  const { refuse, wrongWith } = useFieldRefusal([details, selectedReason], { details: detailsRef });
   const [blockToggle, setBlockToggle] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -212,7 +215,7 @@ function ReportSheet({
     if (!selectedReason || !user) return;
 
     if (selectedReason === 'other' && (!details || !details.trim())) {
-      reelToast.error('Please describe the infraction.');
+      refuse('details', 'Please describe the infraction.');
       return;
     }
 
@@ -232,7 +235,7 @@ function ReportSheet({
     if (result.status === 'submitted' || result.status === 'queued' || result.status === 'duplicate') {
       onDismiss();
     }
-  }, [selectedReason, user, submitReport, contentId, contentType, details, blockToggle, targetUserId, onDismiss]);
+  }, [selectedReason, user, submitReport, contentId, contentType, details, blockToggle, targetUserId, onDismiss, refuse]);
 
   // ── Computed Values ─────────────────────────────────────────────────────
   const isSubmitDisabled = !selectedReason || isSubmitting;
@@ -308,6 +311,7 @@ function ReportSheet({
               {selectedReason && (
                 <Arrive name="report.details" duration={300} style={styles.detailsContainer}>
                   <TextInput
+                    ref={detailsRef}
                     style={[
                       styles.detailsInput,
                       isFocused && styles.detailsInputFocused,
@@ -323,11 +327,12 @@ function ReportSheet({
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                     accessibilityLabel="Additional details"
-                    accessibilityHint="Describe the infraction in more detail"
+                    accessibilityHint={wrongWith('details') ?? 'Describe the infraction in more detail'}
                   />
                   <Text style={[styles.counter, { color: counterColor }]}>
                     {details.length}/{MAX_DETAILS_LENGTH}
                   </Text>
+                  <FieldError message={wrongWith('details')} />
                 </Arrive>
               )}
 

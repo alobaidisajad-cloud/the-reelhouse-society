@@ -13,6 +13,7 @@ import { useContentBottom, usePushedHeaderTop } from '@/src/components/layout/na
 import { Lock } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { passwordIsAccepted, passwordFits, PASSWORD_TOO_LONG, PASSWORD_MAX_BYTES, PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
+import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { nav } from '@/src/utils/typedRouter';
@@ -33,7 +34,10 @@ export default function ResetPasswordScreen() {
   // Whether the recovery link left a session to set the password on (null: still asking).
   const [hasSession, setHasSession] = useState<boolean | null>(null);
 
+  const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
+  // A refused press says why under its field, with it, and goes there.
+  const { refuse, wrongWith } = useFieldRefusal([password, confirm], { password: passwordRef, confirm: confirmRef });
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => { return () => { if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current); }; }, []);
 
@@ -51,15 +55,15 @@ export default function ResetPasswordScreen() {
 
   const handleReset = async () => {
     if (!passwordFits(password)) {
-      reelToast.error(PASSWORD_TOO_LONG);
+      refuse('password', PASSWORD_TOO_LONG);
       return;
     }
     if (!strong) {
-      reelToast.error('Password does not meet security requirements.');
+      refuse('password', 'Password does not meet security requirements.');
       return;
     }
     if (password !== confirm) {
-      reelToast.error('Passwords do not match.');
+      refuse('confirm', 'Passwords do not match.');
       return;
     }
 
@@ -218,6 +222,7 @@ export default function ResetPasswordScreen() {
             <Text style={s.inputLabel}>NEW PASSWORD</Text>
             <View style={s.inputWrap}>
               <TextInput
+                ref={passwordRef}
                 style={[s.input, { paddingRight: 60 }]}
                 placeholder="Enter new password"
                 placeholderTextColor={colors.fog}
@@ -236,6 +241,7 @@ export default function ResetPasswordScreen() {
                 maxLength={PASSWORD_MAX_BYTES}
                 keyboardAppearance="dark"
                 accessibilityLabel="New password"
+                accessibilityHint={wrongWith('password')}
               />
               <PressableScale
                 style={s.showBtn}
@@ -248,6 +254,7 @@ export default function ResetPasswordScreen() {
                 <Text style={s.showText}>{showPassword ? 'HIDE' : 'SHOW'}</Text>
               </PressableScale>
             </View>
+            <FieldError message={wrongWith('password')} />
           </View>
 
           <PasswordStrengthMeter password={password} />
@@ -274,11 +281,13 @@ export default function ResetPasswordScreen() {
                 maxLength={PASSWORD_MAX_BYTES}
                 keyboardAppearance="dark"
                 accessibilityLabel="Confirm new password"
+                accessibilityHint={wrongWith('confirm')}
               />
             </View>
-            {confirm.length > 0 && password !== confirm && (
+            {confirm.length > 0 && password !== confirm && !wrongWith('confirm') && (
               <Text style={s.mismatchText}>PASSWORDS DO NOT MATCH</Text>
             )}
+            <FieldError message={wrongWith('confirm')} />
           </View>
 
           {/* Submit */}

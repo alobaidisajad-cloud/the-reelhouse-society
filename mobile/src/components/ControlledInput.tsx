@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { TextInputProps, View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { useController, useFormContext } from 'react-hook-form';
 import { colors, fonts } from '@/src/theme/theme';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { FieldError, focusField } from '@/src/components/FieldError';
 
 interface ControlledInputProps extends TextInputProps {
   name: string;
@@ -13,30 +14,51 @@ interface ControlledInputProps extends TextInputProps {
   maxLength: number;
 }
 
+/**
+ * The field bound to the form by name, with what is wrong with it: the message
+ * drawn under it and carried as its hint, and the form's refusal moving the
+ * member onto it (react-hook-form focuses the first field in error through the
+ * ref it is handed; that ref moves a screen reader there too).
+ */
+function useField(name: string) {
+  const { control } = useFormContext();
+  const { field, fieldState } = useController({ name, control });
+  const input = useRef<TextInput>(null);
+  const ref = (el: TextInput | null) => {
+    input.current = el;
+    field.ref(el ? { focus: () => focusField(input.current) } : null);
+  };
+  return { field, ref, error: fieldState.error?.message };
+}
+
 /** A form field bound to the form by name: typing redraws this field, not the screen. */
-export const ControlledInput = React.memo(function ControlledInput({ name, style, ...props }: ControlledInputProps) {
-  const { control } = useFormContext();
-  const { field } = useController({ name, control });
-
-  return (
-    <TextInput
-      style={style}
-      value={field.value}
-      onChangeText={field.onChange}
-      selectionColor={colors.selection}
-      {...props}
-    />
-  );
-});
-
-/** The bio, with its count of characters beside it (redrawn with the field alone); its limit the bio's own unless named. */
-export const ControlledBioInput = React.memo(function ControlledBioInput({ name, maxLength = MAX_LENGTHS.bio, ...props }: Omit<ControlledInputProps, 'maxLength'> & { maxLength?: number }) {
-  const { control } = useFormContext();
-  const { field } = useController({ name, control });
+export const ControlledInput = React.memo(function ControlledInput({ name, style, accessibilityHint, ...props }: ControlledInputProps) {
+  const { field, ref, error } = useField(name);
 
   return (
     <>
       <TextInput
+        ref={ref}
+        style={style}
+        value={field.value}
+        onChangeText={field.onChange}
+        selectionColor={colors.selection}
+        {...props}
+        accessibilityHint={error ?? accessibilityHint}
+      />
+      <FieldError message={error} />
+    </>
+  );
+});
+
+/** The bio, with its count of characters beside it (redrawn with the field alone); its limit the bio's own unless named. */
+export const ControlledBioInput = React.memo(function ControlledBioInput({ name, maxLength = MAX_LENGTHS.bio, accessibilityHint, ...props }: Omit<ControlledInputProps, 'maxLength'> & { maxLength?: number }) {
+  const { field, ref, error } = useField(name);
+
+  return (
+    <>
+      <TextInput
+        ref={ref}
         style={st.bioInput}
         value={field.value}
         onChangeText={field.onChange}
@@ -44,35 +66,41 @@ export const ControlledBioInput = React.memo(function ControlledBioInput({ name,
         maxLength={maxLength}
         selectionColor={colors.selection}
         {...props}
+        accessibilityHint={error ?? accessibilityHint}
       />
       <Text style={st.charCount}>{(field.value || '').length}/{maxLength}</Text>
+      <FieldError message={error} />
     </>
   );
 });
 
 /** The handle, after a drawn '@': what is typed is kept to lowercase letters, digits and underscores. */
-export const ControlledUsernameInput = React.memo(function ControlledUsernameInput({ name, ...props }: ControlledInputProps) {
-  const { control } = useFormContext();
-  const { field } = useController({ name, control });
+export const ControlledUsernameInput = React.memo(function ControlledUsernameInput({ name, accessibilityHint, ...props }: ControlledInputProps) {
+  const { field, ref, error } = useField(name);
 
   const handleChange = (v: string) => {
     field.onChange(v.toLowerCase().replace(/[^a-z0-9_]/g, ''));
   };
 
   return (
-    <View style={st.usernameWrap}>
-      {/* Drawn, not spoken: the field's own name says what it holds. */}
-      <Text style={st.usernameAt} accessibilityElementsHidden importantForAccessibility="no">@</Text>
-      <TextInput
-        style={st.usernameInput}
-        value={field.value}
-        onChangeText={handleChange}
-        autoCapitalize="none"
-        autoCorrect={false}
-        selectionColor={colors.selection}
-        {...props}
-      />
-    </View>
+    <>
+      <View style={st.usernameWrap}>
+        {/* Drawn, not spoken: the field's own name says what it holds. */}
+        <Text style={st.usernameAt} accessibilityElementsHidden importantForAccessibility="no">@</Text>
+        <TextInput
+          ref={ref}
+          style={st.usernameInput}
+          value={field.value}
+          onChangeText={handleChange}
+          autoCapitalize="none"
+          autoCorrect={false}
+          selectionColor={colors.selection}
+          {...props}
+          accessibilityHint={error ?? accessibilityHint}
+        />
+      </View>
+      <FieldError message={error} />
+    </>
   );
 });
 

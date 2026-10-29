@@ -9,19 +9,12 @@
  * from older rules could have kept a member from saving even their bio.
  */
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, act } from '@testing-library/react-native';
+import { FormProvider, useForm } from 'react-hook-form';
 import { editProfileSchema, MAX_LINKS } from '@/src/hooks/useEditProfile';
 import { LinksEditor } from '../LinksEditor';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { supabase } from '@/src/lib/supabase';
-
-jest.mock('@/src/components/ControlledInput', () => ({
-  ControlledInput: (props: Record<string, unknown>) => {
-    const React = require('react');
-    const { TextInput } = require('react-native');
-    return React.createElement(TextInput, props);
-  },
-}));
 
 const base = { username: 'tomas', displayName: '', bio: '' };
 const issues = (links: { title: string; url: string }[], over: Record<string, unknown> = {}) => {
@@ -53,13 +46,25 @@ describe('a link is wholly there, or says what it lacks', () => {
 
 describe('the editor', () => {
   const links = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `l${i}`, title: `L${i}`, url: `https://${i}.example` }));
+  /** The editor in the form it lives in: its fields are bound to it, and carry its errors. */
+  function InForm({ n, refused }: { n: number; refused?: string }) {
+    const form = useForm({ defaultValues: { links: links(n) } });
+    React.useEffect(() => {
+      if (refused) form.setError('links.0.title', { message: refused });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    return <FormProvider {...form}><LinksEditor links={links(n)} handleAddLink={jest.fn()} handleRemoveLink={jest.fn()} /></FormProvider>;
+  }
   it('stops offering ADD LINK at the cap', () => {
-    expect(render(<LinksEditor links={links(MAX_LINKS - 1)} handleAddLink={jest.fn()} handleRemoveLink={jest.fn()} errors={{}} />).getByLabelText('Add link')).toBeTruthy();
-    expect(render(<LinksEditor links={links(MAX_LINKS)} handleAddLink={jest.fn()} handleRemoveLink={jest.fn()} errors={{}} />).queryByLabelText('Add link')).toBeNull();
+    expect(render(<InForm n={MAX_LINKS - 1} />).getByLabelText('Add link')).toBeTruthy();
+    expect(render(<InForm n={MAX_LINKS} />).queryByLabelText('Add link')).toBeNull();
   });
-  it('shows a title\'s error beside the title', () => {
-    const r = render(<LinksEditor links={links(1)} handleAddLink={jest.fn()} handleRemoveLink={jest.fn()} errors={{ links: [{ title: { message: 'Give the link a title.' } }] }} />);
+  it('shows a title\'s error under the title, and the title says it', async () => {
+    const r = render(<InForm n={1} refused="Give the link a title." />);
+    await act(async () => { await Promise.resolve(); });
     expect(r.getByText('Give the link a title.')).toBeTruthy();
+    expect(r.getByLabelText('Link title').props.accessibilityHint).toBe('Give the link a title.');
+    expect(r.getByLabelText('Link URL').props.accessibilityHint).toBeUndefined();
   });
 });
 

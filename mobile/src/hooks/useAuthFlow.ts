@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { BAD_CREDENTIALS, authLink } from '@/src/utils/authSignals';
@@ -23,28 +23,40 @@ export interface LoginSubmissionInput {
   usernameCheck: { valid: boolean; error?: string } | null;
 }
 
-// The first reason the form cannot be sent, in the member's words, or null.
-export function validateLoginSubmission(input: LoginSubmissionInput): string | null {
+/** A field of the form a refusal can be about. */
+export type AuthField = 'email' | 'username' | 'password';
+
+/**
+ * The first reason the form cannot be sent, in the member's words, and the field it is
+ * about (null for one about no field: the attempts suspended), or null.
+ */
+export function refusalOf(input: LoginSubmissionInput): { field: AuthField | null; message: string } | null {
   const { isLogin, emailOrUsername, password, username, canAttempt, secondsRemaining, pwStrong, usernameStatus, usernameCheck } = input;
-  if (!emailOrUsername || !password || (!isLogin && !username)) {
-    return 'All fields are required for clearance.';
-  }
+  const required = 'All fields are required for clearance.';
+  if (!emailOrUsername) return { field: 'email', message: required };
+  if (!isLogin && !username) return { field: 'username', message: required };
+  if (!password) return { field: 'password', message: required };
   if (isLogin && !canAttempt) {
-    return `Credentials suspended. Retry in ${secondsRemaining}s.`;
+    return { field: null, message: `Credentials suspended. Retry in ${secondsRemaining}s.` };
   }
   if (!isLogin && !passwordFits(password)) {
-    return PASSWORD_TOO_LONG;
+    return { field: 'password', message: PASSWORD_TOO_LONG };
   }
   if (!isLogin && !pwStrong) {
-    return 'Your cipher does not meet Society encryption standards.';
+    return { field: 'password', message: 'Your cipher does not meet Society encryption standards.' };
   }
   if (usernameCheck && !usernameCheck.valid) {
-    return usernameCheck.error ?? 'That handle is not allowed.';
+    return { field: 'username', message: usernameCheck.error ?? 'That handle is not allowed.' };
   }
   if (!isLogin && usernameStatus === 'taken') {
-    return 'That handle is already claimed by another patron.';
+    return { field: 'username', message: 'That handle is already claimed by another patron.' };
   }
   return null;
+}
+
+// The first reason the form cannot be sent, in the member's words, or null.
+export function validateLoginSubmission(input: LoginSubmissionInput): string | null {
+  return refusalOf(input)?.message ?? null;
 }
 
 // Maps a raw Supabase/auth error message to its user-facing copy.
@@ -130,6 +142,14 @@ export function useAuthFlow() {
 
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const { canAttempt, recordAttempt, secondsRemaining } = useAuthThrottle();
+  // The field a refused press is about, with why: drawn under it, said with it, focused (login.tsx).
+  // Kept with the form it was made against: put right, or the form changed under it, it no longer stands.
+  const [refusal, setRefusal] = useState<{ field: AuthField; message: string; against: string } | null>(null);
+  const formNow = JSON.stringify([isLogin, emailOrUsername, username, password]);
+  const fieldError = useMemo(
+    () => (refusal && refusal.against === formNow ? { field: refusal.field, message: refusal.message } : null),
+    [refusal, formNow],
+  );
 
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const usernameCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -270,10 +290,14 @@ export function useAuthFlow() {
     // words, profanity, underscore placement). Enforced here at signup so the
     // server never has to reject a malformed handle after the fact.
     const usernameCheck = isLogin ? null : validateUsername(username);
-    const blockReason = validateLoginSubmission({
+    const refused = refusalOf({
       isLogin, emailOrUsername, password, username, canAttempt, secondsRemaining, pwStrong, usernameStatus, usernameCheck,
     });
-    if (blockReason) { reelToast.error(blockReason); return; }
+    if (refused) {
+      if (refused.field) setRefusal({ field: refused.field, message: refused.message, against: formNow });
+      else reelToast.error(refused.message);
+      return;
+    }
     if (submitting) return;
     setSubmitting(true);
     TactileEngine.mutate();
@@ -348,7 +372,7 @@ export function useAuthFlow() {
     forgotLoading, forgotSent, setForgotSent,
     awaitingConfirmation, setAwaitingConfirmation, confirmedEmail, resending, resendCooldown,
     usernameStatus, pwChecks, pwStrong,
-    canAttempt, secondsRemaining,
+    canAttempt, secondsRemaining, fieldError,
     checkUsernameAvailability, handleResend, handleLoginSubmit, handleEmailLink, toggleMode, handleManualConfirmationCheck
   };
 }
