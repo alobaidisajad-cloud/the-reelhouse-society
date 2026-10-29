@@ -571,6 +571,19 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         )}
       </Animated.ScrollView>
 
+      {/* Built before the stub it rises from, and drawn under it (zIndex 60 to its
+          70): open, a screen reader reads the tray from its head down, then the
+          stub at the foot that closes it. */}
+      <FilmActionTray
+        visible={trayOpen}
+        onDismiss={closeTray}
+        film={film}
+        subtitle={traySubtitle}
+        acts={trayActs}
+        windowHeight={windowHeight}
+        dockHeight={dockH}
+      />
+
       {/* ── ONE CONTROL, DOCKED ────────────────────────────────────────────────
           It mounts only once the film has resolved: a stub over a skeleton, or
           over "Not in the Archive", would be a control offering to log a film
@@ -583,16 +596,6 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         open={trayOpen}
         onPress={toggleTray}
         bottomInset={edge}
-      />
-
-      <FilmActionTray
-        visible={trayOpen}
-        onDismiss={closeTray}
-        film={film}
-        subtitle={traySubtitle}
-        acts={trayActs}
-        windowHeight={windowHeight}
-        dockHeight={dockH}
       />
     </View>
   );

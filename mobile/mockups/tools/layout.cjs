@@ -28,6 +28,8 @@
  *            no words inside it;
  *   UNSAID   (only with `--kinds UNSAID`) it shows six words or fewer of its own, and its
  *            name does not hold them: a voice-control user says what they see;
+ *   ORDER    (only with `--kinds ORDER`) it is read after a stop drawn wholly below it,
+ *            the two stacked: TalkBack reads a screen in the order it is built;
  *   SMALL    (only with `--kinds SMALL`) its own box is under 48pt a side.
  *
  * And every view (by its React Native style, drawn with MOCKUPS_YOGA=1):
@@ -448,6 +450,36 @@ async function audit(page) {
         found.push({ kind: 'UNSAID', text: `"${missing.join(' ')}" of "${seen}" is not in "${label}"` + (c.e.dataset.src ? ` [${c.e.dataset.src}]` : ''), size: 0, by: `${c.r.width.toFixed(0)}×${c.r.height.toFixed(0)} at ${c.r.left.toFixed(0)},${c.r.top.toFixed(0)}` });
       }
     }
+    // ORDER (`--kinds ORDER`): TalkBack reads a screen in the order its views are
+    // built, not where they are drawn. A stop read after another but drawn wholly
+    // above it, the two stacked (sharing some width), is a screen read out of order:
+    // a pinned header built after its scroller is read after everything in it.
+    // The stops: each control a screen reader lands on, and each text not inside one.
+    const stopOf = (e) => !e.closest('[aria-hidden="true"]') && !e.parentElement?.closest('[data-accessible][aria-label], [data-press], span[data-scale-cap]');
+    const stops = [...document.querySelectorAll('[data-press], [data-accessible][aria-label], span[data-scale-cap]')]
+      .filter((e) => stopOf(e) && opacityOf(e) > 0.05 && getComputedStyle(e).display !== 'none' && (!topModal || topModal.contains(e)))
+      .map((e) => ({ e, r: e.getBoundingClientRect() }))
+      .filter((s) => s.r.width > 0 && s.r.height > 0 && !parked(s.r));
+    // Only what a member SEES has a place to be read out of: a stop on the phone's
+    // frame, not under a bar drawn over it. A line past the fold, or behind a docked
+    // bar, is reached by scrolling, and read in its scroller's turn.
+    const sees = (s) => {
+      const x = (s.r.left + s.r.right) / 2;
+      const y = (s.r.top + s.r.bottom) / 2;
+      if (y < phone.top || y > phone.bottom || x < phone.left || x > phone.right) return false;
+      const hit = document.elementFromPoint(x, y);
+      return !!hit && (s.e.contains(hit) || hit.contains(s.e));
+    };
+    const inView = stops.filter(sees);
+    for (let i = 1; i < inView.length; i++) {
+      const [before, after] = [inView[i - 1], inView[i]];
+      const [a, b] = [before.r, after.r];
+      const stacked = Math.min(a.right, b.right) - Math.max(a.left, b.left) > 4;
+      if (stacked && b.bottom <= a.top - 2) {
+        const said = (s) => (s.e.getAttribute('aria-label') || s.e.textContent || '').trim().slice(0, 40);
+        found.push({ kind: 'ORDER', text: `"${said(after)}" is read after "${said(before)}" but drawn above it` + (after.e.dataset.src ? ` [${after.e.dataset.src}]` : ''), size: 0, by: `${after.r.width.toFixed(0)}×${after.r.height.toFixed(0)} at ${after.r.left.toFixed(0)},${after.r.top.toFixed(0)}` });
+      }
+    }
     // SMALL (`--kinds SMALL`): a control whose OWN box is under 48pt a side. A halo is
     // invisible to both accessibility layers (iOS reports the frame; RN installs no
     // Android touch delegate). Part of a larger named control is not one.
@@ -579,7 +611,7 @@ async function audit(page) {
       await page.setViewportSize({ width: PHONE_W, height: Math.min(h, 16000) });
       const r = await audit(page);
       // SMALL is reported only when asked for by name (see the check).
-      r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID'));
+      r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID' && x.kind !== 'ORDER'));
       await page.close();
       // iOS keeps the plain key, so reports written before Android was measured still compare.
       report[platform === 'ios' ? `${name}@${f}` : `${name}@${platform}-${f}`] = r;

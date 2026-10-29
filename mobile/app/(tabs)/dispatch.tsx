@@ -280,6 +280,10 @@ export default function DispatchScreen() {
       <View style={p.screen}>
         <RoomLight room="dispatch" />
         {readyMark}
+        {/* New paper is offered above the list, never spliced in under a reader's thumb.
+            Built first, as it is drawn first from the top: a screen reader reads it
+            before the page, and its zIndex keeps it drawn over the list. */}
+        <Presence>{newCount > 0 ? <NewFilings key="new" count={newCount} onPress={takeTheNew} /> : null}</Presence>
         {/* The index, pinned under the floating bar: it never scrolls away. */}
         <View style={{ paddingTop: topPad }}>
           <PaperChrome
@@ -383,8 +387,6 @@ export default function DispatchScreen() {
           </View>
         </View>
 
-        {/* New paper is offered above the list, never spliced in under a reader's thumb. */}
-        <Presence>{newCount > 0 ? <NewFilings key="new" count={newCount} onPress={takeTheNew} /> : null}</Presence>
       </View>
     </FrozenTab>
   );

@@ -97,8 +97,8 @@ function Corridor() {
   const [visible, setVisible] = useState(true);
   return (
     <>
-      <CreateLoungeSheet visible={visible} onClose={() => setVisible(false)} />
       <Pressable accessibilityLabel="Establish" onPress={() => setVisible(true)}><Text>ESTABLISH</Text></Pressable>
+      <CreateLoungeSheet visible={visible} onClose={() => setVisible(false)} />
     </>
   );
 }

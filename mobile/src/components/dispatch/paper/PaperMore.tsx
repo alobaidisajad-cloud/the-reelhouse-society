@@ -1120,7 +1120,7 @@ const m = StyleSheet.create({
 
   // ── held filings ──────────────────────────────────────────────────────────
   /** In the gutter the page reserves (`NEW_FILINGS_ROOM`), so it covers no writing. */
-  newWrap: { position: 'absolute', left: 0, right: 0, top: 5, alignItems: 'center' },
+  newWrap: { position: 'absolute', left: 0, right: 0, top: 5, alignItems: 'center', zIndex: 1 },
   /** Filled brass: the one control that must be found without being looked for. */
   newPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,

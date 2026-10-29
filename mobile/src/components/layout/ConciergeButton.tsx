@@ -389,16 +389,9 @@ export const ConciergeButton = memo(function ConciergeButton() {
             closes this — invisible to VoiceOver. */}
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none" accessibilityViewIsModal
           onAccessibilityEscape={closeSheet}>
-          <Animated.View style={[s.cardWrap, { top: cardTop, width: cardWidth }, risen ? (reducedMotion ? RISEN_BACKDROP : RISEN_CARD) : cardStyle]}>
-            <ConciergeCard onLog={onLog} onStack={onStack} onFile={onFile} />
-
-            {/* The notch, pointing back at the button. Drawn AFTER the card so its
-                soot fill erases the segment of card border it crosses; drawn
-                before the disc so the disc still sits on top. */}
-            <View style={[s.notch, { left: notchLeft }]} pointerEvents="none" />
-          </Animated.View>
-
-          {/* The disc's twin, above the scrim, at the identical coordinates. */}
+          {/* The disc's twin, above the scrim, at the identical coordinates. Built
+              before the card it sits above, so a screen reader reaches Close first;
+              its zIndex keeps it drawn over the card and the notch. */}
           <View style={[s.discInModal, { top: btnTop }]} pointerEvents="box-none">
             <PressableScale
               style={s.discShadow}
@@ -416,6 +409,15 @@ export const ConciergeButton = memo(function ConciergeButton() {
               <BrassDisc rotation={rotation} />
             </PressableScale>
           </View>
+
+          <Animated.View style={[s.cardWrap, { top: cardTop, width: cardWidth }, risen ? (reducedMotion ? RISEN_BACKDROP : RISEN_CARD) : cardStyle]}>
+            <ConciergeCard onLog={onLog} onStack={onStack} onFile={onFile} />
+
+            {/* The notch, pointing back at the button. Drawn AFTER the card so its
+                soot fill erases the segment of card border it crosses; the disc
+                sits over both by its zIndex. */}
+            <View style={[s.notch, { left: notchLeft }]} pointerEvents="none" />
+          </Animated.View>
           <ToastHost />
         </View>
       </Modal>
