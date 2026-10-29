@@ -1230,7 +1230,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/dispatchOfflineParity.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/dossierPublishing.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/utils/__tests__/easUpload.guard.test.ts | 2026-10-15 | new |
-| src/utils/__tests__/expoImagePatch.guard.test.ts | 2026-10-15 | new: the patch comes off the installed copy, one version three ways, LF, in the EAS upload |
+| src/utils/__tests__/expoImagePatch.guard.test.ts | 2026-10-29 | edited: every patch held to one standard (named for the installed version, applied on install, LF, shipped with EAS, comes off cleanly); query-string's decodes with the fixed decoder; new: the patch comes off the installed copy, one version three ways, LF, in the EAS upload |
 | src/utils/__tests__/e2eTrace.test.ts | 2026-09-29 | new |
 | src/utils/__tests__/edgeFunctions.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/endorsementGrouping.test.ts | — |  |
