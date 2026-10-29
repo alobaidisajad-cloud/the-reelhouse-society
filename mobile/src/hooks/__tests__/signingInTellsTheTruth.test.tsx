@@ -319,7 +319,7 @@ describe('a refused form points at its field', () => {
 
   it('an empty address: the reason under the address, said with it, and the member sent there', async () => {
     const r = render(<LoginScreen />);
-    await act(async () => { await fireEvent.press(r.getByLabelText('Sign in')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Identify and enter: sign in')); });
     const field = r.getByLabelText('Email or username');
     expect(field.props.accessibilityHint).toBe('All fields are required for clearance.');
     expect(r.getByText('All fields are required for clearance.')).toBeTruthy();
@@ -332,7 +332,7 @@ describe('a refused form points at its field', () => {
   it('an empty password: the reason moves to the password; typed, it is gone', async () => {
     const r = render(<LoginScreen />);
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Email or username'), 'kane@house.test'); });
-    await act(async () => { await fireEvent.press(r.getByLabelText('Sign in')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Identify and enter: sign in')); });
     expect(r.getByLabelText('Password').props.accessibilityHint).toBe('All fields are required for clearance.');
     expect(r.getByLabelText('Email or username').props.accessibilityHint).toBeUndefined();
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Password'), 'Rosebud-1941!'); });

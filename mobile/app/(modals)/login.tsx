@@ -392,7 +392,8 @@ export default function LoginScreen() {
               <PressableScale
                 style={s.showBtn}
                 onPress={() => { TactileEngine.navigate(); setShowPassword(!showPassword); }}
-                hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
+                // Down, half the 12pt to the link below: 15 reached 18pt into it.
+                hitSlop={{ top: 15, right: 15, bottom: 6, left: 15 }}
                 pressedScale={0.92}
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -414,7 +415,8 @@ export default function LoginScreen() {
                 setForgotSent(false);
                 setForgotModalVisible(true);
               }}
-              style={s.forgotBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              // Half of each gap: 6 up to SHOW, 12 down to the submit plate (15 reached 6pt into it).
+              style={s.forgotBtn} hitSlop={{ top: 6, bottom: 12, left: 15, right: 15 }}
               haptic="selection"
               accessibilityLabel="Forgot your credentials"
             >
@@ -428,9 +430,12 @@ export default function LoginScreen() {
             style={[s.submitBtn, ((!isLogin && usernameStatus === 'taken') || (isLogin && !canAttempt)) && UNREADY.plate]}
             onPress={handleLoginSubmit}
             disabled={submitting || (!isLogin && usernameStatus === 'taken') || (isLogin && !canAttempt)}
-            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            // Up, the other half of the 24pt to the link above.
+            hitSlop={{ top: 12, bottom: 15, left: 15, right: 15 }}
             pressedScale={0.97}
-            accessibilityLabel={isLogin ? 'Sign in' : 'Request admission'}
+            // Its own words first, then the act: a voice-control member says what they see.
+            accessibilityLabel={!isLogin ? 'Request admission'
+              : canAttempt ? 'Identify and enter: sign in' : `Retry in ${secondsRemaining}s: signing in is paused`}
           >
             {submitting ? (
               <View style={s.submitLoading}>
@@ -450,7 +455,7 @@ export default function LoginScreen() {
 
         {/* ── Toggle Login/Signup ── */}
         <Arrive name="login-3" duration={600} delay={450} rise={-25} style={s.toggleWrap}>
-          <PressableScale onPress={toggleMode} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityLabel={isLogin ? 'Switch to sign up' : 'Switch to sign in'}>
+          <PressableScale onPress={toggleMode} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityLabel={isLogin ? 'No membership? Request admission: switch to sign up' : 'Already admitted? Identify yourself: switch to sign in'}>
             <Text style={s.toggleText}>
               {isLogin ? 'No membership? ' : 'Already admitted? '}
               <Text style={s.toggleHighlight}>

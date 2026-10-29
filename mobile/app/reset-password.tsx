@@ -297,7 +297,7 @@ export default function ResetPasswordScreen() {
             disabled={loading || !strong || password !== confirm}
             pressedScale={0.97}
             accessibilityRole="button"
-            accessibilityLabel="Submit new password"
+            accessibilityLabel={loading ? 'Resetting the password' : 'Reset password: submit the new one'}
           >
             {loading ? (
               <View style={s.submitLoading}>
