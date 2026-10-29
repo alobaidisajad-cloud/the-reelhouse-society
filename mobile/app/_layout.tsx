@@ -33,6 +33,8 @@ import StandingNotice from '@/src/components/StandingNotice';
 import { KeyboardRoom } from '@/src/components/KeyboardRoom';
 import { FloorGate } from '@/src/components/PleaseUpdate';
 import { BoldTextProvider } from '@/src/hooks/useBoldText';
+import { MoreContrastProvider } from '@/src/hooks/useMoreContrast';
+import { MotionFollowsTheSetting } from '@/src/hooks/useReduceMotion';
 import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import { settleOwedSignOut } from '@/src/lib/endSession';
@@ -147,6 +149,9 @@ export default function RootLayout() {
   // A build under the house's floor draws "please update", and nothing else (src/lib/houseFloor.ts).
   return (
     <BoldTextProvider>
+    <MoreContrastProvider>
+    {/* Reduce Motion as it is now, not as it was at launch, for every animation Reanimated runs. */}
+    <MotionFollowsTheSetting />
     <FloorGate onLayout={onLayoutReady}>
     <GlobalErrorBoundary>
       <SafeAreaProvider>
@@ -216,6 +221,7 @@ export default function RootLayout() {
       </SafeAreaProvider>
     </GlobalErrorBoundary>
     </FloorGate>
+    </MoreContrastProvider>
     </BoldTextProvider>
   );
 }

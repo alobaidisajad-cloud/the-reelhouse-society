@@ -14,6 +14,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import { LinksEditor } from '../LinksEditor';
 
@@ -34,9 +35,13 @@ const LINKS = [
   { id: 'b', title: 'Blog', url: 'https://two.example' },
 ];
 
-const mount = () => render(
-  <LinksEditor links={LINKS} handleAddLink={jest.fn()} handleRemoveLink={jest.fn()} />,
-);
+/** The editor in the form it lives in, as the edit desk draws it. */
+function InForm({ onRemove = jest.fn() }: { onRemove?: (i: number) => void }) {
+  const form = useForm({ defaultValues: { links: LINKS } });
+  return <FormProvider {...form}><LinksEditor links={LINKS} handleAddLink={jest.fn()} handleRemoveLink={onRemove} /></FormProvider>;
+}
+
+const mount = () => render(<InForm />);
 
 const removeButtons = (r: ReturnType<typeof mount>) => r.getAllByLabelText('Remove link');
 
@@ -65,7 +70,7 @@ describe('the remove control clears the floor by its own geometry', () => {
   it('there is one per link, and it removes that link', async () => {
     const handleRemoveLink = jest.fn();
     const r = render(
-      <LinksEditor links={LINKS} handleAddLink={jest.fn()} handleRemoveLink={handleRemoveLink} />,
+      <InForm onRemove={handleRemoveLink} />,
     );
     const btns = r.getAllByLabelText('Remove link');
     expect(btns).toHaveLength(LINKS.length);

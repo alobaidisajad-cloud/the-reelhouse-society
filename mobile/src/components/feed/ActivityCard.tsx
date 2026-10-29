@@ -22,10 +22,8 @@ import { View, StyleSheet, AccessibilityInfo, PixelRatio } from 'react-native';
 import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate,
-  useReducedMotion,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { colors, fonts, SEPIA_HASH, effects } from '@/src/theme/theme';
 import { displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
@@ -109,7 +107,7 @@ const ActivityEditorialHeader = React.memo(({ backdropUri }: { backdropUri: stri
 ActivityEditorialHeader.displayName = 'ActivityEditorialHeader';
 
 export const ActivityCard = React.memo(function ActivityCard({ item, index, onFilmPress }: { item: FeedItem; index: number; onFilmPress?: () => void }) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useReduceMotion();
   const isArchivist = isArchivistPlusTier(item.role);
   const isAuteur = isAuteurPlusTier(item.role);
   const isPremium = isArchivist || isAuteur || !!item.editorial_header || !!item.pull_quote;

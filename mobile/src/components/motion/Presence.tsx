@@ -17,10 +17,8 @@ import React, {
   createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState,
 } from 'react';
 import type { LayoutChangeEvent, LayoutRectangle, StyleProp, ViewProps, ViewStyle } from 'react-native';
-import Animated, {
-  cancelAnimation, ReduceMotion, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue,
-  withDelay, withTiming, type AnimatedStyle, type SharedValue, type WithTimingConfig,
-} from 'react-native-reanimated';
+import Animated, { cancelAnimation, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withTiming, type AnimatedStyle, type SharedValue, type WithTimingConfig } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { useSafeAreaFrame } from 'react-native-safe-area-context';
 import { ARRIVAL_GRACE_MS, ARRIVAL_RISE } from '@/src/hooks/useArrival';
 import { e2eTrace } from '@/src/utils/e2eTrace';
@@ -237,7 +235,7 @@ export function PresenceView({
   name, enter, exit, style, onLayout, pointerEvents, children, ...rest
 }: PresenceViewProps) {
   const stage = useContext(StageContext);
-  const reduced = useReducedMotion();
+  const reduced = useReduceMotion();
   const screen = useSafeAreaFrame();
   const leaving = stage?.leaving ?? false;
 

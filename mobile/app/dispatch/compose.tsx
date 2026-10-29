@@ -51,6 +51,7 @@ import { useDispatch } from '@/src/stores/dispatch';
 import type { FilingKind } from '@/src/stores/dispatchTypes';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
+import { UnderSheet } from '@/src/components/layout/UnderSheet';
 import { nav } from '@/src/utils/typedRouter';
 
 // A long essay survives a background-kill. Whose each draft is: src/utils/memberDrafts.ts.
@@ -669,292 +670,296 @@ function ComposeDossierScreen() {
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
 
-            <View style={[styles.header, { paddingTop: headerTop }]}>
-                <PressableScale onPress={() => {
-                    if (title.trim() || content.trim()) {
-                        // No save mark anywhere; a refused save is said here, at the exit.
-                        const lost = saveFailed && !edit;
-                        Alert.alert(
-                            lost ? 'This is not being kept' : 'Discard this essay?',
-                            lost
-                                ? 'Your phone is out of space, so nothing here has been saved. File it now, or free some room and come back.'
-                                : 'What you have written will be lost.',
-                            [
-                                { text: lost ? 'Go back' : 'Keep writing', style: 'cancel' },
-                                { text: 'Discard', style: 'destructive', onPress: () => {
-                                    // This room's copy only, and its backup too,
-                                    // or it reappears on the next phone.
-                                    if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
-                                    else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
-                                    nav.back();
-                                } },
-                            ],
-                        );
-                    } else {
-                        nav.back();
-                    }
-                }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic
-                    accessibilityRole="button"
-                    accessibilityLabel="Cancel, and leave the writing room">
-                    {/* Three across, no reflow: the deck cap, one line, shrink to fit. */}
-                    <Text style={styles.cancelBtn} {...deckLabelProps}>CANCEL</Text>
-                </PressableScale>
-                <Text style={styles.headerTitle} {...deckLabelProps}>THE WRITING ROOM</Text>
-                <PressableScale
-                    onPress={() => {
-                        setIsPreview(!isPreview);
-                    }}
-                    haptic="medium"
-                    accessibilityRole="button"
-                    // The label says what a press does; the state says where you are.
-                    accessibilityState={{ selected: isPreview }}
-                    accessibilityLabel={isPreview ? 'Edit: back to editing' : 'Preview the essay'}
-                >
-                    <Text style={styles.previewBtn} {...deckLabelProps}>{isPreview ? 'EDIT' : 'PREVIEW'}</Text>
-                </PressableScale>
-            </View>
+            {/* While a sheet is up (neither is a Modal: this route is one), the page is out of
+                a screen reader's reach, so it reads only the sheet. */}
+            <UnderSheet open={filmOpen || seriesOpen}>
+                <View style={[styles.header, { paddingTop: headerTop }]}>
+                    <PressableScale onPress={() => {
+                        if (title.trim() || content.trim()) {
+                            // No save mark anywhere; a refused save is said here, at the exit.
+                            const lost = saveFailed && !edit;
+                            Alert.alert(
+                                lost ? 'This is not being kept' : 'Discard this essay?',
+                                lost
+                                    ? 'Your phone is out of space, so nothing here has been saved. File it now, or free some room and come back.'
+                                    : 'What you have written will be lost.',
+                                [
+                                    { text: lost ? 'Go back' : 'Keep writing', style: 'cancel' },
+                                    { text: 'Discard', style: 'destructive', onPress: () => {
+                                        // This room's copy only, and its backup too,
+                                        // or it reappears on the next phone.
+                                        if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
+                                        else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
+                                        nav.back();
+                                    } },
+                                ],
+                            );
+                        } else {
+                            nav.back();
+                        }
+                    }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel, and leave the writing room">
+                        {/* Three across, no reflow: the deck cap, one line, shrink to fit. */}
+                        <Text style={styles.cancelBtn} {...deckLabelProps}>CANCEL</Text>
+                    </PressableScale>
+                    <Text style={styles.headerTitle} {...deckLabelProps}>THE WRITING ROOM</Text>
+                    <PressableScale
+                        onPress={() => {
+                            setIsPreview(!isPreview);
+                        }}
+                        haptic="medium"
+                        accessibilityRole="button"
+                        // The label says what a press does; the state says where you are.
+                        accessibilityState={{ selected: isPreview }}
+                        accessibilityLabel={isPreview ? 'Edit: back to editing' : 'Preview the essay'}
+                    >
+                        <Text style={styles.previewBtn} {...deckLabelProps}>{isPreview ? 'EDIT' : 'PREVIEW'}</Text>
+                    </PressableScale>
+                </View>
 
-            {isPreview ? (
-                <CinematicScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false} bottomInset={edge}>
-                    <Text style={styles.previewEyebrow} {...scaledTextProps}>AS THE HOUSE WILL SET IT</Text>
-                    {/* The reader's own head, cover and all, so the preview is the page. */}
-                    {title || film ? (
-                        <EssayHead
-                            title={title}
-                            series={series ? partOf(series.part, series.title) : undefined}
-                            author={{
-                                name: user?.username ?? '',
-                                memberNo: user?.member_no ?? 0,
-                                // Their real rank, resolved as every byline does.
-                                tier: paperTierOf(user),
-                                avatar: user?.avatar_url ?? null,
-                            }}
-                            readTime={readTimeOf(content)}
-                            filed={filedOn}
-                            film={film ? {
-                                title: film.title,
-                                director: film.sub,
-                                posterPath: film.image,
-                                backdropPath: film.backdrop,
-                            } : null}
-                            // No handlers: nothing opens from a preview.
-                        />
-                    ) : null}
-                    {/* The reader's own renderer and cap (the cap guards two quadratic markdown
-                        rules): a draft over the limit shows where the limit bites. */}
-                    {content ? (
-                        <EssayBody text={content} />
-                    ) : (
-                        <View style={styles.emptyPreview}>
-                            {/* The form's own name, not a third word for it. */}
-                            <Text style={styles.emptyPreviewText} {...scaledTextProps}>Your essay will appear here, as the house will set it.</Text>
-                        </View>
-                    )}
-                </CinematicScrollView>
-            ) : (
-                <Animated.View style={[styles.kavFlex, animatedContainerStyle]}>
-                    <CinematicScrollView style={styles.workspace} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bottomInset={edge}>
-                        {/* It asks, never merges: both sides with a time and a length. */}
-                        {elsewhere ? (
-                            <View style={styles.elsewhereBox}>
-                                <Text style={styles.elsewhereHead} {...scaledTextProps}>
-                                    A NEWER ONE WAS WRITTEN ELSEWHERE
-                                </Text>
-                                <Text style={styles.elsewhereLine} {...scaledTextProps}>
-                                    {`ELSEWHERE · ${whenOf(elsewhere.savedAt)} · ${wordsOf(elsewhere.data.content)}`}
-                                </Text>
-                                <Text style={styles.elsewhereLine} {...scaledTextProps}>
-                                    {`HERE · ${restored ? whenOf(restored) : 'JUST NOW'} · ${wordsOf(content)}`}
-                                </Text>
-                                <View style={styles.elsewhereActs}>
-                                    <PressableScale
-                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
-                                        onPress={() => answer(true)}
-                                        accessibilityRole="button"
-                                        accessibilityLabel="Take that one: the one written elsewhere"
-                                    >
-                                        <Text style={styles.elsewhereTake} {...scaledTextProps}>TAKE THAT ONE</Text>
-                                    </PressableScale>
-                                    <PressableScale
-                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
-                                        onPress={() => answer(false)}
-                                        accessibilityRole="button"
-                                        accessibilityLabel="Keep the one on this phone"
-                                    >
-                                        <Text style={styles.elsewhereKeep} {...scaledTextProps}>KEEP THIS ONE</Text>
-                                    </PressableScale>
-                                </View>
-                            </View>
+                {isPreview ? (
+                    <CinematicScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false} bottomInset={edge}>
+                        <Text style={styles.previewEyebrow} {...scaledTextProps}>AS THE HOUSE WILL SET IT</Text>
+                        {/* The reader's own head, cover and all, so the preview is the page. */}
+                        {title || film ? (
+                            <EssayHead
+                                title={title}
+                                series={series ? partOf(series.part, series.title) : undefined}
+                                author={{
+                                    name: user?.username ?? '',
+                                    memberNo: user?.member_no ?? 0,
+                                    // Their real rank, resolved as every byline does.
+                                    tier: paperTierOf(user),
+                                    avatar: user?.avatar_url ?? null,
+                                }}
+                                readTime={readTimeOf(content)}
+                                filed={filedOn}
+                                film={film ? {
+                                    title: film.title,
+                                    director: film.sub,
+                                    posterPath: film.image,
+                                    backdropPath: film.backdrop,
+                                } : null}
+                                // No handlers: nothing opens from a preview.
+                            />
                         ) : null}
-                        {/* Explains words on screen that were not typed just now (there is no save
-                            mark); typing accepts them, START CLEAN clears them. */}
-                        {restored ? (
-                            <View
-                                style={styles.restoredRow}
-                                accessible
-                                accessibilityRole="summary"
-                                accessibilityLabel={
-                                    restored === 'unreadable'
-                                        ? 'What was here could not be read. The room has cleared it.'
-                                        : `Taken up where you left it${restoredWhen ? `, ${restoredWhen}` : ''}.`
-                                }
-                            >
-                                <Text
-                                    style={[styles.restoredText, restored === 'unreadable' && styles.restoredLost]}
-                                    {...scaledTextProps}
+                        {/* The reader's own renderer and cap (the cap guards two quadratic markdown
+                            rules): a draft over the limit shows where the limit bites. */}
+                        {content ? (
+                            <EssayBody text={content} />
+                        ) : (
+                            <View style={styles.emptyPreview}>
+                                {/* The form's own name, not a third word for it. */}
+                                <Text style={styles.emptyPreviewText} {...scaledTextProps}>Your essay will appear here, as the house will set it.</Text>
+                            </View>
+                        )}
+                    </CinematicScrollView>
+                ) : (
+                    <Animated.View style={[styles.kavFlex, animatedContainerStyle]}>
+                        <CinematicScrollView style={styles.workspace} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bottomInset={edge}>
+                            {/* It asks, never merges: both sides with a time and a length. */}
+                            {elsewhere ? (
+                                <View style={styles.elsewhereBox}>
+                                    <Text style={styles.elsewhereHead} {...scaledTextProps}>
+                                        A NEWER ONE WAS WRITTEN ELSEWHERE
+                                    </Text>
+                                    <Text style={styles.elsewhereLine} {...scaledTextProps}>
+                                        {`ELSEWHERE · ${whenOf(elsewhere.savedAt)} · ${wordsOf(elsewhere.data.content)}`}
+                                    </Text>
+                                    <Text style={styles.elsewhereLine} {...scaledTextProps}>
+                                        {`HERE · ${restored ? whenOf(restored) : 'JUST NOW'} · ${wordsOf(content)}`}
+                                    </Text>
+                                    <View style={styles.elsewhereActs}>
+                                        <PressableScale
+                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
+                                            onPress={() => answer(true)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel="Take that one: the one written elsewhere"
+                                        >
+                                            <Text style={styles.elsewhereTake} {...scaledTextProps}>TAKE THAT ONE</Text>
+                                        </PressableScale>
+                                        <PressableScale
+                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
+                                            onPress={() => answer(false)}
+                                            accessibilityRole="button"
+                                            accessibilityLabel="Keep the one on this phone"
+                                        >
+                                            <Text style={styles.elsewhereKeep} {...scaledTextProps}>KEEP THIS ONE</Text>
+                                        </PressableScale>
+                                    </View>
+                                </View>
+                            ) : null}
+                            {/* Explains words on screen that were not typed just now (there is no save
+                                mark); typing accepts them, START CLEAN clears them. */}
+                            {restored ? (
+                                <View
+                                    style={styles.restoredRow}
+                                    accessible
+                                    accessibilityRole="summary"
+                                    accessibilityLabel={
+                                        restored === 'unreadable'
+                                            ? 'What was here could not be read. The room has cleared it.'
+                                            : `Taken up where you left it${restoredWhen ? `, ${restoredWhen}` : ''}.`
+                                    }
                                 >
-                                    {restored === 'unreadable'
-                                        ? 'WHAT WAS HERE COULD NOT BE READ'
-                                        : `TAKEN UP WHERE YOU LEFT IT${restoredWhen ? ` · ${restoredWhen}` : ''}`}
-                                </Text>
-                                {restored !== 'unreadable' ? (
-                                    <PressableScale
-                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                        haptic="selection"
-                                        onPress={() => {
-                                            setTitle(''); setContent(''); setFilm(null); setSeries(null);
-                                            setRestored(null);
-                                            if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
-                                            else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
-                                        }}
-                                        accessibilityRole="button"
-                                        accessibilityLabel="Start clean, and discard what was here"
+                                    <Text
+                                        style={[styles.restoredText, restored === 'unreadable' && styles.restoredLost]}
+                                        {...scaledTextProps}
                                     >
-                                        <Text style={styles.restoredAct} {...scaledTextProps}>START CLEAN</Text>
-                                    </PressableScale>
+                                        {restored === 'unreadable'
+                                            ? 'WHAT WAS HERE COULD NOT BE READ'
+                                            : `TAKEN UP WHERE YOU LEFT IT${restoredWhen ? ` · ${restoredWhen}` : ''}`}
+                                    </Text>
+                                    {restored !== 'unreadable' ? (
+                                        <PressableScale
+                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                            haptic="selection"
+                                            onPress={() => {
+                                                setTitle(''); setContent(''); setFilm(null); setSeries(null);
+                                                setRestored(null);
+                                                if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
+                                                else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
+                                            }}
+                                            accessibilityRole="button"
+                                            accessibilityLabel="Start clean, and discard what was here"
+                                        >
+                                            <Text style={styles.restoredAct} {...scaledTextProps}>START CLEAN</Text>
+                                        </PressableScale>
+                                    ) : null}
+                                </View>
+                            ) : null}
+                            <TextInput
+                                style={styles.titleInput}
+                                placeholder="A title for this essay"
+                                placeholderTextColor={colors.fog}
+                                value={title}
+                                onChangeText={(t) => { setTitle(t); setRestored(null); }}
+                                // The sanitiser's number, which the column's title_ceiling also holds.
+                                maxLength={MAX_LENGTHS.filingTitle}
+                                // Wraps and grows (one 30pt line holds ~20 of 200 characters), so a
+                                // headline is never written blind. Return still ends it.
+                                multiline
+                                scrollEnabled={false}
+                                submitBehavior="blurAndSubmit"
+                                returnKeyType="done"
+                                textAlignVertical="top"
+                                cursorColor={colors.sepia}
+                                selectionColor="rgba(184,137,26,0.3)"
+                                keyboardAppearance="dark"
+                                accessibilityLabel="Essay headline"
+                            />
+                            {/* What it is about, by the title; the rail below sets how it reads. */}
+                            <View style={styles.slots}>
+                                <PressableScale
+                                    style={styles.slot} onPress={() => setFilmOpen(true)} haptic="selection"
+                                    // The two slots touch: neither reaches into the other.
+                                    hitSlop={{ top: 6, bottom: 0, left: 0, right: 0 }}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={film ? `Film: ${[film.title, film.sub].filter(Boolean).join(', ')}. Change it.` : 'Film: name the film this is about'}
+                                >
+                                    <Text style={styles.slotLabel} {...actionLabelProps}>FILM</Text>
+                                    <Text style={[styles.slotValue, film && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
+                                        {film ? [film.title, film.sub].filter(Boolean).join(' · ') : 'Name the film this is about'}
+                                    </Text>
+                                </PressableScale>
+                                <PressableScale
+                                    style={styles.slot} onPress={() => setSeriesOpen(true)} haptic="selection"
+                                    hitSlop={{ top: 0, bottom: 6, left: 0, right: 0 }}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={series ? `Series: ${series.title}, part ${series.part}. Change it.` : 'Series: part of a series? Choose one'}
+                                >
+                                    <Text style={styles.slotLabel} {...actionLabelProps}>SERIES</Text>
+                                    <Text style={[styles.slotValue, series && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
+                                        {series ? `${series.title.toUpperCase()} · ${roman(series.part)}` : 'Part of a series?'}
+                                    </Text>
+                                </PressableScale>
+                            </View>
+
+                            <TextInput
+                                ref={inputRef}
+                                style={styles.contentInput}
+                                placeholder="Begin. The house is listening."
+                                placeholderTextColor={colors.fog}
+                                value={content}
+                                onChangeText={(t) => { setContent(t); setRestored(null); }}
+                                onSelectionChange={handleSelectionChange}
+                                selection={forcedSelection ?? undefined}
+                                multiline
+                                textAlignVertical="top"
+                                cursorColor={colors.sepia}
+                                selectionColor="rgba(184,137,26,0.3)"
+                                keyboardAppearance="dark"
+                                accessibilityLabel="Essay content body"
+                                accessibilityHint={wrongWith('body')}
+                            />
+                            <FieldError message={wrongWith('body')} />
+                        </CinematicScrollView>
+
+                        <View style={styles.toolbar}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScroll} keyboardShouldPersistTaps="handled">
+                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
+                                    <Bold size={15} color={colors.parchment} />
+                                    <Text style={styles.toolWord} {...scaledTextProps}>BOLD</Text>
+                                </PressableScale>
+                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
+                                    <Italic size={15} color={colors.parchment} />
+                                    <Text style={styles.toolWord} {...scaledTextProps}>ITALIC</Text>
+                                </PressableScale>
+                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
+                                    <Type size={15} color={colors.parchment} />
+                                    <Text style={styles.toolWord} {...scaledTextProps}>HEADING</Text>
+                                </PressableScale>
+                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
+                                    <Quote size={15} color={colors.parchment} />
+                                    <Text style={styles.toolWord} {...scaledTextProps}>QUOTE</Text>
+                                </PressableScale>
+                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Break: a horizontal rule">
+                                    <Minus size={15} color={colors.parchment} />
+                                    <Text style={styles.toolWord} {...scaledTextProps}>BREAK</Text>
+                                </PressableScale>
+                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
+                                    <Link2 size={15} color={colors.parchment} />
+                                    <Text style={styles.toolWord} {...scaledTextProps}>LINK</Text>
+                                </PressableScale>
+                            </ScrollView>
+                        </View>
+
+                        <HouseBlur intensity={90} tint="dark" style={[styles.footer, { paddingBottom: Math.max(ESSAY_FOOT, edge + ESSAY_FOOT_GAP) }]}>
+                            <View style={styles.stats}>
+                                {/* A fixed strip of three: the deck cap, inherited by the values. */}
+                                <Text style={styles.statText} {...deckLabelProps}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
+                                <Text style={styles.statText} {...deckLabelProps}>READ TIME <Text style={styles.statVal}>~{stats.readMin}m</Text></Text>
+                                {limit.show ? (
+                                    <Text style={[styles.statText, limit.over && styles.statOver]} {...deckLabelProps}>
+                                        {limit.over ? 'OVER BY ' : 'LEFT '}
+                                        <Text style={[styles.statVal, limit.over && styles.statOver]}>
+                                            {groupDigits(Math.abs(limit.remaining))}
+                                        </Text>
+                                    </Text>
                                 ) : null}
                             </View>
-                        ) : null}
-                        <TextInput
-                            style={styles.titleInput}
-                            placeholder="A title for this essay"
-                            placeholderTextColor={colors.fog}
-                            value={title}
-                            onChangeText={(t) => { setTitle(t); setRestored(null); }}
-                            // The sanitiser's number, which the column's title_ceiling also holds.
-                            maxLength={MAX_LENGTHS.filingTitle}
-                            // Wraps and grows (one 30pt line holds ~20 of 200 characters), so a
-                            // headline is never written blind. Return still ends it.
-                            multiline
-                            scrollEnabled={false}
-                            submitBehavior="blurAndSubmit"
-                            returnKeyType="done"
-                            textAlignVertical="top"
-                            cursorColor={colors.sepia}
-                            selectionColor="rgba(184,137,26,0.3)"
-                            keyboardAppearance="dark"
-                            accessibilityLabel="Essay headline"
-                        />
-                        {/* What it is about, by the title; the rail below sets how it reads. */}
-                        <View style={styles.slots}>
                             <PressableScale
-                                style={styles.slot} onPress={() => setFilmOpen(true)} haptic="selection"
-                                // The two slots touch: neither reaches into the other.
-                                hitSlop={{ top: 6, bottom: 0, left: 0, right: 0 }}
+                                style={[styles.publishBtn, !ready && UNREADY.plate]}
+                                disabled={!ready || isPublishing}
+                                onPress={handlePublish}
+                                haptic="medium"
                                 accessibilityRole="button"
-                                accessibilityLabel={film ? `Film: ${[film.title, film.sub].filter(Boolean).join(', ')}. Change it.` : 'Film: name the film this is about'}
+                                // Disabled is announced, or a press answers with nothing.
+                                accessibilityState={{ disabled: !ready || isPublishing, busy: isPublishing }}
+                                accessibilityLabel={
+                                    isPublishing ? 'Filing the essay'
+                                        : !ready ? 'File the essay. Not ready yet — it needs a title and a body'
+                                            : edit ? 'Re-file the essay' : 'File the essay'
+                                }
                             >
-                                <Text style={styles.slotLabel} {...actionLabelProps}>FILM</Text>
-                                <Text style={[styles.slotValue, film && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
-                                    {film ? [film.title, film.sub].filter(Boolean).join(' · ') : 'Name the film this is about'}
-                                </Text>
+                                {/* The screen's longest label: shrink-to-fit, under the ceiling. */}
+                                <Text style={[styles.publishBtnText, !ready && UNREADY.words]} {...scaledTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE ESSAY' : 'FILE THE ESSAY')}</Text>
                             </PressableScale>
-                            <PressableScale
-                                style={styles.slot} onPress={() => setSeriesOpen(true)} haptic="selection"
-                                hitSlop={{ top: 0, bottom: 6, left: 0, right: 0 }}
-                                accessibilityRole="button"
-                                accessibilityLabel={series ? `Series: ${series.title}, part ${series.part}. Change it.` : 'Series: part of a series? Choose one'}
-                            >
-                                <Text style={styles.slotLabel} {...actionLabelProps}>SERIES</Text>
-                                <Text style={[styles.slotValue, series && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
-                                    {series ? `${series.title.toUpperCase()} · ${roman(series.part)}` : 'Part of a series?'}
-                                </Text>
-                            </PressableScale>
-                        </View>
-
-                        <TextInput
-                            ref={inputRef}
-                            style={styles.contentInput}
-                            placeholder="Begin. The house is listening."
-                            placeholderTextColor={colors.fog}
-                            value={content}
-                            onChangeText={(t) => { setContent(t); setRestored(null); }}
-                            onSelectionChange={handleSelectionChange}
-                            selection={forcedSelection ?? undefined}
-                            multiline
-                            textAlignVertical="top"
-                            cursorColor={colors.sepia}
-                            selectionColor="rgba(184,137,26,0.3)"
-                            keyboardAppearance="dark"
-                            accessibilityLabel="Essay content body"
-                            accessibilityHint={wrongWith('body')}
-                        />
-                        <FieldError message={wrongWith('body')} />
-                    </CinematicScrollView>
-
-                    <View style={styles.toolbar}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScroll} keyboardShouldPersistTaps="handled">
-                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
-                                <Bold size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...scaledTextProps}>BOLD</Text>
-                            </PressableScale>
-                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
-                                <Italic size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...scaledTextProps}>ITALIC</Text>
-                            </PressableScale>
-                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
-                                <Type size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...scaledTextProps}>HEADING</Text>
-                            </PressableScale>
-                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
-                                <Quote size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...scaledTextProps}>QUOTE</Text>
-                            </PressableScale>
-                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Break: a horizontal rule">
-                                <Minus size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...scaledTextProps}>BREAK</Text>
-                            </PressableScale>
-                            <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
-                                <Link2 size={15} color={colors.parchment} />
-                                <Text style={styles.toolWord} {...scaledTextProps}>LINK</Text>
-                            </PressableScale>
-                        </ScrollView>
-                    </View>
-
-                    <HouseBlur intensity={90} tint="dark" style={[styles.footer, { paddingBottom: Math.max(ESSAY_FOOT, edge + ESSAY_FOOT_GAP) }]}>
-                        <View style={styles.stats}>
-                            {/* A fixed strip of three: the deck cap, inherited by the values. */}
-                            <Text style={styles.statText} {...deckLabelProps}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
-                            <Text style={styles.statText} {...deckLabelProps}>READ TIME <Text style={styles.statVal}>~{stats.readMin}m</Text></Text>
-                            {limit.show ? (
-                                <Text style={[styles.statText, limit.over && styles.statOver]} {...deckLabelProps}>
-                                    {limit.over ? 'OVER BY ' : 'LEFT '}
-                                    <Text style={[styles.statVal, limit.over && styles.statOver]}>
-                                        {groupDigits(Math.abs(limit.remaining))}
-                                    </Text>
-                                </Text>
-                            ) : null}
-                        </View>
-                        <PressableScale
-                            style={[styles.publishBtn, !ready && UNREADY.plate]}
-                            disabled={!ready || isPublishing}
-                            onPress={handlePublish}
-                            haptic="medium"
-                            accessibilityRole="button"
-                            // Disabled is announced, or a press answers with nothing.
-                            accessibilityState={{ disabled: !ready || isPublishing, busy: isPublishing }}
-                            accessibilityLabel={
-                                isPublishing ? 'Filing the essay'
-                                    : !ready ? 'File the essay. Not ready yet — it needs a title and a body'
-                                        : edit ? 'Re-file the essay' : 'File the essay'
-                            }
-                        >
-                            {/* The screen's longest label: shrink-to-fit, under the ceiling. */}
-                            <Text style={[styles.publishBtnText, !ready && UNREADY.words]} {...scaledTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE ESSAY' : 'FILE THE ESSAY')}</Text>
-                        </PressableScale>
-                    </HouseBlur>
-                </Animated.View>
-            )}
+                        </HouseBlur>
+                    </Animated.View>
+                )}
+            </UnderSheet>
 
             {/* Both sheets are mounted OUTSIDE the preview/edit branch, so
                 neither is torn down and rebuilt when a member flips to the

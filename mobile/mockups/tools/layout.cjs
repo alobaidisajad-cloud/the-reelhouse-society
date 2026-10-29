@@ -30,6 +30,10 @@
  *            name does not hold them: a voice-control user says what they see;
  *   ORDER    (only with `--kinds ORDER`) it is read after a stop drawn wholly below it,
  *            the two stacked: TalkBack reads a screen in the order it is built;
+ *   BENEATH  (only with `--kinds BENEATH`) a screen reader reaches it under a layer drawn
+ *            over half the screen or more (a sheet that is not a Modal);
+ *   COLOUR   (only with `--kinds COLOUR`) a chosen control differs from its unchosen
+ *            sibling in nothing but colour;
  *   SMALL    (only with `--kinds SMALL`) its own box is under 48pt a side.
  *
  * And every view (by its React Native style, drawn with MOCKUPS_YOGA=1):
@@ -480,6 +484,81 @@ async function audit(page) {
         found.push({ kind: 'ORDER', text: `"${said(after)}" is read after "${said(before)}" but drawn above it` + (after.e.dataset.src ? ` [${after.e.dataset.src}]` : ''), size: 0, by: `${after.r.width.toFixed(0)}×${after.r.height.toFixed(0)} at ${after.r.left.toFixed(0)},${after.r.top.toFixed(0)}` });
       }
     }
+    // BENEATH (`--kinds BENEATH`): a stop a screen reader still reaches, hidden under
+    // a layer drawn over half the screen or more: a sheet that is not a Modal leaves
+    // the page beneath it to be wandered into, unless the page is hidden while it is up.
+    // (A line behind a docked bar is not one: a bar covers far less than half.)
+    const area = (q) => Math.max(0, q.right - q.left) * Math.max(0, q.bottom - q.top);
+    const frame = area(phone);
+    for (const s of stops) {
+      const x = (s.r.left + s.r.right) / 2;
+      const y = (s.r.top + s.r.bottom) / 2;
+      if (y < phone.top || y > phone.bottom || x < phone.left || x > phone.right) continue;
+      const hit = document.elementFromPoint(x, y);
+      if (!hit || s.e.contains(hit) || hit.contains(s.e)) continue;
+      // Hidden only by what PAINTS there: a closed sheet's layer, mounted and empty,
+      // is clear glass over the page, and covers nothing.
+      const cs = getComputedStyle(hit);
+      const inked = (c) => { const a = (c.match(/[\d.]+/g) || []).map(Number); return a.length >= 3 && (a.length < 4 || a[3] > 0.05); };
+      const paints = inked(cs.backgroundColor)
+        || ['Top', 'Right', 'Bottom', 'Left'].some((d) => parseFloat(cs[`border${d}Width`]) > 0 && inked(cs[`border${d}Color`]))
+        || /^(svg|img|IMG|SVG)$/.test(hit.tagName) || [...hit.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+      // Nor does a layer drawn at no opacity (one waiting to fade in), nor one hidden from
+      // screen readers: a navigator's inactive screen, which the phone does not draw at all.
+      if (!paints || opacityOf(hit) < 0.05 || hit.closest('[aria-hidden="true"]')) continue;
+      // The layer over it: the widest positioned box holding what was hit.
+      let layer = null;
+      for (let a = hit; a && a !== document.body; a = a.parentElement) {
+        if (a.contains(s.e)) break;
+        const pos = getComputedStyle(a).position;
+        if ((pos === 'absolute' || pos === 'fixed') && area(a.getBoundingClientRect()) >= frame / 2) layer = a;
+      }
+      // A layer with nothing in it to read (a vignette, a grain) is light, not a sheet.
+      if (layer && !layer.querySelector('[data-press], span[data-scale-cap]')) layer = null;
+      if (!layer) continue;
+      const said = (s.e.getAttribute('aria-label') || s.e.textContent || '').trim().slice(0, 40);
+      const over = layer.dataset.src || layer.querySelector('[data-src]')?.dataset.src || '';
+      found.push({ kind: 'BENEATH', text: `"${said}" is read under a layer drawn over it` + (over ? ` [${over}]` : '') + (s.e.dataset.src ? ` (${s.e.dataset.src})` : ''), size: 0, by: `${s.r.width.toFixed(0)}×${s.r.height.toFixed(0)} at ${s.r.left.toFixed(0)},${s.r.top.toFixed(0)}` });
+    }
+    // COLOUR (`--kinds COLOUR`): a chosen control told from its unchosen sibling by
+    // colour alone. Every element of each is read for what is not colour (its tag,
+    // weight, slant, underline, border widths, size, how many words and pieces); if
+    // nothing but colour differs, a member who cannot tell the two inks apart
+    // cannot tell which is chosen.
+    // A fill that is there or not (a ring filled to a disc) is a change of shape, not of
+    // ink: it reads in any colour.
+    const filled = (c) => { const a = (c.match(/[\d.]+/g) || []).map(Number); return a.length < 4 || a[3] > 0.3 ? 1 : 0; };
+    const shape = (e) => [...e.querySelectorAll('*')].concat(e).map((n) => {
+      const cs = getComputedStyle(n);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.05) return '-';
+      return [n.tagName, cs.fontWeight, cs.fontStyle, cs.textDecorationLine, filled(cs.backgroundColor),
+        cs.borderTopWidth, cs.borderBottomWidth, cs.borderLeftWidth, cs.borderRightWidth,
+        Math.round(n.getBoundingClientRect().height), n.childNodes.length].join(',');
+    }).join('|');
+    const chosenOf = (e) => e.getAttribute('aria-selected') ?? e.getAttribute('aria-checked');
+    const groups = new Map();
+    for (const e of document.querySelectorAll('[aria-selected], [aria-checked]')) {
+      if (e.closest('[aria-hidden="true"]') || (topModal && !topModal.contains(e))) continue;
+      const g = groups.get(e.parentElement) ?? [];
+      g.push(e);
+      groups.set(e.parentElement, g);
+    }
+    for (const g of groups.values()) {
+      const on = g.find((e) => chosenOf(e) === 'true');
+      const off = g.find((e) => chosenOf(e) === 'false');
+      if (!on || !off || shape(on) !== shape(off)) continue;
+      // A fill that turns from dark to light (3:1 or more apart, near-black to brass) reads
+      // as lit or not in any colour vision, as a ring filled to a disc does.
+      const lum = (c) => {
+        const [r, g, b] = (c.match(/[\d.]+/g) || [0, 0, 0]).map(Number);
+        const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+        return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+      };
+      const [a, b] = [lum(getComputedStyle(on).backgroundColor), lum(getComputedStyle(off).backgroundColor)];
+      if ((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 3) continue;
+      const said = (e) => (e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 32);
+      found.push({ kind: 'COLOUR', text: `"${said(on)}" is told chosen from "${said(off)}" by colour alone` + (on.dataset.src ? ` [${on.dataset.src}]` : ''), size: 0, by: '' });
+    }
     // SMALL (`--kinds SMALL`): a control whose OWN box is under 48pt a side. A halo is
     // invisible to both accessibility layers (iOS reports the frame; RN installs no
     // Android touch delegate). Part of a larger named control is not one.
@@ -611,7 +690,7 @@ async function audit(page) {
       await page.setViewportSize({ width: PHONE_W, height: Math.min(h, 16000) });
       const r = await audit(page);
       // SMALL is reported only when asked for by name (see the check).
-      r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID' && x.kind !== 'ORDER'));
+      r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID' && x.kind !== 'ORDER' && x.kind !== 'BENEATH' && x.kind !== 'COLOUR'));
       await page.close();
       // iOS keeps the plain key, so reports written before Android was measured still compare.
       report[platform === 'ios' ? `${name}@${f}` : `${name}@${platform}-${f}`] = r;

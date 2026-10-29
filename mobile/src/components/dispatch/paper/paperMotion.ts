@@ -35,7 +35,7 @@
  * a height animated for any other reason still fails.
  *
  * ── THE FOURTH LAW ───────────────────────────────────────────────────────────
- * `useReducedMotion()` collapses every duration to zero and every transform to
+ * `useReduceMotion()` collapses every duration to zero and every transform to
  * its end state. Nothing is *removed* under reduced motion — the state still
  * changes, it simply arrives.
  */

@@ -35,15 +35,8 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Modal, Pressable, Platform, useWindowDimensions } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-  runOnJS,
-  useReducedMotion,
-  type SharedValue,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS, type SharedValue } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HouseBlur } from '@/src/components/HouseBlur';
 import { nav } from '@/src/utils/typedRouter';
@@ -226,7 +219,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useReduceMotion();
 
   const rotation = useSharedValue(0);
   const progress = useSharedValue(0);

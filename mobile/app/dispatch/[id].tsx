@@ -39,7 +39,7 @@ import { DossierShareCard, PaperBack } from '@/src/components/dispatch/paper/Pap
 import { PaperPost } from '@/src/components/dispatch/paper/PaperPost';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { NOT_SENT_LINE, WITHHELD_LINE, partOf } from '@/src/components/dispatch/paper/paperText';
-import { measure, KIND_NAME, SHARE_CARD_WIDTH } from '@/src/components/dispatch/paper/paperMetrics';
+import { measure, KIND_NAME, SHARE_CARD_WIDTH, UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { hourLabel } from '@/src/components/dispatch/dayLabel';
@@ -438,266 +438,270 @@ export default function FilingReader() {
     <View style={p.screen}>
       <RoomLight room="dispatch" />
       {readyMark}
-      {head}
+      {/* The reading: its head, its page and its dock. While the share sheet is up (not a
+          Modal), out of a screen reader's reach, so it reads only the sheet. */}
+      <View style={p.reading} {...(sharing ? UNSPOKEN : null)}>
+        {head}
 
-      <ScrollView
-        ref={scroller}
-        {...traceProps}
-        // The app's law for a router screen: the OS moves the content for the
-        // keyboard. KeyboardAvoidingView is for a Modal, and using it here would
-        // fight the inset the system already applies.
-        automaticallyAdjustKeyboardInsets
-        keyboardDismissMode="interactive"
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: scrollEnd }}
-      >
-        <PaperSheet>
-          {/* The honour stays: the day this filing hung in the Lobby, if it did. */}
-          <LobbyHonour kind="post" id={id} style={{ marginBottom: 12 }} />
-          {/* ── THE FILING ─────────────────────────────────────────────────
-              Each kind is drawn by the component the design drew for it, and
-              nothing here re-implements one. An ended filing keeps its room:
-              PaperPost prints the tombstone and the critiques below survive,
-              which is the entire reason ending is not deleting. */}
-          {live.kind === 'dossier' && !ended ? (
-            <>
-              <EssayHead
-                title={live.title ?? ''}
-                series={live.seriesTitle ? partOf(live.partNumber, live.seriesTitle) : undefined}
-                // A departed member is null, which the byline draws as departed
-                // and offers no door: a stand-in name opened a room that is not there.
-                author={author}
-                readTime={readTimeOf(live.fullContent ?? live.body)}
-                filed={formatDateMonthDay(live.createdAt).toUpperCase()}
-                film={live.film}
-                onAuthor={author ? () => openAuthor(author.name) : undefined}
-                onFilm={live.subjectId ? openFilm : undefined}
-                // `from` is this part, so the series page marks where the reader
-                // already is instead of making them find it.
-                onSeries={live.seriesId
-                  ? () => nav.push(`/dispatch/series/${live.seriesId}?from=${live.id}`)
-                  : undefined}
-              />
-              {/* An essay has no card to carry the line the other kinds carry,
-                  so it is said under the head, before the reading begins, on
-                  the body's own edge (the card's indent is for its byline). */}
-              {pending ? (
-                <Text style={[p.wireSource, { paddingLeft: 0, marginTop: 0, marginBottom: 16 }]} numberOfLines={2} {...scaledTextProps}>
-                  {NOT_SENT_LINE}
-                </Text>
-              ) : null}
-              {/* Withheld, it is read by its author alone (RLS refuses the rest),
-                  and says so, as a card does under its stamp. */}
-              {live.withheldAt ? (
-                <Text style={[p.removedText, { textAlign: 'left', marginTop: 0, marginBottom: 16 }]} {...scaledTextProps}>
-                  {WITHHELD_LINE}
-                </Text>
-              ) : null}
-              <EssayBody text={live.fullContent ?? live.body} />
-              {/* The feed carries only an essay's opening. When the whole of it
-                  could not be read, that is said, with a way to ask again —
-                  never drawn as though the essay ended there. */}
-              {unreachable && !live.fullContent ? (
-                <View style={{ marginTop: 20, gap: 10, alignItems: 'flex-start' }}>
-                  <Text style={[p.removedText, { textAlign: 'left' }]} {...scaledTextProps}>
-                    The rest of this essay could not be reached.
-                  </Text>
-                  <TryAgainLine
-                    onPress={() => { setLoading(true); setAttempt((n) => n + 1); }}
-                    what="read the whole essay"
-                  />
-                </View>
-              ) : null}
-              {/* The foot of a part. Absent when there is no next one, because a
-                  control that says NEXT and opens nothing is worse than an essay
-                  that simply ends. */}
-              {nextPart ? (
-                <EssayNext
-                  label="NEXT IN THE SERIES"
-                  title={nextPart.title ?? ''}
-                  readTime={readTimeOf(nextPart.fullContent ?? nextPart.body)}
-                  onPress={() => nav.push(`/dispatch/${nextPart.id}`)}
+        <ScrollView
+          ref={scroller}
+          {...traceProps}
+          // The app's law for a router screen: the OS moves the content for the
+          // keyboard. KeyboardAvoidingView is for a Modal, and using it here would
+          // fight the inset the system already applies.
+          automaticallyAdjustKeyboardInsets
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: scrollEnd }}
+        >
+          <PaperSheet>
+            {/* The honour stays: the day this filing hung in the Lobby, if it did. */}
+            <LobbyHonour kind="post" id={id} style={{ marginBottom: 12 }} />
+            {/* ── THE FILING ─────────────────────────────────────────────────
+                Each kind is drawn by the component the design drew for it, and
+                nothing here re-implements one. An ended filing keeps its room:
+                PaperPost prints the tombstone and the critiques below survive,
+                which is the entire reason ending is not deleting. */}
+            {live.kind === 'dossier' && !ended ? (
+              <>
+                <EssayHead
+                  title={live.title ?? ''}
+                  series={live.seriesTitle ? partOf(live.partNumber, live.seriesTitle) : undefined}
+                  // A departed member is null, which the byline draws as departed
+                  // and offers no door: a stand-in name opened a room that is not there.
+                  author={author}
+                  readTime={readTimeOf(live.fullContent ?? live.body)}
+                  filed={formatDateMonthDay(live.createdAt).toUpperCase()}
+                  film={live.film}
+                  onAuthor={author ? () => openAuthor(author.name) : undefined}
+                  onFilm={live.subjectId ? openFilm : undefined}
+                  // `from` is this part, so the series page marks where the reader
+                  // already is instead of making them find it.
+                  onSeries={live.seriesId
+                    ? () => nav.push(`/dispatch/series/${live.seriesId}?from=${live.id}`)
+                    : undefined}
                 />
-              ) : null}
-            </>
-          ) : live.kind === 'ballot' && !ended ? (
-            <PaperBallot
-              question={live.title ?? live.body}
-              author={author}
-              options={(live.options ?? []).map((o, i) => ({
-                title: o.title,
-                posterPath: o.poster_path ?? null,
-                // From the frozen count only: an open ballot shows no numbers.
-                votes: live.frozenTotals?.counts?.[String(i)] ?? 0,
-              }))}
-              myVote={myVotes[live.id] ?? null}
-              voteKnown={voteKnown}
-              certifyKnown={certifyKnown}
-              saveKnown={saveKnown}
-              closed={closesPassed}
-              closesLabel={closesIn ? `closes ${closesIn}` : ''}
-              // Whether the result has actually been COUNTED, not merely whether
-              // the ballot has closed. Without it every option reads 0 and the
-              // page announced NO BALLOTS WERE CAST under a question members had
-              // marked — see PaperBallot's own note.
-              sealed={!!live.frozenTotals}
-              docked={!!me && open}
-              certifyCount={live.certifyCount}
-              commentCount={live.commentCount}
-              certified={certified}
-              saved={saved}
-              pending={pending}
-              // Acts need a member; without one each would do nothing on a press.
-              // Share, the byline and the film need no account.
-              onVote={me ? (i) => useDispatch.getState().vote(live.id, i) : undefined}
-              onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
-              onCritique={me ? () => setComposing(true) : undefined}
-              onShare={() => setSharing(true)}
-              onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
-              onAuthor={() => openAuthor(author?.name)}
+                {/* An essay has no card to carry the line the other kinds carry,
+                    so it is said under the head, before the reading begins, on
+                    the body's own edge (the card's indent is for its byline). */}
+                {pending ? (
+                  <Text style={[p.wireSource, { paddingLeft: 0, marginTop: 0, marginBottom: 16 }]} numberOfLines={2} {...scaledTextProps}>
+                    {NOT_SENT_LINE}
+                  </Text>
+                ) : null}
+                {/* Withheld, it is read by its author alone (RLS refuses the rest),
+                    and says so, as a card does under its stamp. */}
+                {live.withheldAt ? (
+                  <Text style={[p.removedText, { textAlign: 'left', marginTop: 0, marginBottom: 16 }]} {...scaledTextProps}>
+                    {WITHHELD_LINE}
+                  </Text>
+                ) : null}
+                <EssayBody text={live.fullContent ?? live.body} />
+                {/* The feed carries only an essay's opening. When the whole of it
+                    could not be read, that is said, with a way to ask again —
+                    never drawn as though the essay ended there. */}
+                {unreachable && !live.fullContent ? (
+                  <View style={{ marginTop: 20, gap: 10, alignItems: 'flex-start' }}>
+                    <Text style={[p.removedText, { textAlign: 'left' }]} {...scaledTextProps}>
+                      The rest of this essay could not be reached.
+                    </Text>
+                    <TryAgainLine
+                      onPress={() => { setLoading(true); setAttempt((n) => n + 1); }}
+                      what="read the whole essay"
+                    />
+                  </View>
+                ) : null}
+                {/* The foot of a part. Absent when there is no next one, because a
+                    control that says NEXT and opens nothing is worse than an essay
+                    that simply ends. */}
+                {nextPart ? (
+                  <EssayNext
+                    label="NEXT IN THE SERIES"
+                    title={nextPart.title ?? ''}
+                    readTime={readTimeOf(nextPart.fullContent ?? nextPart.body)}
+                    onPress={() => nav.push(`/dispatch/${nextPart.id}`)}
+                  />
+                ) : null}
+              </>
+            ) : live.kind === 'ballot' && !ended ? (
+              <PaperBallot
+                question={live.title ?? live.body}
+                author={author}
+                options={(live.options ?? []).map((o, i) => ({
+                  title: o.title,
+                  posterPath: o.poster_path ?? null,
+                  // From the frozen count only: an open ballot shows no numbers.
+                  votes: live.frozenTotals?.counts?.[String(i)] ?? 0,
+                }))}
+                myVote={myVotes[live.id] ?? null}
+                voteKnown={voteKnown}
+                certifyKnown={certifyKnown}
+                saveKnown={saveKnown}
+                closed={closesPassed}
+                closesLabel={closesIn ? `closes ${closesIn}` : ''}
+                // Whether the result has actually been COUNTED, not merely whether
+                // the ballot has closed. Without it every option reads 0 and the
+                // page announced NO BALLOTS WERE CAST under a question members had
+                // marked — see PaperBallot's own note.
+                sealed={!!live.frozenTotals}
+                docked={!!me && open}
+                certifyCount={live.certifyCount}
+                commentCount={live.commentCount}
+                certified={certified}
+                saved={saved}
+                pending={pending}
+                // Acts need a member; without one each would do nothing on a press.
+                // Share, the byline and the film need no account.
+                onVote={me ? (i) => useDispatch.getState().vote(live.id, i) : undefined}
+                onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
+                onCritique={me ? () => setComposing(true) : undefined}
+                onShare={() => setSharing(true)}
+                onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
+                onAuthor={() => openAuthor(author?.name)}
+              />
+            ) : (
+              <PaperPost
+                kind={live.kind}
+                author={author}
+                body={live.body}
+                source={live.source ?? undefined}
+                film={live.film}
+                order={hourLabel(live.createdAt)}
+                orderIs="hour"
+                measureWidth={width}
+                certifyCount={live.certifyCount}
+                commentCount={live.commentCount}
+                certified={certified}
+                saved={saved}
+                certifyKnown={certifyKnown}
+                saveKnown={saveKnown}
+                answered={!!live.answerId}
+                spoiler={live.spoilerLabel}
+                // Only its author can see a withheld filing (RLS refuses the rest).
+                withheld={!!live.withheldAt}
+                ended={live.endedBy ?? undefined}
+                edited={!!live.editedAt}
+                pending={pending}
+                // The dock below holds the marks wherever it is drawn: one row of them, never two.
+                docked={!!me && open}
+                // Gated on a member, for the reason given on the ballot above.
+                onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
+                // The tombstone's one mark leads to the critiques that survive it,
+                // just below; the house takes no new one under words that are gone.
+                onCritique={ended
+                  ? () => scroller.current?.scrollTo({ y: critiquesAt.current, animated: true })
+                  : me ? () => setComposing(true) : undefined}
+                onShare={() => setSharing(true)}
+                onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
+                onAuthor={() => openAuthor(author?.name)}
+                onFilm={live.subjectId ? openFilm : undefined}
+              />
+            )}
+
+            {/* ── THE CRITIQUES ──────────────────────────────────────────────
+                Drawn under an ended filing too: they survive it. A new order
+                re-reads from the first page, as the order is the server's. */}
+            <View onLayout={(e) => { critiquesAt.current = e.nativeEvent.layout.y; }}>
+              <CritiqueHead
+                count={live.commentCount}
+                order={order}
+                onOrder={(o) => {
+                  if (o === order) return;
+                  setOrder(o);
+                  void useDispatch.getState().fetchCritiques(live.id, o);
+                }}
+              />
+            </View>
+
+            {rows.map((c, i) => (
+              <PaperCritiqueRow
+                key={c.id}
+                top={order === 'CERTIFIED' && i === 0 && c.certifyCount > 0}
+                c={{
+                  id: c.id,
+                  author: c.author,
+                  body: c.body,
+                  certifyCount: c.certifyCount,
+                  certified: certifiedCritiqueIds.has(c.id),
+                  certifyKnown: !me || critiqueMarksKnown.has(c.id),
+                  age: (ages[i] ?? '').toUpperCase(),
+                  mine: !!me && c.authorId === me.id,
+                  taken: live.answerId === c.id,
+                }}
+                // Only who asked, only on a seeking; the server refuses the rest too.
+                canTake={live.kind === 'seeking' && mine && !ended}
+                onTake={() => useDispatch.getState().takeAnswer(live.id, c.id)}
+                // Gated on a member, like every act.
+                onCertify={me ? (next) => useDispatch.getState().certifyCritique(c.id, live.id, next) : undefined}
+                onAuthor={() => openAuthor(c.author?.name)}
+                onDelete={
+                  me && c.authorId === me.id
+                    ? () => askToWithdrawCritique(() => {
+                      useDispatch.getState().removeCritique(c.id, live.id)
+                        .catch(() => reelToast.error('It could not be withdrawn.'));
+                    })
+                    : undefined
+                }
+                onReport={
+                  // Not a departed member's: there is no account to report.
+                  me && c.authorId && c.authorId !== me.id && c.author
+                    ? () => setReport({
+                      type: 'dispatch_comment',
+                      id: c.id,
+                      userId: c.authorId as string,
+                      username: c.author!.name,
+                    })
+                    : undefined
+                }
+              />
+            ))}
+
+            <CritiqueFooter
+              shown={rows.length}
+              total={live.commentCount}
+              loading={!!critiquesLoading[id]}
+              loadingMore={!!critiquesLoadingMore[id]}
+              onMore={() => useDispatch.getState().loadMoreCritiques(live.id)}
+            />
+          </PaperSheet>
+        </ScrollView>
+
+        {/* ── ONE DOCKED THING ───────────────────────────────────────────────
+            The composer REPLACES the bar. A signed-out reader gets neither, and
+            so does a filing that takes no acts (`open`). */}
+        {me && open ? (
+          composing ? (
+            <CritiqueComposer
+              me={{
+                name: me.username ?? '',
+                memberNo: (me as { member_no?: number }).member_no ?? 0,
+                // Their own rank, from the one place that decides it.
+                tier: paperTierOf(me),
+                avatar: (me as { avatar_url?: string | null }).avatar_url ?? null,
+              }}
+              value={draft}
+              onChangeText={setDraft}
+              onFile={fileCritique}
+              sending={sending}
+              bottomInset={edge + COMPOSER_GAP}
             />
           ) : (
-            <PaperPost
-              kind={live.kind}
-              author={author}
-              body={live.body}
-              source={live.source ?? undefined}
-              film={live.film}
-              order={hourLabel(live.createdAt)}
-              orderIs="hour"
-              measureWidth={width}
+            <PostDock
               certifyCount={live.certifyCount}
               commentCount={live.commentCount}
               certified={certified}
               saved={saved}
               certifyKnown={certifyKnown}
               saveKnown={saveKnown}
-              answered={!!live.answerId}
-              spoiler={live.spoilerLabel}
-              // Only its author can see a withheld filing (RLS refuses the rest).
-              withheld={!!live.withheldAt}
-              ended={live.endedBy ?? undefined}
-              edited={!!live.editedAt}
-              pending={pending}
-              // The dock below holds the marks wherever it is drawn: one row of them, never two.
-              docked={!!me && open}
-              // Gated on a member, for the reason given on the ballot above.
-              onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
-              // The tombstone's one mark leads to the critiques that survive it,
-              // just below; the house takes no new one under words that are gone.
-              onCritique={ended
-                ? () => scroller.current?.scrollTo({ y: critiquesAt.current, animated: true })
-                : me ? () => setComposing(true) : undefined}
+              bottomInset={edge + POST_DOCK_GAP}
+              onCertify={(next) => useDispatch.getState().certify(live.id, next)}
+              onCritique={() => setComposing(true)}
               onShare={() => setSharing(true)}
-              onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
-              onAuthor={() => openAuthor(author?.name)}
-              onFilm={live.subjectId ? openFilm : undefined}
+              onSave={(next) => useDispatch.getState().save(live.id, next)}
             />
-          )}
-
-          {/* ── THE CRITIQUES ──────────────────────────────────────────────
-              Drawn under an ended filing too: they survive it. A new order
-              re-reads from the first page, as the order is the server's. */}
-          <View onLayout={(e) => { critiquesAt.current = e.nativeEvent.layout.y; }}>
-            <CritiqueHead
-              count={live.commentCount}
-              order={order}
-              onOrder={(o) => {
-                if (o === order) return;
-                setOrder(o);
-                void useDispatch.getState().fetchCritiques(live.id, o);
-              }}
-            />
-          </View>
-
-          {rows.map((c, i) => (
-            <PaperCritiqueRow
-              key={c.id}
-              top={order === 'CERTIFIED' && i === 0 && c.certifyCount > 0}
-              c={{
-                id: c.id,
-                author: c.author,
-                body: c.body,
-                certifyCount: c.certifyCount,
-                certified: certifiedCritiqueIds.has(c.id),
-                certifyKnown: !me || critiqueMarksKnown.has(c.id),
-                age: (ages[i] ?? '').toUpperCase(),
-                mine: !!me && c.authorId === me.id,
-                taken: live.answerId === c.id,
-              }}
-              // Only who asked, only on a seeking; the server refuses the rest too.
-              canTake={live.kind === 'seeking' && mine && !ended}
-              onTake={() => useDispatch.getState().takeAnswer(live.id, c.id)}
-              // Gated on a member, like every act.
-              onCertify={me ? (next) => useDispatch.getState().certifyCritique(c.id, live.id, next) : undefined}
-              onAuthor={() => openAuthor(c.author?.name)}
-              onDelete={
-                me && c.authorId === me.id
-                  ? () => askToWithdrawCritique(() => {
-                    useDispatch.getState().removeCritique(c.id, live.id)
-                      .catch(() => reelToast.error('It could not be withdrawn.'));
-                  })
-                  : undefined
-              }
-              onReport={
-                // Not a departed member's: there is no account to report.
-                me && c.authorId && c.authorId !== me.id && c.author
-                  ? () => setReport({
-                    type: 'dispatch_comment',
-                    id: c.id,
-                    userId: c.authorId as string,
-                    username: c.author!.name,
-                  })
-                  : undefined
-              }
-            />
-          ))}
-
-          <CritiqueFooter
-            shown={rows.length}
-            total={live.commentCount}
-            loading={!!critiquesLoading[id]}
-            loadingMore={!!critiquesLoadingMore[id]}
-            onMore={() => useDispatch.getState().loadMoreCritiques(live.id)}
-          />
-        </PaperSheet>
-      </ScrollView>
-
-      {/* ── ONE DOCKED THING ───────────────────────────────────────────────
-          The composer REPLACES the bar. A signed-out reader gets neither, and
-          so does a filing that takes no acts (`open`). */}
-      {me && open ? (
-        composing ? (
-          <CritiqueComposer
-            me={{
-              name: me.username ?? '',
-              memberNo: (me as { member_no?: number }).member_no ?? 0,
-              // Their own rank, from the one place that decides it.
-              tier: paperTierOf(me),
-              avatar: (me as { avatar_url?: string | null }).avatar_url ?? null,
-            }}
-            value={draft}
-            onChangeText={setDraft}
-            onFile={fileCritique}
-            sending={sending}
-            bottomInset={edge + COMPOSER_GAP}
-          />
-        ) : (
-          <PostDock
-            certifyCount={live.certifyCount}
-            commentCount={live.commentCount}
-            certified={certified}
-            saved={saved}
-            certifyKnown={certifyKnown}
-            saveKnown={saveKnown}
-            bottomInset={edge + POST_DOCK_GAP}
-            onCertify={(next) => useDispatch.getState().certify(live.id, next)}
-            onCritique={() => setComposing(true)}
-            onShare={() => setSharing(true)}
-            onSave={(next) => useDispatch.getState().save(live.id, next)}
-          />
-        )
-      ) : null}
+          )
+        ) : null}
+      </View>
 
       {/* ── THE CLIPPING, RENDERED OFF-SCREEN ────────────────────────────────
           Only while the share sheet is open on an essay. Parked off the left

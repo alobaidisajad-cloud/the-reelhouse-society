@@ -10,7 +10,7 @@
  * A slant turns a word and its ground together, so transforms are undone
  * first (a turned box would reach past the ground it is printed on).
  *
- *   node mockups/tools/contrast.cjs [--src DIR] [--only a,b] [--width 390]
+ *   node mockups/tools/contrast.cjs [--src DIR] [--only a,b] [--width 390] [--controls]
  *     [--passes ios@1,android@2]
  *   exits 1 when any word falls short.
  */
@@ -98,6 +98,138 @@ async function measure(browser, file, pass) {
   return verdict;
 }
 
+/**
+ * --controls: what identifies a control, against what is around it, at 3:1
+ * (WCAG 1.4.11). Words are measured above; here:
+ *   FIELD  a text field's edge — any side's border, or its fill — against the
+ *          ground just outside it: an empty field must be seen to be a field.
+ *   ICON   the icon of a control that has no words of its own, against the
+ *          ground really under it (the worst 5% of those pixels, as a word's).
+ */
+async function measureControls(browser, file, pass) {
+  const page = await open(browser, file, { platform: pass.platform, factor: pass.f, width: W });
+  await page.evaluate(() => {
+    for (const s of document.querySelectorAll('.vscroll')) { s.style.overflow = 'visible'; s.style.height = 'auto'; s.style.flex = 'none'; }
+    document.querySelector('.phone').style.height = 'auto';
+  });
+  await page.addStyleTag({ content: '* { transform: none !important; color: transparent !important; text-shadow: none !important; }' });
+  const h = await page.evaluate(() => Math.ceil(document.querySelector('.phone').getBoundingClientRect().height));
+  await page.setViewportSize({ width: W, height: h });
+  const found = await page.evaluate(() => {
+    const seen = (e) => {
+      let o = 1;
+      for (let a = e; a && a.nodeType === 1; a = a.parentElement) {
+        const cs = getComputedStyle(a);
+        if (cs.display === 'none' || cs.visibility === 'hidden' || a.getAttribute('aria-hidden') === 'true') return 0;
+        o *= +cs.opacity;
+      }
+      return o;
+    };
+    const site = (e) => e.closest('[data-src]')?.dataset.src || '';
+    const fields = [...document.querySelectorAll('[data-field]')].filter((e) => seen(e) > 0.05).map((e) => {
+      const r = e.getBoundingClientRect();
+      const cs = getComputedStyle(e);
+      const sides = ['Top', 'Right', 'Bottom', 'Left'].filter((s) => parseFloat(cs[`border${s}Width`]) >= 0.5);
+      return { say: e.dataset.field || '(a field)', src: site(e), x: r.left, y: r.top, w: r.width, h: r.height, sides };
+    }).filter((f) => f.w > 8 && f.h > 8);
+    // A control with no words of its own is known by its icon alone.
+    const icons = [];
+    for (const c of document.querySelectorAll('[data-press]')) {
+      if (seen(c) < 0.05) continue;
+      const words = [...c.querySelectorAll('span[data-scale-cap]')].some((s) => s.textContent.trim() && seen(s) > 0.05);
+      if (words) continue;
+      for (const svg of c.querySelectorAll('svg')) {
+        if (seen(svg) < 0.05) continue;
+        const r = svg.getBoundingClientRect();
+        if (r.width < 4 || r.height < 4) continue;
+        const ink = [svg, ...svg.querySelectorAll('*')].map((n) => {
+          const cs = getComputedStyle(n);
+          const s = cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 ? cs.stroke : null;
+          const f = cs.fill !== 'none' && !/rgba\(0, 0, 0, 0\)|transparent/.test(cs.fill) ? cs.fill : null;
+          return s || f;
+        }).find((x) => x && /^rgb/.test(x));
+        if (!ink) continue;
+        icons.push({ say: c.getAttribute('aria-label') || '(an icon)', src: site(c), color: ink, opacity: seen(svg), x: r.left, y: r.top, w: r.width, h: r.height });
+      }
+    }
+    return { fields, icons };
+  });
+  if ((!found.fields.length && !found.icons.length) || h < 1) { await page.close(); return { count: 0, worst: 99, faults: [] }; }
+  const shot = async () => (await page.screenshot({ fullPage: true })).toString('base64');
+  const drawn = await shot();
+  await page.addStyleTag({ content: 'svg { visibility: hidden !important; }' });
+  const bare = await shot();
+  const verdict = await page.evaluate(async ({ drawn, bare, found }) => {
+    const load = async (png) => {
+      const img = new Image(); img.src = `data:image/png;base64,${png}`; await img.decode();
+      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+      const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+      return { g, w: c.width, h: c.height };
+    };
+    const A = await load(drawn);
+    const B = await load(bare);
+    const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+    const lum = (r, g, b) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    const ratio = (L1, L2) => (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+    // The median luminance along a line of pixels (x0,y0)→(x1,y1), one pixel thick.
+    const line = (P, x0, y0, x1, y1) => {
+      const out = [];
+      const n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
+      for (let i = 0; i <= n; i++) {
+        const x = Math.round(x0 + ((x1 - x0) * i) / n), y = Math.round(y0 + ((y1 - y0) * i) / n);
+        if (x < 0 || y < 0 || x >= P.w || y >= P.h) continue;
+        const d = P.g.getImageData(x, y, 1, 1).data;
+        out.push(lum(d[0], d[1], d[2]));
+      }
+      out.sort((a, b) => a - b);
+      return out.length ? out[Math.floor(out.length / 2)] : null;
+    };
+    const faults = []; let worst = 99; let count = 0;
+    for (const f of found.fields) {
+      count++;
+      const { x, y, w, h } = f;
+      const r = x + w, b = y + h;
+      // Each drawn side: its edge pixels against the ground 3pt outside it.
+      const edges = {
+        Top: [line(A, x + 4, y + 0.5, r - 4, y + 0.5), line(A, x + 4, y - 3, r - 4, y - 3)],
+        Bottom: [line(A, x + 4, b - 0.5, r - 4, b - 0.5), line(A, x + 4, b + 3, r - 4, b + 3)],
+        Left: [line(A, x + 0.5, y + 4, x + 0.5, b - 4), line(A, x - 3, y + 4, x - 3, b - 4)],
+        Right: [line(A, r - 0.5, y + 4, r - 0.5, b - 4), line(A, r + 3, y + 4, r + 3, b - 4)],
+      };
+      const by = f.sides.map((s) => edges[s]).filter(([e, o]) => e !== null && o !== null).map(([e, o]) => ratio(e, o));
+      // Its fill, a little inside, against the ground outside it.
+      const fill = line(A, x + 6, y + h / 2, r - 6, y + h / 2);
+      const outside = [edges.Top[1], edges.Bottom[1]].filter((v) => v !== null);
+      if (fill !== null && outside.length) by.push(Math.min(...outside.map((o) => ratio(fill, o))));
+      const best = by.length ? Math.max(...by) : 1;
+      worst = Math.min(worst, best);
+      if (best < 3) faults.push(`FIELD ${best.toFixed(2)} < 3  "${f.say}"${f.src ? ` [${f.src}]` : ''}`);
+    }
+    for (const t of found.icons) {
+      count++;
+      const [tr, tg, tb, ta0 = 1] = t.color.match(/[\d.]+/g).map(Number);
+      const ta = ta0 * t.opacity;
+      const x0 = Math.max(0, Math.floor(t.x)), y0 = Math.max(0, Math.floor(t.y));
+      const w = Math.min(B.w - x0, Math.ceil(t.w)), h = Math.min(B.h - y0, Math.ceil(t.h));
+      if (w < 1 || h < 1) continue;
+      const d = B.g.getImageData(x0, y0, w, h).data;
+      const rs = [];
+      for (let i = 0; i < d.length; i += 4) {
+        rs.push(ratio(lum(tr * ta + d[i] * (1 - ta), tg * ta + d[i + 1] * (1 - ta), tb * ta + d[i + 2] * (1 - ta)), lum(d[i], d[i + 1], d[i + 2])));
+      }
+      rs.sort((a, b) => a - b);
+      const r5 = rs[Math.floor(rs.length * 0.05)];
+      worst = Math.min(worst, r5);
+      if (r5 < 3) faults.push(`ICON ${r5.toFixed(2)} < 3  "${t.say}"${t.src ? ` [${t.src}]` : ''}`);
+    }
+    return { count, worst, faults };
+  }, { drawn, bare, found });
+  await page.close();
+  return verdict;
+}
+
+const CONTROLS = args.includes('--controls');
+
 (async () => {
   const files = screens(SRC, ONLY).map((n) => path.join(SRC, `${n}.html`));
   if (!files.length) { console.error(`no screens in ${SRC}`); process.exit(1); }
@@ -105,14 +237,16 @@ async function measure(browser, file, pass) {
   let faults = 0;
   for (const file of files) {
     for (const pass of PASSES) {
-      const v = await measure(browser, file, pass);
+      // A screen that cannot be photographed is not passed: it is said, and counted.
+      const v = await (CONTROLS ? measureControls : measure)(browser, file, pass)
+        .catch((e) => ({ count: 0, worst: 0, faults: [`UNMEASURED: ${String(e.message || e).split('\n')[0]}`] }));
       faults += v.faults.length;
       const name = `${path.basename(file, '.html')}  ${pass.platform === 'ios' ? '' : 'android '}×${pass.f}`;
-      console.log(`${name.padEnd(36)} ${v.count} words, worst ${v.worst.toFixed(2)}${v.faults.length ? `  ${v.faults.length} SHORT` : ''}`);
+      console.log(`${name.padEnd(36)} ${v.count} ${CONTROLS ? 'controls' : 'words'}, worst ${v.worst.toFixed(2)}${v.faults.length ? `  ${v.faults.length} SHORT` : ''}`);
       for (const f of v.faults) console.log(`      ${f}`);
     }
   }
   await browser.close();
-  console.log(faults ? `\n${faults} word(s) fall short` : '\nALL READABLE');
+  console.log(faults ? `\n${faults} ${CONTROLS ? 'control(s)' : 'word(s)'} fall short` : CONTROLS ? '\nALL SEEN' : '\nALL READABLE');
   process.exit(faults ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

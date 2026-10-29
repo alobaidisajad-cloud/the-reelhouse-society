@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Plus, X } from 'lucide-react-native';
+import { useFormContext } from 'react-hook-form';
 import { ControlledInput } from '@/src/components/ControlledInput';
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
@@ -16,6 +17,8 @@ export interface LinksEditorProps {
 }
 
 export function LinksEditor({ links, handleAddLink, handleRemoveLink }: LinksEditorProps) {
+  // Enter in a link's title goes on to its address, as the form reads.
+  const { setFocus } = useFormContext();
   return (
     <View>
       <Text {...scaledTextProps} style={st.fieldBody}>Add links to your profile. They will be visible to anyone who visits your page.</Text>
@@ -47,6 +50,7 @@ export function LinksEditor({ links, handleAddLink, handleRemoveLink }: LinksEdi
                       <ControlledInput
                         name={`links.${index}.title` as const}
                         style={st.fieldInput} placeholder="Portfolio, Blog, Channel…" placeholderTextColor={colors.fog} maxLength={MAX_LENGTHS.linkTitle} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia}
+                        returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => setFocus(`links.${index}.url`)}
                       />
                   </View>
                   

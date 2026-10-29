@@ -20,9 +20,8 @@
  * twenty hearts on mount. The first render is recorded, not animated.
  */
 import { memo, useEffect, useRef, type ReactNode } from 'react';
-import Animated, {
-  Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming,
-} from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 
 import { MS, EASE, STRIKE_SCALE } from './paperMotion';
 
@@ -34,7 +33,7 @@ export const PaperStrike = memo(function PaperStrike({
   children: ReactNode;
 }) {
   const scale = useSharedValue(1);
-  const reduced = useReducedMotion();
+  const reduced = useReduceMotion();
   const seen = useRef<boolean | undefined>(undefined);
 
   useEffect(() => {

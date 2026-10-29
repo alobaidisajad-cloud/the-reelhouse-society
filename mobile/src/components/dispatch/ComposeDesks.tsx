@@ -45,6 +45,7 @@ import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 import { useKeyboardLift } from '@/src/hooks/useKeyboardLift';
 import { useClock } from '@/src/hooks/useClock';
 import Animated from 'react-native-reanimated';
+import { UnderSheet } from '@/src/components/layout/UnderSheet';
 import { nav } from '@/src/utils/typedRouter';
 
 /** The hour the filing will carry: from the shared clock, the desk is drawn again only when the hour turns. */
@@ -179,30 +180,32 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
     <View style={p.screen}>
       <RoomLight room="dispatch" />
       <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
-      <PaperComposer
-        kind={kind}
-        me={me}
-        hour={hour}
-        body={body}
-        film={film}
-        remaining={remaining}
-        spoiler={spoiler}
-        ready={ready}
-        sending={sending}
-        amending={amending}
-        source={source}
-        onSource={kind === 'wire' ? setSource : undefined}
-        onBody={setBody}
-        // BACK returns to the choice of form, not out of the modal.
-        onBack={() => router.setParams({ kind: '' })}
-        onFile={onFile}
-        onFilm={() => setFinding(true)}
-        // A still is its film's; before a film is named, the desk says so.
-        onStill={() => (film
-          ? reelToast.success('The film’s own still is used.')
-          : reelToast.error('Name a film first — the still comes with it.'))}
-        onSpoiler={() => setSpoiler((s) => !s)}
-      />
+      <UnderSheet open={finding}>
+        <PaperComposer
+          kind={kind}
+          me={me}
+          hour={hour}
+          body={body}
+          film={film}
+          remaining={remaining}
+          spoiler={spoiler}
+          ready={ready}
+          sending={sending}
+          amending={amending}
+          source={source}
+          onSource={kind === 'wire' ? setSource : undefined}
+          onBody={setBody}
+          // BACK returns to the choice of form, not out of the modal.
+          onBack={() => router.setParams({ kind: '' })}
+          onFile={onFile}
+          onFilm={() => setFinding(true)}
+          // A still is its film's; before a film is named, the desk says so.
+          onStill={() => (film
+            ? reelToast.success('The film’s own still is used.')
+            : reelToast.error('Name a film first — the still comes with it.'))}
+          onSpoiler={() => setSpoiler((s) => !s)}
+        />
+      </UnderSheet>
       <FilmPicker
         visible={finding}
         onClose={() => setFinding(false)}
@@ -310,20 +313,22 @@ export function ComposeBallotScreen() {
     <View style={p.screen}>
       <RoomLight room="dispatch" />
       <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
-      <BallotDesk
-        me={me}
-        hour={hour}
-        question={question}
-        onQuestion={setQuestion}
-        options={slots.map((s) => s?.film ?? null)}
-        closes={closes}
-        ready={ready}
-        onRemove={(i) => setSlots((prev) => prev.map((s, n) => (n === i ? null : s)))}
-        onChoose={(i) => setFinding(i)}
-        onCloses={setCloses}
-        onBack={() => router.setParams({ kind: '' })}
-        onFile={onFile}
-      />
+      <UnderSheet open={finding !== null}>
+        <BallotDesk
+          me={me}
+          hour={hour}
+          question={question}
+          onQuestion={setQuestion}
+          options={slots.map((s) => s?.film ?? null)}
+          closes={closes}
+          ready={ready}
+          onRemove={(i) => setSlots((prev) => prev.map((s, n) => (n === i ? null : s)))}
+          onChoose={(i) => setFinding(i)}
+          onCloses={setCloses}
+          onBack={() => router.setParams({ kind: '' })}
+          onFile={onFile}
+        />
+      </UnderSheet>
       <FilmPicker
         visible={finding !== null}
         onClose={() => setFinding(null)}

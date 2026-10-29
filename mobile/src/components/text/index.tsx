@@ -45,6 +45,7 @@ import { androidTracking } from '@/src/providers/androidTracking';
 import { cutOf, stillCut, type Box, type LaidLine } from '@/src/utils/cutText';
 import { E2E_BUILD, e2eTrace } from '@/src/utils/e2eTrace';
 import { boldFace, BoldTextContext } from '@/src/hooks/useBoldText';
+import { brighter, MoreContrastContext } from '@/src/hooks/useMoreContrast';
 
 /** Props as the phone should receive them: the house ceiling unless the text sets its own, and iOS's spacing on Android. */
 function housed<P extends TextProps | TextInputProps>(props: P, scale: number): P {
@@ -111,6 +112,20 @@ function emboldened(props: TextProps, bold: boolean): TextProps {
   const face = StyleSheet.flatten(props.style)?.fontFamily;
   const heavier = face ? boldFace(face, true) : face;
   return heavier && heavier !== face ? { ...props, style: [props.style, { fontFamily: heavier }] } : props;
+}
+
+/**
+ * A Text in a brighter ink, and at full strength, while Increase Contrast is on (useMoreContrast):
+ * a quiet ink one step up, and a word dimmed by its opacity no longer dimmed. The props otherwise.
+ */
+function heightened(props: TextProps, more: boolean): TextProps {
+  if (!more) return props;
+  const flat = StyleSheet.flatten(props.style) ?? {};
+  const ink = brighter(flat.color, true);
+  const up: { color?: string; opacity?: number } = {};
+  if (ink !== flat.color) up.color = ink as string;
+  if (typeof flat.opacity === 'number' && flat.opacity < 1) up.opacity = 1;
+  return Object.keys(up).length ? { ...props, style: [props.style, up] } : props;
 }
 
 /** A Text's own strings with their piles kept to four; the children themselves when none has one. */
@@ -267,7 +282,7 @@ export const Text = forwardRef<Text, TextProps>(function Text(props, ref) {
   const asked = said ? { ...props, ...said } : props;
   const kept = marksKeptIn(asked.children);
   const plain = kept === asked.children ? asked : { ...asked, children: kept };
-  const own = emboldened(plain, useContext(BoldTextContext) > 0);
+  const own = heightened(emboldened(plain, useContext(BoldTextContext) > 0), useContext(MoreContrastContext));
   const housedProps = nested ? nestedProps(own, parentScales, scale) : housed(own, scale);
   const minimumFontScale = flooredMinimumScale(housedProps, scale);
   const shown = minimumFontScale !== undefined ? { ...housedProps, minimumFontScale } : housedProps;

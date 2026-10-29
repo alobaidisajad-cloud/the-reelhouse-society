@@ -461,9 +461,24 @@ describe('the critiques overlay', () => {
   it('opens over the page instead of pushing the index down', async () => {
     const r = await openIt();
     await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
-    // The index is still mounted and still above it in the page.
-    expect(r.getByText(/INDEXED REELS/)).toBeTruthy();
+    // The index is still mounted and still above it in the page (drawn, if unspoken: below).
+    expect(r.getByText(/INDEXED REELS/, { includeHiddenElements: true })).toBeTruthy();
     expect(SOURCE).not.toMatch(/showComments && \(\s*<Animated\.View[\s\S]{0,80}commentsPanel/);
+  });
+
+  // P4.39: not a Modal, so nothing but this keeps a screen reader from wandering
+  // onto the page beneath the sheet while it is up.
+  it('while it is up, the page beneath is out of a screen reader\'s reach; closed, it is back', async () => {
+    const r = await openIt();
+    await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+    expect(r.getByText(/INDEXED REELS/, { includeHiddenElements: true })).toBeTruthy();
+    expect(r.queryByText(/INDEXED REELS/)).toBeNull();
+    expect(r.getByLabelText('Go back', { includeHiddenElements: true })).toBeTruthy();
+    expect(r.queryByLabelText('Go back')).toBeNull();
+    const [close] = r.getAllByLabelText('Close critiques');
+    if (!close) throw new Error('the critiques have no way out');
+    await act(async () => { await fireEvent.press(close); });
+    await waitFor(() => expect(r.getByText(/INDEXED REELS/)).toBeTruthy());
   });
 
   it('is NOT a Modal, so the moderation sheet cannot stack on it', () => {

@@ -5,10 +5,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, {
-    useSharedValue, useAnimatedStyle, useReducedMotion,
-    withRepeat, withSequence, withTiming, Easing, cancelAnimation,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { colors, fonts } from '@/src/theme/theme';
 import Buster, { type BusterPicture } from '@/src/components/Buster';
 import TryAgain, { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/TryAgain';
@@ -29,7 +27,7 @@ interface EmptyStateProps {
 
 /** Breathing wrapper — standby projector bulb effect. Under Reduce Motion it rests, half lit. */
 function BreathingIcon({ children }: { children: React.ReactNode }) {
-    const still = useReducedMotion();
+    const still = useReduceMotion();
     const opacity = useSharedValue(still ? 0.55 : 0.4);
     const scale = useSharedValue(still ? 1 : 0.95);
 

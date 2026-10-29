@@ -16,10 +16,8 @@ import React, { memo, useCallback, useEffect, useState } from 'react';
 import { AssetImage } from '@/src/components/Picture';
 import { View, StyleSheet, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
-import Animated, {
-  cancelAnimation, Easing, ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue,
-  withDelay, withRepeat, withSequence, withTiming,
-} from 'react-native-reanimated';
+import Animated, { cancelAnimation, Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { useIsFocused } from "expo-router/react-navigation";
 import { Text } from '@/src/components/text';
 import { colors, fonts } from '@/src/theme/theme';
@@ -50,7 +48,7 @@ const LOAD_GRACE_MS = 600;
 /** Whether he may move: his screen is in front and Reduce Motion is off. Both are always asked. */
 function useLive(): boolean {
   const focused = useIsFocused();
-  const still = useReducedMotion();
+  const still = useReduceMotion();
   return focused && !still;
 }
 

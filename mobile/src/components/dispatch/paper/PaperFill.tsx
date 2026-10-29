@@ -28,15 +28,14 @@
  * and looks like a mistake.
  *
  * ── AND IT ARRIVES EVEN WHEN IT DOES NOT MOVE ───────────────────────────────
- * Under `useReducedMotion` the bar is drawn at its final scale immediately.
+ * Under `useReduceMotion` the bar is drawn at its final scale immediately.
  * Nothing is REMOVED for a member who has asked for less motion — the result is
  * still revealed, it simply does not travel.
  */
 import { memo, useEffect } from 'react';
 import { View } from 'react-native';
-import Animated, {
-  Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming,
-} from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
@@ -54,7 +53,7 @@ export const PaperFill = memo(function PaperFill({
   index?: number;
 }) {
   const grown = useSharedValue(0);
-  const reduced = useReducedMotion();
+  const reduced = useReduceMotion();
   // Clamped rather than trusted: a frozen tally that has drifted must not scale
   // a bar past its own track.
   const target = Math.max(0, Math.min(100, percent)) / 100;

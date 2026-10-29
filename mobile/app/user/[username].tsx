@@ -5,7 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import AnimatedRN, { Easing, Extrapolation, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import AnimatedRN, { Easing, Extrapolation, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 
 import { useFilmStore } from '@/src/stores/films';
 import { useShallow } from 'zustand/react/shallow';
@@ -224,7 +225,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // (no bounce, per the motion law); reduce-motion → quick plain fade;
   // re-runs only when a different member's dossier is opened. Developed, each beat rests on a
   // plain style: the member Nº never waits on an animated style reaching it.
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useReduceMotion();
   const { lit: plate, rests: developed } = useIgnition(`${targetUser?.id ?? ''}:${reducedMotion}`, {
     duration: reducedMotion ? 250 : 900, from: 1, easing: Easing.bezier(0.33, 0, 0.15, 1), name: 'member.plate',
   });

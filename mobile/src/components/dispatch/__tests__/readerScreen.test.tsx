@@ -629,6 +629,18 @@ describe('the reader', () => {
     spy.mockRestore();
   });
 
+  // P4.39: the sheet is not a Modal, so nothing but this keeps a screen reader on it.
+  it('while the share sheet is up, the reading beneath is out of a screen reader\'s reach; closed, it is back', async () => {
+    const { getByLabelText, queryByLabelText } = await mount();
+    expect(getByLabelText('Share')).toBeTruthy();
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
+    expect(getByLabelText(/ELSEWHERE/)).toBeTruthy();
+    expect(queryByLabelText('Share')).toBeNull();
+    expect(getByLabelText('Share', { includeHiddenElements: true })).toBeTruthy();
+    await act(async () => { await fireEvent.press(getByLabelText('Close, without sharing')); });
+    expect(getByLabelText('Share')).toBeTruthy();
+  });
+
   it('sends a WEB link, never a scheme only this app understands', async () => {
     // `reelhouse://` opens nothing for whoever lacks the app: everyone it is sent to.
     const shared: { message?: string }[] = [];

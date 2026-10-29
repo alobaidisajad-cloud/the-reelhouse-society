@@ -16,7 +16,7 @@ import {
     Trash2,
     X,
 } from 'lucide-react-native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
@@ -173,6 +173,7 @@ function ActionModal({
 }) {
   const [reason, setReason] = useState('');
   const [durationHours, setDurationHours] = useState('');
+  const reasonRef = useRef<TextInput>(null);
   const sheetFoot = useSheetBottom();
 
   const reset = useCallback(() => {
@@ -277,6 +278,9 @@ function ActionModal({
                 placeholderTextColor={colors.fog}
                 selectionColor={colors.selection}
                 returnKeyType="next"
+                // On to the reason: Enter goes where the form goes next.
+                onSubmitEditing={() => reasonRef.current?.focus()}
+                blurOnSubmit={false}
                 accessibilityLabel="Suspension, in hours"
               />
             </View>
@@ -285,6 +289,7 @@ function ActionModal({
           <View style={s.inputGroup}>
             <Text style={s.inputLabel}>REASON</Text>
             <TextInput
+              ref={reasonRef}
               style={[s.textInput, s.textArea]}
               value={reason}
               onChangeText={setReason}
@@ -1483,8 +1488,11 @@ const s = StyleSheet.create({
     letterSpacing: 2,
     color: colors.fog,
   },
+  // The view on show, underlined as well as lit: the brighter ink and brass edge alone
+  // do not say it to every eye.
   viewTabTextActive: {
     color: colors.parchment,
+    textDecorationLine: 'underline',
   },
 
   // ── Multi-select Toolbar ───────────────────────────────────────────────

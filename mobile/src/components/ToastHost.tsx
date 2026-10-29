@@ -21,13 +21,8 @@ import { View, StyleSheet, useWindowDimensions, Platform, AccessibilityInfo, Pre
 import { Text } from '@/src/components/text';
 import { InIosSheet, useOverlayTop } from '@/src/components/layout/navMetrics';
 import { E2ERouteMark } from '@/src/components/layout/E2ERouteMark';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-  useReducedMotion,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import type { Stack } from 'expo-router';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
@@ -187,7 +182,7 @@ function ToastPill({ toast, leaving, held = false, slide, inSheet = false }: {
 }) {
   const { width } = useWindowDimensions();
   const top = useOverlayTop(inSheet);
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useReduceMotion();
   const animate = slide && !reducedMotion;
   const translateY = useSharedValue(animate ? -80 : 0);
   const opacity = useSharedValue(animate ? 0 : 1);

@@ -1023,6 +1023,28 @@ describe("the phone's lock, put away, and the store's subscription", () => {
     return mockAlert.mock.calls[mockAlert.mock.calls.length - 1] as [string, string, { text: string; onPress?: () => Promise<void> }[]];
   };
 
+  // P4.40: the code is verified with Enter (Android's pad has a Done key), as with VERIFY CODE.
+  it('a failed Face ID asks for the emailed code, and Enter in the code verifies it', async () => {
+    mockUser = { ...BASE, preferences: { biometric_lock: true } };
+    const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
+    local.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
+    const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
+    const auth = supabase.auth as unknown as { signInWithOtp: jest.Mock; verifyOtp: jest.Mock };
+    auth.signInWithOtp = jest.fn().mockResolvedValue({ data: null, error: null });
+    auth.verifyOtp = jest.fn().mockResolvedValue({ data: null, error: { message: 'Token has expired or is invalid' } });
+    const r = await settle(mount());
+    const [, , buttons] = await pressDelete(r);
+    await act(async () => { await buttons.find((b) => b.text === 'DELETE')!.onPress!(); });
+    expect(r.getByText(/6-digit cipher/)).toBeTruthy();
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Six digit security code'), '12345'); });
+    await act(async () => { await fireEvent(r.getByLabelText('Six digit security code'), 'submitEditing'); });
+    expect(auth.verifyOtp).not.toHaveBeenCalled();
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Six digit security code'), '123456'); });
+    await act(async () => { await fireEvent(r.getByLabelText('Six digit security code'), 'submitEditing'); });
+    expect(auth.verifyOtp).toHaveBeenCalledWith(expect.objectContaining({ token: '123456' }));
+    expect(mockRequestDeletion).not.toHaveBeenCalled();
+  });
+
   it('a Face ID prompt the system put away sends no code and deletes nothing', async () => {
     // Put away by the system (a call, the app sent to the background) is not a
     // failed check: it sent an email code nobody asked for.

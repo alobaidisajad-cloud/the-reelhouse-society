@@ -22,7 +22,7 @@ import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { deckLabelProps } from '@/src/constants/textScaling';
-import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
+import { formatCount, UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { tmdb } from '@/src/lib/tmdb';
 import { STACK_COMMENT_PAGE, StackService } from '@/src/services/StackService';
@@ -169,7 +169,7 @@ const StackDetailFilmCard = React.memo(({
  * nothing, so the chrome dissolves into the film with no ruled edge.
  */
 const StackNav = React.memo(function StackNav({
-    top, onBack, blurStyle, children,
+    top, onBack, blurStyle, children, hidden = false,
 }: {
     /** Where the bar's row starts: the pushed header's top (navMetrics). */
     top: number;
@@ -177,10 +177,12 @@ const StackNav = React.memo(function StackNav({
     /** Scroll-driven blur, on iOS only. Omitted on the loading and error screens. */
     blurStyle?: any;
     children?: React.ReactNode;
+    /** Under the critiques: drawn, and out of a screen reader's reach until they close. */
+    hidden?: boolean;
 }) {
     const height = top + STACK_NAV_ROW;
     return (
-        <View style={[s.navBar, { height, paddingTop: top }]} pointerEvents="box-none">
+        <View style={[s.navBar, { height, paddingTop: top }]} pointerEvents="box-none" {...(hidden ? UNSPOKEN : null)}>
             <View style={[s.navScrim, { height: height + 44 }]} pointerEvents="none">
                 <LinearGradient
                     colors={['rgba(13,11,9,0.92)', 'rgba(13,11,9,0.78)', 'rgba(13,11,9,0.34)', 'rgba(13,11,9,0)']}
@@ -841,7 +843,7 @@ export default function StackDetailScreen() {
       <RoomLight room="default" hem={heroPoster ? HEADER_HEIGHT : undefined} art={heroPoster} />
       {readyMark}
       {/* Absolute Dynamic Nav Bar */}
-      <StackNav top={headerTop} onBack={() => nav.back()} blurStyle={navBlurStyle}>
+      <StackNav top={headerTop} onBack={() => nav.back()} blurStyle={navBlurStyle} hidden={showComments}>
         {isOwner ? (
           <View style={s.headerActions}>
             <PressableScale style={s.actionBtn} onPress={() => { (router.push as any)({ pathname: '/list-modal', params: { editId: id } } as import('expo-router').Href); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Edit stack">
@@ -866,162 +868,167 @@ export default function StackDetailScreen() {
         )}
       </StackNav>
 
-      <CinematicFlashList
-        data={films}
-        keyExtractor={(item: any) => String(item.id)}
-        onEndReached={() => { void readMoreFilms(); }}
-        onEndReachedThreshold={0.6}
-        numColumns={COLUMNS}
-        contentContainerStyle={{ ...s.scrollContent, paddingBottom: end }}
-        externalScrollY={scrollY}
-        bottomInset={edge}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
-        estimatedItemSize={200}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} progressViewOffset={navBottom} />}
-        ListHeaderComponent={
-          <>
-            {/* Parallax Image Background */}
-            <Animated.View style={[s.parallaxHeader, headerStyle]}>
-              {/* No picture, no veil: there is nothing to fade, and a veil
-                  over nothing is a dark block hiding the room's light. */}
-              {heroPoster ? (
-                <>
-                  <RemoteImage uri={heroPoster} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={20} fallback={null} />
-                  <RoomVeil room="default" hem={HEADER_HEIGHT} art={heroPoster} stops={HERO_VEIL} lifted={heroLifted} />
-                </>
-              ) : null}
-            </Animated.View>
+      {/* Under the critiques, the page is out of a screen reader's reach: the sheet is
+          not a Modal (see THE CRITIQUES), so nothing else would keep it from wandering
+          there. A View of its own: a list does not hand these to the view it draws. */}
+      <View style={s.page} {...(showComments ? UNSPOKEN : null)}>
+        <CinematicFlashList
+          data={films}
+          keyExtractor={(item: any) => String(item.id)}
+          onEndReached={() => { void readMoreFilms(); }}
+          onEndReachedThreshold={0.6}
+          numColumns={COLUMNS}
+          contentContainerStyle={{ ...s.scrollContent, paddingBottom: end }}
+          externalScrollY={scrollY}
+          bottomInset={edge}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          estimatedItemSize={200}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} progressViewOffset={navBottom} />}
+          ListHeaderComponent={
+            <>
+              {/* Parallax Image Background */}
+              <Animated.View style={[s.parallaxHeader, headerStyle]}>
+                {/* No picture, no veil: there is nothing to fade, and a veil
+                    over nothing is a dark block hiding the room's light. */}
+                {heroPoster ? (
+                  <>
+                    <RemoteImage uri={heroPoster} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={20} fallback={null} />
+                    <RoomVeil room="default" hem={HEADER_HEIGHT} art={heroPoster} stops={HERO_VEIL} lifted={heroLifted} />
+                  </>
+                ) : null}
+              </Animated.View>
 
-            {/* Content Overlaid on Header */}
-            <View style={[s.headerContentWrap, { marginTop: HEADER_HEIGHT - 120 }]}>
-              {/* No eyebrow: a catalogue does not print its category above its title. */}
-              <Arrive name="stacks-title" duration={600} delay={100}>
-              <Text
-                style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]}
-                numberOfLines={titleType.numberOfLines}
-              >
-                {list.title.toUpperCase()}
-              </Text>
-              </Arrive>
-
-              {/* The colophon: ONE line of type (curator, count, date), so it
-                  wraps as prose and no line begins with a separator; the chips
-                  are objects, so they wrap below as their own elements. */}
-              <Arrive name="stacks-1" duration={600} delay={200} style={s.metaRow}>
-                <View style={s.metaDiamond} />
-                <Text style={s.metaText} numberOfLines={2}>
-                  <Text style={s.metaCurator} onPress={() => handlePressProfile(list.user)} suppressHighlighting accessibilityRole="link" accessibilityLabel={`View curator @${list.user}`}>@{list.user.toUpperCase()}</Text>
-                  <Text style={s.metaSep}>{'  ·  '}</Text>
-                  {(list.filmCount ?? list.films.length)} {(list.filmCount ?? list.films.length) === 1 ? 'REEL' : 'REELS'}
-                  {estDate ? <><Text style={s.metaSep}>{'  ·  '}</Text>EST. {estDate.toUpperCase()}</> : null}
+              {/* Content Overlaid on Header */}
+              <View style={[s.headerContentWrap, { marginTop: HEADER_HEIGHT - 120 }]}>
+                {/* No eyebrow: a catalogue does not print its category above its title. */}
+                <Arrive name="stacks-title" duration={600} delay={100}>
+                <Text
+                  style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]}
+                  numberOfLines={titleType.numberOfLines}
+                >
+                  {list.title.toUpperCase()}
                 </Text>
-                {list.isRanked && (
-                  <View style={s.metaChip}><Text style={s.metaChipText}>✦ RANKED</Text></View>
-                )}
-                {list.isPrivate && isOwner && (
-                  <View style={s.metaChip}>
-                    <KeyRound size={8} color={colors.sepia} strokeWidth={2} />
-                    <Text style={s.metaChipText}>SEALED</Text>
-                  </View>
-                )}
-              </Arrive>
+                </Arrive>
 
-              {/* The honour stays: the day this stack hung in the Lobby, if it did. */}
-              <LobbyHonour kind="list" id={id} style={s.lobbyHonour} />
-
-              {list.description ? (
-                <Arrive name="stacks-2" duration={600} delay={300} style={s.descWrap}>
-                  {/* THE MEASURER: an unclamped copy (a clamped Text reports the
-                      clamp), invisible, out of flow, unspoken, at the same width,
-                      and unmounted once it has answered. */}
-                  {measuredFor !== list.description && (
-                    <Text
-                      style={[s.desc, s.descMeasure]}
-                      onTextLayout={e => {
-                        setDescLineCount(e.nativeEvent.lines.length);
-                        setMeasuredFor(list.description);
-                      }}
-                      accessible={false}
-                      importantForAccessibility="no-hide-descendants"
-                      pointerEvents="none"
-                    >
-                      {list.description}
-                    </Text>
-                  )}
-                  <Text style={s.desc} numberOfLines={descExpanded ? undefined : DESC_CLAMP_LINES}>
-                    {list.description}
+                {/* The colophon: ONE line of type (curator, count, date), so it
+                    wraps as prose and no line begins with a separator; the chips
+                    are objects, so they wrap below as their own elements. */}
+                <Arrive name="stacks-1" duration={600} delay={200} style={s.metaRow}>
+                  <View style={s.metaDiamond} />
+                  <Text style={s.metaText} numberOfLines={2}>
+                    <Text style={s.metaCurator} onPress={() => handlePressProfile(list.user)} suppressHighlighting accessibilityRole="link" accessibilityLabel={`View curator @${list.user}`}>@{list.user.toUpperCase()}</Text>
+                    <Text style={s.metaSep}>{'  ·  '}</Text>
+                    {(list.filmCount ?? list.films.length)} {(list.filmCount ?? list.films.length) === 1 ? 'REEL' : 'REELS'}
+                    {estDate ? <><Text style={s.metaSep}>{'  ·  '}</Text>EST. {estDate.toUpperCase()}</> : null}
                   </Text>
-                  {descNeedsFold && (
-                    <PressableScale onPress={() => { TactileEngine.selection(); setDescExpanded(p => !p); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel={descExpanded ? 'Fold: collapse the description' : 'Read more: expand the description'}>
-                      <Text style={s.descToggle}>{descExpanded ? 'FOLD ▴' : 'READ MORE ▾'}</Text>
-                    </PressableScale>
+                  {list.isRanked && (
+                    <View style={s.metaChip}><Text style={s.metaChipText}>✦ RANKED</Text></View>
+                  )}
+                  {list.isPrivate && isOwner && (
+                    <View style={s.metaChip}>
+                      <KeyRound size={8} color={colors.sepia} strokeWidth={2} />
+                      <Text style={s.metaChipText}>SEALED</Text>
+                    </View>
                   )}
                 </Arrive>
-              ) : null}
 
-              {/* ── ACTION BAR: Certify · Critic · Share to Lounge ── */}
-              <Arrive name="stacks-3" duration={600} delay={350} style={s.actionBar}>
-                {/* The house's one bar anatomy (MarkFigure): icon over word, the
-                    count beside the icon, the log bar's icons for the same acts. */}
-                {/* Whether they certified it not known (drawn from the phone): the heart's outline
-                    before the ink, and a press asks the house rather than filing a second. */}
-                <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={null} haptic="selection" accessibilityRole="button"
-                  accessibilityState={{ selected: isCertified, busy: !certifyKnown }}
-                  accessibilityLabel={certifyKnown ? certifyLabel(certifyCount, isCertified, 'this stack') : 'Certify this stack. Reading your mark'}>
-                  <MarkFigure iconSize={15} count={certifyCount} style={[s.actionLabel, isCertified && s.actionLabelActive]}>
-                    <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'}
-                      strokeDasharray={certifyKnown ? undefined : UNINKED} />
-                  </MarkFigure>
-                  <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} pointerEvents="none" {...deckLabelProps}>
-                    {isCertified ? 'CERTIFIED' : 'CERTIFY'}
+                {/* The honour stays: the day this stack hung in the Lobby, if it did. */}
+                <LobbyHonour kind="list" id={id} style={s.lobbyHonour} />
+
+                {list.description ? (
+                  <Arrive name="stacks-2" duration={600} delay={300} style={s.descWrap}>
+                    {/* THE MEASURER: an unclamped copy (a clamped Text reports the
+                        clamp), invisible, out of flow, unspoken, at the same width,
+                        and unmounted once it has answered. */}
+                    {measuredFor !== list.description && (
+                      <Text
+                        style={[s.desc, s.descMeasure]}
+                        onTextLayout={e => {
+                          setDescLineCount(e.nativeEvent.lines.length);
+                          setMeasuredFor(list.description);
+                        }}
+                        accessible={false}
+                        importantForAccessibility="no-hide-descendants"
+                        pointerEvents="none"
+                      >
+                        {list.description}
+                      </Text>
+                    )}
+                    <Text style={s.desc} numberOfLines={descExpanded ? undefined : DESC_CLAMP_LINES}>
+                      {list.description}
+                    </Text>
+                    {descNeedsFold && (
+                      <PressableScale onPress={() => { TactileEngine.selection(); setDescExpanded(p => !p); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel={descExpanded ? 'Fold: collapse the description' : 'Read more: expand the description'}>
+                        <Text style={s.descToggle}>{descExpanded ? 'FOLD ▴' : 'READ MORE ▾'}</Text>
+                      </PressableScale>
+                    )}
+                  </Arrive>
+                ) : null}
+
+                {/* ── ACTION BAR: Certify · Critic · Share to Lounge ── */}
+                <Arrive name="stacks-3" duration={600} delay={350} style={s.actionBar}>
+                  {/* The house's one bar anatomy (MarkFigure): icon over word, the
+                      count beside the icon, the log bar's icons for the same acts. */}
+                  {/* Whether they certified it not known (drawn from the phone): the heart's outline
+                      before the ink, and a press asks the house rather than filing a second. */}
+                  <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={null} haptic="selection" accessibilityRole="button"
+                    accessibilityState={{ selected: isCertified, busy: !certifyKnown }}
+                    accessibilityLabel={certifyKnown ? certifyLabel(certifyCount, isCertified, 'this stack') : 'Certify this stack. Reading your mark'}>
+                    <MarkFigure iconSize={15} count={certifyCount} style={[s.actionLabel, isCertified && s.actionLabelActive]}>
+                      <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'}
+                        strokeDasharray={certifyKnown ? undefined : UNINKED} />
+                    </MarkFigure>
+                    <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} pointerEvents="none" {...deckLabelProps}>
+                      {isCertified ? 'CERTIFIED' : 'CERTIFY'}
+                    </Text>
+                  </PressableScale>
+
+                  <View style={s.actionDivider} />
+
+                  {/* The count is null when the server could not be asked — the
+                      bar then draws no number rather than a confident 0, since
+                      "none" and "we could not count" are different statements. */}
+                  <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: showComments }} accessibilityLabel={critiqueLabel(critiqueCount)}>
+                    <MarkFigure iconSize={16} count={critiqueCount} style={[s.actionLabel, showComments && s.actionLabelOpen]}>
+                      <MessageSquare size={16} strokeWidth={2} color={showComments ? colors.sepia : colors.fog} />
+                    </MarkFigure>
+                    <Text style={[s.actionLabel, showComments && s.actionLabelOpen]} pointerEvents="none" {...deckLabelProps}>
+                      CRITIQUE
+                    </Text>
+                  </PressableScale>
+
+                  <View style={s.actionDivider} />
+
+                  {/* Who may not speak in a salon holds the brass key; its label says it opens the Society. */}
+                  <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={null} haptic="selection" accessibilityRole="button"
+                    accessibilityLabel={canShare || !user ? 'Share to lounge' : ropeSpoken('Share to lounge', shareRank, shareStanding)}>
+                    {canShare || !user
+                      ? <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
+                      : <KeyRound size={15} strokeWidth={2} color={colors.sepia} style={s.actionKeyDim} />}
+                    <Text style={[s.actionLabel, !canShare && !!user && s.actionLabelKey]} pointerEvents="none" {...deckLabelProps}>LOUNGE</Text>
+                  </PressableScale>
+                </Arrive>
+
+                {/* The critiques open in an overlay, never between here and the films. */}
+                <View style={s.trackRow}>
+                  <Text style={s.trackLabel}>
+                    INDEXED REELS{(list.filmCount ?? 0) > films.length ? `  ·  FIRST ${films.length}` : ''}
                   </Text>
-                </PressableScale>
-
-                <View style={s.actionDivider} />
-
-                {/* The count is null when the server could not be asked — the
-                    bar then draws no number rather than a confident 0, since
-                    "none" and "we could not count" are different statements. */}
-                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: showComments }} accessibilityLabel={critiqueLabel(critiqueCount)}>
-                  <MarkFigure iconSize={16} count={critiqueCount} style={[s.actionLabel, showComments && s.actionLabelOpen]}>
-                    <MessageSquare size={16} strokeWidth={2} color={showComments ? colors.sepia : colors.fog} />
-                  </MarkFigure>
-                  <Text style={[s.actionLabel, showComments && s.actionLabelOpen]} pointerEvents="none" {...deckLabelProps}>
-                    CRITIQUE
-                  </Text>
-                </PressableScale>
-
-                <View style={s.actionDivider} />
-
-                {/* Who may not speak in a salon holds the brass key; its label says it opens the Society. */}
-                <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={null} haptic="selection" accessibilityRole="button"
-                  accessibilityLabel={canShare || !user ? 'Share to lounge' : ropeSpoken('Share to lounge', shareRank, shareStanding)}>
-                  {canShare || !user
-                    ? <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
-                    : <KeyRound size={15} strokeWidth={2} color={colors.sepia} style={s.actionKeyDim} />}
-                  <Text style={[s.actionLabel, !canShare && !!user && s.actionLabelKey]} pointerEvents="none" {...deckLabelProps}>LOUNGE</Text>
-                </PressableScale>
-              </Arrive>
-
-              {/* The critiques open in an overlay, never between here and the films. */}
-              <View style={s.trackRow}>
-                <Text style={s.trackLabel}>
-                  INDEXED REELS{(list.filmCount ?? 0) > films.length ? `  ·  FIRST ${films.length}` : ''}
-                </Text>
-                <LinearGradient colors={[colors.sepiaBorder, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.trackLine} />
+                  <LinearGradient colors={[colors.sepiaBorder, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.trackLine} />
+                </View>
               </View>
+            </>
+          }
+          renderItem={renderItem as any}
+          ListEmptyComponent={
+            <View style={s.emptyState}>
+              <Text style={s.emptyTitle}>An Empty Stack</Text>
+              <Text style={s.emptySubtitle}>No reels have been indexed to this collection yet.</Text>
             </View>
-          </>
-        }
-        renderItem={renderItem as any}
-        ListEmptyComponent={
-          <View style={s.emptyState}>
-            <Text style={s.emptyTitle}>An Empty Stack</Text>
-            <Text style={s.emptySubtitle}>No reels have been indexed to this collection yet.</Text>
-          </View>
-        }
-      />
+          }
+        />
+      </View>
 
       {/* ══ THE CRITIQUES ══ an overlay, NOT a Modal: the moderation sheet a
           long-press opens IS one, and a Modal over a Modal is the iOS trap. It
@@ -1186,6 +1193,7 @@ export default function StackDetailScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
+  page: { flex: 1 },
   navBar: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 },
   // Overhangs the bar so the gradient has room to reach zero past the chrome.
   navScrim: { position: 'absolute', top: 0, left: 0, right: 0 },

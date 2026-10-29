@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation, useReducedMotion } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from "expo-router/react-navigation";
 import { nav } from '@/src/utils/typedRouter';
@@ -23,7 +24,7 @@ import { UNINKED } from '@/src/theme/unready';
 // ══════════════════════════════════════════════════════════════
 export const DarkroomAtmo = React.memo(function DarkroomAtmo() {
   const isFocused = useIsFocused();
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useReduceMotion();
   const pulse = useSharedValue(0.15);
   // The safelight stays — it is the soul of this room. It just stops breathing
   // when nobody is in it. This ran with `[]` deps and cancelled only on

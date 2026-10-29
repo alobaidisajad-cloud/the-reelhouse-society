@@ -98,4 +98,20 @@ describe('the series sheet', () => {
     expect(r.queryByLabelText("The new series' name")).toBeNull();
     expect(r.queryByText('THIS ESSAY WILL BE FILED AS')).toBeNull();
   });
+
+  // P4.40: a member who types sets the series with Enter, as with SET THE SERIES.
+  it('Enter in a new series\' name sets it; with no name yet, sets nothing', async () => {
+    const onSet = jest.fn();
+    const r = render(
+      <SeriesPicker visible chosen={null} bottomInset={0} onClose={() => {}} onSet={onSet} onClear={() => {}} />,
+    );
+    await flush();
+    await act(async () => { await fireEvent.press(r.getByLabelText('Begin a new series')); });
+    await act(async () => { await fireEvent(r.getByLabelText("The new series' name"), 'submitEditing'); });
+    expect(onSet).not.toHaveBeenCalled();
+    await act(async () => { await fireEvent.changeText(r.getByLabelText("The new series' name"), 'Ozu'); });
+    await act(async () => { await fireEvent(r.getByLabelText("The new series' name"), 'submitEditing'); });
+    expect(onSet).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(onSet.mock.calls[0])).toContain('Ozu');
+  });
 });

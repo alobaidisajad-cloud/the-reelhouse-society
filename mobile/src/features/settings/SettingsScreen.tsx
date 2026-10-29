@@ -704,7 +704,11 @@ export function SettingsScreen() {
                 selectionColor={colors.selection}
                 editable={!otpVerifying}
                 autoFocus
+                // Android's pad has a Done key: it verifies, as VERIFY CODE does.
+                returnKeyType="done"
+                onSubmitEditing={() => { if (!otpVerifying && otpCode.length >= 6) void handleOtpVerify(); }}
                 accessibilityLabel="Six digit security code"
+                accessibilityHint={otpError ?? undefined}
                 {...scaledTextProps}
               />
               <PressableScale

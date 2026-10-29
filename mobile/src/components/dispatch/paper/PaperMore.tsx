@@ -12,7 +12,7 @@ import { memo } from 'react';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import { useReducedMotion } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { PresenceView } from '@/src/components/motion/Presence';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, ChevronUp, Search, ArrowLeft, Lock, ExternalLink, MoreHorizontal } from 'lucide-react-native';
@@ -768,7 +768,7 @@ export const NewFilings = memo(function NewFilings({
   // In with movement, out without: it leaves as the list jumps, and two motions are one
   // too many. Reduced motion keeps the appearing and going, without the travel. It
   // arrives through Arrive: a stalled arrival would leave an invisible pill taking taps.
-  const reduced = useReducedMotion();
+  const reduced = useReduceMotion();
   return (
     <View style={m.newWrap} pointerEvents="box-none">
       <PresenceView name="new-filings.leave" exit={reduced ? undefined : { kind: 'FadeOut', duration: MS.quick }}>

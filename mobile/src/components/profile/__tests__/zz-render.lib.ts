@@ -725,7 +725,9 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, text
       ? 'display:block;white-space:break-spaces;overflow-wrap:anywhere'
       : 'display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:auto;margin-bottom:auto';
     const text = shown ? `<span data-scale-cap="${cap}" style="${colour}${layout}">${esc(shown)}</span>` : '';
-    return `<div${rnAttr(rn)} style="${css(st, false)}">${text}</div>`;
+    // Marked as a field, with its name: contrast.cjs --controls finds its edge by it.
+    const name = typeof p.accessibilityLabel === 'string' ? ` data-field="${esc(p.accessibilityLabel)}"` : ' data-field=""';
+    return `<div${name}${rnAttr(rn)} style="${css(st, false)}">${text}</div>`;
   }
 
   const kids = (n.children || []).map((c) => toHtml(c, opts, inSvg)).join('');
@@ -757,10 +759,10 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, text
     if (inner && last && typeof last === 'object' && last.type === 'View' && !last.props?.style) {
       const before = raw.slice(0, -1).map((c) => toHtml(c, opts, inSvg)).join('');
       const content = (last.children || []).map((c) => toHtml(c, within, inSvg)).join('');
-      return `<div class="${cls}"${rnAttr(base(rn))} style="${css(sv, false)}">${before}<div${rnAttr(box)} style="${inner}">${content}</div></div>`;
+      return `<div class="${cls}"${a11yAttr(p)}${rnAttr(base(rn))} style="${css(sv, false)}">${before}<div${rnAttr(box)} style="${inner}">${content}</div></div>`;
     }
     const wrapped = inner ? (n.children || []).map((c) => toHtml(c, within, inSvg)).join('') : kids;
-    return `<div class="${cls}"${rnAttr(base(rn))} style="${css(sv, false)}">${inner ? `<div${rnAttr(box)} style="${inner}">${wrapped}</div>` : kids}</div>`;
+    return `<div class="${cls}"${a11yAttr(p)}${rnAttr(base(rn))} style="${css(sv, false)}">${inner ? `<div${rnAttr(box)} style="${inner}">${wrapped}</div>` : kids}</div>`;
   }
 
   // A testID travels through as a hook, so the frame can address one element
@@ -791,7 +793,11 @@ function a11yAttr(p: Record<string, unknown>): string {
   // An accessible element is ONE stop for a screen reader: what is inside it is
   // read as part of it, not reached separately.
   const whole = p.accessible === true ? ' data-accessible' : '';
-  return label + hidden + whole;
+  // A chosen state, as a screen reader is told it: layout.cjs (COLOUR) compares the chosen with the not.
+  const state = (p.accessibilityState ?? {}) as { selected?: boolean; checked?: boolean | 'mixed' };
+  const chosen = typeof state.selected === 'boolean' ? ` aria-selected="${state.selected}"`
+    : typeof state.checked === 'boolean' ? ` aria-checked="${state.checked}"` : '';
+  return label + hidden + whole + chosen;
 }
 
 /** The RN style, carried when MOCKUPS_YOGA=1 so yoga-parity.cjs can lay it out with Yoga. */

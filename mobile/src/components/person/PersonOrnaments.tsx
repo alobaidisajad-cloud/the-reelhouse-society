@@ -7,11 +7,8 @@
 import { useEffect, memo } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, {
-  useSharedValue, useAnimatedStyle,
-  withTiming, Easing,
-  cancelAnimation, withRepeat, useReducedMotion
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, cancelAnimation, withRepeat } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { colors } from '@/src/theme/theme';
 import { displayTextProps } from '@/src/constants/textScaling';
 import { st } from '@/src/components/person/personStyles';
@@ -21,7 +18,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 // ── Shimmer Pulse ────────────────────────────────────────────
 export function ShimmerBlock({ style }: { style: StyleProp<ViewStyle> }) {
   const opacity = useSharedValue(0.3);
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useReduceMotion();
 
   useEffect(() => {
     if (reducedMotion) {

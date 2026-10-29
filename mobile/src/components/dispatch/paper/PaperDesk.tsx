@@ -545,7 +545,8 @@ const d = StyleSheet.create({
   choice: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog, includeFontPadding: false,
   },
-  choiceOn: { color: KIND_RULE.ballot, opacity: 1 },
+  // Chosen, underlined as well as inked: the ink alone does not say it to every eye.
+  choiceOn: { color: KIND_RULE.ballot, opacity: 1, textDecorationLine: 'underline' },
 
   // ── the dossier desk ──────────────────────────────────────────────────────
   dossierTitle: {

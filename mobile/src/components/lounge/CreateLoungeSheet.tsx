@@ -31,6 +31,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   /** Founding a PRIVATE room is the Auteur's; being admitted to one is not. */
   const privateRoom = useClearance('private-rooms', '/lounge');
   const wasSuccessRef = useRef(false);
+  const descriptionRef = useRef<TextInput>(null);
 
   /**
    * ── THE ROPE INSIDE A SHEET ────────────────────────────────────────────────
@@ -161,6 +162,10 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
               maxLength={MAX_LENGTHS.loungeName}
               selectionColor={colors.sepia}
               keyboardAppearance="dark"
+              // On to the description: Enter goes where the form goes next.
+              returnKeyType="next"
+              onSubmitEditing={() => descriptionRef.current?.focus()}
+              blurOnSubmit={false}
               accessibilityLabel="Salon name"
             />
             <Text style={s.fieldCharCount}>{name.length}/{MAX_LENGTHS.loungeName}</Text>
@@ -169,6 +174,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
           <View style={s.field}>
             <Text style={s.fieldLabel}>DESCRIPTION</Text>
             <TextInput
+              ref={descriptionRef}
               style={[s.fieldInput, s.fieldTextarea]}
               placeholder="What kind of cinema lovers belong here?"
               placeholderTextColor={colors.fog}

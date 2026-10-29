@@ -22,6 +22,9 @@ const mockAccessibilityInfo = {
   // Read by HouseBlur, every glass's (Reduce Transparency).
   isReduceTransparencyEnabled: jest.fn().mockResolvedValue(false),
   isScreenReaderEnabled: jest.fn().mockResolvedValue(false),
+  // Increase Contrast, read by the house Text (useMoreContrast): iOS's and Android's own.
+  isDarkerSystemColorsEnabled: jest.fn().mockResolvedValue(false),
+  isHighTextContrastEnabled: jest.fn().mockResolvedValue(false),
   // Android's "time to take action", which the toast clock keeps (toastBus).
   getRecommendedTimeoutMillis: jest.fn((ms: number) => Promise.resolve(ms)),
   // An action toast moves VoiceOver focus onto its message (ToastHost).
@@ -509,6 +512,8 @@ jest.mock('react-native-reanimated', () => {
     measure: jest.fn(() => ({ x: 0, y: 0, width: 0, height: 0, pageX: 0, pageY: 0 })),
     scrollTo: jest.fn(),
     useReducedMotion: jest.fn(() => false),
+    // Told the setting as it is now by the root (useReduceMotion's MotionFollowsTheSetting).
+    ReducedMotionConfig: () => null,
     useAnimatedKeyboard: jest.fn(() => ({ height: { value: 0 }, state: { value: 0 } })),
     // Reanimated's own enum values.
     KeyboardState: { UNKNOWN: 0, OPENING: 1, OPEN: 2, CLOSING: 3, CLOSED: 4 },

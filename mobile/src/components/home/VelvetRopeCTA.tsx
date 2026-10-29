@@ -5,10 +5,8 @@
 import { memo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withRepeat, withTiming,
-  Easing, interpolate, cancelAnimation, useReducedMotion
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, interpolate, cancelAnimation } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { useIsFocused } from "expo-router/react-navigation";
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -19,7 +17,7 @@ import PressableScale from '@/src/components/PressableScale';
  
 export const ShimmerRule = memo(() => {
     const isFocused = useIsFocused();
-    const reducedMotion = useReducedMotion();
+    const reducedMotion = useReduceMotion();
     const shimmer = useSharedValue(-1);
     // Parked at -1 when hidden or under Reduce Motion: the faint line stays, the highlight rests.
     useEffect(() => {

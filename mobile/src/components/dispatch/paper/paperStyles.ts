@@ -16,6 +16,8 @@ export const p = StyleSheet.create({
   // ── the page ──────────────────────────────────────────────────────────────
   /** The house ground. The paper (`doc`) is a lit step above it, so the sheet has an edge. */
   screen: { flex: 1, backgroundColor: colors.ink },
+  /** A reader's head, page and dock, held together so a sheet over them can hide them at once. */
+  reading: { flex: 1 },
   /** Transparent: a desk mounts in a screen lit by its room, and a page would hide the light. */
   desk: { flex: 1 },
 
@@ -538,7 +540,8 @@ export const p = StyleSheet.create({
   critiqueLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
   critiqueSortRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   critiqueSort: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.bone, opacity: INDEX_INACTIVE, includeFontPadding: false },
-  critiqueSortOn: { color: colors.parchment, opacity: 1 },
+  // Chosen, underlined as well as lit: the brighter ink alone does not say it to every eye.
+  critiqueSortOn: { color: colors.parchment, opacity: 1, textDecorationLine: 'underline', textDecorationColor: colors.sepia },
 
   comment: { flexDirection: 'row', gap: 8, paddingVertical: 12, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.14)' },
   commentName: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.bone, marginBottom: 4, includeFontPadding: false },

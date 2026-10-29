@@ -108,7 +108,8 @@ describe('the three laws', () => {
   it('every animation asks about reduced motion', () => {
     const animating = sources.filter((s) => /withTiming|entering=|exiting=/.test(s.code));
     expect(animating.length).toBeGreaterThan(0);
-    const deaf = animating.filter((s) => !s.code.includes('useReducedMotion')).map((s) => s.name);
+    // The house's live hook: Reanimated's own reads the setting once, at launch (P4.40).
+    const deaf = animating.filter((s) => !s.code.includes('useReduceMotion(')).map((s) => s.name);
     expect(deaf).toEqual([]);
   });
 });

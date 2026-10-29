@@ -1,19 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
-  withSequence,
-  withRepeat,
-  Easing,
-  runOnJS,
-  cancelAnimation,
-  // Reanimated's: it knows the setting on the first frame, so the bloom never
-  // begins for a member who asked for less motion.
-  useReducedMotion,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, withSequence, withRepeat, Easing, runOnJS, cancelAnimation } from 'react-native-reanimated';
+// Known on the first frame (it starts from the setting at launch), so the bloom never
+// begins for a member who asked for less motion; and followed as it changes after.
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts } from '@/src/theme/theme';
 import { storage } from '@/src/stores/mmkv-storage';
@@ -104,7 +94,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
   const warmthOpacity = useSharedValue(0);
   const flicker = useSharedValue(0.45);
   
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
   const throttleDevice = useDeviceThrottling();
 
   const hapticT1 = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -9,16 +9,14 @@
  */
 import { memo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withRepeat, withTiming,
-  Easing, interpolate, cancelAnimation, useReducedMotion,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, interpolate, cancelAnimation } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { useIsFocused } from "expo-router/react-navigation";
 import { LinearGradient } from 'expo-linear-gradient';
 
 export const BrassSheen = memo(function BrassSheen() {
   const isFocused = useIsFocused();
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = useReduceMotion();
   const sheen = useSharedValue(-2);
   useEffect(() => {
     if (!isFocused || reducedMotion) {

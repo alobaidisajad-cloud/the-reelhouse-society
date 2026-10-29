@@ -61,7 +61,7 @@ export default React.memo(function AuteurToolkit({ isAuteur, autopsy, setAutopsy
                                 <PressableScale
                                     key={v}
                                     onPress={() => { setAutopsy({ ...autopsy, [axis]: val === v ? null : v }); }}
-                                    style={[st.axisNotch, rated && v <= (val as number) && st.axisNotchOn]}
+                                    style={[st.axisNotch, rated && v <= (val as number) && st.axisNotchOn, rated && v === val && st.axisNotchAt]}
                                     // 13pt each side of an 18pt channel makes the target
                                     // 44pt tall. Left/right stay at 1: the notches are 2pt
                                     // apart, and an overlap always goes to the LATER one.
@@ -101,6 +101,10 @@ const st = StyleSheet.create({
         backgroundColor: colors.inkwell, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder,
     },
     axisNotch: { flex: 1, backgroundColor: colors.ash },
-    axisNotchOn: { backgroundColor: colors.bloodReel },
+    // The crimson that reads: bloodReel on the ash track was two dark inks a hue apart, a gauge
+    // a member who does not see red could hardly see (3.9:1 now, lit or not in any vision).
+    axisNotchOn: { backgroundColor: colors.crimsonInk },
+    // The score itself: a bright cap on its notch, the needle at the end of the fill.
+    axisNotchAt: { borderTopWidth: 2, borderTopColor: colors.parchment },
     gaugeWrap: { marginTop: 8 },
 });

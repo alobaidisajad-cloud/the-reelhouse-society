@@ -163,7 +163,8 @@ export function EditProfileScreen() {
     // One ground, the inner one, which carries the room's light (a painted
     // outer box would be a second, unlit room under the first).
     <View style={{ flex: 1 }}>
-      <View style={st.container}>
+      {/* Out of a screen reader's reach for the seal's one beat, which says the save itself. */}
+      <View style={st.container} {...(sealed ? UNSPOKEN : null)}>
         <RoomLight room="member" />
         <Animated.View style={[st.ambientGlow, glowStyle]}>
           <LinearGradient
@@ -250,6 +251,7 @@ export function EditProfileScreen() {
               <ControlledUsernameInput
                 name="username"
                 placeholderTextColor={colors.fog} maxLength={MAX_LENGTHS.username} keyboardAppearance="dark" accessibilityLabel="Username" selectionColor={colors.sepia}
+                returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => form.setFocus('displayName')}
               />
               <Text {...scaledTextProps} style={st.helperText}>Lowercase letters, numbers, and underscores only · 3-30 characters</Text>
             </View>
@@ -260,6 +262,7 @@ export function EditProfileScreen() {
                 name="displayName"
                 style={st.fieldInput}
                 placeholderTextColor={colors.fog} placeholder="Your name in the credits..." maxLength={MAX_LENGTHS.displayName} keyboardAppearance="dark" accessibilityLabel="Display name" selectionColor={colors.sepia}
+                returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => form.setFocus('bio')}
               />
             </View>
 

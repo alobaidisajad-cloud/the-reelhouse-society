@@ -19,7 +19,8 @@ import { Text } from '@/src/components/text';
 import { HouseBlur } from '@/src/components/HouseBlur';
 // Reanimated's: it knows the setting on the first frame, so a member who asked
 // for less motion never sees the entrance begin.
-import Animated, { Easing, useSharedValue, useAnimatedStyle, useReducedMotion, withDelay, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, useSharedValue, useAnimatedStyle, withDelay, withTiming } from 'react-native-reanimated';
+import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -112,7 +113,7 @@ interface InitiationModalProps {
 
 export default function InitiationModal({ visible, username, memberNo, onComplete }: InitiationModalProps) {
   const [beat, setBeat] = useState(0);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
   const current = BEATS[beat];
   const isFinal = beat === BEATS.length - 1;
 

@@ -269,6 +269,9 @@ function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<Pick
               selectionColor={colors.sepiaGlow}
               keyboardAppearance="dark"
               accessibilityLabel="The new series' name"
+              // Named, Enter sets it, as SET THE SERIES does.
+              returnKeyType="done"
+              onSubmitEditing={() => { if (ready) confirm(); }}
               {...scaledTextProps}
             />
           ) : null}
