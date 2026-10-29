@@ -132,7 +132,8 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
       )}
       {log.status === 'abandoned' && (
         <View style={[s.statusBadge, s.statusBadgeAbandoned]} pointerEvents="none">
-          <X size={7} color={colors.bloodReel} strokeWidth={2} />
+          {/* The crimson that reads: bloodReel on the badge was 1.67:1. */}
+          <X size={7} color={colors.crimsonInk} strokeWidth={2} />
         </View>
       )}
     </PressableScale>

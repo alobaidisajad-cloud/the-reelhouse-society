@@ -37,11 +37,6 @@ jest.mock('expo-blur', () => {
   return { BlurView: View };
 });
 
-jest.mock('expo-linear-gradient', () => {
-  const { View } = require('react-native');
-  return { LinearGradient: View };
-});
-
 jest.mock('@/src/components/MasterLogo', () => {
   const { View } = require('react-native');
   return { MasterLogo: () => <View testID="master-logo" /> };

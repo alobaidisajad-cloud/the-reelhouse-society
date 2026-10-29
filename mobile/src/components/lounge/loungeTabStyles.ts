@@ -73,6 +73,7 @@ export const s = StyleSheet.create({
     height: 44,
     borderWidth: 1,
     borderColor: colors.sepiaBorder,
+    borderBottomColor: colors.fieldEdge,
     gap: 8,
   },
   searchInput: {

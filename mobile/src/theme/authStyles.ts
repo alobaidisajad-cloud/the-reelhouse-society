@@ -139,7 +139,8 @@ export const loginStyles = StyleSheet.create({
   input: {
     backgroundColor: 'transparent',
     borderBottomWidth: 2,
-    borderColor: colors.sepiaBorder,
+    // Its ledger line, in the ink that reads (the field's only edge).
+    borderBottomColor: colors.fieldEdge,
     paddingVertical: 12,
     paddingHorizontal: 4,
     fontSize: 16,
@@ -147,7 +148,7 @@ export const loginStyles = StyleSheet.create({
     color: colors.parchment,
   },
   inputFocused: {
-    borderColor: colors.sepiaBorderStrong,
+    borderBottomColor: colors.sepia,
   },
   inputDisabled: {
     opacity: 0.5,

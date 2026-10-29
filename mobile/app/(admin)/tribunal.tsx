@@ -1408,7 +1408,7 @@ const s = StyleSheet.create({
     color: colors.fog,
     marginBottom: 6,
   },
-  textInput: {
+  textInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
     backgroundColor: colors.well,
     borderWidth: 1,
     borderColor: colors.ash,

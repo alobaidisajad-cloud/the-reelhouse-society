@@ -313,7 +313,7 @@ const s = StyleSheet.create({
     marginBottom: 8,
     includeFontPadding: false,
   },
-  fieldInput: {
+  fieldInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
     borderWidth: 1,
     borderColor: colors.sepiaBorder,
     backgroundColor: colors.well,

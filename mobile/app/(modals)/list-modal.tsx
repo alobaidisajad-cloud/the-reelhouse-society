@@ -733,6 +733,7 @@ const s = StyleSheet.create({
     label: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
     input: {
         backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
+        borderBottomColor: colors.fieldEdge,
         padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment,
     },
     /**
@@ -741,7 +742,8 @@ const s = StyleSheet.create({
      * adjustsFontSizeToFit is unreliable multiline on Android.
      */
     plate: {
-        borderBottomWidth: 1, borderBottomColor: colors.sepiaBorder,
+        // The title's ledger line, in the ink that reads.
+        borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
         paddingTop: 2, paddingBottom: 10, paddingHorizontal: 0,
         fontFamily: fonts.display, fontSize: 26, lineHeight: 34, color: colors.parchment,
     },
@@ -749,6 +751,7 @@ const s = StyleSheet.create({
     searchWrap: { position: 'relative' },
     searchInput: {
         backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
+        borderBottomColor: colors.fieldEdge,
         paddingLeft: 36, paddingRight: 12, paddingVertical: 10,
         fontFamily: fonts.body, fontSize: 13, color: colors.parchment,
     },

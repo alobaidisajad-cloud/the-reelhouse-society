@@ -86,7 +86,6 @@ jest.mock('@/src/features/settings/DataVault', () => {
   return { __esModule: true, default: () => React.createElement(Text, null, '[DataVault]') };
 });
 jest.mock('expo-blur', () => ({ BlurView: () => null }));
-jest.mock('expo-linear-gradient', () => ({ LinearGradient: () => null }));
 jest.mock('expo-local-authentication', () => ({
   hasHardwareAsync: jest.fn(() => Promise.resolve(true)),
   isEnrolledAsync: jest.fn(() => Promise.resolve(true)),

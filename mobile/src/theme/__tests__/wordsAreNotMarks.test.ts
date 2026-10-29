@@ -78,7 +78,6 @@ const MARKS: Record<string, string> = {
   'src/components/profile/CinematicInsights.tsx · avatarFallback': '✦ standing in for a missing portrait',
   'src/components/profile/profileStyles.ts · bioMarkRuby': '« » around an Auteur’s bio',
   'src/components/profile/profileStyles.ts · footMarkRuby': '✦ closing an Auteur’s file',
-  'app/stacks/[id].tsx · placeholderMark': '✦ in an empty poster well',
   'app/(admin)/tribunal.tsx · suspend': 'the verdict button’s FILL; its title reads `ink`',
   'app/(admin)/tribunal.tsx · ban': 'the verdict button’s FILL; its title reads `ink`',
   'app/(admin)/tribunal.tsx · permanent_exile': 'the verdict button’s FILL; its title reads `ink`',

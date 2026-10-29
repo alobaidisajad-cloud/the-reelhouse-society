@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     position: 'relative',
   },
-  detailsInput: {
+  detailsInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
     backgroundColor: colors.well,
     borderWidth: 1,
     borderColor: colors.ash,
@@ -486,6 +486,7 @@ const styles = StyleSheet.create({
   },
   detailsInputFocused: {
     borderColor: colors.sepia,
+    borderBottomColor: colors.sepia,
   },
   counter: {
     position: 'absolute',

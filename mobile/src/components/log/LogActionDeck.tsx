@@ -116,7 +116,7 @@ export default function LogActionDeck({
              accessibilityLabel={certifyKnown ? certifyLabel(certifyCount, endorsed, 'this critique') : 'Certify this critique. Reading your mark'}>
               {/* 15, the heart every bar in the house draws. */}
               <MarkFigure iconSize={15} count={certifyCount} style={[s.deckLabel, endorsed && s.deckLabelCertified]}>
-                <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'}
+                <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimsonInk : colors.fog} fill={endorsed ? colors.crimsonInk : 'transparent'}
                   strokeDasharray={certifyKnown ? undefined : UNINKED} />
               </MarkFigure>
               <Text style={[s.deckLabel, endorsed && s.deckLabelCertified]} {...deckLabelProps}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>

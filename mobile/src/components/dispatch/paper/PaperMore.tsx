@@ -890,6 +890,7 @@ const m = StyleSheet.create({
   searchRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2,
+    borderBottomColor: colors.fieldEdge,
     paddingHorizontal: 8, paddingVertical: 8, marginTop: 12,
   },
   searchText: {

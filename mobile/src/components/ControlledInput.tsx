@@ -105,7 +105,7 @@ export const ControlledUsernameInput = React.memo(function ControlledUsernameInp
 });
 
 const st = StyleSheet.create({
-  bioInput: {
+  bioInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
     width: '100%',
     paddingHorizontal: 14,
     paddingVertical: 11,
@@ -141,7 +141,7 @@ const st = StyleSheet.create({
     color: colors.fog,
     zIndex: 2,
   },
-  usernameInput: {
+  usernameInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
     paddingLeft: 32,
     width: '100%',
     paddingRight: 14,

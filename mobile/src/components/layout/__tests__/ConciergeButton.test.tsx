@@ -83,11 +83,6 @@ jest.mock('expo-blur', () => {
   return { BlurView: View };
 });
 
-jest.mock('expo-linear-gradient', () => {
-  const { View } = require('react-native');
-  return { LinearGradient: View };
-});
-
 // Imported below the mocks on purpose: reading top-to-bottom, the stand-ins are
 // in place before the component that consumes them. Jest hoists jest.mock
 // regardless, so this is about legibility, not correctness.

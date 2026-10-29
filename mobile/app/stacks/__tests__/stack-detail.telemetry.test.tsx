@@ -101,12 +101,6 @@ jest.mock('expo-blur', () => {
     const { View } = require('react-native');
     return { BlurView: ({ children }: { children: React.ReactNode }) => React.createElement(View, null, children) };
 });
-jest.mock('expo-linear-gradient', () => {
-    const React = require('react');
-    const { View } = require('react-native');
-    return { LinearGradient: ({ children }: { children: React.ReactNode }) => React.createElement(View, null, children) };
-});
-
 beforeEach(() => {
     jest.clearAllMocks();
     capturedCommentsFn = null;

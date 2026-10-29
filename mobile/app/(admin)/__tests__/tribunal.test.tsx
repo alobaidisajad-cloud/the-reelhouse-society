@@ -46,15 +46,6 @@ jest.mock('@/src/stores/auth', () => ({
 }));
 
 // Mock expo-linear-gradient (native)
-jest.mock('expo-linear-gradient', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  return {
-    LinearGradient: ({ children, ...props }: any) =>
-      React.createElement(View, { ...props, testID: 'linear-gradient' }, children),
-  };
-});
-
 // Mock react-native-gesture-handler (native)
 jest.mock('react-native-gesture-handler', () => {
   const React = require('react');

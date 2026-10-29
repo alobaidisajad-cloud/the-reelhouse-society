@@ -67,7 +67,7 @@ export const st = StyleSheet.create({
   // Said in place, not only in a toast that has already gone. A code that never
   // arrived used to leave a live box with no explanation and no way to retry.
   modalFail: { fontFamily: fonts.body, fontSize: 12, color: colors.crimsonInk, lineHeight: 18, marginBottom: 16 },
-  otpInput: { backgroundColor: colors.well, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 24, padding: 16, borderRadius: 4, textAlign: 'center', marginBottom: 16, letterSpacing: 8 },
+  otpInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge, backgroundColor: colors.well, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 24, padding: 16, borderRadius: 4, textAlign: 'center', marginBottom: 16, letterSpacing: 8 },
   modalResend: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   modalResendText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
   modalActions: { flexDirection: 'row', gap: 12 },

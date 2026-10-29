@@ -226,7 +226,7 @@ export const PaperComposer = memo(function PaperComposer({
                 <Text style={p.fieldLabel} {...decorativeTextProps}>SOURCE — REQUIRED</Text>
                 {onSource ? (
                   <TextInput
-                    style={[p.fieldValue, { padding: 0 }]}
+                    style={[p.fieldValue, p.fieldLine, { padding: 0 }]}
                     value={source ?? ''}
                     onChangeText={onSource}
                     placeholder="where did this come from?"

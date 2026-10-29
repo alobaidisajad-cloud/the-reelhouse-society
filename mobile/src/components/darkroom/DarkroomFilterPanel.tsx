@@ -185,7 +185,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  yearInput: {
+  yearInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
     flex: 1,
     backgroundColor: colors.well,
     borderWidth: 1,

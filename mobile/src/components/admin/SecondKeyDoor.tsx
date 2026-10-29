@@ -209,7 +209,7 @@ const s = StyleSheet.create({
   fail: { fontFamily: fonts.body, fontSize: 13, lineHeight: 20, color: colors.crimsonInk },
   block: { gap: 12 },
   retry: { alignSelf: 'flex-start' },
-  code: { backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, color: colors.parchment, fontFamily: fonts.body, fontSize: 24, padding: 16, borderRadius: 4, textAlign: 'center', letterSpacing: 8 },
+  code: { backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderBottomColor: colors.fieldEdge, color: colors.parchment, fontFamily: fonts.body, fontSize: 24, padding: 16, borderRadius: 4, textAlign: 'center', letterSpacing: 8 },
   secret: { fontFamily: fonts.body, fontSize: 17, lineHeight: 26, letterSpacing: 2, color: colors.parchment },
   primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bloodReel, borderWidth: 1, borderColor: 'transparent', borderRadius: 4, paddingHorizontal: 16 },
   primaryText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.bone },

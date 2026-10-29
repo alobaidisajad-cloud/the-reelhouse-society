@@ -779,7 +779,7 @@ const st = StyleSheet.create({
   passwordPanel: { padding: 16, backgroundColor: colors.inkwell, borderTopWidth: 1, borderTopColor: '#30261A' },
   panelField: { marginBottom: 16 },
   oauthBanner: { backgroundColor: 'rgba(184,137,26,0.05)', padding: 16, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)' },
-  fieldInput: { backgroundColor: colors.well, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 14, padding: 12, borderRadius: 2 },
+  fieldInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge, backgroundColor: colors.well, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 14, padding: 12, borderRadius: 2 },
   pwMismatch: { fontFamily: fonts.body, fontSize: 11, color: colors.crimsonInk, marginTop: 8 },
   saveFieldBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.sepia, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 2 },
   saveFieldBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },

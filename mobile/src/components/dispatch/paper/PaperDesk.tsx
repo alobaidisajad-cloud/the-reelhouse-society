@@ -518,7 +518,8 @@ const d = StyleSheet.create({
   },
 
   // ── the ballot desk ───────────────────────────────────────────────────────
-  ballotQ: { fontFamily: fonts.display, fontSize: 16.5, lineHeight: 28, color: colors.parchment },
+  // The question's ledger line: on paper, the rule a question is written on.
+  ballotQ: { fontFamily: fonts.display, fontSize: 16.5, lineHeight: 28, color: colors.parchment, borderBottomWidth: 1, borderBottomColor: colors.fieldEdge },
   slot: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
   // 21, as the ballot's own `optionNo`: `III.` needs 19pt at 8.5pt in the sub face.
   slotNo: { fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, width: 21, includeFontPadding: false },
@@ -567,6 +568,7 @@ const d = StyleSheet.create({
   search: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2,
+    borderBottomColor: colors.fieldEdge,
     paddingHorizontal: 8, paddingVertical: 8, marginBottom: 6,
   },
   searchText: { flex: 1, minWidth: 0, fontFamily: fonts.body, fontSize: 12.5, color: colors.parchment },

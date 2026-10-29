@@ -293,6 +293,7 @@ const s = StyleSheet.create({
     unreachable: { alignItems: 'center', paddingBottom: 16 },
     messageInput: {
         backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash,
+        borderBottomColor: colors.fieldEdge,
         color: colors.bone, fontFamily: fonts.body, fontSize: 13,
         paddingHorizontal: 12, paddingVertical: 10, minHeight: 60, borderRadius: 4,
         textAlignVertical: 'top', marginTop: 12,

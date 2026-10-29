@@ -210,6 +210,7 @@ const s = StyleSheet.create({
   subtitle: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.fog, marginTop: 6 },
 
   searchWrap: {
+    borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
     flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16,
     backgroundColor: colors.well, borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)',
     borderRadius: 8, paddingHorizontal: 11, height: 40,

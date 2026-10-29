@@ -1180,7 +1180,8 @@ const s = StyleSheet.create({
   input: {
     flex: 1, minHeight: 42, maxHeight: 120, backgroundColor: colors.well, borderRadius: 21,
     paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, color: colors.parchment,
-    fontFamily: fonts.serif, fontSize: 15, lineHeight: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
+    // Its edge in the ink that reads: a hairline of ash left the line to write on barely there.
+    fontFamily: fonts.serif, fontSize: 15, lineHeight: 20, borderWidth: 1, borderColor: colors.fieldEdge,
   },
   sendBtn: {
     width: 42, height: 42, borderRadius: 21, backgroundColor: colors.sepia, alignItems: 'center', justifyContent: 'center',

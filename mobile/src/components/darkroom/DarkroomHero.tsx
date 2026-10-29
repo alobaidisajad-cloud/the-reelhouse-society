@@ -188,6 +188,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.well,
     borderWidth: 1.5,
     borderColor: 'rgba(184,137,26,0.2)',
+    borderBottomColor: colors.fieldEdge,
     borderRadius: 6,
     paddingVertical: 16,
     paddingLeft: 46,

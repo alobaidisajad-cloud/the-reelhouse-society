@@ -49,6 +49,9 @@ export const colors = {
   sepiaGlow: 'rgba(184, 137, 26, 0.35)',
   sepiaBorderStrong: 'rgba(184, 137, 26, 0.5)',
   sepiaBorderBold: 'rgba(184, 137, 26, 0.8)',
+  // A field's ledger line: the edge that says "write here", 3.5:1 on the raised card and more
+  // on ink (WCAG 1.4.11's 3:1). The faint borders above left a field barely there.
+  fieldEdge: 'rgba(184, 137, 26, 0.75)',
   bloodFaint: 'rgba(107, 26, 10, 0.3)',
   // The one bright red for marks on dark (bloodReel is the deep stamp).
   crimson: '#B42D2D',

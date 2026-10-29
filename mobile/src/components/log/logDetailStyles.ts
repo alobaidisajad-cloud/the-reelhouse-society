@@ -222,6 +222,7 @@ export const s = StyleSheet.create({
   composeWrap: { marginTop: 4 },
   critiqueInput: {
     backgroundColor: colors.well, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder,
+    borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
     borderRadius: 2, paddingHorizontal: 16, paddingVertical: 16,
     color: colors.bone, fontFamily: fonts.body, fontSize: 13, lineHeight: 22,
     minHeight: 100, textAlignVertical: 'top',

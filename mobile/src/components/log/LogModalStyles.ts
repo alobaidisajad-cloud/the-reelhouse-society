@@ -37,7 +37,7 @@ export const st = StyleSheet.create({
     searchStep: { flex: 1, paddingHorizontal: 20 },
     searchWrap: { marginTop: 12, position: 'relative' },
     searchIcon: { position: 'absolute', left: 12, top: 14, zIndex: 1 },
-    searchInput: { backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingLeft: 38, paddingRight: 12, paddingVertical: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
+    searchInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge, backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingLeft: 38, paddingRight: 12, paddingVertical: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
     searchingWrap: { alignItems: 'center', paddingVertical: 20 },
     searchingText: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 2.4, includeFontPadding: false },
     searchBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
@@ -120,7 +120,8 @@ export const st = StyleSheet.create({
     calendarWrap: { marginTop: 8 },
 
     // Review — THE MANUSCRIPT
-    manuscriptFrame: { borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 4, backgroundColor: colors.ink, overflow: 'hidden' },
+    // The manuscript's edge, in the ink that reads: the review is written inside it.
+    manuscriptFrame: { borderWidth: 1, borderColor: colors.fieldEdge, borderRadius: 4, backgroundColor: colors.ink, overflow: 'hidden' },
     manuscriptHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)', backgroundColor: 'rgba(184,137,26,0.05)' },
     manuscriptHeaderText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false, flexShrink: 1 },
     reviewInput: { padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment, minHeight: 170, lineHeight: 22, letterSpacing: 0.2 },
@@ -131,7 +132,7 @@ export const st = StyleSheet.create({
     spoilerText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 0.6, includeFontPadding: false },
     charCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, includeFontPadding: false },
     charCountWarn: { color: colors.flicker },
-    privateNotesInput: { minHeight: 80, backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
+    privateNotesInput: { minHeight: 80, backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderBottomColor: colors.fieldEdge, borderRadius: 4 },
     // While the Vault is being opened. Same height as the field it replaces, so
     // the form does not jump when the note arrives.
     vaultWaiting: { minHeight: 80, backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
@@ -267,7 +268,8 @@ export const st = StyleSheet.create({
     // A ruled field: a line under it, never a box around it. A typed document
     // has rules, not bordered wells.
     ruledField: {
-        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.sepiaBorder,
+        // A field's ledger line, in the ink that reads: a hairline at a quarter strength was barely there.
+        borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
         paddingBottom: 9, paddingTop: 2, fontFamily: fonts.body, fontSize: 14, color: colors.parchment,
     },
     ruledRow: {

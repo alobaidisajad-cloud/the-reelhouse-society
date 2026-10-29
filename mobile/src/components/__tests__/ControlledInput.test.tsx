@@ -16,6 +16,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { useForm, FormProvider } from 'react-hook-form';
 import { ControlledInput, ControlledBioInput, ControlledUsernameInput } from '../ControlledInput';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { st } from '@/src/features/profile/profile.styles';
 
 /** Wraps a field in the real form context it reads from. */
 function Harness({ children, defaultValues = {} }: { children: React.ReactNode; defaultValues?: Record<string, unknown> }) {
@@ -27,7 +28,7 @@ describe('ControlledInput', () => {
   it('shows the current form value', () => {
     const { getByDisplayValue } = render(
       <Harness defaultValues={{ displayName: 'Sajad' }}>
-        <ControlledInput name="displayName" accessibilityLabel="Display name" maxLength={50} />
+        <ControlledInput name="displayName" style={st.fieldInput} accessibilityLabel="Display name" maxLength={50} />
       </Harness>,
     );
     expect(getByDisplayValue('Sajad')).toBeTruthy();
@@ -36,7 +37,7 @@ describe('ControlledInput', () => {
   it('writes typing back into the form', async () => {
     const { getByTestId, getByDisplayValue } = render(
       <Harness defaultValues={{ displayName: '' }}>
-        <ControlledInput name="displayName" accessibilityLabel="Display name" maxLength={50} testID="f" />
+        <ControlledInput name="displayName" accessibilityLabel="Display name" style={st.fieldInput} maxLength={50} testID="f" />
       </Harness>,
     );
     await fireEvent.changeText(getByTestId('f'), 'Kurosawa');
@@ -46,7 +47,7 @@ describe('ControlledInput', () => {
   it('passes accessibility props through to the input', () => {
     const { getByLabelText } = render(
       <Harness defaultValues={{ displayName: '' }}>
-        <ControlledInput name="displayName" accessibilityLabel="Display name" maxLength={50} />
+        <ControlledInput name="displayName" style={st.fieldInput} accessibilityLabel="Display name" maxLength={50} />
       </Harness>,
     );
     expect(getByLabelText('Display name')).toBeTruthy();

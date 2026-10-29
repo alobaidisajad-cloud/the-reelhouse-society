@@ -340,7 +340,7 @@ const x = StyleSheet.create({
 
   field: {
     fontFamily: fonts.display, fontSize: 15, color: colors.parchmentBright,
-    borderBottomWidth: 1, borderBottomColor: colors.sepiaBorder,
+    borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
     paddingVertical: 10, marginTop: 4,
   },
 

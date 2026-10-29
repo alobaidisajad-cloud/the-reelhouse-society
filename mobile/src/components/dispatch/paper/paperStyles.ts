@@ -362,6 +362,8 @@ export const p = StyleSheet.create({
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia, marginBottom: 6, includeFontPadding: false,
   },
   fieldValue: { fontFamily: fonts.body, fontSize: 12.5, color: colors.parchment },
+  /** A one-line field on the paper, on its ledger line. */
+  fieldLine: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge, paddingBottom: 2 },
 
   /** A visitor's mark: dimmed, not removed, so the foot keeps its shape. 0.62 is 3.1:1. */
   actionOff: { opacity: 0.62 },
@@ -563,7 +565,8 @@ export const p = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
     backgroundColor: colors.ink,
   },
-  dockInput: { flex: 1, fontFamily: fonts.serif, fontSize: 13.5, color: colors.fog },
+  // The critique's ledger line: the docked line a member writes on.
+  dockInput: { flex: 1, fontFamily: fonts.serif, fontSize: 13.5, color: colors.fog, borderBottomWidth: 1, borderBottomColor: colors.fieldEdge },
 
   // ── the copy desk ─────────────────────────────────────────────────────────
   /**

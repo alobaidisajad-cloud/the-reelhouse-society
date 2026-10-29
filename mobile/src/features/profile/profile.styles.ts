@@ -36,7 +36,7 @@ export const st = StyleSheet.create({
   // Fields
   fieldWrap: { marginBottom: 16 },
   fieldLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, marginBottom: 6 },
-  fieldInput: { width: '100%', paddingHorizontal: 14, paddingVertical: 11, backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 3, color: colors.parchment, fontFamily: fonts.body, fontSize: 14 },
+  fieldInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge, width: '100%', paddingHorizontal: 14, paddingVertical: 11, backgroundColor: 'rgba(13,11,9,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)', borderRadius: 3, color: colors.parchment, fontFamily: fonts.body, fontSize: 14 },
   fieldBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, marginBottom: 12 },
   
   helperText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fogQuiet, marginTop: 4 },

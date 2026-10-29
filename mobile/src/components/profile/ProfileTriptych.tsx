@@ -359,7 +359,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                     // INSIDE it, the way a gallery leaves a hanging space marked.
                     <View style={s.emptyMount}>
                         {isOwnProfile
-                            ? <Plus size={isCentre ? 20 : 15} color={colors.sepia} style={s.inviteGlyph} />
+                            // The brightest brass: sepia on the empty mount's ground was 2.56:1, an invite barely seen.
+                            ? <Plus size={isCentre ? 20 : 15} color={colors.marqueeGold} style={s.inviteGlyph} />
                             : <Text {...decorativeTextProps} style={s.emptyMark}>✦</Text>}
                     </View>
                 )}
@@ -684,6 +685,7 @@ const s = StyleSheet.create({
     modalHeader: { padding: 24, paddingTop: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
     modalEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, textAlign: 'center', marginBottom: 16 },
     searchWrap: {
+        borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.well,

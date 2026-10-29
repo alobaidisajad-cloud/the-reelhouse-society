@@ -364,6 +364,7 @@ const s = StyleSheet.create({
   inputWrap: { position: 'relative' },
   input: {
     backgroundColor: colors.well, borderWidth: 1, borderColor: colors.ash,
+    borderBottomColor: colors.fieldEdge,
     borderRadius: 3, padding: 14, paddingHorizontal: 16,
     fontSize: 14, fontFamily: fonts.body, color: colors.parchment,
   },

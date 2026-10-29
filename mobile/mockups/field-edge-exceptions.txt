@@ -1,0 +1,13 @@
+# Fields contrast.cjs --controls does not hold to an edge (WCAG 1.4.11's 3:1 for a field's boundary).
+#
+# A field must be seen to be a field: its edge (a border, or its fill) at 3:1 against what is around it.
+# Listed here, each with why, are the writing surfaces that are a page rather than a box: the member
+# writes on the screen itself, under a heading that names it, and a frame would make a page a form.
+#
+# <its spoken name> — <why>
+
+Essay headline — the essay's title, set as the page's own headline in the display face, over the body it heads; the composer is the page.
+Essay content body — the essay's body: the whole of the composer below its headline is the sheet of paper written on, with its own placeholder line ("Begin. The house is listening.").
+Your take — a take's body on the copy desk: the paper itself is written on, under the desk's own lead-in (TAKE —), as an essay's body is.
+Your wire — a wire's body on the copy desk: the paper itself is written on, under its lead-in, as a take's is.
+Your seeking — a seeking's body on the copy desk: the paper itself is written on, under its lead-in, as a take's is.

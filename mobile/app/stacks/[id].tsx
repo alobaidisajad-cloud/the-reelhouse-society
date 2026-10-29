@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RemoteImage } from '@/src/components/Picture';
+import { PosterMark, RemoteImage } from '@/src/components/Picture';
 import * as Crypto from 'expo-crypto';
  
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
@@ -137,10 +137,8 @@ const StackDetailFilmCard = React.memo(({
         accessibilityLabel={item.title}
       >
         <RemoteImage uri={tmdb.poster(item.poster_path, 'w342')} style={StyleSheet.absoluteFill} contentFit="cover" placeholder={{ blurhash }} transition={200} recyclingKey={item.poster_path} fallback={
-          // A mark, not the title again: the caption beneath already names it.
-          <View style={s.posterPlaceholder}>
-            <Text style={s.placeholderMark}>✦</Text>
-          </View>} />
+          // The house's mark, not the title again: the caption beneath already names it.
+          <PosterMark style={StyleSheet.absoluteFill} size={15} ground={false} />} />
         {isLogged && (
           <View style={s.loggedBadge}>
             <CheckCircle2 size={12} color={colors.sepia} />
@@ -850,7 +848,8 @@ export default function StackDetailScreen() {
               <Edit3 size={18} color={colors.fog} />
             </PressableScale>
             <PressableScale style={s.actionBtn} onPress={handleDelete} hitSlop={null} haptic="medium" accessibilityRole="button" accessibilityLabel="Delete stack">
-              <Trash2 size={18} color={colors.crimson} />
+              {/* The crimson that reads (the pigment was 2.9:1 on the bar). */}
+              <Trash2 size={18} color={colors.crimsonInk} />
             </PressableScale>
           </View>
         ) : (
@@ -976,7 +975,7 @@ export default function StackDetailScreen() {
                     accessibilityState={{ selected: isCertified, busy: !certifyKnown }}
                     accessibilityLabel={certifyKnown ? certifyLabel(certifyCount, isCertified, 'this stack') : 'Certify this stack. Reading your mark'}>
                     <MarkFigure iconSize={15} count={certifyCount} style={[s.actionLabel, isCertified && s.actionLabelActive]}>
-                      <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'}
+                      <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimsonInk : colors.fog} fill={isCertified ? colors.crimsonInk : 'transparent'}
                         strokeDasharray={certifyKnown ? undefined : UNINKED} />
                     </MarkFigure>
                     <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} pointerEvents="none" {...deckLabelProps}>
@@ -1257,8 +1256,6 @@ const s = StyleSheet.create({
   filmCard: { ...EDGE_LIT, borderRadius: 2, overflow: 'hidden', backgroundColor: colors.soot, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.1)' },
   // The podium frame — only #1 of a ranked stack earns the brass hairline.
   filmCardFirst: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)' },
-  posterPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 },
-  placeholderMark: { fontFamily: fonts.sub, fontSize: 15, color: colors.ash, includeFontPadding: false },
   loggedBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(13,11,9,0.75)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)' },
   /** Its two-line height is reserved on the card (`titleBox`), at the phone's text size. */
   filmTitle: {
@@ -1303,6 +1300,7 @@ const s = StyleSheet.create({
   critiqueField: {
     flex: 1, minHeight: 48, maxHeight: 120,
     backgroundColor: colors.well, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
+    borderBottomColor: colors.fieldEdge,
     borderRadius: 4, paddingHorizontal: 12, paddingVertical: 12,
     fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.bone,
   },

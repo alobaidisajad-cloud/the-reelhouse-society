@@ -217,8 +217,8 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
             }
           >
             <Heart size={12} strokeWidth={2}
-              color={c.certified ? colors.crimson : colors.fog}
-              fill={c.certified ? colors.crimson : 'transparent'}
+              color={c.certified ? colors.crimsonInk : colors.fog}
+              fill={c.certified ? colors.crimsonInk : 'transparent'}
               strokeDasharray={markReading ? UNINKED : undefined} />
             {/* None is drawn as nothing — not an empty slot beside the heart. */}
             {n ? (
@@ -449,7 +449,7 @@ export const PostDock = memo(function PostDock({
             the card's own word. */}
         <MarkFigure iconSize={15} count={certifyCount} reach="open" style={[p.actionLabel, isCertified && p.actionLabelOn]}>
           <PaperStrike on={isCertified}>
-            <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'}
+            <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimsonInk : colors.fog} fill={isCertified ? colors.crimsonInk : 'transparent'}
               strokeDasharray={markReading ? UNINKED : undefined} />
           </PaperStrike>
         </MarkFigure>

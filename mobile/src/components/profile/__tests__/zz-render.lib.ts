@@ -573,8 +573,9 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, text
     return `<${tag}${attrs ? ' ' + attrs : ''}>${kids}</${tag}>`;
   }
 
-  // expo-linear-gradient's host (colours as packed ints, `locations` 0..1).
-  if (/ExpoLinearGradient/.test(t)) {
+  // expo-linear-gradient's host (colours as packed ints, `locations` 0..1), and the `Gradient` host
+  // a test draws to read the stops back (colours as written): the same ramp either way.
+  if (/ExpoLinearGradient/.test(t) || t === 'Gradient') {
     const cols = (p.colors as unknown[] | undefined) || [];
     const locs = (p.locations as number[] | undefined) || [];
     const stops = cols.map((c, i) => {

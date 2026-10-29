@@ -234,8 +234,8 @@ export const PaperActions = memo(function PaperActions({
         <MarkFigure iconSize={15} count={certifyCount} reach="open" style={[p.actionLabel, !markReading && certified && p.actionLabelOn]}>
           <PaperStrike on={!markReading && certified}>
             <Heart size={15} strokeWidth={2}
-              color={!markReading && certified ? colors.crimson : colors.fog}
-              fill={!markReading && certified ? colors.crimson : 'transparent'}
+              color={!markReading && certified ? colors.crimsonInk : colors.fog}
+              fill={!markReading && certified ? colors.crimsonInk : 'transparent'}
               strokeDasharray={markReading ? UNINKED : undefined} />
           </PaperStrike>
         </MarkFigure>

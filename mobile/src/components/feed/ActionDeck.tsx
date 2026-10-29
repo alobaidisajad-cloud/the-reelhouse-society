@@ -170,7 +170,7 @@ export const ActionDeck = React.memo(function ActionDeck({
         <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleCertify} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: endorsed }} accessibilityLabel={certifyLabel(certifyCount, endorsed, 'this critique')}>
           <MarkFigure iconSize={15} count={certifyCount} style={[s.actionLabel, endorsed && s.actionLabelCertified]}>
             <Animated.View style={animatedHeartStyle}>
-              <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
+              <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimsonInk : colors.fog} fill={endorsed ? colors.crimsonInk : 'transparent'} />
             </Animated.View>
           </MarkFigure>
           {/* The cap and shrink-to-fit keep each label on one line at every size. */}

@@ -25,10 +25,13 @@ appId: com.reelhouse.society
 # (iPhone launch 40501819810: the reset screen still showing at the
 # assert, the Lobby drawn a moment after).
 - tapOn: "RETURN TO LOBBY"
+# The tabs are built cold here, as at a launch: the wait is a launch's
+# (30 s), not 15, which the iPhone runner outlasted twice
+# (40501819810, 40831511384).
 - extendedWaitUntil:
     visible:
       id: "dispatch-tab"
-    timeout: 15000
+    timeout: 30000
 
 # reelhouse://_sitemap, opened with the app closed: expo-router makes that
 # route unless app.json turns its sitemap off, and with it off the path is
