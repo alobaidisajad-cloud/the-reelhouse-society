@@ -1,12 +1,6 @@
 {
   "phone": [
     {
-      "package": "decode-uri-component",
-      "version": "0.2.2",
-      "advisory": "GHSA-vcc3-ghjq-m6fr",
-      "reason": "Only query-string's parse calls it, and only React Navigation's default path reader calls that. expo-router gives the navigator its own reader, which decodes with the platform's decodeURIComponent, so an opened link never reaches this package."
-    },
-    {
       "package": "linkify-it",
       "version": "2.2.0",
       "advisory": "GHSA-22p9-wv53-3rq4",

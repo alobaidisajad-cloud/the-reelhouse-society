@@ -8,7 +8,7 @@ module.exports = {
   // waiting (see the header of that file).
   testEnvironment: '<rootDir>/test-utils/timerCheckingEnvironment.js',
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|react-native-mmkv|react-native-reanimated|standard-navigation)',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|react-native-mmkv|react-native-reanimated|standard-navigation|decode-uri-component)',
   ],
   // `.claude/worktrees` holds whole copies of the repo, each with its own tests:
   // anchored at this checkout, so one that is itself such a copy runs its own.
