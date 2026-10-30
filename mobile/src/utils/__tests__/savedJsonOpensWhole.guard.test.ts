@@ -70,6 +70,8 @@ const FAMILIES: Record<string, { writers: [string, RegExp][]; opened: string; sc
   'handle-history': { writers: [['src/utils/handleHistory.ts', /^KEY$/]], opened: HERE },
   'handle-notice': { writers: [['src/utils/handleNotice.ts', /^KEY$/]], opened: HERE },
   'last-tab': { writers: [['src/utils/lastTab.ts', /^LAST_TAB_KEY$/]], opened: HERE },
+  // New since build 41, which never wrote it: opened by its own test, from what lastRoom.ts writes.
+  'last-room': { writers: [['src/utils/lastRoom.ts', /^LAST_ROOM_KEY$/]], opened: 'src/utils/__tests__/aRoomThePhoneClosedOpensAgain.test.ts', ownFixtures: true },
   'profile-counts': { writers: [['src/utils/profileCountsCache.ts', /^`\$\{KEY\}_\$\{uid\}`$/]], opened: HERE },
   drafts: {
     writers: [['src/utils/memberDrafts.ts', /^draftKey\(/]],

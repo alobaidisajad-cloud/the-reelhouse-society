@@ -14,6 +14,7 @@ import { RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomPa
 import { EmptyState } from '@/src/components/EmptyStates';
 import PressableScale from '@/src/components/PressableScale';
 import { useLogFlow } from '@/src/hooks/useLogFlow';
+import { useWritingRoom } from '@/src/hooks/useWritingRoom';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors } from '@/src/theme/theme';
 import { Arrive } from '@/src/components/Arrive';
@@ -26,6 +27,8 @@ export default function LogModalScreen() {
     const { user } = useAuthStore();
     const flow = useLogFlow();
     const { isAuthenticated, step, film, isEditing, editReady, selectFilm, submitting, setStep } = flow;
+    // A new record is a room a launch may reopen, its draft holding the film; an edit keeps none.
+    useWritingRoom('log-modal', !isEditing);
 
     // KEYBOARD LAW (router-screen form): the ScrollView's
     // automaticallyAdjustKeyboardInsets scrolls the FOCUSED field above the

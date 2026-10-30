@@ -2,7 +2,8 @@
  * A screen holding unsaved work asks before any way out (P4.12).
  *
  * Driven through a real router: a pop from anywhere (the same action an edge swipe and Android's
- * back send) is stopped and asks; Cancel stays, Discard leaves; with nothing unsaved, nothing asks.
+ * back send) is stopped and asks; Cancel stays, Discard leaves (and lets the screen's draft go first);
+ * with nothing unsaved, nothing asks.
  */
 import React from 'react';
 import { Alert, Text } from 'react-native';
@@ -12,9 +13,10 @@ import { act, cleanup, renderRouter } from 'expo-router/testing-library';
 import { useAskBeforeLeaving } from '../useAskBeforeLeaving';
 
 let mockUnsaved = true;
+const mockDiscarded = jest.fn();
 
 function Desk() {
-  useAskBeforeLeaving(mockUnsaved);
+  useAskBeforeLeaving(mockUnsaved, { onDiscard: mockDiscarded });
   return <Text>the desk</Text>;
 }
 
@@ -47,11 +49,11 @@ it('a pop over unsaved work is stopped and asks; Cancel stays, Discard leaves; n
 
   await act(() => { buttons.find((b) => b.text === 'Cancel')?.onPress?.(); });
   await settle();
-  expect(app.getPathname()).toBe('/settings');
+  expect([app.getPathname(), mockDiscarded.mock.calls.length]).toEqual(['/settings', 0]);
 
   await act(() => { buttons.find((b) => b.text === 'Discard')?.onPress?.(); });
   await settle();
-  expect(app.getPathname()).toBe('/');
+  expect([app.getPathname(), mockDiscarded.mock.calls.length]).toEqual(['/', 1]);
 
   // Nothing unsaved: no question, out at once.
   mockUnsaved = false;

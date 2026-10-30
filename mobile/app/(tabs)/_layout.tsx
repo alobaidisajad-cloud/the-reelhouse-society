@@ -4,6 +4,8 @@ import React from 'react';
 import { AppState, Linking, View, StyleSheet, Platform } from 'react-native';
 import { pageOfLaunch, rememberTab, stampTab, TABS_HOME, tabToReopenAfter } from '@/src/utils/lastTab';
 import { e2eTrace } from '@/src/utils/e2eTrace';
+import { ROOMS, roomToReopen } from '@/src/utils/lastRoom';
+import { useAuthStore } from '@/src/stores/auth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HouseBlur } from '@/src/components/HouseBlur';
 import Animated, {
@@ -185,8 +187,14 @@ export default function TabLayout() {
     if (launchedAt.current === '/') {
       void Linking.getInitialURL().catch(() => null).then((url) => {
         const tab = tabToReopenAfter(url);
-        e2eTrace('tabs.reopen', { tab, link: pageOfLaunch(url) || null, moved: here.current !== '/' });
-        if (tab && !gone && here.current === '/') router.navigate(`/${tab}` as Href);
+        // A writing room the phone closed behind the member, with their words still in its
+        // draft, opens again over its tab (lastRoom.ts): never for a launch a link made.
+        const room = pageOfLaunch(url) ? null : roomToReopen(useAuthStore.getState().user?.id);
+        e2eTrace('tabs.reopen', { tab, room, link: pageOfLaunch(url) || null, moved: here.current !== '/' });
+        if (!gone && here.current === '/') {
+          if (tab) router.navigate(`/${tab}` as Href);
+          if (room) nav.push(ROOMS[room].href);
+        }
       });
     }
     const sub = AppState.addEventListener('change', (next) => { if (next !== 'active') stampTab(); });

@@ -28,10 +28,11 @@ import { FORMS, PaperBack, PaperDoor, PaperPicker } from '@/src/components/dispa
 import { EssayHead } from '@/src/components/dispatch/paper/PaperEssay';
 import { partOf } from '@/src/components/dispatch/paper/paperText';
 import { readMinutes, readTimeOf } from '@/src/components/dispatch/readTime';
-import { WEEKDAYS, hourLabel } from '@/src/components/dispatch/dayLabel';
+import { TakenUpLine, whenKept } from '@/src/components/TakenUpLine';
 import { paperTierOf } from '@/src/stores/dispatchTypes';
 import { formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useClock } from '@/src/hooks/useClock';
+import { useWritingRoom } from '@/src/hooks/useWritingRoom';
 import { useDoor } from '@/src/hooks/useDoor';
 import {
   pullDraft, pushDraft, dropDraft, whichCopy, SYNC_EVERY_MS, type RemoteDraft,
@@ -64,17 +65,8 @@ export const ESSAY_FOOT = 40;
 /** And at least this clear of the home indicator's edge: what the 40 keeps on a 34pt inset. */
 export const ESSAY_FOOT_GAP = 6;
 
-/**
- * `TUESDAY · 21:40`, from the app's own tables.
- *
- * NEVER `Intl` — it is not in Hermes and this app ships no polyfill, so a
- * `toLocaleString` would work in every test and throw on a device.
- */
-const whenOf = (iso: string): string => {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return '';
-    return `${WEEKDAYS[d.getDay()]} · ${hourLabel(iso)}`;
-};
+/** When a draft was kept, as every writing room says it (TakenUpLine). */
+const whenOf = whenKept;
 
 /** How long each side is, which is half of what makes the choice answerable. */
 const wordsOf = (text?: string): string => {
@@ -224,6 +216,8 @@ function ComposeDossierScreen() {
     // The day the proof is dated: it turns at midnight, with the desk open.
     const filedOn = useClock((now) => formatDateMonthDay(new Date(now).toISOString()).toUpperCase());
     const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
+    // A new piece is a room a launch may reopen; an amend keeps its draft by its filing instead.
+    useWritingRoom('essay', !edit);
     const { user } = useAuthStore();
     const edge = useBottomEdge();
     const headerTop = useModalTop();
@@ -304,11 +298,6 @@ function ComposeDossierScreen() {
         }
     }, [user?.id]);
 
-    // Empty for a draft kept with no time: the line names none rather than inventing one.
-    const restoredWhen = useMemo(
-        () => (!restored || restored === 'unreadable' || restored === 'unknown' ? '' : whenOf(restored)),
-        [restored],
-    );
 
     // Guards the delayed back() below against a screen already gone.
     const isMounted = useRef(true);
@@ -793,41 +782,16 @@ function ComposeDossierScreen() {
                             {/* Explains words on screen that were not typed just now (there is no save
                                 mark); typing accepts them, START CLEAN clears them. */}
                             {restored ? (
-                                <View
-                                    style={styles.restoredRow}
-                                    accessible
-                                    accessibilityRole="summary"
-                                    accessibilityLabel={
-                                        restored === 'unreadable'
-                                            ? 'What was here could not be read. The room has cleared it.'
-                                            : `Taken up where you left it${restoredWhen ? `, ${restoredWhen}` : ''}.`
-                                    }
-                                >
-                                    <Text
-                                        style={[styles.restoredText, restored === 'unreadable' && styles.restoredLost]}
-                                        {...scaledTextProps}
-                                    >
-                                        {restored === 'unreadable'
-                                            ? 'WHAT WAS HERE COULD NOT BE READ'
-                                            : `TAKEN UP WHERE YOU LEFT IT${restoredWhen ? ` · ${restoredWhen}` : ''}`}
-                                    </Text>
-                                    {restored !== 'unreadable' ? (
-                                        <PressableScale
-                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                            haptic="selection"
-                                            onPress={() => {
-                                                setTitle(''); setContent(''); setFilm(null); setSeries(null);
-                                                setRestored(null);
-                                                if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
-                                                else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
-                                            }}
-                                            accessibilityRole="button"
-                                            accessibilityLabel="Start clean, and discard what was here"
-                                        >
-                                            <Text style={styles.restoredAct} {...scaledTextProps}>START CLEAN</Text>
-                                        </PressableScale>
-                                    ) : null}
-                                </View>
+                                <TakenUpLine
+                                    unreadable={restored === 'unreadable'}
+                                    savedAt={restored === 'unknown' ? null : restored}
+                                    onStartClean={() => {
+                                        setTitle(''); setContent(''); setFilm(null); setSeries(null);
+                                        setRestored(null);
+                                        if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
+                                        else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
+                                    }}
+                                />
                             ) : null}
                             <TextInput
                                 style={styles.titleInput}
@@ -1150,27 +1114,6 @@ const styles = StyleSheet.create({
         color: colors.fog,
     },
     kavFlex: { flex: 1 },
-    /**
-     * The line that explains words you did not just type. Quiet — it is not an
-     * alert and it is not chrome the room keeps; it leaves on the first
-     * keystroke. `space-between` so START CLEAN sits at the measure's edge,
-     * where every other trailing act in this app sits.
-     */
-    restoredRow: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, marginBottom: 14, paddingBottom: 10, paddingHorizontal: 24,
-        borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)',
-    },
-    restoredText: {
-        flexShrink: 1, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
-        color: colors.sepia, includeFontPadding: false,
-    },
-    /** Crimson, because this one is a loss rather than a courtesy. */
-    restoredLost: { color: colors.crimsonInk },
-    restoredAct: {
-        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2,
-        color: colors.parchment, includeFontPadding: false,
-    },
     /**
      * A box, not a line: a decision, not a notice that goes by itself. A column, so two
      * facts and two acts are not crushed at the largest text.

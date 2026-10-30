@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +18,7 @@ import { WALL_KEY } from '@/src/components/lobby/wallRead';
 import { nav } from '@/src/utils/typedRouter';
 import { useAskBeforeLeaving } from '@/src/hooks/useAskBeforeLeaving';
 import { normalizeSocialUrl } from '@/src/utils/linking';
+import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 
 /** The most links a profile carries; the editor stops offering more there. */
 export const MAX_LINKS = 10;
@@ -65,6 +66,26 @@ export const parseLinks = (raw: any): { title: string; url: string }[] => {
   }
   return [];
 };
+
+/** What the form holds for a member as they are stored: what an amendment is measured from. */
+const storedOf = (user: { username?: string | null; display_name?: string | null; bio?: string | null; social_links?: unknown } | null | undefined): ProfileFormData => ({
+  username: user?.username || '',
+  displayName: user?.display_name || '',
+  bio: user?.bio || '',
+  links: parseLinks(user?.social_links),
+});
+
+/** The fields a draft keeps, in one order, so two sets of them compare as text. */
+const amendmentsOf = (v: ProfileFormData): ProfileFormData => ({
+  username: v.username ?? '',
+  displayName: v.displayName ?? '',
+  bio: v.bio ?? '',
+  links: (v.links ?? []).map((l) => ({ title: l.title ?? '', url: l.url ?? '' })),
+});
+const sameAmendments = (a: ProfileFormData, b: ProfileFormData) => JSON.stringify(amendmentsOf(a)) === JSON.stringify(amendmentsOf(b));
+
+/** How long the typing rests before its draft is kept; leaving the app keeps it at once. */
+export const PROFILE_DRAFT_REST_MS = 400;
 
 // Drops blank entries and trims the rest before persisting to social_links.
 export function sanitizeLinks(links: { title: string; url: string }[]): { title: string; url: string }[] {
@@ -122,12 +143,7 @@ export function useEditProfile() {
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(editProfileSchema) as any,
-    defaultValues: {
-      username: user?.username || '',
-      displayName: user?.display_name || '',
-      bio: user?.bio || '',
-      links: parseLinks(user?.social_links),
-    },
+    defaultValues: storedOf(user),
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -168,16 +184,58 @@ export function useEditProfile() {
   const sealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (sealTimerRef.current) clearTimeout(sealTimerRef.current); }, []);
 
+  // The member's amendments, kept on this phone as they type (memberDrafts, kind 'profile'): the
+  // phone may end the app in the background, or rebuild its screen, and they are taken up again
+  // here (a launch reopens this room within the half hour, lastRoom.ts). Undefined: nothing was
+  // taken up; null: taken up from a draft kept with no time. Read once, as the room opens.
+  const [opened] = useState(() => {
+    const held = user ? readDraft<ProfileFormData>(user.id, 'profile') : null;
+    return held && !sameAmendments(held.data, storedOf(user)) ? { kept: amendmentsOf(held.data), savedAt: held.savedAt ?? null } : null;
+  });
+  const [takenUpAt, setTakenUpAt] = useState<string | null | undefined>(opened ? opened.savedAt : undefined);
+  const takenUp = useRef(false);
   useEffect(() => {
-    if (user) {
-      form.reset({
-        username: user.username || '',
-        displayName: user.display_name || '',
-        bio: user.bio || '',
-        links: parseLinks(user.social_links),
-      });
-    }
-  }, [user, form]);
+    if (!user) return;
+    // The profile read again (a return to the app, another device) is laid UNDER what the member
+    // has typed: a field they changed keeps their words, the rest follow the read. A plain reset
+    // here wiped a half-written bio on every return to the app.
+    form.reset(storedOf(user), { keepDirtyValues: true });
+    if (takenUp.current || !opened) return;
+    takenUp.current = true;
+    (Object.keys(opened.kept) as (keyof ProfileFormData)[]).forEach((k) => form.setValue(k, opened.kept[k] as never, { shouldDirty: true }));
+  }, [user, form, opened]);
+
+  // Kept when the typing rests, and at once when the app leaves the screen (the phone may end it
+  // there); let go when the form is back to what is stored. The first keystroke after a draft was
+  // taken up accepts it, and the line that explained it goes.
+  const memberId = user?.id;
+  useEffect(() => {
+    if (!memberId) return undefined;
+    let resting: ReturnType<typeof setTimeout> | null = null;
+    const keep = () => {
+      if (resting) { clearTimeout(resting); resting = null; }
+      const values = form.getValues();
+      if (sameAmendments(values, storedOf(useAuthStore.getState().user))) clearDraft(memberId, 'profile');
+      else writeDraft(memberId, 'profile', amendmentsOf(values));
+    };
+    const stopWatching = form.subscribe({
+      formState: { values: true },
+      callback: ({ type }) => {
+        if (type === 'change') setTakenUpAt(undefined);
+        if (resting) clearTimeout(resting);
+        resting = setTimeout(keep, PROFILE_DRAFT_REST_MS);
+      },
+    });
+    const leaving = AppState.addEventListener('change', (next) => { if (next !== 'active' && resting) keep(); });
+    return () => { stopWatching(); leaving.remove(); if (resting) clearTimeout(resting); };
+  }, [form, memberId]);
+
+  /** START CLEAN: what is stored, and no draft. */
+  const startClean = () => {
+    if (memberId) clearDraft(memberId, 'profile');
+    form.reset(storedOf(user));
+    setTakenUpAt(undefined);
+  };
 
   const { isDirty: isFormDirty } = form.formState;
 
@@ -324,6 +382,7 @@ export function useEditProfile() {
       // return. This is the confirmation the old silent back lacked —
       // and, paired with the profile's focus-refetch, the edit is guaranteed
       // to be reflected the moment the member lands back on their dossier.
+      clearDraft(user.id, 'profile');
       TactileEngine.success();
       setSaving(false);
       setSealed(true);
@@ -345,7 +404,7 @@ export function useEditProfile() {
 
   // Every way out asks while something is unsaved, the back button, an edge swipe and Android's
   // back alike; a save that landed leaves freely (sealed).
-  useAskBeforeLeaving(isDirty && !sealed);
+  useAskBeforeLeaving(isDirty && !sealed, { onDiscard: () => { if (memberId) clearDraft(memberId, 'profile'); } });
   const handleBack = () => nav.back();
 
   return {
@@ -372,5 +431,7 @@ export function useEditProfile() {
     handleSave,
     handleBack,
     isDirty,
+    takenUpAt,
+    startClean,
   };
 }

@@ -7,7 +7,7 @@ import type { DomainLog } from '../../../../types';
 import { LOG_SELECT_COLUMNS, mapLogRow, mapLogToDbPayload } from '../../../../utils/mappers';
 import { captureError } from '../../../../lib/sentry';
 import { isNetworkError } from '../../../../utils/networkError';
-import { enqueueMutation, getOfflineQueue } from '../../../../utils/offlineQueue';
+import { enqueueMutation, getOfflineQueue, letSentGo } from '../../../../utils/offlineQueue';
 import reelToast from '../../../../utils/reelToast';
 import { sanitizeInput } from '../../../../utils/sanitizeInput';
 import { pgLiteral } from '../../../../utils/keysetCursor';
@@ -383,8 +383,15 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 view_count: 1,
                 viewing_history: [],
             };
+            // Kept on the phone BEFORE it is sent: an app ended while the write is out (killed, out of
+            // power) sends it at the next launch, and the same id lands once (killed_mid_write). The
+            // send that delivers it, or is refused for good, lets the kept copy go; a lost network keeps it.
+            // Kept as the member who is signed in now, or not at all.
+            if (!stillSignedIn(user.id)) return;
+            const keptAhead = enqueueMutation({ type: 'add_log', payload }, { ahead: true });
             const { data, error } = await supabase.from('logs').insert([payload]).select().single();
-            // Left mid-write: neither shown nor queued, where either would be the next member's.
+            if (keptAhead && !(error && isNetworkError(error))) letSentGo('add_log', payload.id);
+            // Left mid-write: not shown, where it would be the next member's.
             if (!stillSignedIn(user.id)) return;
 
             let finalData = data;
@@ -392,8 +399,9 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             // end of this block says it is. See the note there.
             let queuedOffline = false;
             if (error) {
-                // Kept for the network's return; one the phone had no room to keep is thrown as it came.
-                if (isNetworkError(error) && enqueueMutation({ type: 'add_log', payload: payload })) {
+                // Kept for the network's return (above, before the send); one the phone had no room
+                // to keep is thrown as it came.
+                if (isNetworkError(error) && keptAhead) {
                     reelToast('Archived offline. Will sync when connected.');
                     queuedOffline = true;
                     finalData = { ...payload, created_at: new Date().toISOString(), id: payload.id };
@@ -408,15 +416,20 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                             .eq('user_id', user.id).eq('film_id', log.filmId)
                             .order('created_at', { ascending: false }).limit(1);
                         if (!stillSignedIn(user.id)) return;
-                        if (serverRows && serverRows.length > 0) {
-                            const existing = mapLogRow(serverRows[0] as any) as unknown as DomainLog;
+                        const winner = serverRows?.find(() => true);
+                        // This very log, landed first by the queue's send of the copy kept ahead: it is
+                        // filed, never merged into itself as a rewatch.
+                        if (winner && (winner as { id?: string }).id === payload.id) {
+                            finalData = winner as unknown as typeof data;
+                        } else if (winner) {
+                            const existing = mapLogRow(winner as any) as unknown as DomainLog;
                             const dupMerged = await applyRewatchMerge(set, get, existing, log);
                             // As above: announced, unless the network dropped and it queued.
                             if (!dupMerged?.queuedOffline) announceToScreenReader('Rewatch added to your archive');
                             return;
                         }
                     }
-                    throw error; // the caller toasts, once
+                    if (!finalData) throw error; // the caller toasts, once
                 } else {
                     throw error; // the caller toasts, once
                 }

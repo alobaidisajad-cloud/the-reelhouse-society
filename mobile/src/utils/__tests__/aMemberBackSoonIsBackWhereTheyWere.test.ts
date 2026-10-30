@@ -11,17 +11,24 @@ import { join } from 'path';
 import { LAST_TAB_KEY, pageOfLaunch, rememberTab, RETURN_WITHIN_MS, stampTab, tabToReopen, tabToReopenAfter } from '../lastTab';
 
 const mockStore = new Map<string, string>();
+let mockFull = false;
 jest.mock('@/src/stores/mmkv-storage', () => ({
   isStorageEncrypted: () => true,
   withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: {
-    set: (k: string, v: string) => { mockStore.set(k, v); },
+    set: (k: string, v: string) => { if (mockFull) throw new Error('no space left on device'); mockStore.set(k, v); },
     getString: (k: string) => mockStore.get(k),
   },
 }));
 
 const T = 1_800_000_000_000;
-beforeEach(() => mockStore.clear());
+beforeEach(() => { mockStore.clear(); mockFull = false; });
+
+it('on a phone with no room left, remembers nothing and throws nothing from the tab bar', () => {
+  mockFull = true;
+  expect(() => { rememberTab('reels', T); stampTab(T + 1); }).not.toThrow();
+  expect(tabToReopen(T + 1000)).toBeNull();
+});
 
 it('back within the half hour: back on the tab they were on', () => {
   rememberTab('reels', T);
@@ -60,7 +67,9 @@ it('the tab bar remembers each tab as it is shown, stamps the time as the app le
   expect(layout).toMatch(/if \(launchedAt\.current === '\/'\) \{\s+void Linking\.getInitialURL\(\)\.catch\(\(\) => null\)\.then\(\(url\) => \{\s+const tab = tabToReopenAfter\(url\);/);
   // Only a member still on the Lobby once the link is read: one a link or a tap took on stays there.
   expect(layout).toMatch(/here\.current = pathname;/);
-  expect(layout).toMatch(/if \(tab && !gone && here\.current === '\/'\) router\.navigate/);
+  expect(layout).toMatch(/if \(!gone && here\.current === '\/'\) \{\s+if \(tab\) router\.navigate\(`\/\$\{tab\}` as Href\);\s+if \(room\) nav\.push\(ROOMS\[room\]\.href\);\s+\}/);
+  // A writing room is reopened only for a launch no link made, as the tab is.
+  expect(layout).toMatch(/const room = pageOfLaunch\(url\) \? null : roomToReopen\(useAuthStore\.getState\(\)\.user\?\.id\);/);
   expect(layout).not.toMatch(/\btabToReopen\(\)/);
 });
 

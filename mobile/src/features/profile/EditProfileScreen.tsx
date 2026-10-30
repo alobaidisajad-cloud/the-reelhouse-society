@@ -11,6 +11,8 @@ import { useAmbientGlow } from '@/src/hooks/useAmbientGlow';
 import { ChevronLeft, User, Camera, Link2, Film, Sparkles, Stamp, Image as ImageIcon } from 'lucide-react-native';
 
 import { useEditProfile } from '@/src/hooks/useEditProfile';
+import { useWritingRoom } from '@/src/hooks/useWritingRoom';
+import { TakenUpLine } from '@/src/components/TakenUpLine';
 import { formatDateMonthYear } from '@/src/utils/timeAgo';
 import { resolveTier } from '@/src/utils/tier';
 import { useClearance } from '@/src/hooks/useClearance';
@@ -127,8 +129,10 @@ export function EditProfileScreen() {
     handleRemoveAvatar,
     fields, handleAddLink, handleRemoveLink,
     saving, sealed, submitError,
-    handleSave, handleBack
+    handleSave, handleBack, takenUpAt, startClean,
   } = useEditProfile();
+  // A launch reopens this room over its tab when the phone closed it with amendments unsaved.
+  useWritingRoom('edit-profile');
 
   // The seal below carries `accessibilityLiveRegion`, which React Native declares
   // ANDROID ONLY. So on iPhone this confirmation was never spoken — the save
@@ -196,6 +200,9 @@ export function EditProfileScreen() {
             </Text>
           </Arrive>
         )}
+
+        {/* Amendments not typed just now: the draft this room took up. Typing accepts them. */}
+        {takenUpAt !== undefined && <TakenUpLine savedAt={takenUpAt} onStartClean={startClean} style={{ marginTop: 12 }} />}
 
         <Arrive name="editprofilescreen-2" duration={600} style={st.hero}>
           <View style={st.heroRuleTop} />

@@ -199,15 +199,27 @@ export function sendHeldAgain(tempId: string): void {
 }
 
 /**
+ * A write kept ahead of its own send, which delivered it (or was refused for good): it leaves the
+ * queue, never sent again. One the queue's send took first lands once all the same: the same id
+ * is read as delivered.
+ */
+export function letSentGo(type: QueuedMutation['type'], id: string): void {
+    const queue = readQueue();
+    const sent = (m: QueuedMutation) => m.type === type && m.payload.id === id;
+    if (queue.some(sent)) writeQueue(queue.filter((m) => !sent(m)));
+}
+
+/**
  * Queue a write to be sent later, as the member signed in now. Synchronous:
  * MMKV. With nobody signed in there is no one to send it as, so it is not queued.
  */
 /**
  * Keeps a write to send when the network returns. Returns whether it was kept: with nobody
  * signed in, or no room on the phone (the member is told, here), it was not, and the caller
- * says nothing of it being saved or queued.
+ * says nothing of it being saved or queued. `ahead`: kept before the write's own send, which
+ * answers the member itself, so a phone with no room says nothing here.
  */
-export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp' | 'owner'>): boolean {
+export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp' | 'owner'>, { ahead = false }: { ahead?: boolean } = {}): boolean {
     const owner = signedInMember();
     if (!owner) {
         logger.warn('[OfflineSync] not queued: nobody is signed in', mutation.type);
@@ -241,7 +253,7 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
     queue.push(newMutation);
 
     if (!writeQueue(queue)) {
-        reelToast.error(NOT_KEPT);
+        if (!ahead) reelToast.error(NOT_KEPT);
         return false;
     }
     logger.debug(`[OfflineSync] Queued ${mutation.type} for background sync.`);

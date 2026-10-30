@@ -42,15 +42,23 @@ function read(): { tab: TabName; at: number } | null {
   }
 }
 
+/**
+ * Written quietly: a phone with no room left throws from the write, here inside a screen's
+ * listener, and a tab not remembered only means the Lobby greets the member next time.
+ */
+function keep(value: { tab: TabName; at: number }): void {
+  try { storage.set(LAST_TAB_KEY, JSON.stringify(value)); } catch { /* not remembered: nothing else is lost */ }
+}
+
 /** The member is on this tab now. */
 export function rememberTab(tab: string, now: number = Date.now()): void {
-  if (isTab(tab)) storage.set(LAST_TAB_KEY, JSON.stringify({ tab, at: now }));
+  if (isTab(tab)) keep({ tab, at: now });
 }
 
 /** The app is leaving the screen: the half hour is counted from its last use, not from the tab's first. */
 export function stampTab(now: number = Date.now()): void {
   const last = read();
-  if (last) storage.set(LAST_TAB_KEY, JSON.stringify({ tab: last.tab, at: now }));
+  if (last) keep({ tab: last.tab, at: now });
 }
 
 /**

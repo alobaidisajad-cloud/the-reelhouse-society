@@ -86,6 +86,7 @@ const COMPUTED: { at: string; text: string; from: string }[] = [
   { at: 'app/(modals)/notifications-modal.tsx', text: 'route as never', from: 'noticeRoute (a notice) or groupRoute (a group of certifications): checked below' },
   { at: 'app/(modals)/search-modal.tsx', text: 'r._nav', from: 'each result\'s _nav, written beside its kind in useUniversalSearch: checked below' },
   { at: 'app/(tabs)/_layout.tsx', text: '`/${tab}` as Href', from: 'tabToReopen: a name from lastTab.ts\'s TABS, never index: checked below' },
+  { at: 'app/(tabs)/_layout.tsx', text: 'ROOMS[room].href', from: 'roomToReopen: a room of lastRoom.ts\'s ROOMS: checked below' },
   { at: 'app/auth-callback.tsx', text: 'to', from: 'goOnward\'s two callers: /reset-password and /(tabs): checked below' },
   { at: 'app/dispatch/[id].tsx', text: 'roomOf(username)', from: 'roomOf: checked below' },
   { at: 'app/dispatch/series/[id].tsx', text: 'roomOf(author.name)', from: 'roomOf: checked below' },
@@ -119,6 +120,7 @@ it('the helpers that work a target out answer with screens app/ has', () => {
   const { groupRoute } = require('@/src/utils/endorsementGroupKey') as typeof import('@/src/utils/endorsementGroupKey');
   const { roomOf } = require('@/src/components/dispatch/roomLink') as typeof import('@/src/components/dispatch/roomLink');
   const { TABS } = require('@/src/utils/lastTab') as typeof import('@/src/utils/lastTab');
+  const { ROOMS } = require('@/src/utils/lastRoom') as typeof import('@/src/utils/lastRoom');
   const id = '11111111-1111-4111-8111-111111111111';
   const made = [
     ...['log', 'list', 'post'].map((k) => noticeRoute({ group_key: `lobby:${k}:${id}` })),
@@ -127,6 +129,7 @@ it('the helpers that work a target out answer with screens app/ has', () => {
     noticeRoute({ from_username: 'kane' }),
     roomOf('kane'), roomOf('a name with spaces'),
     ...TABS.filter((t) => t !== 'index').map((t) => `/${t}`),
+    ...Object.values(ROOMS).map((r) => r.href),
     '/reset-password', '/(tabs)', '/log-modal', '/list-modal', '/dispatch/compose',
   ];
   // The search's results, each kind's _nav as its hook writes it.

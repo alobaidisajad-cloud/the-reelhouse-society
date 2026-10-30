@@ -43,9 +43,9 @@ export const DRAFT_PREFIX = 'reelhouse_draft_';
 /**
  * The kinds of unfinished work. `edit` and `critique` are SCOPED — there is one
  * per filing and one per post — and the scope rides at the end of the key so the
- * member's prefix still sweeps them.
+ * member's prefix still sweeps them. `profile` is Edit Profile's amendments, not yet saved.
  */
-export type DraftKind = 'dossier' | 'log' | 'edit' | 'critique' | 'ballot' | 'stack';
+export type DraftKind = 'dossier' | 'log' | 'edit' | 'critique' | 'ballot' | 'stack' | 'profile';
 
 /** How many scoped drafts of one kind a member keeps. See `evictOldest`. */
 export const SCOPED_KEPT = 3;

@@ -17,7 +17,8 @@
  */
 import { useFilmStore } from '../films';
 import { LOG_BUSY } from '../domain/logSlice/helpers/logOperations';
-import { enqueueMutation } from '@/src/utils/offlineQueue';
+import { enqueueMutation, letSentGo } from '@/src/utils/offlineQueue';
+import { supabase } from '@/src/lib/supabase';
 import reelToast from '@/src/utils/reelToast';
 import { VaultService } from '@/src/services/VaultService';
 import type { DomainLog } from '@/src/types';
@@ -61,7 +62,7 @@ jest.mock('@/src/utils/reelToast', () => {
   return { __esModule: true, default: fn };
 });
 jest.mock('@/src/utils/offlineQueue', () => ({
-  enqueueMutation: jest.fn(() => true), getOfflineQueue: jest.fn(() => []), flushOfflineQueue: jest.fn(),
+  enqueueMutation: jest.fn(() => true), getOfflineQueue: jest.fn(() => []), flushOfflineQueue: jest.fn(), letSentGo: jest.fn(),
 }));
 jest.mock('@/src/lib/sentry', () => ({ addBreadcrumb: jest.fn(), captureError: jest.fn(), Sentry: { captureException: jest.fn() } }));
 jest.mock('@/src/services/VaultService', () => ({ VaultService: { addViewing: jest.fn(), removeViewing: jest.fn() } }));
@@ -128,7 +129,7 @@ describe('filing a record', () => {
     await store().addLog(FILM);
     expect(shown()).toEqual(['Archived offline. Will sync when connected.']);
     expect(heard()).toEqual([]);
-    expect(enqueueMutation).toHaveBeenCalledWith(expect.objectContaining({ type: 'add_log' }));
+    expect(enqueueMutation).toHaveBeenCalledWith(expect.objectContaining({ type: 'add_log' }), { ahead: true });
   });
 
   it('a film already in the archive is a REWATCH, and is called one — not "Record amended"', async () => {
@@ -300,5 +301,68 @@ describe('the watchlist says what happened — once', () => {
     await settle();
     expect(heard()).toEqual(['Removed from watchlist']);
     expect(shown()).toEqual([]);
+  });
+});
+
+/**
+ * A log is on the phone before it is sent (P4.14). It was queued only when its send FAILED, so an
+ * app ended while the send was still out (killed, out of power; the nightly's killed_mid_write)
+ * kept nothing, and the film offered to log it again. Now it is kept first, let go once the send
+ * delivers it or is refused for good, and kept for the network's return when the network fails.
+ * The queue's send of the kept copy may land first: the log is filed as itself, never merged into
+ * itself as a rewatch.
+ */
+describe('a log kept before it is sent', () => {
+  const keptAhead = () => (enqueueMutation as jest.Mock).mock.calls.filter(([m, o]) => m.type === 'add_log' && o?.ahead === true);
+  const sentId = () => keptAhead().map(([m]) => m.payload.id).find(() => true);
+
+  beforeEach(() => { (enqueueMutation as jest.Mock).mockImplementation(() => true); });
+
+  it('is kept on the phone before its send is asked, under the id the send carries', async () => {
+    let keptBeforeInsert = false;
+    const original = (supabase.from as jest.Mock).getMockImplementation();
+    (supabase.from as jest.Mock).mockImplementation((table: string) => {
+      const chain: Record<string, unknown> = {};
+      ['select', 'eq', 'order', 'limit', 'single', 'maybeSingle'].forEach((m) => { chain[m] = jest.fn(() => chain); });
+      chain.insert = jest.fn((rows: { id: string }[]) => { keptBeforeInsert = table === 'logs' && keptAhead().length === 1 && rows.find(() => true)?.id === sentId(); return chain; });
+      chain.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) => Promise.resolve(mockDb.length ? mockDb.shift() : { data: null, error: null }).then(res, rej);
+      return chain;
+    });
+    mockDb = [{ data: [] }, { data: { id: 'x' } }];
+    await store().addLog(FILM);
+    (supabase.from as jest.Mock).mockImplementation(original);
+    expect(keptBeforeInsert).toBe(true);
+  });
+
+  it('delivered, the kept copy goes', async () => {
+    mockDb = [{ data: [] }, { data: { id: 'log-1', film_id: 550, created_at: '2026-10-30T09:00:00Z' } }];
+    await store().addLog(FILM);
+    expect((letSentGo as jest.Mock).mock.calls).toEqual([['add_log', sentId()]]);
+  });
+
+  it('the network failing, the kept copy stays for its return, kept once and said once', async () => {
+    mockDb = [{ data: [] }, { data: null, error: OFFLINE }];
+    await store().addLog(FILM);
+    expect([keptAhead().length, (enqueueMutation as jest.Mock).mock.calls.length, (letSentGo as jest.Mock).mock.calls.length]).toEqual([1, 1, 0]);
+  });
+
+  it('refused for good, the kept copy goes and the refusal is the caller\'s to say', async () => {
+    mockDb = [{ data: [] }, { data: null, error: DEFECT }];
+    await expect(store().addLog(FILM)).rejects.toBe(DEFECT);
+    expect((letSentGo as jest.Mock).mock.calls).toEqual([['add_log', sentId()]]);
+  });
+
+  it('landed first by the queue\'s send of the kept copy, it is filed as itself, not as a rewatch of itself', async () => {
+    // The winner read back is this very log, by its id (read as the answer is taken, after the send began).
+    const winner = { get data() { return [{ id: sentId(), viewing_id: 'v-1', user_id: 'u1', film_id: 550, film_title: 'Fight Club', rating: 4, review: '', status: 'watched', created_at: '2026-10-30T09:00:00Z', view_count: 1, viewing_history: [] }]; } };
+    mockDb = [{ data: [] }, { data: null, error: DUPLICATE }, winner];
+    await store().addLog(FILM);
+    expect([(VaultService.addViewing as jest.Mock).mock.calls.length, store().logs.map((l) => l.id)]).toEqual([0, [sentId()]]);
+  });
+
+  it('with no room on the phone to keep it, a network failure is thrown as it came, never said to be queued', async () => {
+    (enqueueMutation as jest.Mock).mockImplementation(() => false);
+    mockDb = [{ data: [] }, { data: null, error: OFFLINE }];
+    await expect(store().addLog(FILM)).rejects.toBe(OFFLINE);
   });
 });

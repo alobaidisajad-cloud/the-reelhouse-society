@@ -35,7 +35,9 @@ appId: com.reelhouse.society
 - runFlow: ../subflows/open_the_stub.yaml
 - tapOn:
     id: "film-act-log"
+# The sheet stands once its seal does; the field may begin below a short
+# phone's screen, and log.tap.yaml scrolls to it.
 - extendedWaitUntil:
     visible:
-      id: "review-input"
+      id: "submit-log-button"
     timeout: 15000
