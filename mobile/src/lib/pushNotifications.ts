@@ -8,9 +8,9 @@
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { logger } from '../utils/logger';
-import { colors } from '../theme/theme';
 import { storage } from '../stores/mmkv-storage';
 import * as Notifications from 'expo-notifications';
+import { ensureNoticeChannels } from './noticeChannels';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 
@@ -119,15 +119,8 @@ export async function registerForPushNotifications(userId: string): Promise<stri
     // Store token in Supabase for server-side delivery
     await storePushToken(userId, token);
 
-    // Configure Android notification channel
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'ReelHouse',
-        importance: Notifications.AndroidImportance?.MAX ?? 5,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: colors.champagne, // Nitrate Noir sepia
-      });
-    }
+    // Android's channels, one per kind (noticeChannels); made at start too, and again here harmlessly.
+    await ensureNoticeChannels();
 
     return token;
   } catch (err) {

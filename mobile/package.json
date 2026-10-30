@@ -22,10 +22,12 @@
     "gates:check": "node scripts/gates-check.js",
     "comments:check": "node scripts/comment-truth.js",
     "icons": "node scripts/lucide-icons.js",
+    "icons:house": "node scripts/make-house-icons.cjs",
     "bundle:size": "node scripts/bundle-size.js",
     "release:guard": "node scripts/release-guard.cjs",
     "build:ios": "node scripts/eas-build-preflight.cjs && eas build --platform ios --profile production",
-    "build:android": "node scripts/eas-build-preflight.cjs && eas build --platform android --profile production"
+    "build:android": "node scripts/eas-build-preflight.cjs && eas build --platform android --profile production",
+    "update:publish": "node scripts/publish-update.cjs"
   },
   "dependencies": {
     "@expo-google-fonts/courier-prime": "^0.4.1",

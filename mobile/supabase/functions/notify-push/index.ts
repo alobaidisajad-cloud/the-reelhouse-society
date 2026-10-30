@@ -13,6 +13,9 @@
  * The DB trigger reads the secret from Supabase Vault and sends it automatically.
  * Stale tokens that Expo reports as DeviceNotRegistered are pruned automatically.
  *
+ * v5 (2026-10-30): each message names its kind's Android channel (KIND_CHANNEL), which the app
+ * creates at start; a kind with none goes to 'default'.
+ *
  * v4 (2026-10-03): the sender is named whenever there is one (20261003_02 keeps
  * every message free of it), an accepted request has its own title, and a house
  * notice is "The Lounge" only when it is about a salon.
@@ -64,6 +67,24 @@ const TYPE_TITLES: Record<string, string> = {
   moderation: 'A Notice from the House',
 }
 const DEFAULT_TITLE = 'The ReelHouse Society'
+
+/**
+ * Each kind's Android channel: the app creates these at start (src/lib/noticeChannels.ts, the same
+ * map, held equal by theNoticesKnowTheirChannels.test.ts), so a member can quiet one kind alone.
+ */
+const KIND_CHANNEL: Record<string, string> = {
+  comment: 'critiques',
+  annotate: 'critiques',
+  retransmit: 'critiques',
+  follow: 'members',
+  follow_request: 'members',
+  follow_accept: 'members',
+  endorse: 'honours',
+  reaction: 'honours',
+  featured: 'honours',
+  system: 'the-house',
+  moderation: 'the-house',
+}
 
 // The sender lives in from_username and the message never repeats it (the table
 // refuses a named notice that begins with "@"), so the banner prints "@name
@@ -130,6 +151,7 @@ serve(async (req) => {
         title: banner.title,
         body: banner.body,
         data: { type: record.type ?? 'system', notificationId: record.id ?? null },
+        channelId: KIND_CHANNEL[record.type ?? 'system'] ?? 'default',
       }))
 
     if (messages.length === 0) {

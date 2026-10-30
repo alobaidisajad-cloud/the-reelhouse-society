@@ -69,8 +69,16 @@
           }
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#B8891A"
+        }
+      ],
       "./plugins/withSplashWithoutHandoff",
       "./plugins/withLinkDuringLaunch",
+      "./plugins/withLeftToRight",
       "./plugins/withHouseDialogs",
       "./plugins/withOneNdk",
       "./plugins/withGwpAsanOff",
@@ -112,7 +120,7 @@
     },
     "owner": "thereehouse.society",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "fingerprint"
     },
     "updates": {
       "url": "https://u.expo.dev/9527b5a1-c663-4262-883c-7b85e6aa748d"

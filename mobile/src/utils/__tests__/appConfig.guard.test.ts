@@ -137,6 +137,12 @@ it('iOS allows plain http to no host: the template\'s local-network exception is
   expect(appJson.ios.infoPlist.NSAppTransportSecurity).toEqual({ NSAllowsArbitraryLoads: false, NSAllowsLocalNetworking: false });
 });
 
+it('an update reaches only a build with its native code: the runtime is that code’s fingerprint (Decision 6)', () => {
+  // `appVersion` gave one runtime to every build of a version, native changes and all, so an
+  // update built against new native code could reach an older binary and crash it.
+  expect(appJson.runtimeVersion).toEqual({ policy: 'fingerprint' });
+});
+
 it('EAS uploads the commit alone, numbered as committed', () => {
   // requireCommit: EAS uploads a clone of what is committed, so no ignored or
   // untracked file travels, and a dirty tree is refused. No autoIncrement: with

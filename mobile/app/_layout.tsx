@@ -36,6 +36,7 @@ import { BoldTextProvider } from '@/src/hooks/useBoldText';
 import { MoreContrastProvider } from '@/src/hooks/useMoreContrast';
 import { MotionFollowsTheSetting } from '@/src/hooks/useReduceMotion';
 import { captureError, initSentry, markAppLoaded } from '@/src/lib/sentry';
+import { ensureNoticeChannels } from '@/src/lib/noticeChannels';
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import { settleOwedSignOut } from '@/src/lib/endSession';
 import { PathTracker } from '@/src/components/layout/PathTracker';
@@ -77,6 +78,8 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontError) captureError(fontError, { where: 'root fonts' });
   }, [fontError]);
+  // Android's notice channels, made before any notice can arrive: after the first frame, off its path.
+  useEffect(() => { void ensureNoticeChannels(); }, []);
 
   useEffect(() => {
     async function prepare() {

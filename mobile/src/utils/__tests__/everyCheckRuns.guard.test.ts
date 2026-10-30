@@ -44,6 +44,8 @@ const LOCAL: Record<string, string> = {
   'docs:generate': 'writes API documentation on request; it checks nothing',
   'docs:deps': 'draws the dependency graph on request; it checks nothing',
   icons: 'regenerates the icon list; lucide-icons\' own test holds the list to the package',
+  'icons:house': 'draws the app\'s icons from the official logo, when the logo changes; theAppWearsTheHouseIcon holds the files',
+  'update:publish': 'the owner publishes, widens or rolls back an over-the-air update (Decision 6); never CI',
   'release:guard': 'the owner runs it on each EAS download before submitting (P0.0a); CI runs its file too',
   'build:ios': "the owner's store build: the preflight, then EAS; no store build is made by CI",
   'build:android': "the owner's store build: the preflight, then EAS; no store build is made by CI",
