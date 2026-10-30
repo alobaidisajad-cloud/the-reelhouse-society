@@ -335,25 +335,6 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
 
         try {
             let existingLog = log.filmId ? get()._loggedIndex[log.filmId] : undefined;
-            if (!existingLog && log.filmId) {
-                const { data: serverCheck } = await supabase.from('logs')
-                    .select(LOG_SELECT_COLUMNS)
-                    .eq('user_id', user.id).eq('film_id', log.filmId)
-                    .order('created_at', { ascending: false }).limit(1);
-                if (serverCheck && serverCheck.length > 0) {
-                    existingLog = mapLogRow(serverCheck[0] as any) as unknown as DomainLog;
-                }
-                // Left during the check: nothing is filed as them, or as the next member.
-                if (!stillSignedIn(user.id)) return;
-            }
-
-            if (existingLog) {
-                const merged = await applyRewatchMerge(set, get, existingLog, log);
-                // A success that returns early, so it announces itself; not when
-                // queued (updateLogOp queues without throwing), which is not archived.
-                if (!merged?.queuedOffline) announceToScreenReader('Rewatch added to your archive');
-                return;
-            }
 
             const newId = Crypto.randomUUID();
             // The first viewing's identity, chosen here rather than left to the
@@ -383,14 +364,37 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 view_count: 1,
                 viewing_history: [],
             };
-            // Kept on the phone BEFORE it is sent: an app ended while the write is out (killed, out of
-            // power) sends it at the next launch, and the same id lands once (killed_mid_write). The
-            // send that delivers it, or is refused for good, lets the kept copy go; a lost network keeps it.
-            // Kept as the member who is signed in now, or not at all.
-            if (!stillSignedIn(user.id)) return;
-            const keptAhead = enqueueMutation({ type: 'add_log', payload }, { ahead: true });
+            // Kept on the phone FIRST, before the server is asked anything: an app ended at any point
+            // after the seal (killed, out of power, the check below still out on a slow link) sends it at
+            // the next launch, once (killed_mid_write). The copy is the member's whole act either way:
+            // replayed over a log of the film that already exists, it is filed as a rewatch. The send
+            // that delivers it, or is refused for good, lets it go; a lost network keeps it. A film
+            // this phone already knows is logged is a rewatch, filed below, and keeps no copy.
+            const keptAhead = !existingLog && enqueueMutation({ type: 'add_log', payload }, { ahead: true });
             // Kept: the record is the queue's now, and the form's draft of it has done its work.
             if (keptAhead) opts?.onKeptAhead?.();
+            if (!existingLog && log.filmId) {
+                const { data: serverCheck } = await supabase.from('logs')
+                    .select(LOG_SELECT_COLUMNS)
+                    .eq('user_id', user.id).eq('film_id', log.filmId)
+                    .order('created_at', { ascending: false }).limit(1);
+                if (serverCheck && serverCheck.length > 0) {
+                    existingLog = mapLogRow(serverCheck[0] as any) as unknown as DomainLog;
+                }
+                // Left during the check: nothing is filed as them, or as the next member.
+                if (!stillSignedIn(user.id)) return;
+            }
+
+            if (existingLog) {
+                // Filed here as a rewatch: the copy kept ahead, which would file the same, goes first.
+                if (keptAhead) letSentGo('add_log', payload.id);
+                const merged = await applyRewatchMerge(set, get, existingLog, log);
+                // A success that returns early, so it announces itself; not when
+                // queued (updateLogOp queues without throwing), which is not archived.
+                if (!merged?.queuedOffline) announceToScreenReader('Rewatch added to your archive');
+                return;
+            }
+
             const { data, error } = await supabase.from('logs').insert([payload]).select().single();
             if (keptAhead && !(error && isNetworkError(error))) letSentGo('add_log', payload.id);
             // Left mid-write: not shown, where it would be the next member's.

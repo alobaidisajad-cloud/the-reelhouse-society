@@ -318,20 +318,38 @@ describe('a log kept before it is sent', () => {
 
   beforeEach(() => { (enqueueMutation as jest.Mock).mockImplementation(() => true); });
 
-  it('is kept on the phone before its send is asked, under the id the send carries', async () => {
-    let keptBeforeInsert = false;
+  it('is kept on the phone before the server is asked anything, under the id the send carries', async () => {
+    // Asked first is the check for a log of the film; on a slow link the app may end while it is out.
+    const keptAtEachAsk: number[] = [];
+    let insertedId: string | undefined;
     const original = (supabase.from as jest.Mock).getMockImplementation();
-    (supabase.from as jest.Mock).mockImplementation((table: string) => {
+    (supabase.from as jest.Mock).mockImplementation(() => {
+      keptAtEachAsk.push(keptAhead().length);
       const chain: Record<string, unknown> = {};
       ['select', 'eq', 'order', 'limit', 'single', 'maybeSingle'].forEach((m) => { chain[m] = jest.fn(() => chain); });
-      chain.insert = jest.fn((rows: { id: string }[]) => { keptBeforeInsert = table === 'logs' && keptAhead().length === 1 && rows.find(() => true)?.id === sentId(); return chain; });
+      chain.insert = jest.fn((rows: { id: string }[]) => { insertedId = rows.find(() => true)?.id; return chain; });
       chain.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) => Promise.resolve(mockDb.length ? mockDb.shift() : { data: null, error: null }).then(res, rej);
       return chain;
     });
     mockDb = [{ data: [] }, { data: { id: 'x' } }];
     await store().addLog(FILM);
     (supabase.from as jest.Mock).mockImplementation(original);
-    expect(keptBeforeInsert).toBe(true);
+    expect([keptAtEachAsk, insertedId === sentId()]).toEqual([[1, 1], true]);
+  });
+
+  it('a log of the film the check finds is filed as one rewatch, the kept copy let go before it', async () => {
+    mockDb = [{ data: [{ id: 'log-1', viewing_id: 'v-1', user_id: 'u1', film_id: 550, film_title: 'Fight Club', rating: 4, review: '', status: 'watched', created_at: '2026-09-01T12:00:00Z', view_count: 1, viewing_history: [] }] }];
+    await store().addLog(FILM);
+    expect([(letSentGo as jest.Mock).mock.calls, (VaultService.addViewing as jest.Mock).mock.calls.length]).toEqual([[['add_log', sentId()]], 1]);
+    const [letGoAt = Infinity] = (letSentGo as jest.Mock).mock.invocationCallOrder;
+    const [filedAt = -Infinity] = (VaultService.addViewing as jest.Mock).mock.invocationCallOrder;
+    expect(letGoAt).toBeLessThan(filedAt);
+  });
+
+  it('a film this phone already knows is logged is a rewatch, and keeps no copy', async () => {
+    useFilmStore.setState({ logs: [], _loggedIndex: { 550: { id: 'log-1', viewingId: 'v-1', filmId: 550, title: 'Fight Club', rating: 4, review: '', status: 'watched', viewCount: 1, viewingHistory: [] } as never } });
+    await store().addLog(FILM);
+    expect([keptAhead().length, (VaultService.addViewing as jest.Mock).mock.calls.length]).toEqual([0, 1]);
   });
 
   it('delivered, the kept copy goes', async () => {

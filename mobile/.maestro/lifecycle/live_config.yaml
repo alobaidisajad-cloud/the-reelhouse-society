@@ -36,7 +36,8 @@ env:
 - scrollUntilVisible:
     element:
       id: "edit-profile-bio"
-      text: ${WORDS}
+      # The member's bio already holds words: what was typed is within it.
+      text: ".*${WORDS}.*"
     direction: DOWN
     centerElement: true
     timeout: 60000
@@ -57,7 +58,8 @@ env:
 - scrollUntilVisible:
     element:
       id: "edit-profile-bio"
-      text: ${WORDS}
+      # The member's bio already holds words: what was typed is within it.
+      text: ".*${WORDS}.*"
     direction: DOWN
     centerElement: true
     timeout: 60000
