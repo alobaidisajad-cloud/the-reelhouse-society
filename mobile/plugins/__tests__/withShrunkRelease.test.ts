@@ -44,3 +44,38 @@ it('is in every build, and Sentry uploads each build’s mapping so a crash stil
   const sentry = plugins.find((p) => Array.isArray(p) && p.includes('@sentry/react-native')) as [string, { experimental_android?: object }] | undefined;
   expect(sentry?.slice(1)).toEqual([expect.objectContaining({ experimental_android: expect.objectContaining({ enableAndroidGradlePlugin: true, autoUploadProguardMapping: true }) })]);
 });
+
+describe('the keep rules for what the release checks read', () => {
+  const { withKeep, KEEP } = plugin as { withKeep: (t: string) => string; KEEP: string[] };
+  const TEMPLATE_RULES = '# Add any project specific keep options here:\n-keep class com.facebook.react.turbomodule.** { *; }\n';
+
+  it('are written once, at the end, and an earlier copy is replaced, never doubled', () => {
+    const once = withKeep(TEMPLATE_RULES);
+    expect(once.startsWith(TEMPLATE_RULES.trimEnd())).toBe(true);
+    expect(KEEP.every((rule) => once.split(rule).length === 2)).toBe(true);
+    expect(withKeep(once)).toBe(once);
+    expect(withKeep('')).toContain(KEEP.join('\n'));
+  });
+
+  it('keep every class the checks read by name, so a check never reads a renamed one', () => {
+    const checks = ['e2e/glide-log-level.mjs', 'e2e/prefetch-download-only.mjs'].map((f) => readFileSync(join(MOBILE, f), 'utf8')).join('\n');
+    // dexdump's spelling in the checks' patterns (Lcom\/a\/B;) and their method names (com.a.B.method:).
+    const spelt = [...checks.matchAll(/L(?<name>(?:com|expo|android)\\\/[A-Za-z\\\/]+);/g)].map((m) => (m.groups?.name ?? '').split('\\/').join('.'));
+    const named = [...checks.matchAll(/'(?<name>expo\.modules\.[A-Za-z.]+?)(?:\.[a-z]\w*:)?'/g)].map((m) => m.groups?.name ?? '');
+    const classes = [...new Set([...spelt, ...named])];
+    expect(classes.length).toBeGreaterThanOrEqual(6);
+    expect(classes.filter((c) => !KEEP.some((rule) => rule.startsWith(`-keep class ${c} `) || rule === `-keep class ${c}`))).toEqual([]);
+  });
+
+  it('are what prebuild writes into the app\'s proguard-rules.pro', async () => {
+    const fs = require('fs') as typeof import('fs');
+    const os = require('os') as typeof import('os');
+    const root = fs.mkdtempSync(join(os.tmpdir(), 'shrunk-'));
+    fs.mkdirSync(join(root, 'app'));
+    fs.writeFileSync(join(root, 'app', 'proguard-rules.pro'), TEMPLATE_RULES);
+    const config = plugin({ name: 'reelhouse', slug: 'reelhouse' });
+    await config.mods.android.dangerous({ ...config, modResults: {}, modRequest: { platform: 'android', platformProjectRoot: root } });
+    expect(fs.readFileSync(join(root, 'app', 'proguard-rules.pro'), 'utf8')).toBe(withKeep(TEMPLATE_RULES));
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+});

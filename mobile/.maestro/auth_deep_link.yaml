@@ -24,7 +24,13 @@ appId: com.reelhouse.society
 # afresh, which on the iPhone runner outlasted a bare assert's wait
 # (iPhone launch 40501819810: the reset screen still showing at the
 # assert, the Lobby drawn a moment after).
-- tapOn: "RETURN TO LOBBY"
+# Tapped again if nothing changed: the iPhone simulator cancelled the first
+# touch 0.2 s after it landed ("digitizer did disappear", run of 211009e5),
+# so no press was ever made and the reset screen stood for the whole wait.
+# A second tap is only ever made over a screen the first left unchanged.
+- tapOn:
+    text: "RETURN TO LOBBY"
+    retryTapIfNoChange: true
 # The tabs are built cold here, as at a launch: the wait is a launch's
 # (30 s), not 15, which the iPhone runner outlasted twice
 # (40501819810, 40831511384).
