@@ -178,7 +178,11 @@ it('names the project as Expo holds it, and asks that project alone for updates 
 });
 
 it('sends crashes, and the maps that make them readable, to the Sentry project the house reads (CI-20)', () => {
-  expect(entry('@sentry/react-native')).toEqual(['@sentry/react-native', { url: 'https://sentry.io/', ...IDENTITY.sentry }]);
+  // Android's release is shrunk (withShrunkRelease): Sentry's Gradle plugin uploads each build's R8 mapping.
+  expect(entry('@sentry/react-native')).toEqual(['@sentry/react-native', {
+    url: 'https://sentry.io/', ...IDENTITY.sentry,
+    experimental_android: { enableAndroidGradlePlugin: true, autoUploadProguardMapping: true },
+  }]);
   // Metro's Sentry wrapper writes the maps the plugin uploads; switching the upload off leaves every crash minified.
   expect(readFileSync(join(MOBILE, 'metro.config.js'), 'utf8')).toMatch(/= getSentryExpoConfig\(__dirname\b/);
   const easText = readFileSync(join(MOBILE, 'eas.json'), 'utf8');

@@ -262,6 +262,7 @@ Decisions, as of 2026-09-28:
 | `plugins/__tests__/withSplashWithoutHandoff.test.ts` | The generated MainActivity fixture, app.json's plugins and the app's code, for who imports the splash screen. |
 | `plugins/__tests__/withLinkDuringLaunch.test.ts` | The generated MainActivity fixture and app.json's plugins. |
 | `plugins/__tests__/withOneNdk.test.ts` | The generated root build.gradle fixture, app.json's plugins and the NDK the Android packages script names: Gradle files no render reaches. |
+| `plugins/__tests__/withShrunkRelease.test.ts` | app.json's plugins and Sentry's settings: Gradle properties and the build's mapping upload, no render reaches. |
 | `plugins/__tests__/withLeftToRight.test.ts` | The generated MainApplication and SDK 57's template AppDelegate (fixtures) and app.json's plugins: native start no render reaches. |
 | `src/__tests__/theAppWearsTheHouseIcon.test.ts` | The icon images' pixels and app.json's icon settings: what a home screen and a notice draw, no render reaches. |
 | `scripts/__tests__/publishUpdate.test.ts` | The ledger the publishing script writes, in a temporary folder: the file is the script's own output, which no render reaches. |

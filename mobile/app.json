@@ -79,6 +79,7 @@
       "./plugins/withSplashWithoutHandoff",
       "./plugins/withLinkDuringLaunch",
       "./plugins/withLeftToRight",
+      "./plugins/withShrunkRelease",
       "./plugins/withHouseDialogs",
       "./plugins/withOneNdk",
       "./plugins/withGwpAsanOff",
@@ -88,7 +89,11 @@
         {
           "url": "https://sentry.io/",
           "organization": "the-reelhouse-society",
-          "project": "react-native"
+          "project": "react-native",
+          "experimental_android": {
+            "enableAndroidGradlePlugin": true,
+            "autoUploadProguardMapping": true
+          }
         }
       ],
       "expo-secure-store",
