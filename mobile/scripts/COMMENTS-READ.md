@@ -809,7 +809,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/text/__tests__/aCutLabelIsHeard.test.tsx | 2026-10-17 | new |
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | 2026-10-24 | edited: a nested text takes its parent's scaling; a nested label's spacing follows its parent |
 | src/components/text/AnimatedText.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/text/index.tsx | 2026-10-29 | edited: a Text in a brighter ink, and at full strength, while Increase Contrast is on (heightened); edited: a Text in its face's heavier weight while Bold Text is on; at most four combining marks on any one character; edited: marksKept, at most four combining marks on any one character, in every Text's own strings; edited: a nested Text takes nothing of the house's and scales as its parent does; a frozen Text tells the Texts inside it |
+| src/components/text/index.tsx | 2026-10-30 | edited: the cut judge is told a Text shrinks to fit; edited: a Text in a brighter ink, and at full strength, while Increase Contrast is on (heightened); edited: a Text in its face's heavier weight while Bold Text is on; at most four combining marks on any one character; edited: marksKept, at most four combining marks on any one character, in every Text's own strings; edited: a nested Text takes nothing of the house's and scales as its parent does; a frozen Text tells the Texts inside it |
 | src/components/theme/__tests__/oneBrassSheen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written whole: the sheen sweeps only in front, and both plates draw it |
 | src/components/theme/BrassSheen.tsx | 2026-10-29 | edited: Reduce Motion read live (useReduceMotion), not as it stood at launch; written whole: the one sheen both brass plates draw; still behind another tab and under Reduce Motion |
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
@@ -1172,7 +1172,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
 | src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-16 | edited: a capital past Georgian's letters, and Georgian's first and last |
-| src/utils/__tests__/aCutWordIsSeen.test.ts | 2026-10-17 | new |
+| src/utils/__tests__/aCutWordIsSeen.test.ts | 2026-10-30 | edited: a fitted label is not wider than its box; one ellipsized at its floor ended early; new |
 | src/utils/__tests__/aDateIsSaidInTheHouseVoice.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/addOnly.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
@@ -1333,7 +1333,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/withTimeout.test.ts | 2026-10-25 | edited: AbortSignal.timeout taken away by the test itself, as build 41's phone lacked it (the SDK 57 phone has it); the timeout case names withTimeout's own timer |
 | src/utils/AppError.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/csv.ts | 2026-10-02 | read; sound |
-| src/utils/cutText.ts | 2026-10-17 | new: whether a Text's laid-out lines lost its words, ran out of its box or were clipped by it |
+| src/utils/cutText.ts | 2026-10-30 | edited: a Text that shrinks to fit is cut only by an early end: Android reports its lines as before the shrink; new: whether a Text's laid-out lines lost its words, ran out of its box or were clipped by it |
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-27 | edited: its report lines are fixed text, the values after them, kept on the phone (P4.44); read whole in the Dispatch audit; comments checked true |
 | src/utils/e2eRuntime.ts | 2026-10-15 | new: the phone's runtime written once a launch, in parts, by the E2E build |

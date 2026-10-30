@@ -9,7 +9,10 @@
  *     textTransform or the ellipsis itself is no cut;
  *   - a line is wider than its own box: a word that could not break runs out of it;
  *   - its lines are taller than its own box: the box clips its last lines.
- * A Text that shrinks to fit (adjustsFontSizeToFit) is fitted, not cut, unless it still ended early.
+ * A Text that shrinks to fit (adjustsFontSizeToFit) is fitted, not cut, unless it still ended early:
+ * Android reports its lines as wide as they were before the shrink, so a fitted label read
+ * "wider than its box" ("SEALING RECORD…", "Check Your Inbox", largest-text run 40847116101).
+ * One still too long at its smallest size is ellipsized, and that is an early end.
  */
 
 /** One line as onTextLayout gives it. */
@@ -36,11 +39,11 @@ export function stillCut(natural: number, width: number, lines: number, scale = 
   return natural * scale > width * Math.max(1, lines) + ROOM_SLACK;
 }
 
-/** Why the laid-out words do not all show, or null when they all do. */
-export function cutOf(words: string, lines: readonly LaidLine[], box: Box | null): Cut | null {
+/** Why the laid-out words do not all show, or null when they all do. `fitted`: it shrinks to fit. */
+export function cutOf(words: string, lines: readonly LaidLine[], box: Box | null, fitted = false): Cut | null {
   if (!words.trim() || lines.length === 0) return null;
   if (letters(lines.map((l) => l.text).join('')).length < letters(words).length) return 'ended early';
-  if (!box) return null;
+  if (!box || fitted) return null;
   if (lines.some((l) => l.width > box.width + SLACK)) return 'wider than its box';
   if (lines.reduce((sum, l) => sum + l.height, 0) > box.height + SLACK) return 'taller than its box';
   return null;

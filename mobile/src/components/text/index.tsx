@@ -225,7 +225,7 @@ function useCutSaid(props: TextProps, drawn: TextProps): { handlers: Partial<Tex
   };
   const judge = () => {
     if (!lines.current) return;
-    const cut = cutOf(words, lines.current, box.current);
+    const cut = cutOf(words, lines.current, box.current, props.adjustsFontSizeToFit === true);
     if (cut === 'ended early' && box.current) {
       const b = box.current;
       if (doubted?.width !== b.width || doubted.height !== b.height) setDoubted(b);

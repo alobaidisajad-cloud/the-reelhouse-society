@@ -30,6 +30,14 @@ describe('a Text that shows every word', () => {
   it('is judged on its words alone until its box is known', () => {
     expect(cutOf('Words', [line('Words', 500, 500)], null)).toBeNull();
   });
+
+  it('is fitted, not cut, when it shrinks to fit: Android reports its lines as wide as before the shrink', () => {
+    expect(cutOf('SEALING RECORD…', [line('SEALING RECORD…', 180, 30)], BOX, true)).toBeNull();
+    // The same lines from a Text that does not shrink are cut.
+    expect(cutOf('SEALING RECORD…', [line('SEALING RECORD…', 180, 30)], BOX)).toBe('wider than its box');
+    // Still too long at its smallest size, it is ellipsized: an early end, fitted or not.
+    expect(cutOf('@E2E_MEMBER · MEMBER Nº 0001', [line('@E2E_MEMBER · MEMB…', 100)], BOX, true)).toBe('ended early');
+  });
 });
 
 describe('a Text that lost words', () => {
