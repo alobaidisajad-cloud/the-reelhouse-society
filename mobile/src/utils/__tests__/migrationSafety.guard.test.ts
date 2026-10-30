@@ -40,6 +40,10 @@ describe('the migration lint', () => {
     expect(lint(CONCURRENT)).toEqual({ kind: 'concurrently', faults: [] });
   });
 
+  it('lets a file index a table it makes, inside its transaction: no member writes to it yet', () => {
+    expect(lint(`${LIMITS}CREATE TABLE public.n (id uuid);\nCREATE UNIQUE INDEX IF NOT EXISTS n_id ON public.n (id);\n`).faults).toEqual([]);
+  });
+
   it('reads a function body and a DO block as their own: their BEGIN and END are not transaction control', () => {
     const sql = `${LIMITS}CREATE FUNCTION public.f() RETURNS void LANGUAGE plpgsql AS $$ BEGIN COMMIT; END $$;\nDO $do$ BEGIN PERFORM 1; END $do$;\n`;
     expect(lint(sql).faults).toEqual([]);
@@ -56,6 +60,12 @@ describe('the migration lint', () => {
     ['a CONCURRENTLY file with no statement limit', CONCURRENT.replace("SET statement_timeout = '15min';\n", ''), 'no plain SET statement_timeout'],
   ])('says NO to %s', (_name, sql, fault) => {
     expect(lint(sql).faults).toContain(fault);
+  });
+
+  // Its own title: shape-certification-key-holds-writers names it.
+  it('says NO to an index built in a transaction on a table that holds rows', () => {
+    expect(lint(`${GOOD}CREATE UNIQUE INDEX IF NOT EXISTS t_x ON public.t (x);\n`).faults)
+      .toEqual(['an index on t, a table that already holds rows, is built CONCURRENTLY in a file of its own']);
   });
 
   it('refuses transaction control in an undo file, and asks nothing else of it', () => {

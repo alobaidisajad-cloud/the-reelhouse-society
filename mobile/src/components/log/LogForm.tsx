@@ -35,6 +35,7 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
 import { e2eTraceAt } from '@/src/utils/e2eTrace';
+import { RevealedOnOpen } from '@/src/components/layout/RevealAboveDock';
 
 /**
  * The review takes what the column takes: a box stricter than the record
@@ -92,6 +93,8 @@ export default function LogForm({ flow, user }: LogFormProps) {
     const yesterday = useClock((now) => localCalendarDate(-1, now));
     const todayStr = useToday();
     const deskName = (user?.username || 'you').toUpperCase();
+    // ABANDONED asks why at once: its reasons are brought above the seal, never opened under it.
+    const [reasonsAsked, setReasonsAsked] = useState(0);
 
     /**
      * ── THE ROPES, ONE WAY TO HOLD THEM ─────────────────────────────────────
@@ -284,7 +287,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
             <SectionDivider label="THE VERDICT" />
             <View style={st.statusRow}>
                 {(['watched', 'rewatched', 'abandoned'] as const).map(s => (
-                    <PressableScale key={s} style={[st.statusBtn, status === s && st.statusActive]} onPress={() => { setStatus(s); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ selected: status === s }} accessibilityLabel={s} haptic="selection">
+                    <PressableScale key={s} style={[st.statusBtn, status === s && st.statusActive]} onPress={() => { if (s === 'abandoned' && status !== s) setReasonsAsked((n) => n + 1); setStatus(s); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ selected: status === s }} accessibilityLabel={s} haptic="selection">
                         {s === 'watched' && <Eye size={14} color={status === s ? colors.ink : colors.fog} />}
                         {s === 'rewatched' && <History size={14} color={status === s ? colors.ink : colors.fog} />}
                         {s === 'abandoned' && <X size={14} color={status === s ? colors.ink : colors.fog} />}
@@ -300,7 +303,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
             {status === 'abandoned' ? (
                 <View style={st.sec}>
                     <LogVerdict status={status} rating={rating} />
-                    <View style={st.tagRow}>
+                    <RevealedOnOpen opened={reasonsAsked} style={st.tagRow}>
                         {ABANDONED_REASONS.map((r: string) => (
                             <PressableScale key={r} style={st.hit48} onPress={() => { setAbandonedReason(r); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ selected: abandonedReason === r }} accessibilityLabel={r} haptic="selection">
                                 <View style={[st.tag, abandonedReason === r && st.tagActive]}>
@@ -308,7 +311,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                 </View>
                             </PressableScale>
                         ))}
-                    </View>
+                    </RevealedOnOpen>
                 </View>
             ) : (
                 <View style={st.sec}>
@@ -512,6 +515,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 </LogIndexEntry>
 
                 <LogIndexEntry
+                    testID="log-entry-filed"
                     name="FILED"
                     value={`${formatDate(date)}${watchedWith ? ` · WITH ${watchedWith.toUpperCase()}` : ''}`}
                     open={filedOpen}
@@ -530,7 +534,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                 </View>
                             </PressableScale>
                         </View>
-                        <PressableScale style={st.ruledRow} onPress={() => { setCalendarOpen(!calendarOpen); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: calendarOpen }} accessibilityLabel={`Watched on ${formatLongCalendarDate(date)}. ${calendarOpen ? 'Close' : 'Change'} the date.`}>
+                        <PressableScale testID="log-filed-date" style={st.ruledRow} onPress={() => { setCalendarOpen(!calendarOpen); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityState={{ expanded: calendarOpen }} accessibilityLabel={`Watched on ${formatLongCalendarDate(date)}. ${calendarOpen ? 'Close' : 'Change'} the date.`}>
                             <Text style={st.ruledValue}>{formatLongCalendarDate(date)}</Text>
                             <Text style={st.ruledAction}>{calendarOpen ? 'CLOSE' : 'CHANGE'}</Text>
                         </PressableScale>

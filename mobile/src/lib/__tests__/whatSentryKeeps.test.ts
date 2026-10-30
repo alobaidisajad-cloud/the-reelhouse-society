@@ -87,6 +87,9 @@ function withChoice(saved: boolean | undefined): { m: SentryModule; Sentry: { in
       m = require('@/src/lib/sentry');
     });
   } finally {
+    // A doMock outlives isolateModules: left, a choice saved as off reached every later
+    // production(), and Sentry never started there (nightly random order, seed -303375169).
+    jest.dontMock('@/src/lib/bootStore');
     (global as { __DEV__?: boolean }).__DEV__ = dev;
     delete process.env.EXPO_PUBLIC_SENTRY_DSN;
   }

@@ -24,11 +24,13 @@ appId: com.reelhouse.society
 - runFlow: subflows/open_the_stub.yaml
 - tapOn:
     id: "film-act-log"
+# The sheet stands once its seal does. The field may begin below a short
+# phone's screen, so it is scrolled to, and brought to the middle: its
+# middle starts under the docked seal.
 - extendedWaitUntil:
     visible:
-      id: "review-input"
+      id: "submit-log-button"
     timeout: 15000
-# The field's middle starts under the docked seal: brought to the middle first.
 - scrollUntilVisible:
     element:
       id: "review-input"

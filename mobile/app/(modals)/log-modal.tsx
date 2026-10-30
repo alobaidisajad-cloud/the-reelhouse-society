@@ -19,6 +19,7 @@ import { colors } from '@/src/theme/theme';
 import { Arrive } from '@/src/components/Arrive';
 import { ChevronLeft, X } from 'lucide-react-native';
 import { e2eTrace, e2eTraceAt } from '@/src/utils/e2eTrace';
+import { RevealAboveDock, useRevealHost } from '@/src/components/layout/RevealAboveDock';
 
 export default function LogModalScreen() {
 
@@ -33,6 +34,8 @@ export default function LogModalScreen() {
     // root ends at the keyboard (KeyboardRoom) and the shortened ScrollView
     // scrolls the focused field into view.
     const scrollEnd = useAboveDockedBar(SEAL_BAR_HEIGHT);
+    // What the member opens low on the docket is brought above the seal, never left under it.
+    const { scroller, onScroll, reveal } = useRevealHost(scrollEnd);
     const handleTop = useModalTop();
     // Each step the form shows, for the sealed E2E: a flow that lands on the wrong one says when.
     React.useEffect(() => { e2eTrace('log.step', { step, film: film?.id ?? null }); }, [step, film?.id]);
@@ -107,8 +110,10 @@ export default function LogModalScreen() {
                     // The scroll must END above the docked seal, or the last index
                     // entry hides behind it. One measured number: the bar's own
                     // height plus the safe area.
-                    <ScrollView style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: scrollEnd }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
-                        <LogForm flow={flow} user={user} />
+                    <ScrollView ref={scroller} onScroll={onScroll} scrollEventThrottle={16} style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: scrollEnd }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+                        <RevealAboveDock.Provider value={reveal}>
+                            <LogForm flow={flow} user={user} />
+                        </RevealAboveDock.Provider>
                     </ScrollView>
                 )}
             </View>

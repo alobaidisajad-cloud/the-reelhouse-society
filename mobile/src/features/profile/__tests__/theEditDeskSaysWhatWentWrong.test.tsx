@@ -75,4 +75,7 @@ it('a refused camera offers the way to grant it', async () => {
   const buttons = alert.mock.calls[0][2] as { text: string; onPress?: () => void }[];
   buttons.find((b) => b.text === 'Open Settings')!.onPress!();
   expect(open).toHaveBeenCalled();
+  // Left in place, a later spyOn hands back this spy with its call still counted (random order, seed -303375169).
+  alert.mockRestore();
+  open.mockRestore();
 });

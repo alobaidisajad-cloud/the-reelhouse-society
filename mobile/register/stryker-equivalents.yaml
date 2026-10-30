@@ -1,323 +1,325 @@
 # Stryker's survivors that no test can tell apart from the code (WORKLIST P0.70): each named by its
-# file, line, column, mutator and replacement, with why. scripts/stryker-files.cjs leaves each out of its
-# file's score, and fails an entry that names no survivor (stale); strykerFilesAreListed holds every
-# entry to a listed file and a reason.
+# file, the code of its line (indentation aside), its column in that code (`at`), mutator and
+# replacement, with why. Named by the code, never the line's number: a line that moves keeps its
+# entry, and one whose code changed has its reason judged again. scripts/stryker-files.cjs leaves each
+# out of its file's score, and fails an entry that names no survivor (stale); strykerFilesAreListed
+# holds every entry to a listed file, code its file holds, and a reason.
 equivalents:
   - file: src/utils/tier.ts
-    line: 100
-    column: 10
+    code: "return tWeight >= rWeight ? normalizeTier(input.tier) : normalizeTier(effectiveRole);"
+    at: 8
     mutator: EqualityOperator
     replacement: tWeight > rWeight
     why: The store's rank and the role weigh the same only when they read as the same rank (each rank has its own weight, and the free rank's two spellings read as one), so taking either side gives the same answer.
   - file: supabase/functions/revenuecat-webhook/decide.ts
-    line: 27
-    column: 24
+    code: "if (String(e.type ?? '').toUpperCase() === 'TEST') return [];"
+    at: 22
     mutator: StringLiteral
     replacement: "\"Stryker was here!\""
     why: A missing type is read as the text in its place, and only the word TEST stops an event; the replacement is not that word, so a missing type reads every named account either way.
   - file: supabase/functions/revenuecat-webhook/decide.ts
-    line: 30
-    column: 66
+    code: "...(Array.isArray(e.transferred_from) ? e.transferred_from : []),"
+    at: 62
     mutator: ArrayDeclaration
     replacement: "[\"Stryker was here\"]"
     why: A transfer list that is not a list is read as no accounts; the replacement puts one word in its place, which is no account id, so the id filter drops it and the same accounts are read.
   - file: supabase/functions/revenuecat-webhook/decide.ts
-    line: 31
-    column: 62
+    code: "...(Array.isArray(e.transferred_to) ? e.transferred_to : []),"
+    at: 58
     mutator: ArrayDeclaration
     replacement: "[\"Stryker was here\"]"
     why: A transfer list that is not a list is read as no accounts; the replacement puts one word in its place, which is no account id, so the id filter drops it and the same accounts are read.
   - file: supabase/functions/revenuecat-webhook/decide.ts
-    line: 48
-    column: 19
+    code: "for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];"
+    at: 17
     mutator: EqualityOperator
     replacement: "i <= a.length"
     why: The lengths are equal by this loop, so one step past the end compares two missing bytes; undefined ^ undefined is 0, and the difference, and the answer, stay the same.
   - file: supabase/functions/_shared/storeRecord.ts
-    line: 32
-    column: 23
+    code: "if (!entitlement || typeof entitlement !== 'object') return false;"
+    at: 21
     mutator: ConditionalExpression
     replacement: "false"
     why: Past the empty check, an entitlement that is not an object is a string, number, boolean or function; none has an end or a grace date, so it reads as no end and is not in force either way.
   - file: supabase/functions/_shared/storeRecord.ts
-    line: 51
-    column: 92
+    code: "const product = String((e as { product_identifier?: unknown }).product_identifier ?? '').toLowerCase();"
+    at: 86
     mutator: StringLiteral
     replacement: "\"Stryker was here!\""
     why: A missing product is read as the text in its place; the replacement starts with no rank's name (founding, auteur, archivist), so it names no rank either way.
   - file: supabase/functions/_shared/storeRecord.ts
-    line: 53
-    column: 11
+    code: "if (rank) ranks.add(rank);"
+    at: 5
     mutator: ConditionalExpression
     replacement: "true"
     why: Adding "no rank" to the ranks found cannot change which rank is the highest held, since the answer looks only for the three ranks' own names.
   - file: supabase/functions/_shared/storeRecord.ts
-    line: 78
-    column: 29
+    code: "let subscriber: unknown = { entitlements: {} };"
+    at: 27
     mutator: ObjectLiteral
     replacement: "{}"
     why: The starting record is kept only when the store has no record for the member (404); a record with no entitlements and an empty record both hold nothing, so the rank is the free one either way.
   - file: supabase/functions/_shared/storeRecord.ts
-    line: 91
-    column: 54
+    code: "subscriber = (await res.json())?.subscriber ?? { entitlements: {} };"
+    at: 48
     mutator: ObjectLiteral
     replacement: "{}"
     why: An answer with no subscriber is read as the record in its place; a record with no entitlements and an empty record both hold nothing, so the rank is the free one either way.
   - file: supabase/functions/_shared/storeRecord.ts
-    line: 48
-    column: 14
+    code: "if (raw && typeof raw === 'object') {"
+    at: 12
     mutator: ConditionalExpression
     replacement: "true"
     why: Entitlements that are truthy but not an object are a string, number or boolean; a string's entries are its single characters, none in force, and the others have none, so the record holds nothing either way.
   - file: src/components/dispatch/paper/paperMetrics.ts
-    line: 233
-    column: 7
+    code: "if (tenths < 100) {"
+    at: 5
     mutator: EqualityOperator
     replacement: "tenths <= 100"
     why: Exactly a hundred tenths is ten whole units with no tenth, which the short branch writes as the whole number and the unit, exactly as the long branch does (10K).
   - file: src/utils/timeAgo.ts
-    line: 59
-    column: 7
+    code: "if (offsetDays !== 0) d.setDate(d.getDate() + offsetDays);"
+    at: 5
     mutator: ConditionalExpression
     replacement: "true"
     why: Moving the date by zero days leaves it where it was; the check only saves a step.
   - file: src/utils/timeAgo.ts
-    line: 128
-    column: 7
+    code: "if (typeof value !== 'string') return isNaN(value.getTime()) ? null : localParts(value);"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: A Date then reaches the string path, where it is no calendar date (its text is not one) and becomes the same instant again, so its parts are the same, or none for an invalid one.
   - file: src/utils/timeAgo.ts
-    line: 143
-    column: 7
+    code: "if (typeof value !== 'string') return isNaN(value.getTime()) ? null : value.getTime();"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: A Date then reaches the string path, where it is no calendar date (its text is not one) and becomes the same instant again, so its time is the same, or none for an invalid one.
   - file: src/utils/timeAgo.ts
-    line: 175
-    column: 7
+    code: "if (typeof dateStr === 'string') {"
+    at: 5
     mutator: ConditionalExpression
     replacement: "true"
     why: A Date is then asked whether it is a calendar date, and its text is not one, so it goes on to the instant's path as before.
   - file: src/utils/timeAgo.ts
-    line: 196
-    column: 7
+    code: "if (then === null) return echo(dateStr);"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: What cannot be read then measures as long ago and reaches the date in words, which cannot read it either and echoes it the same way.
   - file: src/utils/timeAgo.ts
-    line: 226
-    column: 7
+    code: "if (then === null) return '';"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: What cannot be read then measures as already past, which says nothing, as the check does.
   - file: src/utils/timeAgo.ts
-    line: 241
-    column: 98
+    code: "export function formatDate(dateStr: string | Date | undefined | null, format: 'short' | 'long' = 'short'): string {"
+    at: 98
     mutator: StringLiteral
     replacement: "\"\""
     why: Every format but long is written short, so an empty default writes the same as the short one.
   - file: src/utils/timeAgo.ts
-    line: 271
-    column: 7
+    code: "if (!value) return '';"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: Nothing then reaches the calendar date reader, which finds no calendar date in it and says nothing, as the check does.
   - file: src/utils/timeAgo.ts
-    line: 288
-    column: 106
+    code: "export function formatDateMonthDay(dateStr: string | Date | undefined | null, format: 'short' | 'long' = 'short'): string {"
+    at: 106
     mutator: StringLiteral
     replacement: "\"\""
     why: Every format but long is written short, so an empty default writes the same as the short one.
   - file: src/utils/timeAgo.ts
-    line: 306
-    column: 18
+    code: "if (!value || (typeof value === 'string' && parseCalendarDate(value))) return '';"
+    at: 16
     mutator: ConditionalExpression
     replacement: "true"
     why: A Date is then asked whether it is a calendar date, and its text is not one, so it goes on to its time as before.
   - file: src/utils/timeAgo.ts
-    line: 335
-    column: 95
+    code: "export function formatTMDBDate(dateStr: string | undefined | null, format: 'short' | 'long' = 'short'): string | undefined {"
+    at: 95
     mutator: StringLiteral
     replacement: "\"\""
     why: Every format but long is written short, so an empty default writes the same as the short one.
   - file: src/utils/offlineQueue.ts
-    line: 111
-    column: 16
+    code: "return useAuthStore.getState().user?.id ?? null;"
+    at: 8
     mutator: OptionalChaining
     replacement: "useAuthStore.getState().user.id"
     why: With nobody signed in the mutant throws inside the try, whose catch answers null, the same answer the optional chain gives.
   - file: src/utils/offlineQueue.ts
-    line: 112
-    column: 13
+    code: "} catch {"
+    at: 9
     mutator: BlockStatement
     replacement: "{}"
     why: The catch then answers undefined instead of null, and its one caller, enqueueMutation, asks only whether there is a member, which both deny alike.
   - file: src/utils/offlineQueue.ts
-    line: 146
-    column: 17
+    code: "if (heldFor && heldFor !== memberId) continue;"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: Another member's held list holds only their own writes, each named for them, so the rule below keeps every one, writing the same list back; the check only says so first.
   - file: src/utils/mutationExecutor.ts
-    line: 68
-    column: 46
+    code: "const errLower = String(error.message || '').toLowerCase();"
+    at: 42
     mutator: StringLiteral
     replacement: "\"Stryker was here!\""
     why: A failure with no message is then read as those words, which say neither duplicate nor unique, as the empty string does not.
   - file: src/utils/mutationExecutor.ts
-    line: 245
-    column: 18
+    code: "else if (target_list_id)    deleteQuery = deleteQuery.eq('target_list_id', target_list_id as string).eq('type', (endorseType as string) ?? 'endorse_list');"
+    at: 10
     mutator: ConditionalExpression
     replacement: "true"
     why: This branch is reached only when the endorsement names no log, and the guard above has already refused one that names no stack either, so the stack is always there.
   - file: src/utils/keysetCursor.ts
-    line: 46
-    column: 7
+    code: "if (!cursor) return null;"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: No cursor (undefined, null or empty) becomes the text undefined, null or nothing, none with a separator, which the next check refuses too; so no cursor is refused either way.
   - file: src/utils/text.ts
-    line: 20
-    column: 19
+    code: "for (let i = 0; i < GRAPHEME_RUNS.length; i += 1) {"
+    at: 17
     mutator: EqualityOperator
     replacement: "i <= GRAPHEME_RUNS.length"
     why: One step past the table's end reads no letter and only adds to the digits of a run that is never closed, so the runs unpacked are the same.
   - file: src/utils/text.ts
-    line: 22
-    column: 20
+    code: "if (c >= 65 && c <= 90) { // a class letter closes the run"
+    at: 16
     mutator: EqualityOperator
     replacement: "c < 90"
     why: The table's class letters run from A to R (eighteen classes); Z, the one letter the change drops, is never in it, so every run closes where it did.
   - file: src/utils/text.ts
-    line: 35
-    column: 7
+    code: "if (cp < 0x7f) return cp === 0x0d ? CR : cp === 0x0a ? LF : cp < 0x20 ? CONTROL : 0; // the common case, without a search"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: The ASCII shortcut only saves a search; the table gives every ASCII character the same class (return, line feed, control, or none), so the class is the same either way.
   - file: src/utils/text.ts
-    line: 39
-    column: 12
+    code: "let hi = starts.length - 1;"
+    at: 10
     mutator: ArithmeticOperator
     replacement: "starts.length + 1"
     why: Places past the table's end read as no start, which the search always steps down from, so it settles on the same run.
   - file: src/utils/text.ts
-    line: 54
-    column: 17
+    code: "const start = i >= 2 && isLow(text.charCodeAt(i - 1)) && isHigh(text.charCodeAt(i - 2)) ? i - 2 : i - 1;"
+    at: 15
     mutator: ConditionalExpression
     replacement: "true"
     why: The only place under two is one, where the character before index zero reads as no character, so no pair of halves is ever found there and the start is the same.
   - file: src/utils/text.ts
-    line: 75
-    column: 27
+    code: "if (b === CONSONANT && (a === EXTEND || a === LINKER || a === ZWJ)) return CONJUNCT; // GB9c"
+    at: 25
     mutator: ConditionalExpression
     replacement: "true"
     why: A consonant after anything else is then sent to the conjunct rule, which finds no virama before it and answers a boundary, as the general rule would; and the forward walk joins a conjunct only after a consonant and a virama.
   - file: src/utils/text.ts
-    line: 77
-    column: 7
+    code: "if (a === RI && b === RI) return FLAG; // GB12, GB13"
+    at: 5
     mutator: ConditionalExpression
     replacement: "true"
     why: A flag half after anything else is then sent to the flag rule, which counts the halves before it, none, an even count, so a boundary as before; and the forward walk joins only after an odd count of halves.
   - file: src/utils/text.ts
-    line: 88
-    column: 7
+    code: "if (i <= 0 || i >= text.length) return true;"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: The ends are only a shortcut; past it, a place at or beyond either end reads the missing character there as a control, and a control always parts, so the answer is a boundary either way.
   - file: src/utils/text.ts
-    line: 88
-    column: 7
+    code: "if (i <= 0 || i >= text.length) return true;"
+    at: 5
     mutator: LogicalOperator
     replacement: "i <= 0 && i >= text.length"
     why: The ends are only a shortcut; past it, a place at or beyond either end reads the missing character there as a control, and a control always parts, so the answer is a boundary either way.
   - file: src/utils/text.ts
-    line: 88
-    column: 7
+    code: "if (i <= 0 || i >= text.length) return true;"
+    at: 5
     mutator: EqualityOperator
     replacement: "i < 0"
     why: The ends are only a shortcut; past it, place zero reads the missing character before it as a control, and a control always parts, so the answer is a boundary either way.
   - file: src/utils/text.ts
-    line: 88
-    column: 17
+    code: "if (i <= 0 || i >= text.length) return true;"
+    at: 15
     mutator: ConditionalExpression
     replacement: "false"
     why: The ends are only a shortcut; past it, a place at or beyond the end reads the missing character there as a control, and a control always parts, so the answer is a boundary either way.
   - file: src/utils/text.ts
-    line: 88
-    column: 17
+    code: "if (i <= 0 || i >= text.length) return true;"
+    at: 15
     mutator: EqualityOperator
     replacement: "i > text.length"
     why: The ends are only a shortcut; past it, the place at the end reads the missing character there as a control, and a control always parts, so the answer is a boundary either way.
   - file: src/utils/text.ts
-    line: 96
-    column: 21
+    code: "for (let j = i; j > 0;) {"
+    at: 17
     mutator: EqualityOperator
     replacement: "j >= 0"
     why: One step more reads the missing character before the text as a control, which is neither a virama nor a consonant, so the walk answers a boundary, as it does when it ends.
   - file: src/utils/text.ts
-    line: 106
-    column: 26
+    code: "for (let j = prevAt; j > 0;) {"
+    at: 22
     mutator: EqualityOperator
     replacement: "j >= 0"
     why: One step more reads the missing character before the text as a control, which is no picture, so the walk answers a boundary, as it does when it ends.
   - file: src/utils/text.ts
-    line: 119
-    column: 5
+    code: "halves += 1;"
+    at: 1
     mutator: AssignmentOperator
     replacement: "halves -= 1"
     why: Only whether the count of flag halves is even is read, and counting down gives the same evenness as counting up.
   - file: src/utils/text.ts
-    line: 142
-    column: 10
+    code: "while (i < text.length) {"
+    at: 8
     mutator: EqualityOperator
     replacement: "i <= text.length"
     why: One step more reads the missing character at the end as a control, which always parts, so the walk stops at the end as it would have.
   - file: src/utils/text.ts
-    line: 149
-    column: 173
+    code: "if (b === CONSONANT) { consonant = true; linked = false; } else if (b === LINKER) linked = consonant; else if (b !== EXTEND && b !== ZWJ) { consonant = false; linked = false; }"
+    at: 169
     mutator: BooleanLiteral
     replacement: "true"
     why: This branch also sets the consonant mark false, and the virama mark is read only together with it, until the next consonant or virama sets the virama mark again.
   - file: src/utils/text.ts
-    line: 150
-    column: 21
+    code: "pictureJoined = b === ZWJ && picture;"
+    at: 17
     mutator: ConditionalExpression
     replacement: "true"
     why: The joined mark is read only on the step after a joiner, where the character was a joiner, so taking it as one always gives the same mark.
   - file: src/utils/text.ts
-    line: 207
-    column: 37
+    code: "const lead = OPENING.exec(text ?? '')?.[0] ?? '';"
+    at: 35
     mutator: StringLiteral
     replacement: "\"Stryker was here!\""
     why: No text is read as the text in its place; it opens with a letter, so no opening is found in it, as in no text at all, and the body is read from the text as it came.
   - file: src/utils/text.ts
-    line: 286
-    column: 26
+    code: "return ltr === -1 || rtl < ltr;"
+    at: 22
     mutator: EqualityOperator
     replacement: "rtl <= ltr"
     why: The two searches find different characters, so they never stop at the same place once both found one; the equal case cannot arise.
   - file: src/utils/sanitizeInput.ts
-    line: 141
-    column: 7
+    code: "if (!text) return '';"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: No text is only a shortcut; the cleaner it then reaches answers no text with the empty string too, and an empty string is under every cap.
   - file: src/utils/sanitizeInput.ts
-    line: 147
-    column: 7
+    code: "if (clean.length <= maxLen) return clean;"
+    at: 5
     mutator: ConditionalExpression
     replacement: "false"
     why: A text within its cap then reaches the cut, whose place past the text's end steps back to the end, so the whole text is kept either way.
   - file: src/utils/sanitizeInput.ts
-    line: 147
-    column: 7
+    code: "if (clean.length <= maxLen) return clean;"
+    at: 5
     mutator: EqualityOperator
     replacement: "clean.length < maxLen"
     why: A text exactly at its cap then reaches the cut, at the text's end, which is always a boundary, so the whole text is kept either way.
   - file: src/utils/sanitizeInput.ts
-    line: 161
-    column: 34
+    code: "return cleanForStorage(text ?? '').length > MAX_LENGTHS[fieldType];"
+    at: 32
     mutator: StringLiteral
     replacement: "\"Stryker was here!\""
     why: No text is then measured as the seventeen characters in its place, and the smallest cap of any field is thirty (a username), so no text is over its limit either way.

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { KeyRound } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { st } from './LogModalStyles';
+import { RevealedOnOpen } from '@/src/components/layout/RevealAboveDock';
 
 /**
  * One line in the record's index.
@@ -38,6 +39,8 @@ export interface LogIndexEntryProps {
   open?: boolean;
   onPress: () => void;
   children?: React.ReactNode;
+  /** Its id, where a flow opens it. */
+  testID?: string;
 }
 
 /** The MARK's colour — the key and the dot. Pigment reads as a shape. */
@@ -59,17 +62,20 @@ const INK = {
 } as const;
 
 export default React.memo(function LogIndexEntry({
-  name, value, origin = 'base', lockedTo, open, onPress, children,
+  name, value, origin = 'base', lockedTo, open, onPress, children, testID,
 }: LogIndexEntryProps) {
   const tint = TINT[origin];
   const ink = INK[origin];
   const locked = !!lockedTo;
+  // Opened by the member, its body is brought above the seal: low on a short phone it opens under it.
+  const [opened, setOpened] = useState(0);
 
   return (
     <View>
       <PressableScale
+        testID={testID}
         style={st.idxEntry}
-        onPress={onPress}
+        onPress={() => { if (!open) setOpened((n) => n + 1); onPress(); }}
         // The rows are FLUSH — a hairline between them and no gap at all — so an
         // entry claims nothing vertically; there is no space to halve, and any
         // claim would land on the row above or below, where the later one wins.
@@ -99,7 +105,7 @@ export default React.memo(function LogIndexEntry({
           {locked ? lockedTo : (value || '—')}
         </Text>
       </PressableScale>
-      {open && children}
+      {open && <RevealedOnOpen opened={opened}>{children}</RevealedOnOpen>}
     </View>
   );
 });

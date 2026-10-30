@@ -136,6 +136,11 @@ it('changes files that exist, and plants a new shape where nothing stands yet, i
   const missing = MUTANTS.filter((m) => m.source !== 'judge')
     .flatMap((m) => filesOf(m).filter((f) => !existsSync(join(MOBILE, f))).map((f) => `${m.id}: ${f}`));
   expect(missing).toEqual([]);
+  // An applied migration is history: the lint reads only pending ones, so a mistake planted there
+  // stands unseen (shape-certification-key-holds-writers survived every night from 2026-10-25).
+  const applied = readFileSync(join(MOBILE, 'supabase', 'APPLIED.txt'), 'utf8').split(/\r?\n/);
+  const inHistory = MUTANTS.flatMap((m) => filesOf(m).filter((f) => f.includes('migrations/') && applied.includes(f.split('/').pop() ?? '')).map((f) => `${m.id}: ${f}`));
+  expect(inHistory).toEqual([]);
   const plants = MUTANTS.flatMap((m) => (m.plant ?? []).map((p) => ({ id: m.id, path: p.path })));
   expect(plants.length).toBeGreaterThan(3);
   const badPlants = plants.filter(({ path }) => existsSync(join(MOBILE, path)) || !existsSync(join(MOBILE, path, '..'))

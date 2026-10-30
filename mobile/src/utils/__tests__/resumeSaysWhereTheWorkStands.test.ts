@@ -12,6 +12,7 @@ const resume = require('../../../scripts/resume.cjs') as {
   HEADER_START: string;
   headerFor: (area: string, inArea: object[], today: string) => string;
   nextOpen: (all: object[]) => { id: string }[];
+  nightlySays: (runs: { conclusion: string; createdAt: string; databaseId: number }[]) => string;
   pending: () => string[];
   privateDir: (commonDir: string) => string;
   withHeader: (journal: string, header: string) => string;
@@ -77,5 +78,20 @@ describe('the next train', () => {
     expect(migrations.filter((n) => n && !applied.includes(n)).sort()).toEqual(waiting);
     // 20260626_02 is comments alone (a no-op by design): the train never runs it, so it is never "next".
     expect(waiting).not.toContain('20260626_02_profile_freeze_fix.sql');
+  });
+});
+
+describe('the nightly', () => {
+  const night = (conclusion: string, day: number, databaseId = day) => ({ conclusion, createdAt: `2026-10-${String(day).padStart(2, '0')}T09:00:00Z`, databaseId });
+
+  it('says how many nights in a row it has been red, and the run to read', () => {
+    expect(resume.nightlySays([night('failure', 29), night('failure', 28), night('success', 27), night('failure', 26)]))
+      .toBe('The nightly: RED 2 night(s) running, last 2026-10-29: read run 29 before anything else.');
+    expect(resume.nightlySays([night('failure', 29), night('cancelled', 28)])).toBe('The nightly: RED 2+ night(s) running, last 2026-10-29: read run 29 before anything else.');
+  });
+
+  it('reads the last night that finished, and says green plainly', () => {
+    expect(resume.nightlySays([night('', 30), night('success', 29), night('failure', 28)])).toBe('The nightly: green on 2026-10-29.');
+    expect(resume.nightlySays([night('', 30)])).toBe('The nightly: no night has finished yet.');
   });
 });

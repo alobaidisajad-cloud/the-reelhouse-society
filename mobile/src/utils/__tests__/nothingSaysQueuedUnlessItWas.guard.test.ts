@@ -69,9 +69,11 @@ describe('a write the phone could not keep', () => {
   });
 
   it('is told to the member, kept nowhere, and answered false', () => {
+    // Counted from what the queue held before: the write kept below may have run first (random order, seed -303375169).
+    const before = getOfflineQueue().length;
     (storage.set as jest.Mock).mockImplementationOnce(() => { throw new Error('No space left on device'); });
     const kept = enqueueMutation({ type: 'add_critique', payload: { _tempId: 't', post_id: 'p', user_id: 'u', body: 'b' } });
-    expect([kept, getOfflineQueue().length]).toEqual([false, 0]);
+    expect([kept, getOfflineQueue().length - before]).toEqual([false, 0]);
     expect(reelToast.error).toHaveBeenCalledWith(NOT_KEPT);
   });
 

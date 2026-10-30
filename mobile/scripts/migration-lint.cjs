@@ -8,7 +8,8 @@
  *     one transaction, so it holds no transaction control of its own (a nested
  *     COMMIT ends the outer transaction early), and it sets
  *     `SET LOCAL lock_timeout = '2s'` and `SET LOCAL statement_timeout = '30s'`
- *     before its first other statement;
+ *     before its first other statement, and builds an index only on a table it
+ *     makes itself (one members write to is indexed CONCURRENTLY);
  *   - a CONCURRENTLY file: an index built, dropped or rebuilt CONCURRENTLY,
  *     which cannot run inside a transaction. It holds that one statement alone,
  *     with plain `SET lock_timeout = '2s'` and a plain `SET statement_timeout`
@@ -56,6 +57,15 @@ const lint = (sql, { undo = false } = {}) => {
   for (const [name, value] of [['LOCK_TIMEOUT', '2s'], ['STATEMENT_TIMEOUT', '30s']]) {
     const ok = named(name).some((s) => local(s) && valueOf(s) === value && before(s));
     if (!ok) faults.push(`no SET LOCAL ${name.toLowerCase()} = '${value}' before the first statement`);
+  }
+  // An index on a table members already write to is built CONCURRENTLY: inside a transaction its
+  // build holds their writes (the certification key held them a second and a half on the load
+  // test's two million rows). Only a table this file makes may be indexed in it.
+  const plain = (name) => name.replace(/^PUBLIC\./, '');
+  const made = new Set(all.map((s) => /^CREATE (?:UNLOGGED )?TABLE (?:IF NOT EXISTS )?(?<table>[\w.]+)/.exec(s.masked)?.groups?.table).filter(Boolean).map(plain));
+  for (const s of all) {
+    const on = /^CREATE (?:UNIQUE )?INDEX (?:IF NOT EXISTS )?(?:[\w.]+ )?ON (?:ONLY )?(?<table>[\w.]+)/.exec(s.masked)?.groups?.table;
+    if (on && !made.has(plain(on))) faults.push(`an index on ${plain(on).toLowerCase()}, a table that already holds rows, is built CONCURRENTLY in a file of its own`);
   }
   return { kind: 'transaction', faults };
 };

@@ -41,6 +41,9 @@ files:
       - src/utils/__tests__/aFailureOfAnyShapeIsReadAndTold.test.ts
       - src/utils/__tests__/theQueueAtLaunch.test.ts
       - src/utils/__tests__/whatTheQueueKeepsAndForHowLong.test.ts
+      - src/utils/__tests__/wordsRefusedForTheRankAreKept.test.ts
+      - src/utils/__tests__/nothingSaysQueuedUnlessItWas.guard.test.ts
+      - src/utils/__tests__/theQueueStaysOffAnOpenDisk.test.ts
   - file: src/utils/mutationExecutor.ts
     tests:
       - src/utils/__tests__/mutationExecutor.test.ts
@@ -97,6 +100,7 @@ files:
     tests:
       - src/utils/__tests__/searchPattern.test.ts
       - src/components/profile/__tests__/aRoomKeepsWhatTheServerFound.test.ts
+      - src/utils/__tests__/everyBoxIsBounded.guard.test.ts
   - file: src/hooks/useClearance.ts
     tests:
       - src/hooks/__tests__/useClearance.test.ts

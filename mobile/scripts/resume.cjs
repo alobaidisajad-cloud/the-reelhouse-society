@@ -8,7 +8,9 @@
  *
  * It prints: the commit checked out against main's, and what is not committed;
  * the migrations the next train would run (train.cjs's own list); each
- * workflow's last result for this commit; and the register's open classes,
+ * workflow's last result for this commit; the nightly's last nights (scheduled, so
+ * no commit's list shows it: it went unread for nine red nights in October 2026);
+ * and the register's open classes,
  * the next first (open in production, then by seriousness, then by count),
  * each with its finders (its methods) and its proofs.
  *
@@ -70,6 +72,21 @@ const withHeader = (journal, header) => {
 /** The pending migrations: the ones the train would run (train.cjs, one rule in one place). */
 const pending = () => require(join(MOBILE, 'supabase', 'diagnostics', 'train.cjs')).pendingIn().map((m) => m.name);
 
+/**
+ * The nightly's last nights, newest first ({ conclusion, createdAt, databaseId }): the last night's
+ * result, and how many nights in a row it has been red, with the run to read.
+ */
+const nightlySays = (runs) => {
+  const done = runs.filter((r) => r.conclusion);
+  const last = done.find(() => true);
+  if (!last) return 'The nightly: no night has finished yet.';
+  const night = last.createdAt.slice(0, 10);
+  if (last.conclusion === 'success') return `The nightly: green on ${night}.`;
+  const red = done.findIndex((r) => r.conclusion === 'success');
+  const nights = red === -1 ? `${done.length}+` : String(red);
+  return `The nightly: RED ${nights} night(s) running, last ${night}: read run ${last.databaseId} before anything else.`;
+};
+
 if (require.main === module) {
   const today = new Date().toISOString().slice(0, 10);
   const head = git('rev-parse', 'HEAD');
@@ -92,6 +109,16 @@ if (require.main === module) {
     } catch (e) {
       const said = String(e.stderr || e.message).trim().split('\n')[0];
       console.log(`\nThis commit's workflows: GitHub could not be asked (gh: ${said}); run with --no-ci to skip.`);
+    }
+  }
+
+  if (!process.argv.includes('--no-ci')) {
+    try {
+      const nights = JSON.parse(execFileSync('gh', ['run', 'list', '--workflow', 'nightly.yml', '-L', '10', '--json', 'conclusion,createdAt,databaseId'], { cwd: ROOT, encoding: 'utf8' }));
+      console.log(`\n${nightlySays(nights)}`);
+    } catch (e) {
+      const said = String(e.stderr || e.message).trim().split('\n').find(() => true);
+      console.log(`\nThe nightly: GitHub could not be asked (gh: ${said}).`);
     }
   }
 
@@ -121,4 +148,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { HEADER_END, HEADER_START, headerFor, nextOpen, pending, privateDir, withHeader };
+module.exports = { HEADER_END, HEADER_START, headerFor, nextOpen, nightlySays, pending, privateDir, withHeader };

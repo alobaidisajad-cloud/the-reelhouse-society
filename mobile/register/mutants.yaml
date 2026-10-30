@@ -1149,10 +1149,10 @@ mutants:
     class: DB-certification-held-twice
     source: shape
     edits:
-      - file: ../supabase/migrations/20261023_01_a_certification_of_a_log_is_counted_once.sql
-        find: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS"
-        replace: "CREATE UNIQUE INDEX IF NOT EXISTS"
-    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "can run on the repo as it is: every pending migration has its one rehearsal and passes the lint" }
+      - file: scripts/migration-lint.cjs
+        find: "    if (on && !made.has(plain(on))) faults.push("
+        replace: "    if (on && false) faults.push("
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "says NO to an index built in a transaction on a table that holds rows" }
 
   - id: shape-settings-form-over-unread
     class: DATA-settings-saved-over-an-unread-profile

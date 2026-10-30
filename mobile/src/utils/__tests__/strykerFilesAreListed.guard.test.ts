@@ -15,7 +15,7 @@ const { argumentsFault, judge, STRYKER_ZONE } = require('../../../scripts/stryke
   judge: (file: string, report: unknown, equivalents: Equivalent[], floor: number) =>
     { score: number | null; killed?: number; survived?: number; equivalent?: number; stale?: Equivalent[]; fault: string | null };
 };
-type Equivalent = { file: string; line: number; column: number; mutator: string; replacement: string; why: string };
+type Equivalent = { file: string; code: string; at: number; mutator: string; replacement: string; why: string };
 const LIST = yaml.parse(readFileSync(join(MOBILE, 'register', 'stryker.yaml'), 'utf8')) as { floor: number; files: { file: string; tests: string[] }[] };
 const EQUIVALENTS_FILE = join(MOBILE, 'register', 'stryker-equivalents.yaml');
 
@@ -72,7 +72,13 @@ it('runs every mutant every time, never a verdict kept from a run before', () =>
 it('writes every equivalent against a listed file, with why no test can tell it apart', () => {
   const equivalents = existsSync(EQUIVALENTS_FILE) ? (yaml.parse(readFileSync(EQUIVALENTS_FILE, 'utf8')) as { equivalents?: Equivalent[] }).equivalents ?? [] : [];
   const files = LIST.files.map((f) => f.file);
-  expect(equivalents.filter((e) => !files.includes(e.file) || !Number.isInteger(e.line) || !Number.isInteger(e.column) || !e.mutator || e.replacement === undefined || (e.why ?? '').length < 30)).toEqual([]);
+  expect(equivalents.filter((e) => !files.includes(e.file) || !e.code || !Number.isInteger(e.at) || e.at < 1 || !e.mutator || e.replacement === undefined || (e.why ?? '').length < 30)).toEqual([]);
+});
+
+it('names by each equivalent code its file still holds: one whose code changed is judged again before a push, not at night', () => {
+  const equivalents = (yaml.parse(readFileSync(EQUIVALENTS_FILE, 'utf8')) as { equivalents: Equivalent[] }).equivalents;
+  const held = (e: Equivalent) => readFileSync(join(MOBILE, e.file), 'utf8').split('\n').some((l) => l.trim() === e.code && l.trim().length >= e.at);
+  expect(equivalents.filter((e) => !held(e)).map((e) => `${e.file}: ${e.code}`)).toEqual([]);
 });
 
 it('keeps the tests\' time behind UTC all year, where a calendar date read as UTC midnight is the day before', () => {
@@ -93,7 +99,10 @@ it('refuses a mistyped option or one without its value, so neither starts the ru
 describe('the judge of a file\'s report says NO', () => {
   const mutant = (status: string, line = 1, mutatorName = 'EqualityOperator', replacement = 'a !== b', column = 1) =>
     ({ status, mutatorName, replacement, location: { start: { line, column } } });
-  const report = (...mutants: ReturnType<typeof mutant>[]) => ({ files: { 'src/x.ts': { mutants } } });
+  // Line 5 holds the code the equivalents below name, indented; line 9 holds it again, unindented.
+  const SOURCE = ['', '', '', '', '    a === b && c === d', '', '', '', 'a === b && c === d'].join('\n');
+  const report = (...mutants: ReturnType<typeof mutant>[]) => ({ files: { 'src/x.ts': { mutants, source: SOURCE } } });
+  const eqAt = (at: number) => ({ file: 'src/x.ts', code: 'a === b && c === d', at, mutator: 'EqualityOperator', replacement: 'a !== b', why: 'x' });
 
   it('scores the killed and timed out out of all it could have, and passes at the floor', () => {
     const r = judge('src/x.ts', report(...Array(9).fill(mutant('Killed')), mutant('Survived'), mutant('CompileError')), [], 90);
@@ -106,17 +115,24 @@ describe('the judge of a file\'s report says NO', () => {
   });
 
   it('leaves out a survivor written as equivalent, and fails an equivalent that names none', () => {
-    const eq = { file: 'src/x.ts', line: 5, column: 1, mutator: 'EqualityOperator', replacement: 'a !== b', why: 'x' };
-    const r = judge('src/x.ts', report(...Array(9).fill(mutant('Killed')), mutant('Survived', 5)), [eq], 90);
+    const eq = eqAt(1);
+    const r = judge('src/x.ts', report(...Array(9).fill(mutant('Killed')), mutant('Survived', 5, 'EqualityOperator', 'a !== b', 5)), [eq], 90);
     expect(r).toMatchObject({ score: 100, equivalent: 1, fault: null });
     const stale = judge('src/x.ts', report(...Array(9).fill(mutant('Killed'))), [eq], 90);
     expect(stale.fault).toBe('1 equivalent(s) name no survivor');
   });
 
   it('excuses only the mutant at its own column: the same change elsewhere on the line still counts', () => {
-    const eq = { file: 'src/x.ts', line: 5, column: 1, mutator: 'EqualityOperator', replacement: 'a !== b', why: 'x' };
-    const r = judge('src/x.ts', report(...Array(8).fill(mutant('Killed')), mutant('Survived', 5), mutant('Survived', 5, 'EqualityOperator', 'a !== b', 9)), [eq], 90);
+    const r = judge('src/x.ts', report(...Array(8).fill(mutant('Killed')), mutant('Survived', 5, 'EqualityOperator', 'a !== b', 5), mutant('Survived', 5, 'EqualityOperator', 'a !== b', 15)), [eqAt(1)], 90);
     expect(r).toMatchObject({ equivalent: 1, survived: 1, fault: '88.88% is under 90%' });
+  });
+
+  it('keeps naming a survivor whose line moved, by its code, and never one on a line of other code', () => {
+    // The code is on line 9 now, unindented: the column there is 1, as 5 was under four spaces.
+    const moved = judge('src/x.ts', report(...Array(9).fill(mutant('Killed')), mutant('Survived', 9, 'EqualityOperator', 'a !== b', 1)), [eqAt(1)], 90);
+    expect(moved).toMatchObject({ score: 100, equivalent: 1, fault: null });
+    const elsewhere = judge('src/x.ts', report(...Array(9).fill(mutant('Killed')), mutant('Survived', 2, 'EqualityOperator', 'a !== b', 1)), [eqAt(1)], 90);
+    expect(elsewhere).toMatchObject({ equivalent: 0, survived: 1, fault: '1 equivalent(s) name no survivor' });
   });
 
   it('to a file with no report', () => {

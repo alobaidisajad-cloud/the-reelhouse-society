@@ -31,9 +31,11 @@ env:
 - runFlow: ../subflows/open_the_stub.yaml
 - tapOn:
     id: "film-act-log"
+# The sheet stands once its seal does; the field may begin below a short
+# phone's screen.
 - extendedWaitUntil:
     visible:
-      id: "review-input"
+      id: "submit-log-button"
     timeout: 15000
 - scrollUntilVisible:
     element:
@@ -70,8 +72,13 @@ env:
 - extendedWaitUntil:
     visible: "EDIT YOUR LOG"
     timeout: 45000
-- tapOn:
-    id: "profile-tab"
+# The film page has no tab bar: the profile is opened by its link, and
+# stands once its tabs do.
+- openLink: "reelhouse://profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-tab"
+    timeout: 30000
 - scrollUntilVisible:
     element:
       id: "collection-card-watchlist"

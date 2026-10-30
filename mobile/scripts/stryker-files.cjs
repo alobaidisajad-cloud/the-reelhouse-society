@@ -14,8 +14,9 @@
  *
  * A file's score is Stryker's: the mutants its tests killed or timed out, out of those they could
  * have (a mutant that does not compile or cannot run counts neither way). A survivor written in
- * register/stryker-equivalents.yaml (its file, line, column, mutator and replacement, with why no test can
- * tell it apart) counts neither way too; an entry that matches no survivor is stale, and fails.
+ * register/stryker-equivalents.yaml (its file, its line's code and column in it, mutator and replacement,
+ * with why no test can tell it apart) counts neither way too; an entry that matches no survivor is stale,
+ * and fails.
  * Exit 1 when a file is under the floor, an entry is stale, or a file's run did not finish.
  */
 const { spawnSync } = require('child_process');
@@ -32,8 +33,18 @@ const reportOf = (file) => join(MOBILE, 'reports', 'stryker', `${slugOf(file)}.j
 const DETECTED = ['Killed', 'Timeout'];
 const UNDETECTED = ['Survived', 'NoCoverage'];
 
-/** Whether an equivalents entry names this mutant: its file, start line and column, mutator and replacement. */
-const names = (e, file, m) => e.file === file && e.line === m.location.start.line && e.column === m.location.start.column && e.mutator === m.mutatorName && e.replacement === m.replacement;
+/**
+ * Where a mutant stands, as an equivalent names it: its line's code, read from the source Stryker
+ * mutated (indentation and line end aside), and its column in that code. Never the line's number:
+ * three lines written above timeAgo's left eight entries naming no survivor (nightly 40473942587).
+ */
+const placeOf = (lines, m) => {
+  const raw = lines[m.location.start.line - 1] ?? '';
+  return { code: raw.trim(), at: m.location.start.column - (raw.length - raw.trimStart().length) };
+};
+
+/** Whether an equivalents entry names this mutant: its file, its code and column there, mutator and replacement. */
+const names = (e, file, place, m) => e.file === file && e.code === place.code && e.at === place.at && e.mutator === m.mutatorName && e.replacement === m.replacement;
 
 /**
  * A file's verdict from its report: its score, its counts, the survivors no equivalent names (to
@@ -43,11 +54,13 @@ const judge = (file, report, equivalents, floor) => {
   const mutants = report.files?.[file]?.mutants;
   if (!mutants) return { file, score: null, fault: 'no report for it' };
   const mine = equivalents.filter((e) => e.file === file);
+  const lines = String(report.files[file].source ?? '').split('\n');
   const undetected = mutants.filter((m) => UNDETECTED.includes(m.status));
-  const equivalent = undetected.filter((m) => mine.some((e) => names(e, file, m)));
+  const named = (e, m) => names(e, file, placeOf(lines, m), m);
+  const equivalent = undetected.filter((m) => mine.some((e) => named(e, m)));
   const left = undetected.filter((m) => !equivalent.includes(m));
   const detected = mutants.filter((m) => DETECTED.includes(m.status)).length;
-  const stale = mine.filter((e) => !undetected.some((m) => names(e, file, m)));
+  const stale = mine.filter((e) => !undetected.some((m) => named(e, m)));
   const score = detected + left.length ? Math.floor((detected / (detected + left.length)) * 10000) / 100 : 100;
   return {
     file, score, killed: detected, survived: left.length, equivalent: equivalent.length, stale,
@@ -117,7 +130,7 @@ if (require.main === module) {
   for (const v of verdicts) {
     console.log(`${v.fault ? '✗' : '✓'} ${String(v.score ?? '—').padStart(6)}%  ${v.file}${v.fault ? `  — ${v.fault}` : ''}`);
     for (const l of v.left ?? []) console.log(`      survives: ${l}`);
-    for (const s of v.stale ?? []) console.log(`      stale equivalent: ${s.file}:${s.line} ${s.mutator}`);
+    for (const s of v.stale ?? []) console.log(`      stale equivalent: ${s.file} ${s.mutator} at ${s.at} of: ${s.code}`);
   }
   const out = arg('--results');
   if (out) writeFileSync(out, `${JSON.stringify(verdicts.map(({ file, score, killed, survived, equivalent }) => ({ file, score, killed, survived, equivalent })), null, 2)}\n`);

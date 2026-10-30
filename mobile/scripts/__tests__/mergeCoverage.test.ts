@@ -99,7 +99,10 @@ it('says yes as jest does when every floor is met', () => {
 }, 120_000);
 
 it('refuses to judge a part that kept no coverage, or a file that is not coverage, by name', () => {
-  const missing = merge(join(root, 'part-1', 'coverage-final.json'), join(root, 'part-9', 'coverage-final.json'));
+  // A part of its own that kept coverage, so the missing one is named whichever test ran first
+  // (in random order the parts the tests above write were not there yet, seed -303375169).
+  write('kept/coverage-final.json', '{}');
+  const missing = merge(join(root, 'kept', 'coverage-final.json'), join(root, 'part-9', 'coverage-final.json'));
   expect({ code: missing.code, out: missing.out.trim() }).toEqual({
     code: 2, out: `✗ ${join(root, 'part-9', 'coverage-final.json')} does not exist: that part kept no coverage`,
   });
