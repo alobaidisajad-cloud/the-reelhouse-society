@@ -27,11 +27,19 @@ env:
       TO: "1.3"
 - waitForAnimationToEnd:
     timeout: 8000
+# The room stands once its page does; the words are scrolled to: a draft
+# taken up is said above the form, and the field may sit below the screen.
 - extendedWaitUntil:
     visible:
+      id: "edit-profile"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
       id: "edit-profile-bio"
       text: ${WORDS}
-    timeout: 20000
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
 
 - runFlow:
     file: ../subflows/phone.yaml
@@ -40,8 +48,16 @@ env:
       TO: "560"
 - waitForAnimationToEnd:
     timeout: 8000
+# The room stands once its page does; the words are scrolled to: a draft
+# taken up is said above the form, and the field may sit below the screen.
 - extendedWaitUntil:
     visible:
+      id: "edit-profile"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
       id: "edit-profile-bio"
       text: ${WORDS}
-    timeout: 20000
+    direction: DOWN
+    centerElement: true
+    timeout: 60000

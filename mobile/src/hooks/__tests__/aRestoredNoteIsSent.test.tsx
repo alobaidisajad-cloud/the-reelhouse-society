@@ -34,7 +34,7 @@ it('the note in a restored draft is sent when the record is sealed', async () =>
   expect(result.current.privateNotes).toBe('Saw it with Dad.');
 
   await act(async () => { await result.current.handleLog(); });
-  expect(addLog).toHaveBeenCalledWith(expect.objectContaining({ privateNotes: 'Saw it with Dad.' }));
+  expect(addLog).toHaveBeenCalledWith(expect.objectContaining({ privateNotes: 'Saw it with Dad.' }), { onKeptAhead: expect.any(Function) });
 });
 
 it('a log draft as build 41 saved it opens whole, and is sealed as written (savedJsonOpensWhole)', async () => {
@@ -51,7 +51,7 @@ it('a log draft as build 41 saved it opens whole, and is sealed as written (save
   const r = result.current;
   expect([r.film?.title, r.review, r.rating, r.privateNotes]).toEqual(['Metropolis', 'The machine.', 4.5, 'Saw it at the Castro.']);
   await act(async () => { await result.current.handleLog(); });
-  expect(addLog).toHaveBeenCalledWith(expect.objectContaining({ review: 'The machine.', rating: 4.5, privateNotes: 'Saw it at the Castro.' }));
+  expect(addLog).toHaveBeenCalledWith(expect.objectContaining({ review: 'The machine.', rating: 4.5, privateNotes: 'Saw it at the Castro.' }), { onKeptAhead: expect.any(Function) });
   clearDraft(member, 'log');
 });
 

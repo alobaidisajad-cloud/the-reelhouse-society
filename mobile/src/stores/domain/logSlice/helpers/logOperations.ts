@@ -312,7 +312,7 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
     return { queuedOffline: merge?.queuedOffline === true };
 };
 
-export const addLogOp = async (set: SetState, get: GetState, log: Partial<DomainLog>) => {
+export const addLogOp = async (set: SetState, get: GetState, log: Partial<DomainLog>, opts?: { onKeptAhead?: () => void }) => {
         const user = useAuthStore.getState().user;
         if (!user) return;
 
@@ -389,6 +389,8 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             // Kept as the member who is signed in now, or not at all.
             if (!stillSignedIn(user.id)) return;
             const keptAhead = enqueueMutation({ type: 'add_log', payload }, { ahead: true });
+            // Kept: the record is the queue's now, and the form's draft of it has done its work.
+            if (keptAhead) opts?.onKeptAhead?.();
             const { data, error } = await supabase.from('logs').insert([payload]).select().single();
             if (keptAhead && !(error && isNetworkError(error))) letSentGo('add_log', payload.id);
             // Left mid-write: not shown, where it would be the next member's.

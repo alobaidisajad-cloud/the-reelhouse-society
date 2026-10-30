@@ -190,7 +190,7 @@ export function EditProfileScreen() {
       </View>
 
       <FormProvider {...form}>
-        <ScrollView contentContainerStyle={[st.scrollContent, { paddingBottom: end }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+        <ScrollView testID="edit-profile" contentContainerStyle={[st.scrollContent, { paddingBottom: end }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
 
         {!!submitError && (
           <Arrive name="editprofilescreen-1" duration={300} style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder, borderRadius: 4, marginBottom: 16, marginHorizontal: 16 }}>

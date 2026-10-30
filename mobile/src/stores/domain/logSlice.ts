@@ -62,7 +62,8 @@ export const logSliceInitialState = (): LogSliceData => ({
 export interface LogSlice extends LogSliceData {
     /** True when the read was answered (or there was nothing to read); false when it failed. */
     fetchLogs: (loadMore?: boolean) => Promise<boolean>;
-    addLog: (log: Partial<DomainLog>) => Promise<void>;
+    /** `onKeptAhead`: the new log is kept on the phone, before its send (its draft may go). */
+    addLog: (log: Partial<DomainLog>, opts?: { onKeptAhead?: () => void }) => Promise<void>;
     /** `held`: the record as its editor read it, when the phone holds it nowhere else. */
     updateLog: (id: string, updates: Partial<DomainLog>, held?: DomainLog) => Promise<void>;
     /** Throws when the record is not in hand: whether it goes or a viewing does turns on it. */
@@ -75,7 +76,7 @@ export const createLogSlice: StateCreator<FilmState, [], [], LogSlice> = (set, g
     ...logSliceInitialState(),
 
     fetchLogs: async (loadMore = false) => fetchLogsOp(set, get, loadMore),
-    addLog: async (log) => addLogOp(set, get, log),
+    addLog: async (log, opts) => addLogOp(set, get, log, opts),
     // Awaited rather than returned: updateLogOp reports whether it queued the
     // write offline, but that is only for internal STEP callers, which call the
     // helper directly. The public action stays Promise<void>.

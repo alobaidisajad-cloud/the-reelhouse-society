@@ -574,7 +574,14 @@ export function useLogFlow() {
             });
             const isNewEntry = !(isEditing && editLogId);
             if (isEditing && editLogId) { await updateLog(editLogId, logData, edited ?? undefined); }
-            else { await addLog(logData); }
+            else {
+                // Kept on the phone for sending: the record is the queue's, and its draft goes now, with
+                // any write of it still waiting. An app ended mid-send reopens no sheet to seal it twice.
+                await addLog(logData, { onKeptAhead: () => {
+                    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+                    clearDraft(user?.id, 'log');
+                } });
+            }
             clearDraft(user?.id, 'log');
             TactileEngine.success();
             e2eTrace('log.seal.saved');
@@ -600,6 +607,10 @@ export function useLogFlow() {
             return;
         } catch (err: unknown) {
             e2eTrace('log.seal.failed', { code: (err as { code?: string })?.code ?? null, network: isNetworkError(err) });
+            // Not sealed: the words are on the phone again, as the form still holds them.
+            if (!editLogId && filmId && (review.trim() || rating > 0 || privateNotes.trim())) {
+                writeDraft(user?.id, 'log', { filmId, review, rating, privateNotes, filmTitle, filmName, filmPoster, filmYear });
+            }
             // The core write's failures surface here; a network one is queued, not a defect.
             if (!isNetworkError(err)) {
                 captureError(err, { scope: 'useLogFlow.handleLog', isEditing, filmId: film?.id });
