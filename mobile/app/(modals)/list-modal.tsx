@@ -129,7 +129,7 @@ const ListFilmItem = React.memo(({ item, index, count, drag, isActive, moving, s
                         </PressableScale>
                     </View>
                 ) : !sealed ? (
-                    <PressableScale onPress={() => onRemove(item.id)} style={s.removeBtn} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel={`Remove ${item.title}`}>
+                    <PressableScale touch="destructive" onPress={() => onRemove(item.id)} style={s.removeBtn} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel={`Remove ${item.title}`}>
                         <X size={14} color={colors.crimson} />
                     </PressableScale>
                 ) : null}
@@ -460,7 +460,7 @@ export default function ListModal() {
                         {isAmending ? 'Amend a Stack' : 'Curate a Stack'}
                     </Text>
                 </View>
-                <PressableScale onPress={() => { nav.back(); }} style={s.closeBtn} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Close list modal">
+                <PressableScale touch="wayOut" onPress={() => { nav.back(); }} style={s.closeBtn} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Close list modal">
                     <X size={16} color={colors.fog} />
                     <Text style={s.closeBtnText}>CLOSE</Text>
                 </PressableScale>

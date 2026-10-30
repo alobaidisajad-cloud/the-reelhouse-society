@@ -189,12 +189,12 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
 
             <View style={s.footer}>
               {!isFinal ? (
-                <PressableScale style={s.nextBtn} onPress={handleNext} haptic="selection" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Next">
+                <PressableScale room style={s.nextBtn} onPress={handleNext} haptic="selection" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Next">
                   <Text style={s.nextText}>NEXT&nbsp; →</Text>
                 </PressableScale>
               ) : <View style={s.footerSpacer} />}
 
-              <PressableScale onPress={handleQuiet} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Enter quietly: skip to the Lobby" testID="initiation-enter-quietly">
+              <PressableScale room onPress={handleQuiet} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Enter quietly: skip to the Lobby" testID="initiation-enter-quietly">
                 <Text style={s.quietText}>ENTER QUIETLY</Text>
               </PressableScale>
             </View>

@@ -99,7 +99,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
             accessibilityLabel="Search films by title, director, or actor"
           />
           {inputVal.length > 0 && (
-            <PressableScale onPress={handleClearSearch} style={s.clearBtn} accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="light">
+            <PressableScale room onPress={handleClearSearch} style={s.clearBtn} accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="light">
               <X size={16} color={colors.fog} />
             </PressableScale>
           )}

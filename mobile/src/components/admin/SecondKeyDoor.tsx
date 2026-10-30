@@ -54,7 +54,7 @@ function Room({ children }: { children: React.ReactNode }) {
       <RoomLight room="default" />
       <LinearGradient colors={['rgba(180,45,45,0.10)', colors.ink]} style={[StyleSheet.absoluteFill, WASH]} />
       <ScrollView contentContainerStyle={[s.page, { paddingTop: top, paddingBottom: bottom }]} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-        <PressableScale onPress={() => nav.back()} style={s.backBtn} haptic="selection" pressedScale={0.92} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button" accessibilityLabel="Go back">
+        <PressableScale touch="wayOut" onPress={() => nav.back()} style={s.backBtn} haptic="selection" pressedScale={0.92} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button" accessibilityLabel="Go back">
           <ArrowLeft size={20} color={colors.bone} />
         </PressableScale>
         <KeyRound size={28} color={colors.crimson} style={s.mark} />

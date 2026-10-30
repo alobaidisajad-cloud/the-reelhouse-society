@@ -144,7 +144,7 @@ export default function ResetPasswordScreen() {
             <Text style={s.successBody}>
               Your reset link has expired or was already used.{"\n"}Please request a new one.
             </Text>
-            <PressableScale
+            <PressableScale touch="commit"
               style={[s.submitBtn, { marginTop: 20 }]}
               onPress={() => nav.replace('/login', { action: 'forgot_password' })}
               pressedScale={0.97}
@@ -183,7 +183,7 @@ export default function ResetPasswordScreen() {
         {/* Close / Back — abandoning a pending recovery destroys the session:
             a recovery link alone must never leave the user signed in with an
             unchanged password. */}
-        <PressableScale
+        <PressableScale touch="wayOut"
           style={[s.backBtn, { top: headerTop }]}
           onPress={async () => {
             if (storage.getString('recovery_pending') === 'true') {
@@ -243,7 +243,7 @@ export default function ResetPasswordScreen() {
                 accessibilityLabel="New password"
                 accessibilityHint={wrongWith('password')}
               />
-              <PressableScale
+              <PressableScale room
                 style={s.showBtn}
                 onPress={() => setShowPassword(v => !v)}
                 hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}

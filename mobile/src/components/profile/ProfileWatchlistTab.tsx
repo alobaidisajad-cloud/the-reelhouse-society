@@ -192,7 +192,9 @@ export default function ProfileWatchlistTab({
       <>
         {/* Only with a choice to make: the Oracle picks from what is shown. */}
         {isSelf && watchlistFiltered.length > 1 && (
-          <PressableScale style={s.oracleCta} onPress={() => setRouletteOpen(true)} haptic accessibilityRole="button" accessibilityLabel="Consult the Oracle's Choice — let the archive pick tonight's film">
+          <PressableScale
+            // Past 48 both ways, it needs no halo: one would reach the search below.
+            style={s.oracleCta} hitSlop={null} onPress={() => setRouletteOpen(true)} haptic accessibilityRole="button" accessibilityLabel="Consult the Oracle's Choice — let the archive pick tonight's film">
             <View style={s.oracleCtaPerf}>
               {[0, 1, 2].map(i => <View key={i} style={s.oracleCtaHole} />)}
             </View>

@@ -41,7 +41,7 @@ const SLOP_ABOVE_A_WAY_OUT = { ...SLOP, ...TRY_AGAIN_ABOVE_A_WAY_OUT } as const;
 /** The way in, as every door that asks a stranger to identify themselves draws it. */
 export function IdentifyYourself({ next, testID, aboveAWayOut = false }: { next?: string; testID?: string; aboveAWayOut?: boolean }) {
   return (
-    <PressableScale
+    <PressableScale room
       testID={testID}
       style={s.cta}
       onPress={() => nav.push(next ? `/login?next=${encodeURIComponent(next)}` : '/login')}

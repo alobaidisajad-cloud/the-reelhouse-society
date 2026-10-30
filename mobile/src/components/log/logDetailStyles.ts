@@ -58,7 +58,8 @@ export const s = StyleSheet.create({
   // (mockups/tools/layout.cjs); "FROM THE PERMANENT RECORD" did not.
   eyebrowWrap: { position: 'absolute', top: 0, bottom: 0, left: 104, right: 104, alignItems: 'center', justifyContent: 'center' },
   eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
-  shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  // 48 wide whether it says SHARE or is still preparing: it never grows into MORE beside it.
+  shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, minWidth: 48 },
   shareBtnText: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 1.2, includeFontPadding: false },
   moreBtn: { paddingHorizontal: 2, paddingVertical: 8 },
 

@@ -541,7 +541,7 @@ function PlateAction({ Icon, label, hint, destructive, onPress }: {
     onPress: () => void;
 }) {
     return (
-        <PressableScale
+        <PressableScale touch="destructive"
             style={s.plateAction}
             onPress={onPress}
             // Stacked flush, hairline apart, and one of them removes a film.
@@ -668,10 +668,12 @@ const s = StyleSheet.create({
 
     plateEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.9, color: colors.sepia, textAlign: 'center' },
     plateTitle: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, color: colors.parchment, textAlign: 'center', marginTop: 6, marginBottom: 16 },
+    // 48 by its own box, stacked flush: neither grows into the next.
     plateAction: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 14,
+        minHeight: 48,
         paddingVertical: 14,
         paddingHorizontal: 4,
         borderTopWidth: 1,

@@ -36,7 +36,7 @@ function StateShell({ closeTop, children }: { closeTop: number; children: React.
       <RoomLight room="member" />
       <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFill, WASH]} />
       {children}
-      <PressableScale style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
+      <PressableScale touch="wayOut" style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
       </PressableScale>
     </View>
@@ -270,7 +270,7 @@ export default function YearInCinemaScreen() {
       >
         {slides.map((item, index) => <Fragment key={`${item}-${index}`}>{renderSlide({ item, index })}</Fragment>)}
       </ScrollView>
-      <PressableScale style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
+      <PressableScale touch="wayOut" style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
       </PressableScale>
     </View>

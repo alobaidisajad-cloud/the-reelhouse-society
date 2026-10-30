@@ -450,7 +450,7 @@ const pressablesPlain = [
   edit(PRESS_FILE, '  const animatedStyle = useAnimatedStyle(() => ({\n    transform: [{ scale: scale.value }],\n  }));\n', ''),
   edit(PRESS_FILE, '    <AnimatedPressable\n', '    <Pressable\n'),
   edit(PRESS_FILE, '    </AnimatedPressable>\n', '    </Pressable>\n'),
-  edit(PRESS_FILE, '      style={[style, animatedStyle]}\n', '      style={style}\n'),
+  edit(PRESS_FILE, '      style={[grown ? grown.outer : style, animatedStyle]}\n', '      style={grown ? grown.outer : style}\n'),
 ];
 const postIconsGone = [edit(POST_FILE, "import { Heart, MessageSquare, Share2, Bookmark } from 'lucide-react-native';\n",
   'const Heart = (_: object) => null;\nconst MessageSquare = Heart;\nconst Share2 = Heart;\nconst Bookmark = Heart;\n')];

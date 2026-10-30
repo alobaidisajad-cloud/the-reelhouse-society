@@ -1,0 +1,125 @@
+# Every control that carries a touch weight (DECISIONS 4; PressableScale `touch`): <file> · <label as written> · <weight>.
+# aSlipThatCostsHasItsRoom.test.ts fails when a weighted site is not listed here, or a line here is no longer a
+# weighted site. Written by `node mockups/tools/touch-weights.cjs --write`; read the diff before committing it.
+
+app/(admin)/tribunal.tsx · Ban member · destructive
+app/(admin)/tribunal.tsx · Bulk dismiss … · destructive
+app/(admin)/tribunal.tsx · Close · wayOut
+app/(admin)/tribunal.tsx · Dismiss report · destructive
+app/(admin)/tribunal.tsx · Execute … · destructive
+app/(admin)/tribunal.tsx · Go back · wayOut
+app/(admin)/tribunal.tsx · Permanent exile: ban this member for good · destructive
+app/(admin)/tribunal.tsx · Remove the reported content · destructive
+app/(admin)/tribunal.tsx · Suspend member · destructive
+app/(admin)/tribunal.tsx · Warn: issue a warning · destructive
+app/(modals)/cover-picker.tsx · Close · wayOut
+app/(modals)/list-modal.tsx · Close list modal · wayOut
+app/(modals)/list-modal.tsx · Remove … · destructive
+app/(modals)/log-modal.tsx · Back to search · wayOut
+app/(modals)/log-modal.tsx · Close · wayOut
+app/(modals)/login.tsx · Close login · wayOut
+app/(modals)/membership.tsx · Go back · wayOut
+app/(modals)/membership.tsx · {isRestoring ? 'Restoring purchases' : 'Restore purchases'} · commit
+app/(modals)/notifications-modal.tsx · Close notices · wayOut
+app/(modals)/notifications-modal.tsx · Dismiss grouped notice · destructive
+app/(modals)/notifications-modal.tsx · Dismiss notice · destructive
+app/(modals)/search-modal.tsx · Cancel: close search · wayOut
+app/(modals)/social-modal.tsx · Close social modal · wayOut
+app/dispatch/[id].tsx · Close, without sharing · wayOut
+app/dispatch/compose.tsx · Cancel, and leave the writing room · wayOut
+app/dispatch/compose.tsx · {isPublishing ? 'Filing the essay' : !ready ? 'File the essay. Not ready yet — it needs a title and a body' : edit ? 'Re-file the essay' : 'File the essay'} · commit
+app/film-reviews/[id].tsx · Go back · wayOut
+app/log/[id].tsx · Go back · wayOut
+app/log/[id].tsx · {wayOut} · wayOut
+app/lounge/[id].tsx · Back · wayOut
+app/lounge/[id].tsx · Cancel the reply · wayOut
+app/lounge/[id].tsx · Send the dispatch · commit
+app/lounge/[id].tsx · {wayOut} · wayOut
+app/person/[id].tsx · Go back · wayOut
+app/person/[id].tsx · Go back · wayOut
+app/person/[id].tsx · Go back · wayOut
+app/reset-password.tsx · Back to lobby · wayOut
+app/reset-password.tsx · Request new reset link · commit
+app/stacks/[id].tsx · Close critiques · wayOut
+app/stacks/[id].tsx · Close critiques · wayOut
+app/stacks/[id].tsx · Delete stack · destructive
+app/stacks/[id].tsx · Go back · wayOut
+app/user/[username].tsx · Go back · wayOut
+app/user/[username].tsx · Go back · wayOut
+app/user/[username].tsx · {!followKnown ? (followingKnown === 'failed' ? 'Ask again: your follows could not be read' : 'Reading whether you follow this member') : isFollowing ? 'Following: unfollow this member' : isRequested ? 'Requested: the follow request is sent' : targetUser.is_social_private ? 'Request to follow this member' : 'Follow this member'} · commit
+app/year-in-cinema.tsx · Close Year in Cinema · wayOut
+app/year-in-cinema.tsx · Close Year in Cinema · wayOut
+src/components/ShareToLoungeModal.tsx · Close · wayOut
+src/components/TryAgain.tsx · {label} · wayOut
+src/components/admin/SecondKeyDoor.tsx · Go back · wayOut
+src/components/auth/EmailConfirmationScreen.tsx · Close · wayOut
+src/components/critique/CritiqueRow.tsx · Withdraw your critique · destructive
+src/components/critique/CritiqueRow.tsx · {c.username ? `Report this critique by @${c.username}` : 'Report this critique'} · destructive
+src/components/darkroom/DarkroomCards.tsx · {isSaved ? `Remove ${item.title || 'film'} from watchlist` : `Add ${item.title || 'film'} to watchlist`} · destructive
+src/components/dispatch/ComposeDesks.tsx · Close, without naming a film · wayOut
+src/components/dispatch/SeriesPicker.tsx · Close, without setting a series · wayOut
+src/components/dispatch/paper/PaperComposer.tsx · Back, without filing · wayOut
+src/components/dispatch/paper/PaperComposer.tsx · {amending ? (canFile ? 'Amend it' : 'Amend it. Not ready yet') : (canFile ? 'File it' : 'File it. Not ready yet')} · commit
+src/components/dispatch/paper/PaperCritiques.tsx · Back · wayOut
+src/components/dispatch/paper/PaperCritiques.tsx · Report this critique · destructive
+src/components/dispatch/paper/PaperCritiques.tsx · Withdraw this critique · destructive
+src/components/dispatch/paper/PaperCritiques.tsx · {empty ? 'File this critique. Write something first.' : 'File this critique'} · commit
+src/components/dispatch/paper/PaperCritiques.tsx · {keepReading ? 'Save. Reading your mark' : saved ? 'Saved' : 'Save'} · commit
+src/components/dispatch/paper/PaperDesk.tsx · Back, without filing · wayOut
+src/components/dispatch/paper/PaperDesk.tsx · Remove … · destructive
+src/components/dispatch/paper/PaperDesk.tsx · {ready ? 'File it' : 'File it. Not ready yet'} · commit
+src/components/dispatch/paper/PaperFrame.tsx · {label} · commit
+src/components/dispatch/paper/PaperMore.tsx · Back · wayOut
+src/components/dispatch/paper/PaperPost.tsx · {!canKeep ? `Save this. ${whyNot(keepReading)}` : saved ? 'Saved' : 'Save this'} · commit
+src/components/feed/ActionDeck.tsx · {isOwner ? 'Edit this log' : filmSaved ? 'Saved: remove the film from your watchlist' : 'Save film to your watchlist'} · commit
+src/components/film/FilmDetailLayout.tsx · Go back · wayOut
+src/components/film/FilmDetailLayout.tsx · Go back · wayOut
+src/components/film/FilmDetailLayout.tsx · {wayOut === 'GO BACK' ? 'Go back' : 'Return to the Lobby'} · wayOut
+src/components/film/FilmScrollHeader.tsx · Go back · wayOut
+src/components/film/ShareCardModal.tsx · Close · wayOut
+src/components/film/TrailerModal.tsx · Close · wayOut
+src/components/layout/ConciergeButton.tsx · Close · wayOut
+src/components/layout/ConciergeButton.tsx · Create · commit
+src/components/layout/ConciergeButton.tsx · File to the Dispatch · commit
+src/components/log/LogActionDeck.tsx · {filmSaved ? 'Saved: remove the film from your watchlist' : 'Save film to your watchlist'} · commit
+src/components/log/LogForm.tsx · Cancel: keep this log · wayOut
+src/components/log/LogForm.tsx · Delete this entire log · destructive
+src/components/log/LogForm.tsx · Discard this draft · destructive
+src/components/log/LogForm.tsx · Remove this note · destructive
+src/components/log/NoteSheet.tsx · Close the note · wayOut
+src/components/log/NoteSheet.tsx · Remove this note · destructive
+src/components/lounge/ActionSheet.tsx · Close · wayOut
+src/components/lounge/AtTheDoorPanel.tsx · Admit … · commit
+src/components/lounge/AtTheDoorPanel.tsx · Close · wayOut
+src/components/lounge/AtTheDoorPanel.tsx · Decline … · destructive
+src/components/lounge/CreateLoungeSheet.tsx · Cancel · wayOut
+src/components/lounge/CreateLoungeSheet.tsx · Close sheet · wayOut
+src/components/lounge/LoungeGate.tsx · Join the Society — free. Opens sign up. · commit
+src/components/lounge/LoungeSettingsPanel.tsx · Close · wayOut
+src/components/lounge/LoungeSettingsPanel.tsx · Remove salon cover · destructive
+src/components/moderation/ContentActionSheet.tsx · Close action sheet · wayOut
+src/components/moderation/ContentActionSheet.tsx · {option.accessibilityLabel} · destructive
+src/components/moderation/ReportSheet.tsx · Dismiss report form · wayOut
+src/components/moderation/ReportSheet.tsx · File report · commit
+src/components/profile/AvatarCropSheet.tsx · Close · wayOut
+src/components/profile/CinemaDNACard.tsx · Close cinema DNA · wayOut
+src/components/profile/FollowRequestsPanel.tsx · Admit … · commit
+src/components/profile/FollowRequestsPanel.tsx · Close · wayOut
+src/components/profile/FollowRequestsPanel.tsx · Decline all remaining requests · destructive
+src/components/profile/FollowRequestsPanel.tsx · Decline … · destructive
+src/components/profile/ProfileTriptych.tsx · {label} · destructive
+src/components/profile/RoomParts.tsx · Back to the member file · wayOut
+src/components/profile/WatchlistRoulette.tsx · Close the oracle · wayOut
+src/components/society/PurchaseDock.tsx · {busy ? 'Processing purchase' : `${cta.charAt(0)}${cta.slice(1).toLowerCase()}, ${price}`} · commit
+src/components/society/SmallPrint.tsx · {spoken} · {role === 'button' ? 'commit' : undefined}
+src/features/profile/EditProfileScreen.tsx · Go back · wayOut
+src/features/profile/EditProfileScreen.tsx · Remove portrait · destructive
+src/features/profile/EditProfileScreen.tsx · {saving ? 'Saving profile' : 'Save profile changes'} · commit
+src/features/profile/LinksEditor.tsx · Remove link · destructive
+src/features/settings/SettingsScreen.tsx · Cancel · wayOut
+src/features/settings/SettingsScreen.tsx · DELETE ACCOUNT · destructive
+src/features/settings/SettingsScreen.tsx · Go back · wayOut
+src/features/settings/SettingsScreen.tsx · SIGN OUT · destructive
+src/features/settings/SettingsScreen.tsx · {resendIn > 0 ? `Send a new code. Available in ${counted(resendIn, 'second', 'seconds')}.` : 'Send a new code'} · commit
+src/features/settings/SettingsSections.tsx · Sign out of other devices: every one but this phone · destructive
+src/features/settings/SettingsSections.tsx · {label} · {touch}

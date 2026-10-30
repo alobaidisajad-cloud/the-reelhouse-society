@@ -177,7 +177,7 @@ export default function SearchModal() {
     const c = counts[t.key] as number;
     const Icon = t.icon;
     return (
-      <PressableScale
+      <PressableScale room
         key={t.key}
         style={[st.tabBtn, active && st.tabActive]}
         onPress={() => { TactileEngine.selection(); setTab(t.key); }}
@@ -233,12 +233,12 @@ export default function SearchModal() {
             onSubmitEditing={() => Keyboard.dismiss()}
           />
           {query.length > 0 && (
-            <PressableScale onPress={() => handleQueryChange('')} style={st.clearBtn} hitSlop={{top: 15, right: 15, bottom: 15, left: 15}} haptic="light" accessibilityRole="button" accessibilityLabel="Clear search">
+            <PressableScale room onPress={() => handleQueryChange('')} style={st.clearBtn} hitSlop={{top: 15, right: 15, bottom: 15, left: 15}} haptic="light" accessibilityRole="button" accessibilityLabel="Clear search">
               <X size={14} color={colors.fog} />
             </PressableScale>
           )}
         </View>
-        <PressableScale onPress={() => nav.back()} style={st.cancelWrap} hitSlop={12} haptic="light" accessibilityRole="button" accessibilityLabel="Cancel: close search">
+        <PressableScale touch="wayOut" onPress={() => nav.back()} style={st.cancelWrap} hitSlop={12} haptic="light" accessibilityRole="button" accessibilityLabel="Cancel: close search">
           <Text style={st.cancelText}>CANCEL</Text>
         </PressableScale>
       </View>

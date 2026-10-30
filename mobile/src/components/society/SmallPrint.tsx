@@ -22,7 +22,10 @@ export const STORE = Platform.OS === 'android'
   ? { name: 'Google Play', account: 'Google account', settings: 'Google Play settings' }
   : { name: 'the App Store', account: 'Apple ID', settings: 'App Store settings' };
 
-/** One of the house's small-print doors: a full 44pt target, underlined. */
+/**
+ * One of the house's small-print doors: 48pt a side, underlined. A button here restores or manages
+ * a purchase, and carries the weight of a step that spends; a link only opens a page.
+ */
 export const SmallPrintLink = memo(function SmallPrintLink({ label, spoken, role, onPress, disabled, busy }: {
   label: string;
   spoken: string;
@@ -32,7 +35,7 @@ export const SmallPrintLink = memo(function SmallPrintLink({ label, spoken, role
   busy?: boolean;
 }) {
   return (
-    <PressableScale
+    <PressableScale touch={role === 'button' ? 'commit' : undefined} room
       style={s.link}
       onPress={onPress}
       disabled={disabled}
@@ -90,7 +93,8 @@ export const SmallPrint = memo(function SmallPrint({
 const s = StyleSheet.create({
   wrap: { paddingHorizontal: 22, paddingTop: 34, alignItems: 'center' },
   print: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.fog, textAlign: 'center' },
-  links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 20, marginTop: 8 },
+  // rowGap: a wrapped line of links grows 2 above and below to 48, and meets the next, not crosses it.
+  links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 20, rowGap: 4, marginTop: 8 },
   link: { minHeight: 44, justifyContent: 'center' },
   linkText: {
     fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1.5, color: colors.bone,

@@ -206,7 +206,7 @@ export function ContentActionSheet({
         {/* Backdrop */}
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
           <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
-            <PressableScale
+            <PressableScale touch="wayOut"
               style={styles.backdrop}
               onPress={onClose}
               accessibilityLabel="Close action sheet"
@@ -235,6 +235,8 @@ export function ContentActionSheet({
               return (
                 <PressableScale
                   key={option.key}
+                  // Every option reports, blocks or mutes: each a step a slip costs.
+                  touch="destructive"
                   style={[styles.optionRow, isLast && styles.optionRowLast]}
                   // PressableScale's default 15pt slop makes adjacent rows
                   // OVERLAP by 30pt, and the later row wins — so the bottom of

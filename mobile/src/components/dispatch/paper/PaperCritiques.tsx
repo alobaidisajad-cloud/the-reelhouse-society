@@ -84,16 +84,17 @@ export const CritiqueSpine = memo(function CritiqueSpine({
   const top = usePushedHeaderTop();
   return (
     <View style={[p.spine, { paddingTop: top }]}>
-      <PressableScale
+      <PressableScale touch="wayOut"
         style={p.spineBack} onPress={onBack} haptic="selection"
         hitSlop={{ top: 8, bottom: 8, left: 6, right: 0 }}
         accessibilityRole="button" accessibilityLabel="Back"
       >
         <ArrowLeft size={15} strokeWidth={2} color={colors.sepia} />
       </PressableScale>
-      <PressableScale
+      <PressableScale room
         style={p.spineBody} onPress={onTop} haptic="selection"
-        hitSlop={{ top: 8, bottom: 8, left: 0, right: 6 }}
+        // Wide enough without one sideways: MORE beside it grows to 48 across the gap.
+        hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
         accessibilityRole="button"
         accessibilityLabel={`${nameOf(kind)}: ${opening}. Back to the top. ${counted(count ?? 0, 'critique', 'critiques')}.`}
       >
@@ -107,7 +108,7 @@ export const CritiqueSpine = memo(function CritiqueSpine({
           three do not reach into one another. The bar was already divided into
           "leave" and "go to the top"; this is "do something to it". */}
       {onMore ? (
-        <PressableScale
+        <PressableScale room
           style={p.spineMore} onPress={onMore} haptic="selection"
           hitSlop={{ top: 8, bottom: 8, left: 0, right: 6 }}
           accessibilityRole="button" accessibilityLabel="More, for this filing"
@@ -130,12 +131,10 @@ export const CritiqueHead = memo(function CritiqueHead({
       </Text>
       <View style={p.critiqueSortRow}>
         {(['NEWEST', 'CERTIFIED'] as const).map((o) => (
-          <PressableScale
+          <PressableScale room
             key={o} onPress={() => onOrder?.(o)} haptic="selection"
-            // Down, only the 4pt to what follows (critiqueHead marginBottom):
-            // the foot's READ MORE can sit right there, and 10 reached 6pt into
-            // it. Nothing beneath reaches up, so all 4 are this pair's. Sideways,
-            // half the 8pt between the two.
+            // Up and down it grows to 48 into critiqueHead's 19 (room), its halo
+            // gone there. Sideways, half the 8pt between the two.
             hitSlop={{ top: 10, bottom: 4, left: 4, right: 4 }}
             accessibilityRole="button"
             accessibilityState={{ selected: o === order }}
@@ -197,7 +196,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
         <Text style={[p.commentBody, isRTLText(c.body) && p.rtlText]} {...scaledTextProps}>{softBreak(c.body)}</Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <PressableScale
+          <PressableScale room
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 8, marginLeft: -8 }}
             hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic
             // Absent for a signed-out reader, and an absent handler is not a
@@ -229,7 +228,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
           </PressableScale>
           <Text style={[p.commentMeta, { marginTop: 0 }]} {...scaledTextProps}>{c.age}</Text>
           {canTake && !c.mine ? (
-            <PressableScale
+            <PressableScale room
               style={{ paddingVertical: 8 }} hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic="medium"
               onPress={onTake}
               accessibilityRole="button" accessibilityLabel={`Take this one${c.film?.title ? `, ${c.film.title},` : ''} as your answer`}
@@ -250,7 +249,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
               something looks like one, on every page that has one. */}
           <View style={{ flex: 1 }} />
           {c.mine && onDelete ? (
-            <PressableScale
+            <PressableScale touch="destructive"
               style={{ paddingVertical: 8, paddingHorizontal: 8, marginRight: -8 }}
               // `medium`, not a warning tap. The confirmation is where the
               // weight belongs; this control only opens it, and a heavy knock
@@ -263,7 +262,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
               <Text style={p.critiqueWithdraw} {...scaledTextProps}>WITHDRAW</Text>
             </PressableScale>
           ) : !c.mine && onReport ? (
-            <PressableScale
+            <PressableScale touch="destructive"
               style={{ paddingVertical: 8, paddingHorizontal: 8, marginRight: -8 }}
               hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic
               onPress={onReport}
@@ -396,7 +395,7 @@ export const CritiqueComposer = memo(function CritiqueComposer({
           {left}
         </Text>
       ) : null}
-      <PressableScale
+      <PressableScale touch="commit"
         style={[p.btn, { paddingVertical: 8, paddingHorizontal: 12 }, empty && UNREADY.plate]}
         haptic="medium"
         hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
@@ -469,7 +468,7 @@ export const PostDock = memo(function PostDock({
         <Share2 size={14} strokeWidth={2} color={colors.fog} />
         <Text style={p.actionLabel} {...actionLabelProps}>SHARE</Text>
       </PressableScale>
-      <PressableScale style={p.action} hitSlop={SLOP} haptic onPress={keepReading ? undefined : () => onSave?.(!saved)}
+      <PressableScale touch="commit" style={p.action} hitSlop={SLOP} haptic onPress={keepReading ? undefined : () => onSave?.(!saved)}
         disabled={keepReading}
         accessibilityRole="button" accessibilityState={{ selected: isSaved, disabled: keepReading, busy: keepReading }}
         accessibilityLabel={keepReading ? 'Save. Reading your mark' : saved ? 'Saved' : 'Save'}>

@@ -42,7 +42,7 @@ export function RoomPlate({
   return (
     <>
       <View style={r.plate}>
-        <PressableScale
+        <PressableScale touch="wayOut"
           onPress={onBack}
           style={r.plateBack}
           // Icon-only: with no text child it would announce nothing at all,
@@ -104,7 +104,7 @@ export function RoomChip({
   children?: React.ReactNode;
 }) {
   return (
-    <PressableScale
+    <PressableScale room="vertical"
       style={[r.chip, on && r.chipOn]}
       onPress={onPress}
       // Half the gap sideways so two chips meet without overlapping; the rest
@@ -179,7 +179,7 @@ export function RoomSearch({ value, onChange, onClear, placeholder, a11y, ember 
         spellCheck={false}
       />
       {value.length > 0 && (
-        <PressableScale
+        <PressableScale room
           onPress={onClear}
           style={r.searchClear}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}

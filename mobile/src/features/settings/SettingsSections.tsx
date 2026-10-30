@@ -11,7 +11,7 @@ import {
 import { SUPPORT_EMAIL } from '@/src/constants/support';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { scaledTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
-import PressableScale from '@/src/components/PressableScale';
+import PressableScale, { type TouchWeight } from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { getPushPermissionState, registerForPushNotifications, requestPushPermission, type PushPermissionState } from '@/src/lib/pushNotifications';
 
@@ -106,8 +106,10 @@ export const RadioOption = ({ selected, label, description, onPress, disabled }:
   </PressableScale>
 );
 
-export const ActionBtn = ({ icon: Icon, label, onPress, danger }: { icon: import('lucide-react-native').LucideIcon; label: string; onPress: () => void; danger?: boolean }) => (
+/** `touch`: the weight of an action a slip costs (signing out, deleting the account). */
+export const ActionBtn = ({ icon: Icon, label, onPress, danger, touch }: { icon: import('lucide-react-native').LucideIcon; label: string; onPress: () => void; danger?: boolean; touch?: TouchWeight }) => (
   <PressableScale
+    touch={touch}
     style={[st.actionBtn, danger && st.actionBtnDanger]}
     onPress={onPress}
     hitSlop={null}
@@ -422,7 +424,7 @@ export function PasswordChangePanel() {
           )}
         </View>
       )}
-      <PressableScale
+      <PressableScale touch="destructive"
         style={st.actionBtnSpaced}
         onPress={askToEndOthers}
         disabled={endingOthers}

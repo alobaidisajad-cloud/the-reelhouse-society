@@ -34,7 +34,8 @@
  *            over half the screen or more (a sheet that is not a Modal);
  *   COLOUR   (only with `--kinds COLOUR`) a chosen control differs from its unchosen
  *            sibling in nothing but colour;
- *   SMALL    (only with `--kinds SMALL`) its own box is under 48pt a side.
+ *   SMALL    (only with `--kinds SMALL`) its own box is under 48pt a side when its slip costs
+ *            something (`data-touch`); any other is under 24, or a finger reaches under 48.
  *
  * And every view (by its React Native style, drawn with MOCKUPS_YOGA=1):
  *
@@ -398,7 +399,10 @@ async function audit(page) {
       const cs = getComputedStyle(e);
       const edge = (side) => parseFloat(cs[`border${side}Width`]) || 0;
       const probe = document.createElement('div');
-      probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;top:${-(t + edge('Top'))}px;`
+      // max-width/max-height none: the page's column rule (harness RN_RULES) caps a child at its
+      // parent's width, and the browser writes this style back as "position: absolute", which
+      // the rule's exemption does not read: a halo wider than its control was cut to the control.
+      probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;max-width:none;max-height:none;top:${-(t + edge('Top'))}px;`
         + `left:${-(l + edge('Left'))}px;right:${-(rt + edge('Right'))}px;bottom:${-(b + edge('Bottom'))}px`;
       // The probe is placed from the control's own box, which needs it positioned
       // (every drawn view is; a hand-made page may not be) — for the measurement only.
@@ -559,21 +563,87 @@ async function audit(page) {
       const said = (e) => (e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 32);
       found.push({ kind: 'COLOUR', text: `"${said(on)}" is told chosen from "${said(off)}" by colour alone` + (on.dataset.src ? ` [${on.dataset.src}]` : ''), size: 0, by: '' });
     }
-    // SMALL (`--kinds SMALL`): a control whose OWN box is under 48pt a side. A halo is
+    // SMALL (`--kinds SMALL`): a control too small by its weight (below). A halo is
     // invisible to both accessibility layers (iOS reports the frame; RN installs no
-    // Android touch delegate). Part of a larger named control is not one.
+    // Android touch delegate), so the floors are the OWN box. Part of a larger named control is not one.
     const excused = (e) => ALLOW.some(({ file, label, lines }) => (e.dataset.src || '').replace(/:\d+$/, '') === file
       && (!label || new RegExp(label).test(e.getAttribute('aria-label') || ''))
       && (!lines || lines.includes(Number((e.dataset.src || '').split(':').pop()))));
+    // DECISIONS 4: a control whose slip costs something (`data-touch`, PressableScale's weight)
+    // needs its own box at 48; any other needs 24, and a finger's reach of 48 on each axis. The
+    // reach is the halo as the phone delivers it: cut to each ancestor's bounds, widened only where
+    // the control's own frame sticks out of one (no touch arrives past a parent's bounds), and cut
+    // to the bounds of any ancestor that clips.
+    // The reach, and the first box that cut it (named in the finding, so it says why).
+    const reachOf = (c) => {
+      const x = { ...c.x };
+      let cutBy = '';
+      // The way the nearest scroller between the control and `a` scrolls ('v', 'h', or none).
+      const scrolled = (a) => {
+        for (let s = c.e.parentElement; s && s !== a; s = s.parentElement) {
+          if (s.matches('.vscroll')) return 'v';
+          if (s.matches('.hscroll')) return 'h';
+        }
+        return a.matches('.vscroll') ? 'v' : a.matches('.hscroll') ? 'h' : null;
+      };
+      for (let a = c.e.parentElement; a && a !== document.body; a = a.parentElement) {
+        const r = a.getBoundingClientRect();
+        // A box of no size (the drawing's holder for a sheet, laid over the screen) bounds nothing.
+        if (r.width === 0 || r.height === 0) continue;
+        const clips = getComputedStyle(a).overflow !== 'visible';
+        const loose = { left: Math.min(r.left, c.r.left), right: Math.max(r.right, c.r.right), top: Math.min(r.top, c.r.top), bottom: Math.max(r.bottom, c.r.bottom) };
+        // A scroller, and a clipping box that holds one, clip only across the way it scrolls:
+        // along it, a control is scrolled to (the drawing lays a scroll out as one tall page).
+        const way = clips ? scrolled(a) : null;
+        const b = !clips ? loose
+          : way === 'v' ? { ...loose, left: r.left, right: r.right }
+            : way === 'h' ? { ...loose, top: r.top, bottom: r.bottom } : r;
+        const was = `${x.left},${x.right},${x.top},${x.bottom}`;
+        x.left = Math.max(x.left, b.left); x.right = Math.min(x.right, b.right);
+        x.top = Math.max(x.top, b.top); x.bottom = Math.min(x.bottom, b.bottom);
+        if (!cutBy && was !== `${x.left},${x.right},${x.top},${x.bottom}`) {
+          cutBy = `${a.dataset.src || a.dataset.t || a.className || 'a box'} ${Math.round(r.width)}×${Math.round(r.height)}${clips ? ' (clips)' : ''}`;
+        }
+      }
+      return { w: Math.max(0, x.right - x.left), h: Math.max(0, x.bottom - x.top), cutBy };
+    };
+    // A size is the size at rest: every transform (an entrance caught part way, a press) is
+    // flattened while the controls are measured, and put back after.
+    const turned = [...document.querySelectorAll('*')].filter((n) => {
+      const t = getComputedStyle(n).transform;
+      return t && t !== 'none' && !new DOMMatrix(t).isIdentity;
+    });
+    const kept = turned.map((n) => n.style.transform);
+    turned.forEach((n) => n.style.setProperty('transform', 'none', 'important'));
+    const onScreen = controls.map((c) => [c.r, c.x]);
+    for (const c of controls) { c.r = c.e.getBoundingClientRect(); c.x = haloOf(c.e); }
     for (const c of controls) {
       if (c.e.closest('[aria-hidden="true"]') || c.e.parentElement?.closest('[data-accessible][aria-label]')) continue;
       if (excused(c.e)) continue;
-      if (c.r.width < 48 - 0.5 || c.r.height < 48 - 0.5) {
-        found.push({ kind: 'SMALL', text: (c.e.getAttribute('aria-label') || say(c.e) || 'a control') + (c.e.dataset.src ? ` [${c.e.dataset.src}]` : ''), size: 0, by: `${c.r.width.toFixed(0)}×${c.r.height.toFixed(0)}` });
+      // Drawn without its marks (a test that stands in its own PressableScale, or builds the control
+      // outside any component): its weight and growth are unknown here, so it is judged where the
+      // app draws it marked.
+      if (!c.e.dataset.src) continue;
+      const name = (c.e.getAttribute('aria-label') || say(c.e) || 'a control') + (c.e.dataset.src ? ` [${c.e.dataset.src}]` : '');
+      const own = `${c.r.width.toFixed(0)}×${c.r.height.toFixed(0)}`;
+      const under = (n) => c.r.width < n - 0.5 || c.r.height < n - 0.5;
+      if (c.e.dataset.touch) {
+        if (under(48)) found.push({ kind: 'SMALL', text: name, size: 0, by: `${own}, ${c.e.dataset.touch} (48)` });
+        continue;
       }
+      if (under(24)) { found.push({ kind: 'SMALL', text: name, size: 0, by: `${own} (24)` }); continue; }
+      const reach = reachOf(c);
+      if (reach.w < 48 - 0.5 || reach.h < 48 - 0.5) found.push({ kind: 'SMALL', text: name, size: 0, by: `${own}, reach ${reach.w.toFixed(0)}×${reach.h.toFixed(0)} (48)${reach.cutBy ? `, cut by ${reach.cutBy}` : ''}` });
     }
+    turned.forEach((n, i) => { n.style.removeProperty('transform'); if (kept[i]) n.style.transform = kept[i]; });
+    controls.forEach((c, i) => { [c.r, c.x] = onScreen[i]; });
     const layerOf = (e) => e.closest('.vscroll, .hscroll, [data-t="modal"]');
     const within = (p, q) => p.left >= q.left - 0.5 && p.right <= q.right + 0.5 && p.top >= q.top - 0.5 && p.bottom <= q.bottom + 0.5;
+    /** A control's box less the growth it was given to reach 48 (harness growTouches). */
+    const drawnOf = (c) => {
+      const [v, h] = (c.e.dataset.grown || '0,0').split(',').map(Number);
+      return { left: c.r.left + h, right: c.r.right - h, top: c.r.top + v, bottom: c.r.bottom - v };
+    };
     const nameOf = (e) => (e.getAttribute('aria-label') || e.dataset.t || say(e) || 'a control') + (e.dataset.src ? ` [${e.dataset.src}]` : '');
     // MEASURED: each file (`data-src`) with a control within 30pt of another, near
     // enough for default halos to meet, so an overlap there would have been seen.
@@ -601,7 +671,9 @@ async function audit(page) {
           const A = controls[i], B = controls[j];
           if ((A.ctx === B.ctx && A.ctx !== '') !== same) continue;
           if (A.e.contains(B.e) || B.e.contains(A.e) || layerOf(A.e) !== layerOf(B.e)) continue;
-          if (within(A.r, B.r) || within(B.r, A.r)) continue;
+          // Set on another as it is drawn: a control grown to 48 (data-grown) is judged by the box
+          // it draws, not the growth no one sees.
+          if (within(drawnOf(A), B.r) || within(drawnOf(B), A.r)) continue;
           if (near(A, B)) for (const c of [A, B]) if (c.e.dataset.src) measured.add(c.e.dataset.src);
           const w = Math.min(A.x.right, B.x.right) - Math.max(A.x.left, B.x.left);
           const h = Math.min(A.x.bottom, B.x.bottom) - Math.max(A.x.top, B.x.top);

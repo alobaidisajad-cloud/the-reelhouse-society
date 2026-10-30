@@ -126,7 +126,7 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSe
                         {coverageNote(ready, tally, isSelf) ?? (isSelf ? 'Your cinematic fingerprint' : 'A cinematic fingerprint')}
                     </Text>
                 </View>
-                <PressableScale onPress={handleShare} style={s.shareBtn} haptic accessibilityRole="button" accessibilityLabel={isSelf ? 'Share your taste profile' : 'Share this taste profile'} accessibilityState={{ busy: isSharing }}>
+                <PressableScale room onPress={handleShare} style={s.shareBtn} haptic accessibilityRole="button" accessibilityLabel={isSelf ? 'Share your taste profile' : 'Share this taste profile'} accessibilityState={{ busy: isSharing }}>
                     <Share2 size={16} color={isSharing ? colors.sepia : colors.fog} />
                 </PressableScale>
             </View>

@@ -62,7 +62,7 @@ const STATUS_CONFIG = {
  */
 const DirectorCard = memo(function DirectorCard({ director }: { director: { id: number; name: string; profile_path?: string | null } }) {
   return (
-    <PressableScale
+    <PressableScale room
       onPress={() => { TactileEngine.selection(); nav.push(`/person/${director.id}`); }}
       pressedScale={0.98}
       hitSlop={{ top: 8, bottom: 8, left: 20, right: 20 }}
@@ -341,7 +341,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
             light must not move when the page arrives. */}
         <RoomLight room="film" hem={BACKDROP_H} />
         <Animated.View style={[s.floatingBack, { top: headerTop, zIndex: 100 }]}>
-          <PressableScale onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityLabel="Go back">
+          <PressableScale touch="wayOut" style={s.backTouch} onPress={goBack} accessibilityLabel="Go back">
             <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
         </Animated.View>
@@ -369,7 +369,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         <Buster size={80} mood="suspicious" style={s.notFoundBuster} />
         <Text style={s.notFoundTitle}>Not in the Archive</Text>
         <Text style={s.notFoundBody}>This reel could not be found. It may have been withdrawn from circulation.</Text>
-        <PressableScale style={s.backBtn} onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityRole="button" accessibilityLabel={wayOut === 'GO BACK' ? 'Go back' : 'Return to the Lobby'}>
+        <PressableScale touch="wayOut" style={s.backBtn} onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityRole="button" accessibilityLabel={wayOut === 'GO BACK' ? 'Go back' : 'Return to the Lobby'}>
           <View style={s.ctaIconRow}>
             <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
             <Text style={s.backBtnText}>{wayOut}</Text>
@@ -405,7 +405,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         style={[s.floatingBack, { top: headerTop }, immersiveAnimatedStyle]}
         importantForAccessibility={trayOpen ? 'no-hide-descendants' : 'auto'}
       >
-        <PressableScale onPress={goBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} accessibilityLabel="Go back">
+        <PressableScale touch="wayOut" style={s.backTouch} onPress={goBack} accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
         </PressableScale>
       </Animated.View>
@@ -618,6 +618,8 @@ const s = StyleSheet.create({
    * and the stub (70): the scrim covers everything except the tray and the
    * handle that raised it, never a way off the film while its acts are open.
    */
+  // The circle's inside (its 1pt border off), so the way back grows a known 7 each side to 48.
+  backTouch: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   floatingBack: { position: 'absolute', top: 54, left: 16, zIndex: 50, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.sepiaBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8, alignItems: 'center', justifyContent: 'center' },
   /** Your own critique: a brass edge rather than a box, so it reads as yours
       at a glance without needing a second label to say so. */

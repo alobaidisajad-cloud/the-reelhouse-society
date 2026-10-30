@@ -87,7 +87,7 @@ export const CritiqueRow = React.memo(function CritiqueRow({
         {/* A critique outlives its author: deleting an account keeps the words and
             drops the name, leaving user_id null and the handle a tombstone. There
             is no profile behind it, so the byline never behaves like a button. */}
-        <PressableScale
+        <PressableScale room
           style={s.commentByline}
           onPress={linked ? () => onPressUser(c.username) : undefined}
           disabled={!linked}
@@ -112,7 +112,7 @@ export const CritiqueRow = React.memo(function CritiqueRow({
       </View>
       <Text style={[s.commBody, isRTLText(c.body) && s.rtlText]} {...scaledTextProps} selectable>{c.body}</Text>
       {mine ? (
-        <PressableScale
+        <PressableScale touch="destructive"
           onPress={() => askToWithdrawCritique(() => onWithdraw(c.id))}
           style={s.commActionBtn}
           hitSlop={HITSLOP_ACTION}
@@ -128,7 +128,7 @@ export const CritiqueRow = React.memo(function CritiqueRow({
           </Text>
         </PressableScale>
       ) : reportable(c, currentUserId) && onReport ? (
-        <PressableScale
+        <PressableScale touch="destructive"
           onPress={() => onReport(c)}
           style={s.commActionBtn}
           hitSlop={HITSLOP_ACTION}

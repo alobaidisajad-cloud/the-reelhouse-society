@@ -59,7 +59,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
             <DoorOpen size={18} color={colors.sepia} strokeWidth={1.5} />
             <Text style={s.title}>At the Door</Text>
           </View>
-          <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Close">
+          <PressableScale touch="wayOut" onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Close">
             <X size={20} color={colors.fog} strokeWidth={1.5} />
           </PressableScale>
         </View>
@@ -77,7 +77,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
                   <RemoteImage uri={m.avatar_url} style={s.avatarImg} contentFit="cover" transition={150} fallback={<Users size={14} color={colors.fog} strokeWidth={1.5} />} />
                 </View>
                 <Text style={s.name} numberOfLines={1}>@{m.username?.toUpperCase()}</Text>
-                <PressableScale hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
+                <PressableScale touch="destructive" hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
                   style={[s.btn, s.declineBtn]}
                   onPress={() => act(m.user_id, false)}
                   disabled={busy === m.user_id}
@@ -87,7 +87,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
                 >
                   <X size={14} color={BLOOD} strokeWidth={2} />
                 </PressableScale>
-                <PressableScale hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
+                <PressableScale touch="commit" hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
                   style={[s.btn, s.admitBtn]}
                   onPress={() => act(m.user_id, true)}
                   disabled={busy === m.user_id}

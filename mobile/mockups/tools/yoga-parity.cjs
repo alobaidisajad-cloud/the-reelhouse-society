@@ -193,7 +193,7 @@ function readTree() {
   const report = [];
   const empty = [];
   for (const screen of names) {
-    const page = await open(browser, path.join(SRC, screen + '.html'), { width: PHONE_W, factor: FACTOR, platform: PLATFORM });
+    const page = await open(browser, path.join(SRC, screen + '.html'), { width: PHONE_W, factor: FACTOR, platform: PLATFORM, settle: false });
     const tree = await page.evaluate(readTree);
     await page.close();
     const root = Yoga.Node.create(config);

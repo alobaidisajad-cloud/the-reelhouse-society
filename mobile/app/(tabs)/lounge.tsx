@@ -276,7 +276,7 @@ export default function LoungeScreen() {
               spellCheck={false}
             />
             {searchQuery.length > 0 && (
-              <PressableScale onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
+              <PressableScale room onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
                 accessibilityRole="button" accessibilityLabel="Clear the search">
                 <X size={14} color={colors.fog} strokeWidth={1.5} />
               </PressableScale>
@@ -288,7 +288,7 @@ export default function LoungeScreen() {
               is SHOWN to everyone and answers honestly rather than being
               hidden. A member who cannot found one still learns it is possible,
               which is the entire point of the rope over the vanish. */}
-          <PressableScale
+          <PressableScale room
             style={s.btnPrimary}
             onPress={establish}
             haptic="medium"

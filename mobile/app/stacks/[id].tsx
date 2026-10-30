@@ -192,7 +192,7 @@ const StackNav = React.memo(function StackNav({
                 )}
             </View>
             <View style={s.navInner}>
-                <PressableScale onPress={onBack} style={s.backBtn} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Go back">
+                <PressableScale touch="wayOut" onPress={onBack} style={s.backBtn} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Go back">
                     <ArrowLeft size={20} color={colors.bone} />
                 </PressableScale>
                 {children ?? <View />}
@@ -847,7 +847,7 @@ export default function StackDetailScreen() {
             <PressableScale style={s.actionBtn} onPress={() => { (router.push as any)({ pathname: '/list-modal', params: { editId: id } } as import('expo-router').Href); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Edit stack">
               <Edit3 size={18} color={colors.fog} />
             </PressableScale>
-            <PressableScale style={s.actionBtn} onPress={handleDelete} hitSlop={null} haptic="medium" accessibilityRole="button" accessibilityLabel="Delete stack">
+            <PressableScale touch="destructive" style={s.actionBtn} onPress={handleDelete} hitSlop={null} haptic="medium" accessibilityRole="button" accessibilityLabel="Delete stack">
               {/* The crimson that reads (the pigment was 2.9:1 on the bar). */}
               <Trash2 size={18} color={colors.crimsonInk} />
             </PressableScale>
@@ -958,7 +958,7 @@ export default function StackDetailScreen() {
                       {list.description}
                     </Text>
                     {descNeedsFold && (
-                      <PressableScale onPress={() => { TactileEngine.selection(); setDescExpanded(p => !p); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel={descExpanded ? 'Fold: collapse the description' : 'Read more: expand the description'}>
+                      <PressableScale room onPress={() => { TactileEngine.selection(); setDescExpanded(p => !p); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel={descExpanded ? 'Fold: collapse the description' : 'Read more: expand the description'}>
                         <Text style={s.descToggle}>{descExpanded ? 'FOLD ▴' : 'READ MORE ▾'}</Text>
                       </PressableScale>
                     )}
@@ -1034,7 +1034,7 @@ export default function StackDetailScreen() {
           sits below the chrome; the dimmed strip above it closes it. */}
       {showComments && (
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-          <PressableScale
+          <PressableScale touch="wayOut"
             style={[s.critiqueBackdrop, { height: navBottom }]}
             onPress={handleToggleComments}
             hitSlop={null}
@@ -1053,7 +1053,7 @@ export default function StackDetailScreen() {
               {sheetCount ? (
                 <View style={s.critiqueCountChip}><Text style={s.critiqueCountText}>{sheetCount}</Text></View>
               ) : null}
-              <PressableScale style={s.critiqueClose} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Close critiques">
+              <PressableScale touch="wayOut" style={s.critiqueClose} onPress={handleToggleComments} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Close critiques">
                 <X size={16} color={colors.fog} />
               </PressableScale>
             </View>

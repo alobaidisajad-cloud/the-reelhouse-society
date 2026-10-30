@@ -59,7 +59,7 @@ export const FilmScrollHeader = memo(function FilmScrollHeader({
       pointerEvents="box-none"
     >
       <View style={s.bar} pointerEvents="box-none">
-        <PressableScale
+        <PressableScale touch="wayOut"
           onPress={onBack}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           accessibilityRole="button"

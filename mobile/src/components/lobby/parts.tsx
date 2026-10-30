@@ -92,7 +92,7 @@ export const Person = memo(function Person({ author, size = 22, nameStyle, style
 }) {
   const rank = rankWord(rankOf(author));
   return (
-    <PressableScale
+    <PressableScale room
       style={[s.person, style]}
       hitSlop={hitSlop}
       onPress={() => nav.push(`/user/${author.username}`)}

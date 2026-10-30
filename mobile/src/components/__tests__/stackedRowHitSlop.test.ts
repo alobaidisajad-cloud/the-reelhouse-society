@@ -114,7 +114,7 @@ const MEASURED_NOW: [file: string, what: string][] = [
 ];
 
 /** TopNavBar's icons are an Animated Pressable, which the scanner cannot see: checked apart. */
-const NAV_CLUSTER_GAP = 6;
+const NAV_CLUSTER_GAP = 10;
 
 const AXIS_SIDES: Record<Axis, [string, string]> = { x: ['left', 'right'], y: ['top', 'bottom'] };
 

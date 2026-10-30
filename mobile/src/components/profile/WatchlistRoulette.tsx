@@ -274,7 +274,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                         )}
 
                         {/* Close button */}
-                        <PressableScale style={s.closeBtn} onPress={close} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close the oracle">
+                        <PressableScale touch="wayOut" style={s.closeBtn} onPress={close} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close the oracle">
                             <Text {...scaledTextProps} style={s.closeBtnText}>{'✕'}</Text>
                         </PressableScale>
                     </View>

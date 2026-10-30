@@ -63,11 +63,11 @@ const NavIconButton = memo(function NavIconButton({
         onPress();
       }}
       style={[styles.iconButton, accent && styles.iconButtonAccent, animatedStyle]}
-      // Horizontal slop is 3, not 8, because sideCluster sets gap: 6 and these
-      // buttons sit shoulder to shoulder. At 8 each pair overlapped by 10pt and
-      // the later sibling took it — the right edge of Search opened Notices.
-      // Half the gap is the most either may claim; 38 + 3 + 3 lands on 44 exactly.
-      hitSlop={{ top: 8, bottom: 8, left: 3, right: 3 }}
+      // Horizontal slop is 5, half sideCluster's 10pt gap: these buttons sit
+      // shoulder to shoulder, and at 8 each pair overlapped and the later sibling
+      // took it — the right edge of Search opened Notices. Half the gap is the most
+      // either may claim; 38 + 5 + 5 lands on 48 exactly.
+      hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
     >
       <Icon
         size={size}
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   sideCluster: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
     zIndex: 2, // Above the absolute-centered logo
   },
   rightCluster: {

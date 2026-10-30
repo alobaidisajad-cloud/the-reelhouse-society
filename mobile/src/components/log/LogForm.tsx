@@ -214,7 +214,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     <View style={!curation.held && st.lockedPanel} {...inert(curation.held)}>
                     {availablePosters.length > 0 ? (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.flatListGapPad} keyboardShouldPersistTaps="handled">
-                            <PressableScale hitSlop={null} onPress={() => { setAltPoster(null); }} style={[st.pThumb, altPoster === null && st.pThumbActive]} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityState={{ selected: altPoster === null }} accessibilityLabel="Use the default poster">
+                            <PressableScale room hitSlop={null} onPress={() => { setAltPoster(null); }} style={[st.pThumb, altPoster === null && st.pThumbActive]} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityState={{ selected: altPoster === null }} accessibilityLabel="Use the default poster">
                                 {/* One word in a 46pt tile: at 1.35× it is 59pt, and the
                                     phone would break it mid-letter. It shrinks on one
                                     line instead — to 10pt at the most, the type floor. */}
@@ -457,7 +457,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                     <Text style={st.vaultKeptText} {...scaledTextProps}>
                                         Yours to keep or remove.
                                     </Text>
-                                    <PressableScale
+                                    <PressableScale touch="destructive"
                                         style={st.vaultKeptRemove}
                                         hitSlop={null}
                                         haptic="selection"
@@ -611,12 +611,12 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     already leaves without saving), and "DISCARD DRAFT" on a
                     record you are amending named something that did not exist. */}
                 {hasUnsavedChanges && !isEditing && (
-                    <PressableScale style={st.discardBtn} onPress={() => { TactileEngine.warn(); discardDraft(); nav.back(); }} disabled={submitting} hitSlop={null} haptic="heavy" accessibilityRole="button" accessibilityLabel="Discard this draft">
+                    <PressableScale touch="destructive" style={st.discardBtn} onPress={() => { TactileEngine.warn(); discardDraft(); nav.back(); }} disabled={submitting} hitSlop={null} haptic="heavy" accessibilityRole="button" accessibilityLabel="Discard this draft">
                         <Text style={[st.cancelText, { color: colors.fog }]}>DISCARD DRAFT</Text>
                     </PressableScale>
                 )}
                 {isEditing && !showDeleteConfirm && (
-                    <PressableScale style={st.deleteBtn} onPress={() => { setShowDeleteConfirm(true); }} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Delete this entire log">
+                    <PressableScale touch="destructive" style={st.deleteBtn} onPress={() => { setShowDeleteConfirm(true); }} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Delete this entire log">
                         <Trash2 size={14} color={colors.crimson} />
                         <Text style={st.deleteBtnText}>DELETE THIS ENTIRE LOG</Text>
                     </PressableScale>
@@ -626,7 +626,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         <Text style={st.deleteConfirmText}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</Text>
                         <View style={st.deleteConfirmRow}>
                             <PressableScale style={st.deleteYes} onPress={() => { TactileEngine.destroy(); handleDelete(); }} hitSlop={null} accessibilityRole="button" accessibilityLabel="Confirm delete: this log is gone for good"><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></PressableScale>
-                            <PressableScale style={st.deleteNo} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Cancel: keep this log"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
+                            <PressableScale touch="wayOut" style={st.deleteNo} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Cancel: keep this log"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
                         </View>
                     </View>
                 )}

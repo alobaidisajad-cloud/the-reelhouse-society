@@ -45,7 +45,7 @@ const RequestRow = React.memo(function RequestRow({
         <RemoteImage uri={item.avatarUrl} style={s.avatarImg} contentFit="cover" transition={150} recyclingKey={item.requesterId} fallback={<User size={15} color={colors.fog} strokeWidth={1.5} />} />
       </View>
       <Text {...scaledTextProps} style={s.name} numberOfLines={1}>@{item.username?.toUpperCase()}</Text>
-      <PressableScale
+      <PressableScale touch="destructive"
         style={[s.btn, s.declineBtn, busy && s.btnBusy]}
         onPress={() => onDecline(item)}
         disabled={busy}
@@ -56,7 +56,7 @@ const RequestRow = React.memo(function RequestRow({
       >
         <X size={14} color={colors.crimson} strokeWidth={2} />
       </PressableScale>
-      <PressableScale
+      <PressableScale touch="commit"
         style={[s.btn, s.admitBtn, busy && s.btnBusy]}
         onPress={() => onAccept(item)}
         disabled={busy}
@@ -117,7 +117,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
               <KeyRound size={18} color={colors.sepia} strokeWidth={1.5} />
               <Text {...scaledTextProps} style={s.title}>At the Door</Text>
             </View>
-            <PressableScale onPress={onClose} hitSlop={HITSLOP} haptic="selection" accessibilityRole="button" accessibilityLabel="Close">
+            <PressableScale touch="wayOut" onPress={onClose} hitSlop={HITSLOP} haptic="selection" accessibilityRole="button" accessibilityLabel="Close">
               <X size={20} color={colors.fog} strokeWidth={1.5} />
             </PressableScale>
           </View>
@@ -182,7 +182,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
           </View>
 
           {items.length > 0 && (
-            <PressableScale style={s.declineAll} onPress={confirmDeclineAll} haptic="heavy" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Decline all remaining requests">
+            <PressableScale touch="destructive" style={s.declineAll} onPress={confirmDeclineAll} haptic="heavy" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Decline all remaining requests">
               <Text {...scaledTextProps} style={s.declineAllText}>DECLINE ALL REMAINING</Text>
             </PressableScale>
           )}

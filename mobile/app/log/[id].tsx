@@ -684,7 +684,7 @@ export default function LogDetailScreen() {
       <View style={[s.container, s.centerFull]}>
         <RoomLight room="film" />
         <EmptyState buster="suspicious" title="No Such Record" subtitle="Its member withdrew it, or it was never filed." compact />
-        <PressableScale style={s.backBtnRow} onPress={() => { nav.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection" pressedScale={0.92}
+        <PressableScale touch="wayOut" style={s.backBtnRow} onPress={() => { nav.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection" pressedScale={0.92}
           accessibilityRole="button" accessibilityLabel={wayOut}>
             <ChevronLeft size={12} color={colors.bone} strokeWidth={1.5} />
             <Text style={s.backBtnText}>{wayOut.toUpperCase()}</Text>
@@ -736,7 +736,7 @@ export default function LogDetailScreen() {
 
       <View style={[s.header, { paddingTop: headerTop }]}>
         <View style={s.headerRow}>
-          <PressableScale style={s.backBtn} onPress={() => { nav.back(); }} hitSlop={{top:20,bottom:20,left:20,right:20}} haptic="selection" pressedScale={0.92} accessibilityLabel="Go back">
+          <PressableScale touch="wayOut" style={s.backBtn} onPress={() => { nav.back(); }} hitSlop={{top:20,bottom:20,left:20,right:20}} haptic="selection" pressedScale={0.92} accessibilityLabel="Go back">
             <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
 
@@ -746,16 +746,17 @@ export default function LogDetailScreen() {
           </View>
 
           <View style={s.headerRight}>
-            <PressableScale style={s.shareBtn} onPress={() => { handleShare(); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: HEADER_ACTION_GAP / 2 }} haptic="light" pressedScale={0.92}
+            <PressableScale room style={s.shareBtn} onPress={() => { handleShare(); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 0 }} haptic="light" pressedScale={0.92}
               accessibilityRole="button" accessibilityLabel={(!isReadyToShare || sharing) ? 'Share. Preparing the card.' : 'Share this log'}
               accessibilityState={{ busy: sharing }}>
                <Share2 size={14} color={colors.sepia} strokeWidth={1.5} />
                <Text style={s.shareBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(!isReadyToShare || sharing) ? '...' : 'SHARE'}</Text>
             </PressableScale>
             {!isOwner && (
-              <PressableScale
+              <PressableScale room
                 style={s.moreBtn}
                 onPress={() => setActionSheetVisible(true)}
+                // It grows to 48 (room), its box filling the gap to SHARE, which reaches none of it.
                 hitSlop={{ top: 15, bottom: 15, left: HEADER_ACTION_GAP / 2, right: 15 }}
                 haptic="selection"
                 pressedScale={0.92}

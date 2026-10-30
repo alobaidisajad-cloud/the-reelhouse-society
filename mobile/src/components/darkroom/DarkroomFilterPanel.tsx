@@ -111,7 +111,7 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
           accessibilityLabel="To the year"
         />
         {(filters.yearFrom || filters.yearTo) && (
-          <PressableScale 
+          <PressableScale room 
             onPress={() => updateFilter({ yearFrom: null, yearTo: null })} 
             style={s.yearClearBtn}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -175,10 +175,13 @@ const s = StyleSheet.create({
   filterSectionTitleSpaced: {
     marginTop: spacing.md,
   },
+  // A chip is 29 tall and grows to 48 for a finger (PressableScale `room`): wrapped rows stand 19
+  // apart so each meets the next, not crosses it; side by side, 8 is room enough.
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    columnGap: 8,
+    rowGap: 19,
   },
   yearRangeRow: {
     flexDirection: 'row',

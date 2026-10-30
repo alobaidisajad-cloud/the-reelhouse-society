@@ -409,7 +409,7 @@ export const PaperRoom = memo(function PaperRoom({
         ) : null}
       </View>
       {onFile ? (
-        <PressableScale
+        <PressableScale room
           style={m.roomFile} haptic="selection" onPress={onFile}
           /* All four sides: a partial hitSlop sets the missing ones to 0, not 15pt. */
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -457,12 +457,12 @@ export const PaperCase = memo(function PaperCase({
         </View>
       </View>
       <View style={m.verdicts}>
-        <PressableScale style={m.verdict} haptic hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
+        <PressableScale room style={m.verdict} haptic hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
           onPress={onStand}
           accessibilityRole="button" accessibilityLabel="Let it stand: the filing stays">
           <Text style={m.verdictText} {...scaledTextProps}>LET IT STAND</Text>
         </PressableScale>
-        <PressableScale style={[m.verdict, m.verdictStrike]} haptic="medium" hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
+        <PressableScale room style={[m.verdict, m.verdictStrike]} haptic="medium" hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
           onPress={onStrike}
           accessibilityRole="button" accessibilityLabel="Strike it: the filing is removed">
           <Text style={[m.verdictText, { color: CRIMSON_INK }]} {...scaledTextProps}>STRIKE IT</Text>
@@ -680,7 +680,7 @@ export const LoungeCard = memo(function LoungeCard({
   // stays for the conversation, and still opens the page and its critiques.
   if (ended) {
     return (
-      <PressableScale style={[m.bubble, m.bubbleEnded]} haptic="selection" pressedScale={0.98} onPress={onOpen} hitSlop={null}
+      <PressableScale room style={[m.bubble, m.bubbleEnded]} haptic="selection" pressedScale={0.98} onPress={onOpen} hitSlop={null}
         accessibilityRole="button"
         accessibilityLabel={`${ended === 'author' ? 'This filing was withdrawn by its author.' : 'This filing was removed by the house.'} Open this filing.`}>
         <View style={[m.loungeRule, { backgroundColor: colors.fog, opacity: 0.4 }]} />
@@ -773,7 +773,7 @@ export const NewFilings = memo(function NewFilings({
     <View style={m.newWrap} pointerEvents="box-none">
       <PresenceView name="new-filings.leave" exit={reduced ? undefined : { kind: 'FadeOut', duration: MS.quick }}>
         <Arrive name="new-filings" duration={MS.base} rise={-PILL_Y}>
-          <PressableScale style={m.newPill} haptic="medium" onPress={onPress}
+          <PressableScale room style={m.newPill} haptic="medium" onPress={onPress}
             accessibilityRole="button"
             accessibilityLabel={`${count} new ${count === 1 ? 'filing' : 'filings'}. Go to the top.`}>
             <ChevronUp size={11} strokeWidth={2.5} color={colors.ink} />
@@ -798,7 +798,7 @@ export const PaperBack = memo(function PaperBack({
   const modalTop = useModalTop();
   return (
     <View style={[m.back, { paddingTop: presented ? modalTop : pushedTop }]}>
-      <PressableScale hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} haptic="selection"
+      <PressableScale touch="wayOut" hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} haptic="selection"
         onPress={onBack}
         accessibilityRole="button" accessibilityLabel="Back">
         <ArrowLeft size={15} strokeWidth={2} color={colors.sepia} />
@@ -806,7 +806,7 @@ export const PaperBack = memo(function PaperBack({
       <Text style={m.backLabel} {...deckLabelProps}>{label}</Text>
       {/* A control, or a spacer of its width: either way the label stays centred. */}
       {onMore ? (
-        <PressableScale hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} haptic="selection"
+        <PressableScale room hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }} haptic="selection"
           onPress={onMore}
           accessibilityRole="button" accessibilityLabel="More, for this filing">
           <MoreHorizontal size={15} strokeWidth={2} color={colors.sepia} />
@@ -840,9 +840,10 @@ const m = StyleSheet.create({
     color: colors.bone, opacity: QUIET, marginTop: 4,
   },
   /** space-between, so its chevron ends at the right edge like the five forms' marks. */
+  // 48 by its own box, a hairline under the last kind: it grows into neither.
   rulesRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 12, minHeight: 48,
   },
   rulesLink: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia,

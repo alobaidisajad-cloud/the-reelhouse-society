@@ -133,7 +133,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
       <Animated.View style={[s.sheetKeyboard, animatedContainerStyle]}>
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
           <HouseBlur intensity={90} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(6,5,4,0.6)' }]}>
-            <PressableScale style={s.sheetBackdrop} onPress={handleClose} accessibilityLabel="Close sheet" />
+            <PressableScale touch="wayOut" style={s.sheetBackdrop} onPress={handleClose} accessibilityLabel="Close sheet" />
           </HouseBlur>
         </Animated.View>
 
@@ -241,7 +241,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
           </View>
 
           <View style={s.sheetActions}>
-            <PressableScale style={s.sheetBtnGhost} onPress={onClose} disabled={creating} haptic="selection" accessibilityLabel="Cancel">
+            <PressableScale touch="wayOut" style={s.sheetBtnGhost} onPress={onClose} disabled={creating} haptic="selection" accessibilityLabel="Cancel">
               <Text style={s.sheetBtnGhostText} numberOfLines={1}>[ CANCEL ]</Text>
             </PressableScale>
             <PressableScale

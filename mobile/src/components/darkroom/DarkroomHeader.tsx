@@ -24,11 +24,11 @@ import { Presence } from '@/src/components/motion/Presence';
 // Shared with DarkroomFilterPanel.
 export const Chip = React.memo(function Chip({ active, onPress, children, color }: { active: boolean; onPress: () => void; children: React.ReactNode; color?: string }) {
   return (
-    <PressableScale
+    <PressableScale room="vertical"
       onPress={onPress}
       haptic="light"
-      // Half the rows' 8pt gap: at 10 each chip reached into its neighbour, and
-      // the edge of Action chose Comedy.
+      // Half the 8pt gap between chips side by side: at 10 each chip reached into
+      // its neighbour, and the edge of Action chose Comedy. Up and down it grows.
       hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
@@ -42,7 +42,8 @@ export const Chip = React.memo(function Chip({ active, onPress, children, color 
     >
       {/* No glow on the active chip — sepia glow around ink text on a sepia
           ground was invisible mud. A crisp stamp reads better. */}
-      <Text style={[s.chipText, { color: active ? colors.ink : colors.bone }]}>
+      {/* Chosen, its words are underlined too: the stamp's colour alone does not say it to every eye. */}
+      <Text style={[s.chipText, { color: active ? colors.ink : colors.bone }, active && s.chipTextChosen]}>
         {children}
       </Text>
     </PressableScale>
@@ -286,7 +287,7 @@ export const DarkroomHeader = React.memo(() => {
           />
 
           <View style={s.filterHeader}>
-            <PressableScale 
+            <PressableScale room 
               style={[s.filterToggle, filtersVisible && s.filterToggleActive]}
               onPress={() => setFiltersVisible(!filtersVisible)}
               haptic="medium"
@@ -306,7 +307,7 @@ export const DarkroomHeader = React.memo(() => {
             </PressableScale>
 
             {activeFilterCount > 0 && (
-              <PressableScale onPress={() => { clearFilters(); setPage(1); }} haptic="light" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              <PressableScale room onPress={() => { clearFilters(); setPage(1); }} haptic="light" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button" accessibilityLabel="Clear the filters">
                 <Text style={s.clearFiltersText}>CLEAR</Text>
               </PressableScale>
@@ -361,6 +362,7 @@ const s = StyleSheet.create({
     borderRadius: 16,
     ...effects.shadowSurface,
   },
+  chipTextChosen: { textDecorationLine: 'underline' },
   chipText: {
     fontFamily: fonts.sub,
     fontSize: 10,

@@ -145,6 +145,11 @@ const CASES = {
   steal: [pair(15, 15), ALL('STEAL')],
   // the same two, each reaching half the gap: they meet, and nothing is shared
   halfgap: [pair(5, 5), {}],
+  // the earlier a column, as every view is: its halo reaches past its own width (the page's
+  // column rule once capped the halo's probe at the control, and this was clean)
+  columnsteal: [box('flex-direction:row;padding:40px;gap:3px',
+    '<div data-press="0,5,0,5" aria-label="Earlier" style="position:relative;display:flex;flex-direction:column;border:1px solid #555;width:48px;height:48px;flex-shrink:0"></div>'
+    + '<div data-press="0,0,0,0" aria-label="Later" style="width:40px;height:40px;flex-shrink:0"></div>'), ALL('STEAL')],
   // at half size the gap is 5 and each halo 2: clear (a full-size halo would meet)…
   scaleddown: [scaledPair(0.5, 4, 4), {}],
   // …and at double size the gap is 20 and each halo 12: they overlap

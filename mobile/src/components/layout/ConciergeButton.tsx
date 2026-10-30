@@ -199,7 +199,7 @@ export const ConciergeCard = memo(function ConciergeCard({
       {/* hitSlop null, for the reason two rows above: three rows a
           hairline apart, each 66pt tall, and the default 15pt would make
           every pair overlap by 30 with the later one winning. */}
-      <PressableScale style={s.actionRow} onPress={onFile} hitSlop={null} accessibilityLabel="File to the Dispatch">
+      <PressableScale touch="commit" style={s.actionRow} onPress={onFile} hitSlop={null} accessibilityLabel="File to the Dispatch">
         <View style={[s.actionIconWrap, s.actionIconFile]}>
           <PenLine size={18} color={colors.parchment} strokeWidth={1.5} />
         </View>
@@ -333,7 +333,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
       {/* The disc in the bar. Hidden while the sheet is open: its twin inside
           the Modal stands in the same place, and two discs a pixel apart would
           show a doubled edge through the scrim. */}
-      <PressableScale
+      <PressableScale touch="commit"
         style={[s.discShadow, open && s.discHidden]}
         onPress={openSheet}
         pressedScale={0.9}
@@ -386,7 +386,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
               before the card it sits above, so a screen reader reaches Close first;
               its zIndex keeps it drawn over the card and the notch. */}
           <View style={[s.discInModal, { top: btnTop }]} pointerEvents="box-none">
-            <PressableScale
+            <PressableScale touch="wayOut"
               style={s.discShadow}
               onPress={closeSheet}
               pressedScale={0.9}

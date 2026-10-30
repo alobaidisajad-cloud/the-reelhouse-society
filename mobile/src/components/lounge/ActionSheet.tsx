@@ -80,7 +80,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReaction
       <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
         <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
           {/* The sheet's only close besides a drag, so a screen reader is given it by name. */}
-          <PressableScale style={s.actionBackdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+          <PressableScale touch="wayOut" style={s.actionBackdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
             <View style={StyleSheet.absoluteFill} />
           </PressableScale>
         </HouseBlur>

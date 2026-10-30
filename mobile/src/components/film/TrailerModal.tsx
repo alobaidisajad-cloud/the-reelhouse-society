@@ -84,7 +84,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
         <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={onClose}>
                 {/* Close button — matches web: "X CLOSE" text button above video */}
-                <PressableScale style={[s.closeBtn, { top: closeTop }]} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.96}
+                <PressableScale touch="wayOut" style={[s.closeBtn, { top: closeTop }]} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.96}
                     accessibilityRole="button" accessibilityLabel="Close">
                     <X size={12} color={colors.parchment} />
                     <Text style={s.closeBtnText}>CLOSE</Text>

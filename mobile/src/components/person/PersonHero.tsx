@@ -274,7 +274,7 @@ export const PersonHero = memo(function PersonHero({
 
         {/* Beat 3 — the action. Every rank sees the door; the key marks the rope. */}
         <View>
-          <PressableScale
+          <PressableScale room
             style={s.loungeBtn}
             onPress={handleLoungeShare}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

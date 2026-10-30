@@ -43,7 +43,7 @@ const Credit = memo(function Credit({ author, keepOff }: { author: WallLog['auth
         {/* its mark's line stands CREDIT_GAP below, where an admin's switch may be: half of that down */}
         <Person author={author} hitSlop={{ bottom: CREDIT_GAP / 2 }} />
       </View>
-      <View style={s.creditLine2}>
+      <View style={[s.creditLine2, keepOff ? s.creditLine2Switch : null]}>
         <Mark author={author} />
         {keepOff}
       </View>
@@ -299,6 +299,9 @@ const s = StyleSheet.create({
   },
   creditLine: { flexDirection: 'row', alignItems: 'center', minHeight: 24 },
   creditLine2: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: CREDIT_GAP, minHeight: 18, paddingLeft: WALL.creditInset },
+  // An admin's switch stands here: the name grows 12 down to 48 and the switch 2 up, so the
+  // line stands 14 below, where they meet (a member's Lobby, with no switch, keeps CREDIT_GAP).
+  creditLine2Switch: { marginTop: 14 },
   fan: { height: 112, marginTop: 12, alignItems: 'center', justifyContent: 'flex-end' },
   fanPoster: {
     position: 'absolute', bottom: 4, width: FAN_W, height: FAN_W * 1.5,

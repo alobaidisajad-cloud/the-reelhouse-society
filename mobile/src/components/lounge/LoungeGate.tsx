@@ -51,7 +51,7 @@ export function LoungeGate({ mark }: { mark?: React.ReactNode } = {}) {
 
             {/* Sign-UP, not sign-in: the label promises membership, and a bare
                 '/login' opens the sign-in form (authRouting.test pins this). */}
-            <PressableScale
+            <PressableScale touch="commit"
               testID="lounge-gate-cta"
               style={s.gateCta}
               onPress={() => nav.push('/login', { action: 'signup' })}

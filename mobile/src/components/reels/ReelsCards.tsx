@@ -28,7 +28,7 @@ const FILAMENT = ['rgba(218,165,32,0.0)', 'rgba(218,165,32,0.3)', 'rgba(218,165,
 
 export const FilterChip = memo(function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
-    <PressableScale
+    <PressableScale room
       onPress={onPress}
       style={[st.filterChip, active ? st.filterChipActiveBorder : null]}
       hitSlop={CHIP_HALO}

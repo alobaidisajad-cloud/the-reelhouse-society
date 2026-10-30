@@ -91,7 +91,7 @@ const GROWTH = {
  * at that size (a box sized from the text size) is opened instead; its text is
  * still at base size, as the phone grows text natively, so it is grown here too.
  */
-async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH, height = heightAt(width) } = {}) {
+async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH, height = heightAt(width), settle = true } = {}) {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
   // Written as `@1.35` (iOS; larger iOS sizes reuse it) and `@android-<f>`.
   const variants = (platform === 'ios' ? [`@${Math.min(factor, 1.35)}`] : [`@${platform}-${factor}`])
@@ -128,7 +128,43 @@ async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH
     }, [factor, GROWTH[platform].toString()]);
     await page.evaluate(() => document.fonts.ready);
   }
+  if (settle) await growTouches(page);
   return page;
+}
+
+/**
+ * A control that grows (`data-grow`: a weight, or room) grown as the phone grows it once its content is measured
+ * (PressableScale's grownFor): its content is its box less the growth it was drawn with
+ * (`data-by`, from the style alone); on each axis it may grow on (`data-grow`), the padding and
+ * the margin each move by the difference between that and half what the content falls short of 48.
+ */
+async function growTouches(page) {
+  await page.evaluate((floor) => {
+    for (const e of document.querySelectorAll('[data-grow]')) {
+      const r = e.getBoundingClientRect();
+      const cs = getComputedStyle(e);
+      const [byV, byH] = (e.dataset.by || '0,0').split(',').map(Number);
+      const axes = [['v', r.height - 2 * byV, byV, ['Top', 'Bottom']], ['h', r.width - 2 * byH, byH, ['Left', 'Right']]];
+      // A minimum or maximum the box names takes in its padding too, so it moves with the growth.
+      const bounds = { v: ['minHeight', 'maxHeight'], h: ['minWidth', 'maxWidth'] };
+      const sizes = [];
+      // Grown on an axis, its halo there goes (PressableScale's `halo`): data-press is top,right,bottom,left.
+      const press = (e.dataset.press || '0,0,0,0').split(',').map(Number);
+      // What it grew by, each axis, so the drawing can tell the control drawn from its growth.
+      const grown = { v: byV, h: byH };
+      const plan = axes.filter(([axis]) => (e.dataset.grow || '').includes(axis)).flatMap(([axis, size, was, sides]) => {
+        const g = Math.max(0, (floor - size) / 2);
+        grown[axis] = g;
+        if (g > 0) for (const i of axis === 'v' ? [0, 2] : [1, 3]) press[i] = 0;
+        for (const k of bounds[axis]) if (/px$/.test(cs[k]) && parseFloat(cs[k]) > 0) sizes.push([k, parseFloat(cs[k]) + 2 * (g - was)]);
+        return sides.map((s) => [s, (parseFloat(cs[`padding${s}`]) || 0) - was + g, (parseFloat(cs[`margin${s}`]) || 0) + was - g]);
+      });
+      for (const [s, pad, m] of plan) { e.style[`padding${s}`] = `${pad}px`; e.style[`margin${s}`] = `${m}px`; }
+      for (const [k, v] of sizes) e.style[k] = `${v}px`;
+      if (e.dataset.press) e.dataset.press = press.join(',');
+      e.dataset.grown = `${grown.v},${grown.h}`;
+    }
+  }, 48);
 }
 
 /**

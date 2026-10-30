@@ -97,14 +97,14 @@ export const PaperComposer = memo(function PaperComposer({
   return (
     <View style={p.desk}>
       <View style={[p.ch, { paddingTop: top }]}>
-        <PressableScale onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
+        <PressableScale touch="wayOut" onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
           <Text style={p.chs} {...scaledTextProps}>BACK</Text>
         </PressableScale>
         <Text style={p.chm} {...decorativeTextProps}>{nameOf(kind)}</Text>
         {/* Lit only when the form is ready. A permanently bright confirm on an
             unfinished draft is a button that lies about being ready — the same
             rule DeskHead already follows, applied here so the two desks agree. */}
-        <PressableScale
+        <PressableScale touch="commit"
           onPress={blocked ? undefined : onFile} disabled={blocked}
           hitSlop={{ top: 12, bottom: 12, left: 8, right: 0 }} haptic="medium"
           accessibilityRole="button"
@@ -259,15 +259,15 @@ export const PaperComposer = memo(function PaperComposer({
       {/* Tools and the count on one rail — the count now has something to
           belong to instead of floating in the middle of the page. */}
       <View style={p.rail}>
-        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onFilm} accessibilityRole="button" accessibilityState={{ selected: !!film }} accessibilityLabel="Name a film">
+        <PressableScale room style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onFilm} accessibilityRole="button" accessibilityState={{ selected: !!film }} accessibilityLabel="Name a film">
           <FilmIcon size={13} strokeWidth={2} color={film ? colors.sepia : colors.bone} />
           <Text style={[p.rl, film && { color: colors.sepia }]} {...scaledTextProps}>FILM</Text>
         </PressableScale>
-        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onStill} accessibilityRole="button" accessibilityLabel="Add a still">
+        <PressableScale room style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onStill} accessibilityRole="button" accessibilityLabel="Add a still">
           <ImageIcon size={13} strokeWidth={2} color={colors.bone} />
           <Text style={p.rl} {...scaledTextProps}>STILL</Text>
         </PressableScale>
-        <PressableScale style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onSpoiler} accessibilityRole="button" accessibilityState={{ selected: !!spoiler }} accessibilityLabel="Mark a spoiler">
+        <PressableScale room style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onSpoiler} accessibilityRole="button" accessibilityState={{ selected: !!spoiler }} accessibilityLabel="Mark a spoiler">
           <AlertTriangle size={13} strokeWidth={2} color={spoiler ? colors.crimson : colors.bone} />
           <Text style={[p.rl, spoiler && { color: CRIMSON_INK }]} {...scaledTextProps}>SPOILER</Text>
         </PressableScale>

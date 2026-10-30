@@ -70,7 +70,7 @@ export default function LogModalScreen() {
                     <View style={st.headerLeft}>
                         {isEditing && <View style={st.editBadge}><Text style={st.editBadgeText}>EDITING</Text></View>}
                         {step === 1 && !isEditing && (
-                            <PressableScale onPress={() => { e2eTrace('log.back'); setStep(0); }} hitSlop={null} haptic="selection" style={st.backBtn} accessibilityRole="button" accessibilityLabel="Back to search">
+                            <PressableScale touch="wayOut" onPress={() => { e2eTrace('log.back'); setStep(0); }} hitSlop={null} haptic="selection" style={st.backBtn} accessibilityRole="button" accessibilityLabel="Back to search">
                                 <ChevronLeft size={20} color={colors.fog} strokeWidth={2.5} />
                             </PressableScale>
                         )}
@@ -80,7 +80,7 @@ export default function LogModalScreen() {
                             twice in four seconds. At step 1 the docket names the
                             film. The header is chrome, never content. */}
                     </View>
-                    <PressableScale onPress={() => { nav.back(); }} disabled={submitting} style={[st.closeBtn, submitting && { opacity: 0.5 }]} hitSlop={null} haptic="selection" accessibilityLabel="Close">
+                    <PressableScale touch="wayOut" onPress={() => { nav.back(); }} disabled={submitting} style={[st.closeBtn, submitting && { opacity: 0.5 }]} hitSlop={null} haptic="selection" accessibilityLabel="Close">
                         <X size={16} color={colors.fog} />
                         <Text style={st.closeBtnText}>CLOSE</Text>
                     </PressableScale>

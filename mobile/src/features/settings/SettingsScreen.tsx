@@ -505,7 +505,7 @@ export function SettingsScreen() {
         <LinearGradient colors={['rgba(184,137,26,0.15)', 'transparent', 'transparent']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
       </Animated.View>
       <View style={[st.navBar, { paddingTop: headerTop }]}>
-        <PressableScale
+        <PressableScale touch="wayOut"
           onPress={() => { if (!saving) nav.back(); }}
           style={st.navBackBtn}
           hitSlop={null}
@@ -655,9 +655,9 @@ export function SettingsScreen() {
           <SectionCard danger>
             <SectionHead icon={DoorOpen} label="ACCOUNT ACTIONS" danger />
             <View style={st.legalActions}>
-              <ActionBtn icon={LogOut} label="SIGN OUT" onPress={handleSignOut} />
+              <ActionBtn icon={LogOut} label="SIGN OUT" onPress={handleSignOut} touch="destructive" />
               <View style={st.divider} />
-              <ActionBtn icon={Trash2} label="DELETE ACCOUNT" onPress={handleDeleteAccount} danger />
+              <ActionBtn icon={Trash2} label="DELETE ACCOUNT" onPress={handleDeleteAccount} danger touch="destructive" />
             </View>
           </SectionCard>
         </Arrive>
@@ -711,7 +711,7 @@ export function SettingsScreen() {
                 accessibilityHint={otpError ?? undefined}
                 {...scaledTextProps}
               />
-              <PressableScale
+              <PressableScale touch="commit"
                 style={st.modalResend}
                 onPress={() => { sendOtp(); }}
                 disabled={otpSending || otpVerifying || resendIn > 0}
@@ -726,7 +726,7 @@ export function SettingsScreen() {
                 </Text>
               </PressableScale>
               <View style={st.modalActions}>
-                <PressableScale style={st.modalBtnCancel} disabled={otpVerifying} hitSlop={null} accessibilityRole="button" accessibilityLabel="Cancel" onPress={() => { setOtpModalVisible(false); setOtpCode(''); setOtpError(null); }}>
+                <PressableScale touch="wayOut" style={st.modalBtnCancel} disabled={otpVerifying} hitSlop={null} accessibilityRole="button" accessibilityLabel="Cancel" onPress={() => { setOtpModalVisible(false); setOtpCode(''); setOtpError(null); }}>
                   <Text style={st.modalBtnCancelText} {...scaledTextProps}>CANCEL</Text>
                 </PressableScale>
                 <PressableScale style={[st.modalBtnConfirm, (!otpCode || otpCode.length < 6) && st.disabledBtn]} hitSlop={null} onPress={handleOtpVerify} disabled={otpVerifying || !otpCode || otpCode.length < 6} accessibilityRole="button" accessibilityLabel="Verify code">

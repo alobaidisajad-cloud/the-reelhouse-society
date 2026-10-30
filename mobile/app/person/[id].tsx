@@ -383,7 +383,7 @@ export default function PersonDetailScreen() {
   if (error && !person) return (
     <View style={[s.container, s.notFoundContainer]}>
       <RoomLight room="film" />
-      <PressableScale style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
+      <PressableScale touch="wayOut" style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
       <EmptyOffline onRetry={() => { void handleRefresh(); }} />
@@ -394,7 +394,7 @@ export default function PersonDetailScreen() {
   if (loading) return (
     <View style={s.container}>
       <RoomLight room="film" hem={heroH} />
-      <PressableScale style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
+      <PressableScale touch="wayOut" style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
       <View style={[s.shimmerBackdrop, heroDynStyle]}>
@@ -453,7 +453,7 @@ export default function PersonDetailScreen() {
       </Animated.View>
 
       {/* ── Floating Back Button ── */}
-      <PressableScale
+      <PressableScale touch="wayOut"
         style={[s.floatingBack, floatingBackDynStyle]}
         onPress={handleBack}
         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}

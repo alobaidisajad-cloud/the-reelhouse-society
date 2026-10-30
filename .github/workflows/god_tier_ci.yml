@@ -745,16 +745,19 @@ jobs:
           echo "$(ls mockups/out/captured | wc -l) screens"
 
       # Every finding is one screen's, so each part judges its own. It writes the
-      # controls it measured (--sites) for captures-together's --require.
-      - name: Touch, names, bars and shadows, on every screen of this part
+      # controls it measured (--sites) for captures-together's --require. SMALL is
+      # DECISIONS 4: a control a slip on costs something is 48 by its own box, any
+      # other 24 with a finger's reach of 48, unless excepted in writing.
+      - name: Touch, sizes, names, bars and shadows, on every screen of this part
         working-directory: ./mobile
         run: |
           set +e
           node mockups/tools/layout.cjs --src mockups/out/captured --passes ios@1 \
-            --kinds STEAL,NAMELESS,UNSAID,ORDER,UNDER,SHADOW --sites sites.txt > captures.txt 2>&1
+            --kinds STEAL,SMALL,NAMELESS,UNSAID,ORDER,UNDER,SHADOW --allow mockups/touch-small-exceptions.txt \
+            --sites sites.txt > captures.txt 2>&1
           rc=$?
-          grep -E "^\s+(STEAL|NAMELESS|UNSAID|ORDER|UNDER|SHADOW)|finding|CLEAN" captures.txt
-          [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, name, reading-order, bar or shadow fault (part ${{ matrix.part }} of 3)" captures.txt error --drop 'clean +\('
+          grep -E "^\s+(STEAL|SMALL|NAMELESS|UNSAID|ORDER|UNDER|SHADOW)|finding|CLEAN" captures.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, size, name, reading-order, bar or shadow fault (part ${{ matrix.part }} of 3)" captures.txt error --drop 'clean +\('
           exit $rc
 
       - name: Keep this part's measured controls and its record

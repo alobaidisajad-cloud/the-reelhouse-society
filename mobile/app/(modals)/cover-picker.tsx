@@ -69,7 +69,7 @@ export default function CoverPicker() {
           <Text style={s.eyebrow}>✦ THE SALON COVER</Text>
           <Text style={s.title}>Choose a Cover</Text>
         </View>
-        <PressableScale
+        <PressableScale touch="wayOut"
           onPress={() => nav.back()}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           haptic="selection"

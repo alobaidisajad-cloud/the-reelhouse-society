@@ -38,7 +38,7 @@ export const UserAttributionRow = React.memo(function UserAttributionRow({ usern
   return (
     <View>
       <View style={s.row}>
-        <PressableScale onPress={onUserPress} hitSlop={s.hitSlop} haptic="selection" pressedScale={0.96} style={s.pressable} accessibilityLabel={`View profile of @${username}`}>
+        <PressableScale room onPress={onUserPress} hitSlop={s.hitSlop} haptic="selection" pressedScale={0.96} style={s.pressable} accessibilityLabel={`View profile of @${username}`}>
           <RemoteImage uri={avatarUrl} style={s.avatar} transition={150} fallback={<View style={s.avatar}>
               <Text style={s.avatarText} {...UNSPOKEN}>{initialOf(username)}</Text>
             </View>} />

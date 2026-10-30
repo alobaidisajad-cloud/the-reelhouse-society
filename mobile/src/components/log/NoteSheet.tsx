@@ -82,7 +82,7 @@ export default function NoteSheet({
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
           <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
-            <PressableScale style={styles.backdrop} onPress={onClose} accessibilityLabel="Close the note" accessibilityRole="button">
+            <PressableScale touch="wayOut" style={styles.backdrop} onPress={onClose} accessibilityLabel="Close the note" accessibilityRole="button">
               <View style={StyleSheet.absoluteFill} />
             </PressableScale>
           </HouseBlur>
@@ -122,7 +122,7 @@ export default function NoteSheet({
               </PressableScale>
             ) : null}
 
-            <PressableScale
+            <PressableScale touch="destructive"
               style={[styles.optionRow, styles.optionRowLast]}
               hitSlop={null}
               onPress={() => { TactileEngine.selection(); onRemove(); }}

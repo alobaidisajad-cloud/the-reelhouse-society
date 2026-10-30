@@ -175,10 +175,10 @@ export function EditProfileScreen() {
         </Animated.View>
 
       <View style={[st.navBar, { paddingTop: headerTop }]}>
-        <PressableScale onPress={handleBack} style={st.navBackBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" accessibilityLabel="Go back">
+        <PressableScale touch="wayOut" onPress={handleBack} style={st.navBackBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" accessibilityLabel="Go back">
           <ChevronLeft size={22} color={colors.bone} />
         </PressableScale>
-        <PressableScale onPress={handleSave} disabled={saving} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" accessibilityRole="button" accessibilityLabel={saving ? 'Saving profile' : 'Save profile changes'}>
+        <PressableScale touch="commit" onPress={handleSave} disabled={saving} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" accessibilityRole="button" accessibilityLabel={saving ? 'Saving profile' : 'Save profile changes'}>
           {saving ? <ActivityIndicator size="small" color={colors.sepia} /> : (
             <Text {...scaledTextProps} style={st.navSaveText}>SAVE</Text>
           )}
@@ -231,7 +231,7 @@ export function EditProfileScreen() {
               {/* True of every photo: it is re-encoded square, its location data stripped. */}
               <Text {...scaledTextProps} style={st.avatarSpec}>ANY PHOTO · CROPPED SQUARE · LOCATION REMOVED</Text>
               {avatarPreview && (
-                <PressableScale onPress={handleRemoveAvatar} style={{ marginTop: 12, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder }} haptic="light" accessibilityRole="button" accessibilityLabel="Remove portrait">
+                <PressableScale touch="destructive" onPress={handleRemoveAvatar} style={{ marginTop: 12, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder }} haptic="light" accessibilityRole="button" accessibilityLabel="Remove portrait">
                   <Text {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimsonInk, textAlign: 'center', letterSpacing: 1 }}>REMOVE PORTRAIT</Text>
                 </PressableScale>
               )}

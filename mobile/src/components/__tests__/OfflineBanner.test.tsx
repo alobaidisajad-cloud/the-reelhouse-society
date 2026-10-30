@@ -22,17 +22,6 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaFrame: () => ({ x: 0, y: 0, width: 375, height: 812 }),
 }));
 
-// Mock PressableScale
-jest.mock('../PressableScale', () => {
-  const { Pressable } = require('react-native');
-  return {
-    __esModule: true,
-    default: ({ children, ...props }: Record<string, unknown>) => (
-      <Pressable {...props}>{children}</Pressable>
-    ),
-  };
-});
-
 describe('OfflineBanner', () => {
   it('returns null when connected', () => {
     mockUseNetInfo.mockReturnValue({ isConnected: true });

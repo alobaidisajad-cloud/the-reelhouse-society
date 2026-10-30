@@ -48,7 +48,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
     const totalCount = stamps?.total_logs ?? 0;
 
     const close = (
-        <PressableScale onPress={() => { onClose(); }} style={[s.closeBtn, { top: closeTop }]} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close cinema DNA">
+        <PressableScale touch="wayOut" onPress={() => { onClose(); }} style={[s.closeBtn, { top: closeTop }]} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic accessibilityRole="button" accessibilityLabel="Close cinema DNA">
             <X size={16} color={colors.parchment} />
         </PressableScale>
     );

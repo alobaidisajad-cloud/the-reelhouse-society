@@ -226,7 +226,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
             <View style={s.filmRow}>
               <PosterFrame filmId={item.film_id} filmTitle={item.film_title} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />
               <View style={s.filmMeta}>
-                <PressableScale onPress={handleFilmPress} hitSlop={{ top: 12, bottom: 5, left: 15, right: 15 }} haptic="selection" pressedScale={0.96}>
+                <PressableScale room onPress={handleFilmPress} hitSlop={{ top: 12, bottom: 5, left: 15, right: 15 }} haptic="selection" pressedScale={0.96}>
                   <Text {...displayTextProps} style={s.cardTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>{item.film_title}</Text>
                 </PressableScale>
                 {item.year != null && <Text style={s.cardYear}>{item.year}</Text>}

@@ -32,7 +32,7 @@ export function SearchPartly({ onRetry }: { onRetry: () => void }) {
   return (
     <View style={s.partly}>
       <Text style={s.sub}>Part of the archive could not be reached.</Text>
-      {/* Reaches no lower than the note's own foot: the first result sits below it. */}
+      {/* Grown to 48 (room), it reaches no lower than the note's own foot: the first result sits below it. */}
       <TryAgainLine onPress={onRetry} what="ask the archive" hitSlop={{ top: 6, bottom: 6, left: 15, right: 15 }} />
     </View>
   );
@@ -43,5 +43,5 @@ const s = StyleSheet.create({
   label: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.fog, textAlign: 'center' },
   sub: { fontFamily: fonts.body, fontSize: 12, color: colors.fogQuiet, textAlign: 'center', lineHeight: 18, maxWidth: 280 },
   retrySpace: { marginTop: 4 },
-  partly: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12, gap: 6 },
+  partly: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 20, gap: 6 },
 });

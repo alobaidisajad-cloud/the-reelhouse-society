@@ -139,7 +139,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
           <View style={s.modalContent} onLayout={measureFrame} testID="nitrate-file-sheet">
             <View style={s.header}>
               <Text style={s.title}>✦ THE NITRATE FILE</Text>
-              <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}
+              <PressableScale touch="wayOut" onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}
                 accessibilityRole="button" accessibilityLabel="Close">
                 <Text style={s.closeText}>✕</Text>
               </PressableScale>

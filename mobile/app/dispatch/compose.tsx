@@ -674,7 +674,7 @@ function ComposeDossierScreen() {
                 a screen reader's reach, so it reads only the sheet. */}
             <UnderSheet open={filmOpen || seriesOpen}>
                 <View style={[styles.header, { paddingTop: headerTop }]}>
-                    <PressableScale onPress={() => {
+                    <PressableScale touch="wayOut" onPress={() => {
                         if (title.trim() || content.trim()) {
                             // No save mark anywhere; a refused save is said here, at the exit.
                             const lost = saveFailed && !edit;
@@ -704,7 +704,7 @@ function ComposeDossierScreen() {
                         <Text style={styles.cancelBtn} {...deckLabelProps}>CANCEL</Text>
                     </PressableScale>
                     <Text style={styles.headerTitle} {...deckLabelProps}>THE WRITING ROOM</Text>
-                    <PressableScale
+                    <PressableScale room
                         onPress={() => {
                             setIsPreview(!isPreview);
                         }}
@@ -771,7 +771,7 @@ function ComposeDossierScreen() {
                                         {`HERE · ${restored ? whenOf(restored) : 'JUST NOW'} · ${wordsOf(content)}`}
                                     </Text>
                                     <View style={styles.elsewhereActs}>
-                                        <PressableScale
+                                        <PressableScale room
                                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
                                             onPress={() => answer(true)}
                                             accessibilityRole="button"
@@ -779,7 +779,7 @@ function ComposeDossierScreen() {
                                         >
                                             <Text style={styles.elsewhereTake} {...scaledTextProps}>TAKE THAT ONE</Text>
                                         </PressableScale>
-                                        <PressableScale
+                                        <PressableScale room
                                             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
                                             onPress={() => answer(false)}
                                             accessibilityRole="button"
@@ -853,8 +853,8 @@ function ComposeDossierScreen() {
                             <View style={styles.slots}>
                                 <PressableScale
                                     style={styles.slot} onPress={() => setFilmOpen(true)} haptic="selection"
-                                    // The two slots touch: neither reaches into the other.
-                                    hitSlop={{ top: 6, bottom: 0, left: 0, right: 0 }}
+                                    // The two slots are 48 each and touch: neither reaches into the other.
+                                    hitSlop={null}
                                     accessibilityRole="button"
                                     accessibilityLabel={film ? `Film: ${[film.title, film.sub].filter(Boolean).join(', ')}. Change it.` : 'Film: name the film this is about'}
                                 >
@@ -864,8 +864,8 @@ function ComposeDossierScreen() {
                                     </Text>
                                 </PressableScale>
                                 <PressableScale
-                                    style={styles.slot} onPress={() => setSeriesOpen(true)} haptic="selection"
-                                    hitSlop={{ top: 0, bottom: 6, left: 0, right: 0 }}
+                                    style={[styles.slot, styles.slotRuled]} onPress={() => setSeriesOpen(true)} haptic="selection"
+                                    hitSlop={null}
                                     accessibilityRole="button"
                                     accessibilityLabel={series ? `Series: ${series.title}, part ${series.part}. Change it.` : 'Series: part of a series? Choose one'}
                                 >
@@ -898,27 +898,27 @@ function ComposeDossierScreen() {
 
                         <View style={styles.toolbar}>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScroll} keyboardShouldPersistTaps="handled">
-                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
+                                <PressableScale room hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
                                     <Bold size={15} color={colors.parchment} />
                                     <Text style={styles.toolWord} {...scaledTextProps}>BOLD</Text>
                                 </PressableScale>
-                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
+                                <PressableScale room hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
                                     <Italic size={15} color={colors.parchment} />
                                     <Text style={styles.toolWord} {...scaledTextProps}>ITALIC</Text>
                                 </PressableScale>
-                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
+                                <PressableScale room hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
                                     <Type size={15} color={colors.parchment} />
                                     <Text style={styles.toolWord} {...scaledTextProps}>HEADING</Text>
                                 </PressableScale>
-                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
+                                <PressableScale room hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
                                     <Quote size={15} color={colors.parchment} />
                                     <Text style={styles.toolWord} {...scaledTextProps}>QUOTE</Text>
                                 </PressableScale>
-                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Break: a horizontal rule">
+                                <PressableScale room hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Break: a horizontal rule">
                                     <Minus size={15} color={colors.parchment} />
                                     <Text style={styles.toolWord} {...scaledTextProps}>BREAK</Text>
                                 </PressableScale>
-                                <PressableScale hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
+                                <PressableScale room hitSlop={TOOL_SLOP} style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
                                     <Link2 size={15} color={colors.parchment} />
                                     <Text style={styles.toolWord} {...scaledTextProps}>LINK</Text>
                                 </PressableScale>
@@ -939,7 +939,7 @@ function ComposeDossierScreen() {
                                     </Text>
                                 ) : null}
                             </View>
-                            <PressableScale
+                            <PressableScale touch="commit"
                                 style={[styles.publishBtn, !ready && UNREADY.plate]}
                                 disabled={!ready || isPublishing}
                                 onPress={handlePublish}
@@ -1210,7 +1210,9 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)',
         paddingVertical: 4, marginBottom: 14, paddingHorizontal: 24,
     },
-    slot: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
+    // A form row, 48 for a finger: the film and the series, a hairline between.
+    slot: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
+    slotRuled: { borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.16)' },
     /** A fixed 54pt column: actionLabelProps' shrink-to-fit keeps a longer word inside it. */
     slotLabel: {
         fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia,

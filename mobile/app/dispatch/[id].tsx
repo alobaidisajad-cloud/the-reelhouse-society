@@ -767,7 +767,7 @@ export default function FilingReader() {
           The house first, the world second. No SAVE THE CARD: see `card`. */}
       {sharing ? (
         <View style={[p.sheetHost, { paddingBottom: edge }]}>
-          <PressableScale
+          <PressableScale touch="wayOut"
             style={p.sheetGround}
             onPress={() => setSharing(false)}
             accessibilityRole="button"

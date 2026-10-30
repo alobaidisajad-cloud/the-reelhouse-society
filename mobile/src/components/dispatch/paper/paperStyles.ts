@@ -64,7 +64,9 @@ export const p = StyleSheet.create({
     width: '100%', maxWidth: PAPER_MAX, alignSelf: 'center',
   },
   /** Clips, so the index's last department never paints under the archive's mark beside it. */
-  chromeIndex: { flex: 1, minWidth: 0, overflow: 'hidden', paddingHorizontal: CHROME_PAD_H },
+  // 48 tall where it clips, its 32 where it is seen (8 in, 8 out): a department grows to 48 for a
+  // finger (PressableScale `room`), and no touch arrives past a clip.
+  chromeIndex: { flex: 1, minWidth: 0, overflow: 'hidden', paddingHorizontal: CHROME_PAD_H, marginVertical: -8, paddingVertical: 8 },
   /**
    * The archive's mark, outside the index's scroll: centred on the stretched
    * row, and ending where the page's margin does.
@@ -74,6 +76,9 @@ export const p = StyleSheet.create({
     paddingLeft: 4, paddingRight: CHROME_PAD_H,
   },
   chromeRow: { flexDirection: 'row', alignItems: 'center' },
+  // The scroller clips too: it fills the index's 48 (8 out), its departments where they were (8 in).
+  chromeScroll: { marginVertical: -8 },
+  chromeScrollRoom: { paddingVertical: 8 },
   indexItem: {
     paddingVertical: CHROME_PAD_V,
     paddingHorizontal: 6,
@@ -88,15 +93,17 @@ export const p = StyleSheet.create({
   indexLabelOn: { opacity: 1 },
   /** `indexLabel`'s token: later in the style array, any other number here would win. */
   indexLabelOff: { opacity: INDEX_INACTIVE },
+  // 4 either side: a department grows to 48 wide (PressableScale `room`), ALL by 8 a side, and
+  // meets its neighbour across the dot without crossing it.
   indexDot: {
-    fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, opacity: 0.62,
+    fontFamily: fonts.sub, fontSize: 8.5, color: colors.sepia, opacity: 0.62, marginHorizontal: 4,
     includeFontPadding: false,
   },
   // Over the index's trailing edge on both platforms: iOS stacks by zIndex and
   // Android by elevation, so the two match. 2 clears the index (no elevation)
   // and stays under this file's raised surfaces (6 and 4).
   chromeFade: {
-    position: 'absolute', right: 0, top: 0, bottom: 0, width: 26,
+    position: 'absolute', right: 0, top: 8, bottom: 8, width: 26,
     zIndex: 2, elevation: 2,
   },
   toolLabel: {
@@ -141,9 +148,11 @@ export const p = StyleSheet.create({
    * The running head: the issue number and the day, with the page's tools
    * (sort, saved) on the right, where a printed page keeps its apparatus.
    */
+  // The masthead line is a 48pt band, set clear of the departments' reach above it: its two
+  // controls, a 13pt bookmark and an 11pt word, are 48 tall there without reaching into either.
   runHead: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingTop: 12, paddingBottom: 8,
+    minHeight: 48, marginTop: 8,
     borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.25)',
   },
   /** Yields to the pinned tools by wrapping (two lines, PaperFrame), never by an ellipsis:
@@ -151,7 +160,8 @@ export const p = StyleSheet.create({
   runHeadText: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false, flex: 1, minWidth: 0,
   },
-  runHeadTools: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  // 18: the bookmark grows 17.5 each side to 48, and meets the sort word without crossing it.
+  runHeadTools: { flexDirection: 'row', alignItems: 'center', gap: 18 },
 
   // ── ornament / dividers ───────────────────────────────────────────────────
   orn: { flexDirection: 'row', alignItems: 'center', gap: 8, opacity: 0.5, marginVertical: 24 },
@@ -252,8 +262,10 @@ export const p = StyleSheet.create({
 
 
   // ── byline ────────────────────────────────────────────────────────────────
+  // The byline, the writing and the film credit are three doors stacked: each 48 by its own
+  // box (the owner's choice, 2026-10-30), so a finger opens the one it means.
   byline: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
+    flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48,
     marginTop: 0, marginBottom: 8,
     // No flexWrap: in a wrapping row an item moves down instead of shrinking,
     // so the trail would stop truncating and the byline would take two lines.
@@ -318,7 +330,9 @@ export const p = StyleSheet.create({
   /** Held back: a bright poster is otherwise the loudest thing on a page of ink and brass. */
   artHeld: { opacity: 0.86 },
   /** The feed's credit: a thumbnail and one line. The full poster is on the post page. */
-  credit: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  credit: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, minHeight: 48 },
+  /** The writing's door: a one-line take is 48 too, its words centred in it. */
+  writingDoor: { minHeight: 48, justifyContent: 'center' },
   creditArt: {
     width: 18, height: 27, borderRadius: 1.5, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.28)',
@@ -521,9 +535,11 @@ export const p = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.sepiaBorder,
   },
   /** Its own target behind a hairline: a thumb aiming to leave never lands on "to the top". */
-  spineBack: { paddingRight: 8, marginRight: 2, borderRightWidth: 1, borderRightColor: 'rgba(184,137,26,0.25)' },
+  // marginRight 5: the way back grows 12.5 a side to 48, and meets the title, not crosses it (5 + the gap 8).
+  spineBack: { paddingRight: 8, marginRight: 5, borderRightWidth: 1, borderRightColor: 'rgba(184,137,26,0.25)' },
   // The same hairline facing the other way: the bar reads as three parts.
-  spineMore: { paddingLeft: 8, marginLeft: 2, borderLeftWidth: 1, borderLeftColor: 'rgba(184,137,26,0.25)' },
+  // marginLeft 4: MORE grows 12 a side to 48, and meets the title (4 + the gap 8).
+  spineMore: { paddingLeft: 8, marginLeft: 4, borderLeftWidth: 1, borderLeftColor: 'rgba(184,137,26,0.25)' },
 
   // The ground closes the sheet when touched, as every sheet in the app does.
   sheetHost: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'flex-end' },
@@ -538,7 +554,9 @@ export const p = StyleSheet.create({
   spineText: { fontFamily: fonts.serifItalic, fontSize: 12.5, color: colors.bone, flex: 1 },
   spineCount: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog, includeFontPadding: false },
 
-  critiqueHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, marginBottom: 4 },
+  // 19 above and below: the order links, 10pt words, grow 19 a side to 48 (PressableScale `room`)
+  // and meet what stands above and the first critique or READ MORE below, never cross them.
+  critiqueHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 19, marginBottom: 19 },
   critiqueLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, includeFontPadding: false },
   critiqueSortRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   critiqueSort: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.bone, opacity: INDEX_INACTIVE, includeFontPadding: false },

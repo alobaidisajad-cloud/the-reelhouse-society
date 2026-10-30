@@ -83,7 +83,8 @@ export const PaperChrome = memo(function PaperChrome({
           horizontal
           showsHorizontalScrollIndicator={false}
           alwaysBounceHorizontal={false}
-          contentContainerStyle={p.chromeRow}
+          style={p.chromeScroll}
+          contentContainerStyle={[p.chromeRow, p.chromeScrollRoom]}
           accessibilityRole="tablist"
         >
           {SECTIONS.map((s, i) => (
@@ -95,7 +96,7 @@ export const PaperChrome = memo(function PaperChrome({
               {/* Each department wears its own colour, the way a Darkroom mood
                   does — dimmed until you choose it, full strength and underlined
                   in the same hue once you have. The word teaches the code. */}
-              <PressableScale
+              <PressableScale room
                 style={[
                   p.indexItem,
                   s === section && { borderBottomColor: SECTION_COLOR[s] },
@@ -132,7 +133,7 @@ export const PaperChrome = memo(function PaperChrome({
         </ScrollView>
       </View>
       {onArchive ? (
-        <PressableScale
+        <PressableScale room
           style={p.chromeArchive}
           hitSlop={IX_SLOP}
           onPress={onArchive}
@@ -186,7 +187,7 @@ export const RunningHead = memo(function RunningHead({
         {title ?? `No. ${issueOf(date)} · ${dayLabel}`}
       </Text>
       <View style={p.runHeadTools}>
-        <PressableScale
+        <PressableScale room
           hitSlop={IX_SLOP} onPress={onSaved} haptic
           accessibilityRole="button" accessibilityLabel="Your saved filings"
         >
@@ -194,7 +195,7 @@ export const RunningHead = memo(function RunningHead({
             color={saved ? colors.sepia : colors.fog}
             fill={saved ? colors.sepia : 'transparent'} />
         </PressableScale>
-        <PressableScale
+        <PressableScale room
           style={p.chromeRow} hitSlop={IX_SLOP} onPress={onSort} haptic
           accessibilityRole="button" accessibilityLabel={`Sorted by ${sort.toLowerCase()}. Change`}
         >
@@ -271,7 +272,7 @@ const BrassButton = memo(function BrassButton({
   label, onPress,
 }: { label: string; onPress: () => void }) {
   return (
-    <PressableScale
+    <PressableScale touch="commit"
       style={[p.btn, p.btnBrass]} onPress={onPress} haptic="medium"
       accessibilityRole="button" accessibilityLabel={label}
     >

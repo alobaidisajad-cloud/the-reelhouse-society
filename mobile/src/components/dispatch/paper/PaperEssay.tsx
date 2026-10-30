@@ -327,7 +327,8 @@ const e = StyleSheet.create({
     fontFamily: fonts.display, fontSize: 26, lineHeight: 34,
     color: colors.parchment, marginTop: 8,
   },
-  seriesRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingVertical: 4 },
+  // 48 by its own box, as the byline below it is (the owner's choice, 2026-10-30).
+  seriesRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingVertical: 4, minHeight: 48 },
   series: {
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia,
     includeFontPadding: false, flexShrink: 1,

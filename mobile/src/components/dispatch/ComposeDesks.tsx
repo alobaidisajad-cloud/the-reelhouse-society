@@ -396,7 +396,7 @@ export function FilmPicker({
   return (
     <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end' }]}>
       {/* The ground behind closes it, as every sheet in the app does. */}
-      <PressableScale
+      <PressableScale touch="wayOut"
         style={StyleSheet.absoluteFill}
         onPress={onClose}
         accessibilityRole="button"

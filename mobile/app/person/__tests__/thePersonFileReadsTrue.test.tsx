@@ -251,9 +251,15 @@ describe('every state of the page has the same labelled way back', () => {
     const r = await screen(q);
     const back = r.getAllByLabelText('Go back');
     expect(back).toHaveLength(1);
-    // The circle a member can see IS the control — not a bare icon inside a View.
+    // The circle a member can see IS the control's — not a bare icon inside a View. A way out
+    // is owed 48 a side (PressableScale's touch weight), so the control places the 36pt circle
+    // and grows around it, and the circle is drawn by the one box inside it.
     // (`top` is the screen's: the safe-area inset, set over the style.)
-    expect(wears(back[0] as unknown as J, personStyles.floatingBack, ['top'])).toBe(true);
+    const control = back[0] as unknown as J;
+    const circle = control.children?.[0] as J;
+    expect(wears(control, { position: 'absolute', left: 16, zIndex: 100 })).toBe(true);
+    expect(wears(circle, personStyles.floatingBack, ['top', 'position', 'left', 'zIndex'])).toBe(true);
+    expect(StyleSheet.flatten(control.props.style)).toMatchObject({ paddingTop: 6, marginTop: -6, paddingLeft: 6, marginLeft: -6 });
   });
 
   it('and the loading skeleton has the shape of the record card that arrives', async () => {

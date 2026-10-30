@@ -29,7 +29,7 @@ export default function TryAgain({ onPress, label = 'TRY AGAIN', what, hitSlop, 
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <PressableScale
+    <PressableScale room
       onPress={onPress}
       style={[s.btn, style]}
       haptic="medium"
@@ -54,7 +54,7 @@ export function TryAgainLine({ onPress, what, hitSlop, style }: {
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <PressableScale
+    <PressableScale room
       onPress={onPress}
       hitSlop={hitSlop}
       style={style}
@@ -80,7 +80,7 @@ export function WayOut({ label, onPress, belowAnAct = true }: {
   belowAnAct?: boolean;
 }) {
   return (
-    <PressableScale
+    <PressableScale touch="wayOut"
       onPress={onPress}
       style={s.wayOut}
       haptic="selection"
@@ -93,8 +93,11 @@ export function WayOut({ label, onPress, belowAnAct = true }: {
   );
 }
 
-/** The gap between an act and the way out below it; each claims half of it. */
-export const ACTS_GAP = 14;
+/**
+ * The gap between an act and the way out below it; each claims half of it. 16: each grows up to
+ * 8 toward the other to reach 48 (PressableScale `room` and `touch`), and they meet there.
+ */
+export const ACTS_GAP = 16;
 export const TRY_AGAIN_ABOVE_A_WAY_OUT = { bottom: ACTS_GAP / 2 } as const;
 const WAY_OUT_BELOW_AN_ACT = { top: ACTS_GAP / 2 } as const;
 

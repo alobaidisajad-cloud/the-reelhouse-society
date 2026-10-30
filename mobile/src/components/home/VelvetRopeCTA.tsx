@@ -50,7 +50,7 @@ export const ShimmerRule = memo(() => {
 export const VelvetRopeCTA = memo(() => {
     // States its form, `login`: a bare push would reopen whichever form was left.
     return (
-       <PressableScale
+       <PressableScale room
           style={s.ctaSecondaryNoir}
           // the first door stands 24 above (the front door's gap): half of it, no more
           hitSlop={{ top: 12 }}

@@ -449,10 +449,10 @@ export default function MembershipScreen() {
       <RoomLight room="default" />
       {/* Nav */}
       <View style={[st.navBar, { paddingTop: navTop }]}>
-        <PressableScale onPress={() => nav.back()} style={st.navBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="light" accessibilityRole="button" accessibilityLabel="Go back">
+        <PressableScale touch="wayOut" onPress={() => nav.back()} style={st.navBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="light" accessibilityRole="button" accessibilityLabel="Go back">
           <ChevronLeft size={24} color={colors.bone} />
         </PressableScale>
-        <PressableScale
+        <PressableScale touch="commit"
           onPress={handleRestore}
           disabled={isRestoring || isRedirecting}
           style={st.navBtnRight}

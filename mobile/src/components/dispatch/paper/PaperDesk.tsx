@@ -53,7 +53,7 @@ export const DeskHead = memo(function DeskHead({
   const top = useModalTop();
   return (
     <View style={[p.ch, { paddingTop: top }]}>
-      <PressableScale onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
+      <PressableScale touch="wayOut" onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 0, right: 8 }} accessibilityRole="button" accessibilityLabel="Back, without filing">
         <Text style={p.chs} {...scaledTextProps}>BACK</Text>
       </PressableScale>
       <Text style={[p.chm, { color: KIND_RULE[kind.toLowerCase() as keyof typeof KIND_RULE] ?? colors.sepia }]}
@@ -61,7 +61,7 @@ export const DeskHead = memo(function DeskHead({
         {nameOf(kind)}
       </Text>
       {/* Lit only when the form is complete: a bright FILE IT on an unfinished form lies. */}
-      <PressableScale onPress={ready ? onFile : undefined} hitSlop={{ top: 12, bottom: 12, left: 8, right: 0 }} haptic="medium" disabled={!ready}
+      <PressableScale touch="commit" onPress={ready ? onFile : undefined} hitSlop={{ top: 12, bottom: 12, left: 8, right: 0 }} haptic="medium" disabled={!ready}
         accessibilityRole="button"
         accessibilityLabel={ready ? 'File it' : 'File it. Not ready yet'}
         accessibilityState={{ disabled: !ready }}>
@@ -96,7 +96,7 @@ export const DeskRail = memo(function DeskRail({
       {tools.map((t) => {
         const Icon = I[t.icon];
         return (
-          <PressableScale key={t.icon} style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
+          <PressableScale room key={t.icon} style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }}
             onPress={t.onPress} disabled={!t.onPress}
             accessibilityRole="button"
             accessibilityState={{ selected: !!t.on, disabled: !t.onPress }}
@@ -241,7 +241,7 @@ export const BallotDesk = memo(function BallotDesk({
                         </Text>
                         <Text style={d.slotMeta} numberOfLines={1} {...scaledTextProps}>{o.year}</Text>
                       </View>
-                      <PressableScale hitSlop={{ top: 4, bottom: 4, left: 8, right: 0 }} haptic
+                      <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 8, right: 0 }} haptic
                         onPress={onRemove && (() => onRemove(i))} disabled={!onRemove}
                         accessibilityRole="button" accessibilityState={{ disabled: !onRemove }}
                         accessibilityLabel={`Remove ${o.title}`}>
@@ -249,7 +249,7 @@ export const BallotDesk = memo(function BallotDesk({
                       </PressableScale>
                     </>
                   ) : (
-                    <PressableScale style={d.slotEmpty} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
+                    <PressableScale room style={d.slotEmpty} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
                       onPress={onChoose && (() => onChoose(i))} disabled={!onChoose}
                       accessibilityRole="button" accessibilityState={{ disabled: !onChoose }}
                       accessibilityLabel={`${i < 2 ? 'Choose a film' : 'Another, if you like'}: film ${i + 1}`}>
@@ -267,7 +267,7 @@ export const BallotDesk = memo(function BallotDesk({
               <Text style={d.fieldLabel} {...decorativeTextProps}>CLOSES</Text>
               <View style={d.closesChoices}>
                 {CLOSING_TIMES.map(({ label: c }) => (
-                  <PressableScale key={c} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} haptic="selection"
+                  <PressableScale room key={c} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} haptic="selection"
                     onPress={onCloses && (() => onCloses(c))} disabled={!onCloses}
                     accessibilityRole="button" accessibilityState={{ selected: c === closes, disabled: !onCloses }}
                     accessibilityLabel={`Closes in ${c.toLowerCase()}`}>

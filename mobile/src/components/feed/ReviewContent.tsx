@@ -87,7 +87,7 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
     // The veil stands before the door, never inside it: a control inside a control is
     // one a screen reader cannot reach.
     <SpoilerVeil isSpoiler={item.is_spoiler} revealKey={item.id} compact hitSlop={REVIEW_SLOP}>
-      <PressableScale
+      <PressableScale room
         onPress={onPress}
         haptic="selection"
         pressedScale={0.98}
@@ -138,12 +138,15 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
   );
 });
 
-// 10pt under the title at its tightest (no year, no rating) and 14pt above
-// the deck. At the default 15 a tap just below the review certified it.
+// 18pt under the title at its tightest (no year, no rating) and 14pt above
+// the deck; grown to 48 up and down, it drops these there. At the default 15
+// a tap just below the review certified it.
 const REVIEW_SLOP = { top: 5, bottom: 7, left: 15, right: 15 };
 
 const s = StyleSheet.create({
-  pressable: { width: '100%' },
+  // 8 lower than it was: grown to 48 for a finger (PressableScale `room`), it meets the poster
+  // above, not crosses it.
+  pressable: { width: '100%', marginTop: 8 },
 
   // ── Verdict (film column) ──
   abandonedWrap: { marginTop: 2, marginBottom: 4, alignSelf: 'flex-start' },

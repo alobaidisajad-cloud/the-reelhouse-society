@@ -11,3 +11,7 @@
 src/components/log/AuteurToolkit.tsx — the autopsy notches are an 18pt film-strip track lifted to 44 by a halo. Reaching 48 by geometry would nearly triple the gauge and destroy what it imitates: a design decision about the instrument, not a defect, and the one control on the page the rule is knowingly not applied to.
 src/components/NitrateCalendar.tsx /^[A-Z][a-z]+ \d+, \d{4}$/ — a month is seven columns: in the room the composer gives it, a day is 42 to 46pt WIDE on the narrowest phones (7 × 48 = 336 does not fit). Each is 48 tall, the row is flush, and no day claims a halo, so no neighbour reaches into another; a calendar with fewer columns is not a calendar.
 src/components/log/LogForm.tsx /^Watched with @/ — the @handle suggestions are inline text links inside a wrapping line. Both platforms carve inline links out of the minimum rather than excusing them, and a 48pt box per handle would break the line it belongs to.
+
+# The salon, a conversation: its lines are long-pressed, not tapped, and a reaction sits under its line.
+app/lounge/[id].tsx @/onLongPress=\{\(\) => onLongPress\(msg\)\}/ — a salon message answers a long press, a held gesture and not a tap, and VoiceOver and TalkBack reach everything it offers as named actions (dispatchActions); at 48 a line, a conversation would stand twice as tall.
+app/lounge/[id].tsx /^[A-Z]+, \d+$/ — a reaction (BRAVO, 3) is 24 by its own box, the accessibility minimum, with half the gap to its line above and to its neighbour as its halo; 48 for each would set every conversation apart line by line.

@@ -651,11 +651,28 @@ if (process.env.MOCKUPS_CAPTURE || process.env.MOCKUPS) {
   if (internals && 'recentlyCreatedOwnerStacks' in internals) {
     Object.defineProperty(internals, 'recentlyCreatedOwnerStacks', { get: () => 0, set: () => {}, configurable: true });
   }
-  jest.mock('@/src/components/PressableScale', () => ({
-    __esModule: true,
-    default: require('./mockups/srcMark').markSource(
-      jest.requireActual('@/src/components/PressableScale').default, /PressableScale\.tsx$/, 'PressableScale'),
-  }));
+  jest.mock('@/src/components/PressableScale', () => {
+    const actual = jest.requireActual('@/src/components/PressableScale');
+    const { StyleSheet } = jest.requireActual('react-native');
+    return {
+      ...actual,
+      __esModule: true,
+      // A weighted control says its weight and the axes it may grow on: the drawing grows it as
+      // the phone does once it is measured (mockups/tools/harness.cjs).
+      default: require('./mockups/srcMark').markSource(actual.default, /PressableScale\.tsx$/, 'PressableScale',
+        (p: Record<string, unknown>) => {
+          // A control given room (`room`) is grown the same way, one way when it says so; only a
+          // weight holds it to 48 (data-touch), room is judged as any other control is.
+          const touch = typeof p.touch === 'string' ? p.touch : undefined;
+          if (!touch && !p.room) return null;
+          const only = !touch && typeof p.room === 'string' ? p.room : undefined;
+          const own = StyleSheet.flatten(p.style) ?? {};
+          const axes = actual.touchAxes(own, only);
+          const by = actual.grownFor(own, null, only)?.by ?? { Vertical: 0, Horizontal: 0 };
+          return { touch, grow: `${axes.Vertical ? 'v' : ''}${axes.Horizontal ? 'h' : ''}`, by: `${by.Vertical},${by.Horizontal}` };
+        }),
+    };
+  });
   jest.mock('@/src/components/text', () => {
     const actual = jest.requireActual('@/src/components/text');
     return {

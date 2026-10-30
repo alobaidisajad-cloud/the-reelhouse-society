@@ -210,7 +210,7 @@ function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<Pick
   return (
     <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end' }]}>
       {/* The ground closes it, as every sheet in this app does. */}
-      <PressableScale
+      <PressableScale touch="wayOut"
         style={StyleSheet.absoluteFill} onPress={onClose}
         accessibilityRole="button" accessibilityLabel="Close, without setting a series"
       >
@@ -320,8 +320,9 @@ const x = StyleSheet.create({
   // Bounded so a member with many series cannot push the confirmation and the
   // button off a short screen.
   list: { maxHeight: 260 },
+  // Every row 48 by its own box: a ruled list a finger reads row by row.
   row: {
-    flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11,
+    flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, minHeight: 48,
     borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)',
   },
   tick: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, width: 12, includeFontPadding: false },
@@ -332,8 +333,9 @@ const x = StyleSheet.create({
   rowSub: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.7, color: colors.fog, marginTop: 3, includeFontPadding: false },
   next: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.sepia, includeFontPadding: false },
   begin: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, includeFontPadding: false },
+  // 48, as every row of the sheet is: its try-again grows to the row's own edges.
   unread: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 11,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 11, minHeight: 48,
     borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.16)',
   },
   unreadText: { flex: 1, minWidth: 0, fontFamily: fonts.body, fontSize: 11.5, lineHeight: 18, color: colors.fog },

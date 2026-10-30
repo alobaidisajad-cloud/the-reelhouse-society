@@ -285,9 +285,10 @@ const s = StyleSheet.create({
   privName: { fontFamily: fonts.sub, fontSize: 15, lineHeight: 20, color: colors.parchment },
   privDetail: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.bone, marginTop: 1 },
 
+  // 48 by its own box, flush under the ticket: the 4 it takes come out of the space below it.
   more: {
-    marginLeft: STUB + 16, marginRight: 18, marginBottom: 6,
-    minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+    marginLeft: STUB + 16, marginRight: 18, marginBottom: 2,
+    minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8,
     borderTopWidth: 1, borderTopColor: colors.ash,
   },
   moreAuteur: { borderTopColor: colors.crimsonBorder },

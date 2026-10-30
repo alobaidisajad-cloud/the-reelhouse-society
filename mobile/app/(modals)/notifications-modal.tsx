@@ -113,7 +113,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
         ) : null} />
 
         {/* TactileEngine.warn() before dismiss for destructive-action feedback */}
-        <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_DISMISS} onPress={() => {
+        <PressableScale touch="destructive" style={s.dismissBtn} hitSlop={HITSLOP_DISMISS} onPress={() => {
             TactileEngine.warn();
             useNotificationStore.getState().dismiss(item.id);
         }} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss notice">
@@ -177,7 +177,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
         ) : null} />
 
         {/* Dismiss button */}
-        <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_DISMISS} onPress={handleDismiss} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss grouped notice">
+        <PressableScale touch="destructive" style={s.dismissBtn} hitSlop={HITSLOP_DISMISS} onPress={handleDismiss} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss grouped notice">
           <X size={12} color={colors.fog} />
         </PressableScale>
       </PressableScale>
@@ -256,7 +256,7 @@ export default function NotificationsModal() {
       <View style={[s.dragHandleWrap, { paddingTop: handleTop }]}><View style={s.dragHandle} /></View>
 
       <View style={s.header}>
-        <PressableScale style={s.closeBtn} onPress={() => { nav.back(); }} hitSlop={HITSLOP_15} haptic="selection" pressedScale={0.95} accessibilityLabel="Close notices">
+        <PressableScale touch="wayOut" style={s.closeBtn} onPress={() => { nav.back(); }} hitSlop={HITSLOP_15} haptic="selection" pressedScale={0.95} accessibilityLabel="Close notices">
           <Text style={s.closeText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>CLOSE</Text>
         </PressableScale>
         <View style={s.titleBlock}>

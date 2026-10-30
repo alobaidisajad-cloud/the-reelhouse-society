@@ -635,7 +635,7 @@ export default function LoungeRoomScreen() {
         <Buster size={80} mood="suspicious" />
         <Text style={s.edgeTitle}>Signal Lost</Text>
         <Text style={s.edgeDesc}>This screening room has been incinerated or never existed.</Text>
-        <PressableScale style={s.edgeBtn} onPress={() => nav.back()} haptic="medium" accessibilityRole="button" accessibilityLabel={wayOut}>
+        <PressableScale touch="wayOut" style={s.edgeBtn} onPress={() => nav.back()} haptic="medium" accessibilityRole="button" accessibilityLabel={wayOut}>
           <Text style={s.edgeBtnText}>{wayOut}</Text>
         </PressableScale>
       </View>
@@ -674,7 +674,7 @@ export default function LoungeRoomScreen() {
       {readyMark}
       {/* ── Marquee header ── */}
       <View style={[s.header, { paddingTop: headerTop }]}>
-        <PressableScale style={s.headerBtn} onPress={() => nav.back()} haptic="selection" accessibilityRole="button" accessibilityLabel="Back">
+        <PressableScale touch="wayOut" style={s.headerBtn} onPress={() => nav.back()} haptic="selection" accessibilityRole="button" accessibilityLabel="Back">
           <ArrowLeft size={20} color={colors.parchment} strokeWidth={1.5} />
         </PressableScale>
 
@@ -710,7 +710,7 @@ export default function LoungeRoomScreen() {
               <Text style={s.doorBadgeText}>{pendingMembers.length}</Text>
             </PressableScale>
           )}
-          <PressableScale style={s.headerBtn} onPress={() => setSettingsOpen(true)} haptic="selection" accessibilityRole="button" accessibilityLabel="Lounge settings">
+          <PressableScale room style={s.headerBtn} onPress={() => setSettingsOpen(true)} haptic="selection" accessibilityRole="button" accessibilityLabel="Lounge settings">
             <Settings size={18} color={colors.parchment} strokeWidth={1.5} />
           </PressableScale>
         </View>
@@ -824,7 +824,7 @@ export default function LoungeRoomScreen() {
                 <Text style={s.replyBannerAuthor} numberOfLines={1}>Replying to {authorName(replyTo.user_id, replyTo.username)}</Text>
                 <Text style={s.replyBannerText} numberOfLines={1}>{replyTo.content || 'Shared content'}</Text>
               </View>
-              <PressableScale onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button"
+              <PressableScale touch="wayOut" onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button"
                 accessibilityLabel="Cancel the reply">
                 <X size={14} color={colors.fog} strokeWidth={1.5} />
               </PressableScale>
@@ -844,7 +844,7 @@ export default function LoungeRoomScreen() {
               keyboardAppearance="dark"
               accessibilityLabel="Compose a dispatch"
             />
-            <PressableScale
+            <PressableScale touch="commit"
               style={[s.sendBtn, !input.trim() && UNREADY.plate]}
               onPress={handleSend}
               disabled={!input.trim() || sending}
@@ -1125,8 +1125,9 @@ const s = StyleSheet.create({
 
   // ── Reactions ──
   reactionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  // 24 by its own box, the accessibility minimum, under a line of talk (see mockups/touch-small-exceptions.txt).
   reactionChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 3,
+    flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 3, minHeight: 24,
     borderRadius: 13, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash, backgroundColor: colors.soot,
   },
   reactionChipMine: { borderColor: 'rgba(184,137,26,0.55)', backgroundColor: 'rgba(184,137,26,0.12)' },

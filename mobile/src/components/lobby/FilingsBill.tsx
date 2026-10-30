@@ -34,7 +34,7 @@ const NUM_GAP = WALL.filingNumGap;
 const DOOR_WORDS = 60;
 const KIND_GAP = 8;
 /**
- * The byline's halo: none up or down (the row is 44 tall); to the left half the
+ * The byline's halo: none up or down (the row is 48 tall); to the left half the
  * inset, where a runner may stand beside it; to the right half the row's gap,
  * where the rank's mark or the admin's switch stands.
  */
@@ -136,7 +136,7 @@ export const FilingsBill = memo(function FilingsBill({ filings, plan, admin }: {
           <HouseLine type="bannerName" text={FILINGS_BILL.name} room={plan.bannerWordsRoom} style={s.bannerName} spoken={false} />
         </View>
         {/* a full finger tall, its halo only sideways: it can never reach the filing below */}
-        <PressableScale
+        <PressableScale room
           style={s.bannerDoor}
           hitSlop={{ top: 0, bottom: 0 }}
           onPress={() => router.navigate('/dispatch' as Href)}
@@ -201,13 +201,14 @@ const s = StyleSheet.create({
   openingRunner: { fontSize: 13, lineHeight: 18.5 },
   rtl: { writingDirection: 'rtl', textAlign: 'right' },
   rtlPlain: { writingDirection: 'rtl', textAlign: 'right', fontFamily: fonts.serif },
-  // 44 tall, the byline's own tap: its name stands 11 under the words and 12 over the rule below
+  // 48 tall, the byline's own tap by its own box, its name centred between the words above and
+  // the rule below: flush under the filing's door, it grows into neither.
   by: {
     flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: BY_GAP,
-    paddingLeft: WALL.filingPad + WALL.bylineInset, paddingRight: WALL.filingPad, paddingTop: 1, paddingBottom: 2,
+    paddingLeft: WALL.filingPad + WALL.bylineInset, paddingRight: WALL.filingPad,
   },
   byLead: { paddingLeft: WALL.filingPad + NUM_W + NUM_GAP + WALL.bylineInset },
-  byPerson: { minHeight: 44 },
+  byPerson: { minHeight: 48 },
   runners: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.sepiaBorder },
   runnersStacked: { flexDirection: 'column' },
   // beside only: stacked, a runner is as tall as its words

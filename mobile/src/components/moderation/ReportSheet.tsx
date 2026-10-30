@@ -349,7 +349,7 @@ function ReportSheet({
               </View>
 
               {/* Submit Button */}
-              <PressableScale
+              <PressableScale touch="commit"
                 style={[
                   styles.submitButton,
                   !selectedReason && UNREADY.plate,
@@ -365,7 +365,7 @@ function ReportSheet({
               </PressableScale>
 
               {/* Dismiss Link */}
-              <PressableScale
+              <PressableScale touch="wayOut"
                 style={styles.dismissLink}
                 onPress={handleDismiss}
                 pressedScale={0.95}

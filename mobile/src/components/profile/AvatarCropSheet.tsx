@@ -107,7 +107,7 @@ export default function AvatarCropSheet({ onClose, onSuccess, pending }: Props) 
         exit={{ kind: 'FadeOutDown', duration: MS.quick, easing: leave() }}>
         <View style={s.header}>
           <Text {...scaledTextProps} style={s.title}>UPDATE IDENTITY</Text>
-          <PressableScale onPress={() => { onClose(); }} style={s.closeBtn} hitSlop={{ top: 15, bottom: 9, left: 15, right: 15 }} haptic="selection" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Close">
+          <PressableScale touch="wayOut" onPress={() => { onClose(); }} style={s.closeBtn} hitSlop={{ top: 15, bottom: 9, left: 15, right: 15 }} haptic="selection" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Close">
             <X size={20} color={colors.fog} />
           </PressableScale>
         </View>
@@ -126,7 +126,7 @@ export default function AvatarCropSheet({ onClose, onSuccess, pending }: Props) 
               <Text {...scaledTextProps} style={s.actionText}>USE CAMERA</Text>
             </PressableScale>
 
-            <PressableScale hitSlop={{ top: 15, bottom: 15, left: 8, right: 8 }} style={s.actionCard} onPress={() => handlePick('library')} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Choose a photo from your library">
+            <PressableScale hitSlop={null} style={s.actionCard} onPress={() => handlePick('library')} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Choose a photo from your library">
               <View style={s.iconWrap}>
                 <ImageIcon size={24} color={colors.bone} />
               </View>

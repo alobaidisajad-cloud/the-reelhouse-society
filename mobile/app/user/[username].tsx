@@ -590,7 +590,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         <Text {...scaledTextProps} style={s.notFoundTitle}>Member Not Found</Text>
         {/* eslint-disable-next-line react/no-unescaped-entities */}
         <Text {...scaledTextProps} style={s.notFoundBody}>This member doesn't exist yet, or has been removed.</Text>
-        <PressableScale style={s.ghostBtn} onPress={handleBack} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
+        <PressableScale touch="wayOut" style={s.ghostBtn} onPress={handleBack} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
           <View style={s.ghostBtnRow}>
             <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
             <Text {...scaledTextProps} style={s.ghostBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>GO BACK</Text>
@@ -900,7 +900,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                           {highestRated.map((log: ProfileLog) => {
                             const posterUri = tmdb.poster(log.poster, 'w185');
                             return (
-                              <PressableScale
+                              <PressableScale room
                                 key={log.id}
                                 style={s.favouriteRow}
                                 onPress={() => { if (log.filmId) nav.push(`/film/${log.filmId}`); }}
@@ -978,7 +978,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
       {!usernameOverride && (
         <View style={[s.topNav, { paddingTop: pushedTop }]}>
           {/* Icon-only: the label is its only name for a screen reader. */}
-          <PressableScale
+          <PressableScale touch="wayOut"
             onPress={handleBack}
             style={s.topNavBtn}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -1080,7 +1080,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             {socialLinks.length > 0 && (
               <View style={s.socialLinksRow}>
                 {socialLinks.map((link: SocialLink, i: number) => (
-                  <PressableScale
+                  <PressableScale room
                     key={i}
                     style={s.socialLinkChip}
                     onPress={() => openSocialLink(link.url)}
@@ -1136,7 +1136,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               <View style={s.actsRow}>
                 {/* Not known whether they follow (the follow list not yet read whole): hollow,
                     and saying so; a press asks for the list, never files a follow blind. */}
-                <PressableScale
+                <PressableScale touch="commit"
                   style={[s.act, followKnown && !isFollowing && !isRequested && s.actSolid, !followKnown && UNREADY.plate, followLoading && { opacity: 0.5 }]}
                   onPress={toggleFollow}
                   disabled={followLoading || isRequested}

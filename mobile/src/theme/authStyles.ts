@@ -186,9 +186,10 @@ export const loginStyles = StyleSheet.create({
   },
 
   // ── Forgot password ──
+  // Grown to 48 for a finger (PressableScale `room`): 1 below the field, it meets SHOW's 48, not crosses it.
   forgotBtn: {
     alignSelf: 'flex-end',
-    marginTop: -8,
+    marginTop: 1,
   },
   forgotText: {
     fontFamily: fonts.sub,

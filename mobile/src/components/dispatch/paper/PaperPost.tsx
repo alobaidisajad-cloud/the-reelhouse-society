@@ -221,7 +221,7 @@ export const PaperActions = memo(function PaperActions({
 
   return (
     <View style={p.actions}>
-      <PressableScale style={[p.action, !canMark && !markReading && p.actionOff]} hitSlop={SLOP} haptic pressedScale={0.92}
+      <PressableScale room style={[p.action, !canMark && !markReading && p.actionOff]} hitSlop={SLOP} haptic pressedScale={0.92}
         onPress={canMark ? () => onCertify(!certified) : undefined}
         disabled={!canMark}
         accessibilityRole="button"
@@ -244,7 +244,7 @@ export const PaperActions = memo(function PaperActions({
         </Text>
       </PressableScale>
 
-      <PressableScale style={[p.action, waiting && p.actionOff]} hitSlop={SLOP} haptic
+      <PressableScale room style={[p.action, waiting && p.actionOff]} hitSlop={SLOP} haptic
         onPress={waiting ? undefined : onCritique}
         disabled={waiting}
         accessibilityRole="button"
@@ -256,7 +256,7 @@ export const PaperActions = memo(function PaperActions({
         <Text style={p.actionLabel} {...actionLabelProps}>CRITIQUE</Text>
       </PressableScale>
 
-      <PressableScale style={[p.action, waiting && p.actionOff]} hitSlop={SLOP} haptic
+      <PressableScale room style={[p.action, waiting && p.actionOff]} hitSlop={SLOP} haptic
         onPress={waiting ? undefined : onShare}
         disabled={waiting}
         accessibilityRole="button"
@@ -266,7 +266,7 @@ export const PaperActions = memo(function PaperActions({
         <Text style={p.actionLabel} {...actionLabelProps}>SHARE</Text>
       </PressableScale>
 
-      <PressableScale style={[p.action, !canKeep && !keepReading && p.actionOff]} hitSlop={SLOP} haptic pressedScale={0.92}
+      <PressableScale touch="commit" style={[p.action, !canKeep && !keepReading && p.actionOff]} hitSlop={SLOP} haptic pressedScale={0.92}
         onPress={canKeep ? () => onSave(!saved) : undefined}
         disabled={!canKeep}
         accessibilityRole="button"
@@ -456,7 +456,7 @@ const PostWords = memo(function PostWords({
               credit the film, the byline the member. Uncovering a spoiler and
               opening the filing are one act, one tap. */}
           <PressableScale
-            onPress={onOpen} haptic="selection" pressedScale={0.995}
+            style={p.writingDoor} onPress={onOpen} haptic="selection" pressedScale={0.995}
             // No sideways reach under the rank rule and the margin.
             hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
             accessibilityRole="button"
@@ -593,7 +593,7 @@ export const PaperPost = memo(function PaperPost({
         {/* One act on words that are gone: the critiques, which survive, with
             their count beside the icon as on every bar. */}
         <View style={p.actions}>
-          <PressableScale style={p.action} hitSlop={SLOP} haptic
+          <PressableScale room style={p.action} hitSlop={SLOP} haptic
             onPress={onCritique}
             accessibilityRole="button"
             accessibilityLabel={

@@ -69,7 +69,7 @@ const ProviderLogo = React.memo(function ProviderLogo({ p, providerLink }: { p: 
   // A logo is a picture: the service is named for a screen reader either way,
   // and it is a control only where there is somewhere to go.
   return providerLink ? (
-    <PressableScale onPress={handlePress} haptic="light" hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+    <PressableScale room onPress={handlePress} haptic="light" hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
       accessibilityRole="link" accessibilityLabel={`${p.provider_name}. Opens JustWatch.`}>
       {face}
     </PressableScale>
@@ -123,7 +123,7 @@ export const WatchProviders = React.memo(function WatchProviders({ providers }: 
           <View style={s.footer}>
             <Text style={s.footerText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>DATA BY JUSTWATCH</Text>
             {link && (
-              <PressableScale onPress={handleViewAll} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+              <PressableScale room onPress={handleViewAll} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                 <Text style={s.footerLink} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>VIEW ALL OPTIONS →</Text>
               </PressableScale>
             )}

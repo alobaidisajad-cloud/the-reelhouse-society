@@ -40,7 +40,7 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, auteur }: {
   return (
     <View style={st.tabsContainer}>
       <Animated.View style={[StyleSheet.absoluteFill, st.tabsActiveBg, pillStyle]} />
-      <PressableScale hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
+      <PressableScale room hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
         <View style={st.tabInner}>
           {/* Lit and still: a lamp that blinked every second was the Reel's light read as noise. */}
           <View style={[st.liveDot, auteur ? st.liveDotAuteur : st.liveDotDefault]} />
@@ -48,7 +48,7 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, auteur }: {
           <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fogQuiet }]}>LOGS</Text>
         </View>
       </PressableScale>
-      <PressableScale hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
+      <PressableScale room hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
         <Text style={[st.tabText, { color: activeTab === 'stacks' ? colors.parchmentDim : colors.fogQuiet }]}>STACKS</Text>
       </PressableScale>
     </View>

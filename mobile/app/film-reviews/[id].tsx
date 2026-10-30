@@ -164,7 +164,7 @@ export default function FilmReviewsScreen() {
 
       {/* Header */}
       <View style={[s.header, { paddingTop: headerTop }]}>
-        <PressableScale onPress={() => nav.back()} style={s.backBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityLabel="Go back">
+        <PressableScale touch="wayOut" onPress={() => nav.back()} style={s.backBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
         </PressableScale>
         <View style={s.headerTextWrap}>

@@ -49,6 +49,7 @@ export default function OfflineBanner() {
                 {/* The label says the state as well as the act, the plate's own words first, so a
                     voice-control member can say what they read; "Retry connection" never said why. */}
                 <PressableScale
+                    room
                     onPress={handleRetry}
                     pressedScale={0.96}
                     accessibilityRole="button"

@@ -57,7 +57,7 @@ const RefreshFailed = memo(function RefreshFailed({ plan, onRetry }: { plan: Wal
       <View style={s.refreshWords}>
         {STATES.refreshFailed.map((l) => <HouseLine key={l} type="refresh" text={l} room={plan.refreshWordsRoom} style={s.refreshLine} />)}
       </View>
-      <PressableScale style={s.refreshDoor} onPress={onRetry} haptic="selection" accessibilityRole="button" accessibilityLabel="Try again">
+      <PressableScale room style={s.refreshDoor} onPress={onRetry} haptic="selection" accessibilityRole="button" accessibilityLabel="Try again">
         <HouseLine type="cta" text={STATES.tryAgain} room={plan.refreshDoorRoom} style={s.refreshDoorText} spoken={false} />
       </PressableScale>
     </View>

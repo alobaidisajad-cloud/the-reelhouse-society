@@ -195,7 +195,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
       </View>
 
       {!isPerson && (
-        <PressableScale
+        <PressableScale touch="destructive"
           style={[s.quickSaveIcon, isSaved ? s.quickSaveIconActive : s.quickSaveIconInactive]}
           onPress={toggleWatchlist}
           haptic="light"

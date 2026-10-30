@@ -258,7 +258,7 @@ export function ProjectorRoom({ stats, user, isSelf = false, record, streak }: {
             )}
 
             <Arrive name="projectorroom-3" duration={600} delay={400} style={s.exportWrap}>
-                <PressableScale style={s.exportBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic accessibilityRole="button" accessibilityLabel={isSelf ? 'Share your standing' : 'Share this standing'}>
+                <PressableScale room style={s.exportBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic accessibilityRole="button" accessibilityLabel={isSelf ? 'Share your standing' : 'Share this standing'}>
                     <Text {...scaledTextProps} style={s.exportText}>{isSelf ? 'SHARE YOUR STANDING' : 'SHARE THIS STANDING'}</Text>
                 </PressableScale>
             </Arrive>

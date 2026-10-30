@@ -530,10 +530,14 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, text
       `<div${rnAttr(container)} style="${css(container, false)}">${inner}</div></div>`);
     return '';
   }
-  // A capture run's SrcMark (jest.setup.ts) is not a box: its source line goes onto its child.
+  // A capture run's SrcMark (jest.setup.ts) is not a box: its source line, and a control's touch
+  // weight, go onto its child.
   if (t === 'SrcMark') {
     const inner = (n.children || []).map((c) => toHtml(c, opts, inSvg, textCap)).join('');
-    return typeof p.src === 'string' ? inner.replace(/^<(\w+)/, `<$1 data-src="${esc(p.src)}"`) : inner;
+    const marks = (typeof p.src === 'string' ? ` data-src="${esc(p.src)}"` : '')
+      + (typeof p.touch === 'string' ? ` data-touch="${esc(p.touch)}"` : '')
+      + (typeof p.grow === 'string' ? ` data-grow="${esc(p.grow)}" data-by="${esc(String(p.by ?? '0,0'))}"` : '');
+    return marks ? inner.replace(/^<(\w+)/, `<$1${marks}`) : inner;
   }
   // `rn` is the style as React Native has it — what the Yoga check reads.
   // `st` is where the browser must draw it: the same, unless it is placed

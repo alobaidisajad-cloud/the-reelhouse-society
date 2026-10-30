@@ -31,11 +31,16 @@ export function siteOutside(own: RegExp): string | undefined {
   return undefined;
 }
 
-/** `Component`, marked with the site that used it. Refs pass straight through. */
-export function markSource<P extends object>(Component: ComponentType<P>, own: RegExp, displayName: string) {
+/**
+ * `Component`, marked with the site that used it, and with whatever `more` reads from its props
+ * (a weighted control's weight and the axes it may grow on). Refs pass straight through.
+ */
+export function markSource<P extends object>(Component: ComponentType<P>, own: RegExp, displayName: string,
+  more?: (props: Record<string, unknown>) => Record<string, unknown> | null) {
   const Inner = Component as ComponentType<Record<string, unknown>>;
   const Marked = forwardRef<unknown, P>(function Marked(props, ref) {
-    return createElement('SrcMark', { src: siteOutside(own) }, createElement(Inner, { ...(props as Record<string, unknown>), ref }));
+    const all = props as Record<string, unknown>;
+    return createElement('SrcMark', { src: siteOutside(own), ...more?.(all) }, createElement(Inner, { ...all, ref }));
   });
   Marked.displayName = displayName;
   return Marked;

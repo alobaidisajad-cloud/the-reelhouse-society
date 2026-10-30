@@ -397,7 +397,7 @@ export default function SocialModal() {
             <View style={styles.header}>
                 <View style={styles.headerBalance} />
                 <Text style={styles.title}>{resolveTitle(mode)}</Text>
-                <PressableScale onPress={() => nav.back()} style={styles.closeBtn} hitSlop={null} haptic="selection" pressedScale={0.92} accessibilityRole="button" accessibilityLabel="Close social modal">
+                <PressableScale touch="wayOut" onPress={() => nav.back()} style={styles.closeBtn} hitSlop={null} haptic="selection" pressedScale={0.92} accessibilityRole="button" accessibilityLabel="Close social modal">
                     <X size={20} color={colors.parchment} />
                 </PressableScale>
             </View>

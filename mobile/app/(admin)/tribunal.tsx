@@ -257,7 +257,7 @@ function ActionModal({
 
           <View style={s.modalHeader}>
             <Text style={[s.modalTitle, { color: config.ink }]}>{config.title}</Text>
-            <PressableScale onPress={handleClose} haptic="selection" pressedScale={0.9}
+            <PressableScale touch="wayOut" onPress={handleClose} haptic="selection" pressedScale={0.9}
               accessibilityRole="button" accessibilityLabel="Close">
               <X size={20} color={colors.fog} />
             </PressableScale>
@@ -304,7 +304,7 @@ function ActionModal({
             />
           </View>
 
-          <PressableScale
+          <PressableScale touch="destructive"
             style={[s.submitBtn, { backgroundColor: config.color }, !reason.trim() && UNREADY.plate]}
             onPress={handleSubmit}
             disabled={!reason.trim()}
@@ -715,7 +715,7 @@ function TribunalScreen() {
       />
 
       <Arrive name="tribunal-1" duration={600} style={[s.header, { paddingTop: headerTop }]}>
-        <PressableScale
+        <PressableScale touch="wayOut"
           onPress={() => nav.back()}
           style={s.backBtn}
           haptic="selection"
@@ -794,7 +794,7 @@ function TribunalScreen() {
             </PressableScale>
 
             {multiSelectMode && selectedReports.size > 0 && (
-              <PressableScale
+              <PressableScale touch="destructive"
                 style={s.bulkDismissBtn}
                 onPress={handleBulkDismiss}
                 haptic="medium"
@@ -963,7 +963,7 @@ function TribunalScreen() {
                           <Text style={s.evidenceDestroyed}>The evidence has been destroyed — the page no longer exists.</Text>
                         )
                       ) : (
-                        <PressableScale
+                        <PressableScale room
                           style={s.summonBtn}
                           onPress={() => summonEvidence(item.id)}
                           disabled={!!ev?.loading}
@@ -995,7 +995,7 @@ function TribunalScreen() {
                     {!multiSelectMode && (
                       <View style={s.actionGrid}>
                         <View style={s.actionRow}>
-                          <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                          <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             style={[s.actionBtn, { borderColor: colors.ash }, !item.target_user_id && { flex: 1 }]}
                             onPress={() => handleDismiss(item)}
                             haptic="selection"
@@ -1008,7 +1008,7 @@ function TribunalScreen() {
                           </PressableScale>
 
                           {!!item.target_user_id && (
-                            <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                               style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
                               onPress={() => openActionModal('warn', item)}
                               haptic="selection"
@@ -1038,7 +1038,7 @@ function TribunalScreen() {
                             content" means, and the server refuses the type
                             anyway. The act on a bad room is on its owner. */}
                         {item.content_type !== 'profile' && item.content_type !== 'lounge' && (
-                          <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                          <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
                             onPress={() => openActionModal('delete_content', item)}
                             haptic="medium"
@@ -1054,7 +1054,7 @@ function TribunalScreen() {
                         {!!item.target_user_id && (
                           <>
                             <View style={s.actionRow}>
-                              <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                              <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                                 style={[s.actionBtn, { borderColor: colors.crimson, backgroundColor: 'rgba(180,45,45,0.08)' }]}
                                 onPress={() => openActionModal('suspend', item)}
                                 haptic="medium"
@@ -1066,7 +1066,7 @@ function TribunalScreen() {
                                 <Text style={[s.actionText, { color: colors.crimsonInk }]}>SUSPEND</Text>
                               </PressableScale>
 
-                              <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                              <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                                 style={[s.actionBtn, { borderColor: colors.bloodReel, backgroundColor: 'rgba(107,26,10,0.12)' }]}
                                 onPress={() => handleBanOrExile('ban', item)}
                                 haptic="medium"
@@ -1079,7 +1079,7 @@ function TribunalScreen() {
                               </PressableScale>
                             </View>
 
-                            <PressableScale hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                               style={[s.actionBtn, s.exileBtn]}
                               onPress={() => handleBanOrExile('permanent_exile', item)}
                               haptic="heavy"
@@ -1269,12 +1269,14 @@ const s = StyleSheet.create({
   // ── Action Grid ────────────────────────────────────────────────────────
   actionGrid: { gap: 8 },
   actionRow: { flexDirection: 'row', gap: 8 },
+  // A verdict is a step a slip on costs most: 48 tall by its own box, 8 from the next.
   actionBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    minHeight: 48,
     paddingVertical: 12,
     borderRadius: radii.sm,
     borderWidth: 1,
@@ -1466,12 +1468,14 @@ const s = StyleSheet.create({
     gap: VIEW_GAP,
     marginTop: 16,
   },
+  // 48 by its own box, as every control on the bench is.
   viewTab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    minHeight: 48,
     paddingVertical: 10,
     borderRadius: radii.sm,
     borderWidth: 1,
@@ -1506,6 +1510,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    minHeight: 48,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: radii.sm,

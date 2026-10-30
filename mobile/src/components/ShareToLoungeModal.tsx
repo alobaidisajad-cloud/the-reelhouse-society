@@ -202,7 +202,7 @@ function ShareSheet({
                 <View style={[s.card, { paddingBottom: sheetFoot }]}>
                     <View style={s.header}>
                         <Text style={s.title}>Share to Lounge</Text>
-                        <PressableScale onPress={() => { onClose(); }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic="selection" pressedScale={0.92}
+                        <PressableScale touch="wayOut" onPress={() => { onClose(); }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic="selection" pressedScale={0.92}
                             accessibilityRole="button" accessibilityLabel="Close">
                             <Text style={s.closeText}>✕</Text>
                         </PressableScale>
@@ -283,7 +283,8 @@ const s = StyleSheet.create({
     closeText: { fontSize: 18, color: colors.fog },
     filmLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginBottom: 16 },
     selectLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog, marginBottom: 8 },
-    loungeItem: { paddingVertical: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, marginBottom: 6 },
+    // 48 by its own box, 6 from the next: a salon is a row a finger picks.
+    loungeItem: { minHeight: 48, justifyContent: 'center', paddingVertical: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, marginBottom: 6 },
     loungeActive: { borderColor: colors.sepia, backgroundColor: colors.sepiaFaint },
     loungeName: { fontFamily: fonts.sub, fontSize: 14, color: colors.bone },
     loungeNameActive: { color: colors.sepia },

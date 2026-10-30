@@ -57,7 +57,7 @@ export const KeepOff = memo(function KeepOff({ kind, id, what, room, lines = [KE
   return (
     <PressableScale
       style={s.door}
-      // 44 tall and its words wide: a halo would only reach the name beside it or the line above
+      // 48 tall and its words wide: a halo would only reach the name beside it or the line above
       hitSlop={0}
       onPress={keepOff}
       disabled={busy}
@@ -75,6 +75,6 @@ export const KeepOff = memo(function KeepOff({ kind, id, what, room, lines = [KE
 
 const s = StyleSheet.create({
   // no inset: its words are given the whole row; where that is too narrow, two lines, flush right
-  door: { marginLeft: 'auto', minHeight: 44, justifyContent: 'center', alignItems: 'flex-end' },
+  door: { marginLeft: 'auto', minHeight: 48, justifyContent: 'center', alignItems: 'flex-end' },
   text: { color: colors.crimsonInk },
 });

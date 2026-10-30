@@ -30,7 +30,7 @@ export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, o
       <AuthBackdrop />
 
       {/* Close — pinned top-right, clear of the notch */}
-      <PressableScale
+      <PressableScale touch="wayOut"
         style={[s.closeBtn, { top: closeTop }]}
         onPress={onClose}
         hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}

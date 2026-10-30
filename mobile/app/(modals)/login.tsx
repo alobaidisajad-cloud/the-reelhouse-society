@@ -191,7 +191,7 @@ export default function LoginScreen() {
 
       {/* ── Pinned Header / Close (0-Overlap) ── */}
       <HouseBlur intensity={80} tint="dark" style={[s.fixedHeader, { paddingTop: headerTop, height: headerBottom }]}>
-        <PressableScale
+        <PressableScale touch="wayOut"
           style={s.closeBtn}
           onPress={() => {
             nav.back(); // the Lobby when there is nothing to go back to
@@ -389,10 +389,10 @@ export default function LoginScreen() {
                 textContentType={isLogin ? 'password' : 'newPassword'}
                 autoComplete={isLogin ? 'password' : 'new-password'}
               />
-              <PressableScale
+              <PressableScale room
                 style={s.showBtn}
                 onPress={() => { TactileEngine.navigate(); setShowPassword(!showPassword); }}
-                // Down, half the 12pt to the link below: 15 reached 18pt into it.
+                // Grown to 48 (room), it drops this halo on each grown axis: it holds only until measured.
                 hitSlop={{ top: 15, right: 15, bottom: 6, left: 15 }}
                 pressedScale={0.92}
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
@@ -408,14 +408,14 @@ export default function LoginScreen() {
 
           {/* Forgot password link (login mode only) */}
           {isLogin && (
-            <PressableScale
+            <PressableScale room
               onPress={() => {
                 setForgotEmail(isAddress(emailOrUsername) ? emailOrUsername : '');
                 setLinkPurpose('reset');
                 setForgotSent(false);
                 setForgotModalVisible(true);
               }}
-              // Half of each gap: 6 up to SHOW, 12 down to the submit plate (15 reached 6pt into it).
+              // Up and down it grows to 48 (room), its halo gone there; sideways 15, where nothing stands.
               style={s.forgotBtn} hitSlop={{ top: 6, bottom: 12, left: 15, right: 15 }}
               haptic="selection"
               accessibilityLabel="Forgot your credentials"
@@ -430,8 +430,8 @@ export default function LoginScreen() {
             style={[s.submitBtn, ((!isLogin && usernameStatus === 'taken') || (isLogin && !canAttempt)) && UNREADY.plate]}
             onPress={handleLoginSubmit}
             disabled={submitting || (!isLogin && usernameStatus === 'taken') || (isLogin && !canAttempt)}
-            // Up, the other half of the 24pt to the link above.
-            hitSlop={{ top: 12, bottom: 15, left: 15, right: 15 }}
+            // Up, half the 5pt left under the link above, which grows to 48 (room).
+            hitSlop={{ top: 2, bottom: 15, left: 15, right: 15 }}
             pressedScale={0.97}
             // Its own words first, then the act: a voice-control member says what they see.
             accessibilityLabel={!isLogin ? 'Request admission'
@@ -455,7 +455,7 @@ export default function LoginScreen() {
 
         {/* ── Toggle Login/Signup ── */}
         <Arrive name="login-3" duration={600} delay={450} rise={-25} style={s.toggleWrap}>
-          <PressableScale onPress={toggleMode} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityLabel={isLogin ? 'No membership? Request admission: switch to sign up' : 'Already admitted? Identify yourself: switch to sign in'}>
+          <PressableScale room onPress={toggleMode} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection" accessibilityLabel={isLogin ? 'No membership? Request admission: switch to sign up' : 'Already admitted? Identify yourself: switch to sign in'}>
             <Text style={s.toggleText}>
               {isLogin ? 'No membership? ' : 'Already admitted? '}
               <Text style={s.toggleHighlight}>

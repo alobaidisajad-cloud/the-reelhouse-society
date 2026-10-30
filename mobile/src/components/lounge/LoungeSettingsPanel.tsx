@@ -174,7 +174,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
             <Text style={s.title} numberOfLines={1}>{lounge.name}</Text>
             {!!lounge.description && <Text style={s.subtitle} numberOfLines={2}>{lounge.description}</Text>}
           </View>
-          <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Close">
+          <PressableScale touch="wayOut" onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Close">
             <X size={20} color={colors.fog} strokeWidth={1.5} />
           </PressableScale>
         </View>
@@ -195,7 +195,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
                       <RemoteImage uri={tmdb.backdrop(lounge.cover_image, 'w500')} style={s.coverThumb} contentFit="cover" transition={150} fallback={<PosterMark style={s.coverThumb} size={14} />} />
                       <View style={s.coverActions}>
                         <PressableScale style={s.coverBtn} onPress={handleChangeCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Change salon cover"><Text style={s.coverBtnText}>CHANGE</Text></PressableScale>
-                        <PressableScale style={[s.coverBtn, s.coverBtnRemove]} onPress={handleRemoveCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Remove salon cover"><Text style={[s.coverBtnText, s.coverBtnTextRemove]}>REMOVE</Text></PressableScale>
+                        <PressableScale touch="destructive" style={[s.coverBtn, s.coverBtnRemove]} onPress={handleRemoveCover} haptic="selection" accessibilityRole="button" accessibilityLabel="Remove salon cover"><Text style={[s.coverBtnText, s.coverBtnTextRemove]}>REMOVE</Text></PressableScale>
                       </View>
                     </View>
                   ) : (

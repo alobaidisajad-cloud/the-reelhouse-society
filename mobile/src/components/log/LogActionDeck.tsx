@@ -141,7 +141,7 @@ export default function LogActionDeck({
                 <Text style={[s.deckLabel, s.deckLabelActive]} {...deckLabelProps}>EDIT</Text>
              </PressableScale>
            ) : (
-             <PressableScale
+             <PressableScale touch="commit"
                style={s.deckBtn}
                onPress={onSavePress}
                hitSlop={{ top: 4, bottom: 8, left: 0, right: 0 }}
