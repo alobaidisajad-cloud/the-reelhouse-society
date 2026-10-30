@@ -331,8 +331,11 @@ export const p = StyleSheet.create({
   artHeld: { opacity: 0.86 },
   /** The feed's credit: a thumbnail and one line. The full poster is on the post page. */
   credit: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, minHeight: 48 },
-  /** The writing's door: a one-line take is 48 too, its words centred in it. */
-  writingDoor: { minHeight: 48, justifyContent: 'center' },
+  /**
+   * The writing's door: a one-line take is 48 too, its words at its top as a column's are. Centred,
+   * at Android's largest text Yoga sized a post 14pt short of its words, and its clip cut them.
+   */
+  writingDoor: { minHeight: 48 },
   creditArt: {
     width: 18, height: 27, borderRadius: 1.5, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(240,232,176,0.28)',

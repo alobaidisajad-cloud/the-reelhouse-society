@@ -145,12 +145,18 @@ export function grownFor(own: ViewStyle, seen: { w: number; h: number } | null, 
       at,
     };
   }
-  // The inner box fills the outer one, as the control filled whatever its parent gave it.
+  // The inner box stretches across the outer one, as the control filled the width its parent gave
+  // it (not when it names its own). It never grows along: in a box with no height of its own, Yoga
+  // grows a growing child to all the room above it (a 45pt plate drew 1019 tall, and pushed the
+  // screen's words off its top), and a 38pt disc drew 38×44.
   const outerKeys = new Set<string>([...PLACING, ...SIZES.filter((k) => relative(own[k]))]);
   const pick = (keep: boolean) => Object.fromEntries(Object.entries(rest).filter(([k]) => outerKeys.has(k) === keep)) as ViewStyle;
   return {
     outer: { ...pick(true), ...each('margin', (v, g) => v - g), ...each('padding', (_v, g) => g) },
-    inner: { ...pick(false), ...each('padding', (v) => v), flexGrow: 1, flexShrink: 1, alignSelf: 'stretch' },
+    inner: {
+      ...pick(false), ...each('padding', (v) => v),
+      ...(num(own.width) ? null : { alignSelf: 'stretch' }),
+    },
     by,
     at,
   };

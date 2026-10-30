@@ -40,6 +40,7 @@ app/person/[id].tsx · Go back · wayOut
 app/person/[id].tsx · Go back · wayOut
 app/reset-password.tsx · Back to lobby · wayOut
 app/reset-password.tsx · Request new reset link · commit
+app/reset-password.tsx · Return to lobby · wayOut
 app/stacks/[id].tsx · Close critiques · wayOut
 app/stacks/[id].tsx · Close critiques · wayOut
 app/stacks/[id].tsx · Delete stack · destructive

@@ -153,7 +153,7 @@ export default function ResetPasswordScreen() {
             >
               <Text style={s.submitText}>REQUEST NEW RESET LINK</Text>
             </PressableScale>
-            <PressableScale
+            <PressableScale touch="wayOut"
               style={{ marginTop: 16, padding: 8 }}
               onPress={() => nav.replace('/(tabs)')}
               pressedScale={0.95}

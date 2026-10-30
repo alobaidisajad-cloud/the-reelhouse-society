@@ -54,6 +54,17 @@ describe('grownFor: the sum', () => {
     expect(g.outer).not.toHaveProperty('backgroundColor');
     expect(g.outer).not.toHaveProperty('width');
     expect(g.inner).not.toHaveProperty('position');
+    // Its own size kept: filling the grown box would draw a 30×20 ground 30×34 (Yoga did, a disc 38×44).
+    expect(g.inner).not.toHaveProperty('flexGrow');
+    expect(g.inner).not.toHaveProperty('alignSelf');
+  });
+
+  it('a ground with no size of its own stretches across the grown box, and never grows along it', () => {
+    // Growing along, in a box with no height, Yoga grew a 45pt plate to all the room above it.
+    const g = grownFor({ backgroundColor: 'red', paddingVertical: 4 }, { w: 200, h: 30 })!;
+    expect(g.inner).toMatchObject({ alignSelf: 'stretch' });
+    expect(g.inner).not.toHaveProperty('flexGrow');
+    expect(g.inner).not.toHaveProperty('flex');
   });
 });
 
