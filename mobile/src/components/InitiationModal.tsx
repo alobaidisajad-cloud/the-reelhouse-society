@@ -70,7 +70,30 @@ const BEATS: Beat[] = [
   },
 ];
 
-/** The member stamp — their handle and real serial, in rotated crimson.
+/** The longest handle a stamp sets on one line: longer, one line could not hold it at the type
+ *  floor on a 320pt phone at a large text (a handle may be 30 letters). */
+export const STAMP_LINE = 18;
+
+/**
+ * A handle as the stamp sets it: one line, or a long one as two, broken after its own separator
+ * nearest the middle (an underscore or a dot), or at the middle when it has none. Never left to the
+ * phone, which would break it wherever the line ran out, or shrink it past what can be read. Each
+ * line is its own label that shrinks to fit; split near the middle, the two land at one size.
+ */
+export function stampLines(handle: string): string[] {
+  if (handle.length <= STAMP_LINE) return [handle];
+  const middle = handle.length / 2;
+  let at = -1;
+  for (let i = 1; i < handle.length - 1; i++) {
+    if ((handle.charAt(i) === '_' || handle.charAt(i) === '.') && (at === -1 || Math.abs(i + 1 - middle) < Math.abs(at - middle))) at = i + 1;
+  }
+  const cut = at === -1 ? Math.ceil(middle) : at;
+  return [handle.slice(0, cut), handle.slice(cut)];
+}
+
+/** The member stamp — their handle and real serial, in rotated crimson, set in two tiers as a
+ *  rubber stamp is: the handle, and the serial beneath it. One line could not hold both at the
+ *  largest text (largest-text run 40847116101: cut at its smallest size); each tier fits its own.
  *  Never a fake number: if the serial hasn't landed yet, the handle stands alone. */
 function MemberStamp({ username, memberNo, reduceMotion }: { username: string; memberNo: number | null; reduceMotion: boolean }) {
   const opacity = useSharedValue(reduceMotion ? 1 : 0);
@@ -92,13 +115,16 @@ function MemberStamp({ username, memberNo, reduceMotion }: { username: string; m
     transform: [{ rotate: '-2deg' }, { scale: scale.value }],
   }));
 
-  const line = memberNo != null
-    ? `@${username.toUpperCase()} · MEMBER Nº ${String(memberNo).padStart(4, '0')}`
-    : `@${username.toUpperCase()}`;
+  const handle = `@${username.toUpperCase()}`;
+  const serial = memberNo != null ? `MEMBER Nº ${String(memberNo).padStart(4, '0')}` : null;
 
   return (
-    <Animated.View style={[s.stamp, style]}>
-      <Text style={s.stampText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{line}</Text>
+    // Read as one stamp, as it is seen.
+    <Animated.View style={[s.stamp, style]} accessible accessibilityLabel={serial ? `${handle} · ${serial}` : handle}>
+      {stampLines(handle).map((line) => (
+        <Text key={line} style={s.stampText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{line}</Text>
+      ))}
+      {serial ? <Text style={s.stampSerial} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{serial}</Text> : null}
     </Animated.View>
   );
 }
@@ -189,12 +215,12 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
 
             <View style={s.footer}>
               {!isFinal ? (
-                <PressableScale room style={s.nextBtn} onPress={handleNext} haptic="selection" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Next">
+                <PressableScale room hitSlop={null} style={s.nextBtn} onPress={handleNext} haptic="selection" pressedScale={0.97} accessibilityRole="button" accessibilityLabel="Next">
                   <Text style={s.nextText}>NEXT&nbsp; →</Text>
                 </PressableScale>
               ) : <View style={s.footerSpacer} />}
 
-              <PressableScale room onPress={handleQuiet} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Enter quietly: skip to the Lobby" testID="initiation-enter-quietly">
+              <PressableScale room hitSlop={null} onPress={handleQuiet} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Enter quietly: skip to the Lobby" testID="initiation-enter-quietly">
                 <Text style={s.quietText}>ENTER QUIETLY</Text>
               </PressableScale>
             </View>
@@ -237,10 +263,13 @@ const s = StyleSheet.create({
   body: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 21, maxWidth: 300 },
 
   stamp: {
+    alignItems: 'center',
     borderWidth: 1.5, borderColor: colors.bloodReel, borderRadius: 4,
     paddingVertical: 7, paddingHorizontal: 16, marginBottom: 12, maxWidth: '100%',
   },
-  stampText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.crimsonInk, includeFontPadding: false },
+  stampText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.crimsonInk, includeFontPadding: false, textAlign: 'center' },
+  // The serial beneath the handle: a step smaller, at the type floor, as a stamp's second tier is.
+  stampSerial: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.crimsonInk, includeFontPadding: false, marginTop: 4 },
 
   firstLogBtn: {
     marginTop: 18, backgroundColor: colors.sepia, borderRadius: 3,
@@ -248,7 +277,10 @@ const s = StyleSheet.create({
   },
   firstLogText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
 
-  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24 },
+  // NEXT and the quiet way in share a row while it holds them apart; on a narrow phone at a large
+  // text the quiet one takes the next line, the rows far enough apart that each one's reach of 48
+  // (NEXT's and the link's, grown above and below) stays its own.
+  footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 24, rowGap: 24, marginTop: 24 },
   footerSpacer: { width: 1, height: 1 },
   nextBtn: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 3, paddingVertical: 10, paddingHorizontal: 20 },
   nextText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
