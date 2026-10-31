@@ -300,7 +300,7 @@ without one). "Read" is the day its comments were last read against its code.
 | modules/room-cover/index.ts | 2026-10-27 | new: a locked room covered while the app is away, natively (iOS: the house's ink as the app resigns active; Android 13+: kept out of Recents, the secure flag below 13) |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
 | register/classes.yaml | 2026-10-31 | edited: the tablet runs on Android 16, on its side, on its own emulator; edited: the variants list names a tablet's width, which runs every flow; edited: the E2E judges' classes, each with the test that refuses its bad log; the store call's limit among the request class's tests |
-| register/mutants.yaml | 2026-10-31 | edited: shape-cut-unconfirmed plants on the early end's own line, which now waits for its box; new: every mutant, past, new-shape and judge, each with its class and the test that must fail on it |
+| register/mutants.yaml | 2026-10-31 | edited: shape-cut-unconfirmed keeps the early end's branch and never takes it, so it compiles; edited: shape-cut-unconfirmed plants on the early end's own line, which now waits for its box; new: every mutant, past, new-shape and judge, each with its class and the test that must fail on it |
 | register/stryker-equivalents.yaml | 2026-10-16 | new: the survivors no test can tell apart, each by its file, line, column, mutator and replacement, with why |
 | register/stryker.yaml | 2026-10-16 | new: the logic files Stryker scores, each with its own tests, at a floor of 90% |
 | scripts/__tests__/commit.test.ts | 2026-10-16 | edited: an ignored path refused with the index as it was |
