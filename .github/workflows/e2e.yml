@@ -127,7 +127,7 @@ jobs:
       profile: ${{ steps.device.outputs.profile }}
       disk: ${{ steps.device.outputs.disk }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # First, so a variant not in the list stops the run before anything is built.
       - name: What the variant runs
@@ -359,7 +359,7 @@ jobs:
       E2E_PROFILE: ${{ needs.build.outputs.profile }}
       E2E_DISK: ${{ needs.build.outputs.disk }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The stack's ports kept before the job makes any connection that could be lent one: lent
       # before, a port was held all the job (mobile/e2e/start-stack.sh; run 39249504168).
       - name: The stack's ports, kept first
@@ -771,7 +771,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             mobile/scripts/heartbeat.mjs
@@ -796,7 +796,7 @@ jobs:
           echo "::error title=E2E::the app was not built (${{ needs.build.result }}), so no shard ran"
           exit 1
 
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Its flows are the ones every shard must have run between them.
       - name: The shipped client's app, over this harness

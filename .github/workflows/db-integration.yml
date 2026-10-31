@@ -50,7 +50,7 @@ jobs:
           exit 1
 
       # Pinned to one commit (see god_tier_ci.yml).
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The stack's ports kept before the job makes any connection that could be lent one: lent
       # before, a port was held all the job (mobile/e2e/start-stack.sh; run 39249504168).
       - name: The stack's ports, kept first
@@ -200,7 +200,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The stack's ports kept before the job makes any connection that could be lent one: lent
       # before, a port was held all the job (mobile/e2e/start-stack.sh; run 39249504168).
       - name: The stack's ports, kept first
@@ -320,7 +320,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The stack's ports kept before the job makes any connection that could be lent one: lent
       # before, a port was held all the job (mobile/e2e/start-stack.sh; run 39249504168).
       - name: The stack's ports, kept first
@@ -423,7 +423,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             mobile/scripts/heartbeat.mjs
