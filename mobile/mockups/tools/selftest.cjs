@@ -293,7 +293,7 @@ const wjson = path.join(WDIR, 'report.json');
 const widened = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', WDIR, '--width', '1024', '--passes', 'ios@1', '--json', wjson], { encoding: 'utf8' });
 const wide = fs.existsSync(wjson) ? JSON.parse(fs.readFileSync(wjson, 'utf8')) : {};
 if (!fs.existsSync(wjson)) console.error(`layout.cjs wrote no WIDE report (exit ${widened.status}): ${`${widened.stderr}${widened.stdout}`.trim().split('\n').slice(-5).join('\n')}`);
-for (const [name, want] of [['escaped', ['WIDE']], ['held', []]]) {
+for (const [name, want] of [['escaped', ['CUT', 'WIDE']], ['held', []]]) {
   const got = [...new Set((wide[`${name}@1`] ?? wide[name] ?? { found: null }).found?.map((x) => x.kind) ?? ['NO REPORT'])];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   if (!ok) bad++;
@@ -345,6 +345,18 @@ const thin = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '-
 const thinOk = thin.status !== 0 && /must be/.test(thin.stderr);
 if (!thinOk) bad++;
 console.log(`${thinOk ? 'ok  ' : 'FAIL'}  small-thin   SMALL         want a refused --allow  got exit ${thin.status}`);
+// The reading column clips across only: a control below the phone's height, on a page drawn as one
+// tall scroll, keeps its whole reach (cut there, the column took 1,719 controls' reach to nothing).
+const FDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'frame-selftest-'));
+fs.writeFileSync(path.join(FDIR, 'below.html'), `<div style="height:1400px;flex-shrink:0"></div><div data-press="8,8,8,8" aria-label="Back" data-src="src/x/Edge.tsx:1" style="width:48px;height:48px;flex-shrink:0;margin-left:40px"></div>`);
+for (const [width, want] of [['390', ''], ['1024', '']]) {
+  const r = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', FDIR, '--width', width, '--passes', 'ios@1', '--kinds', 'SMALL'], { encoding: 'utf8' });
+  const got = [...new Set((r.stdout.match(/^\S+(?=\s+×1\s+1 found)/gm) || []))].join(',');
+  const ok = got === want && r.status === (want ? 1 : 0);
+  if (!ok) bad++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  frame-below  SMALL at ${width.padEnd(4)}  want [${want}]  got [${got}] exit ${r.status}${ok ? '' : `: ${`${r.stderr}${r.stdout}`.trim().split('\n').slice(-3).join(' / ')}`}`);
+}
+fs.rmSync(FDIR, { recursive: true, force: true });
 // --allow-short: a text cut at its floor is excused only where the source line
 // it was written on matches — the title, not the copy beside it in the same file.
 const srcDir = path.join(__dirname, '..', 'out', 'selftest-src');

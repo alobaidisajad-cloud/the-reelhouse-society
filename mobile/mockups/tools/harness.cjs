@@ -29,11 +29,12 @@ chromium.launch = (options = {}) => playwright.chromium.launch({
 
 const HOUSE = '#0D0B09';
 /**
- * The reading column every page sits in (navMetrics' READING_MAX; aPageIsSizedByItsColumn holds the
- * two equal): drawn as the app's navigator draws it, so a wide window (744, 1024) is seen as it is.
+ * The reading column every page sits in (navMetrics' readingColumn; aPageIsSizedByItsColumn holds the
+ * two equal): drawn as the app's navigator draws it, so a wide window (744 and up) is seen as it is.
  */
-const COLUMN_MAX = 560;
-const COLUMN_RN = JSON.stringify({ flex: 1, width: '100%', maxWidth: COLUMN_MAX, alignSelf: 'center' });
+const COLUMN = { flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', overflow: 'hidden' };
+const COLUMN_MAX = COLUMN.maxWidth;
+const COLUMN_RN = JSON.stringify(COLUMN);
 // The one device list (mockups/devices.json), shared with the generators.
 const DEVICES = JSON.parse(fs.readFileSync(path.join(MOBILE, 'mockups', 'devices.json'), 'utf8'));
 const WIDTH = DEVICES.default;
@@ -107,12 +108,23 @@ async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH
   await page.setContent(
     `<!doctype html><html><head><meta charset="utf-8"><style>${fonts()}${RN_RULES}</style></head>` +
     // The phone: its exact height, a flex column like RN's root, so `flex: 1` fills it; inside it the
-    // reading column, as the root navigator holds every page (the whole phone, on a phone).
+    // reading column, as the root navigator holds every page (the whole phone, on a phone). It clips
+    // across only: a scroller is drawn as one tall page, read below the phone's height as scrolled to.
     `<body style="margin:0;background:${HOUSE}"><div class="phone" style="width:${width}px;height:${height}px;position:relative;display:flex;flex-direction:column;background:${HOUSE}">` +
-    `<div data-frame="column" data-rn='${COLUMN_RN}' style="flex:1;min-height:0;width:100%;max-width:${COLUMN_MAX}px;align-self:center;position:relative;display:flex;flex-direction:column">${html}</div></div></body></html>`,
+    `<div data-frame="column" data-rn='${COLUMN_RN}' style="flex:1;min-height:0;width:100%;max-width:${COLUMN_MAX}px;align-self:center;overflow-x:clip;position:relative;display:flex;flex-direction:column">${html}</div></div></body></html>`,
     { waitUntil: 'load' },
   );
   await page.evaluate(() => document.fonts.ready);
+  // A Modal's own column (InColumn) is the same frame as the page's: it fills the Modal's window, so
+  // it is drawn and read as the page's is, clipped across only.
+  await page.evaluate((column) => {
+    for (const e of document.querySelectorAll('[data-rn]')) {
+      if (e.dataset.frame || e.dataset.rn !== column) continue;
+      e.dataset.frame = 'column';
+      e.style.overflow = 'visible';
+      e.style.overflowX = 'clip';
+    }
+  }, COLUMN_RN);
   if (factor !== 1) {
     await page.evaluate(([f, growth]) => {
       const grow = new Function('f', 'cap', `return (${growth})(f, cap)`);

@@ -305,12 +305,14 @@ export function useOverlayRoomKeyboardClearance() {
 /**
  * The widest a page is ever set: the Dispatch's paper (560pt). Every phone is narrower, so a page
  * fills its phone; on a wider window (an iPad, an unfolded phone, a Split View) the page holds this
- * column, centred, and each room's own ground shows beyond it, as the Dispatch's always has.
+ * column, centred, on the house's ground, as the Dispatch's always has. The column clips what it
+ * holds: a bleed a phone's edge hides (the film page's blurred backdrop is drawn wider than its
+ * page) would otherwise spill past the column and stop in a hard edge on the ground beyond.
  */
 export const READING_MAX = 560;
 
 /** The column every screen sits in: the navigators' own content style (app/_layout, the tabs). */
-export const readingColumn = { flex: 1, width: '100%', maxWidth: READING_MAX, alignSelf: 'center' } as const;
+export const readingColumn = { flex: 1, width: '100%', maxWidth: READING_MAX, alignSelf: 'center', overflow: 'hidden' } as const;
 
 /** A page's width: the window's, held to the reading column. What a layout sized from the width reads. */
 export function useColumnWidth(): number {

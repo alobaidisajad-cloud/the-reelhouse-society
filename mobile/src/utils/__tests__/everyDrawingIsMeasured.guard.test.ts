@@ -48,6 +48,16 @@ describe('every drawing is measured', () => {
     expect(ci).toMatch(/layout\.cjs --src mockups\/out\/ci\b/);
   });
 
+  // A window in the list that no CI job draws is a size no one sees: the landscape iPad and the open
+  // foldable were missing from both until the app was found to turn on them.
+  it('draws at every window in mockups/devices.json, and at none outside it', () => {
+    const ci = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'god_tier_ci.yml'), 'utf8');
+    const [, matrix = ''] = ci.match(/^ {8}width: \[([\d, ]+)\]$/m) ?? [];
+    const drawn = matrix.split(',').map((w) => Number(w.trim()));
+    const listed = Object.keys(JSON.parse(readCode('mockups/devices.json')).heightAt).map(Number);
+    expect(drawn).toEqual(listed);
+  });
+
   it('says NO to a plate written to a folder of its own, and leaves a manifest alone', () => {
     expect(pagesWrittenAside("writeFileSync(join(OUT, `${name}.html`), toHtml(r.toJSON()), 'utf8');")).toHaveLength(1);
     expect(pagesWrittenAside("writeFileSync(join(OUT, 'w1-the-writing-room.html'), html, 'utf8');")).toHaveLength(1);

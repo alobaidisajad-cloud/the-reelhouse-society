@@ -65,9 +65,10 @@ it('reads the window once only where it also listens for the window to change', 
 });
 
 it('draws the mockups in the same column the app holds its pages to', () => {
-  const { READING_MAX } = require('@/src/components/layout/navMetrics') as typeof import('@/src/components/layout/navMetrics');
+  const { readingColumn } = require('@/src/components/layout/navMetrics') as typeof import('@/src/components/layout/navMetrics');
   const harness = readFileSync(join(MOBILE, 'mockups', 'tools', 'harness.cjs'), 'utf8');
-  expect(harness.match(/^const COLUMN_MAX = (\d+);$/m)?.[1]).toBe(String(READING_MAX));
+  const drawn = harness.match(/^const COLUMN = (\{.*\});$/m)?.[1];
+  expect(drawn && new Function(`return ${drawn}`)()).toEqual(readingColumn);
 });
 
 it('finds both ways a width is read, and none from a height alone', () => {

@@ -1,5 +1,5 @@
 {
-  "_": "Every width (portrait, points) the app is drawn and measured at, with each device's height. Read by mockups/paths.ts (the generators) and mockups/tools/harness.cjs (the measuring tools), so the two cannot disagree. 320: iPhone SE 1st gen, the narrowest phone iOS 15.1 runs on. 360: common narrow Android. 375: iPhone SE 2nd/3rd gen and 13 mini. 390: iPhone 13-15, the default. 430: the largest iPhones. 744 / 820 / 1024: iPad mini / Air / Pro 13, because supportsTablet is on.",
+  "_": "Every window (points) the app is drawn and measured at, with its height, narrowest first. Read by mockups/paths.ts (the generators) and mockups/tools/harness.cjs (the measuring tools), so the two cannot disagree; God-Tier's drawing job draws each (everyDrawingIsMeasured). 320: iPhone SE 1st gen, the narrowest phone iOS 15.1 runs on. 360: common narrow Android. 375: iPhone SE 2nd/3rd gen and 13 mini. 390: iPhone 13-15, the default. 430: the largest iPhones. 744 / 820 / 1024: iPad mini / Air / Pro 13 upright, because supportsTablet is on. 841: a Pixel Fold open and turned on its side, the shortest large window: Android 16 turns an app targeting SDK 36 on any screen 600dp or wider, whatever its orientation asks. 1366: iPad Pro 13 on its side, the widest: iPad multitasking gives the app every orientation.",
   "default": 390,
   "heightAt": {
     "320": 568,
@@ -9,6 +9,8 @@
     "430": 932,
     "744": 1133,
     "820": 1180,
-    "1024": 1366
+    "841": 701,
+    "1024": 1366,
+    "1366": 1024
   }
 }

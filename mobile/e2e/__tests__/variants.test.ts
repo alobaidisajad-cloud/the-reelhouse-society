@@ -97,7 +97,7 @@ it('says which run each variant is: every flow and the walk, or the walk alone',
   const runs = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'runs') as { commands: string[] }).commands]));
   expect(runs).toEqual({
     plain: ['walk'], 'motion-on': ['walk'], 'largest-text': ['flows'], 'bold-text': ['walk'],
-    narrowest: ['flows'], 'three-button': ['walk'], 'right-to-left': ['flows'], dark: ['walk'],
+    narrowest: ['flows'], 'three-button': ['walk'], 'right-to-left': ['flows'], dark: ['walk'], tablet: ['flows'],
   });
 });
 

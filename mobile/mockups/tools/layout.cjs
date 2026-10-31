@@ -252,8 +252,12 @@ async function audit(page) {
         // Inside a clamped text, a piece hidden with the tail is a shortening, not a cut.
         if (a.tagName === 'SPAN' && cs.webkitLineClamp !== 'none' && cs.webkitLineClamp !== '') break;
         const b = a.getBoundingClientRect();
-        const dx = Math.max(0, q.right - b.right, b.left - q.left);
-        const dy = Math.max(0, q.bottom - b.bottom, b.top - q.top);
+        // The reading column clips across only, and only a side standing inside a wider window
+        // shows it: on a phone its sides are the window's, where a word past them is OFF.
+        const glass = a.dataset.frame === 'column' ? a.parentElement.getBoundingClientRect() : null;
+        const dx = glass ? Math.max(0, b.right < glass.right - 0.5 ? q.right - b.right : 0, b.left > glass.left + 0.5 ? b.left - q.left : 0)
+          : Math.max(0, q.right - b.right, b.left - q.left);
+        const dy = glass ? 0 : Math.max(0, q.bottom - b.bottom, b.top - q.top);
         // An INLINE text (a drop cap) is measured by its font box, proud of the ink.
         const inline = getComputedStyle(e).display === 'inline';
         const slackY = inline ? Math.max(0.75, 0.3 * parseFloat(getComputedStyle(e).fontSize)) : 0.75;
@@ -598,7 +602,9 @@ async function audit(page) {
         const r = a.getBoundingClientRect();
         // A box of no size (the drawing's holder for a sheet, laid over the screen) bounds nothing.
         if (r.width === 0 || r.height === 0) continue;
-        const clips = getComputedStyle(a).overflow !== 'visible';
+        // The reading column (the harness's frame) bounds a reach as any box does; it clips the page
+        // only across, and a scroller drawn as one tall page runs on below it as scrolled to.
+        const clips = a.dataset.frame !== 'column' && getComputedStyle(a).overflow !== 'visible';
         const loose = { left: Math.min(r.left, c.r.left), right: Math.max(r.right, c.r.right), top: Math.min(r.top, c.r.top), bottom: Math.max(r.bottom, c.r.bottom) };
         // A scroller, and a clipping box that holds one, clip only across the way it scrolls:
         // along it, a control is scrolled to (the drawing lays a scroll out as one tall page).

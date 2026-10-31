@@ -275,6 +275,14 @@ const LTR_STRONG = /[A-Za-zÀ-ʯͰ-֏]/;
  */
 export const RTL_MARK = '\u200F';
 
+/**
+ * The guillemets around a member's quoted words, each held to the word beside it by a no-break
+ * space (U+00A0), as French setting holds them: a line never ends on \u00AB or starts on \u00BB, so a mark
+ * is never left alone on a line of its own when the words just fill the line before it.
+ */
+export const OPEN_QUOTE = '\u00AB\u00A0';
+export const CLOSE_QUOTE = '\u00A0\u00BB';
+
 export function isRTLText(text: string | null | undefined): boolean {
     if (!text) return false;
     // Only the first 400 characters are inspected: the paragraph's direction is

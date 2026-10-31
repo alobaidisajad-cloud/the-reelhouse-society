@@ -27,7 +27,7 @@ import { colors, fonts, castOf, liftOf } from '@/src/theme/theme';
 import { decorativeTextProps } from '@/src/constants/textScaling';
 import { ReelRating } from '@/src/components/Decorative';
 import { stripHtml } from '@/src/utils/html';
-import { truncateReview } from '@/src/utils/text';
+import { truncateReview, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
 import { EDGE_LIT } from '@/src/theme/light';
 import { HOUSE_WEB } from '@/src/constants/support';
 
@@ -165,7 +165,7 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
         {critique && (
           <View style={s.critiqueZone}>
             {critiqueIsQuote ? (
-              <Text {...decorativeTextProps} style={s.critiqueQuote} numberOfLines={3}>« {critique} »</Text>
+              <Text {...decorativeTextProps} style={s.critiqueQuote} numberOfLines={3}>{OPEN_QUOTE}{critique}{CLOSE_QUOTE}</Text>
             ) : (
               <Text {...decorativeTextProps} style={s.critiqueProse} numberOfLines={3}>&ldquo;{critique}&rdquo;</Text>
             )}

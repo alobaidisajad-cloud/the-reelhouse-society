@@ -28,7 +28,7 @@ import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
 import { stripHtml } from '@/src/utils/html';
-import { extractDropCap, isRTLText, RTL_MARK, spokenExcerpt } from '@/src/utils/text';
+import { extractDropCap, isRTLText, RTL_MARK, spokenExcerpt, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
 import { useTimeAgo } from '@/src/hooks/useClock';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
@@ -125,7 +125,7 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
           {review.pull_quote && (
             <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isArchivist && s.pullQuoteWrapPremium]}>
               <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur]}>
-                « {review.pull_quote} »
+                {OPEN_QUOTE}{review.pull_quote}{CLOSE_QUOTE}
               </Text>
             </View>
           )}

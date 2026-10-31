@@ -49,6 +49,12 @@
       "answer": "^(no|yes|auto|custom_schedule|custom_bedtime)$",
       "setup": ["cmd uimode night yes"],
       "reset": ["cmd uimode night {was}"]
+    },
+    "tablet": {
+      "why": "A tablet's width: the emulator's 1080 px at density 210 is 823 dp across, wider than Android's 600 dp line for a large screen and the reading column's 560, so every flow runs with each page and sheet held to the column, centred in a window wider than any phone.",
+      "flows": true,
+      "setup": ["wm density 210"],
+      "reset": ["wm density reset"]
     }
   }
 }

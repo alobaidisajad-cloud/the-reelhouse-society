@@ -386,7 +386,7 @@ it('every night runs each flow three times and the suite in a random order, and 
   // And the route walk (P0.86), once a variant, each in a group and with artifacts of its own: a
   // matrix of e2e/variants.json's names (variants.test.ts holds the list to the file).
   const walks = calls.filter((j) => j.with?.variant !== undefined) as (Job & { strategy?: { matrix?: { variant?: string[] }; 'fail-fast'?: boolean } })[];
-  expect(walks.map((j) => [j.with?.variant, j.strategy?.['fail-fast'], j.strategy?.matrix?.variant?.length])).toEqual([['${{ matrix.variant }}', false, 8]]);
+  expect(walks.map((j) => [j.with?.variant, j.strategy?.['fail-fast'], j.strategy?.matrix?.variant?.length])).toEqual([['${{ matrix.variant }}', false, Object.keys(JSON.parse(readFileSync(join(DIR, '..', '..', 'mobile', 'e2e', 'variants.json'), 'utf8')).variants).length]]);
   // And the lifecycle runs (P0.86), once, in a group of their own.
   expect(calls.filter((j) => j.with?.lifecycle === true && j.with?.round === undefined)).toHaveLength(1);
   expect(calls).toHaveLength(6);

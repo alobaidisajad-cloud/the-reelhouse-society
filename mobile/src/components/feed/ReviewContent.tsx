@@ -6,7 +6,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
-import { extractDropCap, stripHTML, isRTLText, spokenExcerpt } from '@/src/utils/text';
+import { extractDropCap, stripHTML, isRTLText, spokenExcerpt, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 
 import type { FeedItem } from '@/src/schemas/feed.schema';
@@ -102,7 +102,7 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
         {item.pull_quote && (
           <View style={s.pullQuoteWrap}>
             <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isPremium && !isAuteur && s.pullQuotePremium, quoteRtl && s.rtl]} {...displayTextProps} numberOfLines={4}>
-              « {item.pull_quote} »
+              {OPEN_QUOTE}{item.pull_quote}{CLOSE_QUOTE}
             </Text>
           </View>
         )}

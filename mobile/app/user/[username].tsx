@@ -88,6 +88,7 @@ import { decorativeTextProps, displayTextProps, scaledTextProps } from '@/src/co
 import { useTextScale } from '@/src/hooks/useTextScale';
 import { heroNameSize } from '@/src/components/profile/heroNameSize';
 import { softBreak } from '@/src/utils/softBreak';
+import { OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import Buster, { BusterEyes } from '@/src/components/Buster';
@@ -1068,11 +1069,11 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             {/* ── The bio, in the house's own quotation marks ── */}
             <Text {...scaledTextProps} style={[s.heroBio, bioStyle]} numberOfLines={bioLines}>
               {/* The guillemets grow with the bio they sit inside. */}
-              <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>« </Text>
+              <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>{OPEN_QUOTE}</Text>
               {/* A bio is the member's own words, and may hold a pasted link:
                   offered a place to wrap at its joints, as the Dispatch does. */}
               {softBreak(bioText)}
-              <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}> »</Text>
+              <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>{CLOSE_QUOTE}</Text>
             </Text>
 
             {/* ── Social Links ── */}

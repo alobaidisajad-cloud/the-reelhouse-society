@@ -169,7 +169,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        variant: [plain, motion-on, largest-text, bold-text, narrowest, three-button, right-to-left, dark]
+        variant: [plain, motion-on, largest-text, bold-text, narrowest, three-button, right-to-left, dark, tablet]
     uses: ./.github/workflows/e2e.yml
     with:
       variant: ${{ matrix.variant }}

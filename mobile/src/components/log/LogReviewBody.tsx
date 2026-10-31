@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Sparkles } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
-import { extractDropCap, stripHTML, isRTLText } from '@/src/utils/text';
+import { extractDropCap, stripHTML, isRTLText, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
 import { s } from '@/src/components/log/logDetailStyles';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
 import VaultNote from '@/src/components/log/VaultNote';
@@ -67,7 +67,7 @@ export default function LogReviewBody({
              <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} style={s.ornamentalStar} />
              <View style={s.ornamentalLine} />
            </View>
-           <Text style={[s.featuredQuote, isAuteur && s.featuredQuoteAuteur, isRTLText(pullQuote) && s.rtlText]} {...displayTextProps} adjustsFontSizeToFit numberOfLines={6} minimumFontScale={0.7}>« {pullQuote} »</Text>
+           <Text style={[s.featuredQuote, isAuteur && s.featuredQuoteAuteur, isRTLText(pullQuote) && s.rtlText]} {...displayTextProps} adjustsFontSizeToFit numberOfLines={6} minimumFontScale={0.7}>{OPEN_QUOTE}{pullQuote}{CLOSE_QUOTE}</Text>
            {/* Ornamental divider bottom */}
            <View style={s.ornamentalRow}>
              <View style={s.ornamentalLine} />
