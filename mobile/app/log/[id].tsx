@@ -17,8 +17,7 @@ import { Platform, RefreshControl, Share, StyleSheet, useWindowDimensions, View 
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { Easing, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import {
-  useBottomEdge, useContentBottom, usePushedHeaderTop,
-} from '@/src/components/layout/navMetrics';
+  useBottomEdge, useContentBottom, usePushedHeaderTop, useColumnWidth } from '@/src/components/layout/navMetrics';
  
 import { s, PARALLAX_PADDER_HEIGHT, BACKDROP_H, HEADER_ACTION_GAP } from '@/src/components/log/logDetailStyles';
 import { hasPhysicalFormat } from '@/src/components/log/logRecord';
@@ -127,7 +126,8 @@ interface LogComment {
 export default function LogDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight } = useWindowDimensions();
+  const windowWidth = useColumnWidth();
   const blockUser = useBlockStore((state) => state.blockUser);
   const muteUser = useBlockStore((state) => state.muteUser);
   const edge = useBottomEdge();

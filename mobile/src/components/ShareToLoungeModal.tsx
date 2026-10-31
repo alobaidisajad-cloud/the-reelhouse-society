@@ -2,6 +2,7 @@
  * ShareToLoungeModal — a film, log, stack or filing, shared into a salon.
  */
 import { FlashList } from '@shopify/flash-list';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
@@ -198,6 +199,7 @@ function ShareSheet({
 
     return (
         <Modal statusBarTranslucent visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+          <InColumn>
             <Animated.View style={[s.overlay, animatedSheetStyle]} accessibilityViewIsModal={true} onAccessibilityEscape={onClose}>
                 <View style={[s.card, { paddingBottom: sheetFoot }]}>
                     <View style={s.header}>
@@ -268,6 +270,7 @@ function ShareSheet({
                 </View>
                 <ToastHost />
             </Animated.View>
+          </InColumn>
         </Modal>
     );
 }

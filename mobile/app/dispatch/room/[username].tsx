@@ -14,7 +14,7 @@
  *   its heading and narrow enough for the margin, which a date is not.
  */
 import { useCallback, useMemo } from 'react';
-import { ActivityIndicator, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -37,7 +37,7 @@ import { colors } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
-import { useBottomEdge, useContentBottom } from '@/src/components/layout/navMetrics';
+import { useBottomEdge, useContentBottom, useColumnWidth } from '@/src/components/layout/navMetrics';
 
 type Row = MonthRow<Filing>;
 
@@ -61,7 +61,7 @@ export default function MemberRoomScreen() {
   const rows = useMemo<Row[]>(() => byMonth(filings), [filings]);
 
   // The column at THIS screen's width, not a 390pt phone's.
-  const { width: screenWidth } = useWindowDimensions();
+  const screenWidth = useColumnWidth();
   const width = columnWidth(screenWidth);
 
   /** Whose room this is. Only the owner is offered the way to write in it. */

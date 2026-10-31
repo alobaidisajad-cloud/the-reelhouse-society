@@ -20,6 +20,7 @@
  * own answer: `RoomVeil`, below.
  */
 import { memo, useMemo } from 'react';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient as Fade } from 'expo-linear-gradient';
 import { useAnimatedReaction, useSharedValue, type SharedValue } from 'react-native-reanimated';
@@ -50,7 +51,8 @@ interface LightProps {
 }
 
 export const RoomLight = memo(function RoomLight({ room, hem, art }: LightProps) {
-  const { width: W, height: H } = useWindowDimensions();
+  const { height: H } = useWindowDimensions();
+  const W = useColumnWidth();
   const g = lightGeometry(room, W, H, hem);
   // Kept by Android as a texture while its screen is in front: the light is still, the list
   // over it is not, and redrawn under every scrolled frame it cost the Reel a third of its
@@ -133,7 +135,8 @@ export function heldLift(lifted: number, hem: number, screenHeight: number): num
  * `lightGeometry`.
  */
 function VeilLight({ room, hem, art, stops, lifted }: LightProps & { hem: number; stops: VeilStops; lifted?: SharedValue<number> }) {
-  const { width: W, height: H } = useWindowDimensions();
+  const { height: H } = useWindowDimensions();
+  const W = useColumnWidth();
   const g = lightGeometry(room, W, H, hem);
   const image = useSharedImage(art);
   const opacity = useBloomOpacity(image);

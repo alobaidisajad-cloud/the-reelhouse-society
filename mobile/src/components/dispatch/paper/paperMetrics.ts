@@ -22,6 +22,7 @@
  *     A second table of limits could only disagree with it.
  */
 import { colors } from '@/src/theme/theme';
+import { READING_MAX } from '@/src/components/layout/navMetrics';
 
 export const DOC_RAIL = 1.5;
 
@@ -42,8 +43,8 @@ export const measure = (screenWidth: number) => {
   return w - 2 * (docMargin(screenWidth) + DOC_RAIL + docPad(screenWidth));
 };
 
-/** The widest the paper is ever set; beyond it the page's own ground shows. */
-export const PAPER_MAX = 560;
+/** The widest the paper is ever set: the reading column every page holds (navMetrics). */
+export const PAPER_MAX = READING_MAX;
 
 // The chrome row has no set height: it takes what its words need at any size.
 export const CHROME_PAD_V = 10;

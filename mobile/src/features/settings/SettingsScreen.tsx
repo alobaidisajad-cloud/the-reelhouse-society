@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { View, StyleSheet, Alert, Modal, type LayoutChangeEvent, type ScrollView } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
@@ -674,6 +675,7 @@ export function SettingsScreen() {
       </Animated.ScrollView>
 
       <Modal statusBarTranslucent visible={otpModalVisible} animationType="fade" transparent onRequestClose={closeOtp}>
+        <InColumn>
         <HouseBlur intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
         {/* RN Modal windows never resize for the keyboard, so the screen's
             automaticallyAdjustKeyboardInsets cannot reach inside one: the card's
@@ -737,6 +739,7 @@ export function SettingsScreen() {
           </CentredCard>
         </View>
         <ToastHost />
+        </InColumn>
       </Modal>
 
     </View>

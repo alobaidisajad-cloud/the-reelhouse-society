@@ -1,4 +1,5 @@
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
 import { Text } from '@/src/components/text';
 import React, { useMemo, memo } from 'react';
 import Svg, { Circle, Text as SvgText, Line } from 'react-native-svg';
@@ -153,7 +154,7 @@ export const NoirPassport = memo(function NoirPassport({ analytics, failed, onRe
 
     const earnedCount = earned.filter(s => s.earned).length;
 
-    const { width } = useWindowDimensions();
+    const width = useColumnWidth();
     const stampSize = (width - 64) / 2.5;
 
     if (!stamps) {

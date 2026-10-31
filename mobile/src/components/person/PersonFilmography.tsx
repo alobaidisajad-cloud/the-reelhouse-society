@@ -8,8 +8,9 @@
  * marked-up contact sheet of the artist's career.
  */
 import { useCallback, memo } from 'react';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
 import { RemoteImage } from '@/src/components/Picture';
-import { View, PixelRatio, useWindowDimensions } from 'react-native';
+import { View, PixelRatio } from 'react-native';
 import { Text } from '@/src/components/text';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
@@ -45,7 +46,7 @@ interface PersonCredit {
 // spare so the row runs past both edges, which is the point.
 const PERF_PITCH = 20;
 export const FilmStripPerforations = memo(function FilmStripPerforations() {
-  const { width } = useWindowDimensions();
+  const width = useColumnWidth();
   const count = Math.ceil(width / PERF_PITCH) + 2;
   return (
     <View style={st.perfRow}>

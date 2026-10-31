@@ -12,6 +12,7 @@
  * timing only, never a spring (the house no-bounce law).
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, Modal } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -204,6 +205,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
 
     return (
         <Modal statusBarTranslucent visible transparent animationType="fade" onRequestClose={close}>
+          <InColumn>
             <View style={s.overlay} onAccessibilityEscape={close}>
                 {/* The ground BEHIND the card, not around it: an accessible element
                     hides what it holds from VoiceOver, so a card inside it could
@@ -281,6 +283,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                 </CentredCard>
             </View>
             <ToastHost />
+          </InColumn>
         </Modal>
     );
 }

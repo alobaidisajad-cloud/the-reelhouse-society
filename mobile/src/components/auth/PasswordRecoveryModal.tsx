@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { View, StyleSheet, ActivityIndicator, Modal } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { KeyRound, X } from 'lucide-react-native';
@@ -50,6 +51,7 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
       animationType="fade"
       onRequestClose={onClose}
     >
+      <InColumn>
       <View style={s.modalOverlay} onAccessibilityEscape={onClose}>
         {/* The ground closes it for a finger; a screen reader has "Close recovery".
             The card's scroll ends above the keyboard, as a Modal never resizes for it. */}
@@ -154,6 +156,7 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
         </CentredCard>
       </View>
       <ToastHost />
+      </InColumn>
     </Modal>
   );
 }

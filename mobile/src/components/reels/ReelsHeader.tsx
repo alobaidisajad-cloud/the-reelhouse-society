@@ -1,5 +1,6 @@
 import React, { memo, useEffect } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from 'react-native-reanimated';
 import { arrive, MS } from '@/src/theme/motion';
@@ -31,7 +32,7 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, auteur }: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  const { width } = useWindowDimensions();
+  const width = useColumnWidth();
 
   const pillStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: interpolate(position.value, [0, 1], [0, (width - 34) / 2]) }]

@@ -15,7 +15,7 @@ import { computeYearStats, fetchYearLogs, YearStats } from '@/src/services/YearI
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { safeAreaHeight, useBottomEdge, useOverlayTop } from '@/src/components/layout/navMetrics';
+import { safeAreaHeight, useBottomEdge, useOverlayTop, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { BusterEyes } from '@/src/components/Buster';
@@ -65,7 +65,8 @@ export default function YearInCinemaScreen() {
   // The close button floats over the slides: an overlay's top (navMetrics).
   const closeTop = useOverlayTop();
   const { isOffline } = useOfflineAware();
-  const { width, height } = useWindowDimensions();
+  const { height } = useWindowDimensions();
+  const width = useColumnWidth();
 
   const currentYear = useClock((now) => new Date(now).getFullYear());
   const [phaseRead, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');

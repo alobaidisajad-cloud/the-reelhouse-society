@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
@@ -132,7 +133,7 @@ export function Achievements({ analytics, totalFilms, failed, onRetry }: {
    * iPhone mini up they keep the approved three. Measured at every width in
    * mockups/devices.json.
    */
-  const { width } = useWindowDimensions();
+  const width = useColumnWidth();
   const narrow = width < 375;
 
   if (!stamps) {

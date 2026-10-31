@@ -1,4 +1,5 @@
 import PressableScale from '@/src/components/PressableScale';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { LoungeMessage, ReactionSummary } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import { REACTION_META, REACTION_ORDER } from './reactions';
@@ -76,6 +77,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReaction
 
   return (
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
+      <InColumn>
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
       <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
         <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
@@ -170,6 +172,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReaction
       </GestureDetector>
       </GestureHandlerRootView>
       <ToastHost />
+      </InColumn>
     </Modal>
   );
 }

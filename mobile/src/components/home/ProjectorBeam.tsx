@@ -2,6 +2,7 @@
  * ProjectorBeam — the front door's projector sweep; culled once scrolled a screen down.
  */
 import { memo, useCallback } from 'react';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Animated, {
@@ -14,7 +15,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 
 export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY: SharedValue<number> }) {
-  const { width, height } = useWindowDimensions();
+  const { height } = useWindowDimensions();
+  const width = useColumnWidth();
   const beamSwing = useSharedValue(0.1);
   const flicker = useSharedValue(0.8);
 

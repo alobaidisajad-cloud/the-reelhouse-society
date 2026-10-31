@@ -1,11 +1,11 @@
 import React, { memo } from 'react';
 import { RemoteImage } from '@/src/components/Picture';
 import { useBackCloses } from '@/src/hooks/useBackCloses';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { PresenceView } from '@/src/components/motion/Presence';
 import { X } from 'lucide-react-native';
-import { useOverlayTop } from '@/src/components/layout/navMetrics';
+import { useOverlayTop, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { initialOf } from '@/src/utils/text';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { RadarChart } from '@/src/components/profile/RadarChart';
@@ -42,7 +42,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
     const closeTop = useOverlayTop();
     // Android's back closes the card, not the member's file beneath it.
     useBackCloses(true, onClose);
-    const { width: windowWidth } = useWindowDimensions();
+    const windowWidth = useColumnWidth();
 
     const stamps = analytics?.stamps;
     const totalCount = stamps?.total_logs ?? 0;

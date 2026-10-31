@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useEffectEvent, useRef } from 'react';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { View, StyleSheet, Modal, Switch, Keyboard, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
@@ -129,6 +130,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
 
   return (
     <Modal statusBarTranslucent transparent visible={isRendered} animationType="none" onRequestClose={handleClose}>
+      <InColumn>
       <GestureHandlerRootView style={{ flex: 1 }} onAccessibilityEscape={handleClose}>
       <Animated.View style={[s.sheetKeyboard, animatedContainerStyle]}>
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
@@ -261,6 +263,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
       </Animated.View>
       </GestureHandlerRootView>
       <ToastHost />
+      </InColumn>
     </Modal>
   );
 }

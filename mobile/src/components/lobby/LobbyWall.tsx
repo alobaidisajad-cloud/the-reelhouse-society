@@ -24,7 +24,7 @@ import { EmptyOffline } from '@/src/components/EmptyStates';
 import { rankOf } from '@/src/components/RankBadge';
 import { useAuthStore } from '@/src/stores/auth';
 import { useLineScale, useTextScale } from '@/src/hooks/useTextScale';
-import { useTabBarHeight, useTopBarHeight } from '@/src/components/layout/navMetrics';
+import { useTabBarHeight, useTopBarHeight, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { colors } from '@/src/theme/theme';
 import { EDGE_LIT } from '@/src/theme/light';
 import { Masthead, useWallClock } from './Masthead';
@@ -65,7 +65,8 @@ const RefreshFailed = memo(function RefreshFailed({ plan, onRetry }: { plan: Wal
 });
 
 export const LobbyWall = memo(function LobbyWall() {
-  const { width, height } = useWindowDimensions();
+  const { height } = useWindowDimensions();
+  const width = useColumnWidth();
   const scale = useTextScale();
   const lineScale = useLineScale();
   const visible = height - useTopBarHeight() - useTabBarHeight();

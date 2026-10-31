@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useCallback, useState, useRef } from 'react';
 import { RemoteImage } from '@/src/components/Picture';
-import { View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Disc, Film as FilmIcon, Search } from 'lucide-react-native';
@@ -14,7 +14,7 @@ import PressableScale from '../PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { FORMAT_META, shelfRank } from '@/src/constants/formats';
 import { r, posterColumns, countLabel } from './roomStyles';
-import { scrollEndAbove } from '@/src/components/layout/navMetrics';
+import { scrollEndAbove, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore, RoomMoreFailed } from './RoomParts';
 
@@ -162,7 +162,7 @@ export default React.memo(function ProfilePhysicalTab({
   onRefresh,
   bottomInset
 }: ProfilePhysicalTabProps) {
-  const { width: windowWidth } = useWindowDimensions();
+  const windowWidth = useColumnWidth();
   const grid = useMemo(() => posterColumns(windowWidth, 4), [windowWidth]);
 
   const breatheAnim = useSharedValue(0.1);

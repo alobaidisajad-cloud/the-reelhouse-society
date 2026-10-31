@@ -22,6 +22,7 @@ import { rehydrateDiscoverStore } from '@/src/stores/discover';
 import { rehydrateNotificationStore } from '@/src/stores/notificationStore';
 import { rehydrateVaultStore } from '@/src/stores/vaultStore';
 import { colors } from '@/src/theme/theme';
+import { readingColumn } from '@/src/components/layout/navMetrics';
 import { CourierPrime_400Regular, CourierPrime_400Regular_Italic, CourierPrime_700Bold } from '@expo-google-fonts/courier-prime';
 import { Rye_400Regular, useFonts } from '@expo-google-fonts/rye';
 import { Spectral_400Regular, Spectral_400Regular_Italic, Spectral_500Medium } from '@expo-google-fonts/spectral';
@@ -173,7 +174,9 @@ export default function RootLayout() {
             screenLayout={toastScreenLayout}
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: colors.ink },
+              // Every screen in the reading column: the whole phone on a phone; on a wider window
+              // (an iPad, an unfolded phone) the column, centred, the house's ink beyond it (navMetrics).
+              contentStyle: [{ backgroundColor: colors.ink }, readingColumn],
               animation: 'none', // Shutter-Cut Navigation: Instant mechanical cut
             }}
           >

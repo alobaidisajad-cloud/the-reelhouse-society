@@ -10,6 +10,7 @@
  * noir bureau.
  */
 import { HouseBlur } from '@/src/components/HouseBlur';
+import { InColumn } from '@/src/components/layout/InColumn';
 import React, { useCallback, useRef, useState } from 'react';
 import { useWindowDimensions, Modal, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -248,6 +249,7 @@ function ReportSheet({
 
   return (
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={handleDismiss}>
+      <InColumn>
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={handleDismiss}>
         {/* Backdrop: closes it for a finger; a screen reader has the named DISMISS. */}
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
@@ -379,6 +381,7 @@ function ReportSheet({
         </GestureDetector>
       </GestureHandlerRootView>
       <ToastHost />
+      </InColumn>
     </Modal>
   );
 }

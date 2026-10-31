@@ -33,7 +33,7 @@
  * on Android is a weak tint at best, and its experimental method flickers).
  */
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Modal, Pressable, Platform, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Modal, Pressable, Platform } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS, type SharedValue } from 'react-native-reanimated';
 import { useReduceMotion } from '@/src/hooks/useReduceMotion';
@@ -47,7 +47,7 @@ import { colors, fonts, effects } from '@/src/theme/theme';
 import { displayTextProps } from '@/src/constants/textScaling';
 import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
-import { NAV_BTN_SIZE, NAV_H_PADDING, navButtonTop, navButtonBottom } from './navMetrics';
+import { NAV_BTN_SIZE, NAV_H_PADDING, navButtonTop, navButtonBottom, readingColumn, useColumnWidth } from './navMetrics';
 import { BRASS, BRASS_STOPS, BRASS_START, BRASS_END, CROWN, RIM } from '@/src/theme/brass';
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT } from '@/src/theme/light';
@@ -218,7 +218,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
-  const { width: windowWidth } = useWindowDimensions();
+  const windowWidth = useColumnWidth();
   const reducedMotion = useReduceMotion();
 
   const rotation = useSharedValue(0);
@@ -382,6 +382,9 @@ export const ConciergeButton = memo(function ConciergeButton() {
             closes this — invisible to VoiceOver. */}
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none" accessibilityViewIsModal
           onAccessibilityEscape={closeSheet}>
+          {/* The page's own column: the modal is a window of its own, and on a window wider than
+              the column (an iPad) the disc's twin and the card stand where the page's ＋ does. */}
+          <View style={readingColumn} pointerEvents="box-none">
           {/* The disc's twin, above the scrim, at the identical coordinates. Built
               before the card it sits above, so a screen reader reaches Close first;
               its zIndex keeps it drawn over the card and the notch. */}
@@ -411,6 +414,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
                 sits over both by its zIndex. */}
             <View style={[s.notch, { left: notchLeft }]} pointerEvents="none" />
           </Animated.View>
+          </View>
           <ToastHost />
         </View>
       </Modal>

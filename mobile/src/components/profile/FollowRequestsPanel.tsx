@@ -8,6 +8,7 @@
  * so it behaves identically at 3 requests or 3,000.
  */
 import React from 'react';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { RemoteImage } from '@/src/components/Picture';
 import { Alert, Modal, View, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -104,6 +105,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
     <Presence>
     {visible ? (
     <Modal key="door" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
+      <InColumn>
       <View style={s.host} onAccessibilityEscape={onClose}>
         <HouseBlur intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
         <Pressable style={s.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
@@ -189,6 +191,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
         </PresenceView>
       </View>
       <ToastHost />
+      </InColumn>
     </Modal>
     ) : null}
     </Presence>

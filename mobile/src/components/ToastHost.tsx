@@ -17,9 +17,9 @@
  * — or simply appears and goes, for a member who has asked for less motion.
  */
 import React, { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { View, StyleSheet, useWindowDimensions, Platform, AccessibilityInfo, Pressable } from 'react-native';
+import { View, StyleSheet, Platform, AccessibilityInfo, Pressable } from 'react-native';
 import { Text } from '@/src/components/text';
-import { InIosSheet, useOverlayTop } from '@/src/components/layout/navMetrics';
+import { InIosSheet, useOverlayTop, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { E2ERouteMark } from '@/src/components/layout/E2ERouteMark';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { useReduceMotion } from '@/src/hooks/useReduceMotion';
@@ -180,7 +180,7 @@ function ToastPill({ toast, leaving, held = false, slide, inSheet = false }: {
   /** Drawn in an iOS sheet, whose top is not the screen's. */
   inSheet?: boolean;
 }) {
-  const { width } = useWindowDimensions();
+  const width = useColumnWidth();
   const top = useOverlayTop(inSheet);
   const reducedMotion = useReduceMotion();
   const animate = slide && !reducedMotion;

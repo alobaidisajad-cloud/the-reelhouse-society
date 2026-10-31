@@ -1,4 +1,5 @@
 import TactileEngine from '@/src/utils/TactileEngine';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { RemoteImage } from '@/src/components/Picture';
 import {
     AlertTriangle,
@@ -245,6 +246,7 @@ function ActionModal({
 
   return (
     <Modal statusBarTranslucent visible={state.visible} transparent animationType="fade" onRequestClose={handleClose}>
+      <InColumn>
       <KeyboardAvoidingView
         onAccessibilityEscape={handleClose}
         style={s.modalOverlay}
@@ -318,6 +320,7 @@ function ActionModal({
         </View>
       </KeyboardAvoidingView>
       <ToastHost />
+      </InColumn>
     </Modal>
   );
 }

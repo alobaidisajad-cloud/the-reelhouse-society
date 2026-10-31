@@ -28,6 +28,12 @@ chromium.launch = (options = {}) => playwright.chromium.launch({
 });
 
 const HOUSE = '#0D0B09';
+/**
+ * The reading column every page sits in (navMetrics' READING_MAX; aPageIsSizedByItsColumn holds the
+ * two equal): drawn as the app's navigator draws it, so a wide window (744, 1024) is seen as it is.
+ */
+const COLUMN_MAX = 560;
+const COLUMN_RN = JSON.stringify({ flex: 1, width: '100%', maxWidth: COLUMN_MAX, alignSelf: 'center' });
 // The one device list (mockups/devices.json), shared with the generators.
 const DEVICES = JSON.parse(fs.readFileSync(path.join(MOBILE, 'mockups', 'devices.json'), 'utf8'));
 const WIDTH = DEVICES.default;
@@ -100,8 +106,10 @@ async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH
   const html = fs.readFileSync(sized || file, 'utf8');
   await page.setContent(
     `<!doctype html><html><head><meta charset="utf-8"><style>${fonts()}${RN_RULES}</style></head>` +
-    // The phone: its exact height, a flex column like RN's root, so `flex: 1` fills it.
-    `<body style="margin:0;background:${HOUSE}"><div class="phone" style="width:${width}px;height:${height}px;position:relative;display:flex;flex-direction:column;background:${HOUSE}">${html}</div></body></html>`,
+    // The phone: its exact height, a flex column like RN's root, so `flex: 1` fills it; inside it the
+    // reading column, as the root navigator holds every page (the whole phone, on a phone).
+    `<body style="margin:0;background:${HOUSE}"><div class="phone" style="width:${width}px;height:${height}px;position:relative;display:flex;flex-direction:column;background:${HOUSE}">` +
+    `<div data-frame="column" data-rn='${COLUMN_RN}' style="flex:1;min-height:0;width:100%;max-width:${COLUMN_MAX}px;align-self:center;position:relative;display:flex;flex-direction:column">${html}</div></div></body></html>`,
     { waitUntil: 'load' },
   );
   await page.evaluate(() => document.fonts.ready);

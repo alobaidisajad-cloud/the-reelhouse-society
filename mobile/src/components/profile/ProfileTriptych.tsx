@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { RemoteImage } from '@/src/components/Picture';
-import { View, StyleSheet, Pressable, Modal, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Pressable, Modal, ScrollView, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, useAnimatedProps, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
@@ -25,7 +26,7 @@ import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT } from '@/src/theme/light';
 import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
-import { useBottomEdge, useSheetBottom } from '@/src/components/layout/navMetrics';
+import { useBottomEdge, useSheetBottom, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { Arrive } from '@/src/components/Arrive';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
@@ -174,7 +175,7 @@ const MOUNT_NAME = ['the centre', 'the left wing', 'the right wing'];
 
 export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: TriptychUser, isOwnProfile: boolean, userRole?: string }) {
     const { updateUser } = useAuthStore();
-    const { width } = useWindowDimensions();
+    const width = useColumnWidth();
     const m = useMemo(() => triptychMetrics(width), [width]);
 
     const isArchivistPlus = isArchivistPlusTier(userRole);
@@ -452,6 +453,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                 animationType="slide"
                 onRequestClose={closeSheet}
             >
+              <InColumn>
                 <Animated.View style={[s.modalOverlay, kbPad]} onAccessibilityEscape={closeSheet}>
                     <Pressable
                         style={StyleSheet.absoluteFill}
@@ -528,6 +530,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                     ) : null}
                 </Animated.View>
                 <ToastHost />
+              </InColumn>
             </Modal>
         </View>
     );

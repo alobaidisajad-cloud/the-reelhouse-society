@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { RemoteImage } from '@/src/components/Picture';
-import { View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Film as FilmIcon, Search, X } from 'lucide-react-native';
@@ -13,7 +13,7 @@ import { nav } from '@/src/utils/typedRouter';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET, yearMarker } from './roomStyles';
-import { scrollEndAbove } from '@/src/components/layout/navMetrics';
+import { scrollEndAbove, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
@@ -139,7 +139,7 @@ export default function ProfileArchiveTab({
   onRefresh,
   bottomInset
 }: ProfileArchiveTabProps) {
-  const { width: windowWidth } = useWindowDimensions();
+  const windowWidth = useColumnWidth();
   const grid = useMemo(() => posterColumns(windowWidth, 4), [windowWidth]);
 
   const breatheAnim = useSharedValue(0.2);

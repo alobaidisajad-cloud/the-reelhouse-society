@@ -17,7 +17,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useToday } from '@/src/hooks/useClock';
-import { ActivityIndicator, RefreshControl, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, RefreshControl, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { focusManager } from '@tanstack/react-query';
 import { useScrollToTop } from "expo-router/react-navigation";
@@ -25,7 +25,7 @@ import { useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-nati
 
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import FrozenTab from '@/src/components/layout/FrozenTab';
-import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
+import { useTabBarHeight, useTabContentBottom, useTabContentTop, useColumnWidth } from '@/src/components/layout/navMetrics';
 import {
   DayDivider, Ornament, PaperChrome, PaperEmpty, PaperMasthead, PaperSkeletons,
   RunningHead,
@@ -189,7 +189,7 @@ export default function DispatchScreen() {
   }, [filings, sort]);
 
   // The column at THIS screen's width, not a 390pt phone's.
-  const { width: screenWidth } = useWindowDimensions();
+  const screenWidth = useColumnWidth();
   const width = columnWidth(screenWidth);
 
   const onRefresh = useCallback(async () => {

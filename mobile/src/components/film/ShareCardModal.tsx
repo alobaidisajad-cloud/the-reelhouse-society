@@ -5,6 +5,7 @@
  * card template itself lives in NitrateFileCard (shared with the log page).
  */
 import React, { useRef, useState, memo, useEffect } from 'react';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { View, StyleSheet, Modal, Share, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { Text } from '@/src/components/text';
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
@@ -133,6 +134,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
 
   return (
     <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <InColumn>
       <View style={s.overlay} onAccessibilityEscape={onClose}>
         {/* The ground closes it for a finger; a screen reader has the named ✕. */}
         <CentredCard onGround={onClose} style={s.room}>
@@ -180,6 +182,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
         </CentredCard>
       </View>
       <ToastHost />
+      </InColumn>
     </Modal>
   );
 });

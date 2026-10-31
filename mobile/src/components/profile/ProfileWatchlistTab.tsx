@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
-import { View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Bookmark, Search, Disc3, Sparkles } from 'lucide-react-native';
@@ -13,7 +13,7 @@ import { decadeLabel } from '../../types';
 import { tmdb } from '../../lib/tmdb';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { r, posterColumns, EMBER_REST, EMBER_BEATS } from './roomStyles';
-import { scrollEndAbove } from '@/src/components/layout/navMetrics';
+import { scrollEndAbove, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomChipDivider, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 
@@ -93,7 +93,7 @@ export default function ProfileWatchlistTab({
   onRefresh,
   bottomInset
 }: ProfileWatchlistTabProps) {
-  const { width: windowWidth } = useWindowDimensions();
+  const windowWidth = useColumnWidth();
   const grid = useMemo(() => posterColumns(windowWidth, 3), [windowWidth]);
 
   const breatheAnim = useSharedValue(0.1);

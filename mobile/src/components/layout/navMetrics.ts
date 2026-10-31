@@ -24,12 +24,16 @@
  *   an overlay         useOverlayBottom()     above the tab bar, where a tab's scroll ends
  *   a centred card     CentredCard            useOverlayRoomPadding(), the same above and below
  *
+ * And every page's width: the window's on a phone, the reading column's (READING_MAX) on a wider
+ * window (an iPad, an unfolded phone), held by the navigators themselves (readingColumn); a layout
+ * sized from the width reads useColumnWidth(), never the window's.
+ *
  * No other file adds to the safe-area inset by hand (noPageAddsToTheInset.guard.test.ts).
  * The status bar's edge has a 20pt floor: on a zero-inset device the bar is
  * still 20pt down, and a bare inset would tuck a masthead under it.
  */
 import { createContext, useContext, useSyncExternalStore } from 'react';
-import { Platform } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** Horizontal padding on the bar — also the ＋ button's distance from the edge. */
@@ -296,4 +300,19 @@ export const overlayRoomKeyboardClearance = (insets: { top: number; bottom: numb
 /** 59 at iOS's 59pt and 34pt insets. */
 export function useOverlayRoomKeyboardClearance() {
   return overlayRoomKeyboardClearance(useSafeAreaInsets());
+}
+
+/**
+ * The widest a page is ever set: the Dispatch's paper (560pt). Every phone is narrower, so a page
+ * fills its phone; on a wider window (an iPad, an unfolded phone, a Split View) the page holds this
+ * column, centred, and each room's own ground shows beyond it, as the Dispatch's always has.
+ */
+export const READING_MAX = 560;
+
+/** The column every screen sits in: the navigators' own content style (app/_layout, the tabs). */
+export const readingColumn = { flex: 1, width: '100%', maxWidth: READING_MAX, alignSelf: 'center' } as const;
+
+/** A page's width: the window's, held to the reading column. What a layout sized from the width reads. */
+export function useColumnWidth(): number {
+  return Math.min(useWindowDimensions().width, READING_MAX);
 }

@@ -73,6 +73,7 @@ function readTree() {
       rn,
       size: { w: px(cs.width, r.w), h: px(cs.height, r.h) },
       kind: box ? 'box' : 'leaf',
+      frame: e.dataset.frame === 'column',
       scroll: e.classList.contains('vscroll') ? 'v' : e.classList.contains('hscroll') ? 'h' : null,
       absolute: cs.position === 'absolute',
       hidden: cs.display === 'none',
@@ -212,7 +213,9 @@ function readTree() {
       const X = x + l.left, Y2 = y + l.top;
       const here = [...trail, k.d.name];
       if (k.d.kind === 'box' && !k.moved && !k.d.hidden) {
-        boxes++;
+        // The harness's reading column is the frame every screen is drawn in, compared like any
+        // box but never one of the screen's own: a screen of no box of its own compared none.
+        if (!k.d.frame) boxes++;
         const b = k.d.rect;
         const dx = X - b.x, dy = Y2 - b.y, dw = l.width - b.w, dh = l.height - b.h;
         const worst = Math.max(Math.abs(dx), Math.abs(dy), Math.abs(dw), Math.abs(dh));

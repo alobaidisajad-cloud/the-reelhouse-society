@@ -13,8 +13,7 @@ import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import {
-  useBottomEdge, useContentBottom, usePushedHeaderTop,
-} from '@/src/components/layout/navMetrics';
+  useBottomEdge, useContentBottom, usePushedHeaderTop, useColumnWidth } from '@/src/components/layout/navMetrics';
 
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import { offerWord } from '@/src/lib/pushPrimer';
@@ -243,7 +242,8 @@ export default function StackDetailScreen() {
   const toggleListEndorse = useListStore(s => s.toggleListEndorse);
   const deleteList = useListStore(s => s.deleteList);
   const isCertified = useListStore(s => !!s._listEndorsedIndex[id]);
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight } = useWindowDimensions();
+  const windowWidth = useColumnWidth();
   // Two columns below 360pt: a third of 320 breaks "Chungking" mid-letter at large type.
   const COLUMNS = windowWidth < 360 ? 2 : 3;
   const ITEM_WIDTH = (windowWidth - 18 - 14 * COLUMNS) / COLUMNS;   // 9*2 page + 7*2 per cell

@@ -14,6 +14,7 @@
  * Motion: transform/opacity only, house timing curves, no bounce anywhere.
  */
 import React, { useEffect, useState } from 'react';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { HouseBlur } from '@/src/components/HouseBlur';
@@ -161,6 +162,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
     <Presence>
     {visible ? (
     <Modal key="initiation" statusBarTranslucent visible transparent animationType="fade" onRequestClose={handleQuiet}>
+      <InColumn>
       <PresenceView name="initiation" style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={handleQuiet}>
         {/* The house is real, behind the door — the living Lobby, blurred. */}
         <HouseBlur intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
@@ -230,6 +232,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
         </CentredCard>
         <ToastHost />
       </PresenceView>
+      </InColumn>
     </Modal>
     ) : null}
     </Presence>

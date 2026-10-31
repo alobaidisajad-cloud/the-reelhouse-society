@@ -36,6 +36,9 @@
  *            sibling in nothing but colour;
  *   SMALL    (only with `--kinds SMALL`) its own box is under 48pt a side when its slip costs
  *            something (`data-touch`); any other is under 24, or a finger reaches under 48.
+ *   WIDE     on a window 700pt or wider (an iPad, an unfolded phone), its words run wider than
+ *            a reading measure (READING_MAX): the screen stretched its column across the window
+ *            instead of holding one, as the Dispatch holds its paper. Never on a phone's width.
  *
  * And every view (by its React Native style, drawn with MOCKUPS_YOGA=1):
  *
@@ -282,6 +285,11 @@ async function audit(page) {
         const cs = getComputedStyle(e);
         const over = cs.textOverflow === 'ellipsis' ? e.scrollWidth > e.clientWidth + 1 : e.scrollHeight > e.clientHeight + 1;
         if (over) found.push({ kind: 'SHORT', text: say(e), size: parseFloat(cs.fontSize), by: cs.textOverflow === 'ellipsis' ? `${(e.scrollWidth - e.clientWidth).toFixed(0)}pt hidden` : 'lines hidden' });
+      }
+      // WIDE: words wider than a reading measure, on a window wide enough to hold a column.
+      const windowW = phone.right - phone.left;
+      if (!inRail && windowW >= 700 && q.right - q.left > 640) {
+        found.push({ kind: 'WIDE', text: say(e), size: parseFloat(getComputedStyle(e).fontSize), by: `${(q.right - q.left).toFixed(0)}pt of words on a ${windowW.toFixed(0)}pt window` });
       }
       if (!inRail && (q.right > phone.right + 0.75 || q.left < phone.left - 0.75)) {
         found.push({ kind: 'OFF', text: say(e), size: parseFloat(getComputedStyle(e).fontSize), by: `${Math.max(q.right - phone.right, phone.left - q.left).toFixed(1)}pt` });

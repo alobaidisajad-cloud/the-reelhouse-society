@@ -1,4 +1,5 @@
 import PressableScale from '@/src/components/PressableScale';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
@@ -159,6 +160,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
     <Presence>
     {visible ? (
     <Modal key="settings" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
+      <InColumn>
       <HouseBlur intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants"><View /></PressableScale>
@@ -230,6 +232,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
       </Arrive>
       </PresenceView>
       <ToastHost />
+      </InColumn>
     </Modal>
     ) : null}
     </Presence>

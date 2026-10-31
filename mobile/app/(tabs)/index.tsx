@@ -23,7 +23,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { ProjectorBeam } from '@/src/components/home/ProjectorBeam';
 import { VelvetRopeCTA } from '@/src/components/home/VelvetRopeCTA';
 import { BrassSheen } from '@/src/components/theme/BrassSheen';
-import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
+import { useTabBarHeight, useTabContentBottom, useTabContentTop, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useScreenSeen } from '@/src/hooks/useScreenSeen';
@@ -63,7 +63,8 @@ function LobbyBody() {
   // Re-tap the active tab icon → smoothly scroll the Lobby to the top.
   const scrollRef = useRef<any>(null);
   useScrollToTop(scrollRef);
-  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const { height: windowHeight } = useWindowDimensions();
+  const windowWidth = useColumnWidth();
   // The title is sized, not shrunk to fit: with line breaks, shrink-to-fit wraps
   // "REELHOUSE" mid-word. Its widest line, measured from Rye, must fit at the
   // largest size the text allows (displayTextProps, 1.2x): 38pt at 393, 37 at 375.

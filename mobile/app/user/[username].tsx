@@ -3,7 +3,7 @@ import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
 import { RemoteImage } from '@/src/components/Picture';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import AnimatedRN, { Easing, Extrapolation, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useReduceMotion } from '@/src/hooks/useReduceMotion';
@@ -72,8 +72,7 @@ import {
     Sparkles
 } from 'lucide-react-native';
 import {
-  useBottomEdge, useContentBottom, usePushedHeaderTop, useTabBarHeight, useTabContentBottom, useTabContentTop,
-} from '@/src/components/layout/navMetrics';
+  useBottomEdge, useContentBottom, usePushedHeaderTop, useTabBarHeight, useTabContentBottom, useTabContentTop, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { CentredRoom } from '@/src/components/layout/CentredRoom';
 
 // ════════════════════════════════════════════════════════════
@@ -321,7 +320,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   /** The handle's line, only when it is not the name again (no display name, or the same). */
   const showHandle = heroHandle.slice(1) !== heroName;
 
-  const { width: windowWidth } = useWindowDimensions();
+  const windowWidth = useColumnWidth();
   // Letters widen with the text size (capped at 1.2); the spacing never does.
   const nameScale = useTextScale(displayTextProps.maxFontSizeMultiplier);
   // Fixed steps (heroNameSize.ts), not `adjustsFontSizeToFit`: one name, one size.

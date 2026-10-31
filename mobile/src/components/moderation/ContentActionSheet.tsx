@@ -6,6 +6,7 @@
  * closes on a downward drag.
  */
 import { HouseBlur } from '@/src/components/HouseBlur';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { Ban, ShieldAlert, Unlock, Volume2, VolumeX } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
@@ -202,6 +203,7 @@ export function ContentActionSheet({
 
   return (
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
+      <InColumn>
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
         {/* Backdrop */}
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
@@ -266,6 +268,7 @@ export function ContentActionSheet({
         </GestureDetector>
       </GestureHandlerRootView>
       <ToastHost />
+      </InColumn>
     </Modal>
   );
 }

@@ -1,4 +1,5 @@
 import PressableScale from '@/src/components/PressableScale';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { RemoteImage } from '@/src/components/Picture';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
@@ -43,6 +44,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
     <Presence>
     {visible ? (
     <Modal key="door" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
+      <InColumn>
       <HouseBlur intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants"><View /></PressableScale>
@@ -106,6 +108,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
       </Arrive>
       </PresenceView>
       <ToastHost />
+      </InColumn>
     </Modal>
     ) : null}
     </Presence>

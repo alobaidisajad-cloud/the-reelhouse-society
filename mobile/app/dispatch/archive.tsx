@@ -15,7 +15,7 @@
  * opening one film and reading all of it in one place, and the rope is there.
  */
 import { useCallback } from 'react';
-import { ActivityIndicator, ScrollView, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { Text } from '@/src/components/text';
 
 import { DayDivider, PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
@@ -34,7 +34,7 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { ClearanceGate } from '@/src/components/clearance/Clearance';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { TryAgainLine } from '@/src/components/TryAgain';
-import { useContentBottom } from '@/src/components/layout/navMetrics';
+import { useContentBottom, useColumnWidth } from '@/src/components/layout/navMetrics';
 
 export default function ArchiveScreen() {
   const end = useContentBottom();
@@ -53,7 +53,7 @@ export default function ArchiveScreen() {
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const savedIds = useDispatch((s) => s.savedIds);
   // The column at THIS screen's width, not a 390pt phone's.
-  const { width: screenWidth } = useWindowDimensions();
+  const screenWidth = useColumnWidth();
   const width = columnWidth(screenWidth);
 
   const back = useCallback(() => {

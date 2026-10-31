@@ -16,7 +16,7 @@
  *  · Velvet-rope lounge: archivists share, cinephiles see the brass key
  */
 import { useState, useMemo, useCallback } from 'react';
-import { View, StyleSheet, RefreshControl, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, RefreshControl } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { useSharedValue, useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
@@ -34,8 +34,7 @@ import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
 import {
-  useBottomEdge, useContentBottom, usePushedHeaderTop,
-} from '@/src/components/layout/navMetrics';
+  useBottomEdge, useContentBottom, usePushedHeaderTop, useColumnWidth } from '@/src/components/layout/navMetrics';
 import NetInfo from '@react-native-community/netinfo';
 
 import { s } from '@/src/components/person/personStyles';
@@ -129,7 +128,7 @@ export default function PersonDetailScreen() {
   const edge = useBottomEdge();
   const end = useContentBottom();
   const headerTop = usePushedHeaderTop();
-  const { width: windowWidth } = useWindowDimensions();
+  const windowWidth = useColumnWidth();
 
   // The hero's height as it is really drawn — its box clamps to 240..300 —
   // in whole points: the room's light hangs from this line, and the hero's

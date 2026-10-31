@@ -283,6 +283,24 @@ for (const [name, [, expect]] of Object.entries(CASES)) {
 }
 fs.rmSync(DIR, { recursive: true, force: true });
 
+// WIDE, on an iPad's window: a line set wider than a reading measure (a box given the window's
+// width, escaping the column every page sits in) says so; a line in the column's own flow does not.
+const WDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'wide-selftest-'));
+const LONG = 'The house remembers its own, and every member who files a record is part of the permanent record.';
+fs.writeFileSync(path.join(WDIR, 'escaped.html'), box('padding:20px', T('font-size:14px;display:block;width:900px;max-width:none', LONG)));
+fs.writeFileSync(path.join(WDIR, 'held.html'), box('padding:20px', T('font-size:14px;display:block', LONG)));
+const wjson = path.join(WDIR, 'report.json');
+const widened = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', WDIR, '--width', '1024', '--passes', 'ios@1', '--json', wjson], { encoding: 'utf8' });
+const wide = fs.existsSync(wjson) ? JSON.parse(fs.readFileSync(wjson, 'utf8')) : {};
+if (!fs.existsSync(wjson)) console.error(`layout.cjs wrote no WIDE report (exit ${widened.status}): ${`${widened.stderr}${widened.stdout}`.trim().split('\n').slice(-5).join('\n')}`);
+for (const [name, want] of [['escaped', ['WIDE']], ['held', []]]) {
+  const got = [...new Set((wide[`${name}@1`] ?? wide[name] ?? { found: null }).found?.map((x) => x.kind) ?? ['NO REPORT'])];
+  const ok = JSON.stringify(got) === JSON.stringify(want);
+  if (!ok) bad++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  wide-${name.padEnd(7)} ios@1 at 1024  want [${want}]  got [${got}]`);
+}
+fs.rmSync(WDIR, { recursive: true, force: true });
+
 // What the touch check MEASURED: 10pt apart counts; 60pt apart or alone does not,
 // and requiring an unmeasured file fails the run.
 const SDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'sites-selftest-'));

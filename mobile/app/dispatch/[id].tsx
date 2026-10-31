@@ -16,7 +16,7 @@
  * phone's screen and leave the writing in a slot.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Image, Platform, ScrollView, Share, View, useWindowDimensions } from 'react-native';
+import { Alert, Image, Platform, ScrollView, Share, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -64,7 +64,7 @@ import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useClearance } from '@/src/hooks/useClearance';
 import { useUnsent } from '@/src/stores/offlineQueueStore';
 import { HOUSE_WEB } from '@/src/constants/support';
-import { useAboveDockedBar, useBottomEdge } from '@/src/components/layout/navMetrics';
+import { useAboveDockedBar, useBottomEdge, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { useScrollTrace } from '@/src/hooks/useScrollTrace';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
@@ -85,7 +85,7 @@ export default function FilingReader() {
   const edge = useBottomEdge();
   const scrollEnd = useAboveDockedBar(DOCK_ROOM);
   // The page is measured at THIS screen's width, not a 390pt phone's.
-  const { width: screenWidth } = useWindowDimensions();
+  const screenWidth = useColumnWidth();
   const me = useAuthStore((s) => s.user);
   const blockUser = useBlockStore((s) => s.blockUser);
   const muteUser = useBlockStore((s) => s.muteUser);

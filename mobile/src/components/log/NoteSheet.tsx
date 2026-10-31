@@ -18,6 +18,7 @@
  * Same ink, handle, backdrop and gesture as the house's other sheets.
  */
 import { HouseBlur } from '@/src/components/HouseBlur';
+import { InColumn } from '@/src/components/layout/InColumn';
 import { Lock, Pencil, Trash2 } from 'lucide-react-native';
 import React from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
@@ -79,6 +80,7 @@ export default function NoteSheet({
 
   return (
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
+      <InColumn>
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
           <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
@@ -137,6 +139,7 @@ export default function NoteSheet({
         </GestureDetector>
       </GestureHandlerRootView>
       <ToastHost />
+      </InColumn>
     </Modal>
   );
 }
