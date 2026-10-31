@@ -14,7 +14,7 @@ import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { NitrateFileCard, type NitrateFileData } from '../NitrateFileCard';
 import { previewScaleFor, ShareCardModal } from '../ShareCardModal';
-import { NITRATE_CARD_HEIGHT } from '../NitrateFileCard';
+import { NITRATE_CARD_HEIGHT, NITRATE_CARD_WIDTH } from '../NitrateFileCard';
 import { overlayRoomEdge } from '@/src/components/layout/navMetrics';
 import { Dimensions, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -116,6 +116,27 @@ describe('the ledger line', () => {
     const r = render(<NitrateFileCard data={{ ...DATA, memberNo: null }} />);
     expect(r.getByText('THEREELHOUSESOCIETY.COM')).toBeTruthy();
     expect(JSON.stringify(r.toJSON())).not.toMatch(/reelhouse\.app/i);
+  });
+
+  // The house's address beside an eleven-letter handle ran the handle out of the line (largest-text
+  // run 41237565336). A handle is the member's name on a card that leaves the app: never cut. The
+  // ledger wraps rather than squeeze it, and the widest handle the rules allow fits a line of its own.
+  it('keeps the member’s handle whole: it takes a line of its own before it is cut', async () => {
+    const { lineWidth } = require('@/src/components/lobby/measure') as typeof import('@/src/components/lobby/measure');
+    const { ELITE, ELITE_WIDEST } = require('@/src/theme/faceAdvances') as typeof import('@/src/theme/faceAdvances');
+    const widestLetter = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_'].sort((a, b) => (ELITE[b] ?? ELITE_WIDEST) - (ELITE[a] ?? ELITE_WIDEST))[0]!;
+    const widest = `@${widestLetter.repeat(30)}`;
+    const r = render(<NitrateFileCard data={{ ...DATA, memberNo: null, username: widestLetter.repeat(30) }} />);
+    const handle = r.getByText(widest);
+    const look = StyleSheet.flatten(handle.props.style) as { fontSize: number; letterSpacing: number; flexShrink?: number };
+    // The ledger: the first box above the handle that lays out a row.
+    let box = handle.parent;
+    while (box && (StyleSheet.flatten(box.props.style) as { flexDirection?: string } | undefined)?.flexDirection !== 'row') box = box.parent;
+    const ledger = StyleSheet.flatten(box?.props.style) as { flexWrap?: string; paddingHorizontal: number };
+    // The ledger's line: the slab (32 from the left, 16 from the right, a border of 1 each side), less its padding.
+    const line = NITRATE_CARD_WIDTH - 32 - 16 - 2 - 2 * ledger.paddingHorizontal;
+    expect(lineWidth(widest, 'elite', look.fontSize, 1, look.letterSpacing)).toBeLessThanOrEqual(line);
+    expect([ledger.flexWrap, look.flexShrink ?? 0]).toEqual(['wrap', 0]);
   });
 });
 

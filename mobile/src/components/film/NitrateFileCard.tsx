@@ -408,6 +408,9 @@ const s = StyleSheet.create({
   },
 
   // ── The ledger line ──
+  // The serial left and the handle right, on one line when they fit; when they do not (the house's
+  // address beside an eleven-letter handle ran the handle out: largest-text run 41237565336), the
+  // handle takes a line of its own, still to the right, whole. The poster zone gives up the height.
   footer: {
     marginTop: 12,
     paddingVertical: 10,
@@ -415,8 +418,11 @@ const s = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(184,137,26,0.15)',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
+    columnGap: 12,
+    rowGap: 4,
     backgroundColor: 'rgba(0,0,0,0.2)',
   },
   footerSerial: {
@@ -432,7 +438,6 @@ const s = StyleSheet.create({
     letterSpacing: 1.5,
     color: colors.flicker,
     includeFontPadding: false,
-    flexShrink: 1,
-    marginLeft: 12,
+    marginLeft: 'auto',
   },
 });
