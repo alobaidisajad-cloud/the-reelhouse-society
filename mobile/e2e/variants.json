@@ -1,5 +1,10 @@
 {
-  "why": "The phone as each variant run has it (WORKLIST P0.86): each name's adb shell commands set before the run touches the phone and put back once it ends, so nothing outlives its run. Where the phone's own value is not a fixed default, `read` takes it first (the last word of its answer, which must match `answer`) and a reset's {was} puts it back. `ready`, for a setting the system takes a while to apply, is asked until it answers yes (exit 0). `flows`: the run takes every flow before the route walk, on three machines; every other variant walks the routes alone, on one. `judges`: what else fails the run on that phone (cut-text: e2e/cut-text-judges.mjs). run-flows.sh runs them (e2e/variants.mjs); variants.test.ts holds every one to a setup, a reset and a reason.",
+  "why": "The phone as each variant run has it (WORKLIST P0.86): each name's adb shell commands set before the run touches the phone and put back once it ends, so nothing outlives its run. Where the phone's own value is not a fixed default, `read` takes it first (the last word of its answer, which must match `answer`) and a reset's {was} puts it back. `ready`, for a setting the system takes a while to apply, is asked until it answers yes (exit 0). `flows`: the run takes every flow before the route walk, on three machines; every other variant walks the routes alone, on one. `judges`: what else fails the run on that phone (cut-text: e2e/cut-text-judges.mjs). run-flows.sh runs them (e2e/variants.mjs); variants.test.ts holds every one to a setup, a reset and a reason. `device`: the emulator a variant runs on, when not the one every other run has (below).",
+  "device": {
+    "why": "The emulator every run is on unless its variant names its own: a Pixel 6 on Android 14, the image kept in the cache.",
+    "api": 34,
+    "profile": "pixel_6"
+  },
   "variants": {
     "plain": {
       "why": "The phone as every run has it: the walk's captures every other variant is read against.",
@@ -51,10 +56,13 @@
       "reset": ["cmd uimode night {was}"]
     },
     "tablet": {
-      "why": "A tablet's width: the emulator's 1080 px at density 210 is 823 dp across, wider than Android's 600 dp line for a large screen and the reading column's 560, so every flow runs with each page and sheet held to the column, centred in a window wider than any phone.",
+      "why": "Android 16 on a tablet (API 36, the Pixel Tablet's 2560 by 1600 at density 320: 1280 by 800 dp), held on its side as it rests. Android 16 ignores an app's portrait lock on a screen 600 dp or wider for an app targeting SDK 36, as this one does, so the app runs on its side here as it will on every such tablet and open foldable, each page and sheet held to the reading column. The rotation the phone had is read first and put back.",
+      "device": { "api": 36, "profile": "pixel_tablet" },
       "flows": true,
-      "setup": ["wm density 210"],
-      "reset": ["wm density reset"]
+      "read": "settings get system accelerometer_rotation",
+      "answer": "^[01]$",
+      "setup": ["settings put system accelerometer_rotation 0"],
+      "reset": ["settings put system accelerometer_rotation {was}"]
     }
   }
 }

@@ -93,6 +93,15 @@ it('adds a judge only by a name run-flows.sh runs: cut text to the largest text,
   for (const j of Object.values(judges).flat()) expect(runFlows).toContain(`judges | grep -qx ${j}`);
 });
 
+it('runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16', () => {
+  const devices = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'device') as { commands: string[] }).commands.join(' ')]));
+  expect(Object.entries(devices).filter(([, d]) => d !== '34 pixel_6')).toEqual([['tablet', '36 pixel_tablet']]);
+  // The workflow keys the emulator, its image and its cache on this one answer.
+  expect(E2E_YML).toMatch(/node mobile\/e2e\/variants\.mjs "\$\{E2E_VARIANT:-plain\}" device/);
+  expect(E2E_YML).toMatch(/^ {10}api-level: \$\{\{ env\.E2E_API \}\}$/m);
+  expect(E2E_YML).toMatch(/^ {10}profile: \$\{\{ env\.E2E_PROFILE \}\}$/m);
+});
+
 it('says which run each variant is: every flow and the walk, or the walk alone', () => {
   const runs = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'runs') as { commands: string[] }).commands]));
   expect(runs).toEqual({
@@ -108,7 +117,7 @@ it('takes back the language only as a language, with or without its script', () 
 
 it('refuses, rather than guesses, an unknown variant or step, and a reset with nothing usable to put back', () => {
   expect(commandsFor('sideways', 'setup')).toEqual({ refused: `no variant named sideways (the variants: ${Object.keys(VARIANTS).join(', ')})` });
-  expect(commandsFor('dark', 'undo')).toEqual({ refused: 'a step is read, setup, ready, reset, runs or judges, not undo' });
+  expect(commandsFor('dark', 'undo')).toEqual({ refused: 'a step is read, setup, ready, reset, runs, judges or device, not undo' });
   expect(commandsFor('dark', 'reset')).toEqual({ refused: "dark's reset puts back what was read, and was given nothing" });
   expect(commandsFor('dark', 'reset', 'closed')).toEqual({
     refused: "dark's read answered closed, which ^(no|yes|auto|custom_schedule|custom_bedtime)$ does not match: nothing is put back",

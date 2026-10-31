@@ -10,6 +10,7 @@
  *   node e2e/variants.mjs <variant> reset [<was>]   the commands that put it back, {was} filled in
  *   node e2e/variants.mjs <variant> runs            "flows" (every flow, then the walk) or "walk"
  *   node e2e/variants.mjs <variant> judges          the judges it adds, one a line (cut-text)
+ *   node e2e/variants.mjs <variant> device          its emulator's API level, then its profile
  *
  * Each command is an adb shell command. An unknown variant or step, a reset that needs what was
  * read and is given nothing, or one given a word the variant's `answer` does not match (a failed
@@ -18,10 +19,11 @@
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-const LIST = JSON.parse(readFileSync(new URL('./variants.json', import.meta.url), 'utf8')).variants;
+const FILE = JSON.parse(readFileSync(new URL('./variants.json', import.meta.url), 'utf8'));
+const LIST = FILE.variants;
 
 /** The commands one step of one variant takes, or why there are none to give. */
-export function commandsFor(variants, name, step, was) {
+export function commandsFor(variants, name, step, was, device = FILE.device) {
   const v = variants[name];
   if (!v) return { refused: `no variant named ${name} (the variants: ${Object.keys(variants).join(', ')})` };
   if (step === 'read') return { commands: v.read ? [v.read] : [] };
@@ -29,7 +31,8 @@ export function commandsFor(variants, name, step, was) {
   if (step === 'ready') return { commands: v.ready ?? [] };
   if (step === 'runs') return { commands: [v.flows ? 'flows' : 'walk'] };
   if (step === 'judges') return { commands: v.judges ?? [] };
-  if (step !== 'reset') return { refused: `a step is read, setup, ready, reset, runs or judges, not ${step}` };
+  if (step === 'device') { const d = v.device ?? device; return { commands: [String(d.api), d.profile] }; }
+  if (step !== 'reset') return { refused: `a step is read, setup, ready, reset, runs, judges or device, not ${step}` };
   if (v.reset.some((c) => c.includes('{was}')) && !was) return { refused: `${name}'s reset puts back what was read, and was given nothing` };
   if (v.answer && !new RegExp(v.answer).test(was ?? '')) return { refused: `${name}'s read answered ${was}, which ${v.answer} does not match: nothing is put back` };
   return { commands: v.reset.map((c) => c.split('{was}').join(was ?? '')) };

@@ -123,6 +123,8 @@ jobs:
     # then the walk, or "walk", the walk alone on one.
     outputs:
       runs: ${{ steps.variant.outputs.runs }}
+      api: ${{ steps.device.outputs.api }}
+      profile: ${{ steps.device.outputs.profile }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -133,6 +135,15 @@ jobs:
         run: |
           runs=$(node mobile/e2e/variants.mjs "$E2E_VARIANT" runs) || exit 1
           echo "runs=$runs" >> "$GITHUB_OUTPUT"
+
+      # The emulator the run is on: the one every run has, unless its variant names its own
+      # (e2e/variants.json's `device`: the tablet on Android 16).
+      - name: The phone the run is on
+        id: device
+        run: |
+          device=$(node mobile/e2e/variants.mjs "${E2E_VARIANT:-plain}" device) || exit 1
+          echo "api=$(sed -n 1p <<< "$device")" >> "$GITHUB_OUTPUT"
+          echo "profile=$(sed -n 2p <<< "$device")" >> "$GITHUB_OUTPUT"
 
       # Before the package cache is keyed: the client's own lock file decides it.
       - name: The shipped client's app, over this harness
@@ -341,6 +352,9 @@ jobs:
       E2E_FLOWS: ${{ inputs.faults && 'mobile/.maestro/faults' || inputs.lifecycle && 'mobile/.maestro/lifecycle' || (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && 'none' || 'mobile/.maestro' }}
       E2E_WALK: ${{ (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && '1' || '' }}
       E2E_SEED_WALK: ${{ (inputs.variant && (needs.build.outputs.runs == 'walk' || matrix.shard == 4)) && '1' || '' }}
+      # The emulator's Android and its device (the build job's "The phone the run is on").
+      E2E_API: ${{ needs.build.outputs.api }}
+      E2E_PROFILE: ${{ needs.build.outputs.profile }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # The stack's ports kept before the job makes any connection that could be lent one: lent
@@ -540,8 +554,8 @@ jobs:
         id: image-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: /usr/local/lib/android/sdk/system-images/android-34/google_apis/x86_64
-          key: android-system-image-34-google_apis-x86_64
+          path: /usr/local/lib/android/sdk/system-images/android-${{ env.E2E_API }}/google_apis/x86_64
+          key: android-system-image-${{ env.E2E_API }}-google_apis-x86_64
       - name: The emulator and its system image
         id: android-sdk
         timeout-minutes: 5
@@ -549,23 +563,23 @@ jobs:
         run: |
           rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
-          node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-${{ env.E2E_API }}' emulator 'system-images;android-${{ env.E2E_API }};google_apis;x86_64' --channel=0 > /dev/null
+          node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-${{ env.E2E_API }}' emulator 'system-images;android-${{ env.E2E_API }};google_apis;x86_64'
       - name: The emulator and its system image, once more
         if: steps.android-sdk.outcome == 'failure'
         timeout-minutes: 5
         run: |
           rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64' --channel=0 > /dev/null
-          node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-34' emulator 'system-images;android-34;google_apis;x86_64'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'build-tools;37.0.0' platform-tools 'platforms;android-${{ env.E2E_API }}' emulator 'system-images;android-${{ env.E2E_API }};google_apis;x86_64' --channel=0 > /dev/null
+          node mobile/scripts/android-packages.cjs --installed 'build-tools;37.0.0' platform-tools 'platforms;android-${{ env.E2E_API }}' emulator 'system-images;android-${{ env.E2E_API }};google_apis;x86_64'
       # Only a copy the step above found whole.
       - name: The system image, kept in the cache
         if: steps.image-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: /usr/local/lib/android/sdk/system-images/android-34/google_apis/x86_64
-          key: android-system-image-34-google_apis-x86_64
+          path: /usr/local/lib/android/sdk/system-images/android-${{ env.E2E_API }}/google_apis/x86_64
+          key: android-system-image-${{ env.E2E_API }}-google_apis-x86_64
 
       # The lifecycle run's upgrade (.maestro/lifecycle/upgrade.yaml) installs this build over the
       # one already in members' hands: that build's E2E app, from the last shipped-clients run
@@ -607,10 +621,10 @@ jobs:
           E2E_SHARD_MAP: ${{ inputs.faults && 'mobile/e2e/fault-shards.json' || inputs.lifecycle && 'mobile/e2e/lifecycle-shards.json' || env.E2E_WALK && 'mobile/e2e/walk-shards.json' || 'mobile/e2e/shards.json' }}
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
-          api-level: 34
+          api-level: ${{ env.E2E_API }}
           target: google_apis
           arch: x86_64
-          profile: pixel_6
+          profile: ${{ env.E2E_PROFILE }}
           ram-size: 4096M
           heap-size: 576M
           disable-animations: true
