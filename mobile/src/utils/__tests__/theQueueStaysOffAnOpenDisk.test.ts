@@ -8,7 +8,7 @@
  * in memory: sent while the app is open, lost if it closes first, as the member is told; nothing
  * of it reaches the disk.
  */
-import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../offlineQueue';
+import { clearOfflineQueue, enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../offlineQueue';
 import { DEAD_LETTER_KEY, keepForOwners, readList, writeList } from '../queueOwnership';
 import { storage } from '@/src/stores/mmkv-storage';
 import { supabase } from '@/src/lib/supabase';
@@ -37,8 +37,11 @@ jest.mock('../mutationExecutor', () => ({ ...jest.requireActual('../mutationExec
 const critique = { type: 'add_critique' as const, payload: { _tempId: 't1', post_id: 'p1', user_id: ME, body: 'Written with the store shut.' } };
 const queueWrites = () => (storage.set as jest.Mock).mock.calls.filter(([k]) => String(k).startsWith('reelhouse-offline-mutations'));
 
+// Each test from an empty queue: the queue lives in the module, and a test that leaned on another's
+// critique failed when the night's random order ran it first (seed 1445639628).
 beforeEach(() => {
   mockEncrypted = false;
+  clearOfflineQueue(ME);
   jest.clearAllMocks();
 });
 
@@ -49,6 +52,7 @@ it('a critique queued offline is held, and never written to the disk', () => {
 });
 
 it('and is sent when the network returns, in the same run', async () => {
+  enqueueMutation(critique);
   jest.spyOn(supabase.auth, 'getSession').mockResolvedValue({ data: { session: { user: { id: ME } } }, error: null } as never);
   await flushOfflineQueue();
   expect((executeMutation as jest.Mock).mock.calls.map(([m]) => m.type)).toEqual(['add_critique']);

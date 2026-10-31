@@ -60,7 +60,9 @@ const judge = (file, report, equivalents, floor) => {
   const equivalent = undetected.filter((m) => mine.some((e) => named(e, m)));
   const left = undetected.filter((m) => !equivalent.includes(m));
   const detected = mutants.filter((m) => DETECTED.includes(m.status)).length;
-  const stale = mine.filter((e) => !undetected.some((m) => named(e, m)));
+  // Stale only when its mutant was killed: a timeout says the runner was slow, not that a test
+  // kills it (text.ts's conjunct rule timed out on a slow night, 39 of its mutants with it).
+  const stale = mine.filter((e) => !mutants.some((m) => (UNDETECTED.includes(m.status) || m.status === 'Timeout') && named(e, m)));
   const score = detected + left.length ? Math.floor((detected / (detected + left.length)) * 10000) / 100 : 100;
   return {
     file, score, killed: detected, survived: left.length, equivalent: equivalent.length, stale,

@@ -327,13 +327,14 @@ timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
 probes=('stack|"FILE THE STACK"' 'log|#review-input')
 [ "$PROBES" = yes ] || probes=()
 keys_on() {
+  # A tablet's emulator declares a keyboard of keys, and Android then keeps the one on the screen
+  # away (the tablet run on Android 16: "NO KEYBOARD on screen"). A phone has none, so this is the
+  # setting it already has. Set before the keyboard starts: set after, its first show was only
+  # the strip it keeps for a keyboard of keys, its window gone (run 41202593583).
+  timeout 20 adb shell settings put secure show_ime_with_hard_keyboard 1 > /dev/null 2>&1
   for pkg in $(echo "$imes_all" | sed 's#/.*##' | sort -u); do timeout 20 adb shell pm enable "$pkg" > /dev/null 2>&1; done
   for ime in $imes_all; do timeout 20 adb shell ime enable "$ime" > /dev/null 2>&1; done
   timeout 20 adb shell ime set "$(echo "$imes_all" | grep -m 1 latin || echo "$imes_all" | head -n 1)" > /dev/null 2>&1
-  # A tablet's emulator declares a keyboard of keys, and Android then keeps the one on the screen
-  # away (the tablet run on Android 16: "NO KEYBOARD on screen"). A phone has none, so this is the
-  # setting it already has.
-  timeout 20 adb shell settings put secure show_ime_with_hard_keyboard 1 > /dev/null 2>&1
 }
 keys_off() {
   timeout 20 adb shell settings delete secure show_ime_with_hard_keyboard > /dev/null 2>&1

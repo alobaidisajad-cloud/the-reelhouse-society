@@ -8,11 +8,12 @@
  * And the route files are what expo-router itself loads: its own pattern,
  * read from the package, against the routes universe.
  */
-import { readFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { join } from 'path';
 import { MOBILE } from '../readCode';
 import {
-  everyFile, files, isTest, kindOf, notSweptBecause, rel, repoRel, routeClosure, universesOf, UNIVERSES,
+  checkoutRoot, everyFile, files, isTest, kindOf, notSweptBecause, rel, repoRel, routeClosure, universesOf, UNIVERSES,
   type UniverseName,
 } from '../universe';
 
@@ -21,6 +22,20 @@ const inATree = (r: string) => /^(mobile\/)?supabase\//.test(r);
 const pending = () => (require(join(MOBILE, 'supabase', 'diagnostics', 'train.cjs')) as { pendingIn: () => { name: string }[] }).pendingIn();
 /** A path from mobile/ that is a test file, by the universe's own rule. */
 const aTest = (r: string) => isTest(`mobile/${r}`);
+
+// Stryker runs a file's tests in a sandbox of its own under mobile/.stryker-tmp: taken as two folders
+// up from test-utils, the root there was .stryker-tmp, and every universe was empty (the night of
+// 2026-10-31: two guards found nothing, and their files failed their floor).
+it('finds the checkout from its own mobile/, and from inside a Stryker sandbox', () => {
+  const repo = mkdtempSync(join(tmpdir(), 'checkout-'));
+  mkdirSync(join(repo, 'mobile', 'test-utils'), { recursive: true });
+  writeFileSync(join(repo, 'mobile', 'test-utils', 'universe.js'), '');
+  const sandbox = join(repo, 'mobile', '.stryker-tmp', 'sandbox-1');
+  mkdirSync(join(sandbox, 'test-utils'), { recursive: true });
+  expect([checkoutRoot(join(repo, 'mobile')), checkoutRoot(sandbox)]).toEqual([repo, repo]);
+  expect(files('appCode').length).toBeGreaterThan(100);
+  rmSync(repo, { recursive: true, force: true });
+});
 
 describe('the shared file list names every file', () => {
   const all = everyFile();

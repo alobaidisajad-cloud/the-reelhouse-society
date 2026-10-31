@@ -37,3 +37,5 @@ export function universesOf(repoRelPath: string): UniverseName[];
 export function at(repo: string): Universe;
 export const UNIVERSES: Record<UniverseName, { says: string; roots: string[]; top?: boolean; withClosure?: boolean }>;
 export function isTest(repoRelPath: string): boolean;
+/** The checkout's root, from a folder inside its mobile/ (Stryker's sandbox included). */
+export function checkoutRoot(from?: string): string;

@@ -120,6 +120,11 @@ describe('the judge of a file\'s report says NO', () => {
     expect(r).toMatchObject({ score: 100, equivalent: 1, fault: null });
     const stale = judge('src/x.ts', report(...Array(9).fill(mutant('Killed'))), [eq], 90);
     expect(stale.fault).toBe('1 equivalent(s) name no survivor');
+    // Killed by a test, it is stale; out of time on a slow night, it is not (nightly 41187219004).
+    const killed = judge('src/x.ts', report(...Array(9).fill(mutant('Killed')), mutant('Killed', 5, 'EqualityOperator', 'a !== b', 5)), [eq], 90);
+    expect(killed.fault).toBe('1 equivalent(s) name no survivor');
+    const slow = judge('src/x.ts', report(...Array(9).fill(mutant('Killed')), mutant('Timeout', 5, 'EqualityOperator', 'a !== b', 5)), [eq], 90);
+    expect(slow.fault).toBeNull();
   });
 
   it('excuses only the mutant at its own column: the same change elsewhere on the line still counts', () => {

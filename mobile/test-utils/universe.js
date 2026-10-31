@@ -355,4 +355,16 @@ function at(repo) {
   };
 }
 
-module.exports = { ...at(path.join(__dirname, '..', '..')), at, UNIVERSES, isTest };
+/**
+ * This checkout's root: above the mobile/ folder this file sits in. Inside Stryker's sandbox (a
+ * folder of its own under mobile/.stryker-tmp) that folder is further up: taken as two folders up,
+ * the root was .stryker-tmp, every universe was empty, and each guard there found nothing.
+ */
+function checkoutRoot(from = path.join(__dirname, '..')) {
+  for (let d = from; d !== path.dirname(d); d = path.dirname(d)) {
+    if (path.basename(d) === 'mobile' && fs.existsSync(path.join(d, 'test-utils', 'universe.js'))) return path.dirname(d);
+  }
+  return path.join(__dirname, '..', '..');
+}
+
+module.exports = { ...at(checkoutRoot()), at, UNIVERSES, isTest, checkoutRoot };
