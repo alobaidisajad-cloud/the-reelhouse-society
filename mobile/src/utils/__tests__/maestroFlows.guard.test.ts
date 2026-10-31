@@ -137,12 +137,32 @@ const FIXED_FIELDS: Record<string, string> = {
   'recovery-email-input': 'the top of the recovery sheet',
 };
 
-/** Each tap on a field (an id ending -input), with the step before it. */
+/**
+ * Every field the app draws, by its testID: an element whose tag is an input (TextInput, the forms'
+ * ControlledBioInput and the rest), whatever its id is called. Edit Profile's `edit-profile-bio`,
+ * named by no "-input", was tapped bare and missed on a window on its side.
+ */
+const FIELD_IDS = new Set<string>();
+for (const file of APP_FILES.filter((f) => f.endsWith('.tsx'))) {
+  const sf = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX);
+  const visit = (n: ts.Node): void => {
+    if ((ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) && /Input$/.test(n.tagName.getText(sf))) {
+      for (const a of n.attributes.properties) {
+        if (ts.isJsxAttribute(a) && a.name.getText(sf) === 'testID' && a.initializer && ts.isStringLiteral(a.initializer)) FIELD_IDS.add(a.initializer.text);
+      }
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+}
+
+/** Each tap on a field (one the app draws as an input, or an id ending -input), with the step before it. */
 const fieldTaps = (text: string) => {
   const steps = parseAllDocuments(text).map((d) => d.toJSON()).find(Array.isArray) as Record<string, unknown>[] ?? [];
   return steps.flatMap((s, i) => {
     const tap = s?.tapOn as { id?: string } | undefined;
-    return tap && typeof tap === 'object' && /-input$/.test(tap.id ?? '') ? [{ id: tap.id as string, before: steps[i - 1] }] : [];
+    const id = tap && typeof tap === 'object' ? tap.id ?? '' : '';
+    return /-input$/.test(id) || FIELD_IDS.has(id) ? [{ id, before: steps[i - 1] }] : [];
   });
 };
 const centredOn = (step: unknown, id: string) => {
@@ -156,6 +176,7 @@ it('every tap on a field comes after a centred scroll to it, or the field is fix
   // pressed Back to search (log.back, Sealed E2E 38722108889).
   const taps = FLOWS.flatMap((f) => fieldTaps(f.text).map((t) => ({ ...t, flow: f.flow })));
   expect(taps.some((t) => t.id === 'review-input')).toBe(true);
+  expect([...FIELD_IDS]).toEqual(expect.arrayContaining(['edit-profile-bio', 'review-input']));
   expect(taps.filter((t) => !FIXED_FIELDS[t.id] && !centredOn(t.before, t.id)).map((t) => `${t.flow}: ${t.id}`)).toEqual([]);
   // Every listed field is still tapped somewhere, and says NO without its scroll.
   expect(Object.keys(FIXED_FIELDS).filter((id) => !taps.some((t) => t.id === id))).toEqual([]);
@@ -167,6 +188,14 @@ it('no flow line is over 80 characters, as the flow lint in CI requires (yamllin
   const long = FLOWS.flatMap((f) => f.text.split(/\r?\n/).map((l, i) => ({ at: `${f.flow}:${i + 1}`, n: [...l].length })))
     .filter((l) => l.n > 80);
   expect(long.map((l) => `${l.at} (${l.n})`)).toEqual([]);
+});
+
+// The test phone has no on-screen keyboard (run-flows.sh), and Maestro's hideKeyboard presses Back:
+// a form's flow was sent back out of it, and Edit Profile asked to discard the words it was there to keep.
+it('no flow hides the keyboard: on the test phone that is a Back press', () => {
+  const pressed = FLOWS.flatMap((f) => f.text.split(/\r?\n/).map((l, i) => ({ at: `${f.flow}:${i + 1}`, l })))
+    .filter(({ l }) => /^\s*-\s*hideKeyboard\b/.test(l));
+  expect(pressed.map(({ at }) => at)).toEqual([]);
 });
 
 it('every flow drives this app, and none holds an account', () => {

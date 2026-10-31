@@ -66,12 +66,12 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/keyboard/stack.tap.yaml | 2026-10-01 | written with the keyboard probe: the stack form, reachable by a new member |
 | .maestro/keyboard/stack.yaml | 2026-10-15 | edited: the Reel's log and the seed's stack waited for |
 | .maestro/lifecycle/backup_restore.yaml | 2026-10-17 | new: signed in, backed up, uninstalled, installed afresh, restored: the marker back, the app open signed out (the session's key never travels), sign-in working, the tabs loading |
-| .maestro/lifecycle/dont_keep_activities.yaml | 2026-10-17 | new: "don't keep activities" on, Edit Profile half-edited, home and back: the words kept |
-| .maestro/lifecycle/killed_in_background.yaml | 2026-10-17 | new: Edit Profile half-edited, home, the app killed by the system: back where they were, the words kept |
+| .maestro/lifecycle/dont_keep_activities.yaml | 2026-10-31 | edited: the bio is centred before it is touched: a field below the fold on a window on its side; new: "don't keep activities" on, Edit Profile half-edited, home and back: the words kept |
+| .maestro/lifecycle/killed_in_background.yaml | 2026-10-31 | edited: the bio is centred before it is touched: a field below the fold on a window on its side; new: Edit Profile half-edited, home, the app killed by the system: back where they were, the words kept |
 | .maestro/lifecycle/killed_mid_write.yaml | 2026-10-17 | new: the app stopped dead while a log is on its way over a slow link; reopened, the log is the member's, exactly once |
-| .maestro/lifecycle/live_config.yaml | 2026-10-17 | new: the text size, then the density, changed under a half-edited Edit Profile: the same screen, the words kept |
+| .maestro/lifecycle/live_config.yaml | 2026-10-31 | edited: the bio is centred before it is touched: a field below the fold on a window on its side; new: the text size, then the density, changed under a half-edited Edit Profile: the same screen, the words kept |
 | .maestro/lifecycle/upgrade.yaml | 2026-10-17 | new: the build in members' hands queues a write offline; this build installed over it sends it, exactly once; the member still signed in |
-| .maestro/admin_second_key.yaml | 2026-10-21 | new: the seeded admin registers a key, gives its code, and the Tribunal opens; relaunched, it opens with no code |
+| .maestro/admin_second_key.yaml | 2026-10-31 | edited: the second-key code is centred before it is touched; new: the seeded admin registers a key, gives its code, and the Tribunal opens; relaunched, it opens with no code |
 | .maestro/log_film_flow.yaml | 2026-10-15 | edited: the Darkroom's own films waited for before the search is typed |
 | .maestro/login_flow.yaml | 2026-09-29 | true as written |
 | .maestro/lounge_flow.yaml | 2026-09-29 | true as written |
@@ -234,7 +234,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/png.mjs | 2026-10-17 | new: a capture's pixels, Node's zlib alone; what it cannot read, refused by name |
 | e2e/prefetch-download-only.mjs | 2026-10-15 | new: the APK's prefetch on CachePolicy.DISK calls downloadOnly; not run for a shipped client |
 | e2e/route-judges.mjs | 2026-10-17 | new: every route the walk planned, captured as a picture; a plan of no route is unread; edited: a capture found at any depth of Maestro's output folder |
-| e2e/run-flows.sh | 2026-10-27 | edited: the clock put back before every lifecycle flow: the runner's now, network time on; edited: Android's error dialogs hidden by the shared no-error-dialogs.sh; the speed gate reads the learning file beside the ceilings; a fault run clears the fault before each flow and is judged by fault-judges.mjs; E2E_FLOWS=none runs no flows; with E2E_WALK, the route walk after the flows, judged by route-judges.mjs, its screens not held to the flows' ceilings; edited: the whole run on the phone as E2E_VARIANT has it, set before the run's log begins, waited for, put back at its end |
+| e2e/run-flows.sh | 2026-10-31 | edited: the keyboard probe shows the keyboard beside a declared keyboard of keys (a tablet), and a keyboard that never showed says what its service said; edited: the clock put back before every lifecycle flow: the runner's now, network time on; edited: Android's error dialogs hidden by the shared no-error-dialogs.sh; the speed gate reads the learning file beside the ceilings; a fault run clears the fault before each flow and is judged by fault-judges.mjs; E2E_FLOWS=none runs no flows; with E2E_WALK, the route walk after the flows, judged by route-judges.mjs, its screens not held to the flows' ceilings; edited: the whole run on the phone as E2E_VARIANT has it, set before the run's log begins, waited for, put back at its end |
 | e2e/runtime-dump.mjs | 2026-10-25 | edited: a global a native module installs when it starts, named with what installs it, held to no moment (INSTALLED_LATE); new 2026-10-15: the phone's runtime from the device log, held to the committed copy |
 | e2e/screen-times.mjs | 2026-10-22 | edited: --learning: a new screen reported for LEARNING_DAYS, its entry failing past them or beside a ceiling; --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs; edited: two ceilings a screen, derived by ceilingsFrom from e2e/screen-history.json |
 | e2e/shard-verdict.mjs | 2026-10-15 | new: every shard finished, every flow ran once, every ceiling's screen reported somewhere |
@@ -1262,7 +1262,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/logger.test.ts | 2026-10-27 | edited: a server error is reported as its line and code, never its message;  |
 | src/utils/__tests__/logScreenPolish.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
-| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-16 | edited: a flow's steps include those inside an inline runFlow |
+| src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-31 | edited: no flow hides the keyboard (a Back press); every field the app draws as an input is known by its element, not its id; edited: no flow hides the keyboard: on the test phone that is a Back press; edited: a flow's steps include those inside an inline runFlow |
 | src/utils/__tests__/mappers.test.ts | — |  |
 | src/utils/__tests__/markdownSafety.test.ts | — |  |
 | src/utils/__tests__/memoryManager.test.ts | — |  |
@@ -1465,7 +1465,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/iosFlows.test.ts | 2026-10-24 | edited: the iOS sitemap link handed to the app running |
 | e2e/no-keyboard.sh | 2026-10-22 | moved whole from run-flows.sh: the phone with no keyboard apps, no input method and no autofill, sourced by run-flows.sh and the speed lab's scrolls.sh; a keyboard left stops the run |
 | .maestro/subflows/open_link_on_ios.yaml | 2026-10-22 | written: iOS's own "Open in ...?" before a link opens the app, answered as a member does; nothing if it never came |
-| .maestro/turned.yaml | 2026-10-31 | new: Edit Profile half-edited, the phone turned and turned back: the same screen, the words kept; the app turns only on the tablet run |
+| .maestro/turned.yaml | 2026-10-31 | edited: no hideKeyboard (a Back press on the test phone); the bio is centred before it is touched: a field below the fold on a window on its side; edited: no hideKeyboard: on the test phone it is a Back press, which asked to discard the words; new: Edit Profile half-edited, the phone turned and turned back: the same screen, the words kept; the app turns only on the tablet run |
 | app/(modals)/__tests__/theCoverIsTheHostsToChoose.test.tsx | 2026-10-27 | edited: signed out, asked in; signed in as host, the picker drawn; Written 2026-10-27: the cover picker drawn for the host alone; anyone else, or a salon not known, told plainly (P4.4) |
 | app/__tests__/aLinkWithNoSessionSaysSo.test.tsx | 2026-10-30 | new: a reset link with no session says so, in its own words, and offers a new link and the way back |
 | app/__tests__/aNewPasswordSaysWhichField.test.tsx | 2026-10-28 | new: setting a new password: a refusal under its field, said with it, focused; mended, gone |

@@ -29,6 +29,12 @@ appId: com.reelhouse.society
     id: "second-key-secret"
 - runScript:
     file: subflows/totp.js
+- scrollUntilVisible:
+    element:
+      id: "second-key-code"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
 - tapOn:
     id: "second-key-code"
 - inputText: ${output.code}

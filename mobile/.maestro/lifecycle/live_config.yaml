@@ -14,8 +14,14 @@ env:
 - openLink: "reelhouse://edit-profile"
 - extendedWaitUntil:
     visible:
-      id: "edit-profile-bio"
+      id: "edit-profile"
     timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: "edit-profile-bio"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
 - tapOn:
     id: "edit-profile-bio"
 - inputText: ${WORDS}

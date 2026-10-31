@@ -330,8 +330,13 @@ keys_on() {
   for pkg in $(echo "$imes_all" | sed 's#/.*##' | sort -u); do timeout 20 adb shell pm enable "$pkg" > /dev/null 2>&1; done
   for ime in $imes_all; do timeout 20 adb shell ime enable "$ime" > /dev/null 2>&1; done
   timeout 20 adb shell ime set "$(echo "$imes_all" | grep -m 1 latin || echo "$imes_all" | head -n 1)" > /dev/null 2>&1
+  # A tablet's emulator declares a keyboard of keys, and Android then keeps the one on the screen
+  # away (the tablet run on Android 16: "NO KEYBOARD on screen"). A phone has none, so this is the
+  # setting it already has.
+  timeout 20 adb shell settings put secure show_ime_with_hard_keyboard 1 > /dev/null 2>&1
 }
 keys_off() {
+  timeout 20 adb shell settings delete secure show_ime_with_hard_keyboard > /dev/null 2>&1
   for pkg in $(echo "$imes_all" | sed 's#/.*##' | sort -u); do timeout 20 adb shell pm disable "$pkg" > /dev/null 2>&1; done
   timeout 20 adb shell settings delete secure enabled_input_methods > /dev/null 2>&1
   timeout 20 adb shell settings delete secure default_input_method > /dev/null 2>&1
@@ -425,6 +430,9 @@ for probe in ${probes[@]+"${probes[@]}"}; do
       room_rc=1
       # What was on the screen, so a target that was not found says where it looked.
       node mobile/e2e/screen.mjs "$OUT/keyboard-room/$name.json" | head -n 14 | sed "s/^/  $name screen · /" >> "$OUT/keyboard-room.txt"
+      # And what the keyboard's own service said, so a keyboard that never showed says why.
+      timeout 20 adb shell dumpsys input_method 2>/dev/null | tr -d '\r' \
+        | grep -E 'mInputShown|mShowRequested|mCurMethodId|HardKeyboard|hardKeyboard' | head -n 6 | sed "s/^ */  $name ime · /" >> "$OUT/keyboard-room.txt"
     fi
     # The keyboard window's own lines, so the measure can be checked by eye.
     awk '/Window #[0-9]+ Window\{[0-9a-f]+ u[0-9]+ InputMethod\}/ {p=1; print; next} /Window #[0-9]+/ {p=0} p' \

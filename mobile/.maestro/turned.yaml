@@ -12,14 +12,21 @@ env:
     clearState: true
 - runFlow: subflows/sign_in.yaml
 - openLink: "reelhouse://edit-profile"
+# On a window on its side the form is shorter than its page: the bio is
+# scrolled to before it is touched.
 - extendedWaitUntil:
     visible:
-      id: "edit-profile-bio"
+      id: "edit-profile"
     timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: "edit-profile-bio"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
 - tapOn:
     id: "edit-profile-bio"
 - inputText: ${WORDS}
-- hideKeyboard
 
 - setOrientation: LANDSCAPE_LEFT
 - waitForAnimationToEnd:
