@@ -2,8 +2,9 @@
 /**
  * cut-text-judges.mjs — the cut-text judge of the variant runs that ask for it (e2e/variants.json,
  * `judges`; WORKLIST P0.86): every Text the app said it cut (`text.cut`, src/components/text)
- * fails the run, unless e2e/cut-text-judged.json names its words and its cut, for this variant,
- * with why the cut is the design. cutTextJudges.test.ts holds every judged cut's words to the
+ * fails the run, unless e2e/cut-text-judged.json names its words (or, for a kind of Text whose words
+ * come from elsewhere, TMDB's video titles, its testID) and its cut, for this variant, with why the
+ * cut is the design. cutTextJudges.test.ts holds every judged cut's words to the
  * code or the seeded world that still draws them, so no judgement outlives its label.
  *
  *   node e2e/cut-text-judges.mjs <device log> --judged <json> --variant <name>
@@ -31,14 +32,15 @@ export function readCuts(text) {
     if (typeof c?.words !== 'string' || typeof c?.cut !== 'string') continue;
     const key = `${c.cut}\t${c.words}`;
     const by = seen.get(key)?.by ?? (typeof c.by === 'string' ? c.by : null);
-    seen.set(key, { words: c.words, cut: c.cut, on: seen.get(key)?.on ?? screen, times: (seen.get(key)?.times ?? 0) + 1, by });
+    const testID = seen.get(key)?.testID ?? (typeof c.testID === 'string' ? c.testID : null);
+    seen.set(key, { words: c.words, cut: c.cut, on: seen.get(key)?.on ?? screen, times: (seen.get(key)?.times ?? 0) + 1, by, testID });
   }
   return [...seen.values()];
 }
 
 /** Each cut no judgement for this variant names, in words. */
 export function judge(cuts, judged, variant) {
-  const ok = (c) => judged.some((j) => j.words === c.words && j.cut === c.cut && j.variants.includes(variant));
+  const ok = (c) => judged.some((j) => (j.words !== undefined ? j.words === c.words : !!j.testID && j.testID === c.testID) && j.cut === c.cut && j.variants.includes(variant));
   return cuts.filter((c) => !ok(c)).map((c) => `"${c.words}" ${c.cut}${c.by ? `, ${c.by}` : ''}${c.on ? ` on ${c.on}` : ''} (said ${c.times} time${c.times === 1 ? '' : 's'})`);
 }
 

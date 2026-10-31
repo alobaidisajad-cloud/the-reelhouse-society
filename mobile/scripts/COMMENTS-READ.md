@@ -152,7 +152,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ARCHITECTURE.md | 2026-10-15 | edited: Image Caching is true now that every picture states memory-disk, and names the guard that holds it |
 | audit/batch6/tier_mirror.mjs | 2026-09-29 | true as written: its transcription still matches src/utils/tier.ts |
 | CONTRIBUTING.md | 2026-10-03 | read against the code: a <Modal> needs no accessibilityViewIsModal (an in-screen overlay does, plus the Android half); a toast is already spoken, so only a toast-less write announces |
-| e2e/__tests__/cutTextJudges.test.ts | 2026-10-31 | edited: a cut's measure kept and printed; new |
+| e2e/__tests__/cutTextJudges.test.ts | 2026-10-31 | edited: judged by testID: any words it shows; a judged testID the app still sets; edited: a cut's measure kept and printed; new |
 | e2e/__tests__/faultJudges.test.ts | 2026-10-16 | new |
 | e2e/__tests__/flowHistory.test.ts | 2026-10-16 | new: a shard's logs read (new and older shapes, retries summed, a part the budget stopped left out) and every file it reads uploaded, the map a history makes, the committed map equal to it and inside the workflow's limits |
 | e2e/__tests__/faultProxy.test.ts | 2026-10-27 | edited: the clock moved on by fixed commands of a checked value; an instant written as toybox date sets one; new |
@@ -199,7 +199,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/animation-waits.mjs | 2026-10-04 | the probes come first now; true as written |
 | e2e/app-crashes.mjs | 2026-10-15 | edited: --own sets a shipped client's own crashes and their aftermath apart, failing nothing; each soft report keeps its lines |
 | e2e/attempt.mjs | 2026-10-15 | edited: a shipped client's own crash is run again once within the limits, else not judged (exit 3) |
-| e2e/cut-text-judges.mjs | 2026-10-31 | edited: each cut printed with how much, when the app said; new: every cut the app said fails the variant's run unless the judged list names it for that variant |
+| e2e/cut-text-judges.mjs | 2026-10-31 | edited: a cut judged by its Text's testID, for words that come from elsewhere; edited: each cut printed with how much, when the app said; new: every cut the app said fails the variant's run unless the judged list names it for that variant |
 | e2e/db/attack/attack.mjs | 2026-10-16 | new: every table and view, tried by every kind of member on their own rows and four others', against matrix.json; each function a visitor or member may run, called as each kind of member, judged by its refusal, its answer and the rows it left; the avatars bucket's table, written as the Storage API writes; each live channel heard or spoken on as Realtime asks; a write that names no row reaches no other owner's; --mutants weakens each rule, gate trigger and column grant in turn and names the first try that notices; an update or delete is judged by the row it left; what is covered is read from the database attacked; --self-test plants an open read; mutantsPass: the mutants' run passes only on a green baseline |
 | e2e/db/advisers.mjs | 2026-10-15 | new: supabase db advisors on the sealed copy with the API's schemas set, judged against the allowlist, names and counts only; --self-test plants a table without row security |
 | e2e/db/bootstrap.mjs | 2026-10-15 | edited: a default naming no schema is changed by its own role, supabase_admin's in 4c |
@@ -300,7 +300,7 @@ without one). "Read" is the day its comments were last read against its code.
 | modules/room-cover/index.ts | 2026-10-27 | new: a locked room covered while the app is away, natively (iOS: the house's ink as the app resigns active; Android 13+: kept out of Recents, the secure flag below 13) |
 | README.md | 2026-10-03 | read against the code: the stack table and the folder notes said CQRS and 'pure, stateless', which the code is not; now true |
 | register/classes.yaml | 2026-10-31 | edited: the tablet runs on Android 16, on its side, on its own emulator; edited: the variants list names a tablet's width, which runs every flow; edited: the E2E judges' classes, each with the test that refuses its bad log; the store call's limit among the request class's tests |
-| register/mutants.yaml | 2026-10-16 | new: every mutant, past, new-shape and judge, each with its class and the test that must fail on it |
+| register/mutants.yaml | 2026-10-31 | edited: shape-cut-unconfirmed plants on the early end's own line, which now waits for its box; new: every mutant, past, new-shape and judge, each with its class and the test that must fail on it |
 | register/stryker-equivalents.yaml | 2026-10-16 | new: the survivors no test can tell apart, each by its file, line, column, mutator and replacement, with why |
 | register/stryker.yaml | 2026-10-16 | new: the logic files Stryker scores, each with its own tests, at a floor of 90% |
 | scripts/__tests__/commit.test.ts | 2026-10-16 | edited: an ignored path refused with the index as it was |
@@ -536,7 +536,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/film/FilmDossier.tsx | 2026-10-01 | what it holds, not what it absorbed |
 | src/components/film/FilmHero.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; an unknown verdict claims nothing; histories to the present |
 | src/components/film/FilmHeroSkeleton.tsx | 2026-10-15 | the waiting dock on the edge (bottomEdge) |
-| src/components/film/FilmMediaCarousel.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; hands the whole video on; named |
+| src/components/film/FilmMediaCarousel.tsx | 2026-10-31 | edited: the video title is film-video-title, judged as a kind; edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; hands the whole video on; named |
 | src/components/film/FilmReviews.tsx | 2026-10-31 | edited: its guillemets are OPEN_QUOTE and CLOSE_QUOTE, each held to its word by a no-break space; edited: the critique is named by its writing, then OPEN LOG; the veil stands before the door; edited: a critique's time from the shared clock; edited: no drop cap from right-to-left words |
 | src/components/film/FilmScrollHeader.tsx | 2026-10-29 | edited: its controls a slip on costs something (delete, file, close, go back) carry their touch weight; takes its top; back level with the floating one |
 | src/components/film/FilmSectionHeader.tsx | 2026-10-01 | true as written |
@@ -806,10 +806,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/society/societyPricing.ts | 2026-10-02 | never a static dollar price for a product the store answered without |
 | src/components/SpoilerVeil.tsx | 2026-10-28 | edited: takes the reach of the door it stands before; veiled from the first frame |
 | src/components/StandingNotice.tsx | 2026-10-26 | edited: how long until it looks again, a named helper; stands above the offline plate (useOverlayBottom) |
-| src/components/text/__tests__/aCutLabelIsHeard.test.tsx | 2026-10-31 | edited: the trace carries each cut's measure; new |
+| src/components/text/__tests__/aCutLabelIsHeard.test.tsx | 2026-10-31 | edited: no wider for an ellipsizing Text; an early end waits for its box; edited: the trace carries each cut's measure; new |
 | src/components/text/__tests__/theTextKeepsItsPromises.test.tsx | 2026-10-24 | edited: a nested text takes its parent's scaling; a nested label's spacing follows its parent |
 | src/components/text/AnimatedText.tsx | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/components/text/index.tsx | 2026-10-31 | edited: a cut says by how much: points past its box, or its words' length against its lines; edited: the cut judge is told a Text shrinks to fit; edited: a Text in a brighter ink, and at full strength, while Increase Contrast is on (heightened); edited: a Text in its face's heavier weight while Bold Text is on; at most four combining marks on any one character; edited: marksKept, at most four combining marks on any one character, in every Text's own strings; edited: a nested Text takes nothing of the house's and scales as its parent does; a frozen Text tells the Texts inside it |
+| src/components/text/index.tsx | 2026-10-31 | edited: an early end waits for its box so its twin confirms it; the trace carries the Text's testID; edited: a cut says by how much: points past its box, or its words' length against its lines; edited: the cut judge is told a Text shrinks to fit; edited: a Text in a brighter ink, and at full strength, while Increase Contrast is on (heightened); edited: a Text in its face's heavier weight while Bold Text is on; at most four combining marks on any one character; edited: marksKept, at most four combining marks on any one character, in every Text's own strings; edited: a nested Text takes nothing of the house's and scales as its parent does; a frozen Text tells the Texts inside it |
 | src/components/theme/__tests__/oneBrassSheen.test.tsx | 2026-10-23 | edited: its navigation mock stands on the one base (test-utils/navigationMock); written whole: the sheen sweeps only in front, and both plates draw it |
 | src/components/theme/BrassSheen.tsx | 2026-10-29 | edited: Reduce Motion read live (useReduceMotion), not as it stood at launch; written whole: the one sheen both brass plates draw; still behind another tab and under Reduce Motion |
 | src/components/theme/CrestGlow.tsx | 2026-10-01 | the leak note to what it does |
@@ -1172,7 +1172,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
 | src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-16 | edited: a capital past Georgian's letters, and Georgian's first and last |
-| src/utils/__tests__/aCutWordIsSeen.test.ts | 2026-10-30 | edited: a fitted label is not wider than its box; one ellipsized at its floor ended early; new |
+| src/utils/__tests__/aCutWordIsSeen.test.ts | 2026-10-31 | edited: wider only when the Text clips; a wrapped line's space past its box is no cut; edited: a fitted label is not wider than its box; one ellipsized at its floor ended early; new |
 | src/utils/__tests__/aDateIsSaidInTheHouseVoice.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/addOnly.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/aDraftIsKeptOffAnOpenDisk.test.ts | 2026-10-02 | Written in the launch audit: drafts stay off an unencrypted disk. |
@@ -1333,7 +1333,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/withTimeout.test.ts | 2026-10-25 | edited: AbortSignal.timeout taken away by the test itself, as build 41's phone lacked it (the SDK 57 phone has it); the timeout case names withTimeout's own timer |
 | src/utils/AppError.ts | 2026-10-01 | read whole in the Dispatch audit; comments checked true |
 | src/utils/csv.ts | 2026-10-02 | read; sound |
-| src/utils/cutText.ts | 2026-10-30 | edited: a Text that shrinks to fit is cut only by an early end: Android reports its lines as before the shrink; new: whether a Text's laid-out lines lost its words, ran out of its box or were clipped by it |
+| src/utils/cutText.ts | 2026-10-31 | edited: wider than its box only for a Text that clips: one ending with an ellipsis is never let out, and its line measures past the box by a space, a letter spacing, a rounding; edited: a Text that shrinks to fit is cut only by an early end: Android reports its lines as before the shrink; new: whether a Text's laid-out lines lost its words, ran out of its box or were clipped by it |
 | src/utils/deviceRegion.ts | 2026-10-01 | new |
 | src/utils/draftSync.ts | 2026-10-27 | edited: its report lines are fixed text, the values after them, kept on the phone (P4.44); read whole in the Dispatch audit; comments checked true |
 | src/utils/e2eRuntime.ts | 2026-10-15 | new: the phone's runtime written once a launch, in parts, by the E2E build |

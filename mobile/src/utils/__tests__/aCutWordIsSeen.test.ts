@@ -33,8 +33,8 @@ describe('a Text that shows every word', () => {
 
   it('is fitted, not cut, when it shrinks to fit: Android reports its lines as wide as before the shrink', () => {
     expect(cutOf('SEALING RECORD…', [line('SEALING RECORD…', 180, 30)], BOX, true)).toBeNull();
-    // The same lines from a Text that does not shrink are cut.
-    expect(cutOf('SEALING RECORD…', [line('SEALING RECORD…', 180, 30)], BOX)).toBe('wider than its box');
+    // The same lines from a Text that does not shrink, and clips, are cut.
+    expect(cutOf('SEALING RECORD…', [line('SEALING RECORD…', 180, 30)], BOX, false, true)).toBe('wider than its box');
     // Still too long at its smallest size, it is ellipsized: an early end, fitted or not.
     expect(cutOf('@E2E_MEMBER · MEMBER Nº 0001', [line('@E2E_MEMBER · MEMB…', 100)], BOX, true)).toBe('ended early');
   });
@@ -46,8 +46,13 @@ describe('a Text that lost words', () => {
     expect(cutOf('One two three four', [line('One two'), line('three')], BOX)).toBe('ended early');
   });
 
-  it('ran wider than its box: a word that could not break', () => {
-    expect(cutOf('Supercalifragilistic', [line('Supercalifragilistic', 140)], BOX)).toBe('wider than its box');
+  it('ran wider than its box: a word that could not break, in a Text that clips', () => {
+    expect(cutOf('Supercalifragilistic', [line('Supercalifragilistic', 140)], BOX, false, true)).toBe('wider than its box');
+  });
+
+  it('is no cut when a Text that ends with an ellipsis measures a whole line past its box: Android never lets its words out', () => {
+    // The space a wrapped line ends on, counted in its width ("Makeup Techniques: THE GODFATHER", 4.9pt past 200).
+    expect(cutOf('Makeup Techniques: THE GODFATHER', [line('Makeup Techniques: THE ', 104.9), line('GODFATHER', 60)], BOX)).toBeNull();
   });
 
   it('ran taller than its box: its last lines clipped', () => {

@@ -52,7 +52,7 @@ const VideoThumb = memo(function VideoThumb({ video, onPlay }: VideoThumbProps) 
         <Text {...scaledTextProps} style={sub.videoType}>{video.type?.toUpperCase() ?? 'VIDEO'}</Text>
         {/* Two lines: one would cut a caption mid-word ("A moment for this
             cinematic d…"), which tells a member less than no caption at all. */}
-        <Text {...scaledTextProps} style={sub.videoName} numberOfLines={2}>{video.name}</Text>
+        <Text {...scaledTextProps} style={sub.videoName} numberOfLines={2} testID="film-video-title">{video.name}</Text>
       </View>
     </PressableScale>
   );

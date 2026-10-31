@@ -7,7 +7,12 @@
  *   - it ended early: its lines hold fewer of its words than it was given (an ellipsis, or the
  *     lines past its numberOfLines), letters compared alone, so a space, a line break, a
  *     textTransform or the ellipsis itself is no cut;
- *   - a line is wider than its own box: a word that could not break runs out of it;
+ *   - a line is wider than its own box, for a Text that clips (ellipsizeMode 'clip'): its words
+ *     run out of the box unseen. One that ends with an ellipsis is never let out of its box by
+ *     Android, so a word too long for it shows as an early end, and a line measured past its box is
+ *     the measure's own excess: the space a wrapped line ends on, the letter spacing after its last
+ *     letter, a rounding ("Makeup Techniques: THE GODFATHER" 4.9pt past 200, "8 MIN. AGO" 0.8 past 80,
+ *     "6" 1.4 past 12.2, each drawn whole: largest-text run 41220803686);
  *   - its lines are taller than its own box: the box clips its last lines.
  * A Text that shrinks to fit (adjustsFontSizeToFit) is fitted, not cut, unless it still ended early:
  * Android reports its lines as wide as they were before the shrink, so a fitted label read
@@ -39,12 +44,15 @@ export function stillCut(natural: number, width: number, lines: number, scale = 
   return natural * scale > width * Math.max(1, lines) + ROOM_SLACK;
 }
 
-/** Why the laid-out words do not all show, or null when they all do. `fitted`: it shrinks to fit. */
-export function cutOf(words: string, lines: readonly LaidLine[], box: Box | null, fitted = false): Cut | null {
+/**
+ * Why the laid-out words do not all show, or null when they all do. `fitted`: it shrinks to fit.
+ * `clips`: it cuts its words at the box's edge instead of ending them with an ellipsis.
+ */
+export function cutOf(words: string, lines: readonly LaidLine[], box: Box | null, fitted = false, clips = false): Cut | null {
   if (!words.trim() || lines.length === 0) return null;
   if (letters(lines.map((l) => l.text).join('')).length < letters(words).length) return 'ended early';
   if (!box || fitted) return null;
-  if (lines.some((l) => l.width > box.width + SLACK)) return 'wider than its box';
+  if (clips && lines.some((l) => l.width > box.width + SLACK)) return 'wider than its box';
   if (lines.reduce((sum, l) => sum + l.height, 0) > box.height + SLACK) return 'taller than its box';
   return null;
 }

@@ -222,12 +222,15 @@ function useCutSaid(props: TextProps, drawn: TextProps): { handlers: Partial<Tex
     const key = cut ? `${cut}:${words}` : '';
     if (key === said.current) return;
     said.current = key;
-    if (cut) e2eTrace('text.cut', { words: words.slice(0, 80), cut, lines: count, numberOfLines: props.numberOfLines ?? null, by: by ?? null });
+    if (cut) e2eTrace('text.cut', { words: words.slice(0, 80), cut, lines: count, numberOfLines: props.numberOfLines ?? null, by: by ?? null, testID: props.testID ?? null });
   };
   const judge = () => {
     if (!lines.current) return;
-    const cut = cutOf(words, lines.current, box.current, props.adjustsFontSizeToFit === true);
-    if (cut === 'ended early' && box.current) {
+    const cut = cutOf(words, lines.current, box.current, props.adjustsFontSizeToFit === true, props.ellipsizeMode === 'clip');
+    // An early end is said only once its twin has confirmed it, and the twin needs the box: one laid
+    // out before its box was known waits for it ("@E2E_WRITER", said unconfirmed, run 41220803686).
+    if (cut === 'ended early') {
+      if (!box.current) return;
       const b = box.current;
       if (doubted?.width !== b.width || doubted.height !== b.height) setDoubted(b);
       return;

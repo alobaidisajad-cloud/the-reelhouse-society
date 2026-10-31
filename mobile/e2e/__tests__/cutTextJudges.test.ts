@@ -37,9 +37,9 @@ const LOG = [
 
 it('reads every cut the log says once, with how often and the screen it was first said on, through Windows line ends and braces in the words', () => {
   expect(ask(`m.readCuts(${JSON.stringify(LOG)})`)).toEqual([
-    { words: 'FOUNDING MEMBER', cut: 'ended early', on: 'lobby', times: 2, by: null },
-    { words: 'A {braced} review', cut: 'taller than its box', on: 'member', times: 1, by: null },
-    { words: 'A long title', cut: 'wider than its box', on: 'member', times: 1, by: '3.5pt past a 120.0pt box' },
+    { words: 'FOUNDING MEMBER', cut: 'ended early', on: 'lobby', times: 2, by: null, testID: null },
+    { words: 'A {braced} review', cut: 'taller than its box', on: 'member', times: 1, by: null, testID: null },
+    { words: 'A long title', cut: 'wider than its box', on: 'member', times: 1, by: '3.5pt past a 120.0pt box', testID: null },
   ]);
 });
 
@@ -53,6 +53,10 @@ it('passes a cut judged for this variant alone, by its words and its cut', () =>
   // And by how much, when the app said: a word run out of its box told from a rounding.
   const measured = [{ ...otherCut[0], by: '3.5pt past a 120.0pt box' }];
   expect(ask(`m.judge(${JSON.stringify(measured)}, ${JSON.stringify(judged)}, 'largest-text')`)).toEqual(['"A review" wider than its box, 3.5pt past a 120.0pt box on film (said 3 times)']);
+  // A kind of Text whose words come from elsewhere, judged by its testID: any words it shows, and none other.
+  const byText = [{ testID: 'film-video-title', cut: 'ended early', variants: ['largest-text'], why: 'x' }];
+  const titles = [{ words: 'A title TMDB gave', cut: 'ended early', on: 'film', times: 1, testID: 'film-video-title' }, { words: 'A title', cut: 'ended early', on: 'film', times: 1, testID: null }];
+  expect(ask(`m.judge(${JSON.stringify(titles)}, ${JSON.stringify(byText)}, 'largest-text')`)).toEqual(['"A title" ended early on film (said 1 time)']);
 });
 
 it('passes the judged log and fails it for a variant it is not judged in, by exit code', () => {
@@ -70,7 +74,7 @@ it('cannot be run on nothing: no log, no judged list, or no variant is exit 2', 
 });
 
 describe('the committed judged list (e2e/cut-text-judged.json)', () => {
-  interface Judged { words: string; cut: string; variants: string[]; why: string }
+  interface Judged { words?: string; testID?: string; cut: string; variants: string[]; why: string }
   const judged = (JSON.parse(readFileSync(join(E2E, 'cut-text-judged.json'), 'utf8')) as { cuts: Judged[] }).cuts;
   const variants = (JSON.parse(readFileSync(join(E2E, 'variants.json'), 'utf8')) as { variants: Record<string, { judges?: string[] }> }).variants;
   const judging = Object.keys(variants).filter((n) => variants[n]?.judges?.includes('cut-text'));
@@ -98,6 +102,9 @@ describe('the committed judged list (e2e/cut-text-judged.json)', () => {
 
   it('names only words the code or the seeded world still draws: no judgement outlives its label', () => {
     expect(drawn.length).toBeGreaterThan(100_000);
-    expect(judged.filter((j) => !drawn.includes(j.words.toLowerCase()))).toEqual([]);
+    expect(judged.filter((j) => j.words !== undefined && !drawn.includes(j.words.toLowerCase()))).toEqual([]);
+    // One judged by its Text names a testID the app still sets, and names no words besides.
+    const ids = new Set([...drawn.matchAll(/testid="([^"]+)"/g)].map((m) => m[1]));
+    expect(judged.filter((j) => j.words === undefined && !(j.testID && ids.has(j.testID.toLowerCase())))).toEqual([]);
   });
 });

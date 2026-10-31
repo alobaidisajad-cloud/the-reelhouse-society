@@ -40,7 +40,7 @@ it('says a label cut to one line, once, with its words and how it was cut, when 
   expect([twin.props.numberOfLines, twin.props.adjustsFontSizeToFit]).toEqual([undefined, undefined]);
   await fireEvent(twin, 'textLayout', laid([{ text: LABEL, width: 160 }]));
   await fireEvent(twin, 'textLayout', laid([{ text: LABEL, width: 160 }]));
-  expect(mockTrace.mock.calls).toEqual([['text.cut', { words: LABEL, cut: 'ended early', lines: 1, numberOfLines: 1, by: '160.0pt of words for 1 line of 100.0pt' }]]);
+  expect(mockTrace.mock.calls).toEqual([['text.cut', { words: LABEL, cut: 'ended early', lines: 1, numberOfLines: 1, by: '160.0pt of words for 1 line of 100.0pt', testID: null }]]);
 });
 
 it('says nothing of a label Android reports cut that is no longer than its box, as at bold text (runs 39004285239, 39010071533)', async () => {
@@ -79,13 +79,33 @@ it('watches no Text inside another, which has no box of its own', () => {
 });
 
 it('says nothing of a label that shows every word, and says it again once it is cut anew', async () => {
-  const { getByText } = render(<Text numberOfLines={2}>{LABEL}</Text>);
+  const { getByText } = render(<Text numberOfLines={2} ellipsizeMode="clip" testID="label">{LABEL}</Text>);
   const t = getByText(LABEL);
   await fireEvent(t, 'layout', boxed(100, 40));
   await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER ' }, { text: 'OF THE SOCIETY' }]));
   expect(mockTrace).not.toHaveBeenCalled();
   await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER ' }, { text: 'OF THE SOCIETY', width: 140 }]));
-  expect(mockTrace.mock.calls).toEqual([['text.cut', { words: LABEL, cut: 'wider than its box', lines: 2, numberOfLines: 2, by: '40.0pt past a 100.0pt box' }]]);
+  expect(mockTrace.mock.calls).toEqual([['text.cut', { words: LABEL, cut: 'wider than its box', lines: 2, numberOfLines: 2, by: '40.0pt past a 100.0pt box', testID: 'label' }]]);
+});
+
+it('says nothing of a line measured past its box in a Text that ends with an ellipsis: Android never lets its words out', async () => {
+  const { getByText } = render(<Text numberOfLines={2}>{LABEL}</Text>);
+  const t = getByText(LABEL);
+  await fireEvent(t, 'layout', boxed(100, 40));
+  await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER ', width: 104.9 }, { text: 'OF THE SOCIETY' }]));
+  expect(mockTrace).not.toHaveBeenCalled();
+});
+
+it('waits for its box before an early end is weighed: said unconfirmed, a whole label read as cut', async () => {
+  const { getByText, getAllByText } = render(<Text numberOfLines={1}>{LABEL}</Text>);
+  const t = getByText(LABEL);
+  await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER OF' }]));
+  expect([mockTrace.mock.calls.length, getAllByText(LABEL, { includeHiddenElements: true }).length]).toEqual([0, 1]);
+  await fireEvent(t, 'layout', boxed(100, 20));
+  const twin = getAllByText(LABEL, { includeHiddenElements: true })[1];
+  if (!twin) throw new Error('no twin was drawn once the box was known');
+  await fireEvent(twin, 'textLayout', laid([{ text: LABEL, width: 90 }]));
+  expect(mockTrace).not.toHaveBeenCalled();
 });
 
 it("runs its caller's own onLayout and onTextLayout", async () => {
