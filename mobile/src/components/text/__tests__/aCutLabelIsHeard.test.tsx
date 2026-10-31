@@ -40,7 +40,7 @@ it('says a label cut to one line, once, with its words and how it was cut, when 
   expect([twin.props.numberOfLines, twin.props.adjustsFontSizeToFit]).toEqual([undefined, undefined]);
   await fireEvent(twin, 'textLayout', laid([{ text: LABEL, width: 160 }]));
   await fireEvent(twin, 'textLayout', laid([{ text: LABEL, width: 160 }]));
-  expect(mockTrace.mock.calls).toEqual([['text.cut', { words: LABEL, cut: 'ended early', lines: 1, numberOfLines: 1 }]]);
+  expect(mockTrace.mock.calls).toEqual([['text.cut', { words: LABEL, cut: 'ended early', lines: 1, numberOfLines: 1, by: '160.0pt of words for 1 line of 100.0pt' }]]);
 });
 
 it('says nothing of a label Android reports cut that is no longer than its box, as at bold text (runs 39004285239, 39010071533)', async () => {
@@ -85,7 +85,7 @@ it('says nothing of a label that shows every word, and says it again once it is 
   await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER ' }, { text: 'OF THE SOCIETY' }]));
   expect(mockTrace).not.toHaveBeenCalled();
   await fireEvent(t, 'textLayout', laid([{ text: 'FOUNDING MEMBER ' }, { text: 'OF THE SOCIETY', width: 140 }]));
-  expect(mockTrace.mock.calls).toEqual([['text.cut', { words: LABEL, cut: 'wider than its box', lines: 2, numberOfLines: 2 }]]);
+  expect(mockTrace.mock.calls).toEqual([['text.cut', { words: LABEL, cut: 'wider than its box', lines: 2, numberOfLines: 2, by: '40.0pt past a 100.0pt box' }]]);
 });
 
 it("runs its caller's own onLayout and onTextLayout", async () => {

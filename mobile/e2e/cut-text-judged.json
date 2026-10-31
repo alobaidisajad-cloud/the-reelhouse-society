@@ -1,4 +1,61 @@
 {
   "why": "The cuts the largest-text run may say and still pass (e2e/cut-text-judges.mjs, WORKLIST P0.86): each by its words and its cut, for the variants it is judged in, with why the cut is the design (a member's long words ended with an ellipsis, with the whole a tap away). A house label cut is a defect, never judged here. cutTextJudges.test.ts holds every entry's words to the code or the seeded world that still draws them.",
-  "cuts": []
+  "cuts": [
+    {
+      "words": "Building the Future from Junk - Douglas Trumbull on BLADE RUNNER | TIFF REWIND",
+      "cut": "ended early",
+      "variants": [
+        "largest-text"
+      ],
+      "why": "A film's video from TMDB, its title two lines under its picture (FilmMediaCarousel): the whole title is spoken with the picture's button and shows in the player it opens."
+    },
+    {
+      "words": "Deckard vs. Roy | Full Tears in the Rain Scene",
+      "cut": "ended early",
+      "variants": [
+        "largest-text"
+      ],
+      "why": "A film's video from TMDB, its title two lines under its picture (FilmMediaCarousel): the whole title is spoken with the picture's button and shows in the player it opens."
+    },
+    {
+      "words": "Part 1,  Eye on the city | Restored Edition",
+      "cut": "ended early",
+      "variants": [
+        "largest-text"
+      ],
+      "why": "A film's video from TMDB, its title two lines under its picture (FilmMediaCarousel): the whole title is spoken with the picture's button and shows in the player it opens."
+    },
+    {
+      "words": "Robert De Niro Auditioning for Sonny Corleone in The Godfather",
+      "cut": "ended early",
+      "variants": [
+        "largest-text"
+      ],
+      "why": "A film's video from TMDB, its title two lines under its picture (FilmMediaCarousel): the whole title is spoken with the picture's button and shows in the player it opens."
+    },
+    {
+      "words": "Why This One Shot in ‘The Godfather’ Suddenly Feels Terrifying!",
+      "cut": "ended early",
+      "variants": [
+        "largest-text"
+      ],
+      "why": "A film's video from TMDB, its title two lines under its picture (FilmMediaCarousel): the whole title is spoken with the picture's button and shows in the player it opens."
+    },
+    {
+      "words": "Hayao Miyazaki (Miyazaki Hayao, born January 5, 1941) is a Japanese manga artist",
+      "cut": "ended early",
+      "variants": [
+        "largest-text"
+      ],
+      "why": "A person's TMDB biography, collapsed to six lines under READ MORE (PersonBio), which opens the whole of it."
+    },
+    {
+      "words": "E2E seed: the first take on the wire, filed the way any member files one.",
+      "cut": "ended early",
+      "variants": [
+        "largest-text"
+      ],
+      "why": "The post's opening line repeated in the critiques bar as a running head (PaperCritiques): the whole post is above it, and the bar's own name says the line whole."
+    }
+  ]
 }

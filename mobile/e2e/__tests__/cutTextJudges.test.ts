@@ -30,14 +30,16 @@ const LOG = [
   '10-17 09:00:01.250  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":400}',
   '10-17 09:00:01.300  4321  4377 W ReactNativeJS: [e2e] text.cut {"words":"FOUNDING MEMBER","cut":"ended early","lines":1,"numberOfLines":1}',
   '10-17 09:00:01.400  4321  4377 W ReactNativeJS: [e2e] text.cut {"words":"A {braced} review","cut":"taller than its box","lines":3,"numberOfLines":null}',
+  '10-17 09:00:01.450  4321  4377 W ReactNativeJS: [e2e] text.cut {"words":"A long title","cut":"wider than its box","lines":2,"numberOfLines":2,"by":"3.5pt past a 120.0pt box"}',
   '10-17 09:00:01.500  4321  4377 W ReactNativeJS: [e2e] text.cut {not json}',
   '10-17 09:00:01.600  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"film","ms":900}',
 ].join('\r\n');
 
 it('reads every cut the log says once, with how often and the screen it was first said on, through Windows line ends and braces in the words', () => {
   expect(ask(`m.readCuts(${JSON.stringify(LOG)})`)).toEqual([
-    { words: 'FOUNDING MEMBER', cut: 'ended early', on: 'lobby', times: 2 },
-    { words: 'A {braced} review', cut: 'taller than its box', on: 'member', times: 1 },
+    { words: 'FOUNDING MEMBER', cut: 'ended early', on: 'lobby', times: 2, by: null },
+    { words: 'A {braced} review', cut: 'taller than its box', on: 'member', times: 1, by: null },
+    { words: 'A long title', cut: 'wider than its box', on: 'member', times: 1, by: '3.5pt past a 120.0pt box' },
   ]);
 });
 
@@ -48,6 +50,9 @@ it('passes a cut judged for this variant alone, by its words and its cut', () =>
   expect(ask(`m.judge(${JSON.stringify(cuts)}, ${JSON.stringify(judged)}, 'bold-text')`)).toEqual(['"A review" ended early (said 1 time)']);
   const otherCut = [{ words: 'A review', cut: 'wider than its box', on: 'film', times: 3 }];
   expect(ask(`m.judge(${JSON.stringify(otherCut)}, ${JSON.stringify(judged)}, 'largest-text')`)).toEqual(['"A review" wider than its box on film (said 3 times)']);
+  // And by how much, when the app said: a word run out of its box told from a rounding.
+  const measured = [{ ...otherCut[0], by: '3.5pt past a 120.0pt box' }];
+  expect(ask(`m.judge(${JSON.stringify(measured)}, ${JSON.stringify(judged)}, 'largest-text')`)).toEqual(['"A review" wider than its box, 3.5pt past a 120.0pt box on film (said 3 times)']);
 });
 
 it('passes the judged log and fails it for a variant it is not judged in, by exit code', () => {

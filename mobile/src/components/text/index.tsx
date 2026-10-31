@@ -217,11 +217,12 @@ function useCutSaid(props: TextProps, drawn: TextProps): { handlers: Partial<Tex
   const mayCut = E2E_BUILD && !nested && (props.numberOfLines != null || props.adjustsFontSizeToFit === true);
   const words = mayCut ? wordsOf(props.children) : null;
   if (!words) return { handlers: null, twin: null };
-  const say = (cut: string | null, count: number) => {
+  // `by`: how much, in points, so a run's report tells a word run out of its box from a rounding.
+  const say = (cut: string | null, count: number, by?: string) => {
     const key = cut ? `${cut}:${words}` : '';
     if (key === said.current) return;
     said.current = key;
-    if (cut) e2eTrace('text.cut', { words: words.slice(0, 80), cut, lines: count, numberOfLines: props.numberOfLines ?? null });
+    if (cut) e2eTrace('text.cut', { words: words.slice(0, 80), cut, lines: count, numberOfLines: props.numberOfLines ?? null, by: by ?? null });
   };
   const judge = () => {
     if (!lines.current) return;
@@ -231,7 +232,12 @@ function useCutSaid(props: TextProps, drawn: TextProps): { handlers: Partial<Tex
       if (doubted?.width !== b.width || doubted.height !== b.height) setDoubted(b);
       return;
     }
-    say(cut, lines.current.length);
+    const b = box.current;
+    const by = !b ? undefined
+      : cut === 'wider than its box' ? `${(Math.max(...lines.current.map((l) => l.width)) - b.width).toFixed(1)}pt past a ${b.width.toFixed(1)}pt box`
+        : cut === 'taller than its box' ? `${(lines.current.reduce((sum, l) => sum + l.height, 0) - b.height).toFixed(1)}pt below a ${b.height.toFixed(1)}pt box`
+          : undefined;
+    say(cut, lines.current.length, by);
   };
   const {
     onLayout: _l, onTextLayout: _t, testID: _id, onPress: _p, onLongPress: _lp,
@@ -248,7 +254,9 @@ function useCutSaid(props: TextProps, drawn: TextProps): { handlers: Partial<Tex
       importantForAccessibility="no-hide-descendants"
       onTextLayout={(e) => {
         const natural = e.nativeEvent.lines.reduce((sum, l) => sum + l.width, 0);
-        say(stillCut(natural, doubted.width, props.numberOfLines ?? 1, scale) ? 'ended early' : null, props.numberOfLines ?? 1);
+        const lines = props.numberOfLines ?? 1;
+        say(stillCut(natural, doubted.width, lines, scale) ? 'ended early' : null, lines,
+          `${(natural * scale).toFixed(1)}pt of words for ${lines} line${lines === 1 ? '' : 's'} of ${doubted.width.toFixed(1)}pt`);
       }}
     />
   ) : null;

@@ -1233,7 +1233,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                       <RemoteImage uri={tmdb.poster(log.poster, 'w185')} style={s.latelyPosterImg} contentFit="cover" transition={150} fallback={<FilmIcon size={14} color={colors.sepia} strokeWidth={1.4} opacity={0.4} />} />
                     </View>
                     <View style={s.latelyText}>
-                      <Text {...scaledTextProps} style={s.latelyTitle} numberOfLines={1}>{(log.title || '').toUpperCase()}</Text>
+                      {/* Two lines: at the largest text a title as plain as THE SHAWSHANK REDEMPTION ran out of one. */}
+                      <Text {...scaledTextProps} style={s.latelyTitle} numberOfLines={2}>{(log.title || '').toUpperCase()}</Text>
                       {!!log.year && <Text {...scaledTextProps} style={s.latelyYear} numberOfLines={1}>{log.year}</Text>}
                     </View>
                     <View style={s.latelyRight}>

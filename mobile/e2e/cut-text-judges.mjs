@@ -30,7 +30,8 @@ export function readCuts(text) {
     try { c = JSON.parse(m[1] ?? ''); } catch { continue; }
     if (typeof c?.words !== 'string' || typeof c?.cut !== 'string') continue;
     const key = `${c.cut}\t${c.words}`;
-    seen.set(key, { words: c.words, cut: c.cut, on: seen.get(key)?.on ?? screen, times: (seen.get(key)?.times ?? 0) + 1 });
+    const by = seen.get(key)?.by ?? (typeof c.by === 'string' ? c.by : null);
+    seen.set(key, { words: c.words, cut: c.cut, on: seen.get(key)?.on ?? screen, times: (seen.get(key)?.times ?? 0) + 1, by });
   }
   return [...seen.values()];
 }
@@ -38,7 +39,7 @@ export function readCuts(text) {
 /** Each cut no judgement for this variant names, in words. */
 export function judge(cuts, judged, variant) {
   const ok = (c) => judged.some((j) => j.words === c.words && j.cut === c.cut && j.variants.includes(variant));
-  return cuts.filter((c) => !ok(c)).map((c) => `"${c.words}" ${c.cut}${c.on ? ` on ${c.on}` : ''} (said ${c.times} time${c.times === 1 ? '' : 's'})`);
+  return cuts.filter((c) => !ok(c)).map((c) => `"${c.words}" ${c.cut}${c.by ? `, ${c.by}` : ''}${c.on ? ` on ${c.on}` : ''} (said ${c.times} time${c.times === 1 ? '' : 's'})`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
