@@ -64,6 +64,50 @@ it('reads the window once only where it also listens for the window to change', 
   expect(once.map(({ file }) => file)).toEqual([]);
 });
 
+/** Names a size is held under, from the live hooks, that a state's or a ref's first value takes. */
+function sizesFrozenIn(file: string): string[] {
+  const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const LIVE = /^(useWindowDimensions|useColumnWidth)$/;
+  const sizes = new Set<string>();
+  const frozen: string[] = [];
+  const walk = (n: any) => {
+    if (n.kind === ts.SyntaxKind.VariableDeclaration && n.initializer?.kind === ts.SyntaxKind.CallExpression && LIVE.test(n.initializer.expression.getText())) {
+      if (n.name.kind === ts.SyntaxKind.Identifier) sizes.add(n.name.getText());
+      else for (const e of n.name.elements ?? []) sizes.add(e.name.getText());
+    }
+    if (n.kind === ts.SyntaxKind.CallExpression && /^(useState|useRef)$/.test(n.expression.getText()) && n.arguments[0]) {
+      const first = n.arguments[0];
+      const reads = (m: any): boolean => (m.kind === ts.SyntaxKind.Identifier && sizes.has(m.getText())) || (m.kind === ts.SyntaxKind.CallExpression && LIVE.test(m.expression.getText())) || !!ts.forEachChild(m, reads);
+      if (reads(first)) frozen.push(`${rel(file)}:${source.getLineAndCharacterOfPosition(n.getStart()).line + 1}`);
+    }
+    ts.forEachChild(n, walk);
+  };
+  walk(source);
+  return frozen;
+}
+
+// A size given to a state or a ref as its first value keeps the window the screen opened on: the
+// screen never lays out again when an iPad turns or a phone unfolds. A memo is held to what it reads
+// by the hooks lint, which CI runs with no warning allowed.
+it('never freezes a window or column size into a state or a ref', () => {
+  expect(files('appCode', { ext: ['.ts', '.tsx'] }).filter((f) => !/__tests__/.test(f)).flatMap(sizesFrozenIn)).toEqual([]);
+});
+
+it('finds a size frozen by name or by the hook itself, and none merely read', () => {
+  const { writeFileSync, mkdtempSync, rmSync } = require('fs') as typeof import('fs');
+  const { tmpdir } = require('os') as typeof import('os');
+  const dir = mkdtempSync(join(tmpdir(), 'frozen-'));
+  const probe = join(dir, 'probe.tsx');
+  writeFileSync(probe, [
+    'const a = () => { const { width } = useWindowDimensions(); const [w] = useState(width / 2); };',
+    'const b = () => { const col = useColumnWidth(); const r = useRef(col); };',
+    'const c = () => { const [h] = useState(() => useWindowDimensions().height); };',
+    'const d = () => { const col = useColumnWidth(); const [open] = useState(false); return col; };',
+  ].join('\n'));
+  expect(sizesFrozenIn(probe).map((at) => at.split(':').pop())).toEqual(['1', '2', '3']);
+  rmSync(dir, { recursive: true, force: true });
+});
+
 it('draws the mockups in the same column the app holds its pages to', () => {
   const { readingColumn } = require('@/src/components/layout/navMetrics') as typeof import('@/src/components/layout/navMetrics');
   const harness = readFileSync(join(MOBILE, 'mockups', 'tools', 'harness.cjs'), 'utf8');

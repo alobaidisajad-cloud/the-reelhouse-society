@@ -34,7 +34,7 @@ const manifest = (extra = '', appAttrs = '') => `<?xml version="1.0" encoding="u
   <!-- a comment with <activity android:name="expo.modules.devlauncher.X"/> in it is not an element -->
   <application android:name=".MainApplication" android:allowBackup="true"${appAttrs}>
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="true"/>
-    <activity android:name=".MainActivity" android:launchMode="singleTask" android:exported="true">
+    <activity android:name="com.reelhouse.society.MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode|smallestScreenSize|assetsPaths" android:launchMode="singleTask" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.VIEW"/>
         <data android:scheme="reelhouse"/>
@@ -54,6 +54,8 @@ const PLIST = {
   NSAppTransportSecurity: { NSAllowsArbitraryLoads: false, NSAllowsLocalNetworking: false },
   NSCameraUsageDescription: 'Café portrait & more',
   UISupportedInterfaceOrientations: ['UIInterfaceOrientationPortrait'],
+  'UISupportedInterfaceOrientations~ipad': ['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationPortraitUpsideDown', 'UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight'],
+  UIRequiresFullScreen: false,
   LSRequiresIPhoneOS: true,
 };
 
@@ -154,6 +156,13 @@ describe('the merged release manifest', () => {
     expect(G.checkManifest(xml)).toEqual(['an <instrumentation> (androidx.test.runner.AndroidJUnitRunner): a test runner is declared']);
   });
 
+  it('says no to an app rebuilt by a turn, a fold or a split-screen resize, and to an activity it cannot find', () => {
+    const xml = manifest().replace('|smallestScreenSize|', '|');
+    expect(G.checkManifest(xml)).toEqual(["MainActivity rebuilds the app on smallestScreenSize (android:configChanges): a turn, a fold or a split-screen resize loses the member's place"]);
+    expect(G.checkManifest(manifest().replace(/ android:configChanges="[^"]*"/, '')).join('\n')).toContain('orientation, screenSize, screenLayout, smallestScreenSize');
+    expect(G.checkManifest(manifest().replace('com.reelhouse.society.MainActivity', '.Other'))).toEqual(["0 MainActivity elements, not one: the app's own activity cannot be read"]);
+  });
+
   it('refuses what is not a manifest, rather than pass it', () => {
     expect(G.checkManifest('<resources/>')).toEqual(['the manifest has 0 <application> elements, not one: is this a manifest?']);
     expect(() => G.checkManifest('<manifest><application></manifest>')).toThrow(/closes <manifest>/);
@@ -176,6 +185,8 @@ describe('the Info.plist', () => {
     ['any host over http', { NSAppTransportSecurity: { NSAllowsArbitraryLoads: true } }, 'NSAllowsArbitraryLoads'],
     ['an exception domain', { NSAppTransportSecurity: { NSExceptionDomains: { localhost: { NSExceptionAllowsInsecureHTTPLoads: true } } } }, 'localhost'],
     ['a development client setting', { DEV_CLIENT_TRY_TO_LAUNCH_LAST_BUNDLE: false }, 'development client'],
+    ['an iPad held upright only', { 'UISupportedInterfaceOrientations~ipad': ['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationPortraitUpsideDown'] }, 'UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight'],
+    ['the iPad full screen only', { UIRequiresFullScreen: true }, 'Split View'],
   ])('says no to %s, in either format', (_, change, said) => {
     const plist = { ...PLIST, ...change };
     for (const read of [G.parsePlist(toXmlPlist(plist)), G.parsePlist(toBinaryPlist(plist))]) {

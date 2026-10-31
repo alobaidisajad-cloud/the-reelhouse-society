@@ -342,7 +342,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/press-again.cjs | 2026-10-16 | new: the finder of TST-14, a second press of the same control in a test with no timer advanced and no real wait between |
 | scripts/private-settings.cjs | 2026-10-16 | edited: once a value is read, an error nobody catches is printed with every value read hidden; a rejection reaches the same handler |
 | scripts/register.cjs | 2026-10-15 | new |
-| scripts/release-guard.cjs | 2026-10-16 | edited: the fault proxy's port among the E2E world's addresses |
+| scripts/release-guard.cjs | 2026-10-31 | edited: the app's own activity takes a turn, a fold and a split-screen resize in place; the iPad holds every turn and never asks for full screen; edited: the fault proxy's port among the E2E world's addresses |
 | scripts/resume.cjs | 2026-10-30 | edited: the nightly's last nights said at the start of every session; edited: says why gh could not be asked |
 | scripts/schema-snapshot.mjs | 2026-10-15 | edited: the address from the private settings file; default privileges that name no schema |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
@@ -1287,7 +1287,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
 | src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-22 | read whole: no row picked by a helper's call itself, said no to on a planted case and held for every rehearsal; the rules said no to first; the kit, the seed and CI's order |
-| src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-24 | edited: Android's sitemap link opened closed, iOS's closed or handed to the app running in that one shape |
+| src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-31 | edited: says no to an app rebuilt by a turn or a fold, an activity it cannot find, an iPad held upright only, and full screen only; edited: Android's sitemap link opened closed, iOS's closed or handed to the app running in that one shape |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts | 2026-10-30 | edited: the nightly's red run of nights, and green said plainly; new: the next class is the one that matters most, a journal keeps what was written in it, every worktree finds the same journals, the next train is the pending migrations |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-25 | edited: AbortSignal.timeout stood in for, as Deno has it (the test setup no longer takes it away); the store is asked at the address the settings name, always with a time limit, and gives up before the app does |
@@ -1511,9 +1511,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/InColumn.tsx | 2026-10-30 | new: the reading column inside a Modal, which opens its own window outside the navigator |
 | src/components/layout/RevealAboveDock.tsx | 2026-10-30 | new: what the member opens above a docked bar; revealBy's arithmetic, the host's measure in window coordinates, a section revealed once and only when opened |
 | src/components/layout/UnderSheet.tsx | 2026-10-29 | new: a page with a sheet that is not a Modal drawn over it, out of a screen reader's reach while it is |
-| src/components/layout/__tests__/aPageIsSizedByItsColumn.guard.test.ts | 2026-10-31 | edited: the harness column equals readingColumn whole; a window read once also listens for its change; new: the window's width is read only where the whole window is meant, and the harness column equals the app's |
+| src/components/layout/__tests__/aPageIsSizedByItsColumn.guard.test.ts | 2026-10-31 | edited: no window or column size is frozen into a state or a ref; edited: the harness column equals readingColumn whole; a window read once also listens for its change; new: the window's width is read only where the whole window is meant, and the harness column equals the app's |
 | src/components/layout/__tests__/aPageUnderASheetIsUnspoken.test.tsx | 2026-10-29 | new: UnderSheet hides the page on both platforms while open, and gives it back closed |
 | src/components/layout/__tests__/everyModalHoldsTheColumn.guard.test.ts | 2026-10-30 | new: every RN Modal holds the reading column first, the whole-window ones named with why |
+| src/components/layout/__tests__/theColumnFollowsTheWindow.test.tsx | 2026-10-31 | new: the column width lays out again the moment the window changes |
 | src/components/layout/__tests__/whatIsOpenedIsBroughtAboveTheDock.test.tsx | 2026-10-30 | new: the arithmetic, the host's scroll from its offset, an index entry and the abandoned reasons, each revealed once and never when open at draw |
 | src/components/lounge/__tests__/aSalonCountsItsMembers.test.tsx | 2026-10-28 | new: the card and the door say 0, 1 and 51 members alone, never a limit |
 | src/components/lounge/__tests__/speakingIsTheArchivists.test.tsx | 2026-10-28 | new: a free, a lapsed and an Archivist member in the room; held words stay failed after a remount |

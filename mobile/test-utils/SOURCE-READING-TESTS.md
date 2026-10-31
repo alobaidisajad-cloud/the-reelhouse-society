@@ -365,7 +365,7 @@ Decisions, as of 2026-09-28:
 | `src/components/__tests__/aComponentHasOneName.guard.test.ts` | Which module exports a component name: a fact about the code that no render shows. |
 | `src/components/layout/__tests__/everyModalHoldsTheColumn.guard.test.ts` | Every RN Modal's first child is the reading column: a Modal opens its own window outside the navigator, and a sheet stretched across an iPad shows only on a window no phone render has. |
 | `src/utils/__tests__/aQuoteMarkKeepsItsWord.guard.test.ts` | Every guillemet in the app's code is held to its word: a mark left alone on a line shows only when the words just fill the line before it, which few widths and words hold. |
-| `src/components/layout/__tests__/aPageIsSizedByItsColumn.guard.test.ts` | Where the window's width is read, and the mockup harness's column held equal to the app's: a layout sized from the window runs past the column only on a window wider than it, which no phone render has. |
+| `src/components/layout/__tests__/aPageIsSizedByItsColumn.guard.test.ts` | Where the window's width is read, and the mockup harness's column held equal to the app's: a layout sized from the window runs past the column only on a window wider than it, which no phone render has; and no size frozen into a state or a ref, which keeps the window the screen opened on. |
 | `e2e/__tests__/appCrashes.test.ts` | Recorded device logs, as fixtures for the crash gate. |
 | `e2e/__tests__/attempt.test.ts` | A recorded device log, as a fixture for the attempt judge. |
 | `e2e/__tests__/flowScreens.test.ts` | The files its own run of flow-screens.mjs wrote. |

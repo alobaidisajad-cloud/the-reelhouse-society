@@ -177,6 +177,10 @@ const E2E_KEY = Buffer.from('{"iss":"supabase-demo",').toString('base64url').sli
 const DEV_PACKAGES = ['expo.modules.devlauncher.', 'expo.modules.devmenu.', 'com.facebook.react.devsupport.'];
 const SCANNER = 'com.google.mlkit.vision.DEPENDENCIES';
 const COMPONENTS = ['activity', 'activity-alias', 'service', 'receiver', 'provider'];
+/** What the app's own activity takes in place, so a member's place survives a turn, a fold or a split-screen resize. */
+const KEPT_IN_PLACE = ['orientation', 'screenSize', 'screenLayout', 'smallestScreenSize'];
+/** Every way an iPad may hold the app: decision 8, and iPad multitasking asks for all four. */
+const IPAD_TURNS = ['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationPortraitUpsideDown', 'UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight'];
 
 /** Findings in the public config the build embeds (and an update would carry). */
 function checkConfig(config) {
@@ -219,6 +223,13 @@ function checkManifest(xml) {
     const scheme = e.name === 'data' ? e.attrs['android:scheme'] ?? '' : '';
     if (scheme.startsWith('exp+') || scheme === 'expo-dev-launcher') found.push(`the scheme ${scheme}: development tooling's way in`);
   }
+  const main = all.filter((e) => e.name === 'activity' && /(^|\.)MainActivity$/.test(e.attrs['android:name'] ?? ''));
+  if (main.length !== 1) found.push(`${main.length} MainActivity elements, not one: the app's own activity cannot be read`);
+  else {
+    const kept = (main[0].attrs['android:configChanges'] ?? '').split('|');
+    const lost = KEPT_IN_PLACE.filter((c) => !kept.includes(c));
+    if (lost.length) found.push(`MainActivity rebuilds the app on ${lost.join(', ')} (android:configChanges): a turn, a fold or a split-screen resize loses the member's place`);
+  }
   for (const host of E2E_HOSTS) if (xml.includes(host)) found.push(`the E2E host ${host}`);
   return found;
 }
@@ -237,6 +248,10 @@ function checkPlist(plist) {
   }
   if (ats.NSExceptionDomains) found.push(`NSAppTransportSecurity.NSExceptionDomains names ${Object.keys(ats.NSExceptionDomains).join(', ')}: an exception to https`);
   for (const key of Object.keys(plist)) if (/^(DEV_CLIENT_|EXDevMenu)/.test(key)) found.push(`${key}: a development client setting`);
+  const turns = plist['UISupportedInterfaceOrientations~ipad'] ?? [];
+  const locked = IPAD_TURNS.filter((o) => !turns.includes(o));
+  if (locked.length) found.push(`the iPad cannot hold the app ${locked.join(', ')} (UISupportedInterfaceOrientations~ipad): decision 8, every iPad window works`);
+  if (plist.UIRequiresFullScreen === true) found.push('UIRequiresFullScreen is true: the iPad refuses the app Split View and Slide Over (decision 8)');
   const text = JSON.stringify(plist);
   for (const host of E2E_HOSTS) if (text.includes(host)) found.push(`the E2E host ${host}`);
   return found;
