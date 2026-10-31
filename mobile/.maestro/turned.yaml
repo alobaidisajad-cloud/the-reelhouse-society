@@ -1,0 +1,53 @@
+appId: com.reelhouse.society
+env:
+  WORDS: Half a letter, turned
+---
+# The phone turned while Edit Profile is half-edited (WORKLIST P4.33):
+# the same screen, the member's unsaved words still in the field, turned
+# and turned back. On a phone the app's portrait lock holds and nothing
+# turns; on the tablet run (Android 16, which ignores the lock on a large
+# screen) the app turns with it, never rebuilt: release-guard holds the
+# activity's configChanges to a turn, a fold and a split-screen resize.
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign_in.yaml
+- openLink: "reelhouse://edit-profile"
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile-bio"
+    timeout: 20000
+- tapOn:
+    id: "edit-profile-bio"
+- inputText: ${WORDS}
+- hideKeyboard
+
+- setOrientation: LANDSCAPE_LEFT
+- waitForAnimationToEnd:
+    timeout: 8000
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "edit-profile-bio"
+      # The member's bio already holds words: what was typed is within it.
+      text: ".*${WORDS}.*"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
+
+- setOrientation: PORTRAIT
+- waitForAnimationToEnd:
+    timeout: 8000
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "edit-profile-bio"
+      text: ".*${WORDS}.*"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000

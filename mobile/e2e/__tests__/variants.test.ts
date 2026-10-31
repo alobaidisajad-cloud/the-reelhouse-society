@@ -95,11 +95,12 @@ it('adds a judge only by a name run-flows.sh runs: cut text to the largest text,
 
 it('runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16', () => {
   const devices = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'device') as { commands: string[] }).commands.join(' ')]));
-  expect(Object.entries(devices).filter(([, d]) => d !== '34 pixel_6')).toEqual([['tablet', '36 pixel_tablet']]);
+  expect(Object.entries(devices).filter(([, d]) => d !== '34 pixel_6 ')).toEqual([['tablet', '36 pixel_tablet 4096M']]);
   // The workflow keys the emulator, its image and its cache on this one answer.
   expect(E2E_YML).toMatch(/node mobile\/e2e\/variants\.mjs "\$\{E2E_VARIANT:-plain\}" device/);
   expect(E2E_YML).toMatch(/^ {10}api-level: \$\{\{ env\.E2E_API \}\}$/m);
   expect(E2E_YML).toMatch(/^ {10}profile: \$\{\{ env\.E2E_PROFILE \}\}$/m);
+  expect(E2E_YML).toMatch(/^ {10}disk-size: \$\{\{ env\.E2E_DISK \}\}$/m);
 });
 
 it('says which run each variant is: every flow and the walk, or the walk alone', () => {

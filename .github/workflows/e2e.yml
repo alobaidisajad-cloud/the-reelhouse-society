@@ -125,6 +125,7 @@ jobs:
       runs: ${{ steps.variant.outputs.runs }}
       api: ${{ steps.device.outputs.api }}
       profile: ${{ steps.device.outputs.profile }}
+      disk: ${{ steps.device.outputs.disk }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -144,6 +145,7 @@ jobs:
           device=$(node mobile/e2e/variants.mjs "${E2E_VARIANT:-plain}" device) || exit 1
           echo "api=$(sed -n 1p <<< "$device")" >> "$GITHUB_OUTPUT"
           echo "profile=$(sed -n 2p <<< "$device")" >> "$GITHUB_OUTPUT"
+          echo "disk=$(sed -n 3p <<< "$device")" >> "$GITHUB_OUTPUT"
 
       # Before the package cache is keyed: the client's own lock file decides it.
       - name: The shipped client's app, over this harness
@@ -334,7 +336,7 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     # The flows step's limit, and the app's download and the emulator's start before it.
-    timeout-minutes: 45
+    timeout-minutes: 49
     strategy:
       # Every shard runs to its end: one failing never hides what the others find.
       fail-fast: false
@@ -355,6 +357,7 @@ jobs:
       # The emulator's Android and its device (the build job's "The phone the run is on").
       E2E_API: ${{ needs.build.outputs.api }}
       E2E_PROFILE: ${{ needs.build.outputs.profile }}
+      E2E_DISK: ${{ needs.build.outputs.disk }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # The stack's ports kept before the job makes any connection that could be lent one: lent
@@ -615,7 +618,7 @@ jobs:
         # mobile/e2e/shards.json, made from every run's measured times
         # (flow-history.mjs); this outlasts the longest and what follows the
         # flows (flowHistory.test.ts holds it).
-        timeout-minutes: 33
+        timeout-minutes: 37
         env:
           E2E_SHARD: ${{ (inputs.faults || inputs.lifecycle || env.E2E_WALK) && '1/1' || format('{0}/3', matrix.shard) }}
           E2E_SHARD_MAP: ${{ inputs.faults && 'mobile/e2e/fault-shards.json' || inputs.lifecycle && 'mobile/e2e/lifecycle-shards.json' || env.E2E_WALK && 'mobile/e2e/walk-shards.json' || 'mobile/e2e/shards.json' }}
@@ -625,6 +628,7 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: ${{ env.E2E_PROFILE }}
+          disk-size: ${{ env.E2E_DISK }}
           ram-size: 4096M
           heap-size: 576M
           disable-animations: true

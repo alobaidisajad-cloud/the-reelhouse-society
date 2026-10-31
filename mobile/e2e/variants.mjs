@@ -10,7 +10,7 @@
  *   node e2e/variants.mjs <variant> reset [<was>]   the commands that put it back, {was} filled in
  *   node e2e/variants.mjs <variant> runs            "flows" (every flow, then the walk) or "walk"
  *   node e2e/variants.mjs <variant> judges          the judges it adds, one a line (cut-text)
- *   node e2e/variants.mjs <variant> device          its emulator's API level, then its profile
+ *   node e2e/variants.mjs <variant> device          its emulator's API level, its profile, and its data size (blank: the profile's)
  *
  * Each command is an adb shell command. An unknown variant or step, a reset that needs what was
  * read and is given nothing, or one given a word the variant's `answer` does not match (a failed
@@ -31,7 +31,7 @@ export function commandsFor(variants, name, step, was, device = FILE.device) {
   if (step === 'ready') return { commands: v.ready ?? [] };
   if (step === 'runs') return { commands: [v.flows ? 'flows' : 'walk'] };
   if (step === 'judges') return { commands: v.judges ?? [] };
-  if (step === 'device') { const d = v.device ?? device; return { commands: [String(d.api), d.profile] }; }
+  if (step === 'device') { const d = v.device ?? device; return { commands: [String(d.api), d.profile, d.disk ?? ''] }; }
   if (step !== 'reset') return { refused: `a step is read, setup, ready, reset, runs, judges or device, not ${step}` };
   if (v.reset.some((c) => c.includes('{was}')) && !was) return { refused: `${name}'s reset puts back what was read, and was given nothing` };
   if (v.answer && !new RegExp(v.answer).test(was ?? '')) return { refused: `${name}'s read answered ${was}, which ${v.answer} does not match: nothing is put back` };
