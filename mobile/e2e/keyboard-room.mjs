@@ -3,6 +3,7 @@
  * keyboard-room.mjs — is what the member needs above the keyboard, or under it?
  *
  *   node e2e/keyboard-room.mjs <name> <target> <hierarchy> <windows>
+ *   node e2e/keyboard-room.mjs --top <windows>     exit 0 once the keyboard's window is there and drawn
  *
  * <target> is `#id` or `"text"`. The hierarchy is `maestro hierarchy`; the
  * windows are `adb shell dumpsys window windows`, read for the input method's
@@ -83,7 +84,12 @@ export function verdict(name, target, bounds, top) {
     : { ok: true, line: `${name}: ${target} clear — its foot at ${bounds.bottom}px, the keyboard from ${top}px` };
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.argv[2] === '--top') {
+  // Is the keyboard's window there and drawn yet: run-flows.sh asks until it is (exit 0).
+  let windows = '';
+  try { windows = readFileSync(process.argv[3] ?? '', 'utf8'); } catch { /* none yet */ }
+  process.exit(keyboardTop(windows) == null ? 1 : 0);
+} else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const [name, target, hierarchyFile, windowsFile, dumpFile] = process.argv.slice(2);
   if (!name || !target || !hierarchyFile || !windowsFile) {
     console.error('usage: node e2e/keyboard-room.mjs <name> <#id|"text"> <hierarchy> <windows> [dump.xml]');

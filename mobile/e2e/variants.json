@@ -57,7 +57,7 @@
     },
     "tablet": {
       "why": "Android 16 on a tablet (API 36, the Pixel Tablet's 2560 by 1600 at density 320: 1280 by 800 dp), held on its side as it rests. Android 16 ignores an app's portrait lock on a screen 600 dp or wider for an app targeting SDK 36, as this one does, so the app runs on its side here as it will on every such tablet and open foldable, each page and sheet held to the reading column. The rotation the phone had is read first and put back.",
-      "device": { "api": 36, "profile": "pixel_tablet", "disk": "4096M", "diskWhy": "The profile asks a 7.3 GB data partition, which did not fit beside the walk's files on its runner (run 41175522858: 3.2 GB free, the emulator stopped before it booted); the app needs far less." },
+      "device": { "api": 36, "profile": "pixel_tablet", "disk": "4096M", "diskWhy": "Its data partition, named so its need is known: the emulator asks 1.8 times it free (7.2 GB), and e2e.yml makes that room on the runner before it starts (runs 41175522858 and 41193708096 had 3.2 GB)." },
       "flows": true,
       "read": "settings get system accelerometer_rotation",
       "answer": "^[01]$",

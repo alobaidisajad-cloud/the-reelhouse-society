@@ -539,6 +539,17 @@ jobs:
       - name: The database cleans a member's words as the app does
         run: node mobile/e2e/db/verify-cleaning.mjs
 
+      # Room for the emulator's data: it asks 1.8 times its data partition free, 7.2 GB for the
+      # tablet's, and a runner had left 3.2 GB beside the stack and the app (runs 41175522858 and
+      # 41193708096: "Not enough space to create userdata partition"). What no step of this job uses
+      # goes; the build job, which needs the NDK, is a machine of its own.
+      - name: Room on the runner for the emulator
+        run: |
+          df -h / | tail -n 1
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+            /usr/local/lib/android/sdk/ndk /usr/local/share/powershell /usr/share/swift
+          df -h / | tail -n 1
+
       - name: Let the emulator use the runner's KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

@@ -418,6 +418,13 @@ for probe in ${probes[@]+"${probes[@]}"}; do
       timeout 20 adb shell dumpsys input_method 2>/dev/null | grep -q 'mInputShown=true' && break
       sleep 1
     done
+    # Its window, there and drawn: on a first show the service says shown while the keyboard's own
+    # process is still starting (the tablet's first probe found no window a second later).
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$OUT/keyboard-room/$name.windows.txt"
+      node mobile/e2e/keyboard-room.mjs --top "$OUT/keyboard-room/$name.windows.txt" && break
+      sleep 1
+    done
     sleep 1   # the keyboard's own entrance, so its frame is where it stops
     timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$OUT/keyboard-room/$name.windows.txt"
     rm -rf "$HOME/.maestro/sessions"

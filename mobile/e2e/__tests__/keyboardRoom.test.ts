@@ -66,6 +66,17 @@ function run(target: string, railBottom: number, ime: string | null, rn = false)
 }
 
 describe('the keyboard room', () => {
+  it('says when the keyboard has come, for run-flows.sh to wait on: there and drawn, not merely asked for', () => {
+    const top = (ime: string | null) => {
+      writeFileSync(join(dir, 'w.txt'), windows(ime));
+      return spawnSync(process.execPath, [SCRIPT, '--top', join(dir, 'w.txt')], { encoding: 'utf8' }).status;
+    };
+    expect(top(SHOWN)).toBe(0);
+    expect(top(null)).toBe(1);
+    expect(top(SHOWN.replace('isOnScreen=true', 'isOnScreen=false'))).toBe(1);
+    expect(spawnSync(process.execPath, [SCRIPT, '--top', join(dir, 'none.txt')], { encoding: 'utf8' }).status).toBe(1);
+  });
+
   it('fails a target the keyboard covers, and says by how much', () => {
     const r = run('"FILE THE STACK"', 2280, SHOWN);
     expect(r.status).toBe(1);
