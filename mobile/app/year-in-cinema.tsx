@@ -35,10 +35,11 @@ function StateShell({ closeTop, children }: { closeTop: number; children: React.
     <View style={s.container}>
       <RoomLight room="member" />
       <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFill, WASH]} />
-      {children}
+      {/* First, so a screen reader meets it where it is drawn, at the top; zIndex keeps it over the rest. */}
       <PressableScale touch="wayOut" style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
       </PressableScale>
+      {children}
     </View>
   );
 }
@@ -260,6 +261,10 @@ export default function YearInCinemaScreen() {
   return (
     <View style={s.container}>
       <RoomLight room="member" />
+      {/* First, so a screen reader meets it where it is drawn, at the top; zIndex keeps it over the slides. */}
+      <PressableScale touch="wayOut" style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
+        <X size={24} color={colors.bone} />
+      </PressableScale>
       {/* Six pages at most, each exactly the phone's width: a plain pager. A recycling list
           laid its pages out wider than the phone, and each page's words stood off it
           (the route walk, 2026-10-21: a blank year). */}
@@ -278,9 +283,6 @@ export default function YearInCinemaScreen() {
       >
         {slides.map((item, index) => <Fragment key={`${item}-${index}`}>{renderSlide({ item, index })}</Fragment>)}
       </ScrollView>
-      <PressableScale touch="wayOut" style={[s.closeBtn, { top: closeTop }]} onPress={() => nav.back()} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
-        <X size={24} color={colors.bone} />
-      </PressableScale>
     </View>
   );
 }
