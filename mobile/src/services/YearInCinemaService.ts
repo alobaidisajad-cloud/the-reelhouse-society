@@ -54,6 +54,15 @@ function effectiveDate(l: YearLogInput): string | null {
 }
 
 /**
+ * The year the story tells first, by the day: through January the year just ended, when a member
+ * looks back on it, and the year under way after. The year under way stood alone, so on the 2nd
+ * of January a member's whole past year had no door (WORKLIST P4.32).
+ */
+export function yearToTell(now: Date): number {
+  return now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+}
+
+/**
  * Pure stats over a set of logs — deterministic, no I/O, fully unit-tested.
  * `now` is injectable so the "months elapsed" pace is testable.
  */

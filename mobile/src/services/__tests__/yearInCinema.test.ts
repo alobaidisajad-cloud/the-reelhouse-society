@@ -3,7 +3,7 @@
  * Cinema stats. These are the exact places a Wrapped can lie: miscounting,
  * wrong average scale, wrong pace, or crashing on empty/edge data.
  */
-import { computeYearStats, YearLogInput } from '../YearInCinemaService';
+import { computeYearStats, yearToTell, YearLogInput } from '../YearInCinemaService';
 
 // jest hoists this above the import at runtime.
 jest.mock('@/src/lib/supabase', () => ({ supabase: {} }));
@@ -84,5 +84,13 @@ describe('computeYearStats', () => {
     const s = computeYearStats([log({ title: null, poster: null, rating: 4 })], 2026, NOW);
     expect(s.topFilms[0].title).toBe('Untitled');
     expect(s.topFilms[0].poster).toBeNull();
+  });
+});
+
+describe('yearToTell', () => {
+  it('tells the year just ended through January, and the year under way after', () => {
+    const at = (iso: string) => yearToTell(new Date(iso));
+    expect([at('2027-01-02T12:00:00'), at('2027-01-31T23:00:00'), at('2027-02-01T00:30:00'), at('2026-12-31T23:00:00')])
+      .toEqual([2026, 2026, 2027, 2026]);
   });
 });

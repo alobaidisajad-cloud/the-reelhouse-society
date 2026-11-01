@@ -11,7 +11,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { useOfflineAware } from '@/src/hooks/useOfflineAware';
 import { useClock } from '@/src/hooks/useClock';
 import { tmdb } from '@/src/lib/tmdb';
-import { computeYearStats, fetchYearLogs, YearStats } from '@/src/services/YearInCinemaService';
+import { computeYearStats, fetchYearLogs, yearToTell, YearStats } from '@/src/services/YearInCinemaService';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -68,7 +68,8 @@ export default function YearInCinemaScreen() {
   const { height } = useWindowDimensions();
   const width = useColumnWidth();
 
-  const currentYear = useClock((now) => new Date(now).getFullYear());
+  const thisYear = useClock((now) => new Date(now).getFullYear());
+  const firstTold = useClock((now) => yearToTell(new Date(now)));
   const [phaseRead, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
   const [stats, setStats] = useState<YearStats | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -79,15 +80,21 @@ export default function YearInCinemaScreen() {
   const phase = memberId ? phaseRead : 'error';
   const read = useCallback((member: string) => {
     const myReq = ++reqId.current;
-    fetchYearLogs(member, currentYear).then((logs) => {
+    const tell = async () => {
+      const logs = await fetchYearLogs(member, firstTold);
+      if (logs.length > 0 || firstTold === thisYear) return { year: firstTold, logs };
+      // January, and the year just ended holds nothing of theirs: the year under way is told.
+      return { year: thisYear, logs: await fetchYearLogs(member, thisYear) };
+    };
+    tell().then(({ year, logs }) => {
       if (myReq !== reqId.current) return; // a newer load supersedes this one
-      setStats(computeYearStats(logs, currentYear));
+      setStats(computeYearStats(logs, year));
       setPhase('ready');
     }, () => {
       if (myReq !== reqId.current) return;
       setPhase('error');
     });
-  }, [currentYear]);
+  }, [firstTold, thisYear]);
 
   useEffect(() => { if (memberId) read(memberId); }, [memberId, read]);
   const load = useCallback(() => {
@@ -135,7 +142,7 @@ export default function YearInCinemaScreen() {
               <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit>Films Logged</Text>
               <Text style={s.sub}>
                 {stats.total === 1
-                  ? 'A single reel so far this year.'
+                  ? (stats.year === thisYear ? 'A single reel so far this year.' : `A single reel in all of ${stats.year}.`)
                   : `That is roughly ${stats.perMonth.toFixed(1)} entries a month.`}
               </Text>
             </Arrive>
@@ -207,7 +214,7 @@ export default function YearInCinemaScreen() {
         )}
       </View>
     );
-  }, [currentIndex, width, slideHeight, stats, slides, user, edge]);
+  }, [currentIndex, width, slideHeight, stats, slides, user, edge, thisYear]);
 
   if (phase === 'loading') {
     return (
@@ -226,7 +233,7 @@ export default function YearInCinemaScreen() {
       <StateShell closeTop={closeTop}>
         <View style={s.stateBox}>
           <Text style={s.stateTitle}>{isOffline ? 'Your year awaits a\nconnection' : 'The projector jammed'}</Text>
-          <Text style={s.stateSub}>{isOffline ? 'Reconnect to develop this year’s reel.' : 'The reel slipped the gate. Try once more.'}</Text>
+          <Text style={s.stateSub}>{isOffline ? 'Reconnect to develop the year’s reel.' : 'The reel slipped the gate. Try once more.'}</Text>
           <TryAgain onPress={load} style={s.retrySpace} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} />
         </View>
       </StateShell>
@@ -241,7 +248,7 @@ export default function YearInCinemaScreen() {
           <FilmEdges />
           <Text style={s.blankGlyph}>▦</Text>
           <Text style={s.stateTitle}>A Blank Reel</Text>
-          <Text style={s.stateSub}>You haven&apos;t logged a film in {currentYear} yet. Every reel starts with a single frame.</Text>
+          <Text style={s.stateSub}>You haven&apos;t logged a film in {stats?.year ?? thisYear} yet. Every reel starts with a single frame.</Text>
           <PressableScale style={s.ctaBtn} onPress={() => nav.push('/log-modal')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" accessibilityRole="button" accessibilityLabel="Log your first film">
             <Text style={s.ctaText}>LOG YOUR FIRST FILM</Text>
           </PressableScale>
