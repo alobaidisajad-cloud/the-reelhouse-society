@@ -62,11 +62,12 @@ BEGIN
   END;
   INSERT INTO rh_rows VALUES ('stale', NULL, v_state || '|' || (SELECT string_agg(film_id::text, ',' ORDER BY film_id) FROM public.list_items WHERE list_id = v_stack));
 
-  -- Read now, the same edit saves, exactly its films, and hands back the stack's new time.
-  INSERT INTO rh_rows VALUES ('fresh', NULL, (
-    SELECT (s.updated_at = now())::text FROM public.save_stack(p_id => v_stack,
-      p_films => '[{"film_id": 9001, "film_title": "rh: added elsewhere", "rank_position": 1}, {"film_id": 9002, "film_title": "rh: the phone''s", "rank_position": 2}]'::jsonb,
-      p_read_at => (SELECT updated_at FROM public.lists WHERE id = v_stack)) AS s)
+  -- Read now, the same edit saves, exactly its films, and hands back the stack's new time. Its films
+  -- are read in a statement of their own: one statement reads as it began, before the save.
+  SELECT (s.updated_at = now())::text INTO v_state FROM public.save_stack(p_id => v_stack,
+    p_films => '[{"film_id": 9001, "film_title": "rh: added elsewhere", "rank_position": 1}, {"film_id": 9002, "film_title": "rh: the phone''s", "rank_position": 2}]'::jsonb,
+    p_read_at => (SELECT updated_at FROM public.lists WHERE id = v_stack)) AS s;
+  INSERT INTO rh_rows VALUES ('fresh', NULL, v_state
     || '|' || (SELECT string_agg(film_id::text, ',' ORDER BY film_id) FROM public.list_items WHERE list_id = v_stack));
 
   -- An older call, with no time, saves as before.
