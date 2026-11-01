@@ -125,8 +125,14 @@ describe('the essay opens with a raised initial, not a column beside the text', 
   ])('raises the whole first letter of %s, and loses nothing after it', (_, first, after) => {
     const { toJSON } = render(<EssayOpening text={`${first}${after}`} />);
     const para = toJSON() as any;
-    const cap = (para.children as any[]).find((c) => c && typeof c === 'object');
-    expect(cap.children.join('')).toBe(first);
-    expect((para.children as any[]).map((c) => (typeof c === 'string' ? c : c.children.join(''))).join('')).toBe(`${first}${after}`);
+    // The words through every level: a capture run wraps each Text to note its source line.
+    const textOf = (n: any): string => (typeof n === 'string' ? n : (Array.isArray(n?.children) ? n.children : []).map(textOf).join(''));
+    // The raised initial is the one run of words that does not scale (above), at whatever depth.
+    const capOf = (n: any): any => (n && typeof n === 'object'
+      ? (n.props?.allowFontScaling === false ? n : (Array.isArray(n.children) ? n.children : []).map(capOf).find(Boolean))
+      : undefined);
+    const cap = capOf(para);
+    expect(textOf(cap)).toBe(first);
+    expect(textOf(para)).toBe(`${first}${after}`);
   });
 });

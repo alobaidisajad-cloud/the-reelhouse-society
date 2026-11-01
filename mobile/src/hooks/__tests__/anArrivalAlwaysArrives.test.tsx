@@ -11,6 +11,9 @@ import { useArrival, ARRIVAL_GRACE_MS, ARRIVED } from '../useArrival';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 
 jest.mock('@/src/utils/e2eTrace', () => ({ e2eTrace: jest.fn(), E2E_BUILD: false }));
+// The hook itself, in every run: a drawing run (MOCKUPS) draws each entrance arrived through a
+// stand-in (jest.setup.ts), and this file, run there, tested the stand-in and failed three times.
+jest.unmock('@/src/hooks/useArrival');
 
 function Held({ redraw }: { redraw?: number }) {
   const arrival = useArrival({ duration: 300, name: 'held' });

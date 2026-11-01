@@ -13,8 +13,16 @@ import { act, render } from '@testing-library/react-native';
 import { READING_MAX, useColumnWidth } from '@/src/components/layout/navMetrics';
 
 const OPENED = Dimensions.get('window');
+/**
+ * The window turned to `width` × `height`: set, so its listeners hear the change, and answered by
+ * Dimensions.get, which a capture run's setup otherwise answers with a phone whatever is set
+ * (jest.setup.ts), so this file failed in every capture run.
+ */
 const setWindow = (width: number, height: number) => {
-  Dimensions.set({ window: { ...Dimensions.get('window'), width, height }, screen: { ...Dimensions.get('screen'), width, height } });
+  const window = { ...Dimensions.get('window'), width, height };
+  const screen = { ...Dimensions.get('screen'), width, height };
+  jest.spyOn(Dimensions, 'get').mockImplementation((dim) => (dim === 'screen' ? screen : window));
+  Dimensions.set({ window, screen });
 };
 afterEach(async () => { await act(async () => { setWindow(OPENED.width, OPENED.height); }); });
 

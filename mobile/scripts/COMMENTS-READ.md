@@ -476,7 +476,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/dispatch/__tests__/theReaderAtFullLength.test.tsx | — |  |
 | src/components/dispatch/__tests__/theRoomOnScreenDecidesTheGate.test.ts | 2026-10-28 | edited: the header counts through counted(); read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/theRoomSaysWhatItHolds.test.tsx | — |  |
-| src/components/dispatch/__tests__/theSetOfTheType.test.tsx | 2026-10-04 | edited: an opening quote rides up with the raised initial |
+| src/components/dispatch/__tests__/theSetOfTheType.test.tsx | 2026-11-01 | edited: the raised initial's words read through every level, the initial found by not scaling, as a capture run wraps each Text; edited: an opening quote rides up with the raised initial |
 | src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/dispatch/__tests__/wireCarriesItsSource.test.tsx | — |  |
 | src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -876,7 +876,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aScrollIsOneTransaction.test.tsx | 2026-10-15 | new |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-22 | edited: the mock's plain style read through unknown (Reanimated 4.3 types an animated style as a handle) |
-| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-10-22 | edited: the ratchet at its end: no mount-time entrance left |
+| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-11-01 | edited: the hook itself in every run: a drawing run's stand-in for useArrival is unmocked here; edited: the ratchet at its end: no mount-time entrance left |
 | src/hooks/__tests__/aSlowPhoneIsKnownAtOnce.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a throttled phone is known on the first render. |
 | src/hooks/__tests__/everyMainScreenTracesItsScroll.guard.test.ts | 2026-10-15 | new |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | 2026-10-29 | edited: the submit plate found by the name it now says; edited: a refused form points at its field; edited: a sign-in lands where the member-only screen asked, or the Lobby;  |
@@ -1520,7 +1520,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/layout/__tests__/aPageIsSizedByItsColumn.guard.test.ts | 2026-10-31 | edited: no window or column size is frozen into a state or a ref; edited: the harness column equals readingColumn whole; a window read once also listens for its change; new: the window's width is read only where the whole window is meant, and the harness column equals the app's |
 | src/components/layout/__tests__/aPageUnderASheetIsUnspoken.test.tsx | 2026-10-29 | new: UnderSheet hides the page on both platforms while open, and gives it back closed |
 | src/components/layout/__tests__/everyModalHoldsTheColumn.guard.test.ts | 2026-10-30 | new: every RN Modal holds the reading column first, the whole-window ones named with why |
-| src/components/layout/__tests__/theColumnFollowsTheWindow.test.tsx | 2026-10-31 | new: the column width lays out again the moment the window changes |
+| src/components/layout/__tests__/theColumnFollowsTheWindow.test.tsx | 2026-11-01 | edited: the window it sets is the one Dimensions.get answers, as a capture run's setup answers a phone otherwise; new: the column width lays out again the moment the window changes |
 | src/components/layout/__tests__/whatIsOpenedIsBroughtAboveTheDock.test.tsx | 2026-10-30 | new: the arithmetic, the host's scroll from its offset, an index entry and the abandoned reasons, each revealed once and never when open at draw |
 | src/components/lounge/__tests__/aSalonCountsItsMembers.test.tsx | 2026-10-28 | new: the card and the door say 0, 1 and 51 members alone, never a limit |
 | src/components/lounge/__tests__/speakingIsTheArchivists.test.tsx | 2026-10-28 | new: a free, a lapsed and an Archivist member in the room; held words stay failed after a remount |
