@@ -10,6 +10,7 @@
  *   • the JS thread breathes (a 0ms macrotask) between mutations
  */
 
+import { houseIso } from '@/src/lib/houseClock';
 import { fetchWithinLimit, supabase } from '../lib/supabase';
 import { wallMayHaveChanged } from '../components/lobby/wallRead';
 import { useAuthStore } from '../stores/auth';
@@ -831,7 +832,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         cleanFiling(safe);
         delete safe.kind;
         if (Object.keys(safe).length === 0) return {};
-        safe.updated_at = new Date().toISOString();
+        safe.updated_at = houseIso();
         safe.edited_at = safe.updated_at;
         throwIfRefused(await supabase.from('dispatch_posts').update(safe)
             .eq('id', id).eq('user_id', user_id).select('id'), 'update_filing');
@@ -865,7 +866,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const { id, user_id, body } = p;
         throwIfRefused(await supabase.from('dispatch_comments').update({
             body: sanitizeInput(body as string, 'critique'),
-            edited_at: new Date().toISOString(),
+            edited_at: houseIso(),
         }).eq('id', id).eq('user_id', user_id).select('id'), 'update_critique');
         return {};
     },

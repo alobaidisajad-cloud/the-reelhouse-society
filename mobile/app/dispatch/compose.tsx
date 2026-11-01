@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
+import { houseIso } from '@/src/lib/houseClock';
 import { Text, TextInput } from '@/src/components/text';
 import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 // The preview mounts `EssayBody`, which carries the link guard and the render cap.
@@ -449,7 +450,7 @@ function ComposeDossierScreen() {
             void pushDraft(
                 user.id, edit ? 'edit' : 'dossier',
                 { title: t, content: c, film: filmRef.current, series: seriesRef.current },
-                new Date().toISOString(), edit ?? '',
+                houseIso(), edit ?? '',
             );
         };
         const every = setInterval(backUp, SYNC_EVERY_MS);

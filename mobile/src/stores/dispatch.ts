@@ -26,6 +26,7 @@
 import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 
+import { houseIso } from '@/src/lib/houseClock';
 import { supabase } from '../lib/supabase';
 import { captureError } from '../lib/sentry';
 import { wallMayHaveChanged } from '../components/lobby/wallRead';
@@ -479,7 +480,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     // One choke point: what is shown, sent and replayed are the same cleaned values.
     const clean = cleanDraft(draft);
     const id = Crypto.randomUUID();
-    const now = new Date().toISOString();
+    const now = houseIso();
 
     const optimistic: Filing = {
       id,
@@ -564,7 +565,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     const clean = cleanUpdate(filing.kind, updates);
     const before = filing;
-    const now = new Date().toISOString();
+    const now = houseIso();
 
     set((st) => patchFiling(st, id, (f) => ({
       ...f,
@@ -629,7 +630,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       ...before,
       body: '', fullContent: null, title: null, source: null, sourceUrl: null, spoilerLabel: null,
       film: before.film ? { ...before.film, posterPath: null, backdropPath: null } : null,
-      endedAt: new Date().toISOString(), endedBy: 'author',
+      endedAt: houseIso(), endedBy: 'author',
     };
     set((st) => patchFiling(st, id, () => ended));
 
@@ -872,7 +873,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       },
       body: clean,
       certifyCount: 0,
-      createdAt: new Date().toISOString(),
+      createdAt: houseIso(),
       editedAt: null,
     };
 
@@ -913,7 +914,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const startedAs = user.id;
     const clean = sanitizeInput(body, 'critique');
     if (!clean) return;
-    const now = new Date().toISOString();
+    const now = houseIso();
 
     set((st) => ({
       critiques: {

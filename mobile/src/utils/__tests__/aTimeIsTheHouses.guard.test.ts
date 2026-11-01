@@ -6,7 +6,7 @@
  * ahead read every later message as read), and when a filing or a critique was changed. Since
  * 20261028_02 the house dates each itself whenever a member's write changes it; the time the
  * phone sends only says that it changed. This file finds every write that sets a column ending
- * in `_at` from the phone's clock (`new Date()`, `Date.now()`, or a `now` made from them), read
+ * in `_at` from the phone's clock (`new Date()`, `Date.now()`, the house clock, or a `now` made from them), read
  * from each file's code, and fails on one the house does not date itself, or a listed one gone.
  */
 import { readFileSync } from 'fs';
@@ -15,8 +15,12 @@ import { join } from 'path';
 import { readCode } from '@/test-utils/readCode';
 import { files, rel } from '@/test-utils/universe';
 
-/** The phone's clock, as the app's code spells a reading of it. */
-const PHONE_TIME = /\b(\w+_at)\s*[:=]\s*(?:new Date\(|Date\.now\(|now\b)/g;
+/**
+ * The phone's clock, as the app's code spells a reading of it. The house clock (src/lib/houseClock.ts)
+ * among them: it is the phone's clock set by the house's last answer, near the house's to a second or
+ * two, and still sent by the phone.
+ */
+const PHONE_TIME = /\b(\w+_at)\s*[:=]\s*(?:new Date\(|Date\.now\(|house(?:Iso|Now)\(|now\b)/g;
 
 /** Each write the house dates itself, by file, and the trigger that does. */
 const DATED_BY_THE_HOUSE: Record<string, { columns: string[]; by: string }> = {
@@ -38,7 +42,7 @@ function writesIn(code: string): string[] {
     out.push(code.slice(m.index, j + 1));
   }
   // A payload built field by field before it is sent (`safe.updated_at = new Date()…`).
-  for (const m of code.matchAll(/\b\w+\.(\w+_at)\s*=\s*(?:new Date\(|Date\.now\()[^;\n]*/g)) out.push(m[0].replace(/^\w+\./, ''));
+  for (const m of code.matchAll(/\b\w+\.(\w+_at)\s*=\s*(?:new Date\(|Date\.now\(|house(?:Iso|Now)\()[^;\n]*/g)) out.push(m[0].replace(/^\w+\./, ''));
   return out;
 }
 

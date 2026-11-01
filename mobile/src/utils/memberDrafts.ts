@@ -34,6 +34,7 @@
  * signed out since that draft was written and it is theirs. Anything else is
  * unattributable, and an unattributable private note is not a thing to gamble.
  */
+import { houseIso } from '@/src/lib/houseClock';
 import { storage, isStorageEncrypted } from '@/src/stores/mmkv-storage';
 import { logger } from '@/src/utils/logger';
 
@@ -161,7 +162,7 @@ export function writeDraft<T>(
   if (!isStorageEncrypted()) return false;
   try {
     const envelope: DraftEnvelope<T> = {
-      v: DRAFT_VERSION, savedAt: new Date().toISOString(), data,
+      v: DRAFT_VERSION, savedAt: houseIso(), data,
     };
     storage.set(draftKey(userId, kind, scope), JSON.stringify(envelope));
     if (scope) evictOldest(userId, kind);
@@ -296,7 +297,7 @@ export function adoptLegacyDrafts(userId: string | null | undefined): void {
         // Wrapped into an envelope so it is read like everything else. The old
         // payload becomes `data` and keeps every field it had.
         storage.set(draftKey(userId, becomes), JSON.stringify({
-          v: DRAFT_VERSION, savedAt: new Date().toISOString(), data: JSON.parse(legacy),
+          v: DRAFT_VERSION, savedAt: houseIso(), data: JSON.parse(legacy),
         }));
       } catch (e) {
         logger.warn('[drafts] could not adopt an older draft', e);

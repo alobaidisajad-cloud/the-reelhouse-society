@@ -7,6 +7,7 @@
  * columns and row mapper, and computes the stats with a pure, unit-tested
  * function.
  */
+import { houseNow } from '@/src/lib/houseClock';
 import { supabase } from '@/src/lib/supabase';
 import { LOG_SELECT_COLUMNS, mapLogRow } from '@/src/utils/mappers';
 import { dateParts } from '@/src/utils/timeAgo';
@@ -59,7 +60,7 @@ function effectiveDate(l: YearLogInput): string | null {
 export function computeYearStats(
   logs: YearLogInput[],
   year: number,
-  now: Date = new Date(),
+  now: Date = new Date(houseNow()),
 ): YearStats {
   const yearLogs = logs.filter((l) => {
     const d = effectiveDate(l);

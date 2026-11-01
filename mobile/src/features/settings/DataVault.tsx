@@ -6,6 +6,7 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
+import { houseIso } from '@/src/lib/houseClock';
 import { Text } from '@/src/components/text';
 import {
   Upload, Download, CheckCircle, AlertCircle, Undo2,
@@ -312,7 +313,7 @@ export default function DataVault() {
       }
 
       const dump = {
-        meta: { exported_at: new Date().toISOString(), version: '2.1' },
+        meta: { exported_at: houseIso(), version: '2.1' },
         logs: dbLogs || [],
         // Kept as their own list, keyed by viewing, because that is what a note
         // belongs to: a log with three viewings can hold three different notes,

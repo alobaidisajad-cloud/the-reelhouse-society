@@ -1,5 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import { StateCreator } from 'zustand';
+import { houseIso } from '@/src/lib/houseClock';
 import { queryClient } from '../../lib/queryClient';
 import { supabase } from '../../lib/supabase';
 import { tmdb } from '../../lib/tmdb';
@@ -230,7 +231,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                     is_private: list.isPrivate ?? false, is_ranked: list.isRanked ?? false, films,
                 } })) {
                     const filmEntries = inputFilms.map(f => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? f.poster ?? null }));
-                    set((state) => ({ lists: [{ id: listId, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: new Date().toISOString(), userId: user.id }, ...state.lists] }));
+                    set((state) => ({ lists: [{ id: listId, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: houseIso(), userId: user.id }, ...state.lists] }));
                     reelToast('List saved offline. Will sync when connected.');
                     return;
                 }
@@ -239,7 +240,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         }
         const row = data as { created_at?: string } | null;
         const filmEntries = inputFilms.map((f) => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? f.poster ?? null }));
-        set((state) => ({ lists: [{ id: listId, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: row?.created_at ?? new Date().toISOString(), userId: user.id }, ...state.lists] }));
+        set((state) => ({ lists: [{ id: listId, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: row?.created_at ?? houseIso(), userId: user.id }, ...state.lists] }));
     },
 
     updateList: async (listId, updates) => {

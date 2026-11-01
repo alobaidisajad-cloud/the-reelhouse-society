@@ -21,6 +21,7 @@
  * receipt names — and deleting something the member already owned would make
  * undo more destructive than the mistake it exists to correct.
  */
+import { houseIso } from '@/src/lib/houseClock';
 
 /** One import's footprint. Everything here is safe to delete, and nothing else is. */
 export interface ImportReceipt {
@@ -55,7 +56,7 @@ export interface ImportReceipt {
 export function emptyReceipt(userId: string, sourceLabel: string): ImportReceipt {
   return {
     v: 1,
-    at: new Date().toISOString(),
+    at: houseIso(),
     userId,
     sourceLabel,
     logIds: [],

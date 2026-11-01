@@ -16,6 +16,7 @@
  * again the moment the server refuses a write for it (a suspension that began
  * while the app was open).
  */
+import { houseNow } from '@/src/lib/houseClock';
 import { supabase } from '@/src/lib/supabase';
 import { onRefusal } from '@/src/lib/refusalEvents';
 import { useAuthStore } from '@/src/stores/auth';
@@ -27,7 +28,7 @@ export type Standing = { kind: 'silenced' } | { kind: 'suspended'; until: string
 /** The member's standing now: silenced outranks a suspension, and a suspension past its end is over. */
 export function standingOf(
   user: { is_banned?: boolean | null; suspended_until?: string | null } | null | undefined,
-  now = Date.now(),
+  now = houseNow(),
 ): Standing {
   if (!user) return null;
   if (user.is_banned === true) return { kind: 'silenced' };

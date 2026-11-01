@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { houseNow } from '@/src/lib/houseClock';
 import { isNarrowed } from '@/src/utils/roomFilters';
 import { matchesSearch } from '@/src/utils/searchPattern';
 import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
@@ -109,7 +110,7 @@ export function tally(n: number): string {
  */
 export function computeDailyStreak(
   logs: { watchedDate?: string | null; createdAt?: string | null }[],
-  now: Date = new Date(),
+  now: Date = new Date(houseNow()),
 ): number {
   const dates = new Set<string>();
   for (const log of logs) {

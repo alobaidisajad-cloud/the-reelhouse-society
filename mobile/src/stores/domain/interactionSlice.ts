@@ -1,4 +1,5 @@
 import { StateCreator } from 'zustand';
+import { houseIso } from '@/src/lib/houseClock';
 import { captureError } from '../../lib/sentry';
 import { supabase } from '../../lib/supabase';
 import { InteractionService } from '../../services/InteractionService';
@@ -67,7 +68,7 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 set({ interactions: next, _endorsedIndex: idx });
             } else {
                 const current = get().interactions;
-                const newInteraction: Interaction = { type: 'endorse' as const, targetId, timestamp: new Date().toISOString() };
+                const newInteraction: Interaction = { type: 'endorse' as const, targetId, timestamp: houseIso() };
                 const next: Interaction[] = [...current, newInteraction];
                 set({ interactions: next, _endorsedIndex: { ...get()._endorsedIndex, [targetId]: newInteraction } });
             }
@@ -196,7 +197,7 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 delete idx[listId];
                 set({ interactions: next, _listEndorsedIndex: idx });
             } else {
-                const newInteraction: Interaction = { type: 'endorse_list', targetId: listId, timestamp: new Date().toISOString() };
+                const newInteraction: Interaction = { type: 'endorse_list', targetId: listId, timestamp: houseIso() };
                 const next = [...get().interactions, newInteraction];
                 set({ interactions: next, _listEndorsedIndex: { ...get()._listEndorsedIndex, [listId]: newInteraction } });
             }

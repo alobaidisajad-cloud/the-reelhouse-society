@@ -1,4 +1,5 @@
 import * as Crypto from 'expo-crypto';
+import { houseIso } from '@/src/lib/houseClock';
 import { queryClient } from '../../../../lib/queryClient';
 import { supabase } from '../../../../lib/supabase';
 import { wallMayHaveChanged } from '../../../../components/lobby/wallRead';
@@ -410,7 +411,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 if (isNetworkError(error) && keptAhead) {
                     reelToast('Archived offline. Will sync when connected.');
                     queuedOffline = true;
-                    finalData = { ...payload, created_at: new Date().toISOString(), id: payload.id };
+                    finalData = { ...payload, created_at: houseIso(), id: payload.id };
                 } else if (isDuplicateKey(error)) {
                     // a concurrent insert (e.g. the same film logged from another
                     // device) won the logs(user_id, film_id) unique race. Mirror the offline
@@ -660,7 +661,7 @@ export const updateLogOp = async (
                         watched_with: mergedLog.watchedWith ?? null,
                         editorial_header: mergedLog.editorialHeader ?? null,
                         alt_poster: mergedLog.altPoster ?? null,
-                        created_at: mergedLog.createdAt ?? new Date().toISOString(),
+                        created_at: mergedLog.createdAt ?? houseIso(),
                         user_id: user.id,
                         username: user.username,
                         avatar_url: user.avatar_url,

@@ -22,6 +22,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager, StyleSheet, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { houseNow } from '@/src/lib/houseClock';
 import { useBottomEdge } from '@/src/components/layout/navMetrics';
 
 import PressableScale from '@/src/components/PressableScale';
@@ -277,7 +278,7 @@ export function ComposeBallotScreen() {
     setSending(true);
     try {
       // `closes_at` is compared at RENDER time: no job has to run to close it.
-      const closesAt = new Date(Date.now() + closingDays(closes) * 86_400_000).toISOString();
+      const closesAt = new Date(houseNow() + closingDays(closes) * 86_400_000).toISOString();
 
       const options: BallotOption[] = slots
         .filter((s): s is { film: PaperFilm; id: number } => !!s)

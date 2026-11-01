@@ -1,4 +1,5 @@
 
+import { houseIso } from '@/src/lib/houseClock';
 import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
 import { RemoteImage } from '@/src/components/Picture';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -507,7 +508,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     const grouped: Record<string, T[]> = {};
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     for (const item of items) {
-      const d = (item as any)[dateKey] || (item as any).createdAt || new Date().toISOString();
+      const d = (item as any)[dateKey] || (item as any).createdAt || houseIso();
       let year = 1970;
       let month = 0;
       if (typeof d === 'string') {

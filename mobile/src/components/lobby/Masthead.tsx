@@ -5,6 +5,7 @@
  */
 import React, { memo, useEffect, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
+import { houseNow } from '@/src/lib/houseClock';
 import { colors } from '@/src/theme/theme';
 import { issueOf } from '@/src/components/dispatch/paper/paperMetrics';
 import { dayLabel } from '@/src/components/dispatch/dayLabel';
@@ -29,7 +30,7 @@ export const datelineOf = (d: Date) => `No. ${issueOf(d)} · ${dayLabel(d.toISOS
  * reading handed to `onRead`. Its one timer and its listener end with the Lobby.
  */
 export function useWallClock(onRead: (now: Date) => void): Date {
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState(() => new Date(houseNow()));
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     function arm(t: Date) {
@@ -39,12 +40,12 @@ export function useWallClock(onRead: (now: Date) => void): Date {
       timer = setTimeout(read, toNextHour + 1000);
     }
     function read() {
-      const t = new Date();
+      const t = new Date(houseNow());
       setNow(t);
       onRead(t);
       arm(t);
     }
-    arm(new Date());
+    arm(new Date(houseNow()));
     const sub = AppState.addEventListener('change', (state) => { if (state === 'active') read(); });
     return () => { clearTimeout(timer); sub.remove(); };
   }, [onRead]);

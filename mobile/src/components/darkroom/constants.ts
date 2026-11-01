@@ -1,4 +1,5 @@
 import { Heart, Skull, Sparkles, Sun, Flame, Laugh } from 'lucide-react-native';
+import { houseNow } from '@/src/lib/houseClock';
 
 export const GENRES = [
   { id: 28, name: 'Action' }, { id: 27, name: 'Horror' }, { id: 878, name: 'Sci-Fi' },
@@ -37,7 +38,7 @@ export const MIN_RATINGS = [0, 6, 7, 7.5, 8, 8.5];
 
 // Year boundaries: 1888 = Roundhay Garden Scene (first film), +5 for future releases
 export const YEAR_MIN = 1888;
-export const YEAR_MAX = new Date().getFullYear() + 5;
+export const YEAR_MAX = new Date(houseNow()).getFullYear() + 5;
 
 export const MOODS = [
   { label: 'Emotional', sub: 'Heavy, profound stories', icon: 'Heart', genre: 18, sort: 'vote_average.desc', color: '#4A1A3A', accent: '#C06080' },

@@ -13,6 +13,7 @@
  *   • each write is sent only under its own member's session (queueOwnership.ts)
  */
 import * as Crypto from 'expo-crypto';
+import { houseIso, houseNow } from '@/src/lib/houseClock';
 import { supabase } from '../lib/supabase';
 import { captureError } from '../lib/sentry';
 import { MutationSchemaMap } from '../types/mutations';
@@ -153,7 +154,7 @@ function signedInMember(): string | null {
 /** Failed writes, kept a week for diagnosis, each still naming its member. */
 function addToDeadLetter(failed: readonly QueuedMutation[]): void {
     if (failed.length === 0) return;
-    const weekAgo = Date.now() - DEAD_LETTER_DAYS * 24 * 60 * 60 * 1000;
+    const weekAgo = houseNow() - DEAD_LETTER_DAYS * 24 * 60 * 60 * 1000;
     const kept = readList(DEAD_LETTER_KEY).filter((m) => m.timestamp > weekAgo);
     writeList(DEAD_LETTER_KEY, [...kept, ...failed].slice(-DEAD_LETTER_MAX));
 }
@@ -261,7 +262,7 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
     const newMutation: QueuedMutation = {
         ...mutation,
         id: Crypto.randomUUID(),
-        timestamp: Date.now(),
+        timestamp: houseNow(),
         owner,
     };
 
@@ -366,7 +367,7 @@ async function sendOnce(): Promise<void> {
         // A suspension ends: what was written is held until it does, not thrown
         // away refused (the queue's own day-old rule still applies).
         const suspendedUntil = banProfile?.suspended_until ? Date.parse(banProfile.suspended_until) : NaN;
-        if (!banProfile?.is_banned && Number.isFinite(suspendedUntil) && suspendedUntil > Date.now()) {
+        if (!banProfile?.is_banned && Number.isFinite(suspendedUntil) && suspendedUntil > houseNow()) {
             logger.warn('[OfflineSync] Member is suspended — holding the queue until it ends.');
             return;
         }
@@ -376,7 +377,7 @@ async function sendOnce(): Promise<void> {
             const live = readQueue();
             addToDeadLetter(live.filter((m) => m.owner === authenticatedUserId).map(m => ({
                 ...m,
-                payload: { ...m.payload, _failReason: 'user_banned_at_flush', _failedAt: new Date().toISOString() }
+                payload: { ...m.payload, _failReason: 'user_banned_at_flush', _failedAt: houseIso() }
             })));
             keepForOwners(live.filter((m) => m.owner !== authenticatedUserId));
             writeQueue([]);
@@ -408,7 +409,7 @@ async function sendOnce(): Promise<void> {
     // (a log, a vote, a stack) and their own words are never dropped for their age (WORKLIST P4.32):
     // every write but a toggle was dropped here, the member told only "not sent". Held for the member
     // is not waiting to be sent either: it does not age out.
-    const now = Date.now();
+    const now = houseNow();
     const aged =(m: QueuedMutation) => !m._held && now - m.timestamp >= STALE_THRESHOLD_MS;
     const staleMutations = queue.filter((m) => aged(m) && kindOf(m) === 'toggle');
     const lapsed = new Set(staleMutations.map((m) => m.id));
@@ -456,7 +457,7 @@ async function sendOnce(): Promise<void> {
                     logger.warn('[OfflineSync] schema violation', mutation.type, parseResult.error);
                     deadLetterQueue.push({
                         ...mutation,
-                        payload: { ...mutation.payload, _failReason: `schema: ${parseResult.error.message}`, _failedAt: new Date().toISOString() }
+                        payload: { ...mutation.payload, _failReason: `schema: ${parseResult.error.message}`, _failedAt: houseIso() }
                     });
                     finished(mutation);
                     continue;
@@ -509,7 +510,7 @@ async function sendOnce(): Promise<void> {
                 });
                 deadLetterQueue.push({
                     ...mutation,
-                    payload: { ...mutation.payload, _failReason: `schema: ${errMsg}`, _failedAt: new Date().toISOString() },
+                    payload: { ...mutation.payload, _failReason: `schema: ${errMsg}`, _failedAt: houseIso() },
                 });
                 finished(mutation);
             } else if (errorClass === 'duplicate') {
@@ -523,7 +524,7 @@ async function sendOnce(): Promise<void> {
                 if (attempts >= MAX_TRANSIENT_RETRIES) {
                     // Given up on, so one write that always fails cannot hold back the rest.
                     logger.warn('[OfflineSync] transient failure, retries used up: dead-lettered', mutation.type, MAX_TRANSIENT_RETRIES, status, code);
-                    deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: `transient-exhausted: ${errMsg}`, _failedAt: new Date().toISOString() } });
+                    deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: `transient-exhausted: ${errMsg}`, _failedAt: houseIso() } });
                     finished(mutation);
                 } else {
                     // Stop here, as for no network: what follows may depend on it.
@@ -532,7 +533,7 @@ async function sendOnce(): Promise<void> {
                     break;
                 }
             } else {
-                deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: errMsg, _failedAt: new Date().toISOString() } });
+                deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: errMsg, _failedAt: houseIso() } });
                 finished(mutation);
             }
         }
@@ -553,7 +554,7 @@ async function sendOnce(): Promise<void> {
         // A copy for diagnosis; the words themselves stay in the queue, held.
         addToDeadLetter(heldForRank.map(({ mutation, error }) => ({
             ...mutation,
-            payload: { ...mutation.payload, _failReason: `held for the rank: ${(error as { message?: string })?.message ?? ''}`, _failedAt: new Date().toISOString() },
+            payload: { ...mutation.payload, _failReason: `held for the rank: ${(error as { message?: string })?.message ?? ''}`, _failedAt: houseIso() },
         })));
         // Required here, not imported: the tier door reads the auth store, which imports this file.
         // eslint-disable-next-line @typescript-eslint/no-require-imports

@@ -31,6 +31,7 @@
  * comment says why: "Locks the streak explicitly to the true YYYY-MM-DD stored in the
  * DB without V8 Date engine timezone shifts." That file was right; this one now agrees.
  */
+import { houseNow } from '@/src/lib/houseClock';
 
 const MONTHS_SHORT = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as const;
 const MONTHS_LONG = [
@@ -54,7 +55,7 @@ const CALENDAR_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
  * Lives here, not in useLogFlow, so the store layer can use it without importing a
  * hook — same reason it takes no dependency on Intl.
  */
-export function localCalendarDate(offsetDays = 0, now: number = Date.now()): string {
+export function localCalendarDate(offsetDays = 0, now: number = houseNow()): string {
   const d = new Date(now);
   if (offsetDays !== 0) d.setDate(d.getDate() + offsetDays);
   const mo = String(d.getMonth() + 1).padStart(2, '0');
@@ -163,7 +164,7 @@ function echo(value: string | Date | undefined | null): string {
  * `now` is the instant it is measured to: a drawn label is handed the shared clock's
  * (useClock), so it is worked out again as time passes.
  */
-export function timeAgo(dateStr: string | Date | undefined | null, now: number = Date.now()): string {
+export function timeAgo(dateStr: string | Date | undefined | null, now: number = houseNow()): string {
   if (!dateStr) return '';
 
   // ── A calendar date speaks in DAYS, never in hours ──────────────────────────
@@ -223,7 +224,7 @@ export function timeAgo(dateStr: string | Date | undefined | null, now: number =
  * timeAgo is for the past and clamps a future instant to now, so an open
  * ballot asked it when it closes and read "CLOSES MOMENTS AGO" for days.
  */
-export function timeUntil(value: string | Date | undefined | null, now: number = Date.now()): string {
+export function timeUntil(value: string | Date | undefined | null, now: number = houseNow()): string {
   if (!value) return '';
   const then = toInstant(value);
   if (then === null) return '';

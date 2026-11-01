@@ -2,6 +2,7 @@ import * as Crypto from 'expo-crypto';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import { onlineManager } from '@tanstack/react-query';
+import { houseIso } from '@/src/lib/houseClock';
 import { queryClient } from '../lib/queryClient';
 import { supabase } from '../lib/supabase';
 import { watchChannel } from '../lib/watchChannel';
@@ -165,7 +166,6 @@ export interface LoungeState {
   purgeHiddenMessages: () => void;
   canSendMessage: (loungeId?: string) => boolean;
   syncGlobalAvatar: (userId: string, avatarUrl: string | null) => void;
-  _lastMarkReadMap: Record<string, number>;
 }
 
 // 800ms between sends PER ROOM: stops a double-tap, silently, without eating a
@@ -442,7 +442,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   sending: false,
   presentCount: 0,
   typingUsers: [],
-  _lastMarkReadMap: {},
 
   fetchLounges: async () => {
     const user = useAuthStore.getState().user;
@@ -648,7 +647,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
                 film_title: p.film_title,
                 film_poster: p.film_poster,
                 metadata: p.metadata,
-                created_at: new Date().toISOString(),
+                created_at: houseIso(),
             } as unknown as LoungeMessage);
         }
         // Only for the member who asked: the queued messages stitched in are theirs.
@@ -904,7 +903,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       id: messageId,
       username: user.username,
       avatar_url: user.avatar_url,
-      created_at: new Date().toISOString(),
+      created_at: houseIso(),
       status: 'sending',
       ...payload,
     } as unknown as LoungeMessage;
@@ -1030,7 +1029,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         description: trimmedDesc,
         is_private: isPrivate,
         creator_id: user.id,
-        created_at: new Date().toISOString(),
+        created_at: houseIso(),
         // create_lounge seats its creator, approved: counted, and theirs.
         member_count: 1,
         unread_count: 0,
@@ -1240,7 +1239,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // Optimistic tombstone (continuity over a jarring disappearance).
     set(s => ({
       currentMessages: s.currentMessages.map(m =>
-        m.id === messageId ? { ...m, content: '', deleted_at: new Date().toISOString(), reactions: [] } : m
+        m.id === messageId ? { ...m, content: '', deleted_at: houseIso(), reactions: [] } : m
       ),
     }));
     try {
@@ -1589,13 +1588,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     
     set(s => ({
       lounges: s.lounges.map(l => l.id === loungeId ? { ...l, unread_count: 0 } : l),
-      _lastMarkReadMap: { ...s._lastMarkReadMap, [loungeId]: Date.now() }
     }));
 
     try {
       const { error } = await supabase
         .from('lounge_members')
-        .update({ last_read_at: new Date().toISOString() })
+        .update({ last_read_at: houseIso() })
         .eq('lounge_id', loungeId)
         .eq('user_id', user.id);
       
@@ -1608,7 +1606,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
-    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: false, currentMessages: [], currentLoungeId: null, messagesLoading: false, messagesFailed: false, sending: false, presentCount: 0, typingUsers: [], _lastMarkReadMap: {} });
+    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: false, currentMessages: [], currentLoungeId: null, messagesLoading: false, messagesFailed: false, sending: false, presentCount: 0, typingUsers: [] });
     _lastCreateAt = 0;
     _lastTypingBroadcastAt = 0;
     // Every module-level memory, or the next member on this phone inherits it.

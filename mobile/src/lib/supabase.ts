@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Platform, AppState } from 'react-native';
 import { authSessionStorage } from './authSessionStorage';
 import { heardRefusal } from './refusalEvents';
+import { heardTheHouse } from './houseClock';
 import { E2E_BUILD, e2eTrace } from '../utils/e2eTrace';
 import { captureDeadline } from './sentry';
 
@@ -81,6 +82,7 @@ export const fetchWithinLimit: typeof fetch = async (input, init) => {
   const at = Date.now();
   try {
     const res = await fetch(input, { ...init, signal: controller.signal });
+    heardTheHouse(res.headers.get('date'), at, Date.now());
     const body = NO_BODY.has(res.status) ? null : await res.text();
     traceRequest(init?.method, url, at, { status: res.status });
     return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });

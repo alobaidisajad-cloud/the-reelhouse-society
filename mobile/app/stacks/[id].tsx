@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { houseIso } from '@/src/lib/houseClock';
 import { PosterMark, RemoteImage } from '@/src/components/Picture';
 import * as Crypto from 'expo-crypto';
  
@@ -277,7 +278,7 @@ export default function StackDetailScreen() {
         const currentUser = useAuthStore.getState().user;
         
         const localUserId = localList?.userId;
-        const localCreatedAt = localList?.createdAt || new Date().toISOString();
+        const localCreatedAt = localList?.createdAt || houseIso();
 
         if (localList && currentUser && (localUserId === currentUser.id || !localUserId)) {
           const fallbackDetail: ListDetail = {
@@ -308,7 +309,7 @@ export default function StackDetailScreen() {
       const currentUser = useAuthStore.getState().user;
       
       const localUserId = localList?.userId;
-      const localCreatedAt = localList?.createdAt || new Date().toISOString();
+      const localCreatedAt = localList?.createdAt || houseIso();
 
       if (localList && currentUser && (localUserId === currentUser.id || !localUserId)) {
         return {
@@ -613,7 +614,7 @@ export default function StackDetailScreen() {
       username: user.username || 'anon',
       avatar_url: user.avatar_url ?? null,
       content,
-      created_at: new Date().toISOString()
+      created_at: houseIso()
     };
     
     // CQRS Optimistic sync directly to cache

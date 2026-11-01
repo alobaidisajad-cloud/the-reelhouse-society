@@ -10,6 +10,7 @@
  * rows are upserted with ignoreDuplicates, so an import can run twice.
  */
 import JSZip from 'jszip';
+import { houseIso } from '@/src/lib/houseClock';
 import { localCalendarDate, calendarDateString } from '@/src/utils/timeAgo';
 import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -477,7 +478,7 @@ export function normalizeDate(raw: string, format: 'MDY' | 'DMY' = 'MDY'): strin
  * created_at) with hundreds of "just now" entries. Exported for tests.
  */
 export function backdatedTimestamps(watchedDate: string): { created_at: string; updated_at: string } {
-  const nowIso = new Date().toISOString();
+  const nowIso = houseIso();
   let ts = `${normalizeDate(watchedDate)}T12:00:00.000Z`;
   if (ts > nowIso) ts = nowIso;
   return { created_at: ts, updated_at: ts };
@@ -493,7 +494,7 @@ export function importableTimestamp(raw: unknown): string | null {
   const parsed = new Date(raw);
   if (isNaN(parsed.getTime())) return null;
   const iso = parsed.toISOString();
-  return iso > new Date().toISOString() ? null : iso;
+  return iso > houseIso() ? null : iso;
 }
 
 // ═══════════════════════════════════════════════════════════════

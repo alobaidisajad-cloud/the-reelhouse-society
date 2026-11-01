@@ -7,6 +7,7 @@
  */
 
 import { z } from 'zod';
+import { houseNow } from '@/src/lib/houseClock';
 import { supabase } from '../lib/supabase';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '../utils/logger';
@@ -683,7 +684,7 @@ export const ProfileDataService = {
    */
   async fetchCalendarData(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<{ date: string; rating: number; status: string }[]> {
     const CALENDAR_WEEKS = 52;
-    const from = new Date();
+    const from = new Date(houseNow());
     from.setDate(from.getDate() - (CALENDAR_WEEKS * 7 + 7));   // a week of slack for timezone edges
     const fromKey = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-${String(from.getDate()).padStart(2, '0')}`;
 

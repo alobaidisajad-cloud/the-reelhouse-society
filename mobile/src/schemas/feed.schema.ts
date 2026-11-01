@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { houseIso } from '@/src/lib/houseClock';
 
 /** A TMDB film id, as a number or its digits; anything else drops the row (no /film/NaN). */
 const filmId = z.union([z.number().int().positive(), z.string().regex(/^\d+$/)]).transform(Number);
@@ -65,7 +66,7 @@ export const FeedItemSchema = z.object({
   rating: z.number().nullable().default(0),
   review: z.string().nullable().optional(),
   status: logStatus,
-  created_at: z.string().default(() => new Date().toISOString()),
+  created_at: z.string().default(() => houseIso()),
   year: yearCoercer,
   editorial_header: z.string().nullable().optional(),
   pull_quote: z.string().nullable().optional(),

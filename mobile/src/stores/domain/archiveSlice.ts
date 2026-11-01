@@ -1,4 +1,5 @@
 import { StateCreator } from 'zustand';
+import { houseIso } from '@/src/lib/houseClock';
 import { supabase } from '../../lib/supabase';
 import { PhysicalArchiveItem } from '../../types';
 import { enqueueMutation } from '../../utils/offlineQueue';
@@ -171,7 +172,7 @@ export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice
                 formats,
                 notes: '',
                 condition: 'good',
-                createdAt: new Date().toISOString(),
+                createdAt: houseIso(),
             };
         set((state) => ({ physicalArchive: [shown, ...state.physicalArchive.filter(i => i.filmId !== film.id)] }));
 

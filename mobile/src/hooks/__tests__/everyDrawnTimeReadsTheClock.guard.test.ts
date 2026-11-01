@@ -9,7 +9,8 @@
  *   - timeAgo and timeUntil are called from useClock alone; a screen reads useTimeAgo,
  *     useTimesAgo, useTimeUntil or useHasPassed;
  *   - the time is never read where a screen is drawn (`Date.now()`, `new Date()` with nothing
- *     in it, `localCalendarDate()` given no instant) except through the clock. A read inside an act (a press, an effect, a timer, a
+ *     in it, the house clock's `houseNow()` and `houseIso()`, `localCalendarDate()` given no
+ *     instant) except through the clock. A read inside an act (a press, an effect, a timer, a
  *     promise's answer) is its own moment, not a drawing, and is let be; every other read is
  *     named in the register below with why it is not drawn, or why it keeps its own time.
  */
@@ -50,7 +51,8 @@ export function drawnReadsOf(file: string, text: string): Site[] {
     (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.expression.getText(sf) === 'Date'
       && n.expression.name.text === 'now' && n.arguments.length === 0)
     || (ts.isNewExpression(n) && n.expression.getText(sf) === 'Date' && (n.arguments?.length ?? 0) === 0)
-    || (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && ['localCalendarDate', 'getLocalDateString'].includes(n.expression.text) && n.arguments.length < 2);
+    || (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && ['localCalendarDate', 'getLocalDateString'].includes(n.expression.text) && n.arguments.length < 2)
+    || (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && ['houseNow', 'houseIso'].includes(n.expression.text) && n.arguments.length === 0);
   const calleeName = (c: ts.CallExpression) =>
     ts.isIdentifier(c.expression) ? c.expression.text
       : ts.isPropertyAccessExpression(c.expression) ? c.expression.name.text : '';

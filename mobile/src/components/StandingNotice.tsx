@@ -9,6 +9,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { houseNow } from '@/src/lib/houseClock';
 import { Text } from '@/src/components/text';
 import { colors, fonts } from '@/src/theme/theme';
 import { useAuthStore } from '@/src/stores/auth';
@@ -23,19 +24,19 @@ const ABOVE_THE_OFFLINE_PLATE = 44;
 const LOOK_AGAIN_MS = 24 * 60 * 60 * 1000;
 
 /** How long until the notice looks again: a second past the end, never past a day. */
-const lookAgainIn = (until: number) => Math.min(Math.max(until - Date.now(), 0) + 1000, LOOK_AGAIN_MS);
+const lookAgainIn = (until: number) => Math.min(Math.max(until - houseNow(), 0) + 1000, LOOK_AGAIN_MS);
 
 export default function StandingNotice() {
   const user = useAuthStore((s) => s.user) as { is_banned?: boolean | null; suspended_until?: string | null } | null;
   const overlayBottom = useOverlayBottom();
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => houseNow());
   const standing = standingOf(user, now);
 
   // A suspension ends on its own: the notice goes the moment it does.
   const until = standing?.kind === 'suspended' ? Date.parse(standing.until) : NaN;
   useEffect(() => {
     if (!Number.isFinite(until)) return;
-    const t = setTimeout(() => setNow(Date.now()), lookAgainIn(until));
+    const t = setTimeout(() => setNow(houseNow()), lookAgainIn(until));
     return () => clearTimeout(t);
   }, [until, now]);
 

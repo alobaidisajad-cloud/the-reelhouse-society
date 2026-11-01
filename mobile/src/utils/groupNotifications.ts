@@ -1,3 +1,4 @@
+import { houseNow } from '@/src/lib/houseClock';
 import { AppNotification } from '../stores/notificationStore';
 import { describeGroup, parseGroupKey } from './endorsementGroupKey';
 
@@ -73,7 +74,7 @@ export function groupTitle(n: AppNotification): string | undefined {
  */
 export function groupNotifications(
   notifications: AppNotification[],
-  now: number = Date.now()
+  now: number = houseNow()
 ): DisplayItem[] {
   if (notifications.length === 0) return [];
 

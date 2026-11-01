@@ -1,4 +1,5 @@
  
+import { houseIso } from '@/src/lib/houseClock';
 import { useAuthStore } from '@/src/stores/auth';
 import { RemoteImage } from '@/src/components/Picture';
 import { useBlockStore } from '@/src/stores/blockStore';
@@ -258,7 +259,7 @@ export default function LogDetailScreen() {
             drop_cap: localLog.dropCap,
             pull_quote: localLog.pullQuote,
             user_id: useAuthStore.getState().user?.id || '',
-            created_at: localLog.createdAt || new Date().toISOString(),
+            created_at: localLog.createdAt || houseIso(),
             viewing_history: localLog.viewingHistory,
             viewing_id: localLog.viewingId ?? null,
           };
@@ -468,7 +469,7 @@ export default function LogDetailScreen() {
       username: user?.username || 'anonymous',
       avatar_url: user?.avatar_url || null,
       body: commentBody,
-      created_at: new Date().toISOString(),
+      created_at: houseIso(),
     };
     
     await queryClient.cancelQueries({ queryKey: ['log', id] });

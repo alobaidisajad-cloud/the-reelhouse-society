@@ -12,6 +12,7 @@
  * timing only, never a spring (the house no-bounce law).
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { houseNow } from '@/src/lib/houseClock';
 import { InColumn } from '@/src/components/layout/InColumn';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, Modal } from 'react-native';
@@ -63,7 +64,7 @@ function oracleVerdict(film: RouletteFilm): string {
     const y = typeof film.year === 'number' && film.year > 1870 ? film.year : null;
     if (y == null) return pick(FATE_LINES);
 
-    const now = new Date().getFullYear();
+    const now = new Date(houseNow()).getFullYear();
     if (y >= now - 1) return pick([
         'Fresh from the projector.',
         'Barely dry from the developing bath.',

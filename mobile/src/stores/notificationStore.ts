@@ -1,3 +1,4 @@
+import { houseIso } from '@/src/lib/houseClock';
 import { logger } from '@/src/utils/logger';
 import { carriedForward, SAVED_VERSION } from './savedVersion';
 import { z } from 'zod';
@@ -39,7 +40,7 @@ const RealtimeNotifSchema = z.object({
   title: z.string().nullish().transform(v => v ?? undefined),
   // DB column is `is_read` — transform to `read` for JS interface compat
   is_read: z.boolean().default(false),
-  created_at: z.string().default(() => new Date().toISOString()),
+  created_at: z.string().default(() => houseIso()),
 }).transform(({ is_read, ...rest }) => ({ ...rest, read: is_read }));
 
 export interface AppNotification {

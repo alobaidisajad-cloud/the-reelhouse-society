@@ -17,6 +17,7 @@
  * beneath the blur (and clears the boot aperture-blink on deep-link returns).
  */
 import { useEffect, useRef, useState } from 'react';
+import { houseNow } from '@/src/lib/houseClock';
 import { useAuthStore } from '@/src/stores/auth';
 import { storage } from '@/src/stores/mmkv-storage';
 
@@ -40,7 +41,7 @@ export function shouldInitiate(params: {
   if (!createdAt) return false;
   const created = Date.parse(createdAt);
   if (isNaN(created)) return false;
-  const now = params.now ?? Date.now();
+  const now = params.now ?? houseNow();
   const age = now - created;
   return age >= 0 && age <= INITIATION_WINDOW_MS;
 }

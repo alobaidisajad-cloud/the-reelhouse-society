@@ -1,13 +1,15 @@
 /**
  * whatTheQueueKeepsAndForHowLong.test.ts — utils/offlineQueue.ts, what stays on the phone after a
  * send or a sign-out: a failed write is kept in the dead letter for less than a week, so one a week
- * old or older goes when the next failure is added; a write a day old leaves the queue unsent; a
+ * old or older goes when the next failure is added; a write a day old by the house clock leaves the
+ * queue unsent, and one queued minutes before a wrong phone clock was set right does not; a
  * write behind one the server failed for a moment keeps its own count of attempts; and at sign-out
  * another member's writes stay for them wherever they are — the dead letter, a queue key the sweep
  * has never heard of, and the queue itself, whose are kept for them as a send keeps them.
  */
 import { supabaseFake } from '@/test-utils/supabaseFake';
-import { clearOfflineQueue, flushOfflineQueue, getOfflineQueue, type QueuedMutation } from '../offlineQueue';
+import { clearOfflineQueue, enqueueMutation, flushOfflineQueue, getOfflineQueue, type QueuedMutation } from '../offlineQueue';
+import { __forgetTheHouse, heardTheHouse } from '@/src/lib/houseClock';
 import { DEAD_LETTER_KEY, heldKey, QUEUE_KEY } from '../queueOwnership';
 import { readDraft, writeDraft } from '../memberDrafts';
 
@@ -70,7 +72,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   executeMutation.mockResolvedValue({});
 });
-afterEach(() => jest.useRealTimers());
+afterEach(() => { jest.useRealTimers(); __forgetTheHouse(); });
 
 describe('the dead letter', () => {
   it('keeps a failed write for less than a week: one a week old or older goes when the next failure is added', async () => {
@@ -113,6 +115,21 @@ describe('the dead letter', () => {
 });
 
 describe('the queue after a send', () => {
+  // A toggle queued on a phone a day behind read as a day old the moment the phone was set right.
+  it('ages a write by the house clock: one queued minutes ago on a phone a day behind is sent once the phone is set right', async () => {
+    jest.setSystemTime(NOW - DAY);
+    heardTheHouse(new Date(NOW).toUTCString(), NOW - DAY - 100, NOW - DAY + 100);
+    expect(enqueueMutation({ type: 'follow_user', payload: { user_id: OTHER } } as Omit<QueuedMutation, 'id' | 'timestamp' | 'owner'>)).toBe(true);
+
+    jest.setSystemTime(NOW + 5 * 60_000);
+    heardTheHouse(new Date(NOW + 5 * 60_000).toUTCString(), NOW + 5 * 60_000 - 100, NOW + 5 * 60_000 + 100);
+    await flushOfflineQueue();
+
+    expect(executeMutation).toHaveBeenCalledTimes(1);
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(getOfflineQueue()).toEqual([]);
+  });
+
   it('a write a day old leaves the queue, unsent, and the member is told', async () => {
     put(QUEUE_KEY, [stored({ id: 'a-day', timestamp: NOW - DAY })]);
 

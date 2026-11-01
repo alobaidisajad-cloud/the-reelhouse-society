@@ -12,17 +12,19 @@
  */
 import { useMemo, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
+import { houseNow, onHouseClockMoved } from '@/src/lib/houseClock';
 import { localCalendarDate, timeAgo, timeUntil } from '@/src/utils/timeAgo';
 
 const TICK_MS = 30_000;
 
-let now = Date.now();
+let now = houseNow();
 const readers = new Set<() => void>();
 let ticker: ReturnType<typeof setInterval> | null = null;
 let heard: { remove: () => void } | null = null;
+let unhouse: (() => void) | null = null;
 
 function advance() {
-  now = Date.now();
+  now = houseNow();
   readers.forEach((r) => r());
 }
 
@@ -37,12 +39,14 @@ function halt() {
 
 function subscribe(reader: () => void) {
   if (readers.size === 0) {
-    now = Date.now();
+    now = houseNow();
     if (AppState.currentState !== 'background') run();
     // Back in front, the time is read at once; in the background the timer rests.
     heard = AppState.addEventListener('change', (next) => {
       if (next === 'active') { advance(); run(); } else if (next === 'background') halt();
     });
+    // A phone's clock found wrong (or set right) by the house is read at once.
+    unhouse = onHouseClockMoved(advance);
   }
   readers.add(reader);
   return () => {
@@ -51,11 +55,13 @@ function subscribe(reader: () => void) {
     halt();
     heard?.remove();
     heard = null;
+    unhouse?.();
+    unhouse = null;
   };
 }
 
 /** The instant every reader shares; read fresh when nothing is reading yet. */
-const instant = () => (readers.size > 0 ? now : Date.now());
+const instant = () => (readers.size > 0 ? now : houseNow());
 
 /**
  * What a screen draws from the time, drawn again only when it changes. `of` must return a
