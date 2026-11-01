@@ -521,7 +521,6 @@
   "guard-only-through-a-caller": {
     "mobile/app/(admin)/_layout.tsx": 1,
     "mobile/app/_layout.tsx": 1,
-    "mobile/app/year-in-cinema.tsx": 7,
     "mobile/src/components/MarkFigure.tsx": 1,
     "mobile/src/components/atmosphere/RoomBloom.tsx": 1,
     "mobile/src/components/auth/PasswordStrengthMeter.tsx": 1,
