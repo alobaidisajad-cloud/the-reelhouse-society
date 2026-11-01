@@ -50,7 +50,7 @@ without one). "Read" is the day its comments were last read against its code.
 | ../.github/workflows/nightly.yml | 2026-10-31 | edited: the night walks the tablet variant too; read whole: a variant's machines as it runs them; a heartbeat when the schedule ran |
 | .claude/hooks/no-backslash-through-shell.cjs | 2026-09-29 | history reduced to the rule; its own test still passes |
 | .claude/hooks/no-backslash-through-shell.test.cjs | 2026-09-29 | 1 finding |
-| .maestro/auth_deep_link.yaml | 2026-10-24 | edited: on iOS the sitemap link is handed to the app running, its home seen: the simulator gives up a link that must launch the app at ten seconds |
+| .maestro/auth_deep_link.yaml | 2026-11-01 | edited: RETURN TO LOBBY is tapped again while the reset screen still stands, up to three times: a cancelled touch still plays the press-in, so a retry on no change was not enough; edited: on iOS the sitemap link is handed to the app running, its home seen: the simulator gives up a link that must launch the app at ten seconds |
 | .maestro/auth_flow.yaml | 2026-09-29 | true as written |
 | .maestro/boot_verification.yaml | 2026-10-01 | header narrowed to what it proves; wrapped to 80 |
 | .maestro/browse_vault.yaml | 2026-09-29 | true as written |
