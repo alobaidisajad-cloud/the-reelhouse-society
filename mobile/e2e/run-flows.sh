@@ -560,7 +560,9 @@ if [ -n "${E2E_WALK:-}" ] && [ $gone -eq 0 ]; then
   mkdir -p "$OUT/walk"
   if node mobile/e2e/walk-routes.mjs "$OUT/walk" > "$OUT/walk-plan.txt" 2>&1; then
     printf 'walk\t1\t%s\n' "$(device_clock)" >> "$OUT/flow-times.txt"
-    timeout --signal=INT --kill-after=30 900s "$MAESTRO" test "$OUT/walk/walk.yaml" \
+    # Twenty of the machine's 25 minutes (e2e/walk-shards.json), five left to judge: the motion-on
+    # walk, each screen let settle with its motion, took 13 minutes 44 for 34 routes (41261846288).
+    timeout --signal=INT --kill-after=30 1200s "$MAESTRO" test "$OUT/walk/walk.yaml" \
       -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
       -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" \
       --format junit --output "$OUT/flow-reports/walk.xml" \

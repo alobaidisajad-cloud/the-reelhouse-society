@@ -1008,6 +1008,18 @@ describe('a door to the import panel', () => {
     expect(scrollTo()).toHaveBeenCalledTimes(1);
   });
 
+  it('opens at the account actions for ?section=account: signing out and deleting the account, where a member is sent for them', async () => {
+    mockUser = { ...BASE };
+    useLocalSearchParams.mockImplementation(() => ({ section: 'account' }));
+    const r = await settle(mount());
+    let card = r.getByLabelText('SIGN OUT').parent;
+    while (card && !card.props.onLayout) card = card.parent;
+    await act(async () => { panelOf(r).props.onLayout(placed); });
+    expect(scrollTo()).not.toHaveBeenCalled();
+    await act(async () => { card!.props.onLayout({ nativeEvent: { layout: { x: 0, y: 3200, width: 390, height: 200 } } }); });
+    expect(scrollTo()).toHaveBeenCalledWith({ y: 3184, animated: true });
+  });
+
   it('and Settings opened plainly stays at the top', async () => {
     mockUser = { ...BASE };
     const r = await settle(mount());

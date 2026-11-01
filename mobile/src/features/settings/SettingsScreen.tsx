@@ -652,7 +652,8 @@ export function SettingsScreen() {
         {/* ── Chapter: the way out ── */}
         <View style={st.ornRule}><View style={st.ornLine} /><View style={st.ornDiamond} /><View style={st.ornLine} /></View>
 
-        <Arrive name="settingsscreen-6" duration={DEFAULT_DURATION} delay={400}>
+        {/* `?section=account` opens here: the way out a member is sent to (signing out, deleting the account). */}
+        <Arrive name="settingsscreen-6" duration={DEFAULT_DURATION} delay={400} onLayout={(e) => landOn('account', e)}>
           <SectionCard danger>
             <SectionHead icon={DoorOpen} label="ACCOUNT ACTIONS" danger />
             <View style={st.legalActions}>
