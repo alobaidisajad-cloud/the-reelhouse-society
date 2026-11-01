@@ -77,6 +77,18 @@ it('writes a flow that clears the app, signs in once before the member\'s first 
   ]);
 });
 
+// A moment is taken for its screen, never its motion (the calendar ran the motion-on walk out, 41284557912).
+it('stills the phone once, before its first moment, when the variant asks', () => {
+  const steps = [
+    { file: 'app/film/[id].tsx', link: '/film/129', lands: '/film/129', as: 'member' },
+    { file: 'moment: a', link: '/a', lands: '/a', as: 'member', taps: [{ id: 'x' }] },
+    { file: 'moment: b', link: '/b', lands: '/b', as: 'member', taps: [{ id: 'y' }] },
+  ];
+  const lines = (ask(`m.flowOf(${JSON.stringify(steps)}, '/x/sign_in.yaml', { stillForMoments: true })`) as string).split('\n').filter(Boolean);
+  const stilled = lines.flatMap((l, i) => (l === '      SET: motion' ? [[lines[i + 1], lines.slice(i + 2).find((n) => n.startsWith('# '))]] : []));
+  expect(stilled).toEqual([['      TO: "false"', '# moment: a']]);
+});
+
 // A docked control is never in the page to scroll to (the film's stub, motion-on walk 41274576612).
 it('waits for a docked control as it arrives, and scrolls to the rest', () => {
   const step = { file: 'moment: the calendar', link: '/film/129', lands: '/film/129', as: 'guest', taps: [{ id: 'film-stub', docked: true }, { id: 'film-act-log' }] };

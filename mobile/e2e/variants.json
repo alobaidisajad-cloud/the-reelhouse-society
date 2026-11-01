@@ -12,8 +12,9 @@
       "reset": []
     },
     "motion-on": {
-      "why": "Android's transitions and animations at 1, as most members have them: every other run has them at 0, which React Native and Reanimated read as Reduce Motion. The window animation stays 0, because one holds injected keys. Its walk is still until it has signed in (`stillToSignIn`, e2e/walk-routes.mjs): the signed-out screens keep their own motion, and the driver, waiting for a settled screen, took five minutes over one tap there (nightly 41187219004); so the two routes a guest sees are captured still, and the launch with motion on stays the per-push probe's (run-flows.sh).",
+      "why": "Android's transitions and animations at 1, as most members have them: every other run has them at 0, which React Native and Reanimated read as Reduce Motion. The window animation stays 0, because one holds injected keys. Its walk is still until it has signed in (`stillToSignIn`, e2e/walk-routes.mjs): the signed-out screens keep their own motion, and the driver, waiting for a settled screen, took five minutes over one tap there (nightly 41187219004); so the two routes a guest sees are captured still, and the launch with motion on stays the per-push probe's (run-flows.sh). Its moments are taken still too (`stillForMoments`): a moment is taken for its screen, never its motion, and the calendar's four taps through a moving sheet ran the walk out of its twenty minutes (41284557912).",
       "stillToSignIn": true,
+      "stillForMoments": true,
       "setup": ["settings put global transition_animation_scale 1", "settings put global animator_duration_scale 1", "settings put global window_animation_scale 0"],
       "reset": ["settings put global transition_animation_scale 0", "settings put global animator_duration_scale 0", "settings put global window_animation_scale 0"]
     },

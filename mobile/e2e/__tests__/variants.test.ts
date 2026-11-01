@@ -104,9 +104,9 @@ it('runs each variant on the phone every run has, unless it names its own: the t
 });
 
 it('walks still until signed in only where motion is on, and says why', () => {
-  const still = Object.entries(VARIANTS).filter(([, v]) => (v as { stillToSignIn?: unknown }).stillToSignIn !== undefined);
-  expect(still.map(([n, v]) => [n, (v as { stillToSignIn?: unknown }).stillToSignIn])).toEqual([['motion-on', true]]);
-  expect(VARIANTS['motion-on']?.why).toMatch(/still until it has signed in/);
+  const still = Object.entries(VARIANTS).filter(([, v]) => (v as { stillToSignIn?: unknown }).stillToSignIn !== undefined || (v as { stillForMoments?: unknown }).stillForMoments !== undefined);
+  expect(still.map(([n, v]) => [n, (v as { stillToSignIn?: unknown }).stillToSignIn, (v as { stillForMoments?: unknown }).stillForMoments])).toEqual([['motion-on', true, true]]);
+  expect(VARIANTS['motion-on']?.why).toMatch(/still until it has signed in[\s\S]*moments are taken still/);
 });
 
 it('says which run each variant is: every flow and the walk, or the walk alone', () => {
