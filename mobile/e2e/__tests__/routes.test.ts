@@ -11,7 +11,7 @@ import { files as universe } from '../../test-utils/universe';
 const MOBILE = join(__dirname, '..', '..');
 type Route = { link: string; as?: 'guest' | 'member'; why?: string; lands?: string; then?: string };
 /** A control a moment taps, or what shows once it is there: by its id, or by the words it shows or is labelled. */
-type Control = { id?: string; text?: string };
+type Control = { id?: string; text?: string; docked?: boolean };
 type Moment = { link: string; taps: Control[]; shows?: Control; part?: string; keyboard?: boolean; why?: string };
 const LIST = JSON.parse(readFileSync(join(__dirname, '..', 'routes.json'), 'utf8')) as { routes: Record<string, Route>; moments: Record<string, Moment> };
 
@@ -82,6 +82,8 @@ it('gives each moment a link of the walk\'s placeholders, its taps, what shows, 
     for (const c of [...m.taps, ...(m.shows ? [m.shows] : [])]) {
       if ((c.id === undefined) === (c.text === undefined)) faults.push(`${name}: a control by its id or by its words, one of the two`);
       else if (!drawn(c)) faults.push(`${name}: ${c.id ?? c.text} is drawn nowhere in the app`);
+      // Docked: the walk waits for it rather than scrolling to it, so it must be in a dock the app draws.
+      if (c.docked !== undefined && (c.docked !== true || c.id === undefined || !drawn({ id: `${c.id}-dock` }))) faults.push(`${name}: ${c.id ?? c.text} docked, by its id, in a dock (${c.id}-dock) the app draws`);
     }
     if (m.part !== undefined && !PARTS.includes(m.part)) faults.push(`${name}: no part named ${m.part}`);
     // The keyboard is on only where the screen is read above it, and read above it only where it is on.

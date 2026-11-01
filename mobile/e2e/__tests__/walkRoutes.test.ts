@@ -77,6 +77,16 @@ it('writes a flow that clears the app, signs in once before the member\'s first 
   ]);
 });
 
+// A docked control is never in the page to scroll to (the film's stub, motion-on walk 41274576612).
+it('waits for a docked control as it arrives, and scrolls to the rest', () => {
+  const step = { file: 'moment: the calendar', link: '/film/129', lands: '/film/129', as: 'guest', taps: [{ id: 'film-stub', docked: true }, { id: 'film-act-log' }] };
+  const lines = (ask(`m.flowOf([${JSON.stringify(step)}], '/x/sign_in.yaml')`) as string).split('\n').filter(Boolean);
+  const at = lines.indexOf('      id: "film-stub"');
+  expect(lines.slice(at - 2, at + 2)).toEqual(['- extendedWaitUntil:', '    visible:', '      id: "film-stub"', '    timeout: 30000']);
+  const next = lines.indexOf('      id: "film-act-log"');
+  expect(lines[next - 2]).toBe('- scrollUntilVisible:');
+});
+
 // The motion-on walk: the signed-out screens keep their own motion and the driver waits on a settled
 // screen (a tap took five minutes, nightly 41187219004): still until signed in, moving after.
 it('is still until it has signed in, and moves for every route after, when the variant asks', () => {

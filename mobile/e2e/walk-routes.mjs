@@ -131,8 +131,13 @@ export function flowOf(steps, signIn, { stillToSignIn = false } = {}) {
       // scroll: the settings' sign-out sits a long page down (20 s ran out, run 39625319621).
       // Brought to the middle: Maestro calls a control under a docked bar visible, and its tap
       // lands on the bar (the log sheet's seal took the calendar's, nightly run 40847116101).
+      // A docked control (routes.json `docked`) is never in the page to scroll to: it is waited for
+      // as it arrives (the film's stub: centred by swipes that each waited for the motion to settle,
+      // the motion-on walk's minute ran out, 41274576612).
       ...(s.taps ?? []).flatMap((t) => [
-        '- scrollUntilVisible:', '    element:', pick(t, 6), '    direction: DOWN', '    centerElement: true', '    timeout: 60000',
+        ...(t.docked
+          ? ['- extendedWaitUntil:', '    visible:', pick(t, 6), '    timeout: 30000']
+          : ['- scrollUntilVisible:', '    element:', pick(t, 6), '    direction: DOWN', '    centerElement: true', '    timeout: 60000']),
         '- tapOn:', pick(t, 4), '    retryTapIfNoChange: false',
       ]),
       ...(s.shows ? ['- extendedWaitUntil:', '    visible:', pick(s.shows, 6), '    timeout: 15000'] : []),

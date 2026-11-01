@@ -173,7 +173,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/passwordNeverLeaves.test.ts | 2026-10-04 | written with scrub.mjs and the annotate redaction |
 | e2e/__tests__/prefetchDownloadOnly.test.ts | 2026-10-15 | new: written with prefetch-download-only.mjs, on dexdump lines in the glide check's shape |
 | e2e/__tests__/routeJudges.test.ts | 2026-10-17 | new |
-| e2e/__tests__/routes.test.ts | 2026-10-17 | new |
+| e2e/__tests__/routes.test.ts | 2026-11-01 | edited: a control marked docked is in a dock the app draws (<id>-dock); new |
 | e2e/__tests__/runFlows.rehearsal.test.ts | 2026-11-01 | edited: the window size among what a lifecycle flow begins with put back; edited: a variant settled at the first look is read by its one load read, not the runner's clock; edited: the fake phone's app process starts with a launch or a flow and ends with a stop or a clear, as a phone's does |
 | e2e/__tests__/runtimeDump.test.ts | 2026-10-15 | new: the runtime's parts joined per launch, held to the copy, and every way it says no |
 | e2e/__tests__/screenTimes.test.ts | 2026-10-22 | edited: a learning screen reported, not judged; a stale or ceilinged entry fails; the committed list holds; its files come from the shared file list (test-utils/universe.js); edited: the ceilings file is what ceilingsFrom derives from the history |
@@ -187,7 +187,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/theRunKeepsWhatItWrites.test.ts | 2026-10-17 | new |
 | e2e/__tests__/variants.test.ts | 2026-10-31 | edited: only the motion-on walk is still until signed in, and it says why; edited: the tablet's data size, and the workflow reading it; edited: every variant on the phone every run has but the tablet, on Android 16; the workflow keys its emulator on that answer; edited: tablet runs every flow; new |
 | e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
-| e2e/__tests__/walkRoutes.test.ts | 2026-10-31 | edited: the still walk: motion off before the launch, on after the sign-in, and no other walk touches it; new |
+| e2e/__tests__/walkRoutes.test.ts | 2026-11-01 | edited: a docked control waited for, the rest scrolled to; edited: the still walk: motion off before the launch, on after the sign-in, and no other walk touches it; new |
 | e2e/__tests__/whatTheAppAsked.test.ts | 2026-10-16 | new |
 | e2e/__tests__/fixtures/judges/shard-verdict/flows/a_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
 | e2e/__tests__/fixtures/judges/shard-verdict/flows/b_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
@@ -243,7 +243,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/shards.mjs | 2026-10-16 | edited: a shard's minutes, checked and printed for run-flows.sh |
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
 | e2e/variants.mjs | 2026-10-31 | edited: device: its data size too (blank: the profile's own); edited: device: the emulator's API level, then its profile, the file's own unless the variant names one; new: each variant's commands to read, set, wait for and put back the phone, and whether it runs every flow; an unknown variant, a reset with nothing, or a read that answered no word the variant allows, refused |
-| e2e/walk-routes.mjs | 2026-10-31 | edited: still until signed in when the variant asks (stillToSignIn): motion off before the launch, on after the sign-in; edited: each tap's control brought to the middle: one under a docked bar reads visible; new: the route walk's plan and flow: every route of routes.json, its ids read from the seeded world by name, guests first, each opened cold and captured; edited: each capture a name inside Maestro's output folder, which refuses any other |
+| e2e/walk-routes.mjs | 2026-11-01 | edited: a docked control is waited for as it arrives, never scrolled to; edited: still until signed in when the variant asks (stillToSignIn): motion off before the launch, on after the sign-in; edited: each tap's control brought to the middle: one under a docked bar reads visible; new: the route walk's plan and flow: every route of routes.json, its ids read from the seeded world by name, guests first, each opened cold and captured; edited: each capture a name inside Maestro's output folder, which refuses any other |
 | plugins/__tests__/theScannerStaysInDebug.test.ts | 2026-10-25 | new: the installed expo-dev-launcher 57 asks for the code scanner in its debug manifest, not its main one (the plugin that removed it gone); the release guard still refuses it |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it; its files come from the shared file list (test-utils/universe.js) |
 | plugins/__tests__/withLinkDuringLaunch.test.ts | 2026-10-21 | written: on the real generated MainActivity, through withMainActivity, with the splash plugin either side of it |
