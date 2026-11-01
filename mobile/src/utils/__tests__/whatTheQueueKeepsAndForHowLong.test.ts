@@ -121,6 +121,20 @@ describe('the queue after a send', () => {
     expect(getOfflineQueue()).toEqual([]);
   });
 
+  // Every write a day old was dropped, a member's log and critique among them (WORKLIST P4.32).
+  it('a record of what the member did and their own words are sent whatever their age; a toggle alone lapses', async () => {
+    put(QUEUE_KEY, [
+      stored({ id: 'log', type: 'add_log', payload: { user_id: ME, film_id: 129 }, timestamp: NOW - 3 * DAY }),
+      stored({ id: 'critique', type: 'add_critique', payload: { _tempId: 't', user_id: ME, post_id: 'p', body: 'Kept.' }, timestamp: NOW - 2 * DAY }),
+      stored({ id: 'follow', timestamp: NOW - DAY }),
+    ]);
+
+    await flushOfflineQueue();
+
+    expect(executeMutation.mock.calls.map(([m]) => (m as QueuedMutation).id)).toEqual(['log', 'critique']);
+    expect(toast.error).toHaveBeenCalledWith('A change made offline was over a day old, and not sent.');
+  });
+
   it('a write behind one the server failed for a moment keeps its own count of attempts', async () => {
     put(QUEUE_KEY, [stored({ id: 'w' }), stored({ id: 'behind', _retryCount: 3 })]);
     executeMutation.mockRejectedValueOnce(Object.assign(new Error('Internal Server Error'), { status: 500 }));

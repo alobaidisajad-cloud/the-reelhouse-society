@@ -3,7 +3,8 @@
  * synchronous) and sent in order when it returns.
  *
  *   • at most 100 kept: past that the oldest is dropped, and the member told
- *   • older than 24 hours: dropped at the next send, and the member told
+ *   • a toggle older than 24 hours lapses at the next send, and the member told; a record of
+ *     what they did and their own words are sent whatever their age
  *   • a network failure stops the send and keeps the rest, in order
  *   • so does a refusal for a suspension, which ends: nothing is sent until it has
  *   • a server that fails for a moment (5xx, 429, 408) is retried, five sends at most
@@ -373,12 +374,15 @@ async function sendOnce(): Promise<void> {
     // Read again after the ban check waited: another member's write stays, unsent.
     queue = queue.filter((m) => m.owner === authenticatedUserId);
 
-    // Prune stale mutations (>24h old)
+    // A day old, a toggle lapses: a mark the member can simply make again. A record of what they did
+    // (a log, a vote, a stack) and their own words are never dropped for their age (WORKLIST P4.32):
+    // every write but a toggle was dropped here, the member told only "not sent". Held for the member
+    // is not waiting to be sent either: it does not age out.
     const now = Date.now();
     const preFilterLength = queue.length;
-    // Held for the member is not waiting to be sent: it does not age out.
-    const staleMutations = queue.filter(m => !m._held && now - m.timestamp >= STALE_THRESHOLD_MS);
-    queue = queue.filter(m => m._held || now - m.timestamp < STALE_THRESHOLD_MS);
+    const staleMutations = queue.filter(m => !m._held && kindOf(m) === 'toggle' && now - m.timestamp >= STALE_THRESHOLD_MS);
+    const lapsed = new Set(staleMutations.map((m) => m.id));
+    queue = queue.filter((m) => !lapsed.has(m.id));
     for (const m of staleMutations) processedIds.add(m.id);
     const stalePruned = preFilterLength - queue.length;
     if (stalePruned > 0) {
