@@ -30,8 +30,8 @@ import { queryClient } from '../lib/queryClient';
 import { settleDelivered } from '../stores/markCounts';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 import {
-    DEAD_LETTER_KEY, QUEUE_KEY, changesMadeOffline, heldKey, heldOwnerOf, keepForOwners, kindOf,
-    marksLetGo, NOT_KEPT, queueKeys, readList, readQueue, writeList, writeQueue,
+    DEAD_LETTER_KEY, QUEUE_KEY, changesKept, changesMadeOffline, heldKey, heldOwnerOf, keepForOwners, kindOf,
+    marksLetGo, marksRefused, NOT_KEPT, queueKeys, readList, readQueue, wordsGivenBack, writeList, writeQueue,
 } from './queueOwnership';
 
 export interface QueuedMutation {
@@ -65,10 +65,13 @@ export interface QueuedMutation {
     /** Moments the server failed it so far; beside the payload, never sent or validated. */
     _retryCount?: number;
     /**
-     * Refused for the member's rank: kept for them, never sent on its own, never aged out. A
-     * salon message held so is drawn in its room, failed, for the member to send again.
+     * Kept for the member, never sent on its own, never aged out: refused for their rank (a salon
+     * message held so is drawn in its room, failed, for the member to send again), or refused by
+     * the house for good (WORKLIST P4.14), listed under UNSENT CHANGES to send again or let go.
      */
-    _held?: 'rank';
+    _held?: 'rank' | 'refused';
+    /** Why the house refused a write held 'refused', in its own words, kept for the member. */
+    _refusal?: string;
 }
 
 /** The types that change who a member follows: delivering one refreshes the following feeds. */
@@ -132,6 +135,38 @@ function giveBack(m: QueuedMutation): boolean {
     const there = readDraft<{ body?: string }>(m.owner, box.kind, box.scope)?.data.body?.trim() ?? '';
     const body = there && there !== box.words ? `${there}\n\n${box.words}` : box.words;
     return writeDraft(m.owner, box.kind, { body }, box.scope);
+}
+
+/** The house's sentence for a silenced member, as enforce_not_restricted writes it. */
+const SILENCED = 'Your account has been silenced by The Society.';
+
+/** A write the house will not take, and why, in its own words. */
+type Refused = { mutation: QueuedMutation; why: string };
+
+/**
+ * Every write the house will not take, given back to its member by kind (WORKLIST P4.14), each
+ * with a copy in the dead letter for diagnosis: a mark lapses, as one they can simply make again;
+ * words go back to the box they were written in; anything else is held for the member, refused,
+ * never sent again until they ask (UNSENT CHANGES). Each is said. Was: every one dead-lettered,
+ * the member told only that changes "could not be sent", and their words and records gone.
+ */
+function sortRefused(refused: readonly Refused[]): { done: QueuedMutation[]; held: Refused[] } {
+    if (refused.length === 0) return { done: [], held: [] };
+    addToDeadLetter(refused.map(({ mutation, why }) => ({
+        ...mutation,
+        payload: { ...mutation.payload, _failReason: why, _failedAt: houseIso() },
+    })));
+    const lapsed = refused.filter((r) => kindOf(r.mutation) === 'toggle').map((r) => r.mutation);
+    // A salon message is held instead: its room draws it failed, with tap to retry (useHeld).
+    const back = refused
+        .filter((r) => kindOf(r.mutation) === 'words' && r.mutation.type !== 'send_lounge_message' && giveBack(r.mutation))
+        .map((r) => r.mutation);
+    const done = [...lapsed, ...back];
+    const held = refused.filter((r) => !done.includes(r.mutation));
+    if (lapsed.length) reelToast.error(marksRefused(lapsed));
+    if (back.length) reelToast.error(wordsGivenBack(back));
+    if (held.length) reelToast.error(changesKept(held.length));
+    return { done, held };
 }
 const DEAD_LETTER_DAYS = 7;
 const DEAD_LETTER_MAX = 50;
@@ -212,6 +247,23 @@ export function getOfflineQueue(): QueuedMutation[] {
 
 /** A write held for the member, made with this id: the one their retry stands for. */
 const heldWith = (m: QueuedMutation, tempId: string) => !!m._held && m.payload._tempId === tempId;
+
+/** A write the house refused, held for the member: asked again, it waits to be sent like any other. */
+export function sendRefusedAgain(id: string): void {
+    const queue = readQueue();
+    if (!queue.some((m) => m.id === id && m._held === 'refused')) return;
+    writeQueue(queue.map((m) => {
+        if (m.id !== id) return m;
+        const { _held: _wasHeld, _refusal: _why, _retryCount: _tries, ...waiting } = m;
+        return waiting;
+    }));
+}
+
+/** A write the house refused, let go by the member: it leaves the queue, its copy kept in the dead letter. */
+export function letRefusedGo(id: string): void {
+    const queue = readQueue();
+    if (queue.some((m) => m.id === id && m._held === 'refused')) writeQueue(queue.filter((m) => m.id !== id));
+}
 
 /** The member's held write, sent now by their own hand: it leaves the queue. */
 export function letHeldGo(tempId: string): void {
@@ -372,15 +424,17 @@ async function sendOnce(): Promise<void> {
             return;
         }
         if (banProfile?.is_banned) {
-            logger.warn('[OfflineSync] User is banned — purging write queue to dead-letter.');
+            logger.warn('[OfflineSync] User is banned — their waiting writes are given back.');
             // Theirs alone: a write queued while this check waited is kept for its own member.
             const live = readQueue();
-            addToDeadLetter(live.filter((m) => m.owner === authenticatedUserId).map(m => ({
-                ...m,
-                payload: { ...m.payload, _failReason: 'user_banned_at_flush', _failedAt: houseIso() }
-            })));
+            const mine = live.filter((m) => m.owner === authenticatedUserId);
+            const { held } = sortRefused(mine.filter((m) => !m._held).map((mutation) => ({ mutation, why: SILENCED })));
+            const kept = new Set(held.map(({ mutation }) => mutation.id));
             keepForOwners(live.filter((m) => m.owner !== authenticatedUserId));
-            writeQueue([]);
+            writeQueue(mine.flatMap((m) => {
+                if (m._held) return [m];
+                return kept.has(m.id) ? [{ ...m, _held: 'refused' as const, _refusal: SILENCED }] : [];
+            }));
             return;
         }
     }
@@ -433,7 +487,8 @@ async function sendOnce(): Promise<void> {
 
     logger.debug(`[OfflineSync] Flushing ${queue.length} queued mutations...`);
 
-    const deadLetterQueue: QueuedMutation[] = [];
+    // Every write the house would not take, given back once the send is over (sortRefused).
+    const refused: Refused[] = [];
     /** Did a write that changes who someone follows reach the server? */
     let socialMutationSynced = false;
 
@@ -455,11 +510,7 @@ async function sendOnce(): Promise<void> {
                 const parseResult = schema.safeParse(mutation.payload);
                 if (!parseResult.success) {
                     logger.warn('[OfflineSync] schema violation', mutation.type, parseResult.error);
-                    deadLetterQueue.push({
-                        ...mutation,
-                        payload: { ...mutation.payload, _failReason: `schema: ${parseResult.error.message}`, _failedAt: houseIso() }
-                    });
-                    finished(mutation);
+                    refused.push({ mutation, why: `schema: ${parseResult.error.message}` });
                     continue;
                 }
             }
@@ -501,18 +552,14 @@ async function sendOnce(): Promise<void> {
             } else if (errorClass === 'schema') {
                 // The STATEMENT is wrong (a missing column, a bad ON CONFLICT
                 // target), not the data: retrying cannot help and dropping it would
-                // hide the fault, so it is dead-lettered and reported.
-                logger.warn('[OfflineSync] permanent schema error: dead-lettered', mutation.type, code);
+                // hide the fault, so it is given back and reported.
+                logger.warn('[OfflineSync] permanent schema error: given back', mutation.type, code);
                 captureError(error, {
                     scope: 'offlineQueue.schemaError',
                     mutationType: mutation.type,
                     pgCode: code,
                 });
-                deadLetterQueue.push({
-                    ...mutation,
-                    payload: { ...mutation.payload, _failReason: `schema: ${errMsg}`, _failedAt: houseIso() },
-                });
-                finished(mutation);
+                refused.push({ mutation, why: `schema: ${errMsg}` });
             } else if (errorClass === 'duplicate') {
                 // The row is already on the server: delivered.
                 if (__DEV__) console.warn(`[OfflineSync] Discarding duplicate mutation: ${mutation.type}`);
@@ -523,9 +570,8 @@ async function sendOnce(): Promise<void> {
                 const attempts = (mutation._retryCount ?? 0) + 1;
                 if (attempts >= MAX_TRANSIENT_RETRIES) {
                     // Given up on, so one write that always fails cannot hold back the rest.
-                    logger.warn('[OfflineSync] transient failure, retries used up: dead-lettered', mutation.type, MAX_TRANSIENT_RETRIES, status, code);
-                    deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: `transient-exhausted: ${errMsg}`, _failedAt: houseIso() } });
-                    finished(mutation);
+                    logger.warn('[OfflineSync] transient failure, retries used up: given back', mutation.type, MAX_TRANSIENT_RETRIES, status, code);
+                    refused.push({ mutation, why: `transient-exhausted: ${errMsg}` });
                 } else {
                     // Stop here, as for no network: what follows may depend on it.
                     retryBumps[mutation.id] = attempts;
@@ -533,8 +579,7 @@ async function sendOnce(): Promise<void> {
                     break;
                 }
             } else {
-                deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: errMsg, _failedAt: houseIso() } });
-                finished(mutation);
+                refused.push({ mutation, why: errMsg });
             }
         }
     }
@@ -543,10 +588,9 @@ async function sendOnce(): Promise<void> {
         reelToast(`Archive updated with offline actions.`);
     }
 
-    if (deadLetterQueue.length > 0) {
-        addToDeadLetter(deadLetterQueue);
-        reelToast.error(`${changesMadeOffline(deadLetterQueue.length)} could not be sent.`);
-    }
+    const { done: answered, held: heldRefused } = sortRefused(refused);
+    for (const m of answered) finished(m);
+    const refusal = new Map(heldRefused.map(({ mutation, why }) => [mutation.id, why]));
 
     const held = new Set(heldForRank.map(({ mutation }) => mutation.id));
     const [first] = heldForRank;
@@ -574,10 +618,12 @@ async function sendOnce(): Promise<void> {
             const next = { ...m, payload: applyIdMapToPayload(m.payload, idMap) };
             if (retryBumps[m.id] !== undefined) next._retryCount = retryBumps[m.id];
             if (held.has(m.id)) next._held = 'rank';
+            const why = refusal.get(m.id);
+            if (why !== undefined) { next._held = 'refused'; next._refusal = why; }
             return next;
         });
     writeQueue(finalQueue);
-    e2eTrace('queue.flush.done', { sent: successCount, failed: deadLetterQueue.length, left: finalQueue.length });
+    e2eTrace('queue.flush.done', { sent: successCount, failed: refused.length, left: finalQueue.length });
 
     // A follow sent from the queue shows in the following feeds now, not when
     // their timers next run. Only after a follow: nothing else changes whose

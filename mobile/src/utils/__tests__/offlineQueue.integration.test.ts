@@ -6,9 +6,9 @@
  *   2. idMap propagates across dependent mutations
  *   3. Network failure halts flush and preserves remaining queue
  *   4. Constraint violations (duplicates) are discarded safely
- *   5. Schema violations route to dead-letter
+ *   5. Schema violations are given back, a copy in the dead letter
  *   6. Stale mutations (>24h) are pruned before flush
- *   7. Total accounting: processed + remaining + dead-letter = input
+ *   7. Total accounting: processed + remaining = input, each refused write held
  */
 
 // ── Module Mocks (must be before imports) ──────────────────────
@@ -477,7 +477,7 @@ describe('Offline Queue — Integration Tests', () => {
   });
 
   describe('Invariant 7: Total accounting', () => {
-    it('processed + remaining + dead-letter = initial queue length', async () => {
+    it('processed + remaining = initial queue length, a refused write held and copied to the dead letter', async () => {
       let processedCount = 0;
 
       mockExecuteMutation.mockImplementation(async (mutation: QueuedMutation) => {
@@ -510,16 +510,17 @@ describe('Offline Queue — Integration Tests', () => {
 
       // Accounting breakdown for this test:
       //   good-1       → executed successfully (processedCount++)
-      //   schema-bad   → dead-letter (skipped via continue, no executeMutation call)
+      //   schema-bad   → given back: held in the queue, refused, never sent (no executeMutation
+      //                  call); its copy in the dead letter
       //   good-2       → executed successfully (processedCount++)
       //   network-fail → executeMutation called (processedCount++), throws network error → halts
       //   unreached    → never processed, pushed to remaining along with network-fail
       //
-      // processedCount = 3, remaining = 2, deadLetter = 1
-      // Successful mutations = processedCount - 1 (the network-fail was attempted but failed and remains)
-      // successful(2) + dead-letter(1) + remaining(2) = 5 = initialLength
+      // processedCount = 3, remaining = 3, deadLetter = 1 (a copy of the held one)
+      // successful(2) + remaining(3) = 5 = initialLength
       const successfulExecutions = processedCount - 1; // the last processedCount++ was the failed network one
-      expect(successfulExecutions + deadLetter.length + remaining.length).toBe(initialLength);
+      expect(successfulExecutions + remaining.length).toBe(initialLength);
+      expect(remaining.filter((m) => m._held === 'refused').map((m) => m.id)).toEqual(deadLetter.map((m) => m.id));
     });
 
     it('empty queue produces zero in all buckets', async () => {

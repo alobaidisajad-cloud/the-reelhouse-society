@@ -50,7 +50,7 @@ it('reads every JSX attribute in app/ and src/, and none is `exiting`', () => {
   expect(files.length).toBeGreaterThanOrEqual(440);
   expect(attributes).toBeGreaterThanOrEqual(14000);
   // The app's exits, each played through PresenceView: a new one is counted here.
-  expect(presenceExits).toBe(13);
+  expect(presenceExits).toBe(14);
   expect(found).toEqual([]);
 });
 

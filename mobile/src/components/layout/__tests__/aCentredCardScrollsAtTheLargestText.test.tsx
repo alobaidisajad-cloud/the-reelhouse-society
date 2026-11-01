@@ -276,6 +276,7 @@ const MODALS: Record<string, Kind[]> = {
   'app/(admin)/tribunal.tsx': ['bottom sheet'],
   'src/components/InitiationModal.tsx': ['centred card'],
   'src/components/ShareToLoungeModal.tsx': ['bottom sheet'],
+  'src/components/UnsentChanges.tsx': ['bottom sheet'],
   'src/components/auth/PasswordRecoveryModal.tsx': ['centred card'],
   'src/components/film/ShareCardModal.tsx': ['centred card'],
   'src/components/film/TrailerModal.tsx': ['whole screen'],

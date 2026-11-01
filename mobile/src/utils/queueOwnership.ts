@@ -144,6 +144,90 @@ export const marksLetGo = (dropped: readonly Pick<QueuedMutation, 'type'>[]) =>
     ? `${MARK_NOUN[dropped[0]!.type] ?? 'A mark'} made offline was let go to make room.`
     : `${dropped.length} marks made offline were let go to make room.`;
 
+/** What the member is told a held change is, under UNSENT CHANGES: every 'record' and every unboxed 'words' type. */
+export const HELD_NOUN: Partial<Record<QueuedMutation['type'], string>> = {
+  add_filing: 'A filing',
+  add_dossier_comment: 'A comment',
+  send_lounge_message: 'A salon message',
+  add_log: 'A log',
+  update_log: 'An edit to a log',
+  remove_log: 'A log taken down',
+  mark_watched: 'A film marked watched',
+  add_viewing: 'A viewing',
+  remove_viewing: 'A viewing taken down',
+  set_viewing_note: 'A private note on a viewing',
+  remove_viewing_note: 'A private note taken from a viewing',
+  add_watchlist: 'A film added to the watchlist',
+  remove_watchlist: 'A film taken from the watchlist',
+  create_list: 'A new stack',
+  update_list: 'An edit to a stack',
+  delete_list: 'A stack taken down',
+  add_film_to_list: 'A film added to a stack',
+  remove_film_from_list: 'A film taken from a stack',
+  add_list_items: 'Films added to a stack',
+  restore_list_items: 'Films put back in a stack',
+  add_archive: 'A film added to the archive',
+  update_archive: 'An edit to the archive',
+  remove_archive: 'A film taken from the archive',
+  add_dossier: 'A dossier',
+  update_dossier: 'An edit to a dossier',
+  delete_dossier: 'A dossier taken down',
+  update_dossier_comment: 'An edit to a comment',
+  delete_dossier_comment: 'A comment taken down',
+  remove_log_comment: 'A comment taken down',
+  remove_list_comment: 'A comment taken down',
+  update_profile: 'An edit to the profile',
+  cast_vote: 'A vote',
+  take_answer: 'An answer',
+  submit_report: 'A report',
+  update_filing: 'An edit to a filing',
+  end_filing: 'A filing withdrawn',
+  update_critique: 'An edit to a critique',
+  remove_critique: 'A critique withdrawn',
+  withdraw_lounge_message: 'A salon message withdrawn',
+  delete_lounge_message: 'A salon message withdrawn',
+  sync_entitlement: 'A membership check',
+};
+
+/** The name a held change carries in its own payload (a film, a stack, the words), shortened; null when it carries none. */
+export function heldDetail(m: Pick<QueuedMutation, 'payload'>): string | null {
+  const p = m.payload;
+  const named = [p.film_title, p.title, p.subject_title].find((v) => typeof v === 'string' && v.trim());
+  if (typeof named === 'string') return named.trim();
+  const words = [p.body, p.content, p.note].find((v) => typeof v === 'string' && v.trim());
+  if (typeof words !== 'string') return null;
+  const line = words.trim().replace(/\s+/g, ' ');
+  return line.length > 48 ? `“${line.slice(0, 47).trimEnd()}…”` : `“${line}”`;
+}
+
+/** Why the house refused a held change, in words a member reads: the house's own sentence when it wrote one. */
+export function whyRefused(why: string | undefined): string {
+  if (!why) return 'The house refused it.';
+  if (why.startsWith('schema:')) return 'The house no longer reads it as this phone sent it.';
+  if (why.startsWith('transient-exhausted:')) return 'The house failed it five times over.';
+  if (/^(Your |The Lounge |Speaking )/.test(why)) return why;
+  return 'The house refused it.';
+}
+
+/** "A follow made offline was not taken by the house.", "3 marks made offline were not taken by the house." */
+export const marksRefused = (refused: readonly Pick<QueuedMutation, 'type'>[]) =>
+  refused.length === 1
+    ? `${MARK_NOUN[refused[0]!.type] ?? 'A mark'} made offline was not taken by the house.`
+    : `${refused.length} marks made offline were not taken by the house.`;
+
+/** "A critique the house did not take is back where it was written, unsent.", and the plural. */
+export const wordsGivenBack = (back: readonly Pick<QueuedMutation, 'type'>[]) => {
+  const [first] = back;
+  if (back.length === 1 && first) {
+    return `A ${WORDS_NOUN[first.type]?.[0] ?? 'piece of writing'} the house did not take is back where it was written, unsent.`;
+  }
+  return `${back.length} pieces of writing the house did not take are back where they were written, unsent.`;
+};
+
+/** "A change made offline was not taken by the house: it is kept for you under UNSENT CHANGES.", and the plural. */
+export const changesKept = (n: number) =>
+  `${changesMadeOffline(n)} ${n === 1 ? 'was' : 'were'} not taken by the house: ${n === 1 ? 'it is' : 'they are'} kept for you under UNSENT CHANGES.`;
+
 /**
  * While the store is not encrypted (a keystore that failed, or never answered), the queue, its
  * dead letter and the writes kept for a member live here alone: never on the placeholder's disk,

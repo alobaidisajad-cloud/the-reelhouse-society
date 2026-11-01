@@ -7,7 +7,8 @@
  * Now it is held for the member: never sent again on its own, never aged out, drawn failed in its
  * room with its words (offlineQueueStore's useHeld), and the Society's door is shown once. Their
  * own retry sends it, and takes it from the queue; a retry with no connection lets it wait as
- * any write does. The dead letter keeps a copy for diagnosis.
+ * any write does. The dead letter keeps a copy for diagnosis. A refusal for any other reason is
+ * held in the room too, refused (WORKLIST P4.14), without the Society's door.
  */
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue, letHeldGo, sendHeldAgain } from '../offlineQueue';
 import { stillHeld, useOfflineQueueStore } from '../../stores/offlineQueueStore';
@@ -104,13 +105,14 @@ it('holds back no other write: the next is sent past it', async () => {
   expect(getOfflineQueue().map((m) => m.type)).toEqual(['send_lounge_message']);
 });
 
-it('another refusal on 42501, no rank in it, is given up as before', async () => {
+it('another refusal on 42501, no rank in it, is held in the room as refused, with no rank door', async () => {
   say('Late Spring is a perfect film.');
   mockExecute.mockRejectedValueOnce({ code: '42501', message: 'new row violates row-level security policy' });
   await flushOfflineQueue();
-  expect(getOfflineQueue()).toEqual([]);
+  expect(getOfflineQueue().map((m) => [m.payload._tempId, m._held, m._refusal]))
+    .toEqual([['msg-1', 'refused', 'new row violates row-level security policy']]);
   expect(showTierDoor).not.toHaveBeenCalled();
-  expect(toast.error).toHaveBeenCalledTimes(1);
+  expect(toast.error).toHaveBeenCalledWith('A change made offline was not taken by the house: it is kept for you under UNSENT CHANGES.');
 });
 
 it('the member\'s own retry, sent, takes it from the queue; asked with no connection, it waits to be sent', async () => {

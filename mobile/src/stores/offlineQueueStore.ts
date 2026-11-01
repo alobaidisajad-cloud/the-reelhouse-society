@@ -62,6 +62,23 @@ export function useHeld(type: QueuedMutation['type']): ReadonlySet<string> {
   return useMemo(() => new Set(key ? key.split(' ') : []), [key]);
 }
 
+/** The ids of the writes the house refused, held for the member, in the queue's order. */
+function refusedKey(queued: readonly QueuedMutation[]): string {
+  return queued.filter((m) => m._held === 'refused').map((m) => m.id).join(' ');
+}
+
+/**
+ * The writes the house refused, held for the member to send again or let go (UNSENT CHANGES).
+ * Re-renders only when which writes are held changes.
+ */
+export function useRefused(): readonly QueuedMutation[] {
+  const key = useOfflineQueueStore((s) => refusedKey(s.queued));
+  return useMemo(() => {
+    const ids = new Set(key ? key.split(' ') : []);
+    return useOfflineQueueStore.getState().queued.filter((m) => ids.has(m.id));
+  }, [key]);
+}
+
 /**
  * The rows of one kind written on this phone and not yet sent — `add_filing`
  * gives the filings still in the queue, which say NOT SENT YET. Re-renders only

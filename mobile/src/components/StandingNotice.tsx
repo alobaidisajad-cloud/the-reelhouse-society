@@ -5,7 +5,9 @@
  * The house refuses their writes (see `standing.ts`); without this, each write
  * failed into its own "could not save" and nothing said why. It reads the
  * standing the app holds, says when a suspension ends, and goes when it does.
- * Information only: touches pass through to the page beneath.
+ * Information only: touches pass through to the page beneath. Its frame also
+ * holds the plate of changes the house did not take (UnsentChanges), above it,
+ * the one plate here that is pressed.
  */
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -16,6 +18,8 @@ import { useAuthStore } from '@/src/stores/auth';
 import { standingOf } from '@/src/utils/standing';
 import { formatClockTime, formatDate } from '@/src/utils/timeAgo';
 import { useOverlayBottom } from '@/src/components/layout/navMetrics';
+import { UnsentChangesPlate } from '@/src/components/UnsentChanges';
+import { useRefused } from '@/src/stores/offlineQueueStore';
 
 /** The offline plate's room, above which this one stands: the two never cover each other. */
 const ABOVE_THE_OFFLINE_PLATE = 44;
@@ -31,6 +35,7 @@ export default function StandingNotice() {
   const overlayBottom = useOverlayBottom();
   const [now, setNow] = useState(() => houseNow());
   const standing = standingOf(user, now);
+  const anyHeld = useRefused().length > 0;
 
   // A suspension ends on its own: the notice goes the moment it does.
   const until = standing?.kind === 'suspended' ? Date.parse(standing.until) : NaN;
@@ -40,30 +45,33 @@ export default function StandingNotice() {
     return () => clearTimeout(t);
   }, [until, now]);
 
-  if (!standing) return null;
+  if (!standing && !anyHeld) return null;
 
-  const title = standing.kind === 'silenced'
+  const title = standing?.kind === 'silenced'
     ? 'SILENCED BY THE SOCIETY'
-    : `SUSPENDED UNTIL ${formatDate(standing.until, 'short').toUpperCase()}, ${formatClockTime(standing.until)}`;
+    : standing ? `SUSPENDED UNTIL ${formatDate(standing.until, 'short').toUpperCase()}, ${formatClockTime(standing.until)}` : '';
 
   return (
     <View
       style={[s.frame, { bottom: overlayBottom + ABOVE_THE_OFFLINE_PLATE }]}
-      pointerEvents="none"
+      pointerEvents="box-none"
       accessibilityLiveRegion="polite"
     >
-      <View style={s.plate} accessible accessibilityRole="text"
+      <UnsentChangesPlate />
+      {standing && (
+      <View style={s.plate} pointerEvents="none" accessible accessibilityRole="text"
         accessibilityLabel={`${standing.kind === 'silenced' ? 'Your account has been silenced by The Society' : `Your account is suspended until ${formatDate(standing.until, 'long')}, ${formatClockTime(standing.until)}`}. You may read, and may not write.`}>
         <Text style={s.title}>{title}</Text>
         <Text style={s.line}>YOU MAY READ. YOU MAY NOT WRITE.</Text>
       </View>
+      )}
     </View>
   );
 }
 
 const s = StyleSheet.create({
   // Above everything, as the offline plate is: Android stacks by elevation before order.
-  frame: { position: 'absolute', left: 16, right: 16, alignItems: 'center', zIndex: 99998, elevation: 8 },
+  frame: { position: 'absolute', left: 16, right: 16, alignItems: 'center', gap: 8, zIndex: 99998, elevation: 8 },
   plate: {
     backgroundColor: colors.soot,
     borderWidth: 1,

@@ -52,6 +52,9 @@ app/year-in-cinema.tsx · Close Year in Cinema · wayOut
 app/year-in-cinema.tsx · Close Year in Cinema · wayOut
 src/components/ShareToLoungeModal.tsx · Close · wayOut
 src/components/TryAgain.tsx · {label} · wayOut
+src/components/UnsentChanges.tsx · Close · wayOut
+src/components/UnsentChanges.tsx · Let go: … · destructive
+src/components/UnsentChanges.tsx · Send again: … · commit
 src/components/admin/SecondKeyDoor.tsx · Go back · wayOut
 src/components/auth/EmailConfirmationScreen.tsx · Close · wayOut
 src/components/critique/CritiqueRow.tsx · Withdraw your critique · destructive

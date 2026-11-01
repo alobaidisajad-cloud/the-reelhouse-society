@@ -4,7 +4,7 @@
  * queue reads the member's standing before it sends, and a write the server
  * refuses for a suspension (enforce_not_restricted) waits with every write
  * after it — when that read failed, or the suspension began mid-send. A ban,
- * or a write refused because the member was silenced, is given up.
+ * or a write refused because the member was silenced, is held for them, unsent.
  */
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../offlineQueue';
 
@@ -86,12 +86,12 @@ it('a suspension that begins while the queue sends holds the rest from the write
   expect(e2eTrace).toHaveBeenCalledWith('queue.flush.halted', { type: 'watchlist_add', why: 'suspended' });
 });
 
-it('a write refused because the member was silenced is given up, as a ban gives up the queue', async () => {
+it('a write refused because the member was silenced is held for them, as a ban holds the queue, a copy in the dead letter', async () => {
   mockStanding = { is_banned: false, suspended_until: null };
   write();
   mockExecute.mockRejectedValueOnce(SILENCED);
   await flushOfflineQueue();
-  expect(getOfflineQueue()).toHaveLength(0);
+  expect(getOfflineQueue()).toEqual([expect.objectContaining({ _held: 'refused', _refusal: SILENCED.message })]);
   expect(JSON.parse(mockStorage.get(DEAD) ?? '[]')).toEqual([expect.objectContaining({ payload: expect.objectContaining({ _failReason: SILENCED.message }) })]);
 });
 
@@ -112,11 +112,11 @@ it('once it has ended, the queue is sent', async () => {
   expect(getOfflineQueue()).toHaveLength(0);
 });
 
-it('a ban still empties it, to the dead letter', async () => {
+it('a ban holds it for the member, unsent, a copy in the dead letter', async () => {
   mockStanding = { is_banned: true, suspended_until: null };
   write();
   await flushOfflineQueue();
   expect(mockExecute).not.toHaveBeenCalled();
-  expect(getOfflineQueue()).toHaveLength(0);
+  expect(getOfflineQueue()).toEqual([expect.objectContaining({ _held: 'refused' })]);
   expect(JSON.parse(mockStorage.get(DEAD) ?? '[]')).toHaveLength(1);
 });

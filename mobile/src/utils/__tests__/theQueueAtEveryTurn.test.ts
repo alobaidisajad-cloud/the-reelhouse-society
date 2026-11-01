@@ -1,7 +1,7 @@
 /**
  * theQueueAtEveryTurn.test.ts — utils/offlineQueue.ts, the real queue, at every turn of a send:
  * queued as the member signed in, a full queue dropping its oldest, a send under the member's own
- * session alone, a suspension holding the writes and a ban ending them, a day-old write dropped,
+ * session alone, a suspension holding the writes and a ban giving them back, a day-old write dropped,
  * every kind of failure (no network, a broken statement, a duplicate, a moment's failure and its
  * fifth, a refusal), the dead letter's week and its fifty, the following feeds refreshed after a
  * follow, a send asked for during a send, and what the member and the log are told at each.
@@ -187,17 +187,18 @@ describe('a send, before anything goes', () => {
     expect(executeMutation).toHaveBeenCalledTimes(1);
   });
 
-  it('ends a banned member\'s writes in the dead letter, keeps another\'s, and empties the queue', async () => {
+  it('lets a banned member\'s mark lapse, named, a copy in the dead letter, keeps another\'s, and empties the queue', async () => {
     put(QUEUE_KEY, [stored({ id: 'mine', type: 'follow_user' }), stored({ id: 'theirs', type: 'add_critique', owner: OTHER })]);
     mockProfile = { is_banned: true, suspended_until: new Date(NOW + DAY).toISOString() };
     await flushOfflineQueue();
     expect(executeMutation).not.toHaveBeenCalled();
     expect(read(DEAD_LETTER_KEY)).toEqual([expect.objectContaining({
-      id: 'mine', payload: { user_id: OTHER, _failReason: 'user_banned_at_flush', _failedAt: new Date(NOW).toISOString() },
+      id: 'mine', payload: { user_id: OTHER, _failReason: 'Your account has been silenced by The Society.', _failedAt: new Date(NOW).toISOString() },
     })]);
     expect(read(heldKey(OTHER)).map((m) => m.id)).toEqual(['theirs']);
     expect(getOfflineQueue()).toEqual([]);
-    expect(warned()).toContain('[OfflineSync] User is banned — purging write queue to dead-letter.');
+    expect(warned()).toContain('[OfflineSync] User is banned — their waiting writes are given back.');
+    expect(toast.error).toHaveBeenCalledWith('A follow made offline was not taken by the house.');
   });
 
   it('goes on past a ban check the network did not answer, quietly, and stops at the first write the same way', async () => {
@@ -263,14 +264,14 @@ describe('each write, as it goes', () => {
     expect(getOfflineQueue()).toEqual([]);
   });
 
-  it('dead-letters a write that fails its schema, unsent, and tells the member', async () => {
+  it('gives back a write that fails its schema, unsent, a copy in the dead letter, and tells the member', async () => {
     enqueueMutation({ type: 'endorse_log', payload: { user_id: ME } } as never);
     await flushOfflineQueue();
     expect(executeMutation).not.toHaveBeenCalled();
     const [dead] = read(DEAD_LETTER_KEY);
     expect(String(dead?.payload._failReason)).toMatch(/^schema: /);
     expect(warned()[0]).toMatch(/^\[OfflineSync\] schema violation endorse_log /);
-    expect(toast.error).toHaveBeenCalledWith('A change made offline could not be sent.');
+    expect(toast.error).toHaveBeenCalledWith('A certification made offline was not taken by the house.');
   });
 
   it('gives a write made on the server its real id in every write still queued after it', async () => {
@@ -304,11 +305,11 @@ describe('each failure', () => {
     expect(toast).not.toHaveBeenCalled();
   });
 
-  it('dead-letters a broken statement, reports it, and goes on', async () => {
+  it('gives back a broken statement, a copy in the dead letter, reports it, and goes on', async () => {
     await failing(Object.assign(new Error('column "nope" does not exist'), { code: '42703' }));
     expect(read(DEAD_LETTER_KEY).map((m) => [m.id, m.payload._failReason])).toEqual([['w', 'schema: column "nope" does not exist']]);
     expect(captureError).toHaveBeenCalledWith(expect.any(Error), { scope: 'offlineQueue.schemaError', mutationType: 'follow_user', pgCode: '42703' });
-    expect(warned()).toEqual(['[OfflineSync] permanent schema error: dead-lettered follow_user 42703']);
+    expect(warned()).toEqual(['[OfflineSync] permanent schema error: given back follow_user 42703']);
     expect(executeMutation).toHaveBeenCalledTimes(2);
     expect(getOfflineQueue()).toEqual([]);
   });
@@ -326,19 +327,19 @@ describe('each failure', () => {
     expect(warned()).toEqual(['[OfflineSync] transient failure: halting to retry on the next send follow_user 500 undefined 1 5']);
   });
 
-  it('gives up on the fifth such failure, dead-letters it, and sends what follows', async () => {
+  it('gives up on the fifth such failure, gives it back with a copy in the dead letter, and sends what follows', async () => {
     await failing(Object.assign(new Error('Internal Server Error'), { status: 500 }), 4);
     expect(read(DEAD_LETTER_KEY).map((m) => [m.id, m.payload._failReason])).toEqual([['w', 'transient-exhausted: Internal Server Error']]);
-    expect(warned()).toEqual(['[OfflineSync] transient failure, retries used up: dead-lettered follow_user 5 500 undefined']);
+    expect(warned()).toEqual(['[OfflineSync] transient failure, retries used up: given back follow_user 5 500 undefined']);
     expect(getOfflineQueue()).toEqual([]);
   });
 
-  it('dead-letters a refusal with its words, whatever shape the failure took, and goes on', async () => {
+  it('keeps a refusal\'s words in the dead letter, whatever shape the failure took, and goes on', async () => {
     await failing({ code: '42501', message: 'new row violates row-level security policy' });
     expect(read(DEAD_LETTER_KEY).map((m) => m.payload._failReason)).toEqual(['new row violates row-level security policy']);
     await failing('a plain refusal');
     expect(read(DEAD_LETTER_KEY).map((m) => m.payload._failReason)).toEqual(['new row violates row-level security policy', 'a plain refusal']);
-    expect(toast.error).toHaveBeenLastCalledWith('A change made offline could not be sent.');
+    expect(toast.error).toHaveBeenLastCalledWith('A follow made offline was not taken by the house.');
   });
 });
 

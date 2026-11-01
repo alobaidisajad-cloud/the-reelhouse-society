@@ -85,7 +85,7 @@ beforeEach(() => {
 afterEach(() => jest.useRealTimers());
 
 describe('a banned member\'s send', () => {
-  it('ends the member\'s own writes in the dead letter, and keeps for its member a write of theirs that arrived while the server was asked', async () => {
+  it('holds the member\'s own writes for them, a copy in the dead letter, and keeps for its member a write of theirs that arrived while the server was asked', async () => {
     put(QUEUE_KEY, [stored({ id: 'mine', type: 'add_log', payload: { user_id: ME, film_id: 1 } })]);
     mockWhileAsked = theirsArrives(stored({ id: 'theirs', type: 'add_log', owner: OTHER, payload: { user_id: OTHER, film_id: 2 } }));
     mockProfile = { is_banned: true, suspended_until: null };
@@ -95,7 +95,7 @@ describe('a banned member\'s send', () => {
     expect(ids(DEAD_LETTER_KEY)).toEqual(['mine']);
     expect(ids(heldKey(OTHER))).toEqual(['theirs']);
     expect(storage.getString(heldKey(ME))).toBeUndefined();
-    expect(getOfflineQueue()).toEqual([]);
+    expect(getOfflineQueue().map((m) => [m.id, m._held])).toEqual([['mine', 'refused']]);
     expect(executeMutation).not.toHaveBeenCalled();
   });
 
@@ -106,7 +106,7 @@ describe('a banned member\'s send', () => {
     await flushOfflineQueue();
 
     expect(ids(heldKey(OTHER))).toEqual(['theirs']);
-    expect(logger.warn).toHaveBeenCalledWith('[OfflineSync] User is banned — purging write queue to dead-letter.');
+    expect(logger.warn).toHaveBeenCalledWith('[OfflineSync] User is banned — their waiting writes are given back.');
     expect(storage.getString(DEAD_LETTER_KEY)).toBeUndefined();
   });
 });
