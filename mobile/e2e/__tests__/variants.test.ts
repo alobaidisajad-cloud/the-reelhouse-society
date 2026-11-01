@@ -103,6 +103,12 @@ it('runs each variant on the phone every run has, unless it names its own: the t
   expect(E2E_YML).toMatch(/^ {10}disk-size: \$\{\{ env\.E2E_DISK \}\}$/m);
 });
 
+it('walks still until signed in only where motion is on, and says why', () => {
+  const still = Object.entries(VARIANTS).filter(([, v]) => (v as { stillToSignIn?: unknown }).stillToSignIn !== undefined);
+  expect(still.map(([n, v]) => [n, (v as { stillToSignIn?: unknown }).stillToSignIn])).toEqual([['motion-on', true]]);
+  expect(VARIANTS['motion-on']?.why).toMatch(/still until it has signed in/);
+});
+
 it('says which run each variant is: every flow and the walk, or the walk alone', () => {
   const runs = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'runs') as { commands: string[] }).commands]));
   expect(runs).toEqual({

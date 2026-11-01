@@ -149,6 +149,12 @@ export const PHONE = {
         ['adb', ['shell', 'ime', 'enable', GBOARD]], ['adb', ['shell', 'ime', 'set', GBOARD]],
         ['adb', ['shell', 'settings', 'get', 'secure', 'default_input_method'], { until: (said) => said.trim() === GBOARD, what: 'made it the phone\'s keyboard' }]]
       : [['adb', ['shell', 'pm', 'disable', GBOARD.split('/')[0]]], ['adb', ['shell', 'settings', 'delete', 'secure', 'enabled_input_methods']], ['adb', ['shell', 'settings', 'delete', 'secure', 'default_input_method']]]) },
+  // Android's transitions and animations on (1) or off (0), the window animation always off, as the
+  // motion-on variant sets them (e2e/variants.json): its walk is still until it has signed in.
+  motion: { says: 'true or false', valid: (v) => typeof v === 'boolean',
+    commands: (v) => [['adb', ['shell', 'settings', 'put', 'global', 'transition_animation_scale', v ? '1' : '0']],
+      ['adb', ['shell', 'settings', 'put', 'global', 'animator_duration_scale', v ? '1' : '0']],
+      ['adb', ['shell', 'settings', 'put', 'global', 'window_animation_scale', '0']]] },
   // Whole minutes ahead of now, set as root in UTC (toybox date's MMDDhhmmCCYY.ss); the network time
   // off first, or the phone would take it back. run-flows.sh puts both back before every lifecycle flow.
   clock_ahead: { says: 'whole minutes from 1 to 2880', valid: (v) => Number.isInteger(v) && v >= 1 && v <= 2880,

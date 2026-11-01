@@ -98,14 +98,21 @@ export function plan(routes, ids, moments = {}) {
 const pick = (t, indent) => `${' '.repeat(indent)}${t.id !== undefined ? 'id' : 'text'}: ${JSON.stringify(t.id ?? t.text)}`;
 
 /** The Maestro flow that walks the plan, capturing each route by a name in Maestro's output folder. */
-export function flowOf(steps, signIn) {
-  const lines = ['appId: com.reelhouse.society', '---', '- launchApp:', '    clearState: true'];
-  // The keyboard on or off through the proxy's phone controls (subflows/phone.yaml, beside sign_in.yaml).
-  const keyboard = (on) => ['- runFlow:', `    file: ${JSON.stringify(signIn.replace(/sign_in\.yaml$/, 'phone.yaml'))}`, '    env:', '      SET: keyboard', `      TO: "${on}"`];
+export function flowOf(steps, signIn, { stillToSignIn = false } = {}) {
+  // The phone changed through the proxy's controls (subflows/phone.yaml, beside sign_in.yaml).
+  const phone = (set, to) => ['- runFlow:', `    file: ${JSON.stringify(signIn.replace(/sign_in\.yaml$/, 'phone.yaml'))}`, '    env:', `      SET: ${set}`, `      TO: "${to}"`];
+  const keyboard = (on) => phone('keyboard', on);
+  // `stillToSignIn` (the motion-on walk): the signed-out screens' own motion never lets the driver
+  // find a settled screen (a tap took five minutes, nightly 41187219004), so the walk is still until
+  // it has signed in, and moves for every route after.
+  const lines = ['appId: com.reelhouse.society', '---', ...(stillToSignIn ? phone('motion', false) : []), '- launchApp:', '    clearState: true'];
   let signedIn = false;
   steps.forEach((s, i) => {
     // Signed in from the app's own start: a guest's last route (the login modal, say) covers the tabs it signs in through.
-    if (s.as !== 'guest' && !signedIn) { lines.push('- stopApp', '- launchApp', `- runFlow: ${JSON.stringify(signIn)}`); signedIn = true; }
+    if (s.as !== 'guest' && !signedIn) {
+      lines.push('- stopApp', '- launchApp', `- runFlow: ${JSON.stringify(signIn)}`, ...(stillToSignIn ? phone('motion', true) : []));
+      signedIn = true;
+    }
     lines.push(
       `# ${s.file}`,
       ...(s.keyboard ? keyboard(true) : []),
@@ -160,7 +167,10 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     const steps = plan(routes, await readIds(ask), moments);
     const shots = join(out, 'routes');
     mkdirSync(shots, { recursive: true });
-    writeFileSync(join(out, 'walk.yaml'), flowOf(steps, join(HERE, '..', '.maestro', 'subflows', 'sign_in.yaml').split('\\').join('/')));
+    // The variant's walk (e2e/variants.json `stillToSignIn`): still until signed in, for the motion-on run.
+    const variant = JSON.parse(readFileSync(join(HERE, 'variants.json'), 'utf8')).variants[process.env.E2E_VARIANT ?? ''];
+    writeFileSync(join(out, 'walk.yaml'), flowOf(steps, join(HERE, '..', '.maestro', 'subflows', 'sign_in.yaml').split('\\').join('/'),
+      { stillToSignIn: variant?.stillToSignIn === true }));
     writeFileSync(join(out, 'walk.tsv'), steps.map((s, i) => `${s.file}\t${s.link}\t${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}.png${s.part ? `\t${s.part}` : ''}`).join('\n') + '\n');
     const shown = steps.filter((s) => s.taps).length;
     console.log(`the walk: ${steps.length - shown} routes (${steps.filter((s) => s.as === 'guest').length} as a guest) and ${shown} moments, written to ${out}`);

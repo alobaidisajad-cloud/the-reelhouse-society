@@ -155,7 +155,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/cutTextJudges.test.ts | 2026-10-31 | edited: judged by testID: any words it shows; a judged testID the app still sets; edited: a cut's measure kept and printed; new |
 | e2e/__tests__/faultJudges.test.ts | 2026-10-16 | new |
 | e2e/__tests__/flowHistory.test.ts | 2026-10-16 | new: a shard's logs read (new and older shapes, retries summed, a part the budget stopped left out) and every file it reads uploaded, the map a history makes, the committed map equal to it and inside the workflow's limits |
-| e2e/__tests__/faultProxy.test.ts | 2026-10-27 | edited: the clock moved on by fixed commands of a checked value; an instant written as toybox date sets one; new |
+| e2e/__tests__/faultProxy.test.ts | 2026-10-31 | edited: motion on and off, by their fixed commands; edited: the clock moved on by fixed commands of a checked value; an instant written as toybox date sets one; new |
 | e2e/__tests__/flowScreens.test.ts | 2026-10-04 | QueryController no longer counted; Android 14 names what animated; Maestro's JUnit reason, the no-record flow, the decision line |
 | e2e/__tests__/attempt.test.ts | 2026-10-15 | edited: a shipped client's own crash is run again once, then not judged; with no --own, or beside another crash, final as ever |
 | e2e/__tests__/appCrashes.test.ts | 2026-10-15 | edited: build 41's own crash and its aftermath reported apart and passed (cut from 38679641286); another crash, a late or foreign aftermath, no --own: fail |
@@ -185,9 +185,9 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
 | e2e/__tests__/iosSimulator.test.ts | 2026-10-25 | new: the script against a stand-in xcrun listing macos-26's simulators, and one with no iPhone 17 Pro; both jobs choose by it |
 | e2e/__tests__/theRunKeepsWhatItWrites.test.ts | 2026-10-17 | new |
-| e2e/__tests__/variants.test.ts | 2026-10-31 | edited: the tablet's data size, and the workflow reading it; edited: every variant on the phone every run has but the tablet, on Android 16; the workflow keys its emulator on that answer; edited: tablet runs every flow; new |
+| e2e/__tests__/variants.test.ts | 2026-10-31 | edited: only the motion-on walk is still until signed in, and it says why; edited: the tablet's data size, and the workflow reading it; edited: every variant on the phone every run has but the tablet, on Android 16; the workflow keys its emulator on that answer; edited: tablet runs every flow; new |
 | e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
-| e2e/__tests__/walkRoutes.test.ts | 2026-10-17 | new |
+| e2e/__tests__/walkRoutes.test.ts | 2026-10-31 | edited: the still walk: motion off before the launch, on after the sign-in, and no other walk touches it; new |
 | e2e/__tests__/whatTheAppAsked.test.ts | 2026-10-16 | new |
 | e2e/__tests__/fixtures/judges/shard-verdict/flows/a_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
 | e2e/__tests__/fixtures/judges/shard-verdict/flows/b_flow.yaml | 2026-10-16 | new: a flow the shard judge's good logs name |
@@ -239,11 +239,11 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/screen-times.mjs | 2026-10-22 | edited: --learning: a new screen reported for LEARNING_DAYS, its entry failing past them or beside a ceiling; --record writes one shard's screens and leaves the never-reported rule to shard-verdict.mjs; edited: two ceilings a screen, derived by ceilingsFrom from e2e/screen-history.json |
 | e2e/shard-verdict.mjs | 2026-10-15 | new: every shard finished, every flow ran once, every ceiling's screen reported somewhere |
 | e2e/flow-history.mjs | 2026-10-16 | edited: a shard with no logs is said; any other download failure ends the run in gh's words |
-| e2e/fault-proxy.mjs | 2026-10-27 | edited: the phone's clock moved on, whole minutes, as root in UTC, its network time off (clock_ahead); new: the network between the app and the house, a fault on command, a part stopped, the DNS blocked, every request logged; a slow link holds every piece in flight at once, one latency per reply |
+| e2e/fault-proxy.mjs | 2026-10-31 | edited: motion: transitions and animations on or off, the window animation always off; edited: the phone's clock moved on, whole minutes, as root in UTC, its network time off (clock_ahead); new: the network between the app and the house, a fault on command, a part stopped, the DNS blocked, every request logged; a slow link holds every piece in flight at once, one latency per reply |
 | e2e/shards.mjs | 2026-10-16 | edited: a shard's minutes, checked and printed for run-flows.sh |
 | e2e/start-stack.sh | 2026-10-15 | edited: the stack's ports reserved from the machine's own connections, and waited for |
 | e2e/variants.mjs | 2026-10-31 | edited: device: its data size too (blank: the profile's own); edited: device: the emulator's API level, then its profile, the file's own unless the variant names one; new: each variant's commands to read, set, wait for and put back the phone, and whether it runs every flow; an unknown variant, a reset with nothing, or a read that answered no word the variant allows, refused |
-| e2e/walk-routes.mjs | 2026-10-30 | edited: each tap's control brought to the middle: one under a docked bar reads visible; new: the route walk's plan and flow: every route of routes.json, its ids read from the seeded world by name, guests first, each opened cold and captured; edited: each capture a name inside Maestro's output folder, which refuses any other |
+| e2e/walk-routes.mjs | 2026-10-31 | edited: still until signed in when the variant asks (stillToSignIn): motion off before the launch, on after the sign-in; edited: each tap's control brought to the middle: one under a docked bar reads visible; new: the route walk's plan and flow: every route of routes.json, its ids read from the seeded world by name, guests first, each opened cold and captured; edited: each capture a name inside Maestro's output folder, which refuses any other |
 | plugins/__tests__/theScannerStaysInDebug.test.ts | 2026-10-25 | new: the installed expo-dev-launcher 57 asks for the code scanner in its debug manifest, not its main one (the plugin that removed it gone); the release guard still refuses it |
 | plugins/__tests__/withSplashWithoutHandoff.test.ts | 2026-10-04 | written: on the real generated MainActivity, through withMainActivity; no setOptions re-arms it; its files come from the shared file list (test-utils/universe.js) |
 | plugins/__tests__/withLinkDuringLaunch.test.ts | 2026-10-21 | written: on the real generated MainActivity, through withMainActivity, with the splash plugin either side of it |
@@ -1509,7 +1509,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/theFieldSaysWhatIsWrong.test.tsx | 2026-10-29 | new: FieldError, focusField and useFieldRefusal held to their word on their own |
 | src/components/feed/__tests__/aReelCardKeepsItsTime.test.tsx | 2026-10-27 | Written 2026-10-27: a Reel card drawn MOMENTS AGO says a day, back in the app a day later with the same rows (P4.7) |
 | src/components/feed/__tests__/aReviewIsHeard.test.tsx | 2026-10-28 | new: the writing a card shows is the writing a screen reader hears; the veil is reached first |
-| src/components/film/__tests__/zz-sharecard.gen.test.tsx | 2026-10-31 | new: the share card drawn at its ledger line's every width, so CI measures it |
+| src/components/film/__tests__/zz-sharecard.gen.test.tsx | 2026-11-01 | edited: drawn as the share sheet shows it: shrunk to the window (previewScaleFor), centred in its frame; new: the share card drawn at its ledger line's every width, so CI measures it |
 | src/components/layout/InColumn.tsx | 2026-10-30 | new: the reading column inside a Modal, which opens its own window outside the navigator |
 | src/components/layout/RevealAboveDock.tsx | 2026-10-30 | new: what the member opens above a docked bar; revealBy's arithmetic, the host's measure in window coordinates, a section revealed once and only when opened |
 | src/components/layout/UnderSheet.tsx | 2026-10-29 | new: a page with a sheet that is not a Modal drawn over it, out of a screen reader's reach while it is |

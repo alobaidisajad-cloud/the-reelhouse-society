@@ -77,6 +77,20 @@ it('writes a flow that clears the app, signs in once before the member\'s first 
   ]);
 });
 
+// The motion-on walk: the signed-out screens keep their own motion and the driver waits on a settled
+// screen (a tap took five minutes, nightly 41187219004): still until signed in, moving after.
+it('is still until it has signed in, and moves for every route after, when the variant asks', () => {
+  const steps = [{ file: 'app/(modals)/login.tsx', link: '/login', as: 'guest' }, { file: 'app/film/[id].tsx', link: '/film/129', as: 'member' }];
+  const motion = (to: boolean) => ['- runFlow:', '    file: "/x/phone.yaml"', '    env:', '      SET: motion', `      TO: "${to}"`];
+  const still = (ask(`m.flowOf(${JSON.stringify(steps)}, '/x/sign_in.yaml', { stillToSignIn: true })`) as string).split('\n').filter(Boolean);
+  expect(still.slice(2, 9)).toEqual([...motion(false), '- launchApp:', '    clearState: true']);
+  const signedIn = still.indexOf('- runFlow: "/x/sign_in.yaml"');
+  expect(still.slice(signedIn + 1, signedIn + 6)).toEqual(motion(true));
+  expect(still.filter((l) => l === '      SET: motion')).toHaveLength(2);
+  // Any other walk is as the phone is.
+  expect((ask(`m.flowOf(${JSON.stringify(steps)}, '/x/sign_in.yaml')`) as string).includes('SET: motion')).toBe(false);
+});
+
 it('plans each moment after every route, as the member, its link filled in, and walks it: its mark, each tap once, what shows, then the capture', () => {
   const moments = { 'the calendar': { link: '/film/{film}', taps: [{ id: 'film-stub' }, { text: 'FILED.*' }], shows: { text: 'CLOSE' } }, 'the keyboard': { link: '/darkroom', taps: [{ id: 'k' }], part: 'above-keyboard' } };
   const steps = ask(`m.plan({ 'app/a.tsx': { link: '/a', as: 'guest' }, 'app/b.tsx': { link: '/b' } }, { film: '129' }, ${JSON.stringify(moments)})`) as { file: string }[];
