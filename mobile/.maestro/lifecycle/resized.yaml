@@ -1,0 +1,67 @@
+appId: com.reelhouse.society
+env:
+  WORDS: Half a letter, narrowed
+---
+# The window narrowed while Edit Profile is half-edited, then put back
+# (WORKLIST P4.33): a fold, or a split-screen divider dragged, changes
+# the window's smallest width, and Android would remake the screen for
+# it unless the app takes it in place (its configChanges, held by
+# release-guard). Each time: the same screen, the member's unsaved
+# words still in the field. run-flows.sh puts the size back before every
+# lifecycle flow.
+- launchApp:
+    clearState: true
+- runFlow: ../subflows/sign_in.yaml
+- openLink: "reelhouse://edit-profile"
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: "edit-profile-bio"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
+- tapOn:
+    id: "edit-profile-bio"
+- inputText: ${WORDS}
+
+- runFlow:
+    file: ../subflows/phone.yaml
+    env:
+      SET: window_size
+      TO: "900x1600"
+- waitForAnimationToEnd:
+    timeout: 8000
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "edit-profile-bio"
+      # The member's bio already holds words: what was typed is within it.
+      text: ".*${WORDS}.*"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
+
+- runFlow:
+    file: ../subflows/phone.yaml
+    env:
+      SET: window_size
+      TO: reset
+- waitForAnimationToEnd:
+    timeout: 8000
+- extendedWaitUntil:
+    visible:
+      id: "edit-profile"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "edit-profile-bio"
+      text: ".*${WORDS}.*"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000

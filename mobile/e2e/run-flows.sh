@@ -475,7 +475,7 @@ for flow in $FLOW_LIST; do
     # begins on the phone as the run has it, whatever the one before left.
     if [ -n "${E2E_LIFECYCLE:-}" ]; then
       # The clock too (clock_ahead): set to the runner's now, then the network time back on.
-      for cmd in "settings put system font_scale 1.0" "wm density reset" "settings put global always_finish_activities 0" "date -u $(date -u +%m%d%H%M%Y.%S)" "settings put global auto_time 1"; do
+      for cmd in "settings put system font_scale 1.0" "wm density reset" "wm size reset" "settings put global always_finish_activities 0" "date -u $(date -u +%m%d%H%M%Y.%S)" "settings put global auto_time 1"; do
         timeout 20 adb shell "$cmd" < /dev/null > /dev/null 2>&1 || echo "[phone] could not put back before $name: $cmd" >> "$OUT/maestro.log"
       done
     fi

@@ -149,6 +149,12 @@ export const PHONE = {
         ['adb', ['shell', 'ime', 'enable', GBOARD]], ['adb', ['shell', 'ime', 'set', GBOARD]],
         ['adb', ['shell', 'settings', 'get', 'secure', 'default_input_method'], { until: (said) => said.trim() === GBOARD, what: 'made it the phone\'s keyboard' }]]
       : [['adb', ['shell', 'pm', 'disable', GBOARD.split('/')[0]]], ['adb', ['shell', 'settings', 'delete', 'secure', 'enabled_input_methods']], ['adb', ['shell', 'settings', 'delete', 'secure', 'default_input_method']]]) },
+  // The window's size in pixels, live, or put back: a narrower window changes its smallest width, as
+  // a fold or a split-screen divider does (WORKLIST P4.33). run-flows.sh puts it back before every
+  // lifecycle flow.
+  window_size: { says: 'a width and height in pixels from 600 to 3000 each, as 900x1600, or "reset"',
+    valid: (v) => v === 'reset' || (typeof v === 'string' && /^\d{3,4}x\d{3,4}$/.test(v) && v.split('x').every((n) => Number(n) >= 600 && Number(n) <= 3000)),
+    commands: (v) => [['adb', ['shell', 'wm', 'size', v]]] },
   // Android's transitions and animations on (1) or off (0), the window animation always off, as the
   // motion-on variant sets them (e2e/variants.json): its walk is still until it has signed in.
   motion: { says: 'true or false', valid: (v) => typeof v === 'boolean',

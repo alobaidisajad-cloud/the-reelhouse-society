@@ -9,6 +9,7 @@
         "killed_in_background",
         "killed_mid_write",
         "live_config",
+        "resized",
         "time_moved_on",
         "upgrade"
       ],

@@ -684,8 +684,8 @@ it('puts the phone back before every lifecycle flow, whatever the one before cha
   const r = await rehearse(['a_flow', 'b_flow'], {}, { env: { E2E_LIFECYCLE: '1' } });
   expect(r.status).toBe(0);
   const order = readFileSync(join(r.T, 'state', 'order'), 'utf8').split('\n')
-    .filter((l) => /font_scale|wm density|always_finish_activities|^maestro: [ab]_flow$/.test(l));
-  const back = ['adb: settings put system font_scale 1.0', 'adb: wm density reset', 'adb: settings put global always_finish_activities 0'];
+    .filter((l) => /font_scale|wm density|wm size|always_finish_activities|^maestro: [ab]_flow$/.test(l));
+  const back = ['adb: settings put system font_scale 1.0', 'adb: wm density reset', 'adb: wm size reset', 'adb: settings put global always_finish_activities 0'];
   expect(order).toEqual([...back, 'maestro: a_flow', ...back, 'maestro: b_flow']);
   // Not held to the plain phone's ceilings: a lifecycle flow's times are reported.
   expect(titled(r, 'error', 'A screen could not read or is slower than its ceiling')).toBe('');
