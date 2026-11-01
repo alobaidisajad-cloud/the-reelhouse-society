@@ -3,13 +3,27 @@
  * width: a serial beside a short handle, the house's address beside an eleven-letter handle (which
  * the address ran out of one line: largest-text run 41237565336), the address beside the longest
  * handle a member may have, and a film shared with no member at all. No generator drew the card,
- * so CI never measured it; it is drawn here at every size CI lays out (its words do not scale).
+ * so CI never measured it; it is drawn here at every size CI lays out (its words do not scale), as
+ * the share sheet shows it: shrunk to the window's width (previewScaleFor), centred in its frame.
  */
 import React, { act } from 'react';
+import { View } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { toHtml } from '../../profile/__tests__/zz-render.lib';
-import { whenRendering, writeScreen } from '@/mockups/paths';
-import { NitrateFileCard, type NitrateFileData } from '../NitrateFileCard';
+import { PHONE, whenRendering, writeScreen } from '@/mockups/paths';
+import { NITRATE_CARD_HEIGHT, NITRATE_CARD_WIDTH, NitrateFileCard, type NitrateFileData } from '../NitrateFileCard';
+import { previewScaleFor } from '../ShareCardModal';
+
+/** The card as the share sheet shows it: its size times the window's scale, the card shrunk inside. */
+function Previewed({ data }: { data: NitrateFileData }) {
+  // Every drawn width has its height (mockups/devices.json); one without would be bound by its width alone.
+  const scale = previewScaleFor(PHONE.width, PHONE.height ?? Infinity, 0, 0);
+  return (
+    <View style={{ alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: NITRATE_CARD_WIDTH * scale, height: NITRATE_CARD_HEIGHT * scale }}>
+      <View style={{ transform: [{ scale }] }}><NitrateFileCard data={data} /></View>
+    </View>
+  );
+}
 
 const FILE: NitrateFileData = {
   title: 'Sunset Boulevard',
@@ -31,7 +45,7 @@ whenRendering('share card generator', () => {
     ];
     for (const [name, data, handle] of states) {
       let r!: ReturnType<typeof render>;
-      await act(async () => { r = render(<NitrateFileCard data={data} />); });
+      await act(async () => { r = render(<Previewed data={data} />); });
       // Found or the run fails: a plate written without the handle would pass as if it held it.
       if (handle) expect(r.getByText(handle)).toBeTruthy();
       writeScreen(name, toHtml(r.toJSON()));
