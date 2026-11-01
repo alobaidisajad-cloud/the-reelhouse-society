@@ -10,6 +10,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, X } from 'lucide-react-native';
 import { Alert, Platform, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useBackCloses } from '@/src/hooks/useBackCloses';
+import { useKeptWords } from '@/src/hooks/useKeptWords';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { interpolate, useAnimatedKeyboard, useAnimatedStyle, useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import {
@@ -380,7 +381,8 @@ export default function StackDetailScreen() {
 
   const [isCertifying, setIsCertifying] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const [commentText, setCommentText] = useState('');
+  // A critique being written is kept until the house or the queue has it (useKeptWords).
+  const [commentText, setCommentText, letGoOfComment] = useKeptWords(user?.id, 'critique', id ? `stack:${id}` : null);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [showLoungeShare, setShowLoungeShare] = useState(false);
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
@@ -405,7 +407,7 @@ export default function StackDetailScreen() {
   // Callback isolation: stabilize comment input handler
   const handleCommentTextChange = useCallback((text: string) => {
     setCommentText(text);
-  }, []);
+  }, [setCommentText]);
 
   // Scroll animations
   const scrollY = useSharedValue(0);
@@ -637,6 +639,7 @@ export default function StackDetailScreen() {
         if (!old) return [newComment];
         return old.map(c => c.id === commentId ? newComment : c);
       });
+      letGoOfComment();
       // Filed, where members may certify or answer it: the moment to ask to send word.
       void offerWord('critique', user.id);
 
@@ -647,6 +650,7 @@ export default function StackDetailScreen() {
         payload: { id: commentId, list_id: id, user_id: user.id, content }
       })) {
         flushOfflineQueue();
+        letGoOfComment();
         // Leave the optimistic comment in cache since it's queued
         reelToast('Critique saved offline. Will sync when connected.');
       } else {
@@ -663,7 +667,7 @@ export default function StackDetailScreen() {
     } finally {
       setSubmittingComment(false);
     }
-  }, [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount]);
+  }, [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount, letGoOfComment, setCommentText]);
 
   /**
    * Take back one's own critique, once the member has said yes (CritiqueRow

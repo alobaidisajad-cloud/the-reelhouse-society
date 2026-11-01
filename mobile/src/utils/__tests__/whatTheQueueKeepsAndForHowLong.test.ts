@@ -9,6 +9,7 @@
 import { supabaseFake } from '@/test-utils/supabaseFake';
 import { clearOfflineQueue, flushOfflineQueue, getOfflineQueue, type QueuedMutation } from '../offlineQueue';
 import { DEAD_LETTER_KEY, heldKey, QUEUE_KEY } from '../queueOwnership';
+import { readDraft, writeDraft } from '../memberDrafts';
 
 const ME = '11111111-1111-4111-8111-111111111111';
 const OTHER = '22222222-2222-4222-8222-222222222222';
@@ -33,10 +34,11 @@ jest.mock('../reelToast', () => {
   return { __esModule: true, default: fn };
 });
 jest.mock('expo-crypto', () => { let n = 0; return { randomUUID: () => `id-${++n}` }; });
+let mockEncrypted = true;
 jest.mock('@/src/stores/mmkv-storage', () => {
   const store = new Map<string, string>();
   return {
-    isStorageEncrypted: () => true,
+    isStorageEncrypted: () => mockEncrypted,
     withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
     storage: {
       set: jest.fn((k: string, v: string) => store.set(k, v)),
@@ -122,17 +124,42 @@ describe('the queue after a send', () => {
   });
 
   // Every write a day old was dropped, a member's log and critique among them (WORKLIST P4.32).
-  it('a record of what the member did and their own words are sent whatever their age; a toggle alone lapses', async () => {
+  it('sends a record and a take whatever their age, gives a day-old critique back to its box, and lets a toggle lapse', async () => {
     put(QUEUE_KEY, [
       stored({ id: 'log', type: 'add_log', payload: { user_id: ME, film_id: 129 }, timestamp: NOW - 3 * DAY }),
       stored({ id: 'critique', type: 'add_critique', payload: { _tempId: 't', user_id: ME, post_id: 'p', body: 'Kept.' }, timestamp: NOW - 2 * DAY }),
+      stored({ id: 'take', type: 'add_filing', payload: { _tempId: 'f', user_id: ME, kind: 'take', body: 'A sentence.' }, timestamp: NOW - 2 * DAY }),
       stored({ id: 'follow', timestamp: NOW - DAY }),
     ]);
 
     await flushOfflineQueue();
 
-    expect(executeMutation.mock.calls.map(([m]) => (m as QueuedMutation).id)).toEqual(['log', 'critique']);
+    expect(executeMutation.mock.calls.map(([m]) => (m as QueuedMutation).id)).toEqual(['log', 'take']);
+    expect(readDraft<{ body: string }>(ME, 'critique', 'p')?.data.body).toBe('Kept.');
+    expect(toast).toHaveBeenCalledWith('A piece of writing made offline was over a day old: it is back where it was written, unsent.');
     expect(toast.error).toHaveBeenCalledWith('A change made offline was over a day old, and not sent.');
+    expect(getOfflineQueue()).toEqual([]);
+  });
+
+  it('puts day-old words after what the member has written in the box since, never over it', async () => {
+    writeDraft(ME, 'critique', { body: 'Newer.' }, 'log:L');
+    put(QUEUE_KEY, [stored({ id: 'note', type: 'add_log_comment', payload: { log_id: 'L', user_id: ME, body: 'Older.' }, timestamp: NOW - 2 * DAY })]);
+
+    await flushOfflineQueue();
+
+    expect(readDraft<{ body: string }>(ME, 'critique', 'log:L')?.data.body).toBe('Newer.\n\nOlder.');
+    expect(executeMutation).not.toHaveBeenCalled();
+  });
+
+  it('sends day-old words a phone cannot keep a draft for, rather than drop them', async () => {
+    put(QUEUE_KEY, [stored({ id: 'message', type: 'send_lounge_message', payload: { lounge_id: 'R', user_id: ME, content: 'Still here.' }, timestamp: NOW - 2 * DAY })]);
+    // The draft alone refused (a keystore gone mid-run): the queue itself still reads its own list.
+    const refused = jest.spyOn(jest.requireActual<typeof import('../memberDrafts')>('../memberDrafts'), 'writeDraft').mockReturnValue(false);
+
+    await flushOfflineQueue();
+    refused.mockRestore();
+
+    expect(executeMutation.mock.calls.map(([m]) => (m as QueuedMutation).id)).toEqual(['message']);
   });
 
   it('a write behind one the server failed for a moment keeps its own count of attempts', async () => {

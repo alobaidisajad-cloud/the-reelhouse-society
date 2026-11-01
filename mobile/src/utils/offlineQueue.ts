@@ -23,6 +23,8 @@ import reelToast from './reelToast';
 import { e2eTrace } from './e2eTrace';
 import { isSuspensionRefusal } from './refusedForStanding';
 import { asTierRefusal } from './tierRefusal';
+import { readDraft, writeDraft, type DraftKind } from './memberDrafts';
+import { counted } from './counted';
 import { queryClient } from '../lib/queryClient';
 import { settleDelivered } from '../stores/markCounts';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
@@ -102,6 +104,34 @@ const MAX_QUEUE_SIZE = 100;
 // Sends a write gets when the server fails it for a moment, before the dead letter.
 const MAX_TRANSIENT_RETRIES = 5;
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
+ * The box a member's queued words were written in (useKeptWords' places): a Dispatch critique
+ * under its filing, a critique under a log or a stack, a salon message in its room. A take keeps
+ * no box (a take is a sentence): it has none here, and is sent whatever its age.
+ */
+function boxOf(m: QueuedMutation): { kind: DraftKind; scope: string; words: string } | null {
+    const p = m.payload as Record<string, unknown>;
+    const str = (k: string) => (typeof p[k] === 'string' && p[k] ? (p[k] as string) : null);
+    const at = (kind: DraftKind, scope: string | null, words: string | null) => (scope && words ? { kind, scope, words } : null);
+    if (m.type === 'add_critique') return at('critique', str('post_id'), str('body'));
+    if (m.type === 'add_log_comment') return at('critique', str('log_id') && `log:${str('log_id')}`, str('body'));
+    if (m.type === 'add_list_comment') return at('critique', str('list_id') && `stack:${str('list_id')}`, str('content'));
+    if (m.type === 'send_lounge_message') return at('salon', str('lounge_id'), str('content'));
+    return null;
+}
+
+/**
+ * Words a day old put back in their box, after any the member has written there since: true once
+ * kept. A write with no box, or a phone that cannot keep a draft (writeDraft says no), stays queued.
+ */
+function giveBack(m: QueuedMutation): boolean {
+    const box = boxOf(m);
+    if (!box || !m.owner) return false;
+    const there = readDraft<{ body?: string }>(m.owner, box.kind, box.scope)?.data.body?.trim() ?? '';
+    const body = there && there !== box.words ? `${there}\n\n${box.words}` : box.words;
+    return writeDraft(m.owner, box.kind, { body }, box.scope);
+}
 const DEAD_LETTER_DAYS = 7;
 const DEAD_LETTER_MAX = 50;
 
@@ -379,12 +409,22 @@ async function sendOnce(): Promise<void> {
     // every write but a toggle was dropped here, the member told only "not sent". Held for the member
     // is not waiting to be sent either: it does not age out.
     const now = Date.now();
-    const preFilterLength = queue.length;
-    const staleMutations = queue.filter(m => !m._held && kindOf(m) === 'toggle' && now - m.timestamp >= STALE_THRESHOLD_MS);
+    const aged =(m: QueuedMutation) => !m._held && now - m.timestamp >= STALE_THRESHOLD_MS;
+    const staleMutations = queue.filter((m) => aged(m) && kindOf(m) === 'toggle');
     const lapsed = new Set(staleMutations.map((m) => m.id));
-    queue = queue.filter((m) => !lapsed.has(m.id));
+    // A day old, a member's words go back to the box they were written in, to be read again
+    // before they go out; one with no box (a take), or a phone that cannot keep it, is sent.
+    const givenBack = queue.filter((m) => aged(m) && kindOf(m) === 'words' && giveBack(m));
+    for (const m of givenBack) processedIds.add(m.id);
+    if (givenBack.length > 0) {
+        reelToast(givenBack.length === 1
+            ? 'A piece of writing made offline was over a day old: it is back where it was written, unsent.'
+            : `${counted(givenBack.length, 'piece', 'pieces')} of writing made offline were over a day old: each is back where it was written, unsent.`);
+    }
+    const back = new Set(givenBack.map((m) => m.id));
+    queue = queue.filter((m) => !lapsed.has(m.id) && !back.has(m.id));
     for (const m of staleMutations) processedIds.add(m.id);
-    const stalePruned = preFilterLength - queue.length;
+    const stalePruned = staleMutations.length;
     if (stalePruned > 0) {
         logger.warn('[OfflineSync] pruned writes over a day old', stalePruned);
         reelToast.error(`${changesMadeOffline(stalePruned)} ${stalePruned === 1 ? 'was' : 'were'} over a day old, and not sent.`);

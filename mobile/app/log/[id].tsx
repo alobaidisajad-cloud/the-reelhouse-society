@@ -33,6 +33,7 @@ import { useVault } from '@/src/hooks/useVault';
 import { useClearance } from '@/src/hooks/useClearance';
 import { ropeSpoken } from '@/src/components/clearance/Clearance';
 import { useLater } from '@/src/hooks/useLater';
+import { useKeptWords } from '@/src/hooks/useKeptWords';
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
@@ -357,7 +358,8 @@ export default function LogDetailScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [autopsyOpen, setAutopsyOpen] = useState(false);
-  const [newComment, setNewComment] = useState('');
+  // A critique being written is kept until the house or the queue has it (useKeptWords).
+  const [newComment, setNewComment, letGoOfComment] = useKeptWords(user?.id, 'critique', id ? `log:${id}` : null);
   const [posting, setPosting] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [posterLoaded, setPosterLoaded] = useState(false);
@@ -366,7 +368,7 @@ export default function LogDetailScreen() {
   // Callback isolation: stabilize critique input handler
   const handleNewCommentChange = useCallback((text: string) => {
     setNewComment(text);
-  }, []);
+  }, [setNewComment]);
   const [chronicleActiveIdx, setChronicleActiveIdx] = useState(0);
   const [showLoungeShare, setShowLoungeShare] = useState(false);
   // Mounted only while a share is in flight — see handleShare.
@@ -500,6 +502,7 @@ export default function LogDetailScreen() {
         };
         // Ensure UI displays the saved data (profiles etc.)
         updateComments(list => list.map(c => (c.id === commentId ? mappedData : c)));
+        letGoOfComment();
         settleTap('critique', id, tap);
         // Filed, where members may certify or answer it: the moment to ask to send word.
         if (user) void offerWord('critique', user.id);
@@ -518,6 +521,7 @@ export default function LogDetailScreen() {
          }
       })) {
         flushOfflineQueue();
+        letGoOfComment();
         // Queued, not delivered: it stays on top of every count until the
         // queue delivers it (markCounts.settleDelivered).
         queueTap('critique', id, tap);
@@ -527,6 +531,8 @@ export default function LogDetailScreen() {
         reelToast('Critique saved offline. Will sync when connected.');
       } else {
         updateComments(list => list.filter(c => c.id !== commentId));
+        // Refused: the words go back in the box, never to be typed twice.
+        setNewComment((now) => (now.trim() ? now : commentBody));
         withdrawTap('critique', id, tap);
         reelToast.error(isForbiddenError(error) ? 'This member limits who may annotate their critiques.' : 'Your critique could not be filed.');
       }

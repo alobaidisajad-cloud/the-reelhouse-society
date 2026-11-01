@@ -10,6 +10,7 @@ import { MasterLogo } from '@/src/components/MasterLogo';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
 import { useOfflineAware } from '@/src/hooks/useOfflineAware';
+import { useKeptWords } from '@/src/hooks/useKeptWords';
 import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
@@ -387,7 +388,8 @@ export default function LoungeRoomScreen() {
   } = useLoungeStore();
   const roomLive = useLoungeStore((st) => st.roomLive);
 
-  const [input, setInput] = useState('');
+  // A message being written is kept until it is sent (useKeptWords); a sent one the store keeps.
+  const [input, setInput, letGoOfInput] = useKeptWords(user?.id, 'salon', id ?? null);
   const [replyTo, setReplyTo] = useState<LoungeMessage | null>(null);
   const [actionSheetMsg, setActionSheetMsg] = useState<LoungeMessage | null>(null);
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
@@ -414,7 +416,7 @@ export default function LoungeRoomScreen() {
     setInput(text);
     // THE HOUSE PULSE — announce the typewriter (throttled in the store).
     if (text.length > 0 && id) broadcastTyping(id);
-  }, [id, broadcastTyping]);
+  }, [id, broadcastTyping, setInput]);
 
   // The room on screen NOW, for answers to compare against the room they were asked for.
   const shownRoomRef = useRef(id);
@@ -597,7 +599,7 @@ export default function LoungeRoomScreen() {
       reply_to_username: replyTo?.username || undefined,
       reply_to_content: replyTo?.content,
     });
-    setInput('');
+    letGoOfInput();
     setReplyTo(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, sending, id, replyTo]);
