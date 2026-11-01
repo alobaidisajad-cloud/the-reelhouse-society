@@ -22,6 +22,13 @@ CREATE FUNCTION public.list_items_touch_the_stack() RETURNS trigger
     SET search_path TO 'public', 'pg_temp'
     AS $$
 BEGIN
+  -- A silenced or suspended member may still take out what is theirs, and may edit nothing: no edit
+  -- of theirs can follow to need the stack's time, and touching the stack would be refused as their
+  -- write (enforce_not_restricted, tr_ban_gate_update), taking the withdrawal down with it.
+  IF EXISTS (SELECT 1 FROM public.profiles
+              WHERE id = auth.uid() AND (is_banned OR suspended_until > now())) THEN
+    RETURN NULL;
+  END IF;
   -- The stack's own time, set by set_lists_updated_at to the house's now().
   UPDATE public.lists SET updated_at = now()
    WHERE id IN (SELECT DISTINCT list_id FROM changed);

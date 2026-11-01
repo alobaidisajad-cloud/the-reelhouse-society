@@ -9,7 +9,8 @@
 -- three days ago; since then another device added a film to it. The phone's
 -- edit, sent with the time it read the stack, is refused (PT412) and the film
 -- stays; an edit sent with the stack's time now saves, exactly its films; an
--- older call, with no time, saves as before. The transaction's now() stands
+-- older call, with no time, saves as before; and once silenced, the member
+-- still takes a film out of their own stack. The transaction's now() stands
 -- still, so "three days ago" is written into the stack as it is made.
 -- Read each NOTICE as  case|expected|got ; the last line is the verdict, and
 -- any miss makes psql exit non-zero.
@@ -79,6 +80,27 @@ BEGIN
   PERFORM set_config('request.jwt.claims', '', true);
 END $$;
 
+-- ── the member silenced: they may still take a film out of their own stack ───
+UPDATE public.profiles SET is_banned = true WHERE id = (SELECT id FROM rh_who WHERE what = 'member');
+DO $$
+DECLARE
+  v_stack uuid := (SELECT id FROM rh_rows WHERE what = 'stack');
+  v_state text;
+BEGIN
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', (SELECT id FROM rh_who WHERE what = 'member'), 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+  BEGIN
+    DELETE FROM public.list_items WHERE list_id = v_stack;
+    v_state := 'taken out';
+  EXCEPTION WHEN OTHERS THEN
+    v_state := SQLSTATE;
+  END;
+  INSERT INTO rh_rows VALUES ('silenced', NULL, v_state || '|' || (SELECT count(*) FROM public.list_items WHERE list_id = v_stack)::text);
+  PERFORM set_config('role', 'none', true);
+  PERFORM set_config('request.jwt.claims', '', true);
+END $$;
+
 -- ── the verdict ──────────────────────────────────────────────────────────────
 DO $$
 BEGIN
@@ -90,6 +112,8 @@ BEGIN
     (SELECT got FROM rh_rows WHERE what = 'fresh'));
   PERFORM pg_temp.rh_case('an older call, with no time, saves as before', 'rh: retitled|9002',
     (SELECT got FROM rh_rows WHERE what = 'older'));
+  PERFORM pg_temp.rh_case('a silenced member still takes a film out of their own stack', 'taken out|0',
+    (SELECT got FROM rh_rows WHERE what = 'silenced'));
 END $$;
 
 SELECT pg_temp.rh_verdict();
