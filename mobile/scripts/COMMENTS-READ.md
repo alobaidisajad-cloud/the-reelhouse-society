@@ -1588,6 +1588,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/paperIsFlattened.test.ts | 2026-10-25 | written: the flat paper is the colour its three layers made, at every height |
 | src/types/__tests__/everyWritingHasAReportDoor.guard.test.ts | 2026-10-27 | Written 2026-10-28: every reportable kind has a door or a reason, every table of cleaned member text a kind or a reason it reaches no other member (P4.50) |
 | src/utils/__tests__/aCancelledShareSaysNothing.guard.test.ts | 2026-10-27 | Written 2026-10-27: every function opening a share sheet, and no claim of success in it (P4.43) |
+| src/utils/__tests__/aLeapDayIsADay.test.tsx | 2026-11-01 | new: with the clock at 2028-02-29 and 2028-03-01, today and its neighbours, a time until and an age across the leap day, the paper day label, the picker February and the profile year of days |
 | src/utils/__tests__/aPushCarriesNoPrivateWords.guard.test.ts | 2026-10-27 | Written 2026-10-27: every writer of a notice's message read from the schema snapshot, each value in it judged for a lock screen (P4.5) |
 | src/utils/__tests__/aQuoteMarkKeepsItsWord.guard.test.ts | 2026-10-31 | new: no guillemet is set apart from its word by a space a line may break at |
 | src/utils/__tests__/aRoomThePhoneClosedOpensAgain.test.ts | 2026-10-30 | new: a room reopens within the half hour with its member's draft, never without it, never one left |
