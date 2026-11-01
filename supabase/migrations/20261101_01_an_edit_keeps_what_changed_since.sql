@@ -114,7 +114,7 @@ BEGIN
 END;
 $$;
 
--- add-only (3): it only widens: the grants the old save_stack had, on the new one
+-- add-only (3): it only widens: the grants the old save_stack had, on the new one; build 41's and the website's save_stack calls replayed in the old clients' run (e2e-old-clients), each landing as before
 REVOKE ALL ON FUNCTION public.save_stack(uuid, text, text, boolean, boolean, jsonb, boolean, timestamp with time zone) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.save_stack(uuid, text, text, boolean, boolean, jsonb, boolean, timestamp with time zone) TO authenticated;
 GRANT ALL ON FUNCTION public.save_stack(uuid, text, text, boolean, boolean, jsonb, boolean, timestamp with time zone) TO service_role;
