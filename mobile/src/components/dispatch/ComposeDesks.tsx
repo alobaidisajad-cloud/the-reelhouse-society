@@ -40,6 +40,7 @@ import { useDispatch } from '@/src/stores/dispatch';
 import { paperTierOf, type BallotOption } from '@/src/stores/dispatchTypes';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
+import { FILING_CHANGED_SINCE, isChangedSince } from '@/src/utils/keepWhatChangedSince';
 import { showTierDoor } from '@/src/utils/tierDoor';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
@@ -141,8 +142,9 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
         // Queued is not gone, as the essay's desk says it.
         reelToast.success(amended?.offline ? 'Amended. It goes out when the wire is back.' : 'Amended');
         nav.back();
-      } catch {
-        reelToast.error('It could not be amended.'); // the new words are still in the field
+      } catch (e) {
+        // the new words are still in the field
+        reelToast.error(isChangedSince(e) ? FILING_CHANGED_SINCE : 'It could not be amended.');
       } finally {
         setSending(false);
       }

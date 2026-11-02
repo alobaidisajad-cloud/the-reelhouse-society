@@ -20,6 +20,8 @@ import { fileOnShelf } from '../services/ShelfService';
 import { logger } from './logger';
 import type { QueuedMutation } from './offlineQueue';
 import { sanitizeInput, type FieldType } from './sanitizeInput';
+import { keepFilingEdit, keepLogEdit, mergeHistory } from '../services/KeptEdits';
+import { FILING_EDITABLE_COLUMNS } from '../stores/dispatchTypes';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -288,42 +290,27 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     add_log: insertLog,
 
     update_log: async (p: any) => {
-        const { id, updates } = p;
+        const { id, updates, was } = p;
         const upds = cleanProse(updates as Record<string, unknown>);
-        
+        // The queue sends a write only under its member's own session.
+        const owner = (p.user_id as string | undefined) ?? useAuthStore.getState().user?.id;
+
+        // Laid only over what the member edited, where it is as they left it (SYN-28). An edit
+        // queued by a build before edits carried `was` is written as before.
+        if (was && typeof was === 'object' && owner) {
+            await keepLogEdit(id, owner, upds, was as Record<string, unknown>);
+            // A log removed elsewhere, or one the house would not let them change, is left as it
+            // is, as an edit of either always was.
+            return {};
+        }
+
         // Protect viewing_history array from Last-Write-Wins offline erasure
         if (upds.viewing_history && Array.isArray(upds.viewing_history)) {
             // Raised when it fails: unread, the phone's history would overwrite the
             // server's — the erasure this merge exists to prevent.
             const { data } = throwIfError(await supabase.from('logs').select('viewing_history').eq('id', id).maybeSingle());
             if (data && Array.isArray(data.viewing_history)) {
-                const serverHistory = data.viewing_history;
-                const offlineHistory = upds.viewing_history;
-                
-                // A composite key: `date` alone merges two rewatches on one day (date-only watches
-                // sit at T12:00:00Z); the other fields tell two quick marks apart.
-                const compositeKey = (entry: any): string =>
-                    `${entry.date ?? ''}::${entry.rating ?? 0}::${entry.status ?? ''}::${entry.review?.slice(0, 40) ?? ''}::${entry.watchedWith ?? ''}::${entry.physicalMedia ?? ''}`;
-
-                // An empty place in either history is no viewing, and is dropped from both: kept, the
-                // phone's own reached the sort below, which reads its date and threw, and the edit
-                // was given up.
-                const mergedMap = new Map();
-                serverHistory.forEach((entry: any) => {
-                    if (entry) mergedMap.set(compositeKey(entry), entry);
-                });
-                offlineHistory.forEach((entry: any) => {
-                    if (!entry) return;
-                    const key = compositeKey(entry);
-                    // Only overwrite if the entry is genuinely the same (not a distinct rewatch)
-                    if (!mergedMap.has(key)) {
-                        mergedMap.set(key, entry);
-                    }
-                });
-                
-                upds.viewing_history = Array.from(mergedMap.values()).sort((a: any, b: any) => 
-                    new Date(b.date).getTime() - new Date(a.date).getTime()
-                );
+                upds.viewing_history = mergeHistory(data.viewing_history, upds.viewing_history);
             }
         }
         
@@ -825,14 +812,9 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // votes people already gave. A ballot is filed once.
     update_filing: async (p: any) => {
         const { id, user_id, updates } = p;
-        const ALLOWED = ['title', 'body', 'full_content', 'source', 'source_url',
-            'spoiler_label', 'subject_kind', 'subject_id', 'subject_title',
-            // The cover travels with the film, or the old still stays behind a new title.
-            'subject_sub', 'subject_image', 'subject_backdrop', 'series_id', 'series_title',
-            'part_number', 'is_published'] as const;
         const u = (updates ?? {}) as Record<string, unknown>;
         const safe: Record<string, unknown> = {};
-        for (const k of ALLOWED) if (u[k] !== undefined) safe[k] = u[k];
+        for (const k of FILING_EDITABLE_COLUMNS) if (u[k] !== undefined) safe[k] = u[k];
         // The kind is lent to cleanFiling for the body's cap and never written (a take turned
         // dossier would meet new CHECKs retrospectively). Missing, the tighter cap applies:
         // a trimmed body is recoverable, a refused write is not.
@@ -842,6 +824,13 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         if (Object.keys(safe).length === 0) return {};
         safe.updated_at = houseIso();
         safe.edited_at = safe.updated_at;
+        // Laid only over what the member edited, where it is as they left it (SYN-28). An edit
+        // queued by a build before edits carried `was` is written as before.
+        if (p.was && typeof p.was === 'object') {
+            const kept = await keepFilingEdit(id, user_id, safe, p.was as Record<string, unknown>);
+            if (kept === 'gone' || kept === 'refused') throwIfRefused({ error: null, data: [] }, 'update_filing');
+            return {};
+        }
         throwIfRefused(await supabase.from('dispatch_posts').update(safe)
             .eq('id', id).eq('user_id', user_id).select('id'), 'update_filing');
         return {};

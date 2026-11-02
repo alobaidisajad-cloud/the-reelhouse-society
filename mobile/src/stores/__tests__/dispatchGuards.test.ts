@@ -345,7 +345,9 @@ describe('the row a filing is sent as', () => {
 
 describe('the row an amendment is sent as', () => {
   it('carries every field that was given, including one set back to null', async () => {
-    reset({ filings: [filing({ kind: 'wire', source: 'Old' })] });
+    // Marked as spoiling, so that clearing it is a change.
+    mockRow = row({ kind: 'wire', source: 'Old', spoiler_label: 'SPOILERS' });
+    reset({ filings: [filing({ kind: 'wire', source: 'Old', spoilerLabel: 'SPOILERS' })] });
     await useDispatch.getState().amend('f1', {
       title: 'A Title', body: 'Body.', fullContent: 'Essay.',
       source: 'New', sourceUrl: 'https://x', spoilerLabel: null, seriesTitle: 'A Series',
@@ -375,14 +377,6 @@ describe('when the wire is down', () => {
     expect(useDispatch.getState().critiques.f1).toHaveLength(1);
     expect(mockQueued[0].type).toBe('add_critique');
     expect(mockQueued[0].payload._tempId).toBeTruthy();
-  });
-
-  it('queues an amendment and keeps the new words', async () => {
-    mockOutcome = 'offline';
-    reset({ filings: [filing()], critiques: { f1: [critique] } });
-    await useDispatch.getState().amendCritique('c1', 'f1', 'Second.');
-    expect(useDispatch.getState().critiques.f1[0].body).toBe('Second.');
-    expect(mockQueued[0].type).toBe('update_critique');
   });
 
   it('queues a withdrawal and keeps it off the page', async () => {
@@ -697,6 +691,8 @@ describe('an amendment the house refuses without an error', () => {
       chain.select = () => self(); chain.eq = () => self(); chain.is = () => self();
       chain.order = () => self(); chain.update = () => self();
       chain.in = () => Promise.resolve({ data: [], error: null });
+      // The filing is there, as the member holds it: only the update matches nothing.
+      chain.maybeSingle = () => Promise.resolve({ data: row({ body: 'The original.', updated_at: '2026-08-28T21:00:00Z' }), error: null });
       chain.then = (r: (v: unknown) => unknown) =>
         Promise.resolve({ data: [], error: null }).then(r);
       return chain;
@@ -708,33 +704,16 @@ describe('an amendment the house refuses without an error', () => {
     const restore = matchesNoRow();
     reset({ filings: [filing({ body: 'The original.' })] });
 
-    await expect(useDispatch.getState().amend('f1', { body: 'Changed.' })).rejects.toBeTruthy();
+    await expect(useDispatch.getState().amend('f1', { body: 'Changed.' })).rejects.toThrow('dispatch.amend: refused');
 
     // And the page is put back, so what is on screen is what the house holds.
     expect(useDispatch.getState().filings[0].body).toBe('The original.');
     restore();
   });
 
-  it('does not tell them their critique was amended either', async () => {
-    const restore = matchesNoRow();
-    reset({
-      filings: [filing()],
-      critiques: {
-        f1: [{
-          id: 'c1', postId: 'f1', authorId: 'u1', author: null,
-          body: 'The original.', certifyCount: 0,
-          createdAt: '2026-08-28T21:00:00Z', editedAt: null,
-        }],
-      },
-    });
-
-    await expect(useDispatch.getState().amendCritique('c1', 'f1', 'Changed.')).rejects.toBeTruthy();
-    expect(useDispatch.getState().critiques.f1[0].body).toBe('The original.');
-    restore();
-  });
-
   it('and an amendment that DOES land is still reported as landing', async () => {
     // The control. A guard that refuses everything is not a guard.
+    mockRow = row({ body: 'The original.' });
     reset({ filings: [filing({ body: 'The original.' })] });
     await useDispatch.getState().amend('f1', { body: 'Changed.' });
     expect(useDispatch.getState().filings[0].body).toBe('Changed.');

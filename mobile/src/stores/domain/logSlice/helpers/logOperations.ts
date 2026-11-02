@@ -16,6 +16,8 @@ import { resolveTier } from '../../../../utils/tier';
 import { localCalendarDate } from '../../../../utils/timeAgo';
 import { useAuthStore } from '../../../auth';
 import { VaultService } from '../../../../services/VaultService';
+import { keepLogEdit } from '../../../../services/KeptEdits';
+import { isChangedSince, wasOf } from '../../../../utils/keepWhatChangedSince';
 import { useVaultStore } from '../../../vaultStore';
 import { stillSignedIn } from '../../helpers/sessionGuard';
 import { markWritten } from '../../marksWrites';
@@ -632,6 +634,9 @@ export const updateLogOp = async (
         });
 
         const dbUpdates = mapLogToDbPayload(cleanUpdates);
+        // What this edit changes, as the member saw it (SYN-28): it is laid only where the log
+        // still holds it. Without the record as they read it, the edit is written as before.
+        const was = originalLog ? wasOf(dbUpdates, mapLogToDbPayload(originalLog)) : null;
         
         let previousFilmData: any;
         if (filmIdToUpdate) {
@@ -707,6 +712,12 @@ export const updateLogOp = async (
                 } catch (e) {
                     error = e;
                 }
+            } else if (was) {
+                try {
+                    await keepLogEdit(id, user.id, dbUpdates, was);
+                } catch (e) {
+                    error = e;
+                }
             } else {
                 ({ error } = await supabase.from('logs')
                     .update(dbUpdates)
@@ -722,7 +733,7 @@ export const updateLogOp = async (
                         ? (opts.viewingOp.kind === 'add'
                             ? { type: 'add_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, fields: viewingFieldsOf(dbUpdates) } }
                             : { type: 'remove_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId } })
-                        : { type: 'update_log', payload: { id, updates: dbUpdates } })) {
+                        : { type: 'update_log', payload: { id, user_id: user.id, updates: dbUpdates, ...(was ? { was } : {}) } })) {
                     // A STEP shows no toast either: its caller is told it queued, and
                     // says one true thing in its own verb.
                     if (!opts?.silentAnnounce) reelToast('Saved offline. Will sync when connected.');
@@ -770,7 +781,8 @@ export const updateLogOp = async (
             if (!opts?.silentAnnounce && !queuedOffline) announceToScreenReader('Record amended');
             return { queuedOffline }; // so a caller using this as a step can say the truth
         } catch (e: unknown) {
-            if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp', logId: id });
+            // Changed elsewhere since it was opened is an answer, not a fault.
+            if (!isNetworkError(e) && !isChangedSince(e)) captureError(e, { scope: 'updateLogOp', logId: id });
             // Roll back only while they are still here: after a logout it would hand
             // the next member a record.
             if (originalLog && stillSignedIn(user.id)) {

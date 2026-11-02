@@ -2,7 +2,7 @@
  * dispatchWrites.test.ts — filing, amending, ending, and the critiques.
  * ─────────────────────────────────────────────────────────────────────────────
  * The other half of the store's dark: `file`, `amend`, `end`, `addCritique`,
- * `amendCritique`, `removeCritique`, and the cleaning every one of them goes
+ * `removeCritique`, and the cleaning every one of them goes
  * through. These are the paths where a member's words reach the database, so
  * "nothing has ever run this" is the least acceptable place for it to be true.
  *
@@ -48,6 +48,11 @@ jest.mock('../../lib/supabase', () => ({
       chain.is = () => self();
       chain.order = () => self();
       chain.in = () => Promise.resolve({ data: [], error: null });
+      // The filing as the house holds it, read by an amendment before it is laid; it fails
+      // as a write does (offline, refused).
+      chain.maybeSingle = () => answer().then((r: { error: unknown }) => (r.error
+        ? r
+        : { data: { id: 'f1', title: null, body: 'A take.', source: null, source_url: null, spoiler_label: null, updated_at: '2026-08-28T21:00:00Z' }, error: null }));
       chain.range = () => { const r = Promise.resolve({ data: [], error: null }); return Object.assign(r, { abortSignal: () => r }); };
       chain.limit = () => { const r = Promise.resolve({ data: [], error: null }); return Object.assign(r, { abortSignal: () => r }); };
       chain.insert = (rows: unknown[]) => {
@@ -387,23 +392,11 @@ describe('writing a critique', () => {
   });
 });
 
-describe('amending and withdrawing a critique', () => {
+describe('withdrawing a critique', () => {
   const critique = {
     id: 'c1', postId: 'f1', authorId: 'u1', author: { name: 'me', memberNo: 1, tier: 'free' as const },
     body: 'First thought.', certifyCount: 0, createdAt: '2026-08-28T21:00:00Z', editedAt: null,
   };
-
-  it('rewrites it, and puts the old words back when refused', async () => {
-    reset({ critiques: { f1: [critique] } });
-    await useDispatch.getState().amendCritique('c1', 'f1', 'Second thought.');
-    expect(useDispatch.getState().critiques.f1[0].body).toBe('Second thought.');
-
-    mockOutcome = 'refused';
-    reset({ critiques: { f1: [critique] } });
-    await expect(useDispatch.getState().amendCritique('c1', 'f1', 'Second thought.'))
-      .rejects.toBeTruthy();
-    expect(useDispatch.getState().critiques.f1[0].body).toBe('First thought.');
-  });
 
   it('withdraws it and counts down', async () => {
     reset({ critiques: { f1: [critique] } });
@@ -428,10 +421,10 @@ describe('amending and withdrawing a critique', () => {
 
 // ── THE REFUSAL THAT LOOKS LIKE A SUCCESS ───────────────────────────────────
 /**
- * Three updates ask for `.select('id')` — `amend`, `amendCritique`, and
- * `takeAnswer` — because a row RLS refuses matches nothing, and matching
- * nothing is a 200 with an empty array rather than an error. Two of the three
- * had a test standing over that empty array. `takeAnswer` did not: its only
+ * Two updates ask for `.select('id')` — `amend` and `takeAnswer` — because
+ * a row RLS refuses matches nothing, and matching nothing is a 200 with an
+ * empty array rather than an error. One of the two had a test standing over
+ * that empty array. `takeAnswer` did not: its only
  * refusal test used a PostgREST *error*, which is caught one line earlier by
  * `if (error) throw error`, so the guard underneath had never once run.
  *

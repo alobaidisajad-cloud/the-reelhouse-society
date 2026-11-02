@@ -410,6 +410,21 @@ export const FILING_FULL_COLUMNS = FILING_CARD_COLUMNS.replace(
   'title, body, full_content,',
 );
 
+/** The columns a queued edit of a filing may write (update_filing): no other is sent. */
+export const FILING_EDITABLE_COLUMNS = ['title', 'body', 'full_content', 'source', 'source_url',
+  'spoiler_label', 'subject_kind', 'subject_id', 'subject_title',
+  // The cover travels with the film, or the old still stays behind a new title.
+  'subject_sub', 'subject_image', 'subject_backdrop', 'series_id', 'series_title',
+  'part_number', 'is_published'] as const;
+
+/**
+ * What a queued edit of a filing reads before it is laid (keepWhatChangedSince): every column
+ * update_filing may write, and the time the row last moved.
+ */
+export const FILING_EDIT_COLUMNS =
+  'id, updated_at, title, body, full_content, source, source_url, spoiler_label, subject_kind, subject_id, ' +
+  'subject_title, subject_sub, subject_image, subject_backdrop, series_id, series_title, part_number, is_published';
+
 export const CRITIQUE_COLUMNS =
   'id, post_id, user_id, author_username, body, certify_count, created_at, edited_at, ' +
   'profiles!dispatch_comments_profile_fkey(username, avatar_url, member_no, tier, role, is_founding)';

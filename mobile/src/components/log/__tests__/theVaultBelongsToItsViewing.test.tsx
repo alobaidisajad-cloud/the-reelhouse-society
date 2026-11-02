@@ -51,12 +51,12 @@ describe('a note is never read from, or written to, the log row', () => {
   it('neither column list asks for it', () => {
     const src = read('src/utils/mappers.ts');
     const lists = [...src.matchAll(/export const (\w*LOG_\w*COLUMNS) = '([^']+)'/g)];
-    // Both lists exist, and neither carries the note.
-    expect(lists.length).toBe(2);
+    // The two a log is shown from, and the one an edit reads before it is laid: none carries the note.
+    expect(lists.map(([, name]) => name).sort()).toEqual(['LOG_EDIT_COLUMNS', 'LOG_SELECT_COLUMNS', 'PUBLIC_LOG_COLUMNS']);
     for (const [, name, cols] of lists) {
       expect(`${name}: ${cols}`).not.toMatch(/\bprivate_notes\b/);
-      // …and both carry the viewing, which is what a note belongs to.
-      expect(`${name}: ${cols}`).toMatch(/\bviewing_id\b/);
+      // …and the two a log is shown from carry the viewing, which is what a note belongs to.
+      if (name !== 'LOG_EDIT_COLUMNS') expect(`${name}: ${cols}`).toMatch(/\bviewing_id\b/);
     }
   });
 

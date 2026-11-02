@@ -166,7 +166,6 @@ describe('it does not act for nobody', () => {
     expect(await useDispatch.getState().amend('f1', { body: 'x' })).toBeUndefined();
     expect(await useDispatch.getState().end('f1')).toBeUndefined();
     await useDispatch.getState().addCritique('f1', 'x');
-    await useDispatch.getState().amendCritique('c1', 'f1', 'x');
     await useDispatch.getState().removeCritique('c1', 'f1');
     await settle();
 
@@ -183,20 +182,12 @@ describe('it does not act for nobody', () => {
     await expect(useDispatch.getState().amend('nope', { body: 'x' })).rejects.toBeTruthy();
     await expect(useDispatch.getState().end('nope')).rejects.toBeTruthy();
     useDispatch.getState().takeAnswer('nope', 'c1');
-    await useDispatch.getState().amendCritique('nope', 'nope', 'x');
     await useDispatch.getState().removeCritique('nope', 'nope');
     await settle();
     // The two reads, and nothing written.
     expect(mockAsks).toEqual(['dispatch_posts', 'dispatch_posts']);
   });
 
-  it('refuses an empty amendment to a critique', async () => {
-    const c = { id: 'c1', postId: 'f1', authorId: 'u1', author: null, body: 'First.', certifyCount: 0, createdAt: 'x', editedAt: null };
-    reset({ filings: [filing()], critiques: { f1: [c] } });
-    await useDispatch.getState().amendCritique('c1', 'f1', '   ');
-    expect(useDispatch.getState().critiques.f1[0].body).toBe('First.');
-    expect(mockAsks).toHaveLength(0);
-  });
 });
 
 describe('it does not repeat itself', () => {

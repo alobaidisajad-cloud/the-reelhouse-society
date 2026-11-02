@@ -133,6 +133,19 @@ const LOG_FIELD_MAP: { domain: keyof DomainLog; db: string; defaultOnNull?: stri
   { domain: 'viewingHistory', db: 'viewing_history' },
 ];
 
+/**
+ * What an edit of a log reads before it is laid (keepWhatChangedSince): every column
+ * LOG_FIELD_MAP can write, and the time the row last moved.
+ */
+export const LOG_EDIT_COLUMNS = 'id, updated_at, rating, review, status, is_spoiler, watched_date, watched_with, abandoned_reason, physical_media, is_autopsied, autopsy, pull_quote, drop_cap, editorial_header, alt_poster, video_url, format, view_count, viewing_history' as const;
+
+/** The columns an edit of a log may write (LOG_FIELD_MAP's), for LOG_EDIT_COLUMNS' test. */
+export const LOG_EDITABLE_COLUMNS: readonly string[] = LOG_FIELD_MAP.map((f) => f.db);
+
+/** A log's day as the house keeps it (a date): the phone holds it as noon UTC. */
+export const logAsStored = (column: string, value: unknown): unknown =>
+  column === 'watched_date' && typeof value === 'string' ? value.slice(0, 10) : value;
+
 export function mapLogToDbPayload(updates: Partial<Record<keyof DomainLog, DomainLog[keyof DomainLog] | null>>): Record<string, string | number | boolean | null | unknown[]> {
   const db: Record<string, string | number | boolean | null | unknown[]> = {};
   for (const { domain, db: col, defaultOnNull } of LOG_FIELD_MAP) {

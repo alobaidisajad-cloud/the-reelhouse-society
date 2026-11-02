@@ -10,6 +10,7 @@ import { LOG_BUSY, heldLog } from '@/src/stores/domain/logSlice/helpers/logOpera
 import { LOG_SELECT_COLUMNS, mapLogRow, type LogRow } from '@/src/utils/mappers';
 import type { DomainLog } from '@/src/types';
 import { isNetworkError } from '@/src/utils/networkError';
+import { LOG_CHANGED_SINCE, isChangedSince } from '@/src/utils/keepWhatChangedSince';
 import { maybeRequestReview } from '@/src/utils/requestReview';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -612,14 +613,17 @@ export function useLogFlow() {
                 writeDraft(user?.id, 'log', { filmId, review, rating, privateNotes, filmTitle, filmName, filmPoster, filmYear });
             }
             // The core write's failures surface here; a network one is queued, not a defect.
-            if (!isNetworkError(err)) {
+            // Changed elsewhere since it was opened is an answer, not a fault.
+            if (!isNetworkError(err) && !isChangedSince(err)) {
                 captureError(err, { scope: 'useLogFlow.handleLog', isEditing, filmId: film?.id });
             }
             // ONE toast, chosen here; the reason travels as a CODE, never matched prose.
             reelToast.error(
                 (err as { code?: string })?.code === LOG_BUSY
                     ? 'Still sealing the previous record — one moment.'
-                    : 'The record could not be sealed. Try again.'
+                    : isChangedSince(err)
+                        ? LOG_CHANGED_SINCE
+                        : 'The record could not be sealed. Try again.'
             );
             setSubmitting(false);
         }

@@ -29,9 +29,11 @@ import { create } from 'zustand';
 import { houseIso } from '@/src/lib/houseClock';
 import { supabase } from '../lib/supabase';
 import { captureError } from '../lib/sentry';
+import { keepFilingEdit } from '../services/KeptEdits';
 import { wallMayHaveChanged } from '../components/lobby/wallRead';
 import { e2eTrace } from '../utils/e2eTrace';
 import { logger } from '../utils/logger';
+import { wasOf } from '../utils/keepWhatChangedSince';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
@@ -180,7 +182,6 @@ export interface DispatchState {
   fetchCritiques: (postId: string, order: CritiqueOrder) => Promise<void>;
   loadMoreCritiques: (postId: string) => Promise<void>;
   addCritique: (postId: string, body: string) => Promise<void | { offline: boolean }>;
-  amendCritique: (id: string, postId: string, body: string) => Promise<void>;
   removeCritique: (id: string, postId: string) => Promise<void>;
   certifyCritique: (id: string, postId: string, next: boolean) => void;
 }
@@ -566,6 +567,15 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const clean = cleanUpdate(filing.kind, updates);
     const before = filing;
     const now = houseIso();
+    // What this amendment changes, as the author saw it (SYN-28): it is laid only where the
+    // filing still holds it. The essay only from the copy that read it: the feed's has none.
+    const opened = get().opened[id];
+    const heldAs = opened ?? filing;
+    const was = wasOf(toUpdateRow(clean), toUpdateRow({
+      title: heldAs.title, body: heldAs.body, source: heldAs.source, sourceUrl: heldAs.sourceUrl,
+      spoilerLabel: heldAs.spoilerLabel, seriesTitle: heldAs.seriesTitle,
+      ...(opened ? { fullContent: opened.fullContent } : {}),
+    }));
 
     set((st) => patchFiling(st, id, (f) => ({
       ...f,
@@ -581,15 +591,9 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const dbUpdates = toUpdateRow(clean);
     try {
       // `posts_update_own` refuses a WITHHELD or ENDED filing by matching no row, which
-      // PostgREST answers with 200. `.select('id')` turns that silence into an answer.
-      const { data, error } = await supabase
-        .from('dispatch_posts')
-        .update({ ...dbUpdates, edited_at: now, updated_at: now })
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select('id');
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error('dispatch.amend: refused');
+      // PostgREST answers with 200: the kept write reads that silence as refused.
+      const kept = await keepFilingEdit(id, user.id, { ...dbUpdates, edited_at: now, updated_at: now }, was);
+      if (kept === 'gone' || kept === 'refused') throw new Error('dispatch.amend: refused');
       // Its words or its spoiler mark: the Lobby may be hanging it.
       wallMayHaveChanged();
     } catch (e) {
@@ -598,7 +602,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       if (isNetworkError(e)) {
         if (enqueueMutation({
           type: 'update_filing',
-          payload: { id, user_id: user.id, kind: filing.kind, updates: dbUpdates },
+          payload: { id, user_id: user.id, kind: filing.kind, updates: dbUpdates, was },
         })) {
           flushOfflineQueue();
           return { offline: true };
@@ -902,52 +906,6 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         ...patchFiling(st, postId, (f) => ({
           ...f, commentCount: Math.max(0, f.commentCount - 1),
         })),
-      }));
-      throw e;
-    }
-  },
-
-  amendCritique: async (id, postId, body) => {
-    const user = useAuthStore.getState().user;
-    const before = (get().critiques[postId] ?? []).find((c) => c.id === id);
-    if (!user || !before) return;
-    const startedAs = user.id;
-    const clean = sanitizeInput(body, 'critique');
-    if (!clean) return;
-    const now = houseIso();
-
-    set((st) => ({
-      critiques: {
-        ...st.critiques,
-        [postId]: (st.critiques[postId] ?? []).map((c) =>
-          c.id === id ? { ...c, body: clean, editedAt: now } : c,
-        ),
-      },
-    }));
-
-    try {
-      // `.select('id')`, as in amend: under a withheld or ended filing no row matches, silently.
-      const { data, error } = await supabase
-        .from('dispatch_comments')
-        .update({ body: clean, edited_at: now })
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select('id');
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error('dispatch.amendCritique: refused');
-    } catch (e) {
-      // Neither queued as the next member nor put back on their page.
-      if (!memberUnchanged(startedAs)) throw e;
-      if (isNetworkError(e)) {
-        enqueueMutation({ type: 'update_critique', payload: { id, user_id: user.id, body: clean } });
-        flushOfflineQueue();
-        return;
-      }
-      set((st) => ({
-        critiques: {
-          ...st.critiques,
-          [postId]: (st.critiques[postId] ?? []).map((c) => (c.id === id ? before : c)),
-        },
       }));
       throw e;
     }

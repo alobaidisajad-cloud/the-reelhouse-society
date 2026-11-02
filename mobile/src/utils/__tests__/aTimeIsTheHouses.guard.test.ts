@@ -29,10 +29,14 @@ const DATED_BY_THE_HOUSE: Record<string, { columns: string[]; by: string }> = {
   'src/utils/mutationExecutor.ts': { columns: ['edited_at', 'updated_at'], by: 'dispatch_posts_pin_columns and dispatch_comments_pin_columns' },
 };
 
-/** The argument of each write a file makes: `.update(…)`, `.insert(…)`, `.upsert(…)`, and a payload set by assignment. */
+/**
+ * The argument of each write a file makes: `.update(…)`, `.insert(…)`, `.upsert(…)`, a kept
+ * edit's (keepFilingEdit, keepLogEdit: its changes are written by their own `.update(send)`), and
+ * a payload set by assignment.
+ */
 function writesIn(code: string): string[] {
   const out: string[] = [];
-  for (const m of code.matchAll(/\.(?:update|insert|upsert)\(/g)) {
+  for (const m of code.matchAll(/\.(?:update|insert|upsert)\(|\bkeep\w+Edit\(/g)) {
     let depth = 0;
     let j = (m.index ?? 0) + m[0].length - 1;
     for (; j < code.length; j++) {

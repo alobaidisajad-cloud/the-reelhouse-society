@@ -69,7 +69,10 @@ it('seals the change over the record, never the blanks', async () => {
   await act(async () => { await flow.current.handleLog(); });
   const [held] = mockHouse.rows('logs');
   expect([held?.rating, held?.review, held?.watched_date, held?.watched_with])
-    .toEqual([5, 'Still the best lobby shootout ever filmed.', '2024-03-02T12:00:00Z', 'Mara']);
+    .toEqual([5, 'Still the best lobby shootout ever filmed.', '2024-03-02', 'Mara']);
+  // Only what the member changed is sent: what they left alone stays as the house holds it.
+  const sent = mockHouse.asked.filter((a) => a.table === 'logs' && a.op === 'update').map((a) => Object.keys(a.values?.[0] ?? {}));
+  expect(sent).toEqual([['rating']]);
 });
 
 it('keeps what the member typed when the pages are read again under it', async () => {

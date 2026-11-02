@@ -18,6 +18,7 @@ import { showTierDoor } from '@/src/utils/tierDoor';
 import { colors, fonts } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
 import reelToast from '@/src/utils/reelToast';
+import { FILING_CHANGED_SINCE, isChangedSince } from '@/src/utils/keepWhatChangedSince';
 // The fence an essay is filed against (see `limit`).
 import { isOverLimit, remainingChars, MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import PressableScale from '@/src/components/PressableScale';
@@ -650,7 +651,7 @@ function ComposeDossierScreen() {
             })) return;
             reelToast.error(saveFailed
                 ? 'It did not go, and your phone is out of space. Do not close this.'
-                : 'It did not go. Your words are kept.');
+                : isChangedSince(err) ? FILING_CHANGED_SINCE : 'It did not go. Your words are kept.');
         } finally {
             setIsPublishing(false);
         }

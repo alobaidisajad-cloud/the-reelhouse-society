@@ -18,6 +18,10 @@ jest.mock('@/src/lib/supabase', () => {
     Promise.resolve(mockOffline
       ? { data: null, error: { message: 'TypeError: Network request failed' } }
       : { data: [{ id: 'row' }], error: null, count: 0 }).then(res, rej);
+  // One row, as the house holds the log this file edits (an edit reads it before it is laid).
+  chain.maybeSingle = () => Promise.resolve(mockOffline
+    ? { data: null, error: { message: 'TypeError: Network request failed' } }
+    : { data: { id: 'row', review: 'Long.', rating: 4, updated_at: '2026-09-30T00:00:00Z' }, error: null });
   return {
     supabase: {
       from: () => chain,
