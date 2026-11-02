@@ -28,7 +28,7 @@ export default {
   // The sandbox takes only what the app's tests read: never the worktrees, the drawings or the audit.
   ignorePatterns: ['/*', '!/src', '!/app', '!/__tests__', '!/test-utils', '!/supabase', '!/types', '!/assets', '!/register',
     '!/jest.config.js', '!/jest.stryker.config.js', '!/jest.setup.ts', '!/jest.afterEnv.ts', '!/tsconfig.json',
-    '!/package.json', '!/app.json', '!/eas.json', '!/expo-env.d.ts', '!/patches'],
+    '!/package.json', '!/app.json', '!/eas.json', '!/expo-env.d.ts', '!/patches', '!/modules'],
   incremental: false,
   // A progress line every ten seconds, to the console scripts/stryker-files.cjs hands each run.
   reporters: ['json', 'clear-text', 'progress-append-only'],

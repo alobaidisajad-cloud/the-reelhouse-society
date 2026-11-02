@@ -1,7 +1,7 @@
 appId: com.reelhouse.society
 ---
-# A behind clock run's second half (WORKLIST P4.32): its tokens live 60 s
-# (e2e.yml sets them so for that run alone), so after 75 s the house refuses
+# A behind clock run's second half (WORKLIST P4.32): its tokens live 150 s
+# (e2e.yml sets them so for that run alone), so after 165 s the house refuses
 # the token the phone, its clock behind, still trusts. The app is opened again
 # and every tab read once more. Maestro has no pause: the wait is for the tab
 # bar to go, which it never does on the member's file, so it runs out at its
@@ -9,13 +9,13 @@ appId: com.reelhouse.society
 - extendedWaitUntil:
     notVisible:
       id: "profile-tab"
-    timeout: 75000
+    timeout: 165000
     optional: true
 - runFlow:
     file: phone.yaml
     env:
       SET: waited
-      TO: "75"
+      TO: "165"
 - stopApp
 - launchApp
 - runFlow: every_tab.yaml

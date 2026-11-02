@@ -71,7 +71,7 @@ const ask = (method, path, body, timeout = 3000) => new Promise((resolve) => {
     headers: body ? { 'Content-Length': Buffer.byteLength(body) } : {} }, (res) => {
     let d = '';
     res.on('data', (c) => { d += c; });
-    res.on('end', () => resolve({ status: res.statusCode, type: res.headers['content-type'], length: d.length, body: d.slice(0, 40), ms: Date.now() - t0 }));
+    res.on('end', () => resolve({ status: res.statusCode, type: res.headers['content-type'], date: res.headers.date, length: d.length, body: d.slice(0, 40), ms: Date.now() - t0 }));
     res.on('aborted', () => resolve({ cutAt: d.length }));
     res.on('error', (e) => resolve({ error: e.code ?? e.message, said: e.message, cutAt: d.length }));
   });
@@ -129,6 +129,13 @@ await control('POST', '/fault', { kind: 'limit', bytes: 100 });
 out.limit = await ask('GET', '/big');
 await control('DELETE', '/fault');
 
+out.houseNow = Date.now();
+await control('POST', '/fault', { kind: 'house_ahead', minutes: 1560 });
+out.houseAhead = [await ask('GET', '/ok'), await ask('GET', '/big')];
+await control('DELETE', '/fault');
+out.houseAgain = await ask('GET', '/ok');
+out.aheadRefusals = [refusalOf({ kind: 'house_ahead', minutes: 0 }), refusalOf({ kind: 'house_ahead', minutes: 2881 }), refusalOf({ kind: 'house_ahead' })];
+
 out.upgrade = await new Promise((resolve) => {
   const req = http.request({ host: '127.0.0.1', port: p.port, path: '/realtime/v1/websocket', agent: false,
     headers: { Connection: 'Upgrade', Upgrade: 'websocket' } });
@@ -165,13 +172,13 @@ out.phone = [
   await control('POST', '/phone', { set: 'window_size', to: 'reset' }),
   await control('POST', '/phone', { set: 'clock_ahead', to: 1560 }),
   await control('POST', '/phone', { set: 'clock_behind', to: 180 }),
-  await control('POST', '/phone', { set: 'waited', to: 75 }),
+  await control('POST', '/phone', { set: 'waited', to: 165 }),
   await control('POST', '/phone', { set: 'keyboard', to: 'on' }),
   await control('POST', '/phone', { set: 'window_size', to: '900x1600; reboot' }),
   await control('POST', '/phone', { set: 'window_size', to: '90x1600' }),
   await control('POST', '/phone', { set: 'clock_ahead', to: 0 }),
   await control('POST', '/phone', { set: 'clock_behind', to: 2881 }),
-  await control('POST', '/phone', { set: 'waited', to: 60 }),
+  await control('POST', '/phone', { set: 'waited', to: 150 }),
   await control('POST', '/phone', { set: 'font_scale', to: 9 }),
   await control('POST', '/phone', { set: 'density', to: '560; reboot' }),
   await control('POST', '/phone', { set: 'airplane', to: true }),
@@ -232,7 +239,7 @@ it('passes the app\'s request untouched with no fault set', () => {
 
 it('refuses a fault it cannot carry out, naming why', () => {
   expect(out.refusals).toEqual([
-    'a kind from slow, frozen, cut, answer-lost, limit, http',
+    'a kind from slow, frozen, cut, answer-lost, limit, http, house_ahead',
     'slow needs latencyMs',
     'frozen takes no why',
     'route is not a regular expression: (',
@@ -275,6 +282,14 @@ it('holds a reply in many pieces in flight at once, as a slow link does: one lat
   expect(out.slowInPieces).toMatchObject({ status: 200, length: 8 * 4096 });
   expect(out.slowInPieces.ms).toBeGreaterThanOrEqual(600);
   expect(out.slowInPieces.ms).toBeLessThan(1800);
+});
+
+it('moves the house\'s clock on: every answer\'s Date by the minutes asked, its body untouched, until cleared', () => {
+  const minutesOn = (r: { date: string }) => Math.round((Date.parse(r.date) - out.houseNow) / 60_000);
+  expect(out.houseAhead.map(minutesOn)).toEqual([1560, 1560]);
+  expect(out.houseAhead.map((r: { status: number; body: string; length: number }) => [r.status, r.body.slice(0, 5), r.length])).toEqual([[200, 'hello', 5], [200, 'xxxxx', 10000]]);
+  expect(Math.abs(minutesOn(out.houseAgain))).toBe(0);
+  expect(out.aheadRefusals).toEqual(['house_ahead needs minutes', 'house_ahead needs minutes', 'house_ahead needs minutes']);
 });
 
 it('closes a connection once its limit of bytes has gone back', () => {
@@ -321,13 +336,13 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     { status: 200, done: { set: 'window_size', to: 'reset' } },
     { status: 200, done: { set: 'clock_ahead', to: 1560 } },
     { status: 200, done: { set: 'clock_behind', to: 180 } },
-    { status: 200, done: { set: 'waited', to: 75 } },
+    { status: 200, done: { set: 'waited', to: 165 } },
     { status: 400, refused: 'keyboard to true or false' },
     { status: 400, refused: 'window_size to a width and height in pixels from 600 to 3000 each, as 900x1600, or "reset"' },
     { status: 400, refused: 'window_size to a width and height in pixels from 600 to 3000 each, as 900x1600, or "reset"' },
     { status: 400, refused: 'clock_ahead to whole minutes from 1 to 2880' },
     { status: 400, refused: 'clock_behind to whole minutes from 1 to 2880' },
-    { status: 400, refused: 'waited to whole seconds from 61 to 300' },
+    { status: 400, refused: 'waited to whole seconds from 151 to 300' },
     { status: 400, refused: 'font_scale to a number from 0.85 to 2' },
     { status: 400, refused: 'density to a whole number from 240 to 640, or "reset"' },
     { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, keyboard, window_size, motion, clock_ahead, clock_behind, waited, and to' },
@@ -374,7 +389,7 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     'adb shell settings put global auto_time 0',
     expect.stringMatching(/^adb shell date -u \d{12}\.\d{2}$/),
     `adb shell log -t e2e '[e2e] phone.clock {"minutes":-180}'`,
-    `adb shell log -t e2e '[e2e] phone.waited {"seconds":75}'`,
+    `adb shell log -t e2e '[e2e] phone.waited {"seconds":165}'`,
     // Never listed: asked as often as the proxy waits (three times here), and nothing set.
     'adb shell pm enable com.google.android.inputmethod.latin',
     'adb shell ime list -a -s',

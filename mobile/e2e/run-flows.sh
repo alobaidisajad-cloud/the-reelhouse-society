@@ -469,7 +469,8 @@ for flow in $FLOW_LIST; do
     fi
     # A fault run: no fault left set, by the flow before or by this one's last attempt (a flow that
     # stopped midway never cleared its own), so each starts on a clean line (e2e/fault-proxy.mjs).
-    if [ -n "${E2E_FAULTS:-}" ]; then
+    # A lifecycle run too: time_moved_on moves the house's clock by the same proxy.
+    if [ -n "${E2E_FAULTS:-}" ] || [ -n "${E2E_LIFECYCLE:-}" ]; then
       curl -s -X DELETE http://127.0.0.1:54331/fault > /dev/null || echo "[fault proxy] could not clear the fault before $name" >> "$OUT/maestro.log"
     fi
     # A lifecycle run's flows change the phone mid-flow (.maestro/subflows/phone.yaml): each

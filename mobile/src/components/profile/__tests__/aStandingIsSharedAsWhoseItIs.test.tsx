@@ -29,6 +29,8 @@ describe('what a share says', () => {
 });
 
 describe('the button', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   it('names whose standing it shares, and shares it as theirs', async () => {
     const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
     const r = render(<ProjectorRoom stats={stats} user={{ username: 'vesper' }} isSelf={false} />);

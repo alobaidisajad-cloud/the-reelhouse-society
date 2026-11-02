@@ -3,10 +3,13 @@ env:
   WORDS: "E2E: a day passes with the app waiting."
 ---
 # A day passes with the app in the background (WORKLIST P4.7): a film logged
-# today reads TODAY in the member's LATELY. The phone's clock is moved on 26
-# hours while the app waits; back in front, the same row says YESTERDAY, read
-# again from the shared clock, and the member is still signed in with their
-# file drawn: no sign-out and no false empty after the jump.
+# today reads TODAY in the member's LATELY. A day passes for the phone and the
+# house alike while the app waits: the phone's clock is moved on 26 hours, and
+# the house's (every answer's Date, which the app keeps its time by) the same.
+# Back in front, the same row says YESTERDAY, read again from the shared
+# clock, and the member is still signed in with their file drawn: no sign-out
+# and no false empty after the jump. The phone's clock alone moved is a wrong
+# clock, not a day passed: the clock runs prove the app keeps the house's day.
 - launchApp:
     clearState: true
 - runFlow: ../subflows/sign_in.yaml
@@ -63,6 +66,10 @@ env:
     env:
       SET: clock_ahead
       TO: "1560"
+- runFlow:
+    file: ../subflows/fault.yaml
+    env:
+      FAULT: house_a_day_on
 - launchApp:
     stopApp: false
 - extendedWaitUntil:
@@ -73,3 +80,7 @@ env:
     text: "TODAY"
 - assertVisible:
     id: "profile-tab"
+- runFlow:
+    file: ../subflows/fault.yaml
+    env:
+      FAULT: none

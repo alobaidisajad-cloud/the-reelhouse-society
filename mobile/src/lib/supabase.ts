@@ -1,5 +1,6 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
+import { onlineManager } from '@tanstack/react-query';
 import { Platform, AppState } from 'react-native';
 import { authSessionStorage } from './authSessionStorage';
 import { heardRefusal } from './refusalEvents';
@@ -18,6 +19,9 @@ export const SUPABASE_ANON_KEY = supabaseAnonKey;
 export const REQUEST_LIMIT_MS = 15_000;
 /** The same for storage, where a picture goes up over the slowest network a member may have. */
 export const STORAGE_LIMIT_MS = 90_000;
+
+/** What a request is told when the phone has no network: React Native's own words for it, read by isNetworkError. */
+export const NO_NETWORK = 'Network request failed';
 
 /** The statuses an answer has no body with (a Response made with one throws). */
 const NO_BODY = new Set([204, 205, 304]);
@@ -68,6 +72,11 @@ const traceRequest = (method: string | undefined, url: string, at: number, outco
  * answer is read here, whole, inside the limit: the caller gets it already
  * arrived. Every answer the house gives the app is text (JSON, or nothing). A
  * caller's own signal still ends it, as itself.
+ *
+ * A phone that knows it has no network (queryClient.ts tells onlineManager from
+ * NetInfo) is answered at once, as its own fetch answers one: in airplane mode
+ * the emulator held a request to its deadline, and a log sealed offline waited
+ * out two of them before the queue kept it.
  */
 export const fetchWithinLimit: typeof fetch = async (input, init) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
@@ -81,6 +90,7 @@ export const fetchWithinLimit: typeof fetch = async (input, init) => {
   const timer = setTimeout(() => { ranOut = true; controller.abort(); }, ms);
   const at = Date.now();
   try {
+    if (!onlineManager.isOnline()) throw new TypeError(NO_NETWORK);
     const res = await fetch(input, { ...init, signal: controller.signal });
     heardTheHouse(res.headers.get('date'), at, Date.now());
     const body = NO_BODY.has(res.status) ? null : await res.text();

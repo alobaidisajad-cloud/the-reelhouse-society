@@ -42,6 +42,9 @@
  *   limit         {bytes}  each connection is closed once that many bytes have gone back to the app
  *   http          {route, status}  a request whose path matches is answered with an HTML page of that
  *                 status (500, 502 or 503), as a gateway in trouble answers, and never sent on
+ *   house_ahead   {minutes}  every answer's Date header moved on by that many minutes (1 to 2880): the
+ *                 house's clock, which the app keeps (src/lib/houseClock.ts), as time passing moves
+ *                 it, with the phone's moved by clock_ahead
  * A route is a regular expression over the path. `http` holds until cleared; `cut` and `answer-lost`
  * take `times` requests (one unless told more).
  */
@@ -66,7 +69,24 @@ const KINDS = {
   'answer-lost': { route: (v) => v === undefined || typeof v === 'string', times: (v) => v === undefined || (Number.isInteger(v) && v > 0) },
   limit: { bytes: (v) => Number.isInteger(v) && v > 0 },
   http: { route: (v) => typeof v === 'string', status: (v) => v in REASONS },
+  house_ahead: { minutes: (v) => Number.isInteger(v) && v >= 1 && v <= 2880 },
 };
+
+/**
+ * An answer's first chunk with its Date header moved on by `minutes`, every other byte as it came.
+ * The head arrives whole in an answer's first chunk (the house's gateway writes it at once); a
+ * chunk with no Date in its head is passed as it is. The date keeps its length, as toUTCString
+ * always writes 29 characters.
+ */
+export function dateMovedOn(chunk, minutes) {
+  const text = chunk.toString('latin1');
+  const head = text.indexOf('\r\n\r\n');
+  const date = /\r\ndate: ([^\r\n]+)/i.exec(head < 0 ? text : text.slice(0, head));
+  const at = date ? Date.parse(date[1]) : NaN;
+  if (!Number.isFinite(at)) return chunk;
+  const from = date.index + date[0].length - date[1].length;
+  return Buffer.concat([chunk.subarray(0, from), Buffer.from(new Date(at + minutes * 60_000).toUTCString(), 'latin1'), chunk.subarray(from + date[1].length)]);
+}
 
 /** Why a fault cannot be set, or null when it can. */
 export const refusalOf = (fault) => {
@@ -173,9 +193,9 @@ export const PHONE = {
     commands: (v) => [['adb', ['root']], ['adb', ['wait-for-device']],
       ['adb', ['shell', 'settings', 'put', 'global', 'auto_time', '0']], ['adb', ['shell', 'date', '-u', phoneDate(Date.now() - v * 60_000)]],
       clockSaid(-v)] },
-  // A clock run's wait past its 60 s token, which the flow waits itself (a command here holds the
+  // A clock run's wait past its 150 s token, which the flow waits itself (a command here holds the
   // proxy, and every request through it, until it ends): said in the device log once it has.
-  waited: { says: 'whole seconds from 61 to 300', valid: (v) => Number.isInteger(v) && v >= 61 && v <= 300,
+  waited: { says: 'whole seconds from 151 to 300', valid: (v) => Number.isInteger(v) && v >= 151 && v <= 300,
     commands: (v) => [['adb', ['shell', `log -t e2e '[e2e] phone.waited {"seconds":${v}}'`]]] },
 };
 
@@ -387,6 +407,7 @@ export function startProxy({ listen = 0, to, control = 0, logFile = null, run = 
           }
           record(answered);
         }
+        if (fault?.kind === 'house_ahead') chunk = dateMovedOn(chunk, fault.minutes);
       }
       if (fault?.kind === 'frozen') return;
       if (fault?.kind === 'limit') {

@@ -8,6 +8,8 @@ const FAULTS = {
   house_down: { kind: 'http', route: '^/(rest|functions)/v1/', status: 503 },
   // The plan's EDGE: three seconds late, give or take one, at 20 KB a second.
   edge: { kind: 'slow', latencyMs: 3000, jitterMs: 1000, bytesPerSecond: 20480 },
+  // The house's clock 26 hours on, as time_moved_on moves the phone's (clock_ahead 1560).
+  house_a_day_on: { kind: 'house_ahead', minutes: 1560 },
 };
 const url = 'http://localhost:54331/fault';
 let answer;

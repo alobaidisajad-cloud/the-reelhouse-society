@@ -452,15 +452,17 @@ jobs:
 
       # sign-in-with-username is production's own function, copied in BEFORE the
       # stack starts: config.toml names it, and the CLI checks what it names.
-      # A behind clock run's tokens live 60 s (WORKLIST P2.4, P4.32), so its flows
+      # A behind clock run's tokens live 150 s (WORKLIST P2.4, P4.32), so its flows
       # outlive one: set in this runner's copy alone, the committed file keeping
-      # production's hour.
+      # production's hour. supabase-js renews a token 90 s before it ends, so one
+      # of 150 s is renewed once a minute; under 90 s it was renewed on every
+      # request, and no judge could tell that from a loop.
       - name: Start the local stack
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
           if [ "$E2E_CLOCK" = behind ]; then
-            sed -i 's/^jwt_expiry = 3600$/jwt_expiry = 60/' mobile/e2e/supabase/config.toml
-            grep -qx 'jwt_expiry = 60' mobile/e2e/supabase/config.toml || { echo "::error title=Clock run::the tokens could not be set to 60 s"; exit 1; }
+            sed -i 's/^jwt_expiry = 3600$/jwt_expiry = 150/' mobile/e2e/supabase/config.toml
+            grep -qx 'jwt_expiry = 150' mobile/e2e/supabase/config.toml || { echo "::error title=Clock run::the tokens could not be set to 150 s"; exit 1; }
           fi
           bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta "E2E local stack"
 

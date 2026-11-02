@@ -100,7 +100,8 @@ const held = (o: Partial<DomainLog> = {}): DomainLog => ({
 const hold = (log: DomainLog) => useFilmStore.setState({ logs: [log], _loggedIndex: { [log.filmId!]: log } });
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  jest.clearAllMocks(); // keeps a test's implementation: the queue's is set back below
+  (enqueueMutation as jest.Mock).mockImplementation(() => true);
   mockDb = [];
   useFilmStore.setState({ logs: [], _loggedIndex: {}, _addLogMutex: false, _updateLogMutex: false });
   (VaultService.addViewing as jest.Mock).mockResolvedValue('v-new');
@@ -315,8 +316,6 @@ describe('the watchlist says what happened — once', () => {
 describe('a log kept before it is sent', () => {
   const keptAhead = () => (enqueueMutation as jest.Mock).mock.calls.filter(([m, o]) => m.type === 'add_log' && o?.ahead === true);
   const sentId = () => keptAhead().map(([m]) => m.payload.id).find(() => true);
-
-  beforeEach(() => { (enqueueMutation as jest.Mock).mockImplementation(() => true); });
 
   it('is kept on the phone before the server is asked anything, under the id the send carries', async () => {
     // Asked first is the check for a log of the film; on a slow link the app may end while it is out.

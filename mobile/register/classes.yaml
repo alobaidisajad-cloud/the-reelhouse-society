@@ -227,8 +227,8 @@ classes:
     methods:
       - { kind: running, file: e2e/__tests__/clockJudges.test.ts, test: "refuses a failed read and a sign-out, each in its own flow alone" }
       - { kind: running, file: e2e/__tests__/clockJudges.test.ts, test: "refuses three refreshes in five minutes ahead, takes two, and counts each flow's alone" }
-      - { kind: running, file: e2e/__tests__/clockJudges.test.ts, test: "refuses a behind flow with no refresh, and one past one per token lifetime" }
-    fix: "the clock runs (e2e.yml clock: ahead | behind, nightly) set the phone's clock wrong each way by minutes, hours and a day, the behind run on 60 s tokens; their judge (e2e/clock-judges.mjs) reads the device log in its own order and the gateway's refreshes by the runner's clock, and refuses a tab never read, a failed read, a sign-out, a refresh loop, and a run that never moved its clock or never outlived its token (mutants judge-clock-refresh-loop, judge-clock-signed-out, judge-clock-token-never-ran-out, judge-clock-never-waited)"
+      - { kind: running, file: e2e/__tests__/clockJudges.test.ts, test: "refuses a behind flow with no refresh, and one past one a minute" }
+    fix: "the clock runs (e2e.yml clock: ahead | behind, nightly) set the phone's clock wrong each way by minutes, hours and a day, the behind run on 150 s tokens (renewed once a minute); their judge (e2e/clock-judges.mjs) reads the device log in its own order and the gateway's refreshes by the runner's clock, and refuses a tab never read, a failed read, a sign-out, a refresh loop, and a run that never moved its clock or never outlived its token (mutants judge-clock-refresh-loop, judge-clock-signed-out, judge-clock-token-never-ran-out, judge-clock-never-waited)"
     places: [emulator]
 
   - id: E2E-phone-only-as-the-runner-has-it

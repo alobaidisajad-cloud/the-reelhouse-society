@@ -11,8 +11,12 @@
  *
  * Nor does postgrest-js ask a failed read again at all: the app keeps one layer of retries, its
  * own. A log sealed with no connection waited 16 seconds on a read asked again into a dead network.
+ *
+ * And a phone that knows it has no network asks nothing: in airplane mode the emulator held each
+ * request to its deadline, so a log sealed offline waited out two before the queue kept it.
  */
-import { DeadlineExceeded, fetchWithinLimit, REQUEST_LIMIT_MS, supabase } from '@/src/lib/supabase';
+import { onlineManager } from '@tanstack/react-query';
+import { DeadlineExceeded, fetchWithinLimit, NO_NETWORK, REQUEST_LIMIT_MS, supabase } from '@/src/lib/supabase';
 import { captureDeadline } from '@/src/lib/sentry';
 import { isNetworkError } from '@/src/utils/networkError';
 
@@ -132,5 +136,36 @@ describe('one layer of retries, the app\'s own', () => {
     await jest.advanceTimersByTimeAsync(10_000);
     expect(busy).toHaveBeenCalledTimes(1);
     expect(answer).toMatchObject({ status: 503 });
+  });
+});
+
+describe('a phone that knows it has no network is answered at once', () => {
+  afterEach(() => onlineManager.setOnline(true));
+
+  it('a request is refused before the network is asked, as not reached', async () => {
+    onlineManager.setOnline(false);
+    let ended: unknown = null;
+    void fetchWithinLimit('https://house.example/rest/v1/logs?select=id').catch((e) => { ended = e; });
+    await jest.advanceTimersByTimeAsync(0);
+    expect(hang).not.toHaveBeenCalled();
+    expect([ended instanceof TypeError, (ended as Error).message]).toEqual([true, NO_NETWORK]);
+    expect(isNetworkError(ended)).toBe(true);
+  });
+
+  it('a write is answered as not reached at once: the queue takes it with no deadline waited out', async () => {
+    onlineManager.setOnline(false);
+    let answer: { error: unknown } | null = null;
+    void supabase.from('logs').insert({ film_id: 1 }).then((r) => { answer = r; });
+    await jest.advanceTimersByTimeAsync(0);
+    expect(hang).not.toHaveBeenCalled();
+    expect(isNetworkError((answer as unknown as { error: unknown }).error)).toBe(true);
+  });
+
+  it('back online, the request goes out again', async () => {
+    onlineManager.setOnline(false);
+    onlineManager.setOnline(true);
+    void fetchWithinLimit('https://house.example/rest/v1/logs').catch(() => {});
+    await jest.advanceTimersByTimeAsync(0);
+    expect(hang).toHaveBeenCalledTimes(1);
   });
 });
