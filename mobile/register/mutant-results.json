@@ -157,7 +157,14 @@
     "class": "TEST-mock-accepts-anything",
     "mutant": "shape-hand-mock-finder-trusts-a-name",
     "proof": "m6",
-    "commit": "9a4fd27684c2300133b87e4b886a6915cee2fd46",
+    "commit": "8ee1b812e4398bc5456a133cbad74502d7f5fc23",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEST-mock-accepts-anything",
+    "mutant": "shape-hand-mock-finder-trusts-the-sealed-client-anywhere",
+    "proof": "m6",
+    "commit": "8ee1b812e4398bc5456a133cbad74502d7f5fc23",
     "verdict": "caught"
   },
   {
