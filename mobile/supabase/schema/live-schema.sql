@@ -290,6 +290,24 @@ $$;
 
 
 --
+-- Name: calendar_days(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.calendar_days(p_user_id uuid) RETURNS TABLE(day date, films integer)
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  -- The grid's 364 days end on the member's today: the house's yesterday, today or tomorrow.
+  SELECT l.watched_date, count(*)::integer
+    FROM public.logs l
+   WHERE l.user_id = p_user_id
+     AND l.watched_date BETWEEN (now() AT TIME ZONE 'UTC')::date - 364 AND (now() AT TIME ZONE 'UTC')::date + 1
+   GROUP BY l.watched_date
+   ORDER BY l.watched_date DESC;
+$$;
+
+
+--
 -- Name: can_annotate_list(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -757,6 +775,10 @@ BEGIN
   -- A critique belongs to the filing it was written under. Moving it puts a
   -- member's words beneath somebody else's writing.
   NEW.post_id       := OLD.post_id;
+  -- An edit is dated by the house's clock, never the phone's.
+  IF NEW.edited_at IS DISTINCT FROM OLD.edited_at THEN
+    NEW.edited_at := now();
+  END IF;
   RETURN NEW;
 END $$;
 
@@ -1058,6 +1080,13 @@ BEGIN
   NEW.frozen_totals := OLD.frozen_totals;
   NEW.options       := OLD.options;
   NEW.closes_at     := OLD.closes_at;
+
+  -- When a member changed it is the house's clock, never the phone's: a phone set a day ahead
+  -- dated an edit tomorrow, and the newer of two copies read as the older.
+  NEW.updated_at := now();
+  IF NEW.edited_at IS DISTINCT FROM OLD.edited_at THEN
+    NEW.edited_at := now();
+  END IF;
 
   RETURN NEW;
 END $$;
@@ -2933,6 +2962,29 @@ COMMENT ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) IS 'Batch form
 
 
 --
+-- Name: list_items_touch_the_stack(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.list_items_touch_the_stack() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  -- A silenced or suspended member may still take out what is theirs, and may edit nothing: no edit
+  -- of theirs can follow to need the stack's time, and touching the stack would be refused as their
+  -- write (enforce_not_restricted, tr_ban_gate_update), taking the withdrawal down with it.
+  IF EXISTS (SELECT 1 FROM public.profiles
+              WHERE id = auth.uid() AND (is_banned OR suspended_until > now())) THEN
+    RETURN NULL;
+  END IF;
+  -- The stack's own time, set by set_lists_updated_at to the house's now().
+  UPDATE public.lists SET updated_at = now()
+   WHERE id IN (SELECT DISTINCT list_id FROM changed);
+  RETURN NULL;
+END $$;
+
+
+--
 -- Name: lobby_choose_edition(date); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -3371,6 +3423,23 @@ BEGIN
   END IF;
 
   RETURN NULL;
+END $$;
+
+
+--
+-- Name: lounge_members_read_by_the_house(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.lounge_members_read_by_the_house() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  -- Whatever time the phone sent, the member read the salon now.
+  IF NEW.last_read_at IS DISTINCT FROM OLD.last_read_at THEN
+    NEW.last_read_at := now();
+  END IF;
+  RETURN NEW;
 END $$;
 
 
@@ -4424,19 +4493,28 @@ CREATE TABLE public.lists (
 
 
 --
--- Name: save_stack(uuid, text, text, boolean, boolean, jsonb, boolean); Type: FUNCTION; Schema: public; Owner: -
+-- Name: save_stack(uuid, text, text, boolean, boolean, jsonb, boolean, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.save_stack(p_id uuid, p_title text DEFAULT NULL::text, p_description text DEFAULT NULL::text, p_is_private boolean DEFAULT NULL::boolean, p_is_ranked boolean DEFAULT NULL::boolean, p_films jsonb DEFAULT NULL::jsonb, p_create boolean DEFAULT false) RETURNS public.lists
+CREATE FUNCTION public.save_stack(p_id uuid, p_title text DEFAULT NULL::text, p_description text DEFAULT NULL::text, p_is_private boolean DEFAULT NULL::boolean, p_is_ranked boolean DEFAULT NULL::boolean, p_films jsonb DEFAULT NULL::jsonb, p_create boolean DEFAULT false, p_read_at timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS public.lists
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
     AS $$
 DECLARE
   v_uid uuid := auth.uid();
   v_row public.lists;
+  v_at timestamptz;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '28000';
+  END IF;
+
+  -- An edit of a stack changed since the phone read it is refused, never laid over the change.
+  IF NOT p_create AND p_read_at IS NOT NULL THEN
+    SELECT updated_at INTO v_at FROM public.lists WHERE id = p_id AND user_id = v_uid FOR UPDATE;
+    IF FOUND AND v_at > p_read_at THEN
+      RAISE EXCEPTION 'This stack was changed after this phone read it.' USING ERRCODE = 'PT412';
+    END IF;
   END IF;
 
   IF p_create THEN
@@ -4473,6 +4551,8 @@ BEGIN
        AND film_id NOT IN (SELECT (f->>'film_id')::int FROM jsonb_array_elements(p_films) AS f);
   END IF;
 
+  -- Read again: the films' triggers have moved its time, which the phone keeps for its next edit.
+  SELECT * INTO v_row FROM public.lists WHERE id = p_id AND user_id = v_uid;
   RETURN v_row;
 END;
 $$;
@@ -4762,6 +4842,11 @@ DECLARE
   v_secret   text;
   v_pref_key text;
 BEGIN
+  -- Switched off by the owner: every notice stays under the bell, unpushed.
+  IF NOT coalesce((SELECT pushes_sent FROM public.house_settings WHERE id), true) THEN
+    RETURN NEW;
+  END IF;
+
   -- The Lobby's edition turns at 00:00 UTC, while much of the house sleeps:
   -- its notice waits under the bell and is never pushed.
   IF NEW.type = 'featured' THEN
@@ -5368,6 +5453,22 @@ CREATE TABLE public.gate_metrics (
 --
 
 COMMENT ON TABLE public.gate_metrics IS 'Aggregate gate funnel. Counters only — no member, device or session is identifiable here, by design.';
+
+
+--
+-- Name: house_settings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.house_settings (
+    id boolean DEFAULT true NOT NULL,
+    min_build_ios integer DEFAULT 0 NOT NULL,
+    min_build_android integer DEFAULT 0 NOT NULL,
+    pushes_sent boolean DEFAULT true NOT NULL,
+    films_synced boolean DEFAULT true NOT NULL,
+    CONSTRAINT house_settings_min_build_android_whole CHECK ((min_build_android >= 0)),
+    CONSTRAINT house_settings_min_build_ios_whole CHECK ((min_build_ios >= 0)),
+    CONSTRAINT house_settings_one_row CHECK (id)
+);
 
 
 --
@@ -6158,6 +6259,14 @@ ALTER TABLE ONLY public.founding_seat_counter
 
 ALTER TABLE ONLY public.gate_metrics
     ADD CONSTRAINT gate_metrics_pkey PRIMARY KEY (day, event, feature_id, rank, standing);
+
+
+--
+-- Name: house_settings house_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.house_settings
+    ADD CONSTRAINT house_settings_pkey PRIMARY KEY (id);
 
 
 --
@@ -7378,6 +7487,27 @@ CREATE TRIGGER a_enforce_log_tier_fields BEFORE INSERT OR UPDATE ON public.logs 
 
 
 --
+-- Name: list_items a_film_added_touches_the_stack; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_film_added_touches_the_stack AFTER INSERT ON public.list_items REFERENCING NEW TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION public.list_items_touch_the_stack();
+
+
+--
+-- Name: list_items a_film_moved_touches_the_stack; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_film_moved_touches_the_stack AFTER UPDATE ON public.list_items REFERENCING NEW TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION public.list_items_touch_the_stack();
+
+
+--
+-- Name: list_items a_film_taken_out_touches_the_stack; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_film_taken_out_touches_the_stack AFTER DELETE ON public.list_items REFERENCING OLD TABLE AS changed FOR EACH STATEMENT EXECUTE FUNCTION public.list_items_touch_the_stack();
+
+
+--
 -- Name: logs a_keep_viewings; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -7494,6 +7624,13 @@ CREATE TRIGGER a_lpn_belongs_to_its_viewing BEFORE INSERT OR UPDATE ON public.lo
 --
 
 CREATE TRIGGER a_reaction_is_in_its_message_salon BEFORE INSERT OR UPDATE OF message_id, lounge_id ON public.lounge_message_reactions FOR EACH ROW EXECUTE FUNCTION public.a_reaction_is_in_its_message_salon();
+
+
+--
+-- Name: lounge_members a_read_is_dated_by_the_house; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER a_read_is_dated_by_the_house BEFORE UPDATE OF last_read_at ON public.lounge_members FOR EACH ROW EXECUTE FUNCTION public.lounge_members_read_by_the_house();
 
 
 --
@@ -9475,6 +9612,12 @@ ALTER TABLE public.founding_seat_counter ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gate_metrics ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: house_settings; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.house_settings ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: interactions; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -9929,6 +10072,13 @@ CREATE POLICY saves_own ON public.dispatch_saves TO authenticated USING ((user_i
 
 
 --
+-- Name: house_settings the floor is read by everyone; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "the floor is read by everyone" ON public.house_settings FOR SELECT TO authenticated, anon USING (true);
+
+
+--
 -- Name: physical_archive tier_gate_archive_insert; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -10175,6 +10325,16 @@ GRANT ALL ON FUNCTION public.audience_allows(p_actor uuid, p_owner uuid, p_pref 
 REVOKE ALL ON FUNCTION public.bulk_dismiss_reports(p_report_ids uuid[], p_admin_id uuid, p_reason text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.bulk_dismiss_reports(p_report_ids uuid[], p_admin_id uuid, p_reason text) TO authenticated;
 GRANT ALL ON FUNCTION public.bulk_dismiss_reports(p_report_ids uuid[], p_admin_id uuid, p_reason text) TO service_role;
+
+
+--
+-- Name: FUNCTION calendar_days(p_user_id uuid); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.calendar_days(p_user_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.calendar_days(p_user_id uuid) TO service_role;
+GRANT ALL ON FUNCTION public.calendar_days(p_user_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.calendar_days(p_user_id uuid) TO authenticated;
 
 
 --
@@ -10923,6 +11083,14 @@ GRANT ALL ON FUNCTION public.list_certify_counts(p_list_ids uuid[]) TO service_r
 
 
 --
+-- Name: FUNCTION list_items_touch_the_stack(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.list_items_touch_the_stack() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.list_items_touch_the_stack() TO service_role;
+
+
+--
 -- Name: FUNCTION lobby_choose_edition(p_edition date); Type: ACL; Schema: public; Owner: -
 --
 
@@ -10979,6 +11147,14 @@ GRANT ALL ON FUNCTION public.logs_keep_viewings() TO service_role;
 
 REVOKE ALL ON FUNCTION public.logs_register_viewings() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.logs_register_viewings() TO service_role;
+
+
+--
+-- Name: FUNCTION lounge_members_read_by_the_house(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.lounge_members_read_by_the_house() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.lounge_members_read_by_the_house() TO service_role;
 
 
 --
@@ -11275,12 +11451,12 @@ GRANT ALL ON TABLE public.lists TO service_role;
 
 
 --
--- Name: FUNCTION save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean); Type: ACL; Schema: public; Owner: -
+-- Name: FUNCTION save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean, p_read_at timestamp with time zone); Type: ACL; Schema: public; Owner: -
 --
 
-REVOKE ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) TO authenticated;
-GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean) TO service_role;
+REVOKE ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean, p_read_at timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean, p_read_at timestamp with time zone) TO service_role;
+GRANT ALL ON FUNCTION public.save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean, p_read_at timestamp with time zone) TO authenticated;
 
 
 --
@@ -11600,6 +11776,37 @@ GRANT ALL ON TABLE public.founding_seat_counter TO service_role;
 --
 
 GRANT ALL ON TABLE public.gate_metrics TO service_role;
+
+
+--
+-- Name: TABLE house_settings; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT ALL ON TABLE public.house_settings TO service_role;
+
+
+--
+-- Name: COLUMN house_settings.id; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(id) ON TABLE public.house_settings TO anon;
+GRANT SELECT(id) ON TABLE public.house_settings TO authenticated;
+
+
+--
+-- Name: COLUMN house_settings.min_build_ios; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(min_build_ios) ON TABLE public.house_settings TO anon;
+GRANT SELECT(min_build_ios) ON TABLE public.house_settings TO authenticated;
+
+
+--
+-- Name: COLUMN house_settings.min_build_android; Type: ACL; Schema: public; Owner: -
+--
+
+GRANT SELECT(min_build_android) ON TABLE public.house_settings TO anon;
+GRANT SELECT(min_build_android) ON TABLE public.house_settings TO authenticated;
 
 
 --

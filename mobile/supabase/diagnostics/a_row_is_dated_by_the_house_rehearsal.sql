@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_row_is_dated_by_the_house_rehearsal.sql — 20261028_02. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_row_is_dated_by_the_house_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_row_is_dated_by_the_house_rehearsal.sql
 --
--- With with_train set, 20261028_02 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up). A member whose phone is a day ahead
+-- 20261028_02 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml). A member whose phone is a day ahead
 -- reads a salon, edits a filing and edits a critique, each write carrying the
 -- phone's time as the app sends it; each time reads back as the house's now(),
 -- the transaction's own. A change that sends no time leaves the time it had.
@@ -15,9 +14,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261028_02_a_row_is_dated_by_the_house.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

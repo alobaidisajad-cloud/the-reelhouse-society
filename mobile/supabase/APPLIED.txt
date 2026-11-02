@@ -219,3 +219,7 @@ society_report_system.sql
 20261015_07_a_rule_holds_on_every_path.sql
 20261016_01_a_salon_keeps_its_own_words.sql
 20261016_02_a_member_may_always_leave.sql
+20261028_01_the_house_floor.sql
+20261028_02_a_row_is_dated_by_the_house.sql
+20261101_01_an_edit_keeps_what_changed_since.sql
+20261102_01_the_calendar_by_day.sql

@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- the_calendar_by_day_rehearsal.sql — 20261102_01. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs the_calendar_by_day_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs the_calendar_by_day_rehearsal.sql
 --
--- With with_train set, 20261102_01 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up). A member's films, by day: their own
+-- 20261102_01 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml). A member's films, by day: their own
 -- calendar counts each day the grid can draw and none outside it; a private
 -- member's days are a stranger's and a visitor's to see only as their films
 -- are, so not at all, and a follower's in full; open, a stranger's too; and a
@@ -17,9 +16,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261102_01_the_calendar_by_day.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

@@ -747,17 +747,21 @@ if (DB_URL) {
 
     // Index hygiene. Redundant means STRUCTURALLY covered (identical, or a wider
     // index with the same leading columns, at any width), never "looks unused": scan
-    // counts say nothing on small tables. An unindexed FK makes every parent delete
+    // counts say nothing on small tables. Covered means of the same kind and operator
+    // classes, on plain columns: a trigram index answers a search inside a name, which
+    // a btree on the same column cannot. An unindexed FK makes every parent delete
     // scan the child (143x measured on 200k rows; deleting an account crosses ~12).
     if (sec.indexHygiene) {
       const dup = q(
         `SELECT string_agg(x, ', ') FROM (SELECT DISTINCT ic.relname AS x FROM pg_index i ` +
           `JOIN pg_class ic ON ic.oid=i.indexrelid JOIN pg_class c ON c.oid=i.indrelid ` +
           `JOIN pg_namespace n ON n.oid=c.relnamespace AND n.nspname='public' ` +
-          `WHERE i.indnatts=i.indnkeyatts AND NOT i.indisunique AND i.indpred IS NULL ` +
+          `WHERE i.indnatts=i.indnkeyatts AND NOT i.indisunique AND i.indpred IS NULL AND i.indexprs IS NULL ` +
           `AND NOT EXISTS (SELECT 1 FROM pg_constraint con WHERE con.conindid=i.indexrelid) ` +
-          `AND EXISTS (SELECT 1 FROM pg_index o WHERE o.indrelid=i.indrelid AND o.indexrelid<>i.indexrelid ` +
-          `AND o.indpred IS NULL AND o.indkey[0:i.indnkeyatts-1]=i.indkey[0:i.indnkeyatts-1] ` +
+          `AND EXISTS (SELECT 1 FROM pg_index o JOIN pg_class oc ON oc.oid=o.indexrelid ` +
+          `WHERE o.indrelid=i.indrelid AND o.indexrelid<>i.indexrelid AND oc.relam=ic.relam ` +
+          `AND o.indpred IS NULL AND o.indexprs IS NULL AND o.indkey[0:i.indnkeyatts-1]=i.indkey[0:i.indnkeyatts-1] ` +
+          `AND o.indclass[0:i.indnkeyatts-1]=i.indclass[0:i.indnkeyatts-1] ` +
           `AND (o.indnkeyatts>i.indnkeyatts OR (o.indisunique AND o.indnkeyatts=i.indnkeyatts)))) s`,
       );
       if (dup) posture.push(`redundant index(es) — already covered by another: ${dup}`);

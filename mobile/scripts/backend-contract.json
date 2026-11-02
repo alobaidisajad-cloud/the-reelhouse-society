@@ -163,7 +163,7 @@
     },
     {
       "name": "save_stack",
-      "signature": "save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean)"
+      "signature": "save_stack(p_id uuid, p_title text, p_description text, p_is_private boolean, p_is_ranked boolean, p_films jsonb, p_create boolean, p_read_at timestamp with time zone)"
     },
     {
       "name": "send_salon_typing",
@@ -385,12 +385,16 @@
     "noWipePrivileges": true,
     "indexHygiene": true,
     "columnsInvisibleToEveryClient": [
+      "founding_seat_counter.id",
+      "founding_seat_counter.seats_claimed",
       "gate_metrics.count",
       "gate_metrics.day",
       "gate_metrics.event",
       "gate_metrics.feature_id",
       "gate_metrics.rank",
       "gate_metrics.standing",
+      "house_settings.films_synced",
+      "house_settings.pushes_sent",
       "lobby_editions.author_id",
       "lobby_editions.chosen_at",
       "lobby_editions.score",
@@ -398,8 +402,19 @@
       "lobby_withheld.target_id",
       "lobby_withheld.withheld_at",
       "lobby_withheld.withheld_by",
+      "lounge_sanctions.lounge_id",
+      "lounge_sanctions.set_at",
+      "lounge_sanctions.status",
+      "lounge_sanctions.user_id",
       "profiles.email",
       "profiles.entitlement_source",
+      "rank_grants.granted_at",
+      "rank_grants.source",
+      "rank_grants.tier",
+      "rank_grants.user_id",
+      "salon_typing_sent.lounge_id",
+      "salon_typing_sent.sent_at",
+      "salon_typing_sent.user_id",
       "viewings.log_id",
       "viewings.viewing_id"
     ],
@@ -407,9 +422,8 @@
     "smokeExecuteAsAdmin": [
       "public.get_priority_reports(20, NULL, NULL, NULL)",
       "public.get_moderation_history_for_users(ARRAY[]::uuid[])",
-      "public.get_user_lounges((SELECT id FROM public.profiles WHERE role='admin' LIMIT 1))",
       "public.get_lounge_unread_counts()"
     ],
-    "_columnsInvisibleNote": "gate_metrics is invisible to BOTH client roles on purpose, not by omission: the funnel is write-only from the app (anon and authenticated hold EXECUTE on record_gate_event and nothing else), and the counts are read from the dashboard as service_role. The Lobby's record (20260930_03) is the same by design: a member reads an edition's day, slot, place and piece — never its score (the Lobby shows no counts), its author or when it was chosen; and what the house keeps off the Lobby is written and read only through set_lobby_withheld, by an admin."
+    "_columnsInvisibleNote": "gate_metrics is invisible to BOTH client roles on purpose, not by omission: the funnel is write-only from the app (anon and authenticated hold EXECUTE on record_gate_event and nothing else), and the counts are read from the dashboard as service_role. The Lobby's record (20260930_03) is the same by design: a member reads an edition's day, slot, place and piece — never its score (the Lobby shows no counts), its author or when it was chosen; and what the house keeps off the Lobby is written and read only through set_lobby_withheld, by an admin. The house's own records are the house's alone (each table's migration revokes both client roles): a salon's sanctions (20261003_07), the ranks each source granted (20261003_08), the founding seats' count (20261003_09) and when a member last sent typing (20261015_01). The house's two switches (20261028_01) are read by the house alone; its floors are everyone's."
   }
 }

@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- the_house_floor_rehearsal.sql — 20261028_01. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs the_house_floor_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs the_house_floor_rehearsal.sql
 --
--- With with_train set, 20261028_01 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up). The floor is one row that turns no
+-- 20261028_01 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml). The floor is one row that turns no
 -- build away; a visitor and a member read the two floors and nothing else, and
 -- neither may change them; a second row is refused. Then a member's notice is
 -- filed twice as the house, the push switch on and off: on, its push is queued
@@ -16,9 +15,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261028_01_the_house_floor.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

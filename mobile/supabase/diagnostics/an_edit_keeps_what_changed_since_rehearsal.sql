@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- an_edit_keeps_what_changed_since_rehearsal.sql — 20261101_01. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs an_edit_keeps_what_changed_since_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs an_edit_keeps_what_changed_since_rehearsal.sql
 --
--- With with_train set, 20261101_01 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up). A member's phone read their stack
+-- 20261101_01 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml). A member's phone read their stack
 -- three days ago; since then another device added a film to it. The phone's
 -- edit, sent with the time it read the stack, is refused (PT412) and the film
 -- stays; an edit sent with the stack's time now saves, exactly its films; an
@@ -18,9 +17,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261101_01_an_edit_keeps_what_changed_since.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
