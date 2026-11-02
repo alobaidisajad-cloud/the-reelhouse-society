@@ -350,6 +350,34 @@
     "verdict": "caught"
   },
   {
+    "class": "E2E-wrong-clock-passes",
+    "mutant": "judge-clock-refresh-loop",
+    "proof": "judge",
+    "commit": "bd59198b9dd263c624c227a62c1ae0d237f27a4f",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-wrong-clock-passes",
+    "mutant": "judge-clock-signed-out",
+    "proof": "judge",
+    "commit": "bd59198b9dd263c624c227a62c1ae0d237f27a4f",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-wrong-clock-passes",
+    "mutant": "judge-clock-token-never-ran-out",
+    "proof": "judge",
+    "commit": "bd59198b9dd263c624c227a62c1ae0d237f27a4f",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-wrong-clock-passes",
+    "mutant": "judge-clock-never-waited",
+    "proof": "judge",
+    "commit": "bd59198b9dd263c624c227a62c1ae0d237f27a4f",
+    "verdict": "caught"
+  },
+  {
     "class": "E2E-route-never-opened",
     "mutant": "shape-route-capture-unchecked",
     "proof": "m2",
