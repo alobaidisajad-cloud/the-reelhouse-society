@@ -65,6 +65,8 @@ perfect-clean.js
 # The sealed database's own SQL (db-integration.yml): its checks and the undo self-test.
 !mobile/e2e/db/*.sql
 !mobile/e2e/db/fixtures/**/*.sql
+# The sealed tests' world, laid down before each run (db-integration.yml).
+!mobile/e2e/sealed/*.sql
 
 # Scraped / cached production files
 live.js

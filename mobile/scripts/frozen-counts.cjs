@@ -15,7 +15,8 @@
  *   edge-lint          deno lint over the same files; each `deno-lint-ignore` counts too
  *   hand-supabase-mock in every test file, each jest.mock of the app's Supabase client made by
  *                      hand: its factory does not hand over test-utils/supabaseFake, so it
- *                      answers columns, arguments and rows production would refuse
+ *                      answers columns, arguments and rows production would refuse (a
+ *                      sealed test's real client, test-utils/sealedEnv, asks production's shape)
  *   guard-only-through-a-caller  in every app module no test imports, each guard of its own (an
  *                      early return or throw under an if): reached only through callers,
  *                      which never hand it what it turns away
@@ -143,7 +144,9 @@ const testFiles = () => require('../test-utils/universe.js').files('tests').filt
 /**
  * Each jest.mock of the app's Supabase client a test makes by hand. One is the
  * shared fake's when its factory hands over a client and the file imports
- * test-utils/supabaseFake; any other answers what production would refuse.
+ * test-utils/supabaseFake; one is no mock at all when a sealed test's factory
+ * hands over sealedEnv's real client, which asks the sealed copy itself; any
+ * other answers what production would refuse.
  */
 function handMockCounts(files = testFiles()) {
   const counts = {};
@@ -153,7 +156,8 @@ function handMockCounts(files = testFiles()) {
     for (const m of text.matchAll(/jest\.mock\(\s*(['"])([^'"]*\blib\/supabase)\1/g)) {
       const open = m.index + m[0].indexOf('(');
       const factory = text.slice(open, closing(text, open) + 1);
-      if (!(usesFake && /\.client\b/.test(factory))) bump(counts, fromRoot(file));
+      const real = /\.sealed\.test\.tsx?$/.test(file) && /requireActual\(\s*['"]@\/test-utils\/sealedEnv['"]\s*\)/.test(factory) && /\.memberClient\(/.test(factory);
+      if (!(usesFake && /\.client\b/.test(factory)) && !real) bump(counts, fromRoot(file));
     }
   }
   return { 'hand-supabase-mock': counts };
@@ -419,6 +423,10 @@ const PLANTED_MOCKS = {
   'named.test.ts': "jest.mock('../lib/supabase', () => ({ supabase: { client: 1 } }));\n",
   // a hand-made house's .client handed over, the shared fake never imported: counted
   'borrowed.test.ts': "const mockHouse = { client: { from: jest.fn() } };\njest.mock('../lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));\n",
+  // a sealed test's real client, asking the sealed copy: not counted
+  'real.sealed.test.ts': "jest.mock('@/src/lib/supabase', () => { const env = jest.requireActual('@/test-utils/sealedEnv'); return { supabase: env.memberClient(env.SEALED.readerToken) }; });\n",
+  // the same factory in a test that is not sealed, so never handed an address: counted
+  'unsealed.test.ts': "jest.mock('@/src/lib/supabase', () => { const env = jest.requireActual('@/test-utils/sealedEnv'); return { supabase: env.memberClient(env.SEALED.readerToken) }; });\n",
 };
 const PLANTED_CALLERS = {
   // two guards, and no test names it: both counted
@@ -429,7 +437,7 @@ const PLANTED_CALLERS = {
   'src/plain.ts': 'export const c = (x: number) => x + 1;\n',
   'src/__tests__/tested.test.ts': "import { b } from '../tested';\nit('b', () => expect(b(1)).toBe(1));\n",
 };
-const PLANTED = { 'floating-promise': 2, 'misused-promise': 1, 'unchecked-index': 1, 'edge-type-error': 2, 'edge-lint': 3, 'hand-supabase-mock': 3, 'guard-only-through-a-caller': 2 };
+const PLANTED = { 'floating-promise': 2, 'misused-promise': 1, 'unchecked-index': 1, 'edge-type-error': 2, 'edge-lint': 3, 'hand-supabase-mock': 4, 'guard-only-through-a-caller': 2 };
 
 async function selftest(checks) {
   const dir = mkdtempSync(join(tmpdir(), 'frozen-counts-'));

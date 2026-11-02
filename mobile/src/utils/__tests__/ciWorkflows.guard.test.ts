@@ -372,6 +372,15 @@ it('production is asked by the nightly contracts alone, and every contract run i
   const runsContracts = steps.filter(({ s }) => /\\\.contract\\\.test/.test(s.run ?? ''));
   expect(runsContracts.map(({ file, job }) => `${file} › ${job}`).sort()).toEqual(['db-integration.yml › contracts', 'nightly.yml › contracts']);
   expect(runsContracts.filter(({ s }) => !/node scripts\/contracts-ran\.cjs contracts\.json \|\| exit 1/.test(s.run ?? ''))).toEqual([]);
+  // A sealed test writes: it runs in the sealed copy's job alone, its address the runner's own,
+  // proven not to have skipped and proven able to fail.
+  const runsSealed = steps.filter(({ s }) => /\\\.sealed\\\.test/.test(s.run ?? '') || Object.keys(s.env ?? {}).some((k) => /^SEALED_/.test(k)));
+  expect(runsSealed.map(({ file, job }) => `${file} › ${job}`)).toEqual(['db-integration.yml › contracts']);
+  const sealedRun = runsSealed.map(({ s }) => s.run ?? '').join('\n');
+  expect(sealedRun).toMatch(/SEALED_SUPABASE_URL=http:\/\/127\.0\.0\.1:54321\n/);
+  expect(sealedRun).toMatch(/node scripts\/contracts-ran\.cjs sealed\.json --sealed \|\| exit 1/);
+  expect(sealedRun).toMatch(/\[ "\$without" -ne 0 \] \|\| \{/);
+  expect(sealedRun).not.toMatch(/secrets\./);
 });
 
 it('every night runs each flow three times and the suite in a random order, and keeps every test\'s history (P0.37)', () => {

@@ -221,8 +221,17 @@ mutants:
     source: shape
     edits:
       - file: scripts/frozen-counts.cjs
-        find: "if (!(usesFake && /\\.client\\b/.test(factory))) bump"
-        replace: "if (!/\\.client\\b/.test(factory)) bump"
+        find: "if (!(usesFake && /\\.client\\b/.test(factory)) && !real) bump"
+        replace: "if (!/\\.client\\b/.test(factory) && !real) bump"
+    proof: { file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
+
+  - id: shape-hand-mock-finder-trusts-the-sealed-client-anywhere
+    class: TEST-mock-accepts-anything
+    source: shape
+    edits:
+      - file: scripts/frozen-counts.cjs
+        find: "const real = /\\.sealed\\.test\\.tsx?$/.test(file) && "
+        replace: "const real = "
     proof: { file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
 
   - id: shape-guard-finder-skips-throws
