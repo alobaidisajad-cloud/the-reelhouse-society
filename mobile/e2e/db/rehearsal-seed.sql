@@ -44,6 +44,8 @@ GRANT EXECUTE ON FUNCTION pg_temp.m(text) TO authenticated;
 UPDATE public.profiles SET role = 'admin' WHERE id = pg_temp.m('ada');
 UPDATE public.profiles SET is_social_private = true WHERE id = pg_temp.m('hana');
 INSERT INTO public.founding_seat_counter (id, seats_claimed) VALUES (1, 0) ON CONFLICT (id) DO NOTHING;
+-- The house's one settings row: 20261028_01 made it with the table, and the snapshot holds no rows.
+INSERT INTO public.house_settings DEFAULT VALUES ON CONFLICT (id) DO NOTHING;
 DO $$ BEGIN
   PERFORM public.grant_entitlement(pg_temp.m('ada'), 'auteur', 'manual');
   PERFORM public.grant_entitlement(pg_temp.m('ben'), 'auteur', 'manual');
