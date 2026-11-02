@@ -1,0 +1,45 @@
+appId: com.reelhouse.society
+---
+# Every tab opened, each waited for until its first read is in: each id below
+# is drawn only by content the tab read (the Lobby's wall hung, full or
+# vacant; a filing; a log on the reel; a film card; the member's own
+# watchlist), never by its skeleton or its failure. For the clock runs
+# (.maestro/clock), whose judge reads each tab's screen.ready from the log.
+- extendedWaitUntil:
+    visible:
+      id: "home-tab"
+    timeout: 30000
+- tapOn:
+    id: "home-tab"
+- scrollUntilVisible:
+    element:
+      id: "lobby-wall-hung"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
+- tapOn:
+    id: "dispatch-tab"
+- extendedWaitUntil:
+    visible:
+      id: "dispatch-filing"
+    timeout: 30000
+- tapOn:
+    id: "reels-tab"
+- extendedWaitUntil:
+    visible:
+      id: "reel-log"
+    timeout: 30000
+- tapOn:
+    id: "darkroom-tab"
+- extendedWaitUntil:
+    visible:
+      id: "film-card"
+    timeout: 30000
+- tapOn:
+    id: "profile-tab"
+- scrollUntilVisible:
+    element:
+      id: "collection-card-watchlist"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000

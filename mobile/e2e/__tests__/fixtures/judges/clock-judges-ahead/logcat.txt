@@ -1,0 +1,27 @@
+11-02 06:00:00.000  1111  1111 I e2e     : [e2e] flow.begins {"name":"ahead_minutes","attempt":1}
+11-02 06:00:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":900}
+11-02 06:05:30.000  1111  1111 I e2e     : [e2e] phone.clock {"minutes":5}
+11-02 06:06:00.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":1200}
+11-02 06:06:10.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"dispatch","ms":1200}
+11-02 06:06:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"reel","ms":1200}
+11-02 06:06:30.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"darkroom","ms":1200}
+11-02 06:06:40.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":1200}
+11-02 06:07:00.000  4321  4377 I ReactNativeJS: Running "main"
+11-02 06:10:00.000  1111  1111 I e2e     : [e2e] flow.begins {"name":"ahead_hours","attempt":1}
+11-02 06:10:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":900}
+11-02 09:10:30.000  1111  1111 I e2e     : [e2e] phone.clock {"minutes":180}
+11-02 09:11:00.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":1200}
+11-02 09:11:10.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"dispatch","ms":1200}
+11-02 09:11:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"reel","ms":1200}
+11-02 09:11:30.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"darkroom","ms":1200}
+11-02 09:11:40.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":1200}
+11-02 09:12:00.000  4321  4377 I ReactNativeJS: Running "main"
+11-02 06:20:00.000  1111  1111 I e2e     : [e2e] flow.begins {"name":"ahead_day","attempt":1}
+11-02 06:20:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":900}
+11-03 06:20:30.000  1111  1111 I e2e     : [e2e] phone.clock {"minutes":1440}
+11-03 06:21:00.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":1200}
+11-03 06:21:10.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"dispatch","ms":1200}
+11-03 06:21:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"reel","ms":1200}
+11-03 06:21:30.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"darkroom","ms":1200}
+11-03 06:21:40.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":1200}
+11-03 06:22:00.000  4321  4377 I ReactNativeJS: Running "main"

@@ -1,0 +1,45 @@
+11-02 06:00:00.000  1111  1111 I e2e     : [e2e] flow.begins {"name":"behind_minutes","attempt":1}
+11-02 06:00:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":900}
+11-02 05:55:30.000  1111  1111 I e2e     : [e2e] phone.clock {"minutes":-5}
+11-02 05:56:00.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":1200}
+11-02 05:56:10.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"dispatch","ms":1200}
+11-02 05:56:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"reel","ms":1200}
+11-02 05:56:30.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"darkroom","ms":1200}
+11-02 05:56:40.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":1200}
+11-02 05:57:00.000  4321  4377 I ReactNativeJS: Running "main"
+11-02 05:58:20.000  1111  1111 I e2e     : [e2e] phone.waited {"seconds":75}
+11-02 05:58:40.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":1200}
+11-02 05:58:50.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"dispatch","ms":1200}
+11-02 05:59:00.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"reel","ms":1200}
+11-02 05:59:10.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"darkroom","ms":1200}
+11-02 05:59:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":1200}
+11-02 06:10:00.000  1111  1111 I e2e     : [e2e] flow.begins {"name":"behind_hours","attempt":1}
+11-02 06:10:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":900}
+11-02 03:10:30.000  1111  1111 I e2e     : [e2e] phone.clock {"minutes":-180}
+11-02 03:11:00.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":1200}
+11-02 03:11:10.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"dispatch","ms":1200}
+11-02 03:11:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"reel","ms":1200}
+11-02 03:11:30.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"darkroom","ms":1200}
+11-02 03:11:40.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":1200}
+11-02 03:12:00.000  4321  4377 I ReactNativeJS: Running "main"
+11-02 03:13:20.000  1111  1111 I e2e     : [e2e] phone.waited {"seconds":75}
+11-02 03:13:40.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":1200}
+11-02 03:13:50.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"dispatch","ms":1200}
+11-02 03:14:00.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"reel","ms":1200}
+11-02 03:14:10.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"darkroom","ms":1200}
+11-02 03:14:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":1200}
+11-02 06:20:00.000  1111  1111 I e2e     : [e2e] flow.begins {"name":"behind_day","attempt":1}
+11-02 06:20:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":900}
+11-01 06:20:30.000  1111  1111 I e2e     : [e2e] phone.clock {"minutes":-1440}
+11-01 06:21:00.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":1200}
+11-01 06:21:10.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"dispatch","ms":1200}
+11-01 06:21:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"reel","ms":1200}
+11-01 06:21:30.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"darkroom","ms":1200}
+11-01 06:21:40.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":1200}
+11-01 06:22:00.000  4321  4377 I ReactNativeJS: Running "main"
+11-01 06:23:20.000  1111  1111 I e2e     : [e2e] phone.waited {"seconds":75}
+11-01 06:23:40.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"lobby","ms":1200}
+11-01 06:23:50.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"dispatch","ms":1200}
+11-01 06:24:00.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"reel","ms":1200}
+11-01 06:24:10.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"darkroom","ms":1200}
+11-01 06:24:20.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {"name":"member","ms":1200}

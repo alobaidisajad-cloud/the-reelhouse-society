@@ -25,7 +25,8 @@
 # e2e/fault-judges.mjs; with E2E_WALK, every route is then opened cold by its
 # link and captured (e2e/walk-routes.mjs, judged by e2e/route-judges.mjs). The whole
 # run is on the phone as E2E_VARIANT has it (e2e/variants.json), put back at its end. A
-# lifecycle run (E2E_LIFECYCLE) puts the phone back before each of its flows, which change it.
+# lifecycle run (E2E_LIFECYCLE) puts the phone back before each of its flows, which change it;
+# a clock run (E2E_CLOCK) too, and is judged by e2e/clock-judges.mjs.
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 # Maestro sends usage analytics unless told not to; nothing leaves the sealed world.
@@ -473,7 +474,7 @@ for flow in $FLOW_LIST; do
     fi
     # A lifecycle run's flows change the phone mid-flow (.maestro/subflows/phone.yaml): each
     # begins on the phone as the run has it, whatever the one before left.
-    if [ -n "${E2E_LIFECYCLE:-}" ]; then
+    if [ -n "${E2E_LIFECYCLE:-}" ] || [ -n "${E2E_CLOCK:-}" ]; then
       # The clock too (clock_ahead): set to the runner's now, then the network time back on.
       for cmd in "settings put system font_scale 1.0" "wm density reset" "wm size reset" "settings put global always_finish_activities 0" "date -u $(date -u +%m%d%H%M%Y.%S)" "settings put global auto_time 1"; do
         timeout 20 adb shell "$cmd" < /dev/null > /dev/null 2>&1 || echo "[phone] could not put back before $name: $cmd" >> "$OUT/maestro.log"
@@ -488,6 +489,11 @@ for flow in $FLOW_LIST; do
     # The device's clock as the flow starts, so its log can be read on its own.
     since=$(device_clock)
     printf '%s\t%s\t%s\n' "$name" "$attempt" "$since" >> "$OUT/flow-times.txt"
+    # The same start where a flow that moves the phone's clock cannot move it: a marker in the device
+    # log's own order, and the runner's clock beside the gateway's (e2e/clock-judges.mjs).
+    timeout 20 adb shell "log -t e2e '[e2e] flow.begins {\"name\":\"$name\",\"attempt\":$attempt}'" < /dev/null > /dev/null 2>&1 \
+      || echo "[phone] could not mark $name's start in the device log" >> "$OUT/maestro.log"
+    printf '%s\t%s\t%s\n' "$name" "$attempt" "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)" >> "$OUT/flow-starts.txt"
     began=$(date +%s)
     timeout --signal=INT --kill-after=30 "$(( left < 600 ? left : 600 ))s" "$MAESTRO" test "$flow" \
       -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" \
@@ -694,6 +700,16 @@ if [ -n "${E2E_FAULTS:-}" ]; then
   else
     slow=1
     node mobile/e2e/annotate.mjs "A fault run failed its judges" "$OUT/fault-judges.txt"
+  fi
+elif [ -n "${E2E_CLOCK:-}" ]; then
+  # A clock run sets the phone's clock wrong on purpose, and the device log's times with it: its
+  # judges read that log in its own order, and the gateway's refreshes by the runner's clock.
+  if node mobile/e2e/clock-judges.mjs "$OUT/logcat-stream.txt" --gateway "${RUNNER_TEMP:-/tmp}/gateway.jsonl" \
+      --flow-starts "$OUT/flow-starts.txt" --clock "$E2E_CLOCK" > "$OUT/clock-judges.txt" 2>&1; then
+    note "The clock runs, judged" "$OUT/clock-judges.txt"
+  else
+    slow=1
+    node mobile/e2e/annotate.mjs "A clock run failed its judges" "$OUT/clock-judges.txt"
   fi
 elif node mobile/e2e/screen-times.mjs "$OUT/logcat-stream.txt" "${times_args[@]}" > "$OUT/screen-times.txt"; then
   note "How long each screen took" "$OUT/screen-times.txt"

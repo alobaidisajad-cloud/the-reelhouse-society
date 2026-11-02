@@ -30,6 +30,13 @@ const EXPECT = {
   // A lifecycle flow: logged offline by the build in members' hands, sent by this one after the upgrade.
   'upgrade.yaml': { what: 'Casablanca, queued by the old build and sent by the new one', where: "l.review = 'E2E upgrade: the queue crosses the versions.' AND l.film_title ILIKE 'Casablanca%'" },
   'killed_mid_write.yaml': { what: 'The Godfather, logged as the app was stopped dead mid-write', where: "l.review = 'E2E killed mid-write: the write lands once.' AND l.film_title ILIKE 'The Godfather%'" },
+  // The clock runs (.maestro/clock): one write each, with the phone's clock wrong.
+  'ahead_minutes.yaml': { what: 'The Matrix, logged with the clock five minutes ahead', where: "l.review = 'E2E clock: five minutes ahead, and every tab still reads.' AND l.film_title ILIKE 'The Matrix%'" },
+  'ahead_hours.yaml': { what: 'Casablanca, logged with the clock three hours ahead', where: "l.review = 'E2E clock: three hours ahead, and every tab still reads.' AND l.film_title ILIKE 'Casablanca%'" },
+  'ahead_day.yaml': { what: 'Blade Runner, logged with the clock a day ahead', where: "l.review = 'E2E clock: a day ahead, and every tab still reads.' AND l.film_title ILIKE 'Blade Runner%'" },
+  'behind_minutes.yaml': { what: 'The Matrix, logged past the token with the clock five minutes behind', where: "l.review = 'E2E clock: five minutes behind, past the token, and every tab still reads.' AND l.film_title ILIKE 'The Matrix%'" },
+  'behind_hours.yaml': { what: 'Casablanca, logged past the token with the clock three hours behind', where: "l.review = 'E2E clock: three hours behind, past the token, and every tab still reads.' AND l.film_title ILIKE 'Casablanca%'" },
+  'behind_day.yaml': { what: 'Blade Runner, logged past the token with the clock a day behind', where: "l.review = 'E2E clock: a day behind, past the token, and every tab still reads.' AND l.film_title ILIKE 'Blade Runner%'" },
 };
 
 /** run-flows.sh's list: flow name → "retried" or "not-judged". Empty when no file. */

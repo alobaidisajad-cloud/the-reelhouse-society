@@ -1,0 +1,12 @@
+appId: com.reelhouse.society
+env:
+  WORDS: "E2E clock: three hours behind, past the token, and every tab still reads."
+---
+# The phone's clock three hours behind (WORKLIST P2.4, P4.32).
+- runFlow:
+    file: ../../subflows/wrong_clock.yaml
+    env:
+      SET: clock_behind
+      MINUTES: "180"
+      FILM: "Casablanca"
+      WORDS: ${WORDS}

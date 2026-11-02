@@ -383,6 +383,24 @@ it('production is asked by the nightly contracts alone, and every contract run i
   expect(sealedRun).not.toMatch(/secrets\./);
 });
 
+it('a token lives 60 s on the behind clock run alone, set on the runner, never in the committed config (P2.4, P0.24)', () => {
+  const steps = workflows.flatMap((w) => Object.entries(w.wf.jobs).flatMap(([job, j]) =>
+    ((j.steps ?? []) as RunStep[]).filter((s) => /jwt_expiry/.test(s.run ?? '')).map((s) => ({ at: `${w.file} › ${job} › ${s.name}`, run: s.run ?? '' }))));
+  expect(steps.map((s) => s.at)).toEqual(['e2e.yml › flows › Start the local stack']);
+  expect(steps[0]?.run).toMatch(/if \[ "\$E2E_CLOCK" = behind \]; then\n\s*sed -i 's\/\^jwt_expiry = 3600\$\/jwt_expiry = 60\/' mobile\/e2e\/supabase\/config\.toml\n/);
+  expect(readFileSync(join(DIR, '..', '..', 'mobile', 'e2e', 'supabase', 'config.toml'), 'utf8')).toMatch(/^jwt_expiry = 3600$/m);
+});
+
+it('each E2E machine clears room on its runner, and the build keeps the NDK it compiles with', () => {
+  const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
+  const room = (job: string) => ((e2e.wf.jobs[job]?.steps ?? []) as RunStep[]).find((s) => /^Room on the runner/.test(s.name ?? ''))?.run ?? '';
+  expect(room('build')).toMatch(/sudo rm -rf \/usr\/share\/dotnet/);
+  expect(room('build')).not.toMatch(/ndk/);
+  expect(room('flows')).toMatch(/\/usr\/local\/lib\/android\/sdk\/ndk/);
+  const order = ((e2e.wf.jobs.build?.steps ?? []) as RunStep[]).map((s) => s.name);
+  expect(order.indexOf('Room on the runner for the build')).toBeLessThan(order.indexOf('Build the E2E app (release APK)'));
+});
+
 it('every night runs each flow three times and the suite in a random order, and keeps every test\'s history (P0.37)', () => {
   const nightly = workflows.find((w) => w.file === 'nightly.yml')!;
   expect(triggers(nightly.wf)).toContain('schedule');
@@ -398,7 +416,10 @@ it('every night runs each flow three times and the suite in a random order, and 
   expect(walks.map((j) => [j.with?.variant, j.strategy?.['fail-fast'], j.strategy?.matrix?.variant?.length])).toEqual([['${{ matrix.variant }}', false, Object.keys(JSON.parse(readFileSync(join(DIR, '..', '..', 'mobile', 'e2e', 'variants.json'), 'utf8')).variants).length]]);
   // And the lifecycle runs (P0.86), once, in a group of their own.
   expect(calls.filter((j) => j.with?.lifecycle === true && j.with?.round === undefined)).toHaveLength(1);
-  expect(calls).toHaveLength(6);
+  // And the clock runs (P2.4), each way once, a matrix of ahead and behind, neither stopping the other.
+  const clocks = calls.filter((j) => j.with?.clock !== undefined) as (Job & { strategy?: { matrix?: { clock?: string[] }; 'fail-fast'?: boolean } })[];
+  expect(clocks.map((j) => [j.with?.clock, j.strategy?.['fail-fast'], j.strategy?.matrix?.clock])).toEqual([['${{ matrix.clock }}', false, ['ahead', 'behind']]]);
+  expect(calls).toHaveLength(7);
   const steps = (job: string) => ((jobs[job]?.steps ?? []) as RunStep[]);
   expect(steps('jest-random').some((s) => /npx jest\b.*--randomize --showSeed/.test(s.run ?? ''))).toBe(true);
   const history = jobs['flake-history'] as Job & { needs?: string[] };
@@ -408,7 +429,7 @@ it('every night runs each flow three times and the suite in a random order, and 
   // Each round's artifacts carry its round, so three in one run never share a name.
   const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
   expect(e2e.text).toContain("inputs.round && format(' - round {0}', inputs.round)");
-  expect(e2e.text).toContain("group: ${{ github.workflow }}-${{ github.sha }}${{ inputs.round }}${{ inputs.faults && '-faults' || '' }}${{ inputs.lifecycle && '-lifecycle' || '' }}${{ inputs.variant && format('-{0}', inputs.variant) || '' }}");
+  expect(e2e.text).toContain("group: ${{ github.workflow }}-${{ github.sha }}${{ inputs.round }}${{ inputs.faults && '-faults' || '' }}${{ inputs.lifecycle && '-lifecycle' || '' }}${{ inputs.clock && format('-clock-{0}', inputs.clock) || '' }}${{ inputs.variant && format('-{0}', inputs.variant) || '' }}");
   expect(e2e.text).toContain("inputs.variant && format(' - {0}', inputs.variant)");
 });
 

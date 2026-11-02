@@ -123,7 +123,7 @@ export const GBOARD = 'com.google.android.inputmethod.latin/com.android.inputmet
  * What a flow may change on the phone mid-flow (.maestro/lifecycle, and the route walk's keyboard
  * moment; WORKLIST P0.86): the text size and the display density live, Android's "don't keep
  * activities", the system killing the app in the background, the app stopped dead in the foreground
- * (mid-write), the keyboard on or off, and the phone's clock moved on (its network time off; P4.7). Each a fixed command of a checked value; run-flows.sh puts
+ * (mid-write), the keyboard on or off, and the phone's clock moved on or back (its network time off; P4.7, P2.4). Each a fixed command of a checked value; run-flows.sh puts
  * the settings back before every lifecycle flow.
  */
 export const PHONE = {
@@ -163,10 +163,27 @@ export const PHONE = {
       ['adb', ['shell', 'settings', 'put', 'global', 'window_animation_scale', '0']]] },
   // Whole minutes ahead of now, set as root in UTC (toybox date's MMDDhhmmCCYY.ss); the network time
   // off first, or the phone would take it back. run-flows.sh puts both back before every lifecycle flow.
+  // Then said in the device log (`phone.clock`), where e2e/clock-judges.mjs reads that it was moved.
   clock_ahead: { says: 'whole minutes from 1 to 2880', valid: (v) => Number.isInteger(v) && v >= 1 && v <= 2880,
     commands: (v) => [['adb', ['root']], ['adb', ['wait-for-device']],
-      ['adb', ['shell', 'settings', 'put', 'global', 'auto_time', '0']], ['adb', ['shell', 'date', '-u', phoneDate(Date.now() + v * 60_000)]]] },
+      ['adb', ['shell', 'settings', 'put', 'global', 'auto_time', '0']], ['adb', ['shell', 'date', '-u', phoneDate(Date.now() + v * 60_000)]],
+      clockSaid(v)] },
+  // The same, behind.
+  clock_behind: { says: 'whole minutes from 1 to 2880', valid: (v) => Number.isInteger(v) && v >= 1 && v <= 2880,
+    commands: (v) => [['adb', ['root']], ['adb', ['wait-for-device']],
+      ['adb', ['shell', 'settings', 'put', 'global', 'auto_time', '0']], ['adb', ['shell', 'date', '-u', phoneDate(Date.now() - v * 60_000)]],
+      clockSaid(-v)] },
+  // A clock run's wait past its 60 s token, which the flow waits itself (a command here holds the
+  // proxy, and every request through it, until it ends): said in the device log once it has.
+  waited: { says: 'whole seconds from 61 to 300', valid: (v) => Number.isInteger(v) && v >= 61 && v <= 300,
+    commands: (v) => [['adb', ['shell', `log -t e2e '[e2e] phone.waited {"seconds":${v}}'`]]] },
 };
+
+/**
+ * The clock's move, written to the device log as the app writes its own lines. One word to the
+ * phone's shell, quoted there, or it would take the braces and quotes as its own.
+ */
+export const clockSaid = (minutes) => ['adb', ['shell', `log -t e2e '[e2e] phone.clock {"minutes":${minutes}}'`]];
 
 /** An instant as toybox `date -u` sets one: MMDDhhmmCCYY.ss, in UTC. */
 export function phoneDate(ms) {

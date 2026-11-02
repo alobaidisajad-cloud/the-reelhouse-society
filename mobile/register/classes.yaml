@@ -217,6 +217,20 @@ classes:
     fix: "useScreenReady writes each wait's start (screen.reading) as well as its end; the fault runs' judge refuses a wait past 20 s or still waiting when its flow ends (mutant judge-wait-without-end); P4.6 sets each kind of request's own deadline"
     places: [emulator]
 
+  - id: E2E-wrong-clock-passes
+    title: With the phone's clock minutes, hours or a day wrong, a tab's read fails, the member is signed out or the app refreshes its token in a loop, and the run passes because the flow tapped on
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P2.4" }
+    methods:
+      - { kind: running, file: e2e/__tests__/clockJudges.test.ts, test: "refuses a failed read and a sign-out, each in its own flow alone" }
+      - { kind: running, file: e2e/__tests__/clockJudges.test.ts, test: "refuses three refreshes in five minutes ahead, takes two, and counts each flow's alone" }
+      - { kind: running, file: e2e/__tests__/clockJudges.test.ts, test: "refuses a behind flow with no refresh, and one past one per token lifetime" }
+    fix: "the clock runs (e2e.yml clock: ahead | behind, nightly) set the phone's clock wrong each way by minutes, hours and a day, the behind run on 60 s tokens; their judge (e2e/clock-judges.mjs) reads the device log in its own order and the gateway's refreshes by the runner's clock, and refuses a tab never read, a failed read, a sign-out, a refresh loop, and a run that never moved its clock or never outlived its token (mutants judge-clock-refresh-loop, judge-clock-signed-out, judge-clock-token-never-ran-out, judge-clock-never-waited)"
+    places: [emulator]
+
   - id: E2E-phone-only-as-the-runner-has-it
     title: Every run's phone has the default text, width, navigation bar, direction and mode, with animations off, so a screen that breaks for a member who set any of them passes every run
     seriousness: behaviour

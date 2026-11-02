@@ -1,0 +1,9 @@
+{"id":1,"method":"GET","path":"/rest/v1/logs?select=id","at":"2026-11-02T06:01:10.000Z","status":200,"fault":null,"bytes":420}
+{"id":2,"method":"POST","path":"/auth/v1/token?grant_type=refresh_token","at":"2026-11-02T06:00:40.000Z","status":200,"fault":null,"bytes":300}
+{"id":3,"method":"POST","path":"/rest/v1/rpc/add_log","at":"2026-11-02T06:05:00.000Z","status":200,"fault":null,"bytes":900}
+{"id":4,"method":"GET","path":"/rest/v1/logs?select=id","at":"2026-11-02T06:11:10.000Z","status":200,"fault":null,"bytes":420}
+{"id":5,"method":"POST","path":"/auth/v1/token?grant_type=refresh_token","at":"2026-11-02T06:10:40.000Z","status":200,"fault":null,"bytes":300}
+{"id":6,"method":"POST","path":"/rest/v1/rpc/add_log","at":"2026-11-02T06:15:00.000Z","status":200,"fault":null,"bytes":900}
+{"id":7,"method":"GET","path":"/rest/v1/logs?select=id","at":"2026-11-02T06:21:10.000Z","status":200,"fault":null,"bytes":420}
+{"id":8,"method":"POST","path":"/auth/v1/token?grant_type=refresh_token","at":"2026-11-02T06:20:40.000Z","status":200,"fault":null,"bytes":300}
+{"id":9,"method":"POST","path":"/rest/v1/rpc/add_log","at":"2026-11-02T06:25:00.000Z","status":200,"fault":null,"bytes":900}

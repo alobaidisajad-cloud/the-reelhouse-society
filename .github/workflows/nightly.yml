@@ -160,6 +160,19 @@ jobs:
     with:
       lifecycle: true
 
+  # The clock runs (P2.4, P4.32): the phone's clock minutes, hours and a day ahead, then behind on
+  # tokens that live 60 s, each flow judged by e2e/clock-judges.mjs (every tab read, nothing
+  # failed, no sign-out, no refresh loop).
+  e2e-clock:
+    name: 🎬 The clock runs, ${{ matrix.clock }}
+    strategy:
+      fail-fast: false
+      matrix:
+        clock: [ahead, behind]
+    uses: ./.github/workflows/e2e.yml
+    with:
+      clock: ${{ matrix.clock }}
+
   # Every route opened cold and captured on the phone as each variant has it (mobile/e2e/variants.json,
   # WORKLIST P0.86): four at a time, each its own build, on one machine for a walk alone and
   # four for a variant that runs every flow first.

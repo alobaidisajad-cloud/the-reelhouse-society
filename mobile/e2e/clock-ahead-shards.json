@@ -1,0 +1,14 @@
+{
+  "why": "The ahead clock run's one machine (e2e.yml with clock: ahead, WORKLIST P2.4): every flow in .maestro/clock/ahead, the phone's clock set ahead and put back before the next. Read by e2e/shards.mjs and run-flows.sh; clockJudges.test.ts holds it to the folder and to clock-judges.mjs's list. Each flow signs in, opens every tab and logs a film: about five minutes on the runner.",
+  "probesElsewhere": "The keyboard probes and the launch with animations run in the normal rounds (e2e/shards.json); a clock run tests the phone's clock, not them.",
+  "shards": [
+    {
+      "flows": [
+        "ahead_day",
+        "ahead_hours",
+        "ahead_minutes"
+      ],
+      "minutes": 30
+    }
+  ]
+}

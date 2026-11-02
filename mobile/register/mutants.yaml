@@ -510,6 +510,53 @@ mutants:
         find: "10-16 18:01:39.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {\"name\":\"film\",\"ms\":8000}\n"
         replace: ""
 
+  - id: judge-clock-refresh-loop
+    class: E2E-wrong-clock-passes
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/clock-judges-ahead
+      run: [node, e2e/clock-judges.mjs, "{dir}/logcat.txt", --gateway, "{dir}/gateway.jsonl", --flow-starts, "{dir}/flow-starts.txt", --clock, ahead]
+    edits:
+      - file: gateway.jsonl
+        find: "\"id\":1,\"method\":\"GET\",\"path\":\"/rest/v1/logs?select=id\""
+        replace: "\"id\":1,\"method\":\"POST\",\"path\":\"/auth/v1/token?grant_type=refresh_token\""
+      - file: gateway.jsonl
+        find: "\"id\":3,\"method\":\"POST\",\"path\":\"/rest/v1/rpc/add_log\""
+        replace: "\"id\":3,\"method\":\"POST\",\"path\":\"/auth/v1/token?grant_type=refresh_token\""
+
+  - id: judge-clock-signed-out
+    class: E2E-wrong-clock-passes
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/clock-judges-ahead
+      run: [node, e2e/clock-judges.mjs, "{dir}/logcat.txt", --gateway, "{dir}/gateway.jsonl", --flow-starts, "{dir}/flow-starts.txt", --clock, ahead]
+    edits:
+      - file: logcat.txt
+        find: "11-02 06:07:00.000  4321  4377 I ReactNativeJS: Running \"main\""
+        replace: "11-02 06:07:00.000  4321  4377 W ReactNativeJS: [e2e] screen.ready {\"name\":\"welcome\",\"ms\":300}"
+
+  - id: judge-clock-token-never-ran-out
+    class: E2E-wrong-clock-passes
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/clock-judges-behind
+      run: [node, e2e/clock-judges.mjs, "{dir}/logcat.txt", --gateway, "{dir}/gateway.jsonl", --flow-starts, "{dir}/flow-starts.txt", --clock, behind]
+    edits:
+      - file: gateway.jsonl
+        find: "{\"id\":11,\"method\":\"POST\",\"path\":\"/auth/v1/token?grant_type=refresh_token\",\"at\":\"2026-11-02T06:03:30.000Z\",\"status\":200,\"fault\":null,\"bytes\":300}\n"
+        replace: ""
+
+  - id: judge-clock-never-waited
+    class: E2E-wrong-clock-passes
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/clock-judges-behind
+      run: [node, e2e/clock-judges.mjs, "{dir}/logcat.txt", --gateway, "{dir}/gateway.jsonl", --flow-starts, "{dir}/flow-starts.txt", --clock, behind]
+    edits:
+      - file: logcat.txt
+        find: "11-02 05:58:20.000  1111  1111 I e2e     : [e2e] phone.waited {\"seconds\":75}\n"
+        replace: ""
+
   - id: shape-route-capture-unchecked
     class: E2E-route-never-opened
     source: shape
