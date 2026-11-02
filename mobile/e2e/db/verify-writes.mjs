@@ -34,9 +34,9 @@ const EXPECT = {
   'ahead_minutes.yaml': { what: 'The Matrix, logged with the clock five minutes ahead', where: "l.review = 'E2E clock: five minutes ahead, and every tab still reads.' AND l.film_title ILIKE 'The Matrix%'" },
   'ahead_hours.yaml': { what: 'Casablanca, logged with the clock three hours ahead', where: "l.review = 'E2E clock: three hours ahead, and every tab still reads.' AND l.film_title ILIKE 'Casablanca%'" },
   'ahead_day.yaml': { what: 'Blade Runner, logged with the clock a day ahead', where: "l.review = 'E2E clock: a day ahead, and every tab still reads.' AND l.film_title ILIKE 'Blade Runner%'" },
-  'behind_minutes.yaml': { what: 'The Matrix, logged past the token with the clock five minutes behind', where: "l.review = 'E2E clock: five minutes behind, past the token, and every tab still reads.' AND l.film_title ILIKE 'The Matrix%'" },
-  'behind_hours.yaml': { what: 'Casablanca, logged past the token with the clock three hours behind', where: "l.review = 'E2E clock: three hours behind, past the token, and every tab still reads.' AND l.film_title ILIKE 'Casablanca%'" },
-  'behind_day.yaml': { what: 'Blade Runner, logged past the token with the clock a day behind', where: "l.review = 'E2E clock: a day behind, past the token, and every tab still reads.' AND l.film_title ILIKE 'Blade Runner%'" },
+  'behind_minutes.yaml': { what: 'The Matrix, logged past the token with the clock five minutes behind', where: "l.review = 'E2E clock: five minutes behind, past the token, every tab reads.' AND l.film_title ILIKE 'The Matrix%'" },
+  'behind_hours.yaml': { what: 'Casablanca, logged past the token with the clock three hours behind', where: "l.review = 'E2E clock: three hours behind, past the token, every tab reads.' AND l.film_title ILIKE 'Casablanca%'" },
+  'behind_day.yaml': { what: 'Blade Runner, logged past the token with the clock a day behind', where: "l.review = 'E2E clock: a day behind, past the token, every tab reads.' AND l.film_title ILIKE 'Blade Runner%'" },
 };
 
 /** run-flows.sh's list: flow name → "retried" or "not-judged". Empty when no file. */

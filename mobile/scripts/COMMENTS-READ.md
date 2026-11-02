@@ -210,7 +210,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/db/up-down-up.mjs | 2026-10-22 | read whole: a CONCURRENTLY file and its undo run alone, outside any transaction, as the migration lint names their kind; apply exported, so the rehearsals take it |
 | e2e/db/verify-cleaning.mjs | 2026-10-03 | Written with 20261003_05: the sealed world's database answers the member-text corpus as the app does, a member's words are kept cleaned, and no API role can call the cleaning. |
 | e2e/db/verify-functions.mjs | 2026-09-29 | true as written |
-| e2e/db/verify-writes.mjs | 2026-11-02 | edited: the six clock flows' logs; edited: on one shard, only the flows run-flows.sh listed; edited: the lifecycle flow killed mid-write, its log exactly once |
+| e2e/db/verify-writes.mjs | 2026-11-02 | edited: the behind flows' words as they now type them; edited: the six clock flows' logs; edited: on one shard, only the flows run-flows.sh listed; edited: the lifecycle flow killed mid-write, its log exactly once |
 | e2e/fault-judges.mjs | 2026-10-16 | new: the fault runs' judges (P0.76): no failure drawn empty, a fault that failed nothing proves nothing, no false failure on a slow link, no wait past 20 s or left at a flow's end |
 | e2e/flow-screens.mjs | 2026-10-04 | Maestro's JUnit reason, a report for a flow with no step record, the decision line, the named animation; QueryController dropped (logged on every key of fast runs) |
 | e2e/functions/mail.mjs | 2026-10-16 | new: every email the House's Auth sends, caught by the stack's Mailpit and used: the sign-up link confirms, the reset link opens a session, the code is the House's letter with 6 digits and no link, accepted once, a wrong one refused |
@@ -1459,9 +1459,9 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/clock/ahead/ahead_day.yaml | 2026-11-02 | new: the clock a day ahead, over wrong_clock.yaml |
 | .maestro/clock/ahead/ahead_hours.yaml | 2026-11-02 | new: the clock three hours ahead, over wrong_clock.yaml |
 | .maestro/clock/ahead/ahead_minutes.yaml | 2026-11-02 | new: the clock five minutes ahead, over wrong_clock.yaml |
-| .maestro/clock/behind/behind_day.yaml | 2026-11-02 | new: the clock a day behind, over wrong_clock.yaml |
-| .maestro/clock/behind/behind_hours.yaml | 2026-11-02 | new: the clock three hours behind, over wrong_clock.yaml |
-| .maestro/clock/behind/behind_minutes.yaml | 2026-11-02 | new: the clock five minutes behind, over wrong_clock.yaml |
+| .maestro/clock/behind/behind_day.yaml | 2026-11-02 | edited: words within the flow lint's 80; new: the clock a day behind, over wrong_clock.yaml |
+| .maestro/clock/behind/behind_hours.yaml | 2026-11-02 | edited: words within the flow lint's 80; new: the clock three hours behind, over wrong_clock.yaml |
+| .maestro/clock/behind/behind_minutes.yaml | 2026-11-02 | edited: words within the flow lint's 80; new: the clock five minutes behind, over wrong_clock.yaml |
 | .maestro/lifecycle/resized.yaml | 2026-11-01 | new: Edit Profile half-edited, the window narrowed (a fold, a split-screen drag) and put back: the same screen, the words kept |
 | .maestro/lifecycle/time_moved_on.yaml | 2026-10-27 | edited: the profile tab waits for what only a loaded profile carries before it reads LATELY; new: a day passes with the app in the background: TODAY becomes YESTERDAY in LATELY, the member still signed in (P4.7) |
 | .maestro/subflows/every_tab.yaml | 2026-11-02 | new: read against each tab's own ids (lobby-wall-hung, dispatch-filing, reel-log, film-card, collection-card-watchlist) |
@@ -1473,7 +1473,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/iosFlows.test.ts | 2026-10-24 | edited: the iOS sitemap link handed to the app running |
 | e2e/no-keyboard.sh | 2026-10-22 | moved whole from run-flows.sh: the phone with no keyboard apps, no input method and no autofill, sourced by run-flows.sh and the speed lab's scrolls.sh; a keyboard left stops the run |
 | .maestro/subflows/open_link_on_ios.yaml | 2026-10-22 | written: iOS's own "Open in ...?" before a link opens the app, answered as a member does; nothing if it never came |
-| .maestro/subflows/past_the_token.yaml | 2026-11-02 | new: read against fault-proxy.mjs's waited and e2e.yml's 60 s tokens |
+| .maestro/subflows/past_the_token.yaml | 2026-11-02 | edited: the wait is for the tab bar to go, an id the app draws; new: read against fault-proxy.mjs's waited and e2e.yml's 60 s tokens |
 | .maestro/subflows/wrong_clock.yaml | 2026-11-02 | new: read against time_moved_on.yaml's log steps and clock-judges.mjs |
 | .maestro/turned.yaml | 2026-10-31 | edited: no hideKeyboard (a Back press on the test phone); the bio is centred before it is touched: a field below the fold on a window on its side; edited: no hideKeyboard: on the test phone it is a Back press, which asked to discard the words; new: Edit Profile half-edited, the phone turned and turned back: the same screen, the words kept; the app turns only on the tablet run |
 | app/(modals)/__tests__/theCoverIsTheHostsToChoose.test.tsx | 2026-10-27 | edited: signed out, asked in; signed in as host, the picker drawn; Written 2026-10-27: the cover picker drawn for the host alone; anyone else, or a salon not known, told plainly (P4.4) |

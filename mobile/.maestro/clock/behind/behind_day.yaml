@@ -1,6 +1,6 @@
 appId: com.reelhouse.society
 env:
-  WORDS: "E2E clock: a day behind, past the token, and every tab still reads."
+  WORDS: "E2E clock: a day behind, past the token, every tab reads."
 ---
 # The phone's clock a day behind (WORKLIST P2.4, P4.32).
 - runFlow:
