@@ -452,6 +452,11 @@
         "call": "public.bulk_dismiss_reports(ARRAY['{ref:reports@V}']::uuid[], '{admin}', 'rh')",
         "then": "(SELECT status FROM public.reports WHERE id = '{ref:reports@V}') = 'resolved'" }
     ] },
+    "calendar_days": { "why": "A file's films by day, counted as its logs are read: a private member's only by its readers.", "cases": [
+      { "name": "a private member's", "as": "all", "expect": "ok", "call": "public.calendar_days('{uid@P}')",
+        "result": "jsonb_array_length($1) = 0" },
+      { "name": "an open member's", "as": "all", "expect": "ok", "call": "public.calendar_days('{uid@V}')" }
+    ] },
     "can_annotate_list": { "why": "A gate of comments: answers for the caller alone, and never a private stack.", "cases": [
       { "name": "an open member's private stack", "as": "all", "expect": { "ok": "all" },
         "call": "public.can_annotate_list('{owner}', '{ref:lists@V#2}')", "result": "$1 = '[false]'" },

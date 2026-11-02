@@ -952,7 +952,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 {archiveLock.locked
                   ? null
                   : calendarData
-                  ? <NitrateCalendarGrid logs={calendarData} isSelf={isSelf} />
+                  ? <NitrateCalendarGrid days={calendarData} isSelf={isSelf} />
                   : roomFailed ? <RoomUnreachable room="the calendar" onRetry={retryRoom} /> : <RoomRetrieving room="the calendar" />}
                 {/* After the calendar: opened, the lock fades over it. */}
                 <Presence>

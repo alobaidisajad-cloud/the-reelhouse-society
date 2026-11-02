@@ -91,7 +91,7 @@ describe('profileReducer', () => {
   });
 
   it('SET_CALENDAR_DATA replaces calendarData', () => {
-    const data = [{ watchedDate: '2026-01-01', rating: 4, status: 'watched' }];
+    const data = [{ day: '2026-01-01', films: 1 }];
     const result = profileReducer(initialState, { type: 'SET_CALENDAR_DATA', payload: data });
     expect(result.calendarData).toBe(data);
   });

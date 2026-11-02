@@ -89,7 +89,7 @@ const CTL: Ctl = {
     targetUser: USER, loading: false,
     counts: { logs: 1247, ledger: 318, watchlist: 96, vault: 214, lists: 12 },
     mainLogs: LOGS, archiveLogs: LOGS, ledgerLogs: LOGS, watchlist: [], vault: [], lists: [],
-    analyticsLogs: LOGS, calendarData: LOGS.map((l) => ({ watchedDate: l.watchedDate, rating: l.rating, status: l.status })), serverStreak: 9,
+    analyticsLogs: LOGS, calendarData: LOGS.map((l) => ({ day: l.watchedDate, films: 1 })), serverStreak: 9,
     serverAnalytics: { total_films: 1247, current_streak: 9, longest_streak: 31, avg_rating: 3.8 },
     // As the server answers it: rated 4 and up, highest first, the more recent among equals.
     highestRated: LOGS.filter((l) => l.rating >= 4)

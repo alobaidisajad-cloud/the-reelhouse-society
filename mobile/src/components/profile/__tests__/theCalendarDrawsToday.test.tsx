@@ -16,8 +16,8 @@ jest.mock('expo-haptics', () => ({ impactAsync: jest.fn(), notificationAsync: je
 
 const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return calendarDateString(d)!; };
 
-const mount = async (logs: { watchedDate: string }[]) => {
-  const r = render(<NitrateCalendarGrid logs={logs} isSelf={false} />);
+const mount = async (days: { day: string; films: number }[]) => {
+  const r = render(<NitrateCalendarGrid days={days} isSelf={false} />);
   await act(async () => { await Promise.resolve(); });
   return r;
 };
@@ -44,14 +44,20 @@ const filled = (r: Awaited<ReturnType<typeof mount>>) => {
 };
 
 it('draws a film logged today, and counts it once', async () => {
-  const r = await mount([{ watchedDate: daysAgo(0) }]);
+  const r = await mount([{ day: daysAgo(0), films: 1 }]);
   expect(r.getByText('1 FILM IN THE PAST YEAR')).toBeTruthy();
   // The last cell is today.
   expect(filled(r)).toEqual([363]);
 });
 
+it('counts every film of a day as the house counted them, a year past 1,000 rows whole', async () => {
+  const r = await mount([{ day: daysAgo(1), films: 7 }, { day: daysAgo(200), films: 1500 }]);
+  expect(r.getByText('1507 FILMS IN THE PAST YEAR')).toBeTruthy();
+  expect(filled(r)).toEqual([163, 362]);
+});
+
 it('counts only the days it draws, not the week of slack the read carries', async () => {
-  const r = await mount([{ watchedDate: daysAgo(3) }, { watchedDate: daysAgo(363) }, { watchedDate: daysAgo(366) }]);
+  const r = await mount([{ day: daysAgo(3), films: 1 }, { day: daysAgo(363), films: 1 }, { day: daysAgo(366), films: 1 }]);
   expect(r.getByText('2 FILMS IN THE PAST YEAR')).toBeTruthy();
   expect(filled(r)).toEqual([0, 360]);
 });

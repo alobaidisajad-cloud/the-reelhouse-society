@@ -7,14 +7,13 @@
  */
 
 import { z } from 'zod';
-import { houseNow } from '@/src/lib/houseClock';
 import { supabase } from '../lib/supabase';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '../utils/logger';
 import { withAbortSignal } from '../utils/withAbortSignal';
 import { mapLogRow, PUBLIC_LOG_COLUMNS } from '../utils/mappers';
 import type { LogRow } from '../utils/mappers';
-import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, ShelfSort } from '../types';
+import type { CalendarDay, ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, ShelfSort } from '../types';
 import { LEDGER_HIGH_FLOOR, ledgerRungRange } from '../types';
 import { sortAxis, parseCursor, keysetFilter, buildCursor, pgLiteral } from '../utils/keysetCursor';
 import type { AnalyticsShape } from '../hooks/useProfileData';
@@ -677,35 +676,19 @@ export const ProfileDataService = {
   },
 
   /**
-   * The calendar's three columns, for every member (their logs, under the
-   * same visibility as every room). Bounded by the 52 weeks the grid DRAWS
-   * (NitrateCalendarGrid's WEEKS), not a row count; past 5,000 logs in a year
-   * every cell is already full, so the limit is only a backstop.
+   * The calendar's days, for every member: each day the grid can draw in any zone, with the films
+   * seen on it, counted by the house under the logs' own read rules. One row a day, never more
+   * than 366, so a year past the house's 1,000 rows is drawn whole (P4.9).
    */
-  async fetchCalendarData(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<{ date: string; rating: number; status: string }[]> {
-    const CALENDAR_WEEKS = 52;
-    const from = new Date(houseNow());
-    from.setDate(from.getDate() - (CALENDAR_WEEKS * 7 + 7));   // a week of slack for timezone edges
-    const fromKey = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-${String(from.getDate()).padStart(2, '0')}`;
-
+  async fetchCalendarData(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<CalendarDay[]> {
     const { data, error } = await withAbortSignal(
-      supabase.from('logs')
-        .select('watched_date, rating, status')
-        .eq('user_id', targetUser.id)
-        .not('watched_date', 'is', null)
-        .gte('watched_date', fromKey)
-        .order('watched_date', { ascending: false })
-        .limit(5000),
+      supabase.rpc('calendar_days', { p_user_id: targetUser.id }),
       signal
     );
     if (error) {
       logger.warn('[ProfileDataService] calendar data error:', error.message);
       throw error;
     }
-    return (data ?? []).map(r => ({
-      date: r.watched_date,
-      rating: r.rating ?? 0,
-      status: r.status ?? 'watched',
-    }));
+    return ((data ?? []) as { day: string; films: number }[]).map((r) => ({ day: r.day, films: r.films }));
   },
 };

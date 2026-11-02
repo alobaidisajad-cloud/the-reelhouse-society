@@ -24,6 +24,12 @@ export interface FormatCount {
     color: string;
 }
 
+/** A day of the viewing calendar: the date, and the films the member saw on it. */
+export interface CalendarDay {
+    day: string;
+    films: number;
+}
+
 export interface ProfileLog {
     id: string;
     filmId: number;

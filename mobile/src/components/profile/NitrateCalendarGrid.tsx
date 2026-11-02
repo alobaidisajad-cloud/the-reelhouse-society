@@ -8,17 +8,12 @@ import PressableScale from '../PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { nav } from '@/src/utils/typedRouter';
-import { calendarDateString } from '@/src/utils/timeAgo';
 import { useToday } from '@/src/hooks/useClock';
 import { Arrive } from '@/src/components/Arrive';
-
-interface CalendarGridLog {
-  watchedDate?: string;
-  createdAt?: string;
-}
+import type { CalendarDay } from '@/src/types';
 
 interface Props {
-  logs: CalendarGridLog[];
+  days: CalendarDay[];
   isSelf?: boolean;
 }
 
@@ -34,18 +29,15 @@ const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padSt
 
 /**
  * The last 52 weeks, a column a week, ending TODAY. Every film counted in the
- * heading is a film drawn on the grid: the read carries a week of slack for
- * timezone edges, and nothing outside the grid is counted.
+ * heading is a film drawn on the grid: the read carries a day of slack at each
+ * end for the member's zone, and nothing outside the grid is counted.
  */
-export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
+export default function NitrateCalendarGrid({ days, isSelf }: Props) {
   // The grid ends on the member's today, and moves on at their midnight.
   const todayIs = useToday();
   const { gridData, drawn } = useMemo(() => {
     const countsMap = new Map<string, number>();
-    for (const log of logs) {
-      const key = calendarDateString(log.watchedDate || log.createdAt);
-      if (key) countsMap.set(key, (countsMap.get(key) || 0) + 1);
-    }
+    for (const { day, films } of days) countsMap.set(day, (countsMap.get(day) || 0) + films);
 
     // The first cell is 52 weeks less a day ago, so the last is today.
     const today = new Date(`${todayIs}T00:00:00`);
@@ -67,7 +59,7 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
       weeksData.push(week);
     }
     return { gridData: weeksData, drawn: total };
-  }, [logs, todayIs]);
+  }, [days, todayIs]);
 
   const flickerAnim = useSharedValue(0.6);
   useEffect(() => {

@@ -730,7 +730,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/taste.test.tsx | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/components/profile/__tests__/theArchiveIsHeldWhereverItShows.test.tsx | 2026-10-23 | edited: the rooms answered, as the screen is drawn; Written in the launch audit: the Archive's lock holds every place the own file shows it. |
 | src/components/profile/__tests__/theArchiveLockHolds.test.tsx | 2026-10-01 | written: the archive lock holds |
-| src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-10-01 | written: the calendar draws today and counts what it draws |
+| src/components/profile/__tests__/theCalendarDrawsToday.test.tsx | 2026-11-02 | edited: the grid takes days; a day's films counted whole, a year past 1,000 rows (P4.9); written: the calendar draws today and counts what it draws |
 | src/components/profile/__tests__/theDnaCardReadsTheRecord.test.tsx | 2026-10-28 | edited: a control found by the name it now says, its shown words first; written: the DNA card reads the record and always opens |
 | src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx | 2026-10-23 | edited: the door opens reading, empty only once answered; a failed door is said; a failed count keeps the last; @handles; decline-all asks first |
 | src/components/profile/__tests__/theFileLetsItsViewsLeave.test.tsx | 2026-10-23 | edited: the rooms answered, as the screen is drawn; new: the DNA card and the lock leave after their fade |
@@ -754,7 +754,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/favourites.ts | 2026-10-01 | comments say what is true now |
 | src/components/profile/FollowRequestsPanel.tsx | 2026-10-30 | edited: its Modal holds the reading column (InColumn) first; edited: its controls a slip on costs something (delete, file, close, go back) carry their touch weight; edited: the field's ledger line in the ink that reads (colors.fieldEdge, 3:1 and more); edited: its frosted glass drawn through HouseBlur; edited: the petitioners' search holds SEARCH_MAX; edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; edited: its spinner says it reads the door; rises and slides away through Presence; foot from useSheetBottom |
 | src/components/profile/heroNameSize.ts | 2026-10-01 |  |
-| src/components/profile/NitrateCalendarGrid.tsx | 2026-10-27 | edited: the grid ends on today, and moves on at midnight; today drawn; counts what it draws, "in the past year"; the app date helper; nav |
+| src/components/profile/NitrateCalendarGrid.tsx | 2026-11-02 | edited: the grid takes days and their films, and adds each day's films; a day of slack at each end (P4.9); edited: the grid ends on today, and moves on at midnight; today drawn; counts what it draws, "in the past year"; the app date helper; nav |
 | src/components/profile/NoirPassport.tsx | 2026-10-30 | edited: its widths read from useColumnWidth(), the reading column, not the window; stamps from the whole record only; labels broken between words; said while unread or failed |
 | src/components/profile/portraitInitial.ts | 2026-10-04 | rewritten: on initialOf |
 | src/components/profile/ProfileArchiveTab.tsx | 2026-10-30 | edited: its widths read from useColumnWidth(), the reading column, not the window; edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; ends above its foot (scrollEndAbove) |
@@ -929,7 +929,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/useNotableMembers.ts | 2026-10-01 | true as written |
 | src/hooks/useOfflineAware.ts | 2026-10-01 | one subscription, no clock |
 | src/hooks/useProfileController.ts | 2026-10-26 | edited: the three latest reads made Effect Events; edited: the route's tab taken as it renders, once per tab; the handle repair begun in the render it is decided, ended by the member arriving or the four seconds; edited: followKnown and rereadFollows; a follow is never filed before the follow list is known |
-| src/hooks/useProfileData.ts | 2026-10-27 | edited: the member's file read again on return once older than a read stays fresh, silently; edited: the shown member's id written after each commit; edited: a new member starts from nothing as it renders (your own file seeded there); the archive marks set in the logs read's then; edited: tabAnswered (a room's read came back, not asked) and answeredFilters (the filters a room's rows answer), both reset for a new member; a search overtaken lands neither its rows nor its filters nor lowers the newer one's flag; each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
+| src/hooks/useProfileData.ts | 2026-11-02 | edited: the calendar keeps the house's days as they come (P4.9); edited: the member's file read again on return once older than a read stays fresh, silently; edited: the shown member's id written after each commit; edited: a new member starts from nothing as it renders (your own file seeded there); the archive marks set in the logs read's then; edited: tabAnswered (a room's read came back, not asked) and answeredFilters (the filters a room's rows answer), both reset for a new member; a search overtaken lands neither its rows nor its filters nor lowers the newer one's flag; each read cancelled only by what makes it stale; failures wiped with the member; comments say what is true now |
 | src/hooks/useScreenReady.tsx | 2026-10-26 | edited: the first wait read in a state first value as the screen first renders; a later one stamped as its frame commits; edited: takes the read state; a failed read is screen.failed; a wait's start is screen.reading |
 | src/hooks/useScrollTrace.ts | 2026-10-15 | new: a scroll is one Sentry transaction, begin to rest |
 | src/hooks/useSheetPresence.ts | 2026-10-26 | edited: the latest props written after each commit; edited: a visible sheet is a drawn one from the render that opens it; the effect keeps the motion; written: five sheets' rise and fall, once |
@@ -1004,7 +1004,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/__tests__/getFilmVerdict.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/loungeEmbeds.contract.test.ts | 2026-10-25 | edited: asks through houseFetch, Node's own fetch; edited: the Dispatch's saved page joins it; the app's embeds, not the Lounge's alone; the salon's page checked as the store asks for it (MESSAGE_COLUMNS, its reactions embedded); read whole: sound (the FK names; columns are the query guard's); edited: given an address, an unreachable one fails; only 200 or 401 is an answer |
 | src/services/__tests__/loungeSharePayloads.test.ts | 2026-10-03 | read whole: sound |
-| src/services/__tests__/ProfileDataService.test.ts | 2026-10-03 | read whole: sound |
+| src/services/__tests__/ProfileDataService.test.ts | 2026-11-02 | edited: the calendar reads calendar_days, never the logs; a failed read is said (P4.9); read whole: sound |
 | src/services/__tests__/profileRoomFilters.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
 | src/services/__tests__/profileService.test.ts | 2026-10-03 | read whole: sound |
 | src/services/__tests__/servicesBatch1.test.ts | 2026-10-03 | edited: endorse_list routing and the log error case |
@@ -1029,7 +1029,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/services/LoungeService.ts | 2026-10-01 | true as written |
 | src/services/MemberDiscoveryService.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/services/ModerationService.ts | 2026-10-02 | read; sound |
-| src/services/ProfileDataService.ts | 2026-11-01 | edited: the calendar's first day counted from the house's time; edited: its report lines are fixed text, the values after them, kept on the phone (P4.44); Read whole in the launch audit: fetchHighestRated added; the rest sound. |
+| src/services/ProfileDataService.ts | 2026-11-02 | edited: the calendar asks the house for a row a day (calendar_days), never the logs a busy year cut at 1,000 (P4.9); edited: the calendar's first day counted from the house's time; edited: its report lines are fixed text, the values after them, kept on the phone (P4.44); Read whole in the launch audit: fetchHighestRated added; the rest sound. |
 | src/services/ProfileWriteService.ts | 2026-10-02 | the circle's cursors through pgLiteral |
 | src/services/ShelfService.ts | 2026-10-03 | written whole: a shelf filing adds formats, never rewrites the entry |
 | src/services/StackService.ts | 2026-10-27 | edited: getStackItemsPage, a stack's films past the first page in its own order; STACK_ITEMS_LIMIT exported; edited: its report lines are fixed text, the values after them, kept on the phone (P4.44); Read whole (launch audit). The sheet read the newest 50 critiques with the true count beside them and no way to the rest: getStackComments takes a limit (ordered by id too), and the sheet asks for earlier ones. |
@@ -1168,7 +1168,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/types/index.ts | 2026-10-02 | Read whole (launch audit). ui.types (UIState: a paywall and handbook modal that do not exist) removed from the barrel and deleted. |
 | src/types/moderation.ts | 2026-10-02 | Read whole (launch audit): content types match reports_content_type_check. BlockType, BlockRecordSchema and ActionMetaSchema were used nowhere: removed. |
 | src/types/mutations.ts | 2026-10-15 | edited: the ownership notes say the owner decides the session, not user_id |
-| src/types/profile.types.ts | 2026-10-02 | Read (launch audit). Sound; left alone. |
+| src/types/profile.types.ts | 2026-11-02 | edited: CalendarDay, a day of the viewing calendar and its films (P4.9); Read (launch audit). Sound; left alone. |
 | src/types/social.types.ts | 2026-10-03 | LoungeMember.created_at named a column that does not exist; it is joined_at |
 | src/types/tmdb.types.ts | 2026-10-02 | Read whole (launch audit). TMDBReview was used nowhere: removed. |
 | src/utils/__tests__/aCharacterIsNeverCut.test.ts | 2026-10-16 | edited: a capital past Georgian's letters, and Georgian's first and last |

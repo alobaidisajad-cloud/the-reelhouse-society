@@ -53,7 +53,7 @@ const svc = ProfileDataService as unknown as Record<string, jest.Mock>;
 
 /** A Cinephile — the rank the Projector reads nothing for, when it is someone else. */
 const CINEPHILE = { id: 'u2', username: 'marguerite', tier: 'free', role: 'user', is_founding: false, is_social_private: false };
-const YEAR = [{ date: '2026-09-01', rating: 4, status: 'watched' }];
+const YEAR = [{ day: '2026-09-01', films: 2 }];
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -85,7 +85,7 @@ describe('the Viewing Calendar reads its own year', () => {
 
     await act(async () => { await result.current.loadTabData('calendar'); });
     expect(svc.fetchCalendarData).toHaveBeenCalledWith(expect.objectContaining({ id: CINEPHILE.id }), expect.anything());
-    expect(result.current.calendarData).toEqual([{ watchedDate: '2026-09-01', rating: 4, status: 'watched' }]);
+    expect(result.current.calendarData).toEqual([{ day: '2026-09-01', films: 2 }]);
   });
 
   it('on its own, for a member of any rank', async () => {

@@ -46,12 +46,12 @@ it("draws the picker's February 2028 with its 29th and no 30th", async () => {
 });
 
 it("counts a film watched on the 29th in the profile's year of days, the day itself and the day after", async () => {
-  const logs = [{ watchedDate: '2028-02-29', createdAt: '2028-02-29T20:00:00Z' }];
+  const days = [{ day: '2028-02-29', films: 1 }];
   at(LEAP_DAY);
-  const first = await render(<NitrateCalendarGrid logs={logs} isSelf={false} />);
+  const first = await render(<NitrateCalendarGrid days={days} isSelf={false} />);
   expect(first.getByText('1 FILM IN THE PAST YEAR')).toBeTruthy();
   first.unmount();
   at(MARCH_FIRST);
-  const then = await render(<NitrateCalendarGrid logs={logs} isSelf={false} />);
+  const then = await render(<NitrateCalendarGrid days={days} isSelf={false} />);
   expect(then.getByText('1 FILM IN THE PAST YEAR')).toBeTruthy();
 });

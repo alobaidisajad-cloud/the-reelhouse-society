@@ -3,7 +3,7 @@ import { focusManager } from '@tanstack/react-query';
 import { QUERY_POLICY } from '@/src/lib/queryPolicy';
 import { logger } from '@/src/utils/logger';
 import { useLogStore, useWatchlistStore, useArchiveStore, useListStore } from '@/src/stores/films';
-import type { ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
+import type { CalendarDay, ProfileLog, ProfileWatchlistItem, ProfileVaultItem, ProfileList, LedgerRating, WatchlistDecade, DecadeCount, ShelfSort } from '@/src/types';
 import { ProfileDataService } from '@/src/services/ProfileDataService';
 import type { ValidatedProfileUser } from '@/src/schemas/profile.schema';
 import { useSocialStore } from '@/src/stores/followStore';
@@ -56,7 +56,7 @@ export interface ProfileState {
   ledgerLogs: ProfileLog[];
   analyticsLogs: ProfileLog[];
   /** The last year of viewings, by day. Null until its read has answered. */
-  calendarData: { watchedDate: string; rating: number; status: string }[] | null;
+  calendarData: CalendarDay[] | null;
   serverAnalytics: any | null;
   /** HIGHEST RATED, read over the whole record. Empty until the Projector's read answers. */
   highestRated: ProfileLog[];
@@ -107,7 +107,7 @@ export type ProfileAction =
   | { type: 'SET_COUNTS'; payload: CountsRead }
   | { type: 'SET_TAB_LOADED'; tabs: Record<string, boolean> }
   | { type: 'SET_ANALYTICS'; payload: ProfileLog[] }
-  | { type: 'SET_CALENDAR_DATA'; payload: { watchedDate: string; rating: number; status: string }[] }
+  | { type: 'SET_CALENDAR_DATA'; payload: CalendarDay[] }
   | { type: 'SET_SERVER_ANALYTICS'; payload: any }
   | { type: 'SET_HIGHEST_RATED'; payload: ProfileLog[] }
   | { type: 'SET_TASTE'; payload: TasteProfile | null }
@@ -539,12 +539,12 @@ export function useProfileData({
         dispatch({ type: 'SET_HIGHEST_RATED', payload: highestRated });
       } else if (tab === 'calendar' && (!state.tabDataLoaded.calendar || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { calendar: true } });
-        // Always its own read — three columns over the 52 weeks the grid draws.
+        // Always its own read — a row a day over the 52 weeks the grid draws.
         // The Projector's logs are not the member's year: for another member
         // below the Auteur rank it reads none.
         const calData = await ProfileDataService.fetchCalendarData(state.targetUser, roomSignal(_roomAbortRef, 'calendar'));
         if (!isMounted.current || uid !== targetUserIdRef.current) return;
-        dispatch({ type: 'SET_CALENDAR_DATA', payload: calData.map(d => ({ watchedDate: d.date, rating: d.rating, status: d.status })) });
+        dispatch({ type: 'SET_CALENDAR_DATA', payload: calData });
       } else {
         return;
       }
