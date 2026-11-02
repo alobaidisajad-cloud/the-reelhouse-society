@@ -131,6 +131,11 @@ export interface FilmList {
     createdAt: string
     isPrivate: boolean
     isRanked: boolean
+    /**
+     * When the house last changed it, its films among it, as this phone read it: an edit carries it
+     * and is refused if the stack has changed since (save_stack's p_read_at). Absent when unread.
+     */
+    updatedAt?: string | null
 }
 
 /** Alias for FilmList — used by listSlice domain store */

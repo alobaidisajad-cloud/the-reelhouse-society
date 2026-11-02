@@ -26,6 +26,7 @@ import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { useBanCheck } from '@/src/hooks/useBanCheck';
 import { tmdb } from '@/src/lib/tmdb';
 import { useListStore } from '@/src/stores/films';
+import { STACK_CHANGED_SINCE } from '@/src/stores/domain/listSlice';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
 import reelToast from '@/src/utils/reelToast';
@@ -401,7 +402,9 @@ export default function ListModal() {
                     ...(holdingsAreComplete
                         ? { films: films.map(f => ({ id: f.id, title: f.title, poster: f.poster_path ?? null })) }
                         : {}),
-                });
+                // When the house last changed it as this phone read it, freshest first: its page's
+                // read, then the member's own list.
+                }, (cachedStack?.id === editList.id ? cachedStack.updatedAt : undefined) ?? editList.updatedAt ?? null);
                 queryClient.removeQueries({ queryKey: ['stack', editList.id] });
             } else {
                 await createList({
@@ -419,12 +422,13 @@ export default function ListModal() {
                 // May run after the sheet is gone, when back() would pop another screen.
                 if (isMounted.current) nav.back();
             });
-        } catch {
+        } catch (e) {
             // One sentence, and a true one: a stack is saved whole or not at all
             // (save_stack), so nothing was changed. It showed the database's own
-            // words, beside a second toast from the store.
+            // words, beside a second toast from the store. A stack changed elsewhere
+            // since the sheet opened says so (STACK_CHANGED_SINCE).
             TactileEngine.error();
-            reelToast.error('The stack could not be saved — nothing was changed.');
+            reelToast.error(e instanceof Error && e.message === STACK_CHANGED_SINCE ? STACK_CHANGED_SINCE : 'The stack could not be saved — nothing was changed.');
             if (isMounted.current) setSaving(false);
         }
     };

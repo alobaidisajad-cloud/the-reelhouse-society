@@ -205,7 +205,7 @@ export function whyRefused(why: string | undefined): string {
   if (!why) return 'The house refused it.';
   if (why.startsWith('schema:')) return 'The house no longer reads it as this phone sent it.';
   if (why.startsWith('transient-exhausted:')) return 'The house failed it five times over.';
-  if (/^(Your |The Lounge |Speaking )/.test(why)) return why;
+  if (/^(Your |The Lounge |Speaking |This )/.test(why)) return why;
   return 'The house refused it.';
 }
 

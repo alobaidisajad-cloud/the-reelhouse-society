@@ -23,6 +23,7 @@ const StackDetailSchema = z.object({
   is_private: z.boolean().nullable().optional(),
   is_ranked: z.boolean().nullable().optional(),
   created_at: z.string(),
+  updated_at: z.string().nullable().optional(),
   profiles: z.union([
     z.object({ username: z.string() }),
     z.array(z.object({ username: z.string() })),
@@ -86,7 +87,7 @@ export const StackService = {
     const viewer = useAuthStore.getState().user?.id ?? null;
     const [listRes, itemsRes, filmCountRes, endorseRes, critiqueCountRes, mineRes] = await Promise.all([
       supabase.from('lists')
-        .select('id, title, description, user_id, is_private, is_ranked, created_at, profiles(username)')
+        .select('id, title, description, user_id, is_private, is_ranked, created_at, updated_at, profiles(username)')
         .eq('id', stackId)
         .maybeSingle(),
       // Bounded. This was unbounded — a stack of any size loaded in full, and the
@@ -176,6 +177,9 @@ export const StackService = {
       userId: listRes.data.user_id,
       user: profile?.username || 'anonymous',
       createdAt: listRes.data.created_at,
+      // When the house last changed it (its films among it): an edit carries it, and is refused
+      // if the stack has changed since (save_stack's p_read_at).
+      updatedAt: listRes.data.updated_at ?? null,
       films: validFilms,
       // The stack's TRUE size, from the server. The screen prints "N REELS" and
       // used to count the array it received — correct only while the fetch was

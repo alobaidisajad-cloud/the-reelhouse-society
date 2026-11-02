@@ -248,6 +248,25 @@ export function getOfflineQueue(): QueuedMutation[] {
 /** A write held for the member, made with this id: the one their retry stands for. */
 const heldWith = (m: QueuedMutation, tempId: string) => !!m._held && m.payload._tempId === tempId;
 
+/**
+ * The row a queued edit's time belongs to ('list:<id>'), or null for a write that carries none. A
+ * second edit of a row queued offline was read before the first was sent: it takes the first's
+ * answer (the row's time then), or the house would refuse it as changed since, by the member's
+ * own hand.
+ */
+export function readAtOf(m: Pick<QueuedMutation, 'type' | 'payload'>): string | null {
+    if (typeof m.payload.read_at !== 'string') return null;
+    if (m.type === 'update_list' && typeof m.payload.list_id === 'string') return `list:${m.payload.list_id}`;
+    return null;
+}
+
+/** The write with the newest time its row has had in this send, when it carries one. */
+function withNewestRead(m: QueuedMutation, readAts: Readonly<Record<string, string>>): QueuedMutation {
+    const key = readAtOf(m);
+    const at = key ? readAts[key] : undefined;
+    return at === undefined ? m : { ...m, payload: { ...m.payload, read_at: at } };
+}
+
 /** A write the house refused, held for the member: asked again, it waits to be sent like any other. */
 export function sendRefusedAgain(id: string): void {
     const queue = readQueue();
@@ -495,6 +514,8 @@ async function sendOnce(): Promise<void> {
     let successCount = 0;
 
     const idMap: Record<string, string> = {};
+    // Each row's time as its last edit in this send left it, for a later edit of it (readAtOf).
+    const readAts: Record<string, string> = {};
     // Each write's new retry count, stored with the queue at the end (as idMap is).
     const retryBumps: Record<string, number> = {};
     // Salon messages refused for the rank, held for the member at the end, with the refusal.
@@ -514,10 +535,11 @@ async function sendOnce(): Promise<void> {
                     continue;
                 }
             }
-            const result = await executeMutation(mutation, idMap);
+            const result = await executeMutation(withNewestRead(mutation, readAts), idMap);
             if (result.fakeId && result.newId) {
                 idMap[result.fakeId] = result.newId;
             }
+            if (result.readAt) readAts[result.readAt.key] = result.readAt.at;
             successCount++;
             if (SOCIAL_MUTATION_TYPES.has(mutation.type)) socialMutationSynced = true;
             finished(mutation);
@@ -615,7 +637,7 @@ async function sendOnce(): Promise<void> {
     const finalQueue = freshQueue
         .filter(m => !processedIds.has(m.id))
         .map(m => {
-            const next = { ...m, payload: applyIdMapToPayload(m.payload, idMap) };
+            const next = withNewestRead({ ...m, payload: applyIdMapToPayload(m.payload, idMap) }, readAts);
             if (retryBumps[m.id] !== undefined) next._retryCount = retryBumps[m.id];
             if (held.has(m.id)) next._held = 'rank';
             const why = refusal.get(m.id);

@@ -410,16 +410,25 @@ export function readCalls(src: string, where: string, functions: Map<string, Par
     if (!overloads) continue; // everyNameAClientCallsExists holds the name
     const [, arg] = argsOf(src.slice(m.index, closingOf(src, m.index + 4) + 1), 'rpc')[0] ?? [];
     let keys: string[] = [];
+    // `...(when ? { k: v } : {})` sends k only sometimes: the call must fit both with it and without it
+    let sometimes: string[] = [];
     if (arg) {
       const obj = /^\s*\{([\s\S]*)\}\s*$/.exec(arg);
       if (!obj) { if (!unread.includes(at)) unread.push(at); continue; }
       const parts = topLevel(obj[1]).filter(Boolean);
-      const named = parts.map((p) => (/^(?:(\w+)|['"](\w+)['"])\s*(?::|$)/.exec(p) ?? []).slice(1).find(Boolean));
-      if (named.some((k) => !k)) { if (!unread.includes(at)) unread.push(at); continue; }
+      const keysOf = (ps: string[]) => ps.map((p) => (/^(?:(\w+)|['"](\w+)['"])\s*(?::|$)/.exec(p) ?? []).slice(1).find(Boolean));
+      const spreads = parts.filter((p) => p.startsWith('...'));
+      const inner = spreads.map((p) => /^\.\.\.\s*\([\s\S]*?\?\s*\{([\s\S]*)\}\s*:\s*\{\s*\}\s*\)$/.exec(p)?.[1]);
+      const named = keysOf(parts.filter((p) => !p.startsWith('...')));
+      const maybe = inner.flatMap((s) => (s === undefined ? [undefined] : keysOf(topLevel(s).filter(Boolean))));
+      if ([...named, ...maybe].some((k) => !k)) { if (!unread.includes(at)) unread.push(at); continue; }
       keys = named as string[];
+      sometimes = maybe as string[];
     }
-    const fits = overloads.some((ps) => keys.every((k) => ps.some((p) => p.name === k)) && ps.every((p) => p.optional || keys.includes(p.name)));
+    const fitsWith = (sent: string[]) => overloads.some((ps) => sent.every((k) => ps.some((p) => p.name === k)) && ps.every((p) => p.optional || sent.includes(p.name)));
+    const fits = fitsWith(keys) && fitsWith([...keys, ...sometimes]);
     if (!fits) {
+      keys = [...keys, ...sometimes];
       const takes = overloads.map((ps) => `(${ps.map((p) => p.name + (p.optional ? '?' : '')).join(', ')})`).join(' or ');
       found.push(`${at}: ${m[2]}(${keys.join(', ')}) — it takes ${takes}`);
     }
@@ -480,7 +489,13 @@ describe('the reader can say no', () => {
     expect(call(`supabase.rpc('accept_follow_request', {})`)).toEqual(['x.ts:1: accept_follow_request() — it takes (requester_id)']);
     expect(call(`supabase.rpc('accept_follow_request', {\n  requester_id, // the one at the door\n})`)).toEqual([]);
     expect(call(`supabase.rpc('get_lounge_unread_counts')`)).toEqual([]);
+    // an argument sent only sometimes: the call must fit both ways
+    expect(call(`supabase.rpc('accept_follow_request', { ...(at ? { requester_id } : {}) })`)).toEqual(['x.ts:1: accept_follow_request(requester_id) — it takes (requester_id)']);
+    expect(call(`supabase.rpc('accept_follow_request', { requester_id, ...(at ? { p_read_at: at } : {}) })`)).toEqual(['x.ts:1: accept_follow_request(requester_id, p_read_at) — it takes (requester_id)']);
     expect(unread).toEqual([]);
+    expect(call(`supabase.rpc('accept_follow_request', { requester_id, ...rest })`)).toEqual([]);
+    expect(unread).toEqual(['x.ts:1']);
+    unread.length = 0;
     expect(call(`supabase.rpc('accept_follow_request', args)`)).toEqual([]);
     expect(unread).toEqual(['x.ts:1']);
   });

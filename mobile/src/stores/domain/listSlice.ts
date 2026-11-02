@@ -23,6 +23,9 @@ import { stillSignedIn } from './helpers/sessionGuard';
  * ENTIRELY. All three fields below survived a logout, so a stacks page that had
  * reached its end stayed ended for the next member.
  */
+/** What the member is told when their edit met a stack changed elsewhere since they opened it. */
+export const STACK_CHANGED_SINCE = 'This stack was changed elsewhere after you opened it. Nothing was changed here: open it again to see it as it is.';
+
 export interface ListSliceData {
     lists: CustomList[];
     listsHasMore: boolean;
@@ -43,7 +46,12 @@ export interface ListSlice extends ListSliceData {
     /** True when the read was answered (or there was nothing to read); false when it failed. */
     fetchLists: (loadMore?: boolean) => Promise<boolean>;
     createList: (list: Partial<CustomList>) => Promise<void>;
-    updateList: (listId: string, updates: Partial<CustomList>) => Promise<void>;
+    /**
+     * The stack's details and, when given, exactly its films. `readAt` is when the house last changed
+     * it as the screen read it (else the stack as this store holds it): an edit of a stack changed
+     * since is refused (STACK_CHANGED_SINCE), never laid over the change.
+     */
+    updateList: (listId: string, updates: Partial<CustomList>, readAt?: string | null) => Promise<void>;
     deleteList: (listId: string) => Promise<void>;
     addFilmToList: (listId: string, film: { id: number; title?: string; name?: string; poster_path?: string | null }) => Promise<void>;
     removeFilmFromList: (listId: string, filmId: number) => Promise<void>;
@@ -243,11 +251,12 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         set((state) => ({ lists: [{ id: listId, title: title || 'Untitled', description, isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: row?.created_at ?? houseIso(), userId: user.id }, ...state.lists] }));
     },
 
-    updateList: async (listId, updates) => {
+    updateList: async (listId, updates, readAt) => {
         const user = useAuthStore.getState().user;
         if (!user) return;
         
         const prevList = get().lists.find(l => l.id === listId);
+        const readWhen = readAt ?? prevList?.updatedAt ?? null;
         
         // #68 — same treatment as createList. Kept as `!== undefined` checks so a
         // deliberate clear (description: '') still writes the clear, exactly as before;
@@ -275,7 +284,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             // given — exactly these films, in this order, in one transaction. The
             // removals were worked out from the PHONE's copy of the stack, and two of
             // the three deletes discarded their errors.
-            const { error } = await supabase.rpc('save_stack', {
+            const { data: saved, error } = await supabase.rpc('save_stack', {
                 p_id: listId,
                 p_title: dbUpdates.title ?? null,
                 p_description: dbUpdates.description ?? null,
@@ -284,14 +293,23 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                 p_films: inputFilms === undefined ? null : inputFilms.map((f, idx) => ({
                     film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster_path ?? f.poster ?? null, rank_position: idx,
                 })),
+                // Without a time (a stack not yet read with one) the call is the older one, saved as before.
+                ...(readWhen ? { p_read_at: readWhen } : {}),
             });
             if (!stillSignedIn(user.id)) return;
             if (error) throw error;
+            // The stack's time now, its films' among it: the next edit carries it.
+            const savedAt = (saved as { updated_at?: string | null } | null)?.updated_at ?? null;
+            if (savedAt) set((state) => ({ lists: state.lists.map((l) => (l.id === listId ? { ...l, updatedAt: savedAt } : l)) }));
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
             // Its name, its films, or now private: the Lobby may be hanging it.
             wallMayHaveChanged();
         } catch (e: unknown) {
-            if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.updateList' });
+            const changedSince = (e as { code?: unknown })?.code === 'PT412';
+            // Changed elsewhere since it was read: an answer, not a fault. The stack is read again,
+            // not waited for: the member is told now, and its page shows it as it is when it arrives.
+            if (changedSince) void queryClient.invalidateQueries({ queryKey: ['stack', listId] });
+            if (!isNetworkError(e) && !changedSince) captureError(e, { scope: 'listSlice.updateList' });
             // A throw skips the check in the try: neither queued nor undone once they have left.
             if (!stillSignedIn(user.id)) return;
             if (isNetworkError(e)) {
@@ -301,7 +319,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                     const newFilmIds = new Set(inputFilms.map(f => f.id));
                     removedIds = prevList.films.filter(f => !newFilmIds.has(f.id)).map(f => f.id);
                 }
-                if (enqueueMutation({ type: 'update_list', payload: { list_id: listId, user_id: user.id, updates: dbUpdates, films: inputFilms, removed_film_ids: removedIds } })) {
+                if (enqueueMutation({ type: 'update_list', payload: { list_id: listId, user_id: user.id, updates: dbUpdates, films: inputFilms, removed_film_ids: removedIds, ...(readWhen ? { read_at: readWhen } : {}) } })) {
                     queryClient.invalidateQueries({ queryKey: ['stack', listId] });
                     reelToast('List updated offline. Will sync when connected.');
                     return;
@@ -322,6 +340,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                     })
                 }));
             }
+            if (changedSince) throw new Error(STACK_CHANGED_SINCE);
             throw e;
         }
     },

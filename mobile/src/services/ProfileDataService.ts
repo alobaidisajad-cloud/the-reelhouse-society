@@ -98,6 +98,7 @@ const ListRowSchema = z.object({
   is_ranked: z.boolean().nullable().optional(),
   is_private: z.boolean().nullable().optional(),
   created_at: z.string(),
+  updated_at: z.string().nullable().optional(),
   list_items: ListItemsField,
 }).passthrough();
 
@@ -469,7 +470,7 @@ export const ProfileDataService = {
     // the same round trip (never the capped array's length). Aggregates are on
     // in this project (checked live); the answer is an ARRAY: `film_count[0].count`.
     let query = supabase.from('lists')
-      .select('id, title, description, is_ranked, is_private, created_at, list_items(list_id, film_id, film_title, poster_path), film_count:list_items(count)')
+      .select('id, title, description, is_ranked, is_private, created_at, updated_at, list_items(list_id, film_id, film_title, poster_path), film_count:list_items(count)')
       .eq('user_id', userId)
       .eq('is_private', false)
       .order(axis.column, { ascending: asc })
@@ -506,6 +507,7 @@ export const ProfileDataService = {
       isRanked: l.is_ranked ?? false,
       isPrivate: l.is_private ?? false,
       createdAt: l.created_at,
+      updatedAt: l.updated_at ?? null,
       films: l.list_items.map((i) => ({
         id: i.film_id, title: i.film_title, poster: i.poster_path ?? null,
       })),

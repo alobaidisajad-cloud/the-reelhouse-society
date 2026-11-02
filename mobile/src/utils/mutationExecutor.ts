@@ -23,7 +23,11 @@ import { sanitizeInput, type FieldType } from './sanitizeInput';
 
 // ── Types ──────────────────────────────────────────────────────
 
-type MutationResult = { newId?: string; fakeId?: string };
+/**
+ * What a write hands back: a row's real id for the one the phone made, and, for an edit, the
+ * row's time now (`readAt`), which the queue gives a later edit of the same row (readAtOf).
+ */
+type MutationResult = { newId?: string; fakeId?: string; readAt?: { key: string; at: string } };
 
 type MutationHandler = (
     payload: Record<string, unknown>,
@@ -479,9 +483,9 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         // Whole, or not at all (save_stack, 20260930_01): the details, and — when
         // the payload carries them — exactly its films. A payload's own
         // removed_film_ids (an older build's) is implied by the films it lists.
-        const { list_id, updates, films } = p;
+        const { list_id, updates, films, read_at } = p;
         const u = (updates ?? {}) as Record<string, unknown>;
-        throwIfError(await supabase.rpc('save_stack', {
+        const { data } = throwIfError(await supabase.rpc('save_stack', {
             p_id: list_id,
             // Same last gate as create_list above — a queued EDIT from an older build.
             p_title: typeof u.title === 'string' ? sanitizeInput(u.title, 'listTitle') : null,
@@ -489,8 +493,12 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             p_is_private: typeof u.is_private === 'boolean' ? u.is_private : null,
             p_is_ranked: typeof u.is_ranked === 'boolean' ? u.is_ranked : null,
             p_films: stackFilms(films),
+            // Refused (PT412) if the stack changed after the phone read it. Without a time (an edit
+            // queued by a build before stacks kept theirs) the call is the older one, saved as before.
+            ...(typeof read_at === 'string' ? { p_read_at: read_at } : {}),
         }));
-        return {};
+        const at = (data as { updated_at?: unknown } | null)?.updated_at;
+        return typeof at === 'string' ? { readAt: { key: `list:${String(list_id)}`, at } } : {};
     },
 
     restore_list_items: async (p: any) => {
