@@ -42,13 +42,13 @@
       "reset": ["cmd overlay disable com.android.internal.systemui.navbar.threebutton"]
     },
     "right-to-left": {
-      "why": "The phone in Arabic (Iraq), as a member who reads Arabic has it: Android lays every app out right to left. The language is the system's own, set as root with the system restarted, and the language the phone had is put back the same way.",
+      "why": "The phone in Arabic (Iraq), as a member who reads Arabic has it: Android lays every app out right to left. The language is taken as the Settings app gives it, while the system runs (e2e/phone/HouseLocale.java, which the workflow builds and run-flows.sh puts on the phone), and the one the phone had is put back the same way. Never by restarting the system: `setprop persist.sys.locale; stop; start` lost the emulator from adb in nightly runs 41187219004 and 41427745512.",
       "flows": true,
-      "read": "l=$(getprop persist.sys.locale); echo ${l:-$(getprop ro.product.locale)}",
-      "answer": "^[a-z]{2,3}(-[A-Z][a-z]{3})?(-[A-Z]{2})?$",
-      "setup": ["setprop persist.sys.locale ar-IQ; stop; start"],
-      "ready": ["am get-config | grep -q ldrtl", "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER com.reelhouse.society | grep -q com.reelhouse.society/"],
-      "reset": ["setprop persist.sys.locale {was}; stop; start"]
+      "read": "CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale",
+      "answer": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*(,[a-z]{2,3}(-[A-Za-z0-9]{2,8})*)*$",
+      "setup": ["CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale ar-IQ"],
+      "ready": ["am get-config | grep -q ldrtl"],
+      "reset": ["CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale {was}"]
     },
     "dark": {
       "why": "The system in dark mode. The emulator every other run uses is in light mode (run 39013202388 read \"no\" before a light run set \"no\", so that run changed nothing): the plain run is the light system, and this one the dark, so the app is seen in both. The app keeps its own grounds either way. The mode the phone had is read first and put back.",

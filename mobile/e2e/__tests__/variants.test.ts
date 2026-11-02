@@ -29,8 +29,8 @@ const commandsFor = (name: string, step: string, was?: string) =>
   ask(`m.commandsFor(${LIST}, ${JSON.stringify(name)}, ${JSON.stringify(step)}, ${was === undefined ? 'undefined' : JSON.stringify(was)})`);
 /** The variants the workflow's input names, in its own words. */
 const NAMED = /The variants \(mobile\/e2e\/variants\.json\): (.+)$/m.exec(E2E_YML)?.[1]?.trim().split(', ');
-/** The commands a variant may send: a setting, the density, an overlay, the night mode, or the system's language. */
-const COMMAND = /^(settings put (global|system|secure) \S+ \S+|wm density (\d+|reset)|cmd overlay (enable|disable) \S+|cmd uimode night \S+|setprop persist\.sys\.locale \S+; stop; start)$/;
+/** The commands a variant may send: a setting, the density, an overlay, the night mode, or the system's language (e2e/phone/HouseLocale.java). */
+const COMMAND = /^(settings put (global|system|secure) \S+ \S+|wm density (\d+|reset)|cmd overlay (enable|disable) \S+|cmd uimode night \S+|CLASSPATH=\/data\/local\/tmp\/house-phone\.dex app_process \/ HouseLocale \S+)$/;
 
 describe.each(Object.entries(VARIANTS))('%s', (name, v) => {
   it('says why it is run, in words', () => {
@@ -71,19 +71,18 @@ it('gives each step its commands, and fills in what was read', () => {
   expect(commandsFor('narrowest', 'read')).toEqual({ commands: [] });
   expect(commandsFor('narrowest', 'ready')).toEqual({ commands: [] });
   expect(commandsFor('narrowest', 'reset')).toEqual({ commands: ['wm density reset'] });
-  expect(commandsFor('right-to-left', 'reset', 'en-US')).toEqual({ commands: ['setprop persist.sys.locale en-US; stop; start'] });
-  expect((commandsFor('right-to-left', 'ready') as { commands: string[] }).commands[0]).toBe('am get-config | grep -q ldrtl');
+  expect(commandsFor('right-to-left', 'read')).toEqual({ commands: ['CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale'] });
+  expect(commandsFor('right-to-left', 'reset', 'en-US')).toEqual({ commands: ['CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale en-US'] });
+  expect(commandsFor('right-to-left', 'ready')).toEqual({ commands: ['am get-config | grep -q ldrtl'] });
 });
 
-it("waits, after any variant that restarts the system, until the app's own launch screen resolves", () => {
-  // Run 38991750276: the system answered its new language and said it had booted (that flag is
-  // never cleared by a restart) while it had not yet loaded the app: "Activity class does not exist".
-  const restarts = Object.entries(VARIANTS).filter(([, v]) => v.setup.some((c) => / stop; start$/.test(c)));
-  expect(restarts.map(([n]) => n)).toEqual(['right-to-left']);
-  for (const [, v] of restarts) {
-    expect(v.ready?.at(-1)).toBe('cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER com.reelhouse.society | grep -q com.reelhouse.society/');
-    expect(v.ready?.some((c) => c.includes('sys.boot_completed'))).toBe(false);
-  }
+it('restarts the system for no variant: the language is taken while it runs', () => {
+  // Nightly runs 41187219004 and 41427745512: `setprop persist.sys.locale; stop; start` lost the
+  // emulator from adb, and the right-to-left shard with it.
+  const restarting = /\b(stop|start|reboot)\b|ctl\.restart/;
+  const all = Object.values(VARIANTS).flatMap((v) => [...v.setup, ...v.reset, ...(v.ready ?? [])]);
+  expect(all.filter((c) => restarting.test(c))).toEqual([]);
+  expect(VARIANTS['right-to-left']?.setup).toEqual(['CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale ar-IQ']);
 });
 
 it('adds a judge only by a name run-flows.sh runs: cut text to the largest text, never to bold text, where the app cannot measure itself', () => {
@@ -118,8 +117,8 @@ it('says which run each variant is: every flow and the walk, or the walk alone',
 });
 
 it('takes back the language only as a language, with or without its script', () => {
-  for (const was of ['en-US', 'ar-IQ', 'zh-Hant-TW', 'fil']) expect(commandsFor('right-to-left', 'reset', was)).toHaveProperty('commands');
-  for (const was of ['closed', 'en_US', 'en-US; reboot']) expect(commandsFor('right-to-left', 'reset', was)).toHaveProperty('refused');
+  for (const was of ['en-US', 'ar-IQ', 'zh-Hant-TW', 'fil', 'es-419', 'en-US,ar-IQ']) expect(commandsFor('right-to-left', 'reset', was)).toHaveProperty('commands');
+  for (const was of ['closed', 'en_US', 'en-US; reboot', 'en-US,', 'Exception']) expect(commandsFor('right-to-left', 'reset', was)).toHaveProperty('refused');
 });
 
 it('refuses, rather than guesses, an unknown variant or step, and a reset with nothing usable to put back', () => {

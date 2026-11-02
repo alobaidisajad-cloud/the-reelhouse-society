@@ -628,6 +628,20 @@ jobs:
           path: /usr/local/lib/android/sdk/system-images/android-${{ env.E2E_API }}/google_apis/x86_64
           key: android-system-image-${{ env.E2E_API }}-google_apis-x86_64
 
+      # The phone's language switch (mobile/e2e/phone/HouseLocale.java), built for the Android
+      # this run's emulator has: the right-to-left variant takes its language as the Settings app
+      # gives it, while the system runs, and never by restarting the system, which lost the
+      # emulator from adb in nightly runs 41187219004 and 41427745512. run-flows.sh puts it on
+      # the phone.
+      - name: The phone's language switch
+        run: |
+          out="$RUNNER_TEMP/house-phone"
+          jar="$ANDROID_HOME/platforms/android-${{ env.E2E_API }}/android.jar"
+          mkdir -p "$out/classes"
+          javac --release 11 -nowarn -cp "$jar" -d "$out/classes" mobile/e2e/phone/HouseLocale.java
+          "$ANDROID_HOME/build-tools/37.0.0/d8" --min-api 26 --lib "$jar" --output "$out" "$out"/classes/*.class
+          echo "E2E_PHONE_HELPER=$out/classes.dex" >> "$GITHUB_ENV"
+
       # The lifecycle run's upgrade (.maestro/lifecycle/upgrade.yaml) installs this build over the
       # one already in members' hands: that build's E2E app, from the last shipped-clients run
       # that made it (kept three days). None to be had leaves the proxy without it, and the

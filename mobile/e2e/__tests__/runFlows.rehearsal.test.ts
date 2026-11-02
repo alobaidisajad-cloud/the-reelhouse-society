@@ -39,6 +39,7 @@ const ADB = `#!/usr/bin/env bash
 T="__T__"
 case "$1" in
   install) echo Success ;;
+  push) echo "adb: push $3" >> "$T/state/order"; echo "$2: 1 file pushed, 0 skipped." ;;
   root) echo "restarting adbd as root" ;;
   get-state) [ -f "$T/state/gone" ] && exit 1; echo device ;;
   logcat)
@@ -60,9 +61,9 @@ case "$1" in
       # The system's dark mode, as Android answers it; a phone whose read fails, as one that went away.
       "cmd uimode night") [ -f "$T/state/night-unread" ] && { echo "error: closed"; exit 1; }; echo "Night mode: no" ;;
       "cmd uimode night "*) echo "Night mode: \${cmd##* }" ;;
-      # The system's language: read, then set with the system restarted, which takes it a while.
-      "l="*) echo "en-US" ;;
-      "setprop persist.sys.locale "*) echo 0 > "$T/state/config-asked" ;;
+      # The system's language: read, then set while the system runs, which takes it a moment.
+      "CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale") echo "en-US" ;;
+      "CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale "*) echo 0 > "$T/state/config-asked"; echo "\${cmd##* }" ;;
       "am get-config | grep -q ldrtl")
         [ -f "$T/state/never-rtl" ] && exit 1
         n=$(( $(cat "$T/state/config-asked") + 1 )); echo $n > "$T/state/config-asked"; [ $n -ge 3 ] || exit 1 ;;
@@ -554,7 +555,7 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
   const flows = (variant: string, scenario: Record<string, string[]>, state: Record<string, string> = {}, env: Record<string, string> = {}) =>
     rehearse(['a_flow'], scenario, { state, env: { E2E_VARIANT: variant, ...env } });
   /** What the phone was asked about the variant, and every Maestro run among it, in order. */
-  const VARIANT_SAID = /uimode|font_scale|persist\.sys\.locale|ldrtl|^adb: l=|^maestro: /;
+  const VARIANT_SAID = /uimode|font_scale|HouseLocale|ldrtl|^adb: push |^maestro: /;
   const order = (r: Run, said = VARIANT_SAID) => (existsSync(join(r.T, 'state', 'order')) ? readFileSync(join(r.T, 'state', 'order'), 'utf8') : '')
     .split('\n').filter((l) => said.test(l));
 
@@ -622,17 +623,18 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
     always(r);
   });
 
-  it('waits for the system to restart in the variant\'s language, then puts back the one it had', async () => {
-    const r = await flows('right-to-left', {});
+  it('puts the language switch on the phone, waits for the variant\'s language, then puts back the one it had', async () => {
+    const r = await flows('right-to-left', {}, {}, { E2E_PHONE_HELPER: '/runner/house-phone/classes.dex' });
     expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
     expect(order(r)).toEqual([
-      'adb: l=$(getprop persist.sys.locale); echo ${l:-$(getprop ro.product.locale)}',
-      'adb: setprop persist.sys.locale ar-IQ; stop; start',
+      'adb: push /data/local/tmp/house-phone.dex',
+      'adb: CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale',
+      'adb: CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale ar-IQ',
       'adb: am get-config | grep -q ldrtl', 'adb: am get-config | grep -q ldrtl', 'adb: am get-config | grep -q ldrtl',
       'maestro: stack', 'maestro: log', 'maestro: a_flow',
-      'adb: setprop persist.sys.locale en-US; stop; start',
+      'adb: CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale en-US',
     ]);
-    expect(file(r, 'variant.txt')).toMatch(/^read: .* -> en-US\nset: setprop persist\.sys\.locale ar-IQ; stop; start -> \nready: am get-config \| grep -q ldrtl\nready: cmd package resolve-activity /);
+    expect(file(r, 'variant.txt')).toMatch(/^helper: \/runner\/house-phone\/classes\.dex: 1 file pushed, 0 skipped\.\nread: .* -> en-US\nset: .* HouseLocale ar-IQ -> ar-IQ\nready: am get-config \| grep -q ldrtl\nsettled: /);
     always(r);
   });
 
@@ -640,10 +642,10 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
     const r = await flows('right-to-left', {}, { 'never-rtl': '' }, { E2E_READY_TRIES: '2' });
     expect(r.status).toBe(1);
     expect(order(r)).toEqual([
-      'adb: l=$(getprop persist.sys.locale); echo ${l:-$(getprop ro.product.locale)}',
-      'adb: setprop persist.sys.locale ar-IQ; stop; start',
+      'adb: CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale',
+      'adb: CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale ar-IQ',
       'adb: am get-config | grep -q ldrtl', 'adb: am get-config | grep -q ldrtl',
-      'adb: setprop persist.sys.locale en-US; stop; start',
+      'adb: CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale en-US',
     ]);
     expect(titled(r, 'error', 'The phone never became the right-to-left variant')).toContain('never ready: am get-config | grep -q ldrtl');
     always(r);

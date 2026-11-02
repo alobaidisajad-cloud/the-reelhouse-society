@@ -56,10 +56,15 @@ adb install -r "$APK" || { echo "::error title=E2E::the app would not install"; 
 # E2E_VARIANT (e2e/variants.json, WORKLIST P0.86), plain when unset: what the phone had is read
 # first, each command and its answer kept in variant.txt, and the setting waited for where the
 # system takes a while (ready); put back at the very end (put_back, below), whatever the run
-# said. Before the run's log begins, so a system restarted for the variant is no crash of the
-# run's. A variant not in the list, or one the phone never became, runs nothing.
+# said. Before the run's log begins, so the system re-reading itself for the variant is no crash
+# of the run's. A variant not in the list, or one the phone never became, runs nothing.
 variant=${E2E_VARIANT:-plain}
 : > "$OUT/variant.txt"
+# The phone's language switch, where the workflow built it (e2e/phone/HouseLocale.java): the
+# right-to-left variant's commands run it from the phone.
+if [ -n "${E2E_PHONE_HELPER:-}" ]; then
+  echo "helper: $(timeout 60 adb push "$E2E_PHONE_HELPER" /data/local/tmp/house-phone.dex < /dev/null 2>&1 | tr -d '\r' | tail -n 1)" >> "$OUT/variant.txt"
+fi
 if ! node mobile/e2e/variants.mjs "$variant" setup > "$OUT/variant-setup.txt" 2>&1; then
   node mobile/e2e/annotate.mjs "No variant named ${variant}" "$OUT/variant-setup.txt"
   exit 1
