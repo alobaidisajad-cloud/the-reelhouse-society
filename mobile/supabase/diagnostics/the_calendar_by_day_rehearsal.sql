@@ -39,10 +39,10 @@ INSERT INTO public.interactions (user_id, target_user_id, type)
 VALUES (pg_temp.rh_id('a follower'), pg_temp.rh_id('the member'), 'follow');
 UPDATE public.profiles SET is_social_private = true WHERE id = (SELECT pg_temp.rh_id('the member'));
 DELETE FROM public.logs WHERE user_id = (SELECT pg_temp.rh_id('the member'));
--- Two days past each end of the grid's reach, the rest inside it.
+-- Two days past each end of the grid's reach, the rest inside it: a film each, as a member logs one once.
 INSERT INTO public.logs (user_id, film_id, film_title, watched_date)
-SELECT pg_temp.rh_id('the member'), 603, 'rh film', (now() AT TIME ZONE 'UTC')::date - back
-  FROM unnest(ARRAY[-2, -1, 0, 0, 10, 364, 365]) AS back;
+SELECT pg_temp.rh_id('the member'), 900000 + n::integer, 'rh film', (now() AT TIME ZONE 'UTC')::date - back
+  FROM unnest(ARRAY[-2, -1, 0, 0, 10, 364, 365]) WITH ORDINALITY AS d(back, n);
 
 -- The calendar as one reader sees it (NULL, a visitor): each day's distance back and its films.
 -- Whose it is, read as the house before the reader's role is taken.
@@ -69,7 +69,7 @@ INSERT INTO rh_rows VALUES ('stranger, open', pg_temp.rh_calendar_as(pg_temp.rh_
 
 -- A year of 1,500 films more, five a day for 300 days: past the 1,000 rows the house answers.
 INSERT INTO public.logs (user_id, film_id, film_title, watched_date)
-SELECT pg_temp.rh_id('the member'), 603, 'rh film', (now() AT TIME ZONE 'UTC')::date - (g % 300)
+SELECT pg_temp.rh_id('the member'), 910000 + g, 'rh film', (now() AT TIME ZONE 'UTC')::date - (g % 300)
   FROM generate_series(1, 1500) AS g;
 DO $$
 DECLARE v text; v_member uuid := pg_temp.rh_id('the member');
