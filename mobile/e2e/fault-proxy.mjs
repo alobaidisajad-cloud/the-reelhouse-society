@@ -193,9 +193,9 @@ export const PHONE = {
     commands: (v) => [['adb', ['root']], ['adb', ['wait-for-device']],
       ['adb', ['shell', 'settings', 'put', 'global', 'auto_time', '0']], ['adb', ['shell', 'date', '-u', phoneDate(Date.now() - v * 60_000)]],
       clockSaid(-v)] },
-  // A clock run's wait past its 150 s token, which the flow waits itself (a command here holds the
+  // A clock run's wait past its 180 s token, which the flow waits itself (a command here holds the
   // proxy, and every request through it, until it ends): said in the device log once it has.
-  waited: { says: 'whole seconds from 151 to 300', valid: (v) => Number.isInteger(v) && v >= 151 && v <= 300,
+  waited: { says: 'whole seconds from 181 to 300', valid: (v) => Number.isInteger(v) && v >= 181 && v <= 300,
     commands: (v) => [['adb', ['shell', `log -t e2e '[e2e] phone.waited {"seconds":${v}}'`]]] },
 };
 

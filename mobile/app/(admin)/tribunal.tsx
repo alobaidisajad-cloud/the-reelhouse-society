@@ -930,8 +930,9 @@ function TribunalScreen() {
                         <View style={s.accusedInfo}>
                           <Text style={s.accusedLabel}>THE ACCUSED</Text>
                           <Text style={s.accusedName} numberOfLines={1}>@{accused.username}</Text>
+                          {/* under the name, so the name has the row's whole width (beside it, a fifteen-letter one lost its end) */}
+                          <WarningBadge count={warningCount} />
                         </View>
-                        <WarningBadge count={warningCount} />
                       </PressableScale>
                     ) : (
                       <View style={s.accusedRow}>
@@ -1293,6 +1294,8 @@ const s = StyleSheet.create({
 
   // ── Warning Badge ──────────────────────────────────────────────────────
   warningBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,

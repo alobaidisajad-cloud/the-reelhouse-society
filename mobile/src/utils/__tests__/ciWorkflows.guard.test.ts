@@ -383,11 +383,11 @@ it('production is asked by the nightly contracts alone, and every contract run i
   expect(sealedRun).not.toMatch(/secrets\./);
 });
 
-it('a token lives 150 s on the behind clock run alone, set on the runner, never in the committed config (P2.4, P0.24)', () => {
+it('a token lives 180 s on the behind clock run alone, set on the runner, never in the committed config (P2.4, P0.24)', () => {
   const steps = workflows.flatMap((w) => Object.entries(w.wf.jobs).flatMap(([job, j]) =>
     ((j.steps ?? []) as RunStep[]).filter((s) => /jwt_expiry/.test(s.run ?? '')).map((s) => ({ at: `${w.file} › ${job} › ${s.name}`, run: s.run ?? '' }))));
   expect(steps.map((s) => s.at)).toEqual(['e2e.yml › flows › Start the local stack']);
-  expect(steps[0]?.run).toMatch(/if \[ "\$E2E_CLOCK" = behind \]; then\n\s*sed -i 's\/\^jwt_expiry = 3600\$\/jwt_expiry = 150\/' mobile\/e2e\/supabase\/config\.toml\n/);
+  expect(steps[0]?.run).toMatch(/if \[ "\$E2E_CLOCK" = behind \]; then\n\s*sed -i 's\/\^jwt_expiry = 3600\$\/jwt_expiry = 180\/' mobile\/e2e\/supabase\/config\.toml\n/);
   expect(readFileSync(join(DIR, '..', '..', 'mobile', 'e2e', 'supabase', 'config.toml'), 'utf8')).toMatch(/^jwt_expiry = 3600$/m);
 });
 

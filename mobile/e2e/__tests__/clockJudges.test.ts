@@ -37,7 +37,7 @@ const tabs = () => TABS.map((t) => line('screen.ready', { name: t, ms: 1200 }));
 /** An ahead flow: its marker, the lobby before the clock moved, the move, five tabs (eight lines). */
 const ahead = (name: string) => [line('flow.begins', { name, attempt: 1 }), line('screen.ready', { name: 'lobby', ms: 900 }), line('phone.clock', { minutes: 5 }), ...tabs()];
 /** A behind flow: the same, then the wait past its token and five tabs again (fourteen lines). */
-const behind = (name: string) => [...ahead(name), line('phone.waited', { seconds: 165 }), ...tabs()];
+const behind = (name: string) => [...ahead(name), line('phone.waited', { seconds: 195 }), ...tabs()];
 const AHEAD = ['ahead_minutes', 'ahead_hours', 'ahead_day'];
 const BEHIND = ['behind_minutes', 'behind_hours', 'behind_day'];
 const GOOD_AHEAD = AHEAD.flatMap(ahead);
@@ -47,7 +47,7 @@ const T0 = Date.parse('2026-11-02T06:00:00Z');
 const startsOf = (names: string[]): Start[] => names.map((name, i) => ({ name, attempt: 1, at: T0 + i * 600_000 }));
 const refresh = (seconds: number) => JSON.stringify({ id: 1, method: 'POST', path: '/auth/v1/token?grant_type=refresh_token', at: new Date(T0 + seconds * 1000).toISOString(), status: 200 });
 const asked = (seconds: number, path: string) => JSON.stringify({ id: 1, method: 'GET', path, at: new Date(T0 + seconds * 1000).toISOString(), status: 200 });
-/** A refresh in each behind flow's window, as its 150 s token nears its end. */
+/** A refresh in each behind flow's window, as its 180 s token nears its end. */
 const BEHIND_REFRESHES = [refresh(100), refresh(700), refresh(1300)];
 
 it('names the six flows, minutes, hours and a day each way, and every tab', () => {
@@ -117,7 +117,7 @@ it('refuses three refreshes in five minutes ahead, takes two, and counts each fl
 
 it('refuses a behind flow with no refresh, and one past one a minute', () => {
   expect(judge(GOOD_BEHIND, BEHIND_REFRESHES.slice(1), startsOf(BEHIND), 'behind').faults)
-    .toEqual(['behind_minutes: no token was refreshed, so its 150 s token never ran out and the flow proves nothing']);
+    .toEqual(['behind_minutes: no token was refreshed, so its 180 s token never ran out and the flow proves nothing']);
   expect(judge(GOOD_BEHIND, [refresh(100), refresh(110), refresh(120), ...BEHIND_REFRESHES.slice(1)], startsOf(BEHIND), 'behind').faults)
     .toEqual(['behind_minutes: 3 refreshes in 1 minute(s), past one a minute: a refresh loop']);
 });
@@ -129,7 +129,7 @@ it('judges a flow\'s last attempt alone: its marker begins it, and its start on 
 });
 
 it('counts one a minute: N + 1 in N minutes holds, one more is a loop', () => {
-  // One a minute, as a 150 s token is renewed 90 s before its end, holds; one every half minute is a loop.
+  // One a minute, as a 180 s token is renewed with under 120 s left, holds; one at every 30 s look is a loop.
   expect(ask('[m.pastOneAMinute([0, 60, 120, 180]), m.pastOneAMinute([0, 30, 59]), m.pastOneAMinute([0, 30, 60, 90]), m.pastOneAMinute([0, 10]), m.pastOneAMinute([])]'))
     .toEqual([null, '3 refreshes in 1 minute(s)', '4 refreshes in 2 minute(s)', null, null]);
 });

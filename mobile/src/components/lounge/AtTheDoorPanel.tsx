@@ -10,6 +10,7 @@ import { Check, DoorOpen, Users, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import { ToastHost } from '@/src/components/ToastHost';
 import { Arrive } from '@/src/components/Arrive';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
@@ -78,28 +79,30 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
                 <View style={s.avatar}>
                   <RemoteImage uri={m.avatar_url} style={s.avatarImg} contentFit="cover" transition={150} fallback={<Users size={14} color={colors.fog} strokeWidth={1.5} />} />
                 </View>
-                <Text style={s.name} numberOfLines={1}>@{m.username?.toUpperCase()}</Text>
-                <PressableScale touch="destructive" hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
-                  style={[s.btn, s.declineBtn]}
-                  onPress={() => act(m.user_id, false)}
-                  disabled={busy === m.user_id}
-                  haptic="selection"
-                  accessibilityRole="button"
-                  accessibilityLabel={`Decline ${m.username}`}
-                >
-                  <X size={14} color={BLOOD} strokeWidth={2} />
-                </PressableScale>
-                <PressableScale touch="commit" hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
-                  style={[s.btn, s.admitBtn]}
-                  onPress={() => act(m.user_id, true)}
-                  disabled={busy === m.user_id}
-                  haptic="medium"
-                  accessibilityRole="button"
-                  accessibilityLabel={`Admit ${m.username}`}
-                >
-                  <Check size={14} color={colors.ink} strokeWidth={2.5} />
-                  <Text style={s.admitText}>ADMIT</Text>
-                </PressableScale>
+                <Text {...scaledTextProps} style={s.name} numberOfLines={1}>@{m.username?.toUpperCase()}</Text>
+                <View style={s.doors}>
+                  <PressableScale touch="destructive" hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
+                    style={[s.btn, s.declineBtn]}
+                    onPress={() => act(m.user_id, false)}
+                    disabled={busy === m.user_id}
+                    haptic="selection"
+                    accessibilityRole="button"
+                    accessibilityLabel={`Decline ${m.username}`}
+                  >
+                    <X size={14} color={BLOOD} strokeWidth={2} />
+                  </PressableScale>
+                  <PressableScale touch="commit" hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
+                    style={[s.btn, s.admitBtn]}
+                    onPress={() => act(m.user_id, true)}
+                    disabled={busy === m.user_id}
+                    haptic="medium"
+                    accessibilityRole="button"
+                    accessibilityLabel={`Admit ${m.username}`}
+                  >
+                    <Check size={14} color={colors.ink} strokeWidth={2.5} />
+                    <Text style={s.admitText}>ADMIT</Text>
+                  </PressableScale>
+                </View>
               </View>
             ))}
           </ScrollView>
@@ -137,13 +140,16 @@ const s = StyleSheet.create({
   empty: { paddingVertical: 44, alignItems: 'center' },
   emptyText: { fontFamily: fonts.serifItalic, fontSize: 14, color: colors.fog },
 
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
+  // The name keeps its whole width, and the two doors step down a line, at the right, where a
+  // long one needs the room (a fifteen-letter name lost 20pt beside them on a 390pt phone at 1.35).
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
   avatar: {
     width: 34, height: 34, borderRadius: 17, backgroundColor: colors.soot, alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
   },
   avatarImg: { width: '100%', height: '100%' },
-  name: { flex: 1, fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.bone, includeFontPadding: false },
+  name: { flexGrow: 1, flexShrink: 0, maxWidth: '100%', fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.bone, includeFontPadding: false },
+  doors: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 'auto' },
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 8 },
   declineBtn: { width: 38, height: 34, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.crimsonBorder },
   admitBtn: { backgroundColor: colors.sepia, paddingHorizontal: 14, height: 34 },

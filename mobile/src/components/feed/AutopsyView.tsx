@@ -114,7 +114,8 @@ export const AutopsyBack = React.memo(function AutopsyBack({
           <Text style={s.backTitle}>THE AUTOPSY</Text>
           <Text style={s.stripConfidential}>CONFIDENTIAL</Text>
         </View>
-        <Text style={s.backFiledBy} numberOfLines={1} ellipsizeMode="tail">
+        {/* two lines where the name needs them: it moves whole to the second (a fifteen-letter one lost 14pt at the end of one) */}
+        <Text style={s.backFiledBy} numberOfLines={2}>
           Craft examination · filed by @{username.toUpperCase()}
         </Text>
 

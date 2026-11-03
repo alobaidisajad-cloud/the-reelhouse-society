@@ -14,13 +14,13 @@
  *     flow proves nothing;
  *   - after it, every tab's first read was ready (`screen.ready` for each of TABS; the flow opens
  *     the app again once the clock is moved, so each is a first read); a behind run, on tokens that
- *     live 150 s, then waits past one (`phone.waited`, or it proves nothing), opens the app again,
+ *     live 180 s, then waits past one (`phone.waited`, or it proves nothing), opens the app again,
  *     and every tab's first read is ready once more;
  *   - no read was said to have failed (`state.failed`, `screen.failed`) and the member was never
  *     signed out (the Lobby, once ready as `lobby`, ready again as `welcome`, the signed-out door);
  *   - the token refreshes the gateway saw (POST /auth/v1/token?grant_type=refresh_token): an ahead
- *     run, on 3600 s tokens, at most AHEAD_MOST in any AHEAD_WINDOW_S; a behind run, on 150 s tokens
- *     renewed 90 s before they end (one a minute), at most N + 1
+ *     run, on 3600 s tokens, at most AHEAD_MOST in any AHEAD_WINDOW_S; a behind run, on 180 s tokens
+ *     renewed with under 120 s left (one a minute), at most N + 1
  *     in any N minutes, and at least one, or its token never ran out and the flow proves nothing.
  * One write landing is verify-writes.mjs's to judge; a crash is app-crashes.mjs's.
  *
@@ -146,7 +146,7 @@ export function judgeFlow(name, flow, lines, refreshes) {
     const most = mostIn(refreshes, AHEAD_WINDOW_S);
     if (most > AHEAD_MOST) faults.push(`${name}: ${most} token refreshes in ${AHEAD_WINDOW_S / 60} minutes, past ${AHEAD_MOST}: a refresh loop`);
   } else {
-    if (!refreshes.length) faults.push(`${name}: no token was refreshed, so its 150 s token never ran out and the flow proves nothing`);
+    if (!refreshes.length) faults.push(`${name}: no token was refreshed, so its 180 s token never ran out and the flow proves nothing`);
     const past = pastOneAMinute(refreshes);
     if (past) faults.push(`${name}: ${past}, past one a minute: a refresh loop`);
   }

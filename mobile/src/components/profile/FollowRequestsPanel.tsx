@@ -46,29 +46,31 @@ const RequestRow = React.memo(function RequestRow({
         <RemoteImage uri={item.avatarUrl} style={s.avatarImg} contentFit="cover" transition={150} recyclingKey={item.requesterId} fallback={<User size={15} color={colors.fog} strokeWidth={1.5} />} />
       </View>
       <Text {...scaledTextProps} style={s.name} numberOfLines={1}>@{item.username?.toUpperCase()}</Text>
-      <PressableScale touch="destructive"
-        style={[s.btn, s.declineBtn, busy && s.btnBusy]}
-        onPress={() => onDecline(item)}
-        disabled={busy}
-        hitSlop={DECLINE_SLOP}
-        haptic="selection"
-        accessibilityRole="button"
-        accessibilityLabel={`Decline ${item.username}`}
-      >
-        <X size={14} color={colors.crimson} strokeWidth={2} />
-      </PressableScale>
-      <PressableScale touch="commit"
-        style={[s.btn, s.admitBtn, busy && s.btnBusy]}
-        onPress={() => onAccept(item)}
-        disabled={busy}
-        hitSlop={ADMIT_SLOP}
-        haptic="medium"
-        accessibilityRole="button"
-        accessibilityLabel={`Admit ${item.username}`}
-      >
-        <Check size={14} color={colors.ink} strokeWidth={2.5} />
-        <Text {...scaledTextProps} style={s.admitText}>ADMIT</Text>
-      </PressableScale>
+      <View style={s.doors}>
+        <PressableScale touch="destructive"
+          style={[s.btn, s.declineBtn, busy && s.btnBusy]}
+          onPress={() => onDecline(item)}
+          disabled={busy}
+          hitSlop={DECLINE_SLOP}
+          haptic="selection"
+          accessibilityRole="button"
+          accessibilityLabel={`Decline ${item.username}`}
+        >
+          <X size={14} color={colors.crimson} strokeWidth={2} />
+        </PressableScale>
+        <PressableScale touch="commit"
+          style={[s.btn, s.admitBtn, busy && s.btnBusy]}
+          onPress={() => onAccept(item)}
+          disabled={busy}
+          hitSlop={ADMIT_SLOP}
+          haptic="medium"
+          accessibilityRole="button"
+          accessibilityLabel={`Admit ${item.username}`}
+        >
+          <Check size={14} color={colors.ink} strokeWidth={2.5} />
+          <Text {...scaledTextProps} style={s.admitText}>ADMIT</Text>
+        </PressableScale>
+      </View>
     </View>
   );
 });
@@ -226,13 +228,16 @@ const s = StyleSheet.create({
   footerLoad: { paddingVertical: 16, alignItems: 'center' },
   retry: { marginTop: 12 },
 
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
+  // The name keeps its whole width, and the two doors step down a line, at the right, where a
+  // long one needs the room (a fifteen-letter name lost 20pt beside them on a 390pt phone at 1.35).
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
   avatar: {
     width: 34, height: 34, borderRadius: 17, backgroundColor: colors.soot, alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
   },
   avatarImg: { width: '100%', height: '100%' },
-  name: { flex: 1, fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.bone, includeFontPadding: false },
+  name: { flexGrow: 1, flexShrink: 0, maxWidth: '100%', fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.bone, includeFontPadding: false },
+  doors: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 'auto' },
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 8 },
   btnBusy: { opacity: 0.4 },
   declineBtn: { width: 38, height: 34, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.crimsonBorder },
