@@ -125,11 +125,14 @@ const value = {
   playVideo: jest.fn(),
 } as never;
 
-/** Two real-shaped critiques, for the state where the house has spoken. */
+/**
+ * Two real-shaped critiques, for the state where the house has spoken: a ranked member with a name
+ * of an ordinary length beside a rank (the byline's tightest line), and a short name with none.
+ */
 const CRITIQUES = [
   {
     id: 'c1', rating: 5, status: 'watched', created_at: '2026-07-21T20:00:00Z',
-    user_id: 'm1', username: 'morpho', role: 'auteur', avatar_url: null,
+    user_id: 'm1', username: 'morpho.lumiere', role: 'auteur', avatar_url: null,
     review: 'If the Iliad was the epic of war, the Odyssey is the epic of what war leaves inside a man. Nolan choosing the aftermath over the battle is the whole argument.',
     pull_quote: null, drop_cap: true, is_spoiler: false, abandoned_reason: null,
   },

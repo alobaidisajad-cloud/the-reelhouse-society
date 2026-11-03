@@ -119,6 +119,8 @@ describe('the scale multiplies boxes, never type', () => {
       'app/stacks/[id].tsx',
       // a WIDTH, not a height: the name's longest word against its column
       'app/user/[username].tsx',
+      // which LINE the rank and the time sit on: the name's, or their own beneath it, above the designed size
+      'src/components/feed/UserAttributionRow.tsx',
       'src/components/film/CastCarousel.tsx',
       // the case's height under a masthead of SET lines, and which bills stand side by side
       'src/components/lobby/LobbyWall.tsx',
