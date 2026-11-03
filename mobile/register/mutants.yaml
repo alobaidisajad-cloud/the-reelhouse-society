@@ -1883,9 +1883,9 @@ mutants:
     class: LOOK-the-reel-lit-as-noise
     source: shape
     edits:
-      - file: src/components/reels/ReelsCards.tsx
-        find: "export const FilterChip = memo(function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {\n"
-        replace: "export const FilterChip = memo(function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {\n  require('react-native-reanimated').withRepeat(0, -1, true);\n"
+      - file: src/components/reels/ReelsHeader.tsx
+        find: "const SelectorWord = memo(function SelectorWord({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {\n"
+        replace: "const SelectorWord = memo(function SelectorWord({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {\n  require('react-native-reanimated').withRepeat(0, -1, true);\n"
     proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "is lit by one lamp over its floor, and nothing on it moves on a loop" }
 
   - id: shape-card-paper-seen-through
@@ -1893,18 +1893,18 @@ mutants:
     source: shape
     edits:
       - file: src/components/feed/ActivityCard.tsx
-        find: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFill} />"
-        replace: "          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFill, WASH]} />"
-    proof: { file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat paper: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
+        find: "  groundHouse: { backgroundColor: colors.soot },"
+        replace: "  groundHouse: { backgroundColor: 'rgba(30,25,20,0.9)' },"
+    proof: { file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat stock: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
 
   - id: shape-card-edge-under-paper
     class: SPEED-a-card-blended-every-frame
     source: shape
     edits:
       - file: src/components/feed/ActivityCard.tsx
-        find: "  card: {\n    backgroundColor: colors.soot,"
-        replace: "  card: {\n    boxShadow: 'inset 0px 1px 0px 0px rgba(255,226,176,0.075)',\n    backgroundColor: colors.soot,"
-    proof: { file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat paper: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
+        find: "  frame: { marginHorizontal: FRAME.margin, marginBottom: FRAME.gap, borderRadius: FRAME_RADIUS },"
+        replace: "  frame: { marginHorizontal: FRAME.margin, marginBottom: FRAME.gap, borderRadius: FRAME_RADIUS, boxShadow: 'inset 0px 1px 0px 0px rgba(255,226,176,0.075)' },"
+    proof: { file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat stock: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
 
   - id: shape-one-ndk-unrun
     class: BUILD-a-library-takes-another-ndk

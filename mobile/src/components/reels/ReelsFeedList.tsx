@@ -1,12 +1,11 @@
 import React, { useCallback, useRef, useEffect } from 'react';
-import { RefreshControl, InteractionManager, ActivityIndicator, View, StyleSheet } from 'react-native';
-import { Text } from '@/src/components/text';
+import { RefreshControl, InteractionManager, View } from 'react-native';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { ActivityCard, FeedItem } from '@/src/components/feed/ActivityCard';
 import Animated, { useAnimatedScrollHandler, type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { globalScrollY } from '@/src/lib/scrollBridge';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { CinematicScrollbar } from '@/src/components/layout/CinematicScrollbar';
 import { useScrollTraceOf } from '@/src/hooks/useScrollTrace';
@@ -29,7 +28,8 @@ interface ReelsFeedListProps {
   contentContainerStyle: import('react-native').StyleProp<import('react-native').ViewStyle>;
   listRef: React.RefObject<FlashListRef<FeedItem>>;
   onEndReached?: () => void;
-  isFetchingNextPage?: boolean;
+  /** The reel's foot: the next page being read, its failure, or The End. */
+  footer: React.ReactElement | null;
   extraData?: any;
 }
 
@@ -46,7 +46,7 @@ export function ReelsFeedList({
   contentContainerStyle,
   listRef,
   onEndReached,
-  isFetchingNextPage,
+  footer,
   extraData,
 }: ReelsFeedListProps) {
   // `reel-log`: a log the reel read, which only a loaded reel carries (the E2E asks for it).
@@ -139,29 +139,9 @@ export function ReelsFeedList({
         onViewableItemsChanged={onViewableItemsChanged}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={isFetchingNextPage ? (
-          <View style={fs.footer}>
-            <ActivityIndicator color={colors.sepia} />
-            <Text style={fs.footerText}>SPOOLING THE NEXT REEL…</Text>
-          </View>
-        ) : null}
+        ListFooterComponent={footer}
       />
       <CinematicScrollbar scrollY={overallLogsScrollY} scrollHeight={scrollHeight} viewHeight={viewHeight} isScrolling={isScrolling} topInset={topPad} bottomInset={bottomInset} />
     </View>
   );
 }
-
-const fs = StyleSheet.create({
-  footer: {
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 20,
-  },
-  footerText: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 1.5,
-    color: colors.fogQuiet,
-    includeFontPadding: false,
-  },
-});

@@ -176,7 +176,7 @@ const wide = glows.filter((g) => !(g.r < WIDE));
 
 it('reads every text glow in the app (a scan that finds none proves nothing)', () => {
   expect(glows.length).toBeGreaterThan(20);
-  expect(wide.length).toBeGreaterThanOrEqual(14);
+  expect(wide.length).toBeGreaterThanOrEqual(12);
 });
 
 it('knows the largest value of every radius that is not a number', () => {

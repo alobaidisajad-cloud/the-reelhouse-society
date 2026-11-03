@@ -63,6 +63,17 @@ const overlaid = (image) => box('flex:1 1 0%;min-height:0',
     `</div></div>` +
   `<div style="position:absolute;left:0;right:0;top:0;bottom:0;background-image:${image}"></div>`);
 /**
+ * The same scroller under a section not shown (the Reel's other list): a layer at
+ * opacity 0 over the whole screen, holding a solid card where the line is.
+ */
+const unshown = () => box('flex:1 1 0%;min-height:0',
+  `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0">` +
+    `<div style="position:relative;display:flex;flex-direction:column">` +
+      `<div style="height:810px;flex-shrink:0"></div>` +
+      T('font-size:14px;line-height:18px', 'THE LINE UNDER THE LAYER', 1.35) +
+    `</div></div>` +
+  `<div style="position:absolute;left:0;right:0;top:0;bottom:0;opacity:0"><div style="position:absolute;left:0;right:0;bottom:0;height:200px;background:#111"></div></div>`);
+/**
  * A desk: a head, a page that scrolls, and a rail under it, each its own
  * block. The paragraph on the page is far taller than the room between them.
  */
@@ -193,6 +204,8 @@ const CASES = {
   scrollshade: [overlaid('radial-gradient(ellipse 72% 58% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.34) 100%)'), {}],
   // …but a layer painted with a SOLID gradient covers the words under it
   scrollpainted: [overlaid('linear-gradient(180deg, rgb(17,17,17) 0%, rgb(17,17,17) 100%)'), ALL('UNDER')],
+  // …and a section not shown (opacity 0) covers nothing, whatever solid card it holds
+  scrollunshown: [unshown(), {}],
   // past the fold of a scroller in a clipping sheet: scrolled to, not cut…
   scrollfold: [box('height:120px;overflow:hidden', `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0;overflow:hidden">` +
     `<div style="height:200px;flex-shrink:0"></div>` + T('font-size:14px;line-height:18px', 'THE LAST ACT', 1.35) + `</div>`), {}],

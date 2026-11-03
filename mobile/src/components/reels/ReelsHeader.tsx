@@ -1,124 +1,115 @@
-import React, { memo, useEffect } from 'react';
-import { useColumnWidth } from '@/src/components/layout/navMetrics';
+import React, { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from 'react-native-reanimated';
-import { arrive, MS } from '@/src/theme/motion';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
-import { ReelSection } from './types';
-import { isAuteurPlusTier } from '@/src/utils/tier';
-import { EDGE_LIT } from '@/src/theme/light';
-
+import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
+import { FRAME, FRAME_RADIUS } from '@/src/components/feed/frame/metrics';
+import { ReelSection, FeedFilter } from './types';
 
 // ══════════════════════════════════════════════════════════════
-//  INTERLOCKING GEAR TAB (Mechanical Segment Control)
+//  THE TITLE CARD — the Reel's first frame
 //
-//  The live lamp lives HERE, on the LOGS tab, rather than in a
-//  status row of its own. The wire is what's live, so the light
-//  belongs on it — and a row that only said "LIVE" was a row
-//  spent narrating what the lamp already shows.
+//  The same stock as every frame below it, with the inset rule of a silent film's title card:
+//  what the reel is, its name, and at its foot the two reels it holds. The section switch is the
+//  card's own foot, the chosen half marked by a line along its top. Each list draws its own (both
+//  stay mounted for the crossfade), and both draw the SAME elements, so the card is identical in
+//  height on either tab and nothing below it jumps.
+//
+//  There is deliberately no count here. Both feeds are paginated: a length is a page, never the
+//  society's total. The card carries state, not statistics.
 // ══════════════════════════════════════════════════════════════
-
-export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch, auteur }: {
-  activeTab: ReelSection,
-  onTabSwitch: (t: ReelSection) => void,
-  auteur: boolean,
-}) => {
-  const position = useSharedValue(activeTab === 'logs' ? 0 : 1);
-
-  useEffect(() => {
-    position.value = withTiming(activeTab === 'logs' ? 0 : 1, { duration: MS.base, easing: arrive() });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
-
-  const width = useColumnWidth();
-
-  const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(position.value, [0, 1], [0, (width - 34) / 2]) }]
-  }));
-
+export const SharedReelHeader = memo(function SharedReelHeader({
+  section, onTabSwitch,
+}: {
+  section: ReelSection;
+  onTabSwitch: (t: ReelSection) => void;
+}) {
   return (
-    <View style={st.tabsContainer}>
-      <Animated.View style={[StyleSheet.absoluteFill, st.tabsActiveBg, pillStyle]} />
-      <PressableScale room hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
-        <View style={st.tabInner}>
-          {/* Lit and still: a lamp that blinked every second was the Reel's light read as noise. */}
-          <View style={[st.liveDot, auteur ? st.liveDotAuteur : st.liveDotDefault]} />
-          {/* The tab you are not on is quieter by its ink, never drawn see-through. */}
-          <Text style={[st.tabText, { color: activeTab === 'logs' ? colors.parchmentDim : colors.fogQuiet }]}>LOGS</Text>
-        </View>
-      </PressableScale>
-      <PressableScale room hitSlop={null} style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
-        <Text style={[st.tabText, { color: activeTab === 'stacks' ? colors.parchmentDim : colors.fogQuiet }]}>STACKS</Text>
-      </PressableScale>
+    <View style={st.card}>
+      <View style={st.rule} pointerEvents="none" />
+      <Text style={st.kicker} {...scaledTextProps}>THE LIVING RECORD</Text>
+      <Text style={st.title} {...displayTextProps} accessibilityRole="header">The Reel</Text>
+      <View style={st.switch} accessibilityRole="tablist">
+        <SwitchHalf label="LOGS" on={section === 'logs'} onPress={() => onTabSwitch('logs')} />
+        <SwitchHalf label="STACKS" on={section === 'stacks'} onPress={() => onTabSwitch('stacks')} />
+      </View>
     </View>
   );
 });
 
+const SwitchHalf = memo(function SwitchHalf({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
+  // Two halves flush: a halo would reach the other half, so none.
+  return (
+    <PressableScale room hitSlop={null} style={st.half} onPress={onPress} haptic="light" testID={`reel-switch-${label.toLowerCase()}`}
+      accessibilityRole="tab" accessibilityLabel={label === 'LOGS' ? 'Logs' : 'Stacks'} accessibilityState={{ selected: on }}>
+      {on ? <View style={st.halfMark} /> : null}
+      <Text style={[st.halfText, on && st.halfTextOn]} {...scaledTextProps}>{label}</Text>
+    </PressableScale>
+  );
+});
+
 // ══════════════════════════════════════════════════════════════
-//  SHARED REEL HEADER
-//  Each list draws its own (both stay mounted for the crossfade), and
-//  both draw the SAME elements, so the header is identical in height on
-//  either tab and the control below it never jumps.
+//  THE SELECTOR — which reel the frames below are cut from
 //
-//  There is deliberately no count here. Both feeds are paginated —
-//  the old "LIVE · 40 LOGS" was reading the PAGE SIZE, so it said 40
-//  whether the society had 41 logs or a million, and climbed as you
-//  scrolled. Recency would have been just as wrong: on a
-//  reverse-chronological timeline the newest item's age is already
-//  printed on the first card. The header carries state, not statistics.
+//  Two words and a hairline under the card. The live lamp sits on the chosen one: the wire is
+//  what's live, so the light belongs on it, lit and still (a lamp that blinked was noise).
 // ══════════════════════════════════════════════════════════════
-export const SharedReelHeader = memo(function SharedReelHeader({
-  section, userRole, onTabSwitch,
-}: {
-  section: ReelSection;
-  userRole?: string;
-  onTabSwitch: (t: ReelSection) => void;
+/** How each of the selector's words is said aloud. */
+const SAID: Record<string, string> = { 'MAIN REEL': 'Main reel', 'ALL STACKS': 'All stacks', FOLLOWING: 'Following' };
+
+export const ReelSelector = memo(function ReelSelector({ first, value, onChange }: {
+  /** The house's whole reel: MAIN REEL on the logs, ALL STACKS on the stacks. */
+  first: 'MAIN REEL' | 'ALL STACKS';
+  value: FeedFilter;
+  onChange: (f: FeedFilter) => void;
 }) {
   return (
-    <>
-      <View style={st.sectionHeaderWrap}>
-        <Text style={st.headerTitle} accessibilityRole="header">The Reel</Text>
-      </View>
+    <View style={st.selector} accessibilityRole="tablist">
+      <SelectorWord label={first} on={value === 'all'} onPress={() => onChange('all')} />
+      <View style={st.selectorRule} />
+      <SelectorWord label="FOLLOWING" on={value === 'following'} onPress={() => onChange('following')} />
+    </View>
+  );
+});
 
-      <InterlockingGearTabs
-        activeTab={section}
-        onTabSwitch={onTabSwitch}
-        auteur={isAuteurPlusTier(userRole)}
-      />
-    </>
+const SelectorWord = memo(function SelectorWord({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
+  // Two words a hairline apart: a halo would reach the other word, so none; each is 48 tall.
+  return (
+    <PressableScale room hitSlop={null} style={st.word} onPress={onPress}
+      accessibilityRole="tab" accessibilityLabel={SAID[label] ?? label} accessibilityState={{ selected: on }}>
+      {on ? <View style={st.lamp} /> : null}
+      <Text style={[st.wordText, on && st.wordTextOn]} {...scaledTextProps}>{label}</Text>
+    </PressableScale>
   );
 });
 
 const st = StyleSheet.create({
-  tabsContainer: {
-    // 16 rather than 24 below: with the Est. rule and the status row gone the
-    // masthead is tighter, and the old gap left the tabs floating.
-    flexDirection: 'row', marginHorizontal: 16, marginTop: 12, marginBottom: 16,
-    backgroundColor: 'rgba(30,25,20,0.5)', borderRadius: 4, borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.15)', height: 46, position: 'relative'
+  card: {
+    marginHorizontal: FRAME.margin, marginTop: 8, paddingTop: 22, paddingHorizontal: 18,
+    backgroundColor: colors.soot, borderRadius: FRAME_RADIUS, alignItems: 'center',
   },
-  tabsActiveBg: { ...EDGE_LIT,
-    width: '50%', backgroundColor: colors.soot, borderColor: 'rgba(184,137,26,0.4)',
-    borderWidth: 1, borderRadius: 4, ...effects.shadowFloat, elevation: 5
+  // The title card's inset rule, 6 in from the frame's edge.
+  rule: {
+    position: 'absolute', top: 6, left: 6, right: 6, bottom: 6,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.26)', borderRadius: 5,
   },
-  // A whole 46pt target with no halo, which would reach the filter chips below.
-  tabButton: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  tabInner: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  tabText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 5 },
+  kicker: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 5, color: colors.sepia, textAlign: 'center', includeFontPadding: false },
+  title: { fontFamily: fonts.display, fontSize: 36, lineHeight: 42, color: colors.silverScreen, textAlign: 'center', marginTop: 6 },
+  // The card's foot: the switch spans the inset rule's width, above its lower line.
+  switch: {
+    alignSelf: 'stretch', flexDirection: 'row', marginTop: 14, marginHorizontal: -12, paddingBottom: 6,
+    borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.16)',
+  },
+  half: { flex: 1, minHeight: 48, justifyContent: 'center', alignItems: 'center' },
+  halfMark: { position: 'absolute', top: -1, left: 0, right: 0, height: 2, backgroundColor: colors.sepia },
+  halfText: { fontFamily: fonts.sub, fontSize: 12, letterSpacing: 4, color: colors.fog, includeFontPadding: false },
+  halfTextOn: { color: colors.sepia },
 
-  sectionHeaderWrap: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
-  headerTitle: {
-    fontFamily: fonts.display, fontSize: 36, color: colors.silverScreen,
-    ...effects.textGlowSepia, textShadowRadius: 25, textShadowColor: 'rgba(184,137,26, 0.4)', letterSpacing: 2,
-    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
-    padding: 25, margin: -25, marginBottom: 4 - 25,
-  },
-  liveDot: { width: 6, height: 6, borderRadius: 3 },
-  liveDotDefault: { backgroundColor: colors.sepia, shadowColor: colors.sepia, shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
-  liveDotAuteur: { backgroundColor: colors.crimson, shadowColor: colors.crimson, shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
+  selector: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', marginHorizontal: FRAME.margin },
+  selectorRule: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.25)' },
+  word: { minHeight: 48, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  lamp: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.sepia },
+  wordText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2.4, color: colors.fog, includeFontPadding: false },
+  wordTextOn: { color: colors.parchment },
 });
-
-
-InterlockingGearTabs.displayName = 'InterlockingGearTabs';

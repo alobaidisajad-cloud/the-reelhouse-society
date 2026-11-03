@@ -30,7 +30,6 @@ const ROOT = join(__dirname, '..', '..', '..');
 const NOT_A_ROOM: Record<string, string> = {
   // The app's own frame in app/_layout.tsx is drawn inside FloorGate, which this reader does not look through.
   'src/components/PleaseUpdate.tsx · root': 'the frame the floor draws in the app’s place: PleaseUpdate, inside it, is lit',
-  'src/components/feed/AutopsyView.tsx · backRoot': 'the back face of a card, not a screen',
 };
 
 /** Routes that are not rooms. */

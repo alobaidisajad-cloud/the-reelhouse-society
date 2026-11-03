@@ -7,7 +7,7 @@ import { colors } from '@/src/theme/theme';
 import { UNINKED } from '@/src/theme/unready';
 import { deckLabelProps } from '@/src/constants/textScaling';
 import AutopsyGauge from '@/src/components/AutopsyGauge';
-import { hasRatedAutopsy } from '@/src/components/feed/AutopsyView';
+import { hasRatedAutopsy } from '@/src/components/feed/frame/scores';
 import PressableScale from '@/src/components/PressableScale';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { s } from '@/src/components/log/logDetailStyles';

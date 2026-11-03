@@ -1,9 +1,12 @@
-import React, { useCallback } from 'react';
-import { View, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View, RefreshControl } from 'react-native';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { StackData } from '@/src/components/reels/types';
-import { StackCard } from '@/src/components/reels/ReelsCards';
+import { StackCan, CurateCan, canGrid, rowHeight } from '@/src/components/reels/StackCan';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
+import { useTextScale, useLineScale } from '@/src/hooks/useTextScale';
+import { displayTextProps } from '@/src/constants/textScaling';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
 import Animated, { useAnimatedScrollHandler, type SharedValue, useSharedValue } from 'react-native-reanimated';
@@ -24,10 +27,13 @@ interface ReelsStackListProps {
   activeTabSV: SharedValue<import('@/src/components/reels/types').ReelSection>;
   ListHeaderComponent: React.ReactElement;
   ListEmptyComponent: React.ReactElement;
+  /** The empty can at the head of the grid: where a stack is begun. */
+  onCurate: () => void;
   contentContainerStyle: import('react-native').StyleProp<import('react-native').ViewStyle>;
   listRef: React.RefObject<FlashListRef<StackData>>;
   onEndReached?: () => void;
-  isFetchingNextPage?: boolean;
+  /** The grid's foot: the next cans being read, or their failure. */
+  footer: React.ReactElement | null;
   extraData?: any;
 }
 
@@ -41,20 +47,44 @@ export function ReelsStackList({
   activeTabSV,
   ListHeaderComponent,
   ListEmptyComponent,
+  onCurate,
   contentContainerStyle,
   listRef,
   onEndReached,
-  isFetchingNextPage,
+  footer,
   extraData,
 }: ReelsStackListProps) {
-  const renderStackItem = useCallback(({ item }: { item: StackData }) => (
-    <View style={st.stackGridCell} testID="reel-stack">
-      <StackCard
-        stack={item}
-        onPress={() => { TactileEngine.selection(); nav.push(`/stacks/${item.id}`); }}
-      />
-    </View>
-  ), []);
+  const column = useColumnWidth();
+  const d = useTextScale(displayTextProps.maxFontSizeMultiplier);
+  const t = useTextScale();
+  const lineD = useLineScale(displayTextProps.maxFontSizeMultiplier);
+  const lineT = useLineScale();
+  const scale = useMemo(() => ({ d, t, lineD, lineT }), [d, t, lineD, lineT]);
+  const grid = canGrid(column);
+  // The empty can leads the grid while there are cans; with none, the list's empty state says so.
+  const data: (StackData | typeof CURATE)[] = useMemo(() => (stacks.length ? [CURATE, ...stacks] : []), [stacks]);
+  // Every can in a row as tall as the row's tallest label.
+  const rows = useMemo(() => {
+    const heights: number[] = [];
+    for (let r = 0; r * grid.cols < data.length; r++) {
+      const row = data.slice(r * grid.cols, (r + 1) * grid.cols).filter((s): s is StackData => s !== CURATE);
+      heights.push(rowHeight(row, grid.can, scale));
+    }
+    return heights;
+  }, [data, grid.cols, grid.can, scale]);
+
+  const renderStackItem = useCallback(({ item, index }: { item: StackData | typeof CURATE; index: number }) => {
+    const height = rows[Math.floor(index / grid.cols)] ?? 0;
+    return (
+      <View style={grid.pad(index % grid.cols)}>
+        {item === CURATE ? <CurateCan height={height} onPress={onCurate} /> : (
+          <View testID="reel-stack">
+            <StackCan stack={item} width={grid.can} height={height} onPress={() => { TactileEngine.selection(); nav.push(`/stacks/${item.id}`); }} />
+          </View>
+        )}
+      </View>
+    );
+  }, [rows, grid, onCurate]);
 
   const scrollHeight = useSharedValue(0);
   const viewHeight = useSharedValue(0);
@@ -80,12 +110,12 @@ export function ReelsStackList({
       <AnimatedFlashList
         ref={listRef}
         key="stacks-grid"
-        data={stacks}
+        data={data}
         maintainVisibleContentPosition={NOT_ANCHORED}
-        keyExtractor={(item: any) => String(item.id)}
+        keyExtractor={(item: StackData | typeof CURATE) => (item === CURATE ? 'curate' : String(item.id))}
         extraData={extraData}
-        estimatedItemSize={234}
-        numColumns={2}
+        estimatedItemSize={250}
+        numColumns={grid.cols}
         renderItem={renderStackItem}
         contentContainerStyle={contentContainerStyle}
         showsVerticalScrollIndicator={false}
@@ -109,13 +139,12 @@ export function ReelsStackList({
         }
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null}
+        ListFooterComponent={footer}
       />
       <CinematicScrollbar scrollY={stacksScrollY} scrollHeight={scrollHeight} viewHeight={viewHeight} isScrolling={isScrolling} topInset={topPad} bottomInset={bottomInset} />
     </View>
   );
 }
 
-const st = StyleSheet.create({
-  stackGridCell: { flex: 1, paddingHorizontal: 6 },
-});
+/** The empty can's place in the grid. */
+const CURATE = 'curate' as const;

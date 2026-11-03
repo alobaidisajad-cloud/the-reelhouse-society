@@ -43,10 +43,9 @@ describe('the brass sheen', () => {
     expect(sweeps()).toBe(0);
   });
 
-  it('is the one the Lobby\'s plate draws, and the Reel keeps no copy of its own', () => {
+  it('is the one the Lobby\'s plate draws', () => {
     const root = join(__dirname, '..', '..', '..', '..');
     const lobby = 'app/(tabs)/index.tsx';
     expect(`${lobby}: ${/import \{ BrassSheen \} from '@\/src\/components\/theme\/BrassSheen'/.test(readFileSync(join(root, lobby), 'utf8'))}`).toBe(`${lobby}: true`);
-    expect(readFileSync(join(root, 'src/components/reels/ReelsCards.tsx'), 'utf8')).not.toMatch(/Sheen = memo/);
   });
 });

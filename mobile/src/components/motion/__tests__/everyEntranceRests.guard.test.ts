@@ -21,7 +21,6 @@ const REGISTER: Record<string, { rests: string } | { why: string }> = {
   'app/person/[id].tsx': { why: 'its header fades in as the page scrolls, and is hidden at rest by design' },
   'app/stacks/[id].tsx': { why: 'its header fades in as the page scrolls, and is hidden at rest by design' },
   'src/features/settings/SettingsScreen.tsx': { why: 'its header title fades in as the page scrolls, and is hidden at rest by design' },
-  'src/components/feed/ActivityCard.tsx': { why: 'the card’s back, hidden until it is turned' },
   'src/components/log/LogAtmosphere.tsx': { why: 'a wash of light behind the form, with nothing in it to read' },
   'src/components/Preloader.tsx': { why: 'the countdown’s digits come and go, and the splash itself ends' },
   'src/components/auth/SocietySeal.tsx': { why: 'the sheen is one glint across the mark, gone at rest; the mark rests on IGNITED' },

@@ -246,10 +246,10 @@ describe('muted text stays readable', () => {
     });
 
     it('the Reel text that was raised stays raised', () => {
-        expect(ratioOf('ReelsCards.tsx', 'filterChipText')).toBeGreaterThanOrEqual(4.5);
-        expect(ratioOf('ReelsFeedList.tsx', 'footerText')).toBeGreaterThanOrEqual(4.5);
-        expect(ratioOf('AutopsyView.tsx', 'backFiledBy')).toBeGreaterThanOrEqual(4.5);
-        expect(ratioOf('AutopsyView.tsx', 'stripTurn')).toBeGreaterThanOrEqual(4.5);
+        expect(ratioOf('ReelsHeader.tsx', 'wordText')).toBeGreaterThanOrEqual(4.5);
+        expect(ratioOf('ReelsHeader.tsx', 'halfText')).toBeGreaterThanOrEqual(4.5);
+        expect(ratioOf('ReelStates.tsx', 'endLine')).toBeGreaterThanOrEqual(4.5);
+        expect(ratioOf('ReelStates.tsx', 'nextFailText')).toBeGreaterThanOrEqual(4.5);
         expect(ratioOf('MemberRegistry.tsx', 'subtitle')).toBeGreaterThanOrEqual(4.5);
         expect(ratioOf('reels.tsx', 'emptySub')).toBeGreaterThanOrEqual(4.5);
     });

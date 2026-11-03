@@ -6,10 +6,11 @@
  * a screen-reader member heard those words on every card and never a word of the writing.
  * The spoiler veil sat inside the door, a control inside a control, which a screen reader
  * cannot reach at all. Now the door is named by its writing, and the veil stands before it.
+ * The feed's card is the Reel's frame (FrameWords), drawn at a phone's width.
  */
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import { ReviewContent } from '../ReviewContent';
+import { FrameWords } from '../ActivityCard';
 import { FilmReviews } from '@/src/components/film/FilmReviews';
 import { spokenExcerpt } from '@/src/utils/text';
 import { nav } from '@/src/utils/typedRouter';
@@ -19,15 +20,16 @@ jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), back: jest
 const WRITING = 'A film about waiting, and the waiting is the film. Nothing in it hurries.';
 
 describe('the feed card', () => {
+  const FRAME_WORDS = { inner: 330, scale: 1, accent: '#B8891A', onPress: () => {} };
   const item = { id: 'l1', rating: 4, pull_quote: 'We will always have Paris', review: WRITING, drop_cap: false, role: 'member', is_spoiler: false };
 
   it('is named by its pull quote and its writing, in the order drawn', () => {
-    const r = render(<ReviewContent item={item as never} isPremium={false} isAuteur={false} onPress={() => {}} />);
+    const r = render(<FrameWords item={item as never} {...FRAME_WORDS} />);
     expect(r.getByRole('button').props.accessibilityLabel).toBe(`We will always have Paris. ${WRITING}`);
   });
 
   it('veiled, the veil is its own control, reached and lifted, and then the writing is heard', async () => {
-    const r = render(<ReviewContent item={{ ...item, is_spoiler: true } as never} isPremium={false} isAuteur={false} onPress={() => {}} />);
+    const r = render(<FrameWords item={{ ...item, is_spoiler: true } as never} {...FRAME_WORDS} />);
     // One control on the card, and it is the veil: the writing is neither shown nor said.
     expect(r.getAllByRole('button').map((b) => b.props.accessibilityLabel)).toEqual(['This review contains spoilers. Tap to reveal.']);
     await fireEvent.press(r.getByRole('button'));

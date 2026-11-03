@@ -1,408 +1,247 @@
 /**
- * ActivityCard — the archive index card of The Living Record.
- * ───────────────────────────────────────────────────────────
- * Reading order, the archivist's order:
- *   who filed it (ledger row, tier-ruled)
- *   → what film (poster left · title/year/verdict right)
- *   → the prose (full card width)
- *   → the stamp bar (CERT / CRITIQUE / SAVE / LOUNGE)
- *   → THE AUTOPSY strip, when one is filed.
+ * ActivityCard — a frame of The Reel: one log, as a frame of film.
+ * ───────────────────────────────────────────────────────────────
+ * Reading order:
+ *   who filed it (the byline, its ··· for another member's log)
+ *   → the editorial still, when filed, shown whole across the frame, no words on it
+ *   → the film: poster (over the still's lower edge), title, year, reels, the slate (WITH, REWATCH)
+ *   → the words: the spoiler's leader row, or the pull-quote as a title card and the review
+ *     (five lines, two under a quote), READ ON · N WORDS where words were left out
+ *   → the breakdown, when scored
+ *   → the action band.
  *
- * THE CONFIDENTIAL BACK: autopsied cards TURN OVER — a 420ms weighted
- * flip (pure timing curve, mathematically incapable of bounce) reveals
- * the craft examination on the card's reverse. The back is absolute-
- * filled over the front, so card height NEVER changes: the feed never
- * moves. The back mounts lazily on first flip; flip state resets when
- * FlashList recycles the row onto a different log. Reduce-motion users
- * get a plain crossfade.
+ * THE STOCK is the author's rank: the house's card for a Cinephile and an Archivist (the
+ * Archivist told by its brass), the Auteur's own card for an Auteur. No glow, no layered paper,
+ * no shadow: one flat colour, which a scroll never blends. The frame's height is planned by
+ * arithmetic (planReview, breakdownColumns), never measured after it is drawn.
  */
-import React, { useCallback, useState, useEffect } from 'react';
-import { RemoteImage } from '@/src/components/Picture';
-import { View, StyleSheet, AccessibilityInfo, PixelRatio } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, StyleSheet, PixelRatio } from 'react-native';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { Text } from '@/src/components/text';
-import { LinearGradient } from 'expo-linear-gradient';
 import { nav } from '@/src/utils/typedRouter';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate } from 'react-native-reanimated';
-import { useReduceMotion } from '@/src/hooks/useReduceMotion';
-import { colors, fonts, SEPIA_HASH, effects } from '@/src/theme/theme';
-import { displayTextProps } from '@/src/constants/textScaling';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
+import { ReelRating } from '@/src/components/Decorative';
+import SpoilerVeil from '@/src/components/SpoilerVeil';
 import { ActionDeck } from './ActionDeck';
-import { AutopsyStrip, AutopsyBack, hasRatedAutopsy } from './AutopsyView';
-import { ReviewContent, VerdictBlock } from './ReviewContent';
+import { hasRatedAutopsy } from './frame/scores';
 import { UserAttributionRow } from './UserAttributionRow';
-import { PosterFrame } from './PosterFrame';
+import { Breakdown } from './frame/Breakdown';
+import { FRAME, FRAME_RADIUS, frameInner } from './frame/metrics';
+import { planReview, REVIEW, DROP_CAP } from './frame/planReview';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import { useTimeAgo } from '@/src/hooks/useClock';
+import { useTextScale } from '@/src/hooks/useTextScale';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
+import { useAuthStore } from '@/src/stores/auth';
+import { askAboutLog } from '@/src/components/moderation/LogModerationHost';
+import { balancedWidth } from '@/src/components/lobby/measure';
+import { stripHTML, isRTLText, spokenExcerpt, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { counted } from '@/src/utils/counted';
 
-// Single source of truth: Zod schema
 import type { FeedItem } from '@/src/schemas/feed.schema';
-import { WASH, flatPaper, seenAt } from '@/src/theme/light';
-
-// The banner spans ~326pt: 978 pixels on a 3x screen, which a 500px image fills at half detail.
-const TMDB_IMG_EDITORIAL = `https://image.tmdb.org/t/p/${PixelRatio.get() >= 3 ? 'w780' : 'w500'}`;
 export type { FeedItem };
 
-// The flip law: heavy card stock — acceleration off the fingertip,
-// a firm damped landing. A timing curve cannot overshoot.
-const FLIP_MS = 420;
-const FLIP_EASING = Easing.bezier(0.33, 0, 0.15, 1);
-const CROSSFADE_MS = 250;
+// The still spans the frame: 1074 pixels on a 3x screen, which a 780px image fills nearly whole.
+const TMDB_STILL = `https://image.tmdb.org/t/p/${PixelRatio.get() >= 3 ? 'w780' : 'w500'}`;
+const TMDB_POSTER = 'https://image.tmdb.org/t/p/w185';
+/** The pull-quote's title card: Spectral italic, centred, its lines balanced. */
+const QUOTE = { size: 16, line: 22, pad: 16 } as const;
 
-/**
- * The card's paper: its colour, the edge's light and its wash, thinned so a card
- * is paper on the lit page and not a hole in it, drawn as one opaque gradient
- * (flatPaper). Laid as three translucent layers, a page of them was blended on
- * every frame of the Reel's scroll.
- */
-const PAPER = {
-  plain: flatPaper(colors.soot, 'rgba(30,25,20,0.95)', 'rgba(6,5,4,0.98)'),
-  premium: flatPaper(colors.ink, 'rgba(30,25,20,0.95)', 'rgba(6,5,4,0.98)'),
-  auteur: flatPaper(colors.sootAuteur, 'rgba(40,18,18,0.7)', 'rgba(14,5,5,0.95)'),
-};
-/** A ranked card's two corner glows, at the wash's strength, drawn into their colours. */
-const GLOW = {
-  archivist: { near: seenAt(colors.sepiaFaint, WASH.opacity), far: seenAt('rgba(184,137,26,0.04)', WASH.opacity) },
-  auteur: { near: seenAt(colors.crimsonFaint, WASH.opacity), far: seenAt('rgba(180,45,45,0.04)', WASH.opacity) },
+type Rank = 'cine' | 'arch' | 'aut';
+/** The rank's inks on its stock; the stock itself is the frame's ground (st.groundHouse, st.groundAuteur). */
+const STOCK: Record<Rank, { accent: string; name: string }> = {
+  cine: { accent: colors.bone, name: colors.parchment },
+  arch: { accent: colors.sepia, name: colors.sepia },
+  aut: { accent: colors.sepia, name: colors.sepia },
 };
 
-const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {
-  const paper = isAuteur ? PAPER.auteur : isPremium ? PAPER.premium : PAPER.plain;
-  const glow = isAuteur ? GLOW.auteur : GLOW.archivist;
+/** The words of a frame: the spoiler's leader row, or the pull-quote's title card and the planned review. */
+export const FrameWords = React.memo(function FrameWords({ item, inner, scale, accent, onPress }: {
+  item: FeedItem; inner: number; scale: number; accent: string; onPress: () => void;
+}) {
+  const review = useMemo(() => stripHTML(item.review ?? ''), [item.review]);
+  const rtl = useMemo(() => isRTLText(review), [review]);
+  const quoteRtl = useMemo(() => isRTLText(item.pull_quote), [item.pull_quote]);
+  const quote = item.pull_quote?.trim() || null;
+  // A joined script's first letter cannot be lifted out: no drop cap, and the phone sets its lines.
+  // Any other is lifted as the record lifts it (planReview: extractDropCap), the whole letter.
+  const dropCap = !!item.drop_cap && !rtl;
+  const limit = quote ? FRAME.lines.underQuote : FRAME.lines.alone;
+  const plan = useMemo(() => (review && !rtl ? planReview(review, { width: inner, scale, limit, dropCap }) : null), [review, rtl, inner, scale, limit, dropCap]);
+  // Right-to-left writing is set in the phone's own face, which no table here measures: the phone
+  // lays it out once, unseen, and says whether it ran past its lines.
+  const [rtlCut, setRtlCut] = useState(false);
+  const cut = plan ? plan.cut : rtl && rtlCut;
+  const quoteWidth = quote ? balancedWidth(`${OPEN_QUOTE}${quote}${CLOSE_QUOTE}`, 'spectralItalic', QUOTE.size, scale, inner - QUOTE.pad * 2) : 0;
+  if (!quote && !review) return null;
+  const words = (plan?.words ?? review.split(/\s+/).filter(Boolean).length);
   return (
-    <>
-      <LinearGradient
-        colors={paper.colors}
-        locations={paper.locations}
-        style={[StyleSheet.absoluteFill, s.paperLine, { borderTopColor: paper.line }]}
-      />
-      {(isPremium || isAuteur) && (
-        <>
-          <LinearGradient colors={[glow.near, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFill} />
-          <LinearGradient colors={[glow.far, 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFill} />
-        </>
-      )}
-      {children}
-    </>
-  );
-};
-
-/** The editorial banner: only the tribunal's pick wears the crown. */
-const ActivityEditorialHeader = React.memo(({ backdropUri }: { backdropUri: string }) => {
-  return (
-    <View style={s.editorialHeaderContainer}>
-      <View style={s.editorialHeaderImageWrap}>
-        <RemoteImage uri={backdropUri} style={StyleSheet.absoluteFill} recyclingKey={backdropUri} placeholder={{ blurhash: SEPIA_HASH }} contentFit="cover" transition={200} fallback={null} />
-        <LinearGradient colors={['rgba(13,11,9,0.3)', 'rgba(13,11,9,0.95)']} style={StyleSheet.absoluteFill} />
-        <View style={s.editorialBadge}><Text style={s.editorialBadgeText}>✦ EDITORIAL</Text></View>
-      </View>
-      <LinearGradient
-         colors={['transparent', 'rgba(184,137,26,0.3)', 'transparent']}
-         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-         style={s.editorialHeaderAccent}
-      />
-    </View>
-  );
-});
-ActivityEditorialHeader.displayName = 'ActivityEditorialHeader';
-
-export const ActivityCard = React.memo(function ActivityCard({ item, index, onFilmPress }: { item: FeedItem; index: number; onFilmPress?: () => void }) {
-  const reducedMotion = useReduceMotion();
-  const isArchivist = isArchivistPlusTier(item.role);
-  const isAuteur = isAuteurPlusTier(item.role);
-  const isPremium = isArchivist || isAuteur || !!item.editorial_header || !!item.pull_quote;
-
-  const autopsyStats = (item.autopsy ?? undefined) as Record<string, number> | undefined;
-  // Only filed scores count: an all-zero autopsy does not turn the card over.
-  const hasAutopsy = !!item.is_autopsied && hasRatedAutopsy(autopsyStats);
-
-  const editorialUri = item.editorial_header ? `${TMDB_IMG_EDITORIAL}${item.editorial_header}` : null;
-
-  // The shared timeAgo: past a month it gives the date, never "104w AGO". Read from the
-  // shared clock, so a card drawn MOMENTS AGO does not say so a day later.
-  const relativeTime = useTimeAgo(item.created_at);
-
-  // ── The confidential back ──
-  const [flipped, setFlipped] = useState(false);
-  const [backMounted, setBackMounted] = useState(false);
-  const flip = useSharedValue(0);
-
-  // A recycled card turned over for another log is set face up while rendering, so its
-  // first frame is this log's front: an effect would come a frame late and draw the
-  // last log's back. With the back unmounted the front holds no flip, and the value
-  // resets after, unseen.
-  const [flipFor, setFlipFor] = useState(item.id);
-  if (flipFor !== item.id) {
-    setFlipFor(item.id);
-    setFlipped(false);
-    setBackMounted(false);
-  }
-  useEffect(() => { flip.value = 0; }, [item.id, flip]);
-
-  const turnOver = useCallback(() => {
-    setBackMounted(true);
-    setFlipped(true);
-    flip.set(withTiming(1, { duration: reducedMotion ? CROSSFADE_MS : FLIP_MS, easing: FLIP_EASING }));
-    AccessibilityInfo.announceForAccessibility('Autopsy revealed');
-  }, [flip, reducedMotion]);
-
-  const turnBack = useCallback(() => {
-    setFlipped(false);
-    flip.set(withTiming(0, { duration: reducedMotion ? CROSSFADE_MS : FLIP_MS, easing: FLIP_EASING }));
-    AccessibilityInfo.announceForAccessibility('Returned to the log');
-  }, [flip, reducedMotion]);
-
-  // No animated zIndex (on Fabric it races FlashList's commits): opacity shows a face,
-  // pointerEvents routes the touch, and the back is simply drawn after the front.
-  const frontStyle = useAnimatedStyle(() => {
-    if (reducedMotion) {
-      return { opacity: 1 - flip.value, transform: [] };
-    }
-    return {
-      opacity: flip.value < 0.5 ? 1 : 0,
-      transform: [
-        { perspective: 1000 },
-        { rotateY: `${interpolate(flip.value, [0, 1], [0, 180])}deg` },
-      ],
-    };
-  });
-
-  const backStyle = useAnimatedStyle(() => {
-    if (reducedMotion) {
-      return { opacity: flip.value, transform: [] };
-    }
-    return {
-      opacity: flip.value >= 0.5 ? 1 : 0,
-      transform: [
-        { perspective: 1000 },
-        { rotateY: `${interpolate(flip.value, [0, 1], [-180, 0])}deg` },
-      ],
-    };
-  });
-
-  const handleFilmPress = useCallback(() => {
-    // Host screens already standing on the film (the archive page) override
-    // this so the poster never stacks a duplicate film page.
-    if (onFilmPress) return onFilmPress();
-    nav.push(`/film/${item.film_id}`);
-  }, [item.film_id, onFilmPress]);
-
-  const handleUserPress = useCallback(() => {
-    nav.push(`/user/${item.username}`);
-  }, [item.username]);
-
-  const handleLogPress = useCallback(() => {
-    nav.push(`/log/${item.id}`);
-  }, [item.id]);
-
-  return (
-    <View style={{ zIndex: index }}>
-      {/* Rasterized only at rest: cheap in a scroll, never redrawn per frame of the flip. */}
-      {/* The outer view casts the lift; the inner one clips, and a clip hides a shadow. */}
-      <View style={[s.cardShadow, isAuteur && s.cardShadowAuteur]}>
-      <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]} shouldRasterizeIOS={!flipped}>
-        {/* ── FRONT of the card ── */}
-        <Animated.View
-          style={backMounted ? frontStyle : undefined}
-          pointerEvents={flipped ? 'none' : 'auto'}
-          accessibilityElementsHidden={flipped}
-          importantForAccessibility={flipped ? 'no-hide-descendants' : 'auto'}
-        >
-          <ActivityCardShell isPremium={isPremium} isAuteur={isAuteur}>
-            {editorialUri && <ActivityEditorialHeader backdropUri={editorialUri} />}
-
-            {/* The ledger — who filed it */}
-            <View style={s.ledgerWrap}>
-              <UserAttributionRow
-                username={item.username}
-                avatarUrl={item.avatar_url}
-                role={item.role}
-                timeAgo={relativeTime}
-                onUserPress={handleUserPress}
-              />
+    <SpoilerVeil isSpoiler={item.is_spoiler} revealKey={item.id} leader>
+      <PressableScale onPress={onPress} haptic="selection" pressedScale={0.99} style={st.words} hitSlop={null}
+        accessibilityLabel={`${spokenExcerpt(item.pull_quote, review)}${cut ? ` Read on, ${counted(words, 'word', 'words')}.` : ''}`}
+        accessibilityHint="Opens the whole log">
+        {quote ? (
+          <View style={st.intertitle}>
+            <View style={st.intertitleRule} pointerEvents="none" />
+            <Text {...scaledTextProps} style={[st.quote, { width: quoteWidth }, quoteRtl && st.rtl]}>{OPEN_QUOTE}{quote}{CLOSE_QUOTE}</Text>
+          </View>
+        ) : null}
+        {review ? (
+          plan ? (
+            <View style={quote && st.review} {...UNSPOKEN}>
+              {plan.beside.length ? (
+                <View style={st.capRow}>
+                  {/* The record's initial: one size at every setting (its planned width is this size's). */}
+                  <Text style={[st.cap, { color: accent }]} allowFontScaling={false}>{plan.cap}</Text>
+                  <View style={st.capLines}>
+                    {plan.beside.map((l, i) => <Text key={i} {...scaledTextProps} numberOfLines={1} style={st.line}>{l}</Text>)}
+                  </View>
+                </View>
+              ) : null}
+              {plan.under.map((l, i) => <Text key={i} {...scaledTextProps} numberOfLines={1} style={st.line}>{l}</Text>)}
             </View>
-
-            {/* The film row — poster stapled left, identity right */}
-            <View style={s.filmRow}>
-              <PosterFrame filmId={item.film_id} filmTitle={item.film_title} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />
-              <View style={s.filmMeta}>
-                <PressableScale room onPress={handleFilmPress} hitSlop={{ top: 12, bottom: 5, left: 15, right: 15 }} haptic="selection" pressedScale={0.96}>
-                  <Text {...displayTextProps} style={s.cardTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>{item.film_title}</Text>
-                </PressableScale>
-                {item.year != null && <Text style={s.cardYear}>{item.year}</Text>}
-                <VerdictBlock item={item} />
+          ) : (
+            <View style={quote && st.review}>
+              <Text {...scaledTextProps} numberOfLines={limit} style={[st.line, st.rtl]}>{review}</Text>
+              <View style={st.measure} pointerEvents="none" {...UNSPOKEN}>
+                <Text {...scaledTextProps} style={[st.line, st.rtl]} onTextLayout={(e) => setRtlCut(e.nativeEvent.lines.length > limit)}>{review}</Text>
               </View>
             </View>
-
-            {/* The critique — full card width, proper line length */}
-            <View style={s.proseWrap}>
-              <ReviewContent item={item} isPremium={isPremium} isAuteur={isAuteur} onPress={handleLogPress} />
-            </View>
-
-            {/* The stamp bar */}
-            <View style={st.actionDeckWrap}>
-              <ActionDeck
-                itemId={item.id}
-                filmId={item.film_id}
-                filmTitle={item.film_title}
-                posterPath={item.poster_path ?? null}
-                year={item.year ?? undefined}
-                ownerUsername={item.username}
-                ownerId={item.user_id}
-                certifyCount={item.certify_count}
-                critiqueCount={item.critique_count}
-              />
-            </View>
-
-            {hasAutopsy && <AutopsyStrip onTurnOver={turnOver} />}
-          </ActivityCardShell>
-        </Animated.View>
-
-        {/* ── BACK of the card (lazy — pays nothing until first flip) ── */}
-        {backMounted && hasAutopsy && (
-          <Animated.View
-            style={[StyleSheet.absoluteFill, s.backFace, backStyle]}
-            pointerEvents={flipped ? 'auto' : 'none'}
-            accessibilityElementsHidden={!flipped}
-            importantForAccessibility={flipped ? 'auto' : 'no-hide-descendants'}
-          >
-            <AutopsyBack autopsy={autopsyStats} username={item.username} onReturn={turnBack} />
-          </Animated.View>
-        )}
-      </View>
-      </View>
-    </View>
+          )
+        ) : null}
+        {cut ? (
+          <View style={[st.readOn, rtl && st.readOnRtl]} {...UNSPOKEN}>
+            <Text {...scaledTextProps} style={[st.readOnWord, { color: accent }]}>READ ON</Text>
+            <Text {...scaledTextProps} style={st.readOnCount}>{counted(words, 'WORD', 'WORDS')}</Text>
+            <Text {...scaledTextProps} style={[st.readOnWord, { color: accent }]}>›</Text>
+          </View>
+        ) : null}
+      </PressableScale>
+    </SpoilerVeil>
   );
 });
 
-const s = StyleSheet.create({
-  // The shadow host: the rail margins, and on iOS the lift. Nothing here clips.
-  cardShadow: {
-    // One rail: 16px, aligned with the header, tabs, and chips above.
-    marginHorizontal: 16,
-    marginBottom: 20,
-    borderRadius: 4,
-    ...effects.flat,
-  },
-  // Only an Auteur card lifts, in its own crimson; every other card lies flat on the lit house.
-  cardShadowAuteur: {
-    shadowColor: colors.bloodReel,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.7,
-    shadowRadius: 20,
-  },
-  // The clip host: the paper, the border, and the mask the reverse face turns inside.
-  card: {
-    backgroundColor: colors.soot,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.4)',
-    overflow: 'hidden',
-    position: 'relative',
-    // No elevation: before Android 9 it casts black whatever shadowColor says.
-    ...effects.flat,
-  },
-  cardPremium: {
-    borderColor: 'rgba(184,137,26,0.3)',
-    backgroundColor: colors.ink,
-  },
-  /** The edge's highlight, the top line inside the border, as it showed under the wash. */
-  paperLine: { borderTopWidth: 1 },
-  cardAuteur: {
-    borderColor: colors.crimsonBorder,
-    backgroundColor: colors.sootAuteur,
-    // The Android lift, crimson from Android 9, as cardShadowAuteur casts it on iOS.
-    elevation: 12,
-    shadowColor: colors.bloodReel,
-  },
-  backFace: {
-    backgroundColor: colors.ink,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
+export const ActivityCard = React.memo(function ActivityCard({ item, onFilmPress }: { item: FeedItem; index: number; onFilmPress?: () => void }) {
+  const rank: Rank = isAuteurPlusTier(item.role) ? 'aut' : isArchivistPlusTier(item.role) ? 'arch' : 'cine';
+  const stock = STOCK[rank];
+  const inner = frameInner(useColumnWidth());
+  const scale = useTextScale();
+  // The shared timeAgo: past a month it gives the date. Read from the shared clock.
+  const relativeTime = useTimeAgo(item.created_at);
+  const me = useAuthStore((s) => s.user?.id);
+  const anothers = !!me && !!item.user_id && me !== item.user_id;
+  const autopsy = (item.autopsy ?? undefined) as Record<string, number> | undefined;
+  const scored = !!item.is_autopsied && hasRatedAutopsy(autopsy);
+  const still = item.editorial_header ? `${TMDB_STILL}${item.editorial_header}` : null;
+  const poster = item.poster_path ? `${TMDB_POSTER}${item.poster_path}` : null;
+  const abandoned = item.status === 'abandoned';
+  const slate = [
+    item.watched_with ? `WITH ${item.watched_with.toUpperCase()}` : null,
+    item.status === 'rewatched' ? 'REWATCH' : null,
+  ].filter((x): x is string => !!x);
+  const rated = !abandoned && (item.rating ?? 0) > 0;
+  // What the film control says: everything drawn in it, then where it goes.
+  const filmSaid = [
+    item.film_title, item.year != null ? String(item.year) : null, rated ? `${item.rating} of 5 reels` : null,
+    ...slate.map((x) => x.toLowerCase()), abandoned ? 'abandoned' : null,
+  ].filter(Boolean).join(', ') + '. Opens the film.';
 
-  // ── Editorial (the crown — true editorial only) ──
-  editorialHeaderContainer: {
-    width: '100%',
-    height: 100,
-    position: 'relative',
-  },
-  editorialHeaderImageWrap: {
-    width: '100%',
-    height: '100%',
-    overflow: 'hidden',
-  },
-  editorialHeaderAccent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-  },
-  editorialBadge: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    backgroundColor: 'rgba(13,11,9,0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 2,
-    borderWidth: 1,
-    borderColor: colors.sepiaBorder,
-  },
-  editorialBadgeText: {
-    fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 1.5,
-    color: colors.marqueeGold,
-    includeFontPadding: false,
-  },
+  // Host screens already standing on the film (its reviews page) override this, so the poster
+  // never stacks a second film page.
+  const handleFilmPress = useCallback(() => { if (onFilmPress) return onFilmPress(); nav.push(`/film/${item.film_id}`); }, [item.film_id, onFilmPress]);
+  const handleUserPress = useCallback(() => { nav.push(`/user/${item.username}`); }, [item.username]);
+  const handleLogPress = useCallback(() => { nav.push(`/log/${item.id}`); }, [item.id]);
+  const handleMore = useCallback(() => {
+    if (item.user_id) askAboutLog({ logId: item.id, userId: item.user_id, username: item.username });
+  }, [item.id, item.user_id, item.username]);
 
-  // ── Index card zones ──
-  ledgerWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    zIndex: 1,
-  },
-  filmRow: {
-    flexDirection: 'row',
-    gap: 14,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    zIndex: 1,
-  },
-  filmMeta: {
-    flex: 1,
-    paddingTop: 2,
-  },
-  proseWrap: {
-    paddingHorizontal: 16,
-    zIndex: 1,
-  },
-  cardTitle: {
-    fontFamily: fonts.display,
-    fontSize: 19,
-    color: colors.silverScreen,
-    lineHeight: 24,
-    textShadowColor: colors.sepiaGlow,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-    includeFontPadding: false,
-    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
-    padding: 12,
-    margin: -12,
-  },
-  cardYear: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 2.4,
-    color: colors.fog,
-    marginTop: 5,
-    marginBottom: 6,
-    includeFontPadding: false,
-  },
+  return (
+    <View style={[st.frame, rank === 'aut' ? st.groundAuteur : st.groundHouse]}>
+      <View style={st.byline}>
+        <UserAttributionRow username={item.username} avatarUrl={item.avatar_url} role={item.role} timeAgo={relativeTime}
+          onUserPress={handleUserPress} ruled={false} nameInk={stock.name} onMore={anothers ? handleMore : undefined} />
+      </View>
+
+      {still ? (
+        <RemoteImage uri={still} style={st.still} recyclingKey={still} placeholder={{ blurhash: SEPIA_HASH }} contentFit="cover" transition={150} fallback={null} accessible={false} />
+      ) : null}
+
+      {/* The film, one control: its poster and its title open the same page, so neither reaches into the other. */}
+      <PressableScale onPress={handleFilmPress} haptic="heavy" pressedScale={0.99} hitSlop={null} style={[st.film, still && st.filmOver]}
+        accessibilityLabel={filmSaid}>
+        <RemoteImage uri={poster} style={st.poster} recyclingKey={`poster-${item.film_id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={100}
+          fallback={<PosterMark style={st.poster} />} />
+        <View style={[st.meta, still && st.metaOver]}>
+          <Text {...displayTextProps} style={st.title} numberOfLines={3}>{item.film_title}</Text>
+          {item.year != null ? <Text {...scaledTextProps} style={st.year}>{item.year}</Text> : null}
+          {rated ? <ReelRating rating={item.rating ?? 0} size={16} /> : null}
+          {slate.length ? (
+            <View style={st.slate}>{slate.map((x) => <Text key={x} {...scaledTextProps} style={st.slateItem}>{x}</Text>)}</View>
+          ) : null}
+          {abandoned ? <View style={st.stamp}><Text {...scaledTextProps} style={st.stampText}>ABANDONED</Text></View> : null}
+        </View>
+      </PressableScale>
+
+      <View style={st.pad}>
+        {abandoned && item.abandoned_reason ? <Text {...scaledTextProps} style={st.reason}>{item.abandoned_reason}</Text> : null}
+        <FrameWords item={item} inner={inner} scale={scale} accent={stock.accent} onPress={handleLogPress} />
+        {scored ? <Breakdown autopsy={autopsy} width={inner} scale={scale} accent={stock.accent} /> : null}
+      </View>
+
+      <View style={st.foot}>
+        <ActionDeck itemId={item.id} filmId={item.film_id} filmTitle={item.film_title} posterPath={item.poster_path ?? null}
+          year={item.year ?? undefined} ownerUsername={item.username} ownerId={item.user_id} certifyCount={item.certify_count} critiqueCount={item.critique_count} />
+      </View>
+    </View>
+  );
 });
 
 const st = StyleSheet.create({
-  actionDeckWrap: { marginTop: 14, width: '100%', zIndex: 1 },
+  // One frame: flat stock, the film frame's soft corner, the frame line before the next.
+  frame: { marginHorizontal: FRAME.margin, marginBottom: FRAME.gap, borderRadius: FRAME_RADIUS },
+  // The house's card for a Cinephile and an Archivist; the Auteur's own.
+  groundHouse: { backgroundColor: colors.soot },
+  groundAuteur: { backgroundColor: colors.sootAuteur },
+  byline: { paddingHorizontal: FRAME.pad, paddingTop: FRAME.pad },
+  pad: { paddingHorizontal: FRAME.pad },
+  still: { height: FRAME.still, marginTop: 12, width: '100%' },
+  film: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, paddingHorizontal: FRAME.pad, marginTop: 12 },
+  // The poster stands over the still's lower edge; the film's words begin under the still.
+  filmOver: { marginTop: -FRAME.overlap },
+  poster: { width: FRAME.poster.width, height: FRAME.poster.height, borderRadius: 2, borderWidth: 1, borderColor: colors.inkwell, backgroundColor: colors.posterVoid },
+  meta: { flex: 1, minWidth: 0, gap: 6, paddingTop: 1 },
+  metaOver: { paddingTop: FRAME.overlap + 10 },
+  title: { fontFamily: fonts.display, fontSize: 19, lineHeight: 23, color: colors.silverScreen, includeFontPadding: false },
+  year: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.bone, includeFontPadding: false },
+  slate: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 3, marginTop: 2 },
+  slateItem: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.bone, includeFontPadding: false },
+  stamp: { alignSelf: 'flex-start', marginTop: 4, marginLeft: 2, borderWidth: 1.5, borderColor: colors.crimsonInk, paddingHorizontal: 7, paddingTop: 2, paddingBottom: 1, transform: [{ rotate: '-6deg' }] },
+  stampText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.crimsonInk, includeFontPadding: false },
+  reason: { marginTop: 10, fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 19, color: colors.bone },
+  // The words' own box runs from the film down to the band: the gaps above and below are inside it
+  // (the lower one taken back by its margin, so nothing under it moves), so a one-line review is a
+  // whole 48 to a finger and reaches into neither neighbour.
+  words: { paddingTop: 12, paddingBottom: FRAME.foot, marginBottom: -FRAME.foot },
+  intertitle: { backgroundColor: colors.inkwell, borderRadius: 3, paddingVertical: 12, paddingHorizontal: QUOTE.pad, alignItems: 'center' },
+  intertitleRule: { position: 'absolute', top: 3, left: 3, right: 3, bottom: 3, borderWidth: 1, borderColor: colors.sepiaBorderStrong, borderRadius: 2 },
+  quote: { fontFamily: fonts.serifItalic, fontSize: QUOTE.size, lineHeight: QUOTE.line, color: colors.silverScreen, textAlign: 'center', includeFontPadding: false },
+  // Under the quote's title card; under the film, the words' own top is the 12.
+  review: { marginTop: 12 },
+  capRow: { flexDirection: 'row' },
+  cap: { fontFamily: fonts.display, fontSize: DROP_CAP.size, lineHeight: DROP_CAP.line, marginRight: DROP_CAP.gap, marginTop: 3, includeFontPadding: false },
+  capLines: { flex: 1, minWidth: 0 },
+  line: { fontFamily: fonts.body, fontSize: REVIEW.size, lineHeight: REVIEW.line, color: colors.parchment, includeFontPadding: false },
+  rtl: { writingDirection: 'rtl', textAlign: 'right' },
+  // The unseen layout of right-to-left words: the review's own box, nothing of it drawn.
+  measure: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', opacity: 0 },
+  readOn: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, marginBottom: -10 },
+  // On the side the review is read from.
+  readOnRtl: { justifyContent: 'flex-end' },
+  readOnWord: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, includeFontPadding: false },
+  readOnCount: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1.4, color: colors.bone, includeFontPadding: false },
+  foot: { marginTop: FRAME.foot },
 });

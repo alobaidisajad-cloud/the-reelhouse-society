@@ -117,7 +117,7 @@ describe('the following reel, before the follow list is known', () => {
     const r = await following();
     expect(r.queryByText('Your orbit is quiet.')).toBeNull();
     expect(r.queryByText('Transmission Interrupted')).toBeNull();
-    expect(r.getByText('SPOOLING')).toBeTruthy();
+    expect(r.getByLabelText('Reading the reel')).toBeTruthy();
   });
 
   it('a list that could not be read: the house\'s failure, whose TRY AGAIN reads the list again', async () => {
@@ -157,7 +157,7 @@ it('stacks it could not read are not "the archive awaits its first curator"', as
   const all = { includeHiddenElements: true };
   expect(r.queryByText('The archive awaits its first curator.', all)).toBeNull();
   expect(r.getByText('Transmission Interrupted', all)).toBeTruthy();
-  await act(async () => { await fireEvent.press(r.getAllByLabelText('Stacks tab')[0]); });
+  await act(async () => { await fireEvent.press(r.getAllByLabelText('Stacks')[0]); });
   await act(async () => { await fireEvent.press(r.getByLabelText('Try again', all)); });
   expect(mockFeeds.stacks.refetch).toHaveBeenCalledTimes(1);
 });
@@ -189,10 +189,10 @@ it('a pull that was answered says nothing', async () => {
   expect(toast().error).not.toHaveBeenCalled();
 });
 
-it('the stacks search says what it searches: stacks, not "the archives"', async () => {
+it('the stacks search says what it searches: the stacks, the Reel\'s cans, not "the archives"', async () => {
   await mount();
   const head = render(mockListProps.stacks.ListHeaderComponent);
-  expect(head.getByPlaceholderText('SEARCH STACKS...')).toBeTruthy();
+  expect(head.getByPlaceholderText('SEARCH THE CANS')).toBeTruthy();
   expect(head.getByLabelText('Search curated stacks')).toBeTruthy();
   head.unmount();
 });
@@ -214,7 +214,7 @@ it('once the crossfade is over, each section is drawn shown or hidden as its tou
   await settle();
   expect([drawn('logs'), layer('logs').props.pointerEvents, drawn('stacks'), layer('stacks').props.pointerEvents])
     .toEqual(['shown', 'auto', 'hidden', 'none']);
-  await act(async () => { await fireEvent.press(r.getAllByLabelText('Stacks tab')[0]!); });
+  await act(async () => { await fireEvent.press(r.getAllByLabelText('Stacks')[0]!); });
   expect([drawn('logs'), drawn('stacks'), layer('stacks').props.pointerEvents]).toEqual(['crossfading', 'crossfading', 'auto']);
   await settle();
   expect([drawn('logs'), layer('logs').props.pointerEvents, drawn('stacks'), layer('stacks').props.pointerEvents])

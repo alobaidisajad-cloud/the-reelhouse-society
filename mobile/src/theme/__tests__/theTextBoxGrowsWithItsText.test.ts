@@ -119,10 +119,14 @@ describe('the scale multiplies boxes, never type', () => {
       'app/stacks/[id].tsx',
       // a WIDTH, not a height: the name's longest word against its column
       'app/user/[username].tsx',
+      // a WIDTH: how many of the review's letters a frame's line holds
+      'src/components/feed/ActivityCard.tsx',
       'src/components/film/CastCarousel.tsx',
       // the case's height under a masthead of SET lines, and which bills stand side by side
       'src/components/lobby/LobbyWall.tsx',
       'src/components/person/PersonFilmography.tsx',
+      // a can's height: its label's lines counted at the font's size, each line as the phone sets it
+      'src/components/reels/ReelsStackList.tsx',
     ]);
   });
 

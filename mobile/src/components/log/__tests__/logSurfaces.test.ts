@@ -144,9 +144,8 @@ describe('a deck label is the capped tier, on one line, shrinking to fit', () =>
  */
 describe('every colour on these surfaces is a named one', () => {
   const SURFACES = ['src/components/log/logDetailStyles.ts', 'src/components/log/LogHero.tsx',
-    'src/components/log/LogActionDeck.tsx', 'src/components/feed/ReviewContent.tsx',
-    'src/components/feed/ActivityCard.tsx', 'src/components/feed/PosterFrame.tsx',
-    'src/components/feed/AutopsyView.tsx', 'src/components/feed/ActionDeck.tsx',
+    'src/components/log/LogActionDeck.tsx', 'src/components/feed/ActivityCard.tsx',
+    'src/components/feed/frame/Breakdown.tsx', 'src/components/feed/ActionDeck.tsx',
     'src/components/feed/UserAttributionRow.tsx', 'src/components/log/LogComments.tsx',
     'src/components/log/LogReviewBody.tsx', 'src/components/log/LogChronicle.tsx'];
 

@@ -90,8 +90,9 @@ describe('the acts', () => {
     expect(mockWatch.addToWatchlist).toHaveBeenCalledWith(expect.objectContaining({ id: 603, title: 'The Matrix' }));
     mockWatch._watchlistIndex = { 603: true };
     const saved = render(deck({ itemId: 'log-2' }));
-    expect(saved.getByText('SAVED')).toBeTruthy();
-    await fireEvent.press(saved.getByLabelText('Saved: remove the film from your watchlist'));
+    // The word stays SAVE (the band's words are constant): the act says it is chosen, and the mark is inked.
+    expect(saved.getByLabelText('Save: on your watchlist. Takes it off').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
+    await fireEvent.press(saved.getByLabelText('Save: on your watchlist. Takes it off'));
     expect(mockWatch.removeFromWatchlist).toHaveBeenCalledWith(603);
   });
 

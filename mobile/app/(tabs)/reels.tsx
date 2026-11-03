@@ -1,7 +1,6 @@
 import { useEffect, useCallback, useLayoutEffect, useState, useMemo, useRef, memo } from 'react';
 import { View, StyleSheet, Keyboard } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import { AnimatedText } from '@/src/components/text/AnimatedText';
 
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, useDerivedValue, Easing
@@ -19,7 +18,6 @@ import { useSocialStore } from '@/src/stores/followStore';
 import { hydrateFollowing } from '@/src/stores/domain/socialSlice';
 import { colors, fonts } from '@/src/theme/theme';
 
-import { SectionDivider } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import Buster from '@/src/components/Buster';
 import FrozenTab from '@/src/components/layout/FrozenTab';
@@ -29,10 +27,12 @@ import { globalScrollY } from '@/src/lib/scrollBridge';
 import {
   ReelSection, FeedFilter 
 } from '@/src/components/reels/types';
-import { SharedReelHeader } from '@/src/components/reels/ReelsHeader';
-import { 
-  TungstenSpooling, FilterChip, FILTER_GAP,
-} from '@/src/components/reels/ReelsCards';
+import { SharedReelHeader, ReelSelector } from '@/src/components/reels/ReelsHeader';
+import { ReelReading, CansReading, StateFrame, NextReelFailed, TheEnd, FrameSkeleton } from '@/src/components/reels/ReelStates';
+import { LogModerationHost } from '@/src/components/moderation/LogModerationHost';
+import { FRAME, FRAME_RADIUS } from '@/src/components/feed/frame/metrics';
+import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
+import { Search } from 'lucide-react-native';
 import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/useFeeds';
 import { useFeedTop } from '@/src/hooks/useFeedTop';
 import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
@@ -40,7 +40,7 @@ import { ReelsStackList } from '@/src/components/reels/ReelsStackList';
 import { MemberRegistry } from '@/src/components/reels/MemberRegistry';
 import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
-import { EDGE_LIT, WASH } from '@/src/theme/light';
+import { WASH } from '@/src/theme/light';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useScreenSeen } from '@/src/hooks/useScreenSeen';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
@@ -87,7 +87,7 @@ const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: str
     <>
       <TextInput
         style={st.searchInput}
-        placeholder="SEARCH STACKS..."
+        placeholder="SEARCH THE CANS"
         placeholderTextColor={colors.fog}
         value={localText}
         onChangeText={handleChange}
@@ -194,9 +194,9 @@ export default function ReelScreen() {
 
   // isRefetching is deliberately not taken: the pull gesture drives
   // isManualRefreshing above, so the screen owns its own spinner.
-  const { data: communityData, isLoading: communityLoading, isError: communityFailed, refetch: refetchCommunity, fetchNextPage: fetchNextCommunity, hasNextPage: hasNextCommunity, isFetchingNextPage: isFetchingNextCommunity } = useCommunityFeed(logsBack);
-  const { data: followingData, isLoading: followingLoading, isError: followingFailed, refetch: refetchFollowing, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing } = useFollowingFeed(logsBack);
-  const { data: stacksData, isLoading: stacksLoading, isError: stacksFailed, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks } = useStacksFeed(stackFilter, stackSearch, stacksBack);
+  const { data: communityData, isLoading: communityLoading, isError: communityFailed, refetch: refetchCommunity, fetchNextPage: fetchNextCommunity, hasNextPage: hasNextCommunity, isFetchingNextPage: isFetchingNextCommunity, isFetchNextPageError: communityNextFailed } = useCommunityFeed(logsBack);
+  const { data: followingData, isLoading: followingLoading, isError: followingFailed, refetch: refetchFollowing, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing, isFetchNextPageError: followingNextFailed } = useFollowingFeed(logsBack);
+  const { data: stacksData, isLoading: stacksLoading, isError: stacksFailed, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks, isFetchNextPageError: stacksNextFailed } = useStacksFeed(stackFilter, stackSearch, stacksBack);
 
   const followingCount = useSocialStore((s) => s.following.length);
   // Following nobody is a fact only of a list read: one unread or failed follows someone, perhaps.
@@ -328,14 +328,10 @@ export default function ReelScreen() {
 
   const logsHeader = useMemo(() => (
     <>
-      <SharedReelHeader section={section} userRole={resolvedRole} onTabSwitch={switchSection} />
-      <View style={st.filterRow}>
-        <FilterChip label="MAIN REEL" active={feedFilter === 'all'} onPress={() => switchFeedFilter('all')} />
-        <FilterChip label="FOLLOWING" active={feedFilter === 'following'} onPress={() => switchFeedFilter('following')} />
-      </View>
-      <SectionDivider label="THE LIVING RECORD" />
+      <SharedReelHeader section={section} onTabSwitch={switchSection} />
+      <ReelSelector first="MAIN REEL" value={feedFilter} onChange={switchFeedFilter} />
     </>
-  ), [section, feedFilter, resolvedRole, switchSection, switchFeedFilter]);
+  ), [section, feedFilter, switchSection, switchFeedFilter]);
 
   // A feed that could not be read is not an empty one, and does not say it is.
   const feedFailed = feedFilter === 'following'
@@ -347,68 +343,57 @@ export default function ReelScreen() {
   }, [feedFilter, followsLost, refetchFollowing, refetchCommunity]);
 
   const logsEmpty = useMemo(() => {
-    if (feedLoading) return <TungstenSpooling />;
-    if (feedFailed) return <EmptyOffline onRetry={rereadFeed} />;
+    if (feedLoading) return <ReelReading />;
+    if (feedFailed) return <StateFrame><EmptyOffline onRetry={rereadFeed} /></StateFrame>;
     return (
-      <Arrive name="reel.empty" style={st.emptyWrap}>
-        <Buster size={48} mood="unimpressed" />
-        <Text style={st.emptyTitle}>
-          {feedFilter === 'following' ? 'Your orbit is quiet.' : 'The projection booth is dark.'}
-        </Text>
-        <Text style={st.emptySub}>
-          {feedFilter === 'following'
-            ? 'Follow other members to see their logs here.'
-            : 'Be the first to log a film and leave your mark.'}
-        </Text>
-        {feedFilter === 'following' ? (
-          <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); switchFeedFilter('all'); }}>
-            <Text style={st.emptyBtnText}>GLOBAL REEL</Text>
-          </PressableScale>
-        ) : (
-          <PressableScale style={st.emptyBtn} onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.mutate(); nav.push('/log-modal'); }}>
-            <Text style={st.emptyBtnText}>LOG A FILM</Text>
-          </PressableScale>
-        )}
+      <Arrive name="reel.empty">
+        <StateFrame>
+          <Buster size={48} mood="unimpressed" />
+          <Text style={st.emptyTitle} {...displayTextProps}>
+            {feedFilter === 'following' ? 'Your orbit is quiet.' : 'The projection booth is dark.'}
+          </Text>
+          <Text style={st.emptySub} {...scaledTextProps}>
+            {feedFilter === 'following'
+              ? 'Follow other members to see their logs here.'
+              : 'Be the first to log a film and leave your mark.'}
+          </Text>
+          {feedFilter === 'following' ? (
+            <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); switchFeedFilter('all'); }}>
+              <Text style={st.emptyBtnText} {...scaledTextProps}>GLOBAL REEL</Text>
+            </PressableScale>
+          ) : (
+            <PressableScale style={st.emptyBtn} onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.mutate(); nav.push('/log-modal'); }}>
+              <Text style={st.emptyBtnText} {...scaledTextProps}>LOG A FILM</Text>
+            </PressableScale>
+          )}
 
-        {/* Only in the empty FOLLOWING feed, so an orbit is never a dead end. */}
-        <MemberRegistry visible={feedFilter === 'following'} />
+          {/* Only in the empty FOLLOWING feed, so an orbit is never a dead end. */}
+          <MemberRegistry visible={feedFilter === 'following'} />
+        </StateFrame>
       </Arrive>
     );
   }, [feedLoading, feedFailed, rereadFeed, feedFilter, switchFeedFilter, isAuthenticated, askForAName]);
 
   const stackHeader = useMemo(() => (
     <>
-      <SharedReelHeader section={section} userRole={resolvedRole} onTabSwitch={switchSection} />
-      <View style={st.searchWrap}>
-        <AnimatedText style={st.searchIcon}>✦</AnimatedText>
-        <AutonomousSearchBar 
-          value={stackSearch} 
-          onChangeText={handleStackSearchChange} 
-          onClear={handleClearSearch} 
-        />
-      </View>
+      <SharedReelHeader section={section} onTabSwitch={switchSection} />
       {/* No count: the feed pages 60 at a time, so a length is never the total. */}
-      <View style={st.filterRow}>
-        <FilterChip label="ALL STACKS" active={stackFilter === 'all'} onPress={() => switchStackFilter('all')} />
-        <FilterChip label="FOLLOWING" active={stackFilter === 'following'} onPress={() => switchStackFilter('following')} />
-      </View>
-      {/* Above the rule, so "CURATED STACKS" introduces the grid, not the button. */}
-      <PressableScale
-        testID="reel-curate-stack"
-        style={st.createStackBtn}
-        onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.destroy(); nav.push('/list-modal'); }}
-        accessibilityRole="button" accessibilityLabel="Curate a collection"
-      >
-        <LinearGradient
-          colors={['transparent', 'rgba(184,137,26,0.06)', 'transparent']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={st.createStackGlow}
+      <ReelSelector first="ALL STACKS" value={stackFilter} onChange={switchStackFilter} />
+      <View style={st.searchWrap}>
+        <Search size={16} color={colors.fog} strokeWidth={1.5} />
+        <AutonomousSearchBar
+          value={stackSearch}
+          onChangeText={handleStackSearchChange}
+          onClear={handleClearSearch}
         />
-        <Text style={st.createStackText}>✦ CURATE A COLLECTION</Text>
-      </PressableScale>
-      <SectionDivider label="CURATED STACKS" />
+      </View>
     </>
-  ), [section, resolvedRole, stackSearch, stackFilter, switchSection, switchStackFilter, handleStackSearchChange, handleClearSearch, isAuthenticated, askForAName]);
+  ), [section, stackSearch, stackFilter, switchSection, switchStackFilter, handleStackSearchChange, handleClearSearch]);
+  const curate = useCallback(() => {
+    if (!isAuthenticated) return askForAName();
+    TactileEngine.destroy();
+    nav.push('/list-modal');
+  }, [isAuthenticated, askForAName]);
 
   const logsExtraData = useMemo(() => [feedFilter, section, logCount, resolvedRole, feedLoading], [feedFilter, section, logCount, resolvedRole, feedLoading]);
   const stacksFollowsUnread = stackFilter === 'following' && followsUnread;
@@ -422,17 +407,18 @@ export default function ReelScreen() {
   }, [stackFilter, followsLost, refetchStacks]);
 
   const stackEmpty = useMemo(() => {
-    if (stacksLoading || stacksFollowsUnread) return <TungstenSpooling />;
-    if (stacksLost) return <EmptyOffline onRetry={rereadStacks} />;
+    if (stacksLoading || stacksFollowsUnread) return <CansReading />;
+    if (stacksLost) return <StateFrame><EmptyOffline onRetry={rereadStacks} /></StateFrame>;
     return (
-      <Arrive name="stacks.empty" style={st.emptyWrap}>
+      <Arrive name="stacks.empty">
+        <StateFrame>
         <Buster size={48} mood="suspicious" />
-        <Text style={st.emptyTitle}>
+        <Text style={st.emptyTitle} {...displayTextProps}>
           {stackSearch ? 'No stacks match your search.' 
             : stackFilter === 'following' ? 'Your orbit has no collections.'
             : 'The archive awaits its first curator.'}
         </Text>
-        <Text style={st.emptySub}>
+        <Text style={st.emptySub} {...scaledTextProps}>
           {stackSearch
             ? 'Try a different search term or clear your filters.'
             : stackFilter === 'following' ? 'Follow more curators to discover their stacks here.'
@@ -440,22 +426,41 @@ export default function ReelScreen() {
         </Text>
         {stackSearch ? (
           <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); handleClearSearch(); }}>
-            <Text style={st.emptyBtnText}>CLEAR FILTERS</Text>
+            <Text style={st.emptyBtnText} {...scaledTextProps}>CLEAR FILTERS</Text>
           </PressableScale>
         ) : stackFilter === 'following' ? (
           <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); switchStackFilter('all'); }}>
-            <Text style={st.emptyBtnText}>GLOBAL STACKS</Text>
+            <Text style={st.emptyBtnText} {...scaledTextProps}>GLOBAL STACKS</Text>
           </PressableScale>
         ) : (
           <PressableScale style={st.emptyBtn} onPress={() => { if (!isAuthenticated) return askForAName(); TactileEngine.mutate(); nav.push('/list-modal'); }}>
-            <Text style={st.emptyBtnText}>CREATE COLLECTION</Text>
+            <Text style={st.emptyBtnText} {...scaledTextProps}>CREATE COLLECTION</Text>
           </PressableScale>
         )}
+        </StateFrame>
       </Arrive>
     );
   }, [stacksLoading, stacksFollowsUnread, stacksLost, rereadStacks, stackSearch, stackFilter, handleClearSearch, switchStackFilter, isAuthenticated, askForAName]);
 
 
+
+  // The reel's foot: the next page as a still frame while it is read, a line when it failed, The End
+  // when the whole reel has run.
+  const logsNextReading = feedFilter === 'following' ? isFetchingNextFollowing : isFetchingNextCommunity;
+  const logsNextFailed = feedFilter === 'following' ? followingNextFailed : communityNextFailed;
+  const logsHasNext = feedFilter === 'following' ? hasNextFollowing : hasNextCommunity;
+  const logsFooter = useMemo(() => {
+    if (logCount === 0) return null;
+    if (logsNextReading) return <FrameSkeleton />;
+    if (logsNextFailed) return <NextReelFailed words="The next reel did not load." what="read the next reel" onRetry={onLoadMoreLogs} />;
+    return logsHasNext ? null : <TheEnd />;
+  }, [logCount, logsNextReading, logsNextFailed, logsHasNext, onLoadMoreLogs]);
+  const stacksFooter = useMemo(() => {
+    if (filteredStacks.length === 0) return null;
+    if (isFetchingNextStacks) return <CansReading />;
+    if (stacksNextFailed) return <NextReelFailed words="The next cans did not load." what="read the next cans" onRetry={onLoadMoreStacks} />;
+    return null;
+  }, [filteredStacks.length, isFetchingNextStacks, stacksNextFailed, onLoadMoreStacks]);
 
   // Why a stranger may read the Reel and not the Lounge: theReelIsTheAdvertisement.test.ts.
   return (
@@ -487,7 +492,7 @@ export default function ReelScreen() {
           contentContainerStyle={{ paddingTop: topPad, paddingBottom: endPad }}
           listRef={logsFlatListRef}
           onEndReached={onLoadMoreLogs}
-          isFetchingNextPage={feedFilter === 'following' ? isFetchingNextFollowing : isFetchingNextCommunity}
+          footer={logsFooter}
           extraData={logsExtraData}
         />
       </Animated.View>
@@ -503,13 +508,15 @@ export default function ReelScreen() {
           activeTabSV={activeTabSV}
           ListHeaderComponent={stackHeader}
           ListEmptyComponent={stackEmpty}
-          contentContainerStyle={{ paddingTop: topPad, paddingBottom: endPad, paddingHorizontal: 10 }}
+          onCurate={curate}
+          contentContainerStyle={{ paddingTop: topPad, paddingBottom: endPad }}
           listRef={stacksFlatListRef}
           onEndReached={onLoadMoreStacks}
-          isFetchingNextPage={isFetchingNextStacks}
+          footer={stacksFooter}
           extraData={stacksExtraData}
         />
       </Animated.View>
+      <LogModerationHost />
     </View>
     </FrozenTab>
     </SectionErrorBoundary>
@@ -519,47 +526,27 @@ export default function ReelScreen() {
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
 
-  filterRow: {
-    flexDirection: 'row', paddingHorizontal: 16, gap: FILTER_GAP,
-    marginBottom: 14, alignItems: 'center',
-  },
+  // A field, as every field in the house is: the well, its sepia edge, the frame's corner.
   searchWrap: {
-    flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 12,
-    backgroundColor: colors.well, borderWidth: 1, borderColor: 'rgba(184,137,26,0.12)',
-    borderRadius: 4, paddingHorizontal: 12, height: 40,
+    flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: FRAME.margin, marginTop: 8, marginBottom: 12,
+    backgroundColor: colors.well, borderWidth: 1, borderColor: colors.sepiaBorder,
+    borderRadius: FRAME_RADIUS, paddingHorizontal: 16, minHeight: 48,
   },
-  // The glyph that marks the field as searchable: 0.80 gives 4.35:1, past the
-  // 3:1 a mark needs.
-  searchIcon: { fontSize: 9, color: colors.sepia, opacity: 0.8, marginRight: 10 },
   searchInput: {
-    flex: 1, fontFamily: fonts.body, fontSize: 11, color: colors.parchment,
-    paddingVertical: 0,
+    flex: 1, fontFamily: fonts.sub, fontSize: 12, letterSpacing: 2, color: colors.parchment,
+    paddingVertical: 12,
   },
   searchClear: { padding: 4, marginLeft: 4 },
   searchClearText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog },
 
-  createStackBtn: { ...EDGE_LIT,
-    marginHorizontal: 16, marginBottom: 16,
-    backgroundColor: colors.soot, borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.2)', borderStyle: 'dashed', borderRadius: 2,
-    paddingVertical: 16, alignItems: 'center',
+  // An empty reel's frame: Buster, what is so, and the one thing to do about it.
+  emptyTitle: { fontFamily: fonts.display, fontSize: 17, letterSpacing: 0.5, color: colors.parchment, textAlign: 'center', marginTop: 14 },
+  emptySub: { fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 20, color: colors.fog, textAlign: 'center', maxWidth: 280, marginTop: 8 },
+  emptyBtn: {
+    marginTop: 18, minHeight: 48, paddingHorizontal: 22, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: colors.sepia, borderRadius: 3,
   },
-  createStackGlow: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-  },
-  createStackText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.parchment },
-
-
-  emptyWrap: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32 },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, textAlign: 'center', marginBottom: 8 },
-  // Solid fogQuiet: the line that says what to do with an empty feed reads on any ground.
-  emptySub: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fogQuiet, textAlign: 'center', lineHeight: 18, marginBottom: 24 },
-  emptyBtn: { ...EDGE_LIT,
-    backgroundColor: colors.soot, borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, borderStyle: 'dashed',
-    paddingVertical: 12, paddingHorizontal: 28,
-  },
-  emptyBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.sepia },
+  emptyBtnText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.sepia },
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx

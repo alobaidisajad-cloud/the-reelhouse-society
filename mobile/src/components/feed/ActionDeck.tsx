@@ -17,6 +17,7 @@ import { ropeSpoken } from '@/src/components/clearance/Clearance';
 import { useLater } from '@/src/hooks/useLater';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { useMarkCount } from '@/src/stores/markCounts';
+import { FRAME_RADIUS } from './frame/metrics';
 
 interface ActionDeckProps {
   itemId: string;
@@ -167,24 +168,27 @@ export const ActionDeck = React.memo(function ActionDeck({
   return (
     <>
       <View style={s.actionDeck}>
-        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleCertify} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: endorsed }} accessibilityLabel={certifyLabel(certifyCount, endorsed, 'this critique')}>
+        <PressableScale hitSlop={null} style={s.actionBtn} onPress={handleCertify} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: endorsed }} accessibilityLabel={certifyLabel(certifyCount, false, 'this critique')}>
           <MarkFigure iconSize={15} count={certifyCount} style={[s.actionLabel, endorsed && s.actionLabelCertified]}>
             <Animated.View style={animatedHeartStyle}>
               <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimsonInk : colors.fog} fill={endorsed ? colors.crimsonInk : 'transparent'} />
             </Animated.View>
           </MarkFigure>
           {/* The cap and shrink-to-fit keep each label on one line at every size. */}
-          <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]} {...deckLabelProps}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
+          {/* One word, certified or not: the heart's fill says which, and the word never changes its length. */}
+          <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]} {...deckLabelProps}>CERTIFY</Text>
         </PressableScale>
 
-        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleCritique} accessibilityRole="button" accessibilityLabel={critiqueLabel(critiqueCount, 'Write a critique')}>
+        <PressableScale hitSlop={null} style={s.actionBtn} onPress={handleCritique} accessibilityRole="button" accessibilityLabel={critiqueLabel(critiqueCount, 'Write a critique')}>
+          <View style={s.divider} pointerEvents="none" />
           <MarkFigure iconSize={16} count={critiqueCount} style={s.actionLabel}>
             <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
           </MarkFigure>
           <Text style={s.actionLabel} {...deckLabelProps}>CRITIQUE</Text>
         </PressableScale>
 
-        <PressableScale touch="commit" hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: !isOwner && filmSaved }} accessibilityLabel={isOwner ? 'Edit this log' : filmSaved ? 'Saved: remove the film from your watchlist' : 'Save film to your watchlist'}>
+        <PressableScale touch="commit" hitSlop={null} style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: !isOwner && filmSaved }} accessibilityLabel={isOwner ? 'Edit this log' : filmSaved ? 'Save: on your watchlist. Takes it off' : 'Save film to your watchlist'}>
+          <View style={s.divider} pointerEvents="none" />
           <Animated.View style={animatedBookmarkStyle}>
             {isOwner ? (
               <Edit3 size={15} strokeWidth={2} color={colors.fog} />
@@ -192,15 +196,16 @@ export const ActionDeck = React.memo(function ActionDeck({
               <Bookmark size={15} strokeWidth={2} color={filmSaved ? colors.sepia : colors.fog} fill={filmSaved ? colors.sepia : 'transparent'} />
             )}
           </Animated.View>
-          <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelSaved]} {...deckLabelProps}>{isOwner ? 'EDIT' : filmSaved ? 'SAVED' : 'SAVE'}</Text>
+          <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelSaved]} {...deckLabelProps}>{isOwner ? 'EDIT' : 'SAVE'}</Text>
         </PressableScale>
 
         {/* Who may not speak holds the brass key; its label says it opens the Society. */}
-        <PressableScale hitSlop={{ top: 7, bottom: 0, left: 0, right: 0 }} style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityLabel={
+        <PressableScale hitSlop={null} style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityLabel={
           canShare ? 'Share to a lounge'
             : !signedIn ? 'Share to a lounge. Sign in first.'
             : ropeSpoken('Share to a lounge', shareRank, shareStanding)
         }>
+          <View style={s.divider} pointerEvents="none" />
           {canShare ? (
             <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
           ) : (
@@ -224,26 +229,27 @@ export const ActionDeck = React.memo(function ActionDeck({
 });
 
 const s = StyleSheet.create({
+  // The frame's foot: the recess cut across its width, each action its icon and count over its word.
   actionDeck: {
-    // Flush stamp bar — a seam across the full card width, not a floating box.
     flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(184,137,26,0.12)',
+    minHeight: 58,
     backgroundColor: colors.inkwell,
-    overflow: 'hidden',
-    zIndex: 1,
-    paddingTop: 1,
-    gap: StyleSheet.hairlineWidth,
+    borderBottomLeftRadius: FRAME_RADIUS,
+    borderBottomRightRadius: FRAME_RADIUS,
   },
+  // As tall as the band: a halo would reach out of it into the frame's words.
   actionBtn: {
     flex: 1,
-    paddingVertical: 12,
+    minWidth: 0,
+    minHeight: 58,
+    paddingVertical: 8,
+    paddingHorizontal: 2,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    backgroundColor: colors.ink,
-    borderRadius: 1,
   },
+  /** Between two actions: a fine rule, inset from the band's edges. */
+  divider: { position: 'absolute', left: 0, top: 17, bottom: 17, width: StyleSheet.hairlineWidth * 2, backgroundColor: colors.ash },
   actionLabel: {
     fontFamily: fonts.sub,
     fontSize: 10,

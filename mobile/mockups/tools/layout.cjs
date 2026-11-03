@@ -63,6 +63,7 @@
  *   node mockups/tools/layout.cjs [--src DIR] [--only a,b] [--skip c,d]
  *     [--passes ios@1,android@2] [--width 360] [--kinds STEAL,NAMELESS] [--shorts]
  *     [--json OUT] [--sites OUT] [--require FILE] [--allow FILE] [--allow-short FILE] [--allow-name FILE]
+ *     [--jobs N]   pages measured at once (the machine's cores, at most 4); the report keeps its order
  *   exits 1 when anything is found, and 2 when there is nothing to measure: no
  *   screen, or an --only name with no file.
  */
@@ -89,6 +90,7 @@ const JSON_OUT = opt('json');
 const SHORTS = args.includes('--shorts');
 // Only these kinds: the test-built screens carry deliberate stress content.
 const KINDS = opt('kinds') ? opt('kinds').split(',') : null;
+const JOBS = Math.max(1, Number(opt('jobs', String(Math.min(4, require('os').cpus().length)))));
 // Captures only (`data-src`): the files whose controls were measured beside a neighbour,
 // and (touch-measured.txt) those that must be, so a control no test draws fails.
 const SITES_OUT = opt('sites');
@@ -433,9 +435,12 @@ async function audit(page) {
     // words; under an open modal, nothing is asked. Judged LINE by line, and walked,
     // not read at the two ends: a line under the rail at the top can sit under the
     // head at the end and pass through the whole window between.
+    // A layer drawn at opacity 0 (the Reel's section not shown) covers nothing, whatever it holds.
+    const unseenLayer = (t) => { for (let a = t; a; a = a.parentElement) if (+getComputedStyle(a).opacity < 0.05) return true; return false; };
     const coverOf = (e, x, y) => {
       for (const t of document.elementsFromPoint(x, y)) {
         if (t === e || e.contains(t) || t.contains(e)) return null;
+        if (unseenLayer(t)) continue;
         const cs = getComputedStyle(t);
         const bg = cs.backgroundColor.match(/[\d.]+/g);
         if ((bg && (bg[3] === undefined || +bg[3] > 0.9) && +cs.opacity > 0.9) || (hidingImage(cs.backgroundImage) && t.tagName !== 'SPAN') || t.tagName === 'IMG') return t;
@@ -839,19 +844,30 @@ async function audit(page) {
   const browser = await chromium.launch();
   const report = {};
   let faults = 0;
-  for (const name of names) {
-    for (const { platform, f } of PASSES) {
-      const page = await open(browser, path.join(SRC, name + '.html'), { factor: f, platform, width: PHONE_W });
-      if (KINDS?.includes('NAME')) await page.evaluate(longNames, STAND_IN);
-      // The whole page in view, so "which text is on top here" can be asked
-      // anywhere on it, not only in the first screenful.
-      const h = await page.evaluate(() => document.documentElement.scrollHeight);
-      await page.setViewportSize({ width: PHONE_W, height: Math.min(h, 16000) });
-      const r = KINDS?.length === 1 && KINDS[0] === 'NAME' ? await namesOnly(page) : await audit(page);
-      // SMALL is reported only when asked for by name (see the check).
-      r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID' && x.kind !== 'ORDER' && x.kind !== 'BENEATH' && x.kind !== 'COLOUR'))
-        .filter((x) => x.kind !== 'NAME' || !nameAllowed(x));
-      await page.close();
+  /** One screen at one text size: its own page, measured, closed. */
+  const measure = async ({ name, platform, f }) => {
+    const page = await open(browser, path.join(SRC, name + '.html'), { factor: f, platform, width: PHONE_W });
+    if (KINDS?.includes('NAME')) await page.evaluate(longNames, STAND_IN);
+    // The whole page in view, so "which text is on top here" can be asked
+    // anywhere on it, not only in the first screenful.
+    const h = await page.evaluate(() => document.documentElement.scrollHeight);
+    await page.setViewportSize({ width: PHONE_W, height: Math.min(h, 16000) });
+    const r = KINDS?.length === 1 && KINDS[0] === 'NAME' ? await namesOnly(page) : await audit(page);
+    // SMALL is reported only when asked for by name (see the check).
+    r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID' && x.kind !== 'ORDER' && x.kind !== 'BENEATH' && x.kind !== 'COLOUR'))
+      .filter((x) => x.kind !== 'NAME' || !nameAllowed(x));
+    await page.close();
+    return r;
+  };
+  // Each page is its own: JOBS of them measured at once, read back in the order they are listed.
+  const tasks = names.flatMap((name) => PASSES.map(({ platform, f }) => ({ name, platform, f })));
+  const results = new Array(tasks.length);
+  let next = 0;
+  const worker = async () => { for (let i = next++; i < tasks.length; i = next++) results[i] = await measure(tasks[i]); };
+  await Promise.all(Array.from({ length: Math.min(JOBS, tasks.length) }, worker));
+  for (const [i, { name, platform, f }] of tasks.entries()) {
+    {
+      const r = results[i];
       // iOS keeps the plain key, so reports written before Android was measured still compare.
       report[platform === 'ios' ? `${name}@${f}` : `${name}@${platform}-${f}`] = r;
       const real = r.found.filter((x) => x.kind !== 'SHORT').length;

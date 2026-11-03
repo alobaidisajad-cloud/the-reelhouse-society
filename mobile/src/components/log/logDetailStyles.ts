@@ -201,7 +201,7 @@ export const s = StyleSheet.create({
   commActionBtn: { marginTop: 8, alignSelf: 'flex-end' },
   // Bone, not crimson. Crimson measures 3.18:1 on ink and cannot reach AA at
   // any opacity — exactly the finding already written up for the ABANDONED
-  // stamp in ReviewContent, which changed its colour rather than its alpha.
+  // stamp on the Reel's card, which changed its colour rather than its alpha.
   // That lesson never crossed to here, and this control takes a critique off the page.
   // The word carries the warning; it only had to be readable.
   // A destructive control has to read as one AND be legible. Crimson at 9pt

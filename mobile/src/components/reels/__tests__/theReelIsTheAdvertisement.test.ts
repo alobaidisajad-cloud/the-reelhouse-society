@@ -27,6 +27,7 @@ const ROOT = join(__dirname, '..', '..', '..', '..');
 
 const reel = readCode('app/(tabs)/reels.tsx');
 const corridor = readCode('app/(tabs)/lounge.tsx');
+const selector = readCode('src/components/reels/ReelsHeader.tsx');
 
 describe('the reel is the advertisement', () => {
   it('the scans can SEE these files — not passing on an empty read', () => {
@@ -69,8 +70,12 @@ describe('the reel is the advertisement', () => {
     });
 
     it('EVERY act that writes asks first — the class, not the three I remembered', () => {
-      // Every onPress that opens a composing modal, found in the source, so a new one is covered.
-      const handlers = [...reel.matchAll(/onPress=\{\(\)\s*=>\s*\{([\s\S]*?)\}\}/g)].map((m) => m[1]);
+      // Every onPress that opens a composing modal, and every handler kept for one (the empty can's),
+      // found in the source, so a new one is covered.
+      const handlers = [
+        ...[...reel.matchAll(/onPress=\{\(\)\s*=>\s*\{([\s\S]*?)\}\}/g)].map((m) => m[1]),
+        ...[...reel.matchAll(/= useCallback\(\(\)\s*=>\s*\{([\s\S]*?)\n {2}\}, \[/g)].map((m) => m[1]),
+      ];
       expect(handlers.length).toBeGreaterThan(3);
 
       const writes = handlers.filter((h) => /'\/(log|list)-modal'/.test(h));
@@ -83,8 +88,9 @@ describe('the reel is the advertisement', () => {
     });
 
     it('FOLLOWING is roped, not hidden — a stranger still learns an orbit exists', () => {
-      // The chip is the only place the app says so; the tap is the invitation.
-      expect(reel).toMatch(/label="FOLLOWING"/);
+      // The selector is the only place the app says so; the tap is the invitation. Both lists draw it.
+      expect(selector).toMatch(/label="FOLLOWING"/);
+      expect([...reel.matchAll(/<ReelSelector first="(MAIN REEL|ALL STACKS)" value=\{(feedFilter|stackFilter)\} onChange=\{switch(Feed|Stack)Filter\} \/>/g)]).toHaveLength(2);
       const gated = [...reel.matchAll(/if \(f === 'following' && !isAuthenticated\) return askForAName\(\);/g)];
       // Both switchers: logs and stacks.
       expect(gated).toHaveLength(2);

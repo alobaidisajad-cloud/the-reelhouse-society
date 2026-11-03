@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { MoreHorizontal } from 'lucide-react-native';
 import { initialOf } from '@/src/utils/text';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import { RankBadge, rankOf } from '@/src/components/RankBadge';
@@ -17,6 +18,12 @@ interface Props {
   role: string | null | undefined;
   timeAgo: string;
   onUserPress: () => void;
+  /** The ruled line under it; the Reel's frame says the rank by its stock and draws none. */
+  ruled?: boolean;
+  /** The name's ink: the house's brass, or the frame's own accent. */
+  nameInk?: string;
+  /** Another member's log: ··· at the name line's end, the Tribunal's sheet. */
+  onMore?: () => void;
 }
 
 // Tier-aware ledger rules — premium members' cards are filed on better paper.
@@ -26,6 +33,10 @@ const RULE_AUTEUR = ['rgba(180,45,45,0.55)', 'rgba(180,45,45,0.02)'] as const;
 
 /** The avatar's side, and the gap between each thing on a line. */
 const AVATAR = 28;
+/** ···'s halo: up and down to a finger, sideways no further than its own width. */
+const MORE_SLOP = { top: 10, bottom: 10, left: 0, right: 0 };
+/** The name beside a ···: it reaches no further right than its own box, so a long name never takes the ···'s touches. */
+const NAME_BESIDE_MORE = { top: 15, bottom: 15, left: 15, right: 0 };
 const GAP = 8;
 
 /**
@@ -40,7 +51,7 @@ const GAP = 8;
  * 42 to 78pt at the designed size on a 320pt phone, 16 to 38pt on a 360pt one
  * (mockups/tools/layout.cjs --kinds NAME). A handle longer than its line ends in …
  */
-export const UserAttributionRow = React.memo(function UserAttributionRow({ username, avatarUrl, role, timeAgo, onUserPress }: Props) {
+export const UserAttributionRow = React.memo(function UserAttributionRow({ username, avatarUrl, role, timeAgo, onUserPress, ruled = true, nameInk, onMore }: Props) {
   const isArchivist = isArchivistPlusTier(role) && !isAuteurPlusTier(role);
   const isAuteur = isAuteurPlusTier(role);
   const ruleColors = isAuteur ? RULE_AUTEUR : isArchivist ? RULE_ARCHIVIST : RULE_DEFAULT;
@@ -48,14 +59,19 @@ export const UserAttributionRow = React.memo(function UserAttributionRow({ usern
   return (
     <View>
       <View style={[s.row, s.nameLine]}>
-        <PressableScale room onPress={onUserPress} hitSlop={s.hitSlop} haptic="selection" pressedScale={0.96} style={s.pressable} accessibilityLabel={`View profile of @${username}`}>
+        <PressableScale room onPress={onUserPress} hitSlop={onMore ? NAME_BESIDE_MORE : s.hitSlop} haptic="selection" pressedScale={0.96} style={s.pressable} accessibilityLabel={`View profile of @${username}`}>
           <RemoteImage uri={avatarUrl} style={s.avatar} transition={150} fallback={<View style={s.avatar}>
               <Text style={s.avatarText} {...UNSPOKEN}>{initialOf(username)}</Text>
             </View>} />
-          <Text style={s.username} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={[s.username, nameInk ? { color: nameInk } : null]} numberOfLines={1} ellipsizeMode="tail">
             @{username.toUpperCase()}
           </Text>
         </PressableScale>
+        {onMore ? (
+          <PressableScale room onPress={onMore} hitSlop={MORE_SLOP} haptic="selection" style={s.more} accessibilityRole="button" accessibilityLabel={`More for @${username}'s log`} accessibilityHint="Report, block, or mute this member">
+            <MoreHorizontal size={16} strokeWidth={2} color={colors.fog} />
+          </PressableScale>
+        ) : null}
       </View>
       <View style={[s.row, s.factsLine]}>
         {/* The house's one badge, imported: one brass for one rank, everywhere. */}
@@ -64,12 +80,14 @@ export const UserAttributionRow = React.memo(function UserAttributionRow({ usern
           {timeAgo}
         </Text>
       </View>
-      <LinearGradient
-        colors={ruleColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={s.tierRule}
-      />
+      {ruled ? (
+        <LinearGradient
+          colors={ruleColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={s.tierRule}
+        />
+      ) : null}
     </View>
   );
 });
@@ -139,4 +157,6 @@ const s = StyleSheet.create({
   tierRule: {
     height: 1,
   },
+  // At the name line's end, a finger's 48 across: it reaches the frame's edge (its pad, 14), never the name.
+  more: { marginLeft: 'auto', marginRight: -14, width: 48, alignItems: 'center', justifyContent: 'center' },
 });

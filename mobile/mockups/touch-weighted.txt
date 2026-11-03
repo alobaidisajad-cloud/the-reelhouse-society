@@ -75,7 +75,7 @@ src/components/dispatch/paper/PaperDesk.tsx · {ready ? 'File it' : 'File it. No
 src/components/dispatch/paper/PaperFrame.tsx · {label} · commit
 src/components/dispatch/paper/PaperMore.tsx · Back · wayOut
 src/components/dispatch/paper/PaperPost.tsx · {!canKeep ? `Save this. ${whyNot(keepReading)}` : saved ? 'Saved' : 'Save this'} · commit
-src/components/feed/ActionDeck.tsx · {isOwner ? 'Edit this log' : filmSaved ? 'Saved: remove the film from your watchlist' : 'Save film to your watchlist'} · commit
+src/components/feed/ActionDeck.tsx · {isOwner ? 'Edit this log' : filmSaved ? 'Save: on your watchlist. Takes it off' : 'Save film to your watchlist'} · commit
 src/components/film/FilmDetailLayout.tsx · Go back · wayOut
 src/components/film/FilmDetailLayout.tsx · Go back · wayOut
 src/components/film/FilmDetailLayout.tsx · {wayOut === 'GO BACK' ? 'Go back' : 'Return to the Lobby'} · wayOut

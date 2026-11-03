@@ -26,12 +26,14 @@ import React, { act } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { resetMarkCounts } from '@/src/stores/markCounts';
-import { ReviewContent } from '@/src/components/feed/ReviewContent';
+import { FrameWords } from '@/src/components/feed/ActivityCard';
 import { s as recordStyles } from '@/src/components/log/logDetailStyles';
 
 import LogDetailScreen from '../[id]';
 
 const LOG_ID = '22222222-2222-4222-8222-222222222222';
+/** The Reel's frame on a 390pt phone at the first text size: its words' room, and nothing pressed. */
+const FRAME_WORDS = { inner: 330, scale: 1, accent: '#B8891A', onPress: () => {} };
 const ARABIC = 'يُعد هذا الفيلم تأملاً في الانتظار';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
@@ -213,8 +215,7 @@ describe('a member’s writing is set in its own direction', () => {
   it('the card on the Reel sets it the same way', async () => {
     let r!: R;
     await act(async () => {
-      r = render(<View><ReviewContent item={{ id: 'l1', rating: 4, pull_quote: ARABIC, review: ARABIC, drop_cap: false, role: 'archivist', is_spoiler: false } as never}
-        isPremium isAuteur={false} onPress={() => {}} /></View>);
+      r = render(<View><FrameWords item={{ id: 'l1', rating: 4, pull_quote: ARABIC, review: ARABIC, drop_cap: false, role: 'archivist', is_spoiler: false } as never} {...FRAME_WORDS} /></View>);
     });
     const blocks = textsWith(r, ARABIC);
     expect(blocks.length).toBeGreaterThanOrEqual(2);
@@ -228,8 +229,7 @@ describe('a member’s own words survive being cleaned', () => {
     // ate the first two words of `<The Batman> is the best of them`.
     let card!: R;
     await act(async () => {
-      card = render(<View><ReviewContent item={{ id: 'l1', rating: 4, pull_quote: null, review: '<p><The Batman> is the best of them</p>', drop_cap: false, role: 'archivist', is_spoiler: false } as never}
-        isPremium isAuteur={false} onPress={() => {}} /></View>);
+      card = render(<View><FrameWords item={{ id: 'l1', rating: 4, pull_quote: null, review: '<p><The Batman> is the best of them</p>', drop_cap: false, role: 'archivist', is_spoiler: false } as never} {...FRAME_WORDS} /></View>);
     });
     expect(words(card)).toContain('<The Batman> is the best of them');
     expect(words(card)).not.toContain('<p>');
@@ -263,20 +263,19 @@ describe('no drop cap on a joined script', () => {
     rec.unmount();
     let card!: R;
     await act(async () => {
-      card = render(<View><ReviewContent item={{ id: 'l1', rating: 4, pull_quote: null, review: ARABIC, drop_cap: true, role: 'archivist', is_spoiler: false } as never}
-        isPremium isAuteur={false} onPress={() => {}} /></View>);
+      card = render(<View><FrameWords item={{ id: 'l1', rating: 4, pull_quote: null, review: ARABIC, drop_cap: true, role: 'archivist', is_spoiler: false } as never} {...FRAME_WORDS} /></View>);
     });
     expect(lifted(card)).toEqual([]);
     expect(nodes(card).some((n) => n.type === 'Text' && textOf(n).includes('الانتظار'))).toBe(true);
   });
 
   it('the card reads the review’s direction from the review: an English pull quote leaves an Arabic review Arabic', async () => {
-    const card = (pull_quote: string, review: string) => render(<View><ReviewContent item={{ id: 'l1', rating: 4, pull_quote, review, drop_cap: true, role: 'archivist', is_spoiler: false } as never}
-      isPremium isAuteur={false} onPress={() => {}} /></View>);
+    const card = (pull_quote: string, review: string) => render(<View><FrameWords item={{ id: 'l1', rating: 4, pull_quote, review, drop_cap: true, role: 'archivist', is_spoiler: false } as never} {...FRAME_WORDS} /></View>);
     let r!: R;
     await act(async () => { r = card('A masterpiece of silence', ARABIC); });
     expect(lifted(r)).toEqual([]); // no Arabic letter lifted out of its word
-    expect(textsWith(r, 'الانتظار').map(rightToLeft)).toEqual([true]);
+    expect(textsWith(r, 'الانتظار').length).toBeGreaterThan(0);
+    expect(textsWith(r, 'الانتظار').every(rightToLeft)).toBe(true);
     expect(textsWith(r, 'A masterpiece of silence').map(rightToLeft)).toEqual([false]);
     r.unmount();
     // And the other way round: an Arabic quote does not set the English review hard right.
@@ -287,27 +286,39 @@ describe('no drop cap on a joined script', () => {
     expect(textsWith(r, ARABIC).map(rightToLeft)).toEqual([true]);
   });
 
-  it('“Read more” sits on the side the review reads from, whatever the pull quote', async () => {
-    /** Where "Read more" sits once the review has filled its eight lines: 'right' or 'left'. */
-    const readMoreSide = async (pull_quote: string, review: string) => {
+  it('READ ON sits on the side the review reads from, whatever the pull quote', async () => {
+    const LONG_EN = Array.from({ length: 40 }, () => 'Every corridor is a held breath.').join(' ');
+    /** Where READ ON sits once the review has run past its lines: 'right' or 'left'. */
+    const readOnSide = async (pull_quote: string, review: string) => {
       let r!: R;
       await act(async () => {
-        r = render(<View><ReviewContent item={{ id: 'l1', rating: 4, pull_quote, review, drop_cap: false, role: 'archivist', is_spoiler: false } as never}
-          isPremium isAuteur={false} onPress={() => {}} /></View>);
+        r = render(<View><FrameWords item={{ id: 'l1', rating: 4, pull_quote, review, drop_cap: false, role: 'archivist', is_spoiler: false } as never} {...FRAME_WORDS} /></View>);
       });
+      // Right-to-left words are laid out once by the phone, unseen; left-to-right ones are planned.
       const laidOut = nodes(r).filter((n) => typeof n.props.onTextLayout === 'function');
-      expect(laidOut).toHaveLength(1);
-      await act(async () => { laidOut[0].props.onTextLayout({ nativeEvent: { lines: Array.from({ length: 8 }, () => ({})) } }); });
-      // The view that holds "Read more" and nothing else (the card around it holds the review too).
-      const wraps = nodes(r).filter((n) => n.type === 'View' && textOf(n) === 'Read more');
-      expect(wraps).toHaveLength(1);
-      const wrap = wraps[0];
-      const side = StyleSheet.flatten(wrap.props.style)?.alignItems === 'flex-end' ? 'right' : 'left';
+      for (const n of laidOut) await act(async () => { n.props.onTextLayout({ nativeEvent: { lines: Array.from({ length: 8 }, () => ({})) } }); });
+      const rows = nodes(r).filter((n) => n.type === 'View' && textOf(n).startsWith('READ ON'));
+      expect(rows).toHaveLength(1);
+      const side = StyleSheet.flatten(rows[0]?.props.style)?.justifyContent === 'flex-end' ? 'right' : 'left';
       r.unmount();
       return side;
     };
-    expect(await readMoreSide('A masterpiece of silence', ARABIC)).toBe('right');
-    expect(await readMoreSide(ARABIC, 'Every corridor is a held breath.')).toBe('left');
+    expect(await readOnSide('A masterpiece of silence', ARABIC)).toBe('right');
+    expect(await readOnSide(ARABIC, LONG_EN)).toBe('left');
+  });
+
+  it('a right-to-left review that fits its lines says no READ ON', async () => {
+    let r!: R;
+    await act(async () => {
+      r = render(<View><FrameWords item={{ id: 'l1', rating: 4, pull_quote: null, review: ARABIC, drop_cap: false, role: 'archivist', is_spoiler: false } as never} {...FRAME_WORDS} /></View>);
+    });
+    const laidOut = nodes(r).filter((n) => typeof n.props.onTextLayout === 'function');
+    const [measured] = laidOut;
+    expect(laidOut).toHaveLength(1);
+    await act(async () => { measured!.props.onTextLayout({ nativeEvent: { lines: [{}, {}] } }); });
+    expect(words(r)).not.toContain('READ ON');
+    await act(async () => { measured!.props.onTextLayout({ nativeEvent: { lines: Array.from({ length: 6 }, () => ({})) } }); });
+    expect(words(r)).toContain('READ ON');
   });
 });
 
@@ -324,11 +335,11 @@ describe('a raised initial is a whole letter, on the card and on the record', ()
   ])('%s: the card lifts all of the first letter, and the words go on from just after it', async (_, review, first) => {
     let card!: R;
     await act(async () => {
-      card = render(<View><ReviewContent item={{ id: 'l1', rating: 4, pull_quote: null, review, drop_cap: true, role: 'archivist', is_spoiler: false } as never}
-        isPremium isAuteur={false} onPress={() => {}} /></View>);
+      card = render(<View><FrameWords item={{ id: 'l1', rating: 4, pull_quote: null, review, drop_cap: true, role: 'archivist', is_spoiler: false } as never} {...FRAME_WORDS} /></View>);
     });
     expect(caps(card)).toContain(first);
-    expect(words(card)).toContain(review);
+    // The frame sets its own lines: the first goes on from just after the letter.
+    expect(words(card)).toContain(review.slice(first.length).trim());
     card.unmount();
 
     const rec = await page({ review, drop_cap: true });

@@ -2,9 +2,8 @@
  * film-reviews/[id] — THE LOG ARCHIVE for a single film.
  * ────────────────────────────────────────────────────────
  * Cohesion law: a log looks the same in every room of the house.
- * This page renders the Reel's own ActivityCard — ledger row, poster
- * frame, verdict, prose, stamp bar, and the confidential autopsy back —
- * filtered to one film, twenty at a time, each page starting where the last
+ * This page renders the Reel's own frame (ActivityCard) — its byline, still,
+ * poster, verdict, words, breakdown and action band — filtered to one film, twenty at a time, each page starting where the last
  * one ended (by time, then id): a critique filed while a member reads, or two
  * filed in the same instant, never repeats or skips one.
  *
@@ -12,7 +11,7 @@
  * film's page, so the card must never stack a duplicate on top of it.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { useLocalSearchParams, Stack } from 'expo-router';
@@ -33,7 +32,10 @@ import { tellMarks } from '@/src/stores/tellMarks';
 import { useAuthStore } from '@/src/stores/auth';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import { nav } from '@/src/utils/typedRouter';
-import { TryAgainLine } from '@/src/components/TryAgain';
+import { LogModerationHost } from '@/src/components/moderation/LogModerationHost';
+import { ReelReading, StateFrame, NextReelFailed, FrameSkeleton } from '@/src/components/reels/ReelStates';
+import Buster from '@/src/components/Buster';
+import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 
 const PAGE_SIZE = 20;
 
@@ -164,22 +166,22 @@ export default function FilmReviewsScreen() {
 
       {/* Header */}
       <View style={[s.header, { paddingTop: headerTop }]}>
-        <PressableScale touch="wayOut" onPress={() => nav.back()} style={s.backBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" accessibilityLabel="Go back">
-          <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
+        <PressableScale touch="wayOut" onPress={() => nav.back()} style={s.backBtn} hitSlop={null} haptic="light" accessibilityLabel="Go back">
+          <ArrowLeft size={18} color={colors.sepia} strokeWidth={1.5} />
         </PressableScale>
         <View style={s.headerTextWrap}>
-          <Text style={s.headerEyebrow}>THE LOG ARCHIVE</Text>
+          <Text style={s.headerEyebrow} {...scaledTextProps}>THE LOG ARCHIVE</Text>
           {/* Already decoded by the router. Decoding it again threw on a title
-              with a percent sign ("100% Wolf") and took the page down. */}
-          <Text style={s.headerTitle} numberOfLines={1}>{title || 'Archive'}</Text>
+              with a percent sign ("100% Wolf") and took the page down. Whole, on as many lines as it takes. */}
+          <Text style={s.headerTitle} {...displayTextProps} accessibilityRole="header">{title || 'Archive'}</Text>
         </View>
+        {/* The back's width again, so the title stands in the middle of the page. */}
+        <View style={s.backBtn} />
       </View>
 
       {/* Content */}
       {loading ? (
-        <View style={s.centerBox}>
-          <ActivityIndicator color={colors.sepia} />
-        </View>
+        <View style={s.listContent}><ReelReading /></View>
       ) : (
         <CinematicFlashList
           bottomInset={edge}
@@ -192,47 +194,43 @@ export default function FilmReviewsScreen() {
           showsVerticalScrollIndicator={false}
           estimatedItemSize={230}
           ListFooterComponent={
-            fetchingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} />
-              : moreFailed ? (
-                <View style={s.moreFailed}>
-                  <Text style={s.moreFailedText}>More critiques could not be reached.</Text>
-                  <TryAgainLine onPress={() => fetchLogs(true)} what="ask for more critiques" style={s.moreRetry} />
-                </View>
-              ) : null
+            fetchingMore ? <FrameSkeleton />
+              : moreFailed ? <NextReelFailed words="More critiques could not be reached." what="ask for more critiques" onRetry={() => fetchLogs(true)} />
+              : null
           }
           ListEmptyComponent={failed ? (
-            <EmptyOffline onRetry={() => fetchLogs()} />
+            <StateFrame><EmptyOffline onRetry={() => fetchLogs()} /></StateFrame>
           ) : (
-            <View style={s.emptyBox}>
-              <Text style={s.emptyTitle}>The projection box awaits.</Text>
-            </View>
+            <StateFrame>
+              <Buster size={48} mood="unimpressed" />
+              <Text style={s.emptyTitle} {...displayTextProps}>The projection box awaits.</Text>
+              <Text style={s.emptySub} {...scaledTextProps}>No member has written on this film yet.</Text>
+            </StateFrame>
           )}
         />
       )}
+      <LogModerationHost />
     </View>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
+  // The back, the archive's name in the middle, and the back's width again: the title centred.
   header: {
     flexDirection: 'row', alignItems: 'center',
-    paddingBottom: 16, paddingHorizontal: 20,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.sepiaBorder,
+    paddingBottom: 12, paddingHorizontal: 8,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(232,223,208,0.1)',
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
-  headerTextWrap: { flex: 1 },
-  headerEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
-  headerTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment },
-  centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  backBtn: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center' },
+  headerTextWrap: { flex: 1, alignItems: 'center' },
+  headerEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.bone, includeFontPadding: false, textAlign: 'center' },
+  headerTitle: { fontFamily: fonts.display, fontSize: 18, lineHeight: 24, color: colors.silverScreen, marginTop: 4, textAlign: 'center' },
   // Its foot is the page's (useContentBottom), set where it is drawn.
-  listContent: { paddingTop: 20 },
+  listContent: { paddingTop: 12 },
 
-  emptyBox: { padding: 40, alignItems: 'center' },
-  moreFailed: { alignItems: 'center', paddingVertical: 20, gap: 4 },
-  moreFailedText: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog },
-  moreRetry: { paddingVertical: 10, paddingHorizontal: 16 },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.sepia },
+  emptyTitle: { fontFamily: fonts.display, fontSize: 17, letterSpacing: 0.5, color: colors.parchment, textAlign: 'center', marginTop: 14 },
+  emptySub: { fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 20, color: colors.fog, textAlign: 'center', maxWidth: 280, marginTop: 8 },
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx

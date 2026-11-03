@@ -1130,7 +1130,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1450
+    count: 1446
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
@@ -1531,7 +1531,7 @@ classes:
     count: 1
     source: { kind: running, ref: "speed lab 40147693423: the washes off (Cs) p50 -500 ms, p90 -800; the edge light off (Ce) -225/-325; the clip off (Ck) -100/-200; all three (C0) p50 450, p90 650 from 1800, under the 1094 budget. Speed lab 40147696024: the poster, the title's fit, the review and the deck each within 100 ms" }
     methods:
-      - { kind: running, file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat paper: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
+      - { kind: running, file: __tests__/components/feed/ActivityCard.test.tsx, test: "is drawn as flat stock: an opaque ground, no layer seen through a view's opacity, no edge light under it" }
       - { kind: running, file: src/theme/__tests__/paperIsFlattened.test.ts, test: "says NO to paper that leaves out a layer" }
     fix: "flatPaper (src/theme/light.ts) composites the paper, the edge's face light and the wash once, at the heights where their gradients turn, into one opaque gradient: the colours the eye was shown, within half a level of 255 at every height (paperIsFlattened), the edge's highlight its top line. A ranked card's corner glows carry the wash's strength in their colours (seenAt), so no view of the card is drawn through its opacity; the card's own style holds no edge light. Drawn before and after, the Reel's cards match pixel for pixel inside; only their 1pt translucent borders move, by at most 6 levels (17 at two corner pixels), the face light no longer under them (mutants shape-card-paper-seen-through, shape-card-edge-under-paper)"
     places: [emulator]

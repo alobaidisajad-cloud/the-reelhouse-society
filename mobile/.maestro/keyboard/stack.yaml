@@ -13,7 +13,8 @@ appId: com.reelhouse.society
     visible:
       id: "reel-log"
     timeout: 20000
-- tapOn: "Stacks tab"
+- tapOn:
+    id: "reel-switch-stacks"
 - extendedWaitUntil:
     visible:
       id: "reel-stack"

@@ -247,77 +247,32 @@ const reelNoScrollbar = [
 /** The Reel's arms: each layer alone, and all of them (R0, the floor). */
 export const REEL_ARMS = ['Rw', 'Rl', 'Rt', 'Rs', 'R0'];
 
-// The Reel's cards, part by part (R0 gave the page's layers nothing: the cost is in the cards).
-// Two runs, at most four arms each, so each fits its step: the card's layers, then what it holds.
+// The Reel's frames, part by part (R0 gave the page's layers nothing: the cost is in the frames).
+// A frame is one flat colour, so it has no layers to take apart: what it holds, each taken out alone.
 const CARD_FILE = 'src/components/feed/ActivityCard.tsx';
-const cardNoShell = [edit(CARD_FILE,
-  'const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {\n',
-  'const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {\n  if (globalThis) return <>{children}</>;\n')];
-// Cb: the same paper, in the same box, painted by React Native's own background (a shaded rectangle)
-// rather than expo-linear-gradient's view, which draws an anti-aliased, dithered path and makes its
-// shader again whenever a recycled card is bound (speed lab 40167463635: the paper off, Cs, p90 -950).
-const cardPaperNative = [edit(CARD_FILE, [
-  '      <LinearGradient',
-  '        colors={paper.colors}',
-  '        locations={paper.locations}',
-  '        style={[StyleSheet.absoluteFill, s.paperLine, { borderTopColor: paper.line }]}',
-  '      />',
+const cardNoStill = [edit(CARD_FILE, [
+  '      {still ? (',
+  '        <RemoteImage uri={still} style={st.still} recyclingKey={still} placeholder={{ blurhash: SEPIA_HASH }} contentFit="cover" transition={150} fallback={null} accessible={false} />',
+  '      ) : null}',
   '',
-].join('\n'), [
-  '      <View',
-  '        style={[StyleSheet.absoluteFill, s.paperLine, { borderTopColor: paper.line,',
-  '          experimental_backgroundImage: `linear-gradient(180deg, ${paper.colors.map((c, i) => `${c} ${paper.locations[i] * 100}%`).join(\', \')})` }]}',
-  '      />',
+].join('\n'), '')];
+const cardNoPoster = [edit(CARD_FILE, [
+  '        <RemoteImage uri={poster} style={st.poster} recyclingKey={`poster-${item.film_id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={100}',
+  '          fallback={<PosterMark style={st.poster} />} />',
   '',
-].join('\n'))];
-// Cn: the paper as the front face's own background, one fill: the card's ground is not painted
-// beneath it (only once the back is mounted, for the flip), and no layer of its own lies over
-// that ground (speed lab 40176377824: painted natively in its own layer, Cb, -50; no paper, Cs, -450).
-const cardPaperIsTheFace = [
-  edit(CARD_FILE, [
-    '      <LinearGradient',
-    '        colors={paper.colors}',
-    '        locations={paper.locations}',
-    '        style={[StyleSheet.absoluteFill, s.paperLine, { borderTopColor: paper.line }]}',
-    '      />',
-    '',
-  ].join('\n'), ''),
-  edit(CARD_FILE, '      <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]} shouldRasterizeIOS={!flipped}>\n',
-    "      <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur, !backMounted && { backgroundColor: 'transparent' }]} shouldRasterizeIOS={!flipped}>\n"),
-  edit(CARD_FILE, '          style={backMounted ? frontStyle : undefined}\n', [
-    '          style={[(() => {',
-    '            const paper = isAuteur ? PAPER.auteur : isPremium ? PAPER.premium : PAPER.plain;',
-    '            const stops = paper.colors.map((c, i) => `${c} ${(paper.locations[i] ?? 0) * 100}%`).join(\', \');',
-    '            return { experimental_backgroundImage: `linear-gradient(180deg, ${paper.line} 0px, ${paper.line} 1px, transparent 1px), linear-gradient(180deg, ${stops})` };',
-    '          })(), backMounted ? frontStyle : undefined]}',
-    '',
-  ].join('\n')),
-];
-const cardNoClip = [edit(CARD_FILE, "    borderColor: 'rgba(184,137,26,0.4)',\n    overflow: 'hidden',\n", "    borderColor: 'rgba(184,137,26,0.4)',\n")];
-const cardNoPoster = [edit(CARD_FILE,
-  '              <PosterFrame filmId={item.film_id} filmTitle={item.film_title} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />\n', '')];
-const cardTitleUnfitted = [edit(CARD_FILE,
-  ' numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>{item.film_title}', ' numberOfLines={3}>{item.film_title}')];
-const cardNoReview = [edit(CARD_FILE,
-  '              <ReviewContent item={item} isPremium={isPremium} isAuteur={isAuteur} onPress={handleLogPress} />\n', '')];
+].join('\n'), '')];
+const cardNoWords = [edit(CARD_FILE,
+  '        <FrameWords item={item} inner={inner} scale={scale} accent={stock.accent} onPress={handleLogPress} />\n', '')];
+const cardNoBreakdown = [edit(CARD_FILE,
+  '        {scored ? <Breakdown autopsy={autopsy} width={inner} scale={scale} accent={stock.accent} /> : null}\n', '')];
 const cardNoDeck = [edit(CARD_FILE, [
-  '              <ActionDeck',
-  '                itemId={item.id}',
-  '                filmId={item.film_id}',
-  '                filmTitle={item.film_title}',
-  '                posterPath={item.poster_path ?? null}',
-  '                year={item.year ?? undefined}',
-  '                ownerUsername={item.username}',
-  '                ownerId={item.user_id}',
-  '                certifyCount={item.certify_count}',
-  '                critiqueCount={item.critique_count}',
-  '              />',
+  '        <ActionDeck itemId={item.id} filmId={item.film_id} filmTitle={item.film_title} posterPath={item.poster_path ?? null}',
+  '          year={item.year ?? undefined} ownerUsername={item.username} ownerId={item.user_id} certifyCount={item.certify_count} critiqueCount={item.critique_count} />',
   '',
 ].join('\n'), '')];
 
-/** The card's layers, each alone, and both (C0); then what it holds, each alone. */
-export const CARD_LAYER_ARMS = ['Cs', 'Cb', 'Cn', 'Ck', 'C0'];
-export const CARD_PART_ARMS = ['Cp', 'Ct', 'Cr', 'Ca'];
+/** What a frame holds, each alone; at most four arms to a run, so each fits its step. */
+export const CARD_PART_ARMS = ['Cs', 'Cp', 'Cr', 'Ca'];
 
 // The Dispatch's posts, part by part (speed lab 40046819617: ready 1453 over its 1160, one task of
 // 910 ms as the paper first draws). The lab's filings are takes by Archivists.
@@ -506,15 +461,12 @@ export const ARMS = {
   Rt: reelBarStill,
   Rs: reelNoScrollbar,
   R0: [...reelNoWash, ...reelNoLamp, ...reelBarStill, ...reelNoScrollbar],
-  Cs: cardNoShell,
-  Cb: cardPaperNative,
-  Cn: cardPaperIsTheFace,
-  Ck: cardNoClip,
-  C0: [...cardNoShell, ...cardNoClip],
+  Cs: cardNoStill,
   Cp: cardNoPoster,
-  Ct: cardTitleUnfitted,
-  Cr: cardNoReview,
+  Cr: cardNoWords,
+  Cb: cardNoBreakdown,
   Ca: cardNoDeck,
+  C0: [...cardNoStill, ...cardNoPoster, ...cardNoWords, ...cardNoBreakdown, ...cardNoDeck],
   Ea: postNoActions,
   Eb: postNoByline,
   Er: postNoRankRule,

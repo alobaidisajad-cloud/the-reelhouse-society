@@ -49,7 +49,7 @@ import { PostDock, PaperCritiqueRow } from '@/src/components/dispatch/paper/Pape
 // eslint-disable-next-line import/first
 import LogComments from '@/src/components/log/LogComments';
 // eslint-disable-next-line import/first
-import { StackCard } from '@/src/components/reels/ReelsCards';
+import { StackCan } from '@/src/components/reels/StackCan';
 // eslint-disable-next-line import/first
 import { resetMarkCounts } from '@/src/stores/markCounts';
 
@@ -150,7 +150,9 @@ describe.each(Object.entries(BARS))('%s', (_name, bar) => {
   it('a certified count is in the certified ink, the same as its word', () => {
     const r = render(bar(12, 3, true));
     const ink = (s: string) => StyleSheet.flatten(r.getByText(s, HIDDEN_TOO).props.style).color;
-    expect(ink('12')).toBe(ink('CERTIFIED'));
+    // The word a certified bar draws: CERTIFIED, or the Reel's frame's constant CERTIFY.
+    const word = r.queryByText('CERTIFIED', HIDDEN_TOO) ? 'CERTIFIED' : 'CERTIFY';
+    expect(ink('12')).toBe(ink(word));
     // …and the critique count stays in the plain ink of ITS word.
     expect(ink('3')).toBe(ink('CRITIQUE'));
     expect(ink('12')).not.toBe(ink('3'));
@@ -300,9 +302,9 @@ describe('a zero is never printed — anywhere a mark is counted', () => {
     expect(drawn(many).some((s) => s.includes('CRITIQUES (1.2K)'))).toBe(true);
   });
 
-  it('a stack card with no certifications draws no count', () => {
+  it('a stack\'s can with no certifications draws no count', () => {
     const stack = { id: 'abcd', title: 'Rain', description: '', curator: 'ana', curatorId: 'u', createdAt: '2026-01-01', films: [], count: 3, certifyCount: 0, isRanked: false };
-    noZero(render(<StackCard stack={stack as never} onPress={noop} />));
+    noZero(render(<StackCan stack={stack as never} width={175} height={240} onPress={noop} />));
   });
 
   it.each(Object.entries(BARS))('%s — none, drawn as nothing', (_n, bar) => {
@@ -321,7 +323,8 @@ describe('the class is closed', () => {
 
   const bars = files
     .map((f) => ({ f: relative(ROOT, f).replace(/\\/g, '/'), src: readFileSync(f, 'utf8') }))
-    .filter(({ src }) => /'CERTIFIED'\s*:\s*'CERTIFY'/.test(src));
+    // A bar that turns its word, or one that draws it constant (the Reel's frame).
+    .filter(({ src }) => /'CERTIFIED'\s*:\s*'CERTIFY'|>CERTIFY<\/Text>/.test(src));
 
   it('finds every bar that certifies', () => {
     expect(bars.map((b) => b.f).sort()).toEqual([
