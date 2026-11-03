@@ -30,6 +30,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
 import { CentredCard } from '@/src/components/layout/CentredCard';
 import { Arrive } from '@/src/components/Arrive';
+import { breakHandle } from '@/src/utils/breakHandle';
 
 const CURVE = Easing.bezier(0.33, 0, 0.15, 1);
 
@@ -76,20 +77,11 @@ const BEATS: Beat[] = [
 export const STAMP_LINE = 18;
 
 /**
- * A handle as the stamp sets it: one line, or a long one as two, broken after its own separator
- * nearest the middle (an underscore or a dot), or at the middle when it has none. Never left to the
- * phone, which would break it wherever the line ran out, or shrink it past what can be read. Each
- * line is its own label that shrinks to fit; split near the middle, the two land at one size.
+ * A handle as the stamp sets it: one line, or a long one as two (breakHandle). Each line is its
+ * own label that shrinks to fit; split near the middle, the two land at one size.
  */
 export function stampLines(handle: string): string[] {
-  if (handle.length <= STAMP_LINE) return [handle];
-  const middle = handle.length / 2;
-  let at = -1;
-  for (let i = 1; i < handle.length - 1; i++) {
-    if ((handle.charAt(i) === '_' || handle.charAt(i) === '.') && (at === -1 || Math.abs(i + 1 - middle) < Math.abs(at - middle))) at = i + 1;
-  }
-  const cut = at === -1 ? Math.ceil(middle) : at;
-  return [handle.slice(0, cut), handle.slice(cut)];
+  return handle.length <= STAMP_LINE ? [handle] : breakHandle(handle);
 }
 
 /** The member stamp — their handle and real serial, in rotated crimson, set in two tiers as a

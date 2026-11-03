@@ -19,7 +19,7 @@
  *   beginning at its foot.
  */
 import {
-  balancedWidth, ceilingFor, emOf, filmLine, fitsAt, HOUSE_CEILING, lineWidth, linesAt, MAST_GAPS, MAST_LINES, nameLines,
+  balancedWidth, ceilingFor, creditName, emOf, filmLine, pairCreditLines, fitsAt, HOUSE_CEILING, lineWidth, linesAt, MAST_GAPS, MAST_LINES, nameLines,
   planWall, setLines, SHEET_FOOT, SNIPE_DEPTH, TYPE, WALL, wholeName, wholeSize, FOOT_TOP, TITLE_FLOOR, type TypeKey, type WallPlan,
 } from '../measure';
 import { KEEP_OFF, LOG_BILL, ONE_SHEET, STACK_BILL } from '../words';
@@ -372,6 +372,70 @@ describe('a name on a half bill never breaks a word mid-letter', () => {
     // the narrowest phone: under its poster; the widest, beside it
     expect(filmLine('The Godfather', planWall({ ...PHONES.se1, scale: 1, lineScale: 1 }).pair.room, 1, 89).beside).toBe(false);
     expect(filmLine('The Godfather', planWall({ ...PHONES.proMax, scale: 1, lineScale: 1 }).pair.room, 1, 89).beside).toBe(true);
+  });
+
+  // Set beside a portrait, a 320pt half held about eight letters: "@sajjadobaidi" lost its end there.
+  it('a member’s name of an ordinary length stands whole on its credit plate, at every phone and text size', () => {
+    const plate = (p: WallPlan) => p.pair.room - WALL.creditPad * 2;
+    for (const handle of ['@ana', '@morpho', '@sajjadobaidi', '@marguerite_moss', '@MARGUERITE_MOSS', '@abcdefghijklmno']) {
+      for (const phone of Object.values(PHONES)) {
+        for (const scale of [1, 1.12, 1.35, 2]) {
+          const room = plate(planWall({ ...phone, scale, lineScale: scale }));
+          const n = creditName(handle, room, scale);
+          // whole across its lines, at the type floor or above, each grown only as far as the plate's room
+          expect([phone.width, scale, handle, n.lines.map((l) => l.text).join(''), n.size >= 10]).toEqual([phone.width, scale, handle, handle, true]);
+          for (const l of n.lines) {
+            expect([phone.width, scale, l.text, l.cap >= 1, lineWidth(l.text, 'elite', n.size, l.cap, TYPE.credit.spacing) <= room + 0.5])
+              .toEqual([phone.width, scale, l.text, true, true]);
+          }
+          // one line on every phone but the narrowest
+          if (phone.width > 320) expect([phone.width, scale, handle, n.lines.length]).toEqual([phone.width, scale, handle, 1]);
+        }
+      }
+    }
+    const se1 = plate(planWall({ ...PHONES.se1, scale: 1, lineScale: 1 }));
+    // at its own size where it fits; a long one steps down only as far as it must
+    expect(creditName('@sajjadobaidi', se1, 1).size).toBe(TYPE.credit.size);
+    const wide = creditName('@MARGUERITE_MOSS', planWall({ ...PHONES.androidSmall, scale: 1, lineScale: 1 }).pair.room - WALL.creditPad * 2, 1);
+    expect([wide.lines.length, wide.size < TYPE.credit.size]).toEqual([1, true]);
+    // only a name too wide even at the floor is broken: after its own separator, never mid-letter-group
+    expect(creditName('@a_member_with_the_longest_handle', se1, 1).lines.map((l) => l.text)).toEqual(['@a_member_with_', 'the_longest_handle']);
+  });
+
+  // One line beside its portrait, a fifteen-letter name lost 10.5pt in a runner's column at 360pt.
+  it('a member’s name of an ordinary length stands whole on a filing’s byline, beside its portrait', () => {
+    for (const handle of ['@ana', '@sajjadobaidi', '@marguerite_moss', '@MARGUERITE_MOSS']) {
+      for (const phone of Object.values(PHONES)) {
+        for (const scale of [1, 1.12, 1.35, 2]) {
+          const plan = planWall({ ...phone, scale, lineScale: scale });
+          for (const row of [plan.switchRoom.lead, plan.switchRoom.runner]) {
+            const room = row - WALL.portrait - WALL.portraitGap;
+            const n = creditName(handle, room, scale);
+            expect([phone.width, scale, handle, n.lines.map((l) => l.text).join(''), n.size >= 10, n.lines.length <= 2])
+              .toEqual([phone.width, scale, handle, handle, true, true]);
+            for (const l of n.lines) {
+              expect([phone.width, scale, l.text, lineWidth(l.text, 'elite', n.size, l.cap, TYPE.credit.spacing) <= room + 0.5])
+                .toEqual([phone.width, scale, l.text, true]);
+            }
+          }
+        }
+      }
+    }
+    // the runners' columns at 360pt: the long name keeps its portrait, and is still whole
+    const narrow = planWall({ ...PHONES.androidSmall, scale: 1, lineScale: 1 });
+    expect(narrow.runners).toBe(true);
+    expect(creditName('@marguerite_moss', narrow.switchRoom.runner - WALL.portrait - WALL.portraitGap, 1).lines.map((l) => l.text).join('')).toBe('@marguerite_moss');
+  });
+
+  it('the pair’s two credit plates hold one count of name lines, the more either name needs', () => {
+    const room = (p: keyof typeof PHONES) => planWall({ ...PHONES[p], scale: 1, lineScale: 1 }).pair.room - WALL.creditPad * 2;
+    // a long name broken on the narrowest phone: its short twin keeps the second line too
+    expect(pairCreditLines(['marguerite_moss', 'vesper'], room('se1'), 1)).toBe(2);
+    expect(pairCreditLines(['vesper', 'a_member_with_the_longest_handle'], room('se1'), 1)).toBe(2);
+    // whole on one line wherever both are; a vacant half's missing name counts for nothing
+    expect(pairCreditLines(['marguerite_moss', 'vesper'], room('iphone14'), 1)).toBe(1);
+    expect(pairCreditLines([undefined, 'vesper'], room('se1'), 1)).toBe(1);
+    expect(pairCreditLines([undefined, undefined], room('se1'), 1)).toBe(1);
   });
 
   it('a quote and a stack’s name are given more lines in a narrower half, never fewer than at the widest', () => {

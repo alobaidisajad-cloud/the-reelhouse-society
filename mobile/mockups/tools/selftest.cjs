@@ -240,8 +240,23 @@ const CASES = {
   floor: [box('width:200px', T('font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;width:40px', 'CERTIFIED 2.1K', 0, ' data-fit-min="0.75"')), ALL('CUT')],
   // a label clipped by its cell, whose shrink cannot save it
   clip: [box('width:40px;overflow:hidden', T('font-size:12px;white-space:nowrap', 'CERTIFIED 2.1K', 0, ' data-fit-min="0.75"')), ALL('CUT')],
+  // a fifteen-letter handle in a one-line row too narrow for it: the name loses its end
+  namecut: [box('width:200px', T('font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;width:90px', '@CINEMA_PARADISO')), ALL('NAME')],
+  // the same row wide enough at every size: whole
+  namewhole: [box('width:360px', T('font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block', '@CINEMA_PARADISO', 1.35)), {}],
+  // a sentence shortened AFTER the name: the name is whole, the rest is a shortening
+  namefirst: [box('width:200px', T('font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;width:150px', '@ana kept the third reel for last, and the rain', 1.35)), {}],
+  // a name on the line a two-line clamp hides
+  namehidden: [box('width:200px', T('font-size:10px;line-height:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;width:150px', 'The long take that closes the third reel, seen again in the rain, was answered by @cinema_paradiso', 1.35)), ALL('NAME')],
+  // a name that does not shorten itself, run past the plate round it that clips: lost all the same
+  nameclipped: [box('width:200px', `<div style="width:90px;overflow:hidden;display:flex">${T('font-size:12px;white-space:nowrap;display:block', '@CINEMA_PARADISO')}</div>`),
+    Object.fromEntries(Object.keys(ALL('NAME')).map((p) => [p, ['CUT', 'NAME']]))],
+  // a whole name on a stamp turned 2°: its drawn box grows with it, and nothing is hidden
+  nameturned: [box('width:300px;padding:20px', `<div style="transform:rotate(-2deg);align-self:center;padding:7px 16px">${T('font-size:11px;letter-spacing:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden', '@MARGUERITE_MOSS', 1.35)}</div>`), {}],
+  // a thirty-letter handle, the longest sign-up takes, may end in an ellipsis
+  namelong: [box('width:200px', T('font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;width:90px', '@the_longest_handle_signup_take')), {}],
   // a count hung properly in a column with room: nothing to report
-  hangclean: [hung({ col: 80, count: '12' }), {}],
+  hangclean:[hung({ col: 80, count: '12' }), {}],
   // a count laid over its own icon (no offset past the icon's half)
   hangicon: [hung({ col: 80, count: '12', hangLeft: 0 }), EVERY],
   // a count whose box runs on into the NEXT column, and whose glyphs follow it
@@ -300,6 +315,29 @@ for (const [name, want] of [['escaped', ['CUT', 'WIDE']], ['held', []]]) {
   console.log(`${ok ? 'ok  ' : 'FAIL'}  wide-${name.padEnd(7)} ios@1 at 1024  want [${want}]  got [${got}]`);
 }
 fs.rmSync(WDIR, { recursive: true, force: true });
+
+// NAME asked for by name measures every handle at fifteen letters: a row that holds "@ana"
+// but not a long name is caught, though the plain run (above) passes it; an address is no name,
+// nor is a piece of one, nor a field's hint.
+const NDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'name-selftest-'));
+const row = (text) => box('width:200px', T('font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;width:90px', text, 1.35));
+fs.writeFileSync(path.join(NDIR, 'shortname.html'), row('@ana'));
+fs.writeFileSync(path.join(NDIR, 'address.html'), row('write to the_front_desk@house.example'));
+// the first piece of a name its screen split in two (the stamp): no handle ends in a separator
+fs.writeFileSync(path.join(NDIR, 'piece.html'), row('@the_longest_handle_'));
+// a field's hint names no one
+fs.writeFileSync(path.join(NDIR, 'hint.html'), `<div data-field="Watched with">${row('or @username')}</div>`);
+const njson = path.join(NDIR, 'report.json');
+const named = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', NDIR, '--passes', 'ios@1', '--kinds', 'NAME', '--json', njson], { encoding: 'utf8' });
+const nrep = fs.existsSync(njson) ? JSON.parse(fs.readFileSync(njson, 'utf8')) : {};
+if (!fs.existsSync(njson)) console.error(`layout.cjs wrote no NAME report (exit ${named.status}): ${`${named.stderr}${named.stdout}`.trim().split('\n').slice(-5).join('\n')}`);
+for (const [name, want] of [['shortname', ['NAME']], ['address', []], ['piece', []], ['hint', []]]) {
+  const got = [...new Set((nrep[`${name}@1`] ?? { found: null }).found?.map((x) => `${x.kind}${x.kind === 'NAME' ? ` ${x.text}` : ''}`) ?? ['NO REPORT'])];
+  const ok = JSON.stringify(got) === JSON.stringify(want.map((k) => `${k} @marguerite_moss`));
+  if (!ok) bad++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  name-${name.padEnd(9)} ios@1 lengthened  want [${want}]  got [${got}]`);
+}
+fs.rmSync(NDIR, { recursive: true, force: true });
 
 // What the touch check MEASURED: 10pt apart counts; 60pt apart or alone does not,
 // and requiring an unmeasured file fails the run.

@@ -22,7 +22,7 @@ import { KIND_RULE, nameOf, UNSPOKEN } from '@/src/components/dispatch/paper/pap
 import { excerptFor } from '@/src/components/dispatch/excerpt';
 import { readTimeForWords } from '@/src/components/dispatch/readTime';
 import { HouseLine, Mark, Person } from './parts';
-import { WALL, type WallPlan } from './measure';
+import { creditName, WALL, type WallPlan } from './measure';
 import { FILINGS_BILL } from './words';
 import type { WallFiling } from './wallRead';
 import { KeepOff } from './KeepOff';
@@ -45,8 +45,8 @@ const inkOf = (kind: string) => KIND_RULE[kind.toLowerCase() as keyof typeof KIN
 const kindLabel = (f: WallFiling) =>
   `✦ ${nameOf(f.kind)}${f.kind.toLowerCase() === 'dossier' ? ` · ${readTimeForWords(f.words)}` : ''}`;
 
-const Filing = memo(function Filing({ filing, place, lead, room, switchRoom, admin }: {
-  filing: WallFiling; place: number; lead: boolean; room: number;
+const Filing = memo(function Filing({ filing, place, lead, room, switchRoom, scale, admin }: {
+  filing: WallFiling; place: number; lead: boolean; room: number; scale: number;
   /** the byline row's width, where an admin's switch takes a line of its own */
   switchRoom: number;
   admin: boolean;
@@ -89,7 +89,7 @@ const Filing = memo(function Filing({ filing, place, lead, room, switchRoom, adm
       </PressableScale>
       <View style={[s.by, lead && s.byLead]}>
         {/* a full finger tall in its own row; its halo only sideways, and on the left no further than half its inset */}
-        <Person author={filing.author} style={s.byPerson} hitSlop={BY_HALO} />
+        <Person author={filing.author} portrait set={creditName(`@${filing.author.username}`, switchRoom - WALL.portrait - WALL.portraitGap, scale)} style={s.byPerson} hitSlop={BY_HALO} />
         <Mark author={filing.author} />
         {admin ? <KeepOff kind="post" id={filing.id} what="filing" room={switchRoom} /> : null}
       </View>
@@ -122,7 +122,7 @@ const Vacant = memo(function Vacant({ place, empty, anything, room }: { place: n
   );
 });
 
-export const FilingsBill = memo(function FilingsBill({ filings, plan, admin }: { filings: WallFiling[]; plan: WallPlan; admin: boolean }) {
+export const FilingsBill = memo(function FilingsBill({ filings, plan, scale, admin }: { filings: WallFiling[]; plan: WallPlan; scale: number; admin: boolean }) {
   const router = useRouter();
   const [lead, ...runners] = filings;
   const empty = (3 - filings.length) as 0 | 1 | 2 | 3;
@@ -149,12 +149,12 @@ export const FilingsBill = memo(function FilingsBill({ filings, plan, admin }: {
           </View>
         </PressableScale>
       </View>
-      {lead ? <Filing filing={lead} place={1} lead room={leadRoom} switchRoom={plan.switchRoom.lead} admin={admin} /> : null}
+      {lead ? <Filing filing={lead} place={1} lead room={leadRoom} switchRoom={plan.switchRoom.lead} scale={scale} admin={admin} /> : null}
       {runners.length ? (
         <View style={[s.runners, !plan.runners && s.runnersStacked]}>
           {runners.map((f, i) => (
             <View key={f.id} style={[plan.runners && s.runnerCell, i > 0 && (plan.runners ? s.runnerCellBeside : s.runnerCellBelow)]}>
-              <Filing filing={f} place={i + 2} lead={false} room={runnerRoom} switchRoom={plan.switchRoom.runner} admin={admin} />
+              <Filing filing={f} place={i + 2} lead={false} room={runnerRoom} switchRoom={plan.switchRoom.runner} scale={scale} admin={admin} />
             </View>
           ))}
         </View>
@@ -208,7 +208,10 @@ const s = StyleSheet.create({
     paddingLeft: WALL.filingPad + WALL.bylineInset, paddingRight: WALL.filingPad,
   },
   byLead: { paddingLeft: WALL.filingPad + NUM_W + NUM_GAP + WALL.bylineInset },
-  byPerson: { minHeight: 48 },
+  // The name keeps its width and the mark steps down a line, rather than the name ending
+  // short beside it; the name is planned to what its portrait leaves of the row (a
+  // fifteen-letter name, one line, lost 10.5pt in a runner's column at 360pt).
+  byPerson: { minHeight: 48, flexShrink: 0, maxWidth: '100%' },
   runners: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.sepiaBorder },
   runnersStacked: { flexDirection: 'column' },
   // beside only: stacked, a runner is as tall as its words

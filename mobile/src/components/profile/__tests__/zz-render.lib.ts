@@ -706,7 +706,8 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, text
     // With its base size, so the audit can hold it to the type floor at whatever
     // size it measures (the app's Text sets the floor at the size the phone draws).
     const fitBase = fit && typeof st.fontSize === 'number' ? ` data-fit-base="${st.fontSize}"` : '';
-    const capAttr = ` data-scale-cap="${cap}"${fit ? ` data-fit-min="${fit}"${fitBase}` : ''}`;
+    // and its testID, as a view's: a line its screen planned (the Lobby's credit-name) is left as set
+    const capAttr = ` data-scale-cap="${cap}"${fit ? ` data-fit-min="${fit}"${fitBase}` : ''}${typeof p.testID === 'string' ? ` data-t="${esc(p.testID)}"` : ''}`;
     // The harness holds text to its parent's width, but a Text with its OWN width keeps
     // it, as in Yoga (the ticket's rotated ADMIT ONE is 96pt in a 42pt stub).
     const ownWidth = st.width !== undefined && st.width !== null && st.width !== 'auto' ? ';max-width:none' : '';

@@ -15,7 +15,7 @@ import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { nav } from '@/src/utils/typedRouter';
 import { useSvgId } from '@/src/utils/svgId';
 import { initialOf } from '@/src/utils/text';
-import { ceilingOf, TYPE, type Face, type TypeKey } from './measure';
+import { ceilingOf, TYPE, WALL, type Face, type TypeKey } from './measure';
 import type { WallAuthor } from './wallRead';
 
 const FACE: Record<Face, string> = {
@@ -78,14 +78,17 @@ export const Avatar = memo(function Avatar({ author, size }: { author: WallAutho
 });
 
 /**
- * A member's portrait and name: ONE door to their file, a full finger tall with
- * its halo (PressableScale adds 15 on an axis under 48). Their rank's mark is
+ * A member's name, and on a filing's byline their portrait: ONE door to their file, a full
+ * finger tall with its halo (PressableScale adds 15 on an axis under 48). The name is set as the
+ * wall planned it (measure.ts, creditName), whole across one line or two. Their rank's mark is
  * drawn beside it by the caller — the Society's promise: "wherever it appears".
  */
-export const Person = memo(function Person({ author, size = 22, nameStyle, style, hitSlop }: {
+export const Person = memo(function Person({ author, set, portrait = false, style, hitSlop }: {
   author: WallAuthor;
-  size?: number;
-  nameStyle?: StyleProp<TextStyle>;
+  /** the planned name; `hold`, the lines a credit's twin takes, kept by unseen lines of one type */
+  set: { size: number; lines: readonly { text: string; cap: number }[]; hold?: number };
+  /** the portrait beside the name: a filing's byline has one, a credit plate's name the whole plate */
+  portrait?: boolean;
   /** a row that gives the name its own full finger (the filings' byline) */
   style?: StyleProp<ViewStyle>;
   hitSlop?: { top?: number; bottom?: number; left?: number; right?: number };
@@ -100,8 +103,16 @@ export const Person = memo(function Person({ author, size = 22, nameStyle, style
       accessibilityRole="link"
       accessibilityLabel={`@${author.username}${rank ? `, ${rank}` : ''}. Open their file.`}
     >
-      <Avatar author={author} size={size} />
-      <Text numberOfLines={1} style={[s.name, nameStyle]}>@{author.username}</Text>
+      {portrait ? <Avatar author={author} size={WALL.portrait} /> : null}
+      <View style={s.setName}>
+        {/* credit-name: planned for this name, so a drawing measures it as set, never with another name put in */}
+        {set.lines.map((l, i) => (
+          <Text key={i} testID="credit-name" numberOfLines={1} maxFontSizeMultiplier={l.cap} style={[s.name, { fontSize: set.size }]}>{l.text}</Text>
+        ))}
+        {Array.from({ length: Math.max(0, (set.hold ?? 0) - set.lines.length) }, (_, i) => (
+          <Text key={`held${i}`} numberOfLines={1} maxFontSizeMultiplier={set.lines[0]?.cap} style={[s.name, s.held, { fontSize: set.size }]} {...UNSPOKEN}>{' '}</Text>
+        ))}
+      </View>
     </PressableScale>
   );
 });
@@ -228,8 +239,11 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   initial: { fontFamily: fonts.display, color: colors.sepia },
-  person: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 24, flexShrink: 1, minWidth: 0 },
-  name: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 0.8, color: colors.parchment, flexShrink: 1 },
+  person: { flexDirection: 'row', alignItems: 'center', gap: WALL.portraitGap, minHeight: 24, flexShrink: 1, minWidth: 0 },
+  name: { ...typeStyle('credit'), color: colors.parchment, flexShrink: 1 },
+  setName: { flexShrink: 1, minWidth: 0 },
+  // a line kept for the twin plate's longer name: the same type, so the same height, unseen
+  held: { opacity: 0 },
   slab: {
     alignSelf: 'flex-start',
     paddingHorizontal: 9,

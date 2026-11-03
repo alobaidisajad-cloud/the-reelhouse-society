@@ -81,6 +81,15 @@ it('commits a new file and a deleted one by name', () => {
   expect(r.stdout).toBe('D\tsrc/b.ts\nA\tsrc/c.ts\n');
 });
 
+it('commits a renamed file by both its names', () => {
+  // the same words under a new name: git reads it as a rename
+  write('src/c.ts', 'b\n');
+  rmSync(join(repo, 'src', 'b.ts'));
+  const r = commit('--message', 'msg.txt', '--', 'src/b.ts', 'src/c.ts');
+  expect([r.status, r.stderr]).toEqual([0, '']);
+  expect(r.stdout).toBe('D\tsrc/b.ts\nA\tsrc/c.ts\n');
+});
+
 it('refuses with no paths, no message, or an empty message', () => {
   write('src/a.ts', 'a2\n');
   write('empty.txt', '  \n');

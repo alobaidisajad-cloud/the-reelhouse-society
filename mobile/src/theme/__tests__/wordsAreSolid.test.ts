@@ -56,6 +56,7 @@ const ALLOWED: Record<string, string> = {
   'src/components/profile/Achievements.tsx · glyphLocked': 'a locked honour’s glyph; its name is solid',
   'src/components/log/AuteurToolkit.tsx · axisValueUnrated': 'the — standing for an axis not yet rated',
   'app/stacks/[id].tsx · descMeasure': 'an unseen copy, at 0, that measures the description; never drawn',
+  'src/components/lobby/parts.tsx · held': 'an unseen space, at 0, holding the line a twin credit plate’s name takes; never a word',
   // ── PICTURES — exported images, never seen on this ground ───────────────
   'src/components/profile/TasteDNAExportCanvas.tsx · societyLabel': 'the Taste DNA export',
   'src/components/profile/TasteDNAExportCanvas.tsx · subtitle': 'the Taste DNA export',

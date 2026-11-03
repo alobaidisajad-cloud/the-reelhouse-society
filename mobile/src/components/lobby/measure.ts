@@ -28,6 +28,7 @@ import {
   RYE, RYE_WIDEST, ELITE, ELITE_WIDEST, COURIER_ITALIC, COURIER_ITALIC_WIDEST, SPECTRAL_ITALIC, SPECTRAL_ITALIC_WIDEST,
 } from '@/src/theme/faceAdvances';
 import { TYPE_FLOOR } from '@/src/constants/textScaling';
+import { breakHandle } from '@/src/utils/breakHandle';
 import { FILINGS_BILL, KEEP_OFF, LOG_BILL, ONE_SHEET, RANK_BILL, STACK_BILL, STATES, rankTicket } from './words';
 
 export type Face = 'rye' | 'elite' | 'courierItalic' | 'spectralItalic';
@@ -173,12 +174,14 @@ export const WALL = {
   filmGap: 10,      // between the poster and the film's name
   factsGap: 6,      // between the stack's count and SEE ALL, on one line
   slabPadX: 9,      // a slab's inset, each side
-  creditPad: 8,     // the credit block's inset, each side, inside the half's own
-  creditInset: 2,   // a credit block's second line (the mark, an admin's switch) stands in this far
+  creditPad: 8,     // the credit plate's inset, each side, inside the half's own
+  creditInset: 2,   // a credit plate's second line (the mark, an admin's switch) stands in this far
   filingPad: 14,    // a filing's inset
   filingNum: 22,    // a filing's number column
   filingNumGap: 10, // between the number and the words
   bylineInset: 2,   // a filing's byline stands in this far past the inset
+  portrait: 22,     // a byline's portrait
+  portraitGap: 7,   // between the portrait and the name
   ticketStub: 16,   // a ticket's torn stub
   ticketPad: 10,    // a ticket's inset
   ticketGap: 8,     // between two tickets, beside or above one another
@@ -225,6 +228,7 @@ export const TYPE = {
   darkName: { face: 'rye', size: 20, spacing: 0 },
   darkSub: { face: 'courierItalic', size: 11, spacing: 0 },
   signoff: { face: 'courierItalic', size: 11, spacing: 0 },
+  credit: { face: 'elite', size: 11, spacing: 0.8 },
 } as const satisfies Record<string, { face: Face; size: number; spacing: number }>;
 
 export type TypeKey = keyof typeof TYPE;
@@ -551,6 +555,28 @@ export function filmLine(title: string, room: number, scale: number, reelsW: num
   if (there.whole && there.cap >= Math.min(scale, HOUSE_CEILING)) return { ...there, beside: true, reelsBeside, lines: 2 };
   return { ...wholeName(text, t.face, t.size, t.size, 3, room, scale, t.spacing), beside: false, reelsBeside, lines: 3 };
 }
+
+/**
+ * A member's handle on a half's credit plate: across the plate, on one line, at its own size, or
+ * where that is too wide, half a point at a time down to the type floor (wholeName). Only a
+ * handle too wide even there is broken in two, after its own separator (breakHandle): on a
+ * 320pt half, a wide one of fifteen letters. Each line grows only as far as its room. Set beside
+ * a portrait, a 320pt half held about eight letters: "@sajjadobaidi" lost its end there.
+ * A filing's byline sets its name by the same rule, in what its portrait leaves of the row.
+ */
+export function creditName(handle: string, room: number, scale: number) {
+  const t = TYPE.credit;
+  const one = wholeName(handle, t.face, t.size, TYPE_FLOOR, 1, room, scale, t.spacing);
+  if (one.whole) return { size: one.size, lines: [{ text: handle, cap: one.cap }] };
+  return { size: t.size, lines: breakHandle(handle).map((text) => ({ text, cap: ceilingOf('credit', text, room) })) };
+}
+
+/**
+ * The name lines both credit plates of the pair hold: the more either name needs. The two stand
+ * side by side, so they are set as twins, a short name's plate keeping the line a long one took.
+ */
+export const pairCreditLines = (handles: readonly (string | undefined)[], room: number, scale: number) =>
+  Math.max(1, ...handles.filter((h): h is string => !!h).map((h) => creditName(`@${h}`, room, scale).lines.length));
 
 /** A name on a half: four lines in a half of 150 or more, as many more as keep its words. */
 export const nameLines = (room: number) => Math.max(4, Math.ceil((4 * 150) / room));

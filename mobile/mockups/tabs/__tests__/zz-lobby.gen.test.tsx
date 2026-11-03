@@ -80,7 +80,9 @@ const member = (username: string, role = 'user') => ({ id: `m-${username}`, user
 const WALL: Wall = {
   edition: '2026-09-30',
   log: {
-    id: 'log-1', rating: 4, author: member('morpho', 'auteur'),
+    // long, ordinary handles (fifteen letters), here and on a runner filing: the wall plans a name
+    // to its room, and a planned name is drawn as set, never with another put in its place
+    id: 'log-1', rating: 4, author: member('marguerite_moss', 'auteur'),
     words: 'Brando plays power as tiredness. The quiet scenes are the loud ones.',
     film: { id: canon[1].id, title: canon[1].title, poster_path: canon[1].poster_path },
   },
@@ -91,7 +93,7 @@ const WALL: Wall = {
   filings: [
     { id: 'post-1', kind: 'dossier', title: 'A Love Letter to the Intermission', words: 4800, author: member('sajjadobaidi', 'auteur'),
       text: 'There is a moment in the second act where the camera stops pretending it is not watching, and so do we.' },
-    { id: 'post-2', kind: 'take', title: 'Remakes Are a Confession', words: 120, author: member('marguerite'),
+    { id: 'post-2', kind: 'take', title: 'Remakes Are a Confession', words: 120, author: member('cassius_vallory'),
       text: 'Every remake admits the studio has run out of nerve before it has run out of money.' },
     { id: 'post-3', kind: 'seeking', title: null, words: 40, author: member('halloway', 'archivist'),
       text: 'Looking for a silent film that works on someone who swears they hate silent films.' },

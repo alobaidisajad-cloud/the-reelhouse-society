@@ -328,8 +328,10 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 <View style={st.manuscriptHeader}>
                     <Feather size={10} color={colors.sepia} strokeWidth={1.5} />
                     {/* The frame does not repeat the movement it sits under, so
-                        this fits at a size that can be read. */}
-                    <Text style={st.manuscriptHeaderText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                        this fits at a size that can be read. The member's name takes a
+                        second line where it cannot share the first: at the type floor on
+                        a 320pt phone a fifteen-letter name lost 7pt on one. */}
+                    <Text style={st.manuscriptHeaderText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
                         FROM THE DESK OF @{deskName}
                     </Text>
                 </View>

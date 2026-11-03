@@ -11,6 +11,14 @@ if (process.env.MOCKUPS_CAPTURE) {
   require('./mockups/capture').captureAfterEach();
 }
 
+/** A generator's screen that read the text size is drawn at every large size (mockups/paths.ts). */
+if (process.env.MOCKUPS) {
+  afterAll(() => {
+    const missing = require('./mockups/paths').unsizedScreens() as string[];
+    if (missing.length) throw new Error(`read the text size, but not drawn at it (loop LAYOUTS with atLayout): ${missing.join(', ')}`);
+  });
+}
+
 const G = globalThis as Record<string, unknown>;
 const gaps = () => G.__mockGaps as string[] | undefined;
 

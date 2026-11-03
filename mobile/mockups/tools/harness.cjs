@@ -260,4 +260,23 @@ async function shrinkToFit(page) {
   }, fitMinOf.toString());
 }
 
-module.exports = { chromium, open, shrinkToFit, fitMinOf, screens, fonts, GROWTH, HOUSE, WIDTH, HEIGHT, MOBILE };
+/**
+ * Every @handle on the page is first rewritten to fifteen letters
+ * (in its own case), so each place a name is shown is measured (layout.cjs `--kinds NAME`) or photographed (shoot.cjs `--long-names`) with a long, ordinary
+ * one, whatever name its fixture or test happened to choose. Only a WHOLE handle: one never
+ * ends in a separator (sign-up refuses it), so a piece of a name its screen split in two
+ * (the stamp's "@A_MEMBER_") is left as it is. Nor a field's words: a placeholder is a hint
+ * ("or @username…"), and what is typed scrolls in its field. Nor a name its screen planned
+ * from its own letters (the Lobby's credit-name): another name put in after the plan is a
+ * layout the phone never draws; that one is drawn from its generator's long names instead.
+ */
+const STAND_IN = 'marguerite_moss';
+function longNames(standIn) {
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    if (n.parentElement?.closest('[data-field], [data-t="credit-name"]')) continue;
+    n.data = n.data.replace(/(^|[^\w@])@([A-Za-z0-9]+(?:[_.][A-Za-z0-9]+)*)(?!\w)/g,
+      (_, pre, h) => `${pre}@${/[A-Z]/.test(h) && h === h.toUpperCase() ? standIn.toUpperCase() : standIn}`);
+  }
+}
+module.exports = { chromium, open, shrinkToFit, fitMinOf, screens, longNames, STAND_IN, fonts, GROWTH, HOUSE, WIDTH, HEIGHT, MOBILE };

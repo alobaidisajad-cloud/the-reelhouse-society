@@ -17,8 +17,8 @@ const { existsSync, readFileSync } = require('fs');
 const { resolve } = require('path');
 
 const git = (args, opts = {}) => execFileSync('git', args, { encoding: 'utf8', ...opts });
-/** Every staged path, from the top of the repo. */
-const staged = () => git(['diff', '--cached', '--name-only', '-z']).split('\0').filter(Boolean);
+/** Every staged path, from the top of the repo: a renamed file by both its names, not its new one alone. */
+const staged = () => git(['diff', '--cached', '--no-renames', '--name-only', '-z']).split('\0').filter(Boolean);
 /** A path as the repo names it, from the top. */
 const fromTop = (paths) => git(['ls-files', '--full-name', '--error-unmatch', '--', ...paths], { stdio: ['ignore', 'pipe', 'ignore'] })
   .split('\n').filter(Boolean);
@@ -64,7 +64,7 @@ function main() {
     refuse(`named but brings no change: ${unchanged.join(', ')} (nothing was committed; the index is as it was)`);
   }
 
-  process.stdout.write(git(['diff', '--cached', '--name-status']));
+  process.stdout.write(git(['diff', '--cached', '--no-renames', '--name-status']));
   const commit = spawnSync('git', ['commit', '-q', '-F', resolve(message)], { stdio: 'inherit' });
   process.exit(commit.status ?? 1);
 }

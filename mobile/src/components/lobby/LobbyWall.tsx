@@ -33,7 +33,7 @@ import { LogBill, StackBill, VacantLogBill, VacantStackBill } from './PairBills'
 import { FilingsBill } from './FilingsBill';
 import { RankBill } from './RankBill';
 import { HouseLine } from './parts';
-import { planWall, WALL, type WallPlan } from './measure';
+import { pairCreditLines, planWall, WALL, type WallPlan } from './measure';
 import { SIGNOFF, STATES } from './words';
 import { PROGRAMME_KEY, WALL_KEY, editionDayOf, useFeature, useLobbyWall, useProgramme, type Wall } from './wallRead';
 
@@ -95,6 +95,8 @@ export const LobbyWall = memo(function LobbyWall() {
   // the wall was read once and kept, and the last reading failed: say so, keep the wall
   const keptButStale = wall.isError && wall.data !== undefined;
   const w = wall.data;
+  // the pair's two credit plates hold one count of name lines, so they stand as twins
+  const creditLines = pairCreditLines([w?.log?.author.username, w?.stack?.author.username], plan.pair.room - WALL.creditPad * 2, scale);
 
   return (
     <View style={[s.wall, { width: plan.wallW }]}>
@@ -113,10 +115,10 @@ export const LobbyWall = memo(function LobbyWall() {
         <>
           {/* The wall was read, full or vacant: never its shapes or its failure. */}
           <View style={s.pair} testID="lobby-wall-hung">
-            {w.log ? <LogBill log={w.log} plan={plan} scale={scale} admin={admin} /> : <VacantLogBill plan={plan} />}
-            {w.stack ? <StackBill stack={w.stack} plan={plan} scale={scale} admin={admin} /> : <VacantStackBill plan={plan} />}
+            {w.log ? <LogBill log={w.log} plan={plan} scale={scale} admin={admin} creditLines={creditLines} /> : <VacantLogBill plan={plan} />}
+            {w.stack ? <StackBill stack={w.stack} plan={plan} scale={scale} admin={admin} creditLines={creditLines} /> : <VacantStackBill plan={plan} />}
           </View>
-          <FilingsBill filings={w.filings} plan={plan} admin={admin} />
+          <FilingsBill filings={w.filings} plan={plan} scale={scale} admin={admin} />
         </>
       )}
       <RankBill plan={plan} viewer={viewer} />

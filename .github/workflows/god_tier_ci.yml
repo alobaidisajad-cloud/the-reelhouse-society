@@ -590,6 +590,9 @@ jobs:
           node mockups/tools/layout.cjs --src mockups/out/ci --width ${{ matrix.width }} \
             --allow-short mockups/shortened-on-purpose.txt > layout.txt 2>&1
           rc=$?
+          # every member's name made fifteen letters long, and shown whole wherever it is
+          node mockups/tools/layout.cjs --src mockups/out/ci --width ${{ matrix.width }} --kinds NAME \
+            --allow-name mockups/names-shortened-on-purpose.txt >> layout.txt 2>&1 || rc=1
           cat layout.txt
           [ $rc -eq 0 ] || node e2e/annotate.mjs "A word does not fit at ${{ matrix.width }}pt" layout.txt error --drop 'clean +\('
           exit $rc
@@ -758,6 +761,19 @@ jobs:
           rc=$?
           grep -E "^\s+(STEAL|SMALL|NAMELESS|UNSAID|ORDER|UNDER|SHADOW)|finding|CLEAN" captures.txt
           [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, size, name, reading-order, bar or shadow fault (part ${{ matrix.part }} of 3)" captures.txt error --drop 'clean +\('
+          exit $rc
+
+      # Every handle a test draws, made fifteen letters long (a long, ordinary name;
+      # sign-up allows thirty), shown whole at every text size the app allows.
+      - name: Every member's name whole, at every text size, on every screen of this part
+        working-directory: ./mobile
+        run: |
+          set +e
+          node mockups/tools/layout.cjs --src mockups/out/captured --kinds NAME \
+            --allow-name mockups/names-shortened-on-purpose.txt > names.txt 2>&1
+          rc=$?
+          grep -E "^\s+NAME|finding|CLEAN" names.txt
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A member's name is cut short on a screen the tests build (part ${{ matrix.part }} of 3)" names.txt error --drop 'clean +\('
           exit $rc
 
       - name: Keep this part's measured controls and its record

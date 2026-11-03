@@ -685,6 +685,16 @@ if (process.env.MOCKUPS_CAPTURE || process.env.MOCKUPS) {
 // The drawings themselves: every entrance is drawn arrived, as a member sees the page once it
 // has played. Drawn at its first frame it is invisible, and the measures skip what cannot be seen.
 if (process.env.MOCKUPS) {
+  // A read of the text size is noted, so a screen that read it is drawn at the large sizes too
+  // (mockups/paths.ts, unsizedScreens).
+  jest.mock('@/src/hooks/useTextScale', () => {
+    const actual = jest.requireActual('@/src/hooks/useTextScale');
+    const noted = <A extends unknown[]>(read: (...a: A) => number) => (...a: A) => {
+      require('./mockups/paths').drawing.readSize = true;
+      return read(...a);
+    };
+    return { ...actual, useTextScale: noted(actual.useTextScale), useLineScale: noted(actual.useLineScale) };
+  });
   jest.mock('@/src/hooks/useArrival', () => {
     const actual = jest.requireActual('@/src/hooks/useArrival');
     return {

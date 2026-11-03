@@ -83,6 +83,13 @@ export function readFixture<T = unknown>(file: string): T {
 }
 
 /**
+ * What a generator drew, for `unsizedScreens`. `readSize` is set by every read of
+ * the text size (useTextScale, useLineScale: jest.setup.ts) and taken by the next
+ * screen written.
+ */
+export const drawing = { readSize: false, sized: new Set<string>(), written: new Set<string>() };
+
+/**
  * Writes only when a drawing was asked for: the plates that also run in the
  * ordinary suite would otherwise lay unmeasured copies over the measured ones.
  */
@@ -90,4 +97,18 @@ export function writeScreen(name: string, html: string): void {
   if (!RENDERING) return;
   mkdirSync(OUT, { recursive: true });
   writeFileSync(join(OUT, `${name}.html`), html, 'utf8');
+  if (drawing.readSize && !name.includes('@')) drawing.sized.add(name);
+  drawing.written.add(name);
+  drawing.readSize = false;
+}
+
+/**
+ * The large-size layouts missing for a screen that read the text size. Such a screen
+ * puts a box, or a line, where the size decides; grown by CSS from its size-1 drawing
+ * it is measured as it is never drawn (the byline stacks above the designed size, and
+ * the Reel's drawing kept it on one line at every size).
+ */
+export function unsizedScreens(): string[] {
+  return [...drawing.sized].flatMap((n) => LAYOUTS.filter((l) => l.suffix).map((l) => `${n}${l.suffix}`))
+    .filter((n) => !drawing.written.has(n));
 }

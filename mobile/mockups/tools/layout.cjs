@@ -19,6 +19,9 @@
  *            see them.
  *   UNDER    a line in a scroller that something fixed (a docked bar) covers at
  *            the top of the scroll and still covers scrolled to the end;
+ *   NAME     a member's @handle of 3 to 15 letters, in a text the phone shortens,
+ *            loses letters: a name of ordinary length is always shown whole. Asked
+ *            for by name (`--kinds NAME`), every handle is first made fifteen long.
  *
  * And every control (a pressable, marked by the render lib with its hitSlop):
  *
@@ -59,13 +62,13 @@
  *
  *   node mockups/tools/layout.cjs [--src DIR] [--only a,b] [--skip c,d]
  *     [--passes ios@1,android@2] [--width 360] [--kinds STEAL,NAMELESS] [--shorts]
- *     [--json OUT] [--sites OUT] [--require FILE] [--allow FILE] [--allow-short FILE]
+ *     [--json OUT] [--sites OUT] [--require FILE] [--allow FILE] [--allow-short FILE] [--allow-name FILE]
  *   exits 1 when anything is found, and 2 when there is nothing to measure: no
  *   screen, or an --only name with no file.
  */
 const fs = require('fs');
 const path = require('path');
-const { chromium, open, shrinkToFit, fitMinOf, screens, MOBILE, WIDTH } = require('./harness.cjs');
+const { chromium, open, shrinkToFit, fitMinOf, screens, longNames, STAND_IN, MOBILE, WIDTH } = require('./harness.cjs');
 const { lostFiles } = require('./required.cjs');
 
 const args = process.argv.slice(2);
@@ -113,6 +116,12 @@ const readAllow = (flag) => (opt(flag) ? fs.readFileSync(opt(flag), 'utf8').spli
 const SMALL_ALLOW = readAllow('allow'); // controls SMALL does not report
 // Texts that may end short at their floor: content (a film's title), never house copy.
 const SHORT_ALLOW = readAllow('allow-short');
+// Names that may end short: a one-line preview of words shown whole a tap away, never the name a row is for.
+const NAME_ALLOW = readAllow('allow-name');
+const nameAllowed = (x) => {
+  const [file, line] = (x.site ?? '').split(/:(?=\d+$)/);
+  return NAME_ALLOW.some((a) => a.file === file && (!a.label || new RegExp(a.label).test(x.said)) && (!a.lines || a.lines.includes(Number(line))));
+};
 
 /**
  * What both page passes need, defined ONCE as real code and installed in the
@@ -151,7 +160,69 @@ function pageHelpers() {
       const r = document.createRange(); r.selectNodeContents(e);
       return [...r.getClientRects()].filter((q) => q.width > 0.5 && q.height > 0.5);
     };
-    return { phone, opacityOf, truncates, texts, rectOf, parked, linesOf };
+    // NAME: a member's handle of ordinary length (3 to 15 letters; sign-up allows 30)
+    // whose own letters fall past what the phone shows of it: past its own box where the
+    // text shortens itself, or past a box round it that clips (a plate overflowing hid
+    // "@marguerite_m"). The one word a row exists to say, lost. Judged on the handle's
+    // letters, not the text: a sentence shortened after the name keeps it.
+    const namesCut = (e) => {
+      // a field's words are a hint or what is being typed, scrolled in the field: never a name shown
+      if (e.closest('[data-field]')) return [];
+      const found = [];
+      for (const n of e.childNodes) {
+        if (n.nodeType !== 3) continue;
+        // a whole handle, as the rewrite reads one (harness.cjs, longNames)
+        for (const m of n.data.matchAll(/(^|[^\w@])(@[A-Za-z0-9]+(?:[_.][A-Za-z0-9]+)*)(?!\w)/g)) {
+          if (m[2].length >= 4 && m[2].length <= 16) found.push([n, m]);
+        }
+      }
+      if (!found.length) return [];
+      // Each edge as drawn on the page: a turned stamp's box and its name grow alike (its box's
+      // own height against its name's drawn one read a whole name, turned 2°, as a hidden line).
+      const cs = getComputedStyle(e);
+      let right = Infinity; let bottom = Infinity;
+      if (truncates(e)) {
+        const box = e.getBoundingClientRect();
+        right = box.right - parseFloat(cs.borderRightWidth) - parseFloat(cs.paddingRight);
+        bottom = box.bottom - parseFloat(cs.borderBottomWidth) - parseFloat(cs.paddingBottom);
+      }
+      // up to a scroller or a rail: past its edge is reached by scrolling; the window's own
+      // sides (the reading column) are OFF's to judge
+      for (let a = e.parentElement; a && !a.classList.contains('phone'); a = a.parentElement) {
+        if (a.classList.contains('vscroll') || a.classList.contains('hscroll')) break;
+        if (a.dataset.frame === 'column') continue;
+        const ac = getComputedStyle(a);
+        const b = a.getBoundingClientRect();
+        if (ac.overflowX !== 'visible') right = Math.min(right, b.right - parseFloat(ac.borderRightWidth));
+        if (ac.overflowY !== 'visible') bottom = Math.min(bottom, b.bottom - parseFloat(ac.borderBottomWidth));
+      }
+      const out = [];
+      for (const [n, m] of found) {
+        const g = document.createRange();
+        g.setStart(n, m.index + m[1].length); g.setEnd(n, m.index + m[1].length + m[2].length);
+        const r = g.getBoundingClientRect();
+        const dx = r.right - right; const dy = r.bottom - bottom;
+        if (dx > 0.75 || dy > 0.75) {
+          const site = e.closest('[data-src]')?.dataset.src;
+          out.push({ kind: 'NAME', text: m[2] + (site ? ` [${site}]` : ''), size: parseFloat(cs.fontSize), by: dx > 0.75 ? `${dx.toFixed(1)}pt cut` : 'on a hidden line',
+            site, said: e.textContent.trim().replace(/\s+/g, ' ') });
+        }
+      }
+      return out;
+    };
+    return { phone, opacityOf, truncates, texts, rectOf, parked, linesOf, namesCut };
+}
+
+/** NAME alone: the page as the phone draws it (shrunk to fit), and only its names read. */
+async function namesOnly(page) {
+  await page.addScriptTag({ content: `window.RN = (${pageHelpers})();` });
+  await shrinkToFit(page);
+  return page.evaluate(() => {
+    const { opacityOf, texts, rectOf, parked, namesCut } = window.RN;
+    const live = texts.filter((e) => opacityOf(e) > 0.05 && getComputedStyle(e).visibility !== 'hidden');
+    const found = live.filter((e) => !parked(rectOf(e))).flatMap(namesCut);
+    return { found, texts: texts.length, invisible: texts.length - live.length, measured: [] };
+  });
 }
 
 async function audit(page) {
@@ -211,8 +282,8 @@ async function audit(page) {
 
   // 3 · the faults, on the page as the phone draws it.
   return page.evaluate(([SHORTS, ALLOW, SHORT_OK]) => {
-    const { phone, opacityOf, truncates, texts, rectOf, parked, linesOf } = window.RN;
-    const runs = [...document.querySelectorAll('[data-run]')].map((e) => [e, Number(e.dataset.run)]);
+    const { phone, opacityOf, truncates, texts, rectOf, parked, linesOf, namesCut } = window.RN;
+    const runs =[...document.querySelectorAll('[data-run]')].map((e) => [e, Number(e.dataset.run)]);
     const found = [];
     const live = texts.filter((e) => opacityOf(e) > 0.05 && getComputedStyle(e).visibility !== 'hidden');
     const invisible = texts.length - live.length;
@@ -283,6 +354,7 @@ async function audit(page) {
           found.push({ kind: 'CUT', text: say(e), size: parseFloat(getComputedStyle(e).fontSize), by: `${Math.min(clamp, total) - shown} of ${Math.min(clamp, total)} lines under its box` });
         }
       }
+      found.push(...namesCut(e));
       // SHORT: fits only because the phone cuts it. Not a fault: only a reader can
       // tell a title ellipsising (design) from a label losing its count.
       if (SHORTS && truncates(e)) {
@@ -770,13 +842,15 @@ async function audit(page) {
   for (const name of names) {
     for (const { platform, f } of PASSES) {
       const page = await open(browser, path.join(SRC, name + '.html'), { factor: f, platform, width: PHONE_W });
+      if (KINDS?.includes('NAME')) await page.evaluate(longNames, STAND_IN);
       // The whole page in view, so "which text is on top here" can be asked
       // anywhere on it, not only in the first screenful.
       const h = await page.evaluate(() => document.documentElement.scrollHeight);
       await page.setViewportSize({ width: PHONE_W, height: Math.min(h, 16000) });
-      const r = await audit(page);
+      const r = KINDS?.length === 1 && KINDS[0] === 'NAME' ? await namesOnly(page) : await audit(page);
       // SMALL is reported only when asked for by name (see the check).
-      r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID' && x.kind !== 'ORDER' && x.kind !== 'BENEATH' && x.kind !== 'COLOUR'));
+      r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID' && x.kind !== 'ORDER' && x.kind !== 'BENEATH' && x.kind !== 'COLOUR'))
+        .filter((x) => x.kind !== 'NAME' || !nameAllowed(x));
       await page.close();
       // iOS keeps the plain key, so reports written before Android was measured still compare.
       report[platform === 'ios' ? `${name}@${f}` : `${name}@${platform}-${f}`] = r;

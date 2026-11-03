@@ -5,11 +5,12 @@
  * too wide for a line breaks between its words, the stack's count stands over
  * SEE ALL, and a film's name too wide beside its poster goes under it.
  * ─────────────────────────────────────────────────────────────────────────────
- * The member's name, portrait and rank mark stand in a CREDIT BLOCK at each
- * bill's foot, printed in the bill's own ink with the stock round it: the rank
- * mark (RankBadge) is made for a dark ground — the Auteur's plate is a wash over
+ * The member's name and rank mark stand on a CREDIT PLATE at each bill's foot,
+ * printed in the bill's own ink with the stock round it: the rank mark
+ * (RankBadge) is made for a dark ground — the Auteur's plate is a wash over
  * near-black, the Archivist's a hairline with no ground at all — and on paper or
- * brass it could not be read.
+ * brass it could not be read. Both plates are set alike, the name on one line
+ * across the plate, the mark on the next.
  *
  * No counts: the Lobby names the honoured; the log's own page counts them.
  */
@@ -26,7 +27,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { Halftone, HouseLine, Mark, Person, QuoteMark, Rays, Slab, typeStyle } from './parts';
-import { balancedWidth, filmLine, nameLines, quoteSize, WALL, wholeName, type WallPlan } from './measure';
+import { balancedWidth, creditName, filmLine, nameLines, quoteSize, WALL, wholeName, type WallPlan } from './measure';
 import { LOG_BILL, STACK_BILL } from './words';
 import type { WallLog, WallStack } from './wallRead';
 import { KeepOff } from './KeepOff';
@@ -35,13 +36,27 @@ import { counted } from '@/src/utils/counted';
 /** Between the credit's name and its mark's line. */
 const CREDIT_GAP = 6;
 
-/** The credit block: a member's portrait, name and rank mark, printed in ink on the bill. */
-const Credit = memo(function Credit({ author, keepOff }: { author: WallLog['author']; keepOff?: React.ReactNode }) {
+/**
+ * The credit plate: a member's name and rank mark, printed in ink at the bill's foot. The name is
+ * typeset across the plate as the wall planned it (creditName): no portrait, whose room beside a
+ * 320pt half left a name about eight letters.
+ */
+const Credit = memo(function Credit({ author, room, scale, lines, keepOff }: {
+  author: WallLog['author'];
+  /** the half's room, the plate's own inset not yet taken */
+  room: number;
+  scale: number;
+  /** the name lines both plates of the pair hold (pairCreditLines) */
+  lines: number;
+  keepOff?: React.ReactNode;
+}) {
   return (
     <View style={s.credit}>
+      {/* a fine brass rule inset from its edge, as an engraved plate's */}
+      <View style={s.plateRule} pointerEvents="none" />
       <View style={s.creditLine}>
         {/* its mark's line stands CREDIT_GAP below, where an admin's switch may be: half of that down */}
-        <Person author={author} hitSlop={{ bottom: CREDIT_GAP / 2 }} />
+        <Person author={author} set={{ ...creditName(`@${author.username}`, room - WALL.creditPad * 2, scale), hold: lines }} hitSlop={{ bottom: CREDIT_GAP / 2 }} style={s.creditName} />
       </View>
       <View style={[s.creditLine2, keepOff ? s.creditLine2Switch : null]}>
         <Mark author={author} />
@@ -71,16 +86,20 @@ const Lines = memo(function Lines({ lines, said, type, room, style, box }: {
   );
 });
 
-const Slogan = ({ lines, said, room, style }: {
+const Slogan = ({ lines, said, room, style, after }: {
   lines: readonly string[]; said: readonly string[]; room: number; style: StyleProp<TextStyle>;
-}) => <Lines lines={lines} said={said} type="slogan" room={room} style={style} box={s.slogan} />;
+  /** set straight after a centred body, which takes the free height itself */
+  after?: boolean;
+}) => <Lines lines={lines} said={said} type="slogan" room={room} style={style} box={[s.slogan, after && s.sloganAfter]} />;
 
 /** A rating's reels, beside or under the film's poster. */
 const REEL = 13;
 
 // ── THE FEATURED LOG ────────────────────────────────────────────────────────
-export const LogBill = memo(function LogBill({ log, plan, scale, admin }: {
+export const LogBill = memo(function LogBill({ log, plan, scale, admin, creditLines }: {
   log: WallLog; plan: WallPlan; scale: number; admin: boolean;
+  /** the name lines both credit plates hold */
+  creditLines: number;
 }) {
   const { pair } = plan;
   const room = pair.room;
@@ -149,7 +168,7 @@ export const LogBill = memo(function LogBill({ log, plan, scale, admin }: {
         {film.reelsBeside ? null : reels}
       </PressableScale>
       <Slogan lines={pair.log.slogan} said={LOG_BILL.slogan} room={room} style={s.sloganPaper} />
-      <Credit author={log.author} keepOff={admin ? <KeepOff kind="log" id={log.id} what="log" room={plan.switchRoom.credit} lines={pair.keepOff} /> : null} />
+      <Credit author={log.author} room={room} scale={scale} lines={creditLines} keepOff={admin ? <KeepOff kind="log" id={log.id} what="log" room={plan.switchRoom.credit} lines={pair.keepOff} /> : null} />
     </View>
   );
 });
@@ -163,8 +182,10 @@ const TURNED_W = FAN_W * Math.cos((FAN_TURN * Math.PI) / 180) + FAN_W * 1.5 * Ma
 /** The outer posters' shift from the middle: 30 at most, fanEdge clear of each edge. */
 const fanShift = (halfW: number) => Math.min(30, (halfW - WALL.fanEdge * 2 - TURNED_W) / 2);
 
-export const StackBill = memo(function StackBill({ stack, plan, scale, admin }: {
+export const StackBill = memo(function StackBill({ stack, plan, scale, admin, creditLines }: {
   stack: WallStack; plan: WallPlan; scale: number; admin: boolean;
+  /** the name lines both credit plates hold */
+  creditLines: number;
 }) {
   const { pair } = plan;
   const room = pair.room;
@@ -180,37 +201,41 @@ export const StackBill = memo(function StackBill({ stack, plan, scale, admin }: 
       <Halftone opacity={0.10} />
       <Rays color={colors.ink} strength={0.07} cx={room / 2 + WALL.halfPad} cy={130} radius={210} />
       <Slab lines={STACK_BILL.slab} ground={colors.ink} ink={colors.marqueeGold} room={pair.slabRoom} />
-      <PressableScale
-        style={s.fan}
-        onPress={open}
-        pressedScale={0.985}
-        haptic="selection"
-        accessibilityRole="link"
-        accessibilityLabel={`Featured stack: ${stack.title}, by @${stack.author.username}, ${counted(stack.films, 'film', 'films')}. Open the stack.`}
-      >
-        {FAN.map((f, i) => {
-          const p = order[i];
-          return (
-            <View key={i} style={[s.fanPoster, { zIndex: f.z, transform: [{ translateX: f.side * shift }, { rotate: `${f.turn}deg` }] }]}>
-              <RemoteImage uri={tmdb.poster(p?.poster_path, 'w185')} style={StyleSheet.absoluteFill} contentFit="cover" accessible={false} fallback={<Text style={s.void} {...UNSPOKEN} maxFontSizeMultiplier={1}>✦</Text>} />
-            </View>
-          );
-        })}
-      </PressableScale>
-      <PressableScale style={s.stackWords} onPress={open} haptic="selection" accessibilityRole="link"
-        accessibilityLabel={`${stack.title}. See all ${counted(stack.films, 'film', 'films')}.`}>
-        <Text numberOfLines={lines} maxFontSizeMultiplier={name.cap}
-          style={[s.stackName, { fontSize: name.size, lineHeight: Math.round(name.size * 1.12) }]}>
-          {stack.title}
-        </Text>
-        <View style={[s.facts, pair.factsStacked && s.factsStacked]}>
-          <Text numberOfLines={1} style={[typeStyle('stackFacts'), s.factText]} {...UNSPOKEN}>{STACK_BILL.films(stack.films)}</Text>
-          <HouseLine type="stackFacts" text={STACK_BILL.seeAll} room={pair.seeAllRoom}
-            style={[s.factText, pair.factsStacked && s.seeAllUnder]} spoken={false} />
-        </View>
-      </PressableScale>
-      <Slogan lines={pair.stack.slogan} said={STACK_BILL.slogan} room={room} style={s.sloganInk} />
-      <Credit author={stack.author} keepOff={admin ? <KeepOff kind="list" id={stack.id} what="stack" room={plan.switchRoom.credit} lines={pair.keepOff} /> : null} />
+      {/* the fan and the words stand centred in what the log's taller half leaves the stack */}
+      <View style={s.stackBody}>
+        <PressableScale
+          style={s.fan}
+          onPress={open}
+          pressedScale={0.985}
+          haptic="selection"
+          accessibilityRole="link"
+          accessibilityLabel={`Featured stack: ${stack.title}, by @${stack.author.username}, ${counted(stack.films, 'film', 'films')}. Open the stack.`}
+        >
+          {FAN.map((f, i) => {
+            const p = order[i];
+            return (
+              <View key={i} style={[s.fanPoster, { zIndex: f.z, transform: [{ translateX: f.side * shift }, { rotate: `${f.turn}deg` }] }]}>
+                <RemoteImage uri={tmdb.poster(p?.poster_path, 'w185')} style={StyleSheet.absoluteFill} contentFit="cover" accessible={false} fallback={<Text style={s.void} {...UNSPOKEN} maxFontSizeMultiplier={1}>✦</Text>} />
+              </View>
+            );
+          })}
+        </PressableScale>
+        {/* a full finger on its own; the fan stands 8 above: half of that, and no more */}
+        <PressableScale style={s.stackWords} hitSlop={{ top: 4 }} onPress={open} haptic="selection" accessibilityRole="link"
+          accessibilityLabel={`${stack.title}. See all ${counted(stack.films, 'film', 'films')}.`}>
+          <Text numberOfLines={lines} maxFontSizeMultiplier={name.cap}
+            style={[s.stackName, { fontSize: name.size, lineHeight: Math.round(name.size * 1.12) }]}>
+            {stack.title}
+          </Text>
+          <View style={[s.facts, pair.factsStacked && s.factsStacked]}>
+            <Text numberOfLines={1} style={[typeStyle('stackFacts'), s.factText]} {...UNSPOKEN}>{STACK_BILL.films(stack.films)}</Text>
+            <HouseLine type="stackFacts" text={STACK_BILL.seeAll} room={pair.seeAllRoom}
+              style={[s.factText, pair.factsStacked && s.seeAllUnder]} spoken={false} />
+          </View>
+        </PressableScale>
+      </View>
+      <Slogan lines={pair.stack.slogan} said={STACK_BILL.slogan} room={room} style={s.sloganInk} after />
+      <Credit author={stack.author} room={room} scale={scale} lines={creditLines} keepOff={admin ? <KeepOff kind="list" id={stack.id} what="stack" room={plan.switchRoom.credit} lines={pair.keepOff} /> : null} />
     </View>
   );
 });
@@ -290,18 +315,24 @@ const s = StyleSheet.create({
   reelsBelow: { marginTop: 8 },
   reelsRtl: { justifyContent: 'flex-end' },
   slogan: { marginTop: 'auto', paddingTop: 10 },
+  sloganAfter: { marginTop: 0 },
   sloganPaper: { color: colors.bloodReel, lineHeight: 15 },
   sloganInk: { color: colors.ink, lineHeight: 15 },
-  // a block printed in the bill's own ink, the stock round it: the mark keeps the dark ground it is made for
+  // a plate printed in the bill's own ink, the stock round it: the mark keeps the dark ground it is made for
   credit: {
     marginTop: 10, marginBottom: WALL.halfPad, paddingHorizontal: WALL.creditPad, paddingTop: 7, paddingBottom: 8,
     backgroundColor: colors.ink,
   },
-  creditLine: { flexDirection: 'row', alignItems: 'center', minHeight: 24 },
+  // the name's line: 18 tall, a full finger with the halo PressableScale gives it
+  creditLine: { flexDirection: 'row', alignItems: 'center', minHeight: 18 },
+  plateRule: { position: 'absolute', top: 3, left: 3, right: 3, bottom: 3, borderWidth: 1, borderColor: colors.sepiaBorder },
+  creditName: { minHeight: 18 },
   creditLine2: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: CREDIT_GAP, minHeight: 18, paddingLeft: WALL.creditInset },
-  // An admin's switch stands here: the name grows 12 down to 48 and the switch 2 up, so the
-  // line stands 14 below, where they meet (a member's Lobby, with no switch, keeps CREDIT_GAP).
-  creditLine2Switch: { marginTop: 14 },
+  // An admin's switch stands here: the name's 18 grows 15 down to 48 and the switch 2 up, so the
+  // line stands 17 below, where they meet (a member's Lobby, with no switch, keeps CREDIT_GAP).
+  creditLine2Switch: { marginTop: 17 },
+  // the free height shared above and below: centred, and never nearer the slab than the fan's own 12
+  stackBody: { marginTop: 'auto', marginBottom: 'auto' },
   fan: { height: 112, marginTop: 12, alignItems: 'center', justifyContent: 'flex-end' },
   fanPoster: {
     position: 'absolute', bottom: 4, width: FAN_W, height: FAN_W * 1.5,

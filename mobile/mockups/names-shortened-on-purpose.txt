@@ -1,0 +1,10 @@
+# Member's names that may end in "…" (mockups/tools/layout.cjs --kinds NAME --allow-name).
+#
+# A handle of ordinary length (up to fifteen letters) is shown whole wherever it is the thing
+# a row exists to say: a byline, a credit, a stamp, a list of members. It is fixed there, never
+# listed here. What is listed is a one-line PREVIEW whose words, the name among them, are shown
+# whole a tap away.
+#
+# <file> [/words pattern/] [@/source-line pattern/] — <why>
+src/components/log/LogIndexEntry.tsx /WITH @/ — the FILED row's value is a one-line preview of the section beneath it, the date and who it was watched with; opened, that section shows every companion's name whole, in the Watched With field and in a chip of its own
+src/components/log/LogSealBar.tsx /WITH @/ — the seal bar's one line is a preview of what the record holds, FILED · the date · who it was watched with; above it, in the form, every companion's name stands whole in the Watched With field and in a chip of its own
