@@ -24,6 +24,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { Text } from '@/src/components/text';
 import { colors, fonts } from '@/src/theme/theme';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { pictureUri } from '@/src/utils/outsideValues';
 
 /** The host answered that it does not have the picture: asking again changes nothing. */
 const NOT_THERE = /\b(404|410)\b|not found/i;
@@ -51,7 +52,9 @@ type RemoteProps = Common & {
  */
 type Phase = { uri: string; phase: 'failed' | 'waiting' | 'again' };
 
-export function RemoteImage({ uri, fallback, cachePolicy = 'memory-disk', onError, ...rest }: RemoteProps) {
+export function RemoteImage({ uri: given, fallback, cachePolicy = 'memory-disk', onError, ...rest }: RemoteProps) {
+  // An address of any scheme but the web's or this phone's is no picture.
+  const uri = pictureUri(given);
   // Kept by its address: a new address (a recycled row) is tried afresh.
   const [held, setHeld] = useState<Phase | null>(null);
   const phase = held && held.uri === uri ? held.phase : null;

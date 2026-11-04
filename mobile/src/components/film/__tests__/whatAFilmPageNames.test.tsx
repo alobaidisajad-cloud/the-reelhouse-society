@@ -176,7 +176,7 @@ describe('the player names what it plays', () => {
   });
 
   it('prints the label it is handed', () => {
-    const r = render(<TrailerModal visible videoId="abc" label="Behind the Odyssey" onClose={jest.fn()} />);
+    const r = render(<TrailerModal visible videoId="Odyssey_23x" label="Behind the Odyssey" onClose={jest.fn()} />);
     expect(r.getByText('Behind the Odyssey')).toBeTruthy();
     expect(r.queryByText('OFFICIAL TRAILER')).toBeNull();
   });

@@ -1,6 +1,7 @@
 {
   "why": "Each shard is one machine of e2e.yml flows job: what e2e/flow-history.mjs makes of e2e/flow-history.json (each part weighed by its 90th-percentile time over the measured runs; the launch and the keyboard probes on shard 1; each flow to the lightest shard, heaviest first; minutes = weight and a quarter). Read by e2e/shards.mjs and run-flows.sh; shards.test.ts and flowHistory.test.ts hold it.",
   "firstRuns": {
+    "trailer": "New on 2026-11-04 (WORKLIST P4.2): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
     "turned": "New on 2026-10-31 (WORKLIST P4.33): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
     "admin_second_key": "New on 2026-10-21 (WORKLIST P0.94): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list."
   },
@@ -9,34 +10,35 @@
       "keyboardProbes": true,
       "launchWithAnimations": true,
       "flows": [
-        "darkroom_search",
+        "browse_vault",
         "error_recovery",
-        "log_film_flow",
-        "lounge_flow"
+        "lounge_flow",
+        "offline_resilience"
       ],
-      "minutes": 31
+      "minutes": 33
     },
     {
       "flows": [
         "admin_second_key",
-        "auth_deep_link",
-        "browse_vault",
-        "flow_critical_path",
-        "lobby_wall_flow",
-        "login_flow"
-      ],
-      "minutes": 30
-    },
-    {
-      "flows": [
-        "auth_flow",
-        "boot_verification",
+        "darkroom_search",
         "film_log",
-        "offline_resilience",
+        "login_flow",
         "session_survives_restart",
         "turned"
       ],
-      "minutes": 30
+      "minutes": 33
+    },
+    {
+      "flows": [
+        "auth_deep_link",
+        "auth_flow",
+        "boot_verification",
+        "flow_critical_path",
+        "lobby_wall_flow",
+        "log_film_flow",
+        "trailer"
+      ],
+      "minutes": 33
     }
   ]
 }

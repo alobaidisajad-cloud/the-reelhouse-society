@@ -1,0 +1,30 @@
+appId: com.reelhouse.society
+---
+# A trailer plays (WORKLIST P4.2): the film's trailer opened from its tray, and
+# YouTube's player, served from its privacy-enhanced origin around a key of
+# YouTube's own shape, says it is ready within 20 s. TrailerModal draws what the
+# player said as an undrawn point: trailer-ready, or trailer-refused for an
+# error YouTube gave (153 is the page's origin refused; the device log's
+# trailer.refused line carries the code). No account needed.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "darkroom-tab"
+    timeout: 20000
+- runFlow: subflows/open_a_film.yaml
+- runFlow: subflows/open_the_stub.yaml
+- tapOn:
+    id: "film-act-trailer"
+- extendedWaitUntil:
+    visible:
+      id: "trailer-ready"
+    timeout: 20000
+- assertNotVisible:
+    id: "trailer-refused"
+- tapOn:
+    id: "trailer-close"
+- extendedWaitUntil:
+    notVisible:
+      id: "trailer-ready"
+    timeout: 5000

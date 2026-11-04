@@ -9,12 +9,21 @@ import { useOverlayTop } from '@/src/components/layout/navMetrics';
 import { WebView } from 'react-native-webview';
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
+import { youtubeKey } from '@/src/utils/outsideValues';
+import { e2eTrace } from '@/src/utils/e2eTrace';
+
+/** YouTube's privacy-enhanced origin: the player's page and its embed, and nothing else at the top. */
+export const PLAYER_ORIGIN = 'https://www.youtube-nocookie.com';
 
 // YouTube throws "Error 153 / video player configuration error" when its /embed
 // URL is loaded as the top document (no valid referrer/origin). The fix is to
 // serve a tiny HTML page — with a real baseUrl below — that hosts the embed in an
-// <iframe>, which gives YouTube the origin its embed validation requires.
-const buildEmbedHtml = (videoId: string) => `<!DOCTYPE html>
+// <iframe>, which gives YouTube the origin its embed validation requires. The key is
+// written into the page, so only a key of YouTube's own shape (youtubeKey) is ever given.
+// The picture waits for the member's tap to play. The page listens to the player as YouTube's
+// iframe API speaks (enablejsapi): it says it is listening, and passes on the player's ready
+// and its refusal (heardFromPlayer).
+const buildEmbedHtml = (key: string) => `<!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -25,16 +34,29 @@ const buildEmbedHtml = (videoId: string) => `<!DOCTYPE html>
 </style>
 </head>
 <body>
-  <iframe
-    src="https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&controls=1&playsinline=1&iv_load_policy=3&fs=1&color=white"
+  <iframe id="player"
+    src="${PLAYER_ORIGIN}/embed/${key}?enablejsapi=1&origin=${PLAYER_ORIGIN}&modestbranding=1&rel=0&controls=1&playsinline=1&iv_load_policy=3&fs=1&color=white"
     allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
     allowfullscreen>
   </iframe>
+<script>
+  var player = document.getElementById('player');
+  window.addEventListener('message', function (e) {
+    if (e.origin !== '${PLAYER_ORIGIN}' || !window.ReactNativeWebView) return;
+    var said; try { said = JSON.parse(e.data); } catch (_) { return; }
+    if (said && (said.event === 'onReady' || said.event === 'onError')) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ event: said.event, info: said.info }));
+    }
+  });
+  player.addEventListener('load', function () {
+    player.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '${PLAYER_ORIGIN}');
+  });
+</script>
 </body>
 </html>`;
 
 // Stops playback immediately by navigating the embed frame away — the parent
-// document (baseUrl youtube.com) may re-point its own iframe even cross-origin.
+// document may re-point its own iframe even cross-origin.
 const STOP_PLAYBACK_JS = `
   (function(){ try {
     var f = document.querySelectorAll('iframe');
@@ -42,6 +64,29 @@ const STOP_PLAYBACK_JS = `
   } catch(e){} })();
   true;
 `;
+
+/**
+ * What the player's page may load. The page itself stays on the player's origin (or blank,
+ * when it is stopped). iOS asks for every frame inside it too (isTopFrame false; Android asks
+ * for the page alone): YouTube's own frames load over https, and the page never leaves.
+ */
+export function playerMayLoad({ url, isTopFrame }: { url: string; isTopFrame?: boolean }): boolean {
+  if (url === 'about:blank' || url === PLAYER_ORIGIN || url.startsWith(`${PLAYER_ORIGIN}/`)) return true;
+  return isTopFrame === false && url.startsWith('https://');
+}
+
+/**
+ * What the player said, as the page passes it on: ready, or a refusal by YouTube's error code
+ * (153: the page's origin refused; 100: no such video; 101 and 150: not to be played here).
+ * Anything else the page is sent is nothing.
+ */
+export function heardFromPlayer(data: string): { said: 'ready' } | { said: 'refused'; code: number | null } | null {
+  let m: { event?: unknown; info?: unknown };
+  try { m = JSON.parse(data); } catch { return null; }
+  if (m?.event === 'onReady') return { said: 'ready' };
+  if (m?.event === 'onError') return { said: 'refused', code: typeof m.info === 'number' ? m.info : null };
+  return null;
+}
 
 /** A video as TMDB lists it: the player names it by what it is. */
 export interface Footage { key: string; name?: string; type?: string }
@@ -62,12 +107,16 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
     const closeTop = useOverlayTop(false);
     const [shouldRender, setShouldRender] = useState(visible);
     const webviewRef = useRef<WebView>(null);
+    const key = youtubeKey(videoId);
+    // What the player said of this play: the sealed run waits for 'ready' (trailer.yaml).
+    const [said, setSaid] = useState<'ready' | 'refused' | null>(null);
 
     useEffect(() => {
         const wv = webviewRef.current;
         let timer: ReturnType<typeof setTimeout>;
         if (visible) {
             setShouldRender(true);
+            setSaid(null);
         } else {
             wv?.injectJavaScript(STOP_PLAYBACK_JS);
             timer = setTimeout(() => setShouldRender(false), 300);
@@ -78,13 +127,13 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
         };
     }, [visible]);
 
-    if (!shouldRender || !videoId) return null;
+    if (!shouldRender || !key) return null;
 
     return (
         <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={onClose}>
                 {/* Close button — matches web: "X CLOSE" text button above video */}
-                <PressableScale touch="wayOut" style={[s.closeBtn, { top: closeTop }]} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.96}
+                <PressableScale testID="trailer-close" touch="wayOut" style={[s.closeBtn, { top: closeTop }]} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.96}
                     accessibilityRole="button" accessibilityLabel="Close">
                     <X size={12} color={colors.parchment} />
                     <Text style={s.closeBtnText}>CLOSE</Text>
@@ -99,24 +148,23 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                     </View>
                     <WebView
                         ref={webviewRef}
-                        source={{ html: buildEmbedHtml(videoId), baseUrl: 'https://www.youtube.com' }}
+                        source={{ html: buildEmbedHtml(key), baseUrl: PLAYER_ORIGIN }}
                         style={s.webview}
-                        // Load gating is enforced in onShouldStartLoadWithRequest below; the
-                        // html source needs a permissive originWhitelist to render at all.
+                        // Every load is judged by playerMayLoad. The library's own allow-list is
+                        // left open: an address it refuses, it OPENS in the phone, and iOS asks it
+                        // for every frame inside YouTube's player.
                         originWhitelist={['*']}
-                        onShouldStartLoadWithRequest={(request) => {
-                            const u = request.url;
-                            // Allow the local html render + navigating the frame to blank on close,
-                            // and only real YouTube / Google (OAuth) navigations otherwise.
-                            return (
-                                u === 'about:blank' ||
-                                u.startsWith('about:') ||
-                                u.startsWith('data:') ||
-                                u.startsWith('https://www.youtube.com/') ||
-                                u.startsWith('https://www.youtube-nocookie.com/') ||
-                                u.startsWith('https://www.google.com/')
-                            );
+                        onShouldStartLoadWithRequest={playerMayLoad}
+                        onMessage={(e) => {
+                            const heard = heardFromPlayer(e.nativeEvent.data);
+                            if (!heard) return;
+                            setSaid(heard.said);
+                            e2eTrace(`trailer.${heard.said}`, heard.said === 'refused' ? { code: heard.code } : undefined);
                         }}
+                        // Nothing YouTube writes (cookies, storage, cache) outlives one play.
+                        incognito
+                        thirdPartyCookiesEnabled={false}
+                        sharedCookiesEnabled={false}
                         allowsInlineMediaPlayback
                         mediaPlaybackRequiresUserAction={false}
                         javaScriptEnabled
@@ -127,6 +175,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                         startInLoadingState
                         renderLoading={() => <ActivityIndicator size="large" color={colors.sepia} style={StyleSheet.absoluteFill} />}
                     />
+                    {said && <View testID={`trailer-${said}`} collapsable={false} pointerEvents="none" style={s.said} />}
                 </View>
                 <Text style={s.trailerLabel} numberOfLines={2}>{label}</Text>
                 <ToastHost />
@@ -178,6 +227,8 @@ const s = StyleSheet.create({
         flex: 1,
         backgroundColor: 'transparent',
     },
+    // A point, undrawn: what the player said, for the sealed run to read.
+    said: { position: 'absolute', left: 0, bottom: 0, width: 1, height: 1 },
     trailerLabel: {
         fontFamily: fonts.sub,
         fontSize: 10,

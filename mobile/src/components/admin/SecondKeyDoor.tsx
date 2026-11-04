@@ -24,6 +24,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
 import { WASH } from '@/src/theme/light';
 import { digitsOf, groupedSecret, isWhole, KEY_DIGITS } from '@/src/utils/secondKey';
+import { isAuthenticatorKey } from '@/src/utils/outsideValues';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
 
@@ -174,7 +175,8 @@ function Register({ stale, enrol, give }: {
     );
   }
   const open = async () => {
-    const opened = await Linking.openURL(key.uri).then(() => true, () => false);
+    // The phone is handed only an authenticator's key: never another address in its place.
+    const opened = isAuthenticatorKey(key.uri) && await Linking.openURL(key.uri).then(() => true, () => false);
     if (!opened) reelToast.info('No authenticator on this phone took the key: type it by hand below.');
   };
   const copy = async () => {

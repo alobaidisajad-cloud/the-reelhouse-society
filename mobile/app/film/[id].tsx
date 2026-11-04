@@ -16,6 +16,7 @@ import { rankOf } from '@/src/components/RankBadge';
 import { FilmDetailLayout } from '@/src/components/film/FilmDetailLayout';
 import { ShareCardModal } from '@/src/components/film/ShareCardModal';
 import { TrailerModal, footageLabel, type Footage } from '@/src/components/film/TrailerModal';
+import { youtubeKey } from '@/src/utils/outsideValues';
 import { FilmDetailContextValue, FilmDetailProvider } from '@/src/providers/FilmDetailProvider';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { nav } from '@/src/utils/typedRouter';
@@ -90,7 +91,7 @@ export default function FilmDetailScreen() {
    */
   const trailer = useMemo(() => {
     const rawVideos = data?.detail?.videos?.results ?? [];
-    const videos = rawVideos.filter((v: any) => v.site === 'YouTube');
+    const videos = rawVideos.filter((v: any) => v.site === 'YouTube' && youtubeKey(v.key));
     const official = videos.find((v: any) => v.type === 'Trailer' && v.name?.toLowerCase().includes('official'));
     const anyTrailer = videos.find((v: any) => v.type === 'Trailer');
     const teaser = videos.find((v: any) => v.type === 'Teaser');
@@ -129,7 +130,7 @@ export default function FilmDetailScreen() {
   const derivedData = useMemo(() => {
     const film = data?.detail ?? null;
     const rawVideos = film?.videos?.results ?? EMPTY_ARRAY;
-    const videos = rawVideos.length > 0 ? rawVideos.filter((v: any) => v.site === 'YouTube').slice(0, 6) : EMPTY_ARRAY;
+    const videos = rawVideos.length > 0 ? rawVideos.filter((v: any) => v.site === 'YouTube' && youtubeKey(v.key)).slice(0, 6) : EMPTY_ARRAY;
     const crew = film?.credits?.crew ?? EMPTY_ARRAY;
     const directors = crew.filter((c: any) => c.job === 'Director').slice(0, 4);
     const cast = film?.credits?.cast ? film.credits.cast.slice(0, 15) : EMPTY_ARRAY;

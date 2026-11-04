@@ -63,6 +63,7 @@ with the seeded member's password scrubbed out first (`e2e/scrub.mjs`).
 | `flow_critical_path.yaml` | sign in → find → log with a review → the tray offers to edit it; the row is in the database |
 | `log_film_flow.yaml` | logging from the full results, not the suggestion row |
 | `film_log.yaml` | abandoning a film with a reason |
+| `trailer.yaml` | a film's trailer opens, and YouTube's player says it is ready (no account) |
 | `browse_vault.yaml` | a member opens a room from their holdings |
 | `lobby_wall_flow.yaml` | the Lobby's wall hangs for a member, whole, down to its sign-off |
 | `lounge_flow.yaml` | the Lounge's two doors: the visitor's gate, and the member's rope at ESTABLISH |

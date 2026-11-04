@@ -12,6 +12,7 @@ import { LOCAL_ART } from '../../profile/__tests__/zz-art.gen';
 import { LAYOUTS, atLayout, readFixture, whenRendering, writeScreen } from '@/mockups/paths';
 import { FilmDetailLayout } from '../FilmDetailLayout';
 import { FilmDetailProvider } from '@/src/providers/FilmDetailProvider';
+import { youtubeKey } from '@/src/utils/outsideValues';
 
 jest.mock('expo-router', () => ({
   ...require('@/test-utils/expoRouterMock').expoRouterMock(),
@@ -84,7 +85,7 @@ for (const [p, data] of Object.entries(readFixture<Record<string, string>>('odys
 
 /** Derived exactly as app/film/[id].tsx derives it. */
 const crew = detail.credits?.crew ?? [];
-const videos = (detail.videos?.results ?? []).filter((v: { site: string }) => v.site === 'YouTube').slice(0, 6);
+const videos = (detail.videos?.results ?? []).filter((v: { site: string; key: string }) => v.site === 'YouTube' && youtubeKey(v.key)).slice(0, 6);
 const value = {
   film: detail,
   reviews: [],

@@ -181,7 +181,7 @@ const OVERLAYS: Drawn[] = [
   { file: 'src/components/ToastHost.tsx', name: 'a toast over the app', draw: () => <ToastHost layer="root" />,
     after: () => { reelToast.success('Saved to the watchlist.'); } },
   { file: 'src/components/film/TrailerModal.tsx', name: 'a trailer',
-    draw: () => <TrailerModal visible videoId="abc" label="Official Trailer" onClose={jest.fn()} /> },
+    draw: () => <TrailerModal visible videoId="Odyssey_23x" label="Official Trailer" onClose={jest.fn()} /> },
   { file: 'src/components/profile/CinemaDNACard.tsx', name: 'the cinema DNA card',
     draw: () => <CinemaDNACard user={{ username: 'kane' } as never} analytics={null} onClose={jest.fn()} /> },
   { file: 'src/components/RouteErrorBoundary.tsx', name: 'a jammed route',
