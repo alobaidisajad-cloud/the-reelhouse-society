@@ -561,6 +561,13 @@
     "get_report_evidence": { "why": "A report's content, for admins.", "cases": [
       { "name": "an open member's report", "as": "all", "expect": { "ok": "admin" }, "call": "public.get_report_evidence('{ref:reports@V}')" }
     ] },
+    "get_salon_last_words": { "why": "When each salon last spoke, for the Lounge's directory: a time and its salon, never the words, and only to a member.", "cases": [
+      { "name": "an open salon and a private one, by any member", "as": "members", "expect": "ok",
+        "call": "public.get_salon_last_words(ARRAY['{ref:lounges@V}', '{ref:lounges@P}']::uuid[])",
+        "result": "NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1) e WHERE e->>'lounge_id' NOT IN ('{ref:lounges@V}', '{ref:lounges@P}') OR (SELECT count(*) FROM jsonb_object_keys(e)) <> 2)" },
+      { "name": "a visitor", "as": ["visitor"], "expect": "error",
+        "call": "public.get_salon_last_words(ARRAY['{ref:lounges@V}']::uuid[])" }
+    ] },
     "get_salon_member_faces": { "why": "A salon's faces, for its seats.", "cases": [
       { "name": "a private salon the caller does not sit in", "as": "all", "expect": "ok",
         "call": "public.get_salon_member_faces(ARRAY['{ref:lounges@P}']::uuid[])", "result": "$1 = '[]'" },
