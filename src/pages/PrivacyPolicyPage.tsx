@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
                     Privacy Policy
                 </h1>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
-                    LAST UPDATED: SEPTEMBER 2026
+                    LAST UPDATED: NOVEMBER 2026
                 </div>
             </div>
 
@@ -77,6 +77,7 @@ export default function PrivacyPolicyPage() {
                         <li><strong>RevenueCat:</strong> Manages paid-rank subscriptions. It receives your account's internal ID and the record of your purchases, never your payment details</li>
                         <li><strong>Sentry:</strong> Error and crash reports, as described in section 2</li>
                         <li><strong>Expo:</strong> Delivers push notifications to your device</li>
+                        <li><strong>YouTube:</strong> Plays film trailers inside the app, from its privacy-enhanced service. When you play one, YouTube receives your network address and the video you asked for, and nothing it sets is kept on your phone once the trailer closes (subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--sepia)' }}>Google's Privacy Policy</a>)</li>
                         <li><strong>TMDB API:</strong> Film metadata and poster images (subject to <a href="https://www.themoviedb.org/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--sepia)' }}>TMDB's Privacy Policy</a>)</li>
                     </ul>
                     <p>We do not integrate any advertising networks or social media trackers, and none of these services is used to track you or to advertise to you.</p>
