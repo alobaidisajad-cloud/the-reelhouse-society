@@ -239,10 +239,11 @@ describe('muted text stays readable', () => {
     });
 
     it('the Darkroom text that was raised stays raised', () => {
-        expect(ratioOf('DarkroomMoodBar.tsx', 'moodSub')).toBeGreaterThanOrEqual(4.5);
-        expect(ratioOf('DarkroomFilterPanel.tsx', 'yearRangeDash')).toBeGreaterThanOrEqual(4.0);
-        expect(ratioOf('darkroom.tsx', 'paginationRetrieving')).toBeGreaterThanOrEqual(4.5);
-        expect(ratioOf('darkroom.tsx', 'emptySub')).toBeGreaterThanOrEqual(4.5);
+        // The room's quietest words: a print's year, an undeveloped plate's, the next batch, the empty tray.
+        expect(ratioOf('DarkroomCards.tsx', 'year')).toBeGreaterThanOrEqual(4.5);
+        expect(ratioOf('DarkroomCards.tsx', 'plateYear')).toBeGreaterThanOrEqual(4.5);
+        expect(ratioOf('DarkroomStates.tsx', 'developing')).toBeGreaterThanOrEqual(4.5);
+        expect(ratioOf('DarkroomStates.tsx', 'words')).toBeGreaterThanOrEqual(4.5);
     });
 
     it('the Reel text that was raised stays raised', () => {

@@ -99,7 +99,7 @@ describe('a photograph is not a lit surface', () => {
   });
 
   it('finds the lit surfaces too — the half that decides what a picture may not wear', () => {
-    expect(litStyles).toBeGreaterThan(80);
+    expect(litStyles).toBeGreaterThan(75);
   });
 
   it('the detector sees the edge light wherever a style spreads it, and on a picture that wears it', () => {

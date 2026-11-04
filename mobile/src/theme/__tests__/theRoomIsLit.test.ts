@@ -11,7 +11,8 @@
  *   1. Every SCREEN ROOT painted in the house colour — the element a
  *      component returns, wearing a style with `flex: 1` and
  *      `backgroundColor: colors.ink` — has the light as its FIRST child:
- *      `<RoomLight>`, or `<AuthBackdrop>`, which carries it.
+ *      `<RoomLight>`, `<AuthBackdrop>`, which carries it, or `<HungLight>`, a room's own
+ *      lamp (the Darkroom's safelight, the Lounge's club light).
  *
  *   2. Every ROUTE draws the light: in its own file, or in a component it
  *      renders or re-exports. (Law 1 already makes every house-coloured
@@ -40,7 +41,7 @@ const NOT_A_ROOM_ROUTE: Record<string, string> = {
   'app/(modals)/log-modal.tsx': 'a sheet in the CARD colour — a surface on the light, not a room',
 };
 
-const LIT = /^<(RoomLight|AuthBackdrop)\b/;
+const LIT = /^<(RoomLight|AuthBackdrop|HungLight)\b/;
 
 const rel = (p: string) => relative(ROOT, p).split('\\').join('/');
 const read = (p: string) => readFileSync(p, 'utf8');
@@ -144,7 +145,7 @@ describe('the room is lit', () => {
   });
 
   it('every route draws the light — in its own file or one it renders', () => {
-    const litFiles = new Set(ALL.filter((f) => /<(RoomLight|AuthBackdrop)\b/.test(code(f))).map(rel));
+    const litFiles = new Set(ALL.filter((f) => /<(RoomLight|AuthBackdrop|HungLight)\b/.test(code(f))).map(rel));
     const dark: string[] = [];
     for (const route of ROUTES) {
       const name = rel(route);

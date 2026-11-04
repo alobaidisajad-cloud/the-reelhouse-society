@@ -45,7 +45,7 @@ function flatButElevated(): string[] {
 
 describe('a flat surface', () => {
   // Exact: one cleared is MOST lowered here, so the slack cannot let another in.
-  const MOST = 11;
+  const MOST = 9;
   it(`keeps elevation in exactly ${MOST} styles, and only fewer from here`, () => {
     expect(flatButElevated()).toHaveLength(MOST);
   });

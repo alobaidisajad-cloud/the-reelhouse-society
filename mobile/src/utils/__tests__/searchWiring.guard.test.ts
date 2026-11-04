@@ -62,6 +62,9 @@ describe('every ilike carrying member input goes through the funnel', () => {
     // escaper that covered `%` and `_` and missed `*` — PostgREST's own alias
     // for `%`. This guard is what refused it.
     'src/hooks/useDispatchArchive.ts',
+    // The Lounge's search: the salons past the newest fifty, by name and what each is, asked of
+    // the house as the member types (searchLounges), through buildSearchPattern.
+    'src/stores/lounge.ts',
   ];
 
   const filesUsingIlike = FILES

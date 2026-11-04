@@ -26,8 +26,8 @@ type Count = { buster?: number; still?: number; eyes?: number; offline?: number;
 const REGISTER: Record<string, Count> = {
   'src/components/EmptyStates.tsx': { buster: 1, empty: 1, why: 'an empty state given his mood; the house could not be reached (EmptyOffline): dimmed' },
   'app/(tabs)/reels.tsx': { buster: 2, offline: 2, why: 'the Reel or the stacks empty, or not reached: one list, one state at a time' },
-  'app/(tabs)/darkroom.tsx': { buster: 1, offline: 1, why: 'the tray developed nothing, or could not be reached' },
-  'app/(tabs)/lounge.tsx': { offline: 1, why: 'the salons could not be reached' },
+  'src/components/darkroom/DarkroomStates.tsx': { buster: 1, offline: 1, why: 'the Darkroom developed nothing, or its archives could not be reached' },
+  'src/components/lounge/EmptyMyLounges.tsx': { offline: 1, why: 'the salons could not be reached' },
   'app/lounge/[id].tsx': { buster: 2, eyes: 2, offline: 2, why: 'a salon not found, nobody has spoken in it, being reached, or not reached; its words being read, or not read' },
   'app/(tabs)/profile.tsx': { buster: 1, eyes: 1, offline: 1, why: 'signed out at the archive’s door; your handle being read, or not read' },
   'app/user/[username].tsx': { buster: 1, eyes: 1, offline: 1, why: 'a member not found; a file being read, or not reached' },

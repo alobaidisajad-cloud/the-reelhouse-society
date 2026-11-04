@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { watchChannel } from '../lib/watchChannel';
 import { LoungeMessagePayloadSchema } from '../services/LoungeService';
 import { logger } from '../utils/logger';
+import { buildSearchPattern } from '../utils/searchPattern';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue, letHeldGo, sendHeldAgain } from '../utils/offlineQueue';
 import { stillHeld } from './offlineQueueStore';
@@ -126,6 +127,8 @@ export interface LoungeState {
   typingUsers: string[];
 
   fetchLounges: () => Promise<void>;
+  /** The salons whose name or description holds these words, asked of the house; null when it could not be asked. */
+  searchLounges: (words: string) => Promise<LoungeRoom[] | null>;
   fetchMessages: (loungeId: string) => Promise<void>;
   /** What the open room missed, read and merged into what is held: never a replacement. */
   catchUpMessages: (loungeId: string) => Promise<void>;
@@ -201,6 +204,9 @@ const before = (a: { created_at: string; id: string }, b: { created_at: string; 
  *  showed until the next refresh and then nowhere. */
 const ROOM_COLUMNS = 'id, name, description, is_private, creator_id, created_at, member_count, cover_image';
 type RoomRow = { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number; cover_image: string | null };
+
+/** Standings that keep a membership row but not a seat among "your salons". */
+const UNSEATED: readonly string[] = ['banned', 'muted'];
 
 // ── Create lounge cooldown — prevents spam-creation ──
 let _lastCreateAt = 0;
@@ -471,15 +477,19 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
       const memberships = memberRes.data ?? [];
       const myLoungeIds = memberships.map(r => r.lounge_id);
+      // A seat a ban or a mute has taken is not one of "your salons": the room stays in the directory.
+      const seatedIds = memberships.filter((r) => !UNSEATED.includes(String((r as { status?: string }).status))).map((r) => r.lounge_id);
       const statusMap = new Map(memberships.map(r => [r.lounge_id, (r as { status?: string }).status]));
       const loungeIds = myLoungeIds;
       const ownedIds = (myCreatedRes.data ?? []).map(l => l.id);
       // Build the combined set of IDs the user "owns or joined"
-      const ownedOrJoinedIds = new Set(myLoungeIds);
+      const ownedOrJoinedIds = new Set(seatedIds);
       ownedIds.forEach((lid) => ownedOrJoinedIds.add(lid));
       const facesIds = Array.from(ownedOrJoinedIds);
 
-      const [myJoinedRes, unreadRes, pendingRes, facesRes] = await Promise.all([
+      // The directory's rows: when the last word was said in each salon not the member's own.
+      const directoryIds = (browsableRes.data ?? []).map((l) => l.id).filter((lid) => !ownedOrJoinedIds.has(lid));
+      const [myJoinedRes, unreadRes, pendingRes, facesRes, lastWordsRes] = await Promise.all([
         myLoungeIds.length > 0
           ? supabase.from('lounges').select(ROOM_COLUMNS).in('id', myLoungeIds)
           : Promise.resolve({ data: [] as RoomRow[], error: null }),
@@ -497,6 +507,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         // failure leaves the map empty and every card falls back to its count.
         facesIds.length > 0
           ? Promise.resolve(supabase.rpc('get_salon_member_faces', { p_lounge_ids: facesIds })).catch(() => null)
+          : null,
+        // Best-effort, as the faces are: an unanswered read leaves a row without its time.
+        directoryIds.length > 0
+          ? Promise.resolve(supabase.rpc('get_salon_last_words', { p_lounge_ids: directoryIds })).catch(() => null)
           : null,
       ]);
       // A source that failed would draw a short list as the whole house: the read failed.
@@ -549,6 +563,16 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         }
       }
 
+      // A last word is the row's news, not its door: an unanswered read leaves the row without its
+      // time, and is logged so it can be found.
+      if (lastWordsRes?.error) logger.warn('[LoungeStore.fetchLounges] last words failed:', lastWordsRes.error);
+      const lastWordRows = lastWordsRes?.data;
+      if (Array.isArray(lastWordRows)) {
+        for (const r of lastWordRows as { lounge_id: string; last_message_at: string | null }[]) {
+          if (r.last_message_at) lastMessageTimestamps[r.lounge_id] = r.last_message_at;
+        }
+      }
+
       // Sort by recent activity
       const loungesList = Array.from(allLoungesMap.values());
       loungesList.sort((a, b) => {
@@ -588,6 +612,27 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // seconds for as long as the signal is gone.
       set({ loungesFailed: true, loungesLoading: false, loungesRead: true });
     }
+  },
+
+  searchLounges: async (words) => {
+    const pattern = buildSearchPattern(words);
+    if (pattern === null) return [];
+    const { data, error } = await supabase.from('lounges')
+      .select(ROOM_COLUMNS)
+      .or(`name.ilike.*${pattern}*,description.ilike.*${pattern}*`)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) {
+      logger.warn('[LoungeStore.searchLounges] the house could not be searched:', error.message);
+      return null;
+    }
+    // A salon the corridor holds keeps all it knows (its news, its seat); one found past it is a door.
+    const held = new Map(get().lounges.map((l) => [l.id, l]));
+    return ((data ?? []) as RoomRow[]).map((l) => held.get(l.id) ?? {
+      id: l.id, name: l.name, description: l.description ?? '', is_private: l.is_private ?? false,
+      creator_id: l.creator_id, created_at: l.created_at, member_count: l.member_count ?? 0,
+      cover_image: l.cover_image ?? null, mine: false,
+    });
   },
 
   fetchMessages: async (loungeId: string) => {
@@ -1098,10 +1143,15 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   requestMembership: async (loungeId) => {
     const user = useAuthStore.getState().user;
+    const startedAs = user?.id ?? null;
     if (!user) return 'error';
     try {
       const { error } = await supabase.rpc('request_lounge_membership', { p_lounge_id: loungeId });
       if (error) throw error;
+      // The request is the house's now; a member who has left since is shown none of it.
+      if (!memberUnchanged(startedAs)) return 'requested';
+      // Said at once, as the next read will say it: one of yours, AWAITING the host.
+      set((s) => ({ lounges: s.lounges.map((l) => (l.id === loungeId ? { ...l, mine: true, membership_status: 'pending' } : l)) }));
       return 'requested';
     } catch (e) {
       logger.error('[LoungeStore.requestMembership] failed:', e);

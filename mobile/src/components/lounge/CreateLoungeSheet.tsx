@@ -11,14 +11,15 @@ import { useSheetPresence } from '@/src/hooks/useSheetPresence';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { HouseBlur } from '@/src/components/HouseBlur';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { Lock, Globe } from 'lucide-react-native';
+import { Lock, Globe, KeyRound } from 'lucide-react-native';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { useClearance } from '@/src/hooks/useClearance';
 import { colors, fonts } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
 import PressableScale from '@/src/components/PressableScale';
 import { ToastHost } from '@/src/components/ToastHost';
-import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
+import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { useSheetBottom } from '@/src/components/layout/navMetrics';
 
 export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -32,6 +33,8 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   /** Founding a PRIVATE room is the Auteur's; being admitted to one is not. */
   const privateRoom = useClearance('private-rooms', '/lounge');
   const wasSuccessRef = useRef(false);
+  /** A name the house accepts: two letters at least once cleaned, as createLounge asks. */
+  const ready = sanitizeInput(name, 'loungeName').length >= LEAST_NAME;
   const descriptionRef = useRef<TextInput>(null);
 
   /**
@@ -53,7 +56,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   const openSociety = useEffectEvent(() => privateRoom.open());
 
   const handleCreate = async () => {
-    if (!name.trim()) return;
+    if (!ready) return;
     setCreating(true);
     const id = await createLounge(name.trim(), description.trim(), isPrivate);
     if (id) {
@@ -147,14 +150,17 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
               <View style={s.sheetHandle} />
 
               <View style={s.sheetHeaderWrap}>
-                <Text style={s.sheetEyebrow}>✦ THE HOUSE LEDGER</Text>
-                <Text style={s.sheetTitle}>Establish a Salon</Text>
+                <Text style={s.sheetEyebrow} {...scaledTextProps}>✦ THE HOUSE LEDGER</Text>
+                <Text style={s.sheetTitle} {...displayTextProps} accessibilityRole="header">Establish a Salon</Text>
               </View>
             </View>
           </GestureDetector>
 
           <View style={s.field}>
-            <Text style={s.fieldLabel}>SALON NAME</Text>
+            <View style={s.labelLine}>
+              <Text style={s.fieldLabel} {...scaledTextProps}>SALON NAME</Text>
+              <Text style={s.fieldCharCount} {...scaledTextProps}>{name.length}/{MAX_LENGTHS.loungeName}</Text>
+            </View>
             <TextInput
               style={s.fieldInput}
               placeholder="e.g., The Noir Corner..."
@@ -170,11 +176,13 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
               blurOnSubmit={false}
               accessibilityLabel="Salon name"
             />
-            <Text style={s.fieldCharCount}>{name.length}/{MAX_LENGTHS.loungeName}</Text>
           </View>
 
           <View style={s.field}>
-            <Text style={s.fieldLabel}>DESCRIPTION</Text>
+            <View style={s.labelLine}>
+              <Text style={s.fieldLabel} {...scaledTextProps}>DESCRIPTION</Text>
+              <Text style={s.fieldCharCount} {...scaledTextProps}>{description.length}/{MAX_LENGTHS.loungeDescription}</Text>
+            </View>
             <TextInput
               ref={descriptionRef}
               style={[s.fieldInput, s.fieldTextarea]}
@@ -188,21 +196,22 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
               keyboardAppearance="dark"
               accessibilityLabel="Salon description"
             />
-            <Text style={s.fieldCharCount}>{description.length}/{MAX_LENGTHS.loungeDescription}</Text>
           </View>
 
           <View style={s.toggleRow}>
             <View style={s.toggleInfo}>
               <View style={s.toggleLabelRow}>
                 {isPrivate
-                  ? <Lock size={12} color={colors.sepia} strokeWidth={1.5} />
-                  : <Globe size={12} color={colors.fog} strokeWidth={1.5} />
+                  ? <Lock size={14} color={colors.sepia} strokeWidth={1.5} />
+                  : <Globe size={14} color={colors.sepia} strokeWidth={1.5} />
                 }
-                <Text style={s.toggleLabel}>
+                <Text style={s.toggleLabel} {...scaledTextProps}>
                   {isPrivate ? 'PRIVATE SCREENING ROOM' : 'PUBLIC SALON'}
                 </Text>
+                {/* A private room is the Auteur's: below it, the house's key says so before the tap. */}
+                {privateRoom.held ? null : <KeyRound size={14} color={colors.sepia} strokeWidth={1.5} />}
               </View>
-              <Text style={s.toggleDesc}>
+              <Text style={s.toggleDesc} {...scaledTextProps}>
                 {isPrivate
                   ? 'By request — you admit members at the door'
                   : privateRoom.held
@@ -244,18 +253,18 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
 
           <View style={s.sheetActions}>
             <PressableScale touch="wayOut" style={s.sheetBtnGhost} onPress={onClose} disabled={creating} haptic="selection" accessibilityLabel="Cancel">
-              <Text style={s.sheetBtnGhostText} numberOfLines={1}>[ CANCEL ]</Text>
+              <Text style={s.sheetBtnGhostText} {...scaledTextProps} numberOfLines={1}>[ CANCEL ]</Text>
             </PressableScale>
             <PressableScale
-              style={[s.sheetBtnPrimary, !name.trim() && UNREADY.plate]}
+              style={[s.sheetBtnPrimary, !ready && UNREADY.plate]}
               onPress={handleCreate}
-              disabled={!name.trim() || creating}
+              disabled={!ready || creating}
               haptic="medium"
               accessibilityLabel="Establish salon"
             >
               {creating
                 ? <ActivityIndicator size="small" color={colors.ink} />
-                : <Text style={[s.sheetBtnPrimaryText, !name.trim() && UNREADY.words]} numberOfLines={1}>[ ESTABLISH ]</Text>
+                : <Text style={[s.sheetBtnPrimaryText, !ready && UNREADY.words]} {...scaledTextProps} numberOfLines={1}>[ ESTABLISH ]</Text>
               }
             </PressableScale>
           </View>
@@ -268,6 +277,9 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   );
 }
 
+/** The fewest letters a salon's name may have (createLounge). */
+const LEAST_NAME = 2;
+
 const s = StyleSheet.create({
   sheetKeyboard: { flex: 1 },
   sheetBackdrop: { flex: 1 },
@@ -276,128 +288,138 @@ const s = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.inkwell,
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-    padding: 24,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: colors.sepiaBorder,
+    backgroundColor: colors.surfaceRaised,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingTop: 10,
+    paddingHorizontal: 20,
+    boxShadow: 'inset 0px 1px 0px 0px rgba(255,226,176,0.075)',
   },
   sheetHandle: {
-    width: 48,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(184,137,26,0.2)',
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(232,223,208,0.25)',
     alignSelf: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
-  sheetHeaderWrap: { marginBottom: 28 },
+  sheetHeaderWrap: { alignItems: 'center', marginBottom: 18 },
   sheetEyebrow: {
     fontFamily: fonts.sub,
     fontSize: 10,
-    letterSpacing: 1.9,
+    letterSpacing: 3,
     color: colors.sepia,
-    marginBottom: 8,
+    textAlign: 'center',
     includeFontPadding: false,
   },
   sheetTitle: {
     fontFamily: fonts.display,
-    fontSize: 24,
-    color: colors.parchment,
-    letterSpacing: 1,
+    fontSize: 22,
+    lineHeight: 28,
+    color: colors.silverScreen,
+    textAlign: 'center',
+    marginTop: 6,
   },
-  field: { marginBottom: 22 },
+  field: { marginBottom: 18 },
+  // A field's name, and how much of it is used, on one line above it.
+  labelLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 8 },
   fieldLabel: {
+    flexShrink: 1,
     fontFamily: fonts.sub,
     fontSize: 10,
-    letterSpacing: 1.6,
-    color: colors.sepia,
-    marginBottom: 8,
+    letterSpacing: 2.4,
+    color: colors.bone,
     includeFontPadding: false,
   },
-  fieldInput: { borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
+  fieldInput: {
+    minHeight: 48,
     borderWidth: 1,
-    borderColor: colors.sepiaBorder,
+    borderColor: 'rgba(184,137,26,0.75)',
     backgroundColor: colors.well,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
     fontFamily: fonts.body,
     fontSize: 14,
     color: colors.parchment,
-    borderRadius: 2,
+    borderRadius: 6,
   },
   fieldTextarea: {
-    height: 80,
+    minHeight: 84,
     textAlignVertical: 'top',
   },
   fieldCharCount: {
     fontFamily: fonts.sub,
     fontSize: 10,
+    letterSpacing: 1,
     color: colors.fogQuiet,
     // The thing that tells you how much room is left, so it is solid fogQuiet:
     // a word never borrows its contrast from the ground behind it.
-    textAlign: 'right',
-    marginTop: 4,
     includeFontPadding: false,
   },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 28,
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 6,
+    backgroundColor: colors.soot,
+    marginBottom: 22,
   },
-  toggleInfo: { flex: 1, marginRight: 16 },
+  toggleInfo: { flex: 1 },
   toggleLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   toggleLabel: {
+    flexShrink: 1,
     fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 1.2,
+    fontSize: 11,
+    letterSpacing: 2,
     color: colors.parchment,
     includeFontPadding: false,
   },
   toggleDesc: {
     fontFamily: fonts.bodyItalic,
-    fontSize: 11,
-    color: colors.fog,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.bone,
+    marginTop: 4,
   },
   sheetActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   sheetBtnGhost: {
     flex: 1,
-    height: 48,
+    minHeight: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 2,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: colors.sepiaBorder,
+    borderColor: 'rgba(232,223,208,0.2)',
   },
   sheetBtnGhostText: {
     fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: colors.parchment,
+    fontSize: 11,
+    letterSpacing: 2.4,
+    color: colors.bone,
     includeFontPadding: false,
   },
   sheetBtnPrimary: {
     flex: 1,
-    height: 48,
+    minHeight: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 2,
+    borderRadius: 6,
     backgroundColor: colors.sepia,
   },
   sheetBtnPrimaryText: {
     fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 2,
+    fontSize: 11,
+    letterSpacing: 2.4,
     color: colors.ink,
     includeFontPadding: false,
   },

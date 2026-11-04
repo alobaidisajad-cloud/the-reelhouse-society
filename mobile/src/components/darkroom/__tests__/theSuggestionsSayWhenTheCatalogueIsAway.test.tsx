@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 async function open() {
-  const r = render(<DarkroomHeader />);
+  const r = render(<DarkroomHeader sheet stale={false} />);
   const field = () => r.getByTestId('darkroom-search-input');
   await fireEvent(field(), 'focus');
   return {

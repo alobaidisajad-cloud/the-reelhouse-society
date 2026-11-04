@@ -22,6 +22,7 @@
 import { readCode } from '@/test-utils/readCode';
 
 const corridor = readCode('app/(tabs)/lounge.tsx');
+const header = readCode('src/components/lounge/LoungeHeader.tsx');
 const room = readCode('app/lounge/[id].tsx');
 const nav = readCode('src/components/layout/TopNavBar.tsx');
 
@@ -43,8 +44,8 @@ describe('the corridor is open', () => {
       // "ARCHIVIST EXCLUSIVE" was true when only an Archivist could reach the
       // tab. It is now the first thing a guest reads on a page full of rooms
       // they are welcome to walk into, so it is conditional on holding the rank.
-      const line = /headerMetaLine[\s\S]{0,200}?isArchivist \?/;
-      expect(corridor).toMatch(line);
+      expect(header).toMatch(/rankLine[\s\S]{0,200}?seated \?/);
+      expect(corridor).toMatch(/<LoungeHeader seated=\{seat\.held\}/);
     });
   });
 
@@ -83,15 +84,24 @@ describe('the corridor is open', () => {
     it('and the ESTABLISH button is still SHOWN to a member who cannot use it', () => {
       // The vanish is what this replaces: a member who cannot found a salon
       // still learns that founding one is possible.
-      expect(corridor).toMatch(/ESTABLISH/);
-      expect(corridor).toMatch(/mayFound \? setShowCreate\(true\) : openFounding\(\)/);
+      // Drawn whatever the rank: the key on its face, not its absence, says the rank is needed.
+      expect(header).toMatch(/>ESTABLISH<\/Text>/);
+      expect(header).not.toMatch(/mayFound \?[^:]*>ESTABLISH</);
+      // The register for the rank; else the rope, which reads the rank again and opens it when held.
+      expect(corridor).toMatch(/if \(foundRoom\.held\) setShowCreate\(true\);\s*else foundRoom\.openOr\(\(\) => setShowCreate\(true\)\);/);
     });
 
-    it('and BOTH of them go through it: the empty state opened the form for anyone', () => {
+    it('and EVERY one of them goes through it: the empty state opened the form for anyone', () => {
       // A member without the rank filled in a salon the house then refused.
-      expect(corridor).toMatch(/onPress=\{establish\}/);
+      expect(corridor).toMatch(/onEstablish=\{establish\}/);
       expect(corridor).toMatch(/onEstablishPress=\{establish\}/);
-      expect((corridor.match(/setShowCreate\(true\)/g) ?? []).length).toBe(1);
+      expect(corridor).toMatch(/onPress: establish,/);
+      // The register opens nowhere but in establish.
+      const at = corridor.indexOf('const establish = useCallback(');
+      const body = corridor.slice(at, corridor.indexOf('}, [foundRoom]);', at));
+      expect(at).toBeGreaterThan(-1);
+      expect((body.match(/setShowCreate\(true\)/g) ?? []).length).toBe(2);
+      expect((corridor.match(/setShowCreate\(true\)/g) ?? []).length).toBe(2);
     });
   });
 

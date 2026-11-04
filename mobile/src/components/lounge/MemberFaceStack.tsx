@@ -28,7 +28,7 @@ export interface SalonFace {
 }
 
 const AVATAR = 22;
-const OVERLAP = 7;
+const OVERLAP = 6;
 const MAX_FACES = 3;
 
 /** Pure, unit-tested layout model — the reliability core. */
@@ -89,14 +89,14 @@ const s = StyleSheet.create({
   stack: { flexDirection: 'row', alignItems: 'center' },
   avatar: {
     width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2,
-    borderWidth: 1.5, borderColor: colors.champagne,
-    backgroundColor: colors.soot, overflow: 'hidden',
+    borderWidth: 1, borderColor: colors.champagne,
+    backgroundColor: colors.inkwell, overflow: 'hidden',
     alignItems: 'center', justifyContent: 'center',
   },
   avatarOverlap: { marginLeft: -OVERLAP },
   avatarImg: { width: '100%', height: '100%' },
-  initial: { fontFamily: fonts.display, fontSize: 10, color: colors.parchment, includeFontPadding: false },
-  overflow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, marginLeft: 7, includeFontPadding: false },
+  initial: { fontFamily: fonts.display, fontSize: 10, color: colors.sepia, includeFontPadding: false },
+  overflow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog, marginLeft: 6, includeFontPadding: false },
   count: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog, marginLeft: 7, includeFontPadding: false },
   lock: { marginLeft: 6 },
 });

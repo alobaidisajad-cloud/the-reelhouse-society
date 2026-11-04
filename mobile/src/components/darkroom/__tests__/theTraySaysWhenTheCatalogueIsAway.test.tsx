@@ -79,7 +79,7 @@ it('opens on the films build 41 kept for its filters, the catalogue away (savedJ
   let first!: ReturnType<typeof render>;
   await act(async () => { first = render(<DarkroomScreen />); await settle(); });
   first.unmount();
-  const key = storage.getAllKeys().find((k) => k.startsWith('darkroom_cache_'));
+  const key = storage.getAllKeys().find((k) => k.startsWith('darkroom_sheet_'));
   expect(key).toBeDefined();
   const kept = require('@/src/utils/__tests__/fixtures/saved-json/darkroom-films.json').saved.darkroom_films;
   storage.set(key!, JSON.stringify(kept));

@@ -123,13 +123,17 @@ describe('infinite animations park when nobody is watching', () => {
     // Named individually rather than by file, because the file-level scan above
     // is exactly what missed the Darkroom skeleton for so long. Each of these
     // is a loop that was verified by reading the effect, not by grepping.
-    it('the Darkroom loops are gated on more than mount', () => {
-        const screen = fs.readFileSync(path.join(ROOT, 'app/(tabs)/darkroom.tsx'), 'utf8');
-        // The skeleton pulse must depend on BOTH focus and whether a skeleton
-        // is actually on screen — focus alone still burns the whole visit.
-        expect(screen).toMatch(/\}, \[isFocused, showSkeleton\]\)/);
-
-        const atmo = fs.readFileSync(path.join(ROOT, 'src/components/darkroom/DarkroomCards.tsx'), 'utf8');
-        expect(atmo).toMatch(/\}, \[isFocused, reducedMotion\]\)/);
+    // The redesign took the loops out: the tiles are still while the sheet develops, and the
+    // safelight is a picture. Nothing in the room may loop again.
+    it('the Darkroom and the Lounge loop nothing', () => {
+        const rooms = [
+            'app/(tabs)/darkroom.tsx', 'app/(tabs)/lounge.tsx',
+            ...['DarkroomCards', 'DarkroomFilterPanel', 'DarkroomHeader', 'DarkroomHero', 'DarkroomMoodBar', 'DarkroomStates'].map((f) => `src/components/darkroom/${f}.tsx`),
+            ...['JoinedLoungeCard', 'PublicLoungeCard', 'LoungeHeader', 'EmptyMyLounges', 'LoungeGate'].map((f) => `src/components/lounge/${f}.tsx`),
+            'src/components/atmosphere/HungLight.tsx',
+        ];
+        expect(rooms.length).toBeGreaterThan(13);
+        const looping = rooms.filter((f) => /withRepeat\(|Animated\.loop\(/.test(fs.readFileSync(path.join(ROOT, f), 'utf8')));
+        expect(looping).toEqual([]);
     });
 });

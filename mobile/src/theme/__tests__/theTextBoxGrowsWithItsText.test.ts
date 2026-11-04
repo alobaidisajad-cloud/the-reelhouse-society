@@ -121,6 +121,8 @@ describe('the scale multiplies boxes, never type', () => {
       'app/stacks/[id].tsx',
       // a WIDTH, not a height: the name's longest word against its column
       'app/user/[username].tsx',
+      // a WIDTH: whether every bath's name fits whole three across, else two
+      'src/components/darkroom/DarkroomMoodBar.tsx',
       // a WIDTH: how many of the review's letters a frame's line holds
       'src/components/feed/ActivityCard.tsx',
       'src/components/film/CastCarousel.tsx',
@@ -129,6 +131,12 @@ describe('the scale multiplies boxes, never type', () => {
       // WIDTHS: how many viewings stand to a row; the quote's balanced width
       'src/components/log/LogChronicle.tsx',
       'src/components/log/LogReviewBody.tsx',
+      // a rail card's name: two SET lines reserved, so every card on the rail stands as tall
+      'src/components/lounge/JoinedLoungeCard.tsx',
+      // a WIDTH: ESTABLISH beside the search while the search keeps its least, else under it
+      'src/components/lounge/LoungeHeader.tsx',
+      // a WIDTH: a directory row's last word beside the name while its longest word fits there, else under it
+      'src/components/lounge/PublicLoungeCard.tsx',
       'src/components/person/PersonFilmography.tsx',
       // a can's height: its label's lines counted at the font's size, each line as the phone sets it
       'src/components/reels/ReelsStackList.tsx',

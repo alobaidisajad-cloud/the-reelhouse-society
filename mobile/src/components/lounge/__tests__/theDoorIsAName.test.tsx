@@ -48,8 +48,12 @@ describe('the door is a name, not a rank', () => {
 
   it('an Archivist’s corridor no longer claims to be exclusive', () => {
     const corridor = code('app/(tabs)/lounge.tsx');
-    expect(corridor).not.toMatch(/ARCHIVIST EXCLUSIVE/);
-    expect(corridor).toMatch(/isArchivist \? 'READ ANY SALON · TAKE YOUR SEAT' : 'READ ANY SALON · ARCHIVISTS TAKE A SEAT'/);
+    const header = code('src/components/lounge/LoungeHeader.tsx');
+    expect(corridor + header).not.toMatch(/ARCHIVIST EXCLUSIVE/);
+    // The line the rank earns, said from the rank the house enforces at the seat.
+    expect(header).toMatch(/seated \? 'READ ANY SALON · TAKE YOUR SEAT' : 'READ ANY SALON · ARCHIVISTS TAKE A SEAT'/);
+    expect(corridor).toMatch(/const seat = useClearance\('the-lounge'/);
+    expect(corridor).toMatch(/<LoungeHeader seated=\{seat\.held\}/);
   });
 
   it('the device flow that walks this door checks the truth, not the old gate', () => {

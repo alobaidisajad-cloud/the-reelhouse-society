@@ -1,122 +1,88 @@
 /**
  * LoungeScreen — THE CORRIDOR.
  * ─────────────────────────────────────────────
- * The hallway of salon doors: your salons lit with honest seals, the
- * directory of doors down the hall. Every member walks it and reads the
- * public rooms; the rank is asked at taking a seat and founding one. A
- * visitor who is not signed in meets the LoungeGate.
+ * The club's front of house: its amber light, "The Lounge" and what the viewer's rank lets them
+ * do there, the desk (the search and ESTABLISH), YOUR SALONS on a rail with their news, and the
+ * framed directory of ALL SALONS with the verb true to each viewer's rank. Every member walks it
+ * and reads the public rooms; the rank is asked at taking a seat and at founding one. A visitor
+ * who is not signed in meets the LoungeGate.
  */
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { View, ScrollView, RefreshControl, ActivityIndicator, AppState } from 'react-native';
-import { Text, TextInput } from '@/src/components/text';
-import Animated, {
-  useSharedValue, withTiming, useAnimatedProps, useAnimatedStyle, useAnimatedScrollHandler,
-} from 'react-native-reanimated';
-import { Search, Plus, Globe, X } from 'lucide-react-native';
-import { MasterLogo } from '@/src/components/MasterLogo';
+import { View, ScrollView, RefreshControl, AppState, StyleSheet } from 'react-native';
+import { useSharedValue, withTiming, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useFocusEffect } from 'expo-router';
-import { useScrollToTop } from "expo-router/react-navigation";
+import { useScrollToTop } from 'expo-router/react-navigation';
 import { globalScrollY } from '@/src/lib/scrollBridge';
-import { isMine, useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
+import { isMine, useLoungeStore, type LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
-import { isArchivistPlusTier } from '@/src/utils/tier';
 import { useClearance } from '@/src/hooks/useClearance';
-import { colors } from '@/src/theme/theme';
-import { scaledTextProps } from '@/src/constants/textScaling';
-import { LinearGradient } from 'expo-linear-gradient';
-import PressableScale from '@/src/components/PressableScale';
+import { colors, fonts } from '@/src/theme/theme';
 import FrozenTab from '@/src/components/layout/FrozenTab';
-import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
-
-// ── Extracted components ──
+import { useColumnWidth, useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
 import { LoungeGate } from '@/src/components/lounge/LoungeGate';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
-import TactileEngine from '@/src/utils/TactileEngine';
 import { CreateLoungeSheet } from '@/src/components/lounge/CreateLoungeSheet';
 import { JoinedLoungeCard } from '@/src/components/lounge/JoinedLoungeCard';
-import { PublicLoungeCard } from '@/src/components/lounge/PublicLoungeCard';
-import { EmptyMyLounges } from '@/src/components/lounge/EmptyMyLounges';
-
-// ── Styles ── (must live outside app/ so Expo Router never treats it as a route)
-import { s } from '@/src/components/lounge/loungeTabStyles';
+import { PublicLoungeCard, DirectoryHead, DirectoryFoot } from '@/src/components/lounge/PublicLoungeCard';
+import { EmptyMyLounges, CorridorState, CorridorUnreached, RailReading, RowReading } from '@/src/components/lounge/EmptyMyLounges';
+import { LoungeHeader } from '@/src/components/lounge/LoungeHeader';
+import { CORRIDOR, railCardWidth, railScrolls } from '@/src/components/lounge/corridor';
+import { PageSection } from '@/src/components/log/PageSection';
+import { HungLight } from '@/src/components/atmosphere/HungLight';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
-import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
-import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
-import { Arrive } from '@/src/components/Arrive';
+import { REFRESH_FAILED } from '@/src/components/EmptyStates';
+import { TryAgainLine } from '@/src/components/TryAgain';
+import { Text } from '@/src/components/text';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import reelToast from '@/src/utils/reelToast';
-import { SEARCH_MAX } from '@/src/constants/inputLimits';
+import { matchesSearch } from '@/src/utils/searchPattern';
 
-// Module-scoped: prevents remount on every render cycle
-const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
+/** A search the house is asked: two letters at least, a moment after the last keystroke. */
+const SEARCH = { least: 2, wait: 300 } as const;
 
-// ════════════════════════════════════════════════════════════
-// MAIN LOUNGE SCREEN
-// ════════════════════════════════════════════════════════════
 export default function LoungeScreen() {
-  const user = useAuthStore(s => s.user);
-  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
-  const { lounges, fetchLounges, loungesLoading, loungesRead, loungesFailed } = useLoungeStore();
-  // Reading until the salons have answered once: the first frame comes before the read begins.
-  const loading = loungesLoading || !loungesRead;
+  const user = useAuthStore((st) => st.user);
+  const isAuthenticated = useAuthStore((st) => st.isAuthenticated);
+  const { lounges, fetchLounges, searchLounges, loungesRead, loungesFailed } = useLoungeStore();
+  // Reading only until the salons have answered once: a poll never takes the corridor away.
+  const firstRead = !loungesRead;
   // Nothing to show because nothing could be read: said, not "found no salon".
   const salonsLost = loungesFailed && lounges.length === 0;
   const readyMark = useScreenReady('lounges',
-    loading && lounges.length === 0 ? 'reading' : salonsLost ? 'failed' : 'ready');
-  // The header starts below the top bar, and the list ends above the tab bar: both drawn over it.
+    firstRead && lounges.length === 0 ? 'reading' : salonsLost ? 'failed' : 'ready');
+  // The page starts below the top bar, and ends above the tab bar: both drawn over it.
   const topPad = useTabContentTop();
   const endPad = useTabContentBottom();
   const tabBar = useTabBarHeight();
+  const column = useColumnWidth();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const isArchivist = isArchivistPlusTier(user);
-  /**
-   * Founding a salon is a separate right from sitting in one, and the database
-   * has always enforced them separately — `tr_tier_gate_lounges` on creating,
-   * `tr_tier_gate_lounge_members` on joining. The client had them tangled into
-   * one wall over the whole page.
-   */
+  // One source for the rank, as the house enforces it: taking a seat, and founding a salon.
+  const seat = useClearance('the-lounge', '/lounge');
   const foundRoom = useClearance('create-a-lounge', '/lounge');
-  // Both ESTABLISH buttons: the form for a member who may found one, the rope otherwise.
-  const { held: mayFound, open: openFounding } = foundRoom;
-  const establish = useCallback(
-    () => (mayFound ? setShowCreate(true) : openFounding()),
-    [mayFound, openFounding],
-  );
+  // ESTABLISH: the register for a member who may found one; else the rope, which reads the rank
+  // again and, when it is held after all, opens the register.
+  const establish = useCallback(() => {
+    if (foundRoom.held) setShowCreate(true);
+    else foundRoom.openOr(() => setShowCreate(true));
+  }, [foundRoom]);
   const isPollingRef = useRef(false);
   // Re-tap the active tab icon → smoothly scroll the corridor to the top.
   const listRef = useRef<any>(null);
   useScrollToTop(listRef);
 
-  // The search ember — glows brass while a query burns.
-  const searchEmberOpacity = useSharedValue(0.5);
-  useEffect(() => {
-    searchEmberOpacity.value = withTiming(searchQuery.length > 0 ? 1 : 0.5, { duration: 300 });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery]);
-
-  const animatedSearchProps = useAnimatedProps(() => ({
-    color: searchQuery.length > 0 ? colors.sepia : colors.fog,
-  }));
-  const animatedSearchStyle = useAnimatedStyle(() => ({
-    opacity: searchEmberOpacity.value,
-  }));
-
-  const handleSearchQueryChange = useCallback((text: string) => {
-    setSearchQuery(text);
-  }, []);
-
   /**
    * ── THE POLL RUNS ONLY WHILE SOMEBODY IS LOOKING ──────────────────────────
    * The salons are read for every signed-in member (`lounges` SELECT is open to
    * them). Realtime covers one room, the one open, so this thirty-second read is
-   * the only thing that moves the corridor's unread badges; it runs while this
-   * screen is focused and the app is in front, the one window in which its
-   * answer can be seen. Arriving (`useFocusEffect`) is itself a read, so coming
-   * back from a room updates the badges at once.
+   * the only thing that moves the corridor's news; it runs while this screen is
+   * focused and the app is in front, the one window in which its answer can be
+   * seen. Arriving (`useFocusEffect`) is itself a read, so coming back from a
+   * room updates the news at once.
    */
   useFocusEffect(
     useCallback(() => {
@@ -157,7 +123,6 @@ export default function LoungeScreen() {
     }, [isAuthenticated, fetchLounges]),
   );
 
-  // fetchLounges is a stable zustand selector — safe to include in deps
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchLounges();
@@ -168,28 +133,44 @@ export default function LoungeScreen() {
   }, [fetchLounges]);
   const rereadSalons = useCallback(() => { void fetchLounges(); }, [fetchLounges]);
 
-  // Memoized filtering — prevents O(n) recomputation on unrelated re-renders
-  const { myLounges, browsableLounges } = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    const filtered = lounges.filter(l =>
-      l.name.toLowerCase().includes(q) ||
-      (l.description && l.description.toLowerCase().includes(q))
-    );
-    return {
-      myLounges: filtered.filter(isMine),
-      browsableLounges: filtered.filter(l => !isMine(l)),
-    };
-  }, [lounges, searchQuery]);
+  // The search asks the house, not only the salons already here: the corridor holds the newest
+  // fifty and the member's own, and a salon past them was never found. What is here shows at once.
+  const words = searchQuery.trim().toLowerCase();
+  const [asked, setAsked] = useState<{ words: string; hits: LoungeRoom[] | null } | null>(null);
+  const [askAgain, setAskAgain] = useState(0);
+  useEffect(() => {
+    if (words.length < SEARCH.least) return;
+    let live = true;
+    const t = setTimeout(() => {
+      void searchLounges(words).then((hits) => { if (live) setAsked({ words, hits }); });
+    }, SEARCH.wait);
+    return () => { live = false; clearTimeout(t); };
+  }, [words, searchLounges, askAgain]);
+  const searchFailed = words.length >= SEARCH.least && asked?.words === words && asked.hits === null;
 
-  const isScrolling = useSharedValue(false);
+  const { myLounges, browsableLounges } = useMemo(() => {
+    // As the house's search matches (matchesSearch), so a salon it found is never dropped here.
+    const matches = (l: LoungeRoom) => !words || matchesSearch(words, l.name, l.description);
+    const here = lounges.filter(matches);
+    const held = new Set(here.map((l) => l.id));
+    // The house's answer for these words, past what is here; a salon of the member's own is theirs.
+    const found = words.length >= SEARCH.least && asked?.words === words && asked.hits
+      ? asked.hits.filter((l) => !held.has(l.id) && matches(l)) : [];
+    return {
+      myLounges: here.filter(isMine),
+      browsableLounges: [...here.filter((l) => !isMine(l)), ...found.filter((l) => !isMine(l))],
+    };
+  }, [lounges, words, asked]);
+
   const scrollY = useSharedValue(0);
+  const isScrolling = useSharedValue(false);
   const scrollHeight = useSharedValue(0);
   const viewHeight = useSharedValue(0);
 
   useFocusEffect(
     useCallback(() => {
       globalScrollY.value = withTiming(scrollY.value, { duration: 250 });
-    }, [scrollY])
+    }, [scrollY]),
   );
 
   const onScroll = useAnimatedScrollHandler({
@@ -199,33 +180,23 @@ export default function LoungeScreen() {
       scrollHeight.value = event.contentSize.height;
       viewHeight.value = event.layoutMeasurement.height;
     },
-    onBeginDrag: () => {
-      isScrolling.value = true;
-    },
-    onEndDrag: () => {
-      isScrolling.value = false;
-    },
-    onMomentumBegin: () => {
-      isScrolling.value = true;
-    },
-    onMomentumEnd: () => {
-      isScrolling.value = false;
-    }
+    onBeginDrag: () => { isScrolling.value = true; },
+    onEndDrag: () => { isScrolling.value = false; },
+    onMomentumBegin: () => { isScrolling.value = true; },
+    onMomentumEnd: () => { isScrolling.value = false; },
   });
 
-  // A vile door plaque must be reportable — long-press any salon that
-  // isn't yours to summon the report sheet (contentType 'lounge').
+  // A vile door plaque must be reportable: long-press any salon that isn't yours (its one
+  // haptic is the press's own), or its named action, summons the report sheet.
   const [reportLounge, setReportLounge] = useState<LoungeRoom | null>(null);
   const handleReportLounge = useCallback((lounge: LoungeRoom) => {
     if (lounge.creator_id === user?.id) return;
-    TactileEngine.destroy();
     setReportLounge(lounge);
   }, [user?.id]);
 
-  // Memoized renderItem for FlashList
-  const renderPublicCard = useCallback(({ item, index: i }: { item: LoungeRoom; index: number }) => (
-    <PublicLoungeCard lounge={item} index={i} onReport={handleReportLounge} />
-  ), [handleReportLounge]);
+  const renderRow = useCallback(({ item, index }: { item: LoungeRoom; index: number }) => (
+    <PublicLoungeCard lounge={item} first={index === 0} seated={seat.held} onReport={handleReportLounge} />
+  ), [handleReportLounge, seat.held]);
 
   /**
    * The corridor is the corridor for every member: real rooms, real counts, the
@@ -236,182 +207,123 @@ export default function LoungeScreen() {
     return <LoungeGate mark={readyMark} />;
   }
 
+  const reading = firstRead && lounges.length === 0;
+  const cardWidth = railCardWidth(column, reading ? 3 : myLounges.length);
+  const directory = !salonsLost;
+
   return (
     <FrozenTab>
-    <View style={s.container}>
-      <RoomLight room="default" />
-      {readyMark}
-      {/* ── Compact ceremonial header ── */}
-      <Arrive name="lounge.header" duration={700} rise={0} style={[s.header, { paddingTop: topPad }]}>
-        <View style={s.headerCrestRow}>
-          <View style={s.headerCrest}>
-            <MasterLogo size={26} />
-          </View>
-        </View>
+      <View style={s.container}>
+        {/* The club's light, hung above the screen. */}
+        <HungLight source={require('@/assets/images/light-lounge.png')} top={topPad} scrollY={scrollY} />
+        {readyMark}
+        <CinematicFlashList
+          ref={listRef}
+          data={reading || salonsLost ? [] : browsableLounges}
+          keyExtractor={(item: LoungeRoom) => item.id}
+          estimatedItemSize={130}
+          renderItem={renderRow as any}
+          // A drag puts the keyboard away, on both platforms ('interactive' is the iPhone's alone).
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[s.page, { paddingTop: topPad, paddingBottom: endPad }]}
+          scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
+          onScroll={onScroll}
+          bottomInset={tabBar}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />
+          }
+          ListHeaderComponent={
+            <>
+              <LoungeHeader seated={seat.held} mayFound={foundRoom.held} query={searchQuery} onQuery={setSearchQuery} onEstablish={establish} />
 
-        <Text style={s.headerTitle}>The Lounge</Text>
-        {/* What the rank gives, said to both sides of it in the same words. */}
-        <Text style={s.headerMetaLine}>
-          {isArchivist ? 'READ ANY SALON · TAKE YOUR SEAT' : 'READ ANY SALON · ARCHIVISTS TAKE A SEAT'}
-        </Text>
+              {salonsLost ? <CorridorUnreached onRetry={rereadSalons} /> : null}
 
-        {/* Search + Establish — one working row */}
-        <View style={s.actionsRow}>
-          <View style={s.searchWrap}>
-            <AnimatedSearchIcon size={14} animatedProps={animatedSearchProps} style={animatedSearchStyle} strokeWidth={1.5} />
-            <TextInput
-              {...scaledTextProps}
-              style={s.searchInput}
-              /* Short enough to fit the field past 1.7x text (a placeholder
-                 cannot shrink to fit). */
-              placeholder="Search salons…"
-              placeholderTextColor={colors.fog}
-              value={searchQuery}
-              onChangeText={handleSearchQueryChange}
-              maxLength={SEARCH_MAX}
-              selectionColor={colors.sepia}
-              keyboardAppearance="dark"
-              accessibilityLabel="Search salons"
-              autoCorrect={false}
-              spellCheck={false}
-            />
-            {searchQuery.length > 0 && (
-              <PressableScale room onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection"
-                accessibilityRole="button" accessibilityLabel="Clear the search">
-                <X size={14} color={colors.fog} strokeWidth={1.5} />
-              </PressableScale>
-            )}
-          </View>
-          {/* ESTABLISH is the one thing on this screen that is genuinely an
-              Archivist's: founding a room with your name on it. The database
-              agrees — `tr_tier_gate_lounges` refuses the INSERT — so the button
-              is SHOWN to everyone and answers honestly rather than being
-              hidden. A member who cannot found one still learns it is possible,
-              which is the entire point of the rope over the vanish. */}
-          <PressableScale room
-            style={s.btnPrimary}
-            onPress={establish}
-            haptic="medium"
-            accessibilityRole="button"
-            accessibilityLabel={foundRoom.held
-              ? 'Establish a salon'
-              : 'Establish a salon. The Archivist opens this. Opens the Society.'}
-          >
-            <Plus size={12} color={colors.ink} strokeWidth={2.5} />
-            <Text style={s.btnPrimaryText}>ESTABLISH</Text>
-          </PressableScale>
-        </View>
-      </Arrive>
-
-      {/* ── Body ── */}
-      <CinematicFlashList
-        ref={listRef}
-        data={browsableLounges}
-        keyExtractor={(item: any) => item.id}
-        estimatedItemSize={190}
-        renderItem={renderPublicCard as any}
-        keyboardDismissMode="interactive"
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[s.scrollContent, { paddingBottom: endPad }]}
-        scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
-        onScroll={onScroll}
-        bottomInset={tabBar}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />
-        }
-        ListHeaderComponent={
-          <>
-            {/* Loading */}
-            {loading && lounges.length === 0 && (
-              <View style={s.loadingWrap}>
-                <ActivityIndicator size="small" color={colors.sepia} />
-                <Text style={s.loadingText}>RETRIEVING SALONS</Text>
-              </View>
-            )}
-
-            {salonsLost && <EmptyOffline onRetry={rereadSalons} />}
-
-            {/* Your salons */}
-            {salonsLost ? null : myLounges.length > 0 ? (
-              <View style={s.section}>
-                <View style={s.sectionTitleRow}>
-                  <View style={s.sectionTitleLine} />
-                  <Text style={s.sectionLabel}>YOUR SALONS</Text>
-                  <View style={s.sectionTitleLine} />
-                </View>
-                {/* The strip runs off the right edge and a card sliced through
-                    its badge reads as broken rather than scrollable — "⧗ AWAI…"
-                    hanging in the margin. Same treatment as the Darkroom's mood
-                    row: the row dissolves into the dark instead of being cut by
-                    it. Right edge only, since a symmetric fade would dim the
-                    first card at rest, and pointerEvents none so it never eats
-                    a swipe. */}
-                <View style={s.joinedStripWrap}>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={s.joinedStrip}
-                  >
-                    {myLounges.map((l, i) => (
-                      <JoinedLoungeCard key={`my-${l.id}`} lounge={l} index={i} />
-                    ))}
+              {/* YOUR SALONS: the rail, its still frames while read, or the seats that await. A search
+                  shows only the member's salons it matches, and none when none do. */}
+              {reading ? (
+                <PageSection title="YOUR SALONS">
+                  <View accessible accessibilityRole="progressbar" accessibilityLabel="Retrieving salons"><RailReading width={cardWidth} /></View>
+                </PageSection>
+              ) : salonsLost ? null : myLounges.length > 0 ? (
+                <PageSection title="YOUR SALONS">
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} scrollEnabled={railScrolls(column, myLounges.length)}
+                    style={s.rail} contentContainerStyle={s.railRow}>
+                    {myLounges.map((l) => <JoinedLoungeCard key={l.id} lounge={l} width={cardWidth} />)}
                   </ScrollView>
-                  <LinearGradient
-                    colors={['transparent', colors.ink]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={s.joinedStripFade}
-                    pointerEvents="none"
-                  />
+                </PageSection>
+              ) : !words ? (
+                <PageSection title="YOUR SALONS"><EmptyMyLounges onEstablishPress={establish} held={foundRoom.held} /></PageSection>
+              ) : null}
+
+              {directory ? <DirectoryHead /> : null}
+              {reading ? <>{[0, 1, 2, 3].map((i) => <RowReading key={i} />)}</> : null}
+            </>
+          }
+          ListFooterComponent={directory ? (
+            <>
+              <DirectoryFoot />
+              {searchFailed ? (
+                <View style={s.unasked}>
+                  <Text style={s.unaskedWords} {...scaledTextProps}>The house could not be searched. These are the salons already here.</Text>
+                  <TryAgainLine onPress={() => setAskAgain((n) => n + 1)} what="search the house" style={s.tryLine} />
                 </View>
-              </View>
-            ) : (
-              !loading && !searchQuery && <EmptyMyLounges onEstablishPress={establish} held={mayFound} />
-            )}
-
-            {/* Directory header */}
-            {!salonsLost && <View style={[s.section, { paddingBottom: 0, marginBottom: 0 }]}>
-              <View style={s.sectionTitleRow}>
-                <View style={s.sectionTitleLine} />
-                <Text style={s.sectionLabel}>ALL SALONS</Text>
-                <View style={s.sectionTitleLine} />
-              </View>
-              <Text style={s.sectionSubtext}>Public discourse and private gatherings. Take a seat.</Text>
-            </View>}
-          </>
-        }
-        // Said only once the salons are read, and of the search when there is one:
-        // "no open salons" was printed under the spinner, and of a search that missed.
-        ListEmptyComponent={salonsLost || (loading && lounges.length === 0) ? null : searchQuery.trim() ? (
-          <View style={s.emptyPublic}>
-            <Text style={s.emptyPublicText}>No salon matches that.</Text>
-          </View>
-        ) : (
-          <View style={s.emptyPublic}>
-            <Globe size={22} color={colors.fog} strokeWidth={1} />
-            <Text style={s.emptyPublicText}>No open salons at this time.</Text>
-            <Text style={s.emptyPublicHint}>BE THE FIRST TO OPEN ONE</Text>
-          </View>
-        )}
-      />
-
-      {/* ── Create Sheet ── */}
-      <CreateLoungeSheet visible={showCreate} onClose={() => setShowCreate(false)} />
-
-      {/* ── Report a salon (long-press a door plaque) ── */}
-      {reportLounge && (
-        <ReportSheet
-          visible={!!reportLounge}
-          contentType="lounge"
-          contentId={reportLounge.id}
-          targetUserId={reportLounge.creator_id}
-          targetUsername="the proprietor"
-          onDismiss={() => setReportLounge(null)}
+              ) : null}
+              {/* Said only once the salons are read, and of the search when there is one. */}
+              {reading || browsableLounges.length > 0 ? null : words ? (
+                <CorridorState
+                  title={myLounges.length > 0 ? 'No other salon matches that.' : 'No salon matches that.'}
+                  words={myLounges.length > 0 ? 'Your own salon above does. Try another word to find more.' : 'Try another word to find more.'}
+                />
+              ) : (
+                <CorridorState
+                  title="No open salons at this time."
+                  words="The corridor is quiet tonight."
+                  act={{
+                    label: 'BE THE FIRST TO OPEN ONE',
+                    spoken: foundRoom.held ? 'Be the first to open one' : 'Be the first to open one. The Archivist opens this. Opens the Society.',
+                    onPress: establish,
+                    roped: !foundRoom.held,
+                  }}
+                />
+              )}
+            </>
+          ) : null}
         />
-      )}
+
+        {/* ── The register ── */}
+        <CreateLoungeSheet visible={showCreate} onClose={() => setShowCreate(false)} />
+
+        {/* ── Report a salon (long-press a row) ── */}
+        {reportLounge && (
+          <ReportSheet
+            visible={!!reportLounge}
+            contentType="lounge"
+            contentId={reportLounge.id}
+            targetUserId={reportLounge.creator_id}
+            targetUsername="the proprietor"
+            onDismiss={() => setReportLounge(null)}
+          />
+        )}
       </View>
     </FrozenTab>
   );
 }
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.ink },
+  page: { paddingHorizontal: CORRIDOR.page },
+  // The rail reaches the screen's right edge: the next card shows it goes on.
+  rail: { marginTop: 12, marginRight: -CORRIDOR.page },
+  railRow: { gap: CORRIDOR.gap, paddingRight: CORRIDOR.page },
+  unasked: {
+    marginTop: 12, minHeight: 56, backgroundColor: colors.soot, borderRadius: CORRIDOR.radius,
+    flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 10,
+    paddingVertical: 8, paddingHorizontal: 16,
+  },
+  unaskedWords: { flexShrink: 1, fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 20, color: colors.bone },
+  tryLine: { minHeight: 44, justifyContent: 'center' },
+});
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
 export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

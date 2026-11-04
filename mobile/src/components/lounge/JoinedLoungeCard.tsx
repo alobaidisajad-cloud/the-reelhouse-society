@@ -1,215 +1,107 @@
 /**
- * JoinedLoungeCard — a lit doorway on YOUR SALONS strip.
- * Honest seals only: a crimson "N NEW" when unread dispatches truly
- * wait, a brass door-count when guests truly stand at your door,
- * AWAITING while the host considers you. Nothing pulses, nothing lies.
+ * JoinedLoungeCard — one of YOUR SALONS on the rail: its cover, clean (no words on a picture), and
+ * beneath it its name, when the last word was said, one piece of news, and who sits there. The
+ * news is one tag, in the house's order: AWAITING while the host considers you, then the requests
+ * at your door, then what is new. Nothing pulses.
  */
 import React from 'react';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Film as FilmIcon, DoorOpen, Hourglass } from 'lucide-react-native';
+import { Film as FilmIcon, DoorOpen, Hourglass, Lock } from 'lucide-react-native';
 import { LoungeRoom } from '@/src/stores/lounge';
-import { colors, fonts, effects, SEPIA_HASH, castOf } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
 import { MemberFaceStack } from '@/src/components/lounge/MemberFaceStack';
-import { EDGE_LIT } from '@/src/theme/light';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { useTimeAgo } from '@/src/hooks/useClock';
+import { useLineScale } from '@/src/hooks/useTextScale';
+import { CORRIDOR } from './corridor';
 
 /** Where the server stops counting a salon's unread dispatches. */
 export const UNREAD_COUNTED_TO = 100;
 
-export const JoinedLoungeCard = React.memo(({ lounge, index: _index }: { lounge: LoungeRoom; index: number }) => {
-  const coverUrl = lounge.cover_image
-    ? tmdb.backdrop(lounge.cover_image, 'w500')
-    : null;
+/** The name's two lines, at the phone's display size: every card on the rail stands as tall. */
+const NAME = { size: 15, line: 18 } as const;
+
+export const JoinedLoungeCard = React.memo(({ lounge, width }: { lounge: LoungeRoom; width: number }) => {
+  const coverUrl = lounge.cover_image ? tmdb.backdrop(lounge.cover_image, 'w500') : null;
   const unread = lounge.unread_count ?? 0;
-  const hasUnread = unread > 0;
   const isAwaiting = lounge.membership_status === 'pending';
   const atDoor = lounge.pending_count || 0;
-  const unreadLabel = unread > 9 ? '9+ NEW' : `${unread} NEW`;
+  const lastWord = useTimeAgo(lounge.last_message_at ?? null);
+  const nameRoom = { minHeight: NAME.line * 2 * useLineScale() };
   // get_lounge_unread_counts stops counting at UNREAD_COUNTED_TO, so a count there means at least that.
   const unreadSpoken = unread >= UNREAD_COUNTED_TO ? `more than ${UNREAD_COUNTED_TO - 1}` : `${unread}`;
+  const members = lounge.member_count || 0;
+  const news = isAwaiting ? 'awaiting the host'
+    : atDoor > 0 ? `${atDoor} at your door`
+      : unread > 0 ? `${unreadSpoken} new dispatches` : null;
 
   return (
-    <View style={s.joinedCast}>
-      <PressableScale
-        style={s.joinedCard}
-        onPress={() => nav.push(`/lounge/${lounge.id}`)}
-        haptic="light"
-        accessibilityRole="button"
-        // Every seal the card draws, said: the door and AWAITING were only seen.
-        accessibilityLabel={`Enter salon ${lounge.name}, ${lounge.member_count || 0} ${(lounge.member_count || 0) === 1 ? 'member' : 'members'}${
-          isAwaiting ? ', awaiting the host'
-            : atDoor > 0 ? `, ${atDoor} at your door`
-              : hasUnread ? `, ${unreadSpoken} new dispatches` : ''}`}
-      >
-        <View style={s.joinedImgWrap}>
-          <RemoteImage uri={coverUrl} style={s.joinedImg} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={300} fallback={<LinearGradient
-              colors={['rgba(184,137,26,0.06)', 'rgba(13,11,9,0.95)']}
-              style={s.joinedImgPlaceholder}
-            >
-              <FilmIcon size={22} color={colors.sepia} strokeWidth={1} />
-            </LinearGradient>} />
-
-          <LinearGradient
-            colors={['transparent', 'rgba(13,11,9,0.85)']}
-            style={s.joinedGradient}
-          />
-
-          {hasUnread && !isAwaiting && atDoor === 0 && (
-            <View style={s.unreadSeal}>
-              {/* 9+ past nine: the card's name says the whole count. */}
-              <Text style={s.unreadSealText} {...UNSPOKEN}>{unreadLabel}</Text>
-            </View>
-          )}
-
-          {atDoor > 0 && (
-            <View style={s.doorBadge}>
-              <DoorOpen size={9} color={colors.ink} strokeWidth={2} />
-              <Text style={s.doorBadgeText}>{atDoor}</Text>
-            </View>
-          )}
-
-          {isAwaiting && (
-            <View style={s.awaitingBadge}>
-              <Hourglass size={8} color={colors.sepia} strokeWidth={2} />
-              <Text style={s.awaitingText}>AWAITING</Text>
-            </View>
-          )}
-
-          <View style={s.joinedNameOverlay}>
-            <Text style={s.joinedNameText} numberOfLines={2}>{lounge.name}</Text>
-            {/* Bounded avatar stack — up to 3 faces + "+N" from member_count,
-                or the plain count if faces aren't available. Fixed footprint. */}
-            <MemberFaceStack
-              faces={lounge.memberFaces}
-              totalCount={lounge.member_count || 0}
-              isPrivate={lounge.is_private}
-            />
-          </View>
+    <PressableScale style={[s.card, { width }]} onPress={() => nav.push(`/lounge/${lounge.id}`)} haptic="light" hitSlop={null}
+      accessibilityRole="button"
+      // Everything the card draws, said: the name, its privacy, the last word, the news, the seats.
+      accessibilityLabel={[`Enter salon ${lounge.name}`, lounge.is_private ? 'private' : null,
+        lastWord ? `last word ${lastWord.toLowerCase()}` : null, news,
+        `${members} ${members === 1 ? 'member' : 'members'}`].filter(Boolean).join(', ')}>
+      <View style={s.cover}>
+        <RemoteImage uri={coverUrl} style={StyleSheet.absoluteFill} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={300}
+          fallback={<View style={s.noCover}><FilmIcon size={22} color={colors.tarnishDeep} strokeWidth={1.5} /></View>} />
+      </View>
+      <View style={s.body} {...UNSPOKEN}>
+        <View style={[s.nameRow, nameRoom]}>
+          {lounge.is_private ? <Lock size={12} color={colors.bone} style={s.lock} /> : null}
+          {/* A salon's name is content: past two lines it ends in "…", said whole and shown whole in the room. */}
+          <Text style={s.name} {...displayTextProps} numberOfLines={2}>{lounge.name}</Text>
         </View>
-      </PressableScale>
-    </View>
+        {lastWord ? <Text style={s.lastWord} {...scaledTextProps}>LAST WORD {lastWord.toUpperCase()}</Text> : null}
+        <View style={s.newsRoom}>
+          {isAwaiting ? (
+            <View style={[s.tag, s.tagAwaiting]}>
+              <Hourglass size={11} color={colors.bone} />
+              <Text style={[s.tagWord, s.tagWordAwaiting]} {...scaledTextProps}>AWAITING</Text>
+            </View>
+          ) : atDoor > 0 ? (
+            <View style={[s.tag, s.tagDoor]}>
+              <DoorOpen size={11} color={colors.ink} />
+              <Text style={[s.tagWord, s.tagWordDoor]} {...scaledTextProps}>{`${atDoor} AT THE DOOR`}</Text>
+            </View>
+          ) : unread > 0 ? (
+            <View style={[s.tag, s.tagNew]}>
+              {/* 9+ past nine: the card's name says the whole count. */}
+              <Text style={[s.tagWord, s.tagWordNew]} {...scaledTextProps}>{`${unread > 9 ? '9+' : unread} NEW`}</Text>
+            </View>
+          ) : null}
+        </View>
+        <View style={s.faces}><MemberFaceStack faces={lounge.memberFaces} totalCount={members} /></View>
+      </View>
+    </PressableScale>
   );
 });
 JoinedLoungeCard.displayName = 'JoinedLoungeCard';
 
 const s = StyleSheet.create({
-  // A small lit card keeps a short lift, straight down (see effects.shadowFloat)
-  // — split across two views (see castOf): the card clips its corners, and on
-  // iOS a view that clips casts nothing, so this lift never drew on an iPhone.
-  joinedCast: castOf(effects.shadowFloat),
-  joinedCard: { ...EDGE_LIT,
-    width: 140,
-    borderRadius: 3,
-    overflow: 'hidden',
-    backgroundColor: colors.soot,
-    borderWidth: 1,
-    borderColor: colors.sepiaBorder,
-    elevation: 8,
-  },
-  joinedImgWrap: {
-    width: '100%',
-    aspectRatio: 1 / 1.35,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  joinedImg: {
-    width: '100%',
-    height: '100%',
-  },
-  joinedImgPlaceholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  joinedGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '75%',
-  },
-  // The honest seal — crimson only when dispatches truly wait.
-  unreadSeal: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: colors.crimson,
-    borderWidth: 1,
-    borderColor: colors.ink,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    zIndex: 10,
-  },
-  unreadSealText: {
-    fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 0.3,
-    color: colors.flicker,
-    includeFontPadding: false,
-  },
-  doorBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: colors.sepia,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 10,
-    zIndex: 10,
-  },
-  doorBadgeText: {
-    fontFamily: fonts.sub,
-    fontSize: 9,
-    color: colors.ink,
-    includeFontPadding: false,
-  },
-  awaitingBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(13,11,9,0.85)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(184,137,26,0.5)',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 10,
-    zIndex: 10,
-  },
-  awaitingText: {
-    fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 0.5,
-    color: colors.sepia,
-    includeFontPadding: false,
-  },
-  joinedNameOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 11,
-    paddingBottom: 12,
-    paddingTop: 4,
-  },
-  joinedNameText: {
-    fontFamily: fonts.sub,
-    letterSpacing: 0.5,
-    fontSize: 12,
-    color: colors.parchment,
-    marginBottom: 6,
-    lineHeight: 16,
-  },
+  card: { backgroundColor: colors.soot, borderRadius: CORRIDOR.radius, overflow: 'hidden' },
+  cover: { aspectRatio: 16 / 10, backgroundColor: colors.inkwell },
+  noCover: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
+  body: { flex: 1, paddingTop: 10, paddingHorizontal: 11, paddingBottom: 11, gap: 6 },
+  nameRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  lock: { marginTop: 3 },
+  name: { flex: 1, minWidth: 0, fontFamily: fonts.display, fontSize: NAME.size, lineHeight: NAME.line, color: colors.silverScreen },
+  lastWord: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
+  newsRoom: { minHeight: 22, flexDirection: 'row' },
+  // At the card's foot, however long its name: the cards on a rail stand as tall as the tallest.
+  faces: { marginTop: 'auto' },
+  tag: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 22, paddingHorizontal: 7, paddingTop: 2, paddingBottom: 1, borderRadius: 3 },
+  tagNew: { backgroundColor: colors.crimson },
+  tagDoor: { backgroundColor: colors.sepia },
+  tagAwaiting: { borderWidth: 1, borderColor: 'rgba(194,180,146,0.5)' },
+  tagWord: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, includeFontPadding: false },
+  tagWordNew: { color: colors.flicker },
+  tagWordDoor: { color: colors.ink },
+  tagWordAwaiting: { color: colors.bone },
 });

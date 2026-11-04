@@ -1,412 +1,185 @@
-import React, { useEffect, useRef } from 'react';
+/**
+ * The Darkroom's prints. A print is a poster on the contact sheet with its edge print beneath it:
+ * its place on the sheet and its year, a tick when the member has logged the film, and SAVE.
+ * Nothing is drawn on the poster. A film with no poster is an undeveloped plate (its title and
+ * year where the picture would be); an artist is a portrait print, named on its edge. While a
+ * sheet is developed, its prints are still tiles: nothing loops.
+ */
+import React, { useRef } from 'react';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
-import { useReduceMotion } from '@/src/hooks/useReduceMotion';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useIsFocused } from "expo-router/react-navigation";
 import { nav } from '@/src/utils/typedRouter';
 import { Bookmark } from 'lucide-react-native';
 
-import { colors, fonts, SEPIA_HASH, castOf, liftOf } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { tmdb } from '@/src/lib/tmdb';
 import { type DiscoverFilm } from '@/src/stores/discover';
 import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import PressableScale from '@/src/components/PressableScale';
-import { EDGE_LIT } from '@/src/theme/light';
 import { UNINKED } from '@/src/theme/unready';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
+import { PLATE, SHEET, plateTitleCeiling } from './sheet';
 
-// ══════════════════════════════════════════════════════════════
-//  DARKROOM SAFELIGHT ATMOSPHERICS
-// ══════════════════════════════════════════════════════════════
-export const DarkroomAtmo = React.memo(function DarkroomAtmo() {
-  const isFocused = useIsFocused();
-  const reducedMotion = useReduceMotion();
-  const pulse = useSharedValue(0.15);
-  // The safelight stays — it is the soul of this room. It just stops breathing
-  // when nobody is in it. This ran with `[]` deps and cancelled only on
-  // unmount, and a tab screen never unmounts, so a 12-second cycle drove the
-  // UI thread for the whole session from behind a header nobody was looking at.
-  //
-  // Parked at 0.18 rather than 0: the lamp is still on, it simply holds still.
-  useEffect(() => {
-    if (!isFocused || reducedMotion) {
-      cancelAnimation(pulse);
-      pulse.value = 0.18;
-      return;
-    }
-    // A slow, rhythmic breathing of amber/red darkroom safelight
-    pulse.value = withRepeat(
-      withSequence(
-        withTiming(0.25, { duration: 6000, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0.12, { duration: 6000, easing: Easing.inOut(Easing.sin) })
-      ), -1, true
-    );
-    return () => cancelAnimation(pulse);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFocused, reducedMotion]);
-  const style = useAnimatedStyle(() => ({ opacity: pulse.value }));
-  return (
-    <Animated.View style={[StyleSheet.absoluteFill, style, { zIndex: 0 }]} pointerEvents="none">
-      <LinearGradient
-        colors={['rgba(180,45,45,0.4)', 'rgba(184,137,26,0.1)', 'transparent']}
-        locations={[0, 0.5, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-    </Animated.View>
-  );
-});
+/** A film's year, from either date it may carry. */
+const yearOf = (item: DiscoverFilm) => ((item as { release_date?: string; first_air_date?: string }).release_date
+  || (item as { release_date?: string; first_air_date?: string }).first_air_date || '').slice(0, 4);
 
-// Breathing skeleton for loading states
-export const AnimatedPosterSkeleton = React.memo(function AnimatedPosterSkeleton({ sharedOp }: { sharedOp?: any }) {
-  const localOp = useSharedValue(0.4);
-  const op = sharedOp || localOp;
-
-  useEffect(() => {
-    if (!sharedOp) {
-      op.value = withRepeat(withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }), -1, true);
-      return () => cancelAnimation(op);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sharedOp]);
-
-  const animStyle = useAnimatedStyle(() => ({ opacity: op.value }));
-  return (
-    <Animated.View style={[s.posterWrap, animStyle, { backgroundColor: 'rgba(30,25,20,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.06)' }]} />
-  );
-});
-
-export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: DiscoverFilm }) {
+export const Print = React.memo(function Print({ item, place }: {
+  item: DiscoverFilm;
+  /** Its place among the sheet's films, from 1; an artist has none. */
+  place: number | null;
+}) {
   const isPerson = item.media_type === 'person';
-  const isLogged = useFilmStore((s: any) => !isPerson && !!s._loggedIndex[item.id]);
-  const isSaved = useFilmStore((s: any) => !isPerson && !!s._watchlistIndex[item.id]);
-  const addToWatchlist = useFilmStore((s: any) => s.addToWatchlist);
-  const removeFromWatchlist = useFilmStore((s: any) => s.removeFromWatchlist);
-  const isAuthenticated = useAuthStore(s => !!s.user);
+  const isLogged = useFilmStore((s) => !isPerson && !!s._loggedIndex[item.id]);
+  const isSaved = useFilmStore((s) => !isPerson && !!s._watchlistIndex[item.id]);
+  const addToWatchlist = useFilmStore((s) => s.addToWatchlist);
+  const removeFromWatchlist = useFilmStore((s) => s.removeFromWatchlist);
+  const isAuthenticated = useAuthStore((s) => !!s.user);
   // Not on the watchlist the phone holds, but the ledger not yet read: not known to be unsaved.
   // Pressing it is still right (a film already saved is said as saved), so only its ink waits.
-  const saveUnknown = useFilmStore((s: any) => !isPerson && isAuthenticated && !s._watchlistIndex[item.id] && s.marksKnown !== 'held');
+  const saveUnknown = useFilmStore((s) => !isPerson && isAuthenticated && !s._watchlistIndex[item.id] && s.marksKnown !== 'held');
 
-  // Every poster-less film measured against the live API carried a year, so the
-  // plate can bear it the way a negative's edge marking would.
-  const year = ((item as { release_date?: string; first_air_date?: string }).release_date
-    || (item as { release_date?: string; first_air_date?: string }).first_air_date
-    || '').slice(0, 4);
-  const posterPath = isPerson ? item.profile_path : item.poster_path;
-  const posterUri = posterPath ? (isPerson ? tmdb.profile(posterPath, 'w185') : tmdb.poster(posterPath, 'w342')) : null;
+  const title = (isPerson ? item.name : item.title || item.name) || 'Untitled';
+  const year = yearOf(item);
+  const picturePath = isPerson ? item.profile_path : item.poster_path;
+  const pictureUri = picturePath ? (isPerson ? tmdb.profile(picturePath, 'w185') : tmdb.poster(picturePath, 'w342')) : null;
+  // Everything the edge print tells, said with the picture that opens it.
+  const said = isPerson ? `${title}, artist` : [title, year || null, isLogged ? 'logged' : null].filter(Boolean).join(', ');
+  const column = useColumnWidth();
 
-  const handlePress = () => {
-    nav.push(isPerson ? `/person/${item.id}` : `/film/${item.id}`);
-  };
-
-  const isMutatingWatchlist = useRef(false);
-  const currentItemId = useRef(item.id);
-
-  if (currentItemId.current !== item.id) {
-    currentItemId.current = item.id;
-    isMutatingWatchlist.current = false;
-  }
-
-  const toggleWatchlist = async () => {
+  const saving = useRef(false);
+  const toggleSave = async () => {
     if (!isAuthenticated) {
       nav.push('/login');
       return;
     }
-    if (isMutatingWatchlist.current) return;
-    isMutatingWatchlist.current = true;
-    const captureId = item.id;
+    if (saving.current) return;
+    saving.current = true;
     try {
-      if (isSaved) {
-        await removeFromWatchlist(captureId);
-      } else {
-        await addToWatchlist({ id: captureId, title: item.title || item.name || 'Unknown Title', poster_path: item.poster_path, release_date: item.release_date });
-      }
+      if (isSaved) await removeFromWatchlist(item.id);
+      else await addToWatchlist({ id: item.id, title, poster_path: item.poster_path, release_date: item.release_date });
     } catch (e) {
-      if (__DEV__) console.warn('[FilmGridCard] Watchlist mutation failed:', e);
+      if (__DEV__) console.warn('[Print] Watchlist mutation failed:', e);
     } finally {
-      if (currentItemId.current === captureId) {
-        isMutatingWatchlist.current = false;
-      }
+      saving.current = false;
     }
   };
 
   return (
-    <View style={s.posterWrap}>
-      <View style={s.posterClip}>
-      <PressableScale
-        testID="film-card"
-        style={StyleSheet.absoluteFill}
-        // No halo: the whole poster is the target, and a halo on a grid of
-        // posters 8pt apart only reached onto the next one's face.
-        hitSlop={null}
-        onPress={handlePress}
-        haptic
-        accessibilityRole="button"
-        accessibilityLabel={isPerson ? item.name : `${item.title || 'Film'}${item.release_date ? `, ${item.release_date.slice(0, 4)}` : ''}`}
-      >
-        <View style={[s.posterImg, !posterUri && s.posterPlaceholder]}>
-          {posterUri ? (
-            <>
-              {/* THE DEVELOP — each print surfaces from its sepia ghost like
-                  paper in the tray. Native GPU crossfade: zero JS cost. */}
-              <RemoteImage uri={posterUri} style={StyleSheet.absoluteFill} recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={300} contentFit="cover" fallback={null} />
-              {/* Soft tactical tungsten edge mapping */}
-              <LinearGradient
-                colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(13,11,9,0.9)']}
-                locations={[0, 0.4, 1]}
-                style={StyleSheet.absoluteFill}
-                pointerEvents="none"
-              />
-              <View style={s.posterBorderEngrave} pointerEvents="none" />
-            </>
-          ) : (
-            /* An undeveloped negative. These used to be filtered out of the
-               fetch entirely, so a real film with no poster simply did not
-               exist as far as search was concerned. On a page headed THE
-               NEGATIVES — "undeveloped stock" — a film with no print made yet
-               is the purest example of the idea, so it gets a plate of its own
-               rather than deletion: the mark, then the title and year that a
-               negative would carry on its edge. */
-            <View style={s.undevelopedWrap}>
-              <Text style={s.posterPlaceholderGlyph}>✦</Text>
-              <Text {...scaledTextProps} style={s.undevelopedTitle} numberOfLines={3} ellipsizeMode="tail">
-                {(item.title || item.name || 'UNTITLED').toUpperCase()}
-              </Text>
-              {!!year && <Text {...scaledTextProps} style={s.undevelopedYear}>{year}</Text>}
-            </View>
-          )}
-        </View>
-
-        {isLogged && (
-          <View style={s.loggedBadge}>
-            <Text style={s.loggedText}>✓</Text>
-          </View>
-        )}
-
-        {isPerson && (
-          <Text style={s.personName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
-            {item.name}
-          </Text>
+    <View style={s.print}>
+      <PressableScale testID="film-card" onPress={() => nav.push(isPerson ? `/person/${item.id}` : `/film/${item.id}`)} haptic hitSlop={null}
+        style={[s.pic, !pictureUri && s.undeveloped]} accessibilityRole="button" accessibilityLabel={said}>
+        {pictureUri ? (
+          <RemoteImage uri={pictureUri} style={StyleSheet.absoluteFill} recyclingKey={`${item.media_type || 'movie'}-${item.id}`}
+            placeholder={{ blurhash: SEPIA_HASH }} transition={300} contentFit="cover" fallback={null} />
+        ) : (
+          // An undeveloped plate: the mark, then the title and year a negative carries on its edge.
+          <>
+            <Text style={s.plateMark} {...UNSPOKEN}>✦</Text>
+            <Text style={s.plateTitle} {...scaledTextProps} numberOfLines={4}
+              maxFontSizeMultiplier={Math.min(scaledTextProps.maxFontSizeMultiplier, plateTitleCeiling(title.toUpperCase(), column))}>
+              {title.toUpperCase()}
+            </Text>
+            {!!year && <Text style={s.plateYear} {...scaledTextProps}>{year}</Text>}
+          </>
         )}
       </PressableScale>
-      </View>
 
-      {!isPerson && (
-        <PressableScale touch="destructive"
-          style={[s.quickSaveIcon, isSaved ? s.quickSaveIconActive : s.quickSaveIconInactive]}
-          onPress={toggleWatchlist}
-          haptic="light"
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityRole="button"
-          accessibilityLabel={isSaved ? `Remove ${item.title || 'film'} from watchlist` : `Add ${item.title || 'film'} to watchlist`}
-        >
-          <Bookmark size={12} color={isSaved ? colors.ink : colors.parchment} fill={isSaved ? colors.ink : 'transparent'}
-            strokeDasharray={saveUnknown ? UNINKED : undefined} />
-        </PressableScale>
+      {isPerson ? (
+        <View style={s.who} {...UNSPOKEN}>
+          <Text style={s.whoName} {...scaledTextProps}>{title.toUpperCase()}</Text>
+          <Text style={s.whoKind} {...scaledTextProps}>ARTIST</Text>
+        </View>
+      ) : (
+        <View style={s.edge}>
+          <View style={s.marks} {...UNSPOKEN}>
+            <Text style={s.place} {...scaledTextProps}>{place}</Text>
+            {!!year && <Text style={s.year} {...scaledTextProps}>{year}</Text>}
+          </View>
+          {isLogged ? <Text style={s.tick} {...UNSPOKEN} {...scaledTextProps}>✓</Text> : null}
+          <PressableScale touch="commit" onPress={toggleSave} haptic="light" hitSlop={null} style={s.save}
+            accessibilityRole="button" accessibilityState={{ selected: isSaved }}
+            accessibilityLabel={isSaved ? `Save: ${title} is on your watchlist. Takes it off` : `Save ${title} to your watchlist`}>
+            <Bookmark size={15} strokeWidth={2} color={isSaved ? colors.sepia : colors.bone} fill={isSaved ? colors.sepia : 'transparent'}
+              strokeDasharray={saveUnknown ? UNINKED : undefined} />
+          </PressableScale>
+        </View>
       )}
     </View>
   );
 });
 
+/** A print while the sheet is developed: a still tile, and its edge's room. */
+export const PrintTile = React.memo(function PrintTile() {
+  return (
+    <View style={s.print} {...UNSPOKEN}>
+      <View style={[s.pic, s.tile]} />
+      <View style={s.edge} />
+    </View>
+  );
+});
 
-export const DarkroomSuggestionRow = React.memo(({ item, onPress }: { item: DiscoverFilm; onPress: (item: DiscoverFilm) => void }) => {
+export const DarkroomSuggestionRow = React.memo(({ item, first, onPress }: { item: DiscoverFilm; first: boolean; onPress: (item: DiscoverFilm) => void }) => {
   const isPerson = item.media_type === 'person';
   const imgPath = isPerson ? item.profile_path : item.poster_path;
   const imgUri = imgPath ? (isPerson ? tmdb.profile(imgPath, 'w185') : tmdb.poster(imgPath, 'w92')) : null;
+  const kind = isPerson ? 'ARTIST' : `${item.release_date?.slice(0, 4) || 'TBA'} · FILM`;
 
   return (
-    <PressableScale
-      testID="darkroom-suggestion-row"
-      style={s.suggestionRow}
-      onPress={() => onPress(item)}
-      haptic="light"
-      pressedScale={0.98}
-      accessibilityRole="button"
-      accessibilityLabel={isPerson ? `${item.name}, artist` : `${item.title}, ${item.release_date?.slice(0, 4) ?? 'TBA'}, film`}
-    >
-      {imgUri ? (
-        <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm]}>
-          <RemoteImage uri={imgUri} style={StyleSheet.absoluteFill} recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" fallback={null} />
-        </View>
-      ) : (
-        <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm, s.suggestionImgPlaceholder]} />
-      )}
-
-      <View style={s.suggestionInfo}>
-        <Text style={s.suggestionTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{isPerson ? item.name : item.title}</Text>
-        <Text style={s.suggestionSubTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-          {isPerson ? 'ARTIST' : `${item.release_date?.slice(0, 4) ?? 'TBA'} · FILM`}
-        </Text>
+    <PressableScale testID="darkroom-suggestion-row" style={[s.suggestion, !first && s.suggestionRuled]} onPress={() => onPress(item)}
+      haptic="light" pressedScale={0.98} hitSlop={null}
+      accessibilityRole="button" accessibilityLabel={isPerson ? `${item.name}, artist` : `${item.title}, ${item.release_date?.slice(0, 4) || 'TBA'}, film`}>
+      <View style={isPerson ? s.thumbPerson : s.thumbFilm}>
+        {imgUri ? (
+          <RemoteImage uri={imgUri} style={StyleSheet.absoluteFill} recyclingKey={`${item.media_type || 'movie'}-${item.id}`}
+            placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" fallback={null} />
+        ) : null}
+      </View>
+      <View style={s.suggestionWords}>
+        <Text style={s.suggestionTitle} {...scaledTextProps} numberOfLines={2}>{isPerson ? item.name : item.title}</Text>
+        <Text style={s.suggestionKind} {...scaledTextProps}>{kind}</Text>
       </View>
     </PressableScale>
   );
 });
 
-const s = StyleSheet.create({
-  suggestionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(184,137,26,0.05)',
-  },
-  suggestionImgWrap: {
-    overflow: 'hidden',
-    backgroundColor: colors.soot,
-  },
-  suggestionImgWrapFilm: {
-    width: 24,
-    height: 38,
-    borderRadius: 2,
-  },
-  suggestionImgWrapPerson: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  suggestionImgPlaceholder: {
-    backgroundColor: colors.ash,
-  },
-  suggestionInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  suggestionTitle: {
-    color: colors.parchment,
-    fontFamily: fonts.sub,
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  suggestionSubTitle: {
-    color: colors.fog,
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 0.8,
-  },
-  // A short lift, straight down: a 20pt drop with a 30pt blur was a dark
-  // cloud round every print on the lit house. Grid cells never overlap, so
-  // the lower elevation changes Android's paint order for nothing.
-  //
-  // Split across two views (see castOf): the print clips its corners, and on
-  // iOS a view that clips casts nothing — this lift never drew on an iPhone.
-  posterWrap: {
-    width: '100%',
-    aspectRatio: 2/3,
-    ...castOf({ shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.8, shadowRadius: 12 }),
-  },
-  posterClip: { ...EDGE_LIT,
-    ...StyleSheet.absoluteFill,
-    borderRadius: 6,
-    overflow: 'hidden',
-    backgroundColor: colors.soot,
-    borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.5)',
-    ...liftOf({ elevation: 6 }),
-  },
-  posterBorderEngrave: {
-    ...StyleSheet.absoluteFill,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 6,
-  },
-  posterImg: {
-    width: '100%',
-    height: '100%',
-  },
-  posterPlaceholder: {
-    backgroundColor: colors.ash,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  posterPlaceholderGlyph: {
-    fontFamily: fonts.display,
-    color: colors.fog,
-    fontSize: 18,
-    opacity: 0.55,
-    marginBottom: 8,
-  },
-  undevelopedWrap: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-  },
-  undevelopedTitle: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 0.8,
-    // No fixed lineHeight. React Native does NOT scale lineHeight with Dynamic
-    // Type, so `lineHeight: 13` on 9pt text meant that at 1.35x the glyphs grew
-    // to 12.15 inside a line box still fixed at 13 — cramped, descenders
-    // clipping. This is the same fault removed from heroTitle in this same
-    // pass; it was written back in here thirty lines later. The tile cannot
-    // grow, so the text is capped instead (scaledTextProps, 1.35) and the line
-    // box left free to follow it.
-    color: colors.bone,
-    textAlign: 'center',
-  },
-  undevelopedYear: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 1.3,
-    color: colors.sepia,
-    // No opacity. This plate sits on ash, not ink, so the usual sums do not
-    // apply: 0.85 measured 4.00:1 against ash, just under AA at 8pt, while
-    // full sepia gives 4.99:1 and still reads quieter than the title above it.
-    marginTop: 6,
-  },
-  quickSaveIcon: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.3)',
-  },
-  quickSaveIconActive: {
-    backgroundColor: colors.sepia,
-  },
-  quickSaveIconInactive: {
-    backgroundColor: 'rgba(13,11,9,0.85)',
-  },
-  loggedBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.sepia,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loggedText: {
-    color: colors.ink,
-    fontSize: 10,
-    fontFamily: fonts.sub,
-  },
-  personName: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    backgroundColor: 'rgba(13,11,9,0.85)',
-    color: colors.parchment,
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 0.4,
-    textAlign: 'center',
-    paddingVertical: 6,
-  },
-});
-
-
 DarkroomSuggestionRow.displayName = 'DarkroomSuggestionRow';
+
+const s = StyleSheet.create({
+  print: { flex: 1, minWidth: 0 },
+  pic: {
+    // The plate before its picture: the house's own ground, a shade above the sheet (the well is a field's).
+    aspectRatio: 2 / 3, borderRadius: 2, overflow: 'hidden', backgroundColor: colors.ink,
+    borderWidth: PLATE.border, borderColor: 'rgba(232,223,208,0.1)',
+  },
+  undeveloped: {
+    borderStyle: 'dashed', borderColor: 'rgba(158,148,136,0.45)',
+    alignItems: 'center', justifyContent: 'center', gap: 6, padding: PLATE.pad,
+  },
+  plateMark: { fontFamily: fonts.display, fontSize: 16, color: colors.sepia, includeFontPadding: false },
+  plateTitle: { fontFamily: fonts.sub, fontSize: PLATE.size, lineHeight: 14, letterSpacing: PLATE.spacing, color: colors.bone, textAlign: 'center', includeFontPadding: false },
+  plateYear: { fontFamily: fonts.sub, fontSize: 10, color: colors.fogQuiet, includeFontPadding: false },
+  tile: { backgroundColor: colors.surfaceRaised, borderColor: 'transparent' },
+  // The edge print: as tall as SAVE (SHEET.edge), its marks on the left, SAVE at its end.
+  edge: { flexDirection: 'row', alignItems: 'center', minHeight: SHEET.edge },
+  marks: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 6 },
+  place: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
+  year: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
+  tick: { fontFamily: fonts.sub, fontSize: 11, color: colors.sepia, includeFontPadding: false },
+  // A commit, 48 by its own box, reaching into half the gutter and never into the next print.
+  save: { width: SHEET.edge, height: SHEET.edge, marginRight: -SHEET.gutter / 2, alignItems: 'center', justifyContent: 'center' },
+  who: { minHeight: SHEET.edge, justifyContent: 'center', paddingTop: 6, paddingBottom: 8, gap: 1 },
+  whoName: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.parchment, includeFontPadding: false },
+  whoKind: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
+  suggestion: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, paddingVertical: 8 },
+  suggestionRuled: { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: 'rgba(232,223,208,0.06)' },
+  thumbFilm: { width: 24, height: 38, borderRadius: 2, overflow: 'hidden', backgroundColor: colors.soot },
+  thumbPerson: { width: 32, height: 32, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.soot },
+  suggestionWords: { flex: 1, minWidth: 0 },
+  suggestionTitle: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.parchment },
+  suggestionKind: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fog, marginTop: 3, includeFontPadding: false },
+});

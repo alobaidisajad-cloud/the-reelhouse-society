@@ -59,7 +59,7 @@ src/components/admin/SecondKeyDoor.tsx · Go back · wayOut
 src/components/auth/EmailConfirmationScreen.tsx · Close · wayOut
 src/components/critique/CritiqueRow.tsx · Withdraw your critique · destructive
 src/components/critique/CritiqueRow.tsx · {c.username ? `Report this critique by @${c.username}` : 'Report this critique'} · destructive
-src/components/darkroom/DarkroomCards.tsx · {isSaved ? `Remove ${item.title || 'film'} from watchlist` : `Add ${item.title || 'film'} to watchlist`} · destructive
+src/components/darkroom/DarkroomCards.tsx · {isSaved ? `Save: ${title} is on your watchlist. Takes it off` : `Save ${title} to your watchlist`} · commit
 src/components/dispatch/ComposeDesks.tsx · Close, without naming a film · wayOut
 src/components/dispatch/SeriesPicker.tsx · Close, without setting a series · wayOut
 src/components/dispatch/paper/PaperComposer.tsx · Back, without filing · wayOut

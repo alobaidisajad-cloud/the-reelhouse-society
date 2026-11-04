@@ -101,7 +101,7 @@ it('a pull that reaches nothing keeps the salons and says so', async () => {
   await act(async () => { await mockListProps.refreshControl.props.onRefresh(); });
   expect(toast().error).toHaveBeenCalledWith('Could not refresh — check your connection.');
   expect(r.queryByText('Transmission Interrupted')).toBeNull();
-  expect(r.getAllByText('The Nitrate Circle').length).toBeGreaterThan(0);
+  expect(r.getByLabelText(/^Enter salon The Nitrate Circle,/)).toBeTruthy();
 });
 
 describe('what the corridor says when it is empty', () => {
@@ -113,11 +113,12 @@ describe('what the corridor says when it is empty', () => {
     expect(r.queryByText('No open salons at this time.')).toBeNull();
   });
 
-  it('says nothing of open salons while the first read is still coming', async () => {
+  // The thirty-second poll read again over an answered corridor, and drew it reading each time.
+  it('a poll over an answered corridor leaves what it said', async () => {
     useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: true, loungesRead: true, fetchLounges } as never);
     const r = await mount();
-    expect(r.getByText('RETRIEVING SALONS')).toBeTruthy();
-    expect(r.queryByText('No open salons at this time.')).toBeNull();
+    expect(r.queryByLabelText('Retrieving salons')).toBeNull();
+    expect(r.getByText('The Velvet Seats Await')).toBeTruthy();
   });
 
   // The corridor's first frame came before its read began: "No open salons" and "The Velvet
@@ -125,7 +126,7 @@ describe('what the corridor says when it is empty', () => {
   it('before the salons were ever asked for, reads; it never says the house is empty', async () => {
     useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: false, fetchLounges } as never);
     const r = await mount();
-    expect(r.getByText('RETRIEVING SALONS')).toBeTruthy();
+    expect(r.getByLabelText('Retrieving salons')).toBeTruthy();
     expect(r.queryByText('No open salons at this time.')).toBeNull();
     expect(r.queryByText('The Velvet Seats Await')).toBeNull();
   });
@@ -138,7 +139,7 @@ describe('ESTABLISH, for a member without the rank', () => {
     const r = await mount();
     mockPushed.length = 0;
     await act(async () => {
-      await fireEvent.press(r.getByLabelText('Establish a new salon. The Archivist opens this. Opens the Society.'));
+      await fireEvent.press(r.getByLabelText('Establish salon. The Archivist opens this. Opens the Society.'));
     });
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     expect(mockPushed.some((h) => h.startsWith('/membership'))).toBe(true);

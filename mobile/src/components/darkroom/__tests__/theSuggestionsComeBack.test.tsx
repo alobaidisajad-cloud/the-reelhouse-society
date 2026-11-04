@@ -43,7 +43,7 @@ afterEach(() => {
 const emit = (event: string) => act(() => { (keyboard[event] ?? []).forEach((fn) => fn()); });
 
 async function open() {
-  const r = render(<DarkroomHeader />);
+  const r = render(<DarkroomHeader sheet stale={false} />);
   const field = () => r.getByTestId('darkroom-search-input');
   return {
     rows: () => r.queryAllByTestId('darkroom-suggestion-row'),

@@ -1,68 +1,50 @@
-/** DarkroomMoodBar — the moods a member can develop by, one chosen at a time. */
+/**
+ * DarkroomMoodBar — the baths: six moods a member can develop by, one chosen at a time. Three
+ * across while every name fits its tile whole at the member's size, else two (bathsPerRow); a
+ * chosen bath is lit in its own colours, and its words head the sheet below.
+ */
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
+import { useTextScale } from '@/src/hooks/useTextScale';
 import { MOODS, MOOD_ICONS } from './constants';
+import { BATH, ROOM, bathsPerRow, rowsOf } from './sheet';
 
 interface DarkroomMoodBarProps {
   mood: typeof MOODS[number] | null;
   handleSelectMood: (m: typeof MOODS[number]) => void;
 }
 
-export const DarkroomMoodBar = React.memo(function DarkroomMoodBar({
-  mood, handleSelectMood,
-}: DarkroomMoodBarProps) {
-  const renderItem = React.useCallback(({ item }: { item: typeof MOODS[number] }) => {
-    const active = mood?.label === item.label;
-    return (
-      <PressableScale key={item.label} hitSlop={{ top: 15, bottom: 15, left: 4, right: 4 }}
-        onPress={() => handleSelectMood(item)}
-        style={[s.moodCard, active && { backgroundColor: item.color, borderColor: item.accent }]}
-        haptic="medium"
-        accessibilityRole="button"
-        accessibilityState={{ selected: active }}
-        accessibilityLabel={`${item.label} mood. ${item.sub}`}
-      >
-        {(() => {
-          const IconComp = MOOD_ICONS[item.icon];
-          return IconComp ? <IconComp size={16} color={active ? item.accent : colors.bone} strokeWidth={1.5} /> : null;
-        })()}
-        <View style={{ flexShrink: 1 }}>
-          <Text style={[s.moodLabel, active && s.moodLabelActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{item.label}</Text>
-          <Text style={[s.moodSub, active && s.moodSubActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{item.sub}</Text>
-        </View>
-      </PressableScale>
-    );
-  }, [mood?.label, handleSelectMood]);
+const NAMES = MOODS.map((m) => m.label);
 
+export const DarkroomMoodBar = React.memo(function DarkroomMoodBar({ mood, handleSelectMood }: DarkroomMoodBarProps) {
+  const cols = bathsPerRow(useColumnWidth(), NAMES, useTextScale());
   return (
-    <View style={s.moodSection}>
-      <Text style={s.sectionEyebrow}>✦ DEVELOP BY MOOD ✦</Text>
-      {/* The row runs off the right edge, and a card sliced mid-word reads as
-          broken rather than scrollable. This is a darkroom: the safelight falls
-          off toward the walls, so the row now dissolves into the dark instead
-          of being cut by it — the same treatment the Lobby ticker uses. Right
-          edge only, since a symmetric fade would dim the first card at rest for
-          no reason, and pointerEvents none so it never eats a swipe. */}
-      <View style={s.moodScrollWrap}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.moodList}
-        >
-          {MOODS.map(item => renderItem({ item }))}
-          <View style={{ width: 16 }} />
-        </ScrollView>
-        <LinearGradient
-          colors={['transparent', colors.ink]}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={s.moodEdgeFade}
-          pointerEvents="none"
-        />
+    <View>
+      <Text style={s.eyebrow} {...scaledTextProps} accessibilityRole="header">✦ DEVELOP BY MOOD ✦</Text>
+      <View style={s.baths}>
+        {rowsOf(MOODS, cols).map((row, r) => (
+          <View key={r} style={s.row}>
+            {row.map((m, i) => {
+              if (!m) return <View key={`none-${i}`} style={s.bathRoom} />;
+              const chosen = mood?.label === m.label;
+              const Icon = MOOD_ICONS[m.icon];
+              return (
+                <PressableScale key={m.label} onPress={() => handleSelectMood(m)} haptic="selection" hitSlop={null}
+                  style={[s.bathRoom, s.bath, chosen && { backgroundColor: m.color, borderColor: m.accent }]}
+                  accessibilityRole="button" accessibilityState={{ selected: chosen }} accessibilityLabel={`${m.label} mood. ${m.sub}`}>
+                  {Icon ? <Icon size={16} strokeWidth={1.5} color={chosen ? m.accent : colors.bone} /> : null}
+                  <Text style={[s.name, chosen && s.nameChosen]} {...scaledTextProps} numberOfLines={1}>{m.label.toUpperCase()}</Text>
+                </PressableScale>
+              );
+            })}
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -70,76 +52,16 @@ export const DarkroomMoodBar = React.memo(function DarkroomMoodBar({
 
 DarkroomMoodBar.displayName = 'DarkroomMoodBar';
 
-// ── Styles ──
 const s = StyleSheet.create({
-  moodSection: {
-    marginBottom: 20,
+  eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, textAlign: 'center', marginTop: 20, includeFontPadding: false },
+  baths: { marginTop: 10, gap: BATH.gap },
+  row: { flexDirection: 'row', gap: BATH.gap },
+  bathRoom: { flex: 1, minWidth: 0 },
+  bath: {
+    minHeight: 58, paddingVertical: 8, paddingHorizontal: BATH.pad, borderRadius: ROOM.radius,
+    backgroundColor: colors.soot, borderWidth: BATH.border, borderColor: 'rgba(232,223,208,0.06)',
+    alignItems: 'center', justifyContent: 'center', gap: 5,
   },
-  moodScrollWrap: {
-    position: 'relative',
-  },
-  moodEdgeFade: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 28,
-    // moodCard spreads effects.shadowSurface, which carries elevation: 10.
-    // Android paints by elevation rather than JSX order, so without this the
-    // cards covered the gradient entirely and the fade did not exist on
-    // Android — shipped that way, and found only by auditing the Lounge fade
-    // that repeated the same mistake.
-    elevation: 12,
-    zIndex: 12,
-    // Elevation also DRAWS a shadow on Android. This strip wants the z-order,
-    // not the mark, so the shadow is cleared explicitly.
-    shadowColor: 'transparent',
-  },
-  sectionEyebrow: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 3,
-    color: colors.sepia,
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  moodList: {
-    gap: 8,
-    paddingHorizontal: 4,
-  },
-  moodCard: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1.5,
-    borderRadius: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(13,11,9,0.8)',
-    borderColor: 'rgba(184,137,26,0.15)',
-    minWidth: 140,
-    ...effects.shadowSurface,
-  },
-  moodLabel: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: colors.bone,
-    textTransform: 'uppercase',
-  },
-  moodLabelActive: {
-    color: colors.silverScreen,
-    ...effects.textGlowSepia, textShadowRadius: 8
-  },
-  moodSub: {
-    fontFamily: fonts.body,
-    fontSize: 10,
-    color: colors.fogQuiet,
-    marginTop: 4,
-    // This line tells you what a mood MEANS ("Heavy, profound stories"), so it
-    // is solid fogQuiet: a word never borrows its contrast from the ground behind it.
-    },
-  moodSubActive: {
-    color: colors.flicker,
-  },
+  name: { fontFamily: fonts.sub, fontSize: BATH.size, letterSpacing: BATH.spacing, color: colors.parchment, includeFontPadding: false },
+  nameChosen: { color: colors.silverScreen },
 });

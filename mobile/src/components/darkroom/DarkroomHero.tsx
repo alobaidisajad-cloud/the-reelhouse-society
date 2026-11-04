@@ -1,27 +1,28 @@
 // ============================================================
-// DarkroomHero — the Darkroom's title and its search, with suggestions
+// DarkroomHero — the Darkroom's title and its enlarger (the search), with suggestions
 // ============================================================
 import React from 'react';
 import { useClock } from '@/src/hooks/useClock';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated from 'react-native-reanimated';
-import { useArrival } from '@/src/hooks/useArrival';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Search, X } from 'lucide-react-native';
 
-import { colors, fonts, spacing, effects } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
-import { DarkroomAtmo, DarkroomSuggestionRow } from './DarkroomCards';
+import { DarkroomSuggestionRow } from './DarkroomCards';
 import type { DiscoverFilm } from '@/src/stores/discover';
-import { EDGE_LIT, WASH } from '@/src/theme/light';
+import { EDGE_LIT } from '@/src/theme/light';
 import { e2eTrace } from '@/src/utils/e2eTrace';
-import { arrive, MS } from '@/src/theme/motion';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
 import SearchUnreachable from '@/src/components/search/SearchUnreachable';
+import { ceilingFor } from '@/src/components/lobby/measure';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
+import { ROOM } from './sheet';
 
-const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
+/** What the empty field says, and its measures: the hint must fit the field whole at every size. */
+const HINT = 'Title, director, cast';
+const FIELD = { size: 14, pad: 16, icon: 16, gap: 12 } as const;
 
 interface DarkroomHeroProps {
   isFocused: boolean;
@@ -35,98 +36,84 @@ interface DarkroomHeroProps {
   suggestionsUnreachable: boolean;
   askForSuggestionsAgain: () => void;
   handleSuggestionPress: (item: DiscoverFilm) => void;
-  animatedSearchProps: React.ComponentProps<typeof AnimatedSearchIcon>['animatedProps'];
-  animatedSearchStyle: React.ComponentProps<typeof AnimatedSearchIcon>['style'];
   setFieldFocused: (focused: boolean) => void;
 }
 
 export const DarkroomHero = React.memo(function DarkroomHero({
   isFocused, inputVal, query,
   handleInputValChange, handleSearchSubmit, handleClearSearch,
-  suggestions, suggestionsUnreachable, askForSuggestionsAgain, handleSuggestionPress,
-  animatedSearchProps, animatedSearchStyle, setFieldFocused,
+  suggestions, suggestionsUnreachable, askForSuggestionsAgain, handleSuggestionPress, setFieldFocused,
 }: DarkroomHeroProps) {
-  const arrival = useArrival({ duration: MS.considered, easing: arrive(), name: 'darkroom.hero' });
   // The small hours are told as they come, with the tray open.
   const isLateNight = useClock((now) => { const h = new Date(now).getHours(); return h >= 2 && h < 6; });
+  // The hint grows with the member's text no further than it fits the field whole (Courier is even).
+  const room = useColumnWidth() - 2 * ROOM.page - 2 * FIELD.pad - FIELD.icon - FIELD.gap - 2;
+  const hintCap = Math.min(scaledTextProps.maxFontSizeMultiplier, ceilingFor(HINT, 'courierItalic', FIELD.size, 0, room));
+  // In use (in the field, or words in it): the enlarger's red.
+  const lit = isFocused || inputVal.length > 0 || query.length > 0;
   return (
-    <View style={s.heroContainer}>
-      <DarkroomAtmo />
-      {/* A thin wash: at full strength it darkened the room's lamp into two
-          dark columns down the screen. */}
-      <LinearGradient
-        colors={['rgba(13,11,9,0.8)', 'rgba(6,5,4,0.9)', 'transparent']}
-        locations={[0, 0.6, 1]}
-        style={[StyleSheet.absoluteFill, WASH]}
-      />
-      <Animated.View style={[s.heroContent, arrival]}>
-        {(() => {
-          return (
-            <>
-              {/* A display heading, so the house's display cap (1.2). At 320pt and the
-                  largest text, "Late Night Projection" was cut at a 0.6 floor; 0.5 of
-                  the capped size is 20.4pt, the floor it already had at normal size. */}
-              <Text style={s.heroTitle} accessibilityRole="header" {...displayTextProps} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
-                {isLateNight ? "Late Night Projection" : "The Darkroom"}
-              </Text>
-            </>
-          );
-        })()}
+    <View style={s.hero}>
+      {/* A display heading, so the house's display cap; a long one (Late Night Projection) takes two lines. */}
+      <Text style={s.title} accessibilityRole="header" {...displayTextProps}>
+        {isLateNight ? 'Late Night Projection' : 'The Darkroom'}
+      </Text>
 
-        <View style={s.searchWrap}>
-          <AnimatedSearchIcon size={16} animatedProps={animatedSearchProps} style={[animatedSearchStyle, s.searchIcon]} />
-          <TextInput
-            testID="darkroom-search-input"
-            onFocus={() => setFieldFocused(true)}
-            onBlur={() => setFieldFocused(false)}
-            style={[s.searchInput, (isFocused || query.length > 0) && s.searchInputActive]}
-            {...scaledTextProps}
-            /* A placeholder cannot shrink to fit, so the words fit instead:
-               231pt of the 238pt slot at 1.35 (mockups/tools/layout.cjs). */
-            placeholder="Title, director, cast"
-            placeholderTextColor={colors.fog}
-            selectionColor={colors.selection}
-            value={inputVal}
-            onChangeText={handleInputValChange}
-            maxLength={SEARCH_MAX}
-            // Names, not words: autocorrect turns "Ozu" into "Out", and on
-            // Android its composing let the last letter miss the search.
-            autoCorrect={false}
-            spellCheck={false}
-            onSubmitEditing={handleSearchSubmit}
-            returnKeyType="search"
-            keyboardAppearance="dark"
-            accessibilityLabel="Search films by title, director, or actor"
-          />
-          {inputVal.length > 0 && (
-            <PressableScale room onPress={handleClearSearch} style={s.clearBtn} accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="light">
-              <X size={16} color={colors.fog} />
-            </PressableScale>
-          )}
+      <View style={[s.field, lit && s.fieldLit]}>
+        <Search size={FIELD.icon} color={lit ? colors.bloodReel : colors.sepia} />
+        <TextInput
+          testID="darkroom-search-input"
+          onFocus={() => setFieldFocused(true)}
+          onBlur={() => setFieldFocused(false)}
+          // The hint in Courier's italic, the member's words upright.
+          style={[s.input, !inputVal && s.inputHint]}
+          allowFontScaling
+          maxFontSizeMultiplier={hintCap}
+          placeholder={HINT}
+          placeholderTextColor={colors.fog}
+          selectionColor={colors.selection}
+          value={inputVal}
+          onChangeText={handleInputValChange}
+          maxLength={SEARCH_MAX}
+          // Names, not words: autocorrect turns "Ozu" into "Out", and on
+          // Android its composing let the last letter miss the search.
+          autoCorrect={false}
+          spellCheck={false}
+          onSubmitEditing={handleSearchSubmit}
+          returnKeyType="search"
+          keyboardAppearance="dark"
+          accessibilityLabel="Search films by title, director, or actor"
+        />
+        {inputVal.length > 0 && (
+          <PressableScale onPress={handleClearSearch} style={s.clear} hitSlop={null} haptic="light"
+            accessibilityRole="button" accessibilityLabel="Clear search">
+            <X size={FIELD.icon} color={colors.bloodReel} />
+          </PressableScale>
+        )}
+      </View>
 
-          {isFocused && suggestions.length > 0 && (
-            <View
-              style={s.suggestionsBox}
-              // E2E only: where the list lands in the window.
-              onLayout={(e) => {
-                const box = e.currentTarget;
-                box.measureInWindow((x, y, w, h) => e2eTrace('darkroom.suggestions.drawn', {
-                  x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), rows: suggestions.length,
-                }));
-              }}
-            >
-              {suggestions.map((item) => (
-                <DarkroomSuggestionRow key={`${item.media_type || 'movie'}-${item.id}`} item={item} onPress={handleSuggestionPress} />
-              ))}
-            </View>
-          )}
-          {isFocused && suggestionsUnreachable && suggestions.length === 0 && (
-            <View style={s.suggestionsBox}>
-              <SearchUnreachable onRetry={askForSuggestionsAgain} />
-            </View>
-          )}
+      {/* In the flow, under the field, never hung outside it: Android neither delivers a touch to,
+          nor exposes to accessibility, a view outside its parent. */}
+      {isFocused && suggestions.length > 0 && (
+        <View
+          style={s.suggestions}
+          // E2E only: where the list lands in the window.
+          onLayout={(e) => {
+            const box = e.currentTarget;
+            box.measureInWindow((x, y, w, h) => e2eTrace('darkroom.suggestions.drawn', {
+              x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), rows: suggestions.length,
+            }));
+          }}
+        >
+          {suggestions.map((item, i) => (
+            <DarkroomSuggestionRow key={`${item.media_type || 'movie'}-${item.id}`} item={item} first={i === 0} onPress={handleSuggestionPress} />
+          ))}
         </View>
-      </Animated.View>
+      )}
+      {isFocused && suggestionsUnreachable && suggestions.length === 0 && (
+        <View style={s.suggestions}>
+          <SearchUnreachable onRetry={askForSuggestionsAgain} />
+        </View>
+      )}
     </View>
   );
 });
@@ -134,95 +121,21 @@ export const DarkroomHero = React.memo(function DarkroomHero({
 DarkroomHero.displayName = 'DarkroomHero';
 
 const s = StyleSheet.create({
-  heroContainer: {
-    // Room for the safelight to fall off, and no more: the first poster must
-    // not start low on the screen.
-    paddingTop: 40,
-    paddingBottom: 32,
-    marginHorizontal: 0,
-    marginBottom: 20,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(184,137,26,0.2)',
-    position: 'relative',
-    zIndex: 100,
-    elevation: 100, ...effects.flat,
+  hero: { paddingTop: 10 },
+  title: { fontFamily: fonts.display, fontSize: 30, lineHeight: 36, color: colors.silverScreen, textAlign: 'center' },
+  // The enlarger: the well, ruled in brass; in use, in the safelight's red.
+  field: {
+    marginTop: 14, minHeight: 50, borderRadius: ROOM.radius, backgroundColor: colors.well,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.75)',
+    flexDirection: 'row', alignItems: 'center', gap: FIELD.gap, paddingHorizontal: FIELD.pad,
   },
-  heroContent: {
-    alignItems: 'center',
-    zIndex: 1,
+  fieldLit: { borderColor: 'rgba(180,45,45,0.5)' },
+  input: {
+    flex: 1, minHeight: 48, paddingVertical: 0, paddingHorizontal: 0,
+    fontFamily: fonts.body, fontSize: FIELD.size, color: colors.parchment,
   },
-  heroTitle: {
-    fontFamily: fonts.display,
-    fontSize: 34,
-    color: colors.silverScreen,
-    textAlign: 'center',
-    // No fixed lineHeight: a fixed box stays tall while adjustsFontSizeToFit
-    // shrinks "Late Night Projection", and the words sit off-centre.
-    letterSpacing: 2,
-    ...effects.textGlowSepia,
-    textShadowRadius: 20,
-    textShadowColor: 'rgba(180,45,45, 0.6)',
-    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
-    padding: 20,
-    margin: -20,
-    marginBottom: 14 - 20,
-  },
-  searchWrap: {
-    width: '100%',
-    position: 'relative',
-    zIndex: 10,
-  },
-  searchIcon: {
-    position: 'absolute',
-    left: spacing.md,
-    top: 16,
-    color: colors.sepia,
-    opacity: 0.8,
-    zIndex: 1,
-  },
-  searchInput: {
-    // Courier ledger hand, not bold terminal mono — typing should feel
-    // like filling an archival form, same as every input in the app.
-    width: '100%',
-    backgroundColor: colors.well,
-    borderWidth: 1.5,
-    borderColor: 'rgba(184,137,26,0.2)',
-    borderBottomColor: colors.fieldEdge,
-    borderRadius: 6,
-    paddingVertical: 16,
-    paddingLeft: 46,
-    paddingRight: 40,
-    color: colors.silverScreen,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    letterSpacing: 0.5,
-    ...effects.shadowSurface, ...effects.flat,
-  },
-  searchInputActive: {
-    borderColor: 'rgba(180,45,45,0.5)',
-    backgroundColor: colors.inkwell,
-  },
-  clearBtn: {
-    position: 'absolute',
-    right: spacing.md,
-    top: 16,
-    zIndex: 1,
-  },
-  // In the flow, under the field — NOT absolute. Hung absolutely below the
-  // field it lay outside its parent's bounds, and Android neither delivers a
-  // touch to, nor exposes to accessibility, a view outside its parent: on
-  // Android no suggestion could be tapped. (The sealed E2E said so for weeks:
-  // "drawn", five rows, and "darkroom-suggestion-row is not visible".) The
-  // moods below make room while the member types, and give it back after.
-  suggestionsBox: { ...EDGE_LIT,
-    marginTop: 4,
-    backgroundColor: colors.soot,
-    borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.5)',
-    borderStyle: 'solid',
-    borderRadius: 6,
-    overflow: 'hidden',
-    ...effects.flat,
-  },
+  inputHint: { fontFamily: fonts.bodyItalic },
+  // As tall as the field holds (48), at its end: a target by its own box.
+  clear: { width: 48, height: 48, marginRight: -14, alignItems: 'center', justifyContent: 'center' },
+  suggestions: { ...EDGE_LIT, marginTop: 6, backgroundColor: colors.surfaceRaised, borderRadius: ROOM.radius, overflow: 'hidden' },
 });

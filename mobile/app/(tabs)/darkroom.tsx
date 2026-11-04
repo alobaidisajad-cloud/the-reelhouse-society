@@ -1,34 +1,36 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text } from '@/src/components/text';
-import { useSharedValue, withTiming, withRepeat, Easing, cancelAnimation } from 'react-native-reanimated';
+import { useSharedValue, withTiming } from 'react-native-reanimated';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useFocusEffect } from 'expo-router';
-import { useScrollToTop, useIsFocused } from "expo-router/react-navigation";
+import { useScrollToTop } from 'expo-router/react-navigation';
 import { storage } from '@/src/stores/mmkv-storage';
 
-import { colors, fonts, spacing, effects } from '@/src/theme/theme';
+import { colors } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
-import { useDiscoverStore, type DiscoverFilm } from '@/src/stores/discover';
+import { useDiscoverStore, sheetCacheKey, type DiscoverFilm } from '@/src/stores/discover';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useShallow } from 'zustand/react/shallow';
 
-import Buster from '@/src/components/Buster';
-import { EmptyOffline } from '@/src/components/EmptyStates';
-import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
-import { TryAgainLine } from '@/src/components/TryAgain';
-
 import { DarkroomHeader } from '@/src/components/darkroom/DarkroomHeader';
-import { FilmGridCard, AnimatedPosterSkeleton } from '@/src/components/darkroom/DarkroomCards';
+import { Print, PrintTile } from '@/src/components/darkroom/DarkroomCards';
+import { NothingDeveloped, ArchivesUnreached, SheetFoot } from '@/src/components/darkroom/DarkroomStates';
+import { HungLight } from '@/src/components/atmosphere/HungLight';
+import { ROOM, SHEET, printsPerRow, rowsOf } from '@/src/components/darkroom/sheet';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
-import { EDGE_LIT } from '@/src/theme/light';
-import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
-import { useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
-import { Arrive } from '@/src/components/Arrive';
+import { useColumnWidth, useTabBarHeight, useTabContentBottom, useTabContentTop } from '@/src/components/layout/navMetrics';
 
-// === MAIN SCREEN ===
+/** A print on the sheet, and its place among the sheet's films (an artist has none). */
+type Placed = { item: DiscoverFilm; place: number | null };
+const keyOf = (f: DiscoverFilm) => `${f.media_type || 'movie'}-${f.id}`;
+
+/**
+ * THE DARKROOM: the safelight over the room; the title and the enlarger (search); the baths
+ * (moods) and the settings (filters); and the contact sheet, its prints in rows with their edge
+ * prints beneath. Every state is said in the room's own words.
+ */
 export default function DarkRoomScreen() {
   const [loading, setLoading] = useState(true);
   const loadingRef = useRef(false);
@@ -37,7 +39,10 @@ export default function DarkRoomScreen() {
   useScrollToTop(listRef);
 
   const fetchRequestId = useRef(0);
+  // How many pages the catalogue holds: the handler reads the ref; the foot, drawn, reads the state.
   const totalPagesRef = useRef(1000);
+  const [totalPages, setTotalPages] = useState(1000);
+  const keepTotal = useCallback((n: number) => { totalPagesRef.current = n; setTotalPages(n); }, []);
   const network = useNetInfo();
   const [lastFetchedKey, setLastFetchedKey] = useState<string>('');
   // The catalogue could not be asked for the first page. Said as that — the
@@ -46,14 +51,14 @@ export default function DarkRoomScreen() {
   const [asked, setAsked] = useState(0);
   const askAgain = useCallback(() => setAsked((n) => n + 1), []);
   /**
-   * The search whose next batch could not be read: the grid says so instead of simply ending.
-   * Held with its search, a new search or filter is a new grid with nothing failed.
+   * The search whose next batch could not be read: the sheet says so instead of simply ending.
+   * Held with its search, a new search or filter is a new sheet with nothing failed.
    */
   const [moreFailedFor, setMoreFailedFor] = useState<string | null>(null);
 
   const {
     page, mood, query, accumulatedFilms, filters,
-    setPage, setAccumulatedFilms, clearFilters: clearAllFilters, clearSearch: clearAllSearch
+    setPage, setAccumulatedFilms, clearFilters: clearAllFilters, clearSearch: clearAllSearch,
   } = useDiscoverStore(
     useShallow((s) => ({
       page: s.page,
@@ -64,17 +69,14 @@ export default function DarkRoomScreen() {
       setPage: s.setPage,
       setAccumulatedFilms: s.setAccumulatedFilms,
       clearFilters: s.clearFilters,
-      clearSearch: s.clearSearch
-    }))
+      clearSearch: s.clearSearch,
+    })),
   );
-
-  const isFocused = useIsFocused();
 
   const localScrollY = useSharedValue(0);
   const scrollHeight = useSharedValue(0);
   const viewHeight = useSharedValue(0);
   const isScrolling = useSharedValue(false);
-  const skeletonOpacity = useSharedValue(0.4);
 
   // Reset scroll bridge so NavBar returns to transparent on this tab
   useEffect(() => { globalScrollY.value = 0; }, []);
@@ -82,7 +84,7 @@ export default function DarkRoomScreen() {
   useFocusEffect(
     useCallback(() => {
       globalScrollY.value = withTiming(localScrollY.value, { duration: 250 });
-    }, [localScrollY])
+    }, [localScrollY]),
   );
 
   const isSearching = !!query;
@@ -92,34 +94,16 @@ export default function DarkRoomScreen() {
   const endPad = useTabContentBottom();
   const tabBar = useTabBarHeight();
   const listContentStyle = useMemo(() => ({ ...s.listContent, paddingTop: topPad, paddingBottom: endPad }), [topPad, endPad]);
+  const cols = printsPerRow(useColumnWidth());
 
-  // Cache key based on current discovery params
+  // The sheet kept for these words or settings: named whole, in any script (sheetCacheKey).
   const cacheKey = useMemo(() => {
-    let rawKey = '';
-    if (isSearching) {
-      rawKey = `darkroom_cache_search_${query}`;
-    } else {
-      const moodKey = mood?.label ?? 'default';
-      const filterKey = `${filters.genreId}_${filters.sortBy}_${filters.decade?.label ?? ''}_${filters.yearFrom ?? ''}_${filters.yearTo ?? ''}_${filters.language ?? ''}_${filters.minRating}`;
-      rawKey = `darkroom_cache_${moodKey}_${filterKey}`;
-    }
-    // Pure alphanumeric sanitation & truncation to guarantee JNI/C++ safety
-    return rawKey.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 128);
+    if (isSearching) return sheetCacheKey(`search:${query}`);
+    const filterKey = `${filters.genreId}_${filters.sortBy}_${filters.decade?.label ?? ''}_${filters.yearFrom ?? ''}_${filters.yearTo ?? ''}_${filters.language ?? ''}_${filters.minRating}`;
+    return sheetCacheKey(`${mood?.label ?? 'default'}:${filterKey}`);
   }, [isSearching, query, mood, filters]);
 
-  // The skeleton pulses only while it is drawn and the tab is in view.
   const showSkeleton = loading || (cacheKey !== lastFetchedKey && network.isConnected !== false);
-
-  useEffect(() => {
-    if (!isFocused || !showSkeleton) {
-      cancelAnimation(skeletonOpacity);
-      skeletonOpacity.value = 0.4;
-      return;
-    }
-    skeletonOpacity.value = withRepeat(withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }), -1, true);
-    return () => cancelAnimation(skeletonOpacity);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFocused, showSkeleton]);
 
   // Synchronous cache injection to completely eliminate the 3-stage UI flash
   const displayData = useMemo(() => {
@@ -129,17 +113,27 @@ export default function DarkRoomScreen() {
         const cachedStr = storage.getString(cacheKey);
         if (cachedStr) {
           const parsed = JSON.parse(cachedStr);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed as DiscoverFilm[];
         }
       } catch {}
     }
     return [];
   }, [accumulatedFilms, page, cacheKey]);
+  const offline = network.isConnected === false;
   // Failed: nothing to show, and the tray says the catalogue could not be reached.
   const readyMark = useScreenReady('darkroom', showSkeleton ? 'reading'
-    : displayData.length === 0 && (network.isConnected === false || unreachable) ? 'failed' : 'ready');
+    : displayData.length === 0 && (offline || unreachable) ? 'failed' : 'ready');
 
   const moreFailed = moreFailedFor === cacheKey;
+  // Prints kept from a visit, shown while the archives cannot be reached: said to be that.
+  const stale = !showSkeleton && displayData.length > 0 && (offline || unreachable);
+
+  // Each print's place among the sheet's films, then the sheet's rows.
+  const rows = useMemo(() => {
+    let n = 0;
+    const placed: Placed[] = displayData.map((item) => ({ item, place: item.media_type === 'person' ? null : ++n }));
+    return rowsOf(placed, cols);
+  }, [displayData, cols]);
 
   // -- Main Fetching Logic --
   useEffect(() => {
@@ -155,16 +149,8 @@ export default function DarkRoomScreen() {
       if (page === 1) {
         try {
           const cachedStr = storage.getString(cacheKey);
-          if (cachedStr) {
-            const parsed = JSON.parse(cachedStr);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setAccumulatedFilms(parsed);
-            } else {
-              setAccumulatedFilms([]);
-            }
-          } else {
-            setAccumulatedFilms([]);
-          }
+          const parsed = cachedStr ? JSON.parse(cachedStr) : null;
+          setAccumulatedFilms(Array.isArray(parsed) && parsed.length > 0 ? parsed : []);
         } catch {
           setAccumulatedFilms([]);
         }
@@ -177,7 +163,7 @@ export default function DarkRoomScreen() {
         if (isSearching) {
           const res = await tmdb.search(query, page);
           results = res?.results ?? [];
-          if (res && (res.total_pages ?? 0) > 0) totalPagesRef.current = res.total_pages ?? 0;
+          if (res && (res.total_pages ?? 0) > 0) keepTotal(res.total_pages ?? 0);
           else if (res?.total_pages === 0) isNetworkFailure = true;
         } else {
           let voteCount = mood?.voteGte ?? 20;
@@ -209,11 +195,11 @@ export default function DarkRoomScreen() {
           // Preserve known total_pages to prevent network flicker kill-switch, bounded to 500
           const apiPages = discoverRes?.total_pages;
           if (apiPages && apiPages > 0) {
-            totalPagesRef.current = Math.min(apiPages, 500);
+            keepTotal(Math.min(apiPages, 500));
           } else if (apiPages === 0) {
             isNetworkFailure = true;
           } else if (page === 1) {
-            totalPagesRef.current = 1;
+            keepTotal(1);
           }
         }
 
@@ -228,20 +214,18 @@ export default function DarkRoomScreen() {
           // People need a face; films need a name: a film with no poster is an
           // unexposed plate (THE NEGATIVES), a person with no photograph a gap.
           const withPostersRaw = results.filter((f: DiscoverFilm) =>
-            f.media_type === 'person' ? !!f.profile_path : !!(f.poster_path || f.title || f.name)
+            f.media_type === 'person' ? !!f.profile_path : !!(f.poster_path || f.title || f.name),
           );
-
-          const getFilmKey = (f: DiscoverFilm) => `${f.media_type || 'movie'}-${f.id}`;
 
           // Absolute best O(N) deduplication natively
           const uniqueWithPosters: DiscoverFilm[] = [];
           const seenKeys = new Set<string>();
-          for (let i = 0; i < withPostersRaw.length; i++) {
-             const key = getFilmKey(withPostersRaw[i]);
-             if (!seenKeys.has(key)) {
-                seenKeys.add(key);
-                uniqueWithPosters.push(withPostersRaw[i]);
-             }
+          for (const film of withPostersRaw) {
+            const key = keyOf(film);
+            if (!seenKeys.has(key)) {
+              seenKeys.add(key);
+              uniqueWithPosters.push(film);
+            }
           }
 
           if (page === 1) {
@@ -250,8 +234,8 @@ export default function DarkRoomScreen() {
           } else {
             setMoreFailedFor(null);
             setAccumulatedFilms((prev) => {
-              const currentKeys = new Set(prev.map(getFilmKey));
-              const newUnique = uniqueWithPosters.filter(f => !currentKeys.has(getFilmKey(f)));
+              const currentKeys = new Set(prev.map(keyOf));
+              const newUnique = uniqueWithPosters.filter((f) => !currentKeys.has(keyOf(f)));
               if (newUnique.length === 0) return prev;
               return [...prev, ...newUnique].slice(0, 5000);
             });
@@ -266,7 +250,6 @@ export default function DarkRoomScreen() {
         }
         if (active && reqId === fetchRequestId.current && page === 1) setUnreachable(true);
         // Optimistic cache was already injected at the start of fetchContent.
-        // No redundant MMKV read or array allocation needed here.
       } finally {
         if (active && reqId === fetchRequestId.current) {
           setLoading(false);
@@ -275,119 +258,70 @@ export default function DarkRoomScreen() {
         }
       }
     };
-    fetchContent();
+    // Its failures are caught and said inside it; the effect only starts it.
+    void fetchContent();
     return () => { active = false; };
-  }, [query, page, filters, mood, isSearching, setAccumulatedFilms, cacheKey, network.isConnected, asked]);
+  }, [query, page, filters, mood, isSearching, setAccumulatedFilms, cacheKey, network.isConnected, asked, keepTotal]);
 
-  const renderFooter = useCallback(() => {
-    if (loading && page > 1) {
-      return (
-        <View style={s.footerLoading}>
-           <Arrive name="darkroom-next-batch" duration={300}>
-             <Text style={s.paginationRetrieving}>[ DEVELOPING THE NEXT BATCH... ]</Text>
-           </Arrive>
-        </View>
-      );
-    }
-    if (moreFailed) {
-      return (
-        <View style={s.footerLoading}>
-          <Text style={s.paginationRetrieving}>THE NEXT BATCH COULD NOT BE DEVELOPED.</Text>
-          <TryAgainLine
-            onPress={() => { setMoreFailedFor(null); setPage(useDiscoverStore.getState().page + 1); }}
-            what="develop the next batch"
-            style={s.moreRetry}
-          />
-        </View>
-      );
-    }
-    return null;
-  }, [loading, page, moreFailed, setPage]);
+  // What the sheet's foot says: the next batch, developed as the sheet's end is reached; that it
+  // failed; or the end of the sheet, every batch read.
+  const footState = moreFailed ? 'failed' as const
+    : loading || page < totalPages ? 'developing' as const
+    : 'end' as const;
+  const developNext = useCallback(() => { setMoreFailedFor(null); setPage(useDiscoverStore.getState().page + 1); }, [setPage]);
+  const renderFooter = useCallback(() => (rows.length > 0 && !showSkeleton
+    ? <SheetFoot state={footState} onRetry={developNext} />
+    : null), [rows.length, showSkeleton, footState, developNext]);
 
   const renderEmpty = useMemo(() => {
-    // `showSkeleton` is hoisted to component scope so the pulse animation can
-    // be gated on the same condition that renders the skeleton.
+    // Developing: the sheet's still tiles, three rows of them, said as one. Nothing loops.
     if (showSkeleton) {
       return (
-        <View style={s.skeletonGrid}>
-          {Array.from({ length: 21 }).map((_, i) => (
-            <View key={i} style={s.skeletonItem}>
-              <AnimatedPosterSkeleton sharedOp={skeletonOpacity} />
-            </View>
+        <View accessible accessibilityRole="progressbar" accessibilityLabel="Developing the prints">
+          {rowsOf(Array.from({ length: cols * 3 }, (_, i) => i), cols).map((row, r) => (
+            <View key={r} style={s.row}>{row.map((i) => <PrintTile key={i} />)}</View>
           ))}
+          <SheetFoot state={null} onRetry={developNext} />
         </View>
       );
     }
-
-    // Offline, it asks again by itself when the connection returns (the fetch
-    // hears it); reached but refused, the member asks.
-    if (network.isConnected === false || unreachable) {
-      return (
-        <Arrive name="darkroom-1" duration={600} style={[s.emptyWrap, s.offlineWrap]}>
-           <EmptyOffline onRetry={network.isConnected === false ? undefined : askAgain} />
-        </Arrive>
-      );
-    }
-
+    // Offline, it asks again by itself when the connection returns (the fetch hears it); reached
+    // but refused, the member asks.
+    if (offline || unreachable) return <ArchivesUnreached onRetry={offline ? undefined : askAgain} />;
     return (
-      <Arrive name="darkroom-2" duration={600} style={s.emptyWrap}>
-        <View style={{ alignItems: 'center' }}>
-          <Buster size={56} mood="suspicious" />
-        </View>
-        {/* "The Vault" belongs to the private notes — this tray speaks in
-            the Darkroom's own chemistry. */}
-        <Text style={s.emptyTitle}>
-          {isSearching ? 'The negatives hold no match.' : 'Nothing surfaced in the tray.'}
-        </Text>
-        <Text style={s.emptySub}>
-          {isSearching
-            ? 'No films match that search. Try a different title.'
-            : 'Adjust your filters to develop something new.'}
-        </Text>
-        <PressableScale
-          style={s.emptyBtn}
-          onPress={() => {
-            if (isSearching) { clearAllSearch(); } else { clearAllFilters(); }
-            setPage(1);
-          }}
-          haptic="medium"
-          accessibilityRole="button"
-          accessibilityLabel={isSearching ? 'Clear search query' : 'Reset all filters'}
-        >
-          <Text style={s.emptyBtnText}>
-            {isSearching ? 'CLEAR SEARCH' : 'RESET FILTERS'}
-          </Text>
-        </PressableScale>
-      </Arrive>
+      <NothingDeveloped searching={isSearching} onPress={() => {
+        if (isSearching) clearAllSearch(); else clearAllFilters();
+        setPage(1);
+      }} />
     );
-  }, [showSkeleton, network.isConnected, unreachable, askAgain, isSearching, clearAllFilters, clearAllSearch, setPage, skeletonOpacity]);
+  }, [showSkeleton, cols, developNext, offline, unreachable, askAgain, isSearching, clearAllFilters, clearAllSearch, setPage]);
 
-  const renderFilmItem = useCallback(({ item }: { item: DiscoverFilm }) => (
-    <View style={s.filmItemWrap}>
-      <FilmGridCard item={item} />
+  const renderRow = useCallback(({ item: row }: { item: (Placed | null)[] }) => (
+    <View style={s.row}>
+      {row.map((p, i) => (p ? <Print key={keyOf(p.item)} item={p.item} place={p.place} /> : <View key={`room-${i}`} style={s.room} />))}
     </View>
   ), []);
-
-
 
   return (
     <FrozenTab>
       <View style={s.container}>
-        <RoomLight room="default" />
+        {/* The safelight, hung above the screen. */}
+        <HungLight source={require('@/assets/images/light-darkroom.png')} top={topPad} scrollY={localScrollY} />
         {readyMark}
         <CinematicFlashList
           ref={listRef}
-          data={displayData}
-          keyExtractor={(item: any) => `${item.media_type || 'movie'}-${item.id}`}
-          estimatedItemSize={190}
-          numColumns={3}
+          data={showSkeleton ? [] : rows}
+          keyExtractor={(row: (Placed | null)[], i: number) => (row[0] ? keyOf(row[0].item) : `row-${i}`)}
+          estimatedItemSize={200}
           contentContainerStyle={listContentStyle}
-          ListHeaderComponent={<DarkroomHeader />}
+          ListHeaderComponent={
+            <DarkroomHeader sheet={showSkeleton || rows.length > 0} stale={stale} onRetry={offline ? undefined : askAgain} />
+          }
           ListFooterComponent={renderFooter}
           ListEmptyComponent={renderEmpty}
-          renderItem={renderFilmItem}
+          renderItem={renderRow}
           onEndReached={() => {
-            if (!loadingRef.current && !moreFailed && displayData.length > 0 && displayData.length < 5000 && network.isConnected !== false) {
+            if (!loadingRef.current && !moreFailed && displayData.length > 0 && displayData.length < 5000 && !offline) {
               const statePage = useDiscoverStore.getState().page;
               if (statePage < totalPagesRef.current) {
                 loadingRef.current = true;
@@ -400,7 +334,8 @@ export default function DarkRoomScreen() {
           scrollMetrics={{ scrollY: localScrollY, scrollHeight, viewHeight, isScrolling }}
           bottomInset={tabBar}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
+          // A drag puts the keyboard away, on both platforms ('interactive' is the iPhone's alone).
+          keyboardDismissMode="on-drag"
         />
       </View>
     </FrozenTab>
@@ -408,83 +343,11 @@ export default function DarkRoomScreen() {
 }
 
 const s = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.ink,
-  },
-  listContent: {
-    padding: spacing.md,
-  },
-  footerLoading: {
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-  },
-  moreRetry: { marginTop: 10 },
-  paginationRetrieving: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 2.4,
-    color: colors.sepia,
-    // The only thing that tells you more prints are on the way: solid sepia,
-    // and a word never borrows its contrast from the ground behind it.
-    },
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontFamily: fonts.display,
-    fontSize: 18,
-    color: colors.sepia,
-    textAlign: 'center',
-    marginTop: 20,
-    letterSpacing: 1,
-  },
-  emptySub: {
-    fontFamily: fonts.bodyItalic,
-    fontSize: 12,
-    // The line that tells a member what to do with an empty room: solid
-    // fogQuiet, and a word never borrows its contrast from the ground behind it.
-    color: colors.fogQuiet,
-    textAlign: 'center',
-    marginTop: 12,
-    lineHeight: 18,
-  },
-  emptyBtn: { ...EDGE_LIT,
-    backgroundColor: colors.soot,
-    borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.25)',
-    borderRadius: 3,
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    marginTop: 20,
-    ...effects.shadowFloat,
-  },
-  emptyBtnText: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: colors.sepia,
-  },
-  skeletonGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    width: '100%',
-  },
-  skeletonItem: {
-    width: '33.33%',
-    padding: 4,
-  },
-  offlineWrap: {
-    flex: 1,
-    paddingTop: 100,
-  },
-  filmItemWrap: {
-    flex: 1,
-    padding: 4,
-  },
+  container: { flex: 1, backgroundColor: colors.ink },
+  listContent: { paddingHorizontal: ROOM.page },
+  // A row of the contact sheet: its ink, its padding, its gutters.
+  row: { flexDirection: 'row', gap: SHEET.gutter, paddingHorizontal: SHEET.pad, backgroundColor: colors.inkwell },
+  room: { flex: 1, minWidth: 0 },
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx

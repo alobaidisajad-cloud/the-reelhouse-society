@@ -113,6 +113,9 @@ export const GATED_FEATURES: GatedFeature[] = [
       // The room itself, where TAKING A SEAT is the gated act. It is the only
       // rope that stands in front of joining.
       'app/lounge/[id].tsx',
+      // The corridor: the directory's verb for each salon (TAKE A SEAT, or LISTEN IN and BY REQUEST
+      // with the key) and the line under its title say what this rank holds.
+      'app/(tabs)/lounge.tsx',
       // TopNavBar is NOT here any more, and its absence is the point: it used
       // to fork the icon on rank — chat mark for an Archivist, brass key for a
       // Cinephile. The corridor lists real salons to everyone now, so the nav

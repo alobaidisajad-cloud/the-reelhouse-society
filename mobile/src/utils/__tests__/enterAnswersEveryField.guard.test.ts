@@ -16,7 +16,7 @@ import { files, rel } from '@/test-utils/universe';
 /** One-line fields where Enter only closes the keyboard, and why that is right. Keyed file + label. */
 const CLOSES: Record<string, string> = {
   'app/(modals)/list-modal.tsx Search films to add to stack': 'a search: its results come as it is typed',
-  'app/(tabs)/lounge.tsx Search salons': 'a search: its results come as it is typed',
+  'src/components/lounge/LoungeHeader.tsx Search salons': 'a search: its results come as it is typed',
   'src/components/dispatch/paper/PaperDesk.tsx Search for a film': 'a search: its results come as it is typed',
   'src/components/dispatch/paper/PaperMore.tsx Search the archive for a film': 'a search: its results come as it is typed',
   'src/components/log/LogSearchEngine.tsx Search for a film to log': 'a search: its results come as it is typed',

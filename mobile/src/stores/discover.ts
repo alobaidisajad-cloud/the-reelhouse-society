@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { carriedForward, SAVED_VERSION } from './savedVersion';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { zustandMMKVStorage } from './mmkv-storage';
+import { storage, zustandMMKVStorage } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 
 export interface DiscoverFilm {
@@ -149,10 +149,32 @@ export const useDiscoverStore = create<DiscoverState>()(
 
 export const rehydrateDiscoverStore = () => useDiscoverStore.persist.rehydrate();
 
+/** Where the Darkroom keeps the last sheet it developed for a search or a setting. */
+const KEPT_SHEET = 'darkroom_sheet_';
+
+/**
+ * A kept sheet's name: its search or settings whole, in any script, as a short key a store can
+ * hold (FNV-1a, and the words' length). Letters outside a-z were each made `_`, so every search
+ * in Arabic of the same length shared one sheet.
+ */
+export function sheetCacheKey(what: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < what.length; i++) h = Math.imul(h ^ what.charCodeAt(i), 0x01000193) >>> 0;
+  return `${KEPT_SHEET}${h.toString(36)}_${what.length}`;
+}
+
+/** Every kept sheet, and the ones kept under the old names: a member who signs out leaves no search behind. */
+export function forgetKeptSheets() {
+  for (const key of storage.getAllKeys()) {
+    if (key.startsWith(KEPT_SHEET) || key.startsWith('darkroom_cache_')) storage.delete(key);
+  }
+}
+
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
     useDiscoverStore.setState({
         page: 1, mood: null, query: '', inputVal: '', accumulatedFilms: [],
         filters: { ...defaultFilters },
     });
+    forgetKeptSheets();
 });

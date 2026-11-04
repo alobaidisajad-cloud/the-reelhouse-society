@@ -1,8 +1,8 @@
 /**
  * A centred page centres between its two edges, and scrolls when it is taller.
  *
- * The Lounge's gate, the signed-out Profile and a member's file while it is
- * retrieved stood in the middle of the whole screen: at the largest text sizes
+ * The signed-out Profile and a member's file while it is retrieved (and the
+ * Lounge's gate, before it was hung from the top) stood in the middle of the whole screen: at the largest text sizes
  * their lines ran under both bars, and nothing scrolled to them. Each centred
  * page is drawn here at the largest text size iOS offers (×3.1, the repo's
  * largest pass) and must draw ONE scroll (CentredRoom) that:
@@ -25,7 +25,6 @@ import { testQueryClient } from '@/test-utils/testQueryClient';
 import {
   PUSHED_HEADER_GAP, TAB_CONTENT_GAP, bottomEdge, navBarHeight, pushedHeaderTop, resetTopBarHeight, tabBarHeight,
 } from '@/src/components/layout/navMetrics';
-import LoungeScreen from '@/app/(tabs)/lounge';
 import ProfileTab from '@/app/(tabs)/profile';
 import UserProfileScreen from '@/app/user/[username]';
 import NotFoundScreen from '@/app/+not-found';
@@ -95,7 +94,6 @@ const words = (n: J): string[] => {
 };
 
 const PAGES: { name: string; kind: 'tab' | 'pushed'; draw: () => React.ReactElement; arrange: () => void }[] = [
-  { name: 'the Lounge’s gate', kind: 'tab', draw: () => <LoungeScreen />, arrange: () => { mockUser = null; } },
   { name: 'the Profile, signed out', kind: 'tab', draw: () => <ProfileTab />, arrange: () => { mockUser = null; } },
   { name: 'your file, while its handle is read', kind: 'tab', draw: () => <ProfileTab />,
     arrange: () => { mockUser = { id: 'me', username: null, role: 'archivist', tier: 'archivist', preferences: {} }; } },

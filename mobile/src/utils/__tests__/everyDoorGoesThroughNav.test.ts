@@ -13,7 +13,7 @@ import { files as universe } from '@/test-utils/universe';
 const RAW = /\brouter\.(push|replace|navigate)\b/;
 /** The one file that may drive the router: nav itself. */
 const HOME = 'src/utils/typedRouter.ts';
-const MOST = 23;
+const MOST = 22;
 
 function rawCalls(): Map<string, number> {
   const found = new Map<string, number>();

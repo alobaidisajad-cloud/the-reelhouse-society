@@ -29,8 +29,6 @@ const SCAN = ['src', 'app'];
 
 const ALLOWED: Record<string, string> = {
   // ── MARKS ────────────────────────────────────────────────────────────────
-  'src/components/darkroom/DarkroomCards.tsx · posterPlaceholderGlyph': 'a glyph in an empty poster',
-  'src/components/darkroom/DarkroomFilterPanel.tsx · yearRangeDash': '— between two years',
   'src/components/dispatch/paper/paperStyles.ts · indexDot': '· in the paper’s index',
   'src/components/dispatch/paper/paperStyles.ts · endMark': 'the end-of-article mark',
   'src/components/EmptyStates.tsx · glyph': 'the empty state’s emblem',

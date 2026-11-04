@@ -54,6 +54,7 @@ const LOCAL: Record<string, string> = {
 /** Script files run by a person, each with why. */
 const BY_HAND: Record<string, string> = {
   'resume.cjs': 'every working session starts by running it (P0.59)',
+  'draw-room-lights.cjs': "draws each room's light once (assets/images/light-*.png); run again only when a light is redrawn",
   'dump-production.cjs': "the owner's full dump of production before a train that touches data (PLAN §3c-17)",
   'commit.cjs': 'the one way a commit is made here: explicit paths, the message from a file, each refusal said',
 };

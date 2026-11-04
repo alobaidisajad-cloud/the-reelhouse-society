@@ -89,7 +89,7 @@ const TABS: [string, () => React.ReactElement, () => void, (b: number) => number
   ['the Dispatch', () => <DispatchScreen />, () => { mockSignedIn = true; }, scrollEnd],
   ['the Darkroom', () => <DarkroomScreen />, () => { mockSignedIn = true; }, scrollEnd],
   ['the Lounge, signed in', () => <LoungeScreen />, () => { mockSignedIn = true; }, scrollEnd],
-  ['the Lounge, signed out (the gate)', () => <LoungeScreen />, () => { mockSignedIn = false; }, roomEnd],
+  ['the Lounge, signed out (the gate)', () => <LoungeScreen />, () => { mockSignedIn = false; }, scrollEnd],
   ['the Profile, signed out', () => <ProfileTab />, () => { mockSignedIn = false; }, roomEnd],
   ['the Profile, your file', () => <ProfileTab />, () => { mockSignedIn = true; mockRoom = null; }, scrollEnd],
   ['the Profile, a room of your file', () => <ProfileTab />, () => { mockSignedIn = true; mockRoom = 'ledger'; }, scrollEnd],

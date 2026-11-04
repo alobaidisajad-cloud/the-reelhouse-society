@@ -31,9 +31,13 @@ describe.each([
   [51, '51 MEMBERS', '51 members behind the door'],
 ])('a salon of %i', (n, card, door) => {
   it('the corridor card says the count alone', () => {
-    const r = render(<PublicLoungeCard lounge={room(n)} index={0} />);
-    expect(r.getByText(card)).toBeTruthy();
-    expect(r.queryByText(LIMIT)).toBeNull();
+    const r = render(<PublicLoungeCard lounge={room(n)} first seated />);
+    // Drawn, and said in the row's name: its words are left unspoken there.
+    expect(r.getByText(card, { includeHiddenElements: true })).toBeTruthy();
+    expect(r.queryByText(LIMIT, { includeHiddenElements: true })).toBeNull();
+    const said = r.getByRole('button').props.accessibilityLabel as string;
+    expect(said).toContain(card.toLowerCase());
+    expect(said).not.toMatch(LIMIT);
   });
 
   it('the door of a private salon says the count alone', () => {

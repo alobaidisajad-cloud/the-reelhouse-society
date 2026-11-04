@@ -23,7 +23,7 @@ const room = (over: Record<string, unknown>) => ({
 }) as never;
 
 const seen = (unread: number) => {
-  const r = render(<JoinedLoungeCard lounge={room({ unread_count: unread })} index={0} />);
+  const r = render(<JoinedLoungeCard lounge={room({ unread_count: unread })} width={180} />);
   const label = r.getByRole('button').props.accessibilityLabel as string;
   // The seal is drawn and left unspoken: the card's name says the whole count.
   return { label, seal: r.queryByText(/NEW$/, { includeHiddenElements: true })?.props.children as string | undefined };
@@ -31,17 +31,17 @@ const seen = (unread: number) => {
 
 describe('the unread seal', () => {
   it('says the count while it is a count', () => {
-    expect(seen(5)).toEqual({ label: 'Enter salon The Back Row, 4 members, 5 new dispatches', seal: '5 NEW' });
+    expect(seen(5)).toEqual({ label: 'Enter salon The Back Row, 5 new dispatches, 4 members', seal: '5 NEW' });
     expect(seen(9).seal).toBe('9 NEW');
   });
 
   it('shows 9+ past nine, and still says the number', () => {
-    expect(seen(42)).toEqual({ label: 'Enter salon The Back Row, 4 members, 42 new dispatches', seal: '9+ NEW' });
+    expect(seen(42)).toEqual({ label: 'Enter salon The Back Row, 42 new dispatches, 4 members', seal: '9+ NEW' });
   });
 
   it('at the server\'s limit, says "more than 99" — the count stopped there', () => {
-    expect(seen(UNREAD_COUNTED_TO)).toEqual({ label: 'Enter salon The Back Row, 4 members, more than 99 new dispatches', seal: '9+ NEW' });
-    expect(seen(UNREAD_COUNTED_TO - 1).label).toBe('Enter salon The Back Row, 4 members, 99 new dispatches');
+    expect(seen(UNREAD_COUNTED_TO)).toEqual({ label: 'Enter salon The Back Row, more than 99 new dispatches, 4 members', seal: '9+ NEW' });
+    expect(seen(UNREAD_COUNTED_TO - 1).label).toBe('Enter salon The Back Row, 99 new dispatches, 4 members');
   });
 
   it('shows no seal and says nothing when nothing waits', () => {

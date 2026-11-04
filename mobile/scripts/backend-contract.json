@@ -90,6 +90,10 @@
       "signature": "get_report_evidence(p_report_id uuid)"
     },
     {
+      "name": "get_salon_last_words",
+      "signature": "get_salon_last_words(p_lounge_ids uuid[])"
+    },
+    {
       "name": "get_salon_member_faces",
       "signature": "get_salon_member_faces(p_lounge_ids uuid[])"
     },

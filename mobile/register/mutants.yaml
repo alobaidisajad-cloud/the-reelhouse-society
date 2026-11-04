@@ -688,8 +688,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/lounge/PublicLoungeCard.tsx
-        find: "{counted(lounge.member_count || 0, 'MEMBER', 'MEMBERS')}</Text>"
-        replace: "{lounge.member_count || 0} MEMBERS</Text>"
+        find: "  const members = counted(lounge.member_count || 0, 'MEMBER', 'MEMBERS');"
+        replace: "  const members = `${lounge.member_count || 0} MEMBERS`;"
     proof: { file: src/utils/__tests__/aCountSaysItsWord.guard.test.ts, test: "prints no count before its word but through counted(), or one that can never be one" }
 
   - id: shape-reader-undocked
@@ -1413,8 +1413,8 @@ mutants:
     source: shape
     edits:
       - file: app/(tabs)/lounge.tsx
-        find: "  const loading = loungesLoading || !loungesRead;\n"
-        replace: "  const loading = loungesLoading || !loungesRead && false;\n"
+        find: "  const firstRead = !loungesRead;\n"
+        replace: "  const firstRead = false;\n"
     proof: { file: src/components/lounge/__tests__/theSalonsSayWhenTheyCouldNotBeRead.test.tsx, test: "before the salons were ever asked for, reads; it never says the house is empty" }
 
   - id: shape-share-empty-before-read
