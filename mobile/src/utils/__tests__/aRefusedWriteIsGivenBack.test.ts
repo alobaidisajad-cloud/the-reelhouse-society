@@ -163,4 +163,18 @@ describe('what the member does with a held change', () => {
     letRefusedGo('h');
     expect(getOfflineQueue().map((m) => m.id)).toEqual(['w']);
   });
+
+  // A write held for the rank is the rank's door to open, not UNSENT CHANGES'.
+  it('touches only the refused write it is asked of: never another, one held for the rank, or one not held', () => {
+    const other = stored('h2', 'add_log', { user_id: ME, film_id: 2 }, { _held: 'refused', _refusal: 'refused' });
+    const forTheRank = stored('r', 'add_critique', { post_id: 'P', user_id: ME, body: 'Kept.' }, { _held: 'rank' });
+    put([held(), other, forTheRank, stored('w', 'add_log', { user_id: ME, film_id: 1 })]);
+    storage.set.mockClear();
+    for (const id of ['r', 'w', 'gone']) { sendRefusedAgain(id); letRefusedGo(id); }
+    expect(storage.set).not.toHaveBeenCalled();
+    sendRefusedAgain('h');
+    expect(getOfflineQueue().map((m) => [m.id, m._held ?? null, m._retryCount ?? null])).toEqual([['h', null, null], ['h2', 'refused', null], ['r', 'rank', null], ['w', null, null]]);
+    letRefusedGo('h2');
+    expect(getOfflineQueue().map((m) => m.id)).toEqual(['h', 'r', 'w']);
+  });
 });

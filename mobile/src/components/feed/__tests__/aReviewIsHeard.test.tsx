@@ -12,7 +12,6 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { FrameWords } from '../ActivityCard';
 import { FilmReviews } from '@/src/components/film/FilmReviews';
-import { spokenExcerpt } from '@/src/utils/text';
 import { nav } from '@/src/utils/typedRouter';
 
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), back: jest.fn(), replace: jest.fn() } }));
@@ -55,20 +54,5 @@ describe('the film page critique', () => {
     expect(r.queryByLabelText(`${WRITING} Open log, by kane.`)).toBeNull();
     await fireEvent.press(r.getByLabelText('This review contains spoilers. Tap to reveal.'));
     expect(r.getByLabelText(`${WRITING} Open log, by kane.`)).toBeTruthy();
-  });
-});
-
-describe('spokenExcerpt', () => {
-  it('ends each part as a sentence, once', () => {
-    expect(spokenExcerpt('Rain', 'It never stops.')).toBe('Rain. It never stops.');
-    expect(spokenExcerpt(null, 'It never stops')).toBe('It never stops.');
-    expect(spokenExcerpt('  ', 'Quiet!')).toBe('Quiet!');
-  });
-
-  it('says as much as a card shows, cut at a word', () => {
-    const long = 'word '.repeat(200).trim();
-    const said = spokenExcerpt(null, long);
-    expect(said.length).toBeLessThanOrEqual(352);
-    expect(said).toMatch(/word[.…]+$/);
   });
 });

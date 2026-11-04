@@ -51,6 +51,22 @@ it('gives each its own tests, each there and asking the file itself', () => {
   expect(wrong).toEqual([]);
 });
 
+// offlineQueue's give-back and edit-time functions were tested only in files written after its list:
+// the nightly mutated them with no test of theirs running (81% on 2026-11-04).
+it('asks every function a file exports by its name in the file\'s own tests', () => {
+  const functionsOf = (src: string) => [
+    ...src.matchAll(/^export\s+(?:async\s+)?function\*?\s+([A-Za-z_$][\w$]*)/gm),
+    ...src.matchAll(/^export\s+const\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*(?::[^=]+?)?=>/gm),
+  ].map((m) => m[1] ?? '');
+  const asked = LIST.files.map(({ file, tests }) => {
+    const said = tests.map((t) => readFileSync(join(MOBILE, t), 'utf8')).join('\n');
+    const fns = functionsOf(readFileSync(join(MOBILE, file), 'utf8'));
+    return { fns, unasked: fns.filter((n) => !new RegExp(`\\b${n.replace(/\$/g, '\\$')}\\b`).test(said)).map((n) => `${file}: ${n}`) };
+  });
+  expect(asked.reduce((n, a) => n + a.fns.length, 0)).toBeGreaterThan(80);
+  expect(asked.flatMap((a) => a.unasked)).toEqual([]);
+});
+
 it('is the list the config runs, file by file', () => {
   const config = readFileSync(join(MOBILE, 'stryker.config.mjs'), 'utf8');
   expect(config).toContain("new URL('./register/stryker.yaml', import.meta.url)");

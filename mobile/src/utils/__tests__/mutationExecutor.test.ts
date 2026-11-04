@@ -68,6 +68,8 @@ beforeEach(() => {
     (supabase.from as jest.Mock) = jest.fn(() => mockChain);
     jest.clearAllMocks();
     (supabase.from as jest.Mock) = jest.fn(() => mockChain);
+    // clearAllMocks keeps an implementation a test set: the sanitiser is its plain self again, in any order.
+    (sanitizeInput as jest.Mock).mockReset().mockImplementation((s: string) => s);
 });
 
 afterEach(() => {

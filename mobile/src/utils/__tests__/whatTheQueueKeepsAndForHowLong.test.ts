@@ -8,7 +8,7 @@
  * has never heard of, and the queue itself, whose are kept for them as a send keeps them.
  */
 import { supabaseFake } from '@/test-utils/supabaseFake';
-import { clearOfflineQueue, enqueueMutation, flushOfflineQueue, getOfflineQueue, type QueuedMutation } from '../offlineQueue';
+import { clearOfflineQueue, enqueueMutation, flushOfflineQueue, getOfflineQueue, letSentGo, type QueuedMutation } from '../offlineQueue';
 import { __forgetTheHouse, heardTheHouse } from '@/src/lib/houseClock';
 import { DEAD_LETTER_KEY, heldKey, QUEUE_KEY } from '../queueOwnership';
 import { readDraft, writeDraft } from '../memberDrafts';
@@ -168,6 +168,20 @@ describe('the queue after a send', () => {
     expect(executeMutation).not.toHaveBeenCalled();
   });
 
+  it('gives day-old words back each to its own box: a salon message to its room, a stack\'s critique to its stack; and counts them', async () => {
+    put(QUEUE_KEY, [
+      stored({ id: 'message', type: 'send_lounge_message', payload: { lounge_id: 'R', user_id: ME, content: 'Said late.' }, timestamp: NOW - 2 * DAY }),
+      stored({ id: 'stack', type: 'add_list_comment', payload: { list_id: 'S', user_id: ME, content: 'On the stack.' }, timestamp: NOW - 2 * DAY }),
+    ]);
+
+    await flushOfflineQueue();
+
+    expect(executeMutation).not.toHaveBeenCalled();
+    expect([readDraft<{ body: string }>(ME, 'salon', 'R')?.data.body, readDraft<{ body: string }>(ME, 'critique', 'stack:S')?.data.body]).toEqual(['Said late.', 'On the stack.']);
+    expect(toast).toHaveBeenCalledWith('2 pieces of writing made offline were over a day old: each is back where it was written, unsent.');
+    expect(getOfflineQueue()).toEqual([]);
+  });
+
   it('sends day-old words a phone cannot keep a draft for, rather than drop them', async () => {
     put(QUEUE_KEY, [stored({ id: 'message', type: 'send_lounge_message', payload: { lounge_id: 'R', user_id: ME, content: 'Still here.' }, timestamp: NOW - 2 * DAY })]);
     // The draft alone refused (a keystore gone mid-run): the queue itself still reads its own list.
@@ -177,6 +191,20 @@ describe('the queue after a send', () => {
     refused.mockRestore();
 
     expect(executeMutation.mock.calls.map(([m]) => (m as QueuedMutation).id)).toEqual(['message']);
+  });
+
+  // A log is kept ahead of its own send (logOperations): delivered, it is let go by its type and id.
+  it('lets a write kept ahead of its send go once that send delivered it: that write alone, and none when none is there', () => {
+    put(QUEUE_KEY, [
+      stored({ id: 'kept', type: 'add_log', payload: { id: 'log-1', user_id: ME } }),
+      stored({ id: 'same-id', type: 'add_critique', payload: { id: 'log-1', user_id: ME } }),
+      stored({ id: 'another', type: 'add_log', payload: { id: 'log-2', user_id: ME } }),
+    ]);
+    letSentGo('add_log', 'log-1');
+    expect(getOfflineQueue().map((m) => m.id)).toEqual(['same-id', 'another']);
+    storage.set.mockClear();
+    letSentGo('add_log', 'log-9');
+    expect(storage.set).not.toHaveBeenCalled();
   });
 
   it('a write behind one the server failed for a moment keeps its own count of attempts', async () => {

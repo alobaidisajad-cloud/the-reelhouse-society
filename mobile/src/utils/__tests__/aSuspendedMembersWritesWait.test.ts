@@ -120,3 +120,15 @@ it('a ban holds it for the member, unsent, a copy in the dead letter', async () 
   expect(getOfflineQueue()).toEqual([expect.objectContaining({ _held: 'refused' })]);
   expect(JSON.parse(mockStorage.get(DEAD) ?? '[]')).toHaveLength(1);
 });
+
+it('a ban keeps a write already held for the member as it was, beside the one it holds now', async () => {
+  mockStanding = { is_banned: false, suspended_until: null };
+  write();
+  mockExecute.mockRejectedValueOnce(SILENCED);
+  await flushOfflineQueue();
+  mockStanding = { is_banned: true, suspended_until: null };
+  write();
+  await flushOfflineQueue();
+  expect(mockExecute).toHaveBeenCalledTimes(1);
+  expect(getOfflineQueue()).toEqual([expect.objectContaining({ _held: 'refused' }), expect.objectContaining({ _held: 'refused' })]);
+});

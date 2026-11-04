@@ -9,7 +9,7 @@
  * two counts agree, which is why only a DST zone can see it: CI runs this in
  * Los Angeles, and `npm run test:tz` in New York too.
  */
-import { issueOf, folioOf } from '../paper/paperMetrics';
+import { issueOf, folioOf, volumeOf } from '../paper/paperMetrics';
 
 const MONTH_DAYS = (y: number) => [31, (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
@@ -39,5 +39,6 @@ describe('the issue is the calendar day', () => {
     expect(issueOf(new Date(2026, 7, 28, 0, 30))).toBe(240);
     expect(issueOf(new Date(2028, 11, 31, 23, 59))).toBe(366);
     expect(folioOf(new Date(2026, 0, 1, 0, 0))).toBe('VOL. 103 · No. 1');
+    expect([volumeOf(new Date(1924, 0, 1)), volumeOf(new Date(1924, 11, 31, 23, 59)), volumeOf(new Date(1925, 0, 1))]).toEqual([1, 1, 2]);
   });
 });

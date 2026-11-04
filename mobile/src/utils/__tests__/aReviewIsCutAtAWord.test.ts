@@ -2,9 +2,10 @@
  * aReviewIsCutAtAWord.test.ts — truncateReview (utils/text.ts), the cut every share card makes: a
  * review that fits is kept whole, trimmed; a longer one is cut at its last word before the limit
  * (unless that word ends within the first 40 characters), with nothing left trailing, and an
- * ellipsis. And extractDropCap, given nothing, raises nothing.
+ * ellipsis. What a screen reader hears of a card (spokenExcerpt) is that cut, each part a sentence.
+ * And extractDropCap, given nothing, raises nothing.
  */
-import { extractDropCap, truncateReview } from '../text';
+import { extractDropCap, spokenExcerpt, truncateReview } from '../text';
 
 const words = (n: number) => Array.from({ length: n }, (_, i) => `w${String(i).padStart(3, '0')}`).join(' ');
 
@@ -39,6 +40,21 @@ it('cuts at the limit itself when the last space comes within the first 40 chara
 it('leaves no space trailing before the mark, and keeps the review\'s own start', () => {
   const text = `  start ${'d'.repeat(50)}   ${'e'.repeat(400)}`;
   expect(truncateReview(text, 100)).toBe(`start ${'d'.repeat(50)}…`);
+});
+
+describe('spokenExcerpt', () => {
+  it('ends each part as a sentence, once', () => {
+    expect(spokenExcerpt('Rain', 'It never stops.')).toBe('Rain. It never stops.');
+    expect(spokenExcerpt(null, 'It never stops')).toBe('It never stops.');
+    expect(spokenExcerpt('  ', 'Quiet!')).toBe('Quiet!');
+  });
+
+  it('says as much as a card shows, cut at a word', () => {
+    const long = 'word '.repeat(200).trim();
+    const said = spokenExcerpt(null, long);
+    expect(said.length).toBeLessThanOrEqual(352);
+    expect(said).toMatch(/word[.…]+$/);
+  });
 });
 
 it('raises no letter from nothing, and keeps nothing as nothing', () => {
