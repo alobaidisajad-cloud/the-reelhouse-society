@@ -36,7 +36,8 @@ export const s = StyleSheet.create({
   rtlText: { writingDirection: 'rtl', textAlign: 'right' } as import('react-native').TextStyle,
 
   commentItem: { paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },
-  commentTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 7 },
+  // The name whole on its line; the date beside it while both fit, else beneath, at the right.
+  commentTopRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 8, rowGap: 4, marginBottom: 7 },
   commentByline: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
   commentAvatar: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.sepiaBorder, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   commentAvatarText: { fontFamily: fonts.display, fontSize: 11, color: colors.parchment, includeFontPadding: false, textAlignVertical: 'center' },

@@ -24,6 +24,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { formatDate } from '@/src/utils/timeAgo';
 import { initialOf, isRTLText } from '@/src/utils/text';
 import { scaledTextProps } from '@/src/constants/textScaling';
+import { softBreak } from '@/src/utils/softBreak';
 import React from 'react';
 import { View } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -101,7 +102,8 @@ export const CritiqueRow = React.memo(function CritiqueRow({
               {/* A departed member's disc is empty, as on every card: no letter of a mark. */}
               {departed || !c.username ? null : <Text style={s.commentAvatarText} {...UNSPOKEN}>{initialOf(c.username)}</Text>}
             </View>} />
-          <Text style={s.commUsername} numberOfLines={1}>{linked ? `@${c.username}` : authorName(c.user_id, c.username)}</Text>
+          {/* A name is never cut: too long for its line, it breaks only at its own joints (softBreak). */}
+          <Text style={s.commUsername}>{linked ? softBreak(`@${c.username}`) : authorName(c.user_id, c.username)}</Text>
         </PressableScale>
         {/* The archive's own date shape — this printed the device's short form,
             8/5/2026, directly beneath the record's AUG 5, 2026.
