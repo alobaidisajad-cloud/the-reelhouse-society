@@ -65,7 +65,9 @@ const DESC_CLAMP_LINES = 4;
 /** The chrome's row below its top: the 48pt back button. */
 const STACK_NAV_ROW = 48;
 /** A film caption's line. Its two-line box is this × 2 × the text size. */
-const FILM_TITLE_LINE = 14;
+const FILM_TITLE_LINE = 16;
+/** The action band's height: the frame's, the same in every room. */
+const BAND = 58;
 /** Between the critique field and the keyboard it rides on (iOS). */
 const ABOVE_THE_KEYBOARD = 16;
 
@@ -248,7 +250,7 @@ export default function StackDetailScreen() {
   const windowWidth = useColumnWidth();
   // Two columns below 360pt: a third of 320 breaks "Chungking" mid-letter at large type.
   const COLUMNS = windowWidth < 360 ? 2 : 3;
-  const ITEM_WIDTH = (windowWidth - 18 - 14 * COLUMNS) / COLUMNS;   // 9*2 page + 7*2 per cell
+  const ITEM_WIDTH = (windowWidth - 26 - 10 * COLUMNS) / COLUMNS;   // 13*2 page + 5*2 per cell
   const ITEM_HEIGHT = ITEM_WIDTH * 1.5;
   // From the safe area, floored and capped, in whole points (the veil meets the hem).
   const HEADER_HEIGHT = Math.round(headerTop + Math.min(320, Math.max(236, windowHeight * 0.38)));
@@ -367,15 +369,14 @@ export default function StackDetailScreen() {
   const readyMark = useScreenReady('stack', loading ? 'reading' : isError && !list ? 'failed' : 'ready');
 
   /**
-   * A long title is SET SMALLER, as a catalogue sets one: three fixed steps
+   * A long title is SET SMALLER, as a catalogue sets one: two fixed steps
    * from the measured width (adjustsFontSizeToFit is unreliable multiline on
    * Android). The smallest holds the 100-character maximum on a 360dp screen.
    */
   const titleType = React.useMemo(() => {
-    const width = windowWidth - 32;                    // one column, 16 each side
+    const width = windowWidth - 36;                    // one column, 18 each side
     const capacity = (size: number, lines: number) => (width / (size * 0.723)) * lines;
     const len = (list?.title?.length ?? 0);
-    if (len <= capacity(36, 3)) return { fontSize: 36, lineHeight: 40, numberOfLines: 3 };
     if (len <= capacity(30, 4)) return { fontSize: 30, lineHeight: 34, numberOfLines: 4 };
     return { fontSize: 24, lineHeight: 28, numberOfLines: 6 };
   }, [windowWidth, list?.title]);
@@ -919,7 +920,6 @@ export default function StackDetailScreen() {
                     wraps as prose and no line begins with a separator; the chips
                     are objects, so they wrap below as their own elements. */}
                 <Arrive name="stacks-1" duration={600} delay={200} style={s.metaRow}>
-                  <View style={s.metaDiamond} />
                   <Text style={s.metaText} numberOfLines={2}>
                     <Text style={s.metaCurator} onPress={() => handlePressProfile(list.user)} suppressHighlighting accessibilityRole="link" accessibilityLabel={`View curator @${list.user}`}>@{list.user.toUpperCase()}</Text>
                     <Text style={s.metaSep}>{'  ·  '}</Text>
@@ -970,21 +970,21 @@ export default function StackDetailScreen() {
                   </Arrive>
                 ) : null}
 
-                {/* ── ACTION BAR: Certify · Critic · Share to Lounge ── */}
+                {/* ── THE BAND: certify, critique, share to the Lounge, across the page as the frame's is ── */}
                 <Arrive name="stacks-3" duration={600} delay={350} style={s.actionBar}>
-                  {/* The house's one bar anatomy (MarkFigure): icon over word, the
-                      count beside the icon, the log bar's icons for the same acts. */}
+                  {/* The house's one band anatomy (MarkFigure): icon over word, the count beside the
+                      icon. Its words are constant: the heart's ink says certified. */}
                   {/* Whether they certified it not known (drawn from the phone): the heart's outline
                       before the ink, and a press asks the house rather than filing a second. */}
                   <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={null} haptic="selection" accessibilityRole="button"
                     accessibilityState={{ selected: isCertified, busy: !certifyKnown }}
-                    accessibilityLabel={certifyKnown ? certifyLabel(certifyCount, isCertified, 'this stack') : 'Certify this stack. Reading your mark'}>
-                    <MarkFigure iconSize={15} count={certifyCount} style={[s.actionLabel, isCertified && s.actionLabelActive]}>
-                      <Heart size={15} strokeWidth={2} color={isCertified ? colors.crimsonInk : colors.fog} fill={isCertified ? colors.crimsonInk : 'transparent'}
+                    accessibilityLabel={certifyKnown ? certifyLabel(certifyCount, false, 'this stack') : 'Certify this stack. Reading your mark'}>
+                    <MarkFigure iconSize={16} count={certifyCount} style={[s.actionLabel, isCertified && s.actionLabelActive]}>
+                      <Heart size={16} strokeWidth={2} color={isCertified ? colors.crimsonInk : colors.fog} fill={isCertified ? colors.crimsonInk : 'transparent'}
                         strokeDasharray={certifyKnown ? undefined : UNINKED} />
                     </MarkFigure>
                     <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} pointerEvents="none" {...deckLabelProps}>
-                      {isCertified ? 'CERTIFIED' : 'CERTIFY'}
+                      CERTIFY
                     </Text>
                   </PressableScale>
 
@@ -1008,18 +1008,18 @@ export default function StackDetailScreen() {
                   <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={null} haptic="selection" accessibilityRole="button"
                     accessibilityLabel={canShare || !user ? 'Share to lounge' : ropeSpoken('Share to lounge', shareRank, shareStanding)}>
                     {canShare || !user
-                      ? <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
-                      : <KeyRound size={15} strokeWidth={2} color={colors.sepia} style={s.actionKeyDim} />}
+                      ? <MessageCircle size={16} strokeWidth={2} color={colors.fog} />
+                      : <KeyRound size={16} strokeWidth={2} color={colors.sepia} style={s.actionKeyDim} />}
                     <Text style={[s.actionLabel, !canShare && !!user && s.actionLabelKey]} pointerEvents="none" {...deckLabelProps}>LOUNGE</Text>
                   </PressableScale>
                 </Arrive>
 
                 {/* The critiques open in an overlay, never between here and the films. */}
                 <View style={s.trackRow}>
-                  <Text style={s.trackLabel}>
+                  <Text style={s.trackLabel} accessibilityRole="header">
                     INDEXED REELS{(list.filmCount ?? 0) > films.length ? `  ·  FIRST ${films.length}` : ''}
                   </Text>
-                  <LinearGradient colors={[colors.sepiaBorder, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.trackLine} />
+                  <View style={s.trackLine} />
                 </View>
               </View>
             </>
@@ -1208,43 +1208,38 @@ const s = StyleSheet.create({
   actionBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   moreBtn: { width: 48, height: 48, alignItems: 'flex-end', justifyContent: 'center', marginRight: -10 },
 
-  // ONE left edge: 9 here + 7 on each cell = 16 (and a 14 gutter); the hero
-  // wrap's 7 puts the title on it too. These three numbers move together.
+  // ONE left edge: 13 here + 5 on each cell = 18 (and a 10 gutter); the hero
+  // wrap's 5 puts the title on it too. These three numbers move together.
   // Its foot is the page's (useContentBottom), set where it is drawn.
-  scrollContent: { paddingHorizontal: 9 },
+  scrollContent: { paddingHorizontal: 13 },
   parallaxHeader: { position: 'absolute', top: 0, left: 0, right: 0 },
-  headerContentWrap: { paddingHorizontal: 7, paddingBottom: 24 },
-  title: { fontFamily: fonts.display, fontSize: 36, color: colors.parchment, lineHeight: 40, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
+  headerContentWrap: { paddingHorizontal: 5, paddingBottom: 24 },
+  title: { fontFamily: fonts.display, fontSize: 30, color: colors.silverScreen, lineHeight: 34, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
   // Wraps only to let the chips fall below the one line of type.
   metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 7, rowGap: 6, marginTop: 16, marginBottom: 16 },
   /** "✦ FEATURED IN THE LOBBY · 30 SEPTEMBER", under the colophon. */
   lobbyHonour: { marginTop: -6, marginBottom: 16 },
-  metaDiamond: { width: 5, height: 5, backgroundColor: colors.sepia, transform: [{ rotate: '45deg' }] },
-  metaCurator: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.parchment, textDecorationLine: 'underline', textDecorationColor: colors.sepiaBorder },
-  metaText: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 10, lineHeight: 16, letterSpacing: 1.5, color: colors.fog },
-  metaSep: { color: colors.sepia },
+  metaCurator: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.sepia },
+  metaText: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 10, lineHeight: 16, letterSpacing: 1.5, color: colors.bone },
+  metaSep: { color: colors.bone },
   metaChip: { flexDirection: 'row', alignItems: 'center', gap: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
   metaChipText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.9, color: colors.sepia, includeFontPadding: false },
   // The epigraph — prose wears Courier italic, folded past four lines.
-  descWrap: { marginBottom: 24 },
-  desc: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 21 },
+  descWrap: { marginBottom: 18 },
+  desc: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.parchment, lineHeight: 19 },
   descToggle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginTop: 8 },
   // The epigraph's width and none of its height, invisible.
   descMeasure: { position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 },
   
-  // ── Action Bar ──
-  actionBar: {
-    flexDirection: 'row', alignItems: 'center',
-    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.25)',
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.25)',
-    marginBottom: 16,
-  },
-  // Each item IS the 48pt target, icon over word, as every bar in the house.
-  actionItem: { flex: 1, minHeight: 48, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', gap: 5 },
-  actionLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog, includeFontPadding: false },
+  // ── The band ── across the page: the page's 18 taken back on each side.
+  actionBar: { flexDirection: 'row', minHeight: BAND, marginHorizontal: -18, backgroundColor: colors.inkwell },
+  // As tall as the band: a halo would only reach out of it.
+  actionItem: { flex: 1, minWidth: 0, minHeight: BAND, paddingVertical: 8, paddingHorizontal: 2, alignItems: 'center', justifyContent: 'center', gap: 5 },
+  actionLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.8, color: colors.fog, includeFontPadding: false },
   actionLabelKey: { color: colors.sepia },
   actionKeyDim: { opacity: 0.75 },
-  actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
+  /** Between two acts: a fine rule, inset from the band's edges. */
+  actionDivider: { width: StyleSheet.hairlineWidth * 2, alignSelf: 'stretch', marginVertical: 17, backgroundColor: colors.ash },
 
   // ── Critiques Panel ──
   commentEmpty: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fogQuiet, textAlign: 'center', paddingVertical: 8 },
@@ -1252,26 +1247,26 @@ const s = StyleSheet.create({
   critiqueEarlierText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   critiquesUnread: { alignItems: 'center', gap: 4 },
 
-  trackRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 20 },
-  trackLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
-  trackLine: { flex: 1, height: 1 },
+  trackRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 22, marginBottom: 14 },
+  trackLabel: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.bone, includeFontPadding: false },
+  trackLine: { flex: 1, height: StyleSheet.hairlineWidth * 2, backgroundColor: 'rgba(232,223,208,0.1)' },
   
-  // One gutter both ways (14); the row gap on the item, so FlashList measures it.
-  filmItem: { marginBottom: 14, marginHorizontal: 7 },
+  // One gutter both ways (10); the row gap (16) on the item, so FlashList measures it.
+  filmItem: { marginBottom: 16, marginHorizontal: 5 },
   filmCard: { ...EDGE_LIT, borderRadius: 2, overflow: 'hidden', backgroundColor: colors.soot, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.1)' },
   // The podium frame — only #1 of a ranked stack earns the brass hairline.
   filmCardFirst: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)' },
   loggedBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(13,11,9,0.75)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)' },
   /** Its two-line height is reserved on the card (`titleBox`), at the phone's text size. */
   filmTitle: {
-    fontFamily: fonts.sub, fontSize: 11, lineHeight: FILM_TITLE_LINE,
-    color: colors.fog, marginTop: 8, textAlign: 'center', paddingHorizontal: 2,
+    fontFamily: fonts.body, fontSize: 12, lineHeight: FILM_TITLE_LINE,
+    color: colors.bone, marginTop: 6, textAlign: 'center', paddingHorizontal: 2,
   },
   // The rank in the catalogue line, never over the poster.
-  filmCaptionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 5, marginTop: 8 },
-  filmRank: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
+  filmCaptionRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginTop: 6 },
+  filmRank: { fontFamily: fonts.body, fontSize: 12, color: colors.sepia, includeFontPadding: false },
   filmRankFirst: { color: colors.flicker },
-  filmTitleInline: { flexShrink: 1, fontFamily: fonts.sub, fontSize: 11, lineHeight: FILM_TITLE_LINE, color: colors.fog, textAlign: 'center' },
+  filmTitleInline: { flexShrink: 1, fontFamily: fonts.body, fontSize: 12, lineHeight: FILM_TITLE_LINE, color: colors.bone, textAlign: 'center' },
   
   /* ── THE CRITIQUES ── an overlay, so the index behind it never moves ── */
   // The strip above the sheet: dimmed, and a tap on it closes the sheet.

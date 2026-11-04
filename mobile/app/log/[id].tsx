@@ -50,6 +50,7 @@ import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils
 import { stillQueued } from '@/src/stores/offlineQueueStore';
 import reelToast from '@/src/utils/reelToast';
 import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
+import { rankOf } from '@/src/components/RankBadge';
 import { useTimeAgo } from '@/src/hooks/useClock';
 import { ChevronLeft, MoreHorizontal, Share2 } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
@@ -761,6 +762,7 @@ export default function LogDetailScreen() {
                username: profile?.username ?? '',
                status: log.status as "watched" | "rewatched" | "abandoned" | undefined,
                memberNo: profile?.member_no,
+               rank: rankOf(profile?.role),
             }} onReady={() => shareCardDrawn.current?.()} />
          </View>
       </View>

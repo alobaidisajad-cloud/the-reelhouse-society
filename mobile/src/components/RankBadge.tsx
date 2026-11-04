@@ -39,7 +39,7 @@ import {
   STAMP_RULE_AUTEUR, STAMP_RULE_AUTEUR_INNER, STAMP_RULE_ARCHIVIST,
   STAMP_INK_AUTEUR, STAMP_INK_ARCHIVIST,
 } from '@/src/theme/stamp';
-import { scaledTextProps } from '@/src/constants/textScaling';
+import { scaledTextProps, decorativeTextProps } from '@/src/constants/textScaling';
 import { isArchivistPlusTier, isAuteurPlusTier, type TierInput } from '@/src/utils/tier';
 
 export type Rank = 'auteur' | 'archivist' | null;
@@ -69,13 +69,18 @@ export function rankWord(rank: Rank): string | null {
  * would still take padding in every row in the app, and not a "CINEPHILE"
  * label, which is a word meaning "has not paid" printed on most of the house.
  */
-export const RankBadge = memo(function RankBadge({ rank, silent, style }: {
+export const RankBadge = memo(function RankBadge({ rank, silent, still, style }: {
   rank: Rank;
   /**
    * Inside a control that already speaks the rank in its own label. This is
    * what stops "Ana, Auteur. Open their room." being followed by "Auteur".
    */
   silent?: boolean;
+  /**
+   * On a picture made to be sent (the Nitrate File): its word is frozen with the picture's, so the
+   * file is the same whatever text size its sender reads at. The same mark, at the same size.
+   */
+  still?: boolean;
   /** POSITION only. See the note at the top of this file. */
   style?: StyleProp<ViewStyle>;
 }) {
@@ -83,6 +88,7 @@ export const RankBadge = memo(function RankBadge({ rank, silent, style }: {
 
   const auteur = rank === 'auteur';
   const word = rankWord(rank) as string;
+  const type = still ? decorativeTextProps : scaledTextProps;
   const a11y = silent
     ? { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const }
     : { accessibilityLabel: word };
@@ -94,7 +100,7 @@ export const RankBadge = memo(function RankBadge({ rank, silent, style }: {
   if (!auteur) {
     return (
       <View style={[s.stamp, s.ruleArchivist, style]} {...a11y}>
-        <Text style={[s.word, s.wordArchivist]} numberOfLines={1} {...scaledTextProps}>
+        <Text style={[s.word, s.wordArchivist]} numberOfLines={1} {...type}>
           ✦ ARCHIVIST
         </Text>
       </View>
@@ -113,7 +119,7 @@ export const RankBadge = memo(function RankBadge({ rank, silent, style }: {
           start={STAMP_START} end={STAMP_END}
           style={s.wash}
         />
-        <Text style={[s.word, s.wordAuteur]} numberOfLines={1} {...scaledTextProps}>
+        <Text style={[s.word, s.wordAuteur]} numberOfLines={1} {...type}>
           ★ AUTEUR
         </Text>
       </View>

@@ -30,6 +30,7 @@ import { stripHtml } from '@/src/utils/html';
 import { truncateReview, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
 import { EDGE_LIT } from '@/src/theme/light';
 import { HOUSE_WEB } from '@/src/constants/support';
+import { RankBadge, type Rank } from '@/src/components/RankBadge';
 
 export const NITRATE_CARD_WIDTH = 360;
 export const NITRATE_CARD_HEIGHT = 640;
@@ -48,6 +49,8 @@ export interface NitrateFileData {
   status?: string | null;
   username?: string | null;
   memberNo?: number | null;
+  /** The sender's rank: the Auteur's file is cut from the Auteur's stock, and the mark sits beside the name. */
+  rank?: Rank;
 }
 
 // Sprocket holes down the left edge — the strip this frame was cut from.
@@ -111,7 +114,7 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
       </View>
 
       {/* The slab — the filed frame */}
-      <View style={s.slab}>
+      <View style={[s.slab, data.rank === 'auteur' && s.slabAuteur]}>
         {/* Registration brackets — the archivist's alignment marks */}
         <View style={[s.bracket, s.bracketTL]} />
         <View style={[s.bracket, s.bracketTR]} />
@@ -176,7 +179,10 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
         <View style={s.footer}>
           <Text {...decorativeTextProps} style={s.footerSerial} numberOfLines={1}>{memberNoDisplay}</Text>
           {!!data.username && (
-            <Text {...decorativeTextProps} style={s.footerHandle} numberOfLines={1}>@{data.username.toUpperCase()}</Text>
+            <View style={s.footerWho}>
+              <Text {...decorativeTextProps} style={s.footerHandle} numberOfLines={1}>@{data.username.toUpperCase()}</Text>
+              <RankBadge rank={data.rank ?? null} still />
+            </View>
           )}
         </View>
       </View>
@@ -227,12 +233,13 @@ const s = StyleSheet.create({
     right: 16,
     top: 22,
     bottom: 22,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: colors.sepiaBorder,
     borderRadius: 6,
     overflow: 'hidden',
   },
+  slabAuteur: { backgroundColor: colors.sootAuteur },
   bracket: {
     position: 'absolute',
     width: 12,
@@ -432,12 +439,22 @@ const s = StyleSheet.create({
     color: colors.sepia,
     includeFontPadding: false,
   },
+  // The name and its mark, to the right; the mark goes under the name before the name is cut.
+  footerWho: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    columnGap: 8,
+    rowGap: 4,
+    marginLeft: 'auto',
+    maxWidth: '100%',
+  },
   footerHandle: {
     fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 1.5,
-    color: colors.flicker,
+    color: colors.parchment,
     includeFontPadding: false,
-    marginLeft: 'auto',
   },
 });

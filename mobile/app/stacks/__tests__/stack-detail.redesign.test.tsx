@@ -207,8 +207,8 @@ describe('the chrome has a ground', () => {
 
 describe('one column', () => {
   it('the three numbers that make the margin still agree', () => {
-    // 9 (page) + 7 (cell) = 16, and 7 + 7 = a 14 gutter; the hero wrap's 7
-    // puts the title on the posters' edge.
+    // 13 (page) + 5 (cell) = 18, the drawing's edge, and 5 + 5 = a 10 gutter; the hero
+    // wrap's 5 puts the title on the posters' edge.
     const num = (style: string, prop: string) => {
       const body = SOURCE.slice(SOURCE.indexOf(`${style}: {`));
       return Number(body.slice(0, body.indexOf('}')).match(new RegExp(`${prop}: (\\d+)`))![1]);
@@ -216,9 +216,9 @@ describe('one column', () => {
     const page = num('scrollContent', 'paddingHorizontal');
     const wrap = num('headerContentWrap', 'paddingHorizontal');
     const cell = num('filmItem', 'marginHorizontal');
-    expect(page + cell).toBe(16);
+    expect(page + cell).toBe(18);
     expect(page + wrap).toBe(page + cell);          // title and posters, one edge
-    // The cell: the window less the same 9s and 7s, for any number of columns.
+    // The cell: the window less the same 13s and 5s, for any number of columns.
     expect(SOURCE).toContain(`const ITEM_WIDTH = (windowWidth - ${page * 2} - ${cell * 2} * COLUMNS) / COLUMNS;`);
   });
 });
@@ -250,7 +250,6 @@ describe('the hero', () => {
 
   it('sets a long title smaller rather than cutting it', () => {
     // Steps from the measured width, for the 100 characters a title may hold.
-    expect(SOURCE).toMatch(/capacity\(36, 3\)/);
     expect(SOURCE).toMatch(/capacity\(30, 4\)/);
     expect(SOURCE).toMatch(/fontSize: 24, lineHeight: 28, numberOfLines: 6/);
     // and never shrink-to-fit, which disagrees across platforms
@@ -284,7 +283,7 @@ describe('the index', () => {
     // Two lines at the size the phone draws them, on the card, for BOTH styles.
     const cap = SOURCE.slice(SOURCE.indexOf('filmTitle: {'));
     expect(cap.slice(0, cap.indexOf('}'))).toMatch(/lineHeight: FILM_TITLE_LINE/);
-    expect(SOURCE).toMatch(/const FILM_TITLE_LINE = 14;/);
+    expect(SOURCE).toMatch(/const FILM_TITLE_LINE = 16;/);
     expect(SOURCE).toMatch(/const titleBox = \{ minHeight: FILM_TITLE_LINE \* 2 \* useLineScale\(\) \};/);
     expect(SOURCE).toMatch(/style=\{\[s\.filmTitleInline, titleBox\]\}/);
     expect(SOURCE).toMatch(/style=\{\[s\.filmTitle, titleBox\]\}/);
@@ -436,7 +435,10 @@ describe('the page is legible and reachable', () => {
       ['backBtn', 'height'], ['actionBtn', 'height'], ['moreBtn', 'height'], ['actionItem', 'minHeight'],
     ] as const) {
       const body = SOURCE.slice(SOURCE.indexOf(`${style}: {`));
-      const value = Number(body.slice(0, body.indexOf('}')).match(new RegExp(`${prop}: (\\d+)`))![1]);
+      // A number, or the name of one (the band's height, BAND).
+      const [, said = ''] = body.slice(0, body.indexOf('}')).match(new RegExp(`${prop}: (\\w+)`)) ?? [];
+      const [, named = said] = SOURCE.match(new RegExp(`const ${said} = (\\d+);`)) ?? [];
+      const value = Number(named);
       expect(value).toBeGreaterThanOrEqual(48);
     }
   });
@@ -650,7 +652,7 @@ describe('the states a real stack arrives in', () => {
   });
 
   it('a short title keeps the full display size', async () => {
-    expect((await titleSetting('Noir')).fontSize).toBe(36);
+    expect((await titleSetting('Noir')).fontSize).toBe(30);
   });
 
   it('a very long curator handle cannot push the date onto a line of its own', async () => {
@@ -794,7 +796,7 @@ describe('the film card, actually rendered', () => {
     await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
     const short = captionOf(r, 'Perfect Blue');
     const long = captionOf(r, '28 Years Later: The Bone Temple');
-    expect(short.minHeight).toBe(28);
+    expect(short.minHeight).toBe(32);
     expect(long.minHeight).toBe(short.minHeight);
     expect(r.getByText('Perfect Blue').props.numberOfLines).toBe(2);
   });
@@ -805,7 +807,7 @@ describe('the film card, actually rendered', () => {
     await waitFor(() => expect(r.getByText('Perfect Blue')).toBeTruthy());
     const short = captionOf(r, 'Perfect Blue');
     const long = captionOf(r, '28 Years Later: The Bone Temple');
-    expect(short.minHeight).toBe(28);
+    expect(short.minHeight).toBe(32);
     expect(long.minHeight).toBe(short.minHeight);
   });
 

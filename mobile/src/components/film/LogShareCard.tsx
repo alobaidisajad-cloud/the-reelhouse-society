@@ -7,6 +7,7 @@
  */
 import { tmdb } from '@/src/lib/tmdb';
 import { NitrateFileCard } from '@/src/components/film/NitrateFileCard';
+import type { Rank } from '@/src/components/RankBadge';
 
 export interface ShareCardData {
     filmTitle: string;
@@ -20,6 +21,7 @@ export interface ShareCardData {
     status?: 'watched' | 'rewatched' | 'abandoned';
     pullQuote?: string;
     memberNo?: number | null;
+    rank?: Rank;
 }
 
 /** `onReady`: every picture on the file is drawn (see NitrateFileCard). */
@@ -37,6 +39,7 @@ export default function LogShareCard({ data, onReady }: { data: ShareCardData; o
                 status: data.status ?? null,
                 username: data.username,
                 memberNo: data.memberNo,
+                rank: data.rank,
             }}
             onReady={onReady}
         />

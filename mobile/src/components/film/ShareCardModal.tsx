@@ -28,6 +28,7 @@ import { ToastHost } from '@/src/components/ToastHost';
 import { CentredCard } from '@/src/components/layout/CentredCard';
 import { useOverlayRoomPadding } from '@/src/components/layout/navMetrics';
 import reelToast from '@/src/utils/reelToast';
+import type { Rank } from '@/src/components/RankBadge';
 
 interface ShareFilm {
   id?: number | string;
@@ -62,9 +63,11 @@ interface ShareCardModalProps {
   log?: ShareLog | null;
   username?: string | null;
   memberNo?: number | null;
+  /** The sharer's rank, for their stock and mark on the file. */
+  rank?: Rank;
 }
 
-export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, film, log, username, memberNo }: ShareCardModalProps) {
+export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, film, log, username, memberNo, rank }: ShareCardModalProps) {
   const viewShotRef = useRef<ViewShotRef>(null);
   const { width: winW, height: winH } = useWindowDimensions();
   const room = useOverlayRoomPadding().paddingTop;
@@ -165,6 +168,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
                       status: log?.status ?? null,
                       username,
                       memberNo,
+                      rank,
                     }}
                     onReady={() => setReadyFor(posterUrl ?? '')}
                   />

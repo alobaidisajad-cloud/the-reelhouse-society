@@ -323,8 +323,8 @@ describe('the class is closed', () => {
 
   const bars = files
     .map((f) => ({ f: relative(ROOT, f).replace(/\\/g, '/'), src: readFileSync(f, 'utf8') }))
-    // A bar that turns its word, or one that draws it constant (the Reel's frame).
-    .filter(({ src }) => /'CERTIFIED'\s*:\s*'CERTIFY'|>CERTIFY<\/Text>/.test(src));
+    // A bar that turns its word, or one that draws it constant (the frame's band), on its line or its own.
+    .filter(({ src }) => /'CERTIFIED'\s*:\s*'CERTIFY'|>\s*CERTIFY\s*<\/Text>/.test(src));
 
   it('finds every bar that certifies', () => {
     expect(bars.map((b) => b.f).sort()).toEqual([

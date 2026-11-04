@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { ReelRating } from '@/src/components/Decorative';
+import { ReelRating, reelsWidth } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { stripHTML, isRTLText } from '@/src/utils/text';
 import { dateParts, formatDate } from '@/src/utils/timeAgo';
@@ -57,7 +57,7 @@ const monthYear = (date: string | null | undefined) => {
   const p = dateParts(date);
   return p ? `${MONTHS[p.month] ?? ''} ${p.year}` : null;
 };
-const CELL = { size: 10, spacing: 1.2, padX: 8 } as const;
+const CELL = { size: 10, spacing: 1.2, padX: 8, reel: 11, rule: 1 } as const;
 
 /** The history as stored: a list, or a list written as JSON; anything else is none. */
 function historyOf(raw: unknown): ViewingHistoryEntry[] {
@@ -92,10 +92,11 @@ export default function LogChronicle({ log, noteFor, onOpenNote }: LogChronicleP
   const chosen = chosenPast !== null && chosenPast < viewings.length - 1 ? chosenPast : viewings.length - 1;
   if (!history.length) return null;
 
-  // As many to a row as each cell's widest date allows; the rest wrap beneath.
+  // As many to a row as each cell's widest content allows (its date, or its five reels), with its
+  // padding and the rule before it; the rest wrap beneath.
   const room = column - PAGE.pad * 2;
-  const widest = Math.max(...viewings.map((v) => lineWidth(monthYear(v.date) ?? v.label, 'elite', CELL.size, scale, CELL.spacing))) + CELL.padX * 2;
-  const cols = Math.max(1, Math.min(viewings.length, Math.floor(room / Math.max(widest, 72))));
+  const content = Math.max(reelsWidth(CELL.reel), ...viewings.map((v) => lineWidth(monthYear(v.date) ?? v.label, 'elite', CELL.size, scale, CELL.spacing)));
+  const cols = Math.max(1, Math.min(viewings.length, Math.floor(room / (content + CELL.padX * 2 + CELL.rule))));
   const pick = viewings[chosen];
 
   return (
@@ -111,7 +112,7 @@ export default function LogChronicle({ log, noteFor, onOpenNote }: LogChronicleP
               accessibilityLabel={`${v.isCurrent ? 'This viewing' : v.label.replace('◆ ', '').toLowerCase()}${when ? `, ${when.toLowerCase()}` : ''}${v.rating > 0 ? `, ${v.rating} of 5 reels` : ''}`}>
               {on ? <View style={st.cellMark} /> : null}
               <Text style={[st.cellDate, on && st.cellDateOn]} {...scaledTextProps}>{when ?? v.label.replace('◆ ', '')}</Text>
-              {v.rating > 0 ? <ReelRating rating={v.rating} size={11} /> : null}
+              {v.rating > 0 ? <ReelRating rating={v.rating} size={CELL.reel} /> : null}
             </PressableScale>
           );
         })}

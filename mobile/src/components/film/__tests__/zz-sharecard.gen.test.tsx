@@ -1,7 +1,8 @@
 /**
- * A GENERATOR, not a test. THE NITRATE FILE, the card a member shares, at its ledger line's every
- * width: a serial beside a short handle, the house's address beside an eleven-letter handle (which
- * the address ran out of one line: largest-text run 41237565336), the address beside the longest
+ * A GENERATOR, not a test. THE NITRATE FILE, the card a member shares, in each rank's stock, at its
+ * ledger line's every width: a serial beside a short handle, the house's address beside an
+ * eleven-letter handle (which the address ran out of one line: largest-text run 41237565336), the
+ * address beside the longest
  * handle a member may have, and a film shared with no member at all. No generator drew the card,
  * so CI never measured it; it is drawn here at every size CI lays out (its words do not scale), as
  * the share sheet shows it: shrunk to the window's width (previewScaleFor), centred in its frame.
@@ -38,9 +39,12 @@ const LONGEST = 'the_cinematheque_night_keeper_'.slice(0, 30);
 whenRendering('share card generator', () => {
   it('writes the file at each width its ledger line can take', async () => {
     const states: [string, NitrateFileData, string | null][] = [
-      ['sharecard', { ...FILE, username: 'vera', memberNo: 42 }, '@VERA'],
+      // Each rank's file: the house's card with the Archivist's mark, the Auteur's own stock and plate,
+      // a Cinephile's with none; and the widest ledger, the Auteur's plate beside the longest handle.
+      ['sharecard', { ...FILE, username: 'vera', memberNo: 42, rank: 'archivist' }, '@VERA'],
+      ['sharecard-auteur', { ...FILE, username: 'marguerite_moss', memberNo: 7, rank: 'auteur' }, '@MARGUERITE_MOSS'],
       ['sharecard-house-handle', { ...FILE, username: 'E2E_WRITER', memberNo: null }, '@E2E_WRITER'],
-      ['sharecard-house-longest', { ...FILE, username: LONGEST, memberNo: null }, `@${LONGEST.toUpperCase()}`],
+      ['sharecard-house-longest', { ...FILE, username: LONGEST, memberNo: null, rank: 'auteur' }, `@${LONGEST.toUpperCase()}`],
       ['sharecard-film-only', { ...FILE, status: null, pullQuote: null, username: null, memberNo: null }, null],
     ];
     for (const [name, data, handle] of states) {

@@ -129,14 +129,18 @@ describe('the ledger line', () => {
     const r = render(<NitrateFileCard data={{ ...DATA, memberNo: null, username: widestLetter.repeat(30) }} />);
     const handle = r.getByText(widest);
     const look = StyleSheet.flatten(handle.props.style) as { fontSize: number; letterSpacing: number; flexShrink?: number };
-    // The ledger: the first box above the handle that lays out a row.
-    let box = handle.parent;
-    while (box && (StyleSheet.flatten(box.props.style) as { flexDirection?: string } | undefined)?.flexDirection !== 'row') box = box.parent;
-    const ledger = StyleSheet.flatten(box?.props.style) as { flexWrap?: string; paddingHorizontal: number };
+    // The name's own row (the name and its rank mark), then the ledger: the first row above it
+    // with the slab's padding. Both wrap, so the mark goes under the name before the name is cut.
+    const flat = (b: typeof handle.parent) => (StyleSheet.flatten(b?.props.style) ?? {}) as { flexDirection?: string; flexWrap?: string; paddingHorizontal?: number };
+    let group = handle.parent;
+    while (group && flat(group).flexDirection !== 'row') group = group.parent;
+    let box = group;
+    while (box && !(flat(box).flexDirection === 'row' && flat(box).paddingHorizontal != null)) box = box.parent;
+    const ledger = flat(box) as { flexWrap?: string; paddingHorizontal: number };
     // The ledger's line: the slab (32 from the left, 16 from the right, a border of 1 each side), less its padding.
     const line = NITRATE_CARD_WIDTH - 32 - 16 - 2 - 2 * ledger.paddingHorizontal;
     expect(lineWidth(widest, 'elite', look.fontSize, 1, look.letterSpacing)).toBeLessThanOrEqual(line);
-    expect([ledger.flexWrap, look.flexShrink ?? 0]).toEqual(['wrap', 0]);
+    expect([ledger.flexWrap, flat(group).flexWrap, look.flexShrink ?? 0]).toEqual(['wrap', 'wrap', 0]);
   });
 });
 

@@ -11,6 +11,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import { readMarks } from '@/src/stores/domain/marksLedger';
 import { isArchivistPlusTier } from '@/src/utils/tier';
+import { rankOf } from '@/src/components/RankBadge';
 
 import { FilmDetailLayout } from '@/src/components/film/FilmDetailLayout';
 import { ShareCardModal } from '@/src/components/film/ShareCardModal';
@@ -212,6 +213,7 @@ export default function FilmDetailScreen() {
           log={existingLog as any}
           username={user?.username}
           memberNo={user?.member_no}
+          rank={rankOf(user)}
         />
       )}
       {activeVideo && (
