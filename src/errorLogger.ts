@@ -27,9 +27,14 @@ export async function logError({ type = 'runtime', message, stack, component, us
         _recentErrors.clear()
     }
 
+    // The house keeps a report only from a signed-in member, for themselves (authed_insert_error_logs):
+    // one with no member is refused, so the member signed in is named, and a visitor's is not sent.
+    // Read from the store, never from supabase.auth: this runs inside the auth listener too.
     try {
+        const member = userId || (await import('./stores/auth')).useAuthStore.getState().user?.id
+        if (!member) return
         await supabase.from('error_logs').insert([{
-            user_id: userId || null,
+            user_id: member,
             error_type: type,
             error_message: cutChars(String(message ?? ''), 2000) || 'Unknown error',
             error_stack: stack ? cutChars(String(stack), 5000) : null,
