@@ -257,7 +257,7 @@ const cardNoStill = [edit(CARD_FILE, [
   '',
 ].join('\n'), '')];
 const cardNoPoster = [edit(CARD_FILE, [
-  '        <RemoteImage uri={poster} style={st.poster} recyclingKey={`poster-${item.film_id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={100}',
+  '        <RemoteImage uri={poster} style={st.poster} recyclingKey={`poster-${posterPath ?? item.film_id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={100}',
   '          fallback={<PosterMark style={st.poster} />} />',
   '',
 ].join('\n'), '')];

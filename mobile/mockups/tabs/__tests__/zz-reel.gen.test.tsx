@@ -82,8 +82,8 @@ const LONG = 'The prison is not the subject. Patience is. Every frame is a man d
 /** One of every kind of frame, by rank, in the order a reel might run them. */
 const KINDS: Record<string, unknown>[] = [
   { role: 'auteur', username: 'morpho', film: trending[0], still: true, pull_quote: 'Every frame is a man deciding, again, not to give up.', review: LONG, drop_cap: true,
-    watched_with: 'Ines', status: 'rewatched', is_autopsied: true, autopsy: { _v: 2, story: 9, script: 8, acting: 10, cinematography: 9, editing: 7, sound: 8 } },
-  { role: 'archivist', username: 'vesper', film: trending[1], still: true, review: 'The twist lands because the first act already told you, twice.', is_spoiler: true },
+    watched_with: 'Ines', physical_media: '35mm print', status: 'rewatched', is_autopsied: true, autopsy: { _v: 2, story: 9, script: 8, acting: 10, cinematography: 9, editing: 7, sound: 8 } },
+  { role: 'archivist', username: 'vesper', film: trending[1], still: true, physical_media: '4K Blu-ray', review: 'The twist lands because the first act already told you, twice.', is_spoiler: true },
   { role: 'cinephile', username: 'halloway', film: canon[1], status: 'abandoned', rating: 0, abandoned_reason: 'Two hours in and the family still had not done anything I could not have guessed.' },
   { role: 'cinephile', username: 'marguerite_moss_of_the_longest', film: canon[2], review: 'Pacino gets colder with every scene and the film never once tells you to notice.' },
   { role: 'auteur', username: 'ug.mb', film: canon[3], is_autopsied: true, autopsy: { _v: 2, story: 8, acting: 9, sound: 6 } },

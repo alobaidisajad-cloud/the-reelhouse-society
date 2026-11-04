@@ -4,7 +4,8 @@
  * Reading order:
  *   who filed it (the byline, its ··· for another member's log)
  *   → the editorial still, when filed, shown whole across the frame, no words on it
- *   → the film: poster (over the still's lower edge), title, year, reels, the slate (WITH, REWATCH)
+ *   → the film: the poster the member chose (over the still's lower edge), title, year, reels,
+ *     the slate (WITH, the format, REWATCH)
  *   → the words: the spoiler's leader row, or the pull-quote as a title card and the review
  *     (five lines, two under a quote), READ ON · N WORDS where words were left out
  *   → the breakdown, when scored
@@ -41,6 +42,7 @@ import { balancedWidth } from '@/src/components/lobby/measure';
 import { stripHTML, isRTLText, spokenExcerpt, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { counted } from '@/src/utils/counted';
+import { hasPhysicalFormat } from '@/src/components/log/logRecord';
 
 import type { FeedItem } from '@/src/schemas/feed.schema';
 export type { FeedItem };
@@ -137,17 +139,21 @@ export const ActivityCard = React.memo(function ActivityCard({ item, onFilmPress
   const autopsy = (item.autopsy ?? undefined) as Record<string, number> | undefined;
   const scored = !!item.is_autopsied && hasRatedAutopsy(autopsy);
   const still = item.editorial_header ? `${TMDB_STILL}${item.editorial_header}` : null;
-  const poster = item.poster_path ? `${TMDB_POSTER}${item.poster_path}` : null;
+  // The print the member chose for their log, else the film's own.
+  const posterPath = item.alt_poster || item.poster_path;
+  const poster = posterPath ? `${TMDB_POSTER}${posterPath}` : null;
   const abandoned = item.status === 'abandoned';
+  // The slate: who it was watched with (the name in parchment), the format, a rewatch.
   const slate = [
-    item.watched_with ? `WITH ${item.watched_with.toUpperCase()}` : null,
-    item.status === 'rewatched' ? 'REWATCH' : null,
-  ].filter((x): x is string => !!x);
+    item.watched_with ? { key: 'with', word: 'WITH ', name: item.watched_with.toUpperCase() } : null,
+    hasPhysicalFormat(item.physical_media) ? { key: 'format', word: (item.physical_media ?? '').trim().toUpperCase() } : null,
+    item.status === 'rewatched' ? { key: 'rewatch', word: 'REWATCH' } : null,
+  ].filter((x): x is { key: string; word: string; name?: string } => !!x);
   const rated = !abandoned && (item.rating ?? 0) > 0;
   // What the film control says: everything drawn in it, then where it goes.
   const filmSaid = [
     item.film_title, item.year != null ? String(item.year) : null, rated ? `${item.rating} of 5 reels` : null,
-    ...slate.map((x) => x.toLowerCase()), abandoned ? 'abandoned' : null,
+    ...slate.map((x) => `${x.word}${x.name ?? ''}`.toLowerCase()), abandoned ? 'abandoned' : null,
   ].filter(Boolean).join(', ') + '. Opens the film.';
 
   // Host screens already standing on the film (its reviews page) override this, so the poster
@@ -173,14 +179,20 @@ export const ActivityCard = React.memo(function ActivityCard({ item, onFilmPress
       {/* The film, one control: its poster and its title open the same page, so neither reaches into the other. */}
       <PressableScale onPress={handleFilmPress} haptic="heavy" pressedScale={0.99} hitSlop={null} style={[st.film, still && st.filmOver]}
         accessibilityLabel={filmSaid}>
-        <RemoteImage uri={poster} style={st.poster} recyclingKey={`poster-${item.film_id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={100}
+        <RemoteImage uri={poster} style={st.poster} recyclingKey={`poster-${posterPath ?? item.film_id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={100}
           fallback={<PosterMark style={st.poster} />} />
         <View style={[st.meta, still && st.metaOver]}>
           <Text {...displayTextProps} style={st.title} numberOfLines={3}>{item.film_title}</Text>
           {item.year != null ? <Text {...scaledTextProps} style={st.year}>{item.year}</Text> : null}
           {rated ? <ReelRating rating={item.rating ?? 0} size={16} /> : null}
           {slate.length ? (
-            <View style={st.slate}>{slate.map((x) => <Text key={x} {...scaledTextProps} style={st.slateItem}>{x}</Text>)}</View>
+            <View style={st.slate}>
+              {slate.map((x) => (
+                <Text key={x.key} {...scaledTextProps} style={st.slateItem}>
+                  {x.word}{x.name ? <Text style={st.slateName}>{x.name}</Text> : null}
+                </Text>
+              ))}
+            </View>
           ) : null}
           {abandoned ? <View style={st.stamp}><Text {...scaledTextProps} style={st.stampText}>ABANDONED</Text></View> : null}
         </View>
@@ -219,6 +231,7 @@ const st = StyleSheet.create({
   year: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.bone, includeFontPadding: false },
   slate: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 3, marginTop: 2 },
   slateItem: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.bone, includeFontPadding: false },
+  slateName: { color: colors.parchment },
   stamp: { alignSelf: 'flex-start', marginTop: 4, marginLeft: 2, borderWidth: 1.5, borderColor: colors.crimsonInk, paddingHorizontal: 7, paddingTop: 2, paddingBottom: 1, transform: [{ rotate: '-6deg' }] },
   stampText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.crimsonInk, includeFontPadding: false },
   reason: { marginTop: 10, fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 19, color: colors.bone },

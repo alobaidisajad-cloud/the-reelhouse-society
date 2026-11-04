@@ -76,12 +76,14 @@ export const FeedItemSchema = z.object({
   autopsy: z.unknown().nullable().optional(),
   abandoned_reason: z.string().nullable().optional(),
   is_spoiler: z.boolean().nullable().optional(),
+  alt_poster: z.string().nullable().optional(),
+  physical_media: z.string().nullable().optional(),
   certify_count: markCount,
   critique_count: markCount,
   certified: mineMark,
 });
 
-export type FeedItem = z.infer<typeof FeedItemSchema>;
+export type FeedItem= z.infer<typeof FeedItemSchema>;
 
 /**
  * Input-side Zod schema for the following feed RPC response.
@@ -115,6 +117,10 @@ export const FollowingFeedRowSchema = z.object({
   certify_count: markCount,
   critique_count: markCount,
   certified: mineMark,
+  // The print the member chose and the format they saw it on, at the end again (20261104_01);
+  // absent from a house that does not have them yet, and the frame then draws the film's own.
+  alt_poster: z.string().nullable().optional(),
+  physical_media: z.string().nullable().optional(),
 });
 
 export type FollowingFeedRow = z.infer<typeof FollowingFeedRowSchema>;
