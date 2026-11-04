@@ -71,15 +71,15 @@ describe('#89 · every internal caller of updateLogOp is silent — enumerated',
 });
 
 describe('#111 · the log page scrolls to a named place, not a guessed one', () => {
-  it('the screen and the style share ONE constant for the parallax padder', () => {
-    // If these two ever disagree the scroll lands in the wrong place, which is
-    // exactly what a bare `80` in the screen allowed.
+  it('the critiques are found from where the page body was laid out, and reached below the bar', () => {
+    // A bare number for the head above the body (once `80`) lands the scroll in the wrong place
+    // the day the head changes: the body's own measured top is the one truth.
     const screen = readCode('app/log/[id].tsx');
-    const styles = readCode('src/components/log/logDetailStyles.ts');
     expect(screen).not.toMatch(/critiquesSectionY\.current = \d/);
-    expect(screen).toMatch(/critiquesSectionY\.current = PARALLAX_PADDER_HEIGHT \+ y/);
-    expect(styles).toMatch(/export const PARALLAX_PADDER_HEIGHT = \d+/);
-    expect(styles).toMatch(/parallaxPadder: \{ height: PARALLAX_PADDER_HEIGHT/);
+    expect(screen).toMatch(/critiquesSectionY\.current = bodyY\.current \+ y/);
+    expect(screen).toMatch(/style=\{s\.pageBody\} onLayout=\{\(e\) => \{ bodyY\.current = e\.nativeEvent\.layout\.y; \}\}/);
+    // Scrolled to, it stands below the page's bar, not under it.
+    expect(screen).toMatch(/critiquesSectionY\.current - headerTop - PAGE\.bar/);
   });
 });
 

@@ -34,7 +34,8 @@ export const Breakdown = React.memo(function Breakdown({ autopsy, width, scale, 
   if (!stats.length) return null;
   const mean = stats.reduce((sum, s) => sum + s.value, 0) / stats.length;
   const cols = breakdownColumns(stats.map((s) => s.label), width, scale);
-  const cell = (width - GAP * (cols - 1)) / cols;
+  // Whole points: six cells that sum to the row's width exactly wrap the last under Yoga's rounding.
+  const cell = Math.floor((width - GAP * (cols - 1)) / cols);
   return (
     <View style={st.wrap} accessible accessibilityLabel={`Breakdown, ${score(Math.round(mean * 10) / 10)} out of 10. ${stats.map((s) => `${s.label.toLowerCase()}, ${score(s.value)} out of 10`).join('. ')}.`}>
       <View style={st.rule}>

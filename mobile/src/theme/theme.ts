@@ -26,7 +26,6 @@ export const colors = {
   // A sheet over a film, 8% see-through ON PURPOSE so the backdrop tints it (the ladder
   // guard holds these apart from the grounds it makes solid).
   sheetOverArt: 'rgba(13, 11, 9, 0.92)',
-  sheetOverArtAuteur: 'rgba(42, 20, 13, 0.92)',
   flicker: '#F0E8B0',     // Candlelight accent — hover states, highlights
   bloodReel: '#6B1A0A',   // Deep crimson — destructive actions, stamps
   danger: '#E74C3C',      // Alert red

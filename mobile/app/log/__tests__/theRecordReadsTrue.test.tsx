@@ -27,7 +27,6 @@ import { View, StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { resetMarkCounts } from '@/src/stores/markCounts';
 import { FrameWords } from '@/src/components/feed/ActivityCard';
-import { s as recordStyles } from '@/src/components/log/logDetailStyles';
 
 import LogDetailScreen from '../[id]';
 
@@ -207,6 +206,8 @@ describe('a member’s writing is set in its own direction', () => {
     const r = await page({
       viewing_history: [{ viewingId: 'v0', date: '2025-02-01', rating: 3, review: ARABIC, watchedWith: null }],
     });
+    // Its words are shown once it is chosen on the strip.
+    await act(async () => { await fireEvent.press(r.getByLabelText(/^first watch/)); });
     const blocks = textsWith(r, ARABIC);
     expect(blocks.length).toBeGreaterThan(0);
     for (const b of blocks) expect(rightToLeft(b)).toBe(true);
@@ -348,19 +349,17 @@ describe('a raised initial is a whole letter, on the card and on the record', ()
 });
 
 describe('the page draws only what it has', () => {
-  it('a rating with no words draws no review section at all', async () => {
-    // The section is the box styled `reviewSection` — found by its own style,
-    // so the check is present on a record with words before it is absent on
-    // one without.
-    const section = StyleSheet.flatten(recordStyles.reviewSection);
-    const sections = (r: R) => nodes(r).filter((x) => JSON.stringify(StyleSheet.flatten(x.props.style)) === JSON.stringify(section)).length;
+  it('a rating with no words draws no words at all, not an empty box', async () => {
+    // The words are the paragraphs set in the page's essay face: present on a record with words
+    // before they are absent on one without.
+    const essays = (r: R) => nodes(r).filter((x) => x.type === 'Text' && StyleSheet.flatten(x.props.style)?.fontSize === 14
+      && StyleSheet.flatten(x.props.style)?.lineHeight === 21).length;
     const withWords = await page();
-    expect(sections(withWords)).toBe(1);
+    expect(essays(withWords)).toBe(1);
     withWords.unmount();
     const bare = await page({ review: '', pull_quote: null });
-    // The words went, and so did the box that held them — not an empty frame.
     expect(words(bare)).not.toContain('Every corridor');
-    expect(sections(bare)).toBe(0);
+    expect(essays(bare)).toBe(0);
   });
 });
 
@@ -414,13 +413,13 @@ describe('the record offers what the card offers', () => {
   it('a visitor can save the film, and take it back', async () => {
     const r = await page();
     await act(async () => { await fireEvent.press(r.getByLabelText('Save film to your watchlist')); });
-    expect(r.getByLabelText('Saved: remove the film from your watchlist')).toBeTruthy();
+    expect(r.getByLabelText('Save: on your watchlist. Takes it off')).toBeTruthy();
     // A second tap on the same control inside 400ms is swallowed on purpose
     // (PressableScale's debounce): a member's second tap comes later than that.
     const now = Date.now();
     const clock = jest.spyOn(Date, 'now').mockReturnValue(now + 1000);
     try {
-      await act(async () => { await fireEvent.press(r.getByLabelText('Saved: remove the film from your watchlist')); });
+      await act(async () => { await fireEvent.press(r.getByLabelText('Save: on your watchlist. Takes it off')); });
     } finally {
       clock.mockRestore();
     }

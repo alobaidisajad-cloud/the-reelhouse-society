@@ -1,8 +1,8 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Lock, ChevronRight } from 'lucide-react-native';
-import { colors } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import { isRTLText } from '@/src/utils/text';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
@@ -28,12 +28,15 @@ import { s } from '@/src/components/log/logDetailStyles';
  *    removed, so nothing destructive sits on a page made for reading.
  *  · On a chronicle card it is clamped to three lines, so one long note cannot
  *    swell the carousel every other viewing has to match.
+ *  · On the opened log (`paper`) it is the section's paper: its name is the section's
+ *    heading above it, so the paper holds the words alone.
  */
 export default function VaultNote({
   note,
   onOpen,
   compact = false,
   inPanel = false,
+  paper = false,
 }: {
   note: string;
   /** Opens the note in full. Without it the note is text, not a control. */
@@ -42,13 +45,19 @@ export default function VaultNote({
   compact?: boolean;
   /** Inside the form's own "THE VAULT" panel, where the name is said above. */
   inPanel?: boolean;
+  /** On the opened log: the section's paper, under the section's own heading. */
+  paper?: boolean;
 }) {
   const body = (note ?? '').trim();
   if (!body) return null;
 
   const rtl = isRTLText(body);
 
-  const content = (
+  const content = paper ? (
+    <View style={p.paper}>
+      <Text style={[p.words, rtl && s.rtlText]} {...scaledTextProps}>{body}</Text>
+    </View>
+  ) : (
     <View style={[s.vaultNote, compact ? s.vaultNoteCompact : s.vaultNoteFull]}>
       <View style={[s.vaultNoteHeader, compact && s.vaultNoteHeaderCompact]}>
         <Lock size={compact ? 9 : 10} color={colors.sepia} strokeWidth={2} />
@@ -84,3 +93,8 @@ export default function VaultNote({
     </PressableScale>
   );
 }
+
+const p = StyleSheet.create({
+  paper: { marginTop: 10, backgroundColor: colors.paper, borderRadius: 2, paddingTop: 11, paddingBottom: 12, paddingHorizontal: 14 },
+  words: { fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 19, color: colors.onBrassQuiet },
+});

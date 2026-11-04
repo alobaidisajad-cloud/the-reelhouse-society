@@ -133,9 +133,9 @@ without one). "Read" is the day its comments were last read against its code.
 | app/film/[id].tsx | 2026-10-23 | edited: marksUnknown from the ledger, and the ledger asked for when it never was |
 | app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx | 2026-10-28 | edited: a control found by the name it now says, its shown words first; written with the log page's critiques matched to the stack's |
 | app/log/__tests__/theLogPageMovesEveryCard.test.tsx | 2026-10-28 | edited: the rope stand-in takes its act too; edited: LOUNGE opens the rope for a free and a lapsed member, the salons for an Archivist;  |
-| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-11-03 | edited: the card is the Reel's frame (FrameWords): READ ON on the side the review reads from, right-to-left words laid out once unseen, the raised initial whole and the words after it |
-| app/log/__tests__/zz-log.gen.test.tsx | — |  |
-| app/log/[id].tsx | 2026-11-01 | edited: an optimistic critique stamped by the house's time; edited: a critique being written is kept (useKeptWords), let go once the house or the queue has it, put back in the box when refused; edited: its widths read from useColumnWidth(), the reading column, not the window; edited: share reaches none of the gap to more, which grows to 48 across it; its ways back carry their weight; edited: share and more have room to 48; its ways back carry their weight; edited: its controls a slip on costs something (delete, file, close, go back) carry their touch weight; edited: a rank found held at the rope opens the salon list; edited: LOUNGE reads lounge-speaking: without the rank it opens the rope; edited: a critique or removal is claimed offline only when the queue kept it; one not kept comes off the page; edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; edited: the log's time from the shared clock; edited: certifiedKnown from the log's read (drawn from the phone, the heart is uninked and a press asks again); the film's bookmark known once the ledger is held |
+| app/log/__tests__/theRecordReadsTrue.test.tsx | 2026-11-04 | edited: a record with no words draws no essay; the card is the Reel's frame (FrameWords) |
+| app/log/__tests__/zz-log.gen.test.tsx | 2026-11-04 | edited: every kind of record, each at every text size |
+| app/log/[id].tsx | 2026-11-04 | edited: the opened log as drawn: its author's stock, the bar over the projection with its scrim, the head, the words, the Vault, the viewings, the breakdown, the band, the critiques |
 | app/lounge.tsx | 2026-10-01 | true as written |
 | app/lounge/[id].tsx | 2026-11-01 | edited: a message being written is kept (useKeptWords) until it is sent; edited: a reaction is 24 by its own box, the accessibility minimum; a message answers a long press with named actions (mockups/touch-small-exceptions.txt); the salon's settings have room; edited: a message and its reactions keep their size until the owner chooses (mockups/touch-small-exceptions.txt); the salon's settings have room; edited: a reaction, a message and the salon's settings have room to 48; its ways back and send carry their weight; edited: its controls a slip on costs something (delete, file, close, go back) carry their touch weight; edited: the composer's edge in the ink that reads; edited: the speaking rope says its own words, Ascend the ranks, before what it opens; edited: a message reaches no further than its words (its 15pt default ran 11pt into the reaction chips); a rank found held at the seat's rope takes the seat; edited: a rank found held at the seat's rope takes the seat; edited: speaking and reacting follow the rank: the rope where the composer was, chips read-only but one's own, no picker or REPLY; counts said alone; held words drawn failed; edited: pictures through Picture; a shared film with no poster draws the house mark; edited: online but not live, the room says so in its offline line's place; edited: TODAY and YESTERDAY turn at the member's midnight; edited: the shown room written after each commit; edited: a new room or another try starts from what the list knows of it as it renders; the roster shown in its read's then; edited: the seat bar while the rank is read: a guest, asked again, nothing sold |
 | app/person/__tests__/thePersonFileReadsTrue.test.tsx | 2026-10-29 | edited: the way back places the circle and grows around it to 48 (its touch weight); the circle is drawn by the box inside it; edited: the way back places the circle and grows around it to 48 (its touch weight); the circle is drawn by the box inside it; edited: its navigation mock stands on the one base (test-utils/navigationMock); a portrait without a photograph carries the whole first letter, unspoken |
@@ -378,9 +378,9 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/__tests__/PressableScale.hitSlop.test.tsx | — |  |
 | src/components/__tests__/SectionErrorBoundary.test.tsx | 2026-10-28 | edited: a control found by the name it now says, its shown words first;  |
 | src/components/__tests__/SpoilerVeil.test.tsx | 2026-10-01 | records every frame |
-| src/components/__tests__/stackedRowHitSlop.test.ts | 2026-10-30 | edited: the top bar's cluster gap is 10, its icons' halo 5; edited: its files come from the shared file list (test-utils/universe.js) |
+| src/components/__tests__/stackedRowHitSlop.test.ts | 2026-11-04 | edited: the log page's band acts |
 | src/components/__tests__/textContrast.test.ts | 2026-11-03 | edited: the Reel's raised words are the title card's, the selector's, the states' and the breakdown's |
-| src/components/__tests__/theCountHangsBesideItsMark.test.tsx | 2026-11-03 | edited: a stack is a can |
+| src/components/__tests__/theCountHangsBesideItsMark.test.tsx | 2026-11-04 | edited: a stack is a can; the log page's header says CRITIQUES · N |
 | src/components/__tests__/theDoorCanBeReadAndPressed.test.tsx | — |  |
 | src/components/__tests__/theRankBadgeIsReadable.test.ts | — |  |
 | src/components/__tests__/theShareSheetSaysWhenTheSalonsAreAway.test.tsx | 2026-10-28 | edited: a control found by the name it now says, its shown words first; edited: salons never asked for are being read, not "no seat yet"; the salons' flag by its own name; salons, selection, closed cost, crash copy |
@@ -511,7 +511,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/feed/ActionDeck.tsx | 2026-11-03 | edited: the frame's action band on the recess, its words constant, a hairline between each |
 | src/components/feed/ActivityCard.tsx | 2026-11-03 | rewritten whole: a frame of the Reel, its stock the author's rank; the still, the poster over it, the planned words and READ ON, the breakdown, the action band |
 | src/components/feed/frame/__tests__/theFrameIsPlanned.test.ts | 2026-11-03 | new: the scores under the AUTOPSY LAW, the review's lines and READ ON, the breakdown's columns |
-| src/components/feed/frame/Breakdown.tsx | 2026-11-03 | new: an Auteur's six scores in one row under a rule with the mean, three to a row where a label cannot hold its sixth |
+| src/components/feed/frame/Breakdown.tsx | 2026-11-04 | edited: cells in whole points, so six never wrap under Yoga's rounding |
 | src/components/feed/frame/metrics.ts | 2026-11-03 | new: the frame's measures, one place for the drawing and the arithmetic |
 | src/components/feed/frame/planReview.ts | 2026-11-03 | new: the review's lines planned from Courier's one width, the record's raised initial, a word broken by whole letters |
 | src/components/feed/frame/scores.ts | 2026-11-03 | new: an Auteur's scores read from the stored payload under the AUTOPSY LAW, moved from the card's back |
@@ -612,7 +612,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/logComposer.test.ts | 2026-10-15 | edited: the seal's two reservations read navMetrics |
 | src/components/log/__tests__/logComposerRender.test.tsx | 2026-10-28 | edited: a control found by the name it now says, its shown words first; edited: a control found by the name it now says, its shown words first;  |
 | src/components/log/__tests__/LogForm.fields.test.tsx | — |  |
-| src/components/log/__tests__/logRender.test.tsx | — |  |
+| src/components/log/__tests__/logRender.test.tsx | 2026-11-04 | edited: the slate, the essay and the viewings as drawn now |
 | src/components/log/__tests__/logSealBar.test.tsx | — |  |
 | src/components/log/__tests__/logSearchEngine.test.tsx | — |  |
 | src/components/log/__tests__/logStacksChips.test.tsx | — |  |
@@ -622,28 +622,30 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/theLapsedMemberReadsTheirNote.test.tsx | — |  |
 | src/components/log/__tests__/theNoteSheetOffersOnlyWhatIsReal.test.tsx | — |  |
 | src/components/log/__tests__/theVaultBelongsToItsViewing.test.tsx | 2026-11-02 | edited: the three log column lists named: none carries the note; the two a log is shown from carry the viewing; read whole: reads source through readCode; no regex stripper |
-| src/components/log/__tests__/theVaultSaysWhenItCouldNotOpen.test.tsx | 2026-10-28 | edited: a control found by the name it now says, its shown words first; written: the Vault on the record, when it could not open |
+| src/components/log/__tests__/theVaultSaysWhenItCouldNotOpen.test.tsx | 2026-11-04 | edited: the review body takes the rank's ink |
 | src/components/log/__tests__/zz-composer.gen.test.tsx | 2026-10-28 | edited: a control found by the name it now says, its shown words first; edited: the signed-out page drawn once its entrance has played (arrived); read whole: the signed-out page is held to its own floor, its sentence and its door |
 | src/components/log/AuteurToolkit.tsx | 2026-10-29 | edited: the filled notches in the crimson that reads (3.9:1 on the track), and the score capped bright, the needle at the end of the fill; histories to the present |
 | src/components/log/EditorialDesk.tsx | 2026-10-28 | edited: a control named by the words it shows, first (label in name); edited: a control named by the words it shows, first (label in name), or its initial left unspoken; edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; edited: the pull quote names its cap |
-| src/components/log/LogActionDeck.tsx | 2026-11-03 | edited: the scores read from the frame's own module |
+| src/components/log/LogActionDeck.tsx | 2026-11-04 | rewritten whole: the frame's band across the page, its words constant |
 | src/components/log/LogAtmosphere.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; the film behind the composer, said as why |
-| src/components/log/LogChronicle.tsx | 2026-10-01 | the typed card, said as why |
+| src/components/log/LogChronicle.tsx | 2026-11-04 | rewritten whole: THE VIEWINGS as a strip, oldest first; a past viewing chosen shows its words and note |
 | src/components/log/LogClearanceGate.tsx | 2026-10-28 | edited: the rope names its own act (Ascend the ranks, Resume your standing); edited: the log's rope, reading: said, asked again, nothing sold |
-| src/components/log/LogComments.tsx | 2026-10-28 | edited: a control named by the words it shows, first (label in name); true as written |
-| src/components/log/logDetailStyles.ts | 2026-11-03 | edited: the ABANDONED stamp named where it now is |
+| src/components/log/LogComments.tsx | 2026-11-04 | edited: the section's heading, what was said, then the field and FILE CRITIQUE; a reader not signed in is asked |
+| src/components/log/logDetailStyles.ts | 2026-11-04 | edited: the old page's card, backdrop, deck and chronicle styles gone; the bar's |
 | src/components/log/LogForm.tsx | 2026-11-03 | edited: the desk's name may take a second line; edited: the abandoned reasons revealed above the seal; the date row's id; edited: a control too small for a finger, or in a row too short for its reach, is given room to 48 (DECISIONS 4 tier B); edited: its controls a slip on costs something (delete, file, close, go back) carry their touch weight; edited: a control named by the words it shows, first (label in name); edited: a control named by the words it shows, first (label in name), or its initial left unspoken; edited: pictures through Picture; the poster and its alternates that could not be had draw the house mark; edited: TODAY and YESTERDAY turn at the member's midnight, with the composer open; edited: the review field says where it sits, in the E2E log |
 | src/components/log/LogFormBody.tsx | 2026-10-01 | true as written |
-| src/components/log/LogHero.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; the filing mark in the present tense |
+| src/components/log/LogHero.tsx | 2026-11-04 | rewritten whole: the projected still into the page's stock, the film one control over its edge, the byline and the slate |
 | src/components/log/LogIndexEntry.tsx | 2026-10-30 | edited: its body revealed above the seal when the member opens it; its id; a held-but-unshown entry said as holding something |
 | src/components/log/LogModalStyles.ts | 2026-10-29 | edited: the field's ledger line in the ink that reads (colors.fieldEdge, 3:1 and more); edited: editWait, the waiting words centred |
 | src/components/log/logRecord.ts | 2026-10-01 | histories to the present |
-| src/components/log/LogReviewBody.tsx | 2026-10-31 | edited: its guillemets are OPEN_QUOTE and CLOSE_QUOTE, each held to its word by a no-break space; edited: a control named by the words it shows, first (label in name); a Vault that could not open says so |
+| src/components/log/LogReviewBody.tsx | 2026-11-04 | rewritten whole: the quote as a title card, the essay with the record's initial, the Vault as its own section on paper |
 | src/components/log/LogSealBar.tsx | 2026-10-22 | edited: the unready seal is hollow (UNREADY); the note on why it still answers moved beside the press |
 | src/components/log/LogSearchEngine.tsx | 2026-10-29 | edited: the field's ledger line in the ink that reads (colors.fieldEdge, 3:1 and more); edited: a control named by the words it shows, first (label in name); edited: pictures through Picture; a result with no poster keeps its column with the house mark: the rows no longer go ragged; foot from useContentBottom |
 | src/components/log/LogVerdict.tsx | 2026-10-26 | edited: the verdict word ignites through useIgnition and rests on a plain style; edited: the word's lit box spans the slot, so Yoga and the browser measure it alike |
 | src/components/log/NoteSheet.tsx | 2026-10-30 | edited: its Modal holds the reading column (InColumn) first; edited: its controls a slip on costs something (delete, file, close, go back) carry their touch weight; edited: its frosted glass drawn through HouseBlur; foot from useSheetBottom |
-| src/components/log/VaultNote.tsx | 2026-10-01 | true as written |
+| src/components/log/pageMetrics.ts | 2026-11-04 | new: the opened log's measures in one place |
+| src/components/log/PageSection.tsx | 2026-11-04 | new: one section of the opened log, its name and its hairline |
+| src/components/log/VaultNote.tsx | 2026-11-04 | edited: on the opened log, the section's paper |
 | src/components/lounge/__tests__/aKeystrokeRedrawsNoMessage.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; read whole: openRoom proves rows were drawn before counting redraws |
 | src/components/lounge/__tests__/aMessageCanBeHeardAndActedOn.test.ts | 2026-09-29 | new |
 | src/components/lounge/__tests__/aSeatLostLeavesTheChannel.test.tsx | 2026-10-23 | edited: the store as it now is: the room open, its own flags; new |
@@ -682,7 +684,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/moderation/ContentActionSheet.tsx | 2026-10-30 | edited: its Modal holds the reading column (InColumn) first; edited: every option (report, block, mute) and the close carry their touch weight; edited: its frosted glass drawn through HouseBlur; edited: reading from the frame the sheet opens on unread blocks: the refusal line never shows before the read begins; edited: block, mute and their undoing only over the member's blocks, read: one row reads them, or says they could not be read and asks again; foot from useSheetBottom |
 | src/components/moderation/LogModerationHost.tsx | 2026-11-03 | new: one pair of the Tribunal's sheets for a list of frames, asked for by a frame's ··· |
 | src/components/moderation/ReportSheet.tsx | 2026-10-30 | edited: its Modal holds the reading column (InColumn) first; edited: its controls a slip on costs something (delete, file, close, go back) carry their touch weight; edited: the details' ledger line in the ink that reads, full brass while focused; edited: OTHER with no description is said under the details, with them, and focused there (useFieldRefusal), not toasted; edited: a control named by the words it shows, first (label in name); edited: its frosted glass drawn through HouseBlur; foot from useSheetBottom |
-| src/components/motion/__tests__/everyEntranceRests.guard.test.ts | 2026-11-03 | edited: the Reel frame has no back face, nothing on it born invisible |
+| src/components/motion/__tests__/everyEntranceRests.guard.test.ts | 2026-11-04 | edited: the opened log's bar scrim is clear at rest; the Reel frame has no back face |
 | src/components/motion/__tests__/fixtures/hiddenAtBirth.fixture.tsx | 2026-10-26 | Written 2026-10-26: one view born invisible, one born seen, for the guard. |
 | src/components/motion/__tests__/exitingIsNeverUsed.guard.test.ts | 2026-11-01 | edited: the UNSENT CHANGES sheet adds the fourteenth PresenceView exit; edited: its files come from the shared file list (test-utils/universe.js) |
 | src/components/motion/__tests__/fixtures/exiting.fixture.tsx | 2026-10-15 | new: the shapes the guard refuses and passes |
@@ -833,7 +835,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/constants/__tests__/taste.test.ts | — |  |
 | src/constants/__tests__/theHouseLinksToItself.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/constants/__tests__/theRanksAreWellFormed.test.ts | — |  |
-| src/constants/__tests__/theVaultIsThePrivateNotes.test.ts | 2026-10-28 | edited: a control found by the name it now says, its shown words first; edited: its files come from the shared file list (test-utils/universe.js) |
+| src/constants/__tests__/theVaultIsThePrivateNotes.test.ts | 2026-11-04 | edited: the Vault's section on the opened log |
 | src/constants/cacheKeys.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/constants/deepLinks.ts | 2026-10-01 | true as written |
 | src/constants/departed.ts | 2026-10-02 | Written in the launch audit: how the house names a member who has left, and one whose name it could not read: one phrase, no made-up handle. |
@@ -943,7 +945,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx | 2026-11-02 | edited: only what the member changed is sent; the day left alone stays as the house holds it; new: an edit over a record the phone has not paged in, against the strict fake |
 | src/stores/__tests__/theLedgerIsKnownWhole.test.ts | 2026-10-23 | new: the ledger against the strict fake |
 | src/stores/__tests__/aCritiqueMarkIsReadBeforeItIsDrawn.test.ts | 2026-10-24 | new: the critiques' marks against the strict fake |
-| src/components/log/__tests__/theDeckSaysWhatItKnows.test.tsx | 2026-10-28 | edited: the deck given its lounge clearance; new: the log deck's unknown marks |
+| src/components/log/__tests__/theDeckSaysWhatItKnows.test.tsx | 2026-11-04 | edited: the band's words are constant: chosen acts say so |
 | src/components/darkroom/__tests__/aSaveNotYetReadIsUninked.test.tsx | 2026-10-24 | new: a Darkroom poster's save while the ledger is read |
 | src/hooks/useTextScale.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/hooks/useUniversalSearch.ts | 2026-10-27 | edited: its report lines are fixed text, the values after them, kept on the phone (P4.44); @handle reads usernames; the exact handle asked for and put first; plain one-line excerpts |
@@ -1148,18 +1150,18 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/aGlowFadesInsideItsBox.guard.test.ts | 2026-10-15 | written: no radial glow keeps strength on an edge of its box that can show; the welcome seal no longer kept |
 | src/theme/__tests__/aGradientIsNeverABitmap.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/aPhotographIsNotLit.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/aTextGlowHasRoom.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/aTextGlowHasRoom.guard.test.ts | 2026-11-04 | edited: the Reel's and the record's glows are gone |
 | src/theme/__tests__/aFlatSurfaceCastsNothing.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/lightFloor.test.ts | — |  |
 | src/theme/__tests__/nothingOvershoots.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/theGroundLadder.test.ts | 2026-10-24 | edited: the drawn eye's file left the art list with the file |
+| src/theme/__tests__/theGroundLadder.test.ts | 2026-11-04 | edited: the sheet over art is the log page's bar; the Auteur's sheet is gone |
 | src/theme/__tests__/theLightIsReadable.test.ts | 2026-10-08 | written: every light gradient read back through React Native's own parser |
 | src/theme/__tests__/theRoomIsLit.test.ts | 2026-11-03 | edited: the card's back face is gone |
-| src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-11-03 | edited: the byline reads the size no longer; edited: the two scale hooks rendered, not called bare; edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/theTypeFloor.test.ts | 2026-11-03 | edited: the old card's and stack card's small words are gone |
-| src/theme/__tests__/theVeilMeetsTheLight.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-10-29 | edited: the stack tile's own star left the list: the tile draws the house's PosterMark now; edited: its files come from the shared file list (test-utils/universe.js) |
+| src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-11-04 | edited: the widths the opened log plans: the breakdown's columns, the viewings to a row, the quote's balance |
+| src/theme/__tests__/theTypeFloor.test.ts | 2026-11-04 | edited: the old card's and the old record's small words are gone |
+| src/theme/__tests__/theVeilMeetsTheLight.test.ts | 2026-11-04 | edited: the log page draws no veil now |
+| src/theme/__tests__/wordsAreNotMarks.test.ts | 2026-11-04 | edited: the old filing band's dot is gone |
 | src/theme/__tests__/wordsAreSolid.test.ts | 2026-11-03 | edited: the old poster frame's mark is gone; the house's PosterMark stands |
 | src/theme/authStyles.ts | 2026-10-30 | edited: the forgot link stands 1 below the field, so it grows to 48 and meets SHOW; edited: the sign-in fields' ledger line in the ink that reads, full brass while focused; comments short and true |
 | src/theme/brass.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -1167,7 +1169,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/light.ts | 2026-10-25 | edited: flatPaper composites a card's paper, the edge's face and the wash into one opaque gradient; seenAt draws a view's opacity into its colour |
 | src/theme/motion.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
 | src/theme/stamp.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
-| src/theme/theme.ts | 2026-10-29 | edited: fieldEdge: a field's ledger line, 3.5:1 on the raised card and more on ink; Read whole (launch audit). Dead tokens removed: typography, physics (springBouncy broke the no-bounce law), three metrics, three effects; type.caption 8.5 and type.badge 7.5 sat under the 10pt floor unused. theTypeFloor now reads the live scale. |
+| src/theme/theme.ts | 2026-11-04 | edited: the Auteur's sheet over art is gone with the old record |
 | src/types/film.types.ts | 2026-11-02 | edited: a stack's updatedAt: when the house last changed it, as this phone read it; edited: light, the ledger's record |
 | src/types/index.ts | 2026-10-02 | Read whole (launch audit). ui.types (UIState: a paywall and handbook modal that do not exist) removed from the barrel and deleted. |
 | src/types/moderation.ts | 2026-10-02 | Read whole (launch audit): content types match reports_content_type_check. BlockType, BlockRecordSchema and ActionMetaSchema were used nowhere: removed. |
@@ -1224,7 +1226,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-11-01 | edited: a silenced or banned member's writes are held for them, a copy in the dead letter; edited: expects the fixed report line, its values after it (P4.44); edited: a write refused for a suspension waits, the standing read failed or the suspension begun mid-send; a silenced one is given up |
 | src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |
-| src/utils/__tests__/boundedCounts.guard.test.ts | 2026-10-03 | read whole: reads source through readCode; no regex stripper |
+| src/utils/__tests__/boundedCounts.guard.test.ts | 2026-11-04 | edited: the header says CRITIQUES · N |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |
 | src/utils/__tests__/ciWorkflows.guard.test.ts | 2026-11-02 | edited: 60 s tokens on the behind clock run alone; the build keeps its NDK; the clock runs each night, in the run's group; edited: a sealed test runs in the sealed copy's job alone, its address the runner's own, never skipped, able to fail; edited: the night's variant count read from e2e/variants.json; edited: every apt install waits for the lock a try cut short leaves, and reads only Ubuntu's own sources first; the speed lab named as run by hand, with why; every workflow watched and started by hand; no E2E run cancelled by a later push; a scheduled install has its limit and one retry of that step alone; the advisers run on every push in their count-only mode; the push judges the phone's packages, the nightly the website's and the functions' too; an E2E group shared across commits counts as cancelling; its files come from the shared file list (test-utils/universe.js); every action a scheduled workflow uses is judged, one that downloads is an install, and the emulator's packages are installed before it; jest and the captures run in parts that their read-together jobs count alike, and jest in every zone of test-timezones.js; no job runs one command twice; every Gradle run finds its Android packages installed and downloads none; every Android install asks the disk; a TMDB miss fails the E2E run; the other zones leave the tooling's tests out; production is asked by the nightly contracts alone; the cache actions judged; the night's rounds, random order and history held; every gate runs on a push to main or on a schedule, or is named with why; a step let fail is a download tried once more by the step after it |
@@ -1265,7 +1267,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/inputTrustBoundary.test.ts | 2026-10-03 | edited: a pasted separator stays a break; hidden test characters written as escapes |
 | src/utils/__tests__/keysetCursor.test.ts | 2026-10-16 | edited: a missing primary or id is built empty |
 | src/utils/__tests__/logger.test.ts | 2026-10-27 | edited: a server error is reported as its line and code, never its message;  |
-| src/utils/__tests__/logScreenPolish.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
+| src/utils/__tests__/logScreenPolish.guard.test.ts | 2026-11-04 | edited: the critiques found from the body's measured top, reached below the bar |
 | src/utils/__tests__/lucideIconsAreBundled.guard.test.ts | — |  |
 | src/utils/__tests__/maestroFlows.guard.test.ts | 2026-10-31 | edited: no flow hides the keyboard (a Back press); every field the app draws as an input is known by its element, not its id; edited: no flow hides the keyboard: on the test phone that is a Back press; edited: a flow's steps include those inside an inline runFlow |
 | src/utils/__tests__/mappers.test.ts | — |  |

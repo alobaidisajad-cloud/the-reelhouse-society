@@ -11,7 +11,7 @@ import React, { act } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import LogReviewBody from '../LogReviewBody';
 
-const base = { review: 'Every corridor is a held breath.', isAuteur: false, isSpoiler: false };
+const base = { review: 'Every corridor is a held breath.', accent: '#B8891A', isSpoiler: false };
 
 describe('the Vault, on the record', () => {
   it('that could not be opened says so to its owner, and asks again', async () => {
@@ -23,7 +23,7 @@ describe('the Vault, on the record', () => {
   });
 
   it('even on a log with no words, where the section would otherwise draw nothing', () => {
-    const r = render(<LogReviewBody isAuteur={false} isOwner note="" noteUnreachable />);
+    const r = render(<LogReviewBody accent="#B8891A" isOwner note="" noteUnreachable />);
     expect(r.getByText('The Vault could not be opened.')).toBeTruthy();
   });
 

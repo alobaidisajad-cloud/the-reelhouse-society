@@ -1,7 +1,6 @@
  
 import { houseIso } from '@/src/lib/houseClock';
 import { useAuthStore } from '@/src/stores/auth';
-import { RemoteImage } from '@/src/components/Picture';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useFilmStore, useInteractionStore } from '@/src/stores/films';
 import { beginTap, queueTap, settleTap, useMarkCount, withdrawTap } from '@/src/stores/markCounts';
@@ -10,24 +9,28 @@ import { markCount, mineMark } from '@/src/schemas/feed.schema';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Platform, RefreshControl, Share, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, RefreshControl, Share, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
-import Animated, { Easing, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { Extrapolation, interpolate, useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import {
   useBottomEdge, useContentBottom, usePushedHeaderTop, useColumnWidth } from '@/src/components/layout/navMetrics';
  
-import { s, PARALLAX_PADDER_HEIGHT, BACKDROP_H, HEADER_ACTION_GAP } from '@/src/components/log/logDetailStyles';
+import { s } from '@/src/components/log/logDetailStyles';
+import { PAGE } from '@/src/components/log/pageMetrics';
+import { Breakdown } from '@/src/components/feed/frame/Breakdown';
+import { hasRatedAutopsy } from '@/src/components/feed/frame/scores';
+import { useTextScale } from '@/src/hooks/useTextScale';
+import { lineWidth } from '@/src/components/lobby/measure';
 import { hasPhysicalFormat } from '@/src/components/log/logRecord';
 import LogShareCard from '@/src/components/film/LogShareCard';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import LogActionDeck from '@/src/components/log/LogActionDeck';
 import LogChronicle from '@/src/components/log/LogChronicle';
 import LogComments from '@/src/components/log/LogComments';
-import LogHero from '@/src/components/log/LogHero';
+import LogHero, { projectionHeight } from '@/src/components/log/LogHero';
 import LogReviewBody from '@/src/components/log/LogReviewBody';
 import NoteSheet from '@/src/components/log/NoteSheet';
 import { useVault } from '@/src/hooks/useVault';
@@ -48,27 +51,32 @@ import { stillQueued } from '@/src/stores/offlineQueueStore';
 import reelToast from '@/src/utils/reelToast';
 import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
 import { useTimeAgo } from '@/src/hooks/useClock';
-import { ChevronLeft, MoreHorizontal, Share2, Sparkles } from 'lucide-react-native';
+import { ChevronLeft, MoreHorizontal, Share2 } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { z } from 'zod';
-import { WASH } from '@/src/theme/light';
-import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
+import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { nav } from '@/src/utils/typedRouter';
 import { EmptyOffline, EmptyState, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { BusterEyes } from '@/src/components/Buster';
-import { Arrive } from '@/src/components/Arrive';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { offerWord } from '@/src/lib/pushPrimer';
 
-/** The backdrop's fade into the room: how much house it lays down, top to hem. */
-const BACKDROP_VEIL: VeilStops = [[0, 0], [1 / 3, 0.4], [2 / 3, 0.95], [1, 1]];
+/**
+ * The bar's title, planned from the words' own widths (never grown: allowFontScaling false). Its
+ * gutters are the right cluster's width, SHARE and the ··· slot, on both sides; it takes the widest
+ * letter spacing that fits between them, and stands aside on a window too narrow for any.
+ */
+const BAR_TITLE = (() => {
+  const share = Math.max(48, Math.ceil(14 + 6 + lineWidth('SHARE', 'elite', 10, 1, 2.4) + 12));
+  const gutter = 6 + share + 48;
+  const spacing = (window: number) =>
+    [3, 2, 1.5, 1].find((ls) => lineWidth('PERMANENT RECORD', 'elite', 10, 1, ls) <= window - gutter * 2) ?? null;
+  return { share, gutter, spacing };
+})();
 
 /** How long a share waits for its card's pictures before it fails and says so. */
 const SHARE_CARD_WAIT_MS = 20_000;
-
-/** The EDITORIAL badge hangs below the header's top: its 24pt row, 16pt foot, 4pt of air. */
-const BELOW_THE_HEADER = 44;
 
 interface LogDetail {
   id: string;
@@ -128,7 +136,6 @@ interface LogComment {
 export default function LogDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, isAuthenticated } = useAuthStore();
-  const { height: windowHeight } = useWindowDimensions();
   const windowWidth = useColumnWidth();
   const blockUser = useBlockStore((state) => state.blockUser);
   const muteUser = useBlockStore((state) => state.muteUser);
@@ -358,7 +365,6 @@ export default function LogDetailScreen() {
   const posterUri = effectivePosterPath ? tmdb.poster(effectivePosterPath, 'w185') : null;
 
   const [refreshing, setRefreshing] = useState(false);
-  const [autopsyOpen, setAutopsyOpen] = useState(false);
   // A critique being written is kept until the house or the queue has it (useKeptWords).
   const [newComment, setNewComment, letGoOfComment] = useKeptWords(user?.id, 'critique', id ? `log:${id}` : null);
   const [posting, setPosting] = useState(false);
@@ -370,7 +376,6 @@ export default function LogDetailScreen() {
   const handleNewCommentChange = useCallback((text: string) => {
     setNewComment(text);
   }, [setNewComment]);
-  const [chronicleActiveIdx, setChronicleActiveIdx] = useState(0);
   const [showLoungeShare, setShowLoungeShare] = useState(false);
   // Mounted only while a share is in flight — see handleShare.
   const [shareCardMounted, setShareCardMounted] = useState(false);
@@ -430,6 +435,19 @@ export default function LogDetailScreen() {
       reelToast.success('Saved to watchlist ✦');
     }
   }, [log, filmSaved, addToWatchlist, removeFromWatchlist]);
+
+  // The page's bar: clear over the projection, its scrim in as the page goes under it.
+  const scrollY = useSharedValue(0);
+  const scrimEnd = useSharedValue<number>(PAGE.stillUnderBar);
+  React.useEffect(() => {
+    scrimEnd.value = projectionHeight(headerTop, !!log?.editorial_header) - headerTop - PAGE.bar;
+  }, [scrimEnd, headerTop, log?.editorial_header]);
+  const barScrimStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [scrimEnd.value - 60, scrimEnd.value], [0, 1], Extrapolation.CLAMP),
+  }));
+  const textScale = useTextScale();
+  // Where the page's body begins in the scroll: the critiques' place is measured from it.
+  const bodyY = useRef(0);
 
   const keyboard = useAnimatedKeyboard();
   const animatedContainerStyle = useAnimatedStyle(() => ({
@@ -711,71 +729,20 @@ export default function LogDetailScreen() {
   const isAuteur = isAuteurPlusTier(profile?.role);
   const isArchivist = isArchivistPlusTier(profile?.role);
 
-  const backdropPosterUri = effectivePosterPath ? tmdb.poster(effectivePosterPath, 'w780') : null;
-  // The one picture behind the page: the editorial header when there is one.
-  const backdropUri = log.editorial_header ? tmdb.backdrop(log.editorial_header, 'w780') : backdropPosterUri;
+  // The still projected behind the page: the editorial header, when the member set one.
+  const stillUri = log.editorial_header ? tmdb.backdrop(log.editorial_header, 'w780') ?? null : null;
   const isOwner = user?.id === log.user_id;
+  const rank = isAuteur ? 'aut' : isArchivist ? 'arch' : 'cine';
+  // The page is cut from its author's stock, as the frame was; the rank's ink for the name and initial.
+  const ground = rank === 'aut' ? colors.sootAuteur : colors.soot;
+  const accent = rank === 'cine' ? colors.bone : colors.sepia;
+  const nameInk = rank === 'cine' ? colors.parchment : colors.sepia;
+  const autopsy = (log.autopsy ?? undefined) as Record<string, number> | undefined;
+  const scored = !!log.is_autopsied && hasRatedAutopsy(autopsy);
 
   return (
-    <Animated.View style={[s.container, animatedContainerStyle]}>
-      {/* The room's light hangs from where the backdrop ends, and blooms from it. */}
-      <RoomLight room="film" hem={backdropUri ? BACKDROP_H : undefined} art={backdropUri} />
+    <Animated.View style={[s.page, { backgroundColor: ground }, animatedContainerStyle]}>
       {readyMark}
-      {/* ── IMMERSIVE FULL-BLEED BACKDROP (BEHIND SCROLLVIEW) ── */}
-      {backdropUri && (
-          <View style={[StyleSheet.absoluteFill, s.backdropContainer]}>
-             <View style={s.fullSize}>
-                <RemoteImage uri={backdropUri} style={[StyleSheet.absoluteFill, log.editorial_header ? s.opacity30 : s.opacity20]} contentFit="cover" blurRadius={4} transition={150} fallback={null} />
-                {/* Fades into the LIT room — see RoomVeil. */}
-                <RoomVeil room="film" hem={BACKDROP_H} art={backdropUri} stops={BACKDROP_VEIL} />
-                {/* Scan lines texture — Web: repeating-linear-gradient for film grain */}
-                <View style={[StyleSheet.absoluteFill, s.textureOverlay]} />
-                
-                {log.editorial_header && (
-                  <View style={[s.editorialBadge, { top: headerTop + BELOW_THE_HEADER }]}>
-                    <Sparkles size={7} color={'rgba(218,165,32,0.85)'} strokeWidth={1.5} />
-                    <Text style={s.editorialBadgeText}>EDITORIAL</Text>
-                  </View>
-                )}
-             </View>
-          </View>
-      )}
-
-      <View style={[s.header, { paddingTop: headerTop }]}>
-        <View style={s.headerRow}>
-          <PressableScale touch="wayOut" style={s.backBtn} onPress={() => { nav.back(); }} hitSlop={{top:20,bottom:20,left:20,right:20}} haptic="selection" pressedScale={0.92} accessibilityLabel="Go back">
-            <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.5} />
-          </PressableScale>
-
-          {/* Absolutely centered — never shifts owner↔visitor */}
-          <View style={s.eyebrowWrap} pointerEvents="none">
-            <Text style={s.eyebrow} numberOfLines={1} allowFontScaling={false}>PERMANENT RECORD</Text>
-          </View>
-
-          <View style={s.headerRight}>
-            <PressableScale room style={s.shareBtn} onPress={() => { handleShare(); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 0 }} haptic="light" pressedScale={0.92}
-              accessibilityRole="button" accessibilityLabel={(!isReadyToShare || sharing) ? 'Share. Preparing the card.' : 'Share this log'}
-              accessibilityState={{ busy: sharing }}>
-               <Share2 size={14} color={colors.sepia} strokeWidth={1.5} />
-               <Text style={s.shareBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(!isReadyToShare || sharing) ? '...' : 'SHARE'}</Text>
-            </PressableScale>
-            {!isOwner && (
-              <PressableScale room
-                style={s.moreBtn}
-                onPress={() => setActionSheetVisible(true)}
-                // It grows to 48 (room), its box filling the gap to SHARE, which reaches none of it.
-                hitSlop={{ top: 15, bottom: 15, left: HEADER_ACTION_GAP / 2, right: 15 }}
-                haptic="selection"
-                pressedScale={0.92}
-                accessibilityLabel="More options"
-                accessibilityHint="Report, block, or mute this member"
-              >
-                <MoreHorizontal size={16} color={colors.fog} strokeWidth={1.5} />
-              </PressableScale>
-            )}
-          </View>
-        </View>
-      </View>
 
       {/* The share card, mounted ONLY while a share is in flight: a complete
           second rendering of this log, poster and all, which a member who never
@@ -799,47 +766,71 @@ export default function LogDetailScreen() {
       </View>
       )}
 
+      {/* The page's bar, over the projection: its scrim comes in as the page goes under it. First in
+          the tree, so a screen reader meets the way back first; drawn over the page by its zIndex. */}
+      <View style={[s.bar, { paddingTop: headerTop }]}>
+        <Animated.View style={[StyleSheet.absoluteFill, s.barScrim, barScrimStyle]} pointerEvents="none" />
+        <View style={s.barRow}>
+          <PressableScale touch="wayOut" style={s.barButton} onPress={() => { nav.back(); }} hitSlop={null} haptic="selection" pressedScale={0.92} accessibilityLabel="Go back">
+            <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.5} />
+          </PressableScale>
+
+          {/* Centred between equal gutters, owner or visitor: it never moves, and stands aside where it cannot fit. */}
+          {BAR_TITLE.spacing(windowWidth) !== null ? (
+            <View style={[s.barTitleWrap, { left: BAR_TITLE.gutter, right: BAR_TITLE.gutter }]} pointerEvents="none">
+              <Text style={[s.barTitle, { letterSpacing: BAR_TITLE.spacing(windowWidth) ?? 0 }]} numberOfLines={1} allowFontScaling={false}>PERMANENT RECORD</Text>
+            </View>
+          ) : null}
+
+          <View style={s.barRight}>
+            <PressableScale room style={[s.barShare, { width: BAR_TITLE.share }]} onPress={() => { handleShare(); }} hitSlop={null} haptic="light" pressedScale={0.92}
+              accessibilityRole="button" accessibilityLabel={(!isReadyToShare || sharing) ? 'Share. Preparing the card.' : 'Share this log'}
+              accessibilityState={{ busy: sharing }}>
+               <Share2 size={14} color={colors.parchment} strokeWidth={1.5} />
+               <Text style={s.barShareText} numberOfLines={1} allowFontScaling={false}>{(!isReadyToShare || sharing) ? '...' : 'SHARE'}</Text>
+            </PressableScale>
+            {/* The ···'s place is kept on the member's own record too, so the title stands where it always does. */}
+            {!isOwner ? (
+              <PressableScale style={s.barButton} onPress={() => setActionSheetVisible(true)} hitSlop={null} haptic="selection" pressedScale={0.92}
+                accessibilityLabel="More options" accessibilityHint="Report, block, or mute this member">
+                <MoreHorizontal size={16} color={colors.parchment} strokeWidth={1.5} />
+              </PressableScale>
+            ) : <View style={s.barButton} />}
+          </View>
+        </View>
+      </View>
+
       <CinematicScrollView
         ref={scrollViewRef}
-        contentContainerStyle={{ paddingBottom: end }}
+        externalScrollY={scrollY}
+        contentContainerStyle={{ paddingBottom: end, backgroundColor: ground }}
         bottomInset={edge}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}
+        topInset={headerTop + PAGE.bar}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} progressViewOffset={headerTop + PAGE.bar} />}
       >
-        {/* Transparent Padder for Parallax Overlap — Web: height IS_TOUCH ? '10vh' ≈ 80px */}
-        <View style={s.parallaxPadder} />
+        <LogHero
+          log={log}
+          profile={profile}
+          stillUri={stillUri}
+          posterUri={posterUri}
+          barTop={headerTop}
+          ground={ground}
+          nameInk={nameInk}
+          timeAgo={filedAgo}
+          onPosterLoaded={() => setPosterLoaded(true)}
+          onPressUser={() => { if (profile?.username) nav.push(`/user/${encodeURIComponent(profile.username)}`); }}
+          onPressFilm={() => { nav.push(`/film/${log.film_id}`); }}
+        />
 
-        {/* Overlapping Content Card — Web: bg rgba(13,11,9,0.85), backdropFilter blur(16px), borderRadius 12px 12px 0 0, boxShadow 0 -20px 40px rgba(0,0,0,0.8) */}
-        {/* Shadow host outside the clip — see contentCardShadow. */}
-        <View style={[s.contentCardShadow, isAuteur && s.contentCardShadowAuteur]}>
-        <View style={[s.contentCard, isAuteur && s.contentCardAuteur]}>
-          {isAuteur && (
-            <LinearGradient colors={[colors.crimsonFaint, 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={[StyleSheet.absoluteFill, WASH]} />
-          )}
-        
-        {/* The record drops into place from above the screen, certain to arrive. */}
-        <Arrive name="log.card" duration={500} rise={-windowHeight} easing={Easing.out(Easing.cubic)} style={s.logCardInner}>
-          
-          <LogHero
-            log={log}
-            profile={profile}
-            posterUri={posterUri}
-            isAuteur={isAuteur}
-            isArchivist={isArchivist}
-            timeAgo={filedAgo}
-            onPosterLoaded={() => setPosterLoaded(true)}
-            onPressUser={() => { if (profile?.username) nav.push(`/user/${encodeURIComponent(profile.username)}`); }}
-            onPressFilm={() => { nav.push(`/film/${log.film_id}`); }}
-          />
-
+        <View style={s.pageBody} onLayout={(e) => { bodyY.current = e.nativeEvent.layout.y; }}>
           {/* The honour stays: the day this log hung in the Lobby, if it did. */}
           <LobbyHonour kind="log" id={log.id} style={s.lobbyHonour} />
 
-          {/* Full Width Review / Pull Quote — Web: padding 1.5rem 1.5rem, textAlign center */}
           <LogReviewBody
             review={log.review}
             pullQuote={log.pull_quote}
             dropCap={log.drop_cap}
-            isAuteur={isAuteur}
+            accent={accent}
             isOwner={isOwner}
             isSpoiler={log.is_spoiler}
             note={isOwner ? vault.noteFor(log.viewing_id) : ''}
@@ -850,12 +841,8 @@ export default function LogDetailScreen() {
               : undefined}
           />
 
-          {/* ═══ VIEWING CHRONICLE — Horizontal swipeable carousel ═══ */}
           <LogChronicle
             log={log}
-            windowWidth={windowWidth}
-            chronicleActiveIdx={chronicleActiveIdx}
-            onChronicleIdxChange={setChronicleActiveIdx}
             // A visitor's device is not given the means to ask for a note, let
             // alone draw one: no reader, no opener.
             noteFor={isOwner ? vault.noteFor : undefined}
@@ -864,13 +851,18 @@ export default function LogDetailScreen() {
               : undefined}
           />
 
+          {/* The breakdown names itself on its own rule, as on the frame. */}
+          {scored ? (
+            <View style={s.breakdown}>
+              <Breakdown autopsy={autopsy} width={windowWidth - PAGE.pad * 2} scale={textScale} accent={accent} />
+            </View>
+          ) : null}
+
           <LogActionDeck
-            log={log}
             isOwner={isOwner}
             endorsed={endorsed}
             certifyCount={certifyShown}
             critiqueCount={commentTotal}
-            autopsyOpen={autopsyOpen}
             filmSaved={filmSaved}
             saveKnown={filmSaveKnown}
             onSavePress={handleToggleSave}
@@ -879,10 +871,9 @@ export default function LogDetailScreen() {
             // Not known whether they certified it: the house is asked again, never a second filed blind.
             onToggleEndorse={() => { if (!certifyKnown) { void rereadLog(); return; } toggleEndorse(id).catch(() => {}); }}
             certifyKnown={certifyKnown}
-            onToggleAutopsy={() => { setAutopsyOpen(!autopsyOpen); }}
             onCritiquePress={() => {
-               // Scroll to the compose box at the top of the critiques section, then focus it.
-               scrollViewRef.current?.scrollTo({ y: Math.max(0, critiquesSectionY.current - 12), animated: true });
+               // To the critiques, then the field, ready.
+               scrollViewRef.current?.scrollTo({ y: Math.max(0, critiquesSectionY.current - headerTop - PAGE.bar - 12), animated: true });
                focusCritique.later(() => { critiqueInputRef.current?.focus(); }, 300);
             }}
             onEditPress={() => { if (log.film_id) openEditor(); }}
@@ -890,37 +881,33 @@ export default function LogDetailScreen() {
             lounge={loungeDeck}
           />
 
-        </Arrive>
-
-
-        
-        <LogComments
-          comments={comments}
-          commentTotal={commentTotal}
-          currentUserId={user?.id}
-          newComment={newComment}
-          posting={posting}
-          critiqueInputRef={critiqueInputRef as React.RefObject<TextInput>}
-          onNewCommentChange={handleNewCommentChange}
-          onPostComment={handlePostComment}
-          onWithdrawComment={handleDeleteComment}
-          onPressUser={(username) => { nav.push(`/user/${encodeURIComponent(username)}`); }}
-          onSectionLayout={(y) => { critiquesSectionY.current = PARALLAX_PADDER_HEIGHT + y; }}
-          // A member's report; a reader not signed in has no report to file.
-          onReportComment={user ? (comment) => {
-            setSelectedComment({ id: comment.id, user_id: comment.user_id, username: comment.username });
-            setCommentReportSheetVisible(true);
-          } : undefined}
-          unread={!!logQueryData?.critiquesUnread}
-          onReread={() => { void rereadLog(); }}
-          loadingOlder={loadingOlder}
-          onLoadOlder={() => {
-            critiqueLimit.current += COMMENT_PAGE_SIZE;
-            setLoadingOlder(true);
-            void rereadLog().finally(() => setLoadingOlder(false));
-          }}
-        />
-        </View>
+          <LogComments
+            comments={comments}
+            commentTotal={commentTotal}
+            currentUserId={user?.id}
+            newComment={newComment}
+            posting={posting}
+            critiqueInputRef={critiqueInputRef as React.RefObject<TextInput>}
+            onNewCommentChange={handleNewCommentChange}
+            onPostComment={handlePostComment}
+            onWithdrawComment={handleDeleteComment}
+            onPressUser={(username) => { nav.push(`/user/${encodeURIComponent(username)}`); }}
+            onSectionLayout={(y) => { critiquesSectionY.current = bodyY.current + y; }}
+            // A member's report; a reader not signed in has no report to file.
+            onReportComment={user ? (comment) => {
+              setSelectedComment({ id: comment.id, user_id: comment.user_id, username: comment.username });
+              setCommentReportSheetVisible(true);
+            } : undefined}
+            onSignIn={isAuthenticated ? undefined : () => { nav.push('/login'); }}
+            unread={!!logQueryData?.critiquesUnread}
+            onReread={() => { void rereadLog(); }}
+            loadingOlder={loadingOlder}
+            onLoadOlder={() => {
+              critiqueLimit.current += COMMENT_PAGE_SIZE;
+              setLoadingOlder(true);
+              void rereadLog().finally(() => setLoadingOlder(false));
+            }}
+          />
         </View>
       </CinematicScrollView>
 

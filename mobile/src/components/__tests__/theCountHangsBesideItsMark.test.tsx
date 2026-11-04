@@ -62,9 +62,9 @@ const BARS: Record<string, Bar> = {
     return <ActionDeck itemId="log-1" filmId={603} filmTitle="The Matrix" posterPath={null} ownerUsername="someone-else" certifyCount={c} critiqueCount={k} />;
   },
   'the log page': (c, k, on) => (
-    <LogActionDeck log={{ film_id: 603, film_title: 'The Matrix', poster_path: null }}
-      isOwner={false} endorsed={on} certifyCount={c} critiqueCount={k} filmSaved={false} autopsyOpen={false}
-      onToggleEndorse={noop} onToggleAutopsy={noop} onCritiquePress={noop} onSavePress={noop} onEditPress={noop} onLoungePress={noop} lounge={{ held: true, spoken: 'Share to a lounge' }} />
+    <LogActionDeck
+      isOwner={false} endorsed={on} certifyCount={c} critiqueCount={k} filmSaved={false}
+      onToggleEndorse={noop} onCritiquePress={noop} onSavePress={noop} onEditPress={noop} onLoungePress={noop} lounge={{ held: true, spoken: 'Share to a lounge' }} />
   ),
   'a filing': (c, k, on) => (
     <PaperActions certifyCount={c ?? 0} commentCount={k ?? 0} certified={on} onCertify={noop} onCritique={noop} onShare={noop} onSave={noop} />
@@ -289,7 +289,7 @@ describe('a zero is never printed — anywhere a mark is counted', () => {
     expect(r.getByLabelText('Certify this critique. 1200 members have certified this critique')).toBeTruthy();
   });
 
-  it('the log page’s critique header says CRITIQUES, not CRITIQUES (0)', () => {
+  it('the log page’s critique header says CRITIQUES, not CRITIQUES · 0', () => {
     const props = {
       comments: [], newComment: '', posting: false, critiqueInputRef: { current: null } as never,
       onNewCommentChange: noop, onPostComment: noop, onWithdrawComment: noop, onPressUser: noop,
@@ -299,7 +299,7 @@ describe('a zero is never printed — anywhere a mark is counted', () => {
     expect(drawn(none).some((s) => s.includes('CRITIQUES'))).toBe(true);
     none.unmount();
     const many = render(<LogComments {...props} commentTotal={1200} />);
-    expect(drawn(many).some((s) => s.includes('CRITIQUES (1.2K)'))).toBe(true);
+    expect(drawn(many).some((s) => s.includes('CRITIQUES · 1.2K'))).toBe(true);
   });
 
   it('a stack\'s can with no certifications draws no count', () => {

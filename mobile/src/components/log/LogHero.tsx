@@ -1,20 +1,27 @@
-
 import React from 'react';
-import { RemoteImage } from '@/src/components/Picture';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { Text } from '@/src/components/text';
-import { Film as FilmIcon, X } from 'lucide-react-native';
-import { colors } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
-import { s } from '@/src/components/log/logDetailStyles';
 import { buildFilingMark } from '@/src/components/log/logRecord';
-import { displayTextProps } from '@/src/constants/textScaling';
+import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
+import { PAGE } from '@/src/components/log/pageMetrics';
+import { ceilingFor } from '@/src/components/lobby/measure';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
 
+/**
+ * The opened log's head: the editorial still projected behind the page's bar, falling into the
+ * page's own stock, and the film over its lower edge (its poster, title, year and reels, one
+ * control to the film's page). With no still, the head is the bar's own height of ink, and the
+ * film stands just under it. Then the byline and the slate: who filed it, and the facts of the
+ * viewing.
+ */
 interface LogHeroProps {
   log: {
-    film_id: number;
     film_title: string;
     year?: number | null;
     rating: number;
@@ -23,120 +30,120 @@ interface LogHeroProps {
     watched_date?: string | null;
     watched_with?: string | null;
     physical_media?: string | null;
-    editorial_header?: string | null;
-    alt_poster?: string | null;
-    poster_path: string | null;
   };
-  profile: {
-    username: string;
-    role?: string;
-    avatar_url?: string | null;
-  } | null;
+  profile: { username: string; role?: string; avatar_url?: string | null } | null;
+  /** The editorial still, at the projection's size; null for none. */
+  stillUri: string | null;
   posterUri: string | null | undefined;
-  isAuteur: boolean;
-  isArchivist: boolean;
+  /** Where the page's bar sits: the safe area's top. */
+  barTop: number;
+  /** The page's stock: the projection falls into it. */
+  ground: string;
+  /** The rank's ink for the author's name. */
+  nameInk: string;
   timeAgo: string;
   onPosterLoaded: () => void;
   onPressUser: () => void;
   onPressFilm: () => void;
 }
 
+/** How tall the projection hangs: the bar, then the still's own room under it. */
+export const projectionHeight = (barTop: number, still: boolean) => barTop + PAGE.bar + (still ? PAGE.stillUnderBar : PAGE.plainUnderBar);
+
 export default function LogHero({
-  log,
-  profile,
-  posterUri,
-  isAuteur,
-  isArchivist,
-  timeAgo,
-  onPosterLoaded,
-  onPressUser,
-  onPressFilm,
+  log, profile, stillUri, posterUri, barTop, ground, nameInk, timeAgo, onPosterLoaded, onPressUser, onPressFilm,
 }: LogHeroProps) {
-  // What the filing mark has to say — see buildFilingMark, which owns the rules
-  // for what counts as a printable fact (and is tested on the empty cases).
-  //
-  // The three fields are pulled out rather than depending on `log`, which would
-  // rebuild the band every time anything else on the record changed. Written
-  // this way the dependency list is the truth, instead of a shorter list with
-  // the lint rule silenced over it.
   const { watched_date, watched_with, physical_media } = log;
-  const filed = React.useMemo(
-    () => buildFilingMark({ watched_date, watched_with, physical_media }),
-    [watched_date, watched_with, physical_media],
-  );
+  const filed = React.useMemo(() => buildFilingMark({ watched_date, watched_with, physical_media }), [watched_date, watched_with, physical_media]);
+  const abandoned = log.status === 'abandoned';
+  const rated = !abandoned && log.rating > 0;
+  // The slate: FILED and its date, who it was watched with, the format, a rewatch.
+  const slate = [
+    ...filed.map((e) => (e.key === 'date' ? { key: e.key, word: 'FILED', value: e.value.toUpperCase() } : { key: e.key, word: '', value: e.value })),
+    ...(log.status === 'rewatched' ? [{ key: 'rewatch', word: '', value: 'REWATCH' }] : []),
+  ];
+  const filmSaid = [log.film_title, log.year ? String(log.year) : null, rated ? `${log.rating} of 5 reels` : null, abandoned ? 'abandoned' : null]
+    .filter(Boolean).join(', ') + '. Opens the film.';
+  const still = !!stillUri;
+  // The title grows with the member's text no further than its longest word fits its line whole.
+  const titleRoom = useColumnWidth() - PAGE.pad * 2 - PAGE.poster.width - TITLE_GAP;
+  const titleCap = Math.min(displayTextProps.maxFontSizeMultiplier,
+    ...log.film_title.split(/\s+/).filter(Boolean).map((w) => ceilingFor(w, 'rye', TITLE_SIZE, 0, titleRoom)));
 
   return (
-    <View style={s.logCenter}>
-      {/* The ledger byline — the app's own handwriting: avatar · handle · crest · rule */}
-      <View style={s.bylineFull}>
-        <UserAttributionRow
-          username={profile?.username || 'unknown'}
-          avatarUrl={profile?.avatar_url}
-          role={profile?.role}
-          timeAgo={timeAgo}
-          onUserPress={onPressUser}
-        />
+    <View>
+      <View style={[st.projection, { height: projectionHeight(barTop, still) }, !still && st.plain]}>
+        {still ? (
+          <>
+            <RemoteImage uri={stillUri} style={StyleSheet.absoluteFill} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={150} fallback={null} accessible={false} />
+            {/* Dark where the bar reads, clear where the still is seen, falling into the page's stock. */}
+            <LinearGradient colors={[PAGE.veilTop, PAGE.veilTop2, PAGE.veilClear, ground]} locations={[0, 0.43, 0.68, 1]} style={StyleSheet.absoluteFill} />
+          </>
+        ) : null}
       </View>
 
-      {/* CENTER: Poster plate — radial glow for premium ranks */}
-      <View style={s.posterSection}>
-        {(isAuteur || isArchivist) && posterUri && (
-          <View style={[s.posterGlow, isAuteur ? s.posterGlowAuteur : s.posterGlowArchivist]} />
-        )}
-        <PressableScale onPress={onPressFilm} style={[s.posterBoundsShadow, isAuteur && s.posterBoundsShadowAuteur]} pressedScale={0.95} haptic="selection" accessibilityRole="link" accessibilityLabel={`${log.film_title} poster. Open the film.`}>
-        <View style={[s.posterBounds, isAuteur && s.posterBoundsAuteur]}>
-          <RemoteImage uri={posterUri} style={s.posterCentered} contentFit="cover" transition={150} onLoadEnd={onPosterLoaded} fallback={<View style={[s.posterCentered, s.posterPlaceholder]}>
-              <FilmIcon size={20} color={colors.sepia} strokeWidth={1} />
-            </View>} />
+      {/* The film, one control: poster, title, year and reels open the same page. */}
+      <PressableScale onPress={onPressFilm} haptic="selection" pressedScale={0.99} hitSlop={null} style={[st.film, still ? st.filmOver : st.filmUnder]}
+        accessibilityRole="link" accessibilityLabel={filmSaid}>
+        <RemoteImage uri={posterUri} style={st.poster} contentFit="cover" transition={150} onLoadEnd={onPosterLoaded}
+          placeholder={{ blurhash: SEPIA_HASH }} fallback={<PosterMark style={st.poster} size={24} />} />
+        <View style={st.meta}>
+          <Text style={st.title} allowFontScaling maxFontSizeMultiplier={titleCap}>{log.film_title}</Text>
+          {/* `!!`: a bare 0 in a && guard renders, and a loose 0 outside a Text is a red screen. */}
+          {!!log.year && <Text style={st.year} {...scaledTextProps}>{log.year}</Text>}
+          {rated ? <ReelRating rating={log.rating} size={18} /> : null}
         </View>
-        </PressableScale>
-      </View>
+      </PressableScale>
 
-      {/* BOTTOM: Title & Meta */}
-      <View style={s.titleSection}>
-        <PressableScale onPress={onPressFilm} pressedScale={0.95} haptic="selection">
-           <Text style={s.logFilmTitle} {...displayTextProps} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.8}>{log.film_title}</Text>
-        </PressableScale>
-        {/* `!!` because a bare number in a && guard RENDERS when it is 0 — and a
-            loose 0 outside a <Text> is a red screen, not a missing year. */}
-        {!!log.year && <Text style={s.logFilmYear}>{log.year}</Text>}
-      </View>
-
-      {log.rating > 0 && (
-        <View style={s.ratingWrap}>
-          <ReelRating rating={log.rating} size={18} />
-        </View>
-      )}
-
-      {log.status === 'abandoned' && (
-        <View style={s.abandonedWrap}>
-          <View style={s.abandonedBadge}>
-            <X size={12} color={colors.crimson} strokeWidth={2} />
-            <Text style={s.abandonedText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-               ABANDONED{log.abandoned_reason ? ` — ${log.abandoned_reason.toUpperCase()}` : ''}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* ── THE FILING MARK ──
-          One ruled band, not stacked captions (a tombstone rather than a
-          record): a brass label and its values, the grammar the feed card
-          speaks. The rules above and below make it read as stamped into the
-          file. `format` is only a fact when there IS one (buildFilingMark). */}
-      {filed.length > 0 && (
-         <View style={s.filingMark}>
-            <Text style={s.filingLabel} {...displayTextProps}>FILED</Text>
-            {filed.map((entry, i) => (
-              <View key={entry.key} style={s.filingEntry}>
-                {i > 0 && <Text style={s.filingDot}>·</Text>}
-                <Text style={[s.filingValue, entry.accent && s.filingValueAccent]} {...displayTextProps}>
-                  {entry.value}
-                </Text>
-              </View>
+      <View style={st.byline}>
+        <UserAttributionRow username={profile?.username || 'unknown'} avatarUrl={profile?.avatar_url} role={profile?.role}
+          timeAgo={timeAgo} onUserPress={onPressUser} ruled={false} nameInk={nameInk} />
+        {slate.length ? (
+          <View style={st.slate}>
+            {slate.map((x) => (
+              <Text key={x.key} style={st.slateItem} {...scaledTextProps}>
+                {x.word ? `${x.word} ` : ''}<Text style={st.slateValue}>{x.value}</Text>
+              </Text>
             ))}
-         </View>
-      )}
+          </View>
+        ) : null}
+        {abandoned ? (
+          <View style={st.abandoned}>
+            <View style={st.stamp}><Text style={st.stampText} {...scaledTextProps}>ABANDONED</Text></View>
+            {log.abandoned_reason ? <Text style={st.reason} {...scaledTextProps}>{log.abandoned_reason}</Text> : null}
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
+
+const TITLE_SIZE = 24;
+const TITLE_GAP = 16;
+
+const st = StyleSheet.create({
+  projection: { overflow: 'hidden' },
+  plain: { backgroundColor: colors.ink },
+  film: { flexDirection: 'row', alignItems: 'flex-end', gap: TITLE_GAP, paddingHorizontal: PAGE.pad },
+  // Over the still's lower edge; under the bar's ink when there is no still.
+  filmOver: { marginTop: -PAGE.overlap },
+  filmUnder: { paddingTop: 4 },
+  poster: {
+    width: PAGE.poster.width, height: PAGE.poster.height, borderRadius: 2,
+    borderWidth: 1, borderColor: colors.inkwell, backgroundColor: colors.posterVoid,
+  },
+  meta: { flex: 1, minWidth: 0, gap: 7, paddingBottom: 2 },
+  title: { fontFamily: fonts.display, fontSize: TITLE_SIZE, lineHeight: 28, color: colors.silverScreen },
+  year: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.bone, includeFontPadding: false },
+  byline: { paddingHorizontal: PAGE.pad, paddingTop: 18 },
+  slate: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 4, marginTop: 12 },
+  slateItem: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.bone, includeFontPadding: false },
+  slateValue: { color: colors.parchment },
+  abandoned: { marginTop: 14, gap: 10 },
+  stamp: {
+    alignSelf: 'flex-start', marginLeft: 2, borderWidth: 1.5, borderColor: colors.crimsonInk,
+    paddingHorizontal: 7, paddingTop: 2, paddingBottom: 1, transform: [{ rotate: '-4deg' }],
+  },
+  stampText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.crimsonInk, includeFontPadding: false },
+  reason: { fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 19, color: colors.bone },
+});

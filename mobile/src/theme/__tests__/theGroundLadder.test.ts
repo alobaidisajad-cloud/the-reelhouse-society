@@ -68,8 +68,7 @@ const ART = [
  * it again, and so nothing else can hide in the exception.
  */
 const OVER_ART: Record<string, string> = {
-  sheetOverArt: 'the log page’s content sheet, over the film’s backdrop',
-  sheetOverArtAuteur: 'the same sheet, in the Auteur’s card',
+  sheetOverArt: 'the log page’s bar, over the projected still, once the page goes under it',
 };
 
 const NOT_A_SURFACE: Record<string, string> = {

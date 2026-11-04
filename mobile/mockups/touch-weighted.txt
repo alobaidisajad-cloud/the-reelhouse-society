@@ -85,7 +85,7 @@ src/components/film/TrailerModal.tsx · Close · wayOut
 src/components/layout/ConciergeButton.tsx · Close · wayOut
 src/components/layout/ConciergeButton.tsx · Create · commit
 src/components/layout/ConciergeButton.tsx · File to the Dispatch · commit
-src/components/log/LogActionDeck.tsx · {filmSaved ? 'Saved: remove the film from your watchlist' : 'Save film to your watchlist'} · commit
+src/components/log/LogActionDeck.tsx · {filmSaved ? 'Save: on your watchlist. Takes it off' : 'Save film to your watchlist'} · commit
 src/components/log/LogForm.tsx · Cancel: keep this log · wayOut
 src/components/log/LogForm.tsx · Delete this entire log · destructive
 src/components/log/LogForm.tsx · Discard this draft · destructive

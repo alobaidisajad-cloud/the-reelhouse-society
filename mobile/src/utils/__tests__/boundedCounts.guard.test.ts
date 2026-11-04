@@ -7,7 +7,7 @@
  *
  *   feed          247 films shipped to draw 24 posters, count = films.length
  *   stack detail  every film loaded, "N REELS" = films.length
- *   log comments  unbounded, "CRITIQUES (N)" = comments.length
+ *   log comments  unbounded, "CRITIQUES · N" = comments.length
  *   unread badge  computed over ONE page of 30 — a member with 50 saw 30
  *
  * So this pins the pairing, not the limit: wherever a fetch is bounded, the count
@@ -66,11 +66,11 @@ describe('#44 · log critiques are bounded, and still counted honestly', () => {
   });
 
   it('the header renders the total, not the array length', () => {
-    // Formatted and hidden at zero now (`CRITIQUES (1.2K)`, or `CRITIQUES`);
+    // Formatted and hidden at zero now (`CRITIQUES · 1.2K`, or `CRITIQUES`);
     // still the TOTAL. Rendered with no comments loaded and a total of 1,200 in
-    // theCountHangsBesideItsMark.test.tsx, which reads `CRITIQUES (1.2K)`.
+    // theCountHangsBesideItsMark.test.tsx, which reads `CRITIQUES · 1.2K`.
     const ui = readCode('src/components/log/LogComments.tsx');
-    expect(ui).toMatch(/CRITIQUES \(\$\{formatCount\(commentTotal \?\? comments\.length\)\}\)/);
+    expect(ui).toMatch(/CRITIQUES · \$\{formatCount\(commentTotal \?\? comments\.length\)\}/);
   });
 
   it('the page is large enough that nothing is unreachable YET', () => {

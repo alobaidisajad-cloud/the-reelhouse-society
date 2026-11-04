@@ -12,9 +12,9 @@ import LogActionDeck from '@/src/components/log/LogActionDeck';
 import { UNINKED } from '@/src/theme/unready';
 
 const deck = (over: Partial<React.ComponentProps<typeof LogActionDeck>> = {}) => render(
-  <LogActionDeck log={{ film_id: 603, film_title: 'The Matrix', poster_path: null }}
-    isOwner={false} endorsed={false} certifyCount={4} critiqueCount={2} filmSaved={false} autopsyOpen={false}
-    onToggleEndorse={jest.fn()} onToggleAutopsy={jest.fn()} onCritiquePress={jest.fn()} onSavePress={jest.fn()}
+  <LogActionDeck
+    isOwner={false} endorsed={false} certifyCount={4} critiqueCount={2} filmSaved={false}
+    onToggleEndorse={jest.fn()} onCritiquePress={jest.fn()} onSavePress={jest.fn()}
     onEditPress={jest.fn()} onLoungePress={jest.fn()} lounge={{ held: true, spoken: 'Share to a lounge' }} {...over} />,
 );
 const uninked = (r: ReturnType<typeof render>) => (JSON.stringify(r.toJSON()).match(new RegExp(UNINKED, 'g')) ?? []).length;
@@ -32,6 +32,7 @@ it('a mark not yet read is uninked and said so; the bookmark stays pressable', a
 it('known, both are drawn plainly', () => {
   const r = deck({ certifyKnown: true, saveKnown: true, endorsed: true, filmSaved: true });
   expect(uninked(r)).toBe(0);
-  expect(r.getByText('CERTIFIED')).toBeTruthy();
-  expect(r.getByText('SAVED')).toBeTruthy();
+  // The band's words are constant: the marks are inked, and the acts say they are chosen.
+  expect(r.getByLabelText('Certify this critique. 4 members have certified this critique').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
+  expect(r.getByLabelText('Save: on your watchlist. Takes it off').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
 });

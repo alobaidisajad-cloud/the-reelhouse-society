@@ -229,12 +229,60 @@ const THIS_FILE = join(MOBILE, 'src', 'utils', '__tests__', 'everyFileSurvivedTh
 const BOM = Buffer.from([0xef, 0xbb, 0xbf]);
 
 /**
+ * ── THE OTHER THING A SHELL TAKES: A BACKSLASH ──────────────────────────────
+ * A file written through a shell or a quoted string can lose its backslashes
+ * without a sound. `split(/\s+/)` becomes `split(/s+/)`: it still parses, the
+ * types still check, and it now splits a film's title at every letter s. One
+ * did, on the opened log's title, and the tests passed because a shorter
+ * piece only ever let the title grow further.
+ *
+ * So: a regex literal, where one can begin, that opens with a bare s, d, w or n
+ * and a quantifier. As written on purpose that would match the LETTER, one or
+ * more times, which this app never wants; as damage it is the escape, gone.
+ * Code only — a sed line in a .sh opens `s/` legitimately.
+ */
+const LOST_ESCAPE = /(?:^|[(,=:[!&|?{;]|return)\s*\/[sdwSDWn][+*?{]/;
+const CODE = /\.(tsx?|mjs|cjs|js)$/;
+
+/** The first line in a file whose regex has lost its backslash, if there is one. */
+export function lostEscape(text: string): { line: number; was: string } | null {
+  for (const [i, line] of text.split('\n').entries()) {
+    if (LOST_ESCAPE.test(line)) return { line: i + 1, was: line.trim().slice(0, 70) };
+  }
+  return null;
+}
+
+describe('the lost-escape detector, before it is trusted', () => {
+  it('CATCHES the escapes a shell drops', () => {
+    for (const damaged of [
+      "log.film_title.split(/s+/).filter(Boolean)",
+      "const words = text.split(/n{2,}/);",
+      "if (/d+/.test(year)) return;",
+      "const SPACE = /s*/g;",
+      "return /w+/.exec(name);",
+    ]) expect(lostEscape(damaged)).not.toBeNull();
+  });
+
+  it('and passes the escapes, and the letters, that are meant', () => {
+    for (const honest of [
+      "log.film_title.split(/\\s+/).filter(Boolean)",
+      "const words = text.split(/\\n{2,}/);",
+      "const plural = /s$/.test(word);",
+      "const SHEET = /sheet/i;",
+      "const half = width / scale + 1;",
+      "const third = (a + b) /2;",
+    ]) expect(lostEscape(honest)).toBeNull();
+  });
+});
+
+/**
  * Every file, read ONCE. Both checks below want the same bytes, and walking the
  * tree twice doubled the cost of the slowest guard in the suite for nothing.
  */
 const scan = (() => {
   const mangled: string[] = [];
   const bommed: string[] = [];
+  const unescaped: string[] = [];
   let read = 0;
   for (const file of everyEditedFile()) {
     if (file === THIS_FILE) continue;
@@ -247,6 +295,9 @@ const scan = (() => {
     let text: string;
     try { text = utf8.decode(buf); } catch { mangled.push(`${name}  — NOT VALID UTF-8`); continue; }
 
+    const lost = CODE.test(file) ? lostEscape(text) : null;
+    if (lost) unescaped.push(`${name}:${lost.line}  ${lost.was}`);
+
     const bad = firstBadLine(text);
     if (bad) {
       mangled.push(
@@ -255,7 +306,7 @@ const scan = (() => {
         `        should be:  ${bad.shouldBe}`);
     }
   }
-  return { mangled, bommed, read };
+  return { mangled, bommed, unescaped, read };
 })();
 
 describe('no file in this repo was round-tripped through the shell', () => {
@@ -271,5 +322,9 @@ describe('no file in this repo was round-tripped through the shell', () => {
     // PowerShell's `Set-Content -Encoding utf8` prepends one. Harmless to a
     // compiler, not harmless to a shebang, a .sql run through psql, or a diff.
     expect(scan.bommed).toEqual([]);
+  });
+
+  it('and no regex in the code has lost its backslash', () => {
+    expect(scan.unescaped).toEqual([]);
   });
 });

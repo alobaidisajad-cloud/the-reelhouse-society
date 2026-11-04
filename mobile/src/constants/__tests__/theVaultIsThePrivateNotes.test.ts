@@ -77,6 +77,9 @@ const PRIVATE_NOTES: Said[] = [
   { file: 'src/constants/gatedFeatures.ts', text: 'Vault is an Archivist feature" while their clear and their remove both ' },
   // The note itself, where a member reads it and opens it (2026-09-18).
   { file: 'src/components/log/VaultNote.tsx', text: 'THE VAULT' },
+  // The note's section on the opened log, and when it could not be opened.
+  { file: 'src/components/log/LogReviewBody.tsx', text: 'THE VAULT · ONLY YOU' },
+  { file: 'src/components/log/LogReviewBody.tsx', text: 'THE VAULT · ONLY YOU' },
   { file: 'src/components/log/NoteSheet.tsx', text: 'THE VAULT' },
   { file: 'src/components/log/LogForm.tsx', text: 'Opening the Vault…' },
   // The record, when the owner's notes could not be read (2026-10-01).

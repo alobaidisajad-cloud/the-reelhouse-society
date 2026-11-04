@@ -28,8 +28,6 @@ src/components/dispatch/paper/PaperMore.tsx
 src/components/dispatch/paper/PaperPost.tsx
 src/components/feed/ActionDeck.tsx
 src/components/feed/ActivityCard.tsx
-src/components/feed/PosterFrame.tsx
-src/components/feed/ReviewContent.tsx
 src/components/feed/UserAttributionRow.tsx
 src/components/film/CastCarousel.tsx
 src/components/film/FilmActionTray.tsx
@@ -46,6 +44,7 @@ src/components/lobby/parts.tsx
 src/components/log/AuteurToolkit.tsx
 src/components/log/EditorialDesk.tsx
 src/components/log/LogActionDeck.tsx
+src/components/log/LogChronicle.tsx
 src/components/log/LogClearanceGate.tsx
 src/components/log/LogForm.tsx
 src/components/log/LogHero.tsx
@@ -67,8 +66,8 @@ src/components/profile/ProfilePosterCard.tsx
 src/components/profile/ProfileTriptych.tsx
 src/components/profile/ProfileWatchlistTab.tsx
 src/components/profile/RoomParts.tsx
-src/components/reels/ReelsCards.tsx
 src/components/reels/ReelsHeader.tsx
+src/components/reels/StackCan.tsx
 src/components/society/BillingSwitch.tsx
 src/components/society/RankTicket.tsx
 src/components/society/SmallPrint.tsx

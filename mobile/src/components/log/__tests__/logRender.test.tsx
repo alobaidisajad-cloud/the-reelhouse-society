@@ -9,7 +9,7 @@
  * which this project's jest setup does not bind.
  */
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 
 import LogHero from '@/src/components/log/LogHero';
 import LogChronicle from '@/src/components/log/LogChronicle';
@@ -38,8 +38,10 @@ const hero = (over: Partial<typeof baseLog> = {}) =>
       log={{ ...baseLog, ...over }}
       profile={profile}
       posterUri="https://example.test/p.jpg"
-      isAuteur={false}
-      isArchivist={false}
+      stillUri={null}
+      barTop={59}
+      ground="#1E1914"
+      nameInk="#E8DFD0"
       timeAgo="2h"
       onPosterLoaded={() => {}}
       onPressUser={() => {}}
@@ -47,10 +49,10 @@ const hero = (over: Partial<typeof baseLog> = {}) =>
     />,
   );
 
-describe('the filing mark, as a member sees it', () => {
+describe('the slate, as a member sees it', () => {
   it('states the facts it has, in the record’s own shapes', () => {
     const r = hero({ watched_with: 'Yusuf', physical_media: '4K UHD' });
-    expect(r.getByText('FILED')).toBeTruthy();
+    expect(r.getByText('FILED AUG 5, 2026')).toBeTruthy();
     expect(r.getByText('AUG 5, 2026')).toBeTruthy();
     expect(r.getByText('WITH YUSUF')).toBeTruthy();
     expect(r.getByText('4K UHD')).toBeTruthy();
@@ -64,10 +66,10 @@ describe('the filing mark, as a member sees it', () => {
     expect(r.queryByText(/FORMAT/)).toBeNull();
   });
 
-  it('shows no band at all when nothing was recorded', () => {
+  it('shows no slate at all when nothing was recorded', () => {
     const r = hero({ watched_date: null, watched_with: null, physical_media: null });
     expect(r.getByText('Inception')).toBeTruthy(); // the record is drawn
-    expect(r.queryByText('FILED')).toBeNull();
+    expect(r.queryByText(/FILED/)).toBeNull();
   });
 
   it('a date it cannot read is not a fact', () => {
@@ -75,7 +77,7 @@ describe('the filing mark, as a member sees it', () => {
     // would put an empty caption inside the ruled band.
     const r = hero({ watched_date: 'whenever', watched_with: null, physical_media: null });
     expect(r.getByText('Inception')).toBeTruthy(); // the record is drawn
-    expect(r.queryByText('FILED')).toBeNull();
+    expect(r.queryByText(/FILED/)).toBeNull();
   });
 
   it('a record with no date still renders its title and year', () => {
@@ -92,7 +94,7 @@ describe('the essay, as a member reads it', () => {
         review={null}
         pullQuote={null}
         dropCap={false}
-        isAuteur={false}
+        accent="#B8891A"
         isOwner={false}
         isSpoiler={false}
         note={null}
@@ -159,21 +161,17 @@ describe('the essay, as a member reads it', () => {
     // above it, a member cannot tell at a glance which of the two everyone else
     // can read — and that is the whole promise of the Vault.
     const r = body({ review: 'Some words.', note: 'I cried at the top', isOwner: true });
-    expect(r.getByText('THE VAULT')).toBeTruthy();
-    expect(r.getByText('  ·  ONLY YOU')).toBeTruthy();
+    expect(r.getByText('THE VAULT · ONLY YOU')).toBeTruthy();
   });
 });
 
 describe('the viewing chronicle', () => {
   const chronicle = (history: unknown) =>
     render(
-      <LogChronicle
-        log={{ ...baseLog, review: 'The current one.', viewing_history: history }}
-        windowWidth={390}
-        chronicleActiveIdx={0}
-        onChronicleIdxChange={() => {}}
-      />,
+      <LogChronicle log={{ ...baseLog, review: 'The current one.', viewing_history: history }} />,
     );
+  /** A past viewing chosen on the strip: its own words shown beneath it. */
+  const choose = async (r: ReturnType<typeof chronicle>, cell: string) => { await fireEvent.press(r.getByLabelText(new RegExp(`^${cell}`))); };
 
   it('is absent until there is a history to show', () => {
     expect(chronicle([]).toJSON()).toBeNull();
@@ -187,32 +185,39 @@ describe('the viewing chronicle', () => {
     expect(chronicle('7').toJSON()).toBeNull();
   });
 
-  it('reads a history stored as a JSON string', () => {
+  it('reads a history stored as a JSON string', async () => {
     const r = chronicle(JSON.stringify([{ date: '2024-03-02', rating: 3, review: 'Colder than I remembered.' }]));
+    // This viewing is chosen first: its words are the page's own, so none are repeated here.
+    expect(r.queryByText(/Colder than I remembered\./)).toBeNull();
+    await choose(r, 'first watch');
     expect(r.getByText(/Colder than I remembered\./)).toBeTruthy();
-    expect(r.getByText('◆ FIRST WATCH')).toBeTruthy();
+    expect(r.getByText(/◆ FIRST WATCH/)).toBeTruthy();
   });
 
-  it('dates a past viewing in the same shape as the record above it', () => {
+  it('dates a past viewing in the same shape as the record above it', async () => {
     const r = chronicle([{ date: '2024-03-02', rating: 3, review: 'x' }]);
-    expect(r.getByText('· MAR 2, 2024')).toBeTruthy();
+    expect(r.getByText('MAR 2024')).toBeTruthy();
+    await choose(r, 'first watch');
+    expect(r.getByText('  · MAR 2, 2024')).toBeTruthy();
   });
 
-  it('prints no date at all rather than a broken one', () => {
+  it('prints no date at all rather than a broken one', async () => {
     const r = chronicle([{ date: 'whenever', rating: 3, review: 'x' }]);
+    await choose(r, 'first watch');
     expect(r.queryByText(/Invalid/i)).toBeNull();
     // The assertion that does the work. The shared formatter ECHOES what it
     // cannot parse, so the failure mode here is not "Invalid Date" — it is the
     // raw stored value appearing in the byline. Checking for the former left
     // the guard that prevents the latter completely untested.
     expect(r.queryByText(/whenever/)).toBeNull();
-    // One dated card, not two: the CURRENT viewing still shows its own date, so
-    // counting is what proves the unreadable one printed nothing.
-    expect(r.queryAllByText(/^· /)).toHaveLength(1);
+    // Named by what it is instead, on its cell and beneath the strip, and no date after it.
+    expect(r.getByText('FIRST WATCH')).toBeTruthy();
+    expect(r.queryAllByText(/·/)).toHaveLength(0);
   });
 
-  it('cleans a past review the same way the current one is cleaned', () => {
+  it('cleans a past review the same way the current one is cleaned', async () => {
     const r = chronicle([{ date: '2024-03-02', rating: 3, review: '<p>Powell &amp; Pressburger</p>' }]);
+    await choose(r, 'first watch');
     expect(r.getByText(/Powell & Pressburger/)).toBeTruthy();
   });
 });

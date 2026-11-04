@@ -1,193 +1,39 @@
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import { StyleSheet } from 'react-native';
-import { EDGE_LIT } from '@/src/theme/light';
-
-// ── THE RECORD — one spine for the whole document ──
-export const SPINE = 20;
-
-/**
- * The transparent strip above the record card, which lets the poster show
- * through as the page scrolls.
- *
- * Exported because the critiques scroll target has to add it back. The comments
- * section reports its position relative to the CARD, and the card begins after
- * this padder — so "scroll to the critiques" is `PARALLAX_PADDER_HEIGHT + y`.
- * A bare number in the screen would be silently coupled to this style: change
- * the padder and the scroll target would land in the wrong place, with nothing
- * to say why. (It is not the header's height: the header sits outside the
- * scroll view entirely.)
- */
-export const PARALLAX_PADDER_HEIGHT = 80;
-/** SHARE and ··· side by side. Each reaches half of this toward the other, no more. */
-export const HEADER_ACTION_GAP = 14;
-
-/**
- * How tall the picture behind the record hangs. Exported because the room's
- * light hangs from its hem, and the picture's veil meets the light there.
- */
-export const BACKDROP_H = 360;
 
 export const s = StyleSheet.create({
+  // ── The page: its body under the head, and its bar over the projection ──
+  // The opened log is its author's card stock, not a lit room (the screen sets the stock).
+  page: { flex: 1 },
+  pageBody: { paddingHorizontal: 18, paddingBottom: 28 },
+  // A section's 26 above it, less the 14 the breakdown keeps above its own rule.
+  breakdown: { marginTop: 12 },
+  bar: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 3 },
+  // The house's sheet over art: the page under the bar never reads through its words.
+  barScrim: { backgroundColor: colors.sheetOverArt },
+  barRow: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6 },
+  barButton: { minWidth: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  // Between equal gutters, each the right cluster's width (the screen sets them, from the plan).
+  barTitleWrap: { position: 'absolute', top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  barTitle: { fontFamily: fonts.sub, fontSize: 10, color: colors.parchment, includeFontPadding: false },
+  barRight: { flexDirection: 'row', alignItems: 'center' },
+  // One width whether it says SHARE or is still preparing (the screen sets it): it never grows into the ··· beside it.
+  barShare: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 48, paddingHorizontal: 6 },
+  barShareText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.parchment, includeFontPadding: false },
   container: { flex: 1, backgroundColor: colors.ink },
   centerFull: { justifyContent: 'center', alignItems: 'center', gap: 16 },
-  maxHeight200: { maxHeight: 200 },
-  backdropContainer: { height: BACKDROP_H },
-  fullSize: { width: '100%', height: '100%' },
-  opacity30: { opacity: 0.3 },
-  opacity20: { opacity: 0.2 },
-  textureOverlay: { backgroundColor: 'rgba(0,0,0,0.03)' },
   hiddenShareContainer: { position: 'absolute', top: 0, left: 0, opacity: 0.01, zIndex: -1 },
   inkBg: { backgroundColor: colors.ink },
-  parallaxPadder: { height: PARALLAX_PADDER_HEIGHT, width: '100%' },
-  flexGrowZero: { flexGrow: 0 },
 
-  // ── Header rail ──
-  header: {
-    paddingTop: 56, paddingHorizontal: 16, paddingBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
-  },
-  headerRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    minHeight: 24, position: 'relative',
-  },
-  backBtn: { width: 60, zIndex: 2 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: HEADER_ACTION_GAP, zIndex: 2 },
-  // The eyebrow is absolutely centred so it never shifts owner↔visitor, between
-  // gutters that clear the visitor's right cluster (SHARE + ⋯). Whether "PERMANENT
-  // RECORD" fits between them is MEASURED at every width by the screens job
-  // (mockups/tools/layout.cjs); "FROM THE PERMANENT RECORD" did not.
-  eyebrowWrap: { position: 'absolute', top: 0, bottom: 0, left: 104, right: 104, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
-  // 48 wide whether it says SHARE or is still preparing: it never grows into MORE beside it.
-  shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, minWidth: 48 },
-  shareBtnText: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 1.2, includeFontPadding: false },
-  moreBtn: { paddingHorizontal: 2, paddingVertical: 8 },
-
-  // ── The record card ──
-  // Shadow host / clip host. This card lifts UPWARD off the backdrop above it
-  // (offset -20, radius 40) — a deliberate, large effect that iOS has never
-  // drawn, because the same style also clips. Android drew one from elevation
-  // 24, so the record has been sitting on the page differently per platform.
-  // iOS geometry only. `elevation` stays on contentCard below: Android builds
-  // its shadow from the painted background's outline, and this host paints
-  // nothing — the sheet is deliberately 8% see-through so the film's backdrop
-  // reads under it, which is why the background cannot simply be copied up here.
-  // No black lift: across a sheet this wide it drew a dark band over the
-  // backdrop above it, on the lit house.
-  contentCardShadow: { borderTopLeftRadius: 12, borderTopRightRadius: 12, ...effects.flat },
-  // The Auteur's sheet still rises in its own colour — light, not shadow. It
-  // carries the WHOLE lift now: the base above casts none, so a colour alone
-  // would draw nothing.
-  contentCardShadowAuteur: { shadowColor: colors.bloodReel, shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40 },
-  // 8% see-through on purpose (see above) — `sheetOverArt`, not the house.
-  contentCard: { backgroundColor: colors.sheetOverArt, borderTopWidth: 1, borderColor: colors.sepiaBorder, borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden' },
-  contentCardAuteur: { ...EDGE_LIT, backgroundColor: colors.sheetOverArtAuteur, borderColor: colors.crimsonBorder, shadowColor: colors.bloodReel },
-  logCardInner: { paddingHorizontal: SPINE, paddingBottom: 16, marginTop: 0, paddingTop: 24 },
   /** "✦ FEATURED IN THE LOBBY · 30 SEPTEMBER", between the log's head and its words. */
   lobbyHonour: { textAlign: 'center', marginTop: 4, marginBottom: 12 },
-  logCenter: { alignItems: 'center' },
-  bylineFull: { width: '100%', marginBottom: 20 },
 
-  // ── Poster ──
-  posterSection: { width: '100%', alignItems: 'center', marginBottom: 24, zIndex: 10 },
-  posterGlow: { position: 'absolute', top: '50%', left: '50%', width: 180, height: 250, marginLeft: -90, marginTop: -125, borderRadius: 125, zIndex: 0 },
-  posterGlowAuteur: { backgroundColor: colors.crimsonFaint },
-  posterGlowArchivist: { backgroundColor: colors.sepiaSubtle },
-  // Shadow host / clip host, same reason as the record card above.
-  // iOS geometry only — `elevation` stays on posterBounds, the painted view,
-  // which also keeps the plate drawing over its own glow on Android.
-  posterBoundsShadow: { width: 140, height: 210, borderRadius: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 40 },
-  posterBoundsShadowAuteur: { shadowColor: colors.bloodFaint },
-  posterBounds: { ...EDGE_LIT, width: '100%', height: '100%', borderRadius: 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.sepiaBorderStrong, backgroundColor: colors.soot, elevation: 12, shadowColor: '#000' },
-  posterBoundsAuteur: { borderColor: colors.crimsonBorder, shadowColor: colors.bloodFaint },
-  posterCentered: { width: '100%', height: '100%' },
-  posterPlaceholder: { ...EDGE_LIT, backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
-
-  // ── Title ──
-  titleSection: { alignItems: 'center', marginBottom: 12 },
-  // 35 gave a ratio of 1.09 — the glyphs grew through their own line box above
-  // 1.04x system text, which is to say almost immediately. lineHeight does not
-  // scale with Dynamic Type, so the box has to be sized for the CAP: 42 clears
-  // the 1.2 tier this title declares (42 / 38.4 = 1.09) and the extra leading
-  // is invisible at rest under a 32pt display face.
-  logFilmTitle: { fontFamily: fonts.display, fontSize: 32, lineHeight: 42, color: colors.parchment, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 12,
-    // The shadow's room inside the box a phone cuts it at; the margins keep the layout.
-    paddingTop: 8, paddingBottom: 16, paddingHorizontal: 12, marginTop: -8, marginBottom: -16, marginHorizontal: -12 },
-  logFilmYear: { fontFamily: fonts.sub, fontSize: 12, letterSpacing: 3.6, color: colors.fog, marginTop: 8, includeFontPadding: false },
-  ratingWrap: { marginTop: 12 },
-
-  // ── Review ──
-  reviewSection: { marginTop: 24, marginBottom: 16 },
-  ornamentalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 16, marginTop: 16 },
-  ornamentalLine: { flex: 1, maxWidth: 80, height: 1, backgroundColor: colors.sepiaBorderStrong },
-  ornamentalStar: { opacity: 0.7 },
-  featuredQuoteWrap: { paddingVertical: 24, alignItems: 'center' },
-  featuredQuote: { fontFamily: fonts.serifItalic, fontSize: 20, color: colors.sepia, lineHeight: 27, textAlign: 'center', textShadowColor: colors.sepiaSubtle, textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12,
-    // The glow's room inside the box a phone cuts it at; the margins keep the layout.
-    paddingTop: 10, paddingBottom: 14, paddingHorizontal: 12, marginTop: -10, marginBottom: -14, marginHorizontal: -12 },
-  featuredQuoteAuteur: { color: colors.crimsonInk, textShadowColor: 'rgba(107,26,10,0.15)' },
-  reviewBodyWrap: { paddingHorizontal: 0, marginTop: 0 },
-  // The essay, set as paragraphs — a raised drop cap opens the first.
   // iOS needs the paragraph direction stated — writingDirection is an iOS-only
   // style and the app never set it, so an Arabic essay inherited the app's own
   // left-to-right base and dropped each sentence's stop at the far left of its
   // line. Android resolves direction itself; textAlign is what puts the block
   // on the side it reads from, on both.
   rtlText: { writingDirection: 'rtl', textAlign: 'right' } as import('react-native').TextStyle,
-  reviewParagraph: { fontFamily: fonts.body, fontSize: 14, lineHeight: 24, color: colors.bone },
-  dropCapParagraph: { fontFamily: fonts.body, fontSize: 14, color: colors.bone },
-  reviewParagraphSpaced: { marginBottom: 14 },
-  dropCapLetter: { fontFamily: fonts.display, fontSize: 34, color: colors.sepia, lineHeight: 36, textShadowColor: 'rgba(184,137,26,0.2)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
-
-  // ── Editorial Badge ──
-  editorialBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, position: 'absolute', left: 16, backgroundColor: 'rgba(13,11,9,0.5)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 2, borderWidth: 1, borderColor: colors.sepiaBorder },
-  editorialBadgeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.3, color: colors.champagne, includeFontPadding: false },
-
-  // ── Viewing Chronicle ──
-  chronicleWrap: { marginTop: 8, marginBottom: 16, backgroundColor: colors.inkwell, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder, borderRadius: 2, overflow: 'hidden' },
-  chronicleHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.sepiaBorder },
-  chronicleDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia },
-  chronicleTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
-  chronicleCard: { padding: 14 },
-  chronicleLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  chronicleLabelBadge: { borderRadius: 2 },
-  chronicleLabelBadgeCurrent: { backgroundColor: colors.sepiaSubtle, paddingHorizontal: 6, paddingVertical: 2 },
-  chronicleLabelText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, includeFontPadding: false },
-  chronicleLabelTextCurrent: { color: colors.sepia },
-  chronicleDateText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.5, color: colors.fog, includeFontPadding: false },
-  chronicleRatingWrap: { marginBottom: 6 },
-  chronicleReviewText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, lineHeight: 20 },
-  chronicleReviewTextCurrent: { color: colors.bone, fontSize: 14, lineHeight: 22, fontStyle: 'normal' },
-  chronicleReviewTextPast: { fontFamily: fonts.bodyItalic },
-  chronicleWatchedWith: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.5, color: colors.fog, marginTop: 6, includeFontPadding: false },
-  chronicleDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: 10, paddingTop: 4 },
-  chronicleDotIndicator: { width: 6, height: 2, borderRadius: 1, backgroundColor: colors.sepiaBorder },
-  chronicleDotActive: { backgroundColor: colors.sepia, width: 12 },
-
-  // ── Autopsy drawer ──
-  autopsyWrap: { marginTop: 8 },
-  autopsyToggle: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: colors.ink, borderRadius: 4, borderWidth: 1, borderColor: colors.sepiaBorder, borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: -1, zIndex: 2 },
-  autopsyToggleInner: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  autopsyPulse: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.bloodReel, shadowColor: 'rgba(107,26,10,0.9)', shadowOffset: { width: 0, height: 0 }, shadowRadius: 8, shadowOpacity: 1 },
-  autopsyToggleTitle: { fontFamily: fonts.display, fontSize: 12, letterSpacing: 2, color: colors.parchment },
-  autopsyToggleConf: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 3, color: colors.sepia, includeFontPadding: false },
-  rotated: { transform: [{ rotate: '180deg' }] },
-
-  // ── Action Deck ──
-  actionDeckWrap: { marginTop: 8 },
-  actionDeck: { flexDirection: 'row', backgroundColor: colors.inkwell, borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder, marginBottom: 16, overflow: 'hidden', padding: 1, gap: StyleSheet.hairlineWidth, zIndex: 1 },
-  deckBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 18, gap: 6, backgroundColor: colors.ink, borderRadius: 1 },
-  deckLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog, includeFontPadding: false },
-  deckLabelActive: { color: colors.sepia },
-  // The brass key in LOUNGE's place, for a reader without the rank to speak in a salon.
-  deckKeyDim: { opacity: 0.75 },
-  deckLabelCertified: { color: colors.crimsonInk },
-
-  // ── Critiques ──
-  commentsSection: { paddingHorizontal: SPINE, marginTop: 16, paddingBottom: 40 },
-  emptyComments: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, textAlign: 'center', marginTop: 20 },
-  critiquesUnread: { alignItems: 'center', gap: 4 },
-  listDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.sepiaBorder, marginTop: 20, marginBottom: 2 },
 
   commentItem: { paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },
   commentTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 7 },
@@ -215,67 +61,13 @@ export const s = StyleSheet.create({
   /** REPORT on another member's critique: said quietly, in the date's grey — it accuses no one until pressed. */
   commReport: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog, includeFontPadding: false },
 
-  // Show earlier/more critiques
-  showMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'center', marginTop: 16, paddingVertical: 9, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2 },
-  showMoreText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, includeFontPadding: false },
-
-  // ── Compose critique (top of the section) ──
-  composeWrap: { marginTop: 4 },
-  critiqueInput: {
-    backgroundColor: colors.well, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.sepiaBorder,
-    borderBottomWidth: 1, borderBottomColor: colors.fieldEdge,
-    borderRadius: 2, paddingHorizontal: 16, paddingVertical: 16,
-    color: colors.bone, fontFamily: fonts.body, fontSize: 13, lineHeight: 22,
-    minHeight: 100, textAlignVertical: 'top',
-  },
-  critiqueSubmitBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: colors.sepia, borderWidth: 1, borderColor: 'transparent', borderRadius: 2,
-    paddingVertical: 14, marginTop: 12,
-  },
-  critiqueSubmitText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
-
   backBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 24, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: colors.ash, borderRadius: 2 },
   backBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.bone, includeFontPadding: false },
-
-  // ── Abandoned Badge (crimson, shrink-guarded) ──
-  abandonedWrap: { marginTop: 12, alignItems: 'center', width: '100%', paddingHorizontal: 8 },
-  abandonedBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.crimsonFaint, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4, borderWidth: 1, borderColor: colors.crimsonBorder, flexShrink: 1, maxWidth: '100%' },
-  abandonedText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.crimsonInk, includeFontPadding: false, flexShrink: 1 },
-
-  // ── The filing mark ──
-  // The rules above and below are the whole idea: they make the line read as
-  // something stamped into a file rather than a caption floating under a
-  // poster. It wraps rather than shrinking, so a long companion name never
-  // squeezes the date.
-  filingMark: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    flexWrap: 'wrap', columnGap: 10, rowGap: 4,
-    marginTop: 16, paddingVertical: 9,
-    alignSelf: 'stretch', marginHorizontal: 20,
-    borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.sepiaBorder,
-  },
-  filingLabel: {
-    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5,
-    color: colors.sepia, includeFontPadding: false,
-  },
-  filingEntry: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  filingDot: { color: colors.ash, fontSize: 10, includeFontPadding: false },
-  filingValue: {
-    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3,
-    color: colors.bone, includeFontPadding: false,
-  },
-  // The companion keeps the brass — who you watched it with is the warm fact
-  // in the band.
-  filingValueAccent: { color: colors.sepia } as import('react-native').TextStyle,
 
   // ── THE VAULT: a private note, on the page it belongs to ──
   // No frame and no radius on purpose — a brass rule down one side and a wash
   // so faint it reads as part of the writing above, not as a third box between
-  // two others. The spacing is even on both sides of it: the review ends with 16
-  // below, the chronicle starts with 8 above, so 8 above / 16 below gives 24
-  // each way.
+  // two others.
   vaultNote: {
     backgroundColor: 'rgba(184,137,26,0.05)',
     borderLeftWidth: 2,
@@ -292,8 +84,5 @@ export const s = StyleSheet.create({
   // Bone, not fog: this is the member's own writing and it is read, not skimmed
   // (fog on this wash measures under the floor at a small size).
   vaultNoteBody: { fontFamily: fonts.bodyItalic, fontSize: 13.5, lineHeight: 22, color: colors.bone },
-  // Where the note would be, when the Vault could not be opened.
-  vaultUnread: { marginTop: 8, marginBottom: 16, gap: 4 },
-  vaultUnreadText: { fontFamily: fonts.bodyItalic, fontSize: 12, lineHeight: 18, color: colors.fog },
   vaultNoteBodyCompact: { fontFamily: fonts.bodyItalic, fontSize: 12.5, lineHeight: 20, color: colors.bone },
 });

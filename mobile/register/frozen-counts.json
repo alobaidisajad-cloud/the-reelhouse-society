@@ -196,7 +196,6 @@
     "mobile/src/components/layout/__tests__/everyPushedScreenEndsAboveItsFoot.test.tsx": 1,
     "mobile/src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx": 16,
     "mobile/src/components/log/LogForm.tsx": 1,
-    "mobile/src/components/log/LogReviewBody.tsx": 1,
     "mobile/src/components/log/__tests__/logAtmosphere.test.tsx": 4,
     "mobile/src/components/log/__tests__/theComposerKeepsItsWord.test.tsx": 5,
     "mobile/src/components/log/__tests__/theLapsedMemberReadsTheirNote.test.tsx": 2,

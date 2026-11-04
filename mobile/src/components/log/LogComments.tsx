@@ -1,16 +1,15 @@
 
-import { s } from '@/src/components/log/logDetailStyles';
-import { SectionDivider } from '@/src/components/Decorative';
+import { PageSection } from '@/src/components/log/PageSection';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import PressableScale from '@/src/components/PressableScale';
-import { formatCount } from '@/src/components/dispatch/paper/paperMetrics';
+import { formatCount, UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { scaledTextProps } from '@/src/constants/textScaling';
-import { colors } from '@/src/theme/theme';
-import { UNREADY, UNREADY_INK } from '@/src/theme/unready';
+import { colors, fonts } from '@/src/theme/theme';
+import { UNREADY } from '@/src/theme/unready';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
-import { Sparkles, ChevronDown } from 'lucide-react-native';
+import { ChevronDown } from 'lucide-react-native';
 import React, { RefObject, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { CritiqueRow, type Critique } from '@/src/components/critique/CritiqueRow';
 import { TryAgainLine } from '@/src/components/TryAgain';
@@ -50,6 +49,8 @@ interface LogCommentsProps {
   loadingOlder?: boolean;
   onReread?: () => void;
   onSectionLayout?: (y: number) => void;
+  /** A reader not signed in is asked for a name where the field would be. */
+  onSignIn?: () => void;
 }
 
 export default function LogComments({
@@ -69,6 +70,7 @@ export default function LogComments({
   onReread,
   onLoadOlder,
   loadingOlder = false,
+  onSignIn,
 }: LogCommentsProps) {
   const [visibleCount, setVisibleCount] = useState(PAGE);
 
@@ -83,57 +85,22 @@ export default function LogComments({
 
   return (
     <SectionErrorBoundary fallbackMessage="Critiques could not be loaded.">
-      <View style={s.commentsSection} onLayout={(e) => onSectionLayout?.(e.nativeEvent.layout.y)}>
-        {/* No count for none: `CRITIQUES (0)` is a number about nobody, and
-            every count in the house is hidden at zero. */}
-        <SectionDivider label={formatCount(commentTotal ?? comments.length) ? `CRITIQUES (${formatCount(commentTotal ?? comments.length)})` : 'CRITIQUES'} />
-
-        {/* Compose at the top — file a critique, watch it appear right beneath. */}
-        <View style={s.composeWrap}>
-          <TextInput
-            ref={critiqueInputRef}
-            style={s.critiqueInput}
-            placeholder="File an enduring critique…"
-            placeholderTextColor={colors.fog}
-            value={newComment}
-            onChangeText={onNewCommentChange}
-            multiline
-            maxLength={MAX_LENGTHS.logComment}
-            // The box below it is a fixed 22pt line. Uncapped, a member writing
-            // at the largest accessibility size types into clipped lines.
-            {...scaledTextProps}
-            selectionColor={'rgba(220,166,58,0.3)'}
-            cursorColor={colors.sepia}
-            disableFullscreenUI={true}
-            keyboardAppearance="dark"
-            accessibilityLabel="Write a critique on this log"
-          />
-          <PressableScale
-            style={[s.critiqueSubmitBtn, !newComment.trim() && UNREADY.plate]}
-            onPress={onPostComment}
-            disabled={!newComment.trim() || posting}
-            hitSlop={HITSLOP}
-            pressedScale={0.95}
-            haptic="medium"
-          >
-            <Text style={[s.critiqueSubmitText, !newComment.trim() && UNREADY.words]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{posting ? 'FILING…' : 'FILE CRITIQUE'}</Text>
-            <Sparkles size={10} color={newComment.trim() ? colors.ink : UNREADY_INK} strokeWidth={1.5} />
-          </PressableScale>
-        </View>
+      {/* No count for none: `CRITIQUES · 0` is a number about nobody, and
+          every count in the house is hidden at zero. */}
+      <PageSection title={formatCount(commentTotal ?? comments.length) ? `CRITIQUES · ${formatCount(commentTotal ?? comments.length)}` : 'CRITIQUES'} onLayout={onSectionLayout}>
 
         {/* Whenever the read failed: what is below is only what this phone
             wrote and has not sent, if anything. */}
         {unread ? (
-          <View style={s.critiquesUnread}>
-            <Text style={s.emptyComments}>The critiques could not be reached.</Text>
+          <View style={st.unread}>
+            <Text style={st.margin} {...scaledTextProps}>The critiques could not be reached.</Text>
             {onReread ? <TryAgainLine onPress={onReread} what="read the critiques" /> : null}
           </View>
         ) : null}
         {comments.length === 0 ? (
-          unread ? null : <Text style={s.emptyComments}>No critiques yet. Leave a mark on this record.</Text>
+          unread ? null : <Text style={st.margin} {...scaledTextProps}>No critiques yet. Leave a mark on this record.</Text>
         ) : (
           <>
-            <View style={s.listDivider} />
             {shown.map((c: LogComment) => (
               <CritiqueRow
                 key={c.id}
@@ -146,7 +113,7 @@ export default function LogComments({
             ))}
             {hidden > 0 && (
               <PressableScale
-                style={s.showMoreBtn}
+                style={st.more}
                 onPress={() => {
                   setVisibleCount((v) => v + PAGE);
                   // What is held runs out with this press: the next older page.
@@ -158,13 +125,77 @@ export default function LogComments({
                 haptic="selection"
                 accessibilityLabel={loadingOlder ? 'Reading earlier critiques' : `Show ${hidden} more critiques`}
               >
-                <Text style={s.showMoreText}>{loadingOlder ? 'READING EARLIER CRITIQUES…' : `SHOW MORE CRITIQUES · ${hidden} MORE`}</Text>
+                <Text style={st.moreText}>{loadingOlder ? 'READING EARLIER CRITIQUES…' : `SHOW MORE CRITIQUES · ${hidden} MORE`}</Text>
                 <ChevronDown size={12} color={colors.sepia} strokeWidth={2} />
               </PressableScale>
             )}
           </>
         )}
-      </View>
+
+        {/* The field after what was said, as a margin's last line: a reader not signed in is asked first. */}
+        {onSignIn ? (
+          <>
+            <View style={st.ask}><Text style={st.askText} {...scaledTextProps}>Sign in to file a critique.</Text></View>
+            <PressableScale style={st.file} onPress={onSignIn} hitSlop={null} pressedScale={0.97} haptic="selection" accessibilityRole="button" accessibilityLabel="Sign in to file a critique">
+              <Text style={st.fileText} {...scaledTextProps}>SIGN IN</Text>
+            </PressableScale>
+          </>
+        ) : (
+        <>
+          <TextInput
+            ref={critiqueInputRef}
+            style={st.field}
+            placeholder="File an enduring critique…"
+            placeholderTextColor={colors.fog}
+            value={newComment}
+            onChangeText={onNewCommentChange}
+            multiline
+            maxLength={MAX_LENGTHS.logComment}
+            // Its lines are a set 19pt. Uncapped, a member writing at the
+            // largest accessibility size types into clipped lines.
+            {...scaledTextProps}
+            selectionColor={'rgba(220,166,58,0.3)'}
+            cursorColor={colors.sepia}
+            disableFullscreenUI={true}
+            keyboardAppearance="dark"
+            accessibilityLabel="Write a critique on this log"
+          />
+          <PressableScale
+            style={[st.file, !newComment.trim() && UNREADY.plate]}
+            onPress={onPostComment}
+            disabled={!newComment.trim() || posting}
+            hitSlop={null}
+            pressedScale={0.97}
+            haptic="medium"
+            accessibilityRole="button"
+            accessibilityLabel={posting ? 'Filing the critique' : 'File critique'}
+          >
+            {posting ? null : <Text style={[st.fileText, !newComment.trim() && UNREADY.words]} {...UNSPOKEN}>✦</Text>}
+            <Text style={[st.fileText, !newComment.trim() && UNREADY.words]} {...scaledTextProps}>{posting ? 'FILING…' : 'FILE CRITIQUE'}</Text>
+          </PressableScale>
+        </>
+        )}
+      </PageSection>
     </SectionErrorBoundary>
   );
 }
+
+const st = StyleSheet.create({
+  margin: { marginTop: 12, fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 19, color: colors.fog },
+  unread: { gap: 4 },
+  more: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'center', marginTop: 16,
+    minHeight: 44, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 3,
+  },
+  moreText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.sepia, includeFontPadding: false },
+  // The field: the house's well, its brass edge.
+  field: {
+    marginTop: 18, minHeight: 66, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 12,
+    backgroundColor: colors.well, borderWidth: 1, borderColor: colors.fieldEdge, borderRadius: 3,
+    fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 19, color: colors.parchment, textAlignVertical: 'top',
+  },
+  file: { marginTop: 10, minHeight: 48, borderWidth: 1, borderColor: colors.sepia, borderRadius: 3, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  fileText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.sepia, includeFontPadding: false, textAlign: 'center' },
+  ask: { marginTop: 18, padding: 16, backgroundColor: colors.well, borderRadius: 3 },
+  askText: { fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 19, color: colors.bone, textAlign: 'center' },
+});

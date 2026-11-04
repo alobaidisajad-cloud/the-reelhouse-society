@@ -20,6 +20,7 @@ const REGISTER: Record<string, { rests: string } | { why: string }> = {
   'src/components/layout/ConciergeButton.tsx': { rests: 'risen ?' },
   'app/person/[id].tsx': { why: 'its header fades in as the page scrolls, and is hidden at rest by design' },
   'app/stacks/[id].tsx': { why: 'its header fades in as the page scrolls, and is hidden at rest by design' },
+  'app/log/[id].tsx': { why: 'its bar’s scrim comes in as the page goes under it, and is clear over the projection at rest' },
   'src/features/settings/SettingsScreen.tsx': { why: 'its header title fades in as the page scrolls, and is hidden at rest by design' },
   'src/components/log/LogAtmosphere.tsx': { why: 'a wash of light behind the form, with nothing in it to read' },
   'src/components/Preloader.tsx': { why: 'the countdown’s digits come and go, and the splash itself ends' },

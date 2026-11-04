@@ -116,6 +116,8 @@ describe('the scale multiplies boxes, never type', () => {
 
   it('is used where a box reserves lines (the check reads real files)', () => {
     expect(users.map(({ file }) => file).sort()).toEqual([
+      // a WIDTH: the breakdown's columns on the opened log
+      'app/log/[id].tsx',
       'app/stacks/[id].tsx',
       // a WIDTH, not a height: the name's longest word against its column
       'app/user/[username].tsx',
@@ -124,6 +126,9 @@ describe('the scale multiplies boxes, never type', () => {
       'src/components/film/CastCarousel.tsx',
       // the case's height under a masthead of SET lines, and which bills stand side by side
       'src/components/lobby/LobbyWall.tsx',
+      // WIDTHS: how many viewings stand to a row; the quote's balanced width
+      'src/components/log/LogChronicle.tsx',
+      'src/components/log/LogReviewBody.tsx',
       'src/components/person/PersonFilmography.tsx',
       // a can's height: its label's lines counted at the font's size, each line as the phone sets it
       'src/components/reels/ReelsStackList.tsx',

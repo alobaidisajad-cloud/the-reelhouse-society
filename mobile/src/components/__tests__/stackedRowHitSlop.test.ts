@@ -57,7 +57,7 @@ const RULES: Rule[] = [
     note: 'Log a Film / Curate a Stack, hairline apart' },
   // Partly: SAVE is drawn (a visitor's deck); EDIT is the owner's, which no
   // drawing of the record shows.
-  { file: 'src/components/log/LogActionDeck.tsx', style: 'deckBtn', gap: { x: 0 },
+  { file: 'src/components/log/LogActionDeck.tsx', style: 'act', gap: { x: 0 },
     note: 'four flex:1 actions, flush' },
   // Not drawn beside a neighbour: the member's own desk (it is theirs alone).
   { file: 'app/user/[username].tsx', style: 'deskRow', gap: { y: 0 },

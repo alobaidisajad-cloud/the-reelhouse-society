@@ -74,7 +74,6 @@ const MARKS: Record<string, string> = {
   'src/components/AutopsyGauge.tsx · headerStar': '✦ beside the heading',
   'app/auth-callback.tsx · errorIcon': '✕ at 28pt beside the words that say what failed',
   'app/reset-password.tsx · successIcon': '✕ above SESSION EXPIRED, which carries the meaning',
-  'src/components/log/logDetailStyles.ts · filingDot': '· between two filing facts',
   'src/components/profile/CinematicInsights.tsx · avatarFallback': '✦ standing in for a missing portrait',
   'src/components/profile/profileStyles.ts · bioMarkRuby': '« » around an Auteur’s bio',
   'src/components/profile/profileStyles.ts · footMarkRuby': '✦ closing an Auteur’s file',

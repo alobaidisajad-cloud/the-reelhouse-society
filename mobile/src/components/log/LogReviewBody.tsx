@@ -1,21 +1,29 @@
-
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { Sparkles } from 'lucide-react-native';
-import { colors } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import { extractDropCap, stripHTML, isRTLText, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
-import { s } from '@/src/components/log/logDetailStyles';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
 import VaultNote from '@/src/components/log/VaultNote';
-import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
+import { PageSection } from '@/src/components/log/PageSection';
+import { scaledTextProps } from '@/src/constants/textScaling';
 import { TryAgainLine } from '@/src/components/TryAgain';
+import { balancedWidth } from '@/src/components/lobby/measure';
+import { useTextScale } from '@/src/hooks/useTextScale';
+import { useColumnWidth } from '@/src/components/layout/navMetrics';
+import { PAGE } from '@/src/components/log/pageMetrics';
 
+/**
+ * The words of the opened log: the pull-quote as a title card, the essay in paragraphs with the
+ * record's raised initial, and, for its author alone, the Vault's note about this viewing on its
+ * own paper.
+ */
 interface LogReviewBodyProps {
   review?: string | null;
   pullQuote?: string | null;
   dropCap?: boolean;
-  isAuteur: boolean;
+  /** The rank's ink: the raised initial's. */
+  accent: string;
   isOwner: boolean;
   isSpoiler?: boolean;
   /**
@@ -34,103 +42,92 @@ interface LogReviewBodyProps {
   onRereadNote?: () => void;
 }
 
+const QUOTE = { size: 19, line: 27, padX: 22 } as const;
+
 export default function LogReviewBody({
-  review,
-  pullQuote,
-  dropCap,
-  isAuteur,
-  isOwner,
-  isSpoiler,
-  note,
-  onOpenNote,
-  noteUnreachable = false,
-  onRereadNote,
+  review, pullQuote, dropCap, accent, isOwner, isSpoiler, note, onOpenNote, noteUnreachable = false, onRereadNote,
 }: LogReviewBodyProps) {
-  // A rating-only log with no quote, no essay and no note draws nothing: this
-  // section's own margins (24 above, 16 below) would leave a hole under the
-  // filing mark. Nothing to say, nothing to occupy.
+  const scale = useTextScale();
+  const column = useColumnWidth();
+  const cleanReview = stripHTML(review ?? '');
+  const quote = pullQuote?.trim() || null;
   const vaultUnread = isOwner && !note && noteUnreachable;
-  const hasBody = !!pullQuote || !!stripHTML(review ?? '') || !!(isOwner && note) || vaultUnread;
-  if (!hasBody) return null;
+  // A rating-only log with no quote, no essay and no note draws nothing.
+  if (!quote && !cleanReview && !(isOwner && note) && !vaultUnread) return null;
+
+  // Set the essay as paragraphs, the raised initial on the first only.
+  const split = cleanReview.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const paragraphs = split.length ? split : cleanReview ? [cleanReview] : [];
+  // The member's own writing direction, read from the text: iOS gives an Arabic essay the
+  // device's left-to-right base otherwise, and drops each full stop at the far left.
+  const rtl = isRTLText(cleanReview);
+  // No raised initial on a joined script: a letter lifted out of an Arabic word breaks the word.
+  const dc = dropCap && !rtl && paragraphs[0] ? extractDropCap(paragraphs[0]) : null;
+  const quoteWidth = quote
+    ? balancedWidth(`${OPEN_QUOTE}${quote}${CLOSE_QUOTE}`, 'spectralItalic', QUOTE.size, scale, column - PAGE.pad * 2 - QUOTE.padX * 2)
+    : 0;
 
   return (
-    <View style={s.reviewSection}>
+    <View>
+      {/* Veiled where it was filed with spoilers; its author always reads their own. */}
+      {quote || paragraphs.length ? (
+        <SpoilerVeil isSpoiler={isSpoiler} bypass={isOwner} leader>
+          {quote ? (
+            <View style={st.intertitle}>
+              <View style={st.intertitleRule} pointerEvents="none" />
+              <Text style={[st.quote, { width: quoteWidth }, isRTLText(quote) && st.rtl]} {...scaledTextProps}>{OPEN_QUOTE}{quote}{CLOSE_QUOTE}</Text>
+            </View>
+          ) : null}
+          {paragraphs.length ? (
+            <View style={st.words}>
+              {paragraphs.map((para, i) => {
+                const spaced = i < paragraphs.length - 1 && st.spaced;
+                if (i === 0 && dc && dc.first) {
+                  return (
+                    // The initial is an ornament, never grown; the paragraph grows as every other does.
+                    <Text key={i} style={[st.paragraph, spaced]} {...scaledTextProps}>
+                      <Text style={[st.initial, { color: accent }]} allowFontScaling={false}>{dc.first}</Text>{dc.rest}
+                    </Text>
+                  );
+                }
+                return <Text key={i} style={[st.paragraph, spaced, rtl && st.rtl]} {...scaledTextProps}>{para}</Text>;
+              })}
+            </View>
+          ) : null}
+        </SpoilerVeil>
+      ) : null}
 
-      {/* COMP-SPOILER-1: veil the critique when flagged; the author always sees their own. */}
-      <SpoilerVeil isSpoiler={isSpoiler} bypass={isOwner}>
-
-      {pullQuote && (
-        <View style={s.featuredQuoteWrap}>
-           {/* Ornamental divider */}
-           <View style={s.ornamentalRow}>
-             <View style={s.ornamentalLine} />
-             <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} style={s.ornamentalStar} />
-             <View style={s.ornamentalLine} />
-           </View>
-           <Text style={[s.featuredQuote, isAuteur && s.featuredQuoteAuteur, isRTLText(pullQuote) && s.rtlText]} {...displayTextProps} adjustsFontSizeToFit numberOfLines={6} minimumFontScale={0.7}>{OPEN_QUOTE}{pullQuote}{CLOSE_QUOTE}</Text>
-           {/* Ornamental divider bottom */}
-           <View style={s.ornamentalRow}>
-             <View style={s.ornamentalLine} />
-             <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} style={s.ornamentalStar} />
-             <View style={s.ornamentalLine} />
-           </View>
-        </View>
-      )}
-
-      {review && (() => {
-        const cleanReview = stripHTML(review);
-        if (!cleanReview) return null;
-
-        // Set the essay as paragraphs — real rhythm at any length, drop cap on the first only.
-        const split = cleanReview.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
-        const paragraphs = split.length ? split : [cleanReview];
-
-        // The member's own writing direction, read from the text rather than
-        // the device's locale. Without it, iOS gives an Arabic essay a
-        // left-to-right base and drops each sentence's full stop at the far
-        // left of its line, away from the words it ends.
-        const rtl = isRTLText(cleanReview);
-        // No drop cap on a joined script: lifting the first letter out of an
-        // Arabic word leaves an isolated form and breaks the word behind it.
-        const dc = dropCap && !rtl ? extractDropCap(paragraphs[0]) : null;
-
-        return (
-          <View style={s.reviewBodyWrap}>
-            {paragraphs.map((para, i) => {
-              const spaced = i < paragraphs.length - 1;
-              if (i === 0 && dc && dc.first) {
-                return (
-                  // Same cap as every other paragraph below. Without it the
-                  // opening paragraph of an essay grew while the rest held, and
-                  // one essay read at two sizes. The initial itself opts out
-                  // separately — it is an ornament, not reading text.
-                  <Text key={i} style={[s.dropCapParagraph, spaced && s.reviewParagraphSpaced]} {...scaledTextProps}>
-                    <Text style={s.dropCapLetter} allowFontScaling={false}>{dc.first}</Text>{dc.rest}
-                  </Text>
-                );
-              }
-              return (
-                <Text key={i} style={[s.reviewParagraph, spaced && s.reviewParagraphSpaced, rtl && s.rtlText]} {...scaledTextProps}>
-                  {para}
-                </Text>
-              );
-            })}
+      {/* THE VAULT — the note about this viewing, its author's eyes only, outside the veil: a
+          member is never veiled from their own writing, and a note is not the critique. */}
+      {isOwner && !!note ? (
+        <PageSection title="THE VAULT · ONLY YOU">
+          <VaultNote note={note} onOpen={onOpenNote} paper />
+        </PageSection>
+      ) : null}
+      {vaultUnread ? (
+        <PageSection title="THE VAULT · ONLY YOU">
+          <View style={st.vaultUnread}>
+            <Text style={st.vaultUnreadText} {...scaledTextProps}>The Vault could not be opened.</Text>
+            {onRereadNote ? <TryAgainLine onPress={onRereadNote} what="open the Vault" /> : null}
           </View>
-        );
-      })()}
-
-      </SpoilerVeil>
-
-      {/* THE VAULT — the note about this viewing. The owner's eyes only, and
-          outside the spoiler veil: a member is never veiled from their own
-          writing, and a note is not part of the critique others read. */}
-      {isOwner && !!note && <VaultNote note={note} onOpen={onOpenNote} />}
-      {vaultUnread && (
-        <View style={s.vaultUnread}>
-          <Text style={s.vaultUnreadText} {...scaledTextProps}>The Vault could not be opened.</Text>
-          {onRereadNote ? <TryAgainLine onPress={onRereadNote} what="open the Vault" /> : null}
-        </View>
-      )}
+        </PageSection>
+      ) : null}
     </View>
   );
 }
+
+const st = StyleSheet.create({
+  intertitle: {
+    marginTop: 22, backgroundColor: colors.inkwell, borderRadius: 3,
+    paddingTop: 20, paddingBottom: 18, paddingHorizontal: QUOTE.padX, alignItems: 'center',
+  },
+  intertitleRule: { position: 'absolute', top: 3, left: 3, right: 3, bottom: 3, borderWidth: 1, borderColor: colors.sepiaBorderStrong, borderRadius: 2 },
+  quote: { fontFamily: fonts.serifItalic, fontSize: QUOTE.size, lineHeight: QUOTE.line, color: colors.silverScreen, textAlign: 'center' },
+  words: { marginTop: 18 },
+  paragraph: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, color: colors.parchment },
+  spaced: { marginBottom: 14 },
+  initial: { fontFamily: fonts.display, fontSize: 44, lineHeight: 39 },
+  rtl: { writingDirection: 'rtl', textAlign: 'right' },
+  vaultUnread: { marginTop: 10, gap: 4 },
+  vaultUnreadText: { fontFamily: fonts.bodyItalic, fontSize: 13, lineHeight: 19, color: colors.fog },
+});
