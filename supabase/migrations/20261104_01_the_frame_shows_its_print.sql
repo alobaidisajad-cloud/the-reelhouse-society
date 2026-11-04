@@ -23,7 +23,7 @@
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
--- add-only (3): it only widens: get_community_feed_auth_cursor is made again in this transaction with its name, arguments and columns, two added at the end; the app reads its rows through a schema that drops keys it does not know (schemas/feed.schema.ts, in every shipped build), and the website does not call it. Replayed: the_frame_shows_its_print_rehearsal.sql reads both as a member and a visitor; the builds in members' hands against the train (e2e-old-clients.yml)
+-- add-only (3): it only widens: get_community_feed_auth_cursor is made again in this transaction with its name, arguments and columns, two added at the end; the app reads its rows through a schema that drops keys it does not know (schemas/feed.schema.ts, in every shipped build), and the website does not call it. Replayed: the_frame_shows_its_print_rehearsal.sql reads the house feed as a member and a visitor, the following feed as a follower; the builds in members' hands against the train (e2e-old-clients.yml)
 DROP FUNCTION public.get_community_feed_auth_cursor(integer, timestamp with time zone, uuid);
 CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean, certify_count integer, critique_count integer, certified boolean, alt_poster text, physical_media text)
     LANGUAGE sql STABLE
@@ -57,13 +57,13 @@ CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40
   LIMIT p_limit;
 $$;
 
--- add-only (3): it only restates: production's grants on get_community_feed_auth_cursor, exactly (a function made new is open to PUBLIC until this)
+-- add-only (3): it only restates: production's grants on get_community_feed_auth_cursor, exactly (a function made new is open to PUBLIC until this). Replayed: the_frame_shows_its_print_rehearsal.sql calls it as a member and as a visitor after them
 REVOKE ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO service_role;
 
--- add-only (3): it only widens: get_following_feed_auth_cursor is made again in this transaction with its name, arguments and columns, two added at the end; the app reads its rows through a schema that drops keys it does not know (schemas/feed.schema.ts, in every shipped build), and the website does not call it. Replayed: the_frame_shows_its_print_rehearsal.sql reads both as a member and a visitor; the builds in members' hands against the train (e2e-old-clients.yml)
+-- add-only (3): it only widens: get_following_feed_auth_cursor is made again in this transaction with its name, arguments and columns, two added at the end; the app reads its rows through a schema that drops keys it does not know (schemas/feed.schema.ts, in every shipped build), and the website does not call it. Replayed: the_frame_shows_its_print_rehearsal.sql reads the house feed as a member and a visitor, the following feed as a follower; the builds in members' hands against the train (e2e-old-clients.yml)
 DROP FUNCTION public.get_following_feed_auth_cursor(integer, timestamp with time zone, uuid);
 CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean, certify_count integer, critique_count integer, certified boolean, alt_poster text, physical_media text)
     LANGUAGE sql STABLE SECURITY DEFINER
@@ -114,7 +114,7 @@ CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40
   ORDER BY pg.created_at DESC, pg.id DESC;
 $$;
 
--- add-only (3): it only restates: production's grants on get_following_feed_auth_cursor, exactly (a function made new is open to PUBLIC until this)
+-- add-only (3): it only restates: production's grants on get_following_feed_auth_cursor, exactly (a function made new is open to PUBLIC until this). Replayed: the_frame_shows_its_print_rehearsal.sql calls it as a follower after them
 REVOKE ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO authenticated;
