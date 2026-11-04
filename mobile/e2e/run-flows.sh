@@ -426,11 +426,21 @@ for probe in ${probes[@]+"${probes[@]}"}; do
       sleep 1
     done
     # Its window, there and drawn: on a first show the service says shown while the keyboard's own
-    # process is still starting (the tablet's first probe found no window a second later).
-    for _ in 1 2 3 4 5 6 7 8 9 10; do
-      timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$OUT/keyboard-room/$name.windows.txt"
-      node mobile/e2e/keyboard-room.mjs --top "$OUT/keyboard-room/$name.windows.txt" && break
-      sleep 1
+    # process is still starting (the tablet's first probe found no window a second later). On the
+    # tablet the keyboard's first show after its app is turned back on keeps its window gone for good
+    # (run 41906276106: mInputShown=true, the window GONE 10 s on; the second probe's drew at once),
+    # so the field is tapped once more, as a member taps a field whose keyboard did not come.
+    for tap in 1 2; do
+      shown=0
+      for _ in 1 2 3 4 5 6 7 8 9 10; do
+        timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$OUT/keyboard-room/$name.windows.txt"
+        node mobile/e2e/keyboard-room.mjs --top "$OUT/keyboard-room/$name.windows.txt" && { shown=1; break; }
+        sleep 1
+      done
+      { [ $shown -eq 1 ] || [ $tap -eq 2 ]; } && break
+      echo "$name: the keyboard's window did not come on the first tap: the field is tapped again" >> "$OUT/keyboard-room.txt"
+      rm -rf "$HOME/.maestro/sessions"
+      timeout 120 "$MAESTRO" test "$FLOWS/keyboard/$name.tap.yaml" >> "$OUT/keyboard-room/$name.log" 2>&1
     done
     sleep 1   # the keyboard's own entrance, so its frame is where it stops
     timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$OUT/keyboard-room/$name.windows.txt"
