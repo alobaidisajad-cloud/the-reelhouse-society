@@ -33,7 +33,7 @@ CREATE FUNCTION pg_temp.rh_id(p_what text) RETURNS uuid LANGUAGE sql AS $$ SELEC
 
 -- Nothing between the three but the reader's block of one of them.
 DELETE FROM public.user_blocks WHERE blocker_id IN (SELECT id FROM rh_who) AND blocked_id IN (SELECT id FROM rh_who);
-INSERT INTO public.user_blocks (blocker_id, blocked_id) VALUES (pg_temp.rh_id('the reader'), pg_temp.rh_id('the blocked'));
+INSERT INTO public.user_blocks (blocker_id, blocked_id, type) VALUES (pg_temp.rh_id('the reader'), pg_temp.rh_id('the blocked'), 'block');
 
 -- Three salons the host keeps and the reader does not sit in.
 CREATE TEMP TABLE rh_room (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
@@ -44,6 +44,8 @@ WITH made AS (
          ('rh quiet salon', pg_temp.rh_id('a host'), false)
   RETURNING id, name)
 INSERT INTO rh_room SELECT replace(replace(name, 'rh ', ''), ' salon', ''), id FROM made;
+-- Read as each asker, so a refusal is the function's own, never this table's.
+GRANT SELECT ON rh_room TO authenticated, anon;
 -- The open salon: the host spoke two hours ago, the blocked author an hour ago. The private
 -- salon: the host spoke three hours ago. The quiet salon: nothing.
 INSERT INTO public.lounge_messages (lounge_id, user_id, content, created_at) VALUES
