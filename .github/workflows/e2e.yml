@@ -703,6 +703,11 @@ jobs:
           # every run under `swangle_indirect`: ANGLE's GLES over SwiftShader's
           # Vulkan (omnesis-dev/Omnesis#200).
           emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          # A phone with no keyboard of keys, as a member's is: the tablet's profile declares one (a Pixel
+          # Tablet on its dock), and Android then keeps the keyboard on the screen away, whatever
+          # show_ime_with_hard_keyboard says (nightly runs 41618008309 and 41812368927: "NO KEYBOARD on
+          # screen", its window gone). Written after the AVD is made, before it starts.
+          pre-emulator-launch-script: f="$ANDROID_AVD_HOME/test.avd/config.ini"; sed -i '/^hw\.keyboard *=/d' "$f" && echo 'hw.keyboard=no' >> "$f" && grep '^hw\.keyboard' "$f"
           script: bash mobile/e2e/run-flows.sh
 
       # Only the flows this shard ran (run-flows.sh's flows-run.txt).
