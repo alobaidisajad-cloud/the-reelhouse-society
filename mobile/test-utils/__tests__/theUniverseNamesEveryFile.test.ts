@@ -89,7 +89,8 @@ describe('the route files, and what they reach', () => {
     expect(routes.filter((r) => !loaded.includes(r))).toEqual([]);
     // The pattern also takes the tests under app/; Metro leaves each of them
     // out of the bundle (aTestNeverShipsAsAScreen.guard.test.ts holds that).
-    expect(loaded.filter((r) => !routes.includes(r) && !aTest(r))).toEqual([]);
+    // And the native intent, loaded and called on each link, but no screen: it draws nothing.
+    expect(loaded.filter((r) => !routes.includes(r) && !aTest(r))).toEqual(['app/+native-intent.tsx']);
     expect(loaded.filter(aTest).length).toBeGreaterThan(10);
   });
 

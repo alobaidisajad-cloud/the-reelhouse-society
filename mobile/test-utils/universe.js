@@ -40,9 +40,10 @@ const ext = (...list) => (r) => list.includes(path.posix.extname(r));
  */
 const UNIVERSES = {
   routes: {
-    says: 'the route files: every file expo-router loads from app/, layouts included',
+    says: 'the route files: every file expo-router loads from app/ as a screen, layouts included',
     roots: ['mobile/app'],
-    keep: (r) => isCode(r) && !isTest(r),
+    // Not the native intent: expo-router calls it on each link that opens the app, and it draws nothing.
+    keep: (r) => isCode(r) && !isTest(r) && !/^mobile\/app\/\+native-intent\.[jt]sx?$/.test(r),
   },
   appCode: {
     says: 'the app: every source file under app/ and src/, and every code file a route reaches outside them',

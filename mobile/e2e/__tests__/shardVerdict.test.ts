@@ -69,6 +69,25 @@ it('says no to a learning screen no shard reported, naming it, and only in a who
   expect({ code: cut.code, problems: cut.problems }).toEqual({ code: 0, problems: [] });
 });
 
+it('asks a shipped client\'s run nothing of what its flows reach, and says so', () => {
+  writeFileSync(join(dir, 'learning.json'), JSON.stringify({ learning: { stack: '2026-11-05' } }));
+  const kept = [{ flows: ['a_flow', 'b_flow'], record: whole(['welcome']) }, { flows: ['c_flow'], record: whole(['lobby']) }];
+  kept.forEach((k, i) => shard(i + 1, k));
+  const run = (env: Record<string, string>) => spawnSync(process.execPath, [SCRIPT, join(dir, 'logs'), '--shards', '2', '--name', NAME,
+    '--ceilings', join(dir, 'ceilings.json'), '--flows', join(dir, 'flows'), '--learning', join(dir, 'learning.json')],
+    { encoding: 'utf8', env: { ...process.env, ...env } });
+  // This checkout's: the ceiling (film) and the learning screen (stack) no shard reported are said.
+  const own = run({ E2E_OLD_CLIENT: '' });
+  expect(own.stdout.split('\n').filter((l) => l.startsWith('✗ ')).length).toBe(2);
+  const shipped = run({ E2E_OLD_CLIENT: 'TestFlight build 41' });
+  expect(shipped.status).toBe(0);
+  expect(shipped.stdout).toContain('(what the flows reach is not judged for TestFlight build 41: its own flows, and only the screens its build marks)');
+  // The rest is judged as ever: a flow no shard ran still fails it.
+  writeFileSync(join(dir, 'flows', 'd_flow.yaml'), '');
+  const missing = run({ E2E_OLD_CLIENT: 'TestFlight build 41' });
+  expect(missing.stdout).toContain('✗ d_flow ran in no shard');
+});
+
 it('the workflow hands the verdict the learning file', () => {
   expect(readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8'))
     .toMatch(/shard-verdict\.mjs[^\n]*\n[^\n]*--learning mobile\/e2e\/screen-learning\.json/);

@@ -19,7 +19,11 @@
           "NSAllowsArbitraryLoads": false,
           "NSAllowsLocalNetworking": false
         }
-      }
+      },
+      "associatedDomains": [
+        "applinks:www.thereelhousesociety.com",
+        "webcredentials:www.thereelhousesociety.com"
+      ]
     },
     "android": {
       "package": "com.reelhouse.society",
@@ -37,6 +41,118 @@
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "pathPrefix": "/film/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "pathPrefix": "/log/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "pathPrefix": "/user/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "pathPrefix": "/lists/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "pathPrefix": "/stacks/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/lounge"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "pathPrefix": "/lounge/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "pathPrefix": "/person/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/dispatch"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/dispatch/compose"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/discover"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/darkroom"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/feed"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/year-in-cinema"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/patronage"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/society"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/membership"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/settings"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/edit-profile"
+            },
+            {
+              "scheme": "https",
+              "host": "www.thereelhousesociety.com",
+              "path": "/tribunal"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "web": {
@@ -83,6 +199,7 @@
       "./plugins/withHouseDialogs",
       "./plugins/withOneNdk",
       "./plugins/withGwpAsanOff",
+      "./plugins/withAssetStatements",
       "expo-font",
       [
         "@sentry/react-native",

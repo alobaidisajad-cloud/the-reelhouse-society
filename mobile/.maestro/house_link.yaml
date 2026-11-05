@@ -1,0 +1,38 @@
+appId: com.reelhouse.society
+---
+# A link to the house's website opens the app on its page (decision 9,
+# WORKLIST P4.20). Each address is opened with the app closed, as a tap in a
+# message opens it, the house's domain first marked verified for the app
+# (autoVerify: the sealed phone cannot reach the website's link file). Each
+# lands on the app's own page for it (src/linking/housePaths.json), waited for
+# until its content is in, never the Lobby: a film by its number, a member's
+# ledger by the website's name for it (diary), and the Darkroom by the
+# website's (discover). Android only: an iPhone simulator has no verified
+# domain without the live file.
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign_in.yaml
+- stopApp
+- openLink:
+    link: "https://www.thereelhousesociety.com/film/603"
+    autoVerify: true
+- extendedWaitUntil:
+    visible:
+      id: "screen-ready-film"
+    timeout: 30000
+- stopApp
+- openLink:
+    link: "https://www.thereelhousesociety.com/user/e2e_admin/diary"
+    autoVerify: true
+- extendedWaitUntil:
+    visible:
+      id: "screen-ready-member"
+    timeout: 30000
+- stopApp
+- openLink:
+    link: "https://www.thereelhousesociety.com/discover"
+    autoVerify: true
+- extendedWaitUntil:
+    visible:
+      id: "screen-ready-darkroom"
+    timeout: 30000

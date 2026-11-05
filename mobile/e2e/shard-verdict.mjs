@@ -17,6 +17,9 @@
  *     which, reached by no flow, would sit on its list until its days ran out. A shard
  *     cut short is failed by its own job, and this rule waits for a whole run,
  *     as screen-times' --complete does.
+ * A shipped client's run (E2E_OLD_CLIENT) is not asked what its flows reach: its
+ * tree has its own flows, its build marks only the screens it knew, and the
+ * ceilings and the learning list are this checkout's app's. The rest is judged.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -38,7 +41,7 @@ export function readShard(folder) {
 }
 
 /** The verdict on N shards' records: lines to print, and each problem in words. */
-export function judge(shards, { ceilings, flows, learning = {} }) {
+export function judge(shards, { ceilings, flows, learning = {}, shipped = null }) {
   const total = shards.length;
   const problems = [];
   const lines = [];
@@ -66,7 +69,9 @@ export function judge(shards, { ceilings, flows, learning = {} }) {
   }
 
   const whole = shards.every((s) => s.record?.complete === true);
-  if (whole) {
+  if (shipped) {
+    lines.push(`(what the flows reach is not judged for ${shipped}: its own flows, and only the screens its build marks)`);
+  } else if (whole) {
     const reported = new Set(shards.flatMap((s) => s.record.reported));
     for (const name of Object.keys(ceilings).sort()) {
       if (!reported.has(name)) problems.push(`${name} has a ceiling but no shard reported it: renamed, or no flow reaches it`);
@@ -101,7 +106,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const flows = readdirSync(flowsDir).filter((f) => f.endsWith('.yaml') && f !== 'config.yaml')
     .map((f) => f.replace(/\.yaml$/, '')).sort();
   const learning = learningFile ? JSON.parse(readFileSync(learningFile, 'utf8')).learning ?? {} : {};
-  const { lines, problems } = judge(shards, { ceilings: JSON.parse(readFileSync(ceilingsFile, 'utf8')), flows, learning });
+  const { lines, problems } = judge(shards, { ceilings: JSON.parse(readFileSync(ceilingsFile, 'utf8')), flows, learning,
+    shipped: process.env.E2E_OLD_CLIENT || null });
   console.log(lines.join('\n'));
   for (const p of problems) console.log(`✗ ${p}`);
   process.exit(problems.length ? 1 : 0);
