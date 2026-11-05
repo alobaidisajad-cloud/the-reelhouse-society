@@ -246,12 +246,12 @@ Decisions, as of 2026-09-28:
 | `e2e/__tests__/keyboardRoom.test.ts` | The flow runner, the keyboard flows and the app's code, for the ids a probe taps. |
 | `e2e/__tests__/prefetchDownloadOnly.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
 | `e2e/__tests__/runFlows.rehearsal.test.ts` | The flow runner, its screen ceilings and the state its own run wrote. |
-| `e2e/__tests__/screenTimes.test.ts` | The record its own run wrote, the flows the runner runs, and the screen-time history its ceilings are derived from. |
+| `e2e/__tests__/screenTimes.test.ts` | The record its own run wrote, the flows the runner runs, the screen-time history its ceilings are derived from, and every app file that marks a screen ready (useScreenReady's names). |
 | `e2e/__tests__/shardVerdict.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
 | `e2e/__tests__/shards.test.ts` | The shard map and the E2E workflow. |
 | `e2e/__tests__/flowHistory.test.ts` | The flow history, the shard map it must make, and the E2E workflow's limits around it. |
 | `e2e/__tests__/functionsWorld.test.ts` | Every deployed edge function's code, the sealed world's config.toml, the functions world's scripts and the DB workflow's functions job: each function served, loaded and asked, and each outside address it reads stood in for. No jest render reaches Deno code. |
-| `src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts` | APPLIED.txt, against the shared migration list, and resume.cjs's own text for how it finds the private folder: the record of what production has applied is a file, not a render. |
+| `src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts` | APPLIED.txt, against the shared migration list, and resume.cjs's own text for how it finds the private folder and which files its waiting lists are read from: the record of what production has applied is a file, not a render. |
 | `src/utils/__tests__/everySecretIsInventoried.test.ts` | Every functions tree, script, workflow, the schema snapshot and eas.json, for the names they read, against the inventory: which secret a file reads is spelled in the file. |
 | `src/utils/__tests__/everyEventIsAwaited.guard.test.ts` | Every test file, parsed, for each fireEvent, act and renderHook nobody waits for: a sweep of the tests themselves, which no render of a screen sees. |
 | `src/utils/__tests__/aFailedToolSaysWhy.guard.test.ts` | Every script that ships, for each run of another program: its answer heard, or why not named; each catch of a run or a fetch reporting the cause. |

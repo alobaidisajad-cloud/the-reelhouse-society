@@ -65,6 +65,7 @@ with the seeded member's password scrubbed out first (`e2e/scrub.mjs`).
 | `film_log.yaml` | abandoning a film with a reason |
 | `trailer.yaml` | a film's trailer opens, and YouTube's player says it is ready (no account) |
 | `browse_vault.yaml` | a member opens a room from their holdings |
+| `member_pages.yaml` | a member opens Settings, a log, a stack and a filing, each from where they find it, and each says its content is in (the speed gate times each) |
 | `lobby_wall_flow.yaml` | the Lobby's wall hangs for a member, whole, down to its sign-off |
 | `lounge_flow.yaml` | the Lounge's two doors: the visitor's gate, and the member's rope at ESTABLISH |
 | `offline_resilience.yaml` | a log made offline is queued, and sent on reconnect |

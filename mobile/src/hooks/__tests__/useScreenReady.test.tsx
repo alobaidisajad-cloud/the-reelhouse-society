@@ -124,4 +124,19 @@ describe('useScreenReady', () => {
     expect(style).toMatchObject({ position: 'absolute', width: 0, height: 0 });
     expect(holder.props.pointerEvents).toBe('none');
   });
+
+  it('draws the point a flow waits for once the content is in, and only then', () => {
+    const r = render(<Screen read="reading" />);
+    expect(r.queryByTestId('screen-ready-lobby')).toBeNull();
+    r.rerender(<Screen read="failed" />);
+    expect(r.queryByTestId('screen-ready-lobby')).toBeNull();
+    r.rerender(<Screen read="ready" />);
+    const point = r.getByTestId('screen-ready-lobby');
+    // A pixel out of the layout, never pressed, and kept as a view on Android.
+    expect(StyleSheet.flatten(point.props.style)).toEqual({ position: 'absolute', left: 0, top: 0, width: 1, height: 1 });
+    expect(point.props.pointerEvents).toBe('none');
+    expect(point.props.collapsable).toBe(false);
+    r.rerender(<Screen read="reading" />);
+    expect(r.queryByTestId('screen-ready-lobby')).toBeNull();
+  });
 });

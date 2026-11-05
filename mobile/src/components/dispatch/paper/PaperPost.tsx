@@ -456,7 +456,7 @@ const PostWords = memo(function PostWords({
               credit the film, the byline the member. Uncovering a spoiler and
               opening the filing are one act, one tap. */}
           <PressableScale
-            style={p.writingDoor} onPress={onOpen} haptic="selection" pressedScale={0.995}
+            style={p.writingDoor} onPress={onOpen} haptic="selection" pressedScale={0.995} testID="filing-words"
             // No sideways reach under the rank rule and the margin.
             hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
             accessibilityRole="button"

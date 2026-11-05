@@ -32,7 +32,11 @@ import type { AddressInfo } from 'net';
 
 const SCRIPT = join(__dirname, '..', 'run-flows.sh');
 const BASH = process.platform === 'win32' ? 'C:\\Program Files\\Git\\bin\\bash.exe' : 'bash';
-const SCREENS = Object.keys(JSON.parse(readFileSync(join(__dirname, '..', 'screen-ceilings.json'), 'utf8')));
+// Every screen a whole run must report: each with a ceiling, and each still learning one.
+const SCREENS = [
+  ...Object.keys(JSON.parse(readFileSync(join(__dirname, '..', 'screen-ceilings.json'), 'utf8'))),
+  ...Object.keys(JSON.parse(readFileSync(join(__dirname, '..', 'screen-learning.json'), 'utf8')).learning),
+];
 const posix = (p: string) => p.replace(/\\/g, '/');
 
 const ADB = `#!/usr/bin/env bash

@@ -119,6 +119,13 @@ describe('the committed map', () => {
     const firstRuns = (JSON.parse(readFileSync(join(E2E, 'shards.json'), 'utf8')) as { firstRuns?: Record<string, string> }).firstRuns ?? {};
     expect({ unmeasured, twice }).toEqual({ unmeasured: Object.keys(firstRuns).sort(), twice: [] });
     expect(Object.entries(firstRuns).filter(([, why]) => why.length < 30)).toEqual([]);
+    // And for two weeks at most, as a screen learns: three flows were weighed by the estimate for
+    // up to fifteen days with their runs in hand, because nothing asked for them.
+    const days = (why: string) => {
+      const on = /^New on (\d{4}-\d\d-\d\d) /.exec(why)?.[1];
+      return on ? (Date.now() - Date.parse(`${on}T00:00:00Z`)) / 86400000 : NaN;
+    };
+    expect(Object.entries(firstRuns).filter(([, why]) => !(days(why) >= 0 && days(why) <= 14))).toEqual([]);
   });
 
   it("fits inside the workflow: the flows step outlasts the longest shard's minutes and what follows the flows, the job outlasts the step and the emulator's start", () => {

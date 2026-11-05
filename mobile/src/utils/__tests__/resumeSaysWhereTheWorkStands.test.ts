@@ -14,6 +14,7 @@ const resume = require('../../../scripts/resume.cjs') as {
   nextOpen: (all: object[]) => { id: string }[];
   nightlySays: (runs: { conclusion: string; createdAt: string; databaseId: number }[]) => string;
   pending: () => string[];
+  waitingLists: (learning: Record<string, string>, firstRuns: Record<string, string>, today: string) => string;
   privateDir: (commonDir: string) => string;
   withHeader: (journal: string, header: string) => string;
 };
@@ -93,5 +94,26 @@ describe('the nightly', () => {
   it('reads the last night that finished, and says green plainly', () => {
     expect(resume.nightlySays([night('', 30), night('success', 29), night('failure', 28)])).toBe('The nightly: green on 2026-10-29.');
     expect(resume.nightlySays([night('', 30)])).toBe('The nightly: no night has finished yet.');
+  });
+});
+
+describe('the waiting lists', () => {
+  const firstRun = (on: string) => `New on ${on} (WORKLIST P0.112): weighed by the estimate until its first runs are added.`;
+
+  it('says each entry with its days left, and DUE in its last three', () => {
+    expect(resume.waitingLists({ stack: '2026-11-05', log: '2026-10-25' }, { member_pages: firstRun('2026-11-05') }, '2026-11-05').split('\n')).toEqual([
+      'The waiting lists:',
+      '  the stack screen learning: since 2026-11-05, 14 day(s) left; add its runs to e2e/screen-history.json and derive its ceilings',
+      '  DUE the log screen learning: since 2026-10-25, 3 day(s) left; add its runs to e2e/screen-history.json and derive its ceilings',
+      '  the member_pages flow on an estimate: since 2026-11-05, 14 day(s) left; node mobile/e2e/flow-history.mjs --add <run id>',
+    ]);
+    expect(resume.waitingLists({ stack: '2026-11-05' }, {}, '2026-11-19')).toContain('DUE the stack screen learning: since 2026-11-05, 0 day(s) left');
+  });
+
+  it('says so when both are empty, and is printed from the committed files', () => {
+    expect(resume.waitingLists({}, {}, '2026-11-05')).toBe('The waiting lists: empty.');
+    const src = readFileSync(join(MOBILE, 'scripts', 'resume.cjs'), 'utf8');
+    expect(src).toContain("readJson('screen-learning.json').learning");
+    expect(src).toContain("readJson('shards.json').firstRuns");
   });
 });

@@ -32,10 +32,13 @@ function shard(i: number, kept: Kept | undefined) {
   if (kept.record) writeFileSync(join(folder, 'screen-record.json'), typeof kept.record === 'string' ? kept.record : JSON.stringify(kept.record));
 }
 function verdict(...kept: (Kept | undefined)[]) {
+  return verdictWith([], ...kept);
+}
+function verdictWith(extra: string[], ...kept: (Kept | undefined)[]) {
   kept.forEach((k, i) => shard(i + 1, k));
   mkdirSync(join(dir, 'logs'), { recursive: true });
   const r = spawnSync(process.execPath, [SCRIPT, join(dir, 'logs'), '--shards', String(kept.length), '--name', NAME,
-    '--ceilings', join(dir, 'ceilings.json'), '--flows', join(dir, 'flows')], { encoding: 'utf8' });
+    '--ceilings', join(dir, 'ceilings.json'), '--flows', join(dir, 'flows'), ...extra], { encoding: 'utf8' });
   return { code: r.status, out: r.stdout, problems: r.stdout.split('\n').filter((l) => l.startsWith('✗ ')) };
 }
 const whole = (reported: string[]) => ({ complete: true, reported });
@@ -54,6 +57,21 @@ it('says no to a ceiling no shard reported, naming it', () => {
   const r = verdict({ flows: ['a_flow', 'b_flow'], record: whole(['welcome']) }, { flows: ['c_flow'], record: whole(['lobby']) });
   expect(r.code).toBe(1);
   expect(r.problems).toEqual(['✗ film has a ceiling but no shard reported it: renamed, or no flow reaches it']);
+});
+
+it('says no to a learning screen no shard reported, naming it, and only in a whole run', () => {
+  writeFileSync(join(dir, 'learning.json'), JSON.stringify({ learning: { stack: '2026-11-05', log: '2026-11-05' } }));
+  const learning = ['--learning', join(dir, 'learning.json')];
+  const r = verdictWith(learning, { flows: ['a_flow', 'b_flow'], record: whole(['welcome', 'film', 'log']) }, { flows: ['c_flow'], record: whole(['lobby']) });
+  expect(r.code).toBe(1);
+  expect(r.problems).toEqual(['✗ stack is learning but no shard reported it: no flow reaches it, so no run can give it a ceiling']);
+  const cut = verdictWith(learning, { flows: ['a_flow', 'b_flow'], record: whole(['welcome', 'film', 'lobby']) }, { flows: ['c_flow'], record: { complete: false, reported: [] } });
+  expect({ code: cut.code, problems: cut.problems }).toEqual({ code: 0, problems: [] });
+});
+
+it('the workflow hands the verdict the learning file', () => {
+  expect(readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8'))
+    .toMatch(/shard-verdict\.mjs[^\n]*\n[^\n]*--learning mobile\/e2e\/screen-learning\.json/);
 });
 
 it('leaves that rule to a whole run: a shard cut short fails its own job, and it is said here', () => {

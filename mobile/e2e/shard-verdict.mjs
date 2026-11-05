@@ -3,7 +3,7 @@
  * shard-verdict.mjs — what no one shard of the sealed E2E can judge alone.
  *
  *   node mobile/e2e/shard-verdict.mjs <logs dir> --shards <N> --name <folder, {i} for the shard>
- *        --ceilings <json> --flows <flows folder>
+ *        --ceilings <json> --flows <flows folder> [--learning <json>]
  *
  * e2e.yml runs the flows on N machines (e2e/shards.json), and each keeps its
  * logs in its own folder under <logs dir>. Each shard judges its own device:
@@ -13,8 +13,10 @@
  *   - every flow in the folder ran in exactly one shard;
  *   - when every shard ran every flow to its end, every screen with a ceiling
  *     reported in some shard: a ceiling no shard measured was renamed, or no
- *     flow reaches it any more. A shard cut short is failed by its own job,
- *     and this rule waits for a whole run, as screen-times' --complete does.
+ *     flow reaches it any more; and so did every screen the learning file names,
+ *     which, reached by no flow, would sit on its list until its days ran out. A shard
+ *     cut short is failed by its own job, and this rule waits for a whole run,
+ *     as screen-times' --complete does.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -36,7 +38,7 @@ export function readShard(folder) {
 }
 
 /** The verdict on N shards' records: lines to print, and each problem in words. */
-export function judge(shards, { ceilings, flows }) {
+export function judge(shards, { ceilings, flows, learning = {} }) {
   const total = shards.length;
   const problems = [];
   const lines = [];
@@ -69,6 +71,9 @@ export function judge(shards, { ceilings, flows }) {
     for (const name of Object.keys(ceilings).sort()) {
       if (!reported.has(name)) problems.push(`${name} has a ceiling but no shard reported it: renamed, or no flow reaches it`);
     }
+    for (const name of Object.keys(learning).sort()) {
+      if (!reported.has(name)) problems.push(`${name} is learning but no shard reported it: no flow reaches it, so no run can give it a ceiling`);
+    }
   } else {
     lines.push('(a ceiling no shard reported is not judged: a shard did not run every flow to its end)');
   }
@@ -85,16 +90,18 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const template = flag('--name');
   const ceilingsFile = flag('--ceilings');
   const flowsDir = flag('--flows');
+  const learningFile = flag('--learning');
   const dir = args[0];
   if (!dir || !Number.isInteger(total) || total < 1 || !template?.includes('{i}') || !ceilingsFile || !flowsDir) {
     console.error('usage: node mobile/e2e/shard-verdict.mjs <logs dir> --shards <N> --name <folder with {i}>'
-      + ' --ceilings <json> --flows <flows folder>');
+      + ' --ceilings <json> --flows <flows folder> [--learning <json>]');
     process.exit(2);
   }
   const shards = Array.from({ length: total }, (_, i) => readShard(join(dir, template.replace('{i}', String(i + 1)))));
   const flows = readdirSync(flowsDir).filter((f) => f.endsWith('.yaml') && f !== 'config.yaml')
     .map((f) => f.replace(/\.yaml$/, '')).sort();
-  const { lines, problems } = judge(shards, { ceilings: JSON.parse(readFileSync(ceilingsFile, 'utf8')), flows });
+  const learning = learningFile ? JSON.parse(readFileSync(learningFile, 'utf8')).learning ?? {} : {};
+  const { lines, problems } = judge(shards, { ceilings: JSON.parse(readFileSync(ceilingsFile, 'utf8')), flows, learning });
   console.log(lines.join('\n'));
   for (const p of problems) console.log(`✗ ${p}`);
   process.exit(problems.length ? 1 : 0);

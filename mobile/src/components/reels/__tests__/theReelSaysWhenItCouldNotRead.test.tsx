@@ -254,10 +254,11 @@ it('is lit by one lamp over its floor, and nothing on it moves on a loop', async
   };
   const room = find(r.toJSON());
   if (!room) throw new Error('the Reel was not drawn');
-  // (The screen's ready mark is drawn at no size, out of the layout: it paints nothing.)
+  // (The screen's ready mark is drawn at no size, out of the layout, and its point a pixel with
+  // no colour, for the flows: neither paints anything.)
   const painted = (room.children as Node[]).filter((c) => {
     const s = StyleSheet.flatten(c.props?.style) ?? {};
-    return !(s.width === 0 && s.height === 0);
+    return !(s.width === 0 && s.height === 0) && c.props?.testID !== 'screen-ready-reel';
   });
   expect(painted.map((c) => c.props?.testID ?? 'a layer with no name'))
     .toEqual(['room-light', 'reel-floor', 'reels-logs-layer', 'reels-stacks-layer']);

@@ -31,7 +31,8 @@
  *     date the file gives; past that, or with a ceiling of its own, the entry itself fails;
  *   - with --complete (every flow ran to its end), a ceiling's screen never
  *     reported: it was renamed, or no flow reaches it any more, so the list
- *     cannot rot into ceilings that measure nothing.
+ *     cannot rot into ceilings that measure nothing; nor a learning screen,
+ *     which, reached by no flow, would sit on its list until its days ran out.
  * Without one, it reports the times.
  *
  * With --record (one shard of e2e.yml's flows), the never-reported rule is
@@ -164,6 +165,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   if (ceilings && complete && !record) {
     for (const name of Object.keys(ceilings).sort()) {
       if (!times.has(name)) problems.push(`${name} has a ceiling but never reported: renamed, or no flow reaches it`);
+    }
+    for (const name of Object.keys(learning).sort()) {
+      if (!times.has(name)) problems.push(`${name} is learning but never reported: no flow reaches it, so no run can give it a ceiling`);
     }
   }
   const planted = screens.filter((s) => s.kind === 'failed' && !counts(s));

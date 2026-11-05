@@ -87,6 +87,26 @@ const nightlySays = (runs) => {
   return `The nightly: RED ${nights} night(s) running, last ${night}: read run ${last.databaseId} before anything else.`;
 };
 
+/**
+ * The E2E's two waiting lists, each entry with its days left: a screen learning before it is given
+ * ceilings (e2e/screen-learning.json), a flow weighed by an estimate until its runs are added
+ * (e2e/shards.json firstRuns). Both fail the suite after fourteen days; the speed gate's list was
+ * found on its last day with nothing gathered. Within three days an entry is DUE.
+ */
+const LIST_DAYS = 14;
+const waitingLists = (learning, firstRuns, today) => {
+  const left = (since) => LIST_DAYS - Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${since}T00:00:00Z`)) / 86400000);
+  const said = (what, since, todo) => {
+    const n = left(since);
+    return `  ${n <= 3 ? 'DUE ' : ''}${what}: since ${since}, ${n} day(s) left; ${todo}`;
+  };
+  const lines = [
+    ...Object.entries(learning).map(([name, since]) => said(`the ${name} screen learning`, since, 'add its runs to e2e/screen-history.json and derive its ceilings')),
+    ...Object.entries(firstRuns).map(([flow, why]) => said(`the ${flow} flow on an estimate`, (/^New on (\d{4}-\d\d-\d\d) /.exec(why) ?? [])[1] ?? today, 'node mobile/e2e/flow-history.mjs --add <run id>')),
+  ];
+  return `The waiting lists:${lines.length ? `\n${lines.join('\n')}` : ' empty.'}`;
+};
+
 if (require.main === module) {
   const today = new Date().toISOString().slice(0, 10);
   const head = git('rev-parse', 'HEAD');
@@ -122,6 +142,9 @@ if (require.main === module) {
     }
   }
 
+  const readJson = (file) => JSON.parse(readFileSync(join(MOBILE, 'e2e', file), 'utf8'));
+  console.log(`\n${waitingLists(readJson('screen-learning.json').learning ?? {}, readJson('shards.json').firstRuns ?? {}, today)}`);
+
   const all = classes();
   const open = nextOpen(all);
   console.log(`\nThe register: ${all.length} classes, ${open.length} not done. Next:`);
@@ -148,4 +171,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { HEADER_END, HEADER_START, headerFor, nextOpen, nightlySays, pending, privateDir, withHeader };
+module.exports = { HEADER_END, HEADER_START, headerFor, nextOpen, nightlySays, pending, privateDir, waitingLists, withHeader };

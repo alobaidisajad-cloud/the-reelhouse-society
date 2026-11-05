@@ -1,0 +1,81 @@
+appId: com.reelhouse.society
+---
+# The pages a member opens from a list (WORKLIST P0.112's main screens), each
+# reached as a member reaches it: Settings from their own file, a log from its
+# words on the Reel, a stack from the Reel's stacks, a filing from its words on
+# the Dispatch (the seed's own: e2e/db/seed.mjs). Each is waited for until its
+# content is in: the point useScreenReady draws then
+# (screen-ready-<name>), so the moment waited for is the moment the speed
+# gate times (e2e/screen-times.mjs).
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign_in.yaml
+# Settings: the file's own door, at its head (signing in left the file
+# scrolled to its holdings).
+- scrollUntilVisible:
+    element:
+      id: "profile-settings"
+    direction: UP
+    centerElement: true
+    timeout: 60000
+- tapOn:
+    id: "profile-settings"
+- extendedWaitUntil:
+    visible:
+      id: "screen-ready-settings"
+    timeout: 15000
+- back
+# A log: the Reel opens on its logs, and a log's words open it.
+- tapOn:
+    id: "reels-tab"
+- extendedWaitUntil:
+    visible:
+      id: "reel-log"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: "log-words"
+    direction: DOWN
+    centerElement: true
+    timeout: 60000
+- tapOn:
+    id: "log-words"
+- extendedWaitUntil:
+    visible:
+      id: "screen-ready-log"
+    timeout: 15000
+- back
+# A stack: the Reel's stacks are one over, at its head.
+- scrollUntilVisible:
+    element:
+      id: "reel-switch-stacks"
+    direction: UP
+    centerElement: true
+    timeout: 60000
+- tapOn:
+    id: "reel-switch-stacks"
+- extendedWaitUntil:
+    visible:
+      id: "reel-stack"
+    timeout: 15000
+- tapOn:
+    id: "reel-stack"
+- extendedWaitUntil:
+    visible:
+      id: "screen-ready-stack"
+    timeout: 15000
+- back
+# A filing: the Dispatch's writing is its door.
+- tapOn:
+    id: "dispatch-tab"
+- extendedWaitUntil:
+    visible:
+      id: "dispatch-filing"
+    timeout: 20000
+- tapOn:
+    id: "filing-words"
+- extendedWaitUntil:
+    visible:
+      id: "screen-ready-reader"
+    timeout: 15000
+- back

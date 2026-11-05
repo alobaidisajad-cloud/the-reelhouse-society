@@ -83,7 +83,7 @@ export const FrameWords = React.memo(function FrameWords({ item, inner, scale, a
   const words = (plan?.words ?? review.split(/\s+/).filter(Boolean).length);
   return (
     <SpoilerVeil isSpoiler={item.is_spoiler} revealKey={item.id} leader>
-      <PressableScale onPress={onPress} haptic="selection" pressedScale={0.99} style={st.words} hitSlop={null}
+      <PressableScale onPress={onPress} haptic="selection" pressedScale={0.99} style={st.words} hitSlop={null} testID="log-words"
         accessibilityLabel={`${spokenExcerpt(item.pull_quote, review)}${cut ? ` Read on, ${counted(words, 'word', 'words')}.` : ''}`}
         accessibilityHint="Opens the whole log">
         {quote ? (

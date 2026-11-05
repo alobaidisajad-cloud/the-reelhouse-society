@@ -12,7 +12,8 @@
  *
  * Called at the top of a screen, before any early return; the mark it returns
  * goes in every tree the screen can return, so the clock survives a loading
- * branch giving way to the page.
+ * branch giving way to the page. Once the content is in, the mark also draws an
+ * undrawn point, screen-ready-<name>: what a flow waits for is the moment timed.
  */
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -57,12 +58,19 @@ export function useScreenReady(name: string, read: ScreenRead): React.ReactEleme
     e2eTrace(read === 'ready' ? 'screen.ready' : 'screen.failed', { name, ms: Date.now() - startedAt.current });
   }, [read, name]);
   // Sentry is handed the moment the screen settled, a failed read too.
-  // Out of the layout: a screen's gaps and spacing never count it.
+  // Out of the layout: a screen's gaps and spacing never count it. The point is
+  // a pixel because the flows' driver does not see a view of no size.
   return (
-    <View style={s.out} pointerEvents="none">
-      <FullDisplay ready={ready} />
-    </View>
+    <>
+      <View style={s.out} pointerEvents="none">
+        <FullDisplay ready={ready} />
+      </View>
+      {read === 'ready' && <View testID={`screen-ready-${name}`} collapsable={false} pointerEvents="none" style={s.point} />}
+    </>
   );
 }
 
-const s = StyleSheet.create({ out: { position: 'absolute', width: 0, height: 0 } });
+const s = StyleSheet.create({
+  out: { position: 'absolute', width: 0, height: 0 },
+  point: { position: 'absolute', left: 0, top: 0, width: 1, height: 1 },
+});

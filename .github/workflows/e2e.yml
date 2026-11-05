@@ -889,7 +889,7 @@ jobs:
         run: |
           set +e
           node mobile/e2e/shard-verdict.mjs "$RUNNER_TEMP/shards" --shards 3 --name "e2e-logs-{i}${E2E_TAG}" \
-            --ceilings mobile/e2e/screen-ceilings.json --flows "$E2E_FLOWS" > "$RUNNER_TEMP/shard-verdict.txt" 2>&1
+            --ceilings mobile/e2e/screen-ceilings.json --learning mobile/e2e/screen-learning.json --flows "$E2E_FLOWS" > "$RUNNER_TEMP/shard-verdict.txt" 2>&1
           rc=$?
           cat "$RUNNER_TEMP/shard-verdict.txt"
           if [ $rc -eq 0 ]; then

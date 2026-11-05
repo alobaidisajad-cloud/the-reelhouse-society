@@ -1129,6 +1129,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   haptic
                   accessibilityRole="button"
                   accessibilityLabel="Open settings"
+                  testID="profile-settings"
                 >
                   <Settings size={15} color={colors.fog} strokeWidth={1.7} />
                 </PressableScale>
