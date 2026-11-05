@@ -223,3 +223,5 @@ society_report_system.sql
 20261028_02_a_row_is_dated_by_the_house.sql
 20261101_01_an_edit_keeps_what_changed_since.sql
 20261102_01_the_calendar_by_day.sql
+20261104_01_the_frame_shows_its_print.sql
+20261104_02_a_salons_last_word.sql

@@ -447,6 +447,7 @@ describe('Lists', () => {
                     { film_id: 7, film_title: 'Seven', poster_path: '/7.jpg', rank_position: 0 },
                     { film_id: 9, film_title: 'Nine', poster_path: null, rank_position: 1 },
                 ],
+                p_read_at: null,
             });
             expect(supabase.from).not.toHaveBeenCalled();
         });

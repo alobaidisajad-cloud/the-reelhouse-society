@@ -1731,7 +1731,7 @@ END $$;
 -- Name: get_community_feed_auth_cursor(integer, timestamp with time zone, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean, certify_count integer, critique_count integer, certified boolean)
+CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean, certify_count integer, critique_count integer, certified boolean, alt_poster text, physical_media text)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
@@ -1747,7 +1747,8 @@ CREATE FUNCTION public.get_community_feed_auth_cursor(p_limit integer DEFAULT 40
     (auth.uid() IS NOT NULL AND EXISTS (
       SELECT 1 FROM interactions im
        WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
-    )) AS certified
+    )) AS certified,
+    l.alt_poster, l.physical_media
   FROM logs l
   JOIN profiles p ON p.id = l.user_id
   LEFT JOIN log_counts c ON c.log_id = l.id
@@ -1853,7 +1854,7 @@ $$;
 -- Name: get_following_feed_auth_cursor(integer, timestamp with time zone, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean, certify_count integer, critique_count integer, certified boolean)
+CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40, p_cursor_created_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_cursor_id uuid DEFAULT NULL::uuid) RETURNS TABLE(id uuid, film_id integer, film_title text, poster_path text, rating numeric, review text, drop_cap boolean, status text, abandoned_reason text, created_at timestamp with time zone, year text, user_id uuid, username text, avatar_url text, role text, editorial_header text, pull_quote text, watched_with text, is_autopsied boolean, autopsy jsonb, is_spoiler boolean, certify_count integer, critique_count integer, certified boolean, alt_poster text, physical_media text)
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
@@ -1893,7 +1894,8 @@ CREATE FUNCTION public.get_following_feed_auth_cursor(p_limit integer DEFAULT 40
     EXISTS (
       SELECT 1 FROM public.interactions im
        WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
-    ) AS certified
+    ) AS certified,
+    l.alt_poster, l.physical_media
   FROM page pg
   JOIN public.logs l ON l.id = pg.id
   JOIN public.profiles p ON p.id = l.user_id
@@ -2311,6 +2313,30 @@ BEGIN
     'route', v_route
   );
 END;
+$$;
+
+
+--
+-- Name: get_salon_last_words(uuid[]); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_salon_last_words(p_lounge_ids uuid[]) RETURNS TABLE(lounge_id uuid, last_message_at timestamp with time zone)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  WITH me AS (SELECT auth.uid() AS id, public.hidden_authors() AS hidden)
+  SELECT l.id, newest.created_at
+    FROM me
+    JOIN public.lounges l ON l.id = ANY (p_lounge_ids[1:100])
+    CROSS JOIN LATERAL (
+      SELECT m.created_at
+        FROM public.lounge_messages m
+       WHERE m.lounge_id = l.id
+         AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+       ORDER BY m.created_at DESC, m.id DESC
+       LIMIT 1
+    ) newest
+   WHERE me.id IS NOT NULL;
 $$;
 
 
@@ -10780,9 +10806,9 @@ GRANT ALL ON FUNCTION public.freeze_closed_ballots() TO service_role;
 --
 
 REVOKE ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO service_role;
 GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO authenticated;
-GRANT ALL ON FUNCTION public.get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO service_role;
 
 
 --
@@ -10808,9 +10834,9 @@ GRANT ALL ON FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text, p
 --
 
 REVOKE ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO service_role;
 GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO authenticated;
-GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid) TO service_role;
 
 
 --
@@ -10877,6 +10903,15 @@ GRANT ALL ON FUNCTION public.get_public_profile_analytics(p_user_id uuid) TO ser
 REVOKE ALL ON FUNCTION public.get_report_evidence(p_report_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_report_evidence(p_report_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_report_evidence(p_report_id uuid) TO service_role;
+
+
+--
+-- Name: FUNCTION get_salon_last_words(p_lounge_ids uuid[]); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.get_salon_last_words(p_lounge_ids uuid[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_salon_last_words(p_lounge_ids uuid[]) TO service_role;
+GRANT ALL ON FUNCTION public.get_salon_last_words(p_lounge_ids uuid[]) TO authenticated;
 
 
 --

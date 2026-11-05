@@ -122,14 +122,14 @@ describe('a stack edited offline', () => {
     });
     expect(rpcs).toStrictEqual([['save_stack', {
       p_id: LIST, p_title: 't'.repeat(100), p_description: 'd'.repeat(1000),
-      p_is_private: false, p_is_ranked: true, p_films: SAVED_FILMS,
+      p_is_private: false, p_is_ranked: true, p_films: SAVED_FILMS, p_read_at: null,
     }]]);
   });
 
   it('sends everything the edit does not name as unchanged', async () => {
     await replay('update_list', { list_id: LIST, user_id: ME, updates: {} });
     expect(rpcs).toStrictEqual([['save_stack', {
-      p_id: LIST, p_title: null, p_description: null, p_is_private: null, p_is_ranked: null, p_films: null,
+      p_id: LIST, p_title: null, p_description: null, p_is_private: null, p_is_ranked: null, p_films: null, p_read_at: null,
     }]]);
   });
 });

@@ -125,12 +125,13 @@ it('keeps the newer time on an edit left waiting when the send stops after the f
   expect(getOfflineQueue().map((m) => m.payload.read_at)).toEqual(['2026-11-01T12:00:01.000000+00:00']);
 });
 
-it('sends no time when the edit carries none, as an older build\'s does', async () => {
+it('sends no time when the edit carries none, as an older build\'s does, and it is saved', async () => {
   enqueueMutation({ type: 'update_list', payload: { list_id: STACK, user_id: ME, updates: { title: 'Renamed' } } } as Omit<QueuedMutation, 'id' | 'timestamp' | 'owner'>);
   await flushOfflineQueue();
   expect(asked).toHaveLength(1);
-  expect(asked[0]?.p_read_at).toBeUndefined();
-  expect(JSON.parse(JSON.stringify(asked[0]))).not.toHaveProperty('p_read_at');
+  // Named, and null: save_stack compares nothing then, and the call stays readable to check:backend.
+  expect(asked[0]).toHaveProperty('p_read_at', null);
+  expect(getOfflineQueue()).toEqual([]);
 });
 
 it('names a stack edit\'s row by its stack, and no other write\'s', () => {

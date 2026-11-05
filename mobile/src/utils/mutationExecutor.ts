@@ -481,8 +481,8 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             p_is_ranked: typeof u.is_ranked === 'boolean' ? u.is_ranked : null,
             p_films: stackFilms(films),
             // Refused (PT412) if the stack changed after the phone read it. Without a time (an edit
-            // queued by a build before stacks kept theirs) the call is the older one, saved as before.
-            ...(typeof read_at === 'string' ? { p_read_at: read_at } : {}),
+            // queued by a build before stacks kept theirs) nothing is compared: saved as before.
+            p_read_at: typeof read_at === 'string' ? read_at : null,
         }));
         const at = (data as { updated_at?: unknown } | null)?.updated_at;
         return typeof at === 'string' ? { readAt: { key: `list:${String(list_id)}`, at } } : {};

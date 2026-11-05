@@ -1,12 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_salons_last_word_rehearsal.sql — 20261104_02. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_salons_last_word_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_salons_last_word_rehearsal.sql
 --
--- With with_train set, 20261104_02 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up).
--- The Lounge's directory says when each salon's last word was said. A member
+-- 20261104_02 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml). The Lounge's directory says when each salon's last word was said. A member
 -- asks for three salons they do not sit in: an open one whose newest word is by
 -- an author they have blocked (its time is the newest word they may read), a
 -- private one, and one where nothing has been said (no answer for it). Only the
@@ -17,9 +15,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261104_02_a_salons_last_word.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

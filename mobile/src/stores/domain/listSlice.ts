@@ -293,8 +293,8 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                 p_films: inputFilms === undefined ? null : inputFilms.map((f, idx) => ({
                     film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster_path ?? f.poster ?? null, rank_position: idx,
                 })),
-                // Without a time (a stack not yet read with one) the call is the older one, saved as before.
-                ...(readWhen ? { p_read_at: readWhen } : {}),
+                // Without a time (a stack not yet read with one) nothing is compared: saved as before.
+                p_read_at: readWhen,
             });
             if (!stillSignedIn(user.id)) return;
             if (error) throw error;

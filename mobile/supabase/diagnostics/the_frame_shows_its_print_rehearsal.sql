@@ -1,12 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- the_frame_shows_its_print_rehearsal.sql — 20261104_01. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs the_frame_shows_its_print_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs the_frame_shows_its_print_rehearsal.sql
 --
--- With with_train set, 20261104_01 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up).
--- Both feeds give each log the poster its member chose and the format they saw
+-- 20261104_01 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml). Both feeds give each log the poster its member chose and the format they saw
 -- it on: the house feed to a member and to a visitor, the following feed to a
 -- follower; a log with neither gives neither. And what each reader is given is
 -- unchanged: a private member's log is not in a stranger's house feed, and is
@@ -17,9 +15,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261104_01_the_frame_shows_its_print.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
