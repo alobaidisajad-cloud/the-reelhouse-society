@@ -19,6 +19,7 @@ import { initialOf, isRTLText } from '@/src/utils/text';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Credit, UNINKED, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
 
 export interface Critique {
   id: string;
@@ -75,11 +76,13 @@ export interface Critique {
  * where a string cut in advance is only ever right at one.
  */
 export const CritiqueSpine = memo(function CritiqueSpine({
-  kind, opening, count, onTop, onBack, onMore,
+  kind, opening: written, count, onTop, onBack, onMore,
 }: {
   kind: string; opening: string; count: number;
   onTop?: () => void; onBack?: () => void; onMore?: () => void;
 }) {
+  // The filing's words, each slur struck for a reader who asked (StruckWords).
+  const opening = useStruck()(written);
   // The reader's head, on a pushed screen: it starts at the pushed header's top.
   const top = usePushedHeaderTop();
   return (
@@ -96,7 +99,7 @@ export const CritiqueSpine = memo(function CritiqueSpine({
         // Wide enough without one sideways: MORE beside it grows to 48 across the gap.
         hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
         accessibilityRole="button"
-        accessibilityLabel={`${nameOf(kind)}: ${opening}. Back to the top. ${counted(count ?? 0, 'critique', 'critiques')}.`}
+        accessibilityLabel={`${nameOf(kind)}: ${saidStruck(opening)}. Back to the top. ${counted(count ?? 0, 'critique', 'critiques')}.`}
       >
         <ChevronUp size={13} strokeWidth={2} color={colors.sepia} />
         <Text style={p.spineKind} {...deckLabelProps}>{nameOf(kind)}</Text>
@@ -166,6 +169,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
   onReport?: () => void;
 }) {
   const n = formatCount(c.certifyCount);
+  const struck = useStruck();
   // A member's certification of this critique not yet read: drawn as the outline before the ink.
   const markReading = !!onCertify && c.certifyKnown === false;
   return (
@@ -193,7 +197,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
           </View>
         ) : null}
 
-        <Text style={[p.commentBody, isRTLText(c.body) && p.rtlText]} {...scaledTextProps}>{softBreak(c.body)}</Text>
+        <Text style={[p.commentBody, isRTLText(c.body) && p.rtlText]} {...scaledTextProps}>{softBreak(struck(c.body))}</Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <PressableScale room

@@ -269,13 +269,29 @@ describe('the house says why', () => {
       await useLoungeStore.getState().toggleReaction(M1, 'bravo' as never);
       expect(toastTexts()).toEqual(['The Lounge is an Archivist feature']);
       // And the optimistic mark is still taken back.
-      expect(useLoungeStore.getState().currentMessages[0].reactions ?? []).toHaveLength(0);
+      expect(useLoungeStore.getState().currentMessages[0]?.reactions ?? []).toHaveLength(0);
     });
 
     it('any other failure keeps its quiet revert', async () => {
       useLoungeStore.setState({ currentMessages: [{ ...failedMessage(), status: 'sent' }] } as never);
       result = { data: null, error: { code: '57014', message: 'timeout' } };
       await useLoungeStore.getState().toggleReaction(M1, 'bravo' as never);
+      expect(toastTexts()).toEqual([]);
+    });
+
+    // P4.13: the house took the mark and the answer was lost on the way back.
+    it.each([
+      ['the house holds it', [{ reaction: 'bravo' }], 1],
+      ['the house does not', [], 0],
+    ])('a lost answer is read back: kept when %s', async (_when, held, marks) => {
+      useLoungeStore.setState({ currentMessages: [{ ...failedMessage(), status: 'sent' }] } as never);
+      const answers = [
+        { data: null, error: { message: 'TypeError: Network request failed' } },
+        { data: held, error: null },
+      ];
+      mockFrom.mockImplementation(() => { result = answers.shift() ?? result; return chain(); });
+      await useLoungeStore.getState().toggleReaction(M1, 'bravo' as never);
+      expect(useLoungeStore.getState().currentMessages[0]?.reactions ?? []).toHaveLength(marks);
       expect(toastTexts()).toEqual([]);
     });
   });

@@ -39,6 +39,7 @@ import { capMarkdownForRender, onMarkdownLinkPress } from '@/src/utils/markdownS
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { isRTLText } from '@/src/utils/text';
+import { useStruck } from '@/src/components/StruckWords';
 import {
   EssayBreak, EssayOpening, ESSAY_BODY,
 } from './paper/PaperEssay';
@@ -127,7 +128,10 @@ function plainTextOf(node: any): string | null {
   return inner.map((c: any) => c.content).join('');
 }
 
-export const EssayBody = memo(function EssayBody({ text }: { text: string }) {
+export const EssayBody = memo(function EssayBody({ text: written }: { text: string }) {
+  // Each slur struck before the words are read as markdown, so every paragraph, label and
+  // caption is struck alike, for a reader who asked (StruckWords).
+  const text = useStruck()(written);
   /**
    * The cap is applied ONCE per body rather than per render. It is a scan of up
    * to 25,000 characters, and this component re-renders whenever a critique

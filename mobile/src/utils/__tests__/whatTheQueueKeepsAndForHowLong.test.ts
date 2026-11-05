@@ -160,7 +160,7 @@ describe('the queue after a send', () => {
 
   it('puts day-old words after what the member has written in the box since, never over it', async () => {
     writeDraft(ME, 'critique', { body: 'Newer.' }, 'log:L');
-    put(QUEUE_KEY, [stored({ id: 'note', type: 'add_log_comment', payload: { log_id: 'L', user_id: ME, body: 'Older.' }, timestamp: NOW - 2 * DAY })]);
+    put(QUEUE_KEY, [stored({ id: 'note', type: 'add_log_comment', payload: { id: 'c-note', log_id: 'L', user_id: ME, body: 'Older.' }, timestamp: NOW - 2 * DAY })]);
 
     await flushOfflineQueue();
 
@@ -170,8 +170,8 @@ describe('the queue after a send', () => {
 
   it('gives day-old words back each to its own box: a salon message to its room, a stack\'s critique to its stack; and counts them', async () => {
     put(QUEUE_KEY, [
-      stored({ id: 'message', type: 'send_lounge_message', payload: { lounge_id: 'R', user_id: ME, content: 'Said late.' }, timestamp: NOW - 2 * DAY }),
-      stored({ id: 'stack', type: 'add_list_comment', payload: { list_id: 'S', user_id: ME, content: 'On the stack.' }, timestamp: NOW - 2 * DAY }),
+      stored({ id: 'message', type: 'send_lounge_message', payload: { id: 'm-late', lounge_id: 'R', user_id: ME, content: 'Said late.' }, timestamp: NOW - 2 * DAY }),
+      stored({ id: 'stack', type: 'add_list_comment', payload: { id: 'c-stack', list_id: 'S', user_id: ME, content: 'On the stack.' }, timestamp: NOW - 2 * DAY }),
     ]);
 
     await flushOfflineQueue();
@@ -183,7 +183,7 @@ describe('the queue after a send', () => {
   });
 
   it('sends day-old words a phone cannot keep a draft for, rather than drop them', async () => {
-    put(QUEUE_KEY, [stored({ id: 'message', type: 'send_lounge_message', payload: { lounge_id: 'R', user_id: ME, content: 'Still here.' }, timestamp: NOW - 2 * DAY })]);
+    put(QUEUE_KEY, [stored({ id: 'message', type: 'send_lounge_message', payload: { id: 'm-still', lounge_id: 'R', user_id: ME, content: 'Still here.' }, timestamp: NOW - 2 * DAY })]);
     // The draft alone refused (a keystore gone mid-run): the queue itself still reads its own list.
     const refused = jest.spyOn(jest.requireActual<typeof import('../memberDrafts')>('../memberDrafts'), 'writeDraft').mockReturnValue(false);
 

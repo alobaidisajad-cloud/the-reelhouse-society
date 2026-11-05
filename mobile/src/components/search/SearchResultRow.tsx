@@ -9,6 +9,7 @@ import PressableScale from '@/src/components/PressableScale';
 import type { SR } from '@/src/hooks/useUniversalSearch';
 import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { ReelRating } from '@/src/components/Decorative';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
 
 const TYPE_GLYPH: Record<string, string> = {
   film: '▶', actor: '◎', director: '✦', user: '◉', log: '✎', list: '☰',
@@ -42,7 +43,13 @@ export function resultLabel(item: SR): string {
   }
 }
 
-export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR; index: number; onPress: (r: SR) => void }) => {
+export const SearchResultRow = React.memo(({ item: found, index, onPress }: { item: SR; index: number; onPress: (r: SR) => void }) => {
+  // A member's words in a result (a log's excerpt, a stack's title and note, a member's name),
+  // each slur struck for a reader who asked (StruckWords); the catalogue's own words as they are.
+  const struck = useStruck();
+  const item: SR = found.type === 'log' ? { ...found, extra: struck(found.extra) }
+    : found.type === 'list' || found.type === 'user' ? { ...found, title: struck(found.title), subtitle: struck(found.subtitle) }
+    : found;
   const tc = TYPE_COLOR[item.type] || TYPE_COLOR.film;
   const isPerson = item.type === 'actor' || item.type === 'director' || item.type === 'user';
   // Arrives once, when the row is first made: a recycled row keeps its arrival, so a scroll
@@ -51,13 +58,13 @@ export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR;
     <Arrive name="search-row" duration={250} delay={Math.min(index * 25, 150)}>
       <PressableScale
         style={st.row}
-        onPress={() => onPress(item)}
+        onPress={() => onPress(found)}
         haptic="light"
         pressedScale={0.97}
         // A row is at least its poster's 56pt tall: no halo, or stacked rows take each other's taps.
         hitSlop={null}
         accessibilityRole="button"
-        accessibilityLabel={resultLabel(item)}
+        accessibilityLabel={saidStruck(resultLabel(item))}
         accessibilityHint="Double tap to view details"
       >
         <View style={[st.badge, { backgroundColor: tc.bg, borderColor: tc.border }]}>

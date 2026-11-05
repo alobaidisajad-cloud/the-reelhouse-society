@@ -31,6 +31,7 @@ import { truncateReview, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
 import { EDGE_LIT } from '@/src/theme/light';
 import { HOUSE_WEB } from '@/src/constants/support';
 import { RankBadge, type Rank } from '@/src/components/RankBadge';
+import { useStruck } from '@/src/components/StruckWords';
 
 export const NITRATE_CARD_WIDTH = 360;
 export const NITRATE_CARD_HEIGHT = 640;
@@ -80,8 +81,10 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
   const sealDrawn = () => setDrawn((d) => ({ ...d, seal: true }));
 
   const rating = data.rating ?? 0;
-  const pullQuote = data.pullQuote?.trim() || null;
-  const review = data.review ? truncateReview(stripHtml(data.review), 260) : null;
+  // The member's words as the reader reads them: each slur struck for one who asked (StruckWords).
+  const struck = useStruck();
+  const pullQuote = struck(data.pullQuote?.trim() || null);
+  const review = data.review ? truncateReview(struck(stripHtml(data.review)), 260) : null;
   // The critique zone's priority law: the author's own chosen line first.
   const critique = pullQuote ?? review;
   const critiqueIsQuote = !!pullQuote;

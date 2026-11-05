@@ -45,6 +45,8 @@ import { counted } from '@/src/utils/counted';
 import { hasPhysicalFormat } from '@/src/components/log/logRecord';
 
 import type { FeedItem } from '@/src/schemas/feed.schema';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
+import { STRUCK_OPENS } from '@/src/utils/slurs';
 export type { FeedItem };
 
 // The still spans the frame: 1074 pixels on a 3x screen, which a 780px image fills nearly whole.
@@ -65,13 +67,17 @@ const STOCK: Record<Rank, { accent: string; name: string }> = {
 export const FrameWords = React.memo(function FrameWords({ item, inner, scale, accent, onPress }: {
   item: FeedItem; inner: number; scale: number; accent: string; onPress: () => void;
 }) {
-  const review = useMemo(() => stripHTML(item.review ?? ''), [item.review]);
+  // Each slur struck before the lines are planned, for a reader who asked (StruckWords): the plan
+  // measures the words as they will be drawn.
+  const struck = useStruck();
+  const review = useMemo(() => struck(stripHTML(item.review ?? '')), [item.review, struck]);
   const rtl = useMemo(() => isRTLText(review), [review]);
   const quoteRtl = useMemo(() => isRTLText(item.pull_quote), [item.pull_quote]);
-  const quote = item.pull_quote?.trim() || null;
+  const quote = struck(item.pull_quote?.trim() || null);
   // A joined script's first letter cannot be lifted out: no drop cap, and the phone sets its lines.
-  // Any other is lifted as the record lifts it (planReview: extractDropCap), the whole letter.
-  const dropCap = !!item.drop_cap && !rtl;
+  // Any other is lifted as the record lifts it (planReview: extractDropCap), the whole letter; a
+  // review opening on a struck word has no letter of its own to lift.
+  const dropCap = !!item.drop_cap && !rtl && !review.startsWith(STRUCK_OPENS);
   const limit = quote ? FRAME.lines.underQuote : FRAME.lines.alone;
   const plan = useMemo(() => (review && !rtl ? planReview(review, { width: inner, scale, limit, dropCap }) : null), [review, rtl, inner, scale, limit, dropCap]);
   // Right-to-left writing is set in the phone's own face, which no table here measures: the phone
@@ -84,7 +90,7 @@ export const FrameWords = React.memo(function FrameWords({ item, inner, scale, a
   return (
     <SpoilerVeil isSpoiler={item.is_spoiler} revealKey={item.id} leader>
       <PressableScale onPress={onPress} haptic="selection" pressedScale={0.99} style={st.words} hitSlop={null} testID="log-words"
-        accessibilityLabel={`${spokenExcerpt(item.pull_quote, review)}${cut ? ` Read on, ${counted(words, 'word', 'words')}.` : ''}`}
+        accessibilityLabel={`${spokenExcerpt(saidStruck(quote), saidStruck(review))}${cut ? ` Read on, ${counted(words, 'word', 'words')}.` : ''}`}
         accessibilityHint="Opens the whole log">
         {quote ? (
           <View style={st.intertitle}>
@@ -135,6 +141,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, onFilmPress
   // The shared timeAgo: past a month it gives the date. Read from the shared clock.
   const relativeTime = useTimeAgo(item.created_at);
   const me = useAuthStore((s) => s.user?.id);
+  const struck = useStruck();
   const anothers = !!me && !!item.user_id && me !== item.user_id;
   const autopsy = (item.autopsy ?? undefined) as Record<string, number> | undefined;
   const scored = !!item.is_autopsied && hasRatedAutopsy(autopsy);
@@ -145,7 +152,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, onFilmPress
   const abandoned = item.status === 'abandoned';
   // The slate: who it was watched with (the name in parchment), the format, a rewatch.
   const slate = [
-    item.watched_with ? { key: 'with', word: 'WITH ', name: item.watched_with.toUpperCase() } : null,
+    item.watched_with ? { key: 'with', word: 'WITH ', name: struck(item.watched_with).toUpperCase() } : null,
     hasPhysicalFormat(item.physical_media) ? { key: 'format', word: (item.physical_media ?? '').trim().toUpperCase() } : null,
     item.status === 'rewatched' ? { key: 'rewatch', word: 'REWATCH' } : null,
   ].filter((x): x is { key: string; word: string; name?: string } => !!x);

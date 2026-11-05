@@ -31,6 +31,8 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   remove_endorsement: z.object({ user_id: z.string() }).passthrough(),
 
   // ── Logs ──
+  // No id required: a log is one per member and film (logs_user_id_film_id_key), so a replay
+  // lands on that key however it is named, and build 41 queues its logs by _tempId alone.
   mark_watched: z.object({ user_id: z.string(), film_id: z.number() }).passthrough(),
   add_log: z.object({ user_id: z.string(), film_id: z.number() }).passthrough(),
   update_log: z.object({ id: z.string() }).passthrough(),
@@ -43,7 +45,9 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   set_viewing_note: z.object({ log_id: z.string(), viewing_id: z.string(), notes: z.string() }).passthrough(),
   remove_viewing_note: z.object({ viewing_id: z.string() }).passthrough(),
 
-  add_log_comment: z.object({ log_id: z.string(), user_id: z.string(), body: z.string() }).passthrough(),
+  // A critique is keyed by the id the phone made, which build 41 sends too: one kept without it
+  // would be filed under a fresh id each time it went, so it is given back to its box instead.
+  add_log_comment: z.object({ id: z.string(), log_id: z.string(), user_id: z.string(), body: z.string() }).passthrough(),
   remove_log_comment: z.object({ comment_id: z.string(), user_id: z.string() }).passthrough(),
 
   // ── Profile ──
@@ -61,7 +65,7 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   add_list_items: z.object({ list_id: z.string() }).passthrough(),
   restore_list_items: z.object({ list_id: z.string() }).passthrough(),
   update_list: z.object({ list_id: z.string(), user_id: z.string() }).passthrough(),
-  add_list_comment: z.object({ list_id: z.string(), user_id: z.string(), content: z.string() }).passthrough(),
+  add_list_comment: z.object({ id: z.string(), list_id: z.string(), user_id: z.string(), content: z.string() }).passthrough(),
   remove_list_comment: z.object({ comment_id: z.string(), user_id: z.string() }).passthrough(),
 
   // ── Physical Archive (Vault) ──
@@ -76,7 +80,9 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   unfollow_user: z.object({ user_id: z.string() }).passthrough(),
 
   // ── Lounge ──
-  send_lounge_message: z.object({ lounge_id: z.string(), user_id: z.string(), content: z.string() }).passthrough(),
+  // Its id under either name: the live send's `id`, or the `_tempId` an older build kept.
+  send_lounge_message: z.object({ lounge_id: z.string(), user_id: z.string(), content: z.string() }).passthrough()
+    .refine((p) => typeof (p.id ?? p._tempId) === 'string', { message: 'the message carries no id' }),
   // No user_id: withdraw_lounge_message derives the caller from auth.uid() and
   // refuses anyone who is neither the author nor the lounge creator, so there is
   // nothing for a queued payload to assert (or spoof).

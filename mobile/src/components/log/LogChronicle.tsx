@@ -13,6 +13,7 @@ import { lineWidth } from '@/src/components/lobby/measure';
 import { useTextScale } from '@/src/hooks/useTextScale';
 import { useColumnWidth } from '@/src/components/layout/navMetrics';
 import { PAGE } from '@/src/components/log/pageMetrics';
+import { useStruck } from '@/src/components/StruckWords';
 
 /**
  * THE VIEWINGS: every time the film was watched, oldest first, this one last, as a strip of
@@ -72,6 +73,8 @@ function historyOf(raw: unknown): ViewingHistoryEntry[] {
 }
 
 export default function LogChronicle({ log, noteFor, onOpenNote }: LogChronicleProps) {
+  // A past viewing's words, each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
   const history = historyOf(log.viewing_history);
   const scale = useTextScale();
   const column = useColumnWidth();
@@ -125,9 +128,9 @@ export default function LogChronicle({ log, noteFor, onOpenNote }: LogChronicleP
             {pick.label}{dateParts(pick.date) ? <Text style={st.pastDate}>{`  · ${formatDate(pick.date)}`}</Text> : null}
           </Text>
           {pick.review ? (
-            <Text style={[st.pastWords, isRTLText(pick.review) && st.rtl]} {...scaledTextProps}>“{stripHTML(pick.review)}”</Text>
+            <Text style={[st.pastWords, isRTLText(pick.review) && st.rtl]} {...scaledTextProps}>“{struck(stripHTML(pick.review))}”</Text>
           ) : null}
-          {pick.watchedWith ? <Text style={st.pastWith} {...scaledTextProps}>WITH {pick.watchedWith.toUpperCase()}</Text> : null}
+          {pick.watchedWith ? <Text style={st.pastWith} {...scaledTextProps}>WITH {struck(pick.watchedWith).toUpperCase()}</Text> : null}
           {pick.note ? (
             <VaultNote note={pick.note} compact
               onOpen={onOpenNote && pick.viewingId ? () => onOpenNote({ viewingId: pick.viewingId as string, label: pick.label, isCurrent: false }) : undefined} />

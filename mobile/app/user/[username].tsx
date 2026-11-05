@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
 import AnimatedRN, { Easing, Extrapolation, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 
@@ -314,9 +315,12 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // THE PARTICULARS — the member's name block, set beside their portrait
   // ════════════════════════════════════════════════════════════
 
-  const heroName = String(
+  // The member's own words on their page (name, bio, link titles), each slur struck for a
+  // reader who asked (StruckWords); the handle is held to its own rules.
+  const struck = useStruck();
+  const heroName = struck(String(
     targetUser?.persona || (targetUser as any)?.display_name || targetUser?.username || 'unknown',
-  ).toUpperCase();
+  )).toUpperCase();
   const heroHandle = `@${(targetUser?.username || 'unknown').toUpperCase()}`;
 
   /** The handle's line, only when it is not the name again (no display name, or the same). */
@@ -329,7 +333,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const nameSize = heroNameSize(heroName, windowWidth, nameScale);
   const nameStyle = { fontSize: nameSize, lineHeight: Math.round(nameSize * 1.16), letterSpacing: nameSize >= 26 ? 1.4 : 1 };
 
-  const bioText = targetUser?.bio?.trim() || (isSelf ? 'No bio yet. Tell the society who you are.' : 'No bio on file.');
+  const bioText = struck(targetUser?.bio?.trim()) || (isSelf ? 'No bio yet. Tell the society who you are.' : 'No bio on file.');
   // Same reasoning as the name: fixed steps, and the longest bios get more
   // lines rather than smaller type.
   const bioSize = bioText.length <= 90 ? 12.5 : bioText.length <= 170 ? 11.5 : 10.5;
@@ -1089,10 +1093,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                     haptic
                     accessibilityRole="link"
-                    accessibilityLabel={`Open ${link.title || 'link'}`}
+                    accessibilityLabel={`Open ${saidStruck(struck(link.title)) || 'link'}`}
                   >
                     <Globe size={10} color={colors.fog} />
-                    <Text {...scaledTextProps} style={s.socialLinkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(link.title || '').toUpperCase()}</Text>
+                    <Text {...scaledTextProps} style={s.socialLinkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(struck(link.title) || '').toUpperCase()}</Text>
                   </PressableScale>
                 ))}
               </View>

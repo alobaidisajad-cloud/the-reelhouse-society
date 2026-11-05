@@ -31,6 +31,7 @@ import { balancedWidth, creditName, filmLine, nameLines, quoteSize, WALL, wholeN
 import { LOG_BILL, STACK_BILL } from './words';
 import type { WallLog, WallStack } from './wallRead';
 import { KeepOff } from './KeepOff';
+import { saidStruck } from '@/src/components/StruckWords';
 import { counted } from '@/src/utils/counted';
 
 /** Between the credit's name and its mark's line. */
@@ -135,7 +136,7 @@ export const LogBill = memo(function LogBill({ log, plan, scale, admin, creditLi
         pressedScale={0.985}
         haptic="selection"
         accessibilityRole="link"
-        accessibilityLabel={`Featured log by @${log.author.username}, on ${log.film.title}: ${log.words}. Read the log.`}
+        accessibilityLabel={`Featured log by @${log.author.username}, on ${log.film.title}: ${saidStruck(log.words)}. Read the log.`}
       >
         <QuoteMark size={52} color={colors.crimson} close={rtl} style={[s.quoteMark, rtl && s.quoteMarkRtl]} />
         <Text
@@ -209,7 +210,7 @@ export const StackBill = memo(function StackBill({ stack, plan, scale, admin, cr
           pressedScale={0.985}
           haptic="selection"
           accessibilityRole="link"
-          accessibilityLabel={`Featured stack: ${stack.title}, by @${stack.author.username}, ${counted(stack.films, 'film', 'films')}. Open the stack.`}
+          accessibilityLabel={`Featured stack: ${saidStruck(stack.title)}, by @${stack.author.username}, ${counted(stack.films, 'film', 'films')}. Open the stack.`}
         >
           {FAN.map((f, i) => {
             const p = order[i];
@@ -222,7 +223,7 @@ export const StackBill = memo(function StackBill({ stack, plan, scale, admin, cr
         </PressableScale>
         {/* a full finger on its own; the fan stands 8 above: half of that, and no more */}
         <PressableScale style={s.stackWords} hitSlop={{ top: 4 }} onPress={open} haptic="selection" accessibilityRole="link"
-          accessibilityLabel={`${stack.title}. See all ${counted(stack.films, 'film', 'films')}.`}>
+          accessibilityLabel={`${saidStruck(stack.title)}. See all ${counted(stack.films, 'film', 'films')}.`}>
           <Text numberOfLines={lines} maxFontSizeMultiplier={name.cap}
             style={[s.stackName, { fontSize: name.size, lineHeight: Math.round(name.size * 1.12) }]}>
             {stack.title}

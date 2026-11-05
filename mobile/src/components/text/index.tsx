@@ -46,6 +46,8 @@ import { cutOf, stillCut, type Box, type LaidLine } from '@/src/utils/cutText';
 import { E2E_BUILD, e2eTrace } from '@/src/utils/e2eTrace';
 import { boldFace, BoldTextContext } from '@/src/hooks/useBoldText';
 import { brighter, MoreContrastContext } from '@/src/hooks/useMoreContrast';
+import { STRUCK_CLOSES, STRUCK_OPENS, STRUCK_WORD } from '@/src/utils/slurs';
+import { colors } from '@/src/theme/theme';
 
 /** Props as the phone should receive them: the house ceiling unless the text sets its own, and iOS's spacing on Android. */
 function housed<P extends TextProps | TextInputProps>(props: P, scale: number): P {
@@ -137,6 +139,43 @@ function marksKeptIn(children: React.ReactNode): React.ReactNode {
   return children;
 }
 
+/** The house's brass, spaced as type is: a struck slur reads as ink on the page, never a gap in it. */
+const STRUCK_INK = { color: colors.sepia, letterSpacing: 0.6 } as const;
+
+/** A mark whose pair was cut away (a line planned through a struck word): never drawn. */
+const LONE_MARK = /[\uE000\uE001]/gu;
+
+/** Whether words hold a struck word's mark, whole or cut. */
+const hasMark = (words: string) => words.includes(STRUCK_OPENS) || words.includes(STRUCK_CLOSES);
+
+/** One string's struck slurs drawn in brass between the words around them; the string itself when none is. */
+function struckWords(words: string): React.ReactNode {
+  if (!hasMark(words)) return words;
+  const out: React.ReactNode[] = [];
+  let at = 0;
+  for (const m of words.matchAll(STRUCK_WORD)) {
+    if (m.index > at) out.push(words.slice(at, m.index).replace(LONE_MARK, ''));
+    out.push(<RNText key={`struck-${m.index}`} style={STRUCK_INK}>{m[1]}</RNText>);
+    at = m.index + m[0].length;
+  }
+  if (at < words.length) out.push(words.slice(at).replace(LONE_MARK, ''));
+  return out;
+}
+
+/**
+ * A Text's own strings with each slur a member asked to have struck (components/StruckWords)
+ * drawn in brass, the marks around it never drawn; the children themselves when none is.
+ */
+function struckIn(children: React.ReactNode): React.ReactNode {
+  if (typeof children === 'string') return struckWords(children);
+  if (Array.isArray(children) && children.some((c) => typeof c === 'string' && hasMark(c))) {
+    return children.map((c, i) => (typeof c === 'string' && hasMark(c)
+      ? <React.Fragment key={`struck-line-${i}`}>{struckWords(c)}</React.Fragment>
+      : c));
+  }
+  return children;
+}
+
 /** A Text's words as one string, through nested Texts; null if it holds anything else. */
 function wordsOf(children: React.ReactNode): string | null {
   if (children == null || typeof children === 'boolean') return '';
@@ -160,10 +199,13 @@ function wordsOf(children: React.ReactNode): string | null {
 function spoken(props: TextProps): Partial<TextProps> | null {
   if (props.accessibilityLabel != null || props.accessibilityElementsHidden != null
     || props.importantForAccessibility != null || props.accessible === false) return null;
-  const words = wordsOf(props.children);
-  if (!words) return null;
+  const held = wordsOf(props.children);
+  if (!held) return null;
+  // A struck slur is said as "struck", never as the x's it is drawn in (struckIn).
+  const struck = held.includes(STRUCK_OPENS);
+  const words = struck ? held.replace(STRUCK_WORD, 'struck') : held;
   const ornate = ORNAMENT.test(words);
-  if (!ornate && !ONLY_SEPARATORS.test(words)) return null;
+  if (!ornate && !ONLY_SEPARATORS.test(words)) return struck ? { accessibilityLabel: words } : null;
   const said = ornate ? words.replace(ORNAMENTS, '').replace(/\s+/g, ' ').trim() : '';
   if (!HAS_WORDS.test(said)) {
     return { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' };
@@ -291,7 +333,7 @@ export const Text = forwardRef<Text, TextProps>(function Text(props, ref) {
   const parentScales = useContext(ParentScales);
   const said = spoken(props);
   const asked = said ? { ...props, ...said } : props;
-  const kept = marksKeptIn(asked.children);
+  const kept = struckIn(marksKeptIn(asked.children));
   const plain = kept === asked.children ? asked : { ...asked, children: kept };
   const own = heightened(emboldened(plain, useContext(BoldTextContext) > 0), useContext(MoreContrastContext));
   const housedProps = nested ? nestedProps(own, parentScales, scale) : housed(own, scale);

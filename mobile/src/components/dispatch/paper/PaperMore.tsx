@@ -34,6 +34,7 @@ import { EDGE_LIT } from '@/src/theme/light';
 import { Arrive } from '@/src/components/Arrive';
 import { useModalTop, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
+import { useStruck } from '@/src/components/StruckWords';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
  * The brass ＋ opens this: five forms, each in its own ink, so the colour code is
@@ -553,7 +554,7 @@ const titleFace = (t: string) =>
     : { fontFamily: fonts.serifMedium, lead: 1.5 / 1.21 };
 
 export const DossierShareCard = memo(function DossierShareCard({
-  title, opening, author, filed, logo, width,
+  title: named, opening: written, author, filed, logo, width,
 }: {
   title: string; opening: string;
   /** Null once the member closed their account: the essay survives, the name does not. */
@@ -564,6 +565,10 @@ export const DossierShareCard = memo(function DossierShareCard({
   /** Undefined fills the parent; a number is for the story ground, which sizes it. */
   width?: number;
 }) {
+  // The essay as the reader reads it: each slur struck for one who asked (StruckWords).
+  const struck = useStruck();
+  const title = struck(named);
+  const opening = struck(written);
   const head = fitTitle(title);
   // The set width, as the ladder measures it, in any script.
   const room = openingRoom(visualLen(head), titleFace(head).lead);

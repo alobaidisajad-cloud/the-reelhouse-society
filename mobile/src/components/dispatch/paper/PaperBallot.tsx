@@ -11,6 +11,7 @@ import { isRTLText, RTL_MARK } from '@/src/utils/text';
 import { counted, NOT_SENT_LINE } from './paperText';
 import { BALLOT_PERCENT_FLOOR, UNSPOKEN } from './paperMetrics';
 import { PaperFill } from './PaperFill';
+import { useStruck } from '@/src/components/StruckWords';
 import { Byline, PaperActions, type PaperAuthor, type PaperFilm } from './PaperPost';
 
 export interface BallotOption extends PaperFilm { votes: number }
@@ -69,7 +70,7 @@ const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
  * and a closed ballot must not print the first while the second is true.
  */
 export const PaperBallot = memo(function PaperBallot({
-  question, author, options, myVote, closed, closesLabel, sealed = true,
+  question: asked, author, options, myVote, closed, closesLabel, sealed = true,
   certifyCount, commentCount, certified, saved, showKind = true, pending, docked,
   certifyKnown, saveKnown, voteKnown = true,
   onVote, onCertify, onCritique, onShare, onSave, onAuthor,
@@ -142,6 +143,8 @@ export const PaperBallot = memo(function PaperBallot({
    */
   const hasResult = closed && sealed;
 
+  // The member's question, each slur struck for a reader who asked (StruckWords).
+  const question = useStruck()(asked);
   /** The question is the member's own writing, so it sets its own direction. */
   const rtl = isRTLText(question);
   // A tie has no winner: crowning the first of the leaders named a film the

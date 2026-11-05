@@ -48,6 +48,7 @@ import {
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { useBottomEdge, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
@@ -123,6 +124,20 @@ export function shareOf(msg: LoungeMessage): { typeLabel: string; title: string 
 
 export const firstLink = (content: string | null | undefined) =>
   content?.match(URL_RE)?.[0]?.replace(/[.,;:!?)\]]+$/, '') ?? null;
+
+/**
+ * A message as it is drawn: its words, the words it answers and a shared title, each slur struck
+ * for a reader who asked (StruckWords); the message itself when nothing is.
+ */
+function struckMessage(msg: LoungeMessage, struck: ReturnType<typeof useStruck>): LoungeMessage {
+  const meta = (msg.metadata ?? null) as Record<string, unknown> | null;
+  const content = struck(msg.content);
+  const reply = struck(msg.reply_to_content);
+  const film = struck(msg.film_title);
+  const title = meta && typeof meta.title === 'string' ? struck(meta.title) : null;
+  if (content === msg.content && reply === msg.reply_to_content && film === msg.film_title && (!meta || title === meta.title)) return msg;
+  return { ...msg, content, reply_to_content: reply, film_title: film, ...(title !== null && meta ? { metadata: { ...meta, title } } : {}) } as LoungeMessage;
+}
 
 /** A message, as a screen reader hears it: what it answers, its words, what it shares. */
 export function spokenDispatch(msg: LoungeMessage): string {
@@ -254,6 +269,8 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, canReact, onLo
   onReactToggle: (messageId: string, reaction: string) => void;
   onRetry: (messageId: string) => void;
 }) => {
+  const struck = useStruck();
+  const shown = React.useMemo(() => struckMessage(msg, struck), [msg, struck]);
   const isWithdrawn = !!msg.deleted_at;
   const isSending = msg.status === 'sending';
   const isFailed = msg.status === 'failed';
@@ -305,7 +322,7 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, canReact, onLo
               // One element to a screen reader, whose long press and whose card
               // inside are out of its reach: they are offered as named actions.
               accessibilityRole="text"
-              accessibilityLabel={spokenDispatch(msg)}
+              accessibilityLabel={saidStruck(spokenDispatch(shown))}
               accessibilityActions={isSending || isFailed ? undefined : dispatchActions(msg)}
               onAccessibilityAction={(e) => {
                 const act = e.nativeEvent.actionName;
@@ -316,11 +333,11 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, canReact, onLo
               {Boolean(msg.reply_to_content) && (
                 <View style={s.replyQuote}>
                   <Text style={s.replyQuoteAuthor} numberOfLines={1}>{quotedName(msg.reply_to_username)}</Text>
-                  <Text style={s.replyQuoteContent} numberOfLines={2}>{msg.reply_to_content}</Text>
+                  <Text style={s.replyQuoteContent} numberOfLines={2}>{shown.reply_to_content}</Text>
                 </View>
               )}
-              {Boolean(msg.content) && <Text style={s.bodyText}>{renderBody(msg.content)}</Text>}
-              {msg.type !== 'text' && <SharedCard msg={msg} onOpen={onOpenShare} onLongPress={onLongPress} />}
+              {Boolean(msg.content) && <Text style={s.bodyText}>{renderBody(shown.content)}</Text>}
+              {msg.type !== 'text' && <SharedCard msg={shown} onOpen={onOpenShare} onLongPress={onLongPress} />}
             </PressableScale>
           )}
 
@@ -399,6 +416,8 @@ function LoungeRoomScreen({ id }: { id: string }) {
 
   // A message being written is kept until it is sent (useKeptWords); a sent one the store keeps.
   const [input, setInput, letGoOfInput] = useKeptWords(user?.id, 'salon', id ?? null);
+  // The room's name and the words being answered, each slur struck for a reader who asked.
+  const struckRoom = useStruck();
   const [replyTo, setReplyTo] = useState<LoungeMessage | null>(null);
   const [actionSheetMsg, setActionSheetMsg] = useState<LoungeMessage | null>(null);
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
@@ -691,7 +710,7 @@ function LoungeRoomScreen({ id }: { id: string }) {
 
         <View style={s.headerCenter}>
           <View style={s.headerCrest}><MasterLogo size={22} /></View>
-          <Text style={s.headerTitle} numberOfLines={1}>{activeLounge.name}</Text>
+          <Text style={s.headerTitle} numberOfLines={1}>{struckRoom(activeLounge.name)}</Text>
           <View style={s.headerMeta}>
             <Text style={s.headerMetaText} numberOfLines={1}>
               {counted(seated, 'MEMBER', 'MEMBERS')}
@@ -833,7 +852,7 @@ function LoungeRoomScreen({ id }: { id: string }) {
               enter={{ kind: 'FadeIn', duration: 200 }} exit={{ kind: 'FadeOut', duration: 150 }}>
               <View style={s.replyBannerCol}>
                 <Text style={s.replyBannerAuthor} numberOfLines={1}>Replying to {authorName(replyTo.user_id, replyTo.username)}</Text>
-                <Text style={s.replyBannerText} numberOfLines={1}>{replyTo.content || 'Shared content'}</Text>
+                <Text style={s.replyBannerText} numberOfLines={1}>{struckRoom(replyTo.content) || 'Shared content'}</Text>
               </View>
               <PressableScale touch="wayOut" onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button"
                 accessibilityLabel="Cancel the reply">
@@ -1004,15 +1023,17 @@ export function GateView({ gate, lounge, memberCount, onRequest, onRetry, pendin
   gate: RoomGate;
   lounge: LoungeRoom; memberCount: number; onRequest: () => void; onRetry: () => void; pending: boolean;
 }) {
+  // The room's name and description, each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
   return (
     <Arrive name="lounge-1" duration={400} style={s.gate}>
       <View style={s.gateCrest}><MasterLogo size={52} /></View>
-      <Text style={s.gateName}>{lounge.name}</Text>
+      <Text style={s.gateName}>{struck(lounge.name)}</Text>
       <View style={s.gatePrivateRow}>
         <Lock size={11} color={colors.sepia} strokeWidth={1.5} />
         <Text style={s.gatePrivateLabel}>PRIVATE SALON</Text>
       </View>
-      {!!lounge.description && <Text style={s.gateDesc}>{lounge.description}</Text>}
+      {!!lounge.description && <Text style={s.gateDesc}>{struck(lounge.description)}</Text>}
       <Text style={s.gateMembers}>{counted(memberCount, 'member', 'members')} behind the door</Text>
 
       {gate === 'request' && (

@@ -251,10 +251,13 @@ jobs:
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.anon.outputs.key }}
           SENTRY_DISABLE_AUTO_UPLOAD: 'true'
           EXPO_NO_TELEMETRY: '1'
+        # Gradle's wrapper, when its own copy is not cached, fetches it with 10 s to answer, and a
+        # runner's link can take longer: the build failed on the fetch, not on the app. Two minutes.
         run: |
           set +e
           {
             npx expo prebuild --platform android --no-install --clean \
+            && sed -i 's/^networkTimeout=.*/networkTimeout=120000/' android/gradle/wrapper/gradle-wrapper.properties \
             && grep -q 'android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml \
             && grep -A 2 -F 'super.onCreate(null)' android/app/src/main/java/com/reelhouse/society/MainActivity.kt \
                  | grep -q -F 'splashScreen.clearOnExitAnimationListener()' \

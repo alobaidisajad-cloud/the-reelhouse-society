@@ -21,6 +21,7 @@ import { PaperStrike } from './PaperStrike';
 import { softBreak, counted, NOT_SENT_LINE, WITHHELD_LINE } from './paperText';
 import { DEPARTED_NAME } from '@/src/constants/departed';
 import { initialOf, isRTLText, RTL_MARK } from '@/src/utils/text';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
 
 export type PaperKind = 'take' | 'seeking' | 'wire' | 'ballot' | 'dossier';
 export type PaperTier = 'free' | 'archivist' | 'auteur';
@@ -386,11 +387,17 @@ type PostWordsProps = Omit<PaperPostProps, 'ended' | 'docked' | 'certifyCount' |
  * (read after the page) redraw the bar alone.
  */
 const PostWords = memo(function PostWords({
-  kind, author, body, source, film, still, order, orderIs, measureWidth,
-  answer, answered, spoiler, withheld, edited, series, readTime, noByline, pending,
+  kind, author, body: written, source: sourced, film, still, order, orderIs, measureWidth,
+  answer, answered, spoiler: veiled, withheld, edited, series: seriesTitle, readTime, noByline, pending,
   onOpen, onFilm, onAuthor,
 }: PostWordsProps) {
   const tier = author?.tier ?? 'free';
+  // The member's words, each slur struck for a reader who asked (StruckWords); as written otherwise.
+  const struck = useStruck();
+  const body = struck(written);
+  const source = struck(sourced);
+  const spoiler = struck(veiled);
+  const series = struck(seriesTitle);
 
   // The member's words turn; the house's lead-in (`TAKE —`) stays left to right.
   const rtl = isRTLText(body);
@@ -462,8 +469,8 @@ const PostWords = memo(function PostWords({
             accessibilityRole="button"
             // Named by its writing, as it reads: "Open this filing" alone, twenty times down a
             // page, read a screen-reader member no word of any of them.
-            accessibilityLabel={spoiler ? `${spoiler}. Uncover it.`
-              : `${nameOf(kind)}: ${body}. Open this filing.`}
+            accessibilityLabel={spoiler ? `${saidStruck(spoiler)}. Uncover it.`
+              : `${nameOf(kind)}: ${saidStruck(body)}. Open this filing.`}
           >
           {spoiler ? (
             <View style={p.veil}>

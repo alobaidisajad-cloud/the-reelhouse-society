@@ -35,6 +35,8 @@ import SpoilerVeil from '@/src/components/SpoilerVeil';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
 import { EDGE_LIT } from '@/src/theme/light';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
+import { STRUCK_OPENS } from '@/src/utils/slurs';
 
 const INLINE_CLIPPINGS = 4;
 
@@ -66,12 +68,15 @@ interface FilmReviewsProps {
 }
 
 const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityReview }) {
-  const strippedReview = stripHtml(review.review ?? '');
+  // Each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
+  const strippedReview = struck(stripHtml(review.review ?? ''));
+  const pullQuote = struck(review.pull_quote);
   const { first: dropCapFirst, rest: dropCapRest } = extractDropCap(strippedReview);
   // No drop cap on a joined script: lifting the first letter out of an Arabic
   // word leaves an isolated form and breaks the word behind it.
   const rtl = isRTLText(strippedReview);
-  const dropCap = review.drop_cap && !rtl && !!dropCapFirst;
+  const dropCap = review.drop_cap && !rtl && !!dropCapFirst && !strippedReview.startsWith(STRUCK_OPENS);
 
   const isAuteur = isAuteurPlusTier(review.role);
   const isArchivist = isArchivistPlusTier(review.role) && !isAuteur;
@@ -120,12 +125,12 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
         <PressableScale
           onPress={handleOpenLog} pressedScale={0.99}
           // The critique itself, as the card draws it, then the door's own words.
-          accessibilityLabel={`${spokenExcerpt(review.pull_quote, strippedReview)} ${strippedReview.length > 250 ? 'Read full critique. ' : ''}Open log, by ${review.username ?? 'anonymous'}.`}
+          accessibilityLabel={`${spokenExcerpt(saidStruck(pullQuote), saidStruck(strippedReview))} ${strippedReview.length > 250 ? 'Read full critique. ' : ''}Open log, by ${review.username ?? 'anonymous'}.`}
         >
-          {review.pull_quote && (
+          {pullQuote && (
             <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isArchivist && s.pullQuoteWrapPremium]}>
               <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur]}>
-                {OPEN_QUOTE}{review.pull_quote}{CLOSE_QUOTE}
+                {OPEN_QUOTE}{pullQuote}{CLOSE_QUOTE}
               </Text>
             </View>
           )}

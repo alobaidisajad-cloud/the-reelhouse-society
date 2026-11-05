@@ -425,7 +425,9 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                 poster_path: newFilm.poster,
             }]);
             if (!stillSignedIn(startedAs)) return;
-            if (error) throw error;
+            // Already on the stack (added from another phone, or this copy was older): the
+            // stack's one-film-once key says so, and the film stays where it is shown.
+            if (error && error.code !== '23505') throw error;
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
         } catch (e: unknown) {
             if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.addFilmToList' });

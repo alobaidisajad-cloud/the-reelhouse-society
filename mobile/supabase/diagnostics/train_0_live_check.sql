@@ -26,7 +26,7 @@ WITH checks(what, expected, got) AS (
      OR has_table_privilege('anon', 'public.salon_typing_sent', 'SELECT'))::text
   UNION ALL
   SELECT 'members still open, join and set preferences; visitors still read counts', 'true',
-    (has_function_privilege('authenticated', 'public.create_lounge(text, text, boolean)', 'EXECUTE')
+    (has_function_privilege('authenticated', (SELECT p.oid FROM pg_proc p WHERE p.proname = 'create_lounge' AND p.pronamespace = 'public'::regnamespace), 'EXECUTE')
      AND has_function_privilege('authenticated', 'public.join_public_lounge(uuid)', 'EXECUTE')
      AND has_function_privilege('authenticated', 'public.update_my_preferences(jsonb)', 'EXECUTE')
      AND has_function_privilege('anon', 'public.get_profile_counts(uuid)', 'EXECUTE'))::text

@@ -15,6 +15,7 @@ import { r, roomTier, ROOM_INSET } from './roomStyles';
 import { scrollEndAbove } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
 
 /**
  * THE STACKS — bound volumes, not thumbnails: the one thing in these rooms a
@@ -55,6 +56,9 @@ interface ProfileListsTabProps {
 }
 
 const ProfileListCard = React.memo(({ list, edge }: { list: ProfileList, edge: string }) => {
+  // The curator's title and note, each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
+  const title = struck(list.title);
   const posters = (list.films || [])
     .filter((f: ProfileListFilm) => f.poster)
     .slice(0, 3)
@@ -71,7 +75,7 @@ const ProfileListCard = React.memo(({ list, edge }: { list: ProfileList, edge: s
       haptic
       accessibilityRole="button"
       accessibilityLabel={[
-        list.title ?? 'Untitled stack',
+        saidStruck(title) ?? 'Untitled stack',
         `${list.filmCount} ${list.filmCount === 1 ? 'film' : 'films'}`,
         list.isRanked ? 'ranked' : '',
         list.isPrivate ? 'private' : '',
@@ -109,9 +113,9 @@ const ProfileListCard = React.memo(({ list, edge }: { list: ProfileList, edge: s
             </View>
           )}
         </View>
-        <Text {...scaledTextProps} style={s.stackTitle} numberOfLines={2}>{(list.title || '').toUpperCase()}</Text>
+        <Text {...scaledTextProps} style={s.stackTitle} numberOfLines={2}>{(title || '').toUpperCase()}</Text>
         {list.description ? (
-          <Text {...scaledTextProps} style={s.stackDesc} numberOfLines={2}>{list.description}</Text>
+          <Text {...scaledTextProps} style={s.stackDesc} numberOfLines={2}>{struck(list.description)}</Text>
         ) : null}
       </View>
     </PressableScale>

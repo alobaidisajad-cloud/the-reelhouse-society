@@ -16,7 +16,7 @@
  * programme unreachable (the case says so), and a house with nothing yet to
  * feature (each bill says so, and opens the door to be the first).
  */
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import PressableScale from '@/src/components/PressableScale';
@@ -36,6 +36,21 @@ import { HouseLine } from './parts';
 import { pairCreditLines, planWall, WALL, type WallPlan } from './measure';
 import { SIGNOFF, STATES } from './words';
 import { PROGRAMME_KEY, WALL_KEY, editionDayOf, useFeature, useLobbyWall, useProgramme, type Wall } from './wallRead';
+import { useStruck } from '@/src/components/StruckWords';
+
+/**
+ * The wall as it is hung: each member's words on it (a log's, a stack's title and note, a
+ * filing's title and words) with each slur struck for a reader who asked (StruckWords), before
+ * any bill measures them; the wall itself when nothing is.
+ */
+function struckWall(wall: Wall, struck: ReturnType<typeof useStruck>): Wall {
+  const log = wall.log && { ...wall.log, words: struck(wall.log.words) };
+  const stack = wall.stack && { ...wall.stack, title: struck(wall.stack.title), description: struck(wall.stack.description) };
+  const filings = wall.filings.map((f) => ({ ...f, title: struck(f.title), text: struck(f.text) }));
+  const same = log?.words === wall.log?.words && stack?.title === wall.stack?.title && stack?.description === wall.stack?.description
+    && filings.every((f, i) => f.title === wall.filings[i]!.title && f.text === wall.filings[i]!.text);
+  return same ? wall : { ...wall, log, stack, filings };
+}
 
 /** The wall's shapes before anything has arrived: where each bill will hang, laid out as they will be, still. */
 const Skeleton = memo(function Skeleton({ plan }: { plan: WallPlan }) {
@@ -94,7 +109,8 @@ export const LobbyWall = memo(function LobbyWall() {
   const programmeDark = (programme.isError && !programme.data) || (programme.data !== undefined && !programme.data.feature);
   // the wall was read once and kept, and the last reading failed: say so, keep the wall
   const keptButStale = wall.isError && wall.data !== undefined;
-  const w = wall.data;
+  const struck = useStruck();
+  const w = useMemo(() => wall.data && struckWall(wall.data, struck), [wall.data, struck]);
   // the pair's two credit plates hold one count of name lines, so they stand as twins
   const creditLines = pairCreditLines([w?.log?.author.username, w?.stack?.author.username], plan.pair.room - WALL.creditPad * 2, scale);
 

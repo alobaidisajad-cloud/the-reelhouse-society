@@ -13,6 +13,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import React, { useCallback, useState } from 'react';
 import { Alert, InteractionManager, Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
+import { useStruck } from '@/src/components/StruckWords';
 import { ToastHost } from '@/src/components/ToastHost';
 import { leave, MS } from '@/src/theme/motion';
 import { Arrive } from '@/src/components/Arrive';
@@ -35,6 +36,8 @@ export interface LoungeSettingsPanelProps {
 
 export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator, onMembersChanged }: LoungeSettingsPanelProps) {
   const sheetFoot = useSheetBottom();
+  // The room's name and description, each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
   const { leaveLounge, deleteLounge, setMemberStatus, removeMember, setLoungeCover } = useLoungeStore();
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -173,8 +176,8 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         <View style={s.handle} />
         <View style={s.headerRow}>
           <View style={{ flex: 1, marginRight: 12 }}>
-            <Text style={s.title} numberOfLines={1}>{lounge.name}</Text>
-            {!!lounge.description && <Text style={s.subtitle} numberOfLines={2}>{lounge.description}</Text>}
+            <Text style={s.title} numberOfLines={1}>{struck(lounge.name)}</Text>
+            {!!lounge.description && <Text style={s.subtitle} numberOfLines={2}>{struck(lounge.description)}</Text>}
           </View>
           <PressableScale touch="wayOut" onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Close">
             <X size={20} color={colors.fog} strokeWidth={1.5} />

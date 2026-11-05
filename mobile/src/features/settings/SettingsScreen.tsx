@@ -48,7 +48,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SettingsSchema, type SettingsFormData } from '@/src/schemas/settings';
 
-import { PatronageSection, AccountSection, PrivacySection, NotificationsSection, ExperienceSection, FrontDeskSection, SectionCard, SectionHead, ActionBtn } from '@/src/features/settings/SettingsSections';
+import { PatronageSection, AccountSection, PrivacySection, NotificationsSection, ReadingSection, ExperienceSection, FrontDeskSection, SectionCard, SectionHead, ActionBtn } from '@/src/features/settings/SettingsSections';
 import { openHousePage, writeToFrontDesk, copySupportAddress } from '@/src/utils/housePages';
 import { SUPPORT_EMAIL, SUPPORT_URL, TERMS_URL, PRIVACY_URL } from '@/src/constants/support';
 import { st } from '@/src/features/settings/settings.styles';
@@ -604,6 +604,7 @@ export function SettingsScreen() {
         {/* ── Chapter: this device, and your data ── */}
         <View style={st.ornRule}><View style={st.ornLine} /><View style={st.ornDiamond} /><View style={st.ornLine} /></View>
 
+        <ReadingSection />
         <ExperienceSection />
 
         <Arrive name="settingsscreen-2" duration={DEFAULT_DURATION} delay={300} onLayout={(e) => landOn('import', e)}>

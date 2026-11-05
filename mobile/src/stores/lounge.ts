@@ -1269,6 +1269,17 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         if (error && error.code !== '23505') throw error; // ignore duplicate
       }
     } catch (e) {
+      // An answer lost on the way back is not a refusal: the house may hold the change. What it
+      // holds is read back, and a change it took stays drawn; unread, the mark goes back.
+      if (isNetworkError(e)) {
+        const { data: held, error: readError } = await supabase
+          .from('lounge_message_reactions')
+          .select('reaction')
+          .eq('message_id', messageId)
+          .eq('user_id', user.id)
+          .eq('reaction', reaction);
+        if (!readError && Array.isArray(held) && (held.length > 0) !== wasMine) return;
+      }
       logger.warn('[LoungeStore.toggleReaction] failed, reverting:', e);
       // Revert the optimistic delta.
       if (!memberUnchanged(startedAs)) return;

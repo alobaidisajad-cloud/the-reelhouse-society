@@ -20,6 +20,7 @@ import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { useTimeAgo } from '@/src/hooks/useClock';
 import { useLineScale } from '@/src/hooks/useTextScale';
 import { CORRIDOR } from './corridor';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
 
 /** Where the server stops counting a salon's unread dispatches. */
 export const UNREAD_COUNTED_TO = 100;
@@ -27,7 +28,10 @@ export const UNREAD_COUNTED_TO = 100;
 /** The name's two lines, at the phone's display size: every card on the rail stands as tall. */
 const NAME = { size: 15, line: 18 } as const;
 
-export const JoinedLoungeCard = React.memo(({ lounge, width }: { lounge: LoungeRoom; width: number }) => {
+export const JoinedLoungeCard = React.memo(({ lounge: room, width }: { lounge: LoungeRoom; width: number }) => {
+  // The room's name, each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
+  const lounge = React.useMemo(() => ({ ...room, name: struck(room.name) }), [room, struck]);
   const coverUrl = lounge.cover_image ? tmdb.backdrop(lounge.cover_image, 'w500') : null;
   const unread = lounge.unread_count ?? 0;
   const isAwaiting = lounge.membership_status === 'pending';
@@ -45,7 +49,7 @@ export const JoinedLoungeCard = React.memo(({ lounge, width }: { lounge: LoungeR
     <PressableScale style={[s.card, { width }]} onPress={() => nav.push(`/lounge/${lounge.id}`)} haptic="light" hitSlop={null}
       accessibilityRole="button"
       // Everything the card draws, said: the name, its privacy, the last word, the news, the seats.
-      accessibilityLabel={[`Enter salon ${lounge.name}`, lounge.is_private ? 'private' : null,
+      accessibilityLabel={[`Enter salon ${saidStruck(lounge.name)}`, lounge.is_private ? 'private' : null,
         lastWord ? `last word ${lastWord.toLowerCase()}` : null, news,
         `${members} ${members === 1 ? 'member' : 'members'}`].filter(Boolean).join(', ')}>
       <View style={s.cover}>

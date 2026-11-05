@@ -6,7 +6,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { DEFAULT_DURATION } from '@/src/utils/enter';
 import {
   Crown, Lock, Eye, Bell, ChevronDown, ChevronUp, Star, Sparkles,
-  UserRound, AudioLines, BellOff, TriangleAlert, Mail, LifeBuoy, Copy, MonitorSmartphone,
+  UserRound, AudioLines, BellOff, TriangleAlert, Mail, LifeBuoy, Copy, MonitorSmartphone, BookOpen,
 } from 'lucide-react-native';
 import { SUPPORT_EMAIL } from '@/src/constants/support';
 import { colors, fonts, effects } from '@/src/theme/theme';
@@ -689,6 +689,37 @@ export function NotificationsSection({ control, saving }: { control: Control<Set
             erased along with the banner. */}
         <Text style={st.quietLine} {...scaledTextProps}>
           These govern what reaches your lock screen. Your notification list keeps everything either way.
+        </Text>
+      </SectionCard>
+    </Arrive>
+  );
+}
+
+/**
+ * READING — what the member reads, as they asked to read it.
+ *
+ * One switch, off until they turn it on: the eight slurs (utils/slurs.ts) are
+ * struck out of members' writing wherever this member reads it, as a typist
+ * strikes a word, the sentence around them kept (never in a field they type
+ * in). Nothing is taken down, and nobody else's page changes. Like the device's switch below it is written the instant it is
+ * flipped, and said to be kept with the account, for every phone they read on.
+ */
+export function ReadingSection() {
+  const hidden = useAuthStore((s) => s.user?.preferences?.hide_slurs === true);
+  const setPreference = useAuthStore((s) => s.setPreference);
+  return (
+    <Arrive name="settingssections-reading" duration={DEFAULT_DURATION} delay={250}>
+      <SectionCard>
+        <SectionHead icon={BookOpen} label="READING" />
+        <View style={st.notifRow}>
+          <View style={st.notifTextWrap}>
+            <Text style={st.notifLabel} {...scaledTextProps}>Hide Slurs</Text>
+            <Text style={st.rowDesc} {...scaledTextProps}>{"Struck out of members' writing, the sentence kept"}</Text>
+          </View>
+          <Toggle active={hidden} onToggle={() => { setPreference('hide_slurs', !hidden).catch(() => {}); }} label="Hide slurs" />
+        </View>
+        <Text style={st.quietLine} {...scaledTextProps}>
+          Kept with your account, on every phone. Nothing anyone wrote is taken down.
         </Text>
       </SectionCard>
     </Arrive>

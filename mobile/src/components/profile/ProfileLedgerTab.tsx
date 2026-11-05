@@ -19,6 +19,7 @@ import { stripHTML, isRTLText, truncateReview } from '@/src/utils/text';
 import { r, rtlText, EMBER_REST, EMBER_BEATS, yearMarker } from './roomStyles';
 import { scrollEndAbove } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomRail, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch, RoomMoreFailed } from './RoomParts';
+import { useStruck } from '@/src/components/StruckWords';
 
 /**
  * THE LEDGER — what the member WROTE: rows, ruled like a ledger. A small plate,
@@ -106,6 +107,8 @@ const LedgerRow = React.memo(function LedgerRow({
   onPress: () => void;
 }) {
   const posterUri = tmdb.poster(log.altPoster ?? log.poster, 'w185');
+  // The member's words, each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
 
   // A review arrives as HTML from the editorial desk. Rendering the raw string
   // printed `<p>` and `&mdash;` into the row; stripping it is the same call the
@@ -212,7 +215,7 @@ const LedgerRow = React.memo(function LedgerRow({
           // revealed veil carries into whichever entry reuses the row.
           <SpoilerVeil isSpoiler={log.isSpoiler} bypass={isSelf} revealKey={log.id} compact>
             <Text {...scaledTextProps} style={[s.rowWords, rtl && rtlText]} numberOfLines={2}>
-              {words}
+              {struck(words)}
             </Text>
           </SpoilerVeil>
         )}
@@ -225,7 +228,7 @@ const LedgerRow = React.memo(function LedgerRow({
           */}
         {!!companion && (
           <Text {...scaledTextProps} style={s.rowWith} numberOfLines={1}>
-            ♡ WITH <Text {...scaledTextProps} style={s.rowWithName}>{companion}</Text>
+            ♡ WITH <Text {...scaledTextProps} style={s.rowWithName}>{struck(companion)}</Text>
           </Text>
         )}
       </View>

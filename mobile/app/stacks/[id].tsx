@@ -39,6 +39,7 @@ import { UNINKED, UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
 import { isForbiddenError, isNetworkError } from '@/src/utils/networkError';
+import { useStruck } from '@/src/components/StruckWords';
 import { stillQueued, useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import { CritiqueRow, type Critique } from '@/src/components/critique/CritiqueRow';
 import { TryAgainLine } from '@/src/components/TryAgain';
@@ -414,6 +415,8 @@ function StackDetailScreen({ id }: { id: string }) {
   const muteUser = useBlockStore(s => s.muteUser);
 
   const commentInputRef = useRef<TextInput>(null);
+  // The curator's title and note, each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
 
   // Callback isolation: stabilize comment input handler
   const handleCommentTextChange = useCallback((text: string) => {
@@ -921,7 +924,7 @@ function StackDetailScreen({ id }: { id: string }) {
                   style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]}
                   numberOfLines={titleType.numberOfLines}
                 >
-                  {list.title.toUpperCase()}
+                  {struck(list.title).toUpperCase()}
                 </Text>
                 </Arrive>
 
@@ -965,11 +968,11 @@ function StackDetailScreen({ id }: { id: string }) {
                         importantForAccessibility="no-hide-descendants"
                         pointerEvents="none"
                       >
-                        {list.description}
+                        {struck(list.description)}
                       </Text>
                     )}
                     <Text style={s.desc} numberOfLines={descExpanded ? undefined : DESC_CLAMP_LINES}>
-                      {list.description}
+                      {struck(list.description)}
                     </Text>
                     {descNeedsFold && (
                       <PressableScale room onPress={() => { TactileEngine.selection(); setDescExpanded(p => !p); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel={descExpanded ? 'Fold: collapse the description' : 'Read more: expand the description'}>

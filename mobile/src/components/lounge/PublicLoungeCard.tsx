@@ -24,6 +24,7 @@ import { useTextScale } from '@/src/hooks/useTextScale';
 import { useColumnWidth } from '@/src/components/layout/navMetrics';
 import { lineWidth } from '@/src/components/lobby/measure';
 import { CORRIDOR } from './corridor';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
 
 /** A row's measures: its sides inside the frame, the cover, the gaps, the name and its last word. */
 const ROW = { pad: 20, thumb: 52, gap: 12, beside: 10, name: 17, time: 10, timeSpacing: 1.2 } as const;
@@ -66,7 +67,7 @@ export const DirectoryFoot = React.memo(function DirectoryFoot() {
   );
 });
 
-export const PublicLoungeCard = React.memo(({ lounge, first, seated, onReport }: {
+export const PublicLoungeCard = React.memo(({ lounge: room, first, seated, onReport }: {
   lounge: LoungeRoom;
   /** The first row: no hairline above it. */
   first: boolean;
@@ -74,6 +75,9 @@ export const PublicLoungeCard = React.memo(({ lounge, first, seated, onReport }:
   seated: boolean;
   onReport?: (lounge: LoungeRoom) => void;
 }) => {
+  // The room's name and description, each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
+  const lounge = React.useMemo(() => ({ ...room, name: struck(room.name), description: struck(room.description) }), [room, struck]);
   const coverUrl = lounge.cover_image ? tmdb.backdrop(lounge.cover_image, 'w300') : null;
   const lastWord = useTimeAgo(lounge.last_message_at ?? null);
   const verb = verbFor(lounge.is_private, seated);
@@ -88,7 +92,7 @@ export const PublicLoungeCard = React.memo(({ lounge, first, seated, onReport }:
     : 0;
   const longest = Math.max(0, ...lounge.name.split(' ').map((w) => lineWidth(w, 'rye', ROW.name, Math.min(scale, displayTextProps.maxFontSizeMultiplier))));
   const timeBeside = longest <= nameRoom - timeRoom;
-  const report = onReport ? () => onReport(lounge) : undefined;
+  const report = onReport ? () => onReport(room) : undefined;
 
   return (
     <View style={s.room}>
@@ -97,9 +101,9 @@ export const PublicLoungeCard = React.memo(({ lounge, first, seated, onReport }:
       <PressableScale style={[s.row, !first && s.rowRuled]} hitSlop={null} haptic="light"
         onPress={() => nav.push(`/lounge/${lounge.id}`)} onLongPress={report}
         accessibilityRole="button"
-        accessibilityLabel={[`${SAID[verb]}: ${lounge.name}`,
+        accessibilityLabel={[`${SAID[verb]}: ${saidStruck(lounge.name)}`,
           lastWord ? `last word ${lastWord.toLowerCase()}` : null,
-          lounge.description || null, members.toLowerCase(), lounge.is_private ? 'private' : null].filter(Boolean).join(', ')}
+          saidStruck(lounge.description) || null, members.toLowerCase(), lounge.is_private ? 'private' : null].filter(Boolean).join(', ')}
         accessibilityActions={report ? [{ name: 'report', label: 'Report this salon' }] : undefined}
         onAccessibilityAction={report ? (e) => { if (e.nativeEvent.actionName === 'report') report(); } : undefined}>
         {coverUrl ? (

@@ -29,7 +29,7 @@ DO $$ BEGIN
   PERFORM pg_temp.rh_case('a function made now starts closed to it', 'false',
     has_function_privilege('rh_nobody', 'public.rh_made_now()', 'EXECUTE')::text);
   PERFORM pg_temp.rh_case('a member still opens a salon, joins one and keeps their preferences', 'true',
-    (has_function_privilege('authenticated', 'public.create_lounge(text, text, boolean)', 'EXECUTE')
+    (has_function_privilege('authenticated', (SELECT p.oid FROM pg_proc p WHERE p.proname = 'create_lounge' AND p.pronamespace = 'public'::regnamespace), 'EXECUTE')
      AND has_function_privilege('authenticated', 'public.join_public_lounge(uuid)', 'EXECUTE')
      AND has_function_privilege('authenticated', 'public.update_my_preferences(jsonb)', 'EXECUTE'))::text);
   PERFORM pg_temp.rh_case('a visitor still reads a member''s counts', 'true',

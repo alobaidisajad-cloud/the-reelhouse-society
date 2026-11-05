@@ -38,6 +38,8 @@ import { softBreak } from './paperText';
 import { extractDropCap } from '@/src/utils/text';
 import { Byline, Credit, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { EDGE_LIT } from '@/src/theme/light';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
+import { STRUCK_OPENS } from '@/src/utils/slurs';
 
 /**
  * ── THE ESSAY'S MEASURE, DEFINED ONCE ───────────────────────────────────────
@@ -75,13 +77,17 @@ export const ESSAY_BODY = {
  */
 
 export const EssayHead = memo(function EssayHead({
-  title, series, author, readTime, filed, film, onSeries, onAuthor, onFilm,
+  title: written, series: named, author, readTime, filed, film, onSeries, onAuthor, onFilm,
 }: {
   /** Null for a departed member: the byline says so, and is not a door. */
   title: string; series?: { printed: string; said: string }; author: PaperAuthor | null;
   readTime: string; filed: string; film?: PaperFilm | null;
   onSeries?: () => void; onAuthor?: () => void; onFilm?: () => void;
 }) {
+  // The member's words, each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
+  const title = struck(written);
+  const series = named && { printed: struck(named.printed), said: saidStruck(struck(named.said)) };
   return (
     <View>
       {film?.backdropPath ? (
@@ -147,6 +153,8 @@ export const EssayHead = memo(function EssayHead({
  * platforms at every type size.
  */
 export const EssayOpening = memo(function EssayOpening({ text }: { text: string }) {
+  // An essay opening on a struck word has no letter of its own to raise: it reads as it is struck.
+  if (text.startsWith(STRUCK_OPENS)) return <Text style={e.body} {...scaledTextProps}>{softBreak(text)}</Text>;
   // The whole first letter, and whatever the writer opened with before it.
   const cap = extractDropCap(text);
   return (
@@ -181,14 +189,15 @@ export const EssayBreak = memo(function EssayBreak() {
 /** The foot of a part: what comes next, by name. An essay in four parts that
  *  ends with nothing is an essay the reader has to go and hunt for. */
 export const EssayNext = memo(function EssayNext({
-  label, title, readTime, onPress,
+  label, title: written, readTime, onPress,
 }: { label: string; title: string; readTime: string; onPress?: () => void }) {
+  const title = useStruck()(written);
   return (
     // The whole measure, two lines and more tall: big enough as drawn. Its size
     // comes from its words, not its style, so PressableScale cannot see it is
     // big and would add 15pt all round — down over the ORDER BY pair beneath.
     <PressableScale style={e.next} haptic="medium" onPress={onPress} hitSlop={null}
-      accessibilityRole="button" accessibilityLabel={`${label}. ${title}. ${readTime}.`}>
+      accessibilityRole="button" accessibilityLabel={`${label}. ${saidStruck(title)}. ${readTime}.`}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={e.nextLabel} {...deckLabelProps}>{label}</Text>
         <Text style={e.nextTitle} numberOfLines={2} {...displayTextProps}>{title}</Text>
@@ -235,7 +244,7 @@ export const TO_COME_INK = {
 } as const;
 
 export const SeriesList = memo(function SeriesList({
-  title, author, parts, onPart, onAuthor,
+  title: written, author, parts, onPart, onAuthor,
 }: {
   /** Null for a departed member, as on the essay's head. */
   title: string; author: PaperAuthor | null; parts: Part[];
@@ -244,6 +253,8 @@ export const SeriesList = memo(function SeriesList({
   onAuthor?: () => void;
 }) {
   const done = parts.filter((x) => !x.toCome).length;
+  const struck = useStruck();
+  const title = struck(written);
   return (
     <View>
       <Text style={e.seriesTitle} accessibilityRole="header" {...displayTextProps}>{title}</Text>
@@ -281,14 +292,14 @@ export const SeriesList = memo(function SeriesList({
             disabled={x.toCome} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
             accessibilityRole="button"
             accessibilityState={{ disabled: !!x.toCome, selected: !!x.current }}
-            accessibilityLabel={x.toCome ? `Part ${x.n}. ${x.title}. To come.`
-              : `Part ${x.n}. ${[x.title, x.readTime, x.certified ? `${x.certified} certified` : null, x.current ? 'You are here' : null].filter(Boolean).join('. ')}.`}
+            accessibilityLabel={x.toCome ? `Part ${x.n}. ${saidStruck(struck(x.title))}. To come.`
+              : `Part ${x.n}. ${[saidStruck(struck(x.title)), x.readTime, x.certified ? `${x.certified} certified` : null, x.current ? 'You are here' : null].filter(Boolean).join('. ')}.`}
           >
             <View style={p.margin}>
               <Text style={[p.marginValue, x.toCome && { color: TO_COME_INK.numeral }]} {...decorativeTextProps}>{x.n}</Text>
             </View>
             <View style={[p.column, x.current && { borderLeftColor: KIND_RULE.dossier }]}>
-              <Text style={[e.partTitle, x.toCome && { color: TO_COME_INK.title }]} numberOfLines={2} {...displayTextProps}>{x.title}</Text>
+              <Text style={[e.partTitle, x.toCome && { color: TO_COME_INK.title }]} numberOfLines={2} {...displayTextProps}>{struck(x.title)}</Text>
               {/* Up to two lines: three facts at the largest text size need them,
                   and none of the three can be read anywhere else on this page. */}
               <Text style={[e.partMeta, x.toCome && { color: TO_COME_INK.meta }]} numberOfLines={2} {...scaledTextProps}>

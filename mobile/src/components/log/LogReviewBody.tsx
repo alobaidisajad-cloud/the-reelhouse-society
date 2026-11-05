@@ -12,6 +12,8 @@ import { balancedWidth } from '@/src/components/lobby/measure';
 import { useTextScale } from '@/src/hooks/useTextScale';
 import { useColumnWidth } from '@/src/components/layout/navMetrics';
 import { PAGE } from '@/src/components/log/pageMetrics';
+import { useStruck } from '@/src/components/StruckWords';
+import { STRUCK_OPENS } from '@/src/utils/slurs';
 
 /**
  * The words of the opened log: the pull-quote as a title card, the essay in paragraphs with the
@@ -49,8 +51,10 @@ export default function LogReviewBody({
 }: LogReviewBodyProps) {
   const scale = useTextScale();
   const column = useColumnWidth();
-  const cleanReview = stripHTML(review ?? '');
-  const quote = pullQuote?.trim() || null;
+  // Each slur struck for a reader who asked (StruckWords); the words as written otherwise.
+  const struck = useStruck();
+  const cleanReview = struck(stripHTML(review ?? ''));
+  const quote = struck(pullQuote?.trim() || null);
   const vaultUnread = isOwner && !note && noteUnreachable;
   // A rating-only log with no quote, no essay and no note draws nothing.
   if (!quote && !cleanReview && !(isOwner && note) && !vaultUnread) return null;
@@ -62,7 +66,8 @@ export default function LogReviewBody({
   // device's left-to-right base otherwise, and drops each full stop at the far left.
   const rtl = isRTLText(cleanReview);
   // No raised initial on a joined script: a letter lifted out of an Arabic word breaks the word.
-  const dc = dropCap && !rtl && paragraphs[0] ? extractDropCap(paragraphs[0]) : null;
+  // Nor on one opening with a struck word, which has no letter of its own to raise.
+  const dc = dropCap && !rtl && paragraphs[0] && !paragraphs[0].startsWith(STRUCK_OPENS) ? extractDropCap(paragraphs[0]) : null;
   const quoteWidth = quote
     ? balancedWidth(`${OPEN_QUOTE}${quote}${CLOSE_QUOTE}`, 'spectralItalic', QUOTE.size, scale, column - PAGE.pad * 2 - QUOTE.padX * 2)
     : 0;

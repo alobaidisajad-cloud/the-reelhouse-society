@@ -20,6 +20,7 @@ import { UNREADY } from '@/src/theme/unready';
 import reelToast from '@/src/utils/reelToast';
 import { captureError } from '@/src/lib/sentry';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { useStruck } from '@/src/components/StruckWords';
 import { clipToSentence } from '@/src/components/dispatch/paper/paperText';
 import { ToastHost } from '@/src/components/ToastHost';
 import { TryAgainLine } from '@/src/components/TryAgain';
@@ -60,7 +61,10 @@ export const cardTitle = (raw?: string | null): string | null => {
     return cut.clipped ? `${cut.text}…` : cut.text;
 };
 
-const LoungeItem = React.memo(({ item, isSelected, onSelect }: { item: LoungeRoom, isSelected: boolean, onSelect: (id: string) => void }) => (
+const LoungeItem = React.memo(({ item, isSelected, onSelect }: { item: LoungeRoom, isSelected: boolean, onSelect: (id: string) => void }) => {
+  // The room's name, each slur struck for a reader who asked (StruckWords).
+  const struck = useStruck();
+  return (
     <PressableScale
         style={[s.loungeItem, isSelected && s.loungeActive]}
         hitSlop={LOUNGE_SLOP}
@@ -72,10 +76,11 @@ const LoungeItem = React.memo(({ item, isSelected, onSelect }: { item: LoungeRoo
         accessibilityState={{ selected: isSelected }}
     >
         <Text style={[s.loungeName, isSelected && s.loungeNameActive]}>
-            {item.name}
+            {struck(item.name)}
         </Text>
     </PressableScale>
-));
+  );
+});
 LoungeItem.displayName = 'LoungeItem';
 
 /**
@@ -113,6 +118,9 @@ function ShareSheet({
     // Only the salons the house lets this member speak in: a pending or muted seat is refused.
     const lounges = allLounges.filter(canPostIn);
     const [message, setMessage] = useState('');
+    // What is shared, as the sheet names it: each slur struck for a reader who asked. Only the
+    // words drawn here: what is sent to the room goes as it was written.
+    const struck = useStruck();
     const [sending, setSending] = useState(false);
     const [selectedLounge, setSelectedLounge] = useState<string | null>(null);
 
@@ -211,9 +219,9 @@ function ShareSheet({
                     </View>
 
                     {dossierId ? (
-                        <Text style={s.filmLabel} numberOfLines={1}>SHARING ESSAY: {dossierTitle?.toUpperCase()}</Text>
+                        <Text style={s.filmLabel} numberOfLines={1}>SHARING ESSAY: {struck(dossierTitle)?.toUpperCase()}</Text>
                     ) : listId ? (
-                        <Text style={s.filmLabel} numberOfLines={1}>SHARING STACK: {listTitle?.toUpperCase()}</Text>
+                        <Text style={s.filmLabel} numberOfLines={1}>SHARING STACK: {struck(listTitle)?.toUpperCase()}</Text>
                     ) : (
                         <Text style={s.filmLabel} numberOfLines={1}>SHARING: {filmTitle?.toUpperCase()}</Text>
                     )}

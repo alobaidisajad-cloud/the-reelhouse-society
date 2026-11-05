@@ -481,7 +481,13 @@
     ] },
     "create_lounge": { "why": "Opening a salon is an Archivist feature, a private one an Auteur's; a ban silences.", "cases": [
       { "name": "an open salon", "as": "all", "expect": { "ok": "rank1" }, "call": "public.create_lounge('rh salon', 'rh', false)" },
-      { "name": "a private salon", "as": "all", "expect": { "ok": "rank2" }, "call": "public.create_lounge('rh salon', 'rh', true)" }
+      { "name": "a private salon", "as": "all", "expect": { "ok": "rank2" }, "call": "public.create_lounge('rh salon', 'rh', true)" },
+      { "name": "an open salon, with the id its form made", "as": "all", "expect": { "ok": "rank1" },
+        "call": "public.create_lounge('rh salon', 'rh', false, '{new}')",
+        "then": "NOT EXISTS (SELECT 1 FROM public.lounges WHERE id = '{new}' AND creator_id IS DISTINCT FROM '{owner}')" },
+      { "name": "another member's salon, asked for by its id", "as": "all", "expect": "error",
+        "call": "public.create_lounge('rh salon', 'rh', false, '{ref:lounges@V}')",
+        "then": "EXISTS (SELECT 1 FROM public.lounges WHERE id = '{ref:lounges@V}' AND creator_id = '{uid@V}' AND name <> 'rh salon') AND NOT EXISTS (SELECT 1 FROM public.lounge_members WHERE lounge_id = '{ref:lounges@V}' AND user_id = '{owner}' AND status = 'approved')" }
     ] },
     "decline_all_follow_requests": { "why": "A member declines only the requests made to them.", "cases": [
       { "name": "another's requests stay", "as": "all", "expect": { "ok": "all" },

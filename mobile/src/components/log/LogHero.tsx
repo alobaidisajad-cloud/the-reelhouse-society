@@ -12,6 +12,7 @@ import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { PAGE } from '@/src/components/log/pageMetrics';
 import { ceilingFor } from '@/src/components/lobby/measure';
 import { useColumnWidth } from '@/src/components/layout/navMetrics';
+import { useStruck } from '@/src/components/StruckWords';
 
 /**
  * The opened log's head: the editorial still projected behind the page's bar, falling into the
@@ -53,7 +54,9 @@ export const projectionHeight = (barTop: number, still: boolean) => barTop + PAG
 export default function LogHero({
   log, profile, stillUri, posterUri, barTop, ground, nameInk, timeAgo, onPosterLoaded, onPressUser, onPressFilm,
 }: LogHeroProps) {
-  const { watched_date, watched_with, physical_media } = log;
+  const { watched_date, physical_media } = log;
+  // Who it was watched with is the member's own word, each slur struck for a reader who asked.
+  const watched_with = useStruck()(log.watched_with);
   const filed = React.useMemo(() => buildFilingMark({ watched_date, watched_with, physical_media }), [watched_date, watched_with, physical_media]);
   const abandoned = log.status === 'abandoned';
   const rated = !abandoned && log.rating > 0;

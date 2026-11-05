@@ -22,9 +22,11 @@ jest.mock('@/src/utils/withAbortSignal', () => ({ withAbortSignal: (q: unknown) 
 jest.mock('@/src/utils/logger', () => ({ logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn() } }));
 let mockQueue: { type: string; payload: Record<string, unknown> }[] = [];
 jest.mock('@/src/utils/offlineQueue', () => ({ getOfflineQueue: () => mockQueue }));
-jest.mock('@/src/stores/auth', () => ({
-  useAuthStore: { getState: () => ({ user: { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', username: 'me' } }) },
-}));
+jest.mock('@/src/stores/auth', () => {
+  const state = { user: { id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', username: 'me' } };
+  // Read as the store is, by a selector too: a critique row asks it whether to strike slurs.
+  return { useAuthStore: Object.assign((pick: (s: typeof state) => unknown) => pick(state), { getState: () => state }) };
+});
 
 /** A PostgREST chain answering every read with \`answer\`. */
 function answering(answer: { data?: unknown; error: unknown; count?: number }) {

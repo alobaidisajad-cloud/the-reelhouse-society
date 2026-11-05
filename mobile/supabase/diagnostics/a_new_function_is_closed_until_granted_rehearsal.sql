@@ -36,7 +36,7 @@ DO $$ BEGIN
         AND NOT has_function_privilege(r.role, p.oid, 'EXECUTE')));
   PERFORM pg_temp.rh_case('a visitor still reads a member''s counts; a member still opens a salon', 'true',
     (has_function_privilege('anon', 'public.get_profile_counts(uuid)', 'EXECUTE')
-     AND has_function_privilege('authenticated', 'public.create_lounge(text, text, boolean)', 'EXECUTE'))::text);
+     AND has_function_privilege('authenticated', (SELECT p.oid FROM pg_proc p WHERE p.proname = 'create_lounge' AND p.pronamespace = 'public'::regnamespace), 'EXECUTE'))::text);
 END $$;
 
 SELECT pg_temp.rh_verdict();

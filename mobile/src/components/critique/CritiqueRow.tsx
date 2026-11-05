@@ -31,6 +31,7 @@ import { Text } from '@/src/components/text';
 import { askToWithdrawCritique } from './withdraw';
 import { authorName } from '@/src/constants/departed';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { useStruck } from '@/src/components/StruckWords';
 
 export interface Critique {
   id: string;
@@ -78,6 +79,7 @@ export const CritiqueRow = React.memo(function CritiqueRow({
   onReport?: (critique: Critique & { user_id: string }) => void;
 }) {
   const mine = !!currentUserId && currentUserId === c.user_id;
+  const struck = useStruck();
   // A profile is opened by its name: no name, no link (never a guessed one).
   const linked = !!c.user_id && !!c.username;
   // No id: the author has left, and the handle is the database's mark, not a name.
@@ -112,7 +114,7 @@ export const CritiqueRow = React.memo(function CritiqueRow({
             Angeles is dated that evening, not the following morning. */}
         <Text style={s.commDate}>{formatDate(c.created_at)}</Text>
       </View>
-      <Text style={[s.commBody, isRTLText(c.body) && s.rtlText]} {...scaledTextProps} selectable>{c.body}</Text>
+      <Text style={[s.commBody, isRTLText(c.body) && s.rtlText]} {...scaledTextProps} selectable>{struck(c.body)}</Text>
       {mine ? (
         <PressableScale touch="destructive"
           onPress={() => askToWithdrawCritique(() => onWithdraw(c.id))}

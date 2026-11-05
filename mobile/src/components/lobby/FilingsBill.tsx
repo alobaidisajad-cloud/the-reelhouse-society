@@ -26,6 +26,7 @@ import { creditName, WALL, type WallPlan } from './measure';
 import { FILINGS_BILL } from './words';
 import type { WallFiling } from './wallRead';
 import { KeepOff } from './KeepOff';
+import { saidStruck } from '@/src/components/StruckWords';
 
 /** A filing's number: its column, and the gap before its words. */
 const NUM_W = WALL.filingNum;
@@ -67,7 +68,7 @@ const Filing = memo(function Filing({ filing, place, lead, room, switchRoom, sca
         pressedScale={0.99}
         haptic="selection"
         accessibilityRole="link"
-        accessibilityLabel={`Featured filing ${place}, a ${nameOf(filing.kind).toLowerCase()} by @${filing.author.username}${title ? `: ${title}` : ''}. Read it.`}
+        accessibilityLabel={`Featured filing ${place}, a ${nameOf(filing.kind).toLowerCase()} by @${filing.author.username}${title ? `: ${saidStruck(title)}` : ''}. Read it.`}
       >
         <Text style={[s.num, !lead && s.numRunner]} {...UNSPOKEN} maxFontSizeMultiplier={1.2}>{place}</Text>
         <View style={s.body}>

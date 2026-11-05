@@ -298,7 +298,7 @@
     "mobile/src/stores/__tests__/notificationCap.test.ts": 3,
     "mobile/src/stores/__tests__/staleWriteGuard.test.ts": 8,
     "mobile/src/stores/__tests__/theFollowListIsReadOnce.test.ts": 4,
-    "mobile/src/stores/__tests__/theHouseSaysWhy.test.ts": 3,
+    "mobile/src/stores/__tests__/theHouseSaysWhy.test.ts": 2,
     "mobile/src/stores/__tests__/theLiveWireKnowsTheRoom.test.ts": 2,
     "mobile/src/stores/__tests__/theLogSaysWhatHappened.test.ts": 1,
     "mobile/src/stores/__tests__/watchlistSlice.test.ts": 1,

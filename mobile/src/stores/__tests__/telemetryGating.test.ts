@@ -382,6 +382,15 @@ describe('lists — the RPC path and the item path', () => {
         );
     });
 
+    // P4.13: added from another phone, or this copy older than the house's.
+    it('addFilmToList keeps a film the house says is already on the stack, and says nothing is wrong', async () => {
+        mockDbError = { code: '23505', message: 'duplicate key value violates unique constraint "list_items_list_id_film_id_key"' };
+        await useFilmStore.getState().addFilmToList('list-1', { id: 550, title: 'Fight Club' });
+        expect(useFilmStore.getState().lists[0]!.films.map((f) => f.id)).toEqual([550]);
+        expect(captureError).not.toHaveBeenCalled();
+        expect(require('@/src/utils/reelToast').default.error).not.toHaveBeenCalled();
+    });
+
     it('addFilmToList stays silent when offline', async () => {
         mockDbError = OFFLINE;
         await useFilmStore.getState().addFilmToList('list-1', { id: 550, title: 'Fight Club' });

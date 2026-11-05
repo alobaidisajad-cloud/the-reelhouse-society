@@ -29,6 +29,9 @@ export const UserPreferencesSchema = z.object({
   notif_system: z.boolean().optional(),
   biometric_lock: z.boolean().optional(),
   tactile_audio_enabled: z.boolean().optional(),
+  // Whether the eight slurs (utils/slurs.ts) are struck out of other members' writing for this
+  // member. Absent means off: nothing is struck for a member who never asked.
+  hide_slurs: z.boolean().optional(),
   favorites: z.array(z.unknown()).nullable().optional(),
   programmes: z.array(z.unknown()).nullable().optional(),
   // Auteur only: whether the centre of their triptych dresses their dossier.
