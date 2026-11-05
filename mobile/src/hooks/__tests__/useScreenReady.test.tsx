@@ -125,18 +125,34 @@ describe('useScreenReady', () => {
     expect(holder.props.pointerEvents).toBe('none');
   });
 
-  it('draws the point a flow waits for once the content is in, and only then', () => {
+  it('names the point a flow waits for once the content is in, and only then', () => {
     const r = render(<Screen read="reading" />);
     expect(r.queryByTestId('screen-ready-lobby')).toBeNull();
     r.rerender(<Screen read="failed" />);
     expect(r.queryByTestId('screen-ready-lobby')).toBeNull();
     r.rerender(<Screen read="ready" />);
     const point = r.getByTestId('screen-ready-lobby');
-    // A pixel out of the layout, never pressed, and kept as a view on Android.
-    expect(StyleSheet.flatten(point.props.style)).toEqual({ position: 'absolute', left: 0, top: 0, width: 1, height: 1 });
+    // A pixel out of the layout, clear of the status bar, never pressed, and kept as a view on Android.
+    expect(StyleSheet.flatten(point.props.style)).toEqual({ position: 'absolute', left: 0, top: '50%', width: 1, height: 1 });
     expect(point.props.pointerEvents).toBe('none');
     expect(point.props.collapsable).toBe(false);
     r.rerender(<Screen read="reading" />);
     expect(r.queryByTestId('screen-ready-lobby')).toBeNull();
+  });
+
+  it('keeps one shape in every state: the point is named, never added', () => {
+    // A view that came with the content moved every view after it: the Lobby's
+    // scroller was the third or the fourth child as the read won or lost a race,
+    // and the page-top tests could not find it in one place (CI 41988801019).
+    function Held({ read }: { read: ScreenRead }) {
+      return <View>{useScreenReady('lobby', read)}</View>;
+    }
+    const shape = (read: ScreenRead) => {
+      const root = render(<Held read={read} />).toJSON() as unknown as Node;
+      return (root.children ?? []).map((n) => `${n.type} ${JSON.stringify(StyleSheet.flatten(n.props.style as never))}`);
+    };
+    expect(shape('reading')).toHaveLength(2);
+    expect(shape('ready')).toEqual(shape('reading'));
+    expect(shape('failed')).toEqual(shape('reading'));
   });
 });

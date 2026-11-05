@@ -12,8 +12,9 @@
  *
  * Called at the top of a screen, before any early return; the mark it returns
  * goes in every tree the screen can return, so the clock survives a loading
- * branch giving way to the page. Once the content is in, the mark also draws an
- * undrawn point, screen-ready-<name>: what a flow waits for is the moment timed.
+ * branch giving way to the page. The mark also holds an undrawn point, named
+ * screen-ready-<name> once the content is in: what a flow waits for is the
+ * moment timed.
  */
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -59,18 +60,22 @@ export function useScreenReady(name: string, read: ScreenRead): React.ReactEleme
   }, [read, name]);
   // Sentry is handed the moment the screen settled, a failed read too.
   // Out of the layout: a screen's gaps and spacing never count it. The point is
-  // a pixel because the flows' driver does not see a view of no size.
+  // a pixel because the flows' driver does not see a view of no size, halfway
+  // down the left edge because it does not see one under the status bar (drawn
+  // at the corner, Settings' point was there and never seen, run 41988800898),
+  // and it is always there, named only once the content is in: a view that came
+  // and went would move every view after it in the screen's tree.
   return (
     <>
       <View style={s.out} pointerEvents="none">
         <FullDisplay ready={ready} />
       </View>
-      {read === 'ready' && <View testID={`screen-ready-${name}`} collapsable={false} pointerEvents="none" style={s.point} />}
+      <View testID={read === 'ready' ? `screen-ready-${name}` : undefined} collapsable={false} pointerEvents="none" style={s.point} />
     </>
   );
 }
 
 const s = StyleSheet.create({
   out: { position: 'absolute', width: 0, height: 0 },
-  point: { position: 'absolute', left: 0, top: 0, width: 1, height: 1 },
+  point: { position: 'absolute', left: 0, top: '50%', width: 1, height: 1 },
 });

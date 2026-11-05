@@ -54,6 +54,7 @@ app-example
 /lint-results.txt
 /tsc*.txt
 *-output.txt
+*-failure.txt
 *_output.txt
 /search_*.txt
 /search_*.json

@@ -28,9 +28,12 @@ const APP_ID = JSON.parse(readFileSync(join(MOBILE, 'app.json'), 'utf8')).expo.a
 const APP_FILES = universe('appCode');
 const SOURCE = APP_FILES.map((f) => readFileSync(f, 'utf8')).join('\n');
 
-/** Every testID the app sets: literal ones, and the fixed start of templated ones. */
+/**
+ * Every testID the app sets: literal ones, and the fixed start of templated
+ * ones, a template given only once a condition holds included.
+ */
 const LITERAL_IDS = new Set([...SOURCE.matchAll(/(?:testID|tabBarButtonTestID)\s*[=:]\s*\{?\s*['"]([^'"]+)['"]/g)].map((m) => m[1]));
-const TEMPLATE_IDS = [...SOURCE.matchAll(/testID\s*=\s*\{\s*`([^`$]*)\$\{/g)].map((m) => m[1]).filter(Boolean);
+const TEMPLATE_IDS = [...SOURCE.matchAll(/testID\s*=\s*\{[^}`]*`([^`$]*)\$\{/g)].map((m) => m[1]).filter(Boolean);
 
 /**
  * Every string the app writes — each string literal, the fixed text of each

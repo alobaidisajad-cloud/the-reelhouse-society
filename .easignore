@@ -140,6 +140,7 @@ mobile/**/app-example
 /mobile/tsc*.txt
 mobile/**/*-output.txt
 mobile/**/*_output.txt
+mobile/**/*-failure.txt
 /mobile/search_*.txt
 /mobile/search_*.json
 /mobile/context_search.txt
