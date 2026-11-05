@@ -42,7 +42,7 @@ const REGISTER: Record<string, Count> = {
   'app/(modals)/cover-picker.tsx': { empty: 1, why: 'a link to a salon not yours to change (the empty state carries Buster)' },
   'src/components/MembersOnly.tsx': { empty: 1, why: 'a member-only screen opened signed out: asked in, and brought back (the empty state carries Buster)' },
   'src/components/lobby/LobbyWall.tsx': { offline: 1, why: 'the Lobby wall could not be reached' },
-  'app/+not-found.tsx': { buster: 1, why: 'a link to nowhere' },
+  'src/components/NotInTheArchive.tsx': { buster: 1, why: 'a link to nowhere: a route the app does not have, or an id of another shape' },
   'app/(modals)/search-modal.tsx': { buster: 1, why: 'a search that found nothing' },
   'app/dispatch/[id].tsx': { eyes: 1, why: 'a filing being read (its empty pages stay paper: no picture above the words)' },
   'app/dispatch/series/[id].tsx': { eyes: 1, why: 'a series being read' },

@@ -15,7 +15,7 @@ import { create } from 'zustand';
 import LoungeRoomScreen from '@/app/lounge/[id]';
 
 const ROOM = {
-  id: 'room', name: 'The Back Row', description: '', is_private: false,
+  id: '00000011-0000-4000-8000-000000000011', name: 'The Back Row', description: '', is_private: false,
   creator_id: 'host', created_at: '2026-01-01T00:00:00Z', member_count: 3,
 };
 let mockRoomAnswer: { data: unknown; error: unknown } = { data: ROOM, error: null };
@@ -24,7 +24,7 @@ jest.mock('@/src/stores/lounge', () => {
   const { create: mockCreate } = jest.requireActual('zustand');
   const noop = () => {};
   const useLoungeStore = mockCreate(() => ({
-    lounges: [], currentMessages: [], currentLoungeId: 'room', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false,
+    lounges: [], currentMessages: [], currentLoungeId: '00000011-0000-4000-8000-000000000011', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false,
     presentCount: 0, typingUsers: [],
     fetchMessages: noop, sendMessage: noop, subscribeToLounge: () => noop, markRead: noop,
     withdrawMessage: noop, retryMessage: noop, toggleReaction: noop,
@@ -73,8 +73,8 @@ const ROUTER = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate:
 
 async function openRoom(held: object = {}) {
   useRouter.mockReturnValue(ROUTER);
-  useLocalSearchParams.mockReturnValue({ id: 'room' });
-  useLoungeStore.setState({ currentMessages: [], lounges: [], currentLoungeId: 'room', messagesLoading: false, messagesFailed: false, ...held });
+  useLocalSearchParams.mockReturnValue({ id: '00000011-0000-4000-8000-000000000011' });
+  useLoungeStore.setState({ currentMessages: [], lounges: [], currentLoungeId: '00000011-0000-4000-8000-000000000011', messagesLoading: false, messagesFailed: false, ...held });
   const r = render(<LoungeRoomScreen />);
   await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
   return r;
@@ -140,7 +140,7 @@ describe('the transcript says what it has', () => {
     expect(r.queryByText('The Conversation Begins')).toBeNull();
     fetchMessages.mockClear();
     await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
-    expect(fetchMessages.mock.calls).toEqual([['room']]);
+    expect(fetchMessages.mock.calls).toEqual([['00000011-0000-4000-8000-000000000011']]);
   });
 
   it('a room read, with nothing said in it: be the first', async () => {

@@ -81,7 +81,7 @@ const member = (tier: Tier) => useAuthStore.setState(tier === 'out'
 
 /** A record to amend, and two stacks to add the film to. */
 const LOG = {
-  id: 'log-1', filmId: 843, title: FILM.filmTitle, poster: FILM.filmPoster, year: 2000,
+  id: '00000015-0000-4000-8000-000000000015', filmId: 843, title: FILM.filmTitle, poster: FILM.filmPoster, year: 2000,
   status: 'watched', rating: 4.5, review: REVIEW, isSpoiler: false, dropCap: false, pullQuote: '',
   watchedWith: 'Anna', physicalMedia: 'VHS', watchedDate: '2026-08-16', viewingId: 'v-1',
 };
@@ -130,18 +130,18 @@ const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof rende
     await fireEvent.press(r.getByLabelText(/Change the date\.$/));
   }],
   // Amending a record: everything it holds, open — and asked to delete it.
-  ['composer-edit', 'auteur', { editLogId: 'log-1' }, async () => {}],
-  ['composer-delete', 'auteur', { editLogId: 'log-1' }, async (r) => {
+  ['composer-edit', 'auteur', { editLogId: '00000015-0000-4000-8000-000000000015' }, async () => {}],
+  ['composer-delete', 'auteur', { editLogId: '00000015-0000-4000-8000-000000000015' }, async (r) => {
     await fireEvent.press(r.getByLabelText('Delete this entire log'));
   }],
   // A member whose rank ended, over a note they wrote: read in full, theirs to
   // remove, not to change.
   // (It opens itself: an entry that holds something opens when it arrives.)
-  ['composer-kept', 'lapsed', { editLogId: 'log-1' }, async () => {}],
+  ['composer-kept', 'lapsed', { editLogId: '00000015-0000-4000-8000-000000000015' }, async () => {}],
   // An edit opened on a record the house does not hold as theirs: said, never a blank form.
   // Rendered again once the answer is in, so its words are drawn as they rest, not
   // at their first frame's opacity 0.
-  ['composer-edit-withdrawn', 'auteur', { editLogId: 'log-far', filmId: FILM.filmId, filmTitle: FILM.filmTitle }, async (r) => {
+  ['composer-edit-withdrawn', 'auteur', { editLogId: '00000027-0000-4000-8000-000000000027', filmId: FILM.filmId, filmTitle: FILM.filmTitle }, async (r) => {
     await act(async () => { r.rerender(<LogModalScreen />); });
   }],
   // A Cinephile who opened the tools they do not hold: instruments and gates.
@@ -201,7 +201,7 @@ whenRendering('composer generator', () => {
     // the server's, and this is a drawing.
     useVaultStore.setState({
       notes: { 'v-1': 'The corridor again. I could not look at the stairs.' },
-      loaded: { 'log-1': true }, unreachable: {},
+      loaded: { '00000015-0000-4000-8000-000000000015': true }, unreachable: {},
       loadForLog: async () => {},
     } as never);
     (useLocalSearchParams as jest.Mock).mockReturnValue(params);

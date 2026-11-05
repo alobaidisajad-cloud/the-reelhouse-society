@@ -422,6 +422,7 @@ it('an E2E flow opens reelhouse://_sitemap with the app closed on Android, runni
   expect(afterLink([android, android], 0)).toBeNull();
   expect(afterLink([android, ios(['launchApp', { openLink: SITEMAP }])], 0)).toBeNull();
   expect(afterLink([{ runFlow: { when: { platform: 'Android' }, commands: running } }, ios(running)], 0)).toBeNull();
-  // Its title is the one app/+not-found.tsx draws.
-  expect(readCode('app/+not-found.tsx')).toContain('ROUTE NOT IN THE ARCHIVE');
+  // Its title is the one app/+not-found.tsx draws, through NotInTheArchive.
+  expect(readCode('app/+not-found.tsx')).toContain('<NotInTheArchive />');
+  expect(readCode('src/components/NotInTheArchive.tsx')).toContain('ROUTE NOT IN THE ARCHIVE');
 });

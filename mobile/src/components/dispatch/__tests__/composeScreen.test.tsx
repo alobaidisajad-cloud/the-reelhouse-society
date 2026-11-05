@@ -496,7 +496,7 @@ describe('leaving the room', () => {
 
 describe('amending a dossier that already exists', () => {
   const openEdit = async () => {
-    at({ kind: 'dossier', edit: 'f1', initialTitle: 'The Empty Room', initialContent: 'The first version.' });
+    at({ kind: 'dossier', edit: '00000017-0000-4000-8000-000000000017', initialTitle: 'The Empty Room', initialContent: 'The first version.' });
     const r = render(<ComposeScreen />);
     await flush();
     return r;
@@ -511,7 +511,7 @@ describe('amending a dossier that already exists', () => {
   it('opens on an amend as build 41 kept it, over the published words (savedJsonOpensWhole)', async () => {
     const { saved } = require('@/src/utils/__tests__/fixtures/saved-json/drafts.json') as { saved: Record<string, unknown> };
     const envelope = Object.entries(saved).find(([k]) => /_edit_/.test(k))![1];
-    mockStore.set(draftKey('u1', 'edit', 'f1'), JSON.stringify(envelope));
+    mockStore.set(draftKey('u1', 'edit', '00000017-0000-4000-8000-000000000017'), JSON.stringify(envelope));
     const { getByDisplayValue } = await openEdit();
     expect([getByDisplayValue('Revised'), getByDisplayValue('A second look.')].every(Boolean)).toBe(true);
   });
@@ -523,7 +523,7 @@ describe('amending a dossier that already exists', () => {
     await flush();
 
     expect(mockFiled).toHaveLength(0);
-    expect(mockAmended[0][0]).toBe('f1');
+    expect(mockAmended[0][0]).toBe('00000017-0000-4000-8000-000000000017');
     expect(mockAmended[0][1].fullContent).toBe('The second version.');
   });
 

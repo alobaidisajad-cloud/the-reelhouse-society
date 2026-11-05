@@ -9,7 +9,8 @@ import { markCount, mineMark } from '@/src/schemas/feed.schema';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
+import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Platform, RefreshControl, Share, StyleSheet, View } from 'react-native';
@@ -134,8 +135,15 @@ interface LogComment {
   created_at: string;
 }
 
-export default function LogDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+const PARAMS = { id: P.uuid };
+
+/** The route: a link of another shape is a page not in the archive (routeParams, P4.4). */
+export default function LogDetailScreenRoute() {
+  const { id } = useRouteParams(PARAMS);
+  return id ? <LogDetailScreen id={id} /> : <NotInTheArchive />;
+}
+
+function LogDetailScreen({ id }: { id: string }) {
   const { user, isAuthenticated } = useAuthStore();
   const windowWidth = useColumnWidth();
   const blockUser = useBlockStore((state) => state.blockUser);

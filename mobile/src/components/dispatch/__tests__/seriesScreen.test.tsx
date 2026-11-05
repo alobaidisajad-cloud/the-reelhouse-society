@@ -86,10 +86,10 @@ jest.mock('@/src/lib/supabase', () => ({
 
 /** One published part of a series, in the shape PostgREST returns. */
 const part = (over: Record<string, unknown> = {}) => ({
-  id: 'p1', kind: 'dossier', user_id: 'u1', author_username: 'tomasreyes',
+  id: '00000021-0000-4000-8000-000000000021', kind: 'dossier', user_id: 'u1', author_username: 'tomasreyes',
   title: 'The Empty Room', body: 'An excerpt, five hundred characters at most.',
   full_content: Array.from({ length: 2400 }, () => 'word').join(' '), // 12 MIN
-  series_id: 's1', series_title: 'Ozu, in four parts', part_number: 1,
+  series_id: '00000020-0000-4000-8000-000000000020', series_title: 'Ozu, in four parts', part_number: 1,
   withheld_at: null, ended_at: null, ended_by: null,
   certify_count: 9, comment_count: 2,
   created_at: '2026-08-28T21:00:00Z', edited_at: null,
@@ -117,14 +117,14 @@ beforeEach(() => {
   mockTotal = null;
   mockPushed.length = 0;
   mockBack.mockClear();
-  at({ id: 's1' });
+  at({ id: '00000020-0000-4000-8000-000000000020' });
 });
 
 describe('the series page', () => {
   it('lists the parts, in order, under the series title', async () => {
     mockRows = [
-      part({ id: 'p1', part_number: 1, title: 'The Empty Room' }),
-      part({ id: 'p2', part_number: 2, title: 'A Train Leaves' }),
+      part({ id: '00000021-0000-4000-8000-000000000021', part_number: 1, title: 'The Empty Room' }),
+      part({ id: '00000022-0000-4000-8000-000000000022', part_number: 2, title: 'A Train Leaves' }),
       part({ id: 'p3', part_number: 3, title: 'Nobody Comes Back' }),
     ];
     const { getByText, queryByText } = await mount();
@@ -144,7 +144,7 @@ describe('the series page', () => {
     mockRows = [part()];
     await mount();
     expect(mockAsked.order?.[0]).toBe('part_number');
-    expect(mockAsked.eq.series_id).toBe('s1');
+    expect(mockAsked.eq.series_id).toBe('00000020-0000-4000-8000-000000000020');
   });
 
   it('asks for the ESSAY, so the read time is the essay’s', async () => {
@@ -170,15 +170,15 @@ describe('the series page', () => {
   });
 
   it('marks where the reader already is, and only when it knows', async () => {
-    mockRows = [part({ id: 'p1', part_number: 1 }), part({ id: 'p2', part_number: 2, title: 'A Train Leaves' })];
+    mockRows = [part({ id: '00000021-0000-4000-8000-000000000021', part_number: 1 }), part({ id: '00000022-0000-4000-8000-000000000022', part_number: 2, title: 'A Train Leaves' })];
 
-    at({ id: 's1', from: 'p2' });
+    at({ id: '00000020-0000-4000-8000-000000000020', from: '00000022-0000-4000-8000-000000000022' });
     const withFrom = await mount();
     expect(withFrom.getByText(/YOU ARE HERE/)).toBeTruthy();
 
     // Reached from anywhere else, nothing is marked — because they are not in
     // any of them.
-    at({ id: 's1' });
+    at({ id: '00000020-0000-4000-8000-000000000020' });
     const without = await mount();
     expect(without.queryByText(/YOU ARE HERE/)).toBeNull();
   });
@@ -187,13 +187,13 @@ describe('the series page', () => {
     // A member numbered two parts `2` by hand. Matching on the printed number
     // would send both taps to the first.
     mockRows = [
-      part({ id: 'p1', part_number: 2, title: 'The Empty Room' }),
-      part({ id: 'p2', part_number: 2, title: 'A Train Leaves' }),
+      part({ id: '00000021-0000-4000-8000-000000000021', part_number: 2, title: 'The Empty Room' }),
+      part({ id: '00000022-0000-4000-8000-000000000022', part_number: 2, title: 'A Train Leaves' }),
     ];
     const { getByText } = await mount();
 
     await act(async () => { await fireEvent.press(getByText('A Train Leaves')); });
-    expect(mockPushed).toEqual(['/dispatch/p2']);
+    expect(mockPushed).toEqual(['/dispatch/00000022-0000-4000-8000-000000000022']);
   });
 
   it('opens the author’s room from the byline', async () => {
@@ -216,7 +216,7 @@ describe('the series page', () => {
   });
 
   it('says nothing extra when the list IS the series', async () => {
-    mockRows = [part({ id: 'p1', part_number: 1 })];
+    mockRows = [part({ id: '00000021-0000-4000-8000-000000000021', part_number: 1 })];
     mockTotal = 1;
     const { queryByText, getByText } = await mount();
     expect(queryByText(/THE FIRST/)).toBeNull();
@@ -246,8 +246,8 @@ describe('the series page', () => {
   it('numbers a part the member left unnumbered by its position', async () => {
     // Roman-numbered margins are the design; an empty margin is not.
     mockRows = [
-      part({ id: 'p1', part_number: null, title: 'First' }),
-      part({ id: 'p2', part_number: null, title: 'Second' }),
+      part({ id: '00000021-0000-4000-8000-000000000021', part_number: null, title: 'First' }),
+      part({ id: '00000022-0000-4000-8000-000000000022', part_number: null, title: 'Second' }),
     ];
     const { getByText } = await mount();
     expect(getByText('1')).toBeTruthy();

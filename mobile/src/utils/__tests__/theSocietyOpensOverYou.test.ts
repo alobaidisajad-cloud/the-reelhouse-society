@@ -147,7 +147,7 @@ describe('the Society opens over you', () => {
     });
 
     it('the Society page does not act on it yet — and says why, where it would', () => {
-      const params = /const \{([^}]*)\} = useLocalSearchParams</.exec(stripComments(page, 'app/(modals)/membership.tsx'))?.[1] ?? '';
+      const params = /const \{([^}]*)\} = useRouteParams\(/.exec(stripComments(page, 'app/(modals)/membership.tsx'))?.[1] ?? '';
       // Tripwire: the destructuring must be found, or "not read" passes on nothing.
       expect(params).toMatch(/\breason\b/);
       expect(params).not.toMatch(/\breturnTo\b/);

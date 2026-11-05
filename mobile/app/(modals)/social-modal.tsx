@@ -2,7 +2,8 @@ import { nav } from '@/src/utils/typedRouter';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { RemoteImage } from '@/src/components/Picture';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, InteractionManager, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -38,6 +39,17 @@ interface LoungeItem {
     lounge_id: string;
     lounges?: { id: string; name: string } | { id: string; name: string }[] | null | undefined;
 }
+
+const PARAMS = {
+    userId: P.uuid,
+    type: P.oneOf('followers', 'following'),
+    shareFilmId: P.tmdbId,
+    shareFilmTitle: P.words(200),
+    shareFilmPoster: P.posterPath,
+    shareFilmYear: P.year,
+    personId: P.tmdbId,
+    personName: P.words(200),
+};
 
 // ── Determine modal mode from params ──────────────────────────────────────────
 type ModalMode = 'followers' | 'following' | 'share-film' | 'share-person';
@@ -119,30 +131,19 @@ const LoungeRow = React.memo(function LoungeRow({
 export default function SocialModal() {
     const handleTop = useModalTop();
     const end = useContentBottom();
-    const rawParams = useLocalSearchParams<{
-        userId?: string;
-        type?: string;
-        shareFilmId?: string;
-        shareFilmTitle?: string;
-        shareFilmPoster?: string;
-        shareFilmYear?: string;
-        personId?: string;
-        personName?: string;
-    }>();
-
-    const normalizeString = (val: string | string[] | undefined): string | undefined =>
-        Array.isArray(val) ? val[0] : val;
-
+    // Each value in its kind, from the link (P4.4): a poster path of TMDB's own shape, a member
+    // by their id, a film or an artist by their number, words cleaned and cut.
+    const read = useRouteParams(PARAMS);
     const params = useMemo(() => ({
-        userId: normalizeString(rawParams.userId),
-        type: normalizeString(rawParams.type),
-        shareFilmId: normalizeString(rawParams.shareFilmId),
-        shareFilmTitle: normalizeString(rawParams.shareFilmTitle),
-        shareFilmPoster: normalizeString(rawParams.shareFilmPoster),
-        shareFilmYear: normalizeString(rawParams.shareFilmYear),
-        personId: normalizeString(rawParams.personId),
-        personName: normalizeString(rawParams.personName),
-    }), [rawParams.userId, rawParams.type, rawParams.shareFilmId, rawParams.shareFilmTitle, rawParams.shareFilmPoster, rawParams.shareFilmYear, rawParams.personId, rawParams.personName]);
+        userId: read.userId,
+        type: read.type,
+        shareFilmId: read.shareFilmId === undefined ? undefined : String(read.shareFilmId),
+        shareFilmTitle: read.shareFilmTitle,
+        shareFilmPoster: read.shareFilmPoster,
+        shareFilmYear: read.shareFilmYear,
+        personId: read.personId === undefined ? undefined : String(read.personId),
+        personName: read.personName,
+    }), [read]);
 
     const { mode, valid } = useMemo(() => resolveMode(params), [params]);
     // Sharing a film or an artist into a salon is speaking there. The route can be opened

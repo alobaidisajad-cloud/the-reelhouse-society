@@ -5,7 +5,8 @@ import { Text, TextInput } from '@/src/components/text';
 import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 // The preview mounts `EssayBody`, which carries the link guard and the render cap.
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
-import { router, useLocalSearchParams, Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import { HouseBlur } from '@/src/components/HouseBlur';
 import { useBottomEdge, useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 import { Bold, Italic, Type, Quote, Minus, Link2 } from 'lucide-react-native';
@@ -92,10 +93,14 @@ const wordsOf = (text?: string): string => {
  * a dossier need the tier, a take, a seeking and a wire do not, and a member who
  * cannot file one must never reach its desk to find out at the end.
  */
+const PARAMS = { kind: P.oneOf<FilingKind>('take', 'seeking', 'wire', 'ballot', 'dossier'), edit: P.uuid };
+/** A dossier begun from a link: its title and its opening words, cut as the desk cuts them. */
+const DOSSIER_PARAMS = { edit: P.uuid, initialTitle: P.words(MAX_LENGTHS.filingTitle), initialContent: P.words(MAX_LENGTHS.filingEssay) };
+
 export default function ComposeScreen() {
-    const params = useLocalSearchParams<{ kind?: string; edit?: string }>();
+    const params = useRouteParams(PARAMS);
     const user = useAuthStore((s) => s.user);
-    const kind = (params.kind ?? (params.edit ? 'dossier' : '')) as FilingKind | '';
+    const kind: FilingKind | '' = params.kind ?? (params.edit ? 'dossier' : '');
 
     const isMounted = useRef(true);
     useEffect(() => {
@@ -121,13 +126,10 @@ export default function ComposeScreen() {
 
     // An unrecognised kind in a link is not a crash and not a blank screen; it
     // is somebody arriving without having chosen, which is what the picker is.
-    const known = (['take', 'seeking', 'wire', 'ballot', 'dossier'] as const)
-        .includes(kind as FilingKind);
-
-    if (!known) return <KindPicker />;
+    if (!kind) return <KindPicker />;
     if (kind === 'dossier') return <ComposeDossierScreen />;
     if (kind === 'ballot') return <ComposeBallotScreen />;
-    return <ComposeShortScreen kind={kind as 'take' | 'seeking' | 'wire'} />;
+    return <ComposeShortScreen kind={kind} />;
 }
 
 /**
@@ -217,7 +219,7 @@ function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
 function ComposeDossierScreen() {
     // The day the proof is dated: it turns at midnight, with the desk open.
     const filedOn = useClock((now) => formatDateMonthDay(new Date(now).toISOString()).toUpperCase());
-    const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
+    const { edit, initialTitle, initialContent } = useRouteParams(DOSSIER_PARAMS);
     // A new piece is a room a launch may reopen; an amend keeps its draft by its filing instead.
     useWritingRoom('essay', !edit);
     const { user } = useAuthStore();

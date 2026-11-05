@@ -18,7 +18,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Image, Platform, ScrollView, Share, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
+import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 
 import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
@@ -80,8 +81,15 @@ const COMPOSER_GAP = 10;
 /** The critiques' order before anyone chooses: for the state AND the first read. */
 const FIRST_ORDER: CritiqueOrder = 'CERTIFIED';
 
-export default function FilingReader() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+const PARAMS = { id: P.uuid };
+
+/** The route: a link of another shape is a page not in the archive (routeParams, P4.4). */
+export default function FilingReaderRoute() {
+  const { id } = useRouteParams(PARAMS);
+  return id ? <FilingReader id={id} /> : <NotInTheArchive />;
+}
+
+function FilingReader({ id }: { id: string }) {
   const edge = useBottomEdge();
   const scrollEnd = useAboveDockedBar(DOCK_ROOM);
   // The page is measured at THIS screen's width, not a 390pt phone's.

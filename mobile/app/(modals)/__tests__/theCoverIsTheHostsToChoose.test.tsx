@@ -10,14 +10,14 @@ import CoverPicker from '../cover-picker';
 import { useAuthStore } from '@/src/stores/auth';
 import { useLoungeStore } from '@/src/stores/lounge';
 
-jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useLocalSearchParams: () => ({ loungeId: 'room' }) }));
+jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useLocalSearchParams: () => ({ loungeId: '00000011-0000-4000-8000-000000000011' }) }));
 jest.mock('@/src/components/log/LogSearchEngine', () => {
   const React = require('react');
   const { View } = require('react-native');
   return { __esModule: true, default: () => React.createElement(View, { testID: 'cover-search' }) };
 });
 
-const salon = (host: string) => ({ id: 'room', name: 'The Back Row', creator_id: host });
+const salon = (host: string) => ({ id: '00000011-0000-4000-8000-000000000011', name: 'The Back Row', creator_id: host });
 
 beforeEach(() => useAuthStore.setState({ user: { id: 'me' } as never }));
 afterEach(() => { useAuthStore.setState({ user: null }); useLoungeStore.setState({ lounges: [] }); });

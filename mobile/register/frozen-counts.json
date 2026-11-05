@@ -255,7 +255,6 @@
     "mobile/src/hooks/__tests__/useLater.test.tsx": 11,
     "mobile/src/hooks/useFeeds.ts": 2,
     "mobile/src/hooks/useLogFlow.ts": 1,
-    "mobile/src/hooks/useProfileController.ts": 1,
     "mobile/src/lib/__tests__/sentryMeasures.test.ts": 1,
     "mobile/src/lib/__tests__/theHouseAsksToSendWordWhenItMeansSomething.test.ts": 5,
     "mobile/src/lib/__tests__/thePriceIsTheStores.test.ts": 5,

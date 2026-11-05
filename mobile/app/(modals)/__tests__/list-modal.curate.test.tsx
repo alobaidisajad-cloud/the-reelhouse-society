@@ -266,6 +266,19 @@ describe('the form can never destroy a stack', () => {
     expect(mockUpdateList).not.toHaveBeenCalled();
   });
 
+  it.each([['not an id', 'abc'], ['an id and more', `${STACK_ID}' OR 1=1`]])(
+    'and the same for a link whose stack id is %s: an amend that cannot be opened, never a new stack (P4.4)', async (_why, editId) => {
+      mockParams = { editId };
+      const r = mount();
+      await waitFor(() => expect(r.getByText('THIS STACK COULD NOT BE OPENED')).toBeTruthy());
+      expect(r.getByText('Amend a Stack')).toBeTruthy();
+      await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack title'), 'Anything'); });
+      await act(async () => { await fireEvent.press(r.getByLabelText(/SAVE THE AMENDMENTS/)); });
+      await act(async () => {});
+      expect(mockCreateList).not.toHaveBeenCalled();
+      expect(mockUpdateList).not.toHaveBeenCalled();
+    });
+
   it('and still calls itself an amendment while the stack has not arrived', async () => {
     // The mode is what the member asked for, not what happened to load. Read off
     // `editList`, the sheet called itself "Curate a Stack" with a FILE THE STACK

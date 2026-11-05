@@ -2,8 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { BAD_CREDENTIALS, authLink } from '@/src/utils/authSignals';
-import { useLocalSearchParams } from 'expo-router';
-import { returnAfterSignIn } from '@/src/components/MembersOnly';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
 import reelToast from '@/src/utils/reelToast';
@@ -115,10 +114,13 @@ export function initialIsLogin(action?: string): boolean {
 /** What the email-link sheet sends: a password reset, or a fresh confirmation. */
 export type EmailLinkPurpose = 'reset' | 'confirm';
 
+/** The door a link opens (sign up, sign in, the forgotten password), and the screen to return to. */
+const PARAMS = { action: P.oneOf('signup', 'login', 'forgot_password', 'resend_signup'), next: P.returnTo };
+
 export function useAuthFlow() {
-  const params = useLocalSearchParams<{ action?: string; next?: string }>();
+  const params = useRouteParams(PARAMS);
   // Where a sign-in lands: the member-only screen that sent the stranger here, or the Lobby.
-  const landing = returnAfterSignIn(params.next);
+  const landing = params.next ?? '/(tabs)';
   const { login, signup } = useAuthStore();
 
   // Right on the first frame; the effect below follows the route changing after.

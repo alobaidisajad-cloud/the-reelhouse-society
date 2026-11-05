@@ -20,14 +20,22 @@
  */
 import { useEffect } from 'react';
 import { View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
+import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { nav } from '@/src/utils/typedRouter';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 
-export default function DossierRedirect() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+const PARAMS = { id: P.uuid };
+
+/** The route: a link of another shape is a page not in the archive (routeParams, P4.4). */
+export default function DossierRedirectRoute() {
+  const { id } = useRouteParams(PARAMS);
+  return id ? <DossierRedirect id={id} /> : <NotInTheArchive />;
+}
+
+function DossierRedirect({ id }: { id: string }) {
 
   useEffect(() => {
     // Without an id there is nothing to forward to, so this goes back rather

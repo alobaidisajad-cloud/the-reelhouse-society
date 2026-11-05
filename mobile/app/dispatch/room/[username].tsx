@@ -16,7 +16,7 @@
 import { useCallback, useMemo } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import {
@@ -41,8 +41,11 @@ import { useBottomEdge, useContentBottom, useColumnWidth } from '@/src/component
 
 type Row = MonthRow<Filing>;
 
+/** A member's room by their handle; with none, the page's own "no such member" (P4.4). */
+const PARAMS = { username: P.words(64) };
+
 export default function MemberRoomScreen() {
-  const { username } = useLocalSearchParams<{ username: string }>();
+  const { username } = useRouteParams(PARAMS);
   const edge = useBottomEdge();
   const end = useContentBottom();
   const me = useAuthStore((s) => s.user);

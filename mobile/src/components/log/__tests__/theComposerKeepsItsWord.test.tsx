@@ -51,7 +51,7 @@ type R = ReturnType<typeof render>;
 
 const FILM = { filmId: '843', filmTitle: 'In the Mood for Love', filmPoster: '/mood.jpg', filmYear: '2000' };
 const LOG = {
-  id: 'log-1', filmId: 843, title: 'In the Mood for Love', poster: '/mood.jpg', year: 2000,
+  id: '00000015-0000-4000-8000-000000000015', filmId: 843, title: 'In the Mood for Love', poster: '/mood.jpg', year: 2000,
   status: 'watched', rating: 4.5, review: 'Rain on the stairs.', isSpoiler: false,
   dropCap: true, pullQuote: '', watchedWith: 'Anna', physicalMedia: 'VHS', watchedDate: '2026-08-16',
   autopsy: { story: 8 },
@@ -138,7 +138,7 @@ describe('every control the composer owns is there, by name', () => {
     // An amended record has no draft: CLOSE leaves it unsaved. "DISCARD DRAFT"
     // here cleared the member's ONE new-record draft — the review they were
     // writing about some other film — and said it was discarding this one.
-    const edit = await mount('auteur', { editLogId: 'log-1' });
+    const edit = await mount('auteur', { editLogId: '00000015-0000-4000-8000-000000000015' });
     expect(edit.queryByLabelText('Discard this draft')).toBeNull();
     expect(edit.queryByText('DISCARD DRAFT')).toBeNull();
   });
@@ -149,7 +149,7 @@ describe('every control the composer owns is there, by name', () => {
     const USER = '33333333-3333-4333-8333-333333333333';
     writeDraft(USER, 'log', { filmId: '550', review: 'Half a review of Fight Club.' });
     await act(async () => { member('auteur'); useFilmStore.setState({ logs: [LOG] } as never); });
-    (useLocalSearchParams as jest.Mock).mockReturnValue({ editLogId: 'log-1' });
+    (useLocalSearchParams as jest.Mock).mockReturnValue({ editLogId: '00000015-0000-4000-8000-000000000015' });
     const edit = await renderHook(() => useLogFlow());
     await act(async () => { edit.result.current.discardDraft(); });
     expect(readDraft<{ review: string }>(USER, 'log')?.data.review).toBe('Half a review of Fight Club.');
@@ -164,7 +164,7 @@ describe('every control the composer owns is there, by name', () => {
   });
 
   it('deleting is reached for past the whole record, and asked twice', async () => {
-    const r = await mount('auteur', { editLogId: 'log-1' });
+    const r = await mount('auteur', { editLogId: '00000015-0000-4000-8000-000000000015' });
     const all = labels(r);
     const del = all.indexOf('Delete this entire log');
     expect(del).toBeGreaterThan(-1);
@@ -232,7 +232,7 @@ describe('the record reads as one document', () => {
 
   it('an amended record opens every entry that already holds something', async () => {
     // Editing last year's record must never make a member hunt for their own words.
-    const r = await mount('auteur', { editLogId: 'log-1' });
+    const r = await mount('auteur', { editLogId: '00000015-0000-4000-8000-000000000015' });
     expect(r.getByLabelText('Enable: stylized drop cap').props.accessibilityState.checked).toBe(true);   // the desk: a drop cap
     expect(stateOf(r, /^THE AUTOPSY/).expanded).toBe(true);                                     // a score
     expect(stateOf(r, /^THE PHYSICAL ARCHIVE/).expanded).toBe(true);                            // VHS
@@ -334,12 +334,12 @@ describe('a rank you lack is a key and a name, never a no', () => {
     // shelf's rope, not the Vault's: on an amended record the Vault first asks
     // the server for the note, and there is no server here — it says so.)
     (openSociety as jest.Mock).mockClear();
-    const edit = await mount('free', { editLogId: 'log-1' });
+    const edit = await mount('free', { editLogId: '00000015-0000-4000-8000-000000000015' });
     // Already open: the record holds a VHS, and an entry holding something opens itself.
     await press(edit.getByLabelText(/^The Physical Archive\. Clearance required\./));
     const back = new URL((openSociety as jest.Mock).mock.calls[0][0], 'https://x');
     expect(back.searchParams.get('reason')).toBe('physical-archive');
-    expect(back.searchParams.get('returnTo')).toBe('/log/log-1');
+    expect(back.searchParams.get('returnTo')).toBe('/log/00000015-0000-4000-8000-000000000015');
   });
 });
 
@@ -352,7 +352,7 @@ describe('the verdict, and the seal that cannot disagree with the save', () => {
   });
 
   it('rated: the word, and the score printed once — the hint is gone', async () => {
-    const r = await mount('auteur', { editLogId: 'log-1' });
+    const r = await mount('auteur', { editLogId: '00000015-0000-4000-8000-000000000015' });
     expect(r.getByText('Masterpiece')).toBeTruthy();
     // A score ends "/ 5"; the review's counter ("19/5000") is not one.
     expect(words(r).filter((w) => /\/ ?5$/.test(w))).toEqual(['4.5 / 5']);
@@ -374,7 +374,7 @@ describe('the verdict, and the seal that cannot disagree with the save', () => {
   });
 
   it('once sealable, the line is the finished record’s own filing mark', async () => {
-    const r = await mount('auteur', { editLogId: 'log-1' });
+    const r = await mount('auteur', { editLogId: '00000015-0000-4000-8000-000000000015' });
     const mark = buildFilingMark({ watched_date: LOG.watchedDate, watched_with: LOG.watchedWith, physical_media: LOG.physicalMedia });
     const line = words(r).find((w) => w.startsWith('FILED · '));
     expect(line).toBeDefined();
@@ -451,7 +451,7 @@ describe('a member who asked for less motion gets less', () => {
     (withTiming as jest.Mock).mockClear();
     jest.useFakeTimers();
     try {
-      const r = await mount('auteur', { editLogId: 'log-1' });            // a verdict word is lit
+      const r = await mount('auteur', { editLogId: '00000015-0000-4000-8000-000000000015' });            // a verdict word is lit
       await act(async () => { jest.advanceTimersByTime(500); });        // the film arrives
       expect(r.getByText('Masterpiece')).toBeTruthy();
       const asks = (withTiming as jest.Mock).mock.calls.filter(([to]) => to === 1);
@@ -494,7 +494,7 @@ describe('the page speaks in one type scale', () => {
       (j.children ?? []).forEach(walk);
     };
     const take = (r: R) => walk(r.toJSON());
-    for (const [tier, params] of [['auteur', FILM], ['free', FILM], ['auteur', { editLogId: 'log-1' }]] as const) {
+    for (const [tier, params] of [['auteur', FILM], ['free', FILM], ['auteur', { editLogId: '00000015-0000-4000-8000-000000000015' }]] as const) {
       const r = await mount(tier, params);
       // An amended record opens what it holds by itself; pressing would shut it.
       if (!('editLogId' in params)) {
@@ -509,7 +509,7 @@ describe('the page speaks in one type scale', () => {
     }
     take(await mount('free', {}));   // the first frame: finding the film
     // A record carrying an alternate poster: its corner badge is the 9.
-    take(await mount('auteur', { editLogId: 'log-1' }, { store: { logs: [{ ...LOG, altPoster: '/alt.jpg' }] } }));
+    take(await mount('auteur', { editLogId: '00000015-0000-4000-8000-000000000015' }, { store: { logs: [{ ...LOG, altPoster: '/alt.jpg' }] } }));
     expect([...sizes].sort((a, b) => a - b)).toEqual(SCALE);
     // The exclusion found the gauge — it did not quietly skip nothing — and
     // the page around it was still read: the badges only an amended record

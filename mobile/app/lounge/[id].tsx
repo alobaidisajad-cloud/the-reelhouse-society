@@ -26,7 +26,9 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { safeOpenURL } from '@/src/utils/linking';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { FlashList } from '@shopify/flash-list';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
+import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -361,8 +363,15 @@ function formatDay(iso: string, now: number): string {
 // ════════════════════════════════════════════════════════════
 // MAIN SALON SCREEN
 // ════════════════════════════════════════════════════════════
-export default function LoungeRoomScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+const PARAMS = { id: P.uuid };
+
+/** The route: a link of another shape is a page not in the archive (routeParams, P4.4). */
+export default function LoungeRoomScreenRoute() {
+  const { id } = useRouteParams(PARAMS);
+  return id ? <LoungeRoomScreen id={id} /> : <NotInTheArchive />;
+}
+
+function LoungeRoomScreen({ id }: { id: string }) {
   const user = useAuthStore(s => s.user);
   // Who reads, by id: the store hands a new `user` object at each session restore, and a read
   // keyed on the object asked for the room, its roster and the Lounge list again each time (three

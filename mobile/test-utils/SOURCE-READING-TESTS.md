@@ -375,3 +375,4 @@ Decisions, as of 2026-09-28:
 | `e2e/__tests__/passwordNeverLeaves.test.ts` | The artifacts its own run of the scrubber wrote. |
 | `e2e/__tests__/runtimeDump.test.ts` | The runtime file its own run wrote. |
 | `src/utils/__tests__/everyOutsideValueIsChecked.guard.test.ts` | Every app file that opens an address, opens the in-app browser or hands a source a page or an address, read from its syntax tree: each value written in the code, asked of by a deciding check, made by a cleaner or a maker, or passed through a funnel whose every caller is judged. |
+| `src/utils/__tests__/everyRouteReadsThroughTheParser.guard.test.ts` | Every app file, read from its syntax tree: no file but routeParams.ts names useLocalSearchParams or useGlobalSearchParams, and every useRouteParams is handed a named shape or a literal one. |

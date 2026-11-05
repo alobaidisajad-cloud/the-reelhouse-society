@@ -21,7 +21,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager, StyleSheet, View } from 'react-native';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import { houseNow } from '@/src/lib/houseClock';
 import { useBottomEdge } from '@/src/components/layout/navMetrics';
 
@@ -87,6 +88,9 @@ function useSendBackIfNotAMember(me: unknown) {
 
 // ── THE SHORT DESKS ─────────────────────────────────────────────────────────
 
+/** `?edit=<id>`: an amend, by its filing's id (routeParams, P4.4). */
+const DESK_PARAMS = { edit: P.uuid };
+
 export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire' }) {
   const me = useMe();
   useSendBackIfNotAMember(me);
@@ -94,7 +98,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   const hour = useOpeningHour();
 
   // `?edit=<id>`: the same desk, amending. Two desks for one shape would drift.
-  const editId = useLocalSearchParams<{ edit?: string }>().edit;
+  const editId = useRouteParams(DESK_PARAMS).edit;
   /**
    * From the store the reader already filled, read ONCE: it only seeds the
    * `useState`s below, and a subscription would re-render the desk mid-typing.

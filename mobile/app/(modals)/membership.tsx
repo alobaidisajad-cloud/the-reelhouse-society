@@ -38,7 +38,7 @@ import { deckLabelProps } from '@/src/constants/textScaling';
 import { FOUNDING, PRIVILEGES, RANKS, rankById, type PaidRankId, type Rank } from '@/src/constants/membership';
 import { GATED_FEATURES } from '@/src/constants/gatedFeatures';
 import { recordGateEvent } from '@/src/utils/gateTelemetry';
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import { useMembershipPricing } from '@/src/hooks/useMembershipPricing';
 
 import { SocietyPoster, type ReachedFor } from '@/src/components/society/SocietyPoster';
@@ -113,6 +113,8 @@ async function readFoundingCount(): Promise<number | null> {
   return error ? null : count;
 }
 
+const PARAMS = { reason: P.oneOf(...GATED_FEATURES.map((f) => f.id)), rank: P.oneOf(...RANKS.map((r) => r.id)) };
+
 export default function MembershipScreen() {
 
   const edge = useBottomEdge();
@@ -165,7 +167,7 @@ export default function MembershipScreen() {
    * `theSocietyOpensOverYou.test.ts` fails the day this line reads it, so the
    * person doing that work is sent here first.
    */
-  const { reason, rank: rankAsked } = useLocalSearchParams<{ reason?: string; rank?: string; returnTo?: string }>();
+  const { reason, rank: rankAsked } = useRouteParams(PARAMS);
   const cameFor = useMemo(
     () => (reason ? GATED_FEATURES.find((f) => f.id === reason) ?? null : null),
     [reason],

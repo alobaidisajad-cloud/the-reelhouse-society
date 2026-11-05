@@ -1483,6 +1483,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/trailer.yaml | 2026-11-04 | new: a film's trailer opened from its tray, and YouTube's player says it is ready within 20 s (P4.2) |
 | .maestro/turned.yaml | 2026-10-31 | edited: no hideKeyboard (a Back press on the test phone); the bio is centred before it is touched: a field below the fold on a window on its side; edited: no hideKeyboard: on the test phone it is a Back press, which asked to discard the words; new: Edit Profile half-edited, the phone turned and turned back: the same screen, the words kept; the app turns only on the tablet run |
 | app/(modals)/__tests__/theCoverIsTheHostsToChoose.test.tsx | 2026-10-27 | edited: signed out, asked in; signed in as host, the picker drawn; Written 2026-10-27: the cover picker drawn for the host alone; anyone else, or a salon not known, told plainly (P4.4) |
+| app/__tests__/aLinkToNowhereIsSaidSo.test.tsx | 2026-11-05 | Written 2026-11-05: each route opened by an id of another shape, or none, is a page not in the archive (P4.4) |
 | app/__tests__/aLinkWithNoSessionSaysSo.test.tsx | 2026-10-30 | new: a reset link with no session says so, in its own words, and offers a new link and the way back |
 | app/__tests__/aNewPasswordSaysWhichField.test.tsx | 2026-10-28 | new: setting a new password: a refusal under its field, said with it, focused; mended, gone |
 | app/__tests__/aYearJustEndedIsTold.test.tsx | 2026-11-01 | new: drawn on the 2nd of January with and without a past year's films, and on the 1st of February |
@@ -1631,6 +1632,7 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/sealedEnv.ts | 2026-11-02 | new: read against contractEnv.ts and jest.setup.ts's stand-in client |
 | src/components/feed/__tests__/aNameHasALineOfItsOwn.test.tsx | 2026-11-03 | new: the name alone on the first line at every size, the rank and the time together beneath |
 | scripts/draw-room-lights.cjs | 2026-11-04 | new: each room's light drawn once: a bell curve in twenty steps with its grain dithered in, so it never bands |
+| src/components/NotInTheArchive.tsx | 2026-11-05 | Written 2026-11-05: the page for a path that leads nowhere, moved out of +not-found for the routes (P4.4) |
 | src/components/atmosphere/HungLight.tsx | 2026-11-04 | new: a room's light hung from the head of the page, going up with it |
 | src/components/darkroom/DarkroomStates.tsx | 2026-11-04 | new: nothing developed, the archives unreached, the sheet's foot (developing, failed, END OF SHEET) |
 | src/components/darkroom/sheet.ts | 2026-11-04 | new: the room's and the sheet's measures; prints a row by width; the baths a row by whether every name fits whole |
@@ -1641,6 +1643,10 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/darkroom/__tests__/theSheetIsPlanned.test.ts | 2026-11-04 | new: prints to a row, a print's width, the baths three across while every name fits, a plate's title by its longest word |
 | src/components/film/__tests__/aTrailerIsPlayedByYouTubeAlone.test.tsx | 2026-11-04 | Written 2026-11-04: the key YouTube-shaped or nothing drawn, the privacy-enhanced origin, no autoplay, nothing kept past a play, every load judged, what the player said drawn (P4.2) |
 | src/components/lounge/__tests__/theRailShowsItGoesOn.test.ts | 2026-11-04 | new: a rail card as wide as the drawing's own rule makes it, at seven widths |
+| src/hooks/__tests__/aLinkBeginsALogInItsKinds.test.tsx | 2026-11-05 | Written 2026-11-05: a log begun from a link takes its film, poster and year in their kinds; a bad amend id is withdrawn and never asked for (P4.4) |
+| src/utils/__tests__/aLinkIsReadByItsKinds.test.ts | 2026-11-05 | Written 2026-11-05: each kind against hostile shapes, and a shape read whole, refused names listed (P4.4) |
 | src/utils/__tests__/anOutsideValueIsChecked.test.ts | 2026-11-04 | Written 2026-11-04: a YouTube key, a picture's address and an authenticator's key, each judged by its kind (P4.2) |
 | src/utils/__tests__/everyOutsideValueIsChecked.guard.test.ts | 2026-11-04 | Written 2026-11-04: every value opened, played or drawn passes its check first, read from the syntax tree (P4.2) |
+| src/utils/__tests__/everyRouteReadsThroughTheParser.guard.test.ts | 2026-11-05 | Written 2026-11-05: no app file but routeParams.ts reads a route's parameters (P4.4) |
 | src/utils/outsideValues.ts | 2026-11-04 | Written 2026-11-04: the check for each kind of outside value the app opens, plays or draws (P4.2) |
+| src/utils/routeParams.ts | 2026-11-05 | Written 2026-11-05: the one reader of a route's parameters, each value in its kind (P4.4) |

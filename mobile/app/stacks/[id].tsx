@@ -7,7 +7,9 @@ import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { HouseBlur } from '@/src/components/HouseBlur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
+import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MessageSquare, MoreHorizontal, Send, Trash2, X } from 'lucide-react-native';
 import { Alert, Platform, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useBackCloses } from '@/src/hooks/useBackCloses';
@@ -204,8 +206,15 @@ const StackNav = React.memo(function StackNav({
     );
 });
 
-export default function StackDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+const PARAMS = { id: P.uuid };
+
+/** The route: a link of another shape is a page not in the archive (routeParams, P4.4). */
+export default function StackDetailScreenRoute() {
+  const { id } = useRouteParams(PARAMS);
+  return id ? <StackDetailScreen id={id} /> : <NotInTheArchive />;
+}
+
+function StackDetailScreen({ id }: { id: string }) {
   const router = useRouter();
   const { user } = useAuthStore();
   const edge = useBottomEdge();

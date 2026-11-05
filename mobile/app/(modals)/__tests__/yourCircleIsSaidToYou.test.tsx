@@ -27,7 +27,7 @@ jest.mock('@/src/services/ProfileWriteService', () => ({
 }));
 jest.mock('@/src/services/LoungeService', () => ({ LoungeService: { getUserLounges: jest.fn() } }));
 jest.mock('@/src/stores/lounge', () => ({ useLoungeStore: { getState: jest.fn(() => ({ sendMessage: jest.fn() })) } }));
-jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: 'me', username: 'cinephile' } }) }));
+jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: '00000012-0000-4000-8000-000000000012', username: 'cinephile' } }) }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 jest.mock('expo-blur', () => {
   const React = require('react');
@@ -42,10 +42,10 @@ beforeEach(() => {
 
 describe('an empty circle', () => {
   it.each([
-    ['followers', 'me', 'No one follows you yet.'],
-    ['following', 'me', 'You haven\'t followed anyone yet.'],
-    ['followers', 'someone-else', 'No one follows this member yet.'],
-    ['following', 'someone-else', 'This member hasn\'t followed anyone yet.'],
+    ['followers', '00000012-0000-4000-8000-000000000012', 'No one follows you yet.'],
+    ['following', '00000012-0000-4000-8000-000000000012', 'You haven\'t followed anyone yet.'],
+    ['followers', '00000013-0000-4000-8000-000000000013', 'No one follows this member yet.'],
+    ['following', '00000013-0000-4000-8000-000000000013', 'This member hasn\'t followed anyone yet.'],
   ])('%s of %s says: %s', async (type, userId, line) => {
     mockParams = { type, userId };
     const r = render(<SocialModal />);

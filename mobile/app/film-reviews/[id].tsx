@@ -14,7 +14,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
+import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import { ArrowLeft } from 'lucide-react-native';
 import {
   useBottomEdge, useContentBottom, usePushedHeaderTop,
@@ -76,8 +78,15 @@ async function readPage(filmId: string, from: Cursor) {
   return { data, error, askedAt };
 }
 
-export default function FilmReviewsScreen() {
-  const { id: filmId, title } = useLocalSearchParams<{ id: string; title?: string }>();
+const PARAMS = { id: P.tmdbId, title: P.words(200) };
+
+/** The route: a link of another shape is a page not in the archive (routeParams, P4.4). */
+export default function FilmReviewsScreenRoute() {
+  const { id, title } = useRouteParams(PARAMS);
+  return id ? <FilmReviewsScreen filmId={String(id)} title={title} /> : <NotInTheArchive />;
+}
+
+function FilmReviewsScreen({ filmId, title }: { filmId: string; title?: string }) {
   const edge = useBottomEdge();
   const end = useContentBottom();
   const headerTop = usePushedHeaderTop();

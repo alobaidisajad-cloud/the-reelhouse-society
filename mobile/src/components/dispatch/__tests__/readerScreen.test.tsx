@@ -161,7 +161,7 @@ jest.mock('expo-sharing', () => ({
 
 /** A row as PostgREST returns it, so `hydrate` parses it for real. */
 const row = (over: Record<string, unknown> = {}) => ({
-  id: 'f1', kind: 'dossier', user_id: 'u2', author_username: 'tomasreyes',
+  id: '00000017-0000-4000-8000-000000000017', kind: 'dossier', user_id: 'u2', author_username: 'tomasreyes',
   title: 'The Empty Room',
   body: 'An excerpt.',
   full_content: 'Ozu frames a room and then leaves it. The camera stays low.\n\nThat is the argument.',
@@ -208,7 +208,7 @@ beforeEach(() => {
   mockSheetProps.length = 0;
   mockReportProps.length = 0;
   mockBack.mockClear();
-  at({ id: 'f1' });
+  at({ id: '00000017-0000-4000-8000-000000000017' });
   useDispatch.setState({
     ...AS_BUILT,
     filings: [], opened: {}, critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
@@ -317,7 +317,7 @@ describe('the reader', () => {
 
     await act(async () => { await fireEvent.press(getByLabelText(/Option 2 of 2/)); });
     // Cast once, never changed: recorded on the mark, not after a round trip.
-    expect(useDispatch.getState().myVotes.f1).toBe(1);
+    expect(useDispatch.getState().myVotes['00000017-0000-4000-8000-000000000017']).toBe(1);
   });
 
   it('an open ballot says when it closes — ahead, never "moments ago"', async () => {
@@ -367,10 +367,10 @@ describe('the reader', () => {
     const { getByLabelText } = await mount();
     // The dock names what it certifies — the page above has its own control.
     await act(async () => { await fireEvent.press(getByLabelText(/^Certify this filing/)); });
-    expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
+    expect(useDispatch.getState().certifiedIds.has('00000017-0000-4000-8000-000000000017')).toBe(true);
 
     await act(async () => { await fireEvent.press(getByLabelText('Save')); });
-    expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
+    expect(useDispatch.getState().savedIds.has('00000017-0000-4000-8000-000000000017')).toBe(true);
   });
 
   it('replaces the bar with the composer, and never stacks the two', async () => {
@@ -390,47 +390,47 @@ describe('the reader', () => {
     await act(async () => { await fireEvent.press(getByLabelText('File this critique')); });
     await act(async () => { await Promise.resolve(); });
 
-    expect(useDispatch.getState().critiques.f1?.[0]?.body).toBe('That is the argument.');
+    expect(useDispatch.getState().critiques['00000017-0000-4000-8000-000000000017']?.[0]?.body).toBe('That is the argument.');
   });
 
   it('opens each filing on its own critique draft, never the last one’s', async () => {
     // The screen is kept when only the filing changes: the last filing's words stayed in the box.
-    writeDraft('u1', 'critique', { body: 'On Ozu.' }, 'f1');
+    writeDraft('u1', 'critique', { body: 'On Ozu.' }, '00000017-0000-4000-8000-000000000017');
     const r = await mount();
     expect(r.getByLabelText('Your critique').props.value).toBe('On Ozu.');
 
-    mockRow = row({ id: 'f2', title: 'The Long Take' });
-    at({ id: 'f2' });
+    mockRow = row({ id: '00000018-0000-4000-8000-000000000018', title: 'The Long Take' });
+    at({ id: '00000018-0000-4000-8000-000000000018' });
     r.rerender(<FilingReader />);
     await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
     expect(r.queryByLabelText('Your critique')).toBeNull();
     expect(r.getByLabelText('Write a critique')).toBeTruthy();
-    clearDraft('u1', 'critique', 'f1');
+    clearDraft('u1', 'critique', '00000017-0000-4000-8000-000000000017');
   });
 
   it('opens on a critique draft as build 41 saved it (savedJsonOpensWhole)', async () => {
     const { saved } = require('@/src/utils/__tests__/fixtures/saved-json/drafts.json') as { saved: Record<string, unknown> };
     const envelope = Object.entries(saved).find(([k]) => /_critique_/.test(k))![1];
-    storage.set(draftKey('u1', 'critique', 'f1'), JSON.stringify(envelope));
+    storage.set(draftKey('u1', 'critique', '00000017-0000-4000-8000-000000000017'), JSON.stringify(envelope));
     const r = await mount();
     expect(r.getByLabelText('Your critique').props.value).toBe('Half a critique.');
-    clearDraft('u1', 'critique', 'f1');
+    clearDraft('u1', 'critique', '00000017-0000-4000-8000-000000000017');
   });
 
   it('re-reads the critiques when the order is changed, and not when it is not', async () => {
     const { getByLabelText } = await mount();
-    expect(useDispatch.getState().critiquesOrder.f1).toBe('CERTIFIED');
+    expect(useDispatch.getState().critiquesOrder['00000017-0000-4000-8000-000000000017']).toBe('CERTIFIED');
 
     await act(async () => { await fireEvent.press(getByLabelText('Order by newest')); });
-    expect(useDispatch.getState().critiquesOrder.f1).toBe('NEWEST');
+    expect(useDispatch.getState().critiquesOrder['00000017-0000-4000-8000-000000000017']).toBe('NEWEST');
 
     // The order already chosen does not re-read (the list would only flash). Pressed
     // past its 400 ms (PressableScale's debounce): inside it, the press would never
     // reach the screen, and "not re-read" would pass for that alone.
-    useDispatch.setState({ critiquesOrder: { f1: 'MARKER' } } as never);
+    useDispatch.setState({ critiquesOrder: { '00000017-0000-4000-8000-000000000017': 'MARKER' } } as never);
     await act(() => new Promise((res) => setTimeout(res, 450)));
     await act(async () => { await fireEvent.press(getByLabelText('Order by newest')); });
-    expect(useDispatch.getState().critiquesOrder.f1).toBe('MARKER');
+    expect(useDispatch.getState().critiquesOrder['00000017-0000-4000-8000-000000000017']).toBe('MARKER');
   });
 
   it('opens the series from the head of a dossier that is part of one', async () => {
@@ -458,7 +458,7 @@ describe('the reader', () => {
     expect(mockSheetProps[0].targetUserId).toBe('u2');
     expect(mockSheetProps[0].targetUsername).toBe('tomasreyes');
     expect(mockSheetProps[0].contentType).toBe('dispatch_post');
-    expect(mockSheetProps[0].contentId).toBe('f1');
+    expect(mockSheetProps[0].contentId).toBe('00000017-0000-4000-8000-000000000017');
   });
 
   it('offers the AUTHOR their own two acts, and never the sheet', async () => {
@@ -486,7 +486,7 @@ describe('the reader', () => {
 
     await act(async () => { await (alerts[1][2].find((b) => b.text === 'Withdraw')?.onPress?.() as unknown as Promise<void>); });
     // On `opened`: reached by its address, the filing is not in the feed.
-    expect(useDispatch.getState().opened.f1?.endedBy).toBe('author');
+    expect(useDispatch.getState().opened['00000017-0000-4000-8000-000000000017']?.endedBy).toBe('author');
     expect(useDispatch.getState().filings).toHaveLength(0);
     spy.mockRestore();
   });
@@ -504,7 +504,7 @@ describe('the reader', () => {
     await act(async () => { alerts[0][2].find((b) => b.text === 'Amend it')?.onPress?.(); });
 
     // The essay desk, with the id that makes it AMEND IT.
-    expect(mockPushed).toEqual(['/dispatch/compose?kind=dossier&edit=f1']);
+    expect(mockPushed).toEqual(['/dispatch/compose?kind=dossier&edit=00000017-0000-4000-8000-000000000017']);
     spy.mockRestore();
   });
 
@@ -548,7 +548,7 @@ describe('the reader', () => {
   it('a filing not sent yet says so, and offers no act until the house has it', async () => {
     mockUser = { id: 'u2', username: 'tomasreyes' };
     mockRow = row({ kind: 'take', title: null, body: 'Written on a train.' });
-    useOfflineQueueStore.setState({ queued: [{ id: 'q1', type: 'add_filing', payload: { _tempId: 'f1' }, timestamp: 0 }] });
+    useOfflineQueueStore.setState({ queued: [{ id: 'q1', type: 'add_filing', payload: { _tempId: '00000017-0000-4000-8000-000000000017' }, timestamp: 0 }] });
     try {
       const { getByText, getAllByText, getByLabelText } = await mount();
       getByText('NOT SENT YET · THE HOUSE HAS NOT SEEN THIS');
@@ -564,7 +564,7 @@ describe('the reader', () => {
     // The short kinds said it on their card and the ballot at its foot; the
     // essay, drawn by its own head and body, read as though it were published.
     mockUser = { id: 'u2', username: 'tomasreyes' };
-    useOfflineQueueStore.setState({ queued: [{ id: 'q1', type: 'add_filing', payload: { _tempId: 'f1' }, timestamp: 0 }] });
+    useOfflineQueueStore.setState({ queued: [{ id: 'q1', type: 'add_filing', payload: { _tempId: '00000017-0000-4000-8000-000000000017' }, timestamp: 0 }] });
     try {
       const { getByText } = await mount();
       expect(getByText('The Empty Room')).toBeTruthy();
@@ -700,14 +700,14 @@ describe('the reader', () => {
     mockUser = { id: 'u2', username: 'tomasreyes' };
     mockRow = row({ kind: 'seeking', title: null, full_content: null, body: 'What tonight?' });
     mockCritiqueRows = [{
-      id: 'c1', post_id: 'f1', user_id: 'u3', author_username: 'someone',
+      id: 'c1', post_id: '00000017-0000-4000-8000-000000000017', user_id: 'u3', author_username: 'someone',
       body: 'Tokyo Story.', certify_count: 0,
       created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
     }];
 
     const { getByLabelText } = await mount();
     await act(async () => { await fireEvent.press(getByLabelText(/Take .* as your answer/)); });
-    expect(useDispatch.getState().opened.f1?.answerId).toBe('c1');
+    expect(useDispatch.getState().opened['00000017-0000-4000-8000-000000000017']?.answerId).toBe('c1');
   });
 
   it('withdraws a critique, after asking', async () => {
@@ -716,7 +716,7 @@ describe('the reader', () => {
       ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
     );
     mockCritiqueRows = [{
-      id: 'c1', post_id: 'f1', user_id: 'u1', author_username: 'me',
+      id: 'c1', post_id: '00000017-0000-4000-8000-000000000017', user_id: 'u1', author_username: 'me',
       body: 'My own critique.', certify_count: 0,
       created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
     }];
@@ -727,7 +727,7 @@ describe('the reader', () => {
 
     await act(async () => { await (alerts[0][2].find((b) => b.text === 'Withdraw')?.onPress?.() as unknown as Promise<void>); });
     await act(async () => { await Promise.resolve(); });
-    expect(useDispatch.getState().critiques.f1).toHaveLength(0);
+    expect(useDispatch.getState().critiques['00000017-0000-4000-8000-000000000017']).toHaveLength(0);
     spy.mockRestore();
   });
 
@@ -758,9 +758,9 @@ describe('the reader', () => {
       expect(queryAllByLabelText('Save this')).toHaveLength(0);
       expect(getAllByLabelText(/^Certify this filing/)).toHaveLength(1);
       await act(async () => { await fireEvent.press(getByLabelText(/^Certify this filing/)); });
-      expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
+      expect(useDispatch.getState().certifiedIds.has('00000017-0000-4000-8000-000000000017')).toBe(true);
       await act(async () => { await fireEvent.press(getByLabelText('Save')); });
-      expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
+      expect(useDispatch.getState().savedIds.has('00000017-0000-4000-8000-000000000017')).toBe(true);
 
       await act(async () => { unmount(); }); // before the next tree mounts
     }
@@ -768,25 +768,25 @@ describe('the reader', () => {
 
   it('certifies a critique', async () => {
     mockCritiqueRows = [{
-      id: 'c1', post_id: 'f1', user_id: 'u3', author_username: 'someone',
+      id: 'c1', post_id: '00000017-0000-4000-8000-000000000017', user_id: 'u3', author_username: 'someone',
       body: 'A critique.', certify_count: 2,
       created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
     }];
     const { getByLabelText } = await mount();
     await act(async () => { await fireEvent.press(getByLabelText('Certify this critique. 2 members have certified this critique')); });
     expect(useDispatch.getState().certifiedCritiqueIds.has('c1')).toBe(true);
-    expect(useDispatch.getState().critiques.f1[0].certifyCount).toBe(3);
+    expect(useDispatch.getState().critiques['00000017-0000-4000-8000-000000000017'][0].certifyCount).toBe(3);
   });
 
   it('reports a critique to the Tribunal, and only somebody else’s', async () => {
     mockCritiqueRows = [
       {
-        id: 'c1', post_id: 'f1', user_id: 'u3', author_username: 'someone',
+        id: 'c1', post_id: '00000017-0000-4000-8000-000000000017', user_id: 'u3', author_username: 'someone',
         body: 'Theirs.', certify_count: 0, created_at: '2026-08-28T22:00:00Z',
         edited_at: null, profiles: null,
       },
       {
-        id: 'c2', post_id: 'f1', user_id: 'u1', author_username: 'me',
+        id: 'c2', post_id: '00000017-0000-4000-8000-000000000017', user_id: 'u1', author_username: 'me',
         body: 'Mine.', certify_count: 0, created_at: '2026-08-28T23:00:00Z',
         edited_at: null, profiles: null,
       },
@@ -803,23 +803,23 @@ describe('the reader', () => {
 
   it('fetches another page of critiques from the foot', async () => {
     mockCritiqueRows = Array.from({ length: 30 }, (_, i) => ({
-      id: 'c' + i, post_id: 'f1', user_id: 'u3', author_username: 'someone',
+      id: 'c' + i, post_id: '00000017-0000-4000-8000-000000000017', user_id: 'u3', author_username: 'someone',
       body: 'Critique ' + i, certify_count: 0,
       created_at: '2026-08-28T22:00:00Z', edited_at: null, profiles: null,
     }));
     mockRow = row({ comment_count: 200 });
     const { getByLabelText } = await mount();
-    expect(useDispatch.getState().critiques.f1).toHaveLength(30);
+    expect(useDispatch.getState().critiques['00000017-0000-4000-8000-000000000017']).toHaveLength(30);
 
     // The next page is thirty others: it said `>= 30`, which the first page met alone.
     mockCritiqueRows = Array.from({ length: 30 }, (_, i) => ({
-      id: 'c' + (i + 30), post_id: 'f1', user_id: 'u3', author_username: 'someone',
+      id: 'c' + (i + 30), post_id: '00000017-0000-4000-8000-000000000017', user_id: 'u3', author_username: 'someone',
       body: 'Critique ' + (i + 30), certify_count: 0,
       created_at: '2026-08-28T21:00:00Z', edited_at: null, profiles: null,
     }));
     await act(async () => { await fireEvent.press(getByLabelText(/more, \d+ at a time: read the next critiques/)); });
     await act(async () => { await Promise.resolve(); });
-    expect(useDispatch.getState().critiques.f1).toHaveLength(60);
+    expect(useDispatch.getState().critiques['00000017-0000-4000-8000-000000000017']).toHaveLength(60);
   }, 10000);   // sixty critiques drawn: ~2.5 s alone, past 5 s under a full run
 
   it('blocks the author, then leaves the page', async () => {
@@ -849,7 +849,7 @@ describe('the reader', () => {
     await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
     await act(async () => { (mockSheetProps[0].onReport as () => void)(); });
     expect(mockReportProps[0].contentType).toBe('dispatch_post');
-    expect(mockReportProps[0].contentId).toBe('f1');
+    expect(mockReportProps[0].contentId).toBe('00000017-0000-4000-8000-000000000017');
     expect(mockSheetProps).toHaveLength(1); // the action sheet closed behind it
   });
 
@@ -1033,7 +1033,7 @@ describe('the reader', () => {
 
   it('asks for the critiques in the order its own header shows', async () => {
     await mount();
-    expect(useDispatch.getState().critiquesOrder.f1).toBe('CERTIFIED');
+    expect(useDispatch.getState().critiquesOrder['00000017-0000-4000-8000-000000000017']).toBe('CERTIFIED');
   });
 });
 
@@ -1231,13 +1231,13 @@ describe('the ways out, and the ways it fails', () => {
 
   it('does not re-read the critiques when the order is already that', async () => {
     const { getByLabelText } = await mount();
-    expect(useDispatch.getState().critiquesOrder.f1).toBe('CERTIFIED');
+    expect(useDispatch.getState().critiquesOrder['00000017-0000-4000-8000-000000000017']).toBe('CERTIFIED');
     // A re-read would write CERTIFIED again, the value already there, so a marker
     // stands in the store: only a re-read could replace it.
-    useDispatch.setState({ critiquesOrder: { f1: 'MARKER' } } as never);
+    useDispatch.setState({ critiquesOrder: { '00000017-0000-4000-8000-000000000017': 'MARKER' } } as never);
     // By its own label: the certify controls say "certified" too now.
     await act(async () => { await fireEvent.press(getByLabelText('Order by certified')); });
-    expect(useDispatch.getState().critiquesOrder.f1).toBe('MARKER');
+    expect(useDispatch.getState().critiquesOrder['00000017-0000-4000-8000-000000000017']).toBe('MARKER');
   });
 
   it('says so when a filing will not withdraw', async () => {

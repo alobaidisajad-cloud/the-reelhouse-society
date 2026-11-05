@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useEffectEvent, useMemo, useRef } from 'react';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useNavigation } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import { useIsFocused } from "expo-router/react-navigation";
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useAuthStore } from '@/src/stores/auth';
@@ -40,12 +41,13 @@ export function computeFollowCountDelta(isFollowing: boolean, isRequested: boole
 /** The room a tab is, if it is one of the five with filters. */
 const roomOf = (tab: ProfileTab | null): Room | null => (tab && (ROOMS as readonly string[]).includes(tab) ? tab as Room : null);
 
+/** A member's file by their handle, and the tab a link opens it on. */
+const PARAMS = { username: P.words(64), tab: P.words(40) };
+
 export function useProfileController(usernameOverride?: string) {
-  const params = useLocalSearchParams<{ username: string | string[]; tab?: string }>();
-  const rawUsername = usernameOverride ?? params.username;
-  // Prevent deep-link array mutation crashing the Supabase client
-  const username = Array.isArray(rawUsername) ? rawUsername[0] : rawUsername;
-  const tab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
+  const params = useRouteParams(PARAMS);
+  const username = usernameOverride ?? params.username;
+  const tab = params.tab;
 
   const user = useAuthStore(s => s.user);
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
@@ -106,7 +108,7 @@ export function useProfileController(usernameOverride?: string) {
   const rereadFollows = useCallback(() => { void hydrateFollowing(); }, []);
 
   const data = useProfileData({
-    username,
+    username: username ?? '',
     isSelf,
     isFollowing,
     activeTab,

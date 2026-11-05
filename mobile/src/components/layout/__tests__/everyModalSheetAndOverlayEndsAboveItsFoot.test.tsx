@@ -101,7 +101,7 @@ jest.mock('@/src/stores/auth', () => {
   // One object, as a store keeps one: a new member each read reruns its effects.
   const state = {
     isAuthenticated: true,
-    user: { id: 'me', username: 'kane', role: 'archivist', tier: 'auteur', preferences: {}, created_at: '2024-01-01T00:00:00Z' },
+    user: { id: '00000012-0000-4000-8000-000000000012', username: 'kane', role: 'archivist', tier: 'auteur', preferences: {}, created_at: '2024-01-01T00:00:00Z' },
     restoreSession: () => Promise.resolve(),
     rereadProfile: () => Promise.resolve(true),
     updateUser: () => Promise.resolve(),
@@ -139,10 +139,10 @@ const MODALS: Drawn[] = [
   { file: 'app/(modals)/notifications-modal.tsx', name: 'notices', draw: route('app/(modals)/notifications-modal.tsx') },
   { file: 'app/(modals)/list-modal.tsx', name: 'a new stack', draw: route('app/(modals)/list-modal.tsx') },
   // The picker is the host's alone: the member hosts the salon it names.
-  { file: 'app/(modals)/cover-picker.tsx', name: 'a salon cover', params: { loungeId: 'room' }, draw: route('app/(modals)/cover-picker.tsx'),
+  { file: 'app/(modals)/cover-picker.tsx', name: 'a salon cover', params: { loungeId: '00000011-0000-4000-8000-000000000011' }, draw: route('app/(modals)/cover-picker.tsx'),
     arrange: () => { require('@/src/stores/lounge').useLoungeStore.setState({ lounges: [ROOM] }); } },
   { file: 'app/(modals)/login.tsx', name: 'sign in', draw: route('app/(modals)/login.tsx') },
-  { file: 'app/(modals)/social-modal.tsx', name: 'followers', params: { userId: 'me', type: 'followers' }, draw: route('app/(modals)/social-modal.tsx') },
+  { file: 'app/(modals)/social-modal.tsx', name: 'followers', params: { userId: '00000012-0000-4000-8000-000000000012', type: 'followers' }, draw: route('app/(modals)/social-modal.tsx') },
   { file: 'app/(modals)/membership.tsx', name: 'the Society', draw: route('app/(modals)/membership.tsx') },
   { file: 'app/dispatch/compose.tsx', name: 'an essay', params: { kind: 'dossier' }, draw: route('app/dispatch/compose.tsx') },
   { file: 'app/dispatch/compose.tsx', name: 'a take', params: { kind: 'take' }, draw: route('app/dispatch/compose.tsx') },
@@ -242,12 +242,12 @@ it('names a foot, or whose foot it is, for every modal the page-top test draws',
 // ── the sheets and the overlays ───────────────────────────────────────────────
 
 const MSG = {
-  id: 'm1', lounge_id: 'room', user_id: 'u2', username: 'morpho', content: 'The rain in that film.',
+  id: 'm1', lounge_id: '00000011-0000-4000-8000-000000000011', user_id: 'u2', username: 'morpho', content: 'The rain in that film.',
   type: 'text', created_at: '2026-08-01T00:00:00Z',
 };
 const ROOM = {
-  id: 'room', name: 'The Back Row', description: '', is_private: false,
-  creator_id: 'me', created_at: '2026-01-01T00:00:00Z', member_count: 3,
+  id: '00000011-0000-4000-8000-000000000011', name: 'The Back Row', description: '', is_private: false,
+  creator_id: '00000012-0000-4000-8000-000000000012', created_at: '2026-01-01T00:00:00Z', member_count: 3,
 };
 
 /** Each sheet and overlay, how it is drawn, and where its foot is. */

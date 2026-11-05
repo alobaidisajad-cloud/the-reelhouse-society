@@ -13,7 +13,8 @@
 import React, { useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
+import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import { useModalTop } from '@/src/components/layout/navMetrics';
 import { X } from 'lucide-react-native';
 import LogSearchEngine, { LogSearchResult } from '@/src/components/log/LogSearchEngine';
@@ -28,8 +29,10 @@ import { EmptyState } from '@/src/components/EmptyStates';
 import { WayOut } from '@/src/components/TryAgain';
 import { MembersOnly } from '@/src/components/MembersOnly';
 
+const PARAMS = { loungeId: P.uuid };
+
 export default function CoverPicker() {
-  const { loungeId } = useLocalSearchParams<{ loungeId: string }>();
+  const { loungeId } = useRouteParams(PARAMS);
   const top = useModalTop();
   const setLoungeCover = useLoungeStore(s => s.setLoungeCover);
   const me = useAuthStore((st) => st.user?.id);
@@ -46,9 +49,12 @@ export default function CoverPicker() {
     nav.back();
   }, [loungeId, setLoungeCover]);
 
+  // A link with no salon, or one of another shape, leads nowhere (P4.4).
+  if (!loungeId) return <NotInTheArchive />;
+
   // A stranger is not told "not yours" of a salon: they are asked in, and brought back here.
   if (!me) {
-    return <MembersOnly next={`/cover-picker?loungeId=${loungeId ?? ''}`} style={{ paddingTop: top }} />;
+    return <MembersOnly next={`/cover-picker?loungeId=${loungeId}`} style={{ paddingTop: top }} />;
   }
 
   if (!hosts) {

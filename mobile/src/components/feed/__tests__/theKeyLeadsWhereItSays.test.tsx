@@ -124,7 +124,7 @@ describe('the other two places that promised a locked corridor', () => {
     // The rope, handed the share itself for a rank found held when it is read again (P4.17).
     expect(share).toMatch(/if \(!canShare\) \{\s*openShare\(shareThem\);/);
     expect(share).not.toMatch(/'\/lounge'/);
-    expect(page).toMatch(/useClearance\('lounge-speaking', `\/person\/\$\{id\}`\)/);
+    expect(page).toMatch(/useClearance\('lounge-speaking', `\/person\/\$\{personId\}`\)/);
     // And the button says where it leads, instead of "requires a higher rank".
     expect(readCode('src/components/person/PersonHero.tsx')).toMatch(/accessibilityLabel=\{shareLabel\}/);
   });

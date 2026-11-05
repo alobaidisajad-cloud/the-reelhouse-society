@@ -14,7 +14,7 @@ import { act, render } from '@testing-library/react-native';
 import LoungeRoomScreen from '@/app/lounge/[id]';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 
-const PRIVATE = { id: 'room', name: 'The Back Row', description: '', is_private: true, creator_id: 'host', created_at: '2026-01-01T00:00:00Z', member_count: 3 };
+const PRIVATE = { id: '00000011-0000-4000-8000-000000000011', name: 'The Back Row', description: '', is_private: true, creator_id: 'host', created_at: '2026-01-01T00:00:00Z', member_count: 3 };
 let mockRoom: Record<string, unknown> = PRIVATE;
 let mockRoster: { user_id: string; status: string }[] = [];
 const mockLeave = jest.fn();
@@ -24,7 +24,7 @@ jest.mock('@/src/stores/lounge', () => {
   const { create: mockCreate } = jest.requireActual('zustand');
   const noop = () => {};
   const useLoungeStore = mockCreate(() => ({
-    lounges: [], currentMessages: [], currentLoungeId: 'room', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false, presentCount: 0, typingUsers: [],
+    lounges: [], currentMessages: [], currentLoungeId: '00000011-0000-4000-8000-000000000011', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false, presentCount: 0, typingUsers: [],
     fetchMessages: noop, sendMessage: noop,
     subscribeToLounge: (id: string, opts: { seated?: boolean; onMembership?: () => void }) => mockSubscribe(id, opts),
     markRead: noop, withdrawMessage: noop, retryMessage: noop, toggleReaction: noop,
@@ -65,7 +65,7 @@ const settle = () => act(async () => { await new Promise((res) => setTimeout(res
 
 async function openRoom() {
   useRouter.mockReturnValue({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() });
-  useLocalSearchParams.mockReturnValue({ id: 'room' });
+  useLocalSearchParams.mockReturnValue({ id: '00000011-0000-4000-8000-000000000011' });
   const r = render(<LoungeRoomScreen />);
   await settle();
   return r;
@@ -81,7 +81,7 @@ beforeEach(() => {
 it('a seated member of a private salon joins its channel seated, and leaves it the moment the seat is lost', async () => {
   mockRoster = [{ user_id: 'u1', status: 'approved' }];
   const r = await openRoom();
-  expect(mockSubscribe.mock.calls.map(([id, o]) => [id, o.seated])).toEqual([['room', true]]);
+  expect(mockSubscribe.mock.calls.map(([id, o]) => [id, o.seated])).toEqual([['00000011-0000-4000-8000-000000000011', true]]);
   // The seat is taken away; the channel says the roster changed.
   mockRoster = [];
   await act(async () => { mockSubscribe.mock.calls[0][1].onMembership?.(); await new Promise((res) => setTimeout(res, 0)); });
@@ -105,6 +105,6 @@ it('a member waiting at a private door joins nothing, then joins seated when the
   mockRoster = [{ user_id: 'u1', status: 'approved' }];
   await act(async () => { useNotificationStore.setState({ noticesHeard: 1 }); await new Promise((res) => setTimeout(res, 0)); });
   await settle();
-  expect(mockSubscribe.mock.calls.map(([id, o]) => [id, o.seated])).toEqual([['room', true]]);
+  expect(mockSubscribe.mock.calls.map(([id, o]) => [id, o.seated])).toEqual([['00000011-0000-4000-8000-000000000011', true]]);
   r.unmount();
 });

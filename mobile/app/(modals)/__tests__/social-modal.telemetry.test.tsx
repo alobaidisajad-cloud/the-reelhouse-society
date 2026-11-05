@@ -78,7 +78,7 @@ beforeEach(() => {
 });
 
 describe('SocialModal fetchData — finding 115', () => {
-    beforeEach(() => { mockParams = { type: 'followers', userId: 'target-1' }; });
+    beforeEach(() => { mockParams = { type: 'followers', userId: '00000014-0000-4000-8000-000000000014' }; });
 
     it('reports a genuine defect with its scope', async () => {
         (ProfileService.getSocialConnections as jest.Mock).mockRejectedValue(GENUINE);
@@ -175,7 +175,7 @@ describe('SocialModal share, opened by its route without the rank to speak (P4.1
 
     it('a follower list is never roped', async () => {
         mockSpeaking = { held: false, standing: 'stranger' };
-        mockParams = { userId: 'u2', type: 'followers' };
+        mockParams = { userId: '00000026-0000-4000-8000-000000000026', type: 'followers' };
         (ProfileService.getSocialConnections as jest.Mock).mockResolvedValue({ profiles: [{ id: 'u3', username: 'reel', avatar_url: null }], hasMore: false });
         const screen = render(<SocialModal />);
         expect(await screen.findByText(/reel/i)).toBeTruthy();
@@ -185,7 +185,7 @@ describe('SocialModal share, opened by its route without the rank to speak (P4.1
 
 describe('the breadcrumb trail — a trace even when nothing is reported', () => {
     it('an offline fetch leaves a breadcrumb though it raises no event', async () => {
-        mockParams = { type: 'followers', userId: 'target-1' };
+        mockParams = { type: 'followers', userId: '00000014-0000-4000-8000-000000000014' };
         (ProfileService.getSocialConnections as jest.Mock).mockRejectedValue(OFFLINE);
         render(<SocialModal />);
         await waitFor(() => {
@@ -197,7 +197,7 @@ describe('the breadcrumb trail — a trace even when nothing is reported', () =>
 });
 
 describe('the circle, read and failed, and read a page at a time', () => {
-    beforeEach(() => { mockParams = { type: 'followers', userId: 'target-1' }; });
+    beforeEach(() => { mockParams = { type: 'followers', userId: '00000014-0000-4000-8000-000000000014' }; });
     const member = (n: number) => ({ id: `m${n}`, username: `member${n}`, avatar_url: null, role: 'cinephile' });
 
     it('a read that failed says so, with the way to ask again — never "The Circle Is Empty"', async () => {
@@ -218,7 +218,7 @@ describe('the circle, read and failed, and read a page at a time', () => {
         const screen = render(<SocialModal />);
         expect(await screen.findByText('@MEMBER2')).toBeTruthy();
         await act(async () => { mockList.onEndReached?.(); });
-        expect(ProfileService.getSocialConnections).toHaveBeenLastCalledWith('target-1', 'followers', { cursor: 'c1' });
+        expect(ProfileService.getSocialConnections).toHaveBeenLastCalledWith('00000014-0000-4000-8000-000000000014', 'followers', { cursor: 'c1' });
         expect(await screen.findByText('@MEMBER3')).toBeTruthy();
     });
 

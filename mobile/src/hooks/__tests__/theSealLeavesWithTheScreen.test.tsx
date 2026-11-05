@@ -42,7 +42,7 @@ jest.mock('@/src/stores/auth', () => {
 // One stable object: a fresh one per render loops the hook's reset effect.
 jest.mock('@/src/stores/films', () => {
   const state = {
-    logs: [{ id: 'log-9', filmId: 550, title: 'Fight Club', rating: 8, status: 'watched' }],
+    logs: [{ id: '00000016-0000-4000-8000-000000000016', filmId: 550, title: 'Fight Club', rating: 8, status: 'watched' }],
     lists: [], _loggedIndex: {},
     addLog: (...a: unknown[]) => mockAddLog(...a),
     updateLog: (...a: unknown[]) => mockUpdateLog(...a),
@@ -113,7 +113,7 @@ describe('a filed record, when the member stays', () => {
   });
 
   it('an edit dismisses too, but asks for no review — it added no film', async () => {
-    mockParams = { editLogId: 'log-9', filmId: '550', filmTitle: 'Fight Club' };
+    mockParams = { editLogId: '00000016-0000-4000-8000-000000000016', filmId: '550', filmTitle: 'Fight Club' };
     await file();
     await beat();
     await idle();

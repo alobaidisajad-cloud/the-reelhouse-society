@@ -21,7 +21,7 @@ import { Text } from '@/src/components/text';
 import Animated, { useSharedValue, useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import { nav } from '@/src/utils/typedRouter';
 import { useQuery } from '@tanstack/react-query';
 import { tmdb } from '@/src/lib/tmdb';
@@ -118,8 +118,11 @@ const VEIL_BELOW_BACK = 46;
 // ════════════════════════════════════════════════════════════
 //  MAIN PERSON DETAIL SCREEN
 // ════════════════════════════════════════════════════════════
+const PARAMS = { id: P.tmdbId };
+
 export default function PersonDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // A link of another shape is no one: the page's own "no record on file" (P4.4).
+  const { id: personId = 0 } = useRouteParams(PARAMS);
   const [showFullBio, setShowFullBio] = useState(false);
   const [isManualRefresh, setIsManualRefresh] = useState(false);
   const _loggedIndex = useArchiveStore(s => s._loggedIndex);
@@ -151,12 +154,11 @@ export default function PersonDetailScreen() {
     opacity: interpolate(scrollY.value, [0, 64], [0, 1], Extrapolation.CLAMP),
   }));
 
-  const personId = Number(id);
   /**
    * Sharing an artist into a salon is posting a message there, so the rope is
    * `lounge-speaking` (the corridor itself is open to every member).
    */
-  const { held: canShare, rank: shareRank, standing: shareStanding, openOr: openShare } = useClearance('lounge-speaking', `/person/${id}`);
+  const { held: canShare, rank: shareRank, standing: shareStanding, openOr: openShare } = useClearance('lounge-speaking', `/person/${personId}`);
   const isArchivist = canShare;
   const shareLabel = canShare ? 'Share to lounge'
     : !user ? 'Share to lounge. Sign in first.'
@@ -254,14 +256,14 @@ export default function PersonDetailScreen() {
       // circular-navigation history off the string it is given, and one screen
       // has one spelling. Social-modal infers share-person from personId.
       nav.push('/social-modal', {
-        personId: String(id),
+        personId: String(personId),
         personName: person.name,
       });
     };
     // A rank read again at the rope and found held shares at once.
     if (!canShare) { openShare(shareThem); return; }
     shareThem();
-  }, [user, canShare, openShare, person, id]);
+  }, [user, canShare, openShare, person, personId]);
 
   // ── THE CANON — the department cut ──
   const { canon, usedFallback } = useMemo(() => {

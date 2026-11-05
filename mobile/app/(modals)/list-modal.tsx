@@ -8,7 +8,7 @@ import { RemoteImage } from '@/src/components/Picture';
 import { useQueryClient } from '@tanstack/react-query';
 import { StackService } from '@/src/services/StackService';
 import { logger } from '@/src/utils/logger';
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -154,9 +154,15 @@ const DropdownResultRow = React.memo(({ r, onAdd }: { r: SearchResult, onAdd: (r
     );
 });
 
+const PARAMS = { editId: P.uuid };
+/** The stack a link named by an id of another shape: none has it, so it could not be opened. */
+const NO_SUCH_STACK = 'no-such-stack';
+
 export default function ListModal() {
 
-    const params = useLocalSearchParams<{ editId?: string }>();
+    const { editId: readId, refused } = useRouteParams(PARAMS);
+    // An amend whose id is of another shape is a stack that could not be opened, never a new one (P4.4).
+    const params = { editId: readId ?? (refused.includes('editId') ? NO_SUCH_STACK : undefined) };
     const lists = useListStore((s: any) => s.lists);
     const createList = useListStore((s: any) => s.createList);
     const updateList = useListStore((s: any) => s.updateList);

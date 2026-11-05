@@ -17,7 +17,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import {
   adoptLegacyDrafts, clearDraft, readDraft, writeDraft,
 } from '@/src/utils/memberDrafts';
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
 import { localCalendarDate } from '@/src/utils/timeAgo';
@@ -158,10 +158,13 @@ export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
     };
 }
 
+/** A log begun from a link: the film by its number, its title, poster path and year in their kinds. */
+const PARAMS = { filmId: P.tmdbId, editLogId: P.uuid, filmTitle: P.words(300), filmPoster: P.posterPath, filmYear: P.year };
+/** The record a link named by an id of another shape: none has it, so it is withdrawn, and never asked for. */
+const NO_SUCH_LOG = 'no-such-log';
+
 export function useLogFlow() {
-    const params = useLocalSearchParams<{
-        filmId?: string; editLogId?: string; filmTitle?: string; filmPoster?: string; filmYear?: string;
-    }>();
+    const params = useRouteParams(PARAMS);
     const { user, isAuthenticated } = useAuthStore();
     const { logs, lists, addLog, updateLog, removeLog, addFilmToList, removeFilmFromList, _loggedIndex } = useFilmStore();
 
@@ -169,20 +172,23 @@ export function useLogFlow() {
     const isAuteur = isAuteurPlusTier(user);
     const isPremium = isArchivistPlusTier(user);
 
+    // An amend whose id is of another shape is a record withdrawn, never a new log (P4.4).
+    const editLogId = params.editLogId ?? (params.refused.includes('editLogId') ? NO_SUCH_LOG : null);
+
     // ── Step state ──
     const [step, setStep] = useState(params.filmId ? 1 : 0);
 
     // ── Film state ──
     const [film, setFilm] = useState<SelectedFilm | null>(params.filmId ? {
-        id: parseInt(params.filmId), title: params.filmTitle ?? '',
+        id: params.filmId, title: params.filmTitle ?? '',
         poster_path: params.filmPoster ?? null, release_date: params.filmYear ?? '',
     } : null);
 
     // ── Detect rewatch mode: film already logged and NOT editing ──
     const previousLog = useMemo(() => {
-        if (params.editLogId || !film?.id) return null;
+        if (editLogId || !film?.id) return null;
         return _loggedIndex[film.id] ?? null;
-    }, [film?.id, params.editLogId, _loggedIndex]);
+    }, [film?.id, editLogId, _loggedIndex]);
     const isRewatchMode = !!previousLog;
 
     // ── Form state (the web's LogForm has the same fields) ──
@@ -215,7 +221,6 @@ export function useLogFlow() {
     const [availablePosters, setAvailablePosters] = useState<{ file_path: string }[]>([]);
     const [availableBackdrops, setAvailableBackdrops] = useState<{ file_path: string }[]>([]);
 
-    const editLogId = params.editLogId || null;
     const isEditing = !!editLogId;
 
     // The ranked tools' pictures: up front with the rank, on opening a tool without.
@@ -275,7 +280,7 @@ export function useLogFlow() {
         setEditRead('reading');
     }
     useEffect(() => {
-        if (!editLogId || holdsEdit || !memberId) return;
+        if (!editLogId || editLogId === NO_SUCH_LOG || holdsEdit || !memberId) return;
         let live = true;
         // Theirs alone: a record of another member's is not one to amend.
         void Promise.resolve()
@@ -384,7 +389,7 @@ export function useLogFlow() {
         setViewingLookupFailed(false);
     }
     useEffect(() => {
-        if (!editLogId || storeViewingId) return;
+        if (!editLogId || editLogId === NO_SUCH_LOG || storeViewingId) return;
         let live = true;
         void Promise.resolve()
             .then(() => supabase.from('logs').select('viewing_id').eq('id', editLogId).maybeSingle())
@@ -415,7 +420,7 @@ export function useLogFlow() {
     const [noteTouched, setNoteTouched] = useState(false);
 
     useEffect(() => {
-        if (!editLogId) return;
+        if (!editLogId || editLogId === NO_SUCH_LOG) return;
         void loadVault(editLogId);
     }, [editLogId, loadVault]);
 
@@ -722,7 +727,7 @@ export function useLogFlow() {
         /** An edit's record is in the form; until then the form is shut and the seal refuses. */
         editReady,
         /** Why an edit's record is not yet in the form: being read, unreachable, or not theirs. */
-        editRead,
+        editRead: editLogId === NO_SUCH_LOG ? 'withdrawn' as const : editRead,
         rereadEdit,
         editLogId, // a rope's way back from an edit: the log, not an empty form
         selectFilm,

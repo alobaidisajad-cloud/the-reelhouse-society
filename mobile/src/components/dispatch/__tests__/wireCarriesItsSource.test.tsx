@@ -465,7 +465,7 @@ describe('a filing that does not go', () => {
  */
 describe('a desk opened on a filing that already exists', () => {
   const existing = {
-    id: 'f9', kind: 'take' as const, authorId: 'u1',
+    id: '00000019-0000-4000-8000-000000000019', kind: 'take' as const, authorId: 'u1',
     author: { name: 'me', memberNo: 7, tier: 'free' as const },
     film: null, subjectId: null, subjectKind: null,
     title: null, body: 'Ozu never once stood up.', fullContent: null,
@@ -478,7 +478,7 @@ describe('a desk opened on a filing that already exists', () => {
   };
 
   beforeEach(() => {
-    mockEditId = 'f9';
+    mockEditId = '00000019-0000-4000-8000-000000000019';
     mockHeld = existing;
     mockAmended.length = 0;
   });
@@ -504,7 +504,7 @@ describe('a desk opened on a filing that already exists', () => {
 
     expect(mockFiled).toHaveLength(0);
     expect(mockAmended).toHaveLength(1);
-    expect(mockAmended[0].id).toBe('f9');
+    expect(mockAmended[0].id).toBe('00000019-0000-4000-8000-000000000019');
     expect((mockAmended[0].updates as Record<string, unknown>).body)
       .toBe('Ozu never once stood up, and that is the argument.');
   });
@@ -566,7 +566,7 @@ describe('a desk opened on a filing that already exists', () => {
  */
 describe('an amendment that does not go', () => {
   const existing = {
-    id: 'f9', kind: 'take' as const, authorId: 'u1',
+    id: '00000019-0000-4000-8000-000000000019', kind: 'take' as const, authorId: 'u1',
     author: { name: 'me', memberNo: 7, tier: 'free' as const },
     film: null, subjectId: null, subjectKind: null,
     title: null, body: 'Ozu never once stood up.', fullContent: null,
@@ -578,7 +578,7 @@ describe('an amendment that does not go', () => {
     createdAt: '2026-08-28T21:00:00Z', editedAt: null,
   };
 
-  beforeEach(() => { mockEditId = 'f9'; mockHeld = existing; mockAmendFails = true; });
+  beforeEach(() => { mockEditId = '00000019-0000-4000-8000-000000000019'; mockHeld = existing; mockAmendFails = true; });
   afterEach(() => { mockEditId = undefined; mockHeld = null; mockAmendFails = false; });
 
   it('says so, and KEEPS what was written', async () => {

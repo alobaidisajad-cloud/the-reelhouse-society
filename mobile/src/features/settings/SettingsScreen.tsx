@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePreventRemove, useNavigation } from "expo-router/react-navigation";
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import Constants from 'expo-constants';
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -84,6 +84,9 @@ const OTP_RESEND_SECONDS = 60;
 const TITLE_FADE_FROM = 130;
 const TITLE_FADE_TO = 210;
 
+/** A door to one section of the page (`/settings?section=import`). */
+const PARAMS = { section: P.oneOf('account', 'import') };
+
 export function SettingsScreen() {
   const { user, logout } = useAuthStore();
   const thisYear = useClock((now) => new Date(now).getFullYear());
@@ -91,7 +94,7 @@ export function SettingsScreen() {
   const end = useContentBottom();
   const headerTop = usePushedHeaderTop();
   // A door to one section (`/settings?section=import`) lands on it, once.
-  const { section } = useLocalSearchParams<{ section?: string }>();
+  const { section } = useRouteParams(PARAMS);
   const scrollRef = useRef<ScrollView>(null);
   const landedRef = useRef(false);
   const landOn = (name: string, e: LayoutChangeEvent) => {

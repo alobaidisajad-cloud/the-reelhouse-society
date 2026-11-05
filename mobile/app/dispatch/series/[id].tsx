@@ -28,7 +28,8 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
+import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 
 import { PaperEmpty, PaperSheet } from '@/src/components/dispatch/paper/PaperFrame';
 import { PaperBack } from '@/src/components/dispatch/paper/PaperMore';
@@ -48,8 +49,15 @@ import { useContentBottom } from '@/src/components/layout/navMetrics';
 /** A series is a handful of essays. Bounded because every read here is. */
 const MOST_PARTS = 24;
 
-export default function SeriesScreen() {
-  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+const PARAMS = { id: P.uuid, from: P.uuid };
+
+/** The route: a link of another shape is a page not in the archive (routeParams, P4.4). */
+export default function SeriesScreenRoute() {
+  const { id, from } = useRouteParams(PARAMS);
+  return id ? <SeriesScreen id={id} from={from} /> : <NotInTheArchive />;
+}
+
+function SeriesScreen({ id, from }: { id: string; from?: string }) {
   const end = useContentBottom();
 
   const [parts, setParts] = useState<Filing[]>([]);

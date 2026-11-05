@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, InteractionManager } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import { nav } from '@/src/utils/typedRouter';
 import { supabase } from '@/src/lib/supabase';
 import { captureAuthRefusal } from '@/src/lib/sentry';
@@ -19,13 +20,17 @@ import { CentredRoom } from '@/src/components/layout/CentredRoom';
 import { Arrive } from '@/src/components/Arrive';
 
 
+/** What an email's link carries: the house's auth server judges the code and the token itself. */
+const PARAMS = {
+  token_hash: P.words(512), code: P.words(512), url: P.words(4096),
+  type: P.oneOf('signup', 'invite', 'magiclink', 'recovery', 'email_change', 'email'),
+  error: P.words(300), error_code: P.words(300), error_description: P.words(300),
+};
+
 // Where an email's link lands (authLink): a sign-up confirmed, or a password reset begun.
 export default function AuthCallbackScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{
-    token_hash?: string; type?: string; url?: string; code?: string;
-    error?: string; error_code?: string; error_description?: string;
-  }>();
+  const params = useRouteParams(PARAMS);
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMsg, setErrorMsg] = useState('');
   // Which email this was, as verification found it, not only as the link said.

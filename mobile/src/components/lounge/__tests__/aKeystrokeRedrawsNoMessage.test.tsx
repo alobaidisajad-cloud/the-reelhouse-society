@@ -30,11 +30,11 @@ jest.mock('@/src/components/PressableScale', () => {
 });
 
 const ROOM = {
-  id: 'room', name: 'The Back Row', description: '', is_private: false,
+  id: '00000011-0000-4000-8000-000000000011', name: 'The Back Row', description: '', is_private: false,
   creator_id: 'host', created_at: '2026-01-01T00:00:00Z', member_count: 3,
 };
 const message = (n: number, over: Record<string, unknown> = {}) => ({
-  id: `m${n}`, lounge_id: 'room', user_id: n % 2 ? 'u2' : 'u3', username: n % 2 ? 'ana' : 'bo',
+  id: `m${n}`, lounge_id: '00000011-0000-4000-8000-000000000011', user_id: n % 2 ? 'u2' : 'u3', username: n % 2 ? 'ana' : 'bo',
   avatar_url: null, content: `Message number ${n}.`, type: 'text', metadata: null,
   created_at: new Date(2026, 8, 29, 20, n).toISOString(), deleted_at: null,
   reactions: [], status: 'sent', ...over,
@@ -44,7 +44,7 @@ jest.mock('@/src/stores/lounge', () => {
   const { create: mockCreate } = jest.requireActual('zustand');
   const noop = () => {};
   const useLoungeStore = mockCreate(() => ({
-    lounges: [], currentMessages: [], currentLoungeId: 'room', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false,
+    lounges: [], currentMessages: [], currentLoungeId: '00000011-0000-4000-8000-000000000011', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false,
     presentCount: 0, typingUsers: [],
     fetchMessages: noop, sendMessage: noop, subscribeToLounge: () => noop, markRead: noop,
     withdrawMessage: noop, retryMessage: noop, toggleReaction: noop,
@@ -94,7 +94,7 @@ beforeEach(() => useRouter.mockReturnValue(ROUTER));
 const FORTY = Array.from({ length: 40 }, (_, i) => message(i + 1));
 
 async function openRoom() {
-  useLocalSearchParams.mockReturnValue({ id: 'room' });
+  useLocalSearchParams.mockReturnValue({ id: '00000011-0000-4000-8000-000000000011' });
   useLoungeStore.setState({ currentMessages: FORTY, lounges: [ROOM] });
   const r = render(<LoungeRoomScreen />);
   await act(async () => { await new Promise((res) => setTimeout(res, 0)); });

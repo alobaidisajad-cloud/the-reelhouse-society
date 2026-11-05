@@ -39,7 +39,7 @@ const mockPersonFile = {
 /** A stack, as its query hands it over. */
 const mockStack = {
   list: {
-    id: 'stack', title: 'Night Walks', description: '', userId: 'u2', user: 'morpho',
+    id: '00000023-0000-4000-8000-000000000023', title: 'Night Walks', description: '', userId: 'u2', user: 'morpho',
     createdAt: '2026-08-01T00:00:00Z', films: [{ id: 1, title: 'Chungking Express', poster_path: null }],
     isPrivate: false, isRanked: false,
   },
@@ -55,10 +55,10 @@ jest.mock('@/src/hooks/useMemberRoom', () => ({
 }));
 /** A filing as PostgREST returns it (readerScreen's shape), a part of a series. */
 const FILING = {
-  id: 'f1', kind: 'dossier', user_id: 'u2', author_username: 'tomasreyes', title: 'The Empty Room',
+  id: '00000017-0000-4000-8000-000000000017', kind: 'dossier', user_id: 'u2', author_username: 'tomasreyes', title: 'The Empty Room',
   body: 'An excerpt.', full_content: 'Ozu frames a room and then leaves it.\n\nThat is the argument.',
   subject_kind: null, subject_id: null, subject_title: null, options: null, closes_at: null,
-  frozen_totals: null, answer_id: null, series_id: 'series', series_title: 'Ozu, in four parts',
+  frozen_totals: null, answer_id: null, series_id: '00000025-0000-4000-8000-000000000025', series_title: 'Ozu, in four parts',
   part_number: 1, spoiler_label: null, withheld_at: null, ended_at: null, ended_by: null,
   certify_count: 9, comment_count: 0, created_at: '2026-08-28T21:00:00Z', edited_at: null,
   profiles: { username: 'tomasreyes', member_no: 147, tier: 'auteur', role: null, is_founding: false },
@@ -157,7 +157,7 @@ type Route = {
 };
 
 const ROOM = {
-  id: 'room', name: 'The Back Row', description: '', is_private: false,
+  id: '00000011-0000-4000-8000-000000000011', name: 'The Back Row', description: '', is_private: false,
   creator_id: 'host', created_at: '2026-01-01T00:00:00Z', member_count: 3,
 };
 /** The house's own `from`, kept to put back after a route that answers one table. */
@@ -167,7 +167,7 @@ const ROUTES: Route[] = [
   { file: 'app/film/[id].tsx', params: { id: '550' }, draw: () => { const C = require('@/app/film/[id]').default; return <C />; },
     arrange: () => { mockFilm = { data: undefined, isLoading: true, isError: false, refetch: jest.fn() }; } },
   { file: 'app/person/[id].tsx', params: { id: '287' }, draw: () => { const C = require('@/app/person/[id]').default; return <C />; } },
-  { file: 'app/lounge/[id].tsx', params: { id: 'room' }, draw: () => { const C = require('@/app/lounge/[id]').default; return <C />; },
+  { file: 'app/lounge/[id].tsx', params: { id: '00000011-0000-4000-8000-000000000011' }, draw: () => { const C = require('@/app/lounge/[id]').default; return <C />; },
     arrange: () => {
       useLoungeStore.setState({ lounges: [ROOM] } as never);
       (supabase.from as jest.Mock).mockImplementation((table: string) => {
@@ -186,14 +186,14 @@ const ROUTES: Route[] = [
     } },
   { file: 'app/(admin)/tribunal.tsx', draw: () => { const C = require('@/app/(admin)/tribunal').default; return <C />; },
     arrange: () => { mockRole = 'admin'; secondKey(true); } },
-  { file: 'app/stacks/[id].tsx', params: { id: 'stack' }, draw: () => { const C = require('@/app/stacks/[id]').default; return <C />; } },
+  { file: 'app/stacks/[id].tsx', params: { id: '00000023-0000-4000-8000-000000000023' }, draw: () => { const C = require('@/app/stacks/[id]').default; return <C />; } },
   { file: 'app/film-reviews/[id].tsx', params: { id: '550', title: 'Fight Club' }, draw: () => { const C = require('@/app/film-reviews/[id]').default; return <C />; } },
-  { file: 'app/dispatch/[id].tsx', params: { id: 'gone' }, draw: () => { const C = require('@/app/dispatch/[id]').default; return <C />; } },
+  { file: 'app/dispatch/[id].tsx', params: { id: '00000024-0000-4000-8000-000000000024' }, draw: () => { const C = require('@/app/dispatch/[id]').default; return <C />; } },
   { file: 'app/edit-profile.tsx', draw: () => { const C = require('@/app/edit-profile').default; return <C />; } },
   { file: 'app/dispatch/archive.tsx', draw: () => { const C = require('@/app/dispatch/archive').default; return <C />; } },
   { file: 'app/dispatch/rules.tsx', draw: () => { const C = require('@/app/dispatch/rules').default; return <C />; } },
   { file: 'app/dispatch/room/[username].tsx', params: { username: 'morpho' }, draw: () => { const C = require('@/app/dispatch/room/[username]').default; return <C />; } },
-  { file: 'app/dispatch/series/[id].tsx', params: { id: 'series' }, draw: () => { const C = require('@/app/dispatch/series/[id]').default; return <C />; } },
+  { file: 'app/dispatch/series/[id].tsx', params: { id: '00000025-0000-4000-8000-000000000025' }, draw: () => { const C = require('@/app/dispatch/series/[id]').default; return <C />; } },
 ];
 
 /** A second state of a route whose header is drawn by other code. */
@@ -222,7 +222,7 @@ const STATES: (Route & { name: string })[] = [
 /** What a route needs beyond the page-top test's drawing for its foot to be drawn. */
 const ARRIVED: Record<string, { params?: Record<string, string>; arrange?: () => void }> = {
   'app/dispatch/[id].tsx': {
-    params: { id: 'f1' },
+    params: { id: '00000017-0000-4000-8000-000000000017' },
     arrange: () => { useDispatch.setState({ filings: [toFiling(FILING as never)] } as never); },
   },
   'app/dispatch/series/[id].tsx': {

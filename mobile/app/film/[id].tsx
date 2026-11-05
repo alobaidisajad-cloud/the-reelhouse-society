@@ -1,6 +1,6 @@
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useIsFocused } from "expo-router/react-navigation";
-import { useLocalSearchParams } from 'expo-router';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -24,11 +24,13 @@ import { nav } from '@/src/utils/typedRouter';
 const EMPTY_ARRAY = [] as never[];
 const EMPTY_OBJECT = {} as Record<string, never>;
 
+const PARAMS = { id: P.tmdbId };
+
 export default function FilmDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string | string[] }>();
-  const idString = Array.isArray(id) ? id[0] : id;
-  const filmId = parseInt(idString || '0', 10);
-  const validFilmId = !isNaN(filmId) && filmId > 0;
+  // A link of another shape is no film: the page's own "not in the archive" (P4.4).
+  const { id } = useRouteParams(PARAMS);
+  const filmId = id ?? 0;
+  const validFilmId = id !== undefined;
 
   const { data, isLoading: loading, isError, refetch, isPlaceholderData } = useFilmDetail(filmId, validFilmId);
   const retry = useCallback(() => { void refetch(); }, [refetch]);
