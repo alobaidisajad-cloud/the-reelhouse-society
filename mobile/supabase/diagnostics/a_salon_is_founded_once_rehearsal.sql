@@ -1,11 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 -- a_salon_is_founded_once_rehearsal.sql — 20261105_02. Rolled back, always.
 -- ════════════════════════════════════════════════════════════════════════════
---   node mobile/supabase/diagnostics/rehearse.cjs a_salon_is_founded_once_rehearsal.sql --with-train
+--   node mobile/supabase/diagnostics/rehearse.cjs a_salon_is_founded_once_rehearsal.sql
 --
--- With with_train set, 20261105_02 is applied first, inside this transaction
--- (production, before the apply); without it, it must already be applied
--- (db-integration.yml, after up-down-up).
+-- 20261105_02 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml).
 -- A member founds a salon with the id their form made, and asks again with it
 -- (the first answer lost): one room, the founder seated once, the same id
 -- back. Another member asking with that id is refused, ranked or not, and an
@@ -17,9 +16,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261105_02_a_salon_is_founded_once.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

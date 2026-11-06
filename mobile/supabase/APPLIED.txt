@@ -225,3 +225,4 @@ society_report_system.sql
 20261102_01_the_calendar_by_day.sql
 20261104_01_the_frame_shows_its_print.sql
 20261104_02_a_salons_last_word.sql
+20261105_02_a_salon_is_founded_once.sql

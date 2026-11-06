@@ -1,5 +1,5 @@
 {
-  "inventory": "38b2dab267d4bc576a2624871120e76825215753a76d4102ff0d544749a2b845",
+  "inventory": "601d28cb30018989ae9b100f82fb97c2d665907feddb345d26fc18a712464ab3",
   "why": "The App Store privacy answers (App Store Connect, App Privacy), written by store/forms.cjs from privacy-inventory.json. Nothing is used to track: no data is joined with other companies' data for advertising, or shared with a data broker.",
   "tracking": false,
   "collected": [

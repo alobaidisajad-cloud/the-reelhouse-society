@@ -1,5 +1,5 @@
 {
-  "inventory": "38b2dab267d4bc576a2624871120e76825215753a76d4102ff0d544749a2b845",
+  "inventory": "601d28cb30018989ae9b100f82fb97c2d665907feddb345d26fc18a712464ab3",
   "why": "Play's data safety answers (Play Console, App content, Data safety), written by store/forms.cjs from privacy-inventory.json. Nothing is shared: every service named in the inventory acts for the house (Play counts a service provider as no sharing).",
   "encryptedInTransit": true,
   "membersCanAskForDeletion": true,

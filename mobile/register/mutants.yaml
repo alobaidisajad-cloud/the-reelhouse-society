@@ -2139,3 +2139,39 @@ mutants:
         find: "const until = instantOf(user.suspended_until);"
         replace: "const until = user.suspended_until ? Date.parse(user.suspended_until) : NaN;"
     proof: { file: src/utils/__tests__/textIsOrderedAndReadOneWay.guard.test.ts, test: "every order and every instant in app/ and src/ goes through the two helpers" }
+
+  - id: shape-salon-asked-without-its-id
+    class: WRITE-a-salon-founded-twice
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "        p_id: id,"
+        replace: ""
+    proof: { file: src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts, test: "asked for again after its answer was lost, is the one room, drawn once" }
+
+  - id: shape-salon-drawn-twice
+    class: WRITE-a-salon-founded-twice
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "set(s => ({ lounges: [newLounge, ...s.lounges.filter(l => l.id !== loungeId)] }));"
+        replace: "set(s => ({ lounges: [newLounge, ...s.lounges] }));"
+    proof: { file: src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts, test: "asked for again after its answer was lost, is the one room, drawn once" }
+
+  - id: shape-form-names-a-room-each-tap
+    class: WRITE-a-salon-founded-twice
+    source: shape
+    edits:
+      - file: src/components/lounge/CreateLoungeSheet.tsx
+        find: "isPrivate, roomId.current);"
+        replace: "isPrivate, Crypto.randomUUID());"
+    proof: { file: src/components/lounge/__tests__/aSalonFormAsksForOneRoom.test.tsx, test: "names the same room on a tap again after an answer was lost" }
+
+  - id: shape-form-keeps-the-last-room
+    class: WRITE-a-salon-founded-twice
+    source: shape
+    edits:
+      - file: src/components/lounge/CreateLoungeSheet.tsx
+        find: "      roomId.current = Crypto.randomUUID();"
+        replace: ""
+    proof: { file: src/components/lounge/__tests__/aSalonFormAsksForOneRoom.test.tsx, test: "names a new room once one is made" }

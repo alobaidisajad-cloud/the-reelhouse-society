@@ -9,6 +9,9 @@
  * next read. Here a small house answers fetchLounges's own queries — the
  * rooms, the seats, member_count as its trigger counts it (approved members
  * only) — and each drawn room is held against what the next read gives.
+ *
+ * Its create_lounge founds the room the form named once (p_id), as the house's
+ * does, and can lose an answer on the way back after founding.
  */
 import { isMine, leftBehind, seatedIn, useLoungeStore, type LoungeRoom } from '../lounge';
 
@@ -18,7 +21,7 @@ const ADA = '55555555-5555-4555-8555-555555555555';
 
 type Seat = { lounge_id: string; user_id: string; status: 'approved' | 'pending' | 'muted' | 'banned' };
 type Room = { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; cover_image: string | null; lastMessageAt: string | null };
-const mockHouse = { rooms: [] as Room[], seats: [] as Seat[] };
+const mockHouse = { rooms: [] as Room[], seats: [] as Seat[], loseAnswer: false };
 
 const counted = (id: string) => mockHouse.seats.filter((s) => s.lounge_id === id && s.status === 'approved').length;
 const asRow = ({ lastMessageAt: _unread, ...room }: Room) => ({ ...room, member_count: counted(room.id) });
@@ -73,9 +76,15 @@ jest.mock('../../lib/supabase', () => ({
         return { data: null, error: null };
       }
       if (fn === 'create_lounge') {
-        const id = `room-${mockHouse.rooms.length + 1}`;
-        mockHouse.rooms.push({ id, name: args.p_name as string, description: args.p_description as string, is_private: args.p_is_private as boolean, creator_id: mockMe, created_at: new Date().toISOString(), cover_image: null, lastMessageAt: null });
-        mockHouse.seats.push({ lounge_id: id, user_id: mockMe, status: 'approved' });
+        const id = args.p_id as string;
+        if (!mockHouse.rooms.some((r) => r.id === id)) {
+          mockHouse.rooms.push({ id, name: args.p_name as string, description: args.p_description as string, is_private: args.p_is_private as boolean, creator_id: mockMe, created_at: new Date().toISOString(), cover_image: null, lastMessageAt: null });
+          mockHouse.seats.push({ lounge_id: id, user_id: mockMe, status: 'approved' });
+        }
+        if (mockHouse.loseAnswer) {
+          mockHouse.loseAnswer = false;
+          return { data: null, error: { message: 'TypeError: Network request failed', code: '', details: '', hint: '' } };
+        }
         return { data: id, error: null };
       }
       throw new Error(`the house has no function ${fn}`);
@@ -104,6 +113,7 @@ const standing = (r: LoungeRoom) => ({
 beforeEach(() => {
   mockHouse.rooms = [{ id: SALON, name: 'The Nitrate Circle', description: 'Silent era.', is_private: false, creator_id: HOST, created_at: '2026-06-01T00:00:00Z', cover_image: null, lastMessageAt: '2026-10-01T20:00:00Z' }];
   mockHouse.seats = [{ lounge_id: SALON, user_id: HOST, status: 'approved' }, { lounge_id: SALON, user_id: ADA, status: 'approved' }];
+  mockHouse.loseAnswer = false;
   useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false });
 });
 
@@ -153,9 +163,28 @@ describe('a salon joined', () => {
 
 describe('a salon founded', () => {
   it('is drawn at once as the next read gives it', async () => {
-    const id = await useLoungeStore.getState().createLounge('The Late Show', 'Midnight only.', false);
+    const id = await useLoungeStore.getState().createLounge('The Late Show', 'Midnight only.', false, 'room-late-show');
     expect(id).not.toBeNull();
     const drawn = standing(room(id as string));
     expect(drawn).toEqual(standing(await readAgain(id as string)));
+  });
+
+  it('asked for again after its answer was lost, is the one room, drawn once', async () => {
+    // Past the half-minute a founding holds the next back, which the test above began.
+    const later = Date.now() + 60_000;
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(later);
+    try {
+      mockHouse.loseAnswer = true;
+      const ask = () => useLoungeStore.getState().createLounge('The Noir Corner', 'Wet streets.', false, 'room-noir');
+      expect(await ask()).toBeNull();
+      // The corridor's own read, between the two taps, already draws the room the house founded.
+      await readAgain('room-noir');
+      expect(await ask()).toBe('room-noir');
+      expect(mockHouse.rooms.filter((r) => r.name === 'The Noir Corner')).toHaveLength(1);
+      expect(mockHouse.seats.filter((s) => s.lounge_id === 'room-noir')).toHaveLength(1);
+      expect(useLoungeStore.getState().lounges.filter((l) => l.id === 'room-noir')).toHaveLength(1);
+    } finally {
+      clock.mockRestore();
+    }
   });
 });

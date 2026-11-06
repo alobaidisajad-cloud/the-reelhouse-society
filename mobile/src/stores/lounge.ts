@@ -136,7 +136,8 @@ export interface LoungeState {
   catchUpMessages: (loungeId: string) => Promise<void>;
   loadMoreMessages: (loungeId: string) => Promise<void>;
   sendMessage: (loungeId: string, content: string, type?: string, meta?: LoungeMessageMeta) => Promise<boolean>;
-  createLounge: (name: string, description: string, isPrivate: boolean) => Promise<string | null>;
+  /** `id` is the room's, made by the form once: a tap again after a lost answer finds the room it made. */
+  createLounge: (name: string, description: string, isPrivate: boolean, id: string) => Promise<string | null>;
   /** Host-only: set (or clear with null) the salon cover — a TMDB backdrop path. */
   setLoungeCover: (loungeId: string, cover: string | null) => Promise<boolean>;
   /** Public lounge: instant join via the SECURITY DEFINER RPC. */
@@ -1028,7 +1029,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     }
   },
 
-  createLounge: async (name, description, isPrivate) => {
+  createLounge: async (name, description, isPrivate, id) => {
     const user = useAuthStore.getState().user;
     const startedAs = user?.id ?? null;
     if (!user) return null;
@@ -1059,6 +1060,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         p_name: trimmedName,
         p_description: trimmedDesc,
         p_is_private: isPrivate,
+        // The form's id: the house founds it once, and answers with it again for its founder.
+        p_id: id,
       });
 
       if (error || !loungeId) {
@@ -1087,7 +1090,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
       // null, not a bare return: callers test === null, and tsc would let undefined pass.
       if (!memberUnchanged(startedAs)) return null;
-      set(s => ({ lounges: [newLounge, ...s.lounges] }));
+      // Asked again after a lost answer, the room may already be drawn by a read between: once.
+      set(s => ({ lounges: [newLounge, ...s.lounges.filter(l => l.id !== loungeId)] }));
 
       get().fetchLounges();
       return loungeId;

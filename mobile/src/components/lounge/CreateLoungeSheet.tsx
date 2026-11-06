@@ -3,6 +3,7 @@ import { InColumn } from '@/src/components/layout/InColumn';
 import { View, StyleSheet, Modal, Switch, Keyboard, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
+import * as Crypto from 'expo-crypto';
 import Animated, {
   useAnimatedStyle, withTiming, Easing, runOnJS
 } from 'react-native-reanimated';
@@ -33,6 +34,13 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   /** Founding a PRIVATE room is the Auteur's; being admitted to one is not. */
   const privateRoom = useClearance('private-rooms', '/lounge');
   const wasSuccessRef = useRef(false);
+  /**
+   * The room's id, made once and sent with every tap until a room is made: an answer lost on
+   * the way back, and a tap again, finds the room the first made (create_lounge), never a second.
+   * Kept across a close as the words are; a new one only once a room is made.
+   */
+  const [firstRoomId] = useState(() => Crypto.randomUUID());
+  const roomId = useRef(firstRoomId);
   /** A name the house accepts: two letters at least once cleaned, as createLounge asks. */
   const ready = sanitizeInput(name, 'loungeName').length >= LEAST_NAME;
   const descriptionRef = useRef<TextInput>(null);
@@ -58,7 +66,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   const handleCreate = async () => {
     if (!ready) return;
     setCreating(true);
-    const id = await createLounge(name.trim(), description.trim(), isPrivate);
+    const id = await createLounge(name.trim(), description.trim(), isPrivate, roomId.current);
     if (id) {
       wasSuccessRef.current = true;
       onClose();
@@ -77,6 +85,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
       if (!wasSuccessRef.current) return;
       wasSuccessRef.current = false;
       setName(''); setDescription(''); setIsPrivate(false);
+      roomId.current = Crypto.randomUUID();
     },
   });
 

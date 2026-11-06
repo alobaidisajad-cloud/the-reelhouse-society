@@ -86,7 +86,7 @@ describe('a refusal for the rank is the door, never "check your connection"', ()
 
   it('founding a salon', async () => {
     mockRpcError = RANK;
-    expect(await useLoungeStore.getState().createLounge('The Nitrate Circle', '', false)).toBeNull();
+    expect(await useLoungeStore.getState().createLounge('The Nitrate Circle', '', false, 'room-nitrate')).toBeNull();
     expect(toast().info).toHaveBeenCalled();
     expect(toast().error).not.toHaveBeenCalled();
   });

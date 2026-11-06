@@ -142,7 +142,7 @@
     "website-analytics": {
       "what": "PostHog's record of a visit to the website, only if the website's PostHog key is set.",
       "purpose": "Knowing how the website is used.",
-      "linked": false, "required": true, "clients": ["website"], "when": "VITE_POSTHOG_KEY is set in a Vercel project that serves the website",
+      "linked": false, "required": true, "clients": ["website"], "when": "VITE_POSTHOG_KEY is set in a Vercel project that serves the website; none does (the owner, 2026-11-06), so it is never made",
       "kept": [], "sentTo": ["posthog"],
       "apple": null, "play": null, "whyNoForm": "The website's alone; the store forms are the app's."
     },
@@ -157,7 +157,7 @@
   },
   "services": {
     "supabase": { "who": "Supabase: the house's own server, database, sign-in and file store", "hosts": ["wihyqkpoymwcvbprslyz.supabase.co"] },
-    "auth-mail": { "who": "The mail server set in Supabase Auth's SMTP settings, which sends the confirm, reset and deletion-code letters", "hosts": [], "owner": "Which server is set there (the dashboard holds it, not the code)." },
+    "auth-mail": { "who": "Resend (smtp.resend.com), the mail server set in Supabase Auth's SMTP settings, which sends the confirm, reset and deletion-code letters from team@thereelhousesociety.com", "hosts": [] },
     "tmdb": { "who": "TMDB, the film database: the house's server asks it for films; the app and website load its posters and pictures directly", "hosts": ["image.tmdb.org", "api.themoviedb.org"] },
     "youtube": { "who": "YouTube: a trailer the member opens plays from YouTube's privacy-enhanced address; trailer pictures load from YouTube", "hosts": ["www.youtube-nocookie.com", "img.youtube.com", "www.youtube.com"] },
     "sentry": { "who": "Sentry: crash and performance reports", "hosts": ["o4511019614208000.ingest.us.sentry.io"] },
@@ -168,7 +168,7 @@
     "expo-updates": { "who": "Expo's update service: the app's updates", "hosts": ["u.expo.dev"] },
     "front-desk-mail": { "who": "The front desk's mail: Cloudflare forwards support@ to the house's Gmail; replies go out through Resend", "hosts": [] },
     "house-website": { "who": "The house's website, served by Vercel; the app opens its pages (help, the rules, privacy)", "hosts": ["www.thereelhousesociety.com"] },
-    "posthog": { "who": "PostHog: the website's visit analytics, only if its key is set", "hosts": ["us.i.posthog.com", "us-assets.i.posthog.com"], "owner": "Whether VITE_POSTHOG_KEY is set in any Vercel project that stays (its name only)." },
+    "posthog": { "who": "PostHog: the website's visit analytics, only if its key is set; no Vercel project sets it (the owner, 2026-11-06), so it receives nothing", "hosts": ["us.i.posthog.com", "us-assets.i.posthog.com"] },
     "rss2json": { "who": "rss2json: the website reads a film news feed through it; nothing of the member is sent", "hosts": ["api.rss2json.com"] }
   },
   "links": {

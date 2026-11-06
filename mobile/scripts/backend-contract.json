@@ -19,7 +19,7 @@
     },
     {
       "name": "create_lounge",
-      "signature": "create_lounge(p_name text, p_description text, p_is_private boolean)"
+      "signature": "create_lounge(p_name text, p_description text, p_is_private boolean, p_id uuid)"
     },
     {
       "name": "decline_all_follow_requests",

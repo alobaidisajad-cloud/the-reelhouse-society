@@ -603,22 +603,42 @@ $$;
 
 
 --
--- Name: create_lounge(text, text, boolean); Type: FUNCTION; Schema: public; Owner: -
+-- Name: create_lounge(text, text, boolean, uuid); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean) RETURNS uuid
+CREATE FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean, p_id uuid DEFAULT NULL::uuid) RETURNS uuid
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-DECLARE v_id uuid; v_uid uuid := auth.uid();
+DECLARE v_id uuid; v_uid uuid := auth.uid(); v_founder uuid;
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  -- Asked again with the id its form made (the first answer lost): the room it founded is the
+  -- answer, before any gate can judge a second founding.
+  IF p_id IS NOT NULL THEN
+    SELECT creator_id INTO v_founder FROM public.lounges WHERE id = p_id;
+    IF FOUND THEN
+      IF v_founder IS DISTINCT FROM v_uid THEN
+        RAISE EXCEPTION 'That room is another member''s.' USING ERRCODE = '42501';
+      END IF;
+      RETURN p_id;
+    END IF;
+  END IF;
   -- `invite_code` is deliberately NOT set. A room is entered by asking at the
   -- door and being admitted; a code would be a way around the door, and the
   -- table it would live in is readable by every member.
-  INSERT INTO public.lounges (name, description, is_private, creator_id, member_count)
-  VALUES (p_name, p_description, COALESCE(p_is_private, false), v_uid, 0)
+  INSERT INTO public.lounges (id, name, description, is_private, creator_id, member_count)
+  VALUES (coalesce(p_id, gen_random_uuid()), p_name, p_description, COALESCE(p_is_private, false), v_uid, 0)
+  ON CONFLICT (id) DO NOTHING
   RETURNING id INTO v_id;
+  -- Two asks at once with one id: the first founded the room, and this one answers with it.
+  IF v_id IS NULL THEN
+    SELECT creator_id INTO v_founder FROM public.lounges WHERE id = p_id;
+    IF v_founder IS DISTINCT FROM v_uid THEN
+      RAISE EXCEPTION 'That room is another member''s.' USING ERRCODE = '42501';
+    END IF;
+    RETURN p_id;
+  END IF;
   INSERT INTO public.lounge_members (lounge_id, user_id, status) VALUES (v_id, v_uid, 'approved');
   RETURN v_id;
 END $$;
@@ -10443,13 +10463,13 @@ GRANT ALL ON FUNCTION public.clean_member_words() TO service_role;
 
 
 --
--- Name: FUNCTION create_lounge(p_name text, p_description text, p_is_private boolean); Type: ACL; Schema: public; Owner: -
+-- Name: FUNCTION create_lounge(p_name text, p_description text, p_is_private boolean, p_id uuid); Type: ACL; Schema: public; Owner: -
 --
 
-REVOKE ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean) TO anon;
-GRANT ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean) TO authenticated;
-GRANT ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean) TO service_role;
+REVOKE ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean, p_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean, p_id uuid) TO service_role;
+GRANT ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean, p_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.create_lounge(p_name text, p_description text, p_is_private boolean, p_id uuid) TO authenticated;
 
 
 --
