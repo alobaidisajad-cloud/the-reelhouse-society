@@ -1622,3 +1622,20 @@ classes:
       - { kind: running, file: e2e/__tests__/iosSimulator.test.ts, test: "with no iPhone 17 Pro, fails and names the iPhones there are" }
     fix: "e2e/ios-simulator.sh names the iPhone 17 Pro on the image's newest iOS, or names the iPhones there are and fails; both iPhone jobs choose by it, and no other line of theirs reads the simulator list (mutants shape-simulator-16-pro, shape-simulator-fails-silently)"
     places: [simulator]
+
+  - id: PRIVACY-collection-unsaid
+    title: "Something the app ships collects, holds or sends a member's data and no written inventory names it, so the Privacy Policy, the store answers and the iPhone's privacy manifest cannot say it: an iPhone asked Google's address each minute (each five seconds offline) whether the internet could be reached, said nowhere"
+    seriousness: behaviour
+    area: security
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "P1.6" }
+    methods:
+      - { kind: static, file: __tests__/thePrivacyInventoryIsWhole.test.ts, test: "is named, with what it sends and why, and nothing is named that does not ship" }
+      - { kind: static, file: __tests__/thePrivacyInventoryIsWhole.test.ts, test: "is named: each with a foreign key to a member, a member column without one, or a user agent" }
+      - { kind: static, file: __tests__/thePrivacyInventoryIsWhole.test.ts, test: "is a service the inventory names, a link the phone opens, or never reached and why" }
+      - { kind: static, file: __tests__/thePrivacyInventoryIsWhole.test.ts, test: "names every category and reason a package's own manifest declares" }
+      - { kind: static, file: __tests__/thePrivacyInventoryIsWhole.test.ts, test: "every answer file was written from this inventory, as store/forms.cjs writes it" }
+      - { kind: running, file: src/lib/__tests__/aReachabilityIsTheHouses.test.ts, test: "asks the house's sign-in health, with the house's key, and no other address" }
+    fix: "store/privacy-inventory.json names every kind of data, its purpose, whether it is linked, where it is kept and who receives it, every shipped package, every table holding a member or a user agent, every outside address and every required-reason API; store/forms.cjs writes the App Store and Play answers from it with its hash; app.json carries the iPhone's manifest from both; NetInfo asks the house's sign-in health, and only reachability.ts takes it (mutants shape-package-unsaid, shape-host-unsaid, shape-answers-stale, shape-reachability-google)"
+    places: [none]

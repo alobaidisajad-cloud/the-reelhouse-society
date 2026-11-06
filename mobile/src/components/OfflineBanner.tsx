@@ -1,4 +1,4 @@
-import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
+import NetInfo, { useNetInfo } from '@/src/lib/reachability';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';

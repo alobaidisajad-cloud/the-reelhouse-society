@@ -1,0 +1,154 @@
+{
+  "inventory": "38b2dab267d4bc576a2624871120e76825215753a76d4102ff0d544749a2b845",
+  "why": "The App Store privacy answers (App Store Connect, App Privacy), written by store/forms.cjs from privacy-inventory.json. Nothing is used to track: no data is joined with other companies' data for advertising, or shared with a data broker.",
+  "tracking": false,
+  "collected": [
+    {
+      "type": "Crash Data",
+      "linkedToTheMember": false,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "crashes"
+      ]
+    },
+    {
+      "type": "Customer Support",
+      "linkedToTheMember": true,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "support-letters"
+      ]
+    },
+    {
+      "type": "Device ID",
+      "linkedToTheMember": true,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "push-token",
+        "install-id"
+      ]
+    },
+    {
+      "type": "Email Address",
+      "linkedToTheMember": true,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "email"
+      ]
+    },
+    {
+      "type": "Name",
+      "linkedToTheMember": true,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "names"
+      ]
+    },
+    {
+      "type": "Other Data Types",
+      "linkedToTheMember": true,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "sign-in-records"
+      ]
+    },
+    {
+      "type": "Other Diagnostic Data",
+      "linkedToTheMember": false,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "crashes"
+      ]
+    },
+    {
+      "type": "Other User Content",
+      "linkedToTheMember": true,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "writing",
+        "salon-messages",
+        "actions",
+        "notices"
+      ]
+    },
+    {
+      "type": "Performance Data",
+      "linkedToTheMember": false,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "crashes"
+      ]
+    },
+    {
+      "type": "Photos or Videos",
+      "linkedToTheMember": true,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "portrait"
+      ]
+    },
+    {
+      "type": "Purchase History",
+      "linkedToTheMember": true,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "purchases"
+      ]
+    },
+    {
+      "type": "Search History",
+      "linkedToTheMember": false,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "searches"
+      ]
+    },
+    {
+      "type": "User ID",
+      "linkedToTheMember": true,
+      "usedToTrack": false,
+      "purposes": [
+        "App Functionality"
+      ],
+      "from": [
+        "member-id"
+      ]
+    }
+  ]
+}

@@ -80,7 +80,8 @@ jest.mock('@react-native-community/netinfo', () => {
   const fetch = jest.fn(async () => ({ isConnected: true, isInternetReachable: true }));
   // queryClient.ts listens for the connection when it loads.
   const addEventListener = jest.fn(() => () => {});
-  return { fetch, addEventListener, default: { fetch, addEventListener } };
+  const configure = jest.fn();
+  return { configure, fetch, addEventListener, default: { configure, fetch, addEventListener } };
 });
 jest.mock('@/src/utils/TactileEngine', () => ({ __esModule: true, default: { success: jest.fn(), mutate: jest.fn(), navigate: jest.fn() } }));
 jest.mock('../reelToast', () => { const t: any = jest.fn(); t.error = jest.fn(); t.success = jest.fn(); t.info = jest.fn(); return { __esModule: true, default: t }; });

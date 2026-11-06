@@ -42,7 +42,7 @@ let mockOnline = true;
 jest.mock('@react-native-community/netinfo', () => ({
   __esModule: true,
   useNetInfo: () => ({ isConnected: mockOnline }),
-  default: { addEventListener: () => () => {} },
+  default: { configure: () => {}, addEventListener: () => () => {} },
 }));
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
 jest.mock('react-native-safe-area-context', () => {

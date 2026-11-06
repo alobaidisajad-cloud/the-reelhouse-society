@@ -35,6 +35,7 @@ without one). "Read" is the day its comments were last read against its code.
 | __tests__/stores/filmStore.test.ts | — |  |
 | __tests__/stores/listSlice.test.ts | 2026-10-15 | edited: a stack's posters fetched ahead in one call, to disk |
 | __tests__/stores/socialSlice.test.ts | — |  |
+| __tests__/thePrivacyInventoryIsWhole.test.ts | 2026-11-06 | Written: the inventory against package.json, the snapshot's member tables and columns, the app's outside addresses, the packages' own manifests, app.json's privacy manifest and the store forms (P1.6, P4.51) |
 | __tests__/tmdbMockCoverage.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | __tests__/utils/mappers.test.ts | — |  |
 | __tests__/utils/mutationExecutor.test.ts | 2026-10-03 | edited: the duplicate merge is a server rewatch under the device viewing id; the insert keeps it |
@@ -959,6 +960,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts | 2026-10-03 | payments pass: queued for the store's account, with no network and no session |
 | src/lib/__tests__/aRankEndsOnlyWhenTheStoreSaysSo.test.ts | 2026-10-03 | payments pass: a stand-in store drives every answer a configured one gives |
 | src/lib/__tests__/aRankIsOnlyTakenOnAnAnswer.test.ts | 2026-10-03 | payments pass: the source pins went; the paths they guarded now run |
+| src/lib/__tests__/aReachabilityIsTheHouses.test.ts | 2026-11-06 | Written: NetInfo told once to ask the house's sign-in health (10 min reached, 60 s not), and only reachability.ts takes it from the package |
 | src/lib/__tests__/aRequestEndsInItsTime.test.ts | 2026-10-27 | edited: a request given up at its limit ends as DeadlineExceeded; edited: an answer whose words never finish arriving is given up at its limit; an answer in time comes back whole (status, headers, words), one with no body with none; new: a request with no answer is given up at its limit as not reached (storage waits longer); a caller's own cancel stays the caller's; an answer in time comes back untouched with no timer left |
 | src/lib/__tests__/aRequestIsWrittenToTheE2ELog.test.ts | 2026-10-27 | edited: a request given up at its limit is written as DeadlineExceeded; edited: its fake answers are Responses, read whole as the client now reads them; new |
 | src/lib/__tests__/aResolvedErrorIsRead.test.ts | 2026-10-26 | edited: signOut is no longer a call whose answer may go unread; edited: a read handed on by .catch()/.then() is seen (Promise.resolve(supabase.rpc(…)).catch(…)), in the probe too; the salon's faces read judged by its new name; the queue's standing read is no longer judged; it reads its error |
@@ -979,6 +981,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/lib/pushPrimer.ts | 2026-10-01 | new: the house asks to send word at a moment that wants it |
 | src/lib/queryClient.ts | 2026-10-27 | edited: React Query hears the app come back to the front (focusManager on AppState); edited: the rules live in queryPolicy.ts; the header still true |
 | src/lib/queryPolicy.ts | 2026-10-04 | written whole: the rules moved out of queryClient.ts, word for word, so tests read them too |
+| src/lib/reachability.ts | 2026-11-06 | Written: an iPhone's NetInfo asked Google each minute; it asks the house, and is the one NetInfo the app reads |
 | src/lib/refusalEvents.ts | 2026-10-02 | Written in the launch audit: every refusal's sentence, for whoever listens. |
 | src/lib/revenueCat.ts | 2026-10-27 | edited: its report lines are fixed text, the values after them, kept on the phone (P4.44); payments pass: the SDK is required (Jest runs every store path); a rank is queued for the account the store sold to |
 | src/lib/scrollBridge.ts | 2026-10-02 | Read whole (launch audit). Sound; left alone. |
@@ -1409,6 +1412,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/withRetry.ts | 2026-10-02 | read; sound |
 | src/utils/withTimeout.ts | 2026-10-27 | edited: its report lines are fixed text, the values after them, kept on the phone (P4.44); edited: its own timer, since Hermes has no AbortSignal.timeout |
 | stryker.config.mjs | 2026-10-16 | new: one listed file at a time, against its own tests alone, every mutant run fresh, its progress printed |
+| store/forms.cjs | 2026-11-06 | Written: the App Store and Play privacy answers from the inventory, each with its hash |
 | supabase/diagnostics/apply.cjs | 2026-10-15 | rewritten: lints first, runs under the time limits, --no-transaction for a CONCURRENTLY file alone; the address from the private settings file |
 | supabase/diagnostics/read-only.cjs | 2026-10-15 | true as written |
 | supabase/diagnostics/rehearse.cjs | 2026-10-15 | new |

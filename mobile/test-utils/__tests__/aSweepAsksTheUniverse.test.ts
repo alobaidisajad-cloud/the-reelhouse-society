@@ -50,6 +50,7 @@ const MAY_LIST: Record<string, string> = {
   'scripts/release-guard.cjs': 'the bundles an export wrote, in the folder it is given',
   'e2e/advisories.mjs': 'the source map an export just wrote, and the folders --roots hands it; the edge trees themselves come from the universe',
   'scripts/dump-production.cjs': 'the dump folder, for the dumps a newer one replaces',
+  '__tests__/thePrivacyInventoryIsWhole.test.ts': 'the privacy manifests the installed native packages ship, under node_modules, outside any universe',
 };
 
 describe('every finder asks the shared file list', () => {

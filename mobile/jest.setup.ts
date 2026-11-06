@@ -380,8 +380,10 @@ jest.mock('@react-native-community/netinfo', () => ({
   useNetInfo: jest.fn(() => ({ isConnected: true, isInternetReachable: true, type: 'wifi' })),
   fetch: jest.fn().mockResolvedValue({ isConnected: true, isInternetReachable: true }),
   addEventListener: jest.fn(() => jest.fn()),
+  configure: jest.fn(),
   __esModule: true,
   default: {
+    configure: jest.fn(),
     fetch: jest.fn().mockResolvedValue({ isConnected: true }),
     addEventListener: jest.fn(() => jest.fn()),
   },

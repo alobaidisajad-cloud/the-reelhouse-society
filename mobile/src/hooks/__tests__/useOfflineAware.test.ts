@@ -14,6 +14,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { isOfflineState, useOfflineAware } from '../useOfflineAware';
 
 jest.mock('@react-native-community/netinfo', () => ({
+  configure: jest.fn(),
   addEventListener: jest.fn(() => jest.fn()),
 }));
 

@@ -2004,3 +2004,39 @@ mutants:
         find: "  printf '%s\\n' \"$list\" | grep -F 'iPhone' >&2\n"
         replace: ""
     proof: { file: e2e/__tests__/iosSimulator.test.ts, test: "with no iPhone 17 Pro, fails and names the iPhones there are" }
+
+  - id: shape-package-unsaid
+    class: PRIVACY-collection-unsaid
+    source: shape
+    edits:
+      - file: store/privacy-inventory.json
+        find: "    \"zod\": { \"sends\": [], \"why\": \"Checks data's shape.\" },\n    \"zustand\": { \"sends\": [], \"why\": \"Holds the app's state.\" }\n"
+        replace: "    \"zod\": { \"sends\": [], \"why\": \"Checks data's shape.\" }\n"
+    proof: { file: __tests__/thePrivacyInventoryIsWhole.test.ts, test: "is named, with what it sends and why, and nothing is named that does not ship" }
+
+  - id: shape-host-unsaid
+    class: PRIVACY-collection-unsaid
+    source: shape
+    edits:
+      - file: store/privacy-inventory.json
+        find: "\"hosts\": [\"image.tmdb.org\", \"api.themoviedb.org\"]"
+        replace: "\"hosts\": [\"api.themoviedb.org\"]"
+    proof: { file: __tests__/thePrivacyInventoryIsWhole.test.ts, test: "is a service the inventory names, a link the phone opens, or never reached and why" }
+
+  - id: shape-answers-stale
+    class: PRIVACY-collection-unsaid
+    source: shape
+    edits:
+      - file: store/privacy-inventory.json
+        find: "\"purpose\": \"Sending the member the notifications they keep on.\""
+        replace: "\"purpose\": \"Sending notifications.\""
+    proof: { file: __tests__/thePrivacyInventoryIsWhole.test.ts, test: "every answer file was written from this inventory, as store/forms.cjs writes it" }
+
+  - id: shape-reachability-google
+    class: PRIVACY-collection-unsaid
+    source: shape
+    edits:
+      - file: src/lib/reachability.ts
+        find: "  reachabilityUrl: REACHABILITY_URL,\n"
+        replace: "  reachabilityUrl: 'https://clients3.google.com/generate_204',\n"
+    proof: { file: src/lib/__tests__/aReachabilityIsTheHouses.test.ts, test: "asks the house's sign-in health, with the house's key, and no other address" }

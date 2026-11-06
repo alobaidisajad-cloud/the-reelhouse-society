@@ -1,6 +1,6 @@
 /** The one list of the files each sweep reads; see universe.js. */
 export type UniverseName =
-  | 'routes' | 'appCode' | 'appData' | 'appTests' | 'tests' | 'testSupport' | 'scripts' | 'config' | 'mockups'
+  | 'routes' | 'appCode' | 'appData' | 'appTests' | 'tests' | 'testSupport' | 'scripts' | 'config' | 'store' | 'mockups'
   | 'flows' | 'runFlows' | 'docs' | 'workflows' | 'migrations' | 'notMigrations' | 'undo' | 'snapshot'
   | 'rehearsals' | 'supabaseSql' | 'functions' | 'standIns' | 'website';
 

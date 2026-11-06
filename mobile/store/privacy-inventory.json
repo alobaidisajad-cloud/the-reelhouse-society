@@ -1,0 +1,310 @@
+{
+  "why": "What the house collects, from whom, for what, and who else receives it: read from the code (WORKLIST P1.6). The Privacy Policy, the App Store privacy answers, Play's data safety form (store/forms/) and the app's privacy manifest (app.json ios.privacyManifests) are written from it. thePrivacyInventoryIsWhole fails if a shipped package, a table holding a member's id or a user agent, an outside host the code names, or a required-reason API a package declares is missing here, and if a store form was prepared from another version of this file.",
+  "data": {
+    "email": {
+      "what": "The member's email address.",
+      "purpose": "The account: signing in, a forgotten password, confirming the address, deleting the account, and the house's notices about the account.",
+      "linked": true, "required": true, "clients": ["app", "website"],
+      "kept": ["auth.users"], "sentTo": ["supabase", "auth-mail"],
+      "apple": { "type": "Email Address", "purposes": ["App Functionality"] },
+      "play": { "type": "Personal info: Email address", "purposes": ["App functionality", "Account management"] }
+    },
+    "names": {
+      "what": "The member's username and the name they show (which may be their real name).",
+      "purpose": "Who the member is to other members: on their writing, in salons, on their page.",
+      "linked": true, "required": true, "clients": ["app", "website"],
+      "kept": ["public.profiles"], "sentTo": ["supabase"],
+      "apple": { "type": "Name", "purposes": ["App Functionality"] },
+      "play": { "type": "Personal info: Name", "purposes": ["App functionality"] }
+    },
+    "member-id": {
+      "what": "The member's account number (a random id the house gives each account) and their username as a handle.",
+      "purpose": "Tying the member's writing, purchases and notices to their account; RevenueCat is told the account number so a purchase reaches the right account.",
+      "linked": true, "required": true, "clients": ["app", "website"],
+      "kept": ["auth.users", "public.profiles"], "sentTo": ["supabase", "revenuecat"],
+      "apple": { "type": "User ID", "purposes": ["App Functionality"] },
+      "play": { "type": "Personal info: User IDs", "purposes": ["App functionality", "Account management"] }
+    },
+    "portrait": {
+      "what": "The portrait a member chooses for their page, from their photos or camera.",
+      "purpose": "Shown on the member's page and beside their writing.",
+      "linked": true, "required": false, "clients": ["app", "website"],
+      "kept": ["storage.objects", "public.profiles"], "sentTo": ["supabase"],
+      "apple": { "type": "Photos or Videos", "purposes": ["App Functionality"] },
+      "play": { "type": "Photos and videos: Photos", "purposes": ["App functionality"] }
+    },
+    "writing": {
+      "what": "What a member writes and keeps: logs, reviews, critiques, Dispatch posts and essays, comments, stacks and lists, their shelf of physical copies, private notes, drafts, their bio, and what they import from a file they choose.",
+      "purpose": "The member's own record of films, kept for as long as the account exists and read by the members they choose.",
+      "linked": true, "required": false, "clients": ["app", "website"],
+      "kept": ["public.logs", "public.lists", "public.list_comments", "public.log_comments", "public.log_private_notes", "public.dispatch_posts", "public.dispatch_comments", "public.dispatch_dossiers_legacy", "public.dossier_comments_legacy", "public.member_drafts", "public.physical_archive", "public.watchlists", "public.profiles"],
+      "sentTo": ["supabase"],
+      "apple": { "type": "Other User Content", "purposes": ["App Functionality"] },
+      "play": { "type": "App activity: Other user-generated content", "purposes": ["App functionality"] }
+    },
+    "salon-messages": {
+      "what": "Messages and reactions a member sends in a salon, and the salons they found or join.",
+      "purpose": "Read by the salon's members.",
+      "linked": true, "required": false, "clients": ["app", "website"],
+      "kept": ["public.lounges", "public.lounge_members", "public.lounge_messages", "public.lounge_message_reactions", "public.salon_typing_sent"],
+      "sentTo": ["supabase"],
+      "apple": { "type": "Other User Content", "purposes": ["App Functionality"] },
+      "play": { "type": "Messages: Other in-app messages", "purposes": ["App functionality"] }
+    },
+    "actions": {
+      "what": "What a member does to others' writing and to members: endorsements, votes, saves, certifications, follows, blocks, and the reports they file.",
+      "purpose": "Shown to the members it concerns (an endorsement, a follow), keeping a blocked member away, and moderation.",
+      "linked": true, "required": false, "clients": ["app", "website"],
+      "kept": ["public.interactions", "public.dispatch_votes", "public.dispatch_saves", "public.dispatch_certifications", "public.dossier_certifications_legacy", "public.user_blocks", "public.reports"],
+      "sentTo": ["supabase"],
+      "apple": { "type": "Other User Content", "purposes": ["App Functionality"] },
+      "play": { "type": "App activity: Other actions", "purposes": ["App functionality"] }
+    },
+    "purchases": {
+      "what": "A member's rank purchases: which rank, from which store, when it began and ends.",
+      "purpose": "Granting the rank paid for, and restoring it on another phone.",
+      "linked": true, "required": false, "clients": ["app"],
+      "kept": ["public.rank_grants", "public.profiles"], "sentTo": ["supabase", "revenuecat", "app-store", "google-play"],
+      "apple": { "type": "Purchase History", "purposes": ["App Functionality"] },
+      "play": { "type": "Financial info: Purchase history", "purposes": ["App functionality"] }
+    },
+    "push-token": {
+      "what": "The address Apple or Google gives the phone for the app's notifications, with the phone's platform; on the website, the browser's notification address and its keys.",
+      "purpose": "Sending the member the notifications they keep on.",
+      "linked": true, "required": false, "clients": ["app", "website"],
+      "kept": ["public.push_tokens", "public.push_subscriptions"], "sentTo": ["supabase", "expo-push"],
+      "apple": { "type": "Device ID", "purposes": ["App Functionality"] },
+      "play": { "type": "Device or other IDs", "purposes": ["App functionality"] }
+    },
+    "install-id": {
+      "what": "A random number expo-updates gives each install of the app, sent with the platform and the app's version when the app asks for an update.",
+      "purpose": "Delivering the app's updates.",
+      "linked": false, "required": true, "clients": ["app"],
+      "kept": [], "sentTo": ["expo-updates"],
+      "apple": { "type": "Device ID", "purposes": ["App Functionality"] },
+      "play": { "type": "Device or other IDs", "purposes": ["App functionality"] }
+    },
+    "notices": {
+      "what": "The notifications the house sends a member, and who caused each.",
+      "purpose": "The member's notices, read in the app.",
+      "linked": true, "required": false, "clients": ["app", "website"],
+      "kept": ["public.notifications"], "sentTo": ["supabase", "expo-push"],
+      "apple": { "type": "Other User Content", "purposes": ["App Functionality"] },
+      "play": { "type": "App activity: Other actions", "purposes": ["App functionality"] }
+    },
+    "searches": {
+      "what": "The words a member searches for films and people with.",
+      "purpose": "Finding the film or person; passed by the house's own server to TMDB, so TMDB never sees who asked.",
+      "linked": false, "required": false, "clients": ["app", "website"],
+      "kept": [], "sentTo": ["supabase", "tmdb"],
+      "apple": { "type": "Search History", "purposes": ["App Functionality"] },
+      "play": { "type": "App activity: In-app search history", "purposes": ["App functionality"] }
+    },
+    "sign-in-records": {
+      "what": "The IP address and browser or app name (user agent) of each sign-in and session, kept by Supabase Auth.",
+      "purpose": "The account's security: sessions, and seeing a sign-in that was not the member's.",
+      "linked": true, "required": true, "clients": ["app", "website"],
+      "kept": ["auth.sessions", "auth.audit_log_entries"], "sentTo": ["supabase"],
+      "apple": { "type": "Other Data Types", "purposes": ["App Functionality"] },
+      "play": { "type": "Device or other IDs", "purposes": ["Fraud prevention, security, and compliance"] }
+    },
+    "moderation": {
+      "what": "What the house's moderators decide about a member: warnings, sanctions in a salon, actions taken, and a piece withheld from the Lobby.",
+      "purpose": "Keeping the house's rules, and a member's right to know why.",
+      "linked": true, "required": false, "clients": ["app", "website"],
+      "kept": ["public.mod_actions", "public.warnings", "public.lounge_sanctions", "public.reports", "public.lobby_withheld", "public.lobby_editions"],
+      "sentTo": ["supabase"],
+      "apple": null, "play": null,
+      "whyNoForm": "Made by the house about a member, not collected from them; named in the Privacy Policy."
+    },
+    "crashes": {
+      "what": "What the app was doing when it failed: the error, the code's path to it, the phone's model and system, the app's version and the member's rank, never their id, name or email (Sentry's sendDefaultPii is off). The website sends the same, and times 10% of visits.",
+      "purpose": "Finding and fixing what fails.",
+      "linked": false, "required": true, "clients": ["app", "website"],
+      "kept": [], "sentTo": ["sentry"],
+      "apple": { "type": "Crash Data", "purposes": ["App Functionality"], "also": ["Performance Data", "Other Diagnostic Data"] },
+      "play": { "type": "App info and performance: Crash logs", "purposes": ["App functionality"], "also": ["App info and performance: Diagnostics"] }
+    },
+    "website-errors": {
+      "what": "An error the website met while a member was signed in: the error, the page, the browser's user agent, and the member's id.",
+      "purpose": "Finding and fixing what fails on the website.",
+      "linked": true, "required": true, "clients": ["website"],
+      "kept": ["public.error_logs"], "sentTo": ["supabase"],
+      "apple": null, "play": null, "whyNoForm": "The website's alone; the store forms are the app's."
+    },
+    "website-visits": {
+      "what": "Which pages a signed-in member opens on the website.",
+      "purpose": "Knowing which of the website's pages are read.",
+      "linked": true, "required": true, "clients": ["website"],
+      "kept": ["public.analytics_events"], "sentTo": ["supabase"],
+      "apple": null, "play": null, "whyNoForm": "The website's alone; the store forms are the app's."
+    },
+    "website-analytics": {
+      "what": "PostHog's record of a visit to the website, only if the website's PostHog key is set.",
+      "purpose": "Knowing how the website is used.",
+      "linked": false, "required": true, "clients": ["website"], "when": "VITE_POSTHOG_KEY is set in a Vercel project that serves the website",
+      "kept": [], "sentTo": ["posthog"],
+      "apple": null, "play": null, "whyNoForm": "The website's alone; the store forms are the app's."
+    },
+    "support-letters": {
+      "what": "A letter a member writes to the front desk from their own mail app: their email, what they write, and what the app puts in it (the app's version, the phone's model, the member's account number).",
+      "purpose": "Answering the member.",
+      "linked": true, "required": false, "clients": ["app", "website"],
+      "kept": [], "sentTo": ["front-desk-mail"],
+      "apple": { "type": "Customer Support", "purposes": ["App Functionality"] },
+      "play": { "type": "App activity: Other user-generated content", "purposes": ["App functionality"] }
+    }
+  },
+  "services": {
+    "supabase": { "who": "Supabase: the house's own server, database, sign-in and file store", "hosts": ["wihyqkpoymwcvbprslyz.supabase.co"] },
+    "auth-mail": { "who": "The mail server set in Supabase Auth's SMTP settings, which sends the confirm, reset and deletion-code letters", "hosts": [], "owner": "Which server is set there (the dashboard holds it, not the code)." },
+    "tmdb": { "who": "TMDB, the film database: the house's server asks it for films; the app and website load its posters and pictures directly", "hosts": ["image.tmdb.org", "api.themoviedb.org"] },
+    "youtube": { "who": "YouTube: a trailer the member opens plays from YouTube's privacy-enhanced address; trailer pictures load from YouTube", "hosts": ["www.youtube-nocookie.com", "img.youtube.com", "www.youtube.com"] },
+    "sentry": { "who": "Sentry: crash and performance reports", "hosts": ["o4511019614208000.ingest.us.sentry.io"] },
+    "revenuecat": { "who": "RevenueCat: reads the store's receipt and tells the house which rank a member holds", "hosts": ["api.revenuecat.com"] },
+    "app-store": { "who": "Apple's App Store: takes the payment, through the phone's own purchase sheet", "hosts": [] },
+    "google-play": { "who": "Google Play: takes the payment, through the phone's own purchase sheet", "hosts": [] },
+    "expo-push": { "who": "Expo's push service, which hands the house's notifications to Apple and Google", "hosts": ["exp.host"] },
+    "expo-updates": { "who": "Expo's update service: the app's updates", "hosts": ["u.expo.dev"] },
+    "front-desk-mail": { "who": "The front desk's mail: Cloudflare forwards support@ to the house's Gmail; replies go out through Resend", "hosts": [] },
+    "house-website": { "who": "The house's website, served by Vercel; the app opens its pages (help, the rules, privacy)", "hosts": ["www.thereelhousesociety.com"] },
+    "posthog": { "who": "PostHog: the website's visit analytics, only if its key is set", "hosts": ["us.i.posthog.com", "us-assets.i.posthog.com"], "owner": "Whether VITE_POSTHOG_KEY is set in any Vercel project that stays (its name only)." },
+    "rss2json": { "who": "rss2json: the website reads a film news feed through it; nothing of the member is sent", "hosts": ["api.rss2json.com"] }
+  },
+  "links": {
+    "why": "Addresses the app hands to the phone's browser or store when the member taps them; the app itself sends nothing there.",
+    "hosts": ["apps.apple.com", "play.google.com"]
+  },
+  "notReached": {
+    "dummy.supabase.co": "supabase.ts's stand-in when a build has no address; every production build has one (eas.json), and the release guard refuses a build without it."
+  },
+  "sdks": {
+    "@expo-google-fonts/courier-prime": { "sends": [], "why": "Font files built into the app." },
+    "@expo-google-fonts/inter": { "sends": [], "why": "Font files built into the app." },
+    "@expo-google-fonts/rye": { "sends": [], "why": "Font files built into the app." },
+    "@expo-google-fonts/special-elite": { "sends": [], "why": "Font files built into the app." },
+    "@expo-google-fonts/spectral": { "sends": [], "why": "Font files built into the app." },
+    "@expo/vector-icons": { "sends": [], "why": "Icon glyphs built into the app." },
+    "@hookform/resolvers": { "sends": [], "why": "Checks a form's fields on the phone." },
+    "@react-native-community/netinfo": { "sends": ["supabase"], "why": "Reads the phone's connection; on an iPhone it asks the house's sign-in server whether it can be reached (src/lib/reachability.ts), never Google's address it asks by default." },
+    "@sentry/react-native": { "sends": ["sentry"], "why": "Crash and performance reports, without the member's id, name or email." },
+    "@shopify/flash-list": { "sends": [], "why": "Draws long lists." },
+    "@shopify/react-native-skia": { "sends": [], "why": "Draws pictures on the phone." },
+    "@supabase/supabase-js": { "sends": ["supabase"], "why": "Everything the member keeps and reads in the house." },
+    "@tanstack/react-query": { "sends": [], "why": "Holds what was read on the phone." },
+    "@tanstack/react-query-persist-client": { "sends": [], "why": "Keeps what was read on the phone between launches." },
+    "base64-arraybuffer": { "sends": [], "why": "Turns a picture into bytes on the phone before its upload (sent by supabase-js)." },
+    "expo": { "sends": [], "why": "The app's runtime." },
+    "expo-application": { "sends": [], "why": "Reads the app's own build number on the phone." },
+    "expo-blur": { "sends": [], "why": "Draws frosted glass." },
+    "expo-clipboard": { "sends": [], "why": "Copies text the member asks to copy." },
+    "expo-constants": { "sends": [], "why": "Reads the app's own settings." },
+    "expo-crypto": { "sends": [], "why": "Makes random ids and hashes on the phone." },
+    "expo-dev-client": { "sends": [], "why": "A development tool; the release guard proves its launcher is not in a store build." },
+    "expo-device": { "sends": [], "why": "Reads the phone's kind on the phone (a real phone or a simulator, its memory class); sent nowhere." },
+    "expo-document-picker": { "sends": [], "why": "Opens the file a member chooses to import; it is read on the phone and what it holds is kept as their writing." },
+    "expo-file-system": { "sends": [], "why": "Reads and writes files on the phone." },
+    "expo-font": { "sends": [], "why": "Loads the fonts built into the app." },
+    "expo-haptics": { "sends": [], "why": "The phone's taps." },
+    "expo-image": { "sends": ["tmdb", "supabase", "youtube"], "why": "Loads posters, portraits and trailer pictures from their addresses." },
+    "expo-image-manipulator": { "sends": [], "why": "Resizes a chosen portrait on the phone." },
+    "expo-image-picker": { "sends": [], "why": "Lets the member choose a portrait from their photos or camera; only the one chosen is uploaded (by supabase-js)." },
+    "expo-linear-gradient": { "sends": [], "why": "Draws gradients." },
+    "expo-linking": { "sends": [], "why": "Opens and reads links." },
+    "expo-local-authentication": { "sends": [], "why": "Face ID or a fingerprint, answered by the phone; nothing of it reaches the app." },
+    "expo-notifications": { "sends": ["expo-push"], "why": "Asks for the phone's notification address and shows notifications." },
+    "expo-router": { "sends": [], "why": "The app's pages." },
+    "expo-secure-store": { "sends": [], "why": "Keeps the sign-in in the phone's keychain." },
+    "expo-sharing": { "sends": [], "why": "Opens the phone's share sheet for what the member shares." },
+    "expo-splash-screen": { "sends": [], "why": "The launch screen." },
+    "expo-status-bar": { "sends": [], "why": "The status bar's colour." },
+    "expo-store-review": { "sends": [], "why": "Asks the phone to show its own rating prompt." },
+    "expo-system-ui": { "sends": [], "why": "The system's background colour." },
+    "expo-updates": { "sends": ["expo-updates"], "why": "Asks for the app's updates, with the install's random number." },
+    "expo-web-browser": { "sends": [], "why": "Opens a page in the phone's browser sheet." },
+    "jszip": { "sends": [], "why": "Opens an import file on the phone." },
+    "lucide-react-native": { "sends": [], "why": "Icons built into the app." },
+    "react": { "sends": [], "why": "The app's interface." },
+    "react-dom": { "sends": [], "why": "Needed by packages that draw with it; the app draws none on the phone." },
+    "react-freeze": { "sends": [], "why": "Pauses hidden pages." },
+    "react-hook-form": { "sends": [], "why": "Forms." },
+    "react-native": { "sends": [], "why": "The app's platform." },
+    "react-native-draggable-flatlist": { "sends": [], "why": "Lists the member reorders." },
+    "react-native-gesture-handler": { "sends": [], "why": "Touch." },
+    "react-native-markdown-display": { "sends": [], "why": "Draws formatted writing." },
+    "react-native-mmkv": { "sends": [], "why": "Keeps settings and saved reads on the phone, encrypted." },
+    "react-native-purchases": { "sends": ["revenuecat", "app-store", "google-play"], "why": "Purchases, with the member's account number." },
+    "react-native-reanimated": { "sends": [], "why": "Motion." },
+    "react-native-safe-area-context": { "sends": [], "why": "The screen's edges." },
+    "react-native-screens": { "sends": [], "why": "Native pages." },
+    "react-native-svg": { "sends": [], "why": "Draws drawings." },
+    "react-native-url-polyfill": { "sends": [], "why": "Reads addresses." },
+    "react-native-view-shot": { "sends": [], "why": "Makes a picture of a card the member shares, on the phone." },
+    "react-native-webview": { "sends": ["youtube"], "why": "Plays a trailer the member opens." },
+    "react-native-worklets": { "sends": [], "why": "Runs motion off the main thread." },
+    "zod": { "sends": [], "why": "Checks data's shape." },
+    "zustand": { "sends": [], "why": "Holds the app's state." }
+  },
+  "tables": {
+    "auth.users": { "data": ["email", "member-id"], "kind": "own" },
+    "auth.sessions": { "data": ["sign-in-records"], "kind": "record" },
+    "auth.audit_log_entries": { "data": ["sign-in-records"], "kind": "record" },
+    "storage.objects": { "data": ["portrait"], "kind": "own" },
+    "public.analytics_events": { "data": ["website-visits"], "kind": "record" },
+    "public.dispatch_certifications": { "data": ["actions"], "kind": "own" },
+    "public.dispatch_comments": { "data": ["writing"], "kind": "own" },
+    "public.dispatch_dossiers_legacy": { "data": ["writing"], "kind": "own" },
+    "public.dispatch_posts": { "data": ["writing"], "kind": "own" },
+    "public.dispatch_saves": { "data": ["actions"], "kind": "own" },
+    "public.dispatch_votes": { "data": ["actions"], "kind": "own" },
+    "public.dossier_certifications_legacy": { "data": ["actions"], "kind": "own" },
+    "public.dossier_comments_legacy": { "data": ["writing"], "kind": "own" },
+    "public.error_logs": { "data": ["website-errors"], "kind": "record" },
+    "public.interactions": { "data": ["actions"], "kind": "own" },
+    "public.list_comments": { "data": ["writing"], "kind": "own" },
+    "public.lists": { "data": ["writing"], "kind": "own" },
+    "public.lobby_editions": { "data": ["moderation"], "kind": "record" },
+    "public.lobby_withheld": { "data": ["moderation"], "kind": "record" },
+    "public.log_comments": { "data": ["writing"], "kind": "own" },
+    "public.log_private_notes": { "data": ["writing"], "kind": "own" },
+    "public.logs": { "data": ["writing"], "kind": "own" },
+    "public.lounge_members": { "data": ["salon-messages"], "kind": "own" },
+    "public.lounge_message_reactions": { "data": ["salon-messages"], "kind": "own" },
+    "public.lounge_messages": { "data": ["salon-messages"], "kind": "own" },
+    "public.lounge_sanctions": { "data": ["moderation"], "kind": "record" },
+    "public.lounges": { "data": ["salon-messages"], "kind": "own" },
+    "public.member_drafts": { "data": ["writing"], "kind": "own" },
+    "public.mod_actions": { "data": ["moderation"], "kind": "record" },
+    "public.notifications": { "data": ["notices"], "kind": "record" },
+    "public.physical_archive": { "data": ["writing"], "kind": "own" },
+    "public.profiles": { "data": ["names", "member-id", "portrait", "writing", "purchases"], "kind": "own" },
+    "public.push_subscriptions": { "data": ["push-token"], "kind": "record" },
+    "public.push_tokens": { "data": ["push-token"], "kind": "record" },
+    "public.rank_grants": { "data": ["purchases"], "kind": "record" },
+    "public.reports": { "data": ["actions", "moderation"], "kind": "record" },
+    "public.salon_typing_sent": { "data": ["salon-messages"], "kind": "record" },
+    "public.user_blocks": { "data": ["actions"], "kind": "own" },
+    "public.warnings": { "data": ["moderation"], "kind": "record" },
+    "public.watchlists": { "data": ["writing"], "kind": "own" }
+  },
+  "memberColumnsWithoutKey": {
+    "why": "Columns that hold a member's id with no foreign key to say so (WORKLIST P3.6), and the id columns named like them that hold something else.",
+    "members": ["error_logs.user_id", "lobby_editions.author_id", "lobby_withheld.withheld_by", "reports.resolved_by"],
+    "notMembers": {
+      "interactions.target_log_id": "a log's id",
+      "interactions.target_list_id": "a stack's id",
+      "interactions.target_review_id": "a review's id",
+      "lobby_editions.target_id": "the piece's id",
+      "lobby_withheld.target_id": "the piece's id"
+    }
+  },
+  "requiredReasonApis": {
+    "why": "Apple's required-reason API categories the app or its packages use, with the reasons they give. Each package's own manifest is in node_modules, or (Sentry, RevenueCat, SDWebImage) in the pod CocoaPods fetches; expo-updates, expo-sharing and react-native-mmkv use one and ship no manifest. The app's manifest (app.json ios.privacyManifests) declares all of them, as a statically linked pod's manifest is not always carried into the app.",
+    "categories": {
+      "NSPrivacyAccessedAPICategoryFileTimestamp": { "reasons": ["C617.1", "0A2A.1", "3B52.1"], "usedBy": ["react-native", "expo-application", "expo-file-system", "react-native-mmkv", "Sentry", "SDWebImage"] },
+      "NSPrivacyAccessedAPICategoryUserDefaults": { "reasons": ["CA92.1"], "usedBy": ["react-native", "expo-constants", "expo-notifications", "expo-system-ui", "expo-eas-client", "expo-updates", "expo-sharing", "Sentry", "RevenueCat"] },
+      "NSPrivacyAccessedAPICategorySystemBootTime": { "reasons": ["35F9.1"], "usedBy": ["react-native", "expo-device", "Sentry"] },
+      "NSPrivacyAccessedAPICategoryDiskSpace": { "reasons": ["E174.1", "85F4.1"], "usedBy": ["expo-file-system"] }
+    }
+  }
+}

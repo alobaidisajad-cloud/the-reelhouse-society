@@ -19,7 +19,7 @@ jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navi
 jest.mock('@react-native-community/netinfo', () => ({
   __esModule: true,
   useNetInfo: () => ({ isConnected: true }),
-  default: { addEventListener: () => () => {} },
+  default: { configure: () => {}, addEventListener: () => () => {} },
 }));
 jest.mock('@shopify/flash-list', () => require('@/mockups/tabs/flashListMock').makeFlashListMock());
 // The header's own search and moods are not what is under test.

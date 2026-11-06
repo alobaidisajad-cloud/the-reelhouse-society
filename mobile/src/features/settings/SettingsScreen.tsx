@@ -58,7 +58,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { EMAIL_CODE_DIGITS } from '@/src/constants/inputLimits';
 import { raceDeadline } from '@/src/utils/raceDeadline';
-import NetInfo from '@react-native-community/netinfo';
+import NetInfo from '@/src/lib/reachability';
 import { flushOfflineQueue, getQueueLength } from '@/src/utils/offlineQueue';
 import { erasedBySigningOut, keptFor } from '@/src/utils/keptOnThisPhone';
 import { counted } from '@/src/utils/counted';

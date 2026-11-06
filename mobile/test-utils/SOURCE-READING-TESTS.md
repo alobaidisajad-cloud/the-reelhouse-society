@@ -182,6 +182,7 @@ Decisions, as of 2026-09-28:
 | `__tests__/animationMockCoverage.test.ts` | Every animation builder the app names in a prop, against the reanimated mock. |
 | `__tests__/colorLock.test.ts` | Every raw hex colour in the app, counted against the committed baseline. |
 | `__tests__/notificationsMockCoverage.test.ts` | Every expo-notifications member the app calls, against the mock in jest.setup.ts. |
+| `__tests__/thePrivacyInventoryIsWhole.test.ts` | store/privacy-inventory.json against what it must hold whole: package.json's shipped packages, the schema snapshot's tables and columns that hold a member or a user agent, every outside address the app's code names, the privacy manifests the native packages ship, app.json's own manifest, and the store answers forms.cjs writes. Each is a list on disk no render reaches. |
 | `__tests__/tmdbMockCoverage.test.ts` | Every TMDB method the app calls, against the mock. |
 
 ## Contract
@@ -343,6 +344,7 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/theFunnelHasOneSeam.test.ts` | Every rope reports through the one funnel. |
 | `src/utils/__tests__/theSocietyOpensOverYou.test.ts` | Every rope opens the Society over the room. |
 | `src/utils/__tests__/lucideIconsAreBundled.guard.test.ts` | The phone bundle lists every icon the source imports (Metro, not jest, reads the list). |
+| `src/lib/__tests__/aReachabilityIsTheHouses.test.ts` | Every app file, for which takes NetInfo from the package: only reachability.ts may, since configuring NetInfo drops the listeners added before it. What it asks is tested by its configuration, not read. |
 | `src/lib/__tests__/sentryMeasures.test.ts` | No file mounts Sentry's touch recorder, which reads accessibility labels. |
 | `src/theme/__tests__/nothingOvershoots.guard.test.ts` | Nothing in the app springs or bounces (the law of motion is a property of all source). |
 | `src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts` | Every route file exports the house crash net (Expo Router reads the export, not a render). |

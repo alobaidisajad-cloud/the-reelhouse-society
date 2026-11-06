@@ -6,7 +6,7 @@
  * at once and refreshes behind it. Kept 24 hours at most, 2 MB at most.
  */
 
-import NetInfo from '@react-native-community/netinfo';
+import NetInfo from '@/src/lib/reachability';
 import { AppState } from 'react-native';
 import { focusManager, onlineManager, QueryClient } from '@tanstack/react-query';
 // Not from auth.ts, which imports this file: that would be a cycle.

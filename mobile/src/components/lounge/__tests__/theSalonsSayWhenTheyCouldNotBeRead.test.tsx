@@ -32,7 +32,7 @@ jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navi
 jest.mock('@react-native-community/netinfo', () => ({
   __esModule: true,
   useNetInfo: () => ({ isConnected: true }),
-  default: { addEventListener: () => () => {} },
+  default: { configure: () => {}, addEventListener: () => () => {} },
 }));
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
 jest.mock('@shopify/flash-list', () => require('@/mockups/tabs/flashListMock').makeFlashListMock());

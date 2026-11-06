@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
-import { useNetInfo } from '@react-native-community/netinfo';
+import { useNetInfo } from '@/src/lib/reachability';
 import { useFocusEffect } from 'expo-router';
 import { useScrollToTop } from 'expo-router/react-navigation';
 import { storage } from '@/src/stores/mmkv-storage';

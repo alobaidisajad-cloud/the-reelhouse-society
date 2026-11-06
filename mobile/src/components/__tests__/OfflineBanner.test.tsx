@@ -13,7 +13,7 @@ const mockUseNetInfo = jest.fn();
 jest.mock('@react-native-community/netinfo', () => ({
   useNetInfo: () => mockUseNetInfo(),
   __esModule: true,
-  default: { fetch: jest.fn().mockResolvedValue({ isConnected: true }) },
+  default: { configure: () => {}, fetch: jest.fn().mockResolvedValue({ isConnected: true }) },
 }));
 
 // Mock safe area

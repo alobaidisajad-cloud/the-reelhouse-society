@@ -6,7 +6,7 @@
  * clock.
  */
 import { useEffect, useState } from 'react';
-import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
+import NetInfo, { NetInfoState } from '@/src/lib/reachability';
 
 export interface OfflineState {
   /** True when the device has no internet connectivity */

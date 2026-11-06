@@ -35,7 +35,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
 import {
   useBottomEdge, useContentBottom, usePushedHeaderTop, useColumnWidth } from '@/src/components/layout/navMetrics';
-import NetInfo from '@react-native-community/netinfo';
+import NetInfo from '@/src/lib/reachability';
 
 import { s } from '@/src/components/person/personStyles';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';

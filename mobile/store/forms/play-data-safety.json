@@ -1,0 +1,159 @@
+{
+  "inventory": "38b2dab267d4bc576a2624871120e76825215753a76d4102ff0d544749a2b845",
+  "why": "Play's data safety answers (Play Console, App content, Data safety), written by store/forms.cjs from privacy-inventory.json. Nothing is shared: every service named in the inventory acts for the house (Play counts a service provider as no sharing).",
+  "encryptedInTransit": true,
+  "membersCanAskForDeletion": true,
+  "collected": [
+    {
+      "type": "App activity: In-app search history",
+      "shared": false,
+      "optional": true,
+      "ephemeral": false,
+      "purposes": [
+        "App functionality"
+      ],
+      "from": [
+        "searches"
+      ]
+    },
+    {
+      "type": "App activity: Other actions",
+      "shared": false,
+      "optional": true,
+      "ephemeral": false,
+      "purposes": [
+        "App functionality"
+      ],
+      "from": [
+        "actions",
+        "notices"
+      ]
+    },
+    {
+      "type": "App activity: Other user-generated content",
+      "shared": false,
+      "optional": true,
+      "ephemeral": false,
+      "purposes": [
+        "App functionality"
+      ],
+      "from": [
+        "writing",
+        "support-letters"
+      ]
+    },
+    {
+      "type": "App info and performance: Crash logs",
+      "shared": false,
+      "optional": false,
+      "ephemeral": false,
+      "purposes": [
+        "App functionality"
+      ],
+      "from": [
+        "crashes"
+      ]
+    },
+    {
+      "type": "App info and performance: Diagnostics",
+      "shared": false,
+      "optional": false,
+      "ephemeral": false,
+      "purposes": [
+        "App functionality"
+      ],
+      "from": [
+        "crashes"
+      ]
+    },
+    {
+      "type": "Device or other IDs",
+      "shared": false,
+      "optional": false,
+      "ephemeral": false,
+      "purposes": [
+        "App functionality",
+        "Fraud prevention, security, and compliance"
+      ],
+      "from": [
+        "push-token",
+        "install-id",
+        "sign-in-records"
+      ]
+    },
+    {
+      "type": "Financial info: Purchase history",
+      "shared": false,
+      "optional": true,
+      "ephemeral": false,
+      "purposes": [
+        "App functionality"
+      ],
+      "from": [
+        "purchases"
+      ]
+    },
+    {
+      "type": "Messages: Other in-app messages",
+      "shared": false,
+      "optional": true,
+      "ephemeral": false,
+      "purposes": [
+        "App functionality"
+      ],
+      "from": [
+        "salon-messages"
+      ]
+    },
+    {
+      "type": "Personal info: Email address",
+      "shared": false,
+      "optional": false,
+      "ephemeral": false,
+      "purposes": [
+        "Account management",
+        "App functionality"
+      ],
+      "from": [
+        "email"
+      ]
+    },
+    {
+      "type": "Personal info: Name",
+      "shared": false,
+      "optional": false,
+      "ephemeral": false,
+      "purposes": [
+        "App functionality"
+      ],
+      "from": [
+        "names"
+      ]
+    },
+    {
+      "type": "Personal info: User IDs",
+      "shared": false,
+      "optional": false,
+      "ephemeral": false,
+      "purposes": [
+        "Account management",
+        "App functionality"
+      ],
+      "from": [
+        "member-id"
+      ]
+    },
+    {
+      "type": "Photos and videos: Photos",
+      "shared": false,
+      "optional": true,
+      "ephemeral": false,
+      "purposes": [
+        "App functionality"
+      ],
+      "from": [
+        "portrait"
+      ]
+    }
+  ]
+}

@@ -19,6 +19,7 @@ jest.mock('@react-native-community/netinfo', () => {
     __esModule: true,
     default: {
       heard,
+      configure: () => {},
       addEventListener: (listener: Connection) => { heard.listener = listener; return () => {}; },
     },
   };

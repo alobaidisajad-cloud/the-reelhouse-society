@@ -20,7 +20,7 @@ import { isNetworkError } from '@/src/utils/networkError';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
-import NetInfo from '@react-native-community/netinfo';
+import NetInfo from '@/src/lib/reachability';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { create } from 'zustand';
 import { registerStoreReset } from '@/src/stores/resetAllStores';

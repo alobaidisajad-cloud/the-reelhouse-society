@@ -82,6 +82,11 @@ const UNIVERSES = {
     top: true,
     keep: (r) => isCode(r) || /\.json$/.test(r),
   },
+  store: {
+    says: 'what the stores and the Privacy Policy are told: the privacy inventory, the answers written from it and the script that writes them',
+    roots: ['mobile/store'],
+    keep: (r) => !isTest(r),
+  },
   mockups: {
     says: 'the drawn pages: their generators, fixtures and records (the tools are scripts)',
     roots: ['mobile/mockups'],

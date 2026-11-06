@@ -28,7 +28,8 @@ jest.mock('../../lib/supabase', () => ({
 }));
 
 jest.mock('@react-native-community/netinfo', () => ({
-  fetch: jest.fn().mockResolvedValue({ isConnected: true, isInternetReachable: true }),
+  configure: jest.fn(),
+  fetch:jest.fn().mockResolvedValue({ isConnected: true, isInternetReachable: true }),
 }));
 
 jest.mock('expo-haptics', () => ({

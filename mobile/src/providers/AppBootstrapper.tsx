@@ -1,7 +1,7 @@
 import { isSafeDeepLinkUrl } from '@/src/constants/deepLinks';
 import { logger } from '@/src/utils/logger';
 import { noticeIdOf, openNoticeFromPush } from '@/src/utils/openNoticeFromPush';
-import NetInfo from '@react-native-community/netinfo';
+import NetInfo from '@/src/lib/reachability';
 import * as Linking from 'expo-linking';
 import * as Updates from 'expo-updates';
 import { useEffect, useRef } from 'react';
