@@ -1053,6 +1053,122 @@ jobs:
           [ $rc -eq 0 ] || node e2e/annotate.mjs "A known-vulnerable package reaches the phone" advisories.txt error
           exit $rc
 
+  # ── THE PURE SUITES, ON THE PHONE'S OWN RUNTIME (WORKLIST P4.52) ───────────────
+  # jest runs on Node, and Node is not the phone: on build 41 withTimeout called an
+  # API Hermes lacked, and every Dispatch read threw under green tests. So each
+  # src/utils suite that needs nothing of Node is bundled as the phone's bundle is,
+  # compiled by the app's hermesc, and run by a Hermes built from the commit React
+  # Native pins (mobile/scripts/hermes-suites.cjs says how, and why each other
+  # suite cannot run there).
+  hermes-suites:
+    name: 🧪 The pure suites pass on the phone's own runtime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    needs: strict-analysis
+    env:
+      # React Native 0.86.3's Hermes, as node_modules/react-native/sdks/.hermesv1version
+      # names it, built from the tag's commit: a moved tag cannot change what is built.
+      HERMES_TAG: hermes-v250829098.0.17
+      HERMES_COMMIT: 3477757eb2475555cf8d8df24bfb1deb0613880d
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Mobile Dependencies
+        id: install-19
+        timeout-minutes: 5
+        continue-on-error: true
+        working-directory: ./mobile
+        run: npm ci
+      - name: Install Mobile Dependencies, once more
+        if: steps.install-19.outcome == 'failure'
+        timeout-minutes: 5
+        working-directory: ./mobile
+        run: npm ci
+
+      - name: The Hermes built here is the one React Native pins
+        working-directory: ./mobile
+        run: |
+          pinned=$(cat node_modules/react-native/sdks/.hermesv1version)
+          [ "$pinned" = "$HERMES_TAG" ] || { echo "::error::React Native pins $pinned and this job builds $HERMES_TAG: name the new tag and its commit"; exit 1; }
+
+      - name: Hermes, from the cache
+        id: hermes-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/hermes-cli
+          key: hermes-cli-${{ env.HERMES_COMMIT }}-ubuntu-24.04-intl
+      # Built once for each commit: ICU's headers (the phone's Hermes has Intl), then the source.
+      - name: Hermes's build tools
+        if: steps.hermes-cache.outputs.cache-hit != 'true'
+        id: install-20
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
+          sudo apt-get install -y -q libicu-dev ninja-build
+      - name: Hermes's build tools, once more
+        if: steps.install-20.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
+          sudo apt-get install -y -q libicu-dev ninja-build
+      - name: Hermes's source, at the pinned commit
+        if: steps.hermes-cache.outputs.cache-hit != 'true'
+        id: hermes-source
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          rm -rf "$RUNNER_TEMP/hermes" && git init -q "$RUNNER_TEMP/hermes"
+          git -C "$RUNNER_TEMP/hermes" fetch -q --depth 1 https://github.com/facebook/hermes.git "$HERMES_COMMIT"
+          git -C "$RUNNER_TEMP/hermes" checkout -q --detach FETCH_HEAD
+      - name: Hermes's source, at the pinned commit, once more
+        if: steps.hermes-source.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          rm -rf "$RUNNER_TEMP/hermes" && git init -q "$RUNNER_TEMP/hermes"
+          git -C "$RUNNER_TEMP/hermes" fetch -q --depth 1 https://github.com/facebook/hermes.git "$HERMES_COMMIT"
+          git -C "$RUNNER_TEMP/hermes" checkout -q --detach FETCH_HEAD
+      - name: Hermes, built
+        if: steps.hermes-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 30
+        run: |
+          cmake -S "$RUNNER_TEMP/hermes" -B "$RUNNER_TEMP/hermes-build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DHERMES_ENABLE_INTL=ON -DHERMES_ENABLE_TEST_SUITE=OFF
+          cmake --build "$RUNNER_TEMP/hermes-build" --target hermes
+          mkdir -p ~/hermes-cli && cp "$RUNNER_TEMP/hermes-build/bin/hermes" ~/hermes-cli/
+      - name: Hermes, kept in the cache
+        if: steps.hermes-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/hermes-cli
+          key: hermes-cli-${{ env.HERMES_COMMIT }}-ubuntu-24.04-intl
+
+      - name: Every pure suite, bundled as the phone's bundle is
+        working-directory: ./mobile
+        run: node scripts/hermes-suites.cjs bundle "$RUNNER_TEMP/hermes-suites"
+      - name: Every pure suite passes on Hermes
+        working-directory: ./mobile
+        run: |
+          set -o pipefail
+          node scripts/hermes-suites.cjs run "$RUNNER_TEMP/hermes-suites" --hermes ~/hermes-cli/hermes \
+            --hermesc node_modules/hermes-compiler/hermesc/linux64-bin/hermesc 2>&1 | tee hermes.txt
+          rc=${PIPESTATUS[0]}
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A pure suite fails on the phone's runtime" hermes.txt error
+          exit $rc
+      # The run's own proof: the runtime is the bare engine, and the polyfills are what it is given.
+      - name: Without React Native's network polyfills, withTimeout's suite fails, as it must
+        working-directory: ./mobile
+        run: |
+          node scripts/hermes-suites.cjs bundle "$RUNNER_TEMP/hermes-bare" --bare
+          node scripts/hermes-suites.cjs run "$RUNNER_TEMP/hermes-bare" --bare --hermes ~/hermes-cli/hermes \
+            --hermesc node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
 
   web-unit-tests:
     name: 🧪 Web Vitest Unit Tests

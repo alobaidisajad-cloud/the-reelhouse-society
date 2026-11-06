@@ -27,6 +27,7 @@ import { readAllRows } from '@/src/features/settings/readAllRows';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { escapeCsvCell } from '@/src/utils/csv';
+import { byKey } from '@/src/utils/order';
 import { counted, grouped } from '@/src/utils/counted';
 import { Arrive } from '@/src/components/Arrive';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
@@ -334,7 +335,7 @@ export default function DataVault() {
           ...rest,
           films: [...(list_items || [])].sort((a: any, b: any) =>
             (a.rank_position ?? 0) - (b.rank_position ?? 0) ||
-            String(a.created_at ?? '').localeCompare(String(b.created_at ?? ''))
+            byKey(String(a.created_at ?? ''), String(b.created_at ?? ''))
           )
         }))
       };

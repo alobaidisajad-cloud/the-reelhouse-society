@@ -2058,3 +2058,84 @@ mutants:
         find: "          : roomFailed && !roomShows ? 'failed'\n            : roomReady ? 'ready' : 'reading');"
         replace: "          : 'ready');"
     proof: { file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "a room whose read is still out is not ready, though the member's file is" }
+
+  - id: shape-hermes-another-engine
+    class: RUNTIME-pure-suites-proven-on-node-alone
+    source: shape
+    edits:
+      - file: ../.github/workflows/god_tier_ci.yml
+        find: "      HERMES_TAG: hermes-v250829098.0.17\n"
+        replace: "      HERMES_TAG: hermes-v0.17.0\n"
+    proof: { file: scripts/__tests__/hermesSuites.test.ts, test: "builds the Hermes React Native pins, from the tag's commit, and keeps it by that commit" }
+
+  - id: shape-hermes-bare-unproven
+    class: RUNTIME-pure-suites-proven-on-node-alone
+    source: shape
+    edits:
+      - file: ../.github/workflows/god_tier_ci.yml
+        find: "          node scripts/hermes-suites.cjs bundle \"$RUNNER_TEMP/hermes-bare\" --bare\n"
+        replace: ""
+    proof: { file: scripts/__tests__/hermesSuites.test.ts, test: "bundles the suites, runs them with the app's own hermesc, and proves the runtime bare" }
+
+  - id: shape-harness-asserts-nothing-passes
+    class: RUNTIME-pure-suites-proven-on-node-alone
+    source: shape
+    edits:
+      - file: test-utils/hermesHarness.js
+        find: "  if (state.assertionCalls === 0 && propertyChecks === 0) return new Error('this test asserted nothing: no expect() and no fast-check property ran');\n"
+        replace: ""
+    proof: { file: scripts/__tests__/hermesSuites.test.ts, test: "fails a test that asserts nothing, as jest.afterEnv.ts fails it" }
+
+  - id: shape-harness-timers-in-queue-order
+    class: RUNTIME-pure-suites-proven-on-node-alone
+    source: shape
+    edits:
+      - file: test-utils/hermesHarness.js
+        find: "    for (const t of pending.values()) if (!next || t.due < next.due) next = t;\n"
+        replace: "    for (const t of pending.values()) if (!next) next = t;\n"
+    proof: { file: scripts/__tests__/hermesSuites.test.ts, test: "keeps each timer's delay, which the CLI's own setTimeout does not" }
+
+  - id: shape-reader-lets-dev-through
+    class: RUNTIME-pure-suites-proven-on-node-alone
+    source: shape
+    edits:
+      - file: scripts/hermes-suites.cjs
+        find: "  if (/\\b__DEV__\\b/.test(text)) return 'sets or reads __DEV__, which the release bundle writes in as false';\n"
+        replace: ""
+    proof: { file: scripts/__tests__/hermesSuites.test.ts, test: "to Node, a drawn screen, jest's registry and development's own code" }
+
+  - id: shape-factory-moved-blind
+    class: RUNTIME-pure-suites-proven-on-node-alone
+    source: shape
+    edits:
+      - file: scripts/hermes-suites.cjs
+        find: "          const read = readsTheSuite(factory, names);\n"
+        replace: "          const read = null;\n"
+    proof: { file: scripts/__tests__/hermesSuites.test.ts, test: "to a mock it cannot make, and yes to one it can" }
+
+  - id: shape-order-by-locale
+    class: RUNTIME-pure-suites-proven-on-node-alone
+    source: shape
+    edits:
+      - file: src/utils/order.ts
+        find: "export const byKey = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);"
+        replace: "export const byKey = (a: string, b: string): number => a.localeCompare(b);"
+    proof: { file: src/utils/__tests__/aListIsOrderedOneWay.test.ts, test: "orders ids and codes as Postgres does: by their characters' codes, capitals first" }
+
+  - id: shape-instant-places-misread
+    class: RUNTIME-pure-suites-proven-on-node-alone
+    source: shape
+    edits:
+      - file: src/utils/instant.ts
+        find: "places.slice(0, 3).padEnd(3, '0')"
+        replace: "places.slice(1, 4).padEnd(3, '0')"
+    proof: { file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "reads the house's own form: six places after the second, the offset in full" }
+
+  - id: shape-bare-parse-back
+    class: RUNTIME-pure-suites-proven-on-node-alone
+    source: shape
+    edits:
+      - file: src/utils/standing.ts
+        find: "const until = instantOf(user.suspended_until);"
+        replace: "const until = user.suspended_until ? Date.parse(user.suspended_until) : NaN;"
+    proof: { file: src/utils/__tests__/textIsOrderedAndReadOneWay.guard.test.ts, test: "every order and every instant in app/ and src/ goes through the two helpers" }

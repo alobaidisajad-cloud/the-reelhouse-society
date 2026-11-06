@@ -22,6 +22,7 @@ import { onRefusal } from '@/src/lib/refusalEvents';
 import { useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
 import { isStandingRefusal } from '@/src/utils/refusedForStanding';
+import { instantOf } from '@/src/utils/instant';
 
 export type Standing = { kind: 'silenced' } | { kind: 'suspended'; until: string } | null;
 
@@ -32,7 +33,7 @@ export function standingOf(
 ): Standing {
   if (!user) return null;
   if (user.is_banned === true) return { kind: 'silenced' };
-  const until = user.suspended_until ? Date.parse(user.suspended_until) : NaN;
+  const until = instantOf(user.suspended_until);
   if (Number.isFinite(until) && until > now) return { kind: 'suspended', until: user.suspended_until as string };
   return null;
 }

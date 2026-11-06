@@ -13,6 +13,8 @@
  *   4. anything at all, rather than nothing
  */
 
+import { byKey } from '@/src/utils/order';
+
 export interface ReleaseDateEntry {
   iso_3166_1?: string;
   release_dates?: { certification?: string | null }[];
@@ -68,6 +70,6 @@ export function pickCertificate(
 
   // Deterministic rather than "whatever TMDB happened to order first", so the
   // same film never shows two different certificates on two runs.
-  const [region, value] = [...byRegion.entries()].sort(([a], [b]) => a.localeCompare(b))[0];
+  const [region, value] = [...byRegion.entries()].sort(([a], [b]) => byKey(a, b))[0];
   return { value, region };
 }

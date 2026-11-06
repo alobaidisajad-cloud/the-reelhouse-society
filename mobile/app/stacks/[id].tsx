@@ -39,6 +39,7 @@ import { UNINKED, UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
 import { isForbiddenError, isNetworkError } from '@/src/utils/networkError';
+import { instantOf } from '@/src/utils/instant';
 import { useStruck } from '@/src/components/StruckWords';
 import { stillQueued, useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import { CritiqueRow, type Critique } from '@/src/components/critique/CritiqueRow';
@@ -841,7 +842,7 @@ function StackDetailScreen({ id }: { id: string }) {
     );
   }
 
-  const estDate = list.createdAt && !isNaN(Date.parse(list.createdAt)) ? formatDateMonthYear(list.createdAt) : null;
+  const estDate = !isNaN(instantOf(list.createdAt)) ? formatDateMonthYear(list.createdAt) : null;
   // Measured lines, never a character count: only the text knows how it wraps.
   const descNeedsFold = measuredFor === list.description && descLineCount > DESC_CLAMP_LINES;
 

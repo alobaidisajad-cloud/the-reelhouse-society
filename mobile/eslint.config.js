@@ -30,6 +30,41 @@ const RN_IMAGE_RULE = {
   importNames: ['Image', 'ImageBackground'],
   message: "Draw pictures through '@/src/components/Picture': React Native's Image has no fallback for a picture that could not be had.",
 };
+// The app's syntax rules, one list for every file and its exceptions.
+const APP_SYNTAX_RULES = [{
+  selector: "MemberExpression[object.name='Animated'][property.name='Text']",
+  message: "Use AnimatedText from '@/src/components/text' — it is Reanimated's animated Text made from the app's Text, so it keeps the ceiling and the spacing.",
+}, {
+  // react-native-svg on Android reads these as numbers and throws on a word.
+  selector: "JSXAttribute[name.name=/^(fontSize|letterSpacing|wordSpacing|kerning)$/] > Literal[value=/[^0-9.\\s-]/]",
+  message: 'An SVG font size or spacing must be a number — Android throws on a word such as "none".',
+}, {
+  selector: "JSXAttribute[name.name=/^(fontFamily|fontWeight|fontStyle|textAnchor)$/] > Literal[value='none']",
+  message: 'Leave the attribute out instead of "none" — a design tool\'s "none" is not an SVG value, and Android does not forgive it.',
+}, {
+  // Hermes has no Intl polyfill: a date right in Node can be wrong on the phone.
+  selector: "MemberExpression[object.name='Intl']",
+  message: "No Intl: the phone's Hermes has no polyfill. Dates and times come from src/utils/timeAgo.ts, which builds them from tables.",
+}, {
+  selector: "CallExpression[callee.property.name=/^toLocale(Date|Time)?String$/]",
+  message: "toLocale…String is Intl underneath, and the phone's Hermes has no polyfill. Use src/utils/timeAgo.ts (dates, times) or a house formatter (numbers).",
+}, {
+  // Three posters carried it, two cast past the types, each wrapped in an
+  // animated Image for nothing.
+  selector: "JSXAttribute[name.name='sharedTransitionTag'], Property[key.name='sharedTransitionTag']",
+  message: 'Reanimated 4.1 has no shared element transitions: sharedTransitionTag reaches the native view and is ignored.',
+}];
+
+// One way to order text and one way to read an instant from it (WORKLIST P4.52): what the
+// phone's engine makes of either is its own, so each is called in one helper whose tests
+// run on Hermes (scripts/hermes-suites.cjs).
+const ONE_WAY_RULES = [{
+  selector: "CallExpression[callee.property.name='localeCompare']",
+  message: 'Order text through src/utils/order.ts: byKey for what a machine wrote (an instant, an id, a code), byTitle for words a reader alphabetises.',
+}, {
+  selector: "MemberExpression[object.name='Date'][property.name='parse']",
+  message: "Read an instant with instantOf (src/utils/instant.ts): it reads the house's six places and short offsets the same on every engine.",
+}];
 module.exports = defineConfig([
   expoConfig,
   {
@@ -67,30 +102,13 @@ module.exports = defineConfig([
       'no-restricted-imports': ['error', {
         paths: [FLASH_LIST_RULE, TEXT_RULE, PICTURE_RULE, RN_IMAGE_RULE],
       }],
-      'no-restricted-syntax': ['error', {
-        selector: "MemberExpression[object.name='Animated'][property.name='Text']",
-        message: "Use AnimatedText from '@/src/components/text' — it is Reanimated's animated Text made from the app's Text, so it keeps the ceiling and the spacing.",
-      }, {
-        // react-native-svg on Android reads these as numbers and throws on a word.
-        selector: "JSXAttribute[name.name=/^(fontSize|letterSpacing|wordSpacing|kerning)$/] > Literal[value=/[^0-9.\\s-]/]",
-        message: 'An SVG font size or spacing must be a number — Android throws on a word such as "none".',
-      }, {
-        selector: "JSXAttribute[name.name=/^(fontFamily|fontWeight|fontStyle|textAnchor)$/] > Literal[value='none']",
-        message: 'Leave the attribute out instead of "none" — a design tool\'s "none" is not an SVG value, and Android does not forgive it.',
-      }, {
-        // Hermes has no Intl polyfill: a date right in Node can be wrong on the phone.
-        selector: "MemberExpression[object.name='Intl']",
-        message: "No Intl: the phone's Hermes has no polyfill. Dates and times come from src/utils/timeAgo.ts, which builds them from tables.",
-      }, {
-        selector: "CallExpression[callee.property.name=/^toLocale(Date|Time)?String$/]",
-        message: "toLocale…String is Intl underneath, and the phone's Hermes has no polyfill. Use src/utils/timeAgo.ts (dates, times) or a house formatter (numbers).",
-      }, {
-        // Three posters carried it, two cast past the types, each wrapped in an
-        // animated Image for nothing.
-        selector: "JSXAttribute[name.name='sharedTransitionTag'], Property[key.name='sharedTransitionTag']",
-        message: 'Reanimated 4.1 has no shared element transitions: sharedTransitionTag reaches the native view and is ignored.',
-      }],
+      'no-restricted-syntax': ['error', ...APP_SYNTAX_RULES, ...ONE_WAY_RULES],
     },
+  },
+  {
+    // The two helpers the one-way rules send everyone to.
+    files: ['src/utils/order.ts', 'src/utils/instant.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...APP_SYNTAX_RULES] },
   },
   {
     // The one place React Native's Text and TextInput are wrapped — and where a

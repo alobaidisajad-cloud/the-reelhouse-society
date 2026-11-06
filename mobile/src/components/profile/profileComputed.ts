@@ -9,6 +9,8 @@ import { ProfileTab } from '@/src/hooks/useProfileData';
 
 import { colors } from '@/src/theme/theme';
 import { calendarDateString } from '@/src/utils/timeAgo';
+import { instantOf } from '@/src/utils/instant';
+import { byTitle } from '@/src/utils/order';
 import { FORMAT_META } from '@/src/constants/formats';
 import { toProfileLog, toProfileWatchlistItem, toProfileVaultItem, toProfileList } from '@/src/utils/mappers';
 
@@ -263,7 +265,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
       if (!log.filmId || earlier.length === 0) continue;
       // Oldest first: the earlier viewings by their dates (in the order kept
       // when a date is missing), then this one, which is the latest.
-      const dated = earlier.map((v, i) => ({ rating: Number(v.rating) || 0, at: v.date ? Date.parse(v.date) : NaN, i }));
+      const dated = earlier.map((v, i) => ({ rating: Number(v.rating) || 0, at: instantOf(v.date), i }));
       dated.sort((a, b) => (Number.isFinite(a.at) && Number.isFinite(b.at) ? a.at - b.at : 0) || a.i - b.i);
       const rated = [...dated.map((v) => v.rating), log.rating || 0].filter((r) => r > 0);
       const first = rated[0] ?? 0;
@@ -286,8 +288,8 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     if (typeof watchlistDecade === 'number') {
       result = result.filter(f => decadeOf(f.year) === watchlistDecade);
     }
-    if (watchlistSort === 'az') result.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''));
-    else if (watchlistSort === 'za') result.sort((a, b) => (b.title ?? '').localeCompare(a.title ?? ''));
+    if (watchlistSort === 'az') result.sort((a, b) => byTitle(a.title ?? '', b.title ?? ''));
+    else if (watchlistSort === 'za') result.sort((a, b) => byTitle(b.title ?? '', a.title ?? ''));
     return result;
   }, [displayWatchlist, watchlistSearch, watchlistSort, watchlistDecade]);
 
@@ -311,13 +313,13 @@ export function useProfileComputed(params: UseProfileComputedParams) {
 
   /**
    * One A–Z for every room, close to the server's order so your own shelf
-   * (sorted here) and a visitor's (sorted by Postgres) agree. `localeCompare`
-   * with no locale and no options: no Intl on the phone.
+   * (sorted here) and a visitor's (sorted by Postgres) agree: byTitle, the
+   * phone's own collation (src/utils/order.ts).
    */
   const byShelfSort = <T extends { title?: string | null }>(items: T[], sort: ShelfSort): T[] => {
     if (sort === 'default') return items;
     const out = [...items];
-    out.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''));
+    out.sort((a, b) => byTitle(a.title ?? '', b.title ?? ''));
     return sort === 'za' ? out.reverse() : out;
   };
 

@@ -7,6 +7,7 @@ import { Disc, Film as FilmIcon, Search } from 'lucide-react-native';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
 import { nav } from '@/src/utils/typedRouter';
+import { byKey } from '@/src/utils/order';
 import { prefetchPictures } from '@/src/utils/prefetchPictures';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation, ReduceMotion } from 'react-native-reanimated';
 import type { ProfileVaultItem, FormatCount, ShelfSort } from '../../types';
@@ -222,7 +223,7 @@ export default React.memo(function ProfilePhysicalTab({
 
     if (real.size > 0) {
       return Array.from(real.entries())
-        .sort((a, b) => shelfRank(a[0]) - shelfRank(b[0]) || a[0].localeCompare(b[0]))
+        .sort((a, b) => shelfRank(a[0]) - shelfRank(b[0]) || byKey(a[0], b[0]))
         .map(([id, count]) => ({
           id,
           label: SHELF_LABEL[id] ?? FORMAT_META[id]?.label ?? id.toUpperCase(),
@@ -261,7 +262,7 @@ export default React.memo(function ProfilePhysicalTab({
 
     const ordered = Array.from(shelves.entries()).sort((a, b) => {
       const d = shelfRank(a[0]) - shelfRank(b[0]);
-      return d !== 0 ? d : a[0].localeCompare(b[0]);
+      return d !== 0 ? d : byKey(a[0], b[0]);
     });
 
     for (const [format, items] of ordered) {

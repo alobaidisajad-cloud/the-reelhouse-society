@@ -3,6 +3,7 @@ import { houseIso } from '@/src/lib/houseClock';
 import { queryClient } from '../../../../lib/queryClient';
 import { supabase } from '../../../../lib/supabase';
 import { wallMayHaveChanged } from '../../../../components/lobby/wallRead';
+import { byKey } from '../../../../utils/order';
 import { standingFor } from '@/src/constants/standing';
 import type { DomainLog } from '../../../../types';
 import { LOG_SELECT_COLUMNS, mapLogRow, mapLogToDbPayload } from '../../../../utils/mappers';
@@ -81,7 +82,7 @@ export const resolveFormat = (physicalMedia?: string | null): string => FORMAT_M
 export const sortLogs = (logs: DomainLog[]) => logs.sort((a, b) => {
     const dateA = a.watchedDate || a.createdAt || '1970-01-01T00:00:00Z';
     const dateB = b.watchedDate || b.createdAt || '1970-01-01T00:00:00Z';
-    return dateB.localeCompare(dateA);
+    return byKey(dateB, dateA);
 });
 
 export type QueuedWrite = { type: string; payload: Record<string, unknown> };

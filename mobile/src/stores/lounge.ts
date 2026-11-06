@@ -6,6 +6,8 @@ import { houseIso } from '@/src/lib/houseClock';
 import { queryClient } from '../lib/queryClient';
 import { supabase } from '../lib/supabase';
 import { watchChannel } from '../lib/watchChannel';
+import { instantOf } from '../utils/instant';
+import { byKey } from '../utils/order';
 import { LoungeMessagePayloadSchema } from '../services/LoungeService';
 import { logger } from '../utils/logger';
 import { buildSearchPattern } from '../utils/searchPattern';
@@ -193,7 +195,7 @@ function serverHeld(msgs: LoungeMessage[]): LoungeMessage[] {
 }
 
 /** A message's place in the (created_at, id) order every read of a room keeps. */
-const placeOf = (m: { created_at: string; id: string }) => [Date.parse(m.created_at), m.id] as const;
+const placeOf = (m: { created_at: string; id: string }) => [instantOf(m.created_at), m.id] as const;
 const before = (a: { created_at: string; id: string }, b: { created_at: string; id: string }) => {
   const [at, aid] = placeOf(a);
   const [bt, bid] = placeOf(b);
@@ -985,7 +987,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
               : m
           ).sort((a, b) => {
             const diff = (new Date(a.created_at).getTime() || 0) - (new Date(b.created_at).getTime() || 0);
-            return diff !== 0 ? diff : a.id.localeCompare(b.id);
+            return diff !== 0 ? diff : byKey(a.id, b.id);
           })
         };
       });

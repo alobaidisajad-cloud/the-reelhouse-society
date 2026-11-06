@@ -23,6 +23,7 @@
  */
 import { supabase } from '@/src/lib/supabase';
 import { logger } from '@/src/utils/logger';
+import { instantOf } from '@/src/utils/instant';
 
 /** Only the essay. See the migration for why the log and the ballot are not here. */
 export type SyncedKind = 'dossier' | 'edit';
@@ -148,8 +149,8 @@ export function whichCopy(
   if (!remoteSavedAt) return 'local';
   if (!localSavedAt) return 'remote';   // a new phone — the whole point of this
 
-  const local = Date.parse(localSavedAt);
-  const remote = Date.parse(remoteSavedAt);
+  const local = instantOf(localSavedAt);
+  const remote = instantOf(remoteSavedAt);
   // An unreadable stamp on either side is not a reason to overwrite anybody's
   // writing. The one in front of them wins, and nothing is thrown away.
   if (Number.isNaN(local) || Number.isNaN(remote)) return 'local';

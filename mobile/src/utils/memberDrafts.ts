@@ -37,6 +37,7 @@
 import { houseIso } from '@/src/lib/houseClock';
 import { storage, isStorageEncrypted } from '@/src/stores/mmkv-storage';
 import { logger } from '@/src/utils/logger';
+import { instantOf } from '@/src/utils/instant';
 
 /** Everything a member leaves unfinished shares this, so one sweep clears it. */
 export const DRAFT_PREFIX = 'reelhouse_draft_';
@@ -239,7 +240,7 @@ export function evictOldest(userId: string, kind: DraftKind, keep = SCOPED_KEPT)
       if (!key.startsWith(mine)) continue;
       const raw = safeGet(key);
       let at = 0;
-      try { at = Date.parse((JSON.parse(raw ?? '{}') as DraftEnvelope<unknown>).savedAt) || 0; } catch { at = 0; }
+      try { at = instantOf((JSON.parse(raw ?? '{}') as DraftEnvelope<unknown>).savedAt) || 0; } catch { at = 0; }
       held.push({ key, at });
     }
     if (held.length <= keep) return;

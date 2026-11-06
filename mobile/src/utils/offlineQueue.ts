@@ -18,6 +18,7 @@ import { supabase } from '../lib/supabase';
 import { captureError } from '../lib/sentry';
 import { MutationSchemaMap } from '../types/mutations';
 import { logger } from './logger';
+import { instantOf } from './instant';
 import { applyIdMapToPayload, executeMutation } from './mutationExecutor';
 import { isNetworkError, isTransientError } from './networkError';
 import reelToast from './reelToast';
@@ -437,7 +438,7 @@ async function sendOnce(): Promise<void> {
         }
         // A suspension ends: what was written is held until it does, not thrown
         // away refused (the queue's own day-old rule still applies).
-        const suspendedUntil = banProfile?.suspended_until ? Date.parse(banProfile.suspended_until) : NaN;
+        const suspendedUntil = instantOf(banProfile?.suspended_until);
         if (!banProfile?.is_banned && Number.isFinite(suspendedUntil) && suspendedUntil > houseNow()) {
             logger.warn('[OfflineSync] Member is suspended — holding the queue until it ends.');
             return;

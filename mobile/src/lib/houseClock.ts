@@ -20,6 +20,8 @@
  * clock to one of the two.
  */
 
+import { instantOf } from '@/src/utils/instant';
+
 /** Nearer than this, the phone's own clock is kept: the header is whole seconds. */
 export const HOUSE_CLOCK_SLACK_MS = 2000;
 /** An answer slower than this cannot place the house's second well enough to move the clock. */
@@ -41,7 +43,7 @@ export function onHouseClockMoved(listener: () => void): () => void {
  */
 export function heardTheHouse(dateHeader: string | null | undefined, askedAt: number, heardAt: number): void {
   if (!dateHeader || heardAt < askedAt || heardAt - askedAt > HOUSE_CLOCK_SLOWEST_MS) return;
-  const house = Date.parse(dateHeader);
+  const house = instantOf(dateHeader);
   if (!Number.isFinite(house)) return;
   const measured = house + 500 - (askedAt + heardAt) / 2;
   const next = Math.abs(measured) <= HOUSE_CLOCK_SLACK_MS ? 0 : Math.round(measured);

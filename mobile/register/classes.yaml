@@ -1653,3 +1653,23 @@ classes:
       - { kind: running, file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "a room whose read is still out is not ready, though the member's file is" }
     fix: "the member page's room tree holds its mark, and in a room the mark is ready once the room's own rows are in (a sealed room is its answer; a room whose read reached nothing, holding nothing, failed); every screen's returns read by the TypeScript parser (mutants shape-room-unmarked, shape-room-ready-on-the-file)"
     places: [emulator]
+
+  - id: RUNTIME-pure-suites-proven-on-node-alone
+    title: "The pure suites ran on Node alone, never on the phone's own engine (on build 41 withTimeout called AbortSignal.timeout, which Hermes lacked, and every Dispatch read threw under green tests); and the app ordered text and read instants with localeCompare and Date.parse at 22 places, whose answers are each engine's own"
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "P4.52" }
+    methods:
+      - { kind: static, file: scripts/__tests__/hermesSuites.test.ts, test: "builds the Hermes React Native pins, from the tag's commit, and keeps it by that commit" }
+      - { kind: static, file: scripts/__tests__/hermesSuites.test.ts, test: "bundles the suites, runs them with the app's own hermesc, and proves the runtime bare" }
+      - { kind: static, file: scripts/__tests__/hermesSuites.test.ts, test: "to Node, a drawn screen, jest's registry and development's own code" }
+      - { kind: static, file: scripts/__tests__/hermesSuites.test.ts, test: "to a mock it cannot make, and yes to one it can" }
+      - { kind: running, file: scripts/__tests__/hermesSuites.test.ts, test: "fails a test that asserts nothing, as jest.afterEnv.ts fails it" }
+      - { kind: running, file: scripts/__tests__/hermesSuites.test.ts, test: "keeps each timer's delay, which the CLI's own setTimeout does not" }
+      - { kind: static, file: src/utils/__tests__/textIsOrderedAndReadOneWay.guard.test.ts, test: "every order and every instant in app/ and src/ goes through the two helpers" }
+      - { kind: running, file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "reads the house's own form: six places after the second, the offset in full" }
+      - { kind: running, file: src/utils/__tests__/aListIsOrderedOneWay.test.ts, test: "orders ids and codes as Postgres does: by their characters' codes, capitals first" }
+    fix: "god_tier_ci.yml's hermes-suites job builds Hermes from the commit React Native pins and runs every src/utils suite that needs nothing of Node, bundled as the phone's bundle is (scripts/hermes-suites.cjs, test-utils/hermesHarness.js), and proves the engine bare by withTimeout's suite failing without the network polyfills; text is ordered by src/utils/order.ts and instants read by src/utils/instant.ts alone, by ESLint and a guard (mutants shape-hermes-another-engine, shape-hermes-bare-unproven, shape-harness-asserts-nothing-passes, shape-harness-timers-in-queue-order, shape-reader-lets-dev-through, shape-factory-moved-blind, shape-order-by-locale, shape-instant-places-misread, shape-bare-parse-back)"
+    places: [none]

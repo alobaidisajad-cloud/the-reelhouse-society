@@ -4,6 +4,7 @@ import { logger } from '@/src/utils/logger';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { buildSearchPattern } from '@/src/utils/searchPattern';
 import { stripHtml } from '@/src/utils/html';
+import { byKey } from '@/src/utils/order';
 import { resolveTier } from '@/src/utils/tier';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
 import { useQuery } from '@tanstack/react-query';
@@ -288,7 +289,7 @@ export function useUniversalSearch(query: string) {
             seen.add(log.id);
             return !log.user_id || !isHidden(log.user_id);
           })
-          .sort((x, y) => (y.created_at ?? '').localeCompare(x.created_at ?? ''))
+          .sort((x, y) => byKey(y.created_at ?? '', x.created_at ?? ''))
           .slice(0, 20)
           .map((log: LogRow) => {
             const author = firstAuthor(log.profiles);

@@ -9,6 +9,7 @@ import * as Crypto from 'expo-crypto';
 import { logger } from '@/src/utils/logger';
 import { captureError } from '@/src/lib/sentry';
 import { e2eTrace } from '@/src/utils/e2eTrace';
+import { instantOf } from '@/src/utils/instant';
 import { bootStore } from '@/src/lib/bootStore';
 
 // ── Encryption-at-rest (LIB-5) ───────────────────────────────────────────────
@@ -176,7 +177,7 @@ const listIn = (raw: string | undefined): { id?: unknown; timestamp?: number }[]
   try { const parsed: unknown = raw ? JSON.parse(raw) : []; return Array.isArray(parsed) ? parsed : []; } catch { return []; }
 };
 const savedAtOf = (raw: string | undefined): number => {
-  try { return Date.parse((JSON.parse(raw ?? '{}') as { savedAt?: string }).savedAt ?? '') || 0; } catch { return 0; }
+  try { return instantOf((JSON.parse(raw ?? '{}') as { savedAt?: string }).savedAt) || 0; } catch { return 0; }
 };
 
 /**

@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import { houseNow } from '@/src/lib/houseClock';
 import { useAuthStore } from '@/src/stores/auth';
 import { storage } from '@/src/stores/mmkv-storage';
+import { instantOf } from '@/src/utils/instant';
 
 export const INITIATION_WINDOW_MS = 48 * 60 * 60 * 1000; // 48 hours
 const BREATH_MS = 600;
@@ -39,7 +40,7 @@ export function shouldInitiate(params: {
   const { userId, createdAt, alreadySeen } = params;
   if (!userId || alreadySeen) return false;
   if (!createdAt) return false;
-  const created = Date.parse(createdAt);
+  const created = instantOf(createdAt);
   if (isNaN(created)) return false;
   const now = params.now ?? houseNow();
   const age = now - created;

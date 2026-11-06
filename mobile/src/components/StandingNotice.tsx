@@ -16,6 +16,7 @@ import { Text } from '@/src/components/text';
 import { colors, fonts } from '@/src/theme/theme';
 import { useAuthStore } from '@/src/stores/auth';
 import { standingOf } from '@/src/utils/standing';
+import { instantOf } from '@/src/utils/instant';
 import { formatClockTime, formatDate } from '@/src/utils/timeAgo';
 import { useOverlayBottom } from '@/src/components/layout/navMetrics';
 import { UnsentChangesPlate } from '@/src/components/UnsentChanges';
@@ -38,7 +39,7 @@ export default function StandingNotice() {
   const anyHeld = useRefused().length > 0;
 
   // A suspension ends on its own: the notice goes the moment it does.
-  const until = standing?.kind === 'suspended' ? Date.parse(standing.until) : NaN;
+  const until = standing?.kind === 'suspended' ? instantOf(standing.until) : NaN;
   useEffect(() => {
     if (!Number.isFinite(until)) return;
     const t = setTimeout(() => setNow(houseNow()), lookAgainIn(until));
