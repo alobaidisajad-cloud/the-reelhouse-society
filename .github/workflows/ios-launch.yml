@@ -30,7 +30,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # The Xcode the store build uses: EAS builds SDK 57 on its sdk-57 image, Xcode 26.6. Named,
       # not the runner's default, which moves; on macos-15 (Xcode 16.4) the SDK 57 app's Swift did not compile.
