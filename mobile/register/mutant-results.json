@@ -1601,5 +1601,33 @@
     "proof": "m7",
     "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
     "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-salon-founded-twice",
+    "mutant": "shape-salon-asked-without-its-id",
+    "proof": "m1",
+    "commit": "31fa4ec1a3b74da9aa926b6190ca0a28b8baf65f",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-salon-founded-twice",
+    "mutant": "shape-salon-drawn-twice",
+    "proof": "m1",
+    "commit": "31fa4ec1a3b74da9aa926b6190ca0a28b8baf65f",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-salon-founded-twice",
+    "mutant": "shape-form-names-a-room-each-tap",
+    "proof": "m2",
+    "commit": "31fa4ec1a3b74da9aa926b6190ca0a28b8baf65f",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-salon-founded-twice",
+    "mutant": "shape-form-keeps-the-last-room",
+    "proof": "m4",
+    "commit": "31fa4ec1a3b74da9aa926b6190ca0a28b8baf65f",
+    "verdict": "caught"
   }
 ]
