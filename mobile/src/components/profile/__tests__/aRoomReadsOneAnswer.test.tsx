@@ -61,6 +61,9 @@ const loadMoreLists = jest.fn();
 const loadMoreVault = jest.fn();
 const loadMoreWatchlist = jest.fn();
 
+/** The page as last drawn. */
+let drawn: ReturnType<typeof render> | undefined;
+
 async function open(activeTab: string, over: Record<string, unknown> = {}, data: Record<string, unknown> = {}) {
   for (const k of Object.keys(mockProps)) delete mockProps[k];
   mockCtl = {
@@ -86,7 +89,7 @@ async function open(activeTab: string, over: Record<string, unknown> = {}, data:
     followLoading: false, toggleFollow: jest.fn(),
     ...over,
   };
-  await act(async () => { render(<UserProfileScreen />); });
+  await act(async () => { drawn = render(<UserProfileScreen />); });
   return mockProps[activeTab];
 }
 
@@ -172,5 +175,40 @@ describe('a room whose read is still out', () => {
   it('a search answered with nothing says so, though the room itself holds rows (a visitor\'s read "retrieving" for good)', async () => {
     const p = await open('watchlist', { isSelf: false, watchlistSearch: 'zzzz', searchAnswered: true });
     expect(p?.ready).toBe(true);
+  });
+});
+
+// A room opened by its address (the website's /user/<name>/diary, P4.20) drew no ready point at
+// all: the flow waited for it in vain, and Sentry never timed a room (house_link, run
+// 42156632009). The point is the page's, in every tree it returns, and names itself only once
+// the room's own rows are in.
+describe('a room says when it is ready, as the page does', () => {
+  const point = () => drawn!.queryByTestId('screen-ready-member');
+
+  it('each room holds the page\'s ready point once its read has answered', async () => {
+    for (const tab of ['archive', 'ledger', 'watchlist', 'lists', 'physical']) {
+      await open(tab);
+      expect([tab, point()]).not.toEqual([tab, null]);
+    }
+  });
+
+  it('a room whose read is still out is not ready, though the member\'s file is', async () => {
+    await open('ledger', {}, { tabAnswered: {} });
+    expect(point()).toBeNull();
+  });
+
+  it('a room whose read reached nothing, holding nothing, is not called ready', async () => {
+    await open('ledger', {}, { tabAnswered: {}, tabFailed: { ledger: true } });
+    expect(point()).toBeNull();
+  });
+
+  it('a private member\'s room, shut to this one, is ready: being sealed is its answer', async () => {
+    await open('ledger', { isSelf: false, followKnown: true, isFollowing: false }, { targetUser: { ...USER, is_social_private: true }, counts: { logs: 5, ledger: 5, watchlist: 5, vault: 5, lists: 5 } });
+    expect(point()).not.toBeNull();
+  });
+
+  it('a private member\'s room whose door is not yet known waits, never ready over a guess', async () => {
+    await open('ledger', { isSelf: false, followKnown: false }, { targetUser: { ...USER, is_social_private: true } });
+    expect(point()).toBeNull();
   });
 });

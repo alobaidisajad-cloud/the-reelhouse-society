@@ -1639,3 +1639,17 @@ classes:
       - { kind: running, file: src/lib/__tests__/aReachabilityIsTheHouses.test.ts, test: "asks the house's sign-in health, with the house's key, and no other address" }
     fix: "store/privacy-inventory.json names every kind of data, its purpose, whether it is linked, where it is kept and who receives it, every shipped package, every table holding a member or a user agent, every outside address and every required-reason API; store/forms.cjs writes the App Store and Play answers from it with its hash; app.json carries the iPhone's manifest from both; NetInfo asks the house's sign-in health, and only reachability.ts takes it (mutants shape-package-unsaid, shape-host-unsaid, shape-answers-stale, shape-reachability-google)"
     places: [none]
+
+  - id: UI-ready-point-left-out
+    title: "A screen that marks when its content is in returns a tree without the mark, so that tree never says it is ready: the member page's rooms (the Ledger, the Stacks, each of six), opened by a link, left the flow waiting in vain and Sentry never timing a room"
+    seriousness: behaviour
+    area: states
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "Sealed E2E 42156632009, house_link: the Ledger drawn, screen.ready traced, screen-ready-member never seen" }
+    methods:
+      - { kind: static, file: src/hooks/__tests__/everyScreenTreeHoldsItsReadyPoint.test.ts, test: "each tree such a screen returns holds its mark" }
+      - { kind: running, file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "each room holds the page's ready point once its read has answered" }
+      - { kind: running, file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "a room whose read is still out is not ready, though the member's file is" }
+    fix: "the member page's room tree holds its mark, and in a room the mark is ready once the room's own rows are in (a sealed room is its answer; a room whose read reached nothing, holding nothing, failed); every screen's returns read by the TypeScript parser (mutants shape-room-unmarked, shape-room-ready-on-the-file)"
+    places: [emulator]

@@ -193,9 +193,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const { nav: doors, data } = ctrl;
   const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, taste } = data;
   const { username, isSelf, repairingHandle, isFollowing, isRequested, followKnown, followingKnown, rereadFollows, activeTab, myLogs, myWatchlist, myVault, myLists } = ctrl;
-  // Failed: the file could not be read, and nothing of it is held.
-  const readyMark = useScreenReady('member', loading || repairingHandle ? 'reading'
-    : !targetUser && data.error ? 'failed' : 'ready');
   // Your own Archive, wherever this page shows it, behind one lock (Settings).
   const archiveLock = useArchiveLock(isSelf);
   const { archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, watchlistDecade, physicalFilter, physicalSort, listsSort, setArchiveSieve, setArchiveSearch, setListsSearch, setPhysicalSearch, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setWatchlistDecade, setPhysicalFilter, setPhysicalSort, setListsSort } = ctrl;
@@ -504,6 +501,17 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     }
   }, [isSelf, activeTab, roomShows, counts, roomFailed, roomNarrowed, searchAnswered, roomAnswered]);
 
+  // In every tree the page returns, a room's too (one opened by its address was never marked).
+  // Failed: the file could not be read, and nothing of it is held. In a room, ready once the
+  // room's own rows are in: a sealed room is its answer, and a room whose read reached nothing,
+  // holding nothing, failed.
+  const readyMark = useScreenReady('member', loading || repairingHandle ? 'reading'
+    : !targetUser && data.error ? 'failed'
+      : !activeTab || !targetUser || isPrivate ? 'ready'
+        : sealUnknown ? (followingKnown === 'failed' ? 'failed' : 'reading')
+          : roomFailed && !roomShows ? 'failed'
+            : roomReady ? 'ready' : 'reading');
+
   // The six rated highest over the whole record (the server's read), as the title says.
   const highestRated = data.highestRated;
 
@@ -652,6 +660,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     return (
       <View style={[s.container, { paddingTop: usernameOverride ? tabTop : pushedTop }]}>
         <RoomLight room="member" />
+        {readyMark}
         {/* ── THE ROOM PLATE — one threshold for all six ── */}
         <RoomPlate
           /* Title case, as the display face is set everywhere; caps are the sub face's. */

@@ -2040,3 +2040,21 @@ mutants:
         find: "  reachabilityUrl: REACHABILITY_URL,\n"
         replace: "  reachabilityUrl: 'https://clients3.google.com/generate_204',\n"
     proof: { file: src/lib/__tests__/aReachabilityIsTheHouses.test.ts, test: "asks the house's sign-in health, with the house's key, and no other address" }
+
+  - id: shape-room-unmarked
+    class: UI-ready-point-left-out
+    source: shape
+    edits:
+      - file: app/user/[username].tsx
+        find: "        <RoomLight room=\"member\" />\n        {readyMark}\n        {/* ── THE ROOM PLATE"
+        replace: "        <RoomLight room=\"member\" />\n        {/* ── THE ROOM PLATE"
+    proof: { file: src/hooks/__tests__/everyScreenTreeHoldsItsReadyPoint.test.ts, test: "each tree such a screen returns holds its mark" }
+
+  - id: shape-room-ready-on-the-file
+    class: UI-ready-point-left-out
+    source: shape
+    edits:
+      - file: app/user/[username].tsx
+        find: "          : roomFailed && !roomShows ? 'failed'\n            : roomReady ? 'ready' : 'reading');"
+        replace: "          : 'ready');"
+    proof: { file: src/components/profile/__tests__/aRoomReadsOneAnswer.test.tsx, test: "a room whose read is still out is not ready, though the member's file is" }
