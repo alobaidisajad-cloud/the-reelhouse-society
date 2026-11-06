@@ -971,7 +971,8 @@ describe('the archive desk', () => {
   it('no longer prints an escape sequence at the member', () => {
     // Inside JSX text, \u2026 is five literal characters.
     expect(CODE_VAULT).not.toMatch(/> \\u2026and /);
-    expect(VAULT).toMatch(/\{'\\u2026'\}and /);
+    // In a template string it is the ellipsis; theImportAndExportIsDrawn reads it drawn.
+    expect(VAULT).toMatch(/`\\u2026and \$\{/);
   });
 
   it('and only the export you pressed says it is running', () => {

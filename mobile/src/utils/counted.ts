@@ -28,3 +28,13 @@ export function counted(
 ): string {
   return `${format(n) ?? String(n)} ${n === 1 ? singular : plural}`;
 }
+
+/**
+ * A whole number with its thousands marked: `1,240`, never `1240`, for a count
+ * that must be exact (an undo says what it removes). No Intl: Hermes's is partial.
+ */
+export function grouped(n: number): string {
+  const [whole, part] = String(n).split('.');
+  const marked = whole!.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return part === undefined ? marked : `${marked}.${part}`;
+}

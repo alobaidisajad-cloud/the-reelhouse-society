@@ -569,7 +569,7 @@ jest.mock('./src/lib/tmdb', () => {
       const m = minutes % 60;
       return h ? `${h}h ${m}m` : `${m}m`;
     },
-    getYear: (dateStr?: string | null) => (dateStr ? String(dateStr).slice(0, 4) : ''),
+    getYear: (dateStr?: string | null) => (dateStr ? String(dateStr).slice(0, 4) : '—'),
     obscurityScore: (movie: { popularity?: number }) => {
       const pop = movie?.popularity || 0;
       if (pop <= 0) return 99;

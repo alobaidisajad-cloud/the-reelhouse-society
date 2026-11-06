@@ -50,6 +50,11 @@ if [ -n "${E2E_OLD_CLIENT:-}" ]; then
 fi
 
 adb install -r "$APK" || { echo "::error title=E2E::the app would not install"; exit 1; }
+# The house's address opens the app (house_link). Android gives the app a link only once the
+# website's link file names it, and that file ships at launch prep; until then the address is
+# approved for the app here (settle_phone, before every flow), as the file will approve it on a
+# member's phone. Android's own answer, before house_link, is in the run's summary.
+HOUSE_HOST=www.thereelhousesociety.com
 . "$(dirname "$0")/no-error-dialogs.sh"
 . "$(dirname "$0")/no-keyboard.sh"
 # ── THE PHONE AS THE VARIANT HAS IT ───────────────────────────────────────────
@@ -208,6 +213,14 @@ note() {
 settle_phone() {
   rm -rf "$HOME/.maestro/sessions"
   timeout 20 adb shell cmd connectivity airplane-mode disable > /dev/null 2>&1 || true
+  # The house's address approved for the app, whatever a flow cleared before it: its state
+  # approved (2), and the member's own choice, the switch Android's settings for the app hold.
+  timeout 20 adb shell pm set-app-links --package "$PKG" 2 "$HOUSE_HOST" < /dev/null > /dev/null 2>&1 || true
+  timeout 20 adb shell pm set-app-links-user-selection --user 0 --package "$PKG" true "$HOUSE_HOST" < /dev/null > /dev/null 2>&1 || true
+  if [ "$1" = house_link ]; then
+    timeout 20 adb shell pm get-app-links "$PKG" < /dev/null 2>&1 | tr -d '\r' > "$OUT/app-links.txt"
+    node mobile/e2e/annotate.mjs "The house's address, as Android holds it for the app" "$OUT/app-links.txt" summary
+  fi
   local fixed="" s v
   for s in window_animation_scale transition_animation_scale animator_duration_scale; do
     v="$(timeout 20 adb shell settings get global "$s" 2>/dev/null | tr -d '\r')"

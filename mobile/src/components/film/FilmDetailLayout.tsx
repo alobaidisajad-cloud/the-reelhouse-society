@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, RotateCcw, Check, XCircle } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH, metrics } from '@/src/theme/theme';
-import { tmdb, getYear, formatRuntime } from '@/src/lib/tmdb';
+import { tmdb, formatRuntime } from '@/src/lib/tmdb';
 import { formatDate, formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useClock } from '@/src/hooks/useClock';
 import { stripHtml } from '@/src/utils/html';
@@ -26,6 +26,7 @@ import { FilmHero } from '@/src/components/film/FilmHero';
 import { FilmHeroSkeleton } from '@/src/components/film/FilmHeroSkeleton';
 import { FilmReviews } from '@/src/components/film/FilmReviews';
 import { FilmDossier } from '@/src/components/film/FilmDossier';
+import { oneDash, yearOf } from '@/src/components/film/releaseOf';
 import { FilmSimilar } from '@/src/components/film/FilmSimilar';
 import { FilmMediaCarousel } from '@/src/components/film/FilmMediaCarousel';
 import { FilmStub } from '@/src/components/film/FilmStub';
@@ -288,9 +289,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
 
   const traySubtitle = useMemo(() => {
     if (!film) return '';
-    const year = getYear(film.release_date);
-    const runtime = formatRuntime(film.runtime).toUpperCase();
-    return [year, runtime].filter(Boolean).join('  ·  ');
+    return oneDash([yearOf(film), formatRuntime(film.runtime).toUpperCase()]).join('  ·  ');
   }, [film]);
 
   const dockH = useMemo(() => dockHeight(edge), [edge]);

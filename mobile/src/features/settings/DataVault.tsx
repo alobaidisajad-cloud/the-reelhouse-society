@@ -27,8 +27,9 @@ import { readAllRows } from '@/src/features/settings/readAllRows';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { escapeCsvCell } from '@/src/utils/csv';
-import { counted } from '@/src/utils/counted';
+import { counted, grouped } from '@/src/utils/counted';
 import { Arrive } from '@/src/components/Arrive';
+import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 
 export default function DataVault() {
   const user = useAuthStore(s => s.user);
@@ -68,7 +69,7 @@ export default function DataVault() {
 
     Alert.alert(
       'Undo this transfer?',
-      `This removes the ${counted(receiptSize(receipt), 'entry', 'entries')} the transfer added. Anything you logged yourself, and any stack you already had, stays exactly as it is.`,
+      `This removes the ${counted(receiptSize(receipt), 'entry', 'entries', grouped)} the transfer added. Anything you logged yourself, and any stack you already had, stays exactly as it is.`,
       [
         { text: 'Keep it', style: 'cancel' },
         {
@@ -100,7 +101,7 @@ export default function DataVault() {
                 setUndoableRows(0);
                 setImportResult(null);
                 TactileEngine.success();
-                reelToast.success(`Transfer undone. ${counted(removed, 'entry', 'entries')} removed.`);
+                reelToast.success(`Transfer undone. ${counted(removed, 'entry', 'entries', grouped)} removed.`);
               }
             } catch (e: unknown) {
               if (!isMounted.current) return;
@@ -376,154 +377,160 @@ export default function DataVault() {
 
   return (
     <Arrive name="datavault-1" duration={600} rise={0}>
+      {/* Inset from the card's edge as its heading is: every part below is a ruled box of its own. */}
+      <View style={s.body}>
+        {/* ── Import ── */}
+        <View style={s.importSection}>
+          <Text style={s.subLabel}>IMPORT YOUR DATA</Text>
+          <Text style={s.importDesc}>
+            A .zip or .json export brings your history, reviews, ratings, watchlist and stacks across.
+          </Text>
 
-      {/* ── Import ── */}
-      <View style={s.importSection}>
-        <Text style={s.subLabel}>IMPORT YOUR DATA</Text>
-        <Text style={s.importDesc}>
-          A .zip or .json export brings your history, reviews, ratings, watchlist and stacks across.
-        </Text>
-
-        {/* ── Upload Zone (idle state) ── */}
-        {!importing && !importResult && (
-          <PressableScale style={s.uploadZone} onPress={handlePickFile} hitSlop={null} haptic="medium" pressedScale={0.98} accessibilityRole="button" accessibilityLabel="Upload a file to import">
-            <Upload size={24} color={colors.sepia} style={{ opacity: 0.7, marginBottom: 10 }} />
-            <Text style={s.uploadTitle}>Tap to select your archive</Text>
-            <Text style={s.uploadHint}>or use the file browser</Text>
-          </PressableScale>
-        )}
-
-        {/* ── Progress Bar (importing state) ── */}
-        {importing && importProgress && (
-          <View
-            style={s.progressCard}
-            accessible
-            accessibilityRole="progressbar"
-            accessibilityLabel={importProgress.phase.toLowerCase()}
-            accessibilityValue={{ min: 0, max: importProgress.total, now: importProgress.current }}
-          >
-            <View style={s.progressHeader}>
-              <Text style={s.progressPhase}>{importProgress.phase}</Text>
-              <Text style={s.progressCount}>{importProgress.current} / {importProgress.total}</Text>
-            </View>
-            {/* Progress track */}
-            <View style={s.progressTrack}>
-              <View style={[s.progressBar, { width: `${progressPct}%` as import('react-native').DimensionValue }]} />
-            </View>
-            {importProgress.detail && (
-              <Text style={s.progressDetail}>{importProgress.detail}</Text>
-            )}
-          </View>
-        )}
-
-        {/* ── Import Result (complete state) ── */}
-        {importResult && (
-          <View style={s.resultCard}>
-            <View style={s.resultHeader}>
-              {importResult.errors.length > 0 ? (
-                <AlertCircle size={16} color={colors.crimson} />
-              ) : (
-                <CheckCircle size={16} color={colors.sepia} />
-              )}
-              <Text style={s.resultTitle}>
-                {importResult.errors.length > 0 ? 'FILED WITH EXCEPTIONS' : 'TRANSFER COMPLETE'}
-              </Text>
-            </View>
-
-            {/* Stats Grid — PHYSICAL appears only when physical media transferred */}
-            <View style={s.statsGrid}>
-              {[
-                { label: 'FILM LOGS', value: importResult.logs },
-                { label: 'REVIEWS', value: importResult.reviews },
-                { label: 'WATCHLIST', value: importResult.watchlist },
-                { label: 'STACKS', value: importResult.lists },
-                ...(importResult.vault > 0 ? [{ label: 'PHYSICAL', value: importResult.vault }] : []),
-              ].map(stat => (
-                <View key={stat.label} style={s.statCell}>
-                  <Text style={s.statValue}>{stat.value}</Text>
-                  <Text style={s.statLabel}>{stat.label}</Text>
-                </View>
-              ))}
-            </View>
-
-            {importResult.skipped > 0 && (
-              <View style={s.skippedRow}>
-                <AlertCircle size={10} color={colors.fog} />
-                <Text style={s.skippedText}>{counted(importResult.skipped, 'film', 'films')} could not be matched</Text>
-              </View>
-            )}
-
-            {importResult.errors.length > 0 && (
-              <View style={s.errorScroll}>
-                {importResult.errors.slice(0, 8).map((err, i) => (
-                  <Text key={i} style={s.errorLine}>{'\u2022'} {err}</Text>
-                ))}
-                {importResult.errors.length > 8 && (
-                  <Text style={s.errorLine}>{'\u2022'} {'\u2026'}and {importResult.errors.length - 8} more</Text>
-                )}
-              </View>
-            )}
-
-            <PressableScale
-              style={s.importAnotherBtn}
-              onPress={handlePickFile}
-              hitSlop={null}
-              accessibilityRole="button"
-              accessibilityLabel="Import another file"
-              haptic="selection"
-              pressedScale={0.97}
-            >
-              <Upload size={12} color={colors.fog} />
-              <Text style={s.importAnotherText}>IMPORT ANOTHER FILE</Text>
+          {/* ── Upload Zone (idle state) ── */}
+          {!importing && !importResult && (
+            <PressableScale style={s.uploadZone} onPress={handlePickFile} hitSlop={null} haptic="medium" pressedScale={0.98} accessibilityRole="button" accessibilityLabel="Upload a file to import">
+              <Upload size={24} color={colors.sepia} style={{ opacity: 0.7, marginBottom: 10 }} />
+              <Text style={s.uploadTitle}>Tap to select your archive</Text>
+              <Text style={s.uploadHint}>or use the file browser</Text>
             </PressableScale>
-          </View>
-        )}
+          )}
 
-        {/* Undo sits OUTSIDE the result card deliberately: that card only exists
-            while this screen holds the result in state, and the member's real
-            path is to leave, look at their films, and come back. The receipt
-            outlives the screen, so the control must too. */}
-        {undoableRows > 0 && (
-          <PressableScale
-            style={[s.undoBtn, undoing && { opacity: 0.5 }]}
-            onPress={handleUndoImport}
-            disabled={undoing}
-            accessibilityLabel={`Undo the last transfer, removing ${counted(undoableRows, 'entry', 'entries')}`}
-            accessibilityRole="button"
-            haptic="heavy"
-            pressedScale={0.97}
-            hitSlop={null}
-          >
-            <Undo2 size={12} color={colors.crimson} />
-            <Text style={s.undoText}>
-              {undoing ? 'UNDOING…' : `UNDO LAST TRANSFER (${undoableRows})`}
-            </Text>
-          </PressableScale>
-        )}
+          {/* ── Progress Bar (importing state) ── */}
+          {importing && importProgress && (
+            <View
+              style={s.progressCard}
+              accessible
+              accessibilityRole="progressbar"
+              accessibilityLabel={importProgress.phase.toLowerCase()}
+              accessibilityValue={{ min: 0, max: importProgress.total, now: importProgress.current }}
+            >
+              <View style={s.progressHeader}>
+                <Text style={s.progressPhase}>{importProgress.phase}</Text>
+                <Text style={s.progressCount}>{grouped(importProgress.current)} / {grouped(importProgress.total)}</Text>
+              </View>
+              {/* Progress track */}
+              <View style={s.progressTrack}>
+                <View style={[s.progressBar, { width: `${progressPct}%` as import('react-native').DimensionValue }]} />
+              </View>
+              {importProgress.detail && (
+                <Text style={s.progressDetail}>{importProgress.detail}</Text>
+              )}
+            </View>
+          )}
+
+          {/* ── Import Result (complete state) ── */}
+          {importResult && (
+            <View style={s.resultCard}>
+              <View style={s.resultHeader}>
+                {importResult.errors.length > 0 ? (
+                  <AlertCircle size={16} color={colors.crimson} />
+                ) : (
+                  <CheckCircle size={16} color={colors.sepia} />
+                )}
+                <Text style={s.resultTitle}>
+                  {importResult.errors.length > 0 ? 'FILED WITH EXCEPTIONS' : 'TRANSFER COMPLETE'}
+                </Text>
+              </View>
+
+              {/* Stats Grid — PHYSICAL appears only when physical media transferred */}
+              <View style={s.statsGrid}>
+                {[
+                  { label: 'FILM LOGS', value: importResult.logs },
+                  { label: 'REVIEWS', value: importResult.reviews },
+                  { label: 'WATCHLIST', value: importResult.watchlist },
+                  { label: 'STACKS', value: importResult.lists },
+                  ...(importResult.vault > 0 ? [{ label: 'PHYSICAL', value: importResult.vault }] : []),
+                ].map(stat => (
+                  <View key={stat.label} style={s.statCell}>
+                    <Text style={s.statValue}>{grouped(stat.value)}</Text>
+                    <Text style={s.statLabel}>{stat.label}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {importResult.skipped > 0 && (
+                <View style={s.skippedRow}>
+                  <AlertCircle size={10} color={colors.fog} />
+                  <Text style={s.skippedText}>{counted(importResult.skipped, 'film', 'films', grouped)} could not be matched</Text>
+                </View>
+              )}
+
+              {importResult.errors.length > 0 && (
+                <View style={s.errorScroll}>
+                  {/* Each reason hangs from its bullet: a second line starts under the words. */}
+                  {[
+                    ...importResult.errors.slice(0, 8),
+                    ...(importResult.errors.length > 8 ? [`\u2026and ${importResult.errors.length - 8} more`] : []),
+                  ].map((err, i) => (
+                    <View key={i} style={s.errorRow}>
+                      <Text style={s.errorLine} {...UNSPOKEN}>{'\u2022'}</Text>
+                      <Text style={[s.errorLine, s.errorWords]}>{err}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <PressableScale
+                style={s.importAnotherBtn}
+                onPress={handlePickFile}
+                hitSlop={null}
+                accessibilityRole="button"
+                accessibilityLabel="Import another file"
+                haptic="selection"
+                pressedScale={0.97}
+              >
+                <Upload size={12} color={colors.fog} />
+                <Text style={s.importAnotherText}>IMPORT ANOTHER FILE</Text>
+              </PressableScale>
+            </View>
+          )}
+
+          {/* Undo sits OUTSIDE the result card deliberately: that card only exists
+              while this screen holds the result in state, and the member's real
+              path is to leave, look at their films, and come back. The receipt
+              outlives the screen, so the control must too. */}
+          {undoableRows > 0 && (
+            <PressableScale
+              style={[s.undoBtn, undoing && { opacity: 0.5 }]}
+              onPress={handleUndoImport}
+              disabled={undoing}
+              accessibilityLabel={`Undo the last transfer, removing ${counted(undoableRows, 'entry', 'entries', grouped)}`}
+              accessibilityRole="button"
+              haptic="heavy"
+              pressedScale={0.97}
+              hitSlop={null}
+            >
+              <Undo2 size={12} color={colors.crimson} />
+              <Text style={s.undoText}>
+                {undoing ? 'UNDOING…' : `UNDO LAST TRANSFER (${grouped(undoableRows)})`}
+              </Text>
+            </PressableScale>
+          )}
+        </View>
+
+        {/* ── Export ── */}
+        <View style={s.divider} />
+
+        <Text style={s.subLabel}>EXPORT YOUR DATA</Text>
+
+        <PressableScale style={[s.actionBtn, !!exporting && s.dimmed]} onPress={handleExportCSV} disabled={!!exporting} hitSlop={null} haptic="medium" pressedScale={0.97} accessibilityRole="button" accessibilityState={{ disabled: !!exporting }} accessibilityLabel="Export data as CSV">
+          <Download size={12} color={colors.fog} />
+          <Text style={s.actionBtnText}>{exporting === 'csv' ? 'EXPORTING…' : 'EXPORT DATA (CSV)'}</Text>
+        </PressableScale>
+
+        <View style={s.exportSpacer} />
+
+        <PressableScale style={[s.actionBtn, !!exporting && s.dimmed]} onPress={handleExportJSON} disabled={!!exporting} hitSlop={null} haptic="medium" pressedScale={0.97} accessibilityRole="button" accessibilityState={{ disabled: !!exporting }} accessibilityLabel="Export full archive as JSON">
+          <Download size={12} color={colors.fog} />
+          <Text style={s.actionBtnText}>{exporting === 'json' ? 'EXPORTING…' : 'EXPORT FULL ARCHIVE (JSON)'}</Text>
+        </PressableScale>
       </View>
-
-      {/* ── Export ── */}
-      <View style={s.divider} />
-
-      <Text style={s.subLabel}>EXPORT YOUR DATA</Text>
-
-      <PressableScale style={[s.actionBtn, !!exporting && s.dimmed]} onPress={handleExportCSV} disabled={!!exporting} hitSlop={null} haptic="medium" pressedScale={0.97} accessibilityRole="button" accessibilityState={{ disabled: !!exporting }} accessibilityLabel="Export data as CSV">
-        <Download size={12} color={colors.fog} />
-        <Text style={s.actionBtnText}>{exporting === 'csv' ? 'EXPORTING…' : 'EXPORT DATA (CSV)'}</Text>
-      </PressableScale>
-
-      <View style={s.exportSpacer} />
-
-      <PressableScale style={[s.actionBtn, !!exporting && s.dimmed]} onPress={handleExportJSON} disabled={!!exporting} hitSlop={null} haptic="medium" pressedScale={0.97} accessibilityRole="button" accessibilityState={{ disabled: !!exporting }} accessibilityLabel="Export full archive as JSON">
-        <Download size={12} color={colors.fog} />
-        <Text style={s.actionBtnText}>{exporting === 'json' ? 'EXPORTING…' : 'EXPORT FULL ARCHIVE (JSON)'}</Text>
-      </PressableScale>
-
     </Arrive>
   );
 }
 
 const s = StyleSheet.create({
+  body: { padding: 16 },
   // ── Import ──
   importSection: { marginBottom: 12 },
   subLabel: {
@@ -613,6 +620,8 @@ const s = StyleSheet.create({
     fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog,
   },
   errorScroll: { marginTop: 8 },
+  errorRow: { flexDirection: 'row', gap: 6 },
+  errorWords: { flex: 1 },
   errorLine: {
     fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.crimsonInk,
     marginBottom: 3,

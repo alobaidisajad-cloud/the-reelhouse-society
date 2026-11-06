@@ -6,7 +6,8 @@ import Animated from 'react-native-reanimated';
 import type { AnimatedStyle } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film as FilmIcon } from 'lucide-react-native';
-import { tmdb, formatRuntime, getYear } from '@/src/lib/tmdb';
+import { tmdb, formatRuntime } from '@/src/lib/tmdb';
+import { oneDash, yearOf } from './releaseOf';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import { scaledTextProps } from '@/src/constants/textScaling';
@@ -155,8 +156,7 @@ export const FilmHero = memo(function FilmHero({
         )}
 
         <Text {...scaledTextProps} style={styles.metaLine} numberOfLines={1}>
-          {formatRuntime(film.runtime).toUpperCase()}
-          {'  ·  '}{getYear(film.release_date)}
+          {oneDash([formatRuntime(film.runtime).toUpperCase(), yearOf(film)]).join('  ·  ')}
           {film.production_countries?.[0] ? `  ·  ${film.production_countries[0].iso_3166_1}` : ''}
           {/**
             * TMDB's score is a PARTICULAR, and it sits with the runtime and

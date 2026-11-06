@@ -73,6 +73,12 @@ describe('the phones are told the same list', () => {
     expect(data.filter((d) => d.host !== table.host)).toEqual([]);
   });
 
+  it('the sealed phone approves the same address for the app before its flows', () => {
+    const script = readFileSync(join(MOBILE, 'e2e', 'run-flows.sh'), 'utf8');
+    expect(script).toContain(`HOUSE_HOST=${table.host}\n`);
+    expect(script).toMatch(/pm set-app-links --package "\$PKG" 2 "\$HOUSE_HOST"/);
+  });
+
   it('iOS links the house\'s address and shares its saved passwords, and names nothing else', () => {
     expect(appJson.ios.associatedDomains).toEqual([`applinks:${table.host}`, `webcredentials:${table.host}`]);
   });

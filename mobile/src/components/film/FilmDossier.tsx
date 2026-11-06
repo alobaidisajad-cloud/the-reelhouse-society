@@ -6,7 +6,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
-import { formatTMDBDate } from '@/src/utils/timeAgo';
+import { releaseOf } from './releaseOf';
 import type { PickedCertificate } from './pickCertificate';
 
 /**
@@ -14,7 +14,8 @@ import type { PickedCertificate } from './pickCertificate';
  *
  * GENRES, RUNTIME and the year are in the meta line under the title, four
  * hundred points up, so they are not said twice. The particulars carry the
- * CERTIFICATE (with the country it belongs to), the full release date, the
+ * CERTIFICATE (with the country it belongs to), the full release date (or the
+ * date it OPENS, or why it has none), the
  * language, the STUDIO and the money.
  *
  * Unboxed: a ledger is ruled, not framed.
@@ -70,6 +71,7 @@ interface FilmDossierProps {
 export const FilmDossier = memo(function FilmDossier({ film, studios, certificate }: FilmDossierProps) {
   if (!film) return null;
 
+  const release = releaseOf(film);
   const studioNames = (studios ?? [])
     .map((c) => c?.name)
     .filter((n): n is string => !!n)
@@ -82,7 +84,7 @@ export const FilmDossier = memo(function FilmDossier({ film, studios, certificat
         <FilmSectionHeader label="THE PARTICULARS" />
         {/* GENRES, RUNTIME and the YEAR are in the hero, not here. */}
         <Row label="CERTIFICATE" value={certificate ? `${certificate.value}  ·  ${certificate.region}` : undefined} />
-        <Row label="RELEASE" value={formatTMDBDate(film.release_date, 'long')} />
+        {release ? <Row label={release.label} value={release.value} /> : null}
         <Row label="LANGUAGE" value={languageName(film.original_language)} />
         <Row label="STUDIO" value={studioNames || undefined} />
         <Row label="BUDGET" value={formatMoney(film.budget)} />
