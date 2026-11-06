@@ -279,10 +279,13 @@ for (const f of files) {
   const flow = own || basename(join(f, '..'));
   recorded.set(flow, entries.length);
   const status = (e) => e?.metadata?.status;
+  // WARNED is an optional step that found nothing and went on: finished, as a skipped one is. Read
+  // as a hang, a flow that passed was noticed as failed at its optional step (run 42156632009).
+  const finished = (e) => ['COMPLETED', 'SKIPPED', 'WARNED'].includes(status(e));
   const failed = entries.find((e) => status(e) === 'FAILED')
-    ?? entries.find((e) => status(e) && status(e) !== 'COMPLETED' && status(e) !== 'SKIPPED');
+    ?? entries.find((e) => status(e) && !finished(e));
   if (!failed) continue;
-  const done = entries.filter((e) => status(e) === 'COMPLETED').length;
+  const done = entries.filter((e) => status(e) === 'COMPLETED' || status(e) === 'WARNED').length;
   const where = `step ${done + 1} of ${entries.length} — ${nameOf(failed.command)}`;
   const why = failed.metadata?.error?.message
     ?? (status(failed) === 'FAILED' ? '(no message)' : `the step never finished (${status(failed)})`);

@@ -283,6 +283,19 @@ describe('the failed step', () => {
     expect(run()['auth_flow.txt']).toContain('why: the step never finished (RUNNING)');
   });
 
+  // flow_critical_path passed with its optional "Clear search" warned, and was noticed as failed
+  // there (run 42156632009).
+  it('reports nothing of a flow whose optional step found nothing and went on', () => {
+    flow('flow_critical_path', failedAt('clear-search', 'WARNED'));
+    flow('auth_flow', failedAt('recovery-email-input'));
+    expect(Object.keys(run())).toEqual(['auth_flow.txt']);
+  });
+
+  it('counts a warned step as done when a later one fails', () => {
+    flow('auth_flow', [...failedAt('clear-search', 'WARNED'), ...failedAt('recovery-email-input').slice(1)]);
+    expect(run()['auth_flow.txt']).toMatch(/^auth_flow: failed at step 3 of 3/);
+  });
+
   it('leaves the keyboard out of the screen', () => {
     flow('darkroom_search', failedAt('x'));
     writeFileSync(join(dir, 'h', 'darkroom_search.json'), JSON.stringify({
