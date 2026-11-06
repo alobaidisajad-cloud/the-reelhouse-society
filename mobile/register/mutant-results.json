@@ -1496,5 +1496,33 @@
     "proof": "m2",
     "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
     "verdict": "caught"
+  },
+  {
+    "class": "PRIVACY-collection-unsaid",
+    "mutant": "shape-package-unsaid",
+    "proof": "m1",
+    "commit": "660f3e3f17c4cf2b4a6bf6fb4df487ac10a6b1da",
+    "verdict": "caught"
+  },
+  {
+    "class": "PRIVACY-collection-unsaid",
+    "mutant": "shape-host-unsaid",
+    "proof": "m3",
+    "commit": "660f3e3f17c4cf2b4a6bf6fb4df487ac10a6b1da",
+    "verdict": "caught"
+  },
+  {
+    "class": "PRIVACY-collection-unsaid",
+    "mutant": "shape-answers-stale",
+    "proof": "m5",
+    "commit": "660f3e3f17c4cf2b4a6bf6fb4df487ac10a6b1da",
+    "verdict": "caught"
+  },
+  {
+    "class": "PRIVACY-collection-unsaid",
+    "mutant": "shape-reachability-google",
+    "proof": "m6",
+    "commit": "660f3e3f17c4cf2b4a6bf6fb4df487ac10a6b1da",
+    "verdict": "caught"
   }
 ]
