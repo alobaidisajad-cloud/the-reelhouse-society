@@ -1538,5 +1538,68 @@
     "proof": "m3",
     "commit": "83689b3228231f3c22be67df39559a042a1395c2",
     "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-pure-suites-proven-on-node-alone",
+    "mutant": "shape-hermes-another-engine",
+    "proof": "m1",
+    "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-pure-suites-proven-on-node-alone",
+    "mutant": "shape-hermes-bare-unproven",
+    "proof": "m2",
+    "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-pure-suites-proven-on-node-alone",
+    "mutant": "shape-harness-asserts-nothing-passes",
+    "proof": "m5",
+    "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-pure-suites-proven-on-node-alone",
+    "mutant": "shape-harness-timers-in-queue-order",
+    "proof": "m6",
+    "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-pure-suites-proven-on-node-alone",
+    "mutant": "shape-reader-lets-dev-through",
+    "proof": "m3",
+    "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-pure-suites-proven-on-node-alone",
+    "mutant": "shape-factory-moved-blind",
+    "proof": "m4",
+    "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-pure-suites-proven-on-node-alone",
+    "mutant": "shape-order-by-locale",
+    "proof": "m9",
+    "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-pure-suites-proven-on-node-alone",
+    "mutant": "shape-instant-places-misread",
+    "proof": "m8",
+    "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-pure-suites-proven-on-node-alone",
+    "mutant": "shape-bare-parse-back",
+    "proof": "m7",
+    "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
+    "verdict": "caught"
   }
 ]
