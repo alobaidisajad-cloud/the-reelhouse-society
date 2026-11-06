@@ -25,13 +25,13 @@ const SUITES = join(MOBILE, 'src/utils/__tests__');
 type Step = { name?: string; run?: string; uses?: string; with?: Record<string, string> };
 type Workflow = { on: { push?: { branches?: string[] } }; jobs: Record<string, { env?: Record<string, string>; steps: Step[] }> };
 const god = parse(readFileSync(join(MOBILE, '..', '.github/workflows/god_tier_ci.yml'), 'utf8')) as Workflow;
-const job = god.jobs['hermes-suites'];
+const job = god.jobs['hermes-suites'] ?? { steps: [] };
 const runs = () => job.steps.map((s) => s.run ?? '').join('\n');
 
 describe('the job', () => {
   it('runs on every push to main', () => {
     expect(god.on.push?.branches).toContain('main');
-    expect(job).toBeDefined();
+    expect(Object.keys(god.jobs)).toContain('hermes-suites');
   });
 
   it('builds the Hermes React Native pins, from the tag\'s commit, and keeps it by that commit', () => {
@@ -97,8 +97,8 @@ describe('the reader says NO', () => {
   it('to a mock it cannot make, and yes to one it can', () => {
     expect(reason("jest.mock('../logger');")).toBe("jest.mock('../logger') without a factory (jest's automock)");
     expect(reason("describe('d', () => { jest.mock('../logger', () => ({})); });")).toBe("calls jest.mock inside a test (jest's module registry)");
-    expect(reason("const mockSent = [];\njest.mock('../lib/supabase', () => ({ send: (x) => mockSent.push(x) }));"))
-      .toBe("jest.mock('../lib/supabase')'s factory reads the suite's own mockSent");
+    expect(reason("const mockSent = [];\njest.mock('../lib/post', () => ({ send: (x) => mockSent.push(x) }));"))
+      .toBe("jest.mock('../lib/post')'s factory reads the suite's own mockSent");
     expect(reason("import { sent } from './x';\njest.mock('../a', () => ({ f: () => sent }));")).toBe("jest.mock('../a')'s factory reads the suite's own sent");
     // A key or a property that only shares a name is not a read.
     expect(reason("const warn = 1;\njest.mock('../logger', () => ({ logger: { warn: jest.fn() }, other: console.warn }));")).toBeNull();
