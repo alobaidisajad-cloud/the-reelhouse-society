@@ -117,7 +117,7 @@ module.exports = defineConfig([
     rules: { 'no-restricted-imports': ['error', { paths: [FLASH_LIST_RULE, TEXT_RULE, PICTURE_RULE] }] },
   },
   {
-    files: ['scripts/**/*.js', 'scripts/**/*.cjs', 'supabase/diagnostics/**/*.cjs', 'test-utils/**/*.js', 'mockups/tools/**/*.cjs', '.claude/hooks/**/*.cjs'],
+    files: ['scripts/**/*.js', 'scripts/**/*.cjs', 'supabase/diagnostics/**/*.cjs', 'test-utils/**/*.js', 'mockups/tools/**/*.cjs', '.claude/hooks/**/*.cjs', 'store/**/*.cjs'],
     languageOptions: {
       globals: {
         __dirname: 'readonly',
