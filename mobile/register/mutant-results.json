@@ -1524,5 +1524,19 @@
     "proof": "m6",
     "commit": "660f3e3f17c4cf2b4a6bf6fb4df487ac10a6b1da",
     "verdict": "caught"
+  },
+  {
+    "class": "UI-ready-point-left-out",
+    "mutant": "shape-room-unmarked",
+    "proof": "m1",
+    "commit": "83689b3228231f3c22be67df39559a042a1395c2",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-ready-point-left-out",
+    "mutant": "shape-room-ready-on-the-file",
+    "proof": "m3",
+    "commit": "83689b3228231f3c22be67df39559a042a1395c2",
+    "verdict": "caught"
   }
 ]
