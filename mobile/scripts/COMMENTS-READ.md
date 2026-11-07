@@ -1265,7 +1265,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyPullSaysWhatItReached.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyRouteHasItsOwnNet.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/utils/__tests__/feedInvalidation.guard.test.ts | — |  |
+| src/utils/__tests__/feedInvalidation.guard.test.ts | 2026-11-07 | edited: the following feed's subscription read beside the Reel's own hold (asked) |
 | src/utils/__tests__/frozenCounts.guard.test.ts | 2026-10-16 | edited: the hand-made mocks and the guards reached only through callers are app checks, and their finders count what is planted for them |
 | src/utils/__tests__/filterContentByBlocks.pbt.test.ts | — |  |
 | src/utils/__tests__/handleGuard.test.ts | 2026-10-03 | edited: the vectors written as escapes |

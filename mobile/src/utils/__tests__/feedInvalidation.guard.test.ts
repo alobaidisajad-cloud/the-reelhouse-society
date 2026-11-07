@@ -102,10 +102,11 @@ describe('the reactivity that never worked is gone, and the one that does is kep
   it('useFollowingFeed KEEPS its subscription — it is load-bearing', () => {
     // That one drives `enabled`, which is what makes a member's first follow work.
     // Deleting it as "also dead" would break the one case that was never broken.
+    // (Beside the Reel's own hold, `asked`: held back, nothing is read either way.)
     const following = feeds.slice(feeds.indexOf('export function useFollowingFeed'),
                                   feeds.indexOf('export function useStacksFeed'));
     expect(following).toMatch(/const followingForEnabled = useSocialStore/);
-    expect(following).toMatch(/enabled: followingForEnabled\.length > 0/);
+    expect(following).toMatch(/enabled: asked && followingForEnabled\.length > 0/);
   });
 
   it('the Registry no longer keeps a private copy of the rule', () => {
