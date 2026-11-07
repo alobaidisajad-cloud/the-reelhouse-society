@@ -2127,8 +2127,8 @@ mutants:
     source: shape
     edits:
       - file: src/utils/instant.ts
-        find: "places.slice(0, 3).padEnd(3, '0')"
-        replace: "places.slice(1, 4).padEnd(3, '0')"
+        find: "(house[7] ?? '').slice(0, 3).padEnd(3, '0')"
+        replace: "(house[7] ?? '').slice(1, 4).padEnd(3, '0')"
     proof: { file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "reads the house's own form: six places after the second, the offset in full" }
 
   - id: shape-bare-parse-back
