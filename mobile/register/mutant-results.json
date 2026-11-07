@@ -1860,5 +1860,54 @@
     "proof": "m16",
     "commit": "2d55c235c8248687e6c43de58c90858736ffee7b",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-year-read-every-column",
+    "proof": "m20",
+    "commit": "cc462e5d2289de7881de12cae562d98feade6b6a",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-year-forgotten-when-closed",
+    "proof": "m18",
+    "commit": "62285ad33c772c6b0af0d0562c750eaa0209b0e9",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-year-never-read-again",
+    "proof": "m18",
+    "commit": "cc462e5d2289de7881de12cae562d98feade6b6a",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-cache-dropped-past-ceiling",
+    "proof": "m21",
+    "commit": "cc462e5d2289de7881de12cae562d98feade6b6a",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-cache-films-before-lobby",
+    "proof": "m22",
+    "commit": "cc462e5d2289de7881de12cae562d98feade6b6a",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-cache-keeps-searches",
+    "proof": "m23",
+    "commit": "cc462e5d2289de7881de12cae562d98feade6b6a",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-cache-rule-not-handed",
+    "proof": "m24",
+    "commit": "cc462e5d2289de7881de12cae562d98feade6b6a",
+    "verdict": "caught"
   }
 ]
