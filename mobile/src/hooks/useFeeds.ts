@@ -35,7 +35,8 @@ export function useCommunityFeed(whenBack?: FeedReturn) {
   });
 }
 
-export function useFollowingFeed(whenBack?: FeedReturn) {
+/** `asked`: false holds the read back (the Reel asks it once its first feed has answered). */
+export function useFollowingFeed(whenBack?: FeedReturn, asked = true) {
   const userId = useAuthStore((s) => s.user?.id);
   const followingForEnabled = useSocialStore((s) => s.following);
 
@@ -45,7 +46,7 @@ export function useFollowingFeed(whenBack?: FeedReturn) {
     queryFn: async ({ pageParam, signal }) => FeedService.getFollowingFeed({ pageParam, signal }),
     getNextPageParam: (lastPage) => nextCursor(lastPage, FEED_PAGE, (row) => row.created_at),
     initialPageParam: undefined as string | undefined,
-    enabled: followingForEnabled.length > 0,
+    enabled: asked && followingForEnabled.length > 0,
     staleTime: 60 * 1000,
     select: (data) => ({
       ...data,
@@ -56,7 +57,7 @@ export function useFollowingFeed(whenBack?: FeedReturn) {
   });
 }
 
-export function useStacksFeed(filter: 'all' | 'following' = 'all', search: string = '', whenBack?: FeedReturn) {
+export function useStacksFeed(filter: 'all' | 'following' = 'all', search: string = '', whenBack?: FeedReturn, asked = true) {
   const userId = useAuthStore((s) => s.user?.id);
 
   // No follow-graph subscription: socialSlice invalidates this key on follow and unfollow.
@@ -71,6 +72,8 @@ export function useStacksFeed(filter: 'all' | 'following' = 'all', search: strin
     getNextPageParam: (lastPage) => nextCursor(lastPage, STACKS_PAGE, (row) => row.createdAt),
     initialPageParam: undefined as string | undefined,
     staleTime: 5 * 60 * 1000,
+    // Held, it is not read; asked, the client's own rule stands (a test's client may hold every read).
+    ...(asked ? {} : { enabled: false }),
     placeholderData: keepPreviousData,
     select: (data) => ({
       ...data,

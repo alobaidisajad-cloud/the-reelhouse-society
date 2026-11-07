@@ -195,8 +195,12 @@ export default function ReelScreen() {
   // isRefetching is deliberately not taken: the pull gesture drives
   // isManualRefreshing above, so the screen owns its own spinner.
   const { data: communityData, isLoading: communityLoading, isError: communityFailed, refetch: refetchCommunity, fetchNextPage: fetchNextCommunity, hasNextPage: hasNextCommunity, isFetchingNextPage: isFetchingNextCommunity, isFetchNextPageError: communityNextFailed } = useCommunityFeed(logsBack);
-  const { data: followingData, isLoading: followingLoading, isError: followingFailed, refetch: refetchFollowing, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing, isFetchNextPageError: followingNextFailed } = useFollowingFeed(logsBack);
-  const { data: stacksData, isLoading: stacksLoading, isError: stacksFailed, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks, isFetchNextPageError: stacksNextFailed } = useStacksFeed(stackFilter, stackSearch, stacksBack);
+  // The reel opens on the house's logs: the other two feeds are asked once that one has answered,
+  // or at once when the member turns to them, so the first read and its first frame go alone.
+  const followingAsked = feedFilter === 'following' || !communityLoading;
+  const stacksAsked = section === 'stacks' || !communityLoading;
+  const { data: followingData, isLoading: followingLoading, isError: followingFailed, refetch: refetchFollowing, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing, isFetchNextPageError: followingNextFailed } = useFollowingFeed(logsBack, followingAsked);
+  const { data: stacksData, isLoading: stacksLoading, isError: stacksFailed, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks, isFetchNextPageError: stacksNextFailed } = useStacksFeed(stackFilter, stackSearch, stacksBack, stacksAsked);
 
   const followingCount = useSocialStore((s) => s.following.length);
   // Following nobody is a fact only of a list read: one unread or failed follows someone, perhaps.

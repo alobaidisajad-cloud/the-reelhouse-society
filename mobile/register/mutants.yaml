@@ -2535,3 +2535,48 @@ mutants:
         find: "buster: CACHE_BUSTER, dehydrateOptions: CACHE_KEEPS }}"
         replace: "buster: CACHE_BUSTER }}"
     proof: { file: src/utils/__tests__/queryClient.test.ts, test: "keeps only what the rule keeps: the root hands the rule to the cache's provider" }
+
+  - id: shape-reel-asks-all-at-once
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/(tabs)/reels.tsx
+        find: "  const followingAsked = feedFilter === 'following' || !communityLoading;"
+        replace: "  const followingAsked = feedFilter === 'following' || true;"
+    proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "are held while the house's logs are read, so that read and its first frame go alone" }
+
+  - id: shape-reel-stacks-held-when-turned
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/(tabs)/reels.tsx
+        find: "  const stacksAsked = section === 'stacks' || !communityLoading;"
+        replace: "  const stacksAsked = !communityLoading;"
+    proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "are asked as soon as the member turns to them, the logs still reading" }
+
+  - id: shape-reel-never-asks-after
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/(tabs)/reels.tsx
+        find: "  const stacksAsked = section === 'stacks' || !communityLoading;"
+        replace: "  const stacksAsked = section === 'stacks';"
+    proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "are asked once the house's logs have answered, so turning to them is at once" }
+
+  - id: shape-stacks-feed-ignores-held
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/hooks/useFeeds.ts
+        find: "    ...(asked ? {} : { enabled: false }),"
+        replace: "    ...({}),"
+    proof: { file: src/hooks/__tests__/aHeldFeedIsNotRead.test.tsx, test: "reads neither while held, and both once asked" }
+
+  - id: shape-following-feed-ignores-held
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/hooks/useFeeds.ts
+        find: "    enabled: asked && followingForEnabled.length > 0,"
+        replace: "    enabled: followingForEnabled.length > 0,"
+    proof: { file: src/hooks/__tests__/aHeldFeedIsNotRead.test.tsx, test: "reads neither while held, and both once asked" }

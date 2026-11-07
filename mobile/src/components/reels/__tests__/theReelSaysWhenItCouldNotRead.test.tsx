@@ -7,7 +7,8 @@
  * film and leave your mark." — and, of the stacks, "The archive awaits its
  * first curator." Now: the house's failed state and TRY AGAIN; the honest
  * empty states only for feeds that ARRIVED empty; and a pull that reached
- * nothing says so over the reel it keeps.
+ * nothing says so over the reel it keeps. And the feeds it does not open on are
+ * asked once the house's logs have answered, or when the member turns to them.
  */
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
@@ -44,10 +45,12 @@ jest.mock('@/src/utils/reelToast', () => {
 });
 /** Each feed as React Query would hand it back. */
 let mockFeeds: Record<'community' | 'following' | 'stacks', Record<string, unknown>>;
+/** Whether the screen last let each held feed be read (the hooks' `asked`). */
+const mockAsked: Record<'following' | 'stacks', unknown> = { following: undefined, stacks: undefined };
 jest.mock('@/src/hooks/useFeeds', () => ({
   useCommunityFeed: () => mockFeeds.community,
-  useFollowingFeed: () => mockFeeds.following,
-  useStacksFeed: () => mockFeeds.stacks,
+  useFollowingFeed: (...a: unknown[]) => { mockAsked.following = a[1]; return mockFeeds.following; },
+  useStacksFeed: (...a: unknown[]) => { mockAsked.stacks = a[3]; return mockFeeds.stacks; },
 }));
 /** The lists' own props, as the screen last drew them (the pull lives there). */
 const mockListProps: Record<string, Record<string, any>> = {};
@@ -263,4 +266,25 @@ it('is lit by one lamp over its floor, and nothing on it moves on a loop', async
   expect(painted.map((c) => c.props?.testID ?? 'a layer with no name'))
     .toEqual(['room-light', 'reel-floor', 'reels-logs-layer', 'reels-stacks-layer']);
   expect(looped).not.toHaveBeenCalled();
+});
+
+describe('the feeds the Reel does not open on', () => {
+  it("are held while the house's logs are read, so that read and its first frame go alone", async () => {
+    mockFeeds.community = query({ isLoading: true });
+    await mount();
+    expect(mockAsked).toEqual({ following: false, stacks: false });
+  });
+
+  it("are asked once the house's logs have answered, so turning to them is at once", async () => {
+    await mount();
+    expect(mockAsked).toEqual({ following: true, stacks: true });
+  });
+
+  it('are asked as soon as the member turns to them, the logs still reading', async () => {
+    mockFeeds.community = query({ isLoading: true });
+    const r = await mount();
+    await act(async () => { await fireEvent.press(r.getAllByLabelText('Stacks')[0]!); });
+    expect(mockAsked.stacks).toBe(true);
+    expect(mockAsked.following).toBe(false);
+  });
 });
