@@ -329,7 +329,11 @@ describe('a file that could not be reached', () => {
 describe('the file is asked at once, the network beside it (P4.53)', () => {
   const NetInfo = jest.requireMock('@react-native-community/netinfo').default as { fetch: (...a: unknown[]) => Promise<unknown> };
   const { tmdb } = jest.requireMock('@/src/lib/tmdb') as { tmdb: Record<string, (...a: unknown[]) => Promise<unknown>> };
-  const asked = async () => { await act(async () => { render(<PersonDetailScreen />); }); return mockOptions.queryFn(); };
+  const asked = async () => {
+    mockQuery = { data: undefined, isLoading: true };
+    await act(async () => { render(<PersonDetailScreen />); });
+    return mockOptions.queryFn();
+  };
 
   it('answers an online phone without waiting on the network\u2019s answer', async () => {
     jest.spyOn(NetInfo, 'fetch').mockReturnValue(new Promise(() => {}));

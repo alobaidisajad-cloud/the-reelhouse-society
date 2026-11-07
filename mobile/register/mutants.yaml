@@ -2317,7 +2317,7 @@ mutants:
     edits:
       - file: app/log/[id].tsx
         find: "        if (seed) return { ...seed, seeded: false, critiquesUnread: true };"
-        replace: "        if (seed && !seed) return { ...seed, seeded: false, critiquesUnread: true };"
+        replace: "        if (seed && id === '') return { ...seed, seeded: false, critiquesUnread: true };"
     proof: { file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "keeps the card’s record when the house cannot be reached, its critiques said out of reach" }
 
   - id: shape-darkroom-skeleton-over-kept
