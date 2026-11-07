@@ -29,6 +29,10 @@ import { storage } from '@/src/stores/mmkv-storage';
 let mockRow: Record<string, unknown> | null = null;
 /** The filing's own read fails, as it does offline. */
 let mockRowFails = false;
+/** The filing's own read never answers: what the reader draws before the house does. */
+let mockRowPending = false;
+/** Each held read's answer, given when the test ends: its deadline timer is cleared by it. */
+const mockHeldReads: (() => void)[] = [];
 let mockCritiqueRows: unknown[] = [];
 let mockNextRows: unknown[] = [];
 let mockWriteFails = false;
@@ -105,7 +109,9 @@ jest.mock('@/src/lib/supabase', () => ({
         const r = Promise.resolve({ data, error });
         return Object.assign(r, { abortSignal: () => r });
       };
-      chain.maybeSingle = () => (mockRowFails
+      chain.maybeSingle = () => (mockRowPending
+        ? Object.assign(new Promise((res) => { mockHeldReads.push(() => res({ data: mockRow, error: null })); }), { abortSignal() { return this; } })
+        : mockRowFails
         ? builder(null, { message: 'TypeError: Network request failed' })
         : builder(mockRow));
       chain.limit = () => builder(mockNextRows); // the next part (critiques use range)
@@ -198,6 +204,7 @@ beforeEach(() => {
   mockUser = { id: 'u1', username: 'me' };
   mockRow = row();
   mockRowFails = false;
+  mockRowPending = false;
   mockCritiqueRows = [];
   mockNextRows = [];
   mockWriteFails = false;
@@ -1255,5 +1262,39 @@ describe('the ways out, and the ways it fails', () => {
 
     expect(mockToastError).toHaveBeenCalledWith('It could not be withdrawn.');
     alert.mockRestore();
+  });
+});
+
+describe('the reader opens at its floor (P4.53)', () => {
+  const ID = '00000017-0000-4000-8000-000000000017';
+  const NEXT = '00000018-0000-4000-8000-000000000018';
+
+  afterEach(async () => {
+    while (mockHeldReads.length) mockHeldReads.shift()?.();
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+  });
+
+  it('draws an essay opened before at once, while the house is asked again', () => {
+    mockRowPending = true;
+    useDispatch.setState({ opened: { [ID]: toFiling(row() as never) } } as never);
+    const { getByText, queryByLabelText } = render(<FilingReader />);
+    expect(getByText('The Empty Room')).toBeTruthy();
+    expect(queryByLabelText('Loading filing')).toBeNull();
+  });
+
+  it('asks for the critiques with the filing, not after it', async () => {
+    mockRowPending = true;
+    render(<FilingReader />);
+    await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    expect(useDispatch.getState().critiquesOrder[ID]).toBeDefined();
+  });
+
+  it('keeps the next part it found whole, so it opens at once', async () => {
+    mockRow = row({ series_id: '00000020-0000-4000-8000-000000000020', series_title: 'Ozu, Slowly', part_number: 1 });
+    mockNextRows = [row({ id: NEXT, title: 'The Second Room', series_id: '00000020-0000-4000-8000-000000000020', series_title: 'Ozu, Slowly', part_number: 2 })];
+    const { getByText } = await mount();
+    await act(async () => { await fireEvent.press(getByText('The Second Room')); });
+    expect(mockPushed).toContain(`/dispatch/${NEXT}`);
+    expect(useDispatch.getState().opened[NEXT]?.title).toBe('The Second Room');
   });
 });

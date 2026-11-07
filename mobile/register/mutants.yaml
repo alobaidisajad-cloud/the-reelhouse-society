@@ -2373,3 +2373,39 @@ mutants:
         find: "  return NaN;"
         replace: "  return Date.parse(trimmed);"
     proof: { file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "names no instant for a form the house never writes, though one engine reads it and another does not" }
+
+  - id: shape-reader-ignores-opened
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "filings.find((f) => f.id === id) ?? opened[id] ?? null);"
+        replace: "filings.find((f) => f.id === id) ?? null);"
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "draws an essay opened before at once, while the house is asked again" }
+
+  - id: shape-reader-critiques-after
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "    void useDispatch.getState().fetchCritiques(id, FIRST_ORDER);"
+        replace: "    void 0;"
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "asks for the critiques with the filing, not after it" }
+
+  - id: shape-next-part-not-kept
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "onPress={() => { useDispatch.getState().keepOpened(nextPart); nav.push("
+        replace: "onPress={() => { nav.push("
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "keeps the next part it found whole, so it opens at once" }
+
+  - id: shape-stack-unseeded-from-card
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "getQueriesData<{ pages?: unknown[] }>({ queryKey: ['feed', 'stacks'] })"
+        replace: "getQueriesData<{ pages?: unknown[] }>({ queryKey: ['feed', 'none'] })"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "seeds its title, curator, first posters and true size from the card, its mark unknown" }

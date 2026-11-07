@@ -62,6 +62,7 @@ import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useClearance } from '@/src/hooks/useClearance';
 import { ropeSpoken } from '@/src/components/clearance/Clearance';
 import { characterCount } from '@/src/utils/text';
+import type { StackData } from '@/src/schemas/feed.schema';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
@@ -346,6 +347,24 @@ function StackDetailScreen({ id }: { id: string }) {
           endorseCount: null,
           certifiedKnown: false,
         };
+      }
+      // Opened from the Reel's card: its title, curator, words, first posters and true size are
+      // drawn at once, the page saying it holds the first of them, while the rest is read (P4.53).
+      for (const [, feed] of queryClient.getQueriesData<{ pages?: unknown[] }>({ queryKey: ['feed', 'stacks'] })) {
+        for (const page of feed?.pages ?? []) {
+          const card = Array.isArray(page) ? (page as Partial<StackData>[]).find((s) => s?.id === id) : undefined;
+          if (!card?.title || !card.createdAt) continue;
+          return {
+            list: {
+              id, title: card.title, description: card.description ?? '', userId: card.curatorId ?? '',
+              user: card.curator ?? '', createdAt: card.createdAt,
+              films: (card.films ?? []).map((f) => ({ id: f.id, title: f.title || 'Unknown', poster_path: f.poster_path ?? null })),
+              filmCount: card.count, isPrivate: false, isRanked: !!card.isRanked,
+            },
+            endorseCount: card.certifyCount ?? null,
+            certifiedKnown: false,
+          };
+        }
       }
       return undefined;
     },

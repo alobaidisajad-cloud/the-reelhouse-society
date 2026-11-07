@@ -165,6 +165,11 @@ export interface DispatchState {
    * nothing about whether it exists.
    */
   hydrate: (id: string) => Promise<Filing | null | 'unreachable'>;
+  /**
+   * A filing already read whole (the next part, found with its essay), kept where the reader
+   * looks first: opened, it draws at once and is read again behind (P4.53).
+   */
+  keepOpened: (one: Filing) => void;
 
   /** This member's marks on filings the store did not fetch (a room's own page). */
   loadMarks: (filings: Filing[]) => Promise<void>;
@@ -431,6 +436,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       if (gen === generation) set({ loadingMore: false });
     }
   },
+
+  keepOpened: (one) => set((st) => ({ opened: capOpened(st.opened, one.id, one) })),
 
   hydrate: async (id) => {
     const startedAs = useAuthStore.getState().user?.id ?? null;

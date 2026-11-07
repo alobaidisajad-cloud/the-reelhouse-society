@@ -1741,7 +1741,7 @@ classes:
     seriousness: behaviour
     area: speed
     status: OPEN
-    count: 7
+    count: 11
     source: { kind: reviewer, ref: "P4.53: every page opens at its floor (audit/final/P4-53-STUDY.md)" }
     methods:
       - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "seeds the page from the feed row it was opened from, its critiques still to come" }
@@ -1753,7 +1753,11 @@ classes:
       - { kind: running, file: src/components/darkroom/__tests__/theSheetIsDrawnWhileItIsRead.test.tsx, test: "asks the archives once on opening, though the network is first unknown and then learned" }
       - { kind: running, file: app/person/__tests__/thePersonFileReadsTrue.test.tsx, test: "tells an offline phone so at the network’s answer, not after the archive gives up" }
       - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "reads the record once, its viewing’s id in the same row: no second request for it (P4.53)" }
-    fix: "the log page asks for the record and its critiques together and draws the feed row it was opened from in its first frame (seedFromCards), its critiques said to be coming, and keeps that row when the house cannot be reached; the Darkroom draws its kept sheet while it reads, keeps a sheet whole while its next batch develops, reads its kept sheet once a key, and asks again only on a return to the network; the person page asks the network beside the archive; the edit form asks for a viewing's id only for a log it holds without one. The rest of the study's list is P4.53's next batches"
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "draws an essay opened before at once, while the house is asked again" }
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "asks for the critiques with the filing, not after it" }
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "keeps the next part it found whole, so it opens at once" }
+      - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "seeds its title, curator, first posters and true size from the card, its mark unknown" }
+    fix: "the log page asks for the record and its critiques together and draws the feed row it was opened from in its first frame (seedFromCards), its critiques said to be coming, and keeps that row when the house cannot be reached; the Darkroom draws its kept sheet while it reads, keeps a sheet whole while its next batch develops, reads its kept sheet once a key, and asks again only on a return to the network; the person page asks the network beside the archive; the edit form asks for a viewing's id only for a log it holds without one. The Dispatch reader draws an essay it holds (opened before: a notice, the part before) in its first frame and asks for its critiques with it, not after; the next part and a series' parts, read whole already, are kept where the reader looks first; a stack opened from the Reel's card draws its title, curator, first posters and true size at once. The rest of the study's list is P4.53's next batches"
     places: [none]
 
   - id: RUNTIME-an-instant-read-by-the-engine

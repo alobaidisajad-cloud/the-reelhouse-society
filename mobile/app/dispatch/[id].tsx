@@ -114,7 +114,9 @@ function FilingReader({ id }: { id: string }) {
   // Which of this member's marks have been read: until then each is drawn unknown, not off.
   const marksKnown = useDispatch((s) => s.marksKnown);
 
-  const [filing, setFiling] = useState<Filing | null>(() => filings.find((f) => f.id === id) ?? null);
+  // Held already (the page's row, or one opened before: a notice, the part before): drawn at
+  // once, read again behind it (P4.53).
+  const [filing, setFiling] = useState<Filing | null>(() => filings.find((f) => f.id === id) ?? opened[id] ?? null);
   const [loading, setLoading] = useState(!filing);
   /** The last read failed: a filing not held here may still exist. */
   const [unreachable, setUnreachable] = useState(false);
@@ -176,14 +178,13 @@ function FilingReader({ id }: { id: string }) {
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
+    // The critiques need only the filing's id: asked with it, not after it (P4.53).
+    void useDispatch.getState().fetchCritiques(id, FIRST_ORDER);
     (async () => {
       const got = await useDispatch.getState().hydrate(id);
       if (cancelled) return;
       setUnreachable(got === 'unreachable');
-      if (got !== 'unreachable') {
-        setFiling(got);
-        void useDispatch.getState().fetchCritiques(id, FIRST_ORDER);
-      }
+      if (got !== 'unreachable') setFiling(got);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -527,7 +528,7 @@ function FilingReader({ id }: { id: string }) {
                     label="NEXT IN THE SERIES"
                     title={nextPart.title ?? ''}
                     readTime={readTimeOf(nextPart.fullContent ?? nextPart.body)}
-                    onPress={() => nav.push(`/dispatch/${nextPart.id}`)}
+                    onPress={() => { useDispatch.getState().keepOpened(nextPart); nav.push(`/dispatch/${nextPart.id}`); }}
                   />
                 ) : null}
               </>

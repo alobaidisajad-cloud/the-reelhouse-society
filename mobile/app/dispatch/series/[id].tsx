@@ -40,6 +40,7 @@ import { roomOf } from '@/src/components/dispatch/roomLink';
 import { supabase } from '@/src/lib/supabase';
 import { FILING_FULL_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/dispatchTypes';
 import { nav } from '@/src/utils/typedRouter';
+import { useDispatch } from '@/src/stores/dispatch';
 import { logger } from '@/src/utils/logger';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
@@ -206,7 +207,8 @@ function SeriesScreen({ id, from }: { id: string; from?: string }) {
             onPart={(part) => {
               const at = rows.indexOf(part);
               const hit = at >= 0 ? parts[at] : undefined;
-              if (hit) nav.push(`/dispatch/${hit.id}`);
+              // Read whole here already: kept where the reader looks first, so it opens at once.
+              if (hit) { useDispatch.getState().keepOpened(hit); nav.push(`/dispatch/${hit.id}`); }
             }}
             onAuthor={author ? () => nav.push(roomOf(author.name)) : undefined}
           />

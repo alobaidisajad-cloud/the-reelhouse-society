@@ -20,6 +20,8 @@ const SOURCE = readFileSync(join(__dirname, '..', '[id].tsx'), 'utf8');
 let mockStackData: Record<string, unknown> | null | undefined;
 /** The stack's read failed (React Query's isError). */
 let mockStackFailed = false;
+/** The feeds held in the cache, as getQueriesData answers: [key, data] pairs. */
+let mockFeeds: [unknown[], unknown][] = [];
 const mockRereadStack = jest.fn();
 const baseStack = {
   id: STACK_ID, title: 'Noir', description: '', userId: 'u1', user: 'morpho',
@@ -63,6 +65,7 @@ jest.mock('@tanstack/react-query', () => ({
     getQueryData: jest.fn((key: unknown[]) => (key[0] === 'stackComments' ? mockComments : undefined)),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),
     getQueryState: (key: unknown[]) => mockQueryState[String(key[0])],
+    getQueriesData: () => mockFeeds,
   }),
   useQuery: (opts: { queryKey: unknown[] }) => {
     const key = String(opts.queryKey[0]);
@@ -1232,4 +1235,30 @@ describe('a stack past its first page (P4.9)', () => {
   // It draws all 501 rows (the list stand-in renders every one): 1.4 s alone, past 5 s under the
   // whole suite's eight workers.
   }, 20_000);
+});
+
+describe('a stack opened from the Reel’s card draws what the card held, at once (P4.53)', () => {
+  type Seed = { list: { title: string; user: string; films: { id: number }[]; filmCount?: number }; endorseCount: number | null; certifiedKnown: boolean };
+  const seed = () => { mount(); return (mockStackOpts as unknown as { placeholderData: (prev?: unknown) => Seed | undefined }).placeholderData(); };
+  const CARD = {
+    id: STACK_ID, title: 'Rooms Ozu Left', description: 'Low and still.', curator: 'vesper', curatorId: 'u9',
+    createdAt: '2026-06-01T00:00:00Z', films: [{ id: 1, title: 'Late Spring', poster_path: '/a.jpg' }, { id: 2, title: 'Tokyo Story', poster_path: '/b.jpg' }],
+    count: 30, certifyCount: 4, isRanked: true,
+  };
+
+  afterEach(() => { mockFeeds = []; });
+
+  it('seeds its title, curator, first posters and true size from the card, its mark unknown', () => {
+    mockFeeds = [[['feed', 'stacks', 'all', '', 'u1'], { pages: [[{ ...CARD, id: '99999999-9999-4999-8999-999999999999' }], [CARD]] }]];
+    expect(seed()).toEqual({
+      list: expect.objectContaining({ title: 'Rooms Ozu Left', user: 'vesper', filmCount: 30, films: [expect.objectContaining({ id: 1 }), expect.objectContaining({ id: 2 })] }),
+      endorseCount: 4,
+      certifiedKnown: false,
+    });
+  });
+
+  it('seeds nothing when no card holds the stack', () => {
+    mockFeeds = [[['feed', 'stacks', 'all', '', 'u1'], { pages: [[{ ...CARD, id: '99999999-9999-4999-8999-999999999999' }]] }]];
+    expect(seed()).toBeUndefined();
+  });
 });
