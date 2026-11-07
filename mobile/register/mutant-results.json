@@ -1564,7 +1564,7 @@
     "class": "RUNTIME-pure-suites-proven-on-node-alone",
     "mutant": "shape-harness-timers-in-queue-order",
     "proof": "m6",
-    "commit": "31ea05b894a2db2d20aadbee8a679d6af4d56eab",
+    "commit": "bf13a82afd411ae5d747019eac3cc9c5b66dd331",
     "verdict": "caught"
   },
   {
