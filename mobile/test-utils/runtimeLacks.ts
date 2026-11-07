@@ -17,6 +17,7 @@ import { readFileSync } from 'fs';
 import { dirname, join, relative, sep } from 'path';
 import ts from 'typescript';
 import { MOBILE } from './readCode';
+import { byKey } from '../src/utils/order';
 import { files as universe } from './universe';
 
 export type Shape = 'static' | 'prototype' | 'global';
@@ -181,7 +182,7 @@ export function findUses(sources: Source[], apis: string[], program?: (files: st
   } else {
     uses.push(...candidates.map((c) => c.use));
   }
-  return uses.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+  return uses.sort((a, b) => byKey(a.file, b.file) || a.line - b.line);
 }
 
 /** The node spanning exactly [start, end) in a tree. */

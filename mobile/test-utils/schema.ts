@@ -8,6 +8,7 @@
  */
 import { readFileSync } from 'fs';
 import { basename, join } from 'path';
+import { byKey } from '../src/utils/order';
 import { files as universe } from './universe';
 
 /** Split at commas (or `sep`) outside brackets and quotes. */
@@ -129,6 +130,6 @@ export const PENDING_SQL = (): string => {
   const applied = new Set(readFileSync(join(__dirname, '..', 'supabase', 'APPLIED.txt'), 'utf8')
     .split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#')));
   return universe('migrations').filter((f) => !applied.has(basename(f)))
-    .sort((a, b) => basename(a).localeCompare(basename(b)))
+    .sort((a, b) => byKey(basename(a), basename(b)))
     .map((f) => readFileSync(f, 'utf8').replace(/\r/g, '')).join('\n');
 };

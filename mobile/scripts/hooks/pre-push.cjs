@@ -77,6 +77,15 @@ const inBatches = (paths, room = 6000) => {
   return batches.filter((b) => b.length);
 };
 
+/**
+ * What lint reads: the changed files, or every file when lint's own rules changed. A new rule
+ * fails files the push never touched: 31ea05b8's ordering rule failed two test-utils files in
+ * CI, and the push, linting only what changed, never saw them.
+ */
+const LINT_RULES = /^(?:eslint\.config\.js|package(?:-lock)?\.json)$/;
+const CODE = /\.(?:[cm]?js|tsx?)$/;
+const lintTargets = (changed, tracked) => (changed.some((p) => LINT_RULES.test(p)) ? tracked : changed).filter((p) => CODE.test(p));
+
 const run = (label, cmd, args, cwd) => {
   console.log(`→ ${label}`);
   const r = spawnSync(cmd, args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' });
@@ -115,7 +124,8 @@ if (require.main === module) {
   }
   const changed = [...new Set(bases.flatMap((b) => git('diff', '--name-only', '--diff-filter=ACMR', `${b}...HEAD`).split('\n')))]
     .filter((p) => p.startsWith('mobile/')).map((p) => p.slice('mobile/'.length));
-  const code = changed.filter((p) => /\.(?:[cm]?js|tsx?)$/.test(p));
+  const code = changed.filter((p) => CODE.test(p));
+  const linted = lintTargets(changed, git('ls-files', '--', 'mobile').split('\n').filter(Boolean).map((p) => p.slice('mobile/'.length)));
   if (changed.length) {
     // God-tier's own comment gate: a comment naming what does not exist failed CI on ede2cc32.
     const c = run('every comment names what exists', 'npm', ['run', '-s', 'comments:check', '--', '--kinds', 'NAME,FILE,LINE'], MOBILE);
@@ -124,7 +134,9 @@ if (require.main === module) {
   if (code.length) {
     const t = run('types', 'npx', ['tsc', '--noEmit', '-p', '.'], MOBILE);
     if (t) faults.push(t);
-    const l = run('lint on the changed files', 'npx', ['eslint', '--max-warnings=0', '--no-warn-ignored', ...code], MOBILE);
+  }
+  for (const batch of inBatches(linted)) {
+    const l = run(linted.length > code.length ? 'lint on every file, as lint\'s rules changed' : 'lint on the changed files', 'npx', ['eslint', '--max-warnings=0', '--no-warn-ignored', ...batch], MOBILE);
     if (l) faults.push(l);
   }
   const workers = workersFor(require('os').freemem(), require('os').cpus().length);
@@ -149,4 +161,4 @@ if (require.main === module) {
   if (faults.length) { console.error(`\nPush refused: ${faults.join('; ')}`); process.exit(1); }
 }
 
-module.exports = { HOOK_GIT_ENV, basesOf, clearHookGitEnv, ignored, inBatches, readers, workersFor };
+module.exports = { HOOK_GIT_ENV, basesOf, clearHookGitEnv, ignored, inBatches, lintTargets, readers, workersFor };

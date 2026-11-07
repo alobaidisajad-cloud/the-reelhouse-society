@@ -16,11 +16,12 @@ const ROOT = join(MOBILE, '..');
 const { mutantInPlace, refusalOf } = require('../../../scripts/hooks/pre-commit.cjs') as {
   mutantInPlace: (root: string) => string | null; refusalOf: (path: string, bytes: Buffer) => string | null;
 };
-const { basesOf, clearHookGitEnv, ignored, inBatches, readers, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
+const { basesOf, clearHookGitEnv, ignored, inBatches, lintTargets, readers, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
   basesOf: (input: string, git: (...a: string[]) => string) => string[];
   clearHookGitEnv: (env: NodeJS.ProcessEnv) => NodeJS.ProcessEnv;
   ignored: (mobile: string) => string[];
   inBatches: (paths: string[], room?: number) => string[][];
+  lintTargets: (changed: string[], tracked: string[]) => string[];
   readers: (mobile: string) => string[];
   workersFor: (freeBytes: number, cores: number) => number;
 };
@@ -111,6 +112,16 @@ describe('before a push', () => {
     const hook = readFileSync(join(ROOT, 'mobile', 'scripts', 'hooks', 'pre-push.cjs'), 'utf8');
     expect(hook).toContain("for (const batch of inBatches(readers(MOBILE)))");
     expect(hook).toContain("for (const batch of inBatches(code))");
+    expect(hook).toContain("for (const batch of inBatches(linted))");
+  });
+
+  it('lints the changed code, and every file once lint\'s own rules change', () => {
+    const tracked = ['src/a.ts', 'test-utils/old.ts', 'eslint.config.js', 'package.json', 'README.md'];
+    expect(lintTargets(['src/a.ts', 'README.md'], tracked)).toEqual(['src/a.ts']);
+    for (const rules of ['eslint.config.js', 'package.json', 'package-lock.json']) {
+      expect(lintTargets([rules], tracked)).toEqual(['src/a.ts', 'test-utils/old.ts', 'eslint.config.js']);
+    }
+    expect(lintTargets(['docs/package.json.md'], tracked)).toEqual([]);
   });
 
   it('runs as many jest workers as the free memory holds, at least one, never every core', () => {

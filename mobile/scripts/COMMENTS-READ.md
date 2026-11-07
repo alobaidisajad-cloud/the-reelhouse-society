@@ -332,7 +332,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/grapheme-table.js | 2026-10-04 | edited: the table records its Unicode version, not the ICU patch |
 | scripts/hooks/commit-msg.cjs | 2026-10-15 | new |
 | scripts/hooks/pre-commit.cjs | 2026-10-16 | edited: refuses while a stopped mutants run left a mutant in place |
-| scripts/hooks/pre-push.cjs | 2026-10-16 | edited: every source-reading test, not only those an import reaches, its paths in batches that fit a Windows command line (the related tests' too); refuses while a mutant is in place; the mutants standing on what changed, last; Stryker's sandbox left out |
+| scripts/hooks/pre-push.cjs | 2026-11-07 | edited: lints every file when lint's own rules change (lintTargets), in batches that fit; edited: every source-reading test, not only those an import reaches, its paths in batches that fit a Windows command line (the related tests' too); refuses while a mutant is in place; the mutants standing on what changed, last; Stryker's sandbox left out |
 | scripts/hermes-suites.cjs | 2026-11-06 | new: bundles each pure src/utils suite as the phone's bundle is and runs it on Hermes; read against Metro's Server.build and DeltaBundler, Expo's transform worker (its import pass puts a suite's requires above its statements), the Hermes CLI's ConsoleHost, and React Native's setUpGlobals and setUpXHR |
 | scripts/hooks-ran.cjs | 2026-10-15 | new |
 | scripts/jest-shards.cjs | 2026-10-16 | new: read against jest --json's record and --listTests, and layout.cjs's --sites; each zone's record is held to that zone's files |
@@ -1274,7 +1274,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/handleHistory.wiring.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.reader.guard.test.ts | — |  |
 | src/utils/__tests__/handleNotice.test.ts | — |  |
-| src/utils/__tests__/hooks.guard.test.ts | 2026-10-16 | edited: Stryker's sandbox left out like the worktrees; a mutant in place refused; the paths in batches that fit |
+| src/utils/__tests__/hooks.guard.test.ts | 2026-11-07 | edited: lints the changed code, and every file once lint's rules change; edited: Stryker's sandbox left out like the worktrees; a mutant in place refused; the paths in batches that fit |
 | src/utils/__tests__/html.test.ts | — |  |
 | src/utils/__tests__/everyPictureStatesItsCache.guard.test.ts | 2026-10-27 | edited: counts RemoteImage and AssetImage, memory-disk by Picture's own default, which it reads and holds; edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/imagePrefetchSites.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
@@ -1452,8 +1452,8 @@ without one). "Read" is the day its comments were last read against its code.
 | test-utils/hermesHarness.js | 2026-11-06 | new: jest's describe and it on Hermes, from jest's own expect, jest-each, jest-mock and fake timers; read against the Hermes CLI's setTimeout (no delay, no setInterval) and jest.afterEnv.ts |
 | test-utils/react-native-testing-library.js | 2026-10-04 | edited: every render's client is testQueryClient(); the comment says what that keeps |
 | test-utils/readCode.ts | 2026-10-03 | read whole: re-exports the one stripper (stripComments.js) |
-| test-utils/runtimeLacks.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| test-utils/schema.ts | 2026-10-28 | edited: PENDING_SQL, every migration production has not had yet; edited: readForeignKeys: the keys PostgREST embeds by; new: production's tables, columns with their types, views and functions, read from the snapshot: the one reader for the query check and the fake |
+| test-utils/runtimeLacks.ts | 2026-11-07 | edited: its uses ordered by byKey; edited: its files come from the shared file list (test-utils/universe.js) |
+| test-utils/schema.ts | 2026-11-07 | edited: PENDING_SQL's migrations ordered by byKey; edited: PENDING_SQL, every migration production has not had yet; edited: readForeignKeys: the keys PostgREST embeds by; new: production's tables, columns with their types, views and functions, read from the snapshot: the one reader for the query check and the fake |
 | test-utils/SOURCE-READING-TESTS.md | 2026-11-02 | edited: clockJudges.test.ts listed; edited: the two reading-column guards; edited: theNavigationMockHasOneBase listed; every test in mobile/ is ledgered; the readers in __tests__/, e2e/ and plugins/, listed |
 | test-utils/stripComments.js | 2026-10-03 | written whole: the one comment stripper, shared by tests and node tools |
 | test-utils/supabaseFake.ts | 2026-10-28 | edited: knows the tables a pending migration makes; whose session the phone holds; edited: whose session the phone holds (auth.getSession), refused unless the test says; edited: an or() filter's text is recorded for a test that answers the table itself; edited: embeds resolved by their keys as PostgREST does (PGRST200/201 thrown), answered from what the test holds; or()/contains() taken on a table the test answers, as its header said; silent, an answer with an empty body (no data and no error), as postgrest-js reads one |
