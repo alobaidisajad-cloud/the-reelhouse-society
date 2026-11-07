@@ -11,6 +11,7 @@ import React, { act } from 'react';
 import { render } from '@testing-library/react-native';
 import { toHtml } from '@/src/components/profile/__tests__/zz-render.lib';
 import { LAYOUTS, atLayout, whenRendering, writeScreen } from '@/mockups/paths';
+import { supabaseFake } from '@/test-utils/supabaseFake';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -32,8 +33,10 @@ const ROOM_ID = '00000011-0000-4000-8000-000000000011';
 /** The room the house answers for (its read happens at render, after this is set). */
 const mockRoom = {
   id: ROOM_ID, name: 'The Back Row', description: 'Whatever is on after the late news.', is_private: false,
-  creator_id: 'host', created_at: '2026-01-01T00:00:00Z', member_count: 3,
+  creator_id: '00000012-0000-4000-8000-000000000012', created_at: '2026-01-01T00:00:00Z', member_count: 3,
 };
+/** The house as the app's client meets it, holding the one room (test-utils/supabaseFake). */
+const mockHouse = supabaseFake({ rows: { lounges: [mockRoom] } });
 jest.mock('@/src/stores/lounge', () => {
   const { create: mockCreate } = jest.requireActual('zustand');
   const noop = () => {};
@@ -48,18 +51,7 @@ jest.mock('@/src/stores/lounge', () => {
   }));
   return { useLoungeStore };
 });
-jest.mock('@/src/lib/supabase', () => ({
-  supabase: {
-    from: () => {
-      const chain: Record<string, unknown> = {};
-      const self = () => chain;
-      chain.select = self; chain.eq = self;
-      chain.single = () => Promise.resolve({ data: mockRoom, error: null });
-      chain.maybeSingle = chain.single;
-      return chain;
-    },
-  },
-}));
+jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));
 jest.mock('@/src/stores/auth', () => {
   const state = { user: { id: 'me', username: 'kane', role: 'archivist', tier: 'archivist' }, isAuthenticated: true };
   return {

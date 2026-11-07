@@ -171,13 +171,13 @@ describe('the harness fails what jest fails', () => {
       '  expect(Date.now() - start).toBeGreaterThanOrEqual(40);',
       '});',
       "it('repeats an interval until cleared, and runs no cleared timer', async () => {",
+      // Counted by ticks, not by a span of the wall clock: a busy machine runs fewer in 28ms.
       '  let ticks = 0;',
-      '  const every = setInterval(() => { ticks += 1; }, 5);',
       '  const never = setTimeout(() => { ticks = -100; }, 1);',
       '  clearTimeout(never);',
-      '  await new Promise((done) => setTimeout(done, 28));',
-      '  clearInterval(every);',
-      '  expect(ticks).toBeGreaterThanOrEqual(4);',
+      '  await new Promise((done) => { const every = setInterval(() => { ticks += 1; if (ticks === 4) { clearInterval(every); done(); } }, 5); setTimeout(done, 2000); });',
+      '  await new Promise((done) => setTimeout(done, 20));',
+      '  expect(ticks).toBe(4);',
       '});',
     ].join('\n'));
     expect(lines).toEqual([

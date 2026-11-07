@@ -307,7 +307,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/__tests__/androidPackages.test.ts | 2026-10-16 | new: a package counts as installed only with its package.xml |
 | scripts/__tests__/contractsRan.test.ts | 2026-11-02 | edited: a sealed run read by its own files; new |
 | scripts/__tests__/flakeHistory.test.ts | 2026-10-16 | new |
-| scripts/__tests__/hermesSuites.test.ts | 2026-11-06 | new |
+| scripts/__tests__/hermesSuites.test.ts | 2026-11-07 | edited: the planted interval counted by ticks, not the wall clock; new |
 | scripts/__tests__/jestShards.test.ts | 2026-10-16 | new: a zone's record holds that zone's files |
 | scripts/__tests__/mergeCoverage.test.ts | 2026-10-30 | edited: the refusal test keeps a part of its own; new: read against jest's CoverageReporter, which it runs whole and in parts |
 | scripts/__tests__/privateSettings.test.ts | 2026-10-16 | new |
