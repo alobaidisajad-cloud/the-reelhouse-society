@@ -2452,7 +2452,7 @@ mutants:
     edits:
       - file: src/services/LogService.ts
         find: ", profiles!log_comments_user_id_fkey(username, avatar_url, display_name)')"
-        replace: "')"
+        replace: ", profiles!log_comments_user_id_fkey(username)')"
     proof: { file: src/services/__tests__/servicesBatch1.test.ts, test: "returns comments ordered by created_at" }
 
   - id: shape-followers-asked-apart
