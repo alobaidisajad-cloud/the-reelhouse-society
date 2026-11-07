@@ -1629,5 +1629,89 @@
     "proof": "m4",
     "commit": "31fa4ec1a3b74da9aa926b6190ca0a28b8baf65f",
     "verdict": "caught"
+  },
+  {
+    "class": "RELEASE-a-crash-sentry-cannot-read",
+    "mutant": "shape-holds-passes-on-nothing",
+    "proof": "m2",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "RELEASE-a-crash-sentry-cannot-read",
+    "mutant": "shape-holds-unread-is-held",
+    "proof": "m3",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "RELEASE-a-crash-sentry-cannot-read",
+    "mutant": "shape-holds-build-id-unreversed",
+    "proof": "m4",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "RELEASE-a-crash-sentry-cannot-read",
+    "mutant": "shape-holds-missing-map-skipped",
+    "proof": "m5",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "RELEASE-a-crash-sentry-cannot-read",
+    "mutant": "shape-update-sent-unasked",
+    "proof": "m6",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "PUSH-a-new-lint-rule-unseen",
+    "mutant": "shape-lint-only-what-changed",
+    "proof": "m1",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-counted-by-code-units",
+    "mutant": "shape-text-counted-by-units",
+    "proof": "m1",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-counted-by-code-units",
+    "mutant": "shape-mark-measured-wide",
+    "proof": "m2",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-counted-by-code-units",
+    "mutant": "shape-name-stepped-by-units",
+    "proof": "m3",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-counted-by-code-units",
+    "mutant": "shape-review-wrapped-by-units",
+    "proof": "m4",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-counted-by-code-units",
+    "mutant": "shape-excerpt-cut-by-units",
+    "proof": "m5",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
+  },
+  {
+    "class": "TEXT-counted-by-code-units",
+    "mutant": "shape-text-guard-blind",
+    "proof": "m7",
+    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "verdict": "caught"
   }
 ]
