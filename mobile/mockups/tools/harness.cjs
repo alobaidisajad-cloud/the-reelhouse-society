@@ -56,6 +56,18 @@ const FACES = [
   ['Spectral', 'spectral/500Medium/Spectral_500Medium.ttf', 500, 'normal'],
 ];
 let fontCss = null;
+/**
+ * Inter, for a page that names it alone (the self-test's ink proof): a face that stacks a pile of
+ * marks itself, so the pile is drawn the same on every renderer, where one the app's faces lack is
+ * left to each renderer's fallback (Linux lays such a pile over itself). The app's pages never name it.
+ */
+let interCss = null;
+function inter() {
+  if (interCss) return interCss;
+  const data = fs.readFileSync(path.join(MOBILE, 'node_modules', '@expo-google-fonts', 'inter/400Regular/Inter_400Regular.ttf')).toString('base64');
+  interCss = `@font-face{font-family:'Inter';src:url(data:font/ttf;base64,${data}) format('truetype');font-weight:400;font-style:normal}`;
+  return interCss;
+}
 function fonts() {
   if (fontCss) return fontCss;
   fontCss = FACES.map(([family, file, weight, style]) => {
@@ -106,7 +118,7 @@ async function open(browser, file, { factor = 1, platform = 'ios', width = WIDTH
   const sized = factor !== 1 ? variants.find((v) => fs.existsSync(v)) : null;
   const html = fs.readFileSync(sized || file, 'utf8');
   await page.setContent(
-    `<!doctype html><html><head><meta charset="utf-8"><style>${fonts()}${RN_RULES}</style></head>` +
+    `<!doctype html><html><head><meta charset="utf-8"><style>${fonts()}${/font-family:\s*'?Inter\b/.test(html) ? inter() : ''}${RN_RULES}</style></head>` +
     // The phone: its exact height, a flex column like RN's root, so `flex: 1` fills it; inside it the
     // reading column, as the root navigator holds every page (the whole phone, on a phone). It clips
     // across only: a scroller is drawn as one tall page, read below the phone's height as scrolled to.

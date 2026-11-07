@@ -124,6 +124,14 @@ const scaledBeside = (a) => box('flex-direction:row;padding:40px;gap:10px',
   `</div></div>` +
   `<div data-press="0,0,0,0" aria-label="Outside" style="width:40px;height:40px;flex-shrink:0"></div>`);
 const EVERY = { 'ios@1': ['HANG'], 'ios@1.35': ['HANG'], 'ios@3.1': ['HANG'], 'android@1.35': ['HANG'], 'android@2': ['HANG'] };
+/**
+ * The ink proof's pile: twelve marks on each letter, set in Inter, which stacks them itself, so the
+ * pile is drawn the same on every renderer (the harness loads Inter for a page that names it). The app's
+ * faces stack no such pile (Spectral holds the marks but lays them over one another; the display faces
+ * hold none), so one set in them is left to each renderer's fallback, and Linux drew no pile at all.
+ */
+const PILE_STYLE = 'font-family:Inter,sans-serif;font-size:14px;line-height:18px';
+const PILE_TEXT = 'Ozu frames a room by its doors ' + [...'and then'].map((c) => c + '\u0300\u0301\u0302\u0303\u0304\u0306\u0307\u0308\u030a\u030b\u030c\u0311').join('');
 const ALL = (kind) => ({ 'ios@1': [kind], 'ios@1.35': [kind], 'ios@3.1': [kind], 'android@1.35': [kind], 'android@2': [kind] });
 
 /** name → [the screen, { pass: expected kinds }] (a pass not listed must be clean) */
@@ -150,21 +158,19 @@ const CASES = {
   // a box sized for iOS's ceiling that Android's ceiling-less line outgrows
   androidline: [box('width:200px', T('font-size:10px;line-height:13px;height:36px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden', 'A caption that wraps onto a second line here', 1.35)),
     { 'android@2': ['CUT'] }],
-  // twelve marks piled on each letter of the second row, reaching up through the first row's letters; set in
-  // Spectral, which carries the marks itself, so they stack on every renderer (a face without them leaves
-  // them to a fallback font, which on Linux sets them over each other rather than piled)
-  inkpile: [box('width:200px', T('font-family:Spectral,serif;font-size:14px;line-height:18px', 'Ozu frames a room by its doors ' + [...'and then'].map((c) => c + '̀́̂̃̄̆̇̈̊̋̌̑').join(''))),
+  // marks stacked above each letter of the later rows, reaching up through the row above's letters
+  inkpile: [box('width:200px', T(PILE_STYLE, PILE_TEXT)),
     ALL('INK')],
   // a script's own marks, set at a reader's leading: above and below their letters, over no row
   inkclean: [box('width:200px', T('font-size:14px;line-height:22px', 'Tiếng Việt có dấu, ภาษาไทย มี วรรณยุกต์ ở trên và ở dưới')), {}],
   // the same piled row under an opaque cover (a sheet over the page): ink no one can see
-  inkcovered: [box('width:200px', T('font-size:14px;line-height:18px', 'Ozu frames a room by its doors ' + [...'and then'].map((c) => c + '̀́̂̃̄̆̇̈̊̋̌̑').join(''))
+  inkcovered: [box('width:200px', T(PILE_STYLE, PILE_TEXT)
     + '<div style="position:absolute;left:0;top:0;width:200px;height:400px;background:#222;z-index:5"></div>'), {}],
   // a title set tight and shown at 0.7 of its size, as a share card's preview is: its letters
   // meet nowhere, and the font's measures are scaled to the drawn boxes before they are judged
   inkscaled: [box('width:300px;transform:scale(0.7);transform-origin:0 0', T("font-family:Rye,serif;font-size:32px;line-height:38px", 'The Long Silence in Ozu, a title', 1)), {}],
   // piled marks shown at 0.7 still reach the row above
-  inkpilescaled: [box('width:200px;transform:scale(0.7);transform-origin:0 0', T('font-family:Spectral,serif;font-size:14px;line-height:18px', 'Ozu frames a room by its doors ' + [...'and then'].map((c) => c + '̀́̂̃̄̆̇̈̊̋̌̑').join(''))),
+  inkpilescaled: [box('width:200px;transform:scale(0.7);transform-origin:0 0', T(PILE_STYLE, PILE_TEXT)),
     ALL('INK')],
   // runs off the phone
   off:[box('padding-left:300px', T('font-size:12px;white-space:nowrap', 'SEVENTEEN LETTERS')), ALL('OFF')],

@@ -2255,7 +2255,7 @@ mutants:
       - file: src/components/profile/heroNameSize.ts
         find: "  const count = characterCount(name);"
         replace: "  const count = name.length;"
-    proof: { file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "a name of six emoji is set as six characters, at the largest step" }
+    proof: { file: src/utils/__tests__/aTextIsCutWholeOnEveryPage.test.ts, test: "a name of six emoji is set as six characters, at the largest step" }
 
   - id: shape-review-wrapped-by-units
     class: TEXT-counted-by-code-units
@@ -2445,3 +2445,21 @@ mutants:
         find: "  if (worded) {"
         replace: "  if (worded && trimmed === '') {"
     proof: { file: src/features/archive/__tests__/archiveImport.test.ts, test: "reads a month written as a word, either way round, by itself and not the engine" }
+
+  - id: shape-critique-authors-asked-apart
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/services/LogService.ts
+        find: ", profiles!log_comments_user_id_fkey(username, avatar_url, display_name)')"
+        replace: "')"
+    proof: { file: src/services/__tests__/servicesBatch1.test.ts, test: "returns comments ordered by created_at" }
+
+  - id: shape-followers-asked-apart
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/services/ProfileWriteService.ts
+        find: ".select('user_id, created_at, profiles!interactions_user_id_fkey(id, username, avatar_url, role, tier)')"
+        replace: ".select('user_id, created_at')"
+    proof: { file: src/services/__tests__/servicesBatch3.test.ts, test: "fetches followers with cursor pagination" }

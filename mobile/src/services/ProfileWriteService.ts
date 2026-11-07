@@ -262,7 +262,8 @@ export const ProfileService = {
     if (type === 'followers') {
         let query = supabase
             .from('interactions')
-            .select('user_id, created_at')
+            // Each follower's profile in the same answer (interactions_user_id_fkey).
+            .select('user_id, created_at, profiles!interactions_user_id_fkey(id, username, avatar_url, role, tier)')
             .eq('target_user_id', userId)
             .eq('type', 'follow')
             .order('created_at', { ascending: false })
@@ -289,7 +290,8 @@ export const ProfileService = {
     } else {
         let query = supabase
             .from('interactions')
-            .select('target_user_id, created_at')
+            // Each followed member's profile in the same answer (interactions_target_user_id_fkey).
+            .select('target_user_id, created_at, profiles!interactions_target_user_id_fkey(id, username, avatar_url, role, tier)')
             .eq('user_id', userId)
             .eq('type', 'follow')
             .order('created_at', { ascending: false })
@@ -318,23 +320,12 @@ export const ProfileService = {
 
     if (ids.length === 0) return { profiles: [], hasMore: false };
 
-    let profQuery = supabase
-        .from('profiles')
-        .select('id, username, avatar_url, role, tier')
-        .in('id', ids);
-    profQuery = withAbortSignal(profQuery, signal);
-
-    const { data: profs, error } = await profQuery;
-
-    if (error) throw error;
-
-    // Re-sort profiles to match the original interaction query order.
-    // .in('id', ids) returns arbitrary PK order, losing the created_at DESC
-    // chronological ordering from the interaction query above.
-    const idOrder = new Map(ids.map((id, i) => [id, i]));
-    const sorted = (profs ?? []).sort(
-      (a: { id: string }, b: { id: string }) => (idOrder.get(a.id) ?? 0) - (idOrder.get(b.id) ?? 0)
-    );
+    // In the order the follows were read (newest first), each with the profile it came with; a
+    // profile the reader may not see comes as none, and is left out, as the second request left it.
+    type Followed = { id: string; username: string; avatar_url: string | null; role: string; tier?: string | null };
+    const sorted = rows.slice(0, ids.length)
+      .map((r: { profiles?: Followed | Followed[] | null }) => (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles) ?? null)
+      .filter((f: Followed | null): f is Followed => f !== null);
 
     let nextCursor: string | undefined = undefined;
     if (hasMore && rows.length > limit) {

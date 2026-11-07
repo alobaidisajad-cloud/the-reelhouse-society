@@ -88,31 +88,27 @@ describe('LogService', () => {
 
     describe('getLogComments', () => {
         it('returns comments ordered by created_at', async () => {
+            // Each critique with its author, in the one answer (the embed by log_comments_user_id_fkey).
             const comments = [
-                { id: 'c1', log_id: 'log-1', user_id: 'u1', body: 'Great!', created_at: '2024-01-01' },
-            ];
-            const profiles = [
-                { id: 'u1', username: 'filmfan', avatar_url: null, display_name: null },
+                { id: 'c1', log_id: 'log-1', user_id: 'u1', body: 'Great!', created_at: '2024-01-01', profiles: { username: 'filmfan', avatar_url: null, display_name: null } },
             ];
             const commentsChain = chain({ data: comments, error: null });
             const totalChain = chain({ data: null, error: null, count: 7 });
-            const profilesChain = chain({ data: profiles, error: null });
             (supabase.from as jest.Mock)
-                .mockReturnValueOnce(commentsChain)   // the bounded page of comments
-                .mockReturnValueOnce(totalChain)      // the TRUE total, head:true
-                .mockReturnValueOnce(profilesChain);  // profiles DataLoader join
+                .mockReturnValueOnce(commentsChain)   // the bounded page of comments, authors joined
+                .mockReturnValueOnce(totalChain);     // the TRUE total, head:true
 
             const result = await LogService.getLogComments('log-1');
             expect(supabase.from).toHaveBeenCalledWith('log_comments');
+            // Two requests, side by side: no third for the authors' names.
+            expect((supabase.from as jest.Mock).mock.calls.map((c) => c[0])).toEqual(['log_comments', 'log_comments']);
+            expect(commentsChain.select).toHaveBeenCalledWith(expect.stringContaining('profiles!log_comments_user_id_fkey(username, avatar_url, display_name)'));
             // Newest-first ON THE WIRE, so the bound keeps the most recent
             // comments rather than the oldest — then reversed for display.
             expect(commentsChain.order).toHaveBeenCalledWith('created_at', { ascending: false });
             expect(commentsChain.limit).toHaveBeenCalled();
-            // getLogComments attaches the author profile to each comment for display.
-            expect(result.comments).toEqual(comments.map(cm => ({
-                ...cm,
-                profiles: { username: 'filmfan', avatar_url: null, display_name: null },
-            })));
+            // Each comment carries its author, as the join answered it.
+            expect(result.comments).toEqual(comments);
             // The total comes from the SERVER, not from the page length — a
             // 7-comment thread reports 7 even when one page is returned.
             expect(result.total).toBe(7);

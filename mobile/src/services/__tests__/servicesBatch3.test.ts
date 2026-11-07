@@ -136,15 +136,18 @@ describe('ProfileWriteService (ProfileService)', () => {
 
     describe('getSocialConnections', () => {
         it('fetches followers with cursor pagination', async () => {
-            const interactionChain = chain({ data: [{ user_id: 'u2', created_at: '2024-01-01' }], error: null });
-            const profileChain = chain({ data: [{ id: 'u2', username: 'follower', avatar_url: null, role: 'cinephile' }], error: null });
-
-            (supabase.from as jest.Mock)
-                .mockReturnValueOnce(interactionChain)
-                .mockReturnValueOnce(profileChain);
+            // Each follow with its member's profile, in the one answer (interactions_user_id_fkey).
+            const interactionChain = chain({ data: [
+                { user_id: 'u2', created_at: '2024-01-02', profiles: { id: 'u2', username: 'follower', avatar_url: null, role: 'cinephile' } },
+                { user_id: 'u3', created_at: '2024-01-01', profiles: null },
+            ], error: null });
+            (supabase.from as jest.Mock).mockReturnValueOnce(interactionChain);
 
             const result = await ProfileService.getSocialConnections('u1', 'followers');
-            expect(result.profiles).toHaveLength(1);
+            // One request, no second for the members; a profile the reader may not see is left out.
+            expect((supabase.from as jest.Mock).mock.calls.map((c) => c[0])).toEqual(['interactions']);
+            expect(interactionChain.select).toHaveBeenCalledWith(expect.stringContaining('profiles!interactions_user_id_fkey('));
+            expect(result.profiles).toEqual([{ id: 'u2', username: 'follower', avatar_url: null, role: 'cinephile' }]);
             expect(result.hasMore).toBe(false);
         });
 
@@ -165,14 +168,11 @@ describe('ProfileWriteService (ProfileService)', () => {
 
         it('detects hasMore when extra row returned', async () => {
             // Create 51 items (limit=50, so 51 = hasMore)
-            const manyIds = Array.from({ length: 51 }, (_, i) => ({ user_id: `u${i}`, created_at: `2024-01-${String(i).padStart(2, '0')}` }));
-            const interactionChain = chain({ data: manyIds, error: null });
-            const profiles = manyIds.slice(0, 50).map(r => ({ id: r.user_id, username: `user${r.user_id}`, avatar_url: null, role: 'cinephile' }));
-            const profileChain = chain({ data: profiles, error: null });
-
-            (supabase.from as jest.Mock)
-                .mockReturnValueOnce(interactionChain)
-                .mockReturnValueOnce(profileChain);
+            const manyIds = Array.from({ length: 51 }, (_, i) => ({
+                user_id: `u${i}`, created_at: `2024-01-${String(i).padStart(2, '0')}`,
+                profiles: { id: `u${i}`, username: `useru${i}`, avatar_url: null, role: 'cinephile' },
+            }));
+            (supabase.from as jest.Mock).mockReturnValueOnce(chain({ data: manyIds, error: null }));
 
             const result = await ProfileService.getSocialConnections('u1', 'followers');
             expect(result.hasMore).toBe(true);

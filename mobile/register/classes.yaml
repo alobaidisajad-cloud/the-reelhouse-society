@@ -1728,7 +1728,7 @@ classes:
     methods:
       - { kind: running, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "are counted as drawn, not by the units a string holds" }
       - { kind: running, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "gives a mark no width of its own: a letter with marks piled on it is the letter" }
-      - { kind: running, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "a name of six emoji is set as six characters, at the largest step" }
+      - { kind: running, file: src/utils/__tests__/aTextIsCutWholeOnEveryPage.test.ts, test: "a name of six emoji is set as six characters, at the largest step" }
       - { kind: running, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "breaks a word with piled marks by its letters, not its units" }
       - { kind: running, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "a stored excerpt never ends on half an emoji" }
       - { kind: static, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.guard.test.ts, test: "sizes no text by its code units, and cuts none at a fixed one, but what is listed" }
@@ -1741,7 +1741,7 @@ classes:
     seriousness: behaviour
     area: speed
     status: OPEN
-    count: 11
+    count: 13
     source: { kind: reviewer, ref: "P4.53: every page opens at its floor (audit/final/P4-53-STUDY.md)" }
     methods:
       - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "seeds the page from the feed row it was opened from, its critiques still to come" }
@@ -1757,7 +1757,9 @@ classes:
       - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "asks for the critiques with the filing, not after it" }
       - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "keeps the next part it found whole, so it opens at once" }
       - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "seeds its title, curator, first posters and true size from the card, its mark unknown" }
-    fix: "the log page asks for the record and its critiques together and draws the feed row it was opened from in its first frame (seedFromCards), its critiques said to be coming, and keeps that row when the house cannot be reached; the Darkroom draws its kept sheet while it reads, keeps a sheet whole while its next batch develops, reads its kept sheet once a key, and asks again only on a return to the network; the person page asks the network beside the archive; the edit form asks for a viewing's id only for a log it holds without one. The Dispatch reader draws an essay it holds (opened before: a notice, the part before) in its first frame and asks for its critiques with it, not after; the next part and a series' parts, read whole already, are kept where the reader looks first; a stack opened from the Reel's card draws its title, curator, first posters and true size at once. The rest of the study's list is P4.53's next batches"
+      - { kind: running, file: src/services/__tests__/servicesBatch1.test.ts, test: "returns comments ordered by created_at" }
+      - { kind: running, file: src/services/__tests__/servicesBatch3.test.ts, test: "fetches followers with cursor pagination" }
+    fix: "the log page asks for the record and its critiques together and draws the feed row it was opened from in its first frame (seedFromCards), its critiques said to be coming, and keeps that row when the house cannot be reached; the Darkroom draws its kept sheet while it reads, keeps a sheet whole while its next batch develops, reads its kept sheet once a key, and asks again only on a return to the network; the person page asks the network beside the archive; the edit form asks for a viewing's id only for a log it holds without one. The Dispatch reader draws an essay it holds (opened before: a notice, the part before) in its first frame and asks for its critiques with it, not after; the next part and a series' parts, read whole already, are kept where the reader looks first; a stack opened from the Reel's card draws its title, curator, first posters and true size at once. A log's critiques come with their authors and a member's followers and following with their profiles, in the one answer (the keys log_comments and interactions hold to profiles, probed live), not a second request after the first. The rest of the study's list is P4.53's next batches"
     places: [none]
 
   - id: RUNTIME-an-instant-read-by-the-engine

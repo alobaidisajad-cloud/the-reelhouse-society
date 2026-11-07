@@ -13,17 +13,6 @@ import { z } from 'zod';
 import { getOfflineQueue } from '@/src/utils/offlineQueue';
 
 /**
- * How many ids may go into one `.in(...)` lookup.
- *
- * The ids are carried in the request URL, and the request fails outright once
- * the whole URL passes roughly 13.8KB — measured against production: 300 uuids
- * succeed, 400 do not, and the same 300 fail once 2KB of other filters are
- * added. The budget is the URL, not the id count, so this is set well below the
- * boundary to leave room for whatever else a query carries.
- */
-const PROFILE_LOOKUP_BATCH = 200;
-
-/**
  * Critiques fetched per log, and per ask for older ones.
  *
  * The page is bounded and the TRUE total travels beside it; the log page's
@@ -198,7 +187,9 @@ export const LogService = {
   async getLogComments(logId: string, signal?: AbortSignal, limit: number = COMMENT_PAGE_SIZE) {
     let query = supabase
       .from('log_comments')
-      .select('id, log_id, user_id, body, created_at')
+      // Each critique's author in the same answer, by the key log_comments holds to profiles
+      // (log_comments_user_id_fkey): a second request for the names cost the page a round trip.
+      .select('id, log_id, user_id, body, created_at, profiles!log_comments_user_id_fkey(username, avatar_url, display_name)')
       .eq('log_id', logId)
       // Newest first ON THE WIRE so the bound keeps the most recent, then
       // reversed below — the screen reads oldest-first.
@@ -224,38 +215,9 @@ export const LogService = {
 
     const comments = [...newestFirst].reverse();
 
-    // DataLoader pattern: fetch profiles manually to bypass the missing DB foreign
-    // key. `log_comments` genuinely has no link to `profiles` — probed live, the
-    // embed returns PGRST200 — so this lookup cannot be replaced by a join.
-    //
-    // It IS batched, because the ids travel in the request URL and the request
-    // fails outright past roughly 350 of them (measured: 300 succeed, 400 do
-    // not). The page above is bounded, so one batch suffices today; the batching
-    // stays because the bound is a page size, not a law.
-    const userIds = [...new Set(comments.map(c => c.user_id))];
-    const profileMap: Record<string, any> = {};
-    for (let i = 0; i < userIds.length; i += PROFILE_LOOKUP_BATCH) {
-      const batch = userIds.slice(i, i + PROFILE_LOOKUP_BATCH);
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url, display_name')
-        .in('id', batch);
-      if (profileError) {
-        // Names are decoration here — the words still render. Never silent.
-        logger.warn('[LogService.getLogComments] profile batch failed:', profileError.message);
-        continue;
-      }
-      for (const profile of profiles ?? []) {
-        profileMap[profile.id] = { username: profile.username, avatar_url: profile.avatar_url, display_name: profile.display_name };
-      }
-    }
-
-    // An author whose name could not be read has none, never "unknown": a name
-    // the page would link to, and any member may hold.
-    const data = comments.map(c => ({
-      ...c,
-      profiles: profileMap[c.user_id] ?? null,
-    }));
+    // An author whose name could not be read (a profile the reader may not see, a member gone)
+    // has none, never "unknown": a name the page would link to, and any member may hold.
+    const data = comments.map(c => ({ ...c, profiles: c.profiles ?? null }));
 
     // Validate each comment row
     const { valid } = validateWithTelemetry({

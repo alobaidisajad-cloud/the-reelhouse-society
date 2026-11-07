@@ -147,10 +147,11 @@ describe('the id-list ceiling · a request that cannot be sent', () => {
     expect(f.code).toMatch(/profiles!interactions_target_user_id_fkey\(username\)/);
   });
 
-  it('the one lookup that cannot join is batched', () => {
-    // log_comments genuinely has no link to profiles — probed live, PGRST200.
+  it('a log\'s critiques join their authors, not a list of ids after them', () => {
+    // log_comments holds log_comments_user_id_fkey to profiles: probed live 2026-11-07, the
+    // embed answers each critique's author (an earlier probe's PGRST200 no longer holds).
     const f = FILES.find(x => x.path === 'src/services/LogService.ts')!;
-    expect(f.code).toMatch(/PROFILE_LOOKUP_BATCH = 200/);
-    expect(f.code).toMatch(/i \+= PROFILE_LOOKUP_BATCH/);
+    expect(f.code).toMatch(/profiles!log_comments_user_id_fkey\(username, avatar_url, display_name\)/);
+    expect(f.code).not.toMatch(/\.from\('profiles'\)[\s\S]{0,80}\.in\('id'/);
   });
 });
