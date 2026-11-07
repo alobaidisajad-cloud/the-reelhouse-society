@@ -455,6 +455,14 @@ for probe in ${probes[@]+"${probes[@]}"}; do
       rm -rf "$HOME/.maestro/sessions"
       timeout 120 "$MAESTRO" test "$FLOWS/keyboard/$name.tap.yaml" >> "$OUT/keyboard-room/$name.log" 2>&1
     done
+    # The run's first keyboard, cold, draws no window on either tap (tablet, nightly 2026-11-03, -06,
+    # -07: mInputShown=true, its window GONE), and a tap again cannot help, since Android holds it
+    # shown; the next probe's, warm, draws at once. So the probe is run again from its start: a
+    # fresh app and a fresh show, as the next probe's.
+    if [ $shown -eq 0 ] && [ $attempt -eq 1 ]; then
+      echo "$name: no keyboard window on either tap, the run's first keyboard cold: the probe is run again from its start" >> "$OUT/keyboard-room.txt"
+      attempt=2; continue
+    fi
     sleep 1   # the keyboard's own entrance, so its frame is where it stops
     timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$OUT/keyboard-room/$name.windows.txt"
     rm -rf "$HOME/.maestro/sessions"

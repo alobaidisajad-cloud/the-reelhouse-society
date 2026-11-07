@@ -52,6 +52,7 @@ const ALLOWED: [file: string, line: string, why: string][] = [
   ['src/components/profile/ProfileTriptych.tsx', 'film.release_date.slice(0, 4)', DATE],
   ['src/features/archive/archiveImport.ts', 'trimmed.slice(0, 10)', DATE],
   ['src/features/archive/archiveImport.ts', 'release_date.slice(0, 4)', DATE],
+  ['src/features/archive/archiveImport.ts', 'name.slice(0, 3)', "a month's English name, its first three letters"],
   ['src/hooks/useLogFlow.ts', 'film.release_date.slice(0, 4)', DATE],
   ['src/lib/tmdb.ts', 'dateStr.slice(0, 4)', DATE],
   ['src/stores/domain/archiveSlice.ts', 'film.release_date.slice(0, 4)', DATE],
