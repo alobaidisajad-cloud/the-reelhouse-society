@@ -16,7 +16,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
-import { LoungeMessage, LoungeRoom, ReactionSummary, useLoungeStore } from '@/src/stores/lounge';
+import { LoungeMessage, LoungeRoom, ReactionSummary, ROOM_COLUMNS, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import { UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { LoungeMember, LoungeMemberStatus } from '@/src/types/social.types';
@@ -494,7 +494,8 @@ function LoungeRoomScreen({ id }: { id: string }) {
     // An answer for the room left behind is dropped.
     let cancelled = false;
     const loadLounge = async () => {
-      const { data: loungeData, error } = await supabase.from('lounges').select('*').eq('id', id).maybeSingle();
+      // The room's own columns, as the corridor reads them: never an invite code or a field it does not draw.
+      const { data: loungeData, error } = await supabase.from('lounges').select(ROOM_COLUMNS).eq('id', id).maybeSingle();
       if (cancelled) return;
       if (error) { setLoadFailed(true); return; }
       if (!loungeData) { setNotFound(true); return; }

@@ -206,7 +206,7 @@ const before = (a: { created_at: string; id: string }, b: { created_at: string; 
 
 /** A salon as the corridor draws it: its cover too, or a cover set by its host
  *  showed until the next refresh and then nowhere. */
-const ROOM_COLUMNS = 'id, name, description, is_private, creator_id, created_at, member_count, cover_image';
+export const ROOM_COLUMNS = 'id, name, description, is_private, creator_id, created_at, member_count, cover_image';
 type RoomRow = { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number; cover_image: string | null };
 
 /** Standings that keep a membership row but not a seat among "your salons". */
