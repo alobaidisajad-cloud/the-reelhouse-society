@@ -168,6 +168,8 @@ const CASES = {
   // marks stacked above each letter of the later rows, reaching up through the row above's letters
   inkpile: [box('width:200px', T(PILE_STYLE, PILE_TEXT)),
     ALL('INK')],
+  // the same piled row cut away by a one-line clamp: its letters are never drawn, so neither is their ink
+  inkclamped: [box('width:200px', T(`${PILE_STYLE};display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden`, PILE_TEXT)), {}],
   // a script's own marks, set at a reader's leading: above and below their letters, over no row
   inkclean: [box('width:200px', T('font-size:14px;line-height:22px', 'Tiếng Việt có dấu, ภาษาไทย มี วรรณยุกต์ ở trên và ở dưới')), {}],
   // the same piled row under an opaque cover (a sheet over the page): ink no one can see

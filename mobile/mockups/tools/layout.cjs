@@ -453,14 +453,19 @@ async function audit(page) {
         // page are scaled, the font's measures are not, so the measures are scaled to match.
         const host = n.parentElement;
         const k = host.offsetWidth > 0 ? host.getBoundingClientRect().width / host.offsetWidth : 1;
+        // A letter whose middle lies outside its text's own box is on a line a clamp cut, or past
+        // its ellipsis: never drawn, and neither is its ink.
+        const shown = (host.closest('span[data-scale-cap]') ?? host).getBoundingClientRect();
         for (const { segment, index } of graphemes.segment(n.data)) {
           if (!segment.trim()) continue;
           const r = document.createRange(); r.setStart(n, index); r.setEnd(n, index + segment.length);
           const box = r.getBoundingClientRect();
           if (box.width < 0.1 || box.height < 0.1 || parked(box)) continue;
+          const mx = (box.left + box.right) / 2, my = (box.top + box.bottom) / 2;
+          if (mx < shown.left || mx > shown.right || my < shown.top || my > shown.bottom) continue;
           const m = pen.measureText(upper ? segment.toUpperCase() : segment);
           const base = box.top + (box.height - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent) * k) / 2 + m.fontBoundingBoxAscent * k;
-          out.push({ box, ink: { left: box.left - m.actualBoundingBoxLeft * k, right: box.left + m.actualBoundingBoxRight * k, top: base - m.actualBoundingBoxAscent * k, bottom: base + m.actualBoundingBoxDescent * k } });
+          out.push({ ch: segment, at: host.closest('[data-src]')?.dataset.src || '', box, ink: { left: box.left - m.actualBoundingBoxLeft * k, right: box.left + m.actualBoundingBoxRight * k, top: base - m.actualBoundingBoxAscent * k, bottom: base + m.actualBoundingBoxDescent * k } });
         }
       }
       inkCache.set(e, out);
@@ -481,7 +486,7 @@ async function audit(page) {
         // As CLASH: two scrollers can each be moved clear of the other.
         const sE = scrollOf(e), sO = scrollOf(o);
         if (sE && sO && sE.s !== sO.s && sE.travel && sO.travel) continue;
-        let hit = 0;
+        let hit = 0, where = '';
         for (const a of spilling) for (const b of inkOf(o)) {
           if (a === b || sameRow(a.box, b.box)) continue;
           const [iw, ih] = overlap(a.ink, b.ink);
@@ -489,12 +494,12 @@ async function audit(page) {
           // As CLASH: only ink a reader can see, both letters showing where they meet.
           const x = Math.max(a.ink.left, b.ink.left) + iw / 2, y = Math.max(a.ink.top, b.ink.top) + ih / 2;
           if (x >= 0 && y >= 0 && x <= innerWidth && y <= innerHeight && !(shows(e, x, y) && shows(o, x, y))) continue;
-          hit = Math.max(hit, ih);
+          if (ih > hit) { hit = ih; where = ` ("${a.ch}" ${a.at} over "${b.ch}" ${b.at})`; }
         }
         const pair = [e, o].map(say).sort().join('\u0000');
         if (hit && !inked.has(pair)) {
           inked.add(pair);
-          found.push({ kind: 'INK', text: o === e ? say(e) : `${say(e)}  ×  ${say(o)}`, size: parseFloat(getComputedStyle(e).fontSize), by: `${hit.toFixed(1)}pt of ink over another row's letters` });
+          found.push({ kind: 'INK', text: o === e ? say(e) : `${say(e)}  ×  ${say(o)}`, size: parseFloat(getComputedStyle(e).fontSize), by: `${hit.toFixed(1)}pt of ink over another row's letters${where}` });
         }
       }
     }
