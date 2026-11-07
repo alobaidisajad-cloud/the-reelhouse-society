@@ -20,6 +20,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { EDGE_LIT } from '@/src/theme/light';
 import { formatLongCalendarDate } from '@/src/utils/timeAgo';
 import { useToday } from '@/src/hooks/useClock';
+import { dateOf } from '@/src/utils/instant';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -31,7 +32,7 @@ interface NitrateCalendarProps {
 
 export default function NitrateCalendar({ value, onChange }: NitrateCalendarProps) {
     const today = useToday();
-    const selected = new Date(`${value || today}T12:00:00`);
+    const selected = dateOf(`${value || today}T12:00:00`);
     const [viewYear, setViewYear] = useState(selected.getFullYear());
     const [viewMonth, setViewMonth] = useState(selected.getMonth());
 

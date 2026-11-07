@@ -51,6 +51,7 @@ import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
 import { useUnsent } from '@/src/stores/offlineQueueStore';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
+import { dateOf } from '@/src/utils/instant';
 
 /** A filing, or a day's divider: one flat list, as a section list re-measures on every certify. */
 type Row =
@@ -246,7 +247,7 @@ export default function DispatchScreen() {
   const empty = EMPTY[section];
   // The paper's date turns at the member's midnight, with the paper open.
   const todayIs = useToday();
-  const today = useMemo(() => new Date(`${todayIs}T12:00:00`), [todayIs]);
+  const today = useMemo(() => dateOf(`${todayIs}T12:00:00`), [todayIs]);
   // The empty BALLOTS and ESSAYS pages' "WHAT AN AUTEUR CAN DO →": each its own
   // rope, so the tap names the form reached for; never shown to who holds it.
   const ballots = useClearance('ballots', '/dispatch');

@@ -64,7 +64,8 @@ jest.mock('@tanstack/react-query', () => ({
     setQueryData: jest.fn((_k: unknown, fn: (old: unknown) => unknown) => { mockCache = fn(mockCache) as never; }),
     getQueryData: jest.fn(() => mockCache),
     getQueryState: jest.fn(() => mockQueryState),
-    getQueriesData: jest.fn(() => mockFeeds),
+    // As React Query matches: a held key that begins with the key asked for.
+    getQueriesData: jest.fn(({ queryKey }: { queryKey: unknown[] }) => mockFeeds.filter(([held]) => queryKey.every((part, i) => held[i] === part))),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()), removeQueries: jest.fn(),
   }),
 }));

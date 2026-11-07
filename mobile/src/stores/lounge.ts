@@ -6,7 +6,7 @@ import { houseIso } from '@/src/lib/houseClock';
 import { queryClient } from '../lib/queryClient';
 import { supabase } from '../lib/supabase';
 import { watchChannel } from '../lib/watchChannel';
-import { instantOf } from '../utils/instant';
+import { instantOf, dateOf } from '../utils/instant';
 import { byKey } from '../utils/order';
 import { characterCount } from '../utils/text';
 import { LoungeMessagePayloadSchema } from '../services/LoungeService';
@@ -582,7 +582,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       loungesList.sort((a, b) => {
         const aTime = lastMessageTimestamps[a.id] || a.created_at;
         const bTime = lastMessageTimestamps[b.id] || b.created_at;
-        return new Date(bTime).getTime() - new Date(aTime).getTime();
+        return dateOf(bTime).getTime() - dateOf(aTime).getTime();
       });
 
       // Enrich — rooms the user owns or joined get unread_count and last_message_at
@@ -988,7 +988,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
               ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const }
               : m
           ).sort((a, b) => {
-            const diff = (new Date(a.created_at).getTime() || 0) - (new Date(b.created_at).getTime() || 0);
+            const diff = (dateOf(a.created_at).getTime() || 0) - (dateOf(b.created_at).getTime() || 0);
             return diff !== 0 ? diff : byKey(a.id, b.id);
           })
         };
@@ -1520,7 +1520,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             const messagesWithoutOpt = s.currentMessages.filter(m => m.id !== newMsg.id);
 
             return {
-              currentMessages: capMessages([...messagesWithoutOpt, newMsg].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())),
+              currentMessages: capMessages([...messagesWithoutOpt, newMsg].sort((a, b) => dateOf(a.created_at).getTime() - dateOf(b.created_at).getTime())),
             };
           });
         }

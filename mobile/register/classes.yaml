@@ -1765,11 +1765,15 @@ classes:
     seriousness: serious
     area: runtime
     status: OPEN
-    count: 1
+    count: 52
     source: { kind: ci, ref: "the pure suites on the phone's own Hermes (god_tier_ci): anInstantIsReadOneWay and aDateIsSaidInTheHouseVoice failed there" }
     methods:
       - { kind: running, file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "names no instant for a field no calendar or clock shows, whatever the engine would roll it into" }
       - { kind: running, file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "names no instant for a form the house never writes, though one engine reads it and another does not" }
       - { kind: running, file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "reads an instant with no offset on the reader’s own clock" }
-    fix: "instantOf hands no text to the engine: the house's instant, a day alone and the HTTP Date header are read field by field, each field held to its range, and any other text names no instant; the suites run on Node and on the phone's Hermes"
+      - { kind: static, file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "hands no text to the engine to read as a date, but in instant.ts" }
+      - { kind: static, file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "finds a date made from text, and not one made from a number, a Date or nothing" }
+      - { kind: running, file: src/utils/__tests__/aDateIsSaidInTheHouseVoice.test.ts, test: "is no calendar date past its month’s length, and is said as it came" }
+      - { kind: running, file: src/features/archive/__tests__/archiveImport.test.ts, test: "reads a month written as a word, either way round, by itself and not the engine" }
+    fix: "instantOf hands no text to the engine: the house's instant, a day alone and the HTTP Date header are read field by field, each field held to its range, and any other text names no instant; fifty places that made a Date from text (new Date(created_at): salon messages sorted, notices grouped) read through dateOf, and a guard finds any other by the type checker; a calendar date holds to its month's length; the archive import reads a month written as a word itself, where it asked the engine; the suites run on Node and on the phone's Hermes"
     places: [none]

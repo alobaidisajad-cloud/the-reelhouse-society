@@ -11,6 +11,7 @@ import { nav } from '@/src/utils/typedRouter';
 import { useToday } from '@/src/hooks/useClock';
 import { Arrive } from '@/src/components/Arrive';
 import type { CalendarDay } from '@/src/types';
+import { dateOf } from '@/src/utils/instant';
 
 interface Props {
   days: CalendarDay[];
@@ -40,7 +41,7 @@ export default function NitrateCalendarGrid({ days, isSelf }: Props) {
     for (const { day, films } of days) countsMap.set(day, (countsMap.get(day) || 0) + films);
 
     // The first cell is 52 weeks less a day ago, so the last is today.
-    const today = new Date(`${todayIs}T00:00:00`);
+    const today = dateOf(`${todayIs}T00:00:00`);
     const startDate = new Date(today);
     startDate.setDate(today.getDate() - (WEEKS * DAYS_PER_WEEK - 1));
 

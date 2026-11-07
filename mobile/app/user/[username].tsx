@@ -94,6 +94,7 @@ import { OPEN_QUOTE, CLOSE_QUOTE, characterCount } from '@/src/utils/text';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import Buster, { BusterEyes } from '@/src/components/Buster';
+import { dateOf } from '@/src/utils/instant';
 
 /** The back button's 40pt row and the 6pt under it, which a pushed file's hero clears. */
 const BACK_ROW = 46;
@@ -530,14 +531,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           year = parseInt(parts[0], 10);
           month = parseInt(parts[1], 10) - 1;
         } else {
-          const dateObj = new Date(d);
+          const dateObj = dateOf(d);
           if (!isNaN(dateObj.getTime())) {
             year = dateObj.getFullYear();
             month = dateObj.getMonth();
           }
         }
       } else {
-        const dateObj = new Date(d);
+        const dateObj = dateOf(d);
         if (!isNaN(dateObj.getTime())) {
           year = dateObj.getFullYear();
           month = dateObj.getMonth();

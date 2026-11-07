@@ -65,7 +65,8 @@ jest.mock('@tanstack/react-query', () => ({
     getQueryData: jest.fn((key: unknown[]) => (key[0] === 'stackComments' ? mockComments : undefined)),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),
     getQueryState: (key: unknown[]) => mockQueryState[String(key[0])],
-    getQueriesData: () => mockFeeds,
+    // As React Query matches: a held key that begins with the key asked for.
+    getQueriesData: ({ queryKey }: { queryKey: unknown[] }) => mockFeeds.filter(([held]) => queryKey.every((part, i) => held[i] === part)),
   }),
   useQuery: (opts: { queryKey: unknown[] }) => {
     const key = String(opts.queryKey[0]);

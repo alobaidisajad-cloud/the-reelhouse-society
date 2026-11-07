@@ -1,6 +1,7 @@
 import { houseNow } from '@/src/lib/houseClock';
 import { AppNotification } from '../stores/notificationStore';
 import { describeGroup, parseGroupKey } from './endorsementGroupKey';
+import { dateOf } from '@/src/utils/instant';
 
 // ─── Display Item Types ───────────────────────────────────────────────────────
 
@@ -86,7 +87,7 @@ export function groupNotifications(
 
   for (const n of notifications) {
     const key = getGroupKey(n);
-    const timestamp = new Date(n.created_at).getTime();
+    const timestamp = dateOf(n.created_at).getTime();
     const withinWindow = !isNaN(timestamp) && timestamp >= cutoff;
 
     if (key && withinWindow) {
@@ -107,7 +108,7 @@ export function groupNotifications(
       // Find the most recent notification in the bucket
       let mostRecent = items[0];
       for (let i = 1; i < items.length; i++) {
-        if (new Date(items[i].created_at).getTime() > new Date(mostRecent.created_at).getTime()) {
+        if (dateOf(items[i].created_at).getTime() > dateOf(mostRecent.created_at).getTime()) {
           mostRecent = items[i];
         }
       }
@@ -138,8 +139,8 @@ export function groupNotifications(
 
   // Merge groups + individuals, sort by most recent timestamp descending
   const all: DisplayItem[] = [...groups, ...individuals].sort((a, b) => {
-    const tsA = a.kind === 'group' ? new Date(a.created_at).getTime() : new Date(a.notification.created_at).getTime();
-    const tsB = b.kind === 'group' ? new Date(b.created_at).getTime() : new Date(b.notification.created_at).getTime();
+    const tsA = a.kind === 'group' ? dateOf(a.created_at).getTime() : dateOf(a.notification.created_at).getTime();
+    const tsB = b.kind === 'group' ? dateOf(b.created_at).getTime() : dateOf(b.notification.created_at).getTime();
     return tsB - tsA;
   });
 

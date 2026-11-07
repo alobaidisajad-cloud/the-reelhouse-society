@@ -150,3 +150,11 @@ describe('a date in words', () => {
     expect(formatTMDBDate('')).toBeUndefined();
   });
 });
+
+describe('a date that names no day', () => {
+  it('is no calendar date past its month’s length, and is said as it came', () => {
+    expect(formatDateMonthDay('2026-02-30')).toBe('2026-02-30');
+    expect(formatDateMonthDay('2026-04-31')).toBe('2026-04-31');
+    expect(formatDateMonthDay('2028-02-29')).toBe('FEB 29');
+  });
+});

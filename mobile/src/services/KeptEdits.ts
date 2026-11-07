@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { FILING_EDIT_COLUMNS } from '../stores/dispatchTypes';
 import { LOG_EDIT_COLUMNS, logAsStored } from '../utils/mappers';
 import { FILING_CHANGED_SINCE, LOG_CHANGED_SINCE, keepWhatChangedSince, type KeptWrite } from '../utils/keepWhatChangedSince';
+import { dateOf } from '@/src/utils/instant';
 
 type Row = Record<string, unknown>;
 
@@ -38,7 +39,7 @@ export function mergeHistory(serverHistory: unknown[], offlineHistory: unknown[]
         }
     });
     return Array.from(mergedMap.values()).sort((a: any, b: any) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+        dateOf(b.date).getTime() - dateOf(a.date).getTime()
     );
 }
 

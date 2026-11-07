@@ -8,6 +8,7 @@ import { storage } from '../stores/mmkv-storage';
 import { CACHE_KEYS } from '../constants/cacheKeys';
 import { rememberPreviousHandle } from '../utils/handleHistory';
 import { pgLiteral } from '../utils/keysetCursor';
+import { dateOf } from '@/src/utils/instant';
 
 /**
  * Canonical column list for auth-bootstrap profile SELECT queries.
@@ -215,7 +216,7 @@ export const ProfileService = {
       currentFileName = parts[parts.length - 1];
       const targetFile = files.find(f => f.name === currentFileName);
       if (targetFile?.created_at) {
-        targetFileDate = new Date(targetFile.created_at);
+        targetFileDate = dateOf(targetFile.created_at);
       } else {
         // FAIL-SAFE: we were given a current avatar but cannot resolve its file (or its
         // timestamp) in the listing. Without a valid chronological anchor, the race
@@ -231,7 +232,7 @@ export const ProfileService = {
         // Never delete a file newer than the target file, to protect concurrent uploads.
         // This guarantees concurrent rapid uploads won't destroy each other's files.
         if (targetFileDate && f.created_at) {
-          const fDate = new Date(f.created_at);
+          const fDate = dateOf(f.created_at);
           if (fDate > targetFileDate) return false;
         }
         return true;

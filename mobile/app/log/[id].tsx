@@ -63,6 +63,7 @@ import { BusterEyes } from '@/src/components/Buster';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { offerWord } from '@/src/lib/pushPrimer';
+import { dateOf } from '@/src/utils/instant';
 
 /**
  * The bar's title, planned from the words' own widths (never grown: allowFontScaling false). Its
@@ -260,7 +261,7 @@ function LogDetailScreen({ id }: { id: string }) {
             finalCommentsMap.delete(id);
         });
 
-        const finalComments = Array.from(finalCommentsMap.values()).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        const finalComments = Array.from(finalCommentsMap.values()).sort((a, b) => dateOf(a.created_at).getTime() - dateOf(b.created_at).getTime());
 
         // The total counts what the SERVER holds, plus anything queued offline
         // that is not in it yet — mirroring the dossier screen.
@@ -661,7 +662,7 @@ function LogDetailScreen({ id }: { id: string }) {
         keepForLater();
       } else {
         if (tap) withdrawTap('critique', id, tap);
-        if (targetComment) updateComments(list => [...list, targetComment].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+        if (targetComment) updateComments(list => [...list, targetComment].sort((a, b) => dateOf(a.created_at).getTime() - dateOf(b.created_at).getTime()));
         reelToast.error('Your critique could not be removed.');
       }
     }

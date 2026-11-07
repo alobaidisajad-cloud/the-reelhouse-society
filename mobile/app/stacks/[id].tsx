@@ -39,7 +39,7 @@ import { UNINKED, UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
 import { isForbiddenError, isNetworkError } from '@/src/utils/networkError';
-import { instantOf } from '@/src/utils/instant';
+import { instantOf, dateOf } from '@/src/utils/instant';
 import { useStruck } from '@/src/components/StruckWords';
 import { stillQueued, useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import { CritiqueRow, type Critique } from '@/src/components/critique/CritiqueRow';
@@ -738,7 +738,7 @@ function StackDetailScreen({ id }: { id: string }) {
       // Refused: it is back where it was, and said so.
       if (target) {
         queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) =>
-          [...(old ?? []), target].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+          [...(old ?? []), target].sort((a, b) => dateOf(a.created_at).getTime() - dateOf(b.created_at).getTime()));
       }
       bumpCritiqueCount(+1);
       reelToast.error('Your critique could not be removed.');

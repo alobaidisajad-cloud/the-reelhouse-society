@@ -2409,3 +2409,39 @@ mutants:
         find: "getQueriesData<{ pages?: unknown[] }>({ queryKey: ['feed', 'stacks'] })"
         replace: "getQueriesData<{ pages?: unknown[] }>({ queryKey: ['feed', 'none'] })"
     proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "seeds its title, curator, first posters and true size from the card, its mark unknown" }
+
+  - id: shape-date-made-from-text
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: src/utils/groupNotifications.ts
+        find: "dateOf(n.created_at)"
+        replace: "new Date(n.created_at)"
+    proof: { file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "hands no text to the engine to read as a date, but in instant.ts" }
+
+  - id: shape-date-guard-trusts-untyped
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts
+        find: "ts.TypeFlags.StringLike | ts.TypeFlags.Any | ts.TypeFlags.Unknown"
+        replace: "ts.TypeFlags.StringLike"
+    proof: { file: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, test: "finds a date made from text, and not one made from a number, a Date or nothing" }
+
+  - id: shape-calendar-any-day-to-31
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: src/utils/timeAgo.ts
+        find: "day > new Date(Date.UTC(year, month, 0)).getUTCDate()) return null;"
+        replace: "day > 31) return null;"
+    proof: { file: src/utils/__tests__/aDateIsSaidInTheHouseVoice.test.ts, test: "is no calendar date past its month’s length, and is said as it came" }
+
+  - id: shape-worded-month-left-to-the-engine
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: src/features/archive/archiveImport.ts
+        find: "  if (worded) {"
+        replace: "  if (worded && trimmed === '') {"
+    proof: { file: src/features/archive/__tests__/archiveImport.test.ts, test: "reads a month written as a word, either way round, by itself and not the engine" }

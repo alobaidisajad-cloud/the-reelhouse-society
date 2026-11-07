@@ -32,6 +32,7 @@
  * DB without V8 Date engine timezone shifts." That file was right; this one now agrees.
  */
 import { houseNow } from '@/src/lib/houseClock';
+import { dateOf } from '@/src/utils/instant';
 
 const MONTHS_SHORT = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as const;
 const MONTHS_LONG = [
@@ -76,7 +77,8 @@ export function parseCalendarDate(value: string): DateParts | null {
   const year = Number(m[1]);
   const month = Number(m[2]);
   const day = Number(m[3]);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  // The month's own length: 2026-02-30 is no date, not March's second (nor printed FEB 30).
+  if (month < 1 || month > 12 || day < 1 || day > new Date(Date.UTC(year, month, 0)).getUTCDate()) return null;
   return { year, month: month - 1, day };
 }
 
@@ -129,7 +131,7 @@ function toParts(value: string | Date): DateParts | null {
   if (typeof value !== 'string') return isNaN(value.getTime()) ? null : localParts(value);
   const calendar = parseCalendarDate(value);
   if (calendar) return calendar;
-  const d = new Date(value);
+  const d = dateOf(value);
   return isNaN(d.getTime()) ? null : localParts(d);
 }
 
@@ -144,7 +146,7 @@ function toInstant(value: string | Date): number | null {
   if (typeof value !== 'string') return isNaN(value.getTime()) ? null : value.getTime();
   const calendar = parseCalendarDate(value);
   if (calendar) return new Date(calendar.year, calendar.month, calendar.day, 12, 0, 0, 0).getTime();
-  const t = new Date(value).getTime();
+  const t = dateOf(value).getTime();
   return isNaN(t) ? null : t;
 }
 

@@ -15,6 +15,7 @@ import reelToast from '../../utils/reelToast';
 import { sanitizeInput } from '../../utils/sanitizeInput';
 import { useAuthStore } from '../auth';
 import { stillSignedIn } from './helpers/sessionGuard';
+import { dateOf } from '@/src/utils/instant';
 
 /**
  * The DATA this slice owns — see the note on `LogSliceData`.
@@ -385,7 +386,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                 set((state) => {
                     // Re-append and chronologically sort to prevent array corruption if UI changed during network request.
                     const reverted = [...state.lists, listToRemove];
-                    reverted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    reverted.sort((a, b) => dateOf(b.createdAt).getTime() - dateOf(a.createdAt).getTime());
                     return { lists: reverted };
                 });
             }

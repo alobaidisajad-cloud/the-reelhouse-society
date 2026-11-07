@@ -14,6 +14,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 import { houseNow, onHouseClockMoved } from '@/src/lib/houseClock';
 import { localCalendarDate, timeAgo, timeUntil } from '@/src/utils/timeAgo';
+import { dateOf } from '@/src/utils/instant';
 
 const TICK_MS = 30_000;
 
@@ -79,7 +80,7 @@ export const useTimeUntil = (at: string | Date | null | undefined) => useClock((
 
 /** Whether an instant has come: false for none. */
 export const useHasPassed = (at: string | Date | null | undefined) =>
-  useClock((t) => (at ? new Date(at).getTime() <= t : false));
+  useClock((t) => (at ? dateOf(at).getTime() <= t : false));
 
 /** Today on the member's calendar, as `YYYY-MM-DD`: it turns at their midnight. */
 export const useToday = () => useClock((t) => localCalendarDate(0, t));

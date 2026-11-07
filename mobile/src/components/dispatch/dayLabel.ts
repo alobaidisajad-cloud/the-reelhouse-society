@@ -15,6 +15,7 @@
  * A filing made at 11pm belongs to the day the member made it, where they made
  * it: `new Date(iso)` gives the device's local time.
  */
+import { dateOf } from '@/src/utils/instant';
 /** Exported for the writing room, which names the day a draft was last written. */
 export const WEEKDAYS = [
   'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
@@ -28,14 +29,14 @@ export const MONTHS = [
 
 /** `2026-08-28` — the key two filings share when they were filed on one day. */
 export function dayKey(iso: string): string {
-  const d = new Date(iso);
+  const d = dateOf(iso);
   if (Number.isNaN(d.getTime())) return '';
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /** `WEDNESDAY, AUGUST 28`. Empty for a date that cannot be read, never `Invalid Date`. */
 export function dayLabel(iso: string): string {
-  const d = new Date(iso);
+  const d = dateOf(iso);
   if (Number.isNaN(d.getTime())) return '';
   return `${WEEKDAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
@@ -49,14 +50,14 @@ export function dayLabel(iso: string): string {
  * nobody scrolls it that far, and a room is read that way on purpose.
  */
 export function monthKey(iso: string): string {
-  const d = new Date(iso);
+  const d = dateOf(iso);
   if (Number.isNaN(d.getTime())) return '';
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 /** `AUGUST 2026` — the divider a room is indexed by, year and all. */
 export function monthLabel(iso: string): string {
-  const d = new Date(iso);
+  const d = dateOf(iso);
   if (Number.isNaN(d.getTime())) return '';
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
@@ -93,7 +94,7 @@ export function byMonth<T extends { id: string; createdAt: string }>(entries: re
  * caller prints the margin's dash), never `NaN`.
  */
 export function dayOfMonth(iso: string): string {
-  const d = new Date(iso);
+  const d = dateOf(iso);
   if (Number.isNaN(d.getTime())) return '';
   return String(d.getDate());
 }
@@ -103,7 +104,7 @@ export function dayOfMonth(iso: string): string {
  * 38pt of room, `21:40` is 27.4pt and `10:40 PM` 43.8, at normal text size.
  */
 export function hourLabel(iso: string): string {
-  const d = new Date(iso);
+  const d = dateOf(iso);
   if (Number.isNaN(d.getTime())) return '—';
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }

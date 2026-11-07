@@ -164,6 +164,14 @@ describe('date handling', () => {
     expect(normalizeDate('not a date')).toBe(TODAY);
   });
 
+  it('reads a month written as a word, either way round, by itself and not the engine', () => {
+    for (const written of ['March 2, 2024', 'Mar 2, 2024', 'mar 2 2024', 'Mar. 2, 2024', '2 March 2024', '2 Mar 2024', '02 march, 2024']) {
+      expect(`${written} → ${normalizeDate(written)}`).toBe(`${written} → 2024-03-02`);
+    }
+    expect(normalizeDate('Smarch 2, 2024')).toBe(TODAY);
+    expect(normalizeDate('February 30, 2024')).toBe(TODAY);
+  });
+
   it('backdatedTimestamps sits at noon UTC of the watch date, never in the future', () => {
     const { created_at, updated_at } = backdatedTimestamps('2019-06-01');
     expect(created_at).toBe('2019-06-01T12:00:00.000Z');

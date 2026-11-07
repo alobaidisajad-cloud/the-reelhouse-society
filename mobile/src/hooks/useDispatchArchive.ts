@@ -29,6 +29,7 @@ import { FILING_CARD_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/
 import { useDispatch } from '@/src/stores/dispatch';
 import { logger } from '@/src/utils/logger';
 import { buildSearchPattern } from '@/src/utils/searchPattern';
+import { dateOf } from '@/src/utils/instant';
 
 /** One page of a film's filings. */
 export const ARCHIVE_PAGE = 20;
@@ -81,8 +82,8 @@ export interface DispatchArchive {
 
 /** `2019–2026`, or a single year when the house said it all in one. */
 const spanOf = (firstISO: string, lastISO: string): string => {
-  const a = new Date(firstISO).getFullYear();
-  const b = new Date(lastISO).getFullYear();
+  const a = dateOf(firstISO).getFullYear();
+  const b = dateOf(lastISO).getFullYear();
   if (Number.isNaN(a) || Number.isNaN(b)) return '';
   // An en dash, which is what a range takes — not a hyphen.
   return a === b ? String(a) : `${a}–${b}`;

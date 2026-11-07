@@ -66,6 +66,7 @@ import { useScrollTrace } from '@/src/hooks/useScrollTrace';
 import { counted } from '@/src/utils/counted';
 import { useHeld } from '@/src/stores/offlineQueueStore';
 import { Arrive } from '@/src/components/Arrive';
+import { dateOf } from '@/src/utils/instant';
 
 
 // ════════════════════════════════════════════════════════════
@@ -368,7 +369,7 @@ Dispatch.displayName = 'Dispatch';
 export const BAR_FOOT_GAP = 8;
 
 function formatDay(iso: string, now: number): string {
-  const d = new Date(iso);
+  const d = dateOf(iso);
   const today = new Date(now);
   const yesterday = new Date(now); yesterday.setDate(today.getDate() - 1);
   const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
@@ -762,9 +763,9 @@ function LoungeRoomScreen({ id }: { id: string }) {
           renderItem={({ item, index }) => {
             const isSelf = item.user_id === user?.id;
             const prev = shownMessages[index - 1];
-            const gap = prev ? new Date(item.created_at).getTime() - new Date(prev.created_at).getTime() : Infinity;
+            const gap = prev ? dateOf(item.created_at).getTime() - dateOf(prev.created_at).getTime() : Infinity;
             const showAuthor = !prev || prev.user_id !== item.user_id || gap > 300000;
-            const showDate = !prev || new Date(item.created_at).toDateString() !== new Date(prev.created_at).toDateString();
+            const showDate = !prev || dateOf(item.created_at).toDateString() !== dateOf(prev.created_at).toDateString();
             return (
               <Dispatch
                 msg={item}

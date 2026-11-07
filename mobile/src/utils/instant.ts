@@ -66,3 +66,13 @@ export function instantOf(text: string | null | undefined): number {
 
   return NaN;
 }
+
+/**
+ * The Date a text names, read by instantOf, so every engine reads it one way (an Invalid Date
+ * when it names none); a Date is copied, and a number of milliseconds is that instant. `new Date(text)` hands the text to the
+ * engine's own reading, which the guard anInstantIsReadByTheHouse refuses.
+ */
+export function dateOf(value: string | number | Date | null | undefined): Date {
+  if (value instanceof Date) return new Date(value.getTime());
+  return new Date(typeof value === 'number' ? value : instantOf(value));
+}

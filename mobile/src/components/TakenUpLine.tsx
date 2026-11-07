@@ -13,6 +13,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { WEEKDAYS, hourLabel } from '@/src/components/dispatch/dayLabel';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { colors, fonts } from '@/src/theme/theme';
+import { dateOf } from '@/src/utils/instant';
 
 /**
  * When a draft was kept, as the room says it: `TUESDAY · 21:40`, from the app's own tables.
@@ -22,7 +23,7 @@ import { colors, fonts } from '@/src/theme/theme';
  * `toLocaleString` would work in every test and throw on a device.
  */
 export const whenKept = (iso: string): string => {
-  const d = new Date(iso);
+  const d = dateOf(iso);
   if (Number.isNaN(d.getTime())) return '';
   return `${WEEKDAYS[d.getDay()]} · ${hourLabel(iso)}`;
 };

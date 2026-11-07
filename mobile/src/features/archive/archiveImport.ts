@@ -25,6 +25,7 @@ import { sanitizeInput } from '@/src/utils/sanitizeInput';
 import { restoreNotes } from '@/src/services/VaultService';
 import { ImportReceipt, emptyReceipt } from './importReceipt';
 import { saveReceipt } from './undoImport';
+import { dateOf } from '@/src/utils/instant';
 
 // ═══════════════════════════════════════════════════════════════
 //  PUBLIC TYPES
@@ -406,6 +407,9 @@ export function normalizeRatingWithScale(raw: number, scale: 'half-five' | 'ten'
  * fail an INSERT against a DATE column — taking their whole batch with them
  * until the row-by-row fallback isolates them, and costing the member that film.
  */
+/** The months by name, for a date an export writes in words; three letters stand for each too. */
+const MONTH_WORDS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+
 function isRealDate(iso: string): boolean {
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!m) return false;
@@ -461,8 +465,19 @@ export function normalizeDate(raw: string, format: 'MDY' | 'DMY' = 'MDY'): strin
     return today;
   }
 
-  // Fallback — try native Date parsing
-  const parsed = new Date(trimmed);
+  // A month written as a word, as some exports write it: "March 2, 2024", "Mar 2 2024", "2 March 2024".
+  // Read here, not by the engine, which reads such text its own way on each phone.
+  const worded = /^([A-Za-z]{3,9})\.? (\d{1,2}),? (\d{4})$/.exec(trimmed) ?? /^(\d{1,2}) ([A-Za-z]{3,9})\.?,? (\d{4})$/.exec(trimmed);
+  if (worded) {
+    const [word, day] = /^\d/.test(worded[1] ?? '') ? [worded[2] ?? '', worded[1] ?? ''] : [worded[1] ?? '', worded[2] ?? ''];
+    const month = MONTH_WORDS.findIndex((name) => word.toLowerCase() === name || word.toLowerCase() === name.slice(0, 3)) + 1;
+    const iso = `${worded[3]}-${String(month).padStart(2, '0')}-${day.padStart(2, '0')}`;
+    if (month > 0 && isRealDate(iso)) return clamp(iso);
+    return today;
+  }
+
+  // An instant in another of the house's forms, read by instantOf.
+  const parsed = dateOf(trimmed);
   // The instant's LOCAL day: toISOString's UTC day would file Tokyo's Jul 25 as Jul 24.
   const asCalendar = isNaN(parsed.getTime()) ? null : calendarDateString(parsed);
   if (asCalendar) return clamp(asCalendar);
@@ -491,7 +506,7 @@ export function backdatedTimestamps(watchedDate: string): { created_at: string; 
  */
 export function importableTimestamp(raw: unknown): string | null {
   if (typeof raw !== 'string' || !raw) return null;
-  const parsed = new Date(raw);
+  const parsed = dateOf(raw);
   if (isNaN(parsed.getTime())) return null;
   const iso = parsed.toISOString();
   return iso > houseIso() ? null : iso;

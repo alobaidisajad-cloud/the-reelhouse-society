@@ -44,6 +44,7 @@ import { useFilmDetailContext } from '@/src/providers/FilmDetailProvider';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import Buster from '@/src/components/Buster';
+import { dateOf } from '@/src/utils/instant';
 
 /** The backdrop's fade into the room: how much house it lays down, top to hem. */
 const BACKDROP_VEIL: VeilStops = [[0, 0.05], [0.5, 0.4], [0.75, 0.85], [1, 1]];
@@ -201,7 +202,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   const thisYear = useClock((now) => new Date(now).getFullYear());
   const watchedLabel = useMemo(() => {
     if (!existingLog?.watchedDate) return null;
-    const watched = new Date(existingLog.watchedDate);
+    const watched = dateOf(existingLog.watchedDate);
     if (Number.isNaN(watched.getTime())) return null;
     // Watched this year, the DAY is what a member is placing. Watched years
     // ago, the YEAR is the whole point and the day is noise. Both forms are
