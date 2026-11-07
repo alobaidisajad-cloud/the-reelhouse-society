@@ -18,6 +18,7 @@ import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import type { QueuedMutation } from './offlineQueue';
 import { logger } from './logger';
 import reelToast from './reelToast';
+import { characterCount, firstCharacters } from './text';
 
 export const QUEUE_KEY = 'reelhouse-offline-mutations';
 export const DEAD_LETTER_KEY = `${QUEUE_KEY}_dead_letter`;
@@ -197,7 +198,7 @@ export function heldDetail(m: Pick<QueuedMutation, 'payload'>): string | null {
   const words = [p.body, p.content, p.note].find((v) => typeof v === 'string' && v.trim());
   if (typeof words !== 'string') return null;
   const line = words.trim().replace(/\s+/g, ' ');
-  return line.length > 48 ? `“${line.slice(0, 47).trimEnd()}…”` : `“${line}”`;
+  return characterCount(line) > 48 ? `“${firstCharacters(line, 47).trimEnd()}…”` : `“${line}”`;
 }
 
 /** Why the house refused a held change, in words a member reads: the house's own sentence when it wrote one. */

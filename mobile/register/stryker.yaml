@@ -15,6 +15,7 @@ files:
       - src/utils/__tests__/aReviewReadsInItsOwnDirection.test.ts
       - src/utils/__tests__/aReviewIsCutAtAWord.test.ts
       - src/components/log/__tests__/logSurfaces.test.ts
+      - src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts
   - file: src/utils/sanitizeInput.ts
     tests:
       - src/utils/__tests__/sanitizeInput.test.ts

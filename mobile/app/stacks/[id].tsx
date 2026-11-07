@@ -61,6 +61,7 @@ import { Arrive } from '@/src/components/Arrive';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useClearance } from '@/src/hooks/useClearance';
 import { ropeSpoken } from '@/src/components/clearance/Clearance';
+import { characterCount } from '@/src/utils/text';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
@@ -387,7 +388,7 @@ function StackDetailScreen({ id }: { id: string }) {
   const titleType = React.useMemo(() => {
     const width = windowWidth - 36;                    // one column, 18 each side
     const capacity = (size: number, lines: number) => (width / (size * 0.723)) * lines;
-    const len = (list?.title?.length ?? 0);
+    const len = characterCount(list?.title);
     if (len <= capacity(30, 4)) return { fontSize: 30, lineHeight: 34, numberOfLines: 4 };
     return { fontSize: 24, lineHeight: 28, numberOfLines: 6 };
   }, [windowWidth, list?.title]);

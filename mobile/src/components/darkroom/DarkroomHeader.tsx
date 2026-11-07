@@ -6,6 +6,7 @@
  * said to be that, under a line that says why and offers TRY AGAIN.
  */
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { characterCount } from '@/src/utils/text';
 import { View, StyleSheet, Keyboard } from 'react-native';
 import { Text } from '@/src/components/text';
 import { SlidersHorizontal } from 'lucide-react-native';
@@ -130,7 +131,7 @@ export const DarkroomHeader = React.memo(function DarkroomHeader({ sheet, stale,
     // Words that are new: what the last ones' failure said is not said of these.
     setSuggestionsUnreachable(false);
     // Too short, or already submitted as the search: no suggestions.
-    if (!val || val.length < 2 || val === query.trim().toLowerCase()) {
+    if (!val || characterCount(val) < 2 || val === query.trim().toLowerCase()) {
       setSuggestions([]);
       return;
     }

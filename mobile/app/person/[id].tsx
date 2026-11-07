@@ -16,6 +16,7 @@
  *  · Velvet-rope lounge: archivists share, cinephiles see the brass key
  */
 import { useState, useMemo, useCallback } from 'react';
+import { characterCount } from '@/src/utils/text';
 import { View, StyleSheet, RefreshControl } from 'react-native';
 import { Text } from '@/src/components/text';
 import Animated, { useSharedValue, useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
@@ -221,7 +222,7 @@ export default function PersonDetailScreen() {
 
   const person = data?.person || null;
   const allCredits = useMemo(() => data?.allCredits || [], [data?.allCredits]);
-  const isLongBio = person?.biography ? (person.biography.length > 300 || (person.biography.match(/\n/g) || []).length > 3) : false;
+  const isLongBio = person?.biography ? (characterCount(person.biography) > 300 || (person.biography.match(/\n/g) || []).length > 3) : false;
 
   // ── Stable Handlers ──
   const handleBack = useCallback(() => {

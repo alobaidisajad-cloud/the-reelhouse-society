@@ -2175,3 +2175,111 @@ mutants:
         find: "      roomId.current = Crypto.randomUUID();"
         replace: ""
     proof: { file: src/components/lounge/__tests__/aSalonFormAsksForOneRoom.test.tsx, test: "names a new room once one is made" }
+
+  - id: shape-holds-passes-on-nothing
+    class: RELEASE-a-crash-sentry-cannot-read
+    source: shape
+    edits:
+      - file: scripts/sentry-holds.cjs
+        find: "  if (!wanted.length) throw new Error("
+        replace: "  if (!wanted.length) return []; if (0) throw new Error("
+    proof: { file: scripts/__tests__/sentryHolds.test.ts, test: "refuses when it found nothing to ask for, or a file with no id" }
+
+  - id: shape-holds-unread-is-held
+    class: RELEASE-a-crash-sentry-cannot-read
+    source: shape
+    edits:
+      - file: scripts/sentry-holds.cjs
+        find: "      try { held = await ask(pathFor(w.kind, w.id)); } catch (e) { throw new Error(`Sentry could not be read (${e.message}): what it holds is unknown`); }"
+        replace: "      try { held = await ask(pathFor(w.kind, w.id)); } catch { held = [w]; }"
+    proof: { file: scripts/__tests__/sentryHolds.test.ts, test: "refuses when Sentry cannot be read, or answers with no list: never a pass" }
+
+  - id: shape-holds-build-id-unreversed
+    class: RELEASE-a-crash-sentry-cannot-read
+    source: shape
+    edits:
+      - file: scripts/sentry-holds.cjs
+        find: "return (rev ? s.reverse() : s).join('');"
+        replace: "return s.join('');"
+    proof: { file: scripts/__tests__/sentryHolds.test.ts, test: "reads an Android library's GNU build id as a little-endian GUID, 64-bit and 32-bit" }
+
+  - id: shape-holds-missing-map-skipped
+    class: RELEASE-a-crash-sentry-cannot-read
+    source: shape
+    edits:
+      - file: scripts/sentry-holds.cjs
+        find: "    wanted.push(mapWanted(map, 'index.android.bundle.map'));"
+        replace: "    if (map) wanted.push(mapWanted(map, 'index.android.bundle.map'));"
+    proof: { file: scripts/__tests__/sentryHolds.test.ts, test: "a build whose files are not where it looks is wanted with no id, so the check fails" }
+
+  - id: shape-update-sent-unasked
+    class: RELEASE-a-crash-sentry-cannot-read
+    source: shape
+    edits:
+      - file: scripts/publish-update.cjs
+        find: "  if (held.code !== 0) {"
+        replace: "  if (held.code !== 0 && false) {"
+    proof: { file: scripts/__tests__/publishUpdate.test.ts, test: "stops when Sentry does not hold the maps the upload sent: no rollout, and that written down" }
+
+  - id: shape-lint-only-what-changed
+    class: PUSH-a-new-lint-rule-unseen
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "const lintTargets = (changed, tracked) => (changed.some((p) => LINT_RULES.test(p)) ? tracked : changed).filter((p) => CODE.test(p));"
+        replace: "const lintTargets = (changed) => changed.filter((p) => CODE.test(p));"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "lints the changed code, and every file once lint's own rules change" }
+
+  - id: shape-text-counted-by-units
+    class: TEXT-counted-by-code-units
+    source: shape
+    edits:
+      - file: src/utils/text.ts
+        find: "  for (let i = 0; i < t.length; i = characterEnd(t, i)) n += 1;"
+        replace: "  n = t.length;"
+    proof: { file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "are counted as drawn, not by the units a string holds" }
+
+  - id: shape-mark-measured-wide
+    class: TEXT-counted-by-code-units
+    source: shape
+    edits:
+      - file: src/components/lobby/measure.ts
+        find: "    const end = characterEnd(text, i);"
+        replace: "    const end = i + 1;"
+    proof: { file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "gives a mark no width of its own: a letter with marks piled on it is the letter" }
+
+  - id: shape-name-stepped-by-units
+    class: TEXT-counted-by-code-units
+    source: shape
+    edits:
+      - file: src/components/profile/heroNameSize.ts
+        find: "  const count = characterCount(name);"
+        replace: "  const count = name.length;"
+    proof: { file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "a name of six emoji is set as six characters, at the largest step" }
+
+  - id: shape-review-wrapped-by-units
+    class: TEXT-counted-by-code-units
+    source: shape
+    edits:
+      - file: src/components/feed/frame/planReview.ts
+        find: "const cells = (ch: string) => (isPictureCharacter(ch) ? 2 : 1);"
+        replace: "const cells = (ch: string) => (isPictureCharacter(ch) ? 2 : ch.length);"
+    proof: { file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "breaks a word with piled marks by its letters, not its units" }
+
+  - id: shape-excerpt-cut-by-units
+    class: TEXT-counted-by-code-units
+    source: shape
+    edits:
+      - file: src/components/dispatch/excerpt.ts
+        find: "  const cut = cutWhole(prose, limit);"
+        replace: "  const cut = prose.slice(0, limit);"
+    proof: { file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "a stored excerpt never ends on half an emoji" }
+
+  - id: shape-text-guard-blind
+    class: TEXT-counted-by-code-units
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aTextIsCountedAsItIsSeen.guard.test.ts
+        find: "  .filter((u) => (u.api.endsWith('.length') ? WEIGHED : CUT).test(u.code));"
+        replace: "  .filter(() => false);"
+    proof: { file: src/utils/__tests__/aTextIsCountedAsItIsSeen.guard.test.ts, test: "finds a string weighed or cut by its units, and not a list, nor a length asked only for any" }

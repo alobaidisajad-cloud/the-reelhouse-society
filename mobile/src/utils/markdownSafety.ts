@@ -1,5 +1,6 @@
 import { safeOpenURL } from '@/src/utils/linking';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { cutWhole } from '@/src/utils/text';
 
 /**
  * onMarkdownLinkPress — the handler every <Markdown> mount must pass as `onLinkPress`.
@@ -74,7 +75,7 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 export function capMarkdownForRender(content: string | null | undefined): string {
   if (!content) return '';
   if (content.length <= MAX_LENGTHS.filingEssay) return content;
-  return content.slice(0, MAX_LENGTHS.filingEssay) + '\n\n…';
+  return cutWhole(content, MAX_LENGTHS.filingEssay) + '\n\n…';
 }
 
 export function onMarkdownLinkPress(url: string): false {

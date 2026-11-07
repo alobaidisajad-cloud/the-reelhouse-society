@@ -5,6 +5,8 @@
  * `softBreak` lives in `src/utils/softBreak` now (the film page needed it) and
  * is re-exported here, so the Dispatch reads it where it always did.
  */
+import { cutWhole } from '@/src/utils/text';
+
 export { softBreak, MAX_RUN } from '@/src/utils/softBreak';
 
 /**
@@ -79,7 +81,7 @@ export function clipToSentence(text: string, max: number): { text: string; clipp
   const whole = (text ?? '').trim();
   if (whole.length <= max) return { text: whole, clipped: false };
 
-  const window = whole.slice(0, max);
+  const window = cutWhole(whole, max);
   const STOPS = '.!?';
   const TRAILING = '»”"\')]';
 

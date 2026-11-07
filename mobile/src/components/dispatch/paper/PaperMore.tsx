@@ -29,7 +29,7 @@ import { LEAD_STYLE } from './paperPerf';
 import { MS, PILL_Y } from './paperMotion';
 import { Byline, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { clipToSentence, counted } from './paperText';
-import { isRTLText, RTL_MARK } from '@/src/utils/text';
+import { charactersOf, cutWhole, isPictureCharacter, isRTLText, RTL_MARK } from '@/src/utils/text';
 import { EDGE_LIT } from '@/src/theme/light';
 import { Arrive } from '@/src/components/Arrive';
 import { useModalTop, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
@@ -485,12 +485,13 @@ export const PaperCase = memo(function PaperCase({
  * re-encoding (2pt rules, no type under 11pt); readable as a ~200px thumbnail.
  */
 
-// How wide a string SETS: CJK and emoji are em-wide (a flag is two), so they count as
-// two, and one size ladder works for every script.
+// How wide a string SETS, character by character as a reader sees them: CJK and an emoji
+// (a whole sequence, a flag) are em-wide, so they count as two; a mark on a letter adds
+// nothing; and one size ladder works for every script.
 const WIDE = /[\u1100-\u115F\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6\u2600-\u27BF\uFE0F\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F1FF}\u{1F300}-\u{1FAFF}]/u;
 const visualLen = (t: string) => {
   let n = 0;
-  for (const ch of t) n += WIDE.test(ch) ? 2 : 1;
+  for (const ch of charactersOf(t)) n += isPictureCharacter(ch) || WIDE.test(ch) ? 2 : 1;
   return n;
 };
 
@@ -522,7 +523,7 @@ const TITLE_MAX = 112;
 const fitTitle = (t: string) => {
   const s = (t ?? '').trim();
   if (visualLen(s) <= TITLE_MAX) return s;
-  const w = s.slice(0, TITLE_MAX);
+  const w = cutWhole(s, TITLE_MAX);
   const sp = w.lastIndexOf(' ');
   return (sp > 0 ? w.slice(0, sp) : w).replace(/[\s,;:.—-]+$/, '') + '…';
 };

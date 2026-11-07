@@ -20,7 +20,7 @@ import { LEAD_STYLE } from './paperPerf';
 import { PaperStrike } from './PaperStrike';
 import { softBreak, counted, NOT_SENT_LINE, WITHHELD_LINE } from './paperText';
 import { DEPARTED_NAME } from '@/src/constants/departed';
-import { initialOf, isRTLText, RTL_MARK } from '@/src/utils/text';
+import { characterCount, initialOf, isRTLText, RTL_MARK } from '@/src/utils/text';
 import { saidStruck, useStruck } from '@/src/components/StruckWords';
 
 export type PaperKind = 'take' | 'seeking' | 'wire' | 'ballot' | 'dossier';
@@ -118,7 +118,7 @@ export const Byline = memo(function Byline({
           takes the next, and neither is cut. */}
       <View style={trailing ? p.bylineInline : p.bylineWords}>
         <Text
-          style={[p.bylineName, name.length < SHORT_NAME && p.bylineNameShort, rank === 'auteur' && p.bylineNameAuteur]}
+          style={[p.bylineName, characterCount(name) < SHORT_NAME && p.bylineNameShort, rank === 'auteur' && p.bylineNameAuteur]}
           numberOfLines={1}
           {...scaledTextProps}
         >

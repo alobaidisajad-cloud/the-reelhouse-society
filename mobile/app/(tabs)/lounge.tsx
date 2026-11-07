@@ -8,6 +8,7 @@
  * who is not signed in meets the LoungeGate.
  */
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { characterCount } from '@/src/utils/text';
 import { View, ScrollView, RefreshControl, AppState, StyleSheet } from 'react-native';
 import { useSharedValue, withTiming, useAnimatedScrollHandler } from 'react-native-reanimated';
 import { useFocusEffect } from 'expo-router';
@@ -139,14 +140,14 @@ export default function LoungeScreen() {
   const [asked, setAsked] = useState<{ words: string; hits: LoungeRoom[] | null } | null>(null);
   const [askAgain, setAskAgain] = useState(0);
   useEffect(() => {
-    if (words.length < SEARCH.least) return;
+    if (characterCount(words) < SEARCH.least) return;
     let live = true;
     const t = setTimeout(() => {
       void searchLounges(words).then((hits) => { if (live) setAsked({ words, hits }); });
     }, SEARCH.wait);
     return () => { live = false; clearTimeout(t); };
   }, [words, searchLounges, askAgain]);
-  const searchFailed = words.length >= SEARCH.least && asked?.words === words && asked.hits === null;
+  const searchFailed = characterCount(words) >= SEARCH.least && asked?.words === words && asked.hits === null;
 
   const { myLounges, browsableLounges } = useMemo(() => {
     // As the house's search matches (matchesSearch), so a salon it found is never dropped here.
@@ -154,7 +155,7 @@ export default function LoungeScreen() {
     const here = lounges.filter(matches);
     const held = new Set(here.map((l) => l.id));
     // The house's answer for these words, past what is here; a salon of the member's own is theirs.
-    const found = words.length >= SEARCH.least && asked?.words === words && asked.hits
+    const found = characterCount(words) >= SEARCH.least && asked?.words === words && asked.hits
       ? asked.hits.filter((l) => !held.has(l.id) && matches(l)) : [];
     return {
       myLounges: here.filter(isMine),

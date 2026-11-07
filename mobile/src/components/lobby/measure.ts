@@ -29,6 +29,7 @@ import {
 } from '@/src/theme/faceAdvances';
 import { TYPE_FLOOR } from '@/src/constants/textScaling';
 import { breakHandle } from '@/src/utils/breakHandle';
+import { characterCount, characterEnd, isPictureCharacter } from '@/src/utils/text';
 import { FILINGS_BILL, KEEP_OFF, LOG_BILL, ONE_SHEET, RANK_BILL, STACK_BILL, STATES, rankTicket } from './words';
 
 export type Face = 'rye' | 'elite' | 'courierItalic' | 'spectralItalic';
@@ -44,15 +45,30 @@ const TABLES: Record<Face, readonly [Readonly<Record<string, number>>, number]> 
 export const HOUSE_CEILING = 1.35;
 const KERN = 1.02;
 
-/** A line's width in ems: each letter's advance; a letter the face's table lacks is its widest. */
+/**
+ * An emoji's advance in ems, drawn by the phone's emoji face whatever the house's face: set as a
+ * ceiling (iOS draws one about 1.2em wide, Android a little narrower), since a size measured with it
+ * only ever steps down.
+ */
+export const PICTURE_EM = 1.3;
+
+/**
+ * A line's width in ems, character by character as a reader sees them: a letter's advance (a mark
+ * on it adds none), an emoji's PICTURE_EM; a letter the face's table lacks is its widest.
+ */
 export function emOf(text: string, face: Face): number {
   const [table, widest] = TABLES[face];
   let em = 0;
-  for (const ch of text) em += table[ch] ?? widest;
+  for (let i = 0; i < text.length;) {
+    const end = characterEnd(text, i);
+    const ch = text.slice(i, end);
+    em += isPictureCharacter(ch) ? PICTURE_EM : table[String.fromCodePoint(ch.codePointAt(0) ?? 0)] ?? widest;
+    i = end;
+  }
   return em;
 }
 
-const letters = (text: string) => [...text].length;
+const letters = characterCount;
 
 /** A line's drawn width at `size`, at the member's text `scale`, with its letter spacing as written. */
 export function lineWidth(text: string, face: Face, size: number, scale = 1, spacing = 0): number {
@@ -419,7 +435,8 @@ export function planWall({ width: windowW, visible, scale, lineScale, admin = fa
   const titleBase = sheetW >= 270 ? 32 : 26;
   const titleRoom = sheetW - 24;
   const titleSize = (title: string) => {
-    const start = title.length <= 14 ? titleBase : title.length <= 24 ? titleBase - 6 : titleBase - 10;
+    const count = characterCount(title);
+    const start = count <= 14 ? titleBase : count <= 24 ? titleBase - 6 : titleBase - 10;
     return wholeSize(title, 'rye', start, TITLE_FLOOR, 5, titleRoom, s);
   };
   // The foot rises from the sheet's floor: the title in its lines, the director in theirs, the year,

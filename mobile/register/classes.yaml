@@ -593,7 +593,7 @@ classes:
     source: { kind: history, ref: "WORKLIST P4.31, hostile text" }
     methods:
       - { kind: static, file: src/components/text/__tests__/aPileOfMarksIsKeptToFour.test.tsx, test: "draws a letter with thirty marks with its first four" }
-    fix: "the house Text, which draws every word, keeps at most four combining marks on any one character, so words stored before and words written on the website are kept too; fully vowelled Arabic, pointed and cantillated Hebrew, decomposed Vietnamese and Thai are drawn exactly as written (mutant shape-marks-piled)"
+    fix: "the house Text, which draws every word, keeps at most four combining marks on any one character, so words stored before and words written on the website are kept too; fully vowelled Arabic, pointed and cantillated Hebrew, decomposed Vietnamese and Thai are drawn exactly as written (mutant shape-marks-piled); layout.cjs's INK finds any letter's ink reaching another row's letters on every drawn screen at every size, where a reader sees both (its self-test: piled, scaled, covered, scripts), and the salon room, the log page and the member file draw piled marks and names of emoji among their states"
     places: [none]
 
   - id: CI-schedule-stops-unheard
@@ -1687,4 +1687,51 @@ classes:
       - { kind: running, file: src/components/lounge/__tests__/aSalonFormAsksForOneRoom.test.tsx, test: "names the same room after a close, as it keeps the words" }
       - { kind: running, file: src/components/lounge/__tests__/aSalonFormAsksForOneRoom.test.tsx, test: "names a new room once one is made" }
     fix: "create_lounge takes the room's id (20261105_02, live since the train of 2026-11-06, read back by train_6_live_check.sql): founded once, the same id back to its founder, refused to anyone else (a_salon_is_founded_once_rehearsal.sql); the founding form makes the id once and sends it with every tap until a room is made, and the corridor draws a room once though a read between already drew it"
+    places: [none]
+
+  - id: RELEASE-a-crash-sentry-cannot-read
+    title: "A build or an update reaches phones while Sentry holds none of its source maps or native symbols, so its crashes come in as unreadable addresses: the upload's own answer was the only proof, and nothing asked Sentry"
+    seriousness: serious
+    area: release
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P4.45: each build's and each update's files, asked of Sentry after it" }
+    methods:
+      - { kind: running, file: scripts/__tests__/sentryHolds.test.ts, test: "is nothing when Sentry holds every file, and names each one it does not" }
+      - { kind: running, file: scripts/__tests__/sentryHolds.test.ts, test: "refuses when it found nothing to ask for, or a file with no id" }
+      - { kind: running, file: scripts/__tests__/sentryHolds.test.ts, test: "refuses when Sentry cannot be read, or answers with no list: never a pass" }
+      - { kind: running, file: scripts/__tests__/sentryHolds.test.ts, test: "reads an Android library's GNU build id as a little-endian GUID, 64-bit and 32-bit" }
+      - { kind: running, file: scripts/__tests__/sentryHolds.test.ts, test: "a build whose files are not where it looks is wanted with no id, so the check fails" }
+      - { kind: running, file: scripts/__tests__/publishUpdate.test.ts, test: "stops when Sentry does not hold the maps the upload sent: no rollout, and that written down" }
+    fix: "scripts/sentry-holds.cjs asks Sentry for each file by its debug id (a map's debugId by artifact lookup; a dSYM's UUID, a library's GNU build id and the ProGuard UUID among the debug files) and fails on anything it cannot prove; publish-update.cjs runs it after the upload and sends no update it fails; EAS runs it after every production and internal build (package.json eas-build-on-success). Proven on the first build after the freeze, with the owner's SENTRY_AUTH_TOKEN build secret"
+    places: [none]
+
+  - id: PUSH-a-new-lint-rule-unseen
+    title: "A push that adds a lint rule is linted only on the files it changed, so the old files the new rule fails pass the push and go red in CI"
+    seriousness: behaviour
+    area: release
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "god_tier_ci on b83840c4: the ordering rule failed test-utils/runtimeLacks.ts and test-utils/schema.ts" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/hooks.guard.test.ts, test: "lints the changed code, and every file once lint's own rules change" }
+    fix: "pre-push.cjs lints every tracked file when eslint.config.js or package(-lock).json changed (lintTargets), in batches that fit; the two files order by byKey"
+    places: [none]
+
+  - id: TEXT-counted-by-code-units
+    title: "A member's words sized or cut by their code units, not the characters a reader sees: a name of emoji set at the smallest step, a review with marks piled on its letters planned at three times its lines, an excerpt stored ending on half an emoji"
+    seriousness: serious
+    area: type
+    status: OPEN
+    count: 14
+    source: { kind: reviewer, ref: "P4.31: hostile text, every place a length or a cut is read off a member's words" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "are counted as drawn, not by the units a string holds" }
+      - { kind: running, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "gives a mark no width of its own: a letter with marks piled on it is the letter" }
+      - { kind: running, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "a name of six emoji is set as six characters, at the largest step" }
+      - { kind: running, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "breaks a word with piled marks by its letters, not its units" }
+      - { kind: running, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.test.ts, test: "a stored excerpt never ends on half an emoji" }
+      - { kind: static, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.guard.test.ts, test: "sizes no text by its code units, and cuts none at a fixed one, but what is listed" }
+      - { kind: static, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.guard.test.ts, test: "finds a string weighed or cut by its units, and not a list, nor a length asked only for any" }
+    fix: "utils/text.ts counts, takes and cuts by the one character rule (charactersOf, characterCount, firstCharacters, cutWhole, isPictureCharacter); emOf measures a character at a time (a mark adds nothing, an emoji PICTURE_EM), and the member file's name size measures with it; the review planner wraps in cells; every site moved; the guard finds a string's length weighed or a fixed cut by the type checker, each left judged by name"
     places: [none]

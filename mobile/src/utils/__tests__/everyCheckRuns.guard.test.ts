@@ -49,6 +49,7 @@ const LOCAL: Record<string, string> = {
   'release:guard': 'the owner runs it on each EAS download before submitting (P0.0a); CI runs its file too',
   'build:ios': "the owner's store build: the preflight, then EAS; no store build is made by CI",
   'build:android': "the owner's store build: the preflight, then EAS; no store build is made by CI",
+  'eas-build-on-success': "EAS's own hook: run on the builder after every build, asking Sentry whether it holds the build's files (P4.45)",
 };
 
 /** Script files run by a person, each with why. */

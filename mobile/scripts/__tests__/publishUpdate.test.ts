@@ -38,8 +38,17 @@ describe('publish', () => {
   it('uploads the source maps before any phone gets it', () => {
     const { calls, run } = runner();
     publish({ message: 'x', run, now: at('2026-11-02T09:00:00Z'), ledgerFile: ledger(), sha: 'abc1234' });
-    const order = calls.map((c) => (c.cmd === 'npx' ? 'upload' : c.args[0]));
-    expect(order).toEqual(['update', 'upload', 'channel:rollout']);
+    const order = calls.map((c) => (c.cmd === 'npx' ? 'upload' : c.cmd === 'node' ? c.args.slice(0, 2).join(' ').replace(/\\/g, '/') : c.args[0]));
+    expect(order).toEqual(['update', 'upload', 'scripts/sentry-holds.cjs update', 'channel:rollout']);
+  });
+
+  it('stops when Sentry does not hold the maps the upload sent: no rollout, and that written down', () => {
+    const { calls, run } = runner();
+    const holds = (cmd: string, args: string[]) => (cmd === 'node' ? (calls.push({ cmd, args }), { code: 1, stdout: '' }) : run(cmd, args));
+    const file = ledger();
+    expect(() => publish({ message: 'x', run: holds, now: at('2026-11-02T09:00:00Z'), ledgerFile: file, sha: 'abc1234' })).toThrow(/does not hold the source maps/);
+    expect(calls.some((c) => c.args[0] === 'channel:rollout')).toBe(false);
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual([expect.objectContaining({ group: GROUP, upload: 'not held', steps: [] })]);
   });
 
   it('stops when the upload fails: no rollout, and the failure written down', () => {

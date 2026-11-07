@@ -79,6 +79,16 @@ const USER = {
   preferences: { favorites: FAVOURITES },
 };
 
+/** Names a member may write that the page must still draw whole, each a state of its own. */
+const HOSTILE_NAMES = {
+  'one-emoji': '🎞️',
+  'family': '👩‍👩‍👧‍👦',
+  'flag': '🇯🇵',
+  'skin-tone': '👋🏽',
+  'joined-run': '👩🏽‍🎤👨🏿‍🚀👩🏻‍🔬🧑🏾‍🎨👨🏼‍🍳👩🏿‍🌾',
+  'piled-marks': [...'Kane'].map((c) => c + '̖̗̘̙̀́̂̃̄̆̇̈').join(''),
+};
+
 const CTL: Ctl = {
   nav: {
     toEditProfile: jest.fn(), toSettings: jest.fn(), toMembership: jest.fn(),
@@ -155,6 +165,14 @@ const VARIANTS: [string, Ctl][] = [
   // room — so none of them may paint the house colour across it.
   ...(['archive', 'ledger', 'watchlist', 'lists', 'physical', 'passport', 'projector', 'calendar'] as const)
     .map((tab): [string, Ctl] => [`memberfile-tab-${tab}`, { ...CTL, activeTab: tab }]),
+
+  // Hostile names (WORKLIST P4.31): a name made only of emoji, as a member may write one, and a
+  // name with marks piled on its letters, which the house's Text keeps to four a letter. The
+  // portrait's initial is the whole first emoji; no mark reaches another row (layout's INK).
+  ...Object.entries(HOSTILE_NAMES).map(([kind, persona]): [string, Ctl] => [`memberfile-name-${kind}`, {
+    ...CTL,
+    data: { ...(CTL.data as Record<string, unknown>), targetUser: { ...USER, persona } },
+  }]),
 ];
 
 // Each state in every layout: the name's size step reads the text size.

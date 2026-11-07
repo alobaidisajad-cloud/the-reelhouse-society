@@ -38,7 +38,7 @@ import Markdown from 'react-native-markdown-display';
 import { capMarkdownForRender, onMarkdownLinkPress } from '@/src/utils/markdownSafety';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
-import { isRTLText } from '@/src/utils/text';
+import { isRTLText, characterCount } from '@/src/utils/text';
 import { useStruck } from '@/src/components/StruckWords';
 import {
   EssayBreak, EssayOpening, ESSAY_BODY,
@@ -182,7 +182,7 @@ export const EssayBody = memo(function EssayBody({ text: written }: { text: stri
       // Nor is a letter raised from right-to-left words: their letters join,
       // and one lifted out is a different shape.
       const plain = plainTextOf(node);
-      if (plain && plain.trim().length > 1 && !isRTLText(plain)) {
+      if (plain && characterCount(plain.trim()) > 1 && !isRTLText(plain)) {
         return <EssayOpening key={node.key} text={plain} />;
       }
       return (

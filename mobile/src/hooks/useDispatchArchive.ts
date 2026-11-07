@@ -21,6 +21,7 @@
  * been arguing about since 2019.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { characterCount } from '@/src/utils/text';
 
 import { supabase } from '@/src/lib/supabase';
 import type { PaperFilm } from '@/src/components/dispatch/paper/PaperPost';
@@ -138,7 +139,7 @@ export function useDispatchArchive(): DispatchArchive {
   // ── THE SEARCH ────────────────────────────────────────────────────────────
   const search = useCallback(async (q: string) => {
     const term = q.trim();
-    if (term.length < 2) { searchSeq.current += 1; setMatches([]); setSearching(false); setSearchFailed(false); return; }
+    if (characterCount(term) < 2) { searchSeq.current += 1; setMatches([]); setSearching(false); setSearchFailed(false); return; }
     // Null when the term is nothing but the characters the parser owns — a
     // search that would match everything is refused rather than run.
     const pattern = buildSearchPattern(term);

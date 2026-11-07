@@ -1,4 +1,5 @@
 import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
+import { characterCount } from '@/src/utils/text';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, useWindowDimensions, InteractionManager } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -505,7 +506,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
                       <Text numberOfLines={3} ellipsizeMode="tail" style={s.mineBody}>
                         {stripHtml(existingLog.review ?? '')}
                       </Text>
-                      {stripHtml(existingLog.review ?? '').length > 100 && (
+                      {characterCount(stripHtml(existingLog.review ?? '')) > 100 && (
                         <Text style={s.mineMore}>READ FULL CRITIQUE →</Text>
                       )}
                     </PressableScale>

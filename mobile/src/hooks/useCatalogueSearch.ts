@@ -10,6 +10,7 @@
  * answer its own way.
  */
 import { useCallback, useEffect, useState } from 'react';
+import { characterCount } from '@/src/utils/text';
 import { tmdb } from '@/src/lib/tmdb';
 
 type Answer = Awaited<ReturnType<typeof tmdb.search>>;
@@ -34,7 +35,7 @@ export function useCatalogueSearch(
   { delay = 400, minLength = 1, enabled = true }: { delay?: number; minLength?: number; enabled?: boolean } = {},
 ): CatalogueSearch {
   const words = text.trim();
-  const live = enabled && words.length >= minLength;
+  const live = enabled && characterCount(words) >= minLength;
   const [attempt, setAttempt] = useState(0);
   const asking = `${attempt}:${words}`;
   const [settled, setSettled] = useState<{ asked: string; answer: Answer | null; unreachable: boolean }>(

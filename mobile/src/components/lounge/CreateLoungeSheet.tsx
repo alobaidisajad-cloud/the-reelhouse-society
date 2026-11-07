@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useEffectEvent, useRef } from 'react';
+import { characterCount } from '@/src/utils/text';
 import { InColumn } from '@/src/components/layout/InColumn';
 import { View, StyleSheet, Modal, Switch, Keyboard, ActivityIndicator } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -42,7 +43,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   const [firstRoomId] = useState(() => Crypto.randomUUID());
   const roomId = useRef(firstRoomId);
   /** A name the house accepts: two letters at least once cleaned, as createLounge asks. */
-  const ready = sanitizeInput(name, 'loungeName').length >= LEAST_NAME;
+  const ready = characterCount(sanitizeInput(name, 'loungeName')) >= LEAST_NAME;
   const descriptionRef = useRef<TextInput>(null);
 
   /**

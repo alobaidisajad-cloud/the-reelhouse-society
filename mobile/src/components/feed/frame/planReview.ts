@@ -11,7 +11,7 @@
  * are broken as the phone would break them, by letters. A paragraph break starts a new line.
  */
 import { emOf } from '@/src/components/lobby/measure';
-import { characterEnd, characterStart, extractDropCap } from '@/src/utils/text';
+import { charactersOf, extractDropCap, isPictureCharacter } from '@/src/utils/text';
 
 /** The review's type in the frame: its size, its line, and the width of one of its letters. */
 export const REVIEW = { size: 13.5, line: 20 } as const;
@@ -34,26 +34,45 @@ export interface PlannedReview {
 
 const wordsOf = (text: string) => text.trim().split(/\s+/).filter(Boolean);
 
-/** Breaks `text` into lines of at most `room(i)` letters, as a phone breaks them: a word by whole letters. */
+/** A character's cells on Courier's grid: one letter (its marks take none), or two for an emoji. */
+const cells = (ch: string) => (isPictureCharacter(ch) ? 2 : 1);
+const cellsOf = (chars: readonly string[]) => chars.reduce((n, ch) => n + cells(ch), 0);
+
+/** The most of `chars` that fills `room` cells, never less than one character. */
+function fill(chars: readonly string[], room: number): number {
+  let n = 0;
+  let used = 0;
+  for (const ch of chars) {
+    if (used + cells(ch) > room) break;
+    used += cells(ch);
+    n += 1;
+  }
+  return Math.max(1, n);
+}
+
+/**
+ * Breaks `text` into lines of at most `room(i)` cells, as a phone breaks them: a word by whole
+ * characters, a mark on its letter, an emoji whole. Counted as a reader sees them, not in code
+ * units: a word with marks piled on it is no longer, and an emoji is two letters wide.
+ */
 export function wrapLetters(text: string, room: (line: number) => number): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split(/\n+/)) {
-    let line = '';
-    for (let word of wordsOf(paragraph)) {
-      while (word.length > room(lines.length) && room(lines.length) > 0) {
-        if (line) { lines.push(line); line = ''; }
-        // Never inside a letter: a mark stays on its letter, a pair of code units together.
-        const fits = characterStart(word, room(lines.length));
-        const at = fits > 0 ? fits : characterEnd(word, 0);
-        lines.push(word.slice(0, at));
-        word = word.slice(at);
+    let line: string[] = [];
+    for (const written of wordsOf(paragraph)) {
+      let word = charactersOf(written);
+      while (cellsOf(word) > room(lines.length) && room(lines.length) > 0) {
+        if (line.length) { lines.push(line.join('')); line = []; }
+        const n = fill(word, room(lines.length));
+        lines.push(word.slice(0, n).join(''));
+        word = word.slice(n);
       }
-      if (!word) continue;
-      const joined = line ? `${line} ${word}` : word;
-      if (joined.length <= room(lines.length)) line = joined;
-      else { lines.push(line); line = word; }
+      if (!word.length) continue;
+      const joined = line.length ? [...line, ' ', ...word] : word;
+      if (cellsOf(joined) <= room(lines.length)) line = joined;
+      else { lines.push(line.join('')); line = word; }
     }
-    if (line) lines.push(line);
+    if (line.length) lines.push(line.join(''));
   }
   return lines;
 }
@@ -79,7 +98,8 @@ export function planReview(text: string, { width, scale, limit, dropCap }: { wid
   if (cut && last !== undefined) {
     // The last line shown ends in an ellipsis, and keeps room for it.
     const room = lifted && shown.length <= DROP_CAP.lines ? beside : full;
-    shown[shown.length - 1] = `${last.length + 1 > room ? last.slice(0, room - 1).trimEnd() : last}…`;
+    const chars = charactersOf(last);
+    shown[shown.length - 1] = `${cellsOf(chars) + 1 > room ? chars.slice(0, fill(chars, room - 1)).join('').trimEnd() : last}…`;
   }
   const besideCount = lifted ? Math.min(DROP_CAP.lines, shown.length) : 0;
   return { cap, beside: shown.slice(0, besideCount), under: shown.slice(besideCount), cut, words: wordsOf(text).length };

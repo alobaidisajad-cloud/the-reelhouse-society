@@ -93,6 +93,9 @@ const NOTES = [
   { id: 'c2', user_id: 'me', username: 'kane', avatar_url: null, body: 'The clocks. I never saw the clocks.', created_at: '2026-08-13T11:00:00Z' },
 ];
 
+/** Twelve marks on every letter, six above and six below: more than any script needs. */
+const piled = (words: string) => [...words].map((c) => (c === ' ' ? c : c + '̖̗̘̙̜̝̀́̂̃̄̆')).join('');
+
 /** Each kind of record, as its reader meets it. */
 const KINDS: [string, Record<string, unknown>][] = [
   // An Archivist's record read by another member: the still, the quote, the essay, the viewings, the breakdown, critiques.
@@ -108,6 +111,10 @@ const KINDS: [string, Record<string, unknown>][] = [
   // Right-to-left words, and a long title.
   ['log-rtl', { data: { log: { ...LOG, film_title: 'Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb', pull_quote: null, drop_cap: false,
     review: 'يُعد هذا الفيلم تأملاً طويلاً في الانتظار، وفي الصبر، وفي ما يبقى من المرء حين لا يبقى شيء.' }, profile: PROFILE, comments: [], commentTotal: 0 }, isLoading: false }],
+  // Marks piled on every letter (WORKLIST P4.31), in the review and in a critique between two
+  // others: the house's Text keeps four a letter, and none may reach another row (layout's INK).
+  ['log-piled-marks', { data: { log: { ...LOG, pull_quote: null, drop_cap: false, review: piled('The clocks run backwards in the last reel and nobody in the room noticed but me.') },
+    profile: PROFILE, comments: [NOTES[0], { ...NOTES[1], user_id: 'u3', username: 'zalgo', body: piled('It comes for every frame, and then it comes for the next.') }, NOTES[1]], commentTotal: 3 }, isLoading: false }],
 ];
 const RUNS = KINDS.flatMap(([name, q]) => LAYOUTS.map((l) => [`${name}${l.suffix}`, q, l] as const));
 

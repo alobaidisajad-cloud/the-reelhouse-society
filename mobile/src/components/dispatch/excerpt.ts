@@ -8,6 +8,7 @@
  * Deliberately not a markdown parser: it unwraps what members write and leaves
  * the rest as written, since over-matching here edits somebody's sentence.
  */
+import { cutWhole } from '@/src/utils/text';
 
 /** Strip the markup, keep the words. Whitespace collapsed to single spaces. */
 export function excerptOf(markdown: string): string {
@@ -47,7 +48,7 @@ export function excerptFor(markdown: string, limit: number = EXCERPT_CHARS): str
   const prose = excerptOf(markdown);
   if (prose.length <= limit) return prose;
   // Cut at the last space inside the limit, so a card never ends mid-word.
-  const cut = prose.slice(0, limit);
+  const cut = cutWhole(prose, limit);
   const lastSpace = cut.lastIndexOf(' ');
   return (lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + '…';
 }

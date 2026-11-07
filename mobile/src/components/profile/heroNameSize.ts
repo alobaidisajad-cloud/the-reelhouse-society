@@ -26,7 +26,8 @@
  * at the smallest step and allowed to break: the design chose a break over
  * type shrunk into illegibility.
  */
-import { RYE, RYE_WIDEST } from '@/src/theme/faceAdvances';
+import { emOf } from '@/src/components/lobby/measure';
+import { characterCount } from '@/src/utils/text';
 import { s } from './profileStyles';
 
 export const NAME_STEPS = [26, 20, 16] as const;
@@ -38,17 +39,18 @@ export const IDENT_INSET =
 
 export const nameSpacing = (size: number) => (size >= 26 ? 1.4 : 1);
 
-/** A word's drawn width: letters at the drawn size, spacing as written (it does not grow — see androidTracking). */
+/**
+ * A word's drawn width: its characters at the drawn size (a mark adds none, an emoji is drawn by the
+ * phone's own face), spacing once a character as written (it does not grow — see androidTracking).
+ */
 export function wordWidth(word: string, size: number, scale: number): number {
-  let em = 0;
-  let n = 0;
-  for (const ch of word) { em += RYE[ch] ?? RYE_WIDEST; n++; }
-  return em * size * scale + nameSpacing(size) * n;
+  return emOf(word, 'rye') * size * scale + nameSpacing(size) * characterCount(word);
 }
 
 /** The step a (capitalised) name is set at, in a window this wide, at this text scale. */
 export function heroNameSize(name: string, windowWidth: number, scale: number): NameStep {
-  const byCount: NameStep = name.length <= 16 ? 26 : name.length <= 28 ? 20 : 16;
+  const count = characterCount(name);
+  const byCount: NameStep = count <= 16 ? 26 : count <= 28 ? 20 : 16;
   const column = windowWidth - IDENT_INSET;
   const words = name.split(/\s+/).filter(Boolean);
   for (const size of NAME_STEPS) {

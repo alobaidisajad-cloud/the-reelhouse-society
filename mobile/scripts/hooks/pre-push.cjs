@@ -84,6 +84,11 @@ const inBatches = (paths, room = 6000) => {
  */
 const LINT_RULES = /^(?:eslint\.config\.js|package(?:-lock)?\.json)$/;
 const CODE = /\.(?:[cm]?js|tsx?)$/;
+/** Every file in mobile/ a sweep reads, from the shared file list, as paths from mobile/. */
+const everyCodeFile = () => {
+  const { files, rel } = require('../../test-utils/universe');
+  return files(['appCode', 'tests', 'testSupport', 'scripts', 'config', 'mockups', 'store', 'flowScripts']).map(rel);
+};
 const lintTargets = (changed, tracked) => (changed.some((p) => LINT_RULES.test(p)) ? tracked : changed).filter((p) => CODE.test(p));
 
 const run = (label, cmd, args, cwd) => {
@@ -125,7 +130,7 @@ if (require.main === module) {
   const changed = [...new Set(bases.flatMap((b) => git('diff', '--name-only', '--diff-filter=ACMR', `${b}...HEAD`).split('\n')))]
     .filter((p) => p.startsWith('mobile/')).map((p) => p.slice('mobile/'.length));
   const code = changed.filter((p) => CODE.test(p));
-  const linted = lintTargets(changed, git('ls-files', '--', 'mobile').split('\n').filter(Boolean).map((p) => p.slice('mobile/'.length)));
+  const linted = lintTargets(changed, everyCodeFile());
   if (changed.length) {
     // God-tier's own comment gate: a comment naming what does not exist failed CI on ede2cc32.
     const c = run('every comment names what exists', 'npm', ['run', '-s', 'comments:check', '--', '--kinds', 'NAME,FILE,LINE'], MOBILE);

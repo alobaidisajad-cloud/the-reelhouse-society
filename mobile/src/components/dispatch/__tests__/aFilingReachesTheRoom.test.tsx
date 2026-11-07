@@ -59,6 +59,13 @@ describe('a filing shared to a room actually reaches it', () => {
     expect(out.startsWith('Stalker is not slow')).toBe(true);
   });
 
+  it('ends a title cut at a word with one ellipsis, never two', () => {
+    const out = cardTitle(`${'Ozu frames every room from the height of a man sitting on the floor '.repeat(4)}and waits`)!;
+    expect(out.endsWith('…')).toBe(true);
+    expect(out.endsWith('……')).toBe(false);
+    expect(out.length).toBeLessThanOrEqual(MAX_LENGTHS.loungeShareTitle + 1);
+  });
+
   it('leaves a short filing exactly as it was written', () => {
     // A dossier's headline, a film's name, a stack's title: nothing to cut, and
     // nothing added. An ellipsis on an untouched title would be a lie about it.

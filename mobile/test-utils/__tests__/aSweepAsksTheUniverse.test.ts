@@ -48,6 +48,7 @@ const MAY_LIST: Record<string, string> = {
   'e2e/__tests__/flowScreens.test.ts': 'the folder its own run of flow-screens.mjs wrote',
   'scripts/bundle-size.js': 'the bundle an export just wrote',
   'scripts/release-guard.cjs': 'the bundles an export wrote, in the folder it is given',
+  'scripts/sentry-holds.cjs': "the maps an update's export wrote, and what a build left on the builder (Xcode's DerivedData and archives, Gradle's build folder)",
   'e2e/advisories.mjs': 'the source map an export just wrote, and the folders --roots hands it; the edge trees themselves come from the universe',
   'scripts/dump-production.cjs': 'the dump folder, for the dumps a newer one replaces',
   '__tests__/thePrivacyInventoryIsWhole.test.ts': 'the privacy manifests the installed native packages ship, under node_modules, outside any universe',

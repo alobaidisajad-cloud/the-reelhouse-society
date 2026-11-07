@@ -20,6 +20,7 @@
  * (`useSendBackIfNotAMember`, the essay desk's own answer), never a blank modal.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { characterCount } from '@/src/utils/text';
 import { InteractionManager, StyleSheet, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { P, useRouteParams } from '@/src/utils/routeParams';
@@ -390,7 +391,7 @@ export function FilmPicker({
       } as PaperFilm,
     })), [search.results]);
   const answer = search.unreachable ? 'unreachable' as const
-    : !search.searching && query.trim().length >= 2 && results.length === 0 ? 'none' as const
+    : !search.searching && characterCount(query.trim()) >= 2 && results.length === 0 ? 'none' as const
     : undefined;
 
   // Emptied on close, as it renders: the next search starts from a clean field.

@@ -5,8 +5,9 @@
  *   node scripts/publish-update.cjs widen --group <update group id>
  *   node scripts/publish-update.cjs rollback --group <update group id>
  *
- * publish: from a clean main, the update goes to a branch of its own, its source maps to Sentry
- * (and it stops there if that fails: an update whose crashes cannot be read is not sent), then the
+ * publish: from a clean main, the update goes to a branch of its own, its source maps to Sentry,
+ * and Sentry is asked whether it holds each (scripts/sentry-holds.cjs; it stops there if either
+ * fails: an update whose crashes cannot be read is not sent), then the
  * production channel takes it for a small share of phones. widen: after a soak with no new Sentry
  * issue, the next share, until all. rollback: the channel goes back to what it ran before. Every
  * step is written to updates-published.json. Every installed build follows `production` (internal
@@ -52,6 +53,13 @@ function publish({ message, run, now, ledgerFile = LEDGER, sha }) {
   if (upload.code !== 0) {
     writeLedger(ledgerFile, [...rows, row]);
     throw new Error(`the source maps did not reach Sentry: update ${row.group} is on branch ${branch} and goes to no phone`);
+  }
+  // An upload that answered 0 is not proof: Sentry is asked for each map by its debug id.
+  const held = run('node', [path.join('scripts', 'sentry-holds.cjs'), 'update', 'dist']);
+  if (held.code !== 0) {
+    row.upload = 'not held';
+    writeLedger(ledgerFile, [...rows, row]);
+    throw new Error(`Sentry does not hold the source maps: update ${row.group} is on branch ${branch} and goes to no phone`);
   }
   const start = run('eas', ['channel:rollout', CHANNEL, '--action', 'create', '--branch', branch, '--percent', String(STEPS[0]), '--non-interactive']);
   if (start.code !== 0) {

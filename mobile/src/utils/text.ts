@@ -169,6 +169,57 @@ export function firstCharacter(text: string | null | undefined): string {
   return t.slice(0, characterEnd(t, 0));
 }
 
+/**
+ * The characters a reader sees, in order: a letter with its marks, an emoji sequence, a flag,
+ * each one. A string's length counts code units (a family of four is eleven, "é" written as e
+ * and its accent is two), never what is drawn.
+ */
+export function charactersOf(text: string | null | undefined): string[] {
+  const t = text ?? '';
+  const out: string[] = [];
+  for (let i = 0; i < t.length;) {
+    const end = characterEnd(t, i);
+    out.push(t.slice(i, end));
+    i = end;
+  }
+  return out;
+}
+
+/** How many characters a reader sees in `text`. */
+export function characterCount(text: string | null | undefined): number {
+  const t = text ?? '';
+  let n = 0;
+  for (let i = 0; i < t.length; i = characterEnd(t, i)) n += 1;
+  return n;
+}
+
+/** The first `n` characters a reader sees, each whole. */
+export function firstCharacters(text: string | null | undefined, n: number): string {
+  const t = text ?? '';
+  let i = 0;
+  for (let k = 0; k < n && i < t.length; k += 1) i = characterEnd(t, i);
+  return t.slice(0, i);
+}
+
+/**
+ * `text` held to `max` code units (a column's limit counts them), cut only between
+ * characters: half an emoji is a broken glyph on the page, and a lone surrogate sent to the
+ * house is no text at all.
+ */
+export function cutWhole(text: string, max: number): string {
+  return text.length <= max ? text : text.slice(0, characterStart(text, max));
+}
+
+/**
+ * Whether a character is drawn as a picture by the phone's emoji face (an emoji, a flag), not
+ * as a letter of the house's: a symbol such as © or ✓ with no picture form asked for is a letter.
+ */
+export function isPictureCharacter(ch: string): boolean {
+  const cp = ch.codePointAt(0) ?? 0;
+  const kind = classOf(cp);
+  return kind === RI || (kind === PICTOGRAPH && (cp >= 0x1f000 || ch.includes('️') || ch.includes('‍')));
+}
+
 /** Georgian's everyday letters: their capitals are an all-capitals style, never an initial. */
 const GEORGIAN = (cp: number) => between(cp, 0x10d0, 0x10ff);
 
@@ -287,7 +338,7 @@ export function isRTLText(text: string | null | undefined): boolean {
     if (!text) return false;
     // Only the first 400 characters are inspected: the paragraph's direction is
     // decided long before that, and reviews can be very long.
-    const head = text.slice(0, 400);
+    const head = cutWhole(text, 400);
     const rtl = head.search(RTL_STRONG);
     if (rtl === -1) return false;
     const ltr = head.search(LTR_STRONG);

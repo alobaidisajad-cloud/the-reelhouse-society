@@ -150,8 +150,22 @@ const CASES = {
   // a box sized for iOS's ceiling that Android's ceiling-less line outgrows
   androidline: [box('width:200px', T('font-size:10px;line-height:13px;height:36px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden', 'A caption that wraps onto a second line here', 1.35)),
     { 'android@2': ['CUT'] }],
+  // twelve marks piled on each letter of the second row, reaching up through the first row's letters
+  inkpile: [box('width:200px', T('font-size:14px;line-height:18px', 'Ozu frames a room by its doors ' + [...'and then'].map((c) => c + '̀́̂̃̄̆̇̈̊̋̌̑').join(''))),
+    ALL('INK')],
+  // a script's own marks, set at a reader's leading: above and below their letters, over no row
+  inkclean: [box('width:200px', T('font-size:14px;line-height:22px', 'Tiếng Việt có dấu, ภาษาไทย มี วรรณยุกต์ ở trên và ở dưới')), {}],
+  // the same piled row under an opaque cover (a sheet over the page): ink no one can see
+  inkcovered: [box('width:200px', T('font-size:14px;line-height:18px', 'Ozu frames a room by its doors ' + [...'and then'].map((c) => c + '̀́̂̃̄̆̇̈̊̋̌̑').join(''))
+    + '<div style="position:absolute;left:0;top:0;width:200px;height:400px;background:#222;z-index:5"></div>'), {}],
+  // a title set tight and shown at 0.7 of its size, as a share card's preview is: its letters
+  // meet nowhere, and the font's measures are scaled to the drawn boxes before they are judged
+  inkscaled: [box('width:300px;transform:scale(0.7);transform-origin:0 0', T("font-family:Rye,serif;font-size:32px;line-height:38px", 'The Long Silence in Ozu, a title', 1)), {}],
+  // piled marks shown at 0.7 still reach the row above
+  inkpilescaled: [box('width:200px;transform:scale(0.7);transform-origin:0 0', T('font-size:14px;line-height:18px', 'Ozu frames a room by its doors ' + [...'and then'].map((c) => c + '̀́̂̃̄̆̇̈̊̋̌̑').join(''))),
+    ALL('INK')],
   // runs off the phone
-  off: [box('padding-left:300px', T('font-size:12px;white-space:nowrap', 'SEVENTEEN LETTERS')), ALL('OFF')],
+  off:[box('padding-left:300px', T('font-size:12px;white-space:nowrap', 'SEVENTEEN LETTERS')), ALL('OFF')],
   // 10pt apart, each reaching 15 toward the other: the later takes the earlier's taps
   steal: [pair(15, 15), ALL('STEAL')],
   // the same two, each reaching half the gap: they meet, and nothing is shared

@@ -28,7 +28,7 @@ import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
 import { stripHtml } from '@/src/utils/html';
-import { extractDropCap, isRTLText, RTL_MARK, spokenExcerpt, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
+import { extractDropCap, isRTLText, RTL_MARK, spokenExcerpt, OPEN_QUOTE, CLOSE_QUOTE, characterCount } from '@/src/utils/text';
 import { useTimeAgo } from '@/src/hooks/useClock';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
@@ -71,6 +71,8 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
   // Each slur struck for a reader who asked (StruckWords).
   const struck = useStruck();
   const strippedReview = struck(stripHtml(review.review ?? ''));
+  /** Longer than the clipping draws: its whole words are a tap away. */
+  const longReview = characterCount(strippedReview) > 250;
   const pullQuote = struck(review.pull_quote);
   const { first: dropCapFirst, rest: dropCapRest } = extractDropCap(strippedReview);
   // No drop cap on a joined script: lifting the first letter out of an Arabic
@@ -125,7 +127,7 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
         <PressableScale
           onPress={handleOpenLog} pressedScale={0.99}
           // The critique itself, as the card draws it, then the door's own words.
-          accessibilityLabel={`${spokenExcerpt(saidStruck(pullQuote), saidStruck(strippedReview))} ${strippedReview.length > 250 ? 'Read full critique. ' : ''}Open log, by ${review.username ?? 'anonymous'}.`}
+          accessibilityLabel={`${spokenExcerpt(saidStruck(pullQuote), saidStruck(strippedReview))} ${longReview ? 'Read full critique. ' : ''}Open log, by ${review.username ?? 'anonymous'}.`}
         >
           {pullQuote && (
             <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isArchivist && s.pullQuoteWrapPremium]}>
@@ -150,7 +152,7 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
           ) : null}
           {/* The door is always visible — even a two-line review opens a room. */}
           <View style={s.cardFooter}>
-            {strippedReview.length > 250 ? (
+            {longReview ? (
               <Text style={s.readFullText}>READ FULL CRITIQUE →</Text>
             ) : <View />}
             <Text style={s.openLogText}>OPEN LOG →</Text>

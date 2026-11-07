@@ -8,6 +8,9 @@
  *            sideways OR downward;
  *   OFF      it runs off the phone's edge, outside a horizontal rail;
  *   CLASH    its lines overlap another text's lines;
+ *   INK      a letter's ink (marks piled on it, a script's vowels and tones) leaves
+ *            its own line and paints over a letter on another row, its own text's
+ *            or another's;
  *   RUN      one of its words is wider than the line it is set on — a pasted
  *            link, `Daring...Unforgettable...`. The phone breaks such a word
  *            mid-letter (or shrinks it below the type floor), so it is a
@@ -427,6 +430,72 @@ async function audit(page) {
           }
         }
         if (hit) found.push({ kind: 'CLASH', text: `${say(A.e)}  ×  ${say(B.e)}`, size: parseFloat(getComputedStyle(A.e).fontSize), by: `${hit.toFixed(1)}pt` });
+      }
+    }
+    // INK: marks piled on a letter (Zalgo, a script's vowels and tones above and below) paint
+    // past the line's own box; a fault where that ink reaches another row's letters. Judged
+    // letter by letter: each letter's ink, from the font's own measures at its baseline, against
+    // the ink of every letter on another row. Only a letter whose ink leaves its own box is
+    // asked, so a headline set tight, its letters inside their boxes, is never judged here.
+    const pen = document.createElement('canvas').getContext('2d');
+    const graphemes = new Intl.Segmenter('und', { granularity: 'grapheme' });
+    const inkCache = new Map();
+    /** Each letter of a text: its ink box on the page, its own box, and which row it sits on. */
+    const inkOf = (e) => {
+      if (inkCache.has(e)) return inkCache.get(e);
+      const out = [];
+      const walk = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+        const cs = getComputedStyle(n.parentElement);
+        pen.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        const upper = cs.textTransform === 'uppercase';
+        // A text drawn scaled (a share card shown at a fraction of its size): its boxes on the
+        // page are scaled, the font's measures are not, so the measures are scaled to match.
+        const host = n.parentElement;
+        const k = host.offsetWidth > 0 ? host.getBoundingClientRect().width / host.offsetWidth : 1;
+        for (const { segment, index } of graphemes.segment(n.data)) {
+          if (!segment.trim()) continue;
+          const r = document.createRange(); r.setStart(n, index); r.setEnd(n, index + segment.length);
+          const box = r.getBoundingClientRect();
+          if (box.width < 0.1 || box.height < 0.1 || parked(box)) continue;
+          const m = pen.measureText(upper ? segment.toUpperCase() : segment);
+          const base = box.top + (box.height - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent) * k) / 2 + m.fontBoundingBoxAscent * k;
+          out.push({ box, ink: { left: box.left - m.actualBoundingBoxLeft * k, right: box.left + m.actualBoundingBoxRight * k, top: base - m.actualBoundingBoxAscent * k, bottom: base + m.actualBoundingBoxDescent * k } });
+        }
+      }
+      inkCache.set(e, out);
+      return out;
+    };
+    const overlap = (a, b) => [Math.min(a.right, b.right) - Math.max(a.left, b.left), Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)];
+    const sameRow = (a, b) => Math.abs((a.top + a.bottom) / 2 - (b.top + b.bottom) / 2) < Math.min(a.height, b.height) / 2;
+    const inked = new Set();
+    for (const { e } of lines) {
+      const spilling = inkOf(e).filter(({ box, ink }) => ink.top < box.top - 0.5 || ink.bottom > box.bottom + 0.5);
+      if (!spilling.length) continue;
+      const reach = spilling.reduce((u, { ink }) => ({ left: Math.min(u.left, ink.left), right: Math.max(u.right, ink.right), top: Math.min(u.top, ink.top), bottom: Math.max(u.bottom, ink.bottom) }),
+        { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity });
+      for (const { e: o } of lines) {
+        if (o !== e && (o.contains(e) || e.contains(o))) continue;
+        const [w, h] = overlap(reach, o.getBoundingClientRect());
+        if (w <= 0.5 || h <= 0.5) continue;
+        // As CLASH: two scrollers can each be moved clear of the other.
+        const sE = scrollOf(e), sO = scrollOf(o);
+        if (sE && sO && sE.s !== sO.s && sE.travel && sO.travel) continue;
+        let hit = 0;
+        for (const a of spilling) for (const b of inkOf(o)) {
+          if (a === b || sameRow(a.box, b.box)) continue;
+          const [iw, ih] = overlap(a.ink, b.ink);
+          if (iw <= 0.5 || ih <= 0.5) continue;
+          // As CLASH: only ink a reader can see, both letters showing where they meet.
+          const x = Math.max(a.ink.left, b.ink.left) + iw / 2, y = Math.max(a.ink.top, b.ink.top) + ih / 2;
+          if (x >= 0 && y >= 0 && x <= innerWidth && y <= innerHeight && !(shows(e, x, y) && shows(o, x, y))) continue;
+          hit = Math.max(hit, ih);
+        }
+        const pair = [e, o].map(say).sort().join('\u0000');
+        if (hit && !inked.has(pair)) {
+          inked.add(pair);
+          found.push({ kind: 'INK', text: o === e ? say(e) : `${say(e)}  ×  ${say(o)}`, size: parseFloat(getComputedStyle(e).fontSize), by: `${hit.toFixed(1)}pt of ink over another row's letters` });
+        }
       }
     }
     // UNDER: a line in a scroller that something fixed covers at the top of the

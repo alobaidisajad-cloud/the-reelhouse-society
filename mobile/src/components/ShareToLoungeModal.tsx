@@ -58,7 +58,8 @@ export const cardTitle = (raw?: string | null): string | null => {
     if (!whole) return null;
     if (whole.length <= MAX_LENGTHS.loungeShareTitle) return whole;
     const cut = clipToSentence(whole, MAX_LENGTHS.loungeShareTitle);
-    return cut.clipped ? `${cut.text}…` : cut.text;
+    // A cut at a sentence ends on its stop; one at a word already carries its ellipsis.
+    return cut.clipped && !cut.text.endsWith('…') ? `${cut.text}…` : cut.text;
 };
 
 const LoungeItem = React.memo(({ item, isSelected, onSelect }: { item: LoungeRoom, isSelected: boolean, onSelect: (id: string) => void }) => {

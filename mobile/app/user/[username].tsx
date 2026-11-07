@@ -90,7 +90,7 @@ import { decorativeTextProps, displayTextProps, scaledTextProps } from '@/src/co
 import { useTextScale } from '@/src/hooks/useTextScale';
 import { heroNameSize } from '@/src/components/profile/heroNameSize';
 import { softBreak } from '@/src/utils/softBreak';
-import { OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
+import { OPEN_QUOTE, CLOSE_QUOTE, characterCount } from '@/src/utils/text';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import Buster, { BusterEyes } from '@/src/components/Buster';
@@ -333,9 +333,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const bioText = struck(targetUser?.bio?.trim()) || (isSelf ? 'No bio yet. Tell the society who you are.' : 'No bio on file.');
   // Same reasoning as the name: fixed steps, and the longest bios get more
   // lines rather than smaller type.
-  const bioSize = bioText.length <= 90 ? 12.5 : bioText.length <= 170 ? 11.5 : 10.5;
+  const bioCount = characterCount(bioText);
+  const bioSize = bioCount <= 90 ? 12.5 : bioCount <= 170 ? 11.5 : 10.5;
   const bioStyle = { fontSize: bioSize, lineHeight: Math.round(bioSize * 1.52) };
-  const bioLines = bioText.length <= 90 ? 4 : bioText.length <= 170 ? 5 : 6;
+  const bioLines = bioCount <= 90 ? 4 : bioCount <= 170 ? 5 : 6;
 
   // `Nº 0147 · ADMITTED MARCH 2026`, the month by the house formatter (no Intl).
   // At large text it may wrap, only where a reader would: no-break spaces keep

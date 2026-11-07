@@ -15,6 +15,7 @@
  * opening one film and reading all of it in one place, and the rope is there.
  */
 import { useCallback } from 'react';
+import { characterCount } from '@/src/utils/text';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { Text } from '@/src/components/text';
 
@@ -46,7 +47,7 @@ export default function ArchiveScreen() {
     query, setQuery, matches, searching, settled, searchFailed,
     film, filings, certifiedAtFetch, count, span, loading, filmFailed, choose, clear, loadMore, retry,
   } = useDispatchArchive();
-  const typed = query.trim().length >= 2;
+  const typed = characterCount(query.trim()) >= 2;
   // Typed, and not yet answered (the search waits 300ms for the last key).
   const waiting = !film && typed && !settled && !searchFailed;
 

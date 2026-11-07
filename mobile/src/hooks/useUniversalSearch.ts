@@ -7,6 +7,7 @@ import { stripHtml } from '@/src/utils/html';
 import { byKey } from '@/src/utils/order';
 import { resolveTier } from '@/src/utils/tier';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
+import { cutWhole } from '@/src/utils/text';
 import { useQuery } from '@tanstack/react-query';
 
 // ═══════════════════════════════════════════════════════════════
@@ -85,7 +86,7 @@ function closeness(handle: string) {
 
 /** A review as one plain line: no markup, entities decoded, whitespace folded. */
 function plainLine(review: string | null | undefined): string {
-  return stripHtml(review ?? '').replace(/\s+/g, ' ').slice(0, 200);
+  return cutWhole(stripHtml(review ?? '').replace(/\s+/g, ' '), 200);
 }
 
 /** PostgREST returns an embedded to-one either as an object or a one-element array. */
@@ -318,7 +319,7 @@ export function useUniversalSearch(query: string) {
           id: `list-${p.id}`, type: 'list',
           title: p.title ?? 'Untitled Stack',
           subtitle: p.description
-              ? (p.is_ranked ? `✦ RANKED · ${p.description.slice(0, 50)}` : p.description.slice(0, 60))
+              ? (p.is_ranked ? `✦ RANKED · ${cutWhole(p.description, 50)}` : cutWhole(p.description, 60))
               : (p.is_ranked ? '✦ RANKED STACK' : 'PUBLIC STACK'),
           image: null,
           _nav: `/stacks/${p.id}`,

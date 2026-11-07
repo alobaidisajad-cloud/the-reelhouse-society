@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { watchChannel } from '../lib/watchChannel';
 import { instantOf } from '../utils/instant';
 import { byKey } from '../utils/order';
+import { characterCount } from '../utils/text';
 import { LoungeMessagePayloadSchema } from '../services/LoungeService';
 import { logger } from '../utils/logger';
 import { buildSearchPattern } from '../utils/searchPattern';
@@ -1036,7 +1037,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
     const trimmedName = sanitizeInput(name, 'loungeName');
     const trimmedDesc = sanitizeInput(description, 'loungeDescription');
-    if (!trimmedName || trimmedName.length < 2) {
+    if (!trimmedName || characterCount(trimmedName) < 2) {
       reelToast.error('Lounge name must be at least 2 characters.');
       return null;
     }
