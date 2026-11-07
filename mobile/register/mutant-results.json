@@ -1853,5 +1853,12 @@
     "proof": "m15",
     "commit": "5126a57a70e23422966d0375fa7eebff154bd441",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-room-read-every-column",
+    "proof": "m16",
+    "commit": "2d55c235c8248687e6c43de58c90858736ffee7b",
+    "verdict": "caught"
   }
 ]
