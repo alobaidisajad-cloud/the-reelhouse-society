@@ -98,16 +98,16 @@ export const mmkvPersister: Persister = {
   persistClient: async (client: PersistedClient) => {
     try {
       const started = Date.now();
-      let serialized = JSON.stringify(client);
+      let serialized: string | null = JSON.stringify(client);
       let bytes = utf8Bytes(serialized);
       if (bytes > MAX_CACHE_SIZE_BYTES) {
         const cut = cutToCeiling(client);
-        // Not one read fits: the cache on disk is never left in its place, and the next start reads afresh.
-        if (!cut) { e2eTrace('cache.persist', { bytes: 0, ms: Date.now() - started }); storage.delete(CACHE_KEY); return; }
-        serialized = JSON.stringify(cut);
-        bytes = utf8Bytes(serialized);
+        serialized = cut ? JSON.stringify(cut) : null;
+        bytes = serialized === null ? 0 : utf8Bytes(serialized);
       }
       e2eTrace('cache.persist', { bytes, ms: Date.now() - started });
+      // Not one read fits: the cache on disk is never left in its place, and the next start reads afresh.
+      if (serialized === null) { storage.delete(CACHE_KEY); return; }
       setSensitive(CACHE_KEY, serialized);
     } catch {
       // Silently fail — app works without cache, just slower on cold start
