@@ -1783,5 +1783,33 @@
     "proof": "m2",
     "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-reader-ignores-opened",
+    "proof": "m10",
+    "commit": "c198b39bccb7aea576c6349030470acc948e0ea5",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-reader-critiques-after",
+    "proof": "m11",
+    "commit": "c198b39bccb7aea576c6349030470acc948e0ea5",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-next-part-not-kept",
+    "proof": "m12",
+    "commit": "c198b39bccb7aea576c6349030470acc948e0ea5",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-stack-unseeded-from-card",
+    "proof": "m13",
+    "commit": "c198b39bccb7aea576c6349030470acc948e0ea5",
+    "verdict": "survived"
   }
 ]
