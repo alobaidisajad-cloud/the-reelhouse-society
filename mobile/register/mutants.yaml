@@ -2472,3 +2472,66 @@ mutants:
         find: "await supabase.from('lounges').select(ROOM_COLUMNS).eq('id', id).maybeSingle();"
         replace: "await supabase.from('lounges').select('*').eq('id', id).maybeSingle();"
     proof: { file: src/utils/__tests__/everyReadNamesItsColumns.guard.test.ts, test: "names its columns in every read of the app" }
+
+  - id: shape-year-read-every-column
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/services/YearInCinemaService.ts
+        find: "export const YEAR_COLUMNS = 'id, film_id, film_title, poster_path, rating, watched_date, created_at';"
+        replace: "export const YEAR_COLUMNS = 'id, user_id, film_id, film_title, poster_path, rating, review, watched_date, viewing_history, created_at';"
+    proof: { file: src/services/__tests__/aYearIsReadToTheLast.test.ts, test: "reads the member's own year alone, by the seven columns it draws, each where the story looks" }
+
+  - id: shape-year-forgotten-when-closed
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/year-in-cinema.tsx
+        find: "    staleTime: 0,"
+        replace: "    staleTime: 0, gcTime: 0,"
+    proof: { file: app/__tests__/aYearIsKeptForItsNextOpening.test.tsx, test: "a second opening draws the year it last read at once, and reads it again beneath" }
+
+  - id: shape-year-never-read-again
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/year-in-cinema.tsx
+        find: "    staleTime: 0,"
+        replace: "    staleTime: Infinity,"
+    proof: { file: app/__tests__/aYearIsKeptForItsNextOpening.test.tsx, test: "a second opening draws the year it last read at once, and reads it again beneath" }
+
+  - id: shape-cache-dropped-past-ceiling
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "  if (kept.length === 0) return null;"
+        replace: "  if (kept.length >= 0) return null;"
+    proof: { file: src/utils/__tests__/queryClient.test.ts, test: "past the ceiling, keeps its newest reads that fit, each whole, and never the oldest" }
+
+  - id: shape-cache-films-before-lobby
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "    .sort((a, b) => drawnFirst(b.query) - drawnFirst(a.query)"
+        replace: "    .sort((a, b) => 0 * (drawnFirst(b.query) - drawnFirst(a.query))"
+    proof: { file: src/utils/__tests__/queryClient.test.ts, test: "keeps the Lobby and the Reels before films opened since, which a start does not draw first" }
+
+  - id: shape-cache-keeps-searches
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "  defaultShouldDehydrateQuery(query) && !NEVER_KEPT.has(String(query.queryKey[0]));"
+        replace: "  defaultShouldDehydrateQuery(query) && !NEVER_KEPT.has(String(query.queryKey[1]));"
+    proof: { file: src/utils/__tests__/queryClient.test.ts, test: "never a search, which answers what was typed: the search opens empty after a start" }
+
+  - id: shape-cache-rule-not-handed
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/_layout.tsx
+        find: "buster: CACHE_BUSTER, dehydrateOptions: CACHE_KEEPS }}"
+        replace: "buster: CACHE_BUSTER }}"
+    proof: { file: src/utils/__tests__/queryClient.test.ts, test: "keeps only what the rule keeps: the root hands the rule to the cache's provider" }

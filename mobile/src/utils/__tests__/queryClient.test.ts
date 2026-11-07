@@ -6,7 +6,7 @@
  */
 import { AppState } from 'react-native';
 import { focusManager, onlineManager, QueryObserver } from '@tanstack/react-query';
-import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
+import { CACHE_KEEPS, keepsQuery, mmkvPersister, queryClient } from '@/src/lib/queryClient';
 import { QUERY_POLICY, shouldRetry } from '@/src/lib/queryPolicy';
 import { TmdbUnreachable } from '@/src/lib/tmdbErrors';
 import { storage, setSensitive } from '@/src/stores/mmkv-storage';
@@ -67,10 +67,10 @@ describe('mmkvPersister — cache size ceiling', () => {
     expect(setSensitive).toHaveBeenCalled();
   });
 
-  it('REFUSES a cache over the 2 MB ceiling, and clears the old one', async () => {
+  it('REFUSES a read over the 2 MB ceiling, and clears the old cache', async () => {
     // Parsing a huge blob on the JS thread stalls the cold start — the exact
-    // thing this cap exists to prevent. Dropping the cache is the right trade:
-    // a slow launch is worse than a cold one.
+    // thing this cap exists to prevent. Dropping a read that size is the right
+    // trade: a slow launch is worse than a cold one.
     const huge = { timestamp: Date.now(), buster: '', clientState: { mutations: [], queries: [{ big: 'x'.repeat(3 * 1024 * 1024) }] } };
     await mmkvPersister.persistClient(huge as never);
     expect(setSensitive).not.toHaveBeenCalled();
@@ -85,6 +85,29 @@ describe('mmkvPersister — cache size ceiling', () => {
     await mmkvPersister.persistClient(whale as never);
     expect(disk.has('REELHOUSE_QUERY_CACHE')).toBe(false);
     await expect(mmkvPersister.restoreClient()).resolves.toBeUndefined();
+  });
+
+  const disk = (storage as unknown as { __store: Map<string, string> }).__store;
+  const read = (hash: string, at: number, root = hash) =>
+    ({ queryHash: hash, queryKey: [root], state: { dataUpdatedAt: at, data: 'x'.repeat(800 * 1024) } });
+
+  it('past the ceiling, keeps its newest reads that fit, each whole, and never the oldest', async () => {
+    await mmkvPersister.persistClient(client({ clientState: { mutations: [], queries: [read('first', 1), read('third', 3), read('second', 2)] } }));
+    const written = disk.get('REELHOUSE_QUERY_CACHE') ?? '';
+    expect(Buffer.byteLength(written, 'utf8')).toBeLessThanOrEqual(2 * 1024 * 1024);
+    const kept = (JSON.parse(written) as { clientState: { queries: { queryHash: string; state: { data: string } }[] } }).clientState.queries;
+    expect(kept.map((q) => q.queryHash)).toEqual(['third', 'second']);
+    expect(kept.every((q) => q.state.data.length === 800 * 1024)).toBe(true);
+    const restored = await mmkvPersister.restoreClient();
+    expect(restored?.clientState.queries.map((q) => q.queryHash)).toEqual(['third', 'second']);
+  });
+
+  it('keeps the Lobby and the Reels before films opened since, which a start does not draw first', async () => {
+    await mmkvPersister.persistClient(client({ clientState: { mutations: [], queries: [
+      read('wall', 1, 'lobby'), read('film-a', 4, 'film'), read('reviews', 2, 'feed'), read('film-b', 5, 'film'),
+    ] } }));
+    const kept = (JSON.parse(disk.get('REELHOUSE_QUERY_CACHE') ?? '') as { clientState: { queries: { queryHash: string }[] } }).clientState.queries;
+    expect(kept.map((q) => q.queryHash)).toEqual(['reviews', 'wall']);
   });
 
   /** A cache whose serialised form is `fill` plus a fixed frame; and that frame's UTF-8 size. */
@@ -123,6 +146,27 @@ describe('mmkvPersister — cache size ceiling', () => {
     (setSensitive as jest.Mock).mockClear();
     await mmkvPersister.persistClient(filled('🎬'.repeat(fits + 1)));
     expect(setSensitive).not.toHaveBeenCalled();
+  });
+});
+
+describe('which reads the cache keeps', () => {
+  const settled = (key: unknown[]) => {
+    queryClient.setQueryData(key, { rows: [1] });
+    return queryClient.getQueryCache().find({ queryKey: key, exact: true })!;
+  };
+
+  it('keeps a read that answered: a feed, a film', () => {
+    expect(keepsQuery(settled(['feed', 'reviews']))).toBe(true);
+    expect(keepsQuery(settled(['film', 550]))).toBe(true);
+  });
+
+  it('never a search, which answers what was typed: the search opens empty after a start', () => {
+    expect(keepsQuery(settled(['universalSearch', 'ozu']))).toBe(false);
+  });
+
+  it('never a read still waiting for its answer', () => {
+    queryClient.getQueryCache().build(queryClient, { queryKey: ['feed', 'waiting'] });
+    expect(keepsQuery(queryClient.getQueryCache().find({ queryKey: ['feed', 'waiting'], exact: true })!)).toBe(false);
   });
 });
 
@@ -346,4 +390,10 @@ describe('a saved cache, across builds and updates', () => {
 it('is restored at launch with that mark: the root hands it to the cache\'s provider (P4.11)', () => {
   const { readCode } = jest.requireActual('@/test-utils/readCode') as typeof import('@/test-utils/readCode');
   expect(readCode('app/_layout.tsx')).toMatch(/persistOptions=\{\{[^}]*buster: CACHE_BUSTER[^}]*\}\}/);
+});
+
+it('keeps only what the rule keeps: the root hands the rule to the cache\'s provider', () => {
+  const { readCode } = jest.requireActual('@/test-utils/readCode') as typeof import('@/test-utils/readCode');
+  expect(readCode('app/_layout.tsx')).toMatch(/persistOptions=\{\{[^}]*dehydrateOptions: CACHE_KEEPS[^}]*\}\}/);
+  expect(CACHE_KEEPS.shouldDehydrateQuery).toBe(keepsQuery);
 });

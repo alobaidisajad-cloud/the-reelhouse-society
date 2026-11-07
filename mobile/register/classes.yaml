@@ -521,7 +521,7 @@ classes:
     seriousness: behaviour
     area: tests
     status: OPEN
-    count: 127
+    count: 126
     source: { kind: history, ref: "the salon roster read a missing column for three months under green tests (a-mock-accepts-any-column); P0.63" }
     methods:
       - { kind: running, file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a column the table does not have, in a select, a filter or an order" }
@@ -1741,7 +1741,7 @@ classes:
     seriousness: behaviour
     area: speed
     status: OPEN
-    count: 14
+    count: 17
     source: { kind: reviewer, ref: "P4.53: every page opens at its floor (audit/final/P4-53-STUDY.md)" }
     methods:
       - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "seeds the page from the feed row it was opened from, its critiques still to come" }
@@ -1761,7 +1761,14 @@ classes:
       - { kind: running, file: src/services/__tests__/servicesBatch3.test.ts, test: "fetches followers with cursor pagination" }
       - { kind: static, file: src/utils/__tests__/everyReadNamesItsColumns.guard.test.ts, test: "names its columns in every read of the app" }
       - { kind: static, file: src/utils/__tests__/everyReadNamesItsColumns.guard.test.ts, test: "says NO to a read of every column, and not to a named one or a comment" }
-    fix: "the log page asks for the record and its critiques together and draws the feed row it was opened from in its first frame (seedFromCards), its critiques said to be coming, and keeps that row when the house cannot be reached; the Darkroom draws its kept sheet while it reads, keeps a sheet whole while its next batch develops, reads its kept sheet once a key, and asks again only on a return to the network; the person page asks the network beside the archive; the edit form asks for a viewing's id only for a log it holds without one. The Dispatch reader draws an essay it holds (opened before: a notice, the part before) in its first frame and asks for its critiques with it, not after; the next part and a series' parts, read whole already, are kept where the reader looks first; a stack opened from the Reel's card draws its title, curator, first posters and true size at once. A log's critiques come with their authors and a member's followers and following with their profiles, in the one answer (the keys log_comments and interactions hold to profiles, probed live), not a second request after the first. The salon page read its room with every column (its invite code and limits among them); it reads ROOM_COLUMNS, and a guard finds any read of every column. The rest of the study's list is P4.53's next batches"
+      - { kind: running, file: app/__tests__/aYearIsKeptForItsNextOpening.test.tsx, test: "a second opening draws the year it last read at once, and reads it again beneath" }
+      - { kind: running, file: app/__tests__/aYearIsKeptForItsNextOpening.test.tsx, test: "a read that fails with no year kept says so, and asking again reads again" }
+      - { kind: running, file: src/services/__tests__/aYearIsReadToTheLast.test.ts, test: "reads the member's own year alone, by the seven columns it draws, each where the story looks" }
+      - { kind: running, file: src/utils/__tests__/queryClient.test.ts, test: "past the ceiling, keeps its newest reads that fit, each whole, and never the oldest" }
+      - { kind: running, file: src/utils/__tests__/queryClient.test.ts, test: "keeps the Lobby and the Reels before films opened since, which a start does not draw first" }
+      - { kind: running, file: src/utils/__tests__/queryClient.test.ts, test: "never a search, which answers what was typed: the search opens empty after a start" }
+      - { kind: static, file: src/utils/__tests__/queryClient.test.ts, test: "keeps only what the rule keeps: the root hands the rule to the cache's provider" }
+    fix: "the log page asks for the record and its critiques together and draws the feed row it was opened from in its first frame (seedFromCards), its critiques said to be coming, and keeps that row when the house cannot be reached; the Darkroom draws its kept sheet while it reads, keeps a sheet whole while its next batch develops, reads its kept sheet once a key, and asks again only on a return to the network; the person page asks the network beside the archive; the edit form asks for a viewing's id only for a log it holds without one. The Dispatch reader draws an essay it holds (opened before: a notice, the part before) in its first frame and asks for its critiques with it, not after; the next part and a series' parts, read whole already, are kept where the reader looks first; a stack opened from the Reel's card draws its title, curator, first posters and true size at once. A log's critiques come with their authors and a member's followers and following with their profiles, in the one answer (the keys log_comments and interactions hold to profiles, probed live), not a second request after the first. The salon page read its room with every column (its invite code and limits among them); it reads ROOM_COLUMNS, and a guard finds any read of every column. Year in Cinema read every column of a whole year (each log's words and past viewings) behind its loading frame at every opening; it reads the seven it draws, and keeps the year it told, drawn at once on the next opening and read again beneath. The cache kept on the phone was dropped whole past 2 MB, so a member with the most reads opened every tab on nothing; past it, it keeps the Lobby's and the Reels' reads, then the newest, each whole, and never a search. The rest of the study's list is P4.53's next batches"
     places: [none]
 
   - id: RUNTIME-an-instant-read-by-the-engine

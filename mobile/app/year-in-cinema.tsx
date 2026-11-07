@@ -2,7 +2,8 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { RemoteImage } from '@/src/components/Picture';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film, X } from 'lucide-react-native';
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/src/components/text';
 
@@ -71,37 +72,30 @@ export default function YearInCinemaScreen() {
 
   const thisYear = useClock((now) => new Date(now).getFullYear());
   const firstTold = useClock((now) => yearToTell(new Date(now)));
-  const [phaseRead, setPhase] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [stats, setStats] = useState<YearStats | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const reqId = useRef(0);
 
   const memberId = user?.id;
-  // No member, no year to read.
-  const phase = memberId ? phaseRead : 'error';
-  const read = useCallback((member: string) => {
-    const myReq = ++reqId.current;
-    const tell = async () => {
+  /**
+   * The year told, kept by who reads it and which year: a second opening draws the year it last
+   * read at once, and reads it again beneath (staleTime 0), so a film logged since is counted.
+   */
+  const year = useQuery<YearStats>({
+    queryKey: ['year', memberId, firstTold, thisYear],
+    enabled: !!memberId,
+    staleTime: 0,
+    queryFn: async () => {
+      const member = memberId as string;
       const logs = await fetchYearLogs(member, firstTold);
-      if (logs.length > 0 || firstTold === thisYear) return { year: firstTold, logs };
+      if (logs.length > 0 || firstTold === thisYear) return computeYearStats(logs, firstTold);
       // January, and the year just ended holds nothing of theirs: the year under way is told.
-      return { year: thisYear, logs: await fetchYearLogs(member, thisYear) };
-    };
-    tell().then(({ year, logs }) => {
-      if (myReq !== reqId.current) return; // a newer load supersedes this one
-      setStats(computeYearStats(logs, year));
-      setPhase('ready');
-    }, () => {
-      if (myReq !== reqId.current) return;
-      setPhase('error');
-    });
-  }, [firstTold, thisYear]);
-
-  useEffect(() => { if (memberId) read(memberId); }, [memberId, read]);
-  const load = useCallback(() => {
-    setPhase('loading');
-    if (memberId) read(memberId);
-  }, [memberId, read]);
+      return computeYearStats(await fetchYearLogs(member, thisYear), thisYear);
+    },
+  });
+  const stats = year.data ?? null;
+  // No member, no year to read; a failed read with no year kept says so, and asking again loads.
+  const phase = !memberId || (year.isError && !year.isFetching && !stats) ? 'error' : stats ? 'ready' : 'loading';
+  const { refetch } = year;
+  const load = useCallback(() => { void refetch(); }, [refetch]);
 
   // The story adapts to the data — no hollow slides for stats you don't have.
   const slides = useMemo<SlideType[]>(() => {

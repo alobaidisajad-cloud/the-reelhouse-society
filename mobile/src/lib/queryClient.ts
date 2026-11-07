@@ -3,12 +3,13 @@
  *
  * The cache is written to disk (only when storage is encrypted: it holds
  * member data) and read back at launch, so a screen draws what it last showed
- * at once and refreshes behind it. Kept 24 hours at most, 2 MB at most.
+ * at once and refreshes behind it. Kept 24 hours at most, 2 MB at most: past
+ * that, its newest reads that fit.
  */
 
 import NetInfo from '@/src/lib/reachability';
 import { AppState } from 'react-native';
-import { focusManager, onlineManager, QueryClient } from '@tanstack/react-query';
+import { defaultShouldDehydrateQuery, focusManager, onlineManager, QueryClient, type Query } from '@tanstack/react-query';
 // Not from auth.ts, which imports this file: that would be a cycle.
 import { storage, setSensitive } from '../stores/mmkv-storage';
 import { e2eTrace } from '../utils/e2eTrace';
@@ -56,20 +57,57 @@ function utf8Bytes(s: string): number {
   return bytes;
 }
 
+/** Reads never kept: a search answers what was typed, and the search opens empty after a start. */
+const NEVER_KEPT = new Set(['universalSearch']);
+/** Which reads the cache keeps: an answered read, never a search. */
+export const keepsQuery = (query: Query): boolean =>
+  defaultShouldDehydrateQuery(query) && !NEVER_KEPT.has(String(query.queryKey[0]));
+/** That rule, as app/_layout.tsx hands it to the cache's provider (persistOptions.dehydrateOptions). */
+export const CACHE_KEEPS = { shouldDehydrateQuery: keepsQuery };
+
+/** The reads a start draws first, the Lobby's and the Reels' feeds: kept before any other. */
+const DRAWN_FIRST = new Set(['lobby', 'feed']);
+const drawnFirst = (query: { queryKey?: readonly unknown[] }): number =>
+  DRAWN_FIRST.has(String(query.queryKey?.[0])) ? 1 : 0;
+
+/**
+ * A cache past the ceiling, cut to it: the reads a start draws first, then the newest, each whole
+ * while it fits, so a member whose reads outgrow 2 MB opens on what they saw last rather than on
+ * nothing, and ten films opened since never push out the Lobby. Null when not one read fits. Each
+ * read's share counts its comma, so the whole never passes.
+ */
+function cutToCeiling(client: PersistedClient): PersistedClient | null {
+  const { queries } = client.clientState;
+  const frame = utf8Bytes(JSON.stringify({ ...client, clientState: { ...client.clientState, queries: [] } }));
+  const newest = queries
+    .map((query) => ({ query, share: utf8Bytes(JSON.stringify(query)) + 1 }))
+    .sort((a, b) => drawnFirst(b.query) - drawnFirst(a.query)
+      || (b.query.state?.dataUpdatedAt ?? 0) - (a.query.state?.dataUpdatedAt ?? 0));
+  let room = MAX_CACHE_SIZE_BYTES - frame;
+  const kept: typeof queries = [];
+  for (const { query, share } of newest) {
+    if (share <= room) { kept.push(query); room -= share; }
+  }
+  if (kept.length === 0) return null;
+  return { ...client, clientState: { ...client.clientState, queries: kept } };
+}
+
 // Each write and read of the cache, its size and the ms it held the thread, for the speed lab
 // (the E2E build alone): a screen's answer is taken in only once the thread is free.
 export const mmkvPersister: Persister = {
   persistClient: async (client: PersistedClient) => {
     try {
       const started = Date.now();
-      const serialized = JSON.stringify(client);
-      const bytes = utf8Bytes(serialized);
-      e2eTrace('cache.persist', { bytes, ms: Date.now() - started });
+      let serialized = JSON.stringify(client);
+      let bytes = utf8Bytes(serialized);
       if (bytes > MAX_CACHE_SIZE_BYTES) {
-        if (__DEV__) console.warn(`[QueryCache] Skipping persist — ${(bytes / 1024).toFixed(0)} KB exceeds 2 MB limit`);
-        storage.delete(CACHE_KEY);
-        return;
+        const cut = cutToCeiling(client);
+        // Not one read fits: the cache on disk is never left in its place, and the next start reads afresh.
+        if (!cut) { e2eTrace('cache.persist', { bytes: 0, ms: Date.now() - started }); storage.delete(CACHE_KEY); return; }
+        serialized = JSON.stringify(cut);
+        bytes = utf8Bytes(serialized);
       }
+      e2eTrace('cache.persist', { bytes, ms: Date.now() - started });
       setSensitive(CACHE_KEY, serialized);
     } catch {
       // Silently fail — app works without cache, just slower on cold start

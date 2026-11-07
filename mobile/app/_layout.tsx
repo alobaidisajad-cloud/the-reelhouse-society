@@ -1,4 +1,4 @@
-import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
+import { CACHE_KEEPS, mmkvPersister, queryClient } from '@/src/lib/queryClient';
 import { CACHE_BUSTER } from '@/src/lib/cacheBuster';
 import { SENTRY_DIST, SENTRY_RELEASE } from '@/src/lib/releaseName';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -163,7 +163,7 @@ export default function RootLayout() {
         <KeyboardRoom>
           <PersistQueryClientProvider
           client={queryClient}
-          persistOptions={{ persister: mmkvPersister, maxAge: 24 * 60 * 60 * 1000, buster: CACHE_BUSTER }}
+          persistOptions={{ persister: mmkvPersister, maxAge: 24 * 60 * 60 * 1000, buster: CACHE_BUSTER, dehydrateOptions: CACHE_KEEPS }}
         >
         <AppBootstrapper>
           {/* Whether the preloader has gone, for the E2E build's route marks (each screen's, drawn by toastScreenLayout). */}
