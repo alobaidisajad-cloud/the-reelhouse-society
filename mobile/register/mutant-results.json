@@ -1909,5 +1909,40 @@
     "proof": "m24",
     "commit": "cc462e5d2289de7881de12cae562d98feade6b6a",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-reel-asks-all-at-once",
+    "proof": "m25",
+    "commit": "321c3c09ef6c3c5f7970208a7e09ef4f26b7ef05",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-reel-stacks-held-when-turned",
+    "proof": "m27",
+    "commit": "321c3c09ef6c3c5f7970208a7e09ef4f26b7ef05",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-reel-never-asks-after",
+    "proof": "m26",
+    "commit": "321c3c09ef6c3c5f7970208a7e09ef4f26b7ef05",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-stacks-feed-ignores-held",
+    "proof": "m28",
+    "commit": "321c3c09ef6c3c5f7970208a7e09ef4f26b7ef05",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-following-feed-ignores-held",
+    "proof": "m28",
+    "commit": "321c3c09ef6c3c5f7970208a7e09ef4f26b7ef05",
+    "verdict": "caught"
   }
 ]
