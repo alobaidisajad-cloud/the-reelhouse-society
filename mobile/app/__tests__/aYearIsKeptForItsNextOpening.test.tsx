@@ -38,6 +38,8 @@ it('a second opening draws the year it last read at once, and reads it again ben
   const screen = await render(<Opened open />);
   expect(await screen.findByText('2027')).toBeTruthy();
   await screen.rerender(<Opened open={false} />);
+  // A while closed, as a member is between two openings: a year kept only while drawn is gone by now.
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
 
   let answer!: (logs: YearLogInput[]) => void;
   fetchYearLogs.mockImplementation(() => new Promise((resolve) => { answer = resolve; }));
