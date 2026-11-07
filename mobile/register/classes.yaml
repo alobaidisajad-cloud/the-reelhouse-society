@@ -1130,7 +1130,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1443
+    count: 1442
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
@@ -1734,4 +1734,38 @@ classes:
       - { kind: static, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.guard.test.ts, test: "sizes no text by its code units, and cuts none at a fixed one, but what is listed" }
       - { kind: static, file: src/utils/__tests__/aTextIsCountedAsItIsSeen.guard.test.ts, test: "finds a string weighed or cut by its units, and not a list, nor a length asked only for any" }
     fix: "utils/text.ts counts, takes and cuts by the one character rule (charactersOf, characterCount, firstCharacters, cutWhole, isPictureCharacter); emOf measures a character at a time (a mark adds nothing, an emoji PICTURE_EM), and the member file's name size measures with it; the review planner wraps in cells; every site moved; the guard finds a string's length weighed or a fixed cut by the type checker, each left judged by name"
+    places: [none]
+
+  - id: SPEED-a-page-waits-for-what-it-knows
+    title: "A page that waits on the network for what it already holds, or asks one thing after another that could go together: the log page a blank frame for three round trips though its card held the record, the Darkroom's kept sheet hidden behind the skeleton (and the whole sheet while its next batch developed) and asked for twice, the person page waiting on the phone's network before asking, the edit form asking for a column it already had"
+    seriousness: behaviour
+    area: speed
+    status: OPEN
+    count: 7
+    source: { kind: reviewer, ref: "P4.53: every page opens at its floor (audit/final/P4-53-STUDY.md)" }
+    methods:
+      - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "seeds the page from the feed row it was opened from, its critiques still to come" }
+      - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "draws the seeded record, the count of its critiques, and never says there are none" }
+      - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "asks for the critiques with the record, not after it" }
+      - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "keeps the card’s record when the house cannot be reached, its critiques said out of reach" }
+      - { kind: running, file: src/components/darkroom/__tests__/theSheetIsDrawnWhileItIsRead.test.tsx, test: "draws the sheet it kept from a visit while the archives are asked again" }
+      - { kind: running, file: src/components/darkroom/__tests__/theSheetIsDrawnWhileItIsRead.test.tsx, test: "keeps the sheet whole while its next batch develops" }
+      - { kind: running, file: src/components/darkroom/__tests__/theSheetIsDrawnWhileItIsRead.test.tsx, test: "asks the archives once on opening, though the network is first unknown and then learned" }
+      - { kind: running, file: app/person/__tests__/thePersonFileReadsTrue.test.tsx, test: "tells an offline phone so at the network’s answer, not after the archive gives up" }
+      - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "reads the record once, its viewing’s id in the same row: no second request for it (P4.53)" }
+    fix: "the log page asks for the record and its critiques together and draws the feed row it was opened from in its first frame (seedFromCards), its critiques said to be coming, and keeps that row when the house cannot be reached; the Darkroom draws its kept sheet while it reads, keeps a sheet whole while its next batch develops, reads its kept sheet once a key, and asks again only on a return to the network; the person page asks the network beside the archive; the edit form asks for a viewing's id only for a log it holds without one. The rest of the study's list is P4.53's next batches"
+    places: [none]
+
+  - id: RUNTIME-an-instant-read-by-the-engine
+    title: "A text handed to the engine's Date.parse is read as the engine chooses: on the phone's Hermes an out-of-range stamp (a 13th month, a 45th day, a 99th hour) rolled over into a real, wrong date, where Node names none; a broken stamp was drawn on the phone as a date"
+    seriousness: serious
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "the pure suites on the phone's own Hermes (god_tier_ci): anInstantIsReadOneWay and aDateIsSaidInTheHouseVoice failed there" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "names no instant for a field no calendar or clock shows, whatever the engine would roll it into" }
+      - { kind: running, file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "names no instant for a form the house never writes, though one engine reads it and another does not" }
+      - { kind: running, file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "reads an instant with no offset on the reader’s own clock" }
+    fix: "instantOf hands no text to the engine: the house's instant, a day alone and the HTTP Date header are read field by field, each field held to its range, and any other text names no instant; the suites run on Node and on the phone's Hermes"
     places: [none]

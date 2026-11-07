@@ -5,8 +5,8 @@ import { useBlockStore } from '@/src/stores/blockStore';
 import { useFilmStore, useInteractionStore } from '@/src/stores/films';
 import { beginTap, queueTap, settleTap, useMarkCount, withdrawTap } from '@/src/stores/markCounts';
 import { tellMarks } from '@/src/stores/tellMarks';
-import { markCount, mineMark } from '@/src/schemas/feed.schema';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { markCount, mineMark, type FeedItem } from '@/src/schemas/feed.schema';
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { P, useRouteParams } from '@/src/utils/routeParams';
@@ -135,6 +135,52 @@ interface LogComment {
   created_at: string;
 }
 
+/** What the page holds of a record: the record, its member, a page of critiques and the marks. */
+interface LogRead {
+  log: LogDetail | null;
+  profile: LogProfile | null;
+  comments: LogComment[];
+  commentTotal: number;
+  certifyCount: number | null;
+  certifiedKnown: boolean;
+  critiquesUnread: boolean;
+  /** Drawn from the card the page was opened from: its critiques are still to come, never none. */
+  seeded?: boolean;
+}
+
+/**
+ * The record as the card it was opened from already holds it (a feed's row), so the page
+ * draws it in its first frame with no wait on the network (P4.53). The critiques are not on a
+ * card: until the house answers, the page reads them as still to come.
+ */
+function seedFromCards(queryClient: QueryClient, id: string): LogRead | undefined {
+  for (const [, data] of queryClient.getQueriesData<{ pages?: unknown[] }>({ queryKey: ['feed'] })) {
+    for (const page of data?.pages ?? []) {
+      if (!Array.isArray(page)) continue;
+      const row = (page as Partial<FeedItem>[]).find((r) => r?.id === id && typeof r.film_title === 'string');
+      if (!row || row.film_id == null || !row.created_at) continue;
+      return {
+        log: {
+          id, film_id: row.film_id, film_title: row.film_title ?? '', poster_path: row.poster_path ?? null, year: row.year ?? null,
+          rating: row.rating ?? 0, review: row.review ?? null, pull_quote: row.pull_quote ?? null, drop_cap: row.drop_cap ?? undefined,
+          alt_poster: row.alt_poster ?? null, status: row.status ?? 'watched', is_spoiler: !!row.is_spoiler,
+          watched_with: row.watched_with ?? null, physical_media: row.physical_media ?? null, abandoned_reason: row.abandoned_reason ?? null,
+          is_autopsied: !!row.is_autopsied, autopsy: (row.autopsy ?? null) as LogDetail['autopsy'],
+          user_id: row.user_id ?? '', created_at: row.created_at, editorial_header: row.editorial_header ?? null,
+        },
+        profile: { id: row.user_id ?? '', username: row.username ?? '', avatar_url: row.avatar_url ?? null, role: row.role },
+        comments: [],
+        commentTotal: row.critique_count ?? 0,
+        certifyCount: row.certify_count ?? null,
+        certifiedKnown: typeof row.certified === 'boolean',
+        critiquesUnread: false,
+        seeded: true,
+      };
+    }
+  }
+  return undefined;
+}
+
 const PARAMS = { id: P.uuid };
 
 /** The route: a link of another shape is a page not in the archive (routeParams, P4.4). */
@@ -160,21 +206,22 @@ function LogDetailScreen({ id }: { id: string }) {
   const [loadingOlder, setLoadingOlder] = useState(false);
 
   // ── React Query: MMKV-cached log detail (instant revisits) ──
-  const { data: logQueryData, isLoading: logQueryLoading, isError: logQueryFailed, refetch: rereadLog } = useQuery({
+  const { data: logQueryData, isLoading: logQueryLoading, isError: logQueryFailed, refetch: rereadLog } = useQuery<LogRead>({
     queryKey: ['log', id],
-    queryFn: async ({ signal }) => {
+    placeholderData: () => seedFromCards(queryClient, id),
+    queryFn: async ({ signal }): Promise<LogRead> => {
       // Taken BEFORE the requests: see tellMarkCounts.
       const askedAt = Date.now();
       try {
-        const logData = await LogService.getLogDetails(id, signal);
-
-        // -------------------------------------------------------
+        // The record and one page of its critiques (newest kept, plus the TRUE total the header
+        // prints, never this page's length) asked together: the critiques need only the id, and
+        // asked after the record they cost the page a round trip of its own.
+        const [logData, { comments: commData, total: commentTotal }] = await Promise.all([
+          LogService.getLogDetails(id, signal),
+          LogService.getLogComments(id, signal, critiqueLimit.current),
+        ]);
 
         const profile = logData ? (Array.isArray(logData.profiles) ? logData.profiles[0] : logData.profiles) : null;
-
-        // One page of critiques, newest kept, plus the TRUE total, which the
-        // header prints (never this page's length).
-        const { comments: commData, total: commentTotal } = await LogService.getLogComments(id, signal, critiqueLimit.current);
 
         const mappedComments = (commData || []).map((c: Record<string, any>) => ({
           id: c.id,
@@ -308,6 +355,10 @@ function LogDetailScreen({ id }: { id: string }) {
             critiquesUnread: true,
           };
         }
+        // The card it was opened from still holds the record: kept on the page, its critiques
+        // said to be out of reach, rather than the record taken away.
+        const seed = seedFromCards(queryClient, id);
+        if (seed) return { ...seed, seeded: false, critiquesUnread: true };
         throw err;
       }
     },
@@ -910,6 +961,7 @@ function LogDetailScreen({ id }: { id: string }) {
             } : undefined}
             onSignIn={isAuthenticated ? undefined : () => { nav.push('/login'); }}
             unread={!!logQueryData?.critiquesUnread}
+            reading={!!logQueryData?.seeded}
             onReread={() => { void rereadLog(); }}
             loadingOlder={loadingOlder}
             onLoadOlder={() => {

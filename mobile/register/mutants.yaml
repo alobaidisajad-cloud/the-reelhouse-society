@@ -2283,3 +2283,93 @@ mutants:
         find: "  .filter((u) => (u.api.endsWith('.length') ? WEIGHED : CUT).test(u.code));"
         replace: "  .filter(() => false);"
     proof: { file: src/utils/__tests__/aTextIsCountedAsItIsSeen.guard.test.ts, test: "finds a string weighed or cut by its units, and not a list, nor a length asked only for any" }
+
+  - id: shape-log-critiques-after-record
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "          LogService.getLogDetails(id, signal),\n          LogService.getLogComments(id, signal, critiqueLimit.current),\n        ]);"
+        replace: "          LogService.getLogDetails(id, signal),\n          LogService.getLogDetails(id, signal).then(() => LogService.getLogComments(id, signal, critiqueLimit.current)),\n        ]);"
+    proof: { file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "asks for the critiques with the record, not after it" }
+
+  - id: shape-log-unseeded
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "    placeholderData: () => seedFromCards(queryClient, id),"
+        replace: "    placeholderData: () => undefined,"
+    proof: { file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "seeds the page from the feed row it was opened from, its critiques still to come" }
+
+  - id: shape-critiques-none-while-reading
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/components/log/LogComments.tsx
+        find: "          unread || reading ? null :"
+        replace: "          unread ? null :"
+    proof: { file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "draws the seeded record, the count of its critiques, and never says there are none" }
+
+  - id: shape-log-failure-drops-card
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "        if (seed) return { ...seed, seeded: false, critiquesUnread: true };"
+        replace: "        if (seed && !seed) return { ...seed, seeded: false, critiquesUnread: true };"
+    proof: { file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "keeps the card’s record when the house cannot be reached, its critiques said out of reach" }
+
+  - id: shape-darkroom-skeleton-over-kept
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/(tabs)/darkroom.tsx
+        find: "  const showSkeleton = displayData.length === 0 && (loading ||"
+        replace: "  const showSkeleton = (loading ||"
+    proof: { file: src/components/darkroom/__tests__/theSheetIsDrawnWhileItIsRead.test.tsx, test: "draws the sheet it kept from a visit while the archives are asked again" }
+
+  - id: shape-darkroom-asks-on-learning
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/(tabs)/darkroom.tsx
+        find: "  const online = network.isConnected !== false;"
+        replace: "  const online = network.isConnected;"
+    proof: { file: src/components/darkroom/__tests__/theSheetIsDrawnWhileItIsRead.test.tsx, test: "asks the archives once on opening, though the network is first unknown and then learned" }
+
+  - id: shape-person-offline-told-late
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/person/[id].tsx
+        find: "        if (s.isConnected === false) throw new Error('NETWORK_OFFLINE');"
+        replace: "        if (s.isConnected === null) throw new Error('NETWORK_OFFLINE');"
+    proof: { file: app/person/__tests__/thePersonFileReadsTrue.test.tsx, test: "tells an offline phone so at the network’s answer, not after the archive gives up" }
+
+  - id: shape-edit-viewing-asked-twice
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "|| storeViewingId || !holdsEdit) return;"
+        replace: "|| storeViewingId) return;"
+    proof: { file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "reads the record once, its viewing’s id in the same row: no second request for it (P4.53)" }
+
+  - id: shape-instant-rolled-over
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: src/utils/instant.ts
+        find: "    if (!inRange(y, mo, d, h, mi, s)) return NaN;"
+        replace: "    if (!inRange(y, mo, d, 0, 0, 0) && mo > 12) return NaN;"
+    proof: { file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "names no instant for a field no calendar or clock shows, whatever the engine would roll it into" }
+
+  - id: shape-instant-any-text-parsed
+    class: RUNTIME-an-instant-read-by-the-engine
+    source: shape
+    edits:
+      - file: src/utils/instant.ts
+        find: "  return NaN;"
+        replace: "  return Date.parse(trimmed);"
+    proof: { file: src/utils/__tests__/anInstantIsReadOneWay.test.ts, test: "names no instant for a form the house never writes, though one engine reads it and another does not" }

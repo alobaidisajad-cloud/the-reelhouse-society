@@ -45,6 +45,8 @@ let mockOptions: { queryFn: (ctx: { signal?: AbortSignal }) => Promise<Record<st
 let mockCache: Record<string, unknown> | undefined;
 /** What the record's query says after a pull: `error` when it reached nothing. */
 let mockQueryState: { status: string } | undefined;
+/** The feeds held in the cache, as getQueriesData answers: [key, data] pairs. */
+let mockFeeds: [unknown[], unknown][] = [];
 const mockToastError = jest.fn();
 jest.mock('@/src/utils/reelToast', () => {
   const fn = Object.assign(jest.fn(), { error: (...a: unknown[]) => mockToastError(...a), success: jest.fn(), info: jest.fn() });
@@ -62,6 +64,7 @@ jest.mock('@tanstack/react-query', () => ({
     setQueryData: jest.fn((_k: unknown, fn: (old: unknown) => unknown) => { mockCache = fn(mockCache) as never; }),
     getQueryData: jest.fn(() => mockCache),
     getQueryState: jest.fn(() => mockQueryState),
+    getQueriesData: jest.fn(() => mockFeeds),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()), removeQueries: jest.fn(),
   }),
 }));
@@ -102,7 +105,7 @@ jest.mock('react-native-view-shot', () => ({ captureRef: (...a: unknown[]) => mo
 jest.mock('@/src/services/LogService', () => ({
   LogService: { getLogDetails: jest.fn(), getLogComments: jest.fn(), addLogComment: jest.fn(), deleteLogComment: jest.fn() },
 }));
-const mockLogService = jest.requireMock('@/src/services/LogService').LogService as Record<string, jest.Mock>;
+const mockLogService = jest.requireMock('@/src/services/LogService').LogService as { getLogDetails: jest.Mock; getLogComments: jest.Mock; addLogComment: jest.Mock; deleteLogComment: jest.Mock };
 
 const LOG = {
   id: LOG_ID, film_id: 843, film_title: 'In the Mood for Love', poster_path: null, year: 2000,
@@ -148,6 +151,7 @@ beforeEach(() => {
   const { useFilmStore } = jest.requireActual('@/src/stores/films');
   useFilmStore.setState({ _endorsedIndex: {}, interactions: [], logs: [], watchlist: [] });
   jest.clearAllMocks();
+  mockFeeds = [];
 });
 
 describe('a record prints facts, and nothing else', () => {
@@ -483,5 +487,68 @@ describe('a record that could not be read', () => {
     expect(r.getByText('No Such Record')).toBeTruthy();
     expect(r.getByText('Its member withdrew it, or it was never filed.')).toBeTruthy();
     expect(r.getByLabelText('Go back')).toBeTruthy();
+  });
+});
+
+describe('a record opened from its card draws what the card held, at once (P4.53)', () => {
+  const ROW = {
+    id: LOG_ID, user_id: 'u1', username: 'morpho', avatar_url: null, role: 'archivist', film_title: 'In the Mood for Love', film_id: 843,
+    poster_path: null, rating: 5, review: 'Every corridor is a held breath.', status: 'watched', created_at: '2026-08-12T21:00:00Z', year: 2000,
+    critique_count: 3, certify_count: 12, certified: false,
+  };
+  /** What the page holds of a record, as far as these tests read it. */
+  type Read = { log: { film_title: string }; profile: { username: string }; comments: unknown[]; commentTotal: number; critiquesUnread: boolean; seeded?: boolean };
+  /** The page's own placeholder, asked as the query would ask it. */
+  const seed = async () => {
+    mockQuery = { data: undefined, isLoading: true };
+    await act(async () => { render(<LogDetailScreen />); });
+    return (mockOptions as unknown as { placeholderData: () => Read | undefined }).placeholderData();
+  };
+
+  it('seeds the page from the feed row it was opened from, its critiques still to come', async () => {
+    mockFeeds = [[['feed', 'community'], { pages: [[{ ...ROW, id: '99999999-9999-4999-8999-999999999999' }], [ROW]] }], [['feed', 'stacks'], { pages: [[{ id: LOG_ID, title: 'a stack' }]] }]];
+    const s = await seed();
+    expect(s).toEqual(expect.objectContaining({ comments: [], commentTotal: 3, certifyCount: 12, certifiedKnown: true, critiquesUnread: false, seeded: true }));
+    expect(s).toEqual(expect.objectContaining({
+      log: expect.objectContaining({ id: LOG_ID, film_title: 'In the Mood for Love', review: 'Every corridor is a held breath.', user_id: 'u1' }),
+      profile: expect.objectContaining({ username: 'morpho', role: 'archivist' }),
+    }));
+  });
+
+  it('seeds nothing when no card holds the record', async () => {
+    mockFeeds = [[['feed', 'community'], { pages: [[{ ...ROW, id: '99999999-9999-4999-8999-999999999999' }]] }]];
+    expect(await seed()).toBeUndefined();
+  });
+
+  it('draws the seeded record, the count of its critiques, and never says there are none', async () => {
+    mockFeeds = [[['feed', 'community'], { pages: [[ROW]] }]];
+    const s = await seed();
+    mockQuery = { data: s, isLoading: false };
+    let r!: R;
+    await act(async () => { r = render(<LogDetailScreen />); });
+    const all = words(r);
+    expect(all).toContain('Every corridor is a held breath.');
+    expect(all).toContain('CRITIQUES · 3');
+    expect(all).not.toContain('No critiques yet');
+  });
+
+  it('asks for the critiques with the record, not after it', async () => {
+    await page();
+    mockLogService.getLogDetails.mockReturnValue(new Promise(() => {}));
+    mockLogService.getLogComments.mockResolvedValue({ comments: [], total: 0 });
+    void mockOptions.queryFn({ signal: new AbortController().signal });
+    await act(async () => {});
+    // Asked while the record is still on its way.
+    expect(mockLogService.getLogComments.mock.calls.map((c) => c[0])).toEqual([LOG_ID]);
+  });
+
+  it('keeps the card’s record when the house cannot be reached, its critiques said out of reach', async () => {
+    mockFeeds = [[['feed', 'community'], { pages: [[ROW]] }]];
+    await page();
+    mockCache = undefined;
+    mockLogService.getLogDetails.mockRejectedValue(new Error('Network request failed'));
+    mockLogService.getLogComments.mockRejectedValue(new Error('Network request failed'));
+    const read = await mockOptions.queryFn({ signal: new AbortController().signal });
+    expect(read).toEqual(expect.objectContaining({ critiquesUnread: true, seeded: false, commentTotal: 3, log: expect.objectContaining({ film_title: 'In the Mood for Love' }) }));
   });
 });

@@ -52,6 +52,8 @@ const REACHES_NATIVE = [
   'roomFilters', 'theDeadLetterIsNobodyElsesToKeep', 'tier', 'whatThisPhoneHoldsIsSaid', 'withRetry',
 ];
 const NATIVE_REFUSAL = '__fbBatchedBridgeConfig is not set';
+/** What the phone's host gives the bundle before it runs: its logging hook, printed here. */
+const NATIVE_HOST = 'globalThis.nativeLoggingHook = function (message) { print(message); };';
 
 const NODE = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]));
 const REGISTRY = /\bjest\.(doMock|dontMock|unmock|isolateModules|isolateModulesAsync|resetModules|createMockFromModule|enableAutomock|disableAutomock)\b/;
@@ -151,6 +153,8 @@ function staticReason(file, text) {
   if (registry) return `uses jest's module registry (${registry[0]})`;
   // The phone's release bundle is built with __DEV__ false, written in as a constant.
   if (/\b__DEV__\b/.test(text)) return 'sets or reads __DEV__, which the release bundle writes in as false';
+  // Node's segmenter is the answer such a suite checks the app against; the app never asks it.
+  if (/\bnew\s+Intl\.Segmenter\b/.test(text)) return "checks against Node's Intl.Segmenter, which the phone has not";
   return mocksOf(file, text).refused ?? null;
 }
 
@@ -281,7 +285,10 @@ async function bundle(out, only = [], bare = false) {
       // Server.build keeps every graph it made; a suite's is done with once its bundle is.
       server.getBundler().getDeltaBundler().end();
       if (suite.reachedNode) { plan.cannot.push({ suite: rel(suite.file), why: suite.reachedNode }); continue; }
-      fs.writeFileSync(path.join(out, `${name}.js`), code);
+      // The phone's native side installs its logging hook before any JavaScript runs, and React
+      // Native's console polyfill builds the whole console on it (assert among it, which the
+      // AbortController polyfill's events call): without the hook, a bare Hermes has none.
+      fs.writeFileSync(path.join(out, `${name}.js`), `${NATIVE_HOST}\n${code}`);
       plan.run.push(name);
       console.log(`bundled ${name}`);
     }

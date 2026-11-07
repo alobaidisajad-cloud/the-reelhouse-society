@@ -78,7 +78,7 @@ describe('which suites run', () => {
     const tried = suites.filter((f) => reasonOf(f) === null);
     expect(tried.length).toBeGreaterThanOrEqual(45);
     const reasons = suites.map(reasonOf).filter((r): r is string => r !== null);
-    expect(reasons.filter((r) => !/^(draws a screen|uses Node's |uses jest's module registry|sets or reads __DEV__|jest\.mock|calls jest\.mock|names a jest\.)/.test(r))).toEqual([]);
+    expect(reasons.filter((r) => !/^(draws a screen|uses Node's |uses jest's module registry|sets or reads __DEV__|checks against Node's Intl\.Segmenter|jest\.mock|calls jest\.mock|names a jest\.)/.test(r))).toEqual([]);
   });
 });
 
@@ -92,6 +92,9 @@ describe('the reader says NO', () => {
     expect(reason("it('x', () => {});", 'src/utils/__tests__/planted.test.tsx')).toBe('draws a screen');
     expect(reason('beforeEach(() => jest.resetModules());')).toBe("uses jest's module registry (jest.resetModules)");
     expect(reason('const was = __DEV__;')).toBe('sets or reads __DEV__, which the release bundle writes in as false');
+    expect(reason("const seg = new Intl.Segmenter('en', { granularity: 'grapheme' });")).toBe("checks against Node's Intl.Segmenter, which the phone has not");
+    // A suite that only proves the app never asks the segmenter runs on the phone.
+    expect(reason('globalThis.Intl.Segmenter = undefined;')).toBeNull();
   });
 
   it('to a mock it cannot make, and yes to one it can', () => {

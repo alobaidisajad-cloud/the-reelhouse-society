@@ -69,3 +69,31 @@ describe('instantOf', () => {
     ));
   });
 });
+
+describe('instantOf, field by field, on every engine', () => {
+  it('names no instant for a field no calendar or clock shows, whatever the engine would roll it into', () => {
+    for (const text of [
+      '2026-13-01T10:00:00Z', '2026-00-10T10:00:00Z', '2026-04-31T10:00:00Z', '2026-02-29T10:00:00Z',
+      '2026-11-06T24:00:00Z', '2026-11-06T10:60:00Z', '2026-11-06T10:00:60Z', '2026-11-06T10:00:00+24:00',
+      '2026-11-06T10:00:00+05:60', '2026-02-30', 'Fri, 31 Apr 2026 10:00:00 GMT',
+    ]) {
+      expect(`${text} → ${instantOf(text)}`).toBe(`${text} → NaN`);
+    }
+  });
+
+  it('reads a leap day where there is one, and a day alone as its midnight, UTC', () => {
+    expect(instantOf('2028-02-29T00:00:00Z')).toBe(Date.UTC(2028, 1, 29));
+    expect(instantOf('2026-08-05')).toBe(Date.UTC(2026, 7, 5));
+  });
+
+  it('reads an instant with no offset on the reader’s own clock', () => {
+    expect(instantOf('2026-08-12T21:00')).toBe(new Date(2026, 7, 12, 21, 0).getTime());
+    expect(instantOf('2026-08-12T21:00:05.5')).toBe(new Date(2026, 7, 12, 21, 0, 5, 500).getTime());
+  });
+
+  it('names no instant for a form the house never writes, though one engine reads it and another does not', () => {
+    for (const text of ['May 5, 2026', '2026/08/05', '5 August 2026', '1785000000000', 'Fri Nov 06 2026 10:00:00 GMT+0000']) {
+      expect(`${text} → ${instantOf(text)}`).toBe(`${text} → NaN`);
+    }
+  });
+});

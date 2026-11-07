@@ -103,22 +103,26 @@ export default function DarkRoomScreen() {
     return sheetCacheKey(`${mood?.label ?? 'default'}:${filterKey}`);
   }, [isSearching, query, mood, filters]);
 
-  const showSkeleton = loading || (cacheKey !== lastFetchedKey && network.isConnected !== false);
-
-  // Synchronous cache injection to completely eliminate the 3-stage UI flash
-  const displayData = useMemo(() => {
-    if (accumulatedFilms.length > 0) return accumulatedFilms;
-    if (page === 1) {
-      try {
-        const cachedStr = storage.getString(cacheKey);
-        if (cachedStr) {
-          const parsed = JSON.parse(cachedStr);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed as DiscoverFilm[];
-        }
-      } catch {}
+  // Asked again when the phone comes back online; not when its state is first learned (unknown, then
+  // online), which asked the archives twice and threw the first answer away.
+  const online = network.isConnected !== false;
+  // The sheet kept on this phone for these words or settings, read once a key (P4.53).
+  const keptSheet = useMemo<DiscoverFilm[]>(() => {
+    if (page !== 1) return [];
+    try {
+      const parsed: unknown = JSON.parse(storage.getString(cacheKey) ?? 'null');
+      return Array.isArray(parsed) ? (parsed as DiscoverFilm[]) : [];
+    } catch {
+      return [];
     }
-    return [];
-  }, [accumulatedFilms, page, cacheKey]);
+  }, [page, cacheKey]);
+  // Once these words or settings were answered, the answer is the sheet (none is none); until
+  // then, the sheet kept for them, drawn at once while the archives are asked again. Never the
+  // last settings' sheet under new ones.
+  const displayData = lastFetchedKey === cacheKey ? accumulatedFilms : keptSheet;
+  // The skeleton only where there is nothing to draw: a kept sheet is drawn while it is read
+  // again, and a sheet stays whole while its next batch develops at its foot.
+  const showSkeleton = displayData.length === 0 && (loading || (cacheKey !== lastFetchedKey && network.isConnected !== false));
   const offline = network.isConnected === false;
   // Failed: nothing to show, and the tray says the catalogue could not be reached.
   const readyMark = useScreenReady('darkroom', showSkeleton ? 'reading'
@@ -145,16 +149,8 @@ export default function DarkRoomScreen() {
       setLoading(true);
       if (page === 1) setUnreachable(false);
 
-      // Optimistic UI & Skeleton Activation
-      if (page === 1) {
-        try {
-          const cachedStr = storage.getString(cacheKey);
-          const parsed = cachedStr ? JSON.parse(cachedStr) : null;
-          setAccumulatedFilms(Array.isArray(parsed) && parsed.length > 0 ? parsed : []);
-        } catch {
-          setAccumulatedFilms([]);
-        }
-      }
+      // The kept sheet stands until the answer: a failed read leaves it, said to be kept.
+      if (page === 1) setAccumulatedFilms(keptSheet);
 
       try {
         let results: any[] = [];
@@ -261,7 +257,7 @@ export default function DarkRoomScreen() {
     // Its failures are caught and said inside it; the effect only starts it.
     void fetchContent();
     return () => { active = false; };
-  }, [query, page, filters, mood, isSearching, setAccumulatedFilms, cacheKey, network.isConnected, asked, keepTotal]);
+  }, [query, page, filters, mood, isSearching, setAccumulatedFilms, cacheKey, online, asked, keepTotal, keptSheet]);
 
   // What the sheet's foot says: the next batch, developed as the sheet's end is reached; that it
   // failed; or the end of the sheet, every batch read.

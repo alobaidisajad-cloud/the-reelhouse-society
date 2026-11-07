@@ -173,14 +173,16 @@ export default function PersonDetailScreen() {
   } = useQuery({
     queryKey: ['person', personId],
     queryFn: async () => {
-      const netState = await NetInfo.fetch();
-      if (netState.isConnected === false) {
-        throw new Error('NETWORK_OFFLINE');
-      }
-
-      const [personData, creditData] = await Promise.all([
-        tmdb.person(personId),
-        tmdb.personCredits(personId),
+      // The archive asked at once, the phone's network beside it (P4.53): an online phone never
+      // waits on the question, and an offline one is told so at its answer, not after the
+      // archive's retries run out.
+      const offline = NetInfo.fetch().then((s) => {
+        if (s.isConnected === false) throw new Error('NETWORK_OFFLINE');
+        return new Promise<never>(() => {});
+      });
+      const [personData, creditData] = await Promise.race([
+        Promise.all([tmdb.person(personId), tmdb.personCredits(personId)]),
+        offline,
       ]);
 
       let credits: PersonCredit[] = [];

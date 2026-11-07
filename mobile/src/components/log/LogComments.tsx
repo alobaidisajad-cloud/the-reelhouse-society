@@ -40,6 +40,8 @@ interface LogCommentsProps {
   onReportComment?: (comment: LogComment & { user_id: string }) => void;
   /** The critiques could not be read: say so, not "No critiques yet". */
   unread?: boolean;
+  /** The record was drawn from its card and its critiques are on their way: never "No critiques yet" before the house answers. */
+  reading?: boolean;
   /**
    * Ask the house for the next older page. The list holds the newest page of a
    * thread; once SHOW MORE has shown all it holds, it asks for more with this.
@@ -67,6 +69,7 @@ export default function LogComments({
   onReportComment,
   onSectionLayout,
   unread = false,
+  reading = false,
   onReread,
   onLoadOlder,
   loadingOlder = false,
@@ -98,7 +101,7 @@ export default function LogComments({
           </View>
         ) : null}
         {comments.length === 0 ? (
-          unread ? null : <Text style={st.margin} {...scaledTextProps}>No critiques yet. Leave a mark on this record.</Text>
+          unread || reading ? null : <Text style={st.margin} {...scaledTextProps}>No critiques yet. Leave a mark on this record.</Text>
         ) : (
           <>
             {shown.map((c: LogComment) => (

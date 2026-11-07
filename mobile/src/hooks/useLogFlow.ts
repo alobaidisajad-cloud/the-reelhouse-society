@@ -389,7 +389,9 @@ export function useLogFlow() {
         setViewingLookupFailed(false);
     }
     useEffect(() => {
-        if (!editLogId || editLogId === NO_SUCH_LOG || storeViewingId) return;
+        // Only for a log this phone holds without it: a log read for the form brings its
+        // viewing's id in the same row (LOG_SELECT_COLUMNS), and asking again cost a request.
+        if (!editLogId || editLogId === NO_SUCH_LOG || storeViewingId || !holdsEdit) return;
         let live = true;
         void Promise.resolve()
             .then(() => supabase.from('logs').select('viewing_id').eq('id', editLogId).maybeSingle())
@@ -409,7 +411,7 @@ export function useLogFlow() {
             })
             .catch(() => { if (live) setViewingLookupFailed(true); });
         return () => { live = false; };
-    }, [editLogId, storeViewingId]);
+    }, [editLogId, storeViewingId, holdsEdit]);
 
     const editViewingId = storeViewingId ?? fetchedViewingId;
     const vaultLoaded = useVaultStore(s => (editLogId ? s.loaded[editLogId] === true : false));

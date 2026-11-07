@@ -127,7 +127,6 @@
     "mobile/app/film-reviews/__tests__/theArchiveSaysWhenItCouldNotRead.test.tsx": 3,
     "mobile/app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx": 6,
     "mobile/app/log/__tests__/theLogPageMovesEveryCard.test.tsx": 6,
-    "mobile/app/log/__tests__/theRecordReadsTrue.test.tsx": 1,
     "mobile/app/lounge/[id].tsx": 1,
     "mobile/app/person/__tests__/thePersonFileReadsTrue.test.tsx": 2,
     "mobile/app/stacks/__tests__/stack-detail.redesign.test.tsx": 7,

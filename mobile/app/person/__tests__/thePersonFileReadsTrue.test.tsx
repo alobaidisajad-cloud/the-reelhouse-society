@@ -34,9 +34,11 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   default: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
 }));
 let mockQuery: Record<string, unknown>;
+/** The page's own query options, kept as the page hands them over. */
+let mockOptions: { queryFn: () => Promise<unknown> };
 jest.mock('@tanstack/react-query', () => ({
   ...jest.requireActual('@tanstack/react-query'),
-  useQuery: () => mockQuery,
+  useQuery: (opts: unknown) => { mockOptions = opts as never; return mockQuery; },
   useQueryClient: () => ({ setQueryData: jest.fn(), getQueryData: jest.fn(), invalidateQueries: jest.fn() }),
 }));
 jest.mock('expo-router', () => ({
@@ -321,5 +323,25 @@ describe('a file that could not be reached', () => {
     await act(async () => { await mockListProps.refreshControl.props.onRefresh(); });
     expect(jest.requireMock('@/src/utils/reelToast').default.error)
       .toHaveBeenCalledWith('Could not refresh — check your connection.');
+  });
+});
+
+describe('the file is asked at once, the network beside it (P4.53)', () => {
+  const NetInfo = jest.requireMock('@react-native-community/netinfo').default as { fetch: (...a: unknown[]) => Promise<unknown> };
+  const { tmdb } = jest.requireMock('@/src/lib/tmdb') as { tmdb: Record<string, (...a: unknown[]) => Promise<unknown>> };
+  const asked = async () => { await act(async () => { render(<PersonDetailScreen />); }); return mockOptions.queryFn(); };
+
+  it('answers an online phone without waiting on the network\u2019s answer', async () => {
+    jest.spyOn(NetInfo, 'fetch').mockReturnValue(new Promise(() => {}));
+    jest.spyOn(tmdb, 'person').mockResolvedValue({ id: 1, name: 'Yasujiro Ozu' });
+    jest.spyOn(tmdb, 'personCredits').mockResolvedValue({ cast: [], crew: [] });
+    await expect(asked()).resolves.toEqual(expect.objectContaining({ person: expect.objectContaining({ name: 'Yasujiro Ozu' }) }));
+  });
+
+  it('tells an offline phone so at the network\u2019s answer, not after the archive gives up', async () => {
+    jest.spyOn(NetInfo, 'fetch').mockResolvedValue({ isConnected: false });
+    jest.spyOn(tmdb, 'person').mockReturnValue(new Promise(() => {}));
+    jest.spyOn(tmdb, 'personCredits').mockReturnValue(new Promise(() => {}));
+    await expect(asked()).rejects.toThrow('NETWORK_OFFLINE');
   });
 });

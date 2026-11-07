@@ -262,7 +262,9 @@ const s = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.bloodReel, borderRadius: 4,
     paddingVertical: 7, paddingHorizontal: 16, marginBottom: 12, maxWidth: '100%',
   },
-  stampText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.crimsonInk, includeFontPadding: false, textAlign: 'center' },
+  // A handle broken onto two lines is set as a stamp's rows: a little leading between them, so a
+  // row's underscores never sit on the capitals of the row beneath.
+  stampText: { fontFamily: fonts.sub, fontSize: 11, lineHeight: 16, letterSpacing: 2, color: colors.crimsonInk, includeFontPadding: false, textAlign: 'center' },
   // The serial beneath the handle: a step smaller, at the type floor, as a stamp's second tier is.
   stampSerial: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.4, color: colors.crimsonInk, includeFontPadding: false, marginTop: 4 },
 

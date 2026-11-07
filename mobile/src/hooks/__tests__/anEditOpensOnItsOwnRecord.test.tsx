@@ -118,3 +118,12 @@ it('a delete of a record nobody has in hand is a failure said, never a silent no
   await expect(useFilmStore.getState().removeLog(OLD)).rejects.toThrow();
   expect(mockHouse.rows('logs')).toHaveLength(1);
 });
+
+it('reads the record once, its viewing’s id in the same row: no second request for it (P4.53)', async () => {
+  const flow = await openEditor({ rows: { logs: [oldRow()], log_private_notes: [] } });
+  await waitFor(() => expect(flow.current.editReady).toBe(true));
+  await settle();
+  const logReads = mockHouse.asked.filter((a) => a.table === 'logs' && a.op === 'select');
+  expect(logReads).toHaveLength(1);
+  expect(logReads[0]?.columns).toContain('viewing_id');
+});
