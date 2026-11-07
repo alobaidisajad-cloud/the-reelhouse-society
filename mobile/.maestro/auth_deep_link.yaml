@@ -5,10 +5,13 @@ appId: com.reelhouse.society
 - launchApp:
     clearState: true
 # The app must be up and listening before the link arrives, or the link is lost.
+# A launch from a cleared state is a cold start, given the boot flow's wait: on the
+# iPhone runner it drew its tabs in 16 and 18 s on green runs, and after 20 s on
+# a4b67680's (iPhone launch 42401880093, the Lobby drawn a moment after).
 - extendedWaitUntil:
     visible:
       id: "home-tab"
-    timeout: 20000
+    timeout: 60000
 - openLink: "reelhouse://reset-password"
 # iOS asks before a link opens an app by its own scheme ("Open in ...?").
 - runFlow:

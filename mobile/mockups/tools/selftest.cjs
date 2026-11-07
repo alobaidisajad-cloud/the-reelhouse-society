@@ -126,12 +126,19 @@ const scaledBeside = (a) => box('flex-direction:row;padding:40px;gap:10px',
 const EVERY = { 'ios@1': ['HANG'], 'ios@1.35': ['HANG'], 'ios@3.1': ['HANG'], 'android@1.35': ['HANG'], 'android@2': ['HANG'] };
 /**
  * The ink proof's pile: twelve marks on each letter, set in Inter, which stacks them itself, so the
- * pile is drawn the same on every renderer (the harness loads Inter for a page that names it). The app's
+ * pile is drawn the same on every renderer (the harness loads Inter for a page that names it). Each
+ * mark is one Inter carries, which is checked before any case: a letter with one it lacks is drawn
+ * whole in the renderer's fallback, a pile on Windows and none on Linux. The app's
  * faces stack no such pile (Spectral holds the marks but lays them over one another; the display faces
  * hold none), so one set in them is left to each renderer's fallback, and Linux drew no pile at all.
  */
 const PILE_STYLE = 'font-family:Inter,sans-serif;font-size:14px;line-height:18px';
-const PILE_TEXT = 'Ozu frames a room by its doors ' + [...'and then'].map((c) => c + '\u0300\u0301\u0302\u0303\u0304\u0306\u0307\u0308\u030a\u030b\u030c\u0311').join('');
+const PILE_TEXT = 'Ozu frames a room by its doors ' + [...'and then'].map((c) => c + '\u0300\u0301\u0302\u0303\u0304\u0306\u0307\u0308\u0309\u030a\u030c\u0313').join('');
+const unpiled = require('./harness.cjs').interLacks(PILE_TEXT);
+if (unpiled.length) {
+  console.log(`FAIL  the ink pile names marks Inter lacks: ${unpiled.map((c) => `U+${c.codePointAt(0).toString(16).padStart(4, '0')}`).join(' ')}`);
+  process.exit(1);
+}
 const ALL = (kind) => ({ 'ios@1': [kind], 'ios@1.35': [kind], 'ios@3.1': [kind], 'android@1.35': [kind], 'android@2': [kind] });
 
 /** name → [the screen, { pass: expected kinds }] (a pass not listed must be clean) */

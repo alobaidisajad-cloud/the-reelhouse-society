@@ -58,15 +58,41 @@ const FACES = [
 let fontCss = null;
 /**
  * Inter, for a page that names it alone (the self-test's ink proof): a face that stacks a pile of
- * marks itself, so the pile is drawn the same on every renderer, where one the app's faces lack is
- * left to each renderer's fallback (Linux lays such a pile over itself). The app's pages never name it.
+ * marks itself, so the pile is drawn the same on every renderer, where a letter carrying one mark
+ * the face lacks is drawn whole in each renderer's fallback (Linux lays such a pile over itself).
+ * The app's pages never name it.
  */
+const INTER_FILE = path.join(MOBILE, 'node_modules', '@expo-google-fonts', 'inter/400Regular/Inter_400Regular.ttf');
 let interCss = null;
 function inter() {
   if (interCss) return interCss;
-  const data = fs.readFileSync(path.join(MOBILE, 'node_modules', '@expo-google-fonts', 'inter/400Regular/Inter_400Regular.ttf')).toString('base64');
+  const data = fs.readFileSync(INTER_FILE).toString('base64');
   interCss = `@font-face{font-family:'Inter';src:url(data:font/ttf;base64,${data}) format('truetype');font-weight:400;font-style:normal}`;
   return interCss;
+}
+/** The characters of `text` Inter has no glyph for, read from its cmap (formats 4 and 12). */
+function interLacks(text) {
+  const b = fs.readFileSync(INTER_FILE);
+  const u16 = (o) => b.readUInt16BE(o);
+  const u32 = (o) => b.readUInt32BE(o);
+  let cmap = 0;
+  for (let i = 0; i < u16(4); i++) if (b.toString('ascii', 12 + 16 * i, 16 + 16 * i) === 'cmap') cmap = u32(20 + 16 * i);
+  const has = (c) => {
+    for (let i = 0; i < u16(cmap + 2); i++) {
+      const at = cmap + u32(cmap + 8 + 8 * i);
+      if (u16(at) === 4) {
+        const segs = u16(at + 6) / 2;
+        for (let s = 0; s < segs; s++) {
+          const end = u16(at + 14 + 2 * s), start = u16(at + 16 + 2 * segs + 2 * s);
+          if (c >= start && c <= end && end !== 0xffff) return true;
+        }
+      } else if (u16(at) === 12) {
+        for (let g = 0; g < u32(at + 12); g++) if (c >= u32(at + 16 + 12 * g) && c <= u32(at + 20 + 12 * g)) return true;
+      }
+    }
+    return false;
+  };
+  return [...new Set([...text].filter((ch) => !has(ch.codePointAt(0))))];
 }
 function fonts() {
   if (fontCss) return fontCss;
@@ -291,4 +317,4 @@ function longNames(standIn) {
       (_, pre, h) => `${pre}@${/[A-Z]/.test(h) && h === h.toUpperCase() ? standIn.toUpperCase() : standIn}`);
   }
 }
-module.exports = { chromium, open, shrinkToFit, fitMinOf, screens, longNames, STAND_IN, fonts, GROWTH, HOUSE, WIDTH, HEIGHT, MOBILE };
+module.exports = { chromium, open, interLacks, shrinkToFit, fitMinOf, screens, longNames, STAND_IN, fonts, GROWTH, HOUSE, WIDTH, HEIGHT, MOBILE };
