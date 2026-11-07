@@ -1690,7 +1690,7 @@
     "class": "TEXT-counted-by-code-units",
     "mutant": "shape-name-stepped-by-units",
     "proof": "m3",
-    "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
+    "commit": "5126a57a70e23422966d0375fa7eebff154bd441",
     "verdict": "caught"
   },
   {
@@ -1838,6 +1838,20 @@
     "mutant": "shape-worded-month-left-to-the-engine",
     "proof": "m7",
     "commit": "57f864093fdba60c4f8ae397ccceaedeea034862",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-critique-authors-asked-apart",
+    "proof": "m14",
+    "commit": "7310fc58139336a03a92b9a29fe2c108e9d7b10b",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-followers-asked-apart",
+    "proof": "m15",
+    "commit": "5126a57a70e23422966d0375fa7eebff154bd441",
     "verdict": "caught"
   }
 ]
