@@ -1809,7 +1809,35 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-stack-unseeded-from-card",
     "proof": "m13",
-    "commit": "c198b39bccb7aea576c6349030470acc948e0ea5",
-    "verdict": "survived"
+    "commit": "57f864093fdba60c4f8ae397ccceaedeea034862",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-an-instant-read-by-the-engine",
+    "mutant": "shape-date-made-from-text",
+    "proof": "m4",
+    "commit": "57f864093fdba60c4f8ae397ccceaedeea034862",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-an-instant-read-by-the-engine",
+    "mutant": "shape-date-guard-trusts-untyped",
+    "proof": "m5",
+    "commit": "57f864093fdba60c4f8ae397ccceaedeea034862",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-an-instant-read-by-the-engine",
+    "mutant": "shape-calendar-any-day-to-31",
+    "proof": "m6",
+    "commit": "57f864093fdba60c4f8ae397ccceaedeea034862",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-an-instant-read-by-the-engine",
+    "mutant": "shape-worded-month-left-to-the-engine",
+    "proof": "m7",
+    "commit": "57f864093fdba60c4f8ae397ccceaedeea034862",
+    "verdict": "caught"
   }
 ]
