@@ -329,6 +329,11 @@ for (const [name, [, expect]] of Object.entries(CASES)) {
     const ok = JSON.stringify(got) === JSON.stringify(want);
     if (!ok) bad++;
     console.log(`${ok ? 'ok  ' : 'FAIL'}  ${name.padEnd(12)} ${pass.padEnd(13)} want [${want}]  got [${got}]`);
+    // A case that must find INK and found none says what the renderer drew (ink-why.cjs).
+    if (!ok && want.includes('INK') && !got.includes('INK') && pass === 'ios@1') {
+      const why = spawnSync(process.execPath, [path.join(__dirname, 'ink-why.cjs'), path.join(DIR, `${name}.html`)], { encoding: 'utf8' });
+      console.log(`${why.stdout}${why.stderr}`.trim().split('\n').map((l) => `        ${l}`).join('\n'));
+    }
   }
 }
 fs.rmSync(DIR, { recursive: true, force: true });
