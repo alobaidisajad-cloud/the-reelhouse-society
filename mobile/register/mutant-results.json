@@ -1713,5 +1713,75 @@
     "proof": "m7",
     "commit": "595c130437253e909ed5f41af42c0c3f083c1e11",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-log-critiques-after-record",
+    "proof": "m3",
+    "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-log-unseeded",
+    "proof": "m1",
+    "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-critiques-none-while-reading",
+    "proof": "m2",
+    "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-log-failure-drops-card",
+    "proof": "m4",
+    "commit": "6781a3b80eaf5c8813730fce325951a1ead0c2d4",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-darkroom-skeleton-over-kept",
+    "proof": "m5",
+    "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-darkroom-asks-on-learning",
+    "proof": "m7",
+    "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-person-offline-told-late",
+    "proof": "m8",
+    "commit": "6781a3b80eaf5c8813730fce325951a1ead0c2d4",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-edit-viewing-asked-twice",
+    "proof": "m9",
+    "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-an-instant-read-by-the-engine",
+    "mutant": "shape-instant-rolled-over",
+    "proof": "m1",
+    "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-an-instant-read-by-the-engine",
+    "mutant": "shape-instant-any-text-parsed",
+    "proof": "m2",
+    "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
+    "verdict": "caught"
   }
 ]
