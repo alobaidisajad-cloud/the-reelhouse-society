@@ -44,6 +44,7 @@ const JUDGED: Record<string, { readings: number; why: string }> = {
   'src/utils/TactileEngine.ts': { readings: 1, why: 'a haptic\'s throttle, so quick taps never stack their buzz' },
   'src/utils/handleNotice.ts': { readings: 2, why: 'a requested handle\'s age, stamped and read on this phone' },
   'src/utils/lastRoom.ts': { readings: 3, why: 'when a room was last open, stamped and read on this phone' },
+  'src/utils/keptPaper.ts': { readings: 2, why: 'when the paper was kept, stamped and read on this phone for its day' },
   'src/utils/lastTab.ts': { readings: 4, why: 'when a tab was last open, stamped and read on this phone' },
   'src/utils/requestReview.ts': { readings: 2, why: 'when the review was last asked for, stamped and read on this phone' },
   'app/(modals)/membership.tsx': { readings: 3, why: 'a checkout\'s throttle' },
