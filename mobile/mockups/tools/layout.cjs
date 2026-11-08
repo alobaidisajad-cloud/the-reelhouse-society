@@ -438,6 +438,7 @@ async function audit(page) {
     // the ink of every letter on another row. Only a letter whose ink leaves its own box is
     // asked, so a headline set tight, its letters inside their boxes, is never judged here.
     const pen = document.createElement('canvas').getContext('2d');
+    const INK_SIZE = 1000;
     const graphemes = new Intl.Segmenter('und', { granularity: 'grapheme' });
     const inkCache = new Map();
     /** Each letter of a text: its ink box on the page, its own box, and which row it sits on. */
@@ -447,12 +448,15 @@ async function audit(page) {
       const walk = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
       for (let n = walk.nextNode(); n; n = walk.nextNode()) {
         const cs = getComputedStyle(n.parentElement);
-        pen.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        // Measured at 1000px and scaled down: the font's measures come in whole pixels, rounded
+        // (to the nearest here, outward on Linux), a pixel's error at a caption's size, where an
+        // underscore and the t below it stand 1.4px apart. Scaled, they are a thousandth of an em.
+        pen.font = `${cs.fontStyle} ${cs.fontWeight} ${INK_SIZE}px ${cs.fontFamily}`;
         const upper = cs.textTransform === 'uppercase';
         // A text drawn scaled (a share card shown at a fraction of its size): its boxes on the
         // page are scaled, the font's measures are not, so the measures are scaled to match.
         const host = n.parentElement;
-        const k = host.offsetWidth > 0 ? host.getBoundingClientRect().width / host.offsetWidth : 1;
+        const k = (host.offsetWidth > 0 ? host.getBoundingClientRect().width / host.offsetWidth : 1) * parseFloat(cs.fontSize) / INK_SIZE;
         // A letter whose middle lies outside its text's own box is on a line a clamp cut, or past
         // its ellipsis: never drawn, and neither is its ink.
         const shown = (host.closest('span[data-scale-cap]') ?? host).getBoundingClientRect();
