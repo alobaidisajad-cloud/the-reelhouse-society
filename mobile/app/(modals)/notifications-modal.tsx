@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { nav } from '@/src/utils/typedRouter';
 import { RemoteImage } from '@/src/components/Picture';
 import { FlashList } from '@shopify/flash-list';
@@ -188,7 +189,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
 export default function NotificationsModal() {
   const handleTop = useModalTop();
   const end = useContentBottom();
-  const { notifications, loading, fetchFailed, markAllRead, fetchNotifications, loadMoreNotifications } = useNotificationStore();
+  const { notifications, loading, fetchFailed, markAllRead, fetchNotifications, loadMoreNotifications } = useNotificationStore(useShallow((s) => ({ notifications: s.notifications, loading: s.loading, fetchFailed: s.fetchFailed, markAllRead: s.markAllRead, fetchNotifications: s.fetchNotifications, loadMoreNotifications: s.loadMoreNotifications })));
   // Online, but the notices' live channel is down: said quietly at the head of the board.
   const noticesLive = useNotificationStore((st) => st.noticesLive);
   const { isOffline } = useOfflineAware();

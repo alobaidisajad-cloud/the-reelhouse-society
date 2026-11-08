@@ -61,7 +61,7 @@ function FilmEdges() {
 }
 
 export default function YearInCinemaScreen() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const insets = useSafeAreaInsets();
   const edge = useBottomEdge();
   // The close button floats over the slides: an overlay's top (navMetrics).

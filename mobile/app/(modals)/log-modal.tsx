@@ -24,7 +24,7 @@ import { RevealAboveDock, useRevealHost } from '@/src/components/layout/RevealAb
 
 export default function LogModalScreen() {
 
-    const { user } = useAuthStore();
+    const user = useAuthStore((s) => s.user);
     const flow = useLogFlow();
     const { isAuthenticated, step, film, isEditing, editReady, selectFilm, submitting, setStep } = flow;
     // A new record is a room a launch may reopen, its draft holding the film; an edit keeps none.

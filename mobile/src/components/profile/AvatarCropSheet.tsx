@@ -37,7 +37,7 @@ function askForSettings(what: string) {
 }
 
 export default function AvatarCropSheet({ onClose, onSuccess, pending }: Props) {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [uploading, setUploading] = useState(!!pending);
   const sheetFoot = useSheetBottom();
   // Android's back closes the sheet, not Edit Profile beneath it.

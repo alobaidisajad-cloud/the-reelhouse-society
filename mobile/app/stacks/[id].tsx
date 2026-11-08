@@ -220,7 +220,7 @@ export default function StackDetailScreenRoute() {
 
 function StackDetailScreen({ id }: { id: string }) {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const edge = useBottomEdge();
   const end = useContentBottom();
   const headerTop = usePushedHeaderTop();

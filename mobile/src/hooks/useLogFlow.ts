@@ -1,4 +1,5 @@
  
+import { useShallow } from 'zustand/react/shallow';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
@@ -165,8 +166,8 @@ const NO_SUCH_LOG = 'no-such-log';
 
 export function useLogFlow() {
     const params = useRouteParams(PARAMS);
-    const { user, isAuthenticated } = useAuthStore();
-    const { logs, lists, addLog, updateLog, removeLog, addFilmToList, removeFilmFromList, _loggedIndex } = useFilmStore();
+    const { user, isAuthenticated } = useAuthStore(useShallow((s) => ({ user: s.user, isAuthenticated: s.isAuthenticated })));
+    const { logs, lists, addLog, updateLog, removeLog, addFilmToList, removeFilmFromList, _loggedIndex } = useFilmStore(useShallow((s) => ({ logs: s.logs, lists: s.lists, addLog: s.addLog, updateLog: s.updateLog, removeLog: s.removeLog, addFilmToList: s.addFilmToList, removeFilmFromList: s.removeFilmFromList, _loggedIndex: s._loggedIndex })));
 
     // ── Tier gating ──
     const isAuteur = isAuteurPlusTier(user);

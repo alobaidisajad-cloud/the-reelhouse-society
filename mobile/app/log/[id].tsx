@@ -1,4 +1,5 @@
  
+import { useShallow } from 'zustand/react/shallow';
 import { houseIso } from '@/src/lib/houseClock';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
@@ -191,7 +192,7 @@ export default function LogDetailScreenRoute() {
 }
 
 function LogDetailScreen({ id }: { id: string }) {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore(useShallow((s) => ({ user: s.user, isAuthenticated: s.isAuthenticated })));
   const windowWidth = useColumnWidth();
   const blockUser = useBlockStore((state) => state.blockUser);
   const muteUser = useBlockStore((state) => state.muteUser);

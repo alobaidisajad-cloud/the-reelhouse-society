@@ -11,6 +11,7 @@
  * privileges that the tickets, the ledger and the web all sell from — and
  * every figure from the store (`useMembershipPricing`, `societyPricing`).
  */
+import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, AppState, useWindowDimensions, Platform } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -122,7 +123,7 @@ export default function MembershipScreen() {
   const end = useContentBottom();
   const navTop = useModalTop();
   const { height } = useWindowDimensions();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore(useShallow((s) => ({ user: s.user, isAuthenticated: s.isAuthenticated })));
   const pricing = useMembershipPricing(); // live store prices (falls back to static)
   const [isRedirecting, setIsRedirecting] = useState(false);
 

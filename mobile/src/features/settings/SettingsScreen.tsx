@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { InColumn } from '@/src/components/layout/InColumn';
 import { View, StyleSheet, Alert, Modal, type LayoutChangeEvent, type ScrollView } from 'react-native';
@@ -88,7 +89,7 @@ const TITLE_FADE_TO = 210;
 const PARAMS = { section: P.oneOf('account', 'import') };
 
 export function SettingsScreen() {
-  const { user, logout } = useAuthStore();
+  const { user, logout } = useAuthStore(useShallow((s) => ({ user: s.user, logout: s.logout })));
   const thisYear = useClock((now) => new Date(now).getFullYear());
   const { mutateAsync: updateUserMutation, isPending: isUpdatingUser } = useUpdateUser();
   const end = useContentBottom();

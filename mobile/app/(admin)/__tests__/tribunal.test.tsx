@@ -42,7 +42,7 @@ jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.clien
 
 const mockAuthStore: { user: any } = { user: null };
 jest.mock('@/src/stores/auth', () => ({
-  useAuthStore: () => mockAuthStore,
+  useAuthStore: (sel?: (s: unknown) => unknown) => (sel ? sel(mockAuthStore) : mockAuthStore),
 }));
 
 // Mock expo-linear-gradient (native)

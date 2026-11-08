@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
@@ -121,7 +122,7 @@ export function useAuthFlow() {
   const params = useRouteParams(PARAMS);
   // Where a sign-in lands: the member-only screen that sent the stranger here, or the Lobby.
   const landing = params.next ?? '/(tabs)';
-  const { login, signup } = useAuthStore();
+  const { login, signup } = useAuthStore(useShallow((s) => ({ login: s.login, signup: s.signup })));
 
   // Right on the first frame; the effect below follows the route changing after.
   const [isLogin, setIsLogin] = useState(() => initialIsLogin(params.action));

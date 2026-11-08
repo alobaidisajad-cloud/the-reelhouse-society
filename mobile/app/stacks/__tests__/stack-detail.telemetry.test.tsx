@@ -78,7 +78,7 @@ jest.mock('@/src/stores/blockStore', () => {
     return { useBlockStore };
 });
 jest.mock('@/src/stores/auth', () => ({
-    useAuthStore: () => ({ user: { id: 'u1', username: 'cinephile' } }),
+    useAuthStore: (sel?: (s: unknown) => unknown) => { const s = { user: { id: 'u1', username: 'cinephile' } }; return sel ? sel(s) : s; },
 }));
 jest.mock('@/src/services/StackService', () => ({
   STACK_COMMENT_PAGE: 50,

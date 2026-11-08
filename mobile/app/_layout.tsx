@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { CACHE_KEEPS, mmkvPersister, queryClient } from '@/src/lib/queryClient';
 import { CACHE_BUSTER } from '@/src/lib/cacheBuster';
 import { SENTRY_DIST, SENTRY_RELEASE } from '@/src/lib/releaseName';
@@ -59,7 +60,7 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const { restoreSession, hydrateFromCache } = useAuthStore();
+  const { restoreSession, hydrateFromCache } = useAuthStore(useShallow((s) => ({ restoreSession: s.restoreSession, hydrateFromCache: s.hydrateFromCache })));
   const [appReady, setAppReady] = useState(false);
   const [showPreloader, setShowPreloader] = useState(true);
 

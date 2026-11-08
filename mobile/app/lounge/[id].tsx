@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import Buster, { BusterEyes } from '@/src/components/Buster';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { ActionSheet } from '@/src/components/lounge/ActionSheet';
@@ -412,7 +413,23 @@ function LoungeRoomScreen({ id }: { id: string }) {
     withdrawMessage, retryMessage, toggleReaction,
     requestMembership, joinPublicLounge, fetchMembers,
     presentCount, typingUsers, broadcastTyping,
-  } = useLoungeStore();
+  } = useLoungeStore(useShallow((s) => ({
+    lounges: s.lounges,
+    fetchMessages: s.fetchMessages,
+    sendMessage: s.sendMessage,
+    subscribeToLounge: s.subscribeToLounge,
+    sending: s.sending,
+    markRead: s.markRead,
+    withdrawMessage: s.withdrawMessage,
+    retryMessage: s.retryMessage,
+    toggleReaction: s.toggleReaction,
+    requestMembership: s.requestMembership,
+    joinPublicLounge: s.joinPublicLounge,
+    fetchMembers: s.fetchMembers,
+    presentCount: s.presentCount,
+    typingUsers: s.typingUsers,
+    broadcastTyping: s.broadcastTyping,
+  })));
   const roomLive = useLoungeStore((st) => st.roomLive);
 
   // A message being written is kept until it is sent (useKeptWords); a sent one the store keeps.
@@ -439,7 +456,7 @@ function LoungeRoomScreen({ id }: { id: string }) {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const askForRoomAgain = useCallback(() => setLoadAttempt((n) => n + 1), []);
 
-  const blockStore = useBlockStore();
+  const blockUser = useBlockStore((s) => s.blockUser);
 
   const handleInputChange = useCallback((text: string) => {
     setInput(text);
@@ -578,9 +595,9 @@ function LoungeRoomScreen({ id }: { id: string }) {
   // block at once and the member's messages leave the room as the toast says.
   const handleBlock = useCallback((userId: string) => {
     setActionSheetMsg(null);
-    blockStore.blockUser(userId);
+    blockUser(userId);
     useLoungeStore.getState().purgeHiddenMessages();
-  }, [blockStore]);
+  }, [blockUser]);
 
   // ── Re-fetch on foreground ──
   useEffect(() => {

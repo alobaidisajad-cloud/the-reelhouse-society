@@ -27,7 +27,7 @@ jest.mock('@/src/services/ProfileWriteService', () => ({
 }));
 jest.mock('@/src/services/LoungeService', () => ({ LoungeService: { getUserLounges: jest.fn() } }));
 jest.mock('@/src/stores/lounge', () => ({ useLoungeStore: { getState: jest.fn(() => ({ sendMessage: jest.fn() })) } }));
-jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: '00000012-0000-4000-8000-000000000012', username: 'cinephile' } }) }));
+jest.mock('@/src/stores/auth', () => ({ useAuthStore: (sel?: (s: unknown) => unknown) => { const s = { user: { id: '00000012-0000-4000-8000-000000000012', username: 'cinephile' } }; return sel ? sel(s) : s; } }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 jest.mock('expo-blur', () => {
   const React = require('react');

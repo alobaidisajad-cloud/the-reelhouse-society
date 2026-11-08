@@ -98,7 +98,7 @@ jest.mock('@/src/stores/blockStore', () => {
 jest.mock('@/src/stores/auth', () => {
   const state = { user: { id: 'u1', username: 'morpho' } };
   // Read as a hook, and by the stack's offline stand-in with getState().
-  return { useAuthStore: Object.assign(() => state, { getState: () => state }) };
+  return { useAuthStore: Object.assign((sel?: (s: unknown) => unknown) => (sel ? sel(state) : state), { getState: () => state }) };
 });
 jest.mock('@/src/stores/tellMarks', () => ({ tellMarks: jest.fn() }));
 const mockAddComment = jest.fn();

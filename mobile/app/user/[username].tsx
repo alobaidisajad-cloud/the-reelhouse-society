@@ -213,7 +213,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
   const isBlocked = useBlockStore((state) => state.isBlocked(targetUser?.id ?? ''));
   const isMuted = useBlockStore((state) => state.isMuted(targetUser?.id ?? ''));
-  const blockStore = useBlockStore();
+  const { blockUser, muteUser, unblockUser, unmuteUser } = useBlockStore(useShallow((s) => ({ blockUser: s.blockUser, muteUser: s.muteUser, unblockUser: s.unblockUser, unmuteUser: s.unmuteUser })));
 
   const breatheAnim = useSharedValue(0.4);
   const pulseStyle = useAnimatedStyle(() => ({ opacity: breatheAnim.value }));
@@ -635,10 +635,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             contentId={targetUser.id}
             onClose={() => setActionSheetVisible(false)}
             onReport={() => { setActionSheetVisible(false); setReportSheetVisible(true); }}
-            onBlock={() => { setActionSheetVisible(false); blockStore.blockUser(targetUser.id); }}
-            onMute={() => { setActionSheetVisible(false); blockStore.muteUser(targetUser.id); }}
-            onUnblock={() => { setActionSheetVisible(false); blockStore.unblockUser(targetUser.id); }}
-            onUnmute={() => { setActionSheetVisible(false); blockStore.unmuteUser(targetUser.id); }}
+            onBlock={() => { setActionSheetVisible(false); blockUser(targetUser.id); }}
+            onMute={() => { setActionSheetVisible(false); muteUser(targetUser.id); }}
+            onUnblock={() => { setActionSheetVisible(false); unblockUser(targetUser.id); }}
+            onUnmute={() => { setActionSheetVisible(false); unmuteUser(targetUser.id); }}
             showUnblock={isBlocked}
             showUnmute={isMuted}
           />

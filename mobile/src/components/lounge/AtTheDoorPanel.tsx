@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import PressableScale from '@/src/components/PressableScale';
 import { InColumn } from '@/src/components/layout/InColumn';
 import { RemoteImage } from '@/src/components/Picture';
@@ -29,7 +30,7 @@ interface Props {
 
 export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved }: Props) {
   const sheetFoot = useSheetBottom();
-  const { approveMember, declineMember } = useLoungeStore();
+  const { approveMember, declineMember } = useLoungeStore(useShallow((s) => ({ approveMember: s.approveMember, declineMember: s.declineMember })));
   const [busy, setBusy] = useState<string | null>(null);
 
   const act = async (userId: string, admit: boolean) => {

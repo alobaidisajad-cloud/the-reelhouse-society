@@ -43,7 +43,7 @@ jest.mock('@/src/stores/lounge', () => ({
     useLoungeStore: { getState: jest.fn(() => ({ sendMessage: jest.fn() })) },
 }));
 jest.mock('@/src/stores/auth', () => ({
-    useAuthStore: () => ({ user: { id: 'u1', username: 'cinephile' } }),
+    useAuthStore: (sel?: (s: unknown) => unknown) => { const s = { user: { id: 'u1', username: 'cinephile' } }; return sel ? sel(s) : s; },
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 /** The member's clearance to speak in a salon, and its rope: an Archivist unless a case says not. */

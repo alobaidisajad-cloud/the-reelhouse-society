@@ -222,7 +222,7 @@ function ComposeDossierScreen() {
     const { edit, initialTitle, initialContent } = useRouteParams(DOSSIER_PARAMS);
     // A new piece is a room a launch may reopen; an amend keeps its draft by its filing instead.
     useWritingRoom('essay', !edit);
-    const { user } = useAuthStore();
+    const user = useAuthStore((s) => s.user);
     const edge = useBottomEdge();
     const headerTop = useModalTop();
     /** Publishing the long form is the Auteur's act — asked from the registry. */

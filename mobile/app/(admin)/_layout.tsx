@@ -4,7 +4,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { toastScreenLayout } from '@/src/components/ToastHost';
 
 export default function AdminLayout() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   // Zero-Flicker Route Guard at the Layout Level
   // Using dynamic RBAC based on the user's role instead of hardcoded UUID

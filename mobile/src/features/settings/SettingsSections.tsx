@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import React, { useRef } from 'react';
 import { Alert, View, StyleSheet, Linking, Platform } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -735,7 +736,7 @@ export function ReadingSection() {
  * needed, and it is a truer name than "Experience" ever was.
  */
 export function ExperienceSection() {
-  const { tactileAudioEnabled, setTactileAudioEnabled } = useSettingsStore();
+  const { tactileAudioEnabled, setTactileAudioEnabled } = useSettingsStore(useShallow((s) => ({ tactileAudioEnabled: s.tactileAudioEnabled, setTactileAudioEnabled: s.setTactileAudioEnabled })));
 
   const handleTactileToggle = async (val: boolean) => {
     setTactileAudioEnabled(val); // Instant MMKV local state

@@ -25,7 +25,7 @@ jest.mock('../../utils/reelToast', () => {
 });
 
 const mockStore = useAuthStore as unknown as jest.Mock;
-const asUser = (user: unknown) => mockStore.mockReturnValue({ user });
+const asUser = (user: unknown) => mockStore.mockImplementation((sel?: (s: unknown) => unknown) => (sel ? sel({ user }) : { user }));
 /** The hook as a screen holds it. */
 const banCheck = async () => (await renderHook(() => useBanCheck())).result.current;
 

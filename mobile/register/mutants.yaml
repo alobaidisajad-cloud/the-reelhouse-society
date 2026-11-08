@@ -2580,3 +2580,12 @@ mutants:
         find: "    enabled: asked && followingForEnabled.length > 0,"
         replace: "    enabled: followingForEnabled.length > 0,"
     proof: { file: src/hooks/__tests__/aHeldFeedIsNotRead.test.tsx, test: "reads neither while held, and both once asked" }
+
+  - id: shape-film-page-takes-the-session-whole
+    class: SPEED-a-screen-takes-a-store-whole
+    source: shape
+    edits:
+      - file: app/film/[id].tsx
+        find: "  const user = useAuthStore((s) => s.user);"
+        replace: "  const user = useAuthStore().user;"
+    proof: { file: src/utils/__tests__/aScreenRedrawsForWhatItReads.guard.test.ts, test: "takes no store whole anywhere in the app" }

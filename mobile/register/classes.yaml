@@ -1736,6 +1736,20 @@ classes:
     fix: "utils/text.ts counts, takes and cuts by the one character rule (charactersOf, characterCount, firstCharacters, cutWhole, isPictureCharacter); emOf measures a character at a time (a mark adds nothing, an emoji PICTURE_EM), and the member file's name size measures with it; the review planner wraps in cells; every site moved; the guard finds a string's length weighed or a fixed cut by the type checker, each left judged by name"
     places: [none]
 
+  - id: SPEED-a-screen-takes-a-store-whole
+    title: "A screen or hook that subscribes to a whole store redraws at every change anywhere in it: the root layout, and every provider under it, at each change to the signed-in member; the salon at each change to any room; the film and log pages at each change to the session"
+    seriousness: behaviour
+    area: speed
+    status: OPEN
+    count: 28
+    source: { kind: reviewer, ref: "P4.53: the salon page's useLoungeStore() (audit/final/P4-53-STUDY.md), then every useXStore() in the app" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aScreenRedrawsForWhatItReads.guard.test.ts, test: "takes no store whole anywhere in the app" }
+      - { kind: static, file: src/utils/__tests__/aScreenRedrawsForWhatItReads.guard.test.ts, test: "says NO to a store taken whole, and not to a selection or a store read outside a render" }
+      - { kind: static, file: src/components/profile/__tests__/theProfileRedrawsForItsOwn.guard.test.ts, test: "never takes the whole film store" }
+    fix: "twenty-eight places took a store whole (useAuthStore() in the root layout, the film, log and stack pages and eleven more; the Lounge store in the salon, the Lounge tab and two panels; the block, film, notice and settings stores); each selects what it reads, one field plainly or several through one shallow selector, and the block store's two takers select the actions they call. A guard finds any store taken whole in the app's code"
+    places: [none]
+
   - id: SPEED-a-page-waits-for-what-it-knows
     title: "A page that waits on the network for what it already holds, or asks one thing after another that could go together: the log page a blank frame for three round trips though its card held the record, the Darkroom's kept sheet hidden behind the skeleton (and the whole sheet while its next batch developed) and asked for twice, the person page waiting on the phone's network before asking, the edit form asking for a column it already had"
     seriousness: behaviour

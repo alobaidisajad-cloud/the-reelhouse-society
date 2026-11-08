@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import PressableScale from '@/src/components/PressableScale';
 import { InColumn } from '@/src/components/layout/InColumn';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
@@ -38,7 +39,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
   const sheetFoot = useSheetBottom();
   // The room's name and description, each slur struck for a reader who asked (StruckWords).
   const struck = useStruck();
-  const { leaveLounge, deleteLounge, setMemberStatus, removeMember, setLoungeCover } = useLoungeStore();
+  const { leaveLounge, deleteLounge, setMemberStatus, removeMember, setLoungeCover } = useLoungeStore(useShallow((s) => ({ leaveLounge: s.leaveLounge, deleteLounge: s.deleteLounge, setMemberStatus: s.setMemberStatus, removeMember: s.removeMember, setLoungeCover: s.setLoungeCover })));
   const [expanded, setExpanded] = useState<string | null>(null);
 
   // Only approved/muted/banned are "members"; pending live in the At-the-Door panel.

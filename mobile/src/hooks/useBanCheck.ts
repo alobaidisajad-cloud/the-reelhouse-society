@@ -10,7 +10,7 @@ import { formatClockTime, formatDate } from '../utils/timeAgo'
  * silence or a suspension, and the StandingNotice says it while it lasts.
  */
 export function useBanCheck() {
-    const { user } = useAuthStore()
+    const user = useAuthStore((s) => s.user);
     const standing = standingOf(user as { is_banned?: boolean | null; suspended_until?: string | null } | null)
     const isBanned = standing !== null
 

@@ -7,6 +7,7 @@
  * and reads the public rooms; the rank is asked at taking a seat and at founding one. A visitor
  * who is not signed in meets the LoungeGate.
  */
+import { useShallow } from 'zustand/react/shallow';
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { characterCount } from '@/src/utils/text';
 import { View, ScrollView, RefreshControl, AppState, StyleSheet } from 'react-native';
@@ -45,7 +46,7 @@ const SEARCH = { least: 2, wait: 300 } as const;
 export default function LoungeScreen() {
   const user = useAuthStore((st) => st.user);
   const isAuthenticated = useAuthStore((st) => st.isAuthenticated);
-  const { lounges, fetchLounges, searchLounges, loungesRead, loungesFailed } = useLoungeStore();
+  const { lounges, fetchLounges, searchLounges, loungesRead, loungesFailed } = useLoungeStore(useShallow((s) => ({ lounges: s.lounges, fetchLounges: s.fetchLounges, searchLounges: s.searchLounges, loungesRead: s.loungesRead, loungesFailed: s.loungesFailed })));
   // Reading only until the salons have answered once: a poll never takes the corridor away.
   const firstRead = !loungesRead;
   // Nothing to show because nothing could be read: said, not "found no salon".

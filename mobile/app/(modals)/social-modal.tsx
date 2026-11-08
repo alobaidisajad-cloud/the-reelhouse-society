@@ -150,7 +150,7 @@ export default function SocialModal() {
     // directly, so the sheet reads the rank itself: without it, the rope, never the salons.
     const speaking = useClearance('lounge-speaking');
     const roped = (mode === 'share-film' || mode === 'share-person') && !speaking.held;
-    const { user } = useAuthStore();
+    const user = useAuthStore((s) => s.user);
     /** Your own followers or following: said to you, not about "this member". */
     const isOwnCircle = !!user?.id && user.id === params.userId;
 

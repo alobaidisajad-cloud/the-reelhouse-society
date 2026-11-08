@@ -35,7 +35,7 @@ export default function FilmDetailScreen() {
   const { data, isLoading: loading, isError, refetch, isPlaceholderData } = useFilmDetail(filmId, validFilmId);
   const retry = useCallback(() => { void refetch(); }, [refetch]);
   const readyMark = useScreenReady('film', loading ? 'reading' : isError && !data?.detail ? 'failed' : 'ready');
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const isAuthenticated = !!user;
   const isArchivist = isArchivistPlusTier(user);
   const currentUsername = user?.username ?? 'you';

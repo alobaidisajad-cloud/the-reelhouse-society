@@ -139,7 +139,7 @@ export function buildProfileUpdates(input: ProfileUpdateInput): Record<string, a
 }
 
 export function useEditProfile() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(editProfileSchema) as any,

@@ -174,7 +174,7 @@ type Sheet = { index: number; mode: 'plate' | 'search' };
 const MOUNT_NAME = ['the centre', 'the left wing', 'the right wing'];
 
 export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: TriptychUser, isOwnProfile: boolean, userRole?: string }) {
-    const { updateUser } = useAuthStore();
+    const updateUser = useAuthStore((s) => s.updateUser);
     const width = useColumnWidth();
     const m = useMemo(() => triptychMetrics(width), [width]);
 

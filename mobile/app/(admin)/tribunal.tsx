@@ -332,7 +332,7 @@ function ActionModal({
  * session has given the second key (src/components/admin/SecondKeyDoor.tsx).
  */
 export default function Tribunal() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   // A member who is no admin never meets the door: there is nothing behind it for them.
   if (!user || user.role !== 'admin') return <View style={s.container}><RoomLight room="default" /></View>;
   return (
@@ -343,7 +343,7 @@ export default function Tribunal() {
 }
 
 function TribunalScreen() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const headerTop = usePushedHeaderTop();
   const end = useContentBottom();
   const queryClient = useQueryClient();
