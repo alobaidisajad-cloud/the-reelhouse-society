@@ -2679,3 +2679,12 @@ mutants:
         find: "          const now = monotonicNow();"
         replace: "          const now = Date.now();"
     proof: { file: src/utils/__tests__/aWaitIsCountedForward.guard.test.ts, test: "counts every wait of the app forward: on monotonicNow, or through agedSince" }
+
+  - id: shape-film-page-drawn-in-one-commit
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/components/film/FilmDetailLayout.tsx
+        find: "  const belowShown = isTransitionComplete && heroDrawn;"
+        replace: "  const belowShown = isTransitionComplete || heroDrawn;"
+    proof: { file: src/components/film/__tests__/zz-film.gen.test.tsx, test: "draws the hero with its film alone, and the rest of the page the frame after" }

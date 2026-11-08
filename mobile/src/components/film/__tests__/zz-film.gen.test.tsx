@@ -40,6 +40,11 @@ jest.mock('react-native/Libraries/Interaction/InteractionManager', () => ({
   },
   runAfterInteractions: (fn: () => void) => { fn(); return { cancel: () => {} }; },
 }));
+/** And the frame the rest of the page waits for after the hero (FilmDetailLayout's heroDrawn), at once too. */
+beforeEach(() => {
+  jest.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((frame: FrameRequestCallback) => { frame(0); return 0; });
+});
+afterEach(() => jest.restoreAllMocks());
 /**
  * Real safe-area insets, for this generator only.
  *
@@ -273,6 +278,20 @@ describe('the film page', () => {
     expect(r.queryByText('The projection box awaits.')).toBeNull();
     await fireEvent.press(r.getByLabelText('Try again: ask for the critiques'));
     expect(retry).toHaveBeenCalled();
+  });
+
+  it('draws the hero with its film alone, and the rest of the page the frame after', async () => {
+    // The frame held: what the answer's own commit draws (P4.53, critical-path.mjs).
+    let next: FrameRequestCallback | null = null;
+    (globalThis.requestAnimationFrame as unknown as jest.Mock).mockImplementation((frame: FrameRequestCallback) => { next = frame; return 1; });
+    const r = page();
+    expect(r.getByText((value as unknown as { film: { title: string } }).film.title)).toBeTruthy();
+    expect(r.queryByText('THE PLAYERS')).toBeNull();
+    expect(r.queryByText('The projection box awaits.')).toBeNull();
+    expect(next).not.toBeNull();
+    await act(async () => { next?.(0); });
+    expect(r.getByText('THE PLAYERS')).toBeTruthy();
+    expect(r.getByText('The projection box awaits.')).toBeTruthy();
   });
 
   it('invites the first voice only when the critiques were read', () => {

@@ -104,7 +104,19 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     });
     return () => task.cancel();
   }, []);
-  useTraceDrawn('film.below', isTransitionComplete);
+  // The rest of the page waits for the push's slide AND for the hero drawn with its film, a frame
+  // later: the slide ends while a film is still read, so the answer drew the hero, the players, the
+  // footage, the shelf and the reviews in one commit, and the hero came 1.0 to 1.8 s after it on the
+  // lab's phone (critical-path.mjs, run 42489489851). Alone, the hero is the answer's next frame.
+  const [heroDrawn, setHeroDrawn] = useState(false);
+  const shownFilm = loading ? undefined : film?.id;
+  useEffect(() => {
+    if (shownFilm === undefined) return;
+    const frame = requestAnimationFrame(() => setHeroDrawn(true));
+    return () => cancelAnimationFrame(frame);
+  }, [shownFilm]);
+  const belowShown = isTransitionComplete && heroDrawn;
+  useTraceDrawn('film.below', belowShown);
 
   const {
     posterGlowStyle,
@@ -459,7 +471,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         {/* The film's acts live in the tray raised by the docked stub at the
             foot of this screen. */}
 
-        {isTransitionComplete && (
+        {belowShown && (
           <>
             {/**
               * ── NO HEADING WITH NOTHING UNDER IT ─────────────────────────────
