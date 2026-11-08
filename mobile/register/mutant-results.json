@@ -2005,7 +2005,21 @@
     "class": "STATE-a-wait-held-by-a-clock-set-back",
     "mutant": "shape-founding-held-by-a-clock-set-back",
     "proof": "m1",
-    "commit": "5b10301efa6dc2ef23984c85cf9c480ca6aceeee",
+    "commit": "464e6e9023ffdda42fbd7ac36711b88bc019ecd1",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-a-wait-held-by-a-clock-set-back",
+    "mutant": "shape-aged-since-trusts-the-future",
+    "proof": "m6",
+    "commit": "464e6e9023ffdda42fbd7ac36711b88bc019ecd1",
+    "verdict": "caught"
+  },
+  {
+    "class": "STATE-a-wait-held-by-a-clock-set-back",
+    "mutant": "shape-press-debounced-on-the-phone-clock",
+    "proof": "m2",
+    "commit": "464e6e9023ffdda42fbd7ac36711b88bc019ecd1",
     "verdict": "caught"
   }
 ]
