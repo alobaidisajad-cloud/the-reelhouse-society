@@ -1951,5 +1951,19 @@
     "proof": "m1",
     "commit": "9e143413fc4e716e09a0cfda8c93baa0049f9186",
     "verdict": "caught"
+  },
+  {
+    "class": "READ-a-page-ordered-by-a-key-rows-share",
+    "mutant": "shape-room-paged-by-the-moment",
+    "proof": "m1",
+    "commit": "76ca7e2cd8e1248f3df56125f2a1c538041a4680",
+    "verdict": "caught"
+  },
+  {
+    "class": "READ-a-page-ordered-by-a-key-rows-share",
+    "mutant": "shape-stack-paged-by-rank-and-moment",
+    "proof": "m1",
+    "commit": "76ca7e2cd8e1248f3df56125f2a1c538041a4680",
+    "verdict": "caught"
   }
 ]
