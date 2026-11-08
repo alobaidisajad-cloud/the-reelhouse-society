@@ -754,6 +754,11 @@ else
   slow=1
   node mobile/e2e/annotate.mjs "A screen could not read or is slower than its ceiling" "$OUT/screen-times.txt"
 fi
+# The round trips each screen waited on in a row, and its phone time after the last answer: a page's
+# floor, counted where the emulator's times cannot show it (e2e/critical-path.mjs). Reported, not judged.
+if node mobile/e2e/critical-path.mjs "$OUT/logcat-stream.txt" > "$OUT/critical-path.txt" 2>&1; then
+  note "What each screen waited on" "$OUT/critical-path.txt"
+fi
 # The variant's own judges (e2e/variants.json): on a phone with bold or the largest text, every
 # Text the app said it cut fails the run unless it is judged (e2e/cut-text-judges.mjs).
 if node mobile/e2e/variants.mjs "$variant" judges | grep -qx cut-text; then
