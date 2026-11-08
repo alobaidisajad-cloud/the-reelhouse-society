@@ -30,17 +30,71 @@ const mockToast = Object.assign(jest.fn(), { error: jest.fn(), success: jest.fn(
 jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: { id: '33333333-3333-4333-8333-333333333333', username: 'me' } }) } }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
-jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }) } }));
+let mockHidden: string[] = [];
+jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: (id: string) => mockHidden.includes(id) }) } }));
 jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [] }));
 jest.mock('../../utils/reelToast', () => ({ __esModule: true, get default() { return mockToast; } }));
 
 const words = () => useLoungeStore.getState().currentMessages.map((m) => m.content);
+/** The Lounge store's own reset (as a sign-out runs it), taken as the store registered it at load. */
+const resets = (): (() => void)[] =>
+  (jest.requireMock('../resetAllStores') as { registerStoreReset: jest.Mock }).registerStoreReset.mock.calls.map(([fn]) => fn as () => void);
+let signOut: (() => void)[] = [];
+beforeAll(() => { signOut = resets(); });
 
 beforeEach(() => {
+  // A phone holding no room: the rooms left for another are kept in the store's own memory.
+  for (const reset of signOut) reset();
+  mockHidden = [];
   mockToast.error.mockClear();
   useLoungeStore.setState({
     lounges: [], loungesFailed: false, loungesLoading: false,
     currentMessages: [], currentLoungeId: null, messagesLoading: false, messagesFailed: false,
+  });
+});
+
+describe('a room opened again', () => {
+  it('is drawn at once from the words it held, and catches up what it missed beneath', async () => {
+    mockHouse = supabaseFake({ rows: { lounge_messages: [msg(1, A, ANA), msg(2, B, ANA)], profiles: PEOPLE, lounge_message_reactions: [] } });
+    await useLoungeStore.getState().fetchMessages(A);
+    await useLoungeStore.getState().fetchMessages(B);
+    // Said since in room A: the catch-up asks for what came after the newest word it holds.
+    const server = [msg(1, A, ANA), msg(2, B, ANA), msg(3, A, ANA)];
+    mockHouse = supabaseFake({
+      rows: { profiles: PEOPLE, lounge_message_reactions: [] },
+      answer: {
+        lounge_messages: (ask: Ask) => {
+          const after = /created_at\.gt\.([^,]+),/.exec(ask.ors?.[0] ?? '')?.[1];
+          return server.filter((r) => r.lounge_id === A && (!after || Date.parse(r.created_at) > Date.parse(after)));
+        },
+      },
+    });
+
+    const back = useLoungeStore.getState().fetchMessages(A);
+    expect({ words: words(), reading: useLoungeStore.getState().messagesLoading }).toEqual({ words: ['words 1'], reading: false });
+    await back;
+    expect(words()).toEqual(['words 1', 'words 3']);
+  });
+
+  it('leaves out anyone the member has hidden since they left it', async () => {
+    mockHouse = supabaseFake({ rows: { lounge_messages: [msg(1, A, ANA), msg(2, A, ME), msg(3, B, ANA)], profiles: PEOPLE, lounge_message_reactions: [] } });
+    await useLoungeStore.getState().fetchMessages(A);
+    await useLoungeStore.getState().fetchMessages(B);
+    mockHidden = [ANA];
+    const back = useLoungeStore.getState().fetchMessages(A);
+    expect(words()).toEqual(['words 2']);
+    await back;
+  });
+
+  it('is read whole again after a sign-out: the next member on the phone is handed no room kept', async () => {
+    mockHouse = supabaseFake({ rows: { lounge_messages: [msg(1, A, ANA), msg(2, B, ANA)], profiles: PEOPLE, lounge_message_reactions: [] } });
+    await useLoungeStore.getState().fetchMessages(A);
+    await useLoungeStore.getState().fetchMessages(B);
+    for (const reset of signOut) reset();
+    const back = useLoungeStore.getState().fetchMessages(A);
+    expect({ words: words(), reading: useLoungeStore.getState().messagesLoading }).toEqual({ words: [], reading: true });
+    await back;
+    expect(words()).toEqual(['words 1']);
   });
 });
 

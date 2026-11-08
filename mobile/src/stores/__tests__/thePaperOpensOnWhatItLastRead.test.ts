@@ -4,13 +4,16 @@
  * The Reel's feeds are kept on the phone, so a launch draws them at once; the Dispatch kept nothing,
  * and every launch drew its skeletons until the house answered. The paper as it opens (every
  * section, latest first) is kept now, as the house sent it, for the member who read it, a day at
- * most (utils/keptPaper): a launch draws it at once and reads the paper again beneath. Against the
+ * most (utils/keptPages): a launch draws it at once and reads the paper again beneath. Against the
  * house as strict as it is (test-utils/supabaseFake).
  */
 import { supabaseFake } from '@/test-utils/supabaseFake';
 import { useDispatch } from '../dispatch';
 import { resetAllStores } from '../resetAllStores';
-import { KEPT_FOR_MS, keepPaper, keptPaper } from '@/src/utils/keptPaper';
+import { KEPT_FOR_MS, keepPage, keptPage } from '@/src/utils/keptPages';
+
+const keepPaper = (userId: string, rows: unknown[], now?: number) => keepPage('paper', userId, rows, now);
+const keptPaper = (userId: string, now?: number) => keptPage('paper', userId, now);
 
 const ME = '33333333-3333-4333-8333-333333333333';
 const OTHER = '44444444-4444-4444-8444-444444444444';

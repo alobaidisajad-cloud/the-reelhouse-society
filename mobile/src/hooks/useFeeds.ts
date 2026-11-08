@@ -2,6 +2,7 @@ import type { FeedItem, StackData } from '@/src/schemas/feed.schema';
 import { FeedService, FEED_PAGE, STACKS_PAGE } from '@/src/services/FeedService';
 import { useAuthStore } from '@/src/stores/auth';
 import { useSocialStore } from '@/src/stores/followStore';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import type { FeedReturn } from '@/src/hooks/useFeedTop';
@@ -19,7 +20,10 @@ export function useCommunityFeed(whenBack?: FeedReturn) {
     ...whenBack,
     queryKey: ['feed', 'community'],
     queryFn: async ({ pageParam, signal }) => {
-      return FeedService.getCommunityFeed({ pageParam, signal });
+      const page = await FeedService.getCommunityFeed({ pageParam, signal });
+      // The first page taken in, read and checked: the Reel's first stage after its answer (critical-path.mjs).
+      if (pageParam === undefined) e2eTrace('reel.data', { rows: page.length });
+      return page;
     },
     // The page's length decides the next page, so the server filters blocks and mutes;
     // `select` hides anyone blocked since the page arrived.

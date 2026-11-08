@@ -42,7 +42,7 @@ const JUDGED: Record<string, { readings: number; why: string }> = {
   'src/components/OfflineBanner.tsx': { readings: 2, why: 'how long the phone has been offline' },
   'src/utils/handleNotice.ts': { readings: 1, why: 'a requested handle\'s stamp, kept on this phone and read back through agedSince' },
   'src/utils/lastRoom.ts': { readings: 3, why: 'when a room was last open, stamped and read on this phone' },
-  'src/utils/keptPaper.ts': { readings: 2, why: 'when the paper was kept, stamped and read on this phone for its day' },
+  'src/utils/keptPages.ts': { readings: 2, why: 'when a page was kept, stamped and read back through agedSince for its day' },
   'src/utils/lastTab.ts': { readings: 4, why: 'when a tab was last open, stamped and read on this phone' },
   'src/utils/requestReview.ts': { readings: 2, why: 'when the review was last asked for, stamped and read on this phone' },
   'app/film-reviews/[id].tsx': { readings: 1, why: 'when a read was asked, weighed against the taps stamped on this phone (markCounts)' },

@@ -125,7 +125,7 @@ const reset = (over: Record<string, unknown> = {}) => {
 
 beforeEach(() => {
   mockAsks = []; mockPages = []; mockCount = null; mockThrow = null; mockNext = null;
-  // A phone holding nothing: a page read in one test is kept (keptPaper), and would open the next.
+  // A phone holding nothing: a page read in one test is kept (keptPages), and would open the next.
   storage.clearAll();
   reset();
 });

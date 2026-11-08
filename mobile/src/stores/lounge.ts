@@ -24,6 +24,7 @@ import { memberUnchanged } from './domain/helpers/sessionGuard';
 import { useBlockStore } from './blockStore';
 import { registerStoreReset } from './resetAllStores';
 import { agedSince, monotonicNow } from '../lib/waits';
+import { keepPage, keptPage } from '../utils/keptPages';
 import { DEPARTED_HANDLE } from '../constants/departed';
 
 // ── Types ──
@@ -215,6 +216,13 @@ const UNSEATED: readonly string[] = ['banned', 'muted'];
 
 // ── Create lounge cooldown — prevents spam-creation ──
 let _lastCreateAt = -Infinity;
+/**
+ * The words of the rooms left for another, this run only (never on the phone's disk), the most
+ * recently left last: a room opened again is drawn from them at once and caught up beneath, as the
+ * open room is on a return to the app, never read whole again behind a spinner.
+ */
+const _keptRooms = new Map<string, LoungeMessage[]>();
+const KEPT_ROOMS = 5;
 const CREATE_COOLDOWN = 30000; // 30s between lounge creations
 
 // ── THE HOUSE PULSE — typing broadcast throttle + expiry ──
@@ -440,6 +448,44 @@ export function leftBehind(room: LoungeRoom): LoungeRoom {
   };
 }
 
+const STANDINGS: readonly string[] = ['approved', 'pending', 'muted', 'banned'];
+
+/**
+ * The corridor kept on the phone (keptPages), held to a room's shape as it is read back: a row
+ * kept by an older build without an id, a name, a host or a founding date is left out, and every
+ * other field the card reads is kept only as its own type.
+ */
+function keptRooms(rows: unknown[] | null): LoungeRoom[] {
+  const text = (v: unknown) => (typeof v === 'string' ? v : undefined);
+  const count = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined);
+  return (rows ?? []).flatMap((row): LoungeRoom[] => {
+    const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
+    const id = text(r.id), name = text(r.name), creator_id = text(r.creator_id), created_at = text(r.created_at);
+    if (!id || name === undefined || !creator_id || !created_at) return [];
+    const faces = Array.isArray(r.memberFaces)
+      ? r.memberFaces.flatMap((f) => {
+          const face = (f && typeof f === 'object' ? f : {}) as Record<string, unknown>;
+          const username = text(face.username);
+          return username === undefined ? [] : [{ username, avatar_url: text(face.avatar_url) ?? null }];
+        })
+      : undefined;
+    const standing = text(r.membership_status);
+    return [{
+      id, name, creator_id, created_at,
+      description: text(r.description) ?? '',
+      is_private: r.is_private === true,
+      cover_image: text(r.cover_image) ?? null,
+      member_count: count(r.member_count) ?? 0,
+      mine: r.mine === true,
+      unread_count: count(r.unread_count),
+      last_message_at: text(r.last_message_at),
+      membership_status: standing && STANDINGS.includes(standing) ? standing as LoungeRoom['membership_status'] : undefined,
+      pending_count: count(r.pending_count) ?? 0,
+      memberFaces: faces,
+    }];
+  });
+}
+
 export const useLoungeStore = create<LoungeState>()((set, get) => ({
   lounges: [],
   loungesFailed: false,
@@ -458,6 +504,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     const startedAs = user?.id ?? null;
     if (!user) return;
+    // A launch draws the corridor this member last read at once (keptPages), and reads it beneath.
+    if (!get().loungesRead && get().lounges.length === 0) {
+      const kept = keptRooms(keptPage('lounges', user.id));
+      if (kept.length > 0) set({ lounges: kept });
+    }
     set({ loungesLoading: true });
     try {
       // Two waves, not five: what needs only the member is asked at once, and what needs
@@ -608,6 +659,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // the logout reset has already cleared.
       if (!memberUnchanged(startedAs)) return;
       set({ lounges: enriched, loungesFailed: false, loungesLoading: false, loungesRead: true });
+      keepPage('lounges', user.id, enriched);
     } catch (err) {
       if (__DEV__) console.warn('[Lounge] fetchLounges failed:', err);
       // Their failed read is not the next member's.
@@ -644,6 +696,19 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // The room already open, with words from the house held: what it missed is read and merged,
     // quietly. Read whole, it replaced them, and a failed bubble or an older page went with them.
     if (get().currentLoungeId === loungeId && serverHeld(get().currentMessages).length > 0) return get().catchUpMessages(loungeId);
+    // The room left keeps its words; one kept is drawn at once, anyone hidden since left out.
+    const leaving = get();
+    if (leaving.currentLoungeId && leaving.currentLoungeId !== loungeId && serverHeld(leaving.currentMessages).length > 0) {
+      _keptRooms.delete(leaving.currentLoungeId);
+      _keptRooms.set(leaving.currentLoungeId, leaving.currentMessages);
+      for (const oldest of _keptRooms.keys()) { if (_keptRooms.size <= KEPT_ROOMS) break; _keptRooms.delete(oldest); }
+    }
+    const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !useBlockStore.getState().isHidden(m.user_id));
+    _keptRooms.delete(loungeId);
+    if (serverHeld(kept).length > 0) {
+      set({ currentLoungeId: loungeId, currentMessages: kept, messagesLoading: false, messagesFailed: false });
+      return get().catchUpMessages(loungeId);
+    }
         const startedAs = useAuthStore.getState().user?.id ?? null;
     // Another room's words go at once: kept, they stood under this room's name until its own
     // came, and for good when its read failed. The same room's stay while it is read again.
@@ -1682,6 +1747,7 @@ registerStoreReset(() => {
     _lastTypingBroadcastAt = -Infinity;
     // Every module-level memory, or the next member on this phone inherits it.
     _lastSendAt.clear();
+    _keptRooms.clear();
     for (const t of _typingTimers.values()) clearTimeout(t);
     _typingTimers.clear();
     // Unsubscribe, not just forget: a live channel would write the next message into

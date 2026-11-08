@@ -2621,9 +2621,9 @@ mutants:
     class: SPEED-a-page-waits-for-what-it-knows
     source: shape
     edits:
-      - file: src/utils/keptPaper.ts
-        find: "const keyOf = (userId: string) => `kept_paper_${userId}`;"
-        replace: "const keyOf = (_userId: string) => 'kept_paper';"
+      - file: src/utils/keptPages.ts
+        find: "const keyOf = (kind: KeptKind, userId: string) => `kept_${kind}_${userId}`;"
+        replace: "const keyOf = (kind: KeptKind, _userId: string) => `kept_${kind}`;"
     proof: { file: src/stores/__tests__/thePaperOpensOnWhatItLastRead.test.ts, test: "never draws another member's kept paper" }
 
   - id: shape-paper-kept-with-the-hidden
@@ -2688,3 +2688,66 @@ mutants:
         find: "  const belowShown = isTransitionComplete && heroDrawn;"
         replace: "  const belowShown = isTransitionComplete || heroDrawn;"
     proof: { file: src/components/film/__tests__/zz-film.gen.test.tsx, test: "draws the hero with its film alone, and the rest of the page the frame after" }
+
+  - id: shape-room-left-keeps-nothing
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      _keptRooms.set(leaving.currentLoungeId, leaving.currentMessages);"
+        replace: "      _keptRooms.set(leaving.currentLoungeId, []);"
+    proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "is drawn at once from the words it held, and catches up what it missed beneath" }
+
+  - id: shape-room-kept-with-the-hidden
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !useBlockStore.getState().isHidden(m.user_id));"
+        replace: "    const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !!m);"
+    proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "leaves out anyone the member has hidden since they left it" }
+
+  - id: shape-room-kept-past-a-sign-out
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    _keptRooms.clear();\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "is read whole again after a sign-out: the next member on the phone is handed no room kept" }
+
+  - id: shape-corridor-kept-for-nobody
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      keepPage('lounges', user.id, enriched);\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/theCorridorOpensOnWhatItLastRead.test.ts, test: "draws the corridor it kept for this member at once, reads it again beneath, and keeps what it read" }
+
+  - id: shape-corridor-kept-drawn-late
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      if (kept.length > 0) set({ lounges: kept });"
+        replace: "      if (kept.length < 0) set({ lounges: kept });"
+    proof: { file: src/stores/__tests__/theCorridorOpensOnWhatItLastRead.test.ts, test: "draws the corridor it kept for this member at once, reads it again beneath, and keeps what it read" }
+
+  - id: shape-corridor-kept-after-a-read
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    if (!get().loungesRead && get().lounges.length === 0) {"
+        replace: "    if (get().lounges.length === 0) {"
+    proof: { file: src/stores/__tests__/theCorridorOpensOnWhatItLastRead.test.ts, test: "draws the kept corridor only before the first read: a read since is never put back" }
+
+  - id: shape-corridor-kept-any-shape
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    if (!id || name === undefined || !creator_id || !created_at) return [];"
+        replace: "    if (!id) return [];"
+    proof: { file: src/stores/__tests__/theCorridorOpensOnWhatItLastRead.test.ts, test: "holds a kept row to the shape of a room: one without an id or a name is left out, each field kept only as its type" }

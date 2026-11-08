@@ -73,7 +73,7 @@ const FAMILIES: Record<string, { writers: [string, RegExp][]; opened: string; sc
   // New since build 41, which never wrote it: opened by its own test, from what lastRoom.ts writes.
   'last-room': { writers: [['src/utils/lastRoom.ts', /^LAST_ROOM_KEY$/]], opened: 'src/utils/__tests__/aRoomThePhoneClosedOpensAgain.test.ts', ownFixtures: true },
   'profile-counts': { writers: [['src/utils/profileCountsCache.ts', /^`\$\{KEY\}_\$\{uid\}`$/]], opened: HERE },
-  'kept-paper': { writers: [['src/utils/keptPaper.ts', /^keyOf\(userId\)$/]], opened: 'src/stores/__tests__/thePaperOpensOnWhatItLastRead.test.ts', ownFixtures: true },
+  'kept-pages': { writers: [['src/utils/keptPages.ts', /^keyOf\(kind, userId\)$/]], opened: 'src/stores/__tests__/thePaperOpensOnWhatItLastRead.test.ts', ownFixtures: true },
   drafts: {
     writers: [['src/utils/memberDrafts.ts', /^draftKey\(/]],
     opened: HERE,
