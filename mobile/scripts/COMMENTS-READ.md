@@ -228,7 +228,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/ios-launch.cjs | 2026-10-15 | true as written |
 | e2e/ios-simulator.sh | 2026-10-25 | new: the iPhone 17 Pro on the newest iOS, or the iPhones there are and a failure; read against the macos-26 image's simulators (no iPhone 16 Pro) and the iPhone launch check on PR #128 |
 | e2e/keyboard-room.mjs | 2026-10-31 | edited: --top: the keyboard's window there and drawn yet, for run-flows.sh to wait on; written with the keyboard probe |
-| e2e/load/probe.mjs | 2026-10-16 | edited: psql's error is shown beside a plan it could not make |
+| e2e/load/probe.mjs | 2026-11-07 | edited: a member's room, first page, as useMemberRoom asks it, timed; edited: psql's error is shown beside a plan it could not make |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
 | e2e/old-client-tree.mjs | 2026-10-16 | edited: after the patches, each of the client's flows waits at least as long as this checkout's same flow |
 | e2e/old-clients.cjs | 2026-10-16 | edited: waitsIn reads each waiting command's target and time; raiseWaits gives a shipped client's flow at least this checkout's time for the same wait, never less |

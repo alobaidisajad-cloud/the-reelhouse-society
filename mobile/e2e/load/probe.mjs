@@ -68,6 +68,9 @@ const PROBES = [
   // The Dispatch
   { screen: 'Dispatch', what: 'the door (dispatch_door)', as: MEMBER, sql: 'SELECT public.dispatch_door()' },
   { screen: 'Dispatch', what: 'a member\'s room totals', as: MEMBER, sql: `SELECT public.dispatch_room_totals('${CELEBRITY}')` },
+  // as useMemberRoom asks it, for the member who filed the hot post
+  { screen: 'Dispatch', what: 'a member\'s room, first page', as: MEMBER,
+    sql: `SELECT id, kind, title, body, certify_count, created_at FROM public.dispatch_posts WHERE user_id = '${mid(14)}' AND is_published AND withheld_at IS NULL AND ended_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 20` },
   { screen: 'Dispatch', what: 'the paper, first page', as: MEMBER,
     // as the app's pageQuery asks it: published and not withheld (an ended ballot stays in the paper)
     sql: 'SELECT id, kind, author_username, title, body, certify_count, comment_count, created_at FROM public.dispatch_posts WHERE is_published AND withheld_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 30' },
