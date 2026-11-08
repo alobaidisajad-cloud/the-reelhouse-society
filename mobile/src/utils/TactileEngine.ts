@@ -1,17 +1,18 @@
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { useSettingsStore } from '../stores/settings';
+import { monotonicNow } from '../lib/waits';
 
 // ── THE TACTILE ENGINE ──
 // The app's one haptic system: nothing else imports expo-haptics. Semantic names,
 // and an Android throttle guard, which keeps the haptic motor's hardware queue
 // from locking up when a member spams a control (a rapid certify/uncertify).
 
-let lastHapticTime = 0;
+let lastHapticTime = -Infinity;
 const HAPTIC_THROTTLE_MS = Platform.OS === 'android' ? 50 : 0;
 
 function shouldThrottle(): boolean {
-  const now = Date.now();
+  const now = monotonicNow();
   if (now - lastHapticTime < HAPTIC_THROTTLE_MS) return true;
   lastHapticTime = now;
   return false;

@@ -34,7 +34,8 @@ const door = async (world: MfaWorld) => {
 };
 /** The clock a press reads: each code is typed a second after the last, as a person types (a press within 400 ms is one tap, PressableScale). */
 let clock = 1_000_000;
-beforeEach(() => { jest.spyOn(Date, 'now').mockImplementation(() => clock); });
+// A press's debounce counts on the forward clock (waits.ts), which follows this one here.
+beforeEach(() => { jest.spyOn(Date, 'now').mockImplementation(() => clock); jest.spyOn(performance, 'now').mockImplementation(() => Date.now()); });
 afterEach(() => { jest.restoreAllMocks(); });
 const type = async (code: string) => {
   clock += 1000;

@@ -4,6 +4,7 @@
  * the screen. Export: CSV or the full JSON archive, through the share sheet.
  * No other service is ever named.
  */
+import { monotonicNow } from '@/src/lib/waits';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { houseIso } from '@/src/lib/houseClock';
@@ -146,9 +147,9 @@ export default function DataVault() {
       setImportProgress({ phase: 'READING ARCHIVE', current: 0, total: 1 });
       TactileEngine.mutate();
 
-      let lastUpdate = 0;
+      let lastUpdate = -Infinity;
       const progressCb = (progress: ImportProgress) => {
-        const now = Date.now();
+        const now = monotonicNow();
         if (now - lastUpdate > 32 || progress.current === progress.total) { // ~30fps
           lastUpdate = now;
           if (isMounted.current) setImportProgress({ ...progress });

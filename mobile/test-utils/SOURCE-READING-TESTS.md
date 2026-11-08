@@ -389,3 +389,4 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/everyReadNamesItsColumns.guard.test.ts` | Every file of the app's code, comments stripped: no `.select('*')`, a read of every column. |
 | `src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts` | Every file of the app's code, comments stripped: each `.from(…)…range(` read's last `.order(` is `id`, or a key held once within the read's `.eq(` (a stack's film). |
 | `src/utils/__tests__/aScreenRedrawsForWhatItReads.guard.test.ts` | Every file of the app's code, comments stripped: no `useXStore()` with no selector, a store taken whole. |
+| `src/utils/__tests__/aWaitIsCountedForward.guard.test.ts` | Every file of the app's code, comments stripped: no wait counted as the phone's clock less a stamp, but on monotonicNow or through agedSince. |

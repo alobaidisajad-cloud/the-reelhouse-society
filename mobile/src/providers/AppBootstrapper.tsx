@@ -1,3 +1,4 @@
+import { agedSince } from '@/src/lib/waits';
 import { isSafeDeepLinkUrl } from '@/src/constants/deepLinks';
 import { logger } from '@/src/utils/logger';
 import { noticeIdOf, openNoticeFromPush } from '@/src/utils/openNoticeFromPush';
@@ -304,11 +305,11 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         // The 5s threshold prevents noise from brief app switches (Control
         // Center, notification shade, brief multitask glances).
         // fetchNotifications() is already guarded by a _fetching mutex.
-        const wasBackgroundedLong = Date.now() - lastBackgroundedAt > 5000;
+        const wasBackgroundedLong = agedSince(lastBackgroundedAt) > 5000;
         if (wasBackgroundedLong && useAuthStore.getState().isAuthenticated) {
           useNotificationStore.getState().fetchNotifications();
         }
-        if (useAuthStore.getState().isAuthenticated && Date.now() - rankReadAt > QUERY_POLICY.queries.staleTime) {
+        if (useAuthStore.getState().isAuthenticated && agedSince(rankReadAt) > QUERY_POLICY.queries.staleTime) {
           rankReadAt = Date.now();
           void useAuthStore.getState().rereadProfile();
         }

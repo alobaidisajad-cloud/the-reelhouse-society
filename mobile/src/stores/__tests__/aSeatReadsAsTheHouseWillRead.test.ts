@@ -179,15 +179,21 @@ describe('a salon founded', () => {
   });
 
   it('is founded on a phone whose clock was set back since the last founding', async () => {
-    // The last founding stamped a minute ahead (a clock run ahead, then put right): the half-minute
-    // is counted forward only, so the clock put back holds nothing back.
-    const ahead = jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 60_000);
+    // The half-minute is counted on the clock that only goes forward: past it, the phone's clock set
+    // an hour back since the last founding holds nothing back.
+    const forward = performance.now();
+    const ticks = jest.spyOn(performance, 'now').mockReturnValue(forward);
+    const wall = Date.now();
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(wall);
     try {
       expect(await useLoungeStore.getState().createLounge('The Early Show', 'Dawn only.', false, 'room-early-show')).not.toBeNull();
+      clock.mockReturnValue(wall - 3_600_000);
+      ticks.mockReturnValue(forward + 31_000);
+      expect(await useLoungeStore.getState().createLounge('The Matinee', 'Afternoons.', false, 'room-matinee')).toBe('room-matinee');
     } finally {
-      ahead.mockRestore();
+      ticks.mockRestore();
+      clock.mockRestore();
     }
-    expect(await useLoungeStore.getState().createLounge('The Matinee', 'Afternoons.', false, 'room-matinee')).toBe('room-matinee');
   });
 
   it('asked for again after its answer was lost, is the one room, drawn once', async () => {

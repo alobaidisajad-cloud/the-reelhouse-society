@@ -14,6 +14,7 @@
  * allowed or refused has answered), and "Not now" is not asked again for two
  * weeks. Settings keeps its own button for anyone who wants it sooner.
  */
+import { agedSince } from './waits';
 import { Alert } from 'react-native';
 import { storage } from '../stores/mmkv-storage';
 import { getPushPermissionState, registerForPushNotifications, requestPushPermission } from './pushNotifications';
@@ -34,7 +35,7 @@ export const PRIMER_BODY: Record<WordMoment, string> = {
 export async function offerWord(moment: WordMoment, userId: string, now: number = Date.now()): Promise<void> {
   if ((await getPushPermissionState()) !== 'undetermined') return;
   const last = Number(storage.getString(PRIMER_ASKED_KEY) ?? 0);
-  if (last && now - last < PRIMER_WAIT_MS) return;
+  if (last && agedSince(last, now) < PRIMER_WAIT_MS) return;
   storage.set(PRIMER_ASKED_KEY, String(now));
   Alert.alert(PRIMER_TITLE, PRIMER_BODY[moment], [
     { text: 'Not now', style: 'cancel' },

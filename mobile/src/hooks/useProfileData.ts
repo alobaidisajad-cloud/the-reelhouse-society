@@ -1,3 +1,4 @@
+import { agedSince } from '@/src/lib/waits';
 import { useReducer, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { focusManager } from '@tanstack/react-query';
 import { QUERY_POLICY } from '@/src/lib/queryPolicy';
@@ -472,7 +473,7 @@ export function useProfileData({
   // Back in the app once the file is older than a read stays fresh, it is read again, silently, as
   // the focus reread does: never a spinner over what is drawn.
   useEffect(() => focusManager.subscribe((focused) => {
-    if (focused && readAt.current > 0 && Date.now() - readAt.current > QUERY_POLICY.queries.staleTime) void fetchUserData();
+    if (focused && readAt.current > 0 && agedSince(readAt.current) > QUERY_POLICY.queries.staleTime) void fetchUserData();
   }), [fetchUserData]);
 
   useEffect(() => {

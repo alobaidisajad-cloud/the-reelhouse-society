@@ -99,6 +99,8 @@ beforeEach(() => {
   // a reason that had nothing to do with refusals.
   tick += 1;
   jest.setSystemTime(new Date('2026-09-16T10:00:00Z').getTime() + tick * 60_000);
+  // The throttle counts on the forward clock (waits.ts), which follows the faked one here.
+  jest.spyOn(performance, 'now').mockImplementation(() => Date.now());
   result = { data: null, error: null };
   mockUser = stranger;
   mockFrom.mockReset().mockImplementation(() => chain());

@@ -47,6 +47,8 @@ beforeEach(() => {
   mockRemove.mockReset();
   now += 10_000;
   jest.spyOn(Date, 'now').mockImplementation(() => now);
+  // Typing's throttle counts on the forward clock (waits.ts), which follows this one here.
+  jest.spyOn(performance, 'now').mockImplementation(() => Date.now());
   useLoungeStore.setState({ currentLoungeId: SALON, typingUsers: [], presentCount: 0 } as never);
 });
 afterEach(() => jest.restoreAllMocks());

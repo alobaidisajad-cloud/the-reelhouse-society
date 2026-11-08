@@ -11,6 +11,7 @@
  * privileges that the tickets, the ledger and the web all sell from — and
  * every figure from the store (`useMembershipPricing`, `societyPricing`).
  */
+import { monotonicNow } from '@/src/lib/waits';
 import { useShallow } from 'zustand/react/shallow';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, AppState, useWindowDimensions, Platform } from 'react-native';
@@ -201,7 +202,7 @@ export default function MembershipScreen() {
   // two rapid taps can both read isRedirecting=false before either setState fires.
   const purchaseMutex = useRef(false);
 
-  const lastCheckoutRef = useRef<number>(0);
+  const lastCheckoutRef = useRef<number>(-Infinity);
 
   // Refresh session tier when returning from the store.
   // Also re-fetch the founding seat count on the same signal, so the certificate
@@ -213,7 +214,7 @@ export default function MembershipScreen() {
         // Not while a purchase or restore is in hand (the store's sheet returning the
         // app to the front is exactly that moment), nor just after one: the watch
         // below reads the rank then, and an earlier read would put back the old one.
-        if (!purchaseMutex.current && Date.now() - lastCheckoutRef.current > 15000) {
+        if (!purchaseMutex.current && monotonicNow() - lastCheckoutRef.current > 15000) {
           useAuthStore.getState().restoreSession?.();
         }
         void readFoundingCount().then((n) => { if (n !== null) setFoundingCount(n); });
@@ -296,7 +297,7 @@ export default function MembershipScreen() {
       // match — a monthly pick can never silently charge the annual price.
       const entitlement = await purchaseTier(tier as ReelHouseTier, billing);
       if (entitlement?.isActive) {
-        lastCheckoutRef.current = Date.now();
+        lastCheckoutRef.current = monotonicNow();
         // The far end of the funnel. `reason` is the door that sent them, so
         // this is the only place that can say WHICH rope led to a purchase.
         recordGateEvent('rank_purchased', {
@@ -348,7 +349,7 @@ export default function MembershipScreen() {
 
       const entitlement = await purchaseTier('founding');
       if (entitlement?.isActive) {
-        lastCheckoutRef.current = Date.now();
+        lastCheckoutRef.current = monotonicNow();
         reelToast.success('Welcome to the Founding Board.');
         useAuthStore.getState().setLocalTierHint({ tier: entitlement.tier, is_founding: entitlement.tier === 'founding' || undefined });
 

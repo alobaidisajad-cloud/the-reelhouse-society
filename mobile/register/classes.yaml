@@ -1754,11 +1754,18 @@ classes:
     seriousness: behaviour
     area: runtime
     status: OPEN
-    count: 1
+    count: 19
     source: { kind: ci, ref: "the nightly's jest in a random order (run 42468307829, seed 383402552): aSeatReadsAsTheHouseWillRead" }
     methods:
       - { kind: running, file: src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts, test: "is founded on a phone whose clock was set back since the last founding" }
-    fix: "createLounge holds the next founding back only for time gone forward since the last (since >= 0 and under the half-minute); the test file runs the Lounge store's own reset before each test, so no founding in one test holds the next back in any order. Eight more waits are counted from a stamp (PressableScale's debounce, the typing and haptic throttles, socialSlice's throttle and caches, the push primer, the sign-in throttle): their sweep is the next batch"
+      - { kind: static, file: src/utils/__tests__/aWaitIsCountedForward.guard.test.ts, test: "counts every wait of the app forward: on monotonicNow, or through agedSince" }
+      - { kind: static, file: src/utils/__tests__/aWaitIsCountedForward.guard.test.ts, test: "says NO to a wait on the phone clock, and not to one counted forward or on the house clock" }
+      - { kind: running, file: src/lib/__tests__/waits.test.ts, test: "counts forward on its own clock, whatever the phone's clock is set to" }
+      - { kind: running, file: src/lib/__tests__/waits.test.ts, test: "reads how long ago a stamp was on the phone's clock" }
+      - { kind: running, file: src/lib/__tests__/waits.test.ts, test: "reads a stamp in the future as long past: a clock set back makes it old, never fresh" }
+      - { kind: static, file: src/utils/__tests__/aWaitIsCountedForward.guard.test.ts, test: "sets and begins every stamp weighed on monotonicNow on that clock: never Date.now, never 0" }
+      - { kind: static, file: src/utils/__tests__/aWaitIsCountedForward.guard.test.ts, test: "says NO to a stamp set on the phone clock or begun at 0, and not to one set forward" }
+    fix: "every wait counts through src/lib/waits.ts. A short wait within a run counts on monotonicNow (performance.now, only forward): a press's debounce, the haptic, follow, send, founding and typing throttles, a checkout's moment, the import's progress, a search's time budget. An age that must count the phone's sleep counts through agedSince, which reads a stamp in the future as long past: the TMDB, username and profile caches, how long the app was away and the rank's age, the member page's staleness, the query cache, the handle notice and the push primer kept on disk. Every stamp weighed on monotonicNow is set on it and begins at -Infinity (a checkout's stamp, once set on the phone's clock, would have read decades). The sign-in throttle weighs a `now` it is handed and keeps an attempt stamped in the future counted, so a clock set back never clears its lockout. aWaitIsCountedForward finds a wait on the phone's clock anywhere in the app; the Lounge store's reset runs before each of its tests"
     places: [none]
 
   - id: SPEED-a-screen-takes-a-store-whole

@@ -1,3 +1,4 @@
+import { agedSince } from '@/src/lib/waits';
 import { storage } from '@/src/stores/mmkv-storage';
 
 const KEY = 'reelhouse_pending_handle';
@@ -62,7 +63,7 @@ export function readRequestedHandle(): PendingHandle | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<PendingHandle>;
     if (typeof parsed?.id !== 'string' || typeof parsed?.requested !== 'string') { clearRequestedHandle(); return null; }
-    if (typeof parsed.at !== 'number' || Date.now() - parsed.at > MAX_AGE_MS) { clearRequestedHandle(); return null; }
+    if (typeof parsed.at !== 'number' || agedSince(parsed.at) > MAX_AGE_MS) { clearRequestedHandle(); return null; }
     return { id: parsed.id, requested: parsed.requested, at: parsed.at };
   } catch {
     clearRequestedHandle();

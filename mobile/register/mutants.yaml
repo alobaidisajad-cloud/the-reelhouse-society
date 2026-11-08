@@ -2658,6 +2658,24 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "    if (since >= 0 && since < CREATE_COOLDOWN) {"
-        replace: "    if (since < CREATE_COOLDOWN) {"
+        find: "    const now = monotonicNow();\n    if (now - _lastCreateAt < CREATE_COOLDOWN) {"
+        replace: "    const now = Date.now();\n    if (now - _lastCreateAt < CREATE_COOLDOWN) {"
     proof: { file: src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts, test: "is founded on a phone whose clock was set back since the last founding" }
+
+  - id: shape-aged-since-trusts-the-future
+    class: STATE-a-wait-held-by-a-clock-set-back
+    source: shape
+    edits:
+      - file: src/lib/waits.ts
+        find: "  return since < 0 ? Infinity : since;"
+        replace: "  return since;"
+    proof: { file: src/lib/__tests__/waits.test.ts, test: "reads a stamp in the future as long past: a clock set back makes it old, never fresh" }
+
+  - id: shape-press-debounced-on-the-phone-clock
+    class: STATE-a-wait-held-by-a-clock-set-back
+    source: shape
+    edits:
+      - file: src/components/PressableScale.tsx
+        find: "          const now = monotonicNow();"
+        replace: "          const now = Date.now();"
+    proof: { file: src/utils/__tests__/aWaitIsCountedForward.guard.test.ts, test: "counts every wait of the app forward: on monotonicNow, or through agedSince" }

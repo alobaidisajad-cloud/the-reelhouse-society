@@ -14,6 +14,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import TactileEngine from '../utils/TactileEngine';
+import { monotonicNow } from '../lib/waits';
 import { arrive, MS } from '../theme/motion';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -187,7 +188,7 @@ function PressableScale({
   room = false,
 }: PressableScaleProps) {
   const scale = useSharedValue(1);
-  const lastPressRef = useRef<number>(0);
+  const lastPressRef = useRef<number>(-Infinity);
 
   // A halo of 15 on each side the caller leaves out, but only on an axis under
   // the 48pt floor: on a big control a halo only reaches into its neighbour, and
@@ -276,7 +277,7 @@ function PressableScale({
       }}
       onPress={() => {
         if (debounceMs > 0) {
-          const now = Date.now();
+          const now = monotonicNow();
           if (now - lastPressRef.current < debounceMs) return;
           lastPressRef.current = now;
         }

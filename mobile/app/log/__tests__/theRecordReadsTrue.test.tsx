@@ -423,10 +423,13 @@ describe('the record offers what the card offers', () => {
     // (PressableScale's debounce): a member's second tap comes later than that.
     const now = Date.now();
     const clock = jest.spyOn(Date, 'now').mockReturnValue(now + 1000);
+    // The debounce counts on the forward clock (waits.ts): it moves the same second on.
+    const ticks = jest.spyOn(performance, 'now').mockReturnValue(performance.now() + 1000);
     try {
       await act(async () => { await fireEvent.press(r.getByLabelText('Save: on your watchlist. Takes it off')); });
     } finally {
       clock.mockRestore();
+      ticks.mockRestore();
     }
     expect(r.getByLabelText('Save film to your watchlist')).toBeTruthy();
   });

@@ -7,6 +7,7 @@
  * that, its newest reads that fit.
  */
 
+import { agedSince } from './waits';
 import NetInfo from '@/src/lib/reachability';
 import { AppState } from 'react-native';
 import { defaultShouldDehydrateQuery, focusManager, onlineManager, QueryClient, type Query } from '@tanstack/react-query';
@@ -121,7 +122,7 @@ export const mmkvPersister: Persister = {
       const parsed = JSON.parse(data) as PersistedClient;
       e2eTrace('cache.restore', { chars: data.length, ms: Date.now() - started });
       // Discard cache if older than 24 hours
-      if (parsed.timestamp && Date.now() - parsed.timestamp > MAX_CACHE_AGE_MS) {
+      if (parsed.timestamp && agedSince(parsed.timestamp) > MAX_CACHE_AGE_MS) {
         storage.delete(CACHE_KEY);
         return undefined;
       }

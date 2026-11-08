@@ -2,6 +2,7 @@
 // REELHOUSE MOBILE — TMDB API Client
 // Resilient, cached, deduplicated — ported from web
 // ============================================================
+import { agedSince, monotonicNow } from './waits';
 import { isTmdbUnreachable, TmdbUnreachable } from './tmdbErrors';
 import { boundedSearch } from '../utils/searchPattern';
 import { DeadlineExceeded, fetchWithinLimit } from './supabase';
@@ -149,7 +150,7 @@ const MAX_CACHE = 200;             // Reduced from 500 — mobile memory safety
 function cacheGet(key: string): unknown | undefined {
   const entry = _cache.get(key);
   if (!entry) return undefined;
-  if (Date.now() - entry.ts > CACHE_TTL) { _cache.delete(key); return undefined; }
+  if (agedSince(entry.ts) > CACHE_TTL) { _cache.delete(key); return undefined; }
   
   // LRU bump: Move to the end of the Map to mark as recently used
   _cache.delete(key);
@@ -242,7 +243,7 @@ export const tmdb = {
   search: async (asked: string, page = 1) => {
     // A phrase, whatever was pasted: every request below, the fallbacks' too, is made from it.
     const query = boundedSearch(asked);
-    const searchStart = Date.now();
+    const searchStart = monotonicNow();
     const SEARCH_BUDGET_MS = 6000;
 
     // TIER 1: Omni-Search — routed through hardened fetchTMDB (timeout + retry + dedup).
@@ -314,7 +315,7 @@ export const tmdb = {
     }
 
     // Budget check: skip fallback tiers if Tier 1 already consumed most of the time budget
-    if (Date.now() - searchStart > SEARCH_BUDGET_MS) {
+    if (monotonicNow() - searchStart > SEARCH_BUDGET_MS) {
         data.searchType = 'failed';
         return data;
     }
@@ -378,7 +379,7 @@ export const tmdb = {
     }
 
     // Budget check: skip semantic tier if budget exhausted
-    if (Date.now() - searchStart > SEARCH_BUDGET_MS) {
+    if (monotonicNow() - searchStart > SEARCH_BUDGET_MS) {
         data.searchType = 'failed';
         return data;
     }

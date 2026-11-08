@@ -23,6 +23,7 @@ import { useAuthStore } from './auth';
 import { memberUnchanged } from './domain/helpers/sessionGuard';
 import { useBlockStore } from './blockStore';
 import { registerStoreReset } from './resetAllStores';
+import { agedSince, monotonicNow } from '../lib/waits';
 import { DEPARTED_HANDLE } from '../constants/departed';
 
 // ── Types ──
@@ -213,11 +214,11 @@ type RoomRow = { id: string; name: string; description: string; is_private: bool
 const UNSEATED: readonly string[] = ['banned', 'muted'];
 
 // ── Create lounge cooldown — prevents spam-creation ──
-let _lastCreateAt = 0;
+let _lastCreateAt = -Infinity;
 const CREATE_COOLDOWN = 30000; // 30s between lounge creations
 
 // ── THE HOUSE PULSE — typing broadcast throttle + expiry ──
-let _lastTypingBroadcastAt = 0;
+let _lastTypingBroadcastAt = -Infinity;
 const TYPING_THROTTLE = 2000; // max one broadcast per 2s per member
 const TYPING_TTL = 4000;      // a typist goes quiet after 4s of silence
 const _typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -249,7 +250,7 @@ const _PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const _PROFILE_CACHE_MAX = 100;
 async function resolveProfile(userId: string): Promise<{ username: string; avatar_url?: string }> {
   const cached = _profileCache.get(userId);
-  if (cached && Date.now() - cached.ts < _PROFILE_CACHE_TTL) return cached;
+  if (cached && agedSince(cached.ts) < _PROFILE_CACHE_TTL) return cached;
   if (cached) _profileCache.delete(userId);
   const { data: profile, error } = await supabase.from('profiles').select('username, avatar_url').eq('id', userId).single();
 
@@ -905,8 +906,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const cleanContent = sanitizeInput(content, 'loungeMessage');
     if (!user || (!cleanContent && type === 'text')) return false;
 
-    const now = Date.now();
-    if (now - (_lastSendAt.get(loungeId) ?? 0) < SEND_THROTTLE) return false;
+    const now = monotonicNow();
+    if (now - (_lastSendAt.get(loungeId) ?? -Infinity) < SEND_THROTTLE) return false;
     _lastSendAt.set(loungeId, now);
 
     set({ sending: true });
@@ -1048,11 +1049,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return null;
     }
 
-    const now = Date.now();
-    // Only time gone forward since the last founding holds the next back: a phone's clock set back
-    // (by hand, or after running ahead) would otherwise refuse every founding until it caught up.
-    const since = now - _lastCreateAt;
-    if (since >= 0 && since < CREATE_COOLDOWN) {
+    // On the clock that only goes forward (waits.ts): a phone's clock set back (by hand, or after
+    // running ahead) would otherwise refuse every founding until it caught up with the last one's stamp.
+    const now = monotonicNow();
+    if (now - _lastCreateAt < CREATE_COOLDOWN) {
         reelToast.error('Please wait before creating another lounge.');
         return null;
     }
@@ -1071,7 +1071,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (error || !loungeId) {
         logger.error('[LoungeStore.createLounge] RPC failed:', error);
         // Set before the call, so a second tap can't create twice; a failure releases it.
-        _lastCreateAt = 0;
+        _lastCreateAt = -Infinity;
         // A rank the house no longer sees (it lapsed since the screen asked) gets its door.
         if (!showTierDoor(error, { returnTo: '/lounge' })) reelToast.error('Failed to create lounge.');
         return null;
@@ -1102,7 +1102,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     } catch (e) {
       logger.error('[LoungeStore.createLounge] Unhandled error:', e);
       reelToast.error('Could not create lounge. Check your connection and try again.');
-      _lastCreateAt = 0;
+      _lastCreateAt = -Infinity;
       return null;
     }
   },
@@ -1641,7 +1641,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   },
 
   broadcastTyping: (loungeId: string) => {
-    const now = Date.now();
+    const now = monotonicNow();
     if (now - _lastTypingBroadcastAt < TYPING_THROTTLE) return;
     const me = useAuthStore.getState().user;
     if (!me || !_activeChannel || !_seatedInActive || get().currentLoungeId !== loungeId) return;
@@ -1678,8 +1678,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
     useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: false, currentMessages: [], currentLoungeId: null, messagesLoading: false, messagesFailed: false, sending: false, presentCount: 0, typingUsers: [] });
-    _lastCreateAt = 0;
-    _lastTypingBroadcastAt = 0;
+    _lastCreateAt = -Infinity;
+    _lastTypingBroadcastAt = -Infinity;
     // Every module-level memory, or the next member on this phone inherits it.
     _lastSendAt.clear();
     for (const t of _typingTimers.values()) clearTimeout(t);

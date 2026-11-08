@@ -9,6 +9,7 @@
 import { z } from 'zod';
 import { captureError } from '../../lib/sentry';
 import { supabase } from '../../lib/supabase';
+import { agedSince, monotonicNow } from '../../lib/waits';
 import { useAuthStore } from '../auth';
 import { useSocialStore } from '../followStore';
 import { stillSignedIn } from './helpers/sessionGuard';
@@ -31,19 +32,19 @@ const _THROTTLE_COOLDOWN = 2000;
 const _THROTTLE_MAX = 200;
 
 function isSocialThrottled(key: string): boolean {
-  const last = _socialThrottles.get(key) ?? 0;
-  if (Date.now() - last < _THROTTLE_COOLDOWN) {
+  const last = _socialThrottles.get(key) ?? -Infinity;
+  if (monotonicNow() - last < _THROTTLE_COOLDOWN) {
     TactileEngine.warn();
     return true;
   }
   pruneSocialThrottles();
-  _socialThrottles.set(key, Date.now());
+  _socialThrottles.set(key, monotonicNow());
   return false;
 }
 
 function pruneSocialThrottles() {
   if (_socialThrottles.size < _THROTTLE_MAX) return;
-  const now = Date.now();
+  const now = monotonicNow();
   for (const [key, ts] of _socialThrottles) {
     if (now - ts > 30000) _socialThrottles.delete(key);
   }
@@ -62,7 +63,7 @@ async function resolveUsernameToProfile(username: string): Promise<{ id: string;
   if (!isLookupSafeHandle(username)) return null;
 
   const cached = _usernameProfileCache.get(username);
-  if (cached && Date.now() - cached.ts < _USERNAME_CACHE_TTL) {
+  if (cached && agedSince(cached.ts) < _USERNAME_CACHE_TTL) {
     // Moved to the end: the oldest are pruned first.
     _usernameProfileCache.delete(username);
     _usernameProfileCache.set(username, { ...cached, ts: Date.now() });

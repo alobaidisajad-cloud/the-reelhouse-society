@@ -65,6 +65,8 @@ let clockSpy: jest.SpyInstance;
 beforeEach(() => {
   clock += 10_000;
   clockSpy = jest.spyOn(Date, 'now').mockImplementation(() => clock);
+  // The throttle counts on the forward clock (waits.ts), which follows this one here.
+  jest.spyOn(performance, 'now').mockImplementation(() => Date.now());
   mockFrom.mockReset().mockImplementation(() => chain());
   nextResult = {
     data: { id: '99999999-9999-4999-8999-999999999999', created_at: '2026-09-11T12:00:00Z' },
