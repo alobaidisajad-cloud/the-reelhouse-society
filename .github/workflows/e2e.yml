@@ -793,7 +793,7 @@ jobs:
             "$RUNNER_TEMP/flows-ended.txt" "$RUNNER_TEMP/retries.txt" "$RUNNER_TEMP/not-judged.txt" \
             "$RUNNER_TEMP/own-crash-flows.txt" "$RUNNER_TEMP/phone-fixes.txt" "$RUNNER_TEMP/app-crashes.txt" \
             "$RUNNER_TEMP/splash-handoff.txt" "$RUNNER_TEMP/animation-waits.txt" "$RUNNER_TEMP/phone-runtime.json" \
-            "$RUNNER_TEMP/runtime-dump.txt" "$RUNNER_TEMP/screen-times.txt" "$RUNNER_TEMP/fault-judges.txt" \
+            "$RUNNER_TEMP/runtime-dump.txt" "$RUNNER_TEMP/screen-times.txt" "$RUNNER_TEMP/critical-path.txt" "$RUNNER_TEMP/fault-judges.txt" \
             "$RUNNER_TEMP/clock-judges.txt" "$RUNNER_TEMP/flow-starts.txt" \
             "$RUNNER_TEMP/walk-plan.txt" "$RUNNER_TEMP/walk.log" "$RUNNER_TEMP/route-judges.txt" \
             "$RUNNER_TEMP/walk" "$RUNNER_TEMP/memory.txt" "$RUNNER_TEMP/shard-plan.txt" \
@@ -843,6 +843,7 @@ jobs:
             ${{ runner.temp }}/phone-runtime.json
             ${{ runner.temp }}/runtime-dump.txt
             ${{ runner.temp }}/screen-times.txt
+            ${{ runner.temp }}/critical-path.txt
             ${{ runner.temp }}/fault-judges.txt
             ${{ runner.temp }}/clock-judges.txt
             ${{ runner.temp }}/flow-starts.txt
