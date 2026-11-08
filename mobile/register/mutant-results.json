@@ -1965,5 +1965,40 @@
     "proof": "m1",
     "commit": "76ca7e2cd8e1248f3df56125f2a1c538041a4680",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-paper-kept-never-drawn",
+    "proof": "m29",
+    "commit": "d0b2abd6e1f4dcd6a1a3a3bef17eb7b117e46f92",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-paper-kept-for-everyone",
+    "proof": "m30",
+    "commit": "d0b2abd6e1f4dcd6a1a3a3bef17eb7b117e46f92",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-paper-kept-with-the-hidden",
+    "proof": "m31",
+    "commit": "d0b2abd6e1f4dcd6a1a3a3bef17eb7b117e46f92",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-paper-kept-for-any-view",
+    "proof": "m33",
+    "commit": "d0b2abd6e1f4dcd6a1a3a3bef17eb7b117e46f92",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-paper-spinner-over-kept",
+    "proof": "m35",
+    "commit": "d0b2abd6e1f4dcd6a1a3a3bef17eb7b117e46f92",
+    "verdict": "caught"
   }
 ]
