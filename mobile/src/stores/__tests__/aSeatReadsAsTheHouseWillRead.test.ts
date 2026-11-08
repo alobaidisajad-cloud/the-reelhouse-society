@@ -94,6 +94,11 @@ jest.mock('../../lib/supabase', () => ({
 }));
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: { id: mockMe, username: 'kane' } }) } }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
+/** The Lounge store's own reset (as a sign-out runs it), taken as the store registered it at load. */
+const loungeResets = (): (() => void)[] =>
+  (jest.requireMock('../resetAllStores') as { registerStoreReset: jest.Mock }).registerStoreReset.mock.calls.map(([fn]) => fn as () => void);
+let resets: (() => void)[] = [];
+beforeAll(() => { resets = loungeResets(); });
 jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }) } }));
 jest.mock('../../lib/queryClient', () => ({ queryClient: { invalidateQueries: jest.fn() } }));
 jest.mock('../../utils/reelToast', () => {
@@ -111,6 +116,10 @@ const standing = (r: LoungeRoom) => ({
 });
 
 beforeEach(() => {
+  // A phone that has founded nothing yet: the half-minute between foundings is the store's own, and
+  // a founding in one test held the next test's back in whatever order they ran (nightly 42468307829).
+  expect(resets.length).toBeGreaterThan(0);
+  for (const reset of resets) reset();
   mockHouse.rooms = [{ id: SALON, name: 'The Nitrate Circle', description: 'Silent era.', is_private: false, creator_id: HOST, created_at: '2026-06-01T00:00:00Z', cover_image: null, lastMessageAt: '2026-10-01T20:00:00Z' }];
   mockHouse.seats = [{ lounge_id: SALON, user_id: HOST, status: 'approved' }, { lounge_id: SALON, user_id: ADA, status: 'approved' }];
   mockHouse.loseAnswer = false;
@@ -169,8 +178,20 @@ describe('a salon founded', () => {
     expect(drawn).toEqual(standing(await readAgain(id as string)));
   });
 
+  it('is founded on a phone whose clock was set back since the last founding', async () => {
+    // The last founding stamped a minute ahead (a clock run ahead, then put right): the half-minute
+    // is counted forward only, so the clock put back holds nothing back.
+    const ahead = jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 60_000);
+    try {
+      expect(await useLoungeStore.getState().createLounge('The Early Show', 'Dawn only.', false, 'room-early-show')).not.toBeNull();
+    } finally {
+      ahead.mockRestore();
+    }
+    expect(await useLoungeStore.getState().createLounge('The Matinee', 'Afternoons.', false, 'room-matinee')).toBe('room-matinee');
+  });
+
   it('asked for again after its answer was lost, is the one room, drawn once', async () => {
-    // Past the half-minute a founding holds the next back, which the test above began.
+    // Past the half-minute a founding holds the next back, whichever founded before it.
     const later = Date.now() + 60_000;
     const clock = jest.spyOn(Date, 'now').mockReturnValue(later);
     try {

@@ -74,6 +74,6 @@ it("says where the phone's time went after the answer: each stage of the opening
     stage('film.data', 420), stage('film.hero', 700), ready('film', 760, 700), stage('film.below', 1200),
     stage('reel.rows', 710),
   ];
-  expect(openings(lines)[0].stages).toEqual({ 'film.data': 20, 'film.hero': 300, 'film.below': 800 });
+  expect(openings(lines)[0]?.stages).toEqual({ 'film.data': 20, 'film.hero': 300, 'film.below': 800 });
   expect(run(lines).out).toContain('after its answer: film.data +20 ms, film.hero +300 ms, ready +360 ms, film.below +800 ms');
 });

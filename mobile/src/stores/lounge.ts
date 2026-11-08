@@ -1049,7 +1049,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     }
 
     const now = Date.now();
-    if (now - _lastCreateAt < CREATE_COOLDOWN) {
+    // Only time gone forward since the last founding holds the next back: a phone's clock set back
+    // (by hand, or after running ahead) would otherwise refuse every founding until it caught up.
+    const since = now - _lastCreateAt;
+    if (since >= 0 && since < CREATE_COOLDOWN) {
         reelToast.error('Please wait before creating another lounge.');
         return null;
     }

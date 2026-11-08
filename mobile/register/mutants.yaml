@@ -2652,3 +2652,12 @@ mutants:
         find: "refreshing={loading && filings.length > 0 && pageState !== 'kept'}"
         replace: "refreshing={loading && filings.length > 0}"
     proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "draws the paper kept on the phone while it is read again, no skeleton and no pull spinner over it" }
+
+  - id: shape-founding-held-by-a-clock-set-back
+    class: STATE-a-wait-held-by-a-clock-set-back
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    if (since >= 0 && since < CREATE_COOLDOWN) {"
+        replace: "    if (since < CREATE_COOLDOWN) {"
+    proof: { file: src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts, test: "is founded on a phone whose clock was set back since the last founding" }

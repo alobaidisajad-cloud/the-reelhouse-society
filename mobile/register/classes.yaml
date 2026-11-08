@@ -1749,6 +1749,18 @@ classes:
     fix: "the member room orders its filings by moment, then id; a stack's films, both its first page and the rest, by rank, moment, then film (list_items_list_id_film_id_key holds a film once in a stack). A guard reads every paged read of the app and finds any whose last order is a key rows may share, its list of keys held once within a value (a stack's film) naming the constraint"
     places: [none]
 
+  - id: STATE-a-wait-held-by-a-clock-set-back
+    title: "A wait counted as the phone's clock now less a stamp reads a clock set back (by hand, or after running ahead) as time not yet passed: founding a salon was refused until the clock caught up with the last founding's stamp, which could be hours; the nightly's random order found it, one test's clock left a minute ahead"
+    seriousness: behaviour
+    area: runtime
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "the nightly's jest in a random order (run 42468307829, seed 383402552): aSeatReadsAsTheHouseWillRead" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts, test: "is founded on a phone whose clock was set back since the last founding" }
+    fix: "createLounge holds the next founding back only for time gone forward since the last (since >= 0 and under the half-minute); the test file runs the Lounge store's own reset before each test, so no founding in one test holds the next back in any order. Eight more waits are counted from a stamp (PressableScale's debounce, the typing and haptic throttles, socialSlice's throttle and caches, the push primer, the sign-in throttle): their sweep is the next batch"
+    places: [none]
+
   - id: SPEED-a-screen-takes-a-store-whole
     title: "A screen or hook that subscribes to a whole store redraws at every change anywhere in it: the root layout, and every provider under it, at each change to the signed-in member; the salon at each change to any room; the film and log pages at each change to the session"
     seriousness: behaviour
