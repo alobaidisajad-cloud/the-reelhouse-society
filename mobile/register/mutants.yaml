@@ -2607,3 +2607,48 @@ mutants:
         find: "      .order('film_id', { ascending: true })\n      .range(offset"
         replace: "      .range(offset"
     proof: { file: src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts, test: "ends every paged read of the app on a key no two of its rows share" }
+
+  - id: shape-paper-kept-never-drawn
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (filings.length > 0) set({ filings, pageState: 'kept' });"
+        replace: "      if (filings.length < 0) set({ filings, pageState: 'kept' });"
+    proof: { file: src/stores/__tests__/thePaperOpensOnWhatItLastRead.test.ts, test: "draws the paper it kept for this member at once, reads it again beneath, and keeps what it read" }
+
+  - id: shape-paper-kept-for-everyone
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/utils/keptPaper.ts
+        find: "const keyOf = (userId: string) => `kept_paper_${userId}`;"
+        replace: "const keyOf = (_userId: string) => 'kept_paper';"
+    proof: { file: src/stores/__tests__/thePaperOpensOnWhatItLastRead.test.ts, test: "never draws another member's kept paper" }
+
+  - id: shape-paper-kept-with-the-hidden
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "parseFilingRows(kept.filter((r) => !isHidden((r as { user_id?: string | null }).user_id)));"
+        replace: "parseFilingRows(kept.filter((r) => isHidden !== null || !!r));"
+    proof: { file: src/stores/__tests__/thePaperOpensOnWhatItLastRead.test.ts, test: "leaves out of the kept paper anyone the member has hidden since" }
+
+  - id: shape-paper-kept-for-any-view
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    const opening = view.section === 'ALL' && view.sort === 'LATEST' && !view.savedOnly;"
+        replace: "    const opening = view !== null;"
+    proof: { file: src/stores/__tests__/thePaperOpensOnWhatItLastRead.test.ts, test: "keeps and draws only the paper as it opens, never a section or the saved list" }
+
+  - id: shape-paper-spinner-over-kept
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: app/(tabs)/dispatch.tsx
+        find: "refreshing={loading && filings.length > 0 && pageState !== 'kept'}"
+        replace: "refreshing={loading && filings.length > 0}"
+    proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "draws the paper kept on the phone while it is read again, no skeleton and no pull spinner over it" }

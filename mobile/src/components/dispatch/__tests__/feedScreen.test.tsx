@@ -365,6 +365,18 @@ describe('the Dispatch feed', () => {
     expect(useDispatch.getState().newCount).toBe(0);
   });
 
+  it('draws the paper kept on the phone while it is read again, no skeleton and no pull spinner over it', async () => {
+    put({ filings: [filing()], pageState: 'kept', loading: true });
+    const kept = await mount();
+    expect(kept.getByText(/A take about a film/)).toBeTruthy();
+    expect(mockListProps.refreshControl.props.refreshing).toBe(false);
+    kept.unmount();
+    // A pull over the paper read: the spinner is the member's answer, and it shows.
+    put({ filings: [filing()], pageState: 'read', loading: true });
+    await mount();
+    expect(mockListProps.refreshControl.props.refreshing).toBe(true);
+  });
+
   it('shows no pill when nothing has arrived', async () => {
     put({ filings: [filing()], newCount: 0 });
     const { queryByLabelText, getByText } = await mount();

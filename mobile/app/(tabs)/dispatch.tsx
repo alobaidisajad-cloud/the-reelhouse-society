@@ -321,7 +321,8 @@ export default function DispatchScreen() {
               onEndReachedThreshold={0.6}
               refreshControl={
                 <RefreshControl
-                  refreshing={loading && filings.length > 0}
+                  // Not over the kept paper on a launch: that read is the page's own, unasked.
+                  refreshing={loading && filings.length > 0 && pageState !== 'kept'}
                   onRefresh={onRefresh}
                   tintColor={colors.sepia}
                   colors={[colors.sepia]}

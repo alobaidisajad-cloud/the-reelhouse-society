@@ -34,6 +34,7 @@ import { wallMayHaveChanged } from '../components/lobby/wallRead';
 import { e2eTrace } from '../utils/e2eTrace';
 import { logger } from '../utils/logger';
 import { wasOf } from '../utils/keepWhatChangedSince';
+import { keepPaper, keptPaper } from '../utils/keptPaper';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
@@ -41,6 +42,7 @@ import { sanitizeInput } from '../utils/sanitizeInput';
 import { withAbortSignal } from '../utils/withAbortSignal';
 import { withTimeout } from '../utils/withTimeout';
 import { useAuthStore } from './auth';
+import { useBlockStore } from './blockStore';
 import { memberUnchanged } from './domain/helpers/sessionGuard';
 import { registerStoreReset } from './resetAllStores';
 import {
@@ -103,10 +105,11 @@ export interface DispatchState {
   loading: boolean;
   /**
    * Whether the page on screen has been read: 'unread' before its first answer
-   * (so an empty list is not yet an empty paper), 'failed' when that read
-   * failed and nothing is shown. A failed refresh keeps the page, and 'read'.
+   * (so an empty list is not yet an empty paper), 'kept' while the paper kept on
+   * the phone is drawn and read again (keptPaper), 'failed' when the first read
+   * failed and nothing is shown. A failed refresh keeps the page, and its state.
    */
-  pageState: 'unread' | 'read' | 'failed';
+  pageState: 'unread' | 'kept' | 'read' | 'failed';
   loadingMore: boolean;
   /**
    * The next page could not be read. Without it the paper simply ended there,
@@ -341,6 +344,16 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const gen = ++generation;
     const startedAs = useAuthStore.getState().user?.id ?? null;
     set({ loading: true });
+    // The paper as it opens (every section, latest first), drawn from the phone while it is read
+    // again, its rows checked as the house's are and anyone hidden since left out.
+    const view = get();
+    const opening = view.section === 'ALL' && view.sort === 'LATEST' && !view.savedOnly;
+    const kept = opening && view.filings.length === 0 ? keptPaper(startedAs) : null;
+    if (kept) {
+      const { isHidden } = useBlockStore.getState();
+      const { filings } = parseFilingRows(kept.filter((r) => !isHidden((r as { user_id?: string | null }).user_id)));
+      if (filings.length > 0) set({ filings, pageState: 'kept' });
+    }
 
     const run = (async () => {
       try {
@@ -351,6 +364,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         // The page's answer in, and how long its rows took to check: the speed lab's floor for the paper.
         e2eTrace('dispatch.read', { rows: rows.length, parseMs: Date.now() - parsing });
         set({ filings, hasMore: gotFullPage(rows.length), droppedRows: dropped, newCount: 0, pageState: 'read' });
+        if (opening && startedAs) keepPaper(startedAs, rows);
         if (dropped > 0) {
           logger.warn('[dispatch] dropped malformed filing rows', dropped);
         }

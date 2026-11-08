@@ -12,6 +12,7 @@
  */
 import { useDispatch } from '../dispatch';
 import { PAGE_SIZE } from '../dispatchTypes';
+import { storage } from '../mmkv-storage';
 
 interface Ask {
   eq: Record<string, unknown>; is: Record<string, unknown>;
@@ -124,6 +125,8 @@ const reset = (over: Record<string, unknown> = {}) => {
 
 beforeEach(() => {
   mockAsks = []; mockPages = []; mockCount = null; mockThrow = null; mockNext = null;
+  // A phone holding nothing: a page read in one test is kept (keptPaper), and would open the next.
+  storage.clearAll();
   reset();
 });
 
