@@ -2000,5 +2000,12 @@
     "proof": "m35",
     "commit": "d0b2abd6e1f4dcd6a1a3a3bef17eb7b117e46f92",
     "verdict": "caught"
+  },
+  {
+    "class": "STATE-a-wait-held-by-a-clock-set-back",
+    "mutant": "shape-founding-held-by-a-clock-set-back",
+    "proof": "m1",
+    "commit": "5b10301efa6dc2ef23984c85cf9c480ca6aceeee",
+    "verdict": "caught"
   }
 ]
