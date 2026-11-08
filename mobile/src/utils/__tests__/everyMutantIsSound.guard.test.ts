@@ -72,6 +72,7 @@ const titlesIn = (file: string): string[] | null => {
 const NOT_JUDGES: Record<string, string> = {
   'advisories.mjs': 'it judges the packages a build holds, not a run; its own tests plant known-vulnerable ones',
   'annotate.mjs': 'it prints a file as an annotation',
+  'critical-path.mjs': 'it reports what each screen waited on and its phone time, judging nothing until the runs show each screen\'s own reads; its own tests plant every count',
   'fault-proxy.mjs': 'it is the network between the app and the house, not a verdict; its own tests set every fault against a real house',
   'anon-key.mjs': 'it prints the local stack\'s key',
   'flow-history.mjs': 'it records each part\'s time from a finished run',
