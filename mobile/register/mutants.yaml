@@ -2589,3 +2589,21 @@ mutants:
         find: "  const user = useAuthStore((s) => s.user);"
         replace: "  const user = useAuthStore().user;"
     proof: { file: src/utils/__tests__/aScreenRedrawsForWhatItReads.guard.test.ts, test: "takes no store whole anywhere in the app" }
+
+  - id: shape-room-paged-by-the-moment
+    class: READ-a-page-ordered-by-a-key-rows-share
+    source: shape
+    edits:
+      - file: src/hooks/useMemberRoom.ts
+        find: "        .order('id', { ascending: false })\n        .range(from, from + ROOM_PAGE - 1),"
+        replace: "        .range(from, from + ROOM_PAGE - 1),"
+    proof: { file: src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts, test: "ends every paged read of the app on a key no two of its rows share" }
+
+  - id: shape-stack-paged-by-rank-and-moment
+    class: READ-a-page-ordered-by-a-key-rows-share
+    source: shape
+    edits:
+      - file: src/services/StackService.ts
+        find: "      .order('film_id', { ascending: true })\n      .range(offset"
+        replace: "      .range(offset"
+    proof: { file: src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts, test: "ends every paged read of the app on a key no two of its rows share" }

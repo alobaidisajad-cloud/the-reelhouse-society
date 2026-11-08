@@ -387,4 +387,5 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/aTextIsCountedAsItIsSeen.guard.test.ts` | Every app file holding a length weighed or a cut from the start, read with the type checker (runtimeLacks' findUses): a string's length weighed against a number, or a string cut at a fixed length, stands only where it is listed with why. |
 | `src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts` | Every file of the app's code, read with the type checker: a `new Date(x)` whose argument may be text stands only in src/utils/instant.ts. |
 | `src/utils/__tests__/everyReadNamesItsColumns.guard.test.ts` | Every file of the app's code, comments stripped: no `.select('*')`, a read of every column. |
+| `src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts` | Every file of the app's code, comments stripped: each `.from(…)…range(` read's last `.order(` is `id`, or a key held once within the read's `.eq(` (a stack's film). |
 | `src/utils/__tests__/aScreenRedrawsForWhatItReads.guard.test.ts` | Every file of the app's code, comments stripped: no `useXStore()` with no selector, a store taken whole. |

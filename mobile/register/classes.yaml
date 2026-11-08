@@ -1736,6 +1736,19 @@ classes:
     fix: "utils/text.ts counts, takes and cuts by the one character rule (charactersOf, characterCount, firstCharacters, cutWhole, isPictureCharacter); emOf measures a character at a time (a mark adds nothing, an emoji PICTURE_EM), and the member file's name size measures with it; the review planner wraps in cells; every site moved; the guard finds a string's length weighed or a fixed cut by the type checker, each left judged by name"
     places: [none]
 
+  - id: READ-a-page-ordered-by-a-key-rows-share
+    title: "A read taken a page at a time, ordered last by a key two rows can share, may hand those rows in either order on each read: the next page repeats one and the other is never drawn. A member's room ordered its filings by the moment alone; a stack's films by rank and moment, which every film of one import shares"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "P4.53: the member room's read (audit/final/P4-53-STUDY.md), then every paged read in the app" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts, test: "ends every paged read of the app on a key no two of its rows share" }
+      - { kind: static, file: src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts, test: "says NO to a page ordered by a moment or a rank alone, and not to one ended by an id or a stack's film" }
+    fix: "the member room orders its filings by moment, then id; a stack's films, both its first page and the rest, by rank, moment, then film (list_items_list_id_film_id_key holds a film once in a stack). A guard reads every paged read of the app and finds any whose last order is a key rows may share, its list of keys held once within a value (a stack's film) naming the constraint"
+    places: [none]
+
   - id: SPEED-a-screen-takes-a-store-whole
     title: "A screen or hook that subscribes to a whole store redraws at every change anywhere in it: the root layout, and every provider under it, at each change to the signed-in member; the salon at each change to any room; the film and log pages at each change to the session"
     seriousness: behaviour

@@ -164,7 +164,9 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
         .eq('is_published', true)
         .is('withheld_at', null)
         .is('ended_at', null)
+        // The id breaks a tied moment: two filings of one second keep one order from page to page.
         .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .range(from, from + ROOM_PAGE - 1),
       // Once, at the head. The totals do not change as you scroll, and asking
       // again on every page would be one more round trip per page for an answer

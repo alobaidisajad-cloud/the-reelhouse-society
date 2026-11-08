@@ -66,7 +66,7 @@ interface Asked {
   eq: Record<string, unknown>;
   ilike: Record<string, unknown>;
   is: Record<string, unknown>;
-  order?: [string, unknown];
+  order?: [string, unknown][];
   range?: [number, number];
 }
 let mockAsked: Asked[] = [];
@@ -88,7 +88,7 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.eq = (k: string, v: unknown) => { asked.eq[k] = v; return self(); };
       chain.ilike = (k: string, v: unknown) => { asked.ilike[k] = v; return self(); };
       chain.is = (k: string, v: unknown) => { asked.is[k] = v; return self(); };
-      chain.order = (k: string, o: unknown) => { asked.order = [k, o]; return self(); };
+      chain.order = (k: string, o: unknown) => { (asked.order ??= []).push([k, o]); return self(); };
       chain.maybeSingle = () => Promise.resolve({ data: mockMember, error: mockMemberError });
       chain.range = (a: number, b: number) => {
         asked.range = [a, b];
@@ -299,8 +299,8 @@ describe('a member’s room', () => {
     expect(q?.eq.is_published).toBe(true);
     expect(q?.is.withheld_at).toBeNull();
     expect(q?.is.ended_at).toBeNull();
-    expect(q?.order?.[0]).toBe('created_at');
-    expect(q?.order?.[1]).toEqual({ ascending: false });
+    // Newest first, the id breaking a tied moment, so a page never repeats the last one's filing.
+    expect(q?.order).toEqual([['created_at', { ascending: false }], ['id', { ascending: false }]]);
     expect(q?.range).toEqual([0, 19]);
     // The card's columns. A room of essays asking for `full_content` would be
     // twenty essays' worth of text to draw twenty openings.

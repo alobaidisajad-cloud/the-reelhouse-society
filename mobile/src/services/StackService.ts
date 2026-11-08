@@ -73,6 +73,9 @@ export const StackService = {
       .eq('list_id', stackId)
       .order('rank_position', { ascending: true })
       .order('created_at', { ascending: true })
+      // A film is in a stack once (list_items_list_id_film_id_key): the last word, so films added
+      // together, of one rank and one moment, keep one order from page to page.
+      .order('film_id', { ascending: true })
       .range(offset, offset + STACK_ITEMS_LIMIT - 1);
     if (error) throw error;
     return (data ?? []).flatMap((item) => {
@@ -99,6 +102,7 @@ export const StackService = {
         .eq('list_id', stackId)
         .order('rank_position', { ascending: true })
         .order('created_at', { ascending: true })
+        .order('film_id', { ascending: true })
         .limit(STACK_ITEMS_LIMIT),
       supabase.from('list_items')
         .select('film_id', { count: 'exact', head: true })
