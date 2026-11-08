@@ -146,12 +146,31 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # Maestro at one release, checked against the digest recorded when it was pinned: kept in the
+      # cache once fetched, and fetched only when not kept, asked again on a refused answer (it is a
+      # GitHub release, and on 2026-11-08 those timed out for hours and the download failed its digest).
+      - name: Maestro 2.10.0, kept
+        id: maestro-kept
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.maestro-dist
+          key: maestro-cli-2.10.0
+
       - name: Install Maestro 2.10.0
         run: |
-          curl -sSL -o "$RUNNER_TEMP/maestro.zip" https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.10.0/maestro.zip
-          echo "29b675e10cc12080e445e9bfb2e2b4e4dfb9c0f2e30d5884120d258b5e1cd991  $RUNNER_TEMP/maestro.zip" | shasum -a 256 -c -
-          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$HOME/.maestro-dist"
+          if [ ! -x "$HOME/.maestro-dist/maestro/bin/maestro" ]; then
+            curl -fsSL --retry 5 --retry-all-errors --retry-delay 15 -o "$RUNNER_TEMP/maestro.zip" https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.10.0/maestro.zip
+            echo "29b675e10cc12080e445e9bfb2e2b4e4dfb9c0f2e30d5884120d258b5e1cd991  $RUNNER_TEMP/maestro.zip" | shasum -a 256 -c -
+            unzip -q "$RUNNER_TEMP/maestro.zip" -d "$HOME/.maestro-dist"
+          fi
           echo "MAESTRO_BIN=$HOME/.maestro-dist/maestro/bin/maestro" >> "$GITHUB_ENV"
+
+      - name: Maestro 2.10.0, saved
+        if: steps.maestro-kept.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.maestro-dist
+          key: maestro-cli-2.10.0
 
       - name: The flows that need no server, on the simulator
         working-directory: mobile

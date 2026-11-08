@@ -241,6 +241,16 @@ jobs:
       # takes Android's splash over and a late handover leaves it animating.
       # Gradle gets 6 GB and 2 GB of Metaspace: the template's 512 MB Metaspace
       # ran out in a library's release lint (the runner has 16 GB).
+      # Gradle's own copy, kept by the last build that succeeded: it is fetched from a GitHub release,
+      # and on 2026-11-08 those timed out for hours (504) and failed every build that fetched one.
+      # Saved only after a build succeeds, so a failed fetch is never what is kept.
+      - name: Gradle's own copy, kept
+        id: gradle-dists
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-dists-${{ hashFiles('mobile/package-lock.json') }}
+          restore-keys: gradle-dists-
       - name: Build the E2E app (release APK)
         working-directory: mobile
         env:
@@ -261,6 +271,7 @@ jobs:
             && grep -q 'android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml \
             && grep -A 2 -F 'super.onCreate(null)' android/app/src/main/java/com/reelhouse/society/MainActivity.kt \
                  | grep -q -F 'splashScreen.clearOnExitAnimationListener()' \
+            && (cd android && for i in 1 2 3 4; do ./gradlew --version --no-daemon --console=plain > /dev/null && break; [ $i -eq 4 ] && exit 1; sleep $((i * 30)); done) \
             && (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
                   "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError")
           } > "$RUNNER_TEMP/build.log" 2>&1
@@ -282,6 +293,13 @@ jobs:
           # The Kotlin compiler's daemon outlives a --no-daemon build; it ends with it.
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
           exit $rc
+
+      - name: Gradle's own copy, saved for the next build
+        if: steps.gradle-dists.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-dists-${{ hashFiles('mobile/package-lock.json') }}
 
       # Expo SDK 54's ready-made expo-image was built with Glide's logging on, so
       # every image the app loaded was logged; package.json has it compiled from
@@ -494,13 +512,31 @@ jobs:
           fi
           echo "the app's anon key is this stack's"
 
-      # Maestro at one release, checked against the digest recorded when it was pinned.
+      # Maestro at one release, checked against the digest recorded when it was pinned: kept in the
+      # cache once fetched, and fetched only when not kept, asked again on a refused answer (it is a
+      # GitHub release, and on 2026-11-08 those timed out for hours and the download failed its digest).
+      - name: Maestro 2.10.0, kept
+        id: maestro-kept
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.maestro-dist
+          key: maestro-cli-2.10.0
+
       - name: Install Maestro 2.10.0
         run: |
-          curl -sSL -o "$RUNNER_TEMP/maestro.zip" https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.10.0/maestro.zip
-          echo "29b675e10cc12080e445e9bfb2e2b4e4dfb9c0f2e30d5884120d258b5e1cd991  $RUNNER_TEMP/maestro.zip" | sha256sum -c -
-          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$HOME/.maestro-dist"
+          if [ ! -x "$HOME/.maestro-dist/maestro/bin/maestro" ]; then
+            curl -fsSL --retry 5 --retry-all-errors --retry-delay 15 -o "$RUNNER_TEMP/maestro.zip" https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.10.0/maestro.zip
+            echo "29b675e10cc12080e445e9bfb2e2b4e4dfb9c0f2e30d5884120d258b5e1cd991  $RUNNER_TEMP/maestro.zip" | sha256sum -c -
+            unzip -q "$RUNNER_TEMP/maestro.zip" -d "$HOME/.maestro-dist"
+          fi
           echo "MAESTRO_BIN=$HOME/.maestro-dist/maestro/bin/maestro" >> "$GITHUB_ENV"
+
+      - name: Maestro 2.10.0, saved
+        if: steps.maestro-kept.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.maestro-dist
+          key: maestro-cli-2.10.0
 
       # Started BEFORE the seal, and each function called once. The runtime
       # fetches a function's remote imports (deno.land, the esm CDN) on first use,

@@ -132,6 +132,16 @@ jobs:
           node scripts/android-packages.cjs --installed
 
       # Release APKs as the Sealed E2E builds them; src/ and app/ are reset before each arm.
+      # Gradle's own copy, kept by the last build that succeeded: it is fetched from a GitHub release,
+      # and on 2026-11-08 those timed out for hours (504) and failed every build that fetched one.
+      # Saved only after a build succeeds, so a failed fetch is never what is kept.
+      - name: Gradle's own copy, kept
+        id: gradle-dists
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-dists-${{ hashFiles('mobile/package-lock.json') }}
+          restore-keys: gradle-dists-
       - name: Build every arm
         working-directory: mobile
         env:
@@ -159,6 +169,7 @@ jobs:
             echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
           }
           npx expo prebuild --platform android --no-install --clean >> "$B" 2>&1 || fail "prebuild"
+          (cd android && for i in 1 2 3 4; do ./gradlew --version --no-daemon --console=plain > /dev/null && break; [ $i -eq 4 ] && exit 1; sleep $((i * 30)); done) >> "$B" 2>&1 || fail "Gradle's own copy could not be fetched"
           arms="A"
           [ "$LAB_MODE" != timed ] && arms="$arms Ws Dm Ds Hm Hs Gm Gs Pm Ps N"
           [ "$LAB_MODE" != shots ] && arms="$arms $LAB_ARMS"
@@ -342,6 +353,16 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install $(node scripts/android-packages.cjs) > /dev/null
           node scripts/android-packages.cjs --installed
 
+      # Gradle's own copy, kept by the last build that succeeded: it is fetched from a GitHub release,
+      # and on 2026-11-08 those timed out for hours (504) and failed every build that fetched one.
+      # Saved only after a build succeeds, so a failed fetch is never what is kept.
+      - name: Gradle's own copy, kept
+        id: gradle-dists
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-dists-${{ hashFiles('mobile/package-lock.json') }}
+          restore-keys: gradle-dists-
       - name: Build the app as it is
         working-directory: mobile
         env:
@@ -369,6 +390,7 @@ jobs:
             echo "built $1: $(stat -c %s "$RUNNER_TEMP/apks/$1.apk") bytes"
           }
           npx expo prebuild --platform android --no-install --clean > "$B" 2>&1 || fail "prebuild"
+          (cd android && for i in 1 2 3 4; do ./gradlew --version --no-daemon --console=plain > /dev/null && break; [ $i -eq 4 ] && exit 1; sleep $((i * 30)); done) >> "$B" 2>&1 || fail "Gradle's own copy could not be fetched"
           for arm in A $LAB_SCROLL_ARMS; do build "$arm"; done
           git checkout -- src app
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
