@@ -1091,7 +1091,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/stores/__tests__/logSlice.test.ts | — |  |
 | src/stores/__tests__/lounge.test.ts | — |  |
 | src/stores/__tests__/loungeActs.test.ts | 2026-10-23 | edited: the room's flag by its own name; a stale line count dropped |
-| src/stores/__tests__/loungeErrors.guard.test.ts | 2026-10-23 | edited: the seats asked in the first wave still throw; reactions come in the page, no read of their own; read whole: reads source through readCode; no regex stripper |
+| src/stores/__tests__/loungeErrors.guard.test.ts | 2026-11-07 | edited: the cooldown released to -Infinity on both failure paths; edited: the seats asked in the first wave still throw; reactions come in the page, no read of their own; read whole: reads source through readCode; no regex stripper |
 | src/stores/__tests__/markCounts.test.ts | — |  |
 | src/stores/__tests__/notificationCap.test.ts | — |  |
 | src/stores/__tests__/reportStore.pbt.test.ts | — |  |

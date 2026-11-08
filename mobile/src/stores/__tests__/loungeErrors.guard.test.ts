@@ -130,7 +130,8 @@ describe('#58 · a failed creation must not burn the cooldown', () => {
   it('the cooldown is released on BOTH failure paths', () => {
     // The finding named only the RPC-error branch. A throw — the offline case, and the
     // likelier one — burned it just as completely.
-    const resets = (f().match(/_lastCreateAt = 0;/g) ?? []).length;
+    // Released to long past (-Infinity): the stamp is on the forward clock, which starts near 0 (waits.ts).
+    const resets = (f().match(/_lastCreateAt = -Infinity;/g) ?? []).length;
     expect(resets).toBe(2);
   });
 
