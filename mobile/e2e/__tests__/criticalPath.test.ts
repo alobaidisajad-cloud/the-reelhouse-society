@@ -28,10 +28,15 @@ function run(lines: string[], ...flags: string[]) {
   const r = spawnSync(process.execPath, [SCRIPT, join(dir, 'logcat.txt'), ...flags], { encoding: 'utf8' });
   return { code: r.status, out: r.stdout };
 }
-const openings = (lines: string[]) => JSON.parse(run(lines, '--json').out) as { name: string; trips: number; paths: string[]; phone: number }[];
+const openings = (lines: string[]) =>
+  JSON.parse(run(lines, '--json').out) as { name: string; trips: number; paths: string[]; phone: number; stages: Record<string, number> }[];
+/** A stage of an opening, `at` ms past 08:32:10: a data mark (`film.data`) or a part drawn. */
+const stage = (name: string, at: number) => name.endsWith('.data')
+  ? `11-08 ${clock(at)}  3891  4026 W ReactNativeJS: [e2e] ${name} {"id":1}`
+  : `11-08 ${clock(at)}  3891  4026 W ReactNativeJS: [e2e] drawn {"name":"${name}"}`;
 
 it("counts none for a page drawn from what it holds, its time all the phone's", () => {
-  expect(openings([ready('log', 500, 120)])).toEqual([{ name: 'log', ms: 120, trips: 0, paths: [], phone: 120 }]);
+  expect(openings([ready('log', 500, 120)])).toEqual([{ name: 'log', ms: 120, trips: 0, paths: [], phone: 120, stages: {} }]);
 });
 
 it("counts one round trip, and the phone's time from its answer to ready", () => {
@@ -61,4 +66,14 @@ it("reports per screen, naming the deepest opening's requests when one waited on
   expect(code).toBe(0);
   expect(out).toMatch(/member\s+2\s+2,\s+2/);
   expect(out).toContain('its deepest: profiles | logs');
+});
+
+it("says where the phone's time went after the answer: each stage of the opening, its own screen's alone", () => {
+  const lines = [
+    request('/functions/v1/tmdb-proxy', 100, 300),
+    stage('film.data', 420), stage('film.hero', 700), ready('film', 760, 700), stage('film.below', 1200),
+    stage('reel.rows', 710),
+  ];
+  expect(openings(lines)[0].stages).toEqual({ 'film.data': 20, 'film.hero': 300, 'film.below': 800 });
+  expect(run(lines).out).toContain('after its answer: film.data +20 ms, film.hero +300 ms, ready +360 ms, film.below +800 ms');
 });

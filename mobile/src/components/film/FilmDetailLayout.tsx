@@ -2,6 +2,7 @@ import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
 import { characterCount } from '@/src/utils/text';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, useWindowDimensions, InteractionManager } from 'react-native';
+import { useTraceDrawn } from '@/src/utils/e2eTrace';
 import { Text } from '@/src/components/text';
 import { useBottomEdge, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withTiming } from 'react-native-reanimated';
@@ -103,6 +104,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     });
     return () => task.cancel();
   }, []);
+  useTraceDrawn('film.below', isTransitionComplete);
 
   const {
     posterGlowStyle,

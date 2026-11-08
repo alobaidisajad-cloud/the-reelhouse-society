@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { tmdb } from '@/src/lib/tmdb';
 import { FilmService } from '@/src/services/FilmService';
 import { buildRecommendationPool } from '@/src/utils/recommendations';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 
 // The recommendation pool rides the appended detail payload (no extra call):
 // recommendations = TMDB's real engine, similar = fallback for obscure titles.
@@ -33,6 +34,7 @@ export function useFilmDetail(filmId: number, validFilmId: boolean) {
       // An unreachable catalogue throws (the page offers TRY AGAIN); a film the
       // catalogue does not have is an answer, null, and the page says so.
       const [detail, communityReviews, verdict] = await Promise.all([detailP, reviewsP, verdictP]);
+      e2eTrace('film.data', { id: filmId });
       if (!detail) return null;
       if (communityReviews.error && __DEV__) {
         console.warn('[useFilmDetail] Failed to fetch community reviews:', communityReviews.error);

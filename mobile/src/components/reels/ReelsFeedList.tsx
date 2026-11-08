@@ -9,6 +9,7 @@ import { colors } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { CinematicScrollbar } from '@/src/components/layout/CinematicScrollbar';
 import { useScrollTraceOf } from '@/src/hooks/useScrollTrace';
+import { useTraceDrawn } from '@/src/utils/e2eTrace';
 
 /** A card counts as seen once 80% of it has stood still for 800 ms. */
 const viewabilityConfig = { minimumViewTime: 800, itemVisiblePercentThreshold: 80 };
@@ -49,6 +50,7 @@ export function ReelsFeedList({
   footer,
   extraData,
 }: ReelsFeedListProps) {
+  useTraceDrawn('reel.rows', feed.length > 0);
   // `reel-log`: a log the reel read, which only a loaded reel carries (the E2E asks for it).
   const renderLogItem = useCallback(({ item, index }: { item: FeedItem; index: number }) => (
     <View testID="reel-log">
