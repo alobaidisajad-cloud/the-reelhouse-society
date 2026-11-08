@@ -9,7 +9,7 @@ import { colors } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { CinematicScrollbar } from '@/src/components/layout/CinematicScrollbar';
 import { useScrollTraceOf } from '@/src/hooks/useScrollTrace';
-import { useTraceDrawn } from '@/src/utils/e2eTrace';
+import { e2eTrace, useTraceDrawn, useTraceRendering } from '@/src/utils/e2eTrace';
 
 /** A card counts as seen once 80% of it has stood still for 800 ms. */
 const viewabilityConfig = { minimumViewTime: 800, itemVisiblePercentThreshold: 80 };
@@ -50,13 +50,18 @@ export function ReelsFeedList({
   footer,
   extraData,
 }: ReelsFeedListProps) {
+  useTraceRendering('reel.list', feed.length > 0);
   useTraceDrawn('reel.rows', feed.length > 0);
   // `reel-log`: a log the reel read, which only a loaded reel carries (the E2E asks for it).
-  const renderLogItem = useCallback(({ item, index }: { item: FeedItem; index: number }) => (
-    <View testID="reel-log">
-      <ActivityCard item={item} index={index} />
-    </View>
-  ), []);
+  const renderLogItem = useCallback(({ item, index }: { item: FeedItem; index: number }) => {
+    // The first card's render begun, between the list's render and its commit (critical-path.mjs).
+    if (index === 0) e2eTrace('drawn', { name: 'reel.card' });
+    return (
+      <View testID="reel-log">
+        <ActivityCard item={item} index={index} />
+      </View>
+    );
+  }, []);
 
   const prefetchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interactionHandle = useRef<{ cancel: () => void } | null>(null);

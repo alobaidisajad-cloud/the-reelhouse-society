@@ -795,7 +795,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts | 2026-10-27 | edited: the community feed is asked for whatever its return rules; read whole: reads source through readCode; no regex stripper |
 | src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx | 2026-11-07 | edited: the feeds it does not open on, held, then asked; edited: the ready mark's point, a pixel with no colour, named or not, is no painted layer; edited: the stacks tab is named Stacks; the search says the cans |
 | src/components/reels/MemberRegistry.tsx | 2026-10-27 | edited: its pictures drawn through Picture: a missing or failed one draws its fallback in its own box; nav; comments cut to the why |
-| src/components/reels/ReelsFeedList.tsx | 2026-11-07 | edited: the first rows drawn, marked (reel.rows); edited: its foot is the screen's to say |
+| src/components/reels/ReelsFeedList.tsx | 2026-11-08 | edited: the list's first render with logs (reel.list) and the first card's (reel.card) marked beside the rows' commit; edited: the first rows drawn, marked (reel.rows); edited: its foot is the screen's to say |
 | src/components/reels/ReelsHeader.tsx | 2026-11-03 | rewritten whole: the title card, the section switch at its foot, the selector under it with its lamp |
 | src/components/reels/ReelsStackList.tsx | 2026-11-03 | edited: the stacks as cans, a row as tall as its tallest label, the empty can first |
 | src/components/reels/StackCan.tsx | 2026-11-03 | new: a stack as a can of film: its posters fanned, a paper label planned whole; the empty can; a can while read |
