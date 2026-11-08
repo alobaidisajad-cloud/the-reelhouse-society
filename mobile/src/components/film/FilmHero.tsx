@@ -10,7 +10,7 @@ import { tmdb, formatRuntime } from '@/src/lib/tmdb';
 import { oneDash, yearOf } from './releaseOf';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
-import { useTraceDrawn } from '@/src/utils/e2eTrace';
+import { useTraceDrawn, useTraceRendering } from '@/src/utils/e2eTrace';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { BRASS, BRASS_STOPS, BRASS_START, BRASS_END, ON_BRASS } from '@/src/theme/brass';
 import type { FilmVerdict } from '@/src/services/FilmService';
@@ -88,6 +88,7 @@ export const FilmHero = memo(function FilmHero({
   posterGlowStyle,
   statusConfig
 }: FilmHeroProps) {
+  useTraceRendering('film.hero.render');
   useTraceDrawn('film.hero');
   return (
     <Animated.View style={styles.heroSection}>

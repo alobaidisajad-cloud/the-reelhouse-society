@@ -37,6 +37,7 @@ import { STUB_HEIGHT, STUB_PAD_TOP, dockHeight } from './filmStubMetrics';
 import { bottomEdge } from '@/src/components/layout/navMetrics';
 import { EDGE_LIT } from '@/src/theme/light';
 import { UNINKED } from '@/src/theme/unready';
+import { useTraceRendering } from '@/src/utils/e2eTrace';
 
 export interface FilmStubProps {
   /**
@@ -82,6 +83,7 @@ const BrassFace = memo(function BrassFace() {
 export const FilmStub = memo(function FilmStub({
   existingLog, isWatchlisted, unknown, watchedLabel, open, onPress, bottomInset,
 }: FilmStubProps) {
+  useTraceRendering('film.stub.render');
   const Chevron = open ? ChevronDown : ChevronUp;
 
   /**

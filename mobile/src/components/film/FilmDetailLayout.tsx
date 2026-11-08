@@ -2,7 +2,7 @@ import React, { memo, useState, useEffect, useMemo, useCallback } from 'react';
 import { characterCount } from '@/src/utils/text';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, useWindowDimensions, InteractionManager } from 'react-native';
-import { useTraceDrawn } from '@/src/utils/e2eTrace';
+import { useTraceDrawn, useTraceRendering } from '@/src/utils/e2eTrace';
 import { Text } from '@/src/components/text';
 import { useBottomEdge, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated, { useSharedValue, useAnimatedScrollHandler, withSequence, withTiming } from 'react-native-reanimated';
@@ -110,6 +110,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   // lab's phone (critical-path.mjs, run 42489489851). Alone, the hero is the answer's next frame.
   const [heroDrawn, setHeroDrawn] = useState(false);
   const shownFilm = loading ? undefined : film?.id;
+  useTraceRendering('film.layout', shownFilm !== undefined);
   useEffect(() => {
     if (shownFilm === undefined) return;
     const frame = requestAnimationFrame(() => setHeroDrawn(true));

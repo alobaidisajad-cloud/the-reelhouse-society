@@ -4,7 +4,7 @@
  * Warning level, the level e2e/flow-screens.mjs lifts into a failed flow's report.
  */
 import Constants from 'expo-constants';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 
 const ON = Constants.expoConfig?.extra?.e2e === true;
@@ -42,4 +42,14 @@ export function useTraceDrawn(name: string, drawn = true): void {
     told.current = true;
     e2eTrace('drawn', { name });
   }, [name, drawn]);
+}
+
+/**
+ * A stage written as the render that first draws it begins (when `drawing`), before its commit:
+ * beside useTraceDrawn's effect, the two say whether the phone's time went before a part was
+ * rendered, into rendering it, or into the commit after (the first mark of an opening is the one
+ * read). Kept by its key, never a ref written in the render.
+ */
+export function useTraceRendering(name: string, drawing = true): void {
+  useMemo(() => { if (ON && drawing) e2eTrace('drawn', { name }); }, [name, drawing]);
 }

@@ -48,7 +48,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { trayMaxHeight } from './filmStubMetrics';
 import { EDGE_LIT } from '@/src/theme/light';
 import { UNINKED } from '@/src/theme/unready';
-import { e2eTrace } from '@/src/utils/e2eTrace';
+import { e2eTrace, useTraceRendering } from '@/src/utils/e2eTrace';
 
 /** The scrim, matching the Concierge's. Not a blur — Android. */
 const SCRIM = 'rgba(13,11,9,0.66)';
@@ -172,6 +172,7 @@ const ActRow = memo(function ActRow({ act }: { act: TrayAct }) {
 export const FilmActionTray = memo(function FilmActionTray({
   visible, onDismiss, film, subtitle, acts, windowHeight, dockHeight,
 }: FilmActionTrayProps) {
+  useTraceRendering('film.tray.render');
   // Android's back closes the tray instead of leaving the film.
   useBackCloses(visible, onDismiss);
 

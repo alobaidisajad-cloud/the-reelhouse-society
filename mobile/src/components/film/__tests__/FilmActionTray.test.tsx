@@ -10,7 +10,7 @@ import { FilmActionTray, TrayIcons, FALL_MS, RISE_RESCUE_MS, RISEN_SCRIM, RISEN_
 import { trayMaxHeight } from '../filmStubMetrics';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 
-jest.mock('@/src/utils/e2eTrace', () => ({ e2eTrace: jest.fn(), E2E_BUILD: false }));
+jest.mock('@/src/utils/e2eTrace', () => ({ e2eTrace: jest.fn(), E2E_BUILD: false, useTraceRendering: jest.fn() }));
 
 const act = (over: Partial<TrayAct> = {}): TrayAct => ({
   key: 'log', Icon: TrayIcons.Plus, label: 'LOG THIS FILM',
