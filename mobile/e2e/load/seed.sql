@@ -151,6 +151,14 @@ INSERT INTO public.dispatch_certifications (user_id, post_id)
 SELECT pg_temp.mid(u), ('00000000-0000-4000-9000-' || lpad(to_hex(p), 12, '0'))::uuid
   FROM generate_series(1, 40000) p, LATERAL (SELECT ((p * 7 + k * 15485863) % 100000) + 1 AS u FROM generate_series(1, 20) k) x
 ON CONFLICT DO NOTHING;
+-- One series at the ceiling: 24 parts (MOST_PARTS) of 25,000 characters (essay_ceiling), its words
+-- parted by every kind of space the app counts by, Arabic among them (the series page's read times).
+INSERT INTO public.dispatch_posts (id, kind, user_id, author_username, title, body, full_content, series_id, series_title, part_number, created_at)
+SELECT ('00000000-0000-4000-9100-' || lpad(to_hex(n), 12, '0'))::uuid, 'dossier', pg_temp.mid(7), 'm7',
+       'Part ' || n, 'A part of the long series.',
+       left(repeat('The long form, at' || chr(160) || 'length.' || chr(9) || 'مقال طويل' || chr(12288) || 'and on  ' || chr(10), 2000), 25000),
+       '00000000-0000-4000-9200-000000000001'::uuid, 'The long series', n, now() - n * interval '1 day'
+  FROM generate_series(1, 24) n;
 
 -- ── the Lounge: 1,500 rooms; one with 200,000 messages ───────────────────────
 INSERT INTO public.lounges (id, name, description, creator_id, is_private, member_count, max_members, created_at)

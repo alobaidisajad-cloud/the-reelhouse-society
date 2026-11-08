@@ -82,12 +82,26 @@ const PROBES = [
     sql: "SELECT id, kind, author_username, title, body, certify_count, comment_count, created_at FROM public.dispatch_posts WHERE is_published AND withheld_at IS NULL AND kind = 'take' ORDER BY created_at DESC, id DESC LIMIT 30" },
   { screen: 'Dispatch', what: 'one section of the paper, most certified first', as: MEMBER,
     sql: "SELECT id, kind, author_username, title, body, certify_count, comment_count, created_at FROM public.dispatch_posts WHERE is_published AND withheld_at IS NULL AND kind = 'take' ORDER BY certify_count DESC, id DESC LIMIT 30" },
+  // A series of 24 parts at the essay ceiling (seed.sql), as the series page asks it. Today it reads
+  // every part's whole text (length() reads it as sending it would); proposed.sql's two shapes give
+  // the words instead: counted on the read (A), or stored as each part was written (B).
+  { screen: 'Dispatch', what: 'a series, every part\'s whole text (today)', as: MEMBER,
+    sql: "SELECT id, title, length(full_content) FROM public.dispatch_posts WHERE series_id = '00000000-0000-4000-9200-000000000001' AND is_published AND withheld_at IS NULL AND ended_at IS NULL ORDER BY part_number LIMIT 24" },
+  { screen: 'Dispatch', what: 'a series, its words counted on the read (A)', as: MEMBER,
+    sql: "SELECT id, title, public.words(d) FROM public.dispatch_posts d WHERE series_id = '00000000-0000-4000-9200-000000000001' AND is_published AND withheld_at IS NULL AND ended_at IS NULL ORDER BY part_number LIMIT 24" },
+  { screen: 'Dispatch', what: 'a series, its words as stored (B)', as: MEMBER,
+    sql: "SELECT id, title, words_stored FROM public.dispatch_posts WHERE series_id = '00000000-0000-4000-9200-000000000001' AND is_published AND withheld_at IS NULL AND ended_at IS NULL ORDER BY part_number LIMIT 24" },
   { screen: 'Dispatch', what: 'the hot post\'s critiques, newest first', as: MEMBER,
     sql: `SELECT id, author_username, body, certify_count, created_at FROM public.dispatch_comments WHERE post_id = '${HOT_POST}' ORDER BY created_at DESC LIMIT 30` },
   { screen: 'Dispatch', what: 'the hot post\'s critiques, most certified first', as: MEMBER,
     sql: `SELECT id, author_username, body, certify_count, created_at FROM public.dispatch_comments WHERE post_id = '${HOT_POST}' ORDER BY certify_count DESC, created_at DESC LIMIT 30` },
   // The Lounge
   { screen: 'Lounge', what: 'unread counts, for a member in 200 rooms', as: WHALE, sql: 'SELECT * FROM public.get_lounge_unread_counts()' },
+  // The corridor in one trip (proposed.sql's get_lounge_list): for the member in 200 rooms, for one
+  // in a few, and for the host of the busiest room.
+  { screen: 'Lounge', what: 'the corridor in one trip, for a member in 200 rooms', as: WHALE, sql: 'SELECT public.get_lounge_list()' },
+  { screen: 'Lounge', what: 'the corridor in one trip, for a member', as: MEMBER, sql: 'SELECT public.get_lounge_list()' },
+  { screen: 'Lounge', what: 'the corridor in one trip, for the busiest room\'s host', as: mid(((1 * 61) % 100000) + 1), sql: 'SELECT public.get_lounge_list()' },
   { screen: 'Lounge', what: 'the busiest room\'s last 100 messages', as: mid(((1 * 61) % 100000) + 1),
     sql: `SELECT m.id, m.content, m.created_at, p.username FROM public.lounge_messages m LEFT JOIN public.profiles p ON p.id = m.user_id WHERE m.lounge_id = '${HOT_LOUNGE}' ORDER BY m.created_at DESC LIMIT 100` },
   // Notices
