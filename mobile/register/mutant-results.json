@@ -1944,5 +1944,12 @@
     "proof": "m28",
     "commit": "321c3c09ef6c3c5f7970208a7e09ef4f26b7ef05",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-screen-takes-a-store-whole",
+    "mutant": "shape-film-page-takes-the-session-whole",
+    "proof": "m1",
+    "commit": "9e143413fc4e716e09a0cfda8c93baa0049f9186",
+    "verdict": "caught"
   }
 ]
