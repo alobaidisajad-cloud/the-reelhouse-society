@@ -4,8 +4,9 @@
  *
  * The run sends a notice through notify-push to the Expo stand-in, reads the message it kept, and
  * opens reelhouse://e2e/present?message=<the message, as JSON>. The message is presented here through
- * expo-notifications, with its own title, body, data and channel, so Android shows it as the app's
- * own notice in its kind's channel, and a tap on it reaches the app's own tap handler
+ * expo-notifications, with its own title, body, data, sound and channel, so Android shows it as the
+ * app's own notice in its kind's channel, alerting as a delivered push alerts (without its sound it
+ * was filed as silent, its title drawn in the header a tap only expands: run 42657444661), and a tap on it reaches the app's own tap handler
  * (setupNotificationResponseHandler) as a delivered push's would. `adb shell cmd notification post`
  * cannot: its notice belongs to com.android.shell and never reaches that handler.
  */
@@ -18,10 +19,10 @@ import { E2E_BUILD, e2eTrace } from './e2eTrace';
  */
 export const PRESENT_PATH = /^(?:reelhouse:\/\/|\/)?e2e\/present(?:\?|$)/;
 
-type Message = { title?: unknown; body?: unknown; data?: unknown; channelId?: unknown };
+type Message = { title?: unknown; body?: unknown; data?: unknown; sound?: unknown; channelId?: unknown };
 
 /** The message from the link's `message` parameter, or null when there is none or it is not one. */
-export function messageOf(path: string): { title: string; body: string; data: Record<string, string>; channelId: string | null } | null {
+export function messageOf(path: string): { title: string; body: string; data: Record<string, string>; sound: string | null; channelId: string | null } | null {
   const query = path.split('?')[1] ?? '';
   const raw = new URLSearchParams(query).get('message');
   if (!raw) return null;
@@ -35,6 +36,7 @@ export function messageOf(path: string): { title: string; body: string; data: Re
     title: typeof m.title === 'string' ? m.title : '',
     body: typeof m.body === 'string' ? m.body : '',
     data,
+    sound: typeof m.sound === 'string' && m.sound ? m.sound : null,
     channelId: typeof m.channelId === 'string' && m.channelId ? m.channelId : null,
   };
 }
@@ -48,7 +50,7 @@ export async function presentFromLink(path: string): Promise<boolean> {
   const message = messageOf(path);
   if (!message) { e2eTrace('present.refused'); return false; }
   await Notifications.scheduleNotificationAsync({
-    content: { title: message.title, body: message.body, data: message.data },
+    content: { title: message.title, body: message.body, data: message.data, ...(message.sound ? { sound: message.sound } : {}) },
     trigger: message.channelId ? { channelId: message.channelId } : null,
   });
   e2eTrace('present', { type: message.data.type ?? null, channel: message.channelId });

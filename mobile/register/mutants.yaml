@@ -2886,3 +2886,12 @@ mutants:
         find: "    if (!toTheDoor || metAtTheDoor.current || !isCreator || pendingMembers.length === 0) return;"
         replace: "    if (!toTheDoor || !isCreator || pendingMembers.length === 0) return;"
     proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "the door is shown once: closed, a new roster read does not open it again" }
+
+  - id: shape-present-without-its-sound
+    class: E2E-push-tap-unproven
+    source: shape
+    edits:
+      - file: src/utils/e2ePresent.ts
+        find: "    content: { title: message.title, body: message.body, data: message.data, ...(message.sound ? { sound: message.sound } : {}) },"
+        replace: "    content: { title: message.title, body: message.body, data: message.data },"
+    proof: { file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "presents the message as notify-push built it, in its own channel, in the E2E build" }

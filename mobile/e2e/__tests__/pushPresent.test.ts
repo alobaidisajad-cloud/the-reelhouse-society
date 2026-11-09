@@ -26,7 +26,7 @@ function ask(name: 'messageFor' | 'linkOf' | 'TOKEN', arg?: unknown): unknown {
 
 const TOKEN = ask('TOKEN') as string;
 const send = (messages: unknown[]) => ({ method: 'POST', path: '/--/api/v2/push/send', body: JSON.stringify(messages) });
-const ours = (title: string) => ({ to: TOKEN, title, body: 'started following your frequency.', data: { type: 'follow', notificationId: 'n-1' }, channelId: 'members' });
+const ours = (title: string) => ({ to: TOKEN, title, body: 'started following your frequency.', data: { type: 'follow', notificationId: 'n-1' }, sound: 'default', channelId: 'members' });
 
 it("takes the last message sent to the member's phone, from the text the stand-in kept", () => {
   const seen = [
@@ -44,5 +44,5 @@ it("takes nothing when no message reached the member's phone, or a body was not 
 
 it('hands the message whole to the link the E2E build presents', () => {
   const m = ours('A new follower');
-  expect(messageOf(ask('linkOf', m) as string)).toEqual({ title: m.title, body: m.body, data: m.data, channelId: 'members' });
+  expect(messageOf(ask('linkOf', m) as string)).toEqual({ title: m.title, body: m.body, data: m.data, sound: 'default', channelId: 'members' });
 });

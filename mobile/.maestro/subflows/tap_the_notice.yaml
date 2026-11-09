@@ -12,9 +12,13 @@ appId: com.reelhouse.society
       TO: "true"
 - extendedWaitUntil:
     visible:
+      id: "android:id/title"
       text: ${PUSH_TITLE}
     timeout: 20000
+# By its title line: a tap on the notice's header expands it, and opens
+# nothing (run 42657444661).
 - tapOn:
+    id: "android:id/title"
     text: ${PUSH_TITLE}
 - extendedWaitUntil:
     visible:
