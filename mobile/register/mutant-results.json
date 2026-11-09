@@ -2105,5 +2105,33 @@
     "proof": "m4",
     "commit": "26fa2ceb235c6796898075f4a5f3908dd2654799",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-member-id-unused",
+    "proof": "m45",
+    "commit": "727611a3d4a0569d754a1f21abc864e5a53ca3e9",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-renamed-member-answers-kept",
+    "proof": "m47",
+    "commit": "727611a3d4a0569d754a1f21abc864e5a53ca3e9",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-shelf-shown-before-the-rank",
+    "proof": "m48",
+    "commit": "727611a3d4a0569d754a1f21abc864e5a53ca3e9",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-member-link-without-id",
+    "proof": "m49",
+    "commit": "727611a3d4a0569d754a1f21abc864e5a53ca3e9",
+    "verdict": "caught"
   }
 ]
