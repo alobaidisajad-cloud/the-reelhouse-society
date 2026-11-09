@@ -2182,5 +2182,12 @@
     "proof": "m4",
     "commit": "af9f5b6fbaab8223af4b4848156270fde08b3674",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-push-tap-unproven",
+    "mutant": "shape-present-without-its-sound",
+    "proof": "m1",
+    "commit": "2b9d5dc5f896643e76f6301fb0f583851e0db490",
+    "verdict": "caught"
   }
 ]
