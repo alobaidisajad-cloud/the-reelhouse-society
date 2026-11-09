@@ -24,5 +24,7 @@ appId: com.reelhouse.society
     visible:
       id: "screen-ready-member"
     timeout: 30000
+# The file draws the handle as its name, in capitals, without its @
+# (run 42718741997).
 - assertVisible:
-    text: "(?i).*@${PUSH_FROM}.*"
+    text: "(?i)${PUSH_FROM}"
