@@ -35,7 +35,7 @@ CREATE FUNCTION pg_temp.rh_id(p_what text) RETURNS uuid LANGUAGE sql AS $$ SELEC
 DELETE FROM public.user_blocks WHERE blocker_id IN (SELECT id FROM rh_who) OR blocked_id IN (SELECT id FROM rh_who);
 -- The host sits in no salon (production's first member did not, and the corridor answered them a
 -- JSON null for their unread counts): given here, so every database rehearses that reader.
-DELETE FROM public.lounge_members WHERE user_id = pg_temp.rh_id('the host');
+DELETE FROM public.lounge_members WHERE user_id = (SELECT pg_temp.rh_id('the host'));
 
 -- The salon, its seats, and the host's word in it an hour ago.
 CREATE TEMP TABLE rh_room (id uuid) ON COMMIT DROP;
