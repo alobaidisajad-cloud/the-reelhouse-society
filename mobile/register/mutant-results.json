@@ -2133,5 +2133,19 @@
     "proof": "m49",
     "commit": "727611a3d4a0569d754a1f21abc864e5a53ca3e9",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-push-tap-unproven",
+    "mutant": "shape-present-in-every-build",
+    "proof": "m4",
+    "commit": "151c783c0949b9521cee14230e01fb53c0c5e1fb",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-push-tap-unproven",
+    "mutant": "shape-present-without-its-channel",
+    "proof": "m1",
+    "commit": "151c783c0949b9521cee14230e01fb53c0c5e1fb",
+    "verdict": "caught"
   }
 ]
