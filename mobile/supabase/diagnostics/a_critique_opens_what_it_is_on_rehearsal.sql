@@ -6,9 +6,10 @@
 -- A critique's notice names what it is on. Notices written before are staged
 -- first, as the old writers left them (no key) and dated an hour and two apart:
 -- two critiques by one critic on two logs of one owner, one on a stack, and one
--- whose critique is gone. Then the migration runs (it is whole again on a copy
--- that holds it: its writers replaced as they are, and only keyless notices
--- given a key), and a member critiques a log and a stack as themselves. Each
+-- whose critique is gone. Then the migration runs (applied by the train, or run
+-- once more on a copy that holds it: its writers replaced as they are, and only
+-- keyless notices given a key), and a member critiques a log and a stack as
+-- themselves. Each
 -- notice must name its own log or stack; the one with no critique keeps no
 -- key; a follow and a Dispatch critique keep theirs. Read each NOTICE as
 -- case|expected|got ; the last line is the verdict, and any miss makes psql
@@ -83,9 +84,17 @@ WITH n AS (
 INSERT INTO rh_kept SELECT 'a follow keeps no key', id, group_key FROM n;
 
 -- ── the migration ────────────────────────────────────────────────────────────
--- Run here whatever the copy holds: its writers are replaced as they are, and it keys only keyless
--- notices, so a copy that holds it already is given the staged notices' keys and nothing else.
+-- The train applies it here (with_train). A copy that holds it already runs it once more, over the
+-- staged notices: its writers are replaced as they are, and it keys only keyless notices, so the
+-- staged ones are given their keys and nothing else changes. A copy without it runs nothing, and
+-- every case of it fails (rehearsals.mjs --without).
+SELECT position('endorse:log:' IN prosrc) > 0 AS held FROM pg_proc
+ WHERE oid = 'public.notify_on_log_comment()'::regprocedure \gset rh_
+\if :{?with_train}
 \ir ../../../supabase/migrations/20261109_03_a_critique_opens_what_it_is_on.sql
+\elif :rh_held
+\ir ../../../supabase/migrations/20261109_03_a_critique_opens_what_it_is_on.sql
+\endif
 
 -- ── a member's critiques, as the member ──────────────────────────────────────
 CREATE TEMP TABLE rh_new (what text PRIMARY KEY, got text) ON COMMIT DROP;
