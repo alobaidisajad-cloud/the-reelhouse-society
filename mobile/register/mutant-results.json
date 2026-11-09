@@ -2077,5 +2077,33 @@
     "proof": "m44",
     "commit": "bcebae661912b61ca48a989c3fb40308ae7c15f8",
     "verdict": "caught"
+  },
+  {
+    "class": "UI-rank-colour-reads-two-ways",
+    "mutant": "shape-loss-drawn-in-red",
+    "proof": "m2",
+    "commit": "26fa2ceb235c6796898075f4a5f3908dd2654799",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-rank-colour-reads-two-ways",
+    "mutant": "shape-ember-in-red",
+    "proof": "m2",
+    "commit": "26fa2ceb235c6796898075f4a5f3908dd2654799",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-rank-colour-reads-two-ways",
+    "mutant": "shape-standing-borrows-a-rank",
+    "proof": "m5",
+    "commit": "26fa2ceb235c6796898075f4a5f3908dd2654799",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-rank-colour-reads-two-ways",
+    "mutant": "shape-archivist-in-three-golds",
+    "proof": "m4",
+    "commit": "26fa2ceb235c6796898075f4a5f3908dd2654799",
+    "verdict": "caught"
   }
 ]
