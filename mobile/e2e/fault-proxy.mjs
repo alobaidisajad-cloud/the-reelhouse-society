@@ -158,6 +158,10 @@ export const PHONE = {
   // In the foreground, mid-write: am kill reaches only an app in the background.
   force_stopped: { says: 'true', valid: (v) => v === true,
     commands: () => [['adb', ['shell', 'am', 'force-stop', 'com.reelhouse.society']]] },
+  // The notification shade pulled down, for a push flow to tap its notice (.maestro/push_tap.yaml): a
+  // swipe from the top edge never opened it on the emulator (run 42622134690).
+  notification_shade: { says: 'true', valid: (v) => v === true,
+    commands: () => [['adb', ['shell', 'cmd', 'statusbar', 'expand-notifications']]] },
   // The image's keyboard, on for a moment of the route walk and off again: run-flows.sh turns every
   // keyboard off, because the flows type without one (its keyboard-room probes turn it on the same way).
   // Android lists a keyboard again only once it has read the package's enabling, after `pm enable`

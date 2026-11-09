@@ -345,8 +345,8 @@ it('changes the phone mid-flow by fixed commands of checked values alone, and re
     { status: 400, refused: 'waited to whole seconds from 181 to 300' },
     { status: 400, refused: 'font_scale to a number from 0.85 to 2' },
     { status: 400, refused: 'density to a whole number from 240 to 640, or "reset"' },
-    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, keyboard, window_size, motion, clock_ahead, clock_behind, waited, and to' },
-    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, keyboard, window_size, motion, clock_ahead, clock_behind, waited, and to' },
+    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, notification_shade, keyboard, window_size, motion, clock_ahead, clock_behind, waited, and to' },
+    { status: 400, refused: 'set, one of font_scale, density, dont_keep_activities, killed_in_background, force_stopped, notification_shade, keyboard, window_size, motion, clock_ahead, clock_behind, waited, and to' },
     { status: 500, failed: 'Android never listed the keyboard once its package was enabled: adb shell ime list -a -s said "com.android.other/.Ime"' },
   ]);
   expect(out.ran.slice(out.ranParts.length, out.ranPhone)).toEqual([

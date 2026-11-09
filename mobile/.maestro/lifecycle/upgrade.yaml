@@ -16,10 +16,15 @@ env:
 - launchApp:
     clearState: true
 - runFlow: ../subflows/sign_in.yaml
-- runFlow:
-    file: ../subflows/open_a_film.yaml
-    env:
-      FILM: "Casablanca"
+# The old build reaches Casablanca by its link, not the Darkroom tab: a change
+# of tab in the old build can hit its own known crash (RN-react-destroyed-
+# on-mount, fixed since), which ended the nightly's run 42602365705 before
+# this build was ever installed. The new build's half below takes the tab.
+- openLink: "reelhouse://film/289"
+- extendedWaitUntil:
+    visible:
+      id: "film-stub"
+    timeout: 30000
 - runFlow:
     when:
       platform: Android

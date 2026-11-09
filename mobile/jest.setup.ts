@@ -135,6 +135,9 @@ jest.mock('react-native-mmkv', () => ({
 
 // Mock mmkv-storage module (used by stores)
 const _mockMMKVStore: Record<string, string> = {};
+// Reached by jest.afterEnv.ts, which clears the kept pages before each test without loading the
+// module (a require there gave a test that resets its modules a second store).
+(globalThis as Record<string, unknown>).__mockPhoneStore = _mockMMKVStore;
 jest.mock('./src/stores/mmkv-storage', () => ({
   storage: {
     set: jest.fn((key: string, value: string) => { _mockMMKVStore[key] = value; }),

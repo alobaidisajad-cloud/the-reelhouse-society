@@ -6,9 +6,12 @@ appId: com.reelhouse.society
 # message to the E2E build, which presents it as the app's own notice in its
 # kind's channel (src/utils/e2ePresent.ts). Tapped from the shade three ways:
 # the app in front, in the background, and killed in the background (the cold
-# start). Each tap must open the follower's file.
+# start). Each tap must open the follower's file. Notices allowed, as a
+# member allows them: Android 13 shows none without (run 42622134690).
 - launchApp:
     clearState: true
+    permissions:
+      notifications: allow
 - runFlow: subflows/sign_in.yaml
 # In front.
 - openLink: ${PUSH_LINK}

@@ -27,6 +27,13 @@ beforeEach(() => {
   if (g) g.length = 0;
   G.__armSwallowedTypeError = undefined;
   G.__propertyChecks = 0;
+  // Every test begins on a phone holding no kept page: a page one test kept (keptPages: the paper,
+  // the corridor) opened the next one's in the nightly's random order (seed 692248039). Only the
+  // kept pages: what else a file puts on the phone is its own. A file that mocks the store itself
+  // keeps its own, as it says. The store is reached as jest.setup.ts holds it: requiring the module
+  // here gave a test that resets its modules a second store.
+  const phone = G.__mockPhoneStore as Record<string, string> | undefined;
+  for (const key of Object.keys(phone ?? {})) if (key.startsWith('kept_')) delete phone![key];
 });
 
 /**

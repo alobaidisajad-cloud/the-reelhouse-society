@@ -65,6 +65,14 @@ const traceRequest = (method: string | undefined, url: string, at: number, outco
 };
 
 /**
+ * Expo's native fetch refused to start the request: its native object was released before it began
+ * (a cold start from a link; the nightly's walk, run 42602365705, lost the reader's first read so).
+ * Nothing left the phone, so the request is asked once more, whatever its method.
+ */
+export const neverStarted = (e: unknown): boolean =>
+  e instanceof Error && /NativeRequest\.start' has been rejected|shared object that was already released/.test(e.message);
+
+/**
  * A request given up when its time runs out. Android's networking waits on a
  * connection with no limit, so a request caught by a change of network (data
  * to Wi-Fi) could wait for minutes, holding back everything queued behind it.
@@ -91,7 +99,13 @@ export const fetchWithinLimit: typeof fetch = async (input, init) => {
   const at = Date.now();
   try {
     if (!onlineManager.isOnline()) throw new TypeError(NO_NETWORK);
-    const res = await fetch(input, { ...init, signal: controller.signal });
+    let res: Response;
+    try {
+      res = await fetch(input, { ...init, signal: controller.signal });
+    } catch (e) {
+      if (!neverStarted(e) || controller.signal.aborted) throw e;
+      res = await fetch(input, { ...init, signal: controller.signal });
+    }
     heardTheHouse(res.headers.get('date'), at, Date.now());
     const body = NO_BODY.has(res.status) ? null : await res.text();
     traceRequest(init?.method, url, at, { status: res.status });

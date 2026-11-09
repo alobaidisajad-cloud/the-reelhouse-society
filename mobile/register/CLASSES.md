@@ -7,6 +7,7 @@ production shows only its id, area, seriousness and count here.
 |---|---|---|---|---|---|
 | MOTION-empty-config-key | motion | serious | OPEN | 0 | An animation config key holding no value replaces Reanimated's default with nothing |
 | RUNTIME-api-missing-on-phone | runtime | serious | OPEN | 0 | A JavaScript API Node has and the phone's runtime lacks is called, passing in jest and throwing on the phone |
+| RUNTIME-request-never-started | runtime | behaviour | OPEN | 1 | Expo's native fetch refuses to start a request (its native object released before it began, on a cold start from a link), and the page says the house could not be reached though nothing left the phone |
 | E2E-soft-crash-unseen | tests | serious | OPEN | 0 | React destroyed with no crash dialog passes a run whose flows relaunched over it |
 | E2E-app-crash-unseen | tests | serious | OPEN | 0 | The app crashes, freezes or dies during an E2E run or a launch check, and the run passes because the flows did (CI-09) |
 | E2E-splash-taken-over | tests | behaviour | OPEN | 0 | The app takes Android's splash over and hands it back late, so its window keeps animating and every key waits until a relaunch |

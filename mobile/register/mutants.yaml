@@ -2841,3 +2841,12 @@ mutants:
         find: "    trigger: message.channelId ? { channelId: message.channelId } : null,"
         replace: "    trigger: null,"
     proof: { file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "presents the message as notify-push built it, in its own channel, in the E2E build" }
+
+  - id: shape-never-started-not-asked-again
+    class: RUNTIME-request-never-started
+    source: shape
+    edits:
+      - file: src/lib/supabase.ts
+        find: "      if (!neverStarted(e) || controller.signal.aborted) throw e;"
+        replace: "      throw e;"
+    proof: { file: src/lib/__tests__/aRequestThatNeverStartedIsAskedAgain.test.ts, test: "asks once more a request the native fetch refused to start, and hands back its answer" }

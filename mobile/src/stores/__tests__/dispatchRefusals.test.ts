@@ -16,6 +16,7 @@
 import { useDispatch } from '../dispatch';
 import { PAGE_SIZE } from '../dispatchTypes';
 import type { Filing } from '../dispatchTypes';
+import { storage } from '../mmkv-storage';
 
 type Outcome = 'ok' | 'refused' | 'offline' | 'throw';
 let mockOutcome: Outcome = 'ok';
@@ -151,6 +152,9 @@ beforeEach(() => {
   mockPages = []; mockCount = 0;
   mockAsks.length = 0; mockCapture.mockClear();
   reset();
+  // A phone holding nothing: a page one test read is kept for its member (keptPages), and would
+  // open the next test's paper before its read (the nightly's random order, seed 692248039).
+  storage.clearAll();
 });
 
 describe('it does not act for nobody', () => {
