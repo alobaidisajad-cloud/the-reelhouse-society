@@ -9,6 +9,10 @@
 import { readCode } from '@/test-utils/readCode';
 import { KIND_CHANNEL, NOTICE_CHANNELS, ensureNoticeChannels } from '../noticeChannels';
 
+/** expo's importance numbers, from the module itself (never the jest stand-in's copy). */
+const IMPORTANCE = jest.requireActual('expo-notifications/build/NotificationChannelManager.types').AndroidImportance as
+  Record<'NONE' | 'MIN' | 'LOW' | 'DEFAULT' | 'HIGH' | 'MAX', number>;
+
 /** The channels the first Android build with push (the launch build) makes: a later build adds, never removes. */
 const LAUNCHED = ['critiques', 'members', 'honours', 'the-house', 'default'];
 
@@ -46,7 +50,17 @@ describe('the notice channels', () => {
     const weights = NOTICE_CHANNELS.map((c) => c.importance);
     expect(new Set(weights).size).toBeGreaterThan(1);
     expect(weight('honours')).toBeLessThan(weight('the-house'));
-    expect(Math.max(...weights)).toBeLessThan(5);
+    expect(Math.max(...weights)).toBeLessThan(IMPORTANCE.MAX);
+  });
+
+  it("gives each its weight by expo's numbers: every notice shown, the quietest without sound, none folded away", () => {
+    const weights = Object.fromEntries(NOTICE_CHANNELS.map((c) => [c.id, c.importance]));
+    expect(weights).toEqual({
+      critiques: IMPORTANCE.HIGH, members: IMPORTANCE.DEFAULT, honours: IMPORTANCE.LOW,
+      'the-house': IMPORTANCE.HIGH, default: IMPORTANCE.DEFAULT,
+    });
+    // Below LOW a notice is folded away (MIN) or never shown (NONE): Android's own 2 and 3, read by expo.
+    expect(Object.values(weights).filter((w) => w < IMPORTANCE.LOW)).toEqual([]);
   });
 
   it('keeps every channel a launched build made, and names each once', () => {

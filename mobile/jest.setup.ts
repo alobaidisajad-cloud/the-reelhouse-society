@@ -611,7 +611,9 @@ jest.mock('expo-notifications', () => ({
   setNotificationChannelAsync: jest.fn().mockResolvedValue(null),
   getLastNotificationResponseAsync: jest.fn().mockResolvedValue(null),
   clearLastNotificationResponseAsync: jest.fn().mockResolvedValue(undefined),
-  AndroidImportance: { MAX: 5, HIGH: 4, DEFAULT: 3, LOW: 2, MIN: 1 },
+  // expo's own numbers, read from the module: a stand-in that wrote Android's (HIGH 4, DEFAULT 3,
+  // LOW 2) agreed with a channel list that wrote them too, and every channel was quieter than meant.
+  AndroidImportance: jest.requireActual('expo-notifications/build/NotificationChannelManager.types').AndroidImportance,
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────

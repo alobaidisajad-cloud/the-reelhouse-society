@@ -2895,3 +2895,12 @@ mutants:
         find: "    content: { title: message.title, body: message.body, data: message.data, ...(message.sound ? { sound: message.sound } : {}) },"
         replace: "    content: { title: message.title, body: message.body, data: message.data },"
     proof: { file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "presents the message as notify-push built it, in its own channel, in the E2E build" }
+
+  - id: shape-channels-by-androids-numbers
+    class: RUNTIME-android-importance-misnumbered
+    source: shape
+    edits:
+      - file: src/lib/noticeChannels.ts
+        find: "const { LOW, DEFAULT, HIGH } = Notifications.AndroidImportance;"
+        replace: "const LOW = 2, DEFAULT = 3, HIGH = 4;"
+    proof: { file: src/lib/__tests__/theNoticesKnowTheirChannels.test.ts, test: "gives each its weight by expo's numbers: every notice shown, the quietest without sound, none folded away" }

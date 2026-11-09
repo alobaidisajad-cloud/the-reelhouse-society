@@ -13,10 +13,13 @@ import * as Notifications from 'expo-notifications';
 import { colors } from '../theme/theme';
 import { logger } from '../utils/logger';
 
-/** Android's importance levels, as expo-notifications numbers them. */
-const LOW = 2;
-const DEFAULT = 3;
-const HIGH = 4;
+/**
+ * Android's importance levels, by expo-notifications' own names: its numbers are not Android's
+ * (expo's LOW is 4, Android's 2). Written as Android's (2, 3, 4), they read in expo as NONE, MIN
+ * and LOW: certifications never shown, follows silent and folded away, critiques and the house's
+ * word without sound or banner (Sealed E2E 42693374688: a follow filed as silent).
+ */
+const { LOW, DEFAULT, HIGH } = Notifications.AndroidImportance;
 
 export type NoticeChannel = { id: string; name: string; description: string; importance: number };
 

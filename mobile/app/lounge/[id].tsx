@@ -762,7 +762,7 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
 
         <View style={s.headerRight}>
           {isCreator && pendingMembers.length > 0 && (
-            <PressableScale style={s.doorBadge} onPress={() => setDoorOpen(true)} haptic="medium" accessibilityRole="button" accessibilityLabel={`${pendingMembers.length} at the door`}>
+            <PressableScale room style={s.doorBadge} onPress={() => setDoorOpen(true)} haptic="medium" accessibilityRole="button" accessibilityLabel={`${pendingMembers.length} at the door`}>
               <DoorOpen size={12} color={colors.ink} strokeWidth={2} />
               <Text style={s.doorBadgeText}>{pendingMembers.length}</Text>
             </PressableScale>
@@ -1134,7 +1134,9 @@ const s = StyleSheet.create({
     marginRight: 1,
   },
   presenceText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.marqueeGold, includeFontPadding: false },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  // The door's count and the settings each grown to a finger's 48 (`room`), the gap wide enough
+  // that neither reaches into the other: at 2 the count's halo took 20pt of the settings' touch.
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   doorBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.sepia,
     paddingHorizontal: 9, paddingVertical: 5, borderRadius: 12,

@@ -1920,3 +1920,15 @@ classes:
       - { kind: running, file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "the door is shown once: closed, a new roster read does not open it again" }
     fix: "a critique's notice of a log or a stack names what it is on (endorse:log:<id>, endorse:list:<id>), as its certification and a Dispatch critique already do, and the notices written before are given theirs, each matched to its critique by critic, owner and time (20261109_03, rehearsed in a_critique_opens_what_it_is_on_rehearsal.sql); a notice is read with its salon (related_lounge_id), and noticeRoute opens a salon's notice at /lounge/<id>?door=1, where the host is shown who waits at the door once the roster says someone does, once"
     places: [emulator]
+
+  - id: RUNTIME-android-importance-misnumbered
+    title: "Android's notice channels were made with Android's own importance numbers (2, 3, 4), which expo-notifications reads by its own count as NONE, MIN and LOW: a certification never shown, a follow silent and folded away, a critique and the house's word without sound or banner; the jest stand-in wrote the same numbers, so every test agreed"
+    seriousness: serious
+    area: android
+    status: OPEN
+    count: 5
+    source: { kind: ci, ref: "Sealed E2E 42693374688: the push flow's follow, presented with its sound in the members channel, filed as silent" }
+    methods:
+      - { kind: running, file: src/lib/__tests__/theNoticesKnowTheirChannels.test.ts, test: "gives each its weight by expo's numbers: every notice shown, the quietest without sound, none folded away" }
+    fix: "noticeChannels takes LOW, DEFAULT and HIGH from expo-notifications' own AndroidImportance; the jest stand-in's AndroidImportance is the module's own, read through requireActual, and the channels' test reads the weights against the module itself, never the stand-in. Android has not launched: no member's phone holds the quieter channels (Android lets an app lower a channel's importance, never raise it)"
+    places: [emulator]
