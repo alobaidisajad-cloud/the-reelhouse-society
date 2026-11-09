@@ -191,6 +191,21 @@ classes:
     fix: "every shared empty room and failure writes which it is to the E2E build's log (useStateSaid; PaperEmpty's call sites each say which by a required prop); the fault runs' judge (e2e/fault-judges.mjs, mutant judge-failure-drawn-empty) refuses an empty room in a flow whose fault fails every read, and a flow where no failure was said"
     places: [emulator]
 
+  - id: E2E-push-tap-unproven
+    title: "A push tapped is proven only with a notice the phone's shell posts (adb shell cmd notification post), which belongs to com.android.shell and never reaches the app's tap handler, so a tap that opens nothing, or the wrong screen, passes"
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "P4.22, P4.26" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "presents the message as notify-push built it, in its own channel, in the E2E build" }
+      - { kind: running, file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "presents nothing for a link with no message, or one that is not a message" }
+      - { kind: running, file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "opens the Lobby behind the notice it presents, in the E2E build" }
+      - { kind: running, file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "answers the link in no other build: nothing presented, the address left as it came" }
+    fix: "the E2E build alone answers reelhouse://e2e/present?message=…: the message notify-push sent to the Expo stand-in is presented through expo-notifications with its own title, body, data and channel (e2ePresent), so it is the app's own notice and its tap reaches setupNotificationResponseHandler; every other build reads the address as one it does not have. The flows that tap it from the shade (in front, in the background, killed) follow, with notify-push served in the sealed world (audit P4-22-PUSH-TAP-PLAN)"
+    places: [emulator]
+
   - id: E2E-route-never-opened
     title: A route no flow opens is never seen by any run, so a screen that crashes, freezes or cannot read when opened by its link passes every run
     seriousness: behaviour

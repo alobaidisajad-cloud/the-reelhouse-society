@@ -2823,3 +2823,21 @@ mutants:
         find: "${id ? `?id=${encodeURIComponent(id)}` : ''}"
         replace: "${id && !id ? `?id=${encodeURIComponent(id)}` : ''}"
     proof: { file: src/hooks/__tests__/aMemberFileIsReadInOneTrip.test.tsx, test: "carries the member's id in a link that holds it, a notice from them among them" }
+
+  - id: shape-present-in-every-build
+    class: E2E-push-tap-unproven
+    source: shape
+    edits:
+      - file: src/utils/e2ePresent.ts
+        find: "  if (!E2E_BUILD || !PRESENT_PATH.test(path)) return false;"
+        replace: "  if (!PRESENT_PATH.test(path)) return false;"
+    proof: { file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "answers the link in no other build: nothing presented, the address left as it came" }
+
+  - id: shape-present-without-its-channel
+    class: E2E-push-tap-unproven
+    source: shape
+    edits:
+      - file: src/utils/e2ePresent.ts
+        find: "    trigger: message.channelId ? { channelId: message.channelId } : null,"
+        replace: "    trigger: null,"
+    proof: { file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "presents the message as notify-push built it, in its own channel, in the E2E build" }

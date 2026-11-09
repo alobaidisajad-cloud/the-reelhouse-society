@@ -1673,7 +1673,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyRouteReadsThroughTheParser.guard.test.ts | 2026-11-05 | Written 2026-11-05: no app file but routeParams.ts reads a route's parameters (P4.4) |
 | src/utils/outsideValues.ts | 2026-11-04 | Written 2026-11-04: the check for each kind of outside value the app opens, plays or draws (P4.2) |
 | src/utils/routeParams.ts | 2026-11-05 | Written 2026-11-05: the one reader of a route's parameters, each value in its kind (P4.4) |
-| app/+native-intent.tsx | 2026-11-05 | Written 2026-11-05: every link that opens the app passes here; a house address is read into its page, any other goes on as it came (P4.20) |
+| app/+native-intent.tsx | 2026-11-08 | edited: reelhouse://e2e/present answered in the E2E build alone (e2ePresent), the Lobby behind it; Written 2026-11-05: every link that opens the app passes here; a house address is read into its page, any other goes on as it came (P4.20) |
 | src/linking/houseLink.ts | 2026-11-05 | Written 2026-11-05: a claimed address of the house's website, as the app's own path for it (P4.20) |
 | src/linking/__tests__/aHouseLinkOpensItsPage.test.ts | 2026-11-06 | edited: the sealed phone approves the same address; Written 2026-11-05: the one list against the website's routes, the app's routes, both phones' claims and the two link files; each claimed address read into its page (P4.20) |
 | plugins/withAssetStatements.js | 2026-11-05 | Written 2026-11-05: Android's half of the link with the website, read against Google's steps for sharing saved passwords (P4.20) |
@@ -1705,3 +1705,5 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts | 2026-11-08 | new: every red line of the member file's sources judged by role; a loss in the neutrals; one gold for the Archivist; the standing ladder borrows no rank's hue |
 | src/utils/memberPath.ts | 2026-11-08 | new: a member's file by name, with their id when the opener holds it |
 | src/hooks/__tests__/aMemberFileIsReadInOneTrip.test.tsx | 2026-11-08 | new: the file read in one trip with the member known, in two without; a renamed name read again; the shelf shown by rank; a sealed file's logs never drawn; the links carry the id |
+| src/utils/e2ePresent.ts | 2026-11-08 | new: the E2E build's way to present a message notify-push sent, as the app's own notice in its channel |
+| src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts | 2026-11-08 | new: the message presented in its channel in the E2E build, refused when it is none, answered in no other build |
