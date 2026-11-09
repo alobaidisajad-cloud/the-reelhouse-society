@@ -9,14 +9,18 @@
 -- essay of every kind: none (its excerpt counted), an empty one (no words, as
 -- the reader counts it), one word, words parted by every space JavaScript
 -- splits on, by characters it does not split on, Arabic, and runs of spaces at
--- both ends. One is rewritten and counted again. A visitor and a member read
--- the count as they read the filing. Read each NOTICE as case|expected|got ;
+-- both ends. One is rewritten and counted again; a count written by hand is
+-- counted again; one with no count is counted at its next write. A visitor and
+-- a member read the count as they read the filing. Read each NOTICE as case|expected|got ;
 -- the last line is the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
+-- The train applies it here first (with_train); a sealed copy already holds every pending migration.
+\if :{?with_train}
 \ir ../../../supabase/migrations/20261109_01_a_part_counts_its_words.sql
+\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
@@ -48,15 +52,15 @@ GRANT SELECT ON rh_filing TO authenticated, anon;
 UPDATE public.dispatch_posts SET full_content = 'now two'
  WHERE id = (SELECT id FROM rh_filing WHERE what = 'one word');
 
--- A count written by hand is refused: the house keeps it.
-CREATE TEMP TABLE rh_hand (got text) ON COMMIT DROP;
-DO $$
-BEGIN
-  UPDATE public.dispatch_posts SET words = 999 WHERE id = (SELECT id FROM rh_filing WHERE what = 'Arabic');
-  INSERT INTO rh_hand VALUES ('written');
-EXCEPTION WHEN generated_always THEN
-  INSERT INTO rh_hand VALUES ('refused');
-END $$;
+-- A count written by hand is counted again: the house keeps it.
+UPDATE public.dispatch_posts SET words = 999 WHERE id = (SELECT id FROM rh_filing WHERE what = 'Arabic');
+CREATE TEMP TABLE rh_hand (what text PRIMARY KEY, got text) ON COMMIT DROP;
+INSERT INTO rh_hand SELECT 'by hand', words::text FROM public.dispatch_posts WHERE id = (SELECT id FROM rh_filing WHERE what = 'Arabic');
+-- A filing with no count (one written before the count was kept) is counted at its next write, of
+-- any column: a certification counted on it, here.
+UPDATE public.dispatch_posts SET words = NULL WHERE id = (SELECT id FROM rh_filing WHERE what = 'runs of spaces, and at both ends');
+UPDATE public.dispatch_posts SET certify_count = certify_count + 1 WHERE id = (SELECT id FROM rh_filing WHERE what = 'runs of spaces, and at both ends');
+INSERT INTO rh_hand SELECT 'unkept', words::text FROM public.dispatch_posts WHERE id = (SELECT id FROM rh_filing WHERE what = 'runs of spaces, and at both ends');
 
 -- ── the verdict ──────────────────────────────────────────────────────────────
 DO $$
@@ -71,8 +75,10 @@ BEGIN
   PERFORM pg_temp.rh_case('a visitor and a member read the count as they read the filing', 'true|true',
     has_column_privilege('anon', 'public.dispatch_posts', 'words', 'SELECT')::text || '|'
     || has_column_privilege('authenticated', 'public.dispatch_posts', 'words', 'SELECT')::text);
-  PERFORM pg_temp.rh_case('a count written by hand is refused: the house keeps it', 'refused',
-    (SELECT got FROM rh_hand));
+  PERFORM pg_temp.rh_case('a count written by hand is counted again: the house keeps it', '3',
+    (SELECT got FROM rh_hand WHERE what = 'by hand'));
+  PERFORM pg_temp.rh_case('a filing with no count is counted at its next write, of any column', '3',
+    (SELECT got FROM rh_hand WHERE what = 'unkept'));
 END $$;
 
 SELECT pg_temp.rh_verdict();

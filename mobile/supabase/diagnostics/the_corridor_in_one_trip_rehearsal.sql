@@ -16,7 +16,10 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
+-- The train applies it here first (with_train); a sealed copy already holds every pending migration.
+\if :{?with_train}
 \ir ../../../supabase/migrations/20261109_02_the_corridor_in_one_trip.sql
+\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
