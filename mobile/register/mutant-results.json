@@ -2154,5 +2154,33 @@
     "proof": "m1",
     "commit": "d76b662c66216c61db6b8e70a0a5f6f2339e1195",
     "verdict": "caught"
+  },
+  {
+    "class": "UI-notice-opens-elsewhere",
+    "mutant": "shape-salon-notice-opens-the-sender",
+    "proof": "m1",
+    "commit": "af9f5b6fbaab8223af4b4848156270fde08b3674",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-notice-opens-elsewhere",
+    "mutant": "shape-door-not-met",
+    "proof": "m2",
+    "commit": "af9f5b6fbaab8223af4b4848156270fde08b3674",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-notice-opens-elsewhere",
+    "mutant": "shape-door-met-by-a-guest",
+    "proof": "m3",
+    "commit": "af9f5b6fbaab8223af4b4848156270fde08b3674",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-notice-opens-elsewhere",
+    "mutant": "shape-door-met-twice",
+    "proof": "m4",
+    "commit": "af9f5b6fbaab8223af4b4848156270fde08b3674",
+    "verdict": "caught"
   }
 ]
