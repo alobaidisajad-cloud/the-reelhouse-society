@@ -7,25 +7,22 @@
 -- applied there, it moves to supabase/migrations under its own name and this
 -- file is emptied.
 --
--- Under measurement: a part's words, counted by the house as the app counts them
--- (readTimeOf: the text split on JavaScript's \s, empty pieces dropped, of
--- full_content, else body), so the series page reads 24 numbers instead of 24
--- essays. Two shapes, timed side by side (audit P4-53-SERIES-WORDS-PLAN):
---   A. counted on every read, a computed field;
---   B. counted once on write, a stored generated column.
---
--- And the Lounge's corridor in one trip: get_lounge_list() answers what
--- lounge.ts's fetchLounges asks in two waves today (its memberships, the newest
--- rooms, the hosted, then the joined, the unread counts, the door requests, the
--- faces and the last words), each piece as the app asks it now. INVOKER: every
--- piece is read under the rules it is read under today (the rooms' and the
--- roster's row rules, the three definer functions' own), so nothing is restated.
+-- Under measurement: the pending train's two files, as they will be applied
+-- (supabase/migrations/20261109_01_a_part_counts_its_words.sql and
+-- 20261109_02_the_corridor_in_one_trip.sql). The shape that counted a part's
+-- words on every read was measured beside the stored one (56 ms against 0.2 ms
+-- for a whole series at the ceiling, 2026-11-09) and dropped.
 -- ════════════════════════════════════════════════════════════════════════════
 
-CREATE OR REPLACE FUNCTION public.get_lounge_list()
+ALTER TABLE public.dispatch_posts ADD COLUMN words integer GENERATED ALWAYS AS (
+  cardinality(array_remove(regexp_split_to_array(coalesce(full_content, body, ''),
+    '[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+'), ''))
+) STORED;
+
+CREATE FUNCTION public.get_lounge_list()
 RETURNS jsonb
 LANGUAGE sql STABLE
-SET search_path = ''
+SET search_path TO 'public', 'pg_temp'
 AS $$
   WITH me AS (SELECT auth.uid() AS id),
   memberships AS (
@@ -64,23 +61,7 @@ AS $$
       FROM public.get_salon_last_words(ARRAY(SELECT id FROM newest WHERE id NOT IN (SELECT id FROM own))) w), '[]'::jsonb)
   )
 $$;
+
 REVOKE ALL ON FUNCTION public.get_lounge_list() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_lounge_list() TO authenticated;
-
--- A. A computed field: PostgREST reads public.words(dispatch_posts) as a column.
-CREATE OR REPLACE FUNCTION public.words(p public.dispatch_posts)
-RETURNS integer
-LANGUAGE sql IMMUTABLE PARALLEL SAFE
-SET search_path = ''
-AS $$
-  SELECT cardinality(array_remove(regexp_split_to_array(coalesce(p.full_content, p.body, ''),
-    '[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+'), ''))
-$$;
-REVOKE ALL ON FUNCTION public.words(public.dispatch_posts) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.words(public.dispatch_posts) TO anon, authenticated;
-
--- B. A stored generated column, counted as each row is written.
-ALTER TABLE public.dispatch_posts ADD COLUMN words_stored integer GENERATED ALWAYS AS (
-  cardinality(array_remove(regexp_split_to_array(coalesce(full_content, body, ''),
-    '[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+'), ''))
-) STORED;
+GRANT ALL ON FUNCTION public.get_lounge_list() TO service_role;

@@ -83,14 +83,12 @@ const PROBES = [
   { screen: 'Dispatch', what: 'one section of the paper, most certified first', as: MEMBER,
     sql: "SELECT id, kind, author_username, title, body, certify_count, comment_count, created_at FROM public.dispatch_posts WHERE is_published AND withheld_at IS NULL AND kind = 'take' ORDER BY certify_count DESC, id DESC LIMIT 30" },
   // A series of 24 parts at the essay ceiling (seed.sql), as the series page asks it. Today it reads
-  // every part's whole text (length() reads it as sending it would); proposed.sql's two shapes give
-  // the words instead: counted on the read (A), or stored as each part was written (B).
+  // every part's whole text (length() reads it as sending it would); with the train it reads each
+  // part's words as the house stored them when the part was written (20261109_01).
   { screen: 'Dispatch', what: 'a series, every part\'s whole text (today)', as: MEMBER,
     sql: "SELECT id, title, length(full_content) FROM public.dispatch_posts WHERE series_id = '00000000-0000-4000-9200-000000000001' AND is_published AND withheld_at IS NULL AND ended_at IS NULL ORDER BY part_number LIMIT 24" },
-  { screen: 'Dispatch', what: 'a series, its words counted on the read (A)', as: MEMBER,
-    sql: "SELECT id, title, public.words(d) FROM public.dispatch_posts d WHERE series_id = '00000000-0000-4000-9200-000000000001' AND is_published AND withheld_at IS NULL AND ended_at IS NULL ORDER BY part_number LIMIT 24" },
-  { screen: 'Dispatch', what: 'a series, its words as stored (B)', as: MEMBER,
-    sql: "SELECT id, title, words_stored FROM public.dispatch_posts WHERE series_id = '00000000-0000-4000-9200-000000000001' AND is_published AND withheld_at IS NULL AND ended_at IS NULL ORDER BY part_number LIMIT 24" },
+  { screen: 'Dispatch', what: 'a series, its words as stored', as: MEMBER,
+    sql: "SELECT id, title, words FROM public.dispatch_posts WHERE series_id = '00000000-0000-4000-9200-000000000001' AND is_published AND withheld_at IS NULL AND ended_at IS NULL ORDER BY part_number LIMIT 24" },
   { screen: 'Dispatch', what: 'the hot post\'s critiques, newest first', as: MEMBER,
     sql: `SELECT id, author_username, body, certify_count, created_at FROM public.dispatch_comments WHERE post_id = '${HOT_POST}' ORDER BY created_at DESC LIMIT 30` },
   { screen: 'Dispatch', what: 'the hot post\'s critiques, most certified first', as: MEMBER,
