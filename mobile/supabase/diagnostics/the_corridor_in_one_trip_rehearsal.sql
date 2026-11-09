@@ -33,6 +33,9 @@ SELECT pg_temp.rh_need('members to keep, sit in and be refused a salon', (SELECT
 CREATE FUNCTION pg_temp.rh_id(p_what text) RETURNS uuid LANGUAGE sql AS $$ SELECT id FROM rh_who WHERE what = p_what $$;
 -- Nothing hidden between them: a face kept back by a block would not be the rule under test.
 DELETE FROM public.user_blocks WHERE blocker_id IN (SELECT id FROM rh_who) OR blocked_id IN (SELECT id FROM rh_who);
+-- The host sits in no salon (production's first member did not, and the corridor answered them a
+-- JSON null for their unread counts): given here, so every database rehearses that reader.
+DELETE FROM public.lounge_members WHERE user_id = pg_temp.rh_id('the host');
 
 -- The salon, its seats, and the host's word in it an hour ago.
 CREATE TEMP TABLE rh_room (id uuid) ON COMMIT DROP;
@@ -60,12 +63,19 @@ BEGIN
   PERFORM set_config('role', CASE WHEN p_who IS NULL THEN 'anon' ELSE 'authenticated' END, true);
   BEGIN
     v := public.get_lounge_list();
+    -- Every piece a list, for every reader: a JSON null where a list belongs fails the client's merge.
+    IF NOT (SELECT bool_and(jsonb_typeof(v -> k) = 'array')
+              FROM unnest(ARRAY['memberships', 'newest', 'hosted', 'joined', 'unread', 'pending', 'faces', 'last_words']) k) THEN
+      got := 'a piece is not a list: ' || (SELECT string_agg(k || '=' || coalesce(jsonb_typeof(v -> k), 'missing'), ',')
+              FROM unnest(ARRAY['memberships', 'newest', 'hosted', 'joined', 'unread', 'pending', 'faces', 'last_words']) k);
+    ELSE
     got := 'door:' || (SELECT count(*) FROM jsonb_array_elements(v -> 'pending') e WHERE e ->> 'lounge_id' = r)
       || ',faces:' || (SELECT count(*) FROM jsonb_array_elements(v -> 'faces') e WHERE e ->> 'lounge_id' = r)
-      || ',unread:' || coalesce((SELECT e ->> 'unread_count' FROM jsonb_array_elements(coalesce(v -> 'unread', '[]'::jsonb)) e
+      || ',unread:' || coalesce((SELECT e ->> 'unread_count' FROM jsonb_array_elements(v -> 'unread') e
                                   WHERE e ->> 'lounge_id' = r), 'none')
       || ',last word:' || (SELECT count(*) FROM jsonb_array_elements(v -> 'last_words') e WHERE e ->> 'lounge_id' = r)
       || ',listed:' || (SELECT count(*) FROM jsonb_array_elements(v -> 'newest') e WHERE e ->> 'id' = r);
+    END IF;
   EXCEPTION WHEN insufficient_privilege THEN
     got := 'refused';
   END;
