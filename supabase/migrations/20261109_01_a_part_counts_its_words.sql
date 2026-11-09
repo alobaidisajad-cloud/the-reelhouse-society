@@ -34,6 +34,9 @@ CREATE FUNCTION public.dispatch_post_words(p_text text) RETURNS integer
 $$;
 -- add-only (1): no shipped client uses it: a function this migration makes, named by no client before it (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION public.dispatch_post_words(text) FROM PUBLIC;
+-- A member's own write counts its words through it (the trigger runs as the writer): theirs to
+-- call. It reads nothing but the text it is given.
+GRANT EXECUTE ON FUNCTION public.dispatch_post_words(text) TO authenticated;
 GRANT ALL ON FUNCTION public.dispatch_post_words(text) TO service_role;
 
 CREATE FUNCTION public.dispatch_posts_count_words() RETURNS trigger

@@ -540,11 +540,16 @@
       { "name": "read", "as": "all", "expect": { "ok": "all" }, "call": "public.get_lobby()",
         "result": "position('{ref:logs@P}' in $1::text) = 0 AND position('{ref:logs@BK}' in $1::text) = 0" }
     ] },
+    "dispatch_post_words": { "why": "A text's words, counted as the app counts them, for a member's own filing as it is written: it reads nothing but the text it is given, and only a member writes a filing.", "cases": [
+      { "name": "a text of three words", "as": "members", "expect": "ok", "call": "public.dispatch_post_words('one two  three')",
+        "result": "($1->>0)::int = 3" },
+      { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.dispatch_post_words('one two  three')" }
+    ] },
     "get_lounge_list": { "why": "The Lounge's corridor in one call, each piece under the rule it is read under alone: a salon's faces only to its seats and its host, and only to a member.", "cases": [
       { "name": "a member with no seat in the private salon", "as": ["V"], "expect": "ok", "call": "public.get_lounge_list()",
-        "result": "$1 ? 'newest' AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1->'faces') e WHERE e->>'lounge_id' = '{ref:lounges@P}') AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1->'pending') e WHERE e->>'lounge_id' = '{ref:lounges@P}')" },
+        "result": "$1->0 ? 'newest' AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1->0->'faces') e WHERE e->>'lounge_id' = '{ref:lounges@P}') AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1->0->'pending') e WHERE e->>'lounge_id' = '{ref:lounges@P}')" },
       { "name": "the private salon's own host", "as": ["P"], "expect": "ok", "call": "public.get_lounge_list()",
-        "result": "EXISTS (SELECT 1 FROM jsonb_array_elements($1->'faces') e WHERE e->>'lounge_id' = '{ref:lounges@P}')" },
+        "result": "EXISTS (SELECT 1 FROM jsonb_array_elements($1->0->'faces') e WHERE e->>'lounge_id' = '{ref:lounges@P}')" },
       { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.get_lounge_list()" }
     ] },
     "get_lounge_unread_counts": { "why": "The caller's own salons' unread counts.", "cases": [

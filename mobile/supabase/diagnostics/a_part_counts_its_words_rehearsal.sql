@@ -40,7 +40,8 @@ INSERT INTO rh_filing (what, essay, excerpt, expected) VALUES
      || chr(12288) || 'j' || chr(9) || 'k' || chr(10) || 'l' || chr(13) || 'm' || ' ' || 'n', 'x', 14),
   ('characters JavaScript does not split on part nothing', 'a' || chr(133) || 'b' || chr(6158) || 'c' || chr(8203) || 'd', 'x', 1),
   ('Arabic', 'مقال طويل جدا', 'x', 3),
-  ('runs of spaces, and at both ends', '   many    spaces  here   ', 'x', 3);
+  ('runs of spaces, and at both ends', '   many    spaces  here   ', 'x', 3),
+  ('to be edited by its member', 'two words', 'x', 2);
 UPDATE rh_filing SET id = gen_random_uuid();
 INSERT INTO public.dispatch_posts (id, kind, user_id, author_username, title, body, full_content, is_published)
 -- Takes, which no rank gates: the count reads the row's text alone, whatever its kind.
@@ -61,13 +62,31 @@ INSERT INTO rh_hand SELECT 'by hand', words::text FROM public.dispatch_posts WHE
 UPDATE public.dispatch_posts SET words = NULL WHERE id = (SELECT id FROM rh_filing WHERE what = 'runs of spaces, and at both ends');
 UPDATE public.dispatch_posts SET certify_count = certify_count + 1 WHERE id = (SELECT id FROM rh_filing WHERE what = 'runs of spaces, and at both ends');
 INSERT INTO rh_hand SELECT 'unkept', words::text FROM public.dispatch_posts WHERE id = (SELECT id FROM rh_filing WHERE what = 'runs of spaces, and at both ends');
+-- The member edits their own filing, as themselves: the count runs as the writer (the house's own
+-- writes above prove nothing of a member's).
+CREATE FUNCTION pg_temp.rh_edit_as_author() RETURNS text LANGUAGE plpgsql AS $$
+DECLARE v text;
+BEGIN
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('rehearsal.author'), 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+  BEGIN
+    UPDATE public.dispatch_posts SET full_content = 'written by its member' WHERE id = (SELECT id FROM rh_filing WHERE what = 'to be edited by its member');
+    SELECT words::text INTO v FROM public.dispatch_posts WHERE id = (SELECT id FROM rh_filing WHERE what = 'to be edited by its member');
+  EXCEPTION WHEN OTHERS THEN
+    v := 'refused: ' || SQLERRM;
+  END;
+  PERFORM set_config('role', 'none', true);
+  PERFORM set_config('request.jwt.claims', '', true);
+  RETURN v;
+END $$;
+INSERT INTO rh_hand VALUES ('by its member', pg_temp.rh_edit_as_author());
 
 -- ── the verdict ──────────────────────────────────────────────────────────────
 DO $$
 DECLARE r record;
 BEGIN
   FOR r IN SELECT f.what, f.expected, p.words FROM rh_filing f JOIN public.dispatch_posts p ON p.id = f.id
-            WHERE f.what <> 'one word' ORDER BY f.what LOOP
+            WHERE f.what NOT IN ('one word', 'to be edited by its member') ORDER BY f.what LOOP
     PERFORM pg_temp.rh_case(r.what, r.expected::text, coalesce(r.words::text, 'none'));
   END LOOP;
   PERFORM pg_temp.rh_case('an essay rewritten is counted again', '2',
@@ -79,6 +98,8 @@ BEGIN
     (SELECT got FROM rh_hand WHERE what = 'by hand'));
   PERFORM pg_temp.rh_case('a filing with no count is counted at its next write, of any column', '3',
     (SELECT got FROM rh_hand WHERE what = 'unkept'));
+  PERFORM pg_temp.rh_case('a member''s own edit is counted, as the member writes it', '4',
+    (SELECT got FROM rh_hand WHERE what = 'by its member'));
 END $$;
 
 SELECT pg_temp.rh_verdict();
