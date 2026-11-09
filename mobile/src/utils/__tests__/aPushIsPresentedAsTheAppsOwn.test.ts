@@ -7,13 +7,13 @@
  * own title, body, data and channel, so a tap reaches the app's own tap handler. Any other build
  * reads the address as one the app does not have.
  */
+import { messageOf, presentFromLink } from '../e2ePresent';
+import { redirectSystemPath } from '@/app/+native-intent';
+
 const mockSchedule = jest.fn(async () => 'n1');
 jest.mock('expo-notifications', () => ({ scheduleNotificationAsync: (...a: unknown[]) => mockSchedule(...(a as [])) }));
 let mockE2E = true;
 jest.mock('@/src/utils/e2eTrace', () => ({ get E2E_BUILD() { return mockE2E; }, e2eTrace: jest.fn() }));
-
-import { messageOf, presentFromLink } from '../e2ePresent';
-import { redirectSystemPath } from '@/app/+native-intent';
 
 const MESSAGE = { to: 'ExponentPushToken[x]', title: 'A new follower', body: 'mara follows you', data: { type: 'follow', notificationId: 'n-7' }, channelId: 'notif_follows' };
 const link = (m: unknown) => `reelhouse://e2e/present?message=${encodeURIComponent(JSON.stringify(m))}`;
