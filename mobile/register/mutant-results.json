@@ -2147,5 +2147,12 @@
     "proof": "m1",
     "commit": "151c783c0949b9521cee14230e01fb53c0c5e1fb",
     "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-request-never-started",
+    "mutant": "shape-never-started-not-asked-again",
+    "proof": "m1",
+    "commit": "d76b662c66216c61db6b8e70a0a5f6f2339e1195",
+    "verdict": "caught"
   }
 ]
