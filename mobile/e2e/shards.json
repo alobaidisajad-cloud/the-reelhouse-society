@@ -2,7 +2,8 @@
   "why": "Each shard is one machine of e2e.yml flows job: what e2e/flow-history.mjs makes of e2e/flow-history.json (each part weighed by its 90th-percentile time over the measured runs; the launch and the keyboard probes on shard 1; each flow to the lightest shard, heaviest first; minutes = weight and a quarter). Read by e2e/shards.mjs and run-flows.sh; shards.test.ts and flowHistory.test.ts hold it.",
   "firstRuns": {
     "member_pages": "New on 2026-11-05 (WORKLIST P0.112): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
-    "house_link": "New on 2026-11-05 (WORKLIST P4.20): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list."
+    "house_link": "New on 2026-11-05 (WORKLIST P4.20): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
+    "push_tap": "New on 2026-11-09 (WORKLIST P4.22): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list."
   },
   "shards": [
     {
@@ -11,35 +12,36 @@
       "flows": [
         "auth_deep_link",
         "auth_flow",
-        "error_recovery",
-        "log_film_flow",
-        "lounge_flow"
-      ],
-      "minutes": 32
-    },
-    {
-      "flows": [
-        "admin_second_key",
         "boot_verification",
-        "flow_critical_path",
-        "house_link",
-        "lobby_wall_flow",
-        "session_survives_restart",
-        "turned"
+        "lounge_flow",
+        "offline_resilience",
+        "session_survives_restart"
       ],
-      "minutes": 32
+      "minutes": 35
     },
     {
       "flows": [
         "browse_vault",
         "darkroom_search",
+        "error_recovery",
         "film_log",
+        "house_link",
         "login_flow",
-        "member_pages",
-        "offline_resilience",
-        "trailer"
+        "push_tap"
       ],
-      "minutes": 32
+      "minutes": 35
+    },
+    {
+      "flows": [
+        "admin_second_key",
+        "flow_critical_path",
+        "lobby_wall_flow",
+        "log_film_flow",
+        "member_pages",
+        "trailer",
+        "turned"
+      ],
+      "minutes": 35
     }
   ]
 }

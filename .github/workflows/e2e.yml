@@ -381,7 +381,7 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     # The flows step's limit, and the app's download and the emulator's start before it.
-    timeout-minutes: 51
+    timeout-minutes: 53
     strategy:
       # Every shard runs to its end: one failing never hides what the others find.
       fail-fast: false
@@ -479,9 +479,26 @@ jobs:
       # under four looks (120 s) left, so one of 180 s is renewed once a minute;
       # one of 150 s had 119.5 s left a look after each renewal, was renewed at
       # every look, and no judge could tell that from a loop.
+      # Expo, as notify-push reaches it (e2e/functions/stand-ins.mjs keeps every message it is sent):
+      # a push is tapped from the message notify-push built (WORKLIST P4.22, e2e/push-present.mjs).
+      # On the runner itself, before the stack, which reaches it as host.docker.internal.
+      - name: Expo's stand-in, for the pushes notify-push sends
+        run: |
+          nohup node mobile/e2e/functions/stand-ins.mjs > "$RUNNER_TEMP/stand-ins.log" 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:54990/__alive > /dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/stand-ins.log"; echo "::error title=E2E stand-ins::Expo's stand-in never answered"; exit 1
+
+      # notify-push is production's own function, served as it is deployed (verify_jwt false, its own
+      # secret), its Expo address at the stand-in and its secret made for this run alone.
       - name: Start the local stack
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          cp -r mobile/supabase/functions/notify-push mobile/e2e/supabase/functions/
+          printf '\n[functions.notify-push]\nverify_jwt = false\n' >> mobile/e2e/supabase/config.toml
+          secret=$(openssl rand -hex 24)
+          echo "::add-mask::$secret"
+          echo "FN_FUNCTION_SHARED_SECRET=$secret" >> "$GITHUB_ENV"
+          printf 'EXPO_PUSH_URL="http://host.docker.internal:54990/--/api/v2/push/send"\nFUNCTION_SHARED_SECRET="%s"\n' "$secret" > mobile/e2e/supabase/functions/.env
           if [ "$E2E_CLOCK" = behind ]; then
             sed -i 's/^jwt_expiry = 3600$/jwt_expiry = 180/' mobile/e2e/supabase/config.toml
             grep -qx 'jwt_expiry = 180' mobile/e2e/supabase/config.toml || { echo "::error title=Clock run::the tokens could not be set to 180 s"; exit 1; }
@@ -560,12 +577,19 @@ jobs:
           # (503); a GET is refused by the function's own code (405), which proves it
           # loaded, imports and all, without the house.
           signin=$(curl -s -o /dev/null -w '%{http_code}' -X GET -H "apikey: $ANON_KEY" "$API_URL/functions/v1/sign-in-with-username" || true)
-          if [ "$tmdb" != "200" ] || [ "$signin" != "405" ]; then
+          # notify-push with its secret and no notice answers 200 ("skipped"), which proves it loaded.
+          for i in $(seq 1 30); do
+            push=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
+                     -H "x-function-secret: $FN_FUNCTION_SHARED_SECRET" -d '{}' "$API_URL/functions/v1/notify-push" || true)
+            [ "$push" = "200" ] && break
+            sleep 2
+          done
+          if [ "$tmdb" != "200" ] || [ "$signin" != "405" ] || [ "$push" != "200" ]; then
             # The report must come out even if gathering it half-fails: Actions
             # runs this with -e, and a failing `docker logs` ended the step silently.
             set +e
             T="$RUNNER_TEMP/functions-tail.txt"
-            echo "(tmdb-proxy answered HTTP ${tmdb:-none}; sign-in-with-username HTTP ${signin:-none})" > "$T"
+            echo "(tmdb-proxy answered HTTP ${tmdb:-none}; sign-in-with-username HTTP ${signin:-none}; notify-push HTTP ${push:-none})" > "$T"
             # The functions runtime writes to its container's own log.
             echo "── containers: $(docker ps -a --format '{{.Names}}' | tr '\n' ' ')" >> "$T"
             for c in $(docker ps -a --format '{{.Names}}' | grep -i edge); do
@@ -575,7 +599,7 @@ jobs:
             node mobile/e2e/annotate.mjs "E2E functions never came up — the runtime's last words" "$RUNNER_TEMP/functions-tail.txt"
             exit 1
           fi
-          echo "tmdb-proxy $tmdb, sign-in-with-username $signin: both loaded"
+          echo "tmdb-proxy $tmdb, sign-in-with-username $signin, notify-push $push: all three loaded"
 
       # Two locks — the firewall for every container, and the name pointed nowhere
       # — proved here from the runner and in bootstrap from inside the database.
@@ -716,7 +740,7 @@ jobs:
         # mobile/e2e/shards.json, made from every run's measured times
         # (flow-history.mjs); this outlasts the longest and what follows the
         # flows (flowHistory.test.ts holds it).
-        timeout-minutes: 39
+        timeout-minutes: 41
         env:
           E2E_SHARD: ${{ (inputs.faults || inputs.lifecycle || inputs.clock || env.E2E_WALK) && '1/1' || format('{0}/3', matrix.shard) }}
           E2E_SHARD_MAP: ${{ inputs.faults && 'mobile/e2e/fault-shards.json' || inputs.lifecycle && 'mobile/e2e/lifecycle-shards.json' || inputs.clock && format('mobile/e2e/clock-{0}-shards.json', inputs.clock) || env.E2E_WALK && 'mobile/e2e/walk-shards.json' || 'mobile/e2e/shards.json' }}

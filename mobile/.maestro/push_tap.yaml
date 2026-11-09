@@ -1,0 +1,28 @@
+appId: com.reelhouse.society
+---
+# A push tapped lands on its notice's screen, through the app's own tap
+# handler (WORKLIST P4.22). The run sent a follow through notify-push, which
+# built the message and sent it to Expo's stand-in; PUSH_LINK hands that
+# message to the E2E build, which presents it as the app's own notice in its
+# kind's channel (src/utils/e2ePresent.ts). Tapped from the shade three ways:
+# the app in front, in the background, and killed in the background (the cold
+# start). Each tap must open the follower's file.
+- launchApp:
+    clearState: true
+- runFlow: subflows/sign_in.yaml
+# In front.
+- openLink: ${PUSH_LINK}
+- runFlow: subflows/tap_the_notice.yaml
+# In the background.
+- openLink: ${PUSH_LINK}
+- pressKey: Home
+- runFlow: subflows/tap_the_notice.yaml
+# Killed in the background, as the system kills it.
+- openLink: ${PUSH_LINK}
+- pressKey: Home
+- runFlow:
+    file: subflows/phone.yaml
+    env:
+      SET: killed_in_background
+      TO: "true"
+- runFlow: subflows/tap_the_notice.yaml

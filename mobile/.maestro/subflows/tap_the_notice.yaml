@@ -1,0 +1,22 @@
+appId: com.reelhouse.society
+---
+# The notice in the shade, tapped, and the sender's file it opens
+# (push_tap.yaml). The shade is pulled from the top edge; the notice is found
+# by the title notify-push gave it (PUSH_TITLE), and the file by its sender's
+# handle (PUSH_FROM), both from the run (e2e/push-present.mjs).
+- swipe:
+    start: "50%, 1%"
+    end: "50%, 75%"
+    duration: 400
+- extendedWaitUntil:
+    visible:
+      text: ${PUSH_TITLE}
+    timeout: 20000
+- tapOn:
+    text: ${PUSH_TITLE}
+- extendedWaitUntil:
+    visible:
+      id: "screen-ready-member"
+    timeout: 30000
+- assertVisible:
+    text: "(?i).*@${PUSH_FROM}.*"

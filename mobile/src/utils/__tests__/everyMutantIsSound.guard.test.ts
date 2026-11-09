@@ -78,6 +78,7 @@ const NOT_JUDGES: Record<string, string> = {
   'flow-history.mjs': 'it records each part\'s time from a finished run',
   'flow-screens.mjs': 'it draws each failed flow\'s screens for a reader',
   'ios-crash.mjs': 'it summarises a crash report the launch judge has already failed on',
+  'push-present.mjs': 'it sends a notice through notify-push and prints the link that presents its message; the push flow judges the tap, and its own tests pick the message',
   'old-client-tree.mjs': 'it builds a shipped client\'s tree to run',
   'old-clients.cjs': 'it reads which shipped clients are checked, and their own crashes, for the crash judge',
   'screen.mjs': 'it prints what was on the screen, as words',
