@@ -2751,3 +2751,39 @@ mutants:
         find: "    const id = text(r.id), name = text(r.name), creator_id = text(r.creator_id), created_at = text(r.created_at);"
         replace: "    const id = text(r.id), name = String(r.name ?? ''), creator_id = text(r.creator_id), created_at = text(r.created_at);"
     proof: { file: src/stores/__tests__/theCorridorOpensOnWhatItLastRead.test.ts, test: "holds a kept row to the shape of a room: one without an id or a name is left out, each field kept only as its type" }
+
+  - id: shape-loss-drawn-in-red
+    class: UI-rank-colour-reads-two-ways
+    source: shape
+    edits:
+      - file: src/components/profile/ProfileArchiveTab.tsx
+        find: "  walkMarkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog },"
+        replace: "  walkMarkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.crimsonInk },"
+    proof: { file: src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts, test: "holds red only where it is judged: the Auteur's rank, or a destructive act in its sheet" }
+
+  - id: shape-ember-in-red
+    class: UI-rank-colour-reads-two-ways
+    source: shape
+    edits:
+      - file: src/components/profile/ProfileLedgerTab.tsx
+        find: "      color: searchEmberOpacity.value > EMBER_REST ? colors.flicker : colors.fog,"
+        replace: "      color: searchEmberOpacity.value > EMBER_REST ? colors.bloodReel : colors.fog,"
+    proof: { file: src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts, test: "holds red only where it is judged: the Auteur's rank, or a destructive act in its sheet" }
+
+  - id: shape-standing-borrows-a-rank
+    class: UI-rank-colour-reads-two-ways
+    source: shape
+    edits:
+      - file: src/constants/standing.ts
+        find: "  { at: 25,  name: 'MIDNIGHT DEVOTEE', color: colors.silverScreen },"
+        replace: "  { at: 25,  name: 'MIDNIGHT DEVOTEE', color: colors.crimsonInk },"
+    proof: { file: src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts, test: "climbs the standing ladder in light, borrowing no rank's hue" }
+
+  - id: shape-archivist-in-three-golds
+    class: UI-rank-colour-reads-two-ways
+    source: shape
+    edits:
+      - file: src/components/profile/ProfileTriptych.tsx
+        find: "        ? ['transparent', 'rgba(196,150,26,0.4)', 'rgba(196,150,26,0.85)', 'rgba(196,150,26,0.4)', 'transparent']"
+        replace: "        ? ['transparent', 'rgba(218,165,32,0.4)', 'rgba(242,232,160,0.7)', 'rgba(218,165,32,0.4)', 'transparent']"
+    proof: { file: src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts, test: "draws the Archivist in its one champagne: no goldenrod or pale gold left on the file" }

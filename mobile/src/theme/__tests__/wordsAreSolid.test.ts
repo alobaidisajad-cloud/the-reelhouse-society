@@ -41,6 +41,7 @@ const ALLOWED: Record<string, string> = {
   'src/components/profile/CinemaDNACard.tsx · avatarInitial': 'the same ghost initial, small, on the Cinema DNA card',
   'src/components/profile/profileStyles.ts · bioMark': '« » around a bio',
   'src/components/profile/profileStyles.ts · bioMarkRuby': '« » around an Auteur’s bio',
+  'src/components/profile/profileStyles.ts · bioMarkBrass': '« » around an Archivist’s bio',
   'src/components/profile/profileStyles.ts · latelyIndex': 'index numerals repeating a list position',
   'src/components/profile/profileStyles.ts · footMark': '✦ closing a file',
   'src/components/profile/ProfileTriptych.tsx · emptyMark': 'a mark in an empty mount',

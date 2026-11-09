@@ -29,6 +29,9 @@ export const s = StyleSheet.create({
     position: 'absolute', bottom: 0, left: '5%', right: '5%', height: 1.5,
     backgroundColor: 'rgba(184,137,26,0.3)', zIndex: 3,
   },
+  // The edge takes the rank, as the plate's rule above it does.
+  headerEdgeRuby: { backgroundColor: 'rgba(180,45,45,0.35)' },
+  headerEdgeBrass: { backgroundColor: 'rgba(196,150,26,0.45)' },
   // No horizontal padding and no centring: each block inside the hero sets its
   // own inset (a shared pad and centring make one centred column of stacked
   // rows). `paddingTop` is supplied at the call site — it differs between your
@@ -191,6 +194,7 @@ export const s = StyleSheet.create({
   heroBio: { position: 'relative' as const, zIndex: 5, fontFamily: fonts.bodyItalic, color: colors.bone, textAlign: 'center' as const, paddingHorizontal: 22, paddingTop: 20 },
   bioMark: { color: colors.sepia, opacity: 0.6, fontStyle: 'normal' as const },
   bioMarkRuby: { color: colors.crimson, opacity: 0.75, fontStyle: 'normal' as const },
+  bioMarkBrass: { color: colors.champagne, opacity: 0.75, fontStyle: 'normal' as const },
 
   // ── the four figures ──
   statsBox: {
@@ -302,4 +306,5 @@ export const s = StyleSheet.create({
   footRule: { width: 32, height: 1, backgroundColor: colors.sepia, opacity: 0.3 },
   footMark: { fontSize: 9, lineHeight: 11, color: colors.sepia, opacity: 0.55 },
   footMarkRuby: { color: colors.crimson, opacity: 0.7 },
+  footMarkBrass: { color: colors.champagne, opacity: 0.7 },
 });

@@ -92,7 +92,7 @@ const WalkoutRow = React.memo(function WalkoutRow({ log, onPress }: { log: Profi
           {!!log.year && <Text {...scaledTextProps} style={s.walkYear}>{String(log.year)}</Text>}
         </View>
         <View style={s.walkMark}>
-          <X size={8} color={colors.crimson} strokeWidth={2.5} />
+          <X size={8} color={colors.fog} strokeWidth={2.5} />
           <Text {...scaledTextProps} style={s.walkMarkText}>WALKED OUT</Text>
         </View>
         {reason
@@ -494,7 +494,8 @@ const s = StyleSheet.create({
   walkTitle: { flex: 1, fontFamily: fonts.display, fontSize: 14.5, lineHeight: 19, color: colors.parchment },
   walkYear: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog },
   walkMark: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 5 },
-  walkMarkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.crimsonInk },
+  // A loss fades, it does not bleed: red on a member's file is the Auteur's alone.
+  walkMarkText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.9, color: colors.fog },
   walkWords: { fontFamily: fonts.bodyItalic, fontSize: 11.5, lineHeight: 17, color: colors.fogQuiet, marginTop: 6 },
   searchIcon: { opacity: 0.6 },
   emptyStateSelf: { ...EDGE_LIT, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: colors.soot, borderWidth: 1, borderRadius: 4, marginTop: 12 },

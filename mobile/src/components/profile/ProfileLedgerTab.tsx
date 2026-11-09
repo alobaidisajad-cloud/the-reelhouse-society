@@ -181,11 +181,11 @@ const LedgerRow = React.memo(function LedgerRow({
           {!!halfLife && halfLife.count > 1 && (
             <View style={s.markRow}>
               {halfLife.trajectory === 'ASCENDING' ? <TrendingUp size={8} color={colors.validation} strokeWidth={2} />
-                : halfLife.trajectory === 'DECAYING' ? <TrendingDown size={8} color={colors.crimson} strokeWidth={2} />
+                : halfLife.trajectory === 'DECAYING' ? <TrendingDown size={8} color={colors.fog} strokeWidth={2} />
                 : <Minus size={8} color={colors.sepia} strokeWidth={2} />}
               <Text
                 {...scaledTextProps}
-                style={[s.markText, { color: halfLife.trajectory === 'ASCENDING' ? colors.validationInk : halfLife.trajectory === 'DECAYING' ? colors.crimsonInk : colors.sepia }]}
+                style={[s.markText, { color: halfLife.trajectory === 'ASCENDING' ? colors.validationInk : halfLife.trajectory === 'DECAYING' ? colors.fog : colors.sepia }]}
               >
                 ×{halfLife.count}
               </Text>
@@ -317,7 +317,8 @@ export default function ProfileLedgerTab({
   }, [ledgerSearch.length, searchEmberOpacity]);
 
   const animatedSearchProps = useAnimatedProps(() => ({
-      color: searchEmberOpacity.value > EMBER_REST ? colors.bloodReel : colors.fog,
+      // The glass warms to the candle while it searches: red on a member's file is the Auteur's alone.
+      color: searchEmberOpacity.value > EMBER_REST ? colors.flicker : colors.fog,
   }));
   const animatedSearchStyle = useAnimatedStyle(() => ({
       opacity: searchEmberOpacity.value,

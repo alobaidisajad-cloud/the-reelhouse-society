@@ -81,9 +81,6 @@ const MARKS: Record<string, string> = {
   'app/(admin)/tribunal.tsx · ban': 'the verdict button’s FILL; its title reads `ink`',
   'app/(admin)/tribunal.tsx · permanent_exile': 'the verdict button’s FILL; its title reads `ink`',
   'src/components/auth/PasswordStrengthMeter.tsx · checkIcon': '✓ / ○ beside a requirement; the label is inked',
-  'src/components/profile/ProfileLedgerTab.tsx · animatedSearchProps': 'the search icon’s ember',
-  'src/components/profile/ProfileWatchlistTab.tsx · animatedSearchProps': 'the search icon’s ember',
-  'src/components/profile/ProfileTriptych.tsx · animatedSearchProps': 'the search icon’s ember',
   'app/(modals)/list-modal.tsx · animatedIconProps': 'the search icon’s ember',
 };
 

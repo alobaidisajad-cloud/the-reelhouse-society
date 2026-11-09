@@ -108,12 +108,12 @@ function TierGlow({ tier, style, children }: { tier: 'archivist' | 'auteur'; sty
 
     // Web: box-shadow values (static radius — the border does the breathing)
     const baseShadow = isArch
-        ? { shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 6 }
+        ? { shadowColor: 'rgba(196,150,26,1)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 6 }
         : { shadowColor: 'rgba(180,45,45,1)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 6 };
 
     const shimmerColors: [string, string, string, string, string] = isArch
-        ? ['transparent', 'rgba(218,165,32,0.4)', 'rgba(242,232,160,0.7)', 'rgba(218,165,32,0.4)', 'transparent']
-        : ['transparent', 'rgba(180,45,45,0.4)', 'rgba(220,80,80,0.7)', 'rgba(180,45,45,0.4)', 'transparent'];
+        ? ['transparent', 'rgba(196,150,26,0.4)', 'rgba(196,150,26,0.85)', 'rgba(196,150,26,0.4)', 'transparent']
+        : ['transparent', 'rgba(180,45,45,0.4)', 'rgba(227,94,88,0.7)', 'rgba(180,45,45,0.4)', 'transparent'];
 
     return (
         <AnimatedView style={[s.glowWrap, baseShadow, style, animStyle]}>
@@ -219,7 +219,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
     }, [isSearching, searchEmberOpacity]);
 
     const animatedSearchProps = useAnimatedProps(() => ({
-        color: isSearching ? colors.bloodReel : colors.sepia,
+        // The glass warms to the candle while it searches: red on a member's file is the Auteur's alone.
+        color: isSearching ? colors.flicker : colors.sepia,
     }));
     const animatedSearchStyle = useAnimatedStyle(() => ({
         opacity: searchEmberOpacity.value,
@@ -375,7 +376,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         // The centre's light, on a host that does not clip: the panel clips its
         // corners, and on iOS a view that clips casts nothing outside itself.
         const hung = isCentre && film
-            ? <View style={[s.mountFill, isAuteurPlus ? s.mountCentreLitRuby : s.mountCentreLit]}>{face}</View>
+            ? <View style={[s.mountFill, isAuteurPlus ? s.mountCentreLitRuby : isArchivistPlus ? s.mountCentreLitBrass : s.mountCentreLit]}>{face}</View>
             : face;
 
         if (film && isAuteurPlus) return <TierGlow key={index} tier="auteur" style={size}>{hung}</TierGlow>;
@@ -437,7 +438,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={s.railLine}
                 />
-                <View style={[s.railDiamond, isAuteurPlus && s.railDiamondRuby]} />
+                <View style={[s.railDiamond, isAuteurPlus ? s.railDiamondRuby : isArchivistPlus && s.railDiamondBrass]} />
                 <LinearGradient
                     colors={['rgba(184,137,26,0.3)', 'rgba(184,137,26,0.3)', 'transparent']}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -575,7 +576,7 @@ const s = StyleSheet.create({
         backgroundColor: colors.ink,
         transform: [{ rotate: '45deg' }],
     },
-    hookBrass: { borderColor: 'rgba(184,137,26,0.75)' },
+    hookBrass: { borderColor: 'rgba(196,150,26,0.75)' },
     hookRuby: { borderColor: 'rgba(180,45,45,0.75)' },
 
     // Bottoms aligned: the wings stand on the same rail as the centre.
@@ -608,6 +609,7 @@ const s = StyleSheet.create({
     railLine: { flex: 1, height: 1 },
     railDiamond: { width: 3, height: 3, marginHorizontal: 5, backgroundColor: colors.sepia, opacity: 0.5, transform: [{ rotate: '45deg' }] },
     railDiamondRuby: { backgroundColor: colors.crimson, opacity: 0.8 },
+    railDiamondBrass: { backgroundColor: colors.champagne, opacity: 0.8 },
 
     // ── a mount ──
     // The frame is BONE, not brass. Brass is the house's action colour; a picture
@@ -632,6 +634,7 @@ const s = StyleSheet.create({
     // draws the light from the panel's own elevation.
     mountCentreLit: { shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.18, shadowRadius: 12 },
     mountCentreLitRuby: { shadowColor: 'rgba(180,45,45,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.22, shadowRadius: 12 },
+    mountCentreLitBrass: { shadowColor: 'rgba(196,150,26,1)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.2, shadowRadius: 12 },
     mountCentreLitElevation: { elevation: 8 },
     mountNoBorder: { borderWidth: 0 },
     mountBoard: { position: 'absolute', top: 4, left: 4, right: 4, bottom: 4, borderWidth: 1, borderColor: 'rgba(232,223,208,0.10)', zIndex: 3 },

@@ -180,7 +180,9 @@ const styles = StyleSheet.create({
     error: {
         fontFamily: fonts.sub,
         fontSize: 12,
-        color: colors.danger,
+        // Said as the house says every failure (TRY AGAIN, the offline line): red on a member's
+        // file is the Auteur's alone.
+        color: colors.bone,
         marginBottom: 24,
         textAlign: 'center',
     },

@@ -53,7 +53,7 @@ const s = StyleSheet.create({
   },
   auteurGlow: {
     borderWidth: 1,
-    borderColor: 'rgba(139,26,26,0.6)', // ruby family — bloodReel was invisible
+    borderColor: 'rgba(180,45,45,0.6)', // the Auteur's crimson, the one red of every mark of the rank
     borderRadius: 2,
     borderStyle: 'solid',
   },
@@ -75,8 +75,9 @@ const s = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 2
   },
+  // A loss fades, it does not bleed: red on a member's file is the Auteur's alone.
   statusBadgeAbandoned: {
-    borderColor: 'rgba(139,30,30,0.4)'
+    borderColor: 'rgba(158,148,136,0.45)'
   },
 });
 
@@ -132,8 +133,7 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
       )}
       {log.status === 'abandoned' && (
         <View style={[s.statusBadge, s.statusBadgeAbandoned]} pointerEvents="none">
-          {/* The crimson that reads: bloodReel on the badge was 1.67:1. */}
-          <X size={7} color={colors.crimsonInk} strokeWidth={2} />
+          <X size={7} color={colors.fog} strokeWidth={2} />
         </View>
       )}
     </PressableScale>

@@ -632,6 +632,22 @@ classes:
     fix: "StateWords (src/components/EmptyStates.tsx), still, is what every failure says: the display-face title, the italic line, the house's rule; both crash nets draw it with a still Buster and the house's TRY AGAIN (RESTART THE APP in the same plate), facts in quiet small capitals; the E2E flows assert the new title absent (mutant shape-crash-words-apart)"
     places: [none]
 
+  - id: UI-rank-colour-reads-two-ways
+    title: "A colour on a ranked member's file means two things: crimson was the Auteur's rank, a loss (WALKED OUT, an abandoned film, a falling rating), a standing (MIDNIGHT DEVOTEE) and a search's ember, so a walked-out film's ✕ and the Auteur's ✦ were one red; the Archivist was drawn in three golds and the Auteur in three reds"
+    seriousness: layout
+    area: states
+    status: OPEN
+    count: 22
+    source: { kind: history, ref: "the owner, 2026-10-30 (P4.54); the rule approved 2026-11-09 from design/p454-colour-rule.html" }
+    methods:
+      - { kind: static, file: src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts, test: "reads the file's sources, the rooms and the altarpiece among them" }
+      - { kind: static, file: src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts, test: "holds red only where it is judged: the Auteur's rank, or a destructive act in its sheet" }
+      - { kind: static, file: src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts, test: "draws a loss in the neutrals: walked out, abandoned, a falling rating" }
+      - { kind: static, file: src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts, test: "draws the Archivist in its one champagne: no goldenrod or pale gold left on the file" }
+      - { kind: static, file: src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts, test: "climbs the standing ladder in light, borrowing no rank's hue" }
+    fix: "brass is the house; a rank dresses the file in its one family (the Archivist's champagne: its altarpiece shimmer, shadow, hook, centre glow and rail diamond, the plate's edge, the « » and the foot's ✦; the Auteur's crimson: its poster frames left bloodAged, its shimmer's peak crimsonInk's own channel); red on a member's file is the Auteur's alone: a loss is drawn in fog (WALKED OUT, the abandoned poster mark, a decaying trajectory), a search's ember warms to the candle (flicker), the Archive lock's failure is said in bone as every failure is; a destructive act keeps its red in the sheet it is asked in; the standing ladder climbs fog, bone, flicker, silverScreen (MIDNIGHT DEVOTEE, crimsonInk before), sepia. aRankSpeaksOneColour judges every red line of the file's sources by role"
+    places: [none]
+
   - id: TYPE-word-see-through-unseen
     title: A word drawn see-through by a style that sets only colour or opacity, which the words-are-solid census skipped because it read a style as text only when it set type (the feed's LOUNGE at 3.9:1, a calendar's coming days at 0.2, an honour's locked name at 0.5)
     seriousness: layout

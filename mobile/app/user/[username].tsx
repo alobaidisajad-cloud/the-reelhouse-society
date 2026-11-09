@@ -1038,7 +1038,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           <LinearGradient colors={['rgba(6,5,4,0.72)', 'transparent']} style={s.heroTopFade} pointerEvents="none" />
 
           {/* Bottom structural edge */}
-          <View style={[s.headerGoldEdge, isAuteurPlus && { backgroundColor: 'rgba(180,45,45,0.35)' }]} pointerEvents="none" />
+          <View style={[s.headerGoldEdge, isAuteurPlus ? s.headerEdgeRuby : isArchivistPlus && s.headerEdgeBrass]} pointerEvents="none" />
 
           {/* ── Header Content ── no shared padding: each block sets its own. */}
           <View style={[s.headerContent, { paddingTop: heroTop }]}>
@@ -1085,11 +1085,11 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             {/* ── The bio, in the house's own quotation marks ── */}
             <Text {...scaledTextProps} style={[s.heroBio, bioStyle]} numberOfLines={bioLines}>
               {/* The guillemets grow with the bio they sit inside. */}
-              <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>{OPEN_QUOTE}</Text>
+              <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : isArchivistPlus ? s.bioMarkBrass : s.bioMark}>{OPEN_QUOTE}</Text>
               {/* A bio is the member's own words, and may hold a pasted link:
                   offered a place to wrap at its joints, as the Dispatch does. */}
               {softBreak(bioText)}
-              <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : s.bioMark}>{CLOSE_QUOTE}</Text>
+              <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : isArchivistPlus ? s.bioMarkBrass : s.bioMark}>{CLOSE_QUOTE}</Text>
             </Text>
 
             {/* ── Social Links ── */}
@@ -1366,7 +1366,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           {/* The foot of the file. */}
           <View style={s.footRow}>
             <View style={s.footRule} />
-            <Text {...decorativeTextProps} style={[s.footMark, isAuteurPlus && s.footMarkRuby]}>✦</Text>
+            <Text {...decorativeTextProps} style={[s.footMark, isAuteurPlus ? s.footMarkRuby : isArchivistPlus && s.footMarkBrass]}>✦</Text>
             <View style={s.footRule} />
           </View>
         </View>

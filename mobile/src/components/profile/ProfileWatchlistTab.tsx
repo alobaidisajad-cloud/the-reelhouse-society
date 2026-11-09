@@ -122,7 +122,8 @@ export default function ProfileWatchlistTab({
   }, [watchlistSearch.length, searchEmberOpacity]);
 
   const animatedSearchProps = useAnimatedProps(() => ({
-      color: searchEmberOpacity.value > EMBER_REST ? colors.bloodReel : colors.fog,
+      // The glass warms to the candle while it searches: red on a member's file is the Auteur's alone.
+      color: searchEmberOpacity.value > EMBER_REST ? colors.flicker : colors.fog,
   }));
   const animatedSearchStyle = useAnimatedStyle(() => ({
       opacity: searchEmberOpacity.value,
