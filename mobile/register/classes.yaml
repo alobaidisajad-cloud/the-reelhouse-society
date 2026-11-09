@@ -1905,3 +1905,18 @@ classes:
       - { kind: running, file: src/features/archive/__tests__/archiveImport.test.ts, test: "reads a month written as a word, either way round, by itself and not the engine" }
     fix: "instantOf hands no text to the engine: the house's instant, a day alone and the HTTP Date header are read field by field, each field held to its range, and any other text names no instant; fifty places that made a Date from text (new Date(created_at): salon messages sorted, notices grouped) read through dateOf, and a guard finds any other by the type checker; a calendar date holds to its month's length; the archive import reads a month written as a word itself, where it asked the engine; the suites run on Node and on the phone's Hermes"
     places: [none]
+
+  - id: UI-notice-opens-elsewhere
+    title: "A notice opens a room other than the one it is about: a critique of a log or a stack opened its critic's file, a salon's request to enter opened the asker's file, and an admission opened only the notices sheet, from the sheet and from a tapped push alike"
+    seriousness: behaviour
+    area: navigation
+    status: OPEN
+    count: 3
+    source: { kind: reviewer, ref: "P4.22's study of every kind a push carries (audit P4-22-PUSH-TAP-PLAN, slice 2), 2026-11-09" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/theTappedNoticeOpensIt.test.ts, test: "to what it is about, then the film, then the person" }
+      - { kind: running, file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "a host opened from a notice is shown who waits at the door" }
+      - { kind: running, file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "a member admitted, opening the same link, is shown the room and no door" }
+      - { kind: running, file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "the door is shown once: closed, a new roster read does not open it again" }
+    fix: "a critique's notice of a log or a stack names what it is on (endorse:log:<id>, endorse:list:<id>), as its certification and a Dispatch critique already do, and the notices written before are given theirs, each matched to its critique by critic, owner and time (20261109_03, rehearsed in a_critique_opens_what_it_is_on_rehearsal.sql); a notice is read with its salon (related_lounge_id), and noticeRoute opens a salon's notice at /lounge/<id>?door=1, where the host is shown who waits at the door once the roster says someone does, once"
+    places: [emulator]

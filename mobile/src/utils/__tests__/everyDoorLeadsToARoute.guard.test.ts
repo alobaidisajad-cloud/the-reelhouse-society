@@ -134,6 +134,7 @@ it('the helpers that work a target out answer with screens app/ has', () => {
     noticeRoute({ film_id: 603 }),
     noticeRoute({ from_username: 'kane' }),
     noticeRoute({ from_username: 'kane', from_user_id: id }),
+    noticeRoute({ from_username: 'kane', related_lounge_id: id }),
     roomOf('kane'), roomOf('a name with spaces'),
     memberPath('kane'), memberPath('kane', id), memberPath('a name with spaces', id),
     ...TABS.filter((t) => t !== 'index').map((t) => `/${t}`),

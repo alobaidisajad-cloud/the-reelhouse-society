@@ -55,6 +55,13 @@ describe('where a notice leads', () => {
     expect(noticeRoute(notice({ group_key: 'endorse:post:p1' }))).toBe('/dispatch/p1');
     expect(noticeRoute(notice({ group_key: 'endorse:log:l1', film_id: 603 }))).toBe('/log/l1');
     expect(noticeRoute(notice({ film_id: 603, from_username: 'marguerite' }))).toBe('/film/603');
+    // A critique of a log or a stack names it (20261109_03): its piece, never its critic's file.
+    expect(noticeRoute(notice({ type: 'comment', group_key: 'endorse:log:l1', from_username: 'marguerite' }))).toBe('/log/l1');
+    expect(noticeRoute(notice({ type: 'comment', group_key: 'endorse:list:s1', from_username: 'marguerite' }))).toBe('/stacks/s1');
+    // A salon's notice opens the salon at its door, the asker's file never; an id of another shape, nothing.
+    expect(noticeRoute(notice({ type: 'system', related_lounge_id: ESSAY, from_username: 'marguerite' }))).toBe(`/lounge/${ESSAY}?door=1`);
+    expect(noticeRoute(notice({ type: 'system', related_lounge_id: ESSAY }))).toBe(`/lounge/${ESSAY}?door=1`);
+    expect(noticeRoute(notice({ type: 'system', related_lounge_id: '../settings' }))).toBeNull();
     expect(noticeRoute(notice({ type: 'follow', from_username: 'marguerite' }))).toBe('/user/marguerite');
     expect(noticeRoute(notice({}))).toBeNull();
   });

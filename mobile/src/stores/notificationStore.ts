@@ -22,7 +22,7 @@ const PAGE_SIZE = 30;
 let _realtimeCleanup: (() => void) | null = null;
 
 /** Every read's columns; each ALSO in the schema below, or Zod drops it silently. */
-const NOTIFICATION_COLUMNS = 'id, user_id, type, from_username, from_user_id, message, is_read, created_at, film_id, poster_path, group_key, title';
+const NOTIFICATION_COLUMNS = 'id, user_id, type, from_username, from_user_id, message, is_read, created_at, film_id, poster_path, group_key, title, related_lounge_id';
 const RealtimeNotifSchema = z.object({
   id: z.string(),
   user_id: z.string(),
@@ -38,6 +38,8 @@ const RealtimeNotifSchema = z.object({
   group_key: z.string().nullish().transform(v => v ?? undefined),
   // The certified thing's name, for a group label: a column, never parsed from copy.
   title: z.string().nullish().transform(v => v ?? undefined),
+  // The salon a Lounge notice is about (an admission, a request to enter): the notice opens it.
+  related_lounge_id: z.string().nullish().transform(v => v ?? undefined),
   // DB column is `is_read` — transform to `read` for JS interface compat
   is_read: z.boolean().default(false),
   created_at: z.string().default(() => houseIso()),
@@ -56,6 +58,8 @@ export interface AppNotification {
     group_key?: string;
     /** The certified thing's name, for a group label. */
     title?: string;
+    /** The salon a Lounge notice is about. */
+    related_lounge_id?: string;
     read: boolean;
     created_at: string;
 }

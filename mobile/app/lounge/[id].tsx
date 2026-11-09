@@ -382,15 +382,16 @@ function formatDay(iso: string, now: number): string {
 // ════════════════════════════════════════════════════════════
 // MAIN SALON SCREEN
 // ════════════════════════════════════════════════════════════
-const PARAMS = { id: P.uuid };
+// `door=1`: a salon's notice opened it (noticeRoute), so its host is shown who waits at the door.
+const PARAMS = { id: P.uuid, door: P.oneOf('1') };
 
 /** The route: a link of another shape is a page not in the archive (routeParams, P4.4). */
 export default function LoungeRoomScreenRoute() {
-  const { id } = useRouteParams(PARAMS);
-  return id ? <LoungeRoomScreen id={id} /> : <NotInTheArchive />;
+  const { id, door } = useRouteParams(PARAMS);
+  return id ? <LoungeRoomScreen id={id} toTheDoor={door === '1'} /> : <NotInTheArchive />;
 }
 
-function LoungeRoomScreen({ id }: { id: string }) {
+function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean }) {
   const user = useAuthStore(s => s.user);
   // Who reads, by id: the store hands a new `user` object at each session restore, and a read
   // keyed on the object asked for the room, its roster and the Lounge list again each time (three
@@ -555,6 +556,13 @@ function LoungeRoomScreen({ id }: { id: string }) {
   const canSpeak = canPost && speaking.held;
   const canReact = canPost && reacting.held;
   const pendingMembers = useMemo(() => members.filter(m => m.status === 'pending'), [members]);
+  // Opened from a notice: the host meets the door once the roster says someone waits, once.
+  const metAtTheDoor = useRef(false);
+  useEffect(() => {
+    if (!toTheDoor || metAtTheDoor.current || !isCreator || pendingMembers.length === 0) return;
+    metAtTheDoor.current = true;
+    setDoorOpen(true);
+  }, [toTheDoor, isCreator, pendingMembers.length]);
   // Seated: the roster's, or the room's own count until the roster is read.
   const seated = members.filter(m => m.status !== 'pending').length || activeLounge?.member_count || 0;
 

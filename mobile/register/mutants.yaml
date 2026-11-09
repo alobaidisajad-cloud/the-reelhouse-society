@@ -2850,3 +2850,39 @@ mutants:
         find: "      if (!neverStarted(e) || controller.signal.aborted) throw e;"
         replace: "      throw e;"
     proof: { file: src/lib/__tests__/aRequestThatNeverStartedIsAskedAgain.test.ts, test: "asks once more a request the native fetch refused to start, and hands back its answer" }
+
+  - id: shape-salon-notice-opens-the-sender
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: src/utils/noticeRoute.ts
+        find: "  if (notice.related_lounge_id && UUID.test(notice.related_lounge_id)) return `/lounge/${notice.related_lounge_id}?door=1`;"
+        replace: ""
+    proof: { file: src/utils/__tests__/theTappedNoticeOpensIt.test.ts, test: "to what it is about, then the film, then the person" }
+
+  - id: shape-door-not-met
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "    metAtTheDoor.current = true;\n    setDoorOpen(true);"
+        replace: "    metAtTheDoor.current = true;"
+    proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "a host opened from a notice is shown who waits at the door" }
+
+  - id: shape-door-met-by-a-guest
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "    if (!toTheDoor || metAtTheDoor.current || !isCreator || pendingMembers.length === 0) return;"
+        replace: "    if (!toTheDoor || metAtTheDoor.current || pendingMembers.length === 0) return;"
+    proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "a member admitted, opening the same link, is shown the room and no door" }
+
+  - id: shape-door-met-twice
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "    if (!toTheDoor || metAtTheDoor.current || !isCreator || pendingMembers.length === 0) return;"
+        replace: "    if (!toTheDoor || !isCreator || pendingMembers.length === 0) return;"
+    proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "the door is shown once: closed, a new roster read does not open it again" }

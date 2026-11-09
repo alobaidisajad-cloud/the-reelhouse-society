@@ -6,9 +6,10 @@
  * there is one answer, here.
  *
  * WHAT IT IS ABOUT, THEN WHO DID IT. The group key says what the notice is
- * about (a log, a stack, an essay, a filing) — the server declares it (#73). A
- * notice about a film with no key goes to the film. A notice with no object but
- * a person — a follow — goes to that person.
+ * about (a log, a stack, an essay, a filing, and a critique of one) — the
+ * server declares it (#73). A notice about a film with no key goes to the film;
+ * one about a salon, to the salon. A notice with no object but a person — a
+ * follow — goes to that person.
  *
  * `null` means the notice points nowhere in particular; the caller decides
  * what that means where it stands.
@@ -36,12 +37,15 @@ export function lobbyRoute(key: string | null | undefined): string | null {
   return null;
 }
 
-export function noticeRoute(notice: Pick<AppNotification, 'group_key' | 'film_id' | 'from_username'> & { from_user_id?: string | null }): string | null {
+export function noticeRoute(notice: Pick<AppNotification, 'group_key' | 'film_id' | 'from_username'> & { from_user_id?: string | null; related_lounge_id?: string | null }): string | null {
   const honoured = lobbyRoute(notice.group_key);
   if (honoured) return honoured;
   const about = groupRoute(parseGroupKey(notice.group_key));
   if (about) return about;
   if (notice.film_id) return `/film/${notice.film_id}`;
+  // A salon's notice (an admission, a request to enter) opens the salon, at its door: its host is
+  // shown who waits there; a member admitted, the room.
+  if (notice.related_lounge_id && UUID.test(notice.related_lounge_id)) return `/lounge/${notice.related_lounge_id}?door=1`;
   // With the sender's id when the notice holds it: their file read in one trip.
   if (notice.from_username) return memberPath(notice.from_username, notice.from_user_id);
   return null;
