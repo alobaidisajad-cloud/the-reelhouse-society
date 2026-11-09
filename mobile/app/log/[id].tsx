@@ -59,6 +59,7 @@ import { captureRef } from 'react-native-view-shot';
 import { z } from 'zod';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { nav } from '@/src/utils/typedRouter';
+import { memberPath } from '@/src/utils/memberPath';
 import { EmptyOffline, EmptyState, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { BusterEyes } from '@/src/components/Buster';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
@@ -881,7 +882,7 @@ function LogDetailScreen({ id }: { id: string }) {
           nameInk={nameInk}
           timeAgo={filedAgo}
           onPosterLoaded={() => setPosterLoaded(true)}
-          onPressUser={() => { if (profile?.username) nav.push(`/user/${encodeURIComponent(profile.username)}`); }}
+          onPressUser={() => { if (profile?.username) nav.push(memberPath(profile.username, profile.id)); }}
           onPressFilm={() => { nav.push(`/film/${log.film_id}`); }}
         />
 

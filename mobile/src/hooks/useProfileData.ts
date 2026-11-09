@@ -285,16 +285,25 @@ function restartRoom(rooms: RoomSwitches, key: string): AbortController {
   return (rooms.current[key] = new AbortController());
 }
 
+/** A member's counts as their file shows them: the shelf's only for a rank that keeps one. */
+function shownCounts<C extends { readonly vault?: number }>(counts: C, member: Pick<ValidatedProfileUser, 'tier' | 'role' | 'is_founding'>): C {
+  // A count that could not be read stays unread; a rank with no shelf shows none.
+  return counts.vault === undefined || isArchivistPlusTier(member) ? counts : { ...counts, vault: 0 };
+}
+
 export function useProfileData({
   username,
   isSelf,
   isFollowing,
-  activeTab
+  activeTab,
+  knownId,
 }: {
   username: string;
   isSelf: boolean;
   isFollowing: boolean | undefined;
   activeTab: ProfileTab | null;
+  /** The member's id when the opener holds it (their own; a tapped row's): their file is read in one trip. */
+  knownId?: string;
 }) {
   const [state, dispatch] = useReducer(profileReducer, initialState);
   /** A room whose read failed, until it is asked again. */
@@ -376,12 +385,26 @@ export function useProfileData({
     const signal = controller.signal;
 
     try {
+      // With the member's id known (the own file; a link from a row that carries it), what the file
+      // opens on is asked WITH the member's row, not after it: one round trip, each read under its
+      // own rule (a sealed file's logs and summary answer a stranger nothing, and are not drawn).
+      // Each is awaited below, or let go unread; none is left to reject unheard.
+      const quiet = <T,>(p: Promise<T>): Promise<T> => { p.catch(() => {}); return p; };
+      const early = knownId ? {
+        id: knownId,
+        counts: quiet(ProfileDataService.fetchCountsOf(knownId, isSelf, signal)),
+        summary: quiet(ProfileDataService.fetchAnalyticsSummary({ id: knownId }, signal)),
+        logs: isSelf ? null : quiet(ProfileDataService.fetchOtherUserLogs(knownId, 50, undefined, signal, undefined)),
+        selfLogs: isSelf && useLogStore.getState().logs.length === 0 ? quiet(fetchLogs()) : null,
+      } : null;
       // Validated at the service; another member's row is read without their preferences.
       const profile = await ProfileDataService.fetchProfile(username, isSelf, signal);
       if (signal.aborted) return;
       if (!profile) { if (isMounted.current) dispatch({ type: 'SET_USER', payload: null }); return; }
       if (!isMounted.current) return;
       const typedProfile = profile;
+      // A name now held by another member (a rename) is read again by its own id, as without one.
+      const asked = early && early.id === typedProfile.id ? early : null;
 
       const currentIsFollowing = useSocialStore.getState().isFollowing(username);
       if (typedProfile.is_social_private && !isSelf && !currentIsFollowing) {
@@ -391,7 +414,7 @@ export function useProfileData({
         // simply never asked for the counts before. The tabs stay locked.
         dispatch({ type: 'SET_USER', payload: typedProfile });
         try {
-          const lockedCounts = await ProfileDataService.fetchCounts(typedProfile, false, signal);
+          const lockedCounts = asked ? shownCounts(await asked.counts, typedProfile) : await ProfileDataService.fetchCounts(typedProfile, false, signal);
           if (!signal.aborted && isMounted.current) {
             if (lockedCounts.followers != null) typedProfile.followers_count = lockedCounts.followers;
             if (lockedCounts.following != null) typedProfile.following_count = lockedCounts.following;
@@ -407,12 +430,13 @@ export function useProfileData({
       if (isSelf) {
         // Your logs are kept on the phone (MMKV): with some held, the file shows
         // at once and they are renewed behind it.
-        const storeHasLogs = useLogStore.getState().logs.length > 0;
+        // Held before the row was asked, as that read found the store (logs read with the row since are not held).
+        const storeHasLogs = !asked?.selfLogs && useLogStore.getState().logs.length > 0;
 
         const [countsResult, analyticsSummary] = await Promise.all([
-          ProfileDataService.fetchCounts(typedProfile, isSelf, signal),
-          ProfileDataService.fetchAnalyticsSummary(typedProfile, signal),
-          (storeHasLogs ? Promise.resolve(true) : fetchLogs()).then((logsRead) => {
+          asked ? asked.counts.then((c) => shownCounts(c, typedProfile)) : ProfileDataService.fetchCounts(typedProfile, isSelf, signal),
+          asked ? asked.summary : ProfileDataService.fetchAnalyticsSummary(typedProfile, signal),
+          (asked?.selfLogs ?? (storeHasLogs ? Promise.resolve(true) : fetchLogs())).then((logsRead) => {
             if (signal.aborted || !isMounted.current) return;
             // With nothing held to show, a logs read that failed leaves the archive
             // and the ledger unread: said, never drawn as an empty record.
@@ -440,10 +464,10 @@ export function useProfileData({
       }
 
       const [countsResult, analyticsSummary, result] = await Promise.all([
-        ProfileDataService.fetchCounts(typedProfile, isSelf, signal),
-        ProfileDataService.fetchAnalyticsSummary(typedProfile, signal),
+        asked ? asked.counts.then((c) => shownCounts(c, typedProfile)) : ProfileDataService.fetchCounts(typedProfile, isSelf, signal),
+        asked ? asked.summary : ProfileDataService.fetchAnalyticsSummary(typedProfile, signal),
         // Never contaminate the root user data fetch with volatile tab filters.
-        ProfileDataService.fetchOtherUserLogs(typedProfile.id, 50, undefined, signal, undefined),
+        asked?.logs ?? ProfileDataService.fetchOtherUserLogs(typedProfile.id, 50, undefined, signal, undefined),
       ]);
       if (signal.aborted || !isMounted.current) return;
       // Heal follower/following display with the live RPC values (see self path).
@@ -468,7 +492,7 @@ export function useProfileData({
         // Said to the caller too: a pull over a page already shown says it reached nothing.
         return false;
     }
-  }, [username, isSelf, fetchLogs]);
+  }, [username, isSelf, knownId, fetchLogs]);
 
   // Back in the app once the file is older than a read stays fresh, it is read again, silently, as
   // the focus reread does: never a spinner over what is drawn.

@@ -18,6 +18,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { User } from 'lucide-react-native';
 import { nav } from '@/src/utils/typedRouter';
+import { memberPath } from '@/src/utils/memberPath';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -61,8 +62,8 @@ function MemberRow({ member }: { member: NotableMember }) {
   const serial = member.member_no ? `Nº ${String(member.member_no).padStart(4, '0')}` : null;
 
   const goToProfile = useCallback(() => {
-    nav.push(`/user/${member.username}`);
-  }, [member.username]);
+    nav.push(memberPath(member.username, member.id));
+  }, [member.username, member.id]);
 
   const onFollow = useCallback(() => {
     if (isFollowing || isRequested) return;

@@ -8,6 +8,7 @@ import { byKey } from '@/src/utils/order';
 import { resolveTier } from '@/src/utils/tier';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
 import { cutWhole } from '@/src/utils/text';
+import { memberPath } from '@/src/utils/memberPath';
 import { useQuery } from '@tanstack/react-query';
 
 // ═══════════════════════════════════════════════════════════════
@@ -266,7 +267,7 @@ export function useUniversalSearch(query: string) {
             subtitle: '',
             image: user.avatar_url || null,
             role: resolveTier(user),
-            _nav: `/user/${user.username}`,
+            _nav: memberPath(String(user.username), user.id),
           }));
       }
 

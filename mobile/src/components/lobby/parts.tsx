@@ -13,6 +13,7 @@ import { RankBadge, rankOf, rankWord } from '@/src/components/RankBadge';
 import { colors, fonts } from '@/src/theme/theme';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { nav } from '@/src/utils/typedRouter';
+import { memberPath } from '@/src/utils/memberPath';
 import { useSvgId } from '@/src/utils/svgId';
 import { initialOf } from '@/src/utils/text';
 import { ceilingOf, TYPE, WALL, type Face, type TypeKey } from './measure';
@@ -98,7 +99,7 @@ export const Person = memo(function Person({ author, set, portrait = false, styl
     <PressableScale room
       style={[s.person, style]}
       hitSlop={hitSlop}
-      onPress={() => nav.push(`/user/${author.username}`)}
+      onPress={() => nav.push(memberPath(author.username, author.id))}
       haptic="selection"
       accessibilityRole="link"
       accessibilityLabel={`@${author.username}${rank ? `, ${rank}` : ''}. Open their file.`}

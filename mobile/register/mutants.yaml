@@ -2787,3 +2787,39 @@ mutants:
         find: "        ? ['transparent', 'rgba(196,150,26,0.4)', 'rgba(196,150,26,0.85)', 'rgba(196,150,26,0.4)', 'transparent']"
         replace: "        ? ['transparent', 'rgba(218,165,32,0.4)', 'rgba(242,232,160,0.7)', 'rgba(218,165,32,0.4)', 'transparent']"
     proof: { file: src/components/profile/__tests__/aRankSpeaksOneColour.guard.test.ts, test: "draws the Archivist in its one champagne: no goldenrod or pale gold left on the file" }
+
+  - id: shape-member-id-unused
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      const early = knownId ? {"
+        replace: "      const early = knownId && !knownId ? {"
+    proof: { file: src/hooks/__tests__/aMemberFileIsReadInOneTrip.test.tsx, test: "asks the counts, the summary and the first logs with the member's row when the link holds their id" }
+
+  - id: shape-renamed-member-answers-kept
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      const asked = early && early.id === typedProfile.id ? early : null;"
+        replace: "      const asked = early;"
+    proof: { file: src/hooks/__tests__/aMemberFileIsReadInOneTrip.test.tsx, test: "reads again by its own id a name now held by another member, and keeps nothing of the first" }
+
+  - id: shape-shelf-shown-before-the-rank
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "  return counts.vault === undefined || isArchivistPlusTier(member) ? counts : { ...counts, vault: 0 };"
+        replace: "  return counts.vault === undefined || !!member ? counts : { ...counts, vault: 0 };"
+    proof: { file: src/hooks/__tests__/aMemberFileIsReadInOneTrip.test.tsx, test: "shows the shelf's count only for a rank that keeps one, once the rank is read" }
+
+  - id: shape-member-link-without-id
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/utils/memberPath.ts
+        find: "${id ? `?id=${encodeURIComponent(id)}` : ''}"
+        replace: "${id && !id ? `?id=${encodeURIComponent(id)}` : ''}"
+    proof: { file: src/hooks/__tests__/aMemberFileIsReadInOneTrip.test.tsx, test: "carries the member's id in a link that holds it, a notice from them among them" }

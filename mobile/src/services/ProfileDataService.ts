@@ -169,11 +169,23 @@ export const ProfileDataService = {
     return parsed.data;
   },
 
-  /** Every room's count in one call; five counting queries if that call fails. */
+  /** Every room's count in one call; five counting queries if that call fails. The vault is shown by rank. */
   async fetchCounts(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, isSelf: boolean = false, signal?: AbortSignal) {
+    const shelved = isArchivistPlusTier(targetUser);
+    const counts = await this.fetchCountsOf(targetUser.id, isSelf, signal, shelved);
+    // A count that could not be read stays unread; a rank with no shelf shows none.
+    return shelved || counts.vault === undefined ? counts : { ...counts, vault: 0 };
+  },
+
+  /**
+   * The counts of a member known by id alone, before their row is read (the member file asks them
+   * with it): the vault counted unless `countVault` is false, and shown by the caller once the
+   * member's rank is read.
+   */
+  async fetchCountsOf(userId: string, isSelf: boolean = false, signal?: AbortSignal, countVault: boolean = true) {
     try {
       const { data, error } = await withAbortSignal(
-        supabase.rpc('get_profile_counts', { p_user_id: targetUser.id }),
+        supabase.rpc('get_profile_counts', { p_user_id: userId }),
         signal
       );
 
@@ -185,7 +197,7 @@ export const ProfileDataService = {
           logs: counts.logs_count ?? 0,
           ledger: counts.ledger_count ?? 0,
           watchlist: counts.watchlist_count ?? counts.watch_count ?? 0,
-          vault: isArchivistPlusTier(targetUser) ? (counts.vault_count ?? 0) : 0,
+          vault: countVault ? (counts.vault_count ?? 0) : 0,
           lists: counts.lists_count ?? 0,
           // Live counts; if absent, callers fall back to the profile row's.
           followers: typeof counts.followers_count === 'number' ? counts.followers_count : undefined,
@@ -196,24 +208,24 @@ export const ProfileDataService = {
     } catch {
       // Counted the long way below.
     }
-    return this._fetchCountsFallback(targetUser, isSelf, signal);
+    return this._fetchCountsFallback(userId, isSelf, signal, countVault);
   },
 
   /** The counts the long way: five HEAD requests, when get_profile_counts fails. */
-  async _fetchCountsFallback(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, isSelf: boolean = false, signal?: AbortSignal) {
+  async _fetchCountsFallback(userId: string, isSelf: boolean = false, signal?: AbortSignal, countVault: boolean = true) {
 
     try {
-      let listsQuery = supabase.from('lists').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id);
+      let listsQuery = supabase.from('lists').select('id', { count: 'exact', head: true }).eq('user_id', userId);
       if (!isSelf) {
         listsQuery = listsQuery.eq('is_private', false);
       }
 
       const [logsCount, ledgerCount, watchCount, vaultCount, listsCount] = await Promise.all([
-        withAbortSignal(supabase.from('logs').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id), signal),
-        withAbortSignal(supabase.from('logs').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id).or('rating.gt.0,review.neq.""'), signal),
-        withAbortSignal(supabase.from('watchlists').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id), signal),
-        isArchivistPlusTier(targetUser)
-          ? withAbortSignal(supabase.from('physical_archive').select('id', { count: 'exact', head: true }).eq('user_id', targetUser.id), signal)
+        withAbortSignal(supabase.from('logs').select('id', { count: 'exact', head: true }).eq('user_id', userId), signal),
+        withAbortSignal(supabase.from('logs').select('id', { count: 'exact', head: true }).eq('user_id', userId).or('rating.gt.0,review.neq.""'), signal),
+        withAbortSignal(supabase.from('watchlists').select('id', { count: 'exact', head: true }).eq('user_id', userId), signal),
+        countVault
+          ? withAbortSignal(supabase.from('physical_archive').select('id', { count: 'exact', head: true }).eq('user_id', userId), signal)
           : Promise.resolve({ count: 0, error: null }),
         withAbortSignal(listsQuery, signal),
       ]);
@@ -624,7 +636,7 @@ export const ProfileDataService = {
   },
 
   /** A member's analytics, summed by the database (~2KB, not every log); null if refused. */
-  async fetchAnalyticsSummary(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, signal?: AbortSignal) {
+  async fetchAnalyticsSummary(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal) {
     try {
       const { data, error } = await withAbortSignal(
         supabase.rpc('get_user_analytics', { p_user_id: targetUser.id }),

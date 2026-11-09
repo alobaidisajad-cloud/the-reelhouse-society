@@ -15,6 +15,7 @@
  */
 import type { AppNotification } from '@/src/stores/notificationStore';
 import { groupRoute, parseGroupKey } from '@/src/utils/endorsementGroupKey';
+import { memberPath } from '@/src/utils/memberPath';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -35,12 +36,13 @@ export function lobbyRoute(key: string | null | undefined): string | null {
   return null;
 }
 
-export function noticeRoute(notice: Pick<AppNotification, 'group_key' | 'film_id' | 'from_username'>): string | null {
+export function noticeRoute(notice: Pick<AppNotification, 'group_key' | 'film_id' | 'from_username'> & { from_user_id?: string | null }): string | null {
   const honoured = lobbyRoute(notice.group_key);
   if (honoured) return honoured;
   const about = groupRoute(parseGroupKey(notice.group_key));
   if (about) return about;
   if (notice.film_id) return `/film/${notice.film_id}`;
-  if (notice.from_username) return `/user/${notice.from_username}`;
+  // With the sender's id when the notice holds it: their file read in one trip.
+  if (notice.from_username) return memberPath(notice.from_username, notice.from_user_id);
   return null;
 }

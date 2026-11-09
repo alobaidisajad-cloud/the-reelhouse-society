@@ -21,6 +21,7 @@ import { View, StyleSheet, PixelRatio } from 'react-native';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { Text } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
+import { memberPath } from '@/src/utils/memberPath';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
@@ -166,7 +167,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, onFilmPress
   // Host screens already standing on the film (its reviews page) override this, so the poster
   // never stacks a second film page.
   const handleFilmPress = useCallback(() => { if (onFilmPress) return onFilmPress(); nav.push(`/film/${item.film_id}`); }, [item.film_id, onFilmPress]);
-  const handleUserPress = useCallback(() => { nav.push(`/user/${item.username}`); }, [item.username]);
+  const handleUserPress = useCallback(() => { nav.push(memberPath(String(item.username), item.user_id)); }, [item.username, item.user_id]);
   const handleLogPress = useCallback(() => { nav.push(`/log/${item.id}`); }, [item.id]);
   const handleMore = useCallback(() => {
     if (item.user_id) askAboutLog({ logId: item.id, userId: item.user_id, username: item.username });

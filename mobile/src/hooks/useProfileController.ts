@@ -42,7 +42,8 @@ export function computeFollowCountDelta(isFollowing: boolean, isRequested: boole
 const roomOf = (tab: ProfileTab | null): Room | null => (tab && (ROOMS as readonly string[]).includes(tab) ? tab as Room : null);
 
 /** A member's file by their handle, and the tab a link opens it on. */
-const PARAMS = { username: P.words(64), tab: P.words(40) };
+// `id`: the member's own, from a link that holds it (a tapped row), so the file is read in one trip.
+const PARAMS = { username: P.words(64), tab: P.words(40), id: P.uuid };
 
 export function useProfileController(usernameOverride?: string) {
   const params = useRouteParams(PARAMS);
@@ -112,6 +113,8 @@ export function useProfileController(usernameOverride?: string) {
     isSelf,
     isFollowing,
     activeTab,
+    // Your own file knows its member; another's knows theirs when the link carried it.
+    knownId: isSelf ? user?.id : params.id,
   });
 
   // ── Your own rename: the route follows it, never stranding on the old handle ──

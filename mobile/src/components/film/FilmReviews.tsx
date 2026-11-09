@@ -34,6 +34,7 @@ import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
+import { memberPath } from '@/src/utils/memberPath';
 import { EDGE_LIT } from '@/src/theme/light';
 import { saidStruck, useStruck } from '@/src/components/StruckWords';
 import { STRUCK_OPENS } from '@/src/utils/slurs';
@@ -88,8 +89,8 @@ const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityR
   }, [review.id]);
 
   const handleOpenProfile = React.useCallback(() => {
-    if (review.username) nav.push(`/user/${encodeURIComponent(review.username)}`);
-  }, [review.username]);
+    if (review.username) nav.push(memberPath(review.username, review.user_id));
+  }, [review.username, review.user_id]);
   const ago = useTimeAgo(review.created_at);
 
   return (

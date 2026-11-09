@@ -91,6 +91,11 @@ const COMPUTED: { at: string; text: string; from: string }[] = [
   { at: 'app/dispatch/[id].tsx', text: 'roomOf(username)', from: 'roomOf: checked below' },
   { at: 'app/dispatch/series/[id].tsx', text: 'roomOf(author.name)', from: 'roomOf: checked below' },
   { at: 'src/components/dispatch/FilingRow.tsx', text: 'roomOf(authorName)', from: 'roomOf: checked below' },
+  { at: 'app/log/[id].tsx', text: 'memberPath(profile.username, profile.id)', from: 'memberPath: checked below' },
+  { at: 'src/components/feed/ActivityCard.tsx', text: 'memberPath(String(item.username), item.user_id)', from: 'memberPath: checked below' },
+  { at: 'src/components/film/FilmReviews.tsx', text: 'memberPath(review.username, review.user_id)', from: 'memberPath: checked below' },
+  { at: 'src/components/lobby/parts.tsx', text: 'memberPath(author.username, author.id)', from: 'memberPath: checked below' },
+  { at: 'src/components/reels/MemberRegistry.tsx', text: 'memberPath(member.username, member.id)', from: 'memberPath: checked below' },
   { at: 'src/components/layout/ConciergeButton.tsx', text: 'route', from: 'handleAction\'s callers: /log-modal, /list-modal, /dispatch/compose: checked below' },
   { at: 'src/utils/openNoticeFromPush.ts', text: 'route', from: 'noticeRoute, or the notices sheet: checked below' },
   { at: 'src/hooks/useAuthFlow.ts', text: 'landing', from: 'returnAfterSignIn (MembersOnly.tsx): the three member-only screens\' own shapes, or /(tabs) (aStrangerIsAskedInAndBroughtBack)' },
@@ -119,6 +124,7 @@ it('the helpers that work a target out answer with screens app/ has', () => {
   const { noticeRoute } = require('@/src/utils/noticeRoute') as typeof import('@/src/utils/noticeRoute');
   const { groupRoute } = require('@/src/utils/endorsementGroupKey') as typeof import('@/src/utils/endorsementGroupKey');
   const { roomOf } = require('@/src/components/dispatch/roomLink') as typeof import('@/src/components/dispatch/roomLink');
+  const { memberPath } = require('@/src/utils/memberPath') as typeof import('@/src/utils/memberPath');
   const { TABS } = require('@/src/utils/lastTab') as typeof import('@/src/utils/lastTab');
   const { ROOMS } = require('@/src/utils/lastRoom') as typeof import('@/src/utils/lastRoom');
   const id = '11111111-1111-4111-8111-111111111111';
@@ -127,7 +133,9 @@ it('the helpers that work a target out answer with screens app/ has', () => {
     ...(['log', 'list', 'post', 'dossier'] as const).map((kind) => groupRoute({ kind, id })),
     noticeRoute({ film_id: 603 }),
     noticeRoute({ from_username: 'kane' }),
+    noticeRoute({ from_username: 'kane', from_user_id: id }),
     roomOf('kane'), roomOf('a name with spaces'),
+    memberPath('kane'), memberPath('kane', id), memberPath('a name with spaces', id),
     ...TABS.filter((t) => t !== 'index').map((t) => `/${t}`),
     ...Object.values(ROOMS).map((r) => r.href),
     '/reset-password', '/(tabs)', '/log-modal', '/list-modal', '/dispatch/compose',

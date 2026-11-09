@@ -190,7 +190,12 @@ describe('every door leads somewhere that exists', () => {
     await drawWall();
     const doors = await pressEveryDoor();
     const went = doors.map((d) => d.went);
-    expect(went).toEqual(expect.arrayContaining([
+    // A member's door carries their id (memberPath), so their file is read in one trip.
+    const members = went.filter((p): p is string => typeof p === 'string' && p.startsWith('/user/'));
+    expect(members.length).toBeGreaterThan(0);
+    expect(members.filter((p) => !/\?id=[^&]+$/.test(p))).toEqual([]);
+    const pages = went.map((p) => (typeof p === 'string' && p.startsWith('/user/') ? p.split('?')[0] : p));
+    expect(pages).toEqual(expect.arrayContaining([
       `/film/${PROGRAMME.feature.id}`, '/film/501', '/film/502', '/darkroom',
       `/log/${LOG_ID}`, '/film/655', '/user/morpho',
       `/stacks/${STACK_ID}`, '/user/vesper',
