@@ -2189,5 +2189,12 @@
     "proof": "m1",
     "commit": "2b9d5dc5f896643e76f6301fb0f583851e0db490",
     "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-android-importance-misnumbered",
+    "mutant": "shape-channels-by-androids-numbers",
+    "proof": "m1",
+    "commit": "1f48f0eb0b3905865d2ba7ef6df45d0ff498cb20",
+    "verdict": "caught"
   }
 ]
