@@ -2200,15 +2200,15 @@
   {
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-corridor-drawn-short",
-    "proof": "m2",
-    "commit": "89d789330da958e11abd84ddd1bcae0822227d77",
+    "proof": "m51",
+    "commit": "d6473ba235e76bedaeff2559f5c08cdf6a4ae3d7",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-series-reads-the-essays",
-    "proof": null,
-    "commit": "b3cdaa83c4a5bae764cea343a5dc3ffb44cf47ea",
+    "proof": "m52",
+    "commit": "d6473ba235e76bedaeff2559f5c08cdf6a4ae3d7",
     "verdict": "caught"
   },
   {
