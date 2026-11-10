@@ -162,6 +162,11 @@ export const PHONE = {
   // swipe from the top edge never opened it on the emulator (run 42622134690).
   notification_shade: { says: 'true', valid: (v) => v === true,
     commands: () => [['adb', ['shell', 'cmd', 'statusbar', 'expand-notifications']]] },
+  // Notices allowed, as a member allows them, to the app already running: Android 13 posts none
+  // without (run 42622134690). A grant never stops the app; Maestro's launch permissions did, as it
+  // started ("app died, no saved state", Sealed E2E 42735790707 attempt 2).
+  notices_allowed: { says: 'true', valid: (v) => v === true,
+    commands: () => [['adb', ['shell', 'pm', 'grant', 'com.reelhouse.society', 'android.permission.POST_NOTIFICATIONS']]] },
   // The image's keyboard, on for a moment of the route walk and off again: run-flows.sh turns every
   // keyboard off, because the flows type without one (its keyboard-room probes turn it on the same way).
   // Android lists a keyboard again only once it has read the package's enabling, after `pm enable`

@@ -7,11 +7,16 @@ appId: com.reelhouse.society
 # kind's channel (src/utils/e2ePresent.ts). Tapped from the shade three ways:
 # the app in front, in the background, and killed in the background (the cold
 # start). Each tap must open the follower's file. Notices allowed, as a
-# member allows them: Android 13 shows none without (run 42622134690).
+# member allows them: Android 13 shows none without (run 42622134690). By
+# the phone, to the app running: Maestro's launch permissions stopped the
+# app as it started (run 42735790707, attempt 2).
 - launchApp:
     clearState: true
-    permissions:
-      notifications: allow
+- runFlow:
+    file: subflows/phone.yaml
+    env:
+      SET: notices_allowed
+      TO: "true"
 - runFlow: subflows/sign_in.yaml
 # In front.
 - openLink: ${PUSH_LINK}
