@@ -1713,4 +1713,3 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/subflows/tap_the_notice.yaml | 2026-11-09 | edited: the sender's handle found as the file draws it, in capitals without its @; edited: the notice found and tapped by its title line, never its header; new: the shade opened by the phone, the notice found by the title notify-push gave it, tapped, and its sender's file it opens |
 | src/lib/__tests__/aRequestThatNeverStartedIsAskedAgain.test.ts | 2026-11-08 | new: a request refused at its start asked once more and answered; no other failure asked again; one its caller ended never |
 | src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx | 2026-11-09 | new: a salon's notice opens the salon at its door: the host shown who waits, once; a member the room |
-| scripts/backend-contract.json | 2026-11-10 | edited: the corridor's three reads are get_lounge_list |
