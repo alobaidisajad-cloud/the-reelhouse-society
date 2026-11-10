@@ -123,9 +123,8 @@ describe('screen-times.mjs', () => {
   it('every screen that marks itself ready is measured: it has a ceiling, it is learning, or it is named here with why no flow opens it', () => {
     // A mark no flow reaches times nothing: three screens learned for fourteen days on a list
     // no run could fill (the flows opened none of them), and two more were never on it.
-    const UNREACHED: Record<string, string> = {
-      room: "a salon: the flows' seed founds none (only the route walk's, e2e/db/seed.mjs), so no flow can sit in one",
-    };
+    // (The salon, room, was one: push_tap_salon founds one and admits the member, and opens it.)
+    const UNREACHED: Record<string, string> = {};
     const { learning } = JSON.parse(readFileSync(join(__dirname, '..', 'screen-learning.json'), 'utf8')) as { learning: Record<string, string> };
     const ceilings = JSON.parse(readFileSync(join(__dirname, '..', 'screen-ceilings.json'), 'utf8')) as Ceilings;
     const marked = new Set<string>();
