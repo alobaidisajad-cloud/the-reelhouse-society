@@ -1239,7 +1239,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/appConfig.guard.test.ts | 2026-10-30 | edited: Sentry uploads each Android build's R8 mapping; edited: the runtime is the native code's fingerprint (Decision 6); edited: the blocked permissions, the picker's microphone off, and each purpose string pinned (P4.25); edited: LAB=1 adds extra.lab beside E2E=1 and nothing alone; only the speed lab sets it; the root mounts the record behind it; the workflows that build with E2E=1 are those app.config.js names; the project, update feed, store ids and Sentry project as the services hold them; the maps written and their upload left on |
 | src/utils/__tests__/aReplayThatCannotReadKeepsItsWrite.test.ts | — |  |
 | src/utils/__tests__/aSuspendedMembersWritesWait.test.ts | 2026-11-01 | edited: a silenced or banned member's writes are held for them, a copy in the dead letter; edited: expects the fixed report line, its values after it (P4.44); edited: a write refused for a suspension waits, the standing read failed or the suspension begun mid-send; a silenced one is given up |
-| src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | — |  |
+| src/utils/__tests__/aWithdrawnFilingKeepsNothing.test.ts | 2026-11-10 | edited: words kept: the house's count, counted again to 0 when the emptying rewrites the text |
 | src/utils/__tests__/boundedCounts.guard.test.ts | 2026-11-04 | edited: the header says CRITIQUES · N |
 | src/utils/__tests__/calendarDates.test.ts | — |  |
 | src/utils/__tests__/ciAlert.behaviour.test.ts | — |  |

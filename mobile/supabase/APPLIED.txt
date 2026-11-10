@@ -226,3 +226,6 @@ society_report_system.sql
 20261104_01_the_frame_shows_its_print.sql
 20261104_02_a_salons_last_word.sql
 20261105_02_a_salon_is_founded_once.sql
+20261109_01_a_part_counts_its_words.sql
+20261109_02_the_corridor_in_one_trip.sql
+20261109_03_a_critique_opens_what_it_is_on.sql

@@ -1066,6 +1066,38 @@ END $$;
 
 
 --
+-- Name: dispatch_post_words(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_post_words(p_text text) RETURNS integer
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE
+    SET search_path TO 'pg_catalog', 'pg_temp'
+    AS $$
+  SELECT cardinality(array_remove(regexp_split_to_array(coalesce(p_text, ''),
+    '[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+'), ''))
+$$;
+
+
+--
+-- Name: dispatch_posts_count_words(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.dispatch_posts_count_words() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+BEGIN
+  IF TG_OP = 'INSERT' OR NEW.words IS NULL
+     OR NEW.full_content IS DISTINCT FROM OLD.full_content OR NEW.body IS DISTINCT FROM OLD.body
+     OR NEW.words IS DISTINCT FROM OLD.words THEN
+    NEW.words := public.dispatch_post_words(coalesce(NEW.full_content, NEW.body));
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
 -- Name: dispatch_posts_pin_columns(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -2015,6 +2047,55 @@ $$;
 --
 
 COMMENT ON FUNCTION public.get_lobby() IS 'The Lobby wall for the member asking: today''s edition, read under their own rules and blocks, one member one bill. No counts.';
+
+
+--
+-- Name: get_lounge_list(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.get_lounge_list() RETURNS jsonb
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  WITH me AS (SELECT auth.uid() AS id),
+  memberships AS (
+    SELECT lm.lounge_id, lm.last_read_at, lm.status
+      FROM public.lounge_members lm, me WHERE lm.user_id = me.id LIMIT 100
+  ),
+  newest AS (
+    SELECT l.id, l.name, l.description, l.is_private, l.creator_id, l.created_at, l.member_count, l.cover_image
+      FROM public.lounges l ORDER BY l.created_at DESC LIMIT 50
+  ),
+  hosted AS (
+    SELECT l.id, l.name, l.description, l.is_private, l.creator_id, l.created_at, l.member_count, l.cover_image
+      FROM public.lounges l, me WHERE l.creator_id = me.id
+  ),
+  joined AS (
+    SELECT l.id, l.name, l.description, l.is_private, l.creator_id, l.created_at, l.member_count, l.cover_image
+      FROM public.lounges l WHERE l.id IN (SELECT lounge_id FROM memberships)
+  ),
+  -- The member's own: seated (a ban or a mute is no seat) or hosted.
+  own AS (
+    SELECT lounge_id AS id FROM memberships WHERE status IS NULL OR status NOT IN ('banned', 'muted')
+    UNION SELECT id FROM hosted
+  )
+  SELECT jsonb_build_object(
+    'memberships', coalesce((SELECT jsonb_agg(to_jsonb(m)) FROM memberships m), '[]'::jsonb),
+    'newest', coalesce((SELECT jsonb_agg(to_jsonb(n) ORDER BY n.created_at DESC) FROM newest n), '[]'::jsonb),
+    'hosted', coalesce((SELECT jsonb_agg(to_jsonb(h)) FROM hosted h), '[]'::jsonb),
+    'joined', coalesce((SELECT jsonb_agg(to_jsonb(j)) FROM joined j), '[]'::jsonb),
+    -- Asked only of a member who sits somewhere, as the client asks it; every piece a list.
+    'unread', CASE WHEN EXISTS (SELECT 1 FROM memberships)
+      THEN coalesce((SELECT jsonb_agg(to_jsonb(u)) FROM public.get_lounge_unread_counts() u), '[]'::jsonb)
+      ELSE '[]'::jsonb END,
+    'pending', coalesce((SELECT jsonb_agg(jsonb_build_object('lounge_id', p.lounge_id))
+      FROM public.lounge_members p WHERE p.lounge_id IN (SELECT id FROM hosted) AND p.status = 'pending'), '[]'::jsonb),
+    'faces', coalesce((SELECT jsonb_agg(to_jsonb(f))
+      FROM public.get_salon_member_faces(ARRAY(SELECT id FROM own)) f), '[]'::jsonb),
+    'last_words', coalesce((SELECT jsonb_agg(to_jsonb(w))
+      FROM public.get_salon_last_words(ARRAY(SELECT id FROM newest WHERE id NOT IN (SELECT id FROM own))) w), '[]'::jsonb)
+  )
+$$;
 
 
 --
@@ -3832,9 +3913,10 @@ BEGIN
     SELECT user_id, title INTO target_user, v_title FROM public.lists WHERE id = NEW.list_id;
 
     IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
+        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, group_key)
         VALUES (target_user, 'comment', sender_user, NEW.user_id,
-                'left a critique on your stack “' || COALESCE(v_title, 'Untitled') || '”.');
+                'left a critique on your stack “' || COALESCE(v_title, 'Untitled') || '”.',
+                'endorse:list:' || NEW.list_id);
     END IF;
 
     RETURN NEW;
@@ -3859,9 +3941,10 @@ BEGIN
     SELECT user_id, film_title INTO target_user, target_film_title FROM public.logs WHERE id = NEW.log_id;
 
     IF target_user IS NOT NULL AND target_user != NEW.user_id THEN
-        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message)
+        INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, group_key)
         VALUES (target_user, 'comment', sender_user, NEW.user_id,
-                'left a critique on your log of ' || COALESCE(target_film_title, 'a film') || '.');
+                'left a critique on your log of ' || COALESCE(target_film_title, 'a film') || '.',
+                'endorse:log:' || NEW.log_id);
     END IF;
 
     RETURN NEW;
@@ -5236,6 +5319,7 @@ CREATE TABLE public.dispatch_posts (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     edited_at timestamp with time zone,
     subject_backdrop text,
+    words integer,
     CONSTRAINT ballot_options CHECK (((kind <> 'ballot'::text) OR ((options IS NOT NULL) AND (closes_at IS NOT NULL) AND ((jsonb_array_length(options) >= 2) AND (jsonb_array_length(options) <= 6))))),
     CONSTRAINT body_ceiling CHECK ((char_length(body) <= 2000)),
     CONSTRAINT dispatch_posts_ended_by_check CHECK ((ended_by = ANY (ARRAY['author'::text, 'house'::text]))),
@@ -8408,6 +8492,13 @@ CREATE TRIGGER trigger_follow_count_change AFTER INSERT OR DELETE ON public.inte
 
 
 --
+-- Name: dispatch_posts z_counts_its_words; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER z_counts_its_words BEFORE INSERT OR UPDATE ON public.dispatch_posts FOR EACH ROW EXECUTE FUNCTION public.dispatch_posts_count_words();
+
+
+--
 -- Name: analytics_events analytics_events_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10639,6 +10730,23 @@ GRANT ALL ON FUNCTION public.dispatch_notify_critique() TO service_role;
 
 
 --
+-- Name: FUNCTION dispatch_post_words(p_text text); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.dispatch_post_words(p_text text) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.dispatch_post_words(p_text text) TO service_role;
+GRANT ALL ON FUNCTION public.dispatch_post_words(p_text text) TO authenticated;
+
+
+--
+-- Name: FUNCTION dispatch_posts_count_words(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.dispatch_posts_count_words() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.dispatch_posts_count_words() TO service_role;
+
+
+--
 -- Name: FUNCTION dispatch_posts_pin_columns(); Type: ACL; Schema: public; Owner: -
 --
 
@@ -10866,6 +10974,15 @@ GRANT ALL ON FUNCTION public.get_following_feed_auth_cursor(p_limit integer, p_c
 REVOKE ALL ON FUNCTION public.get_lobby() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.get_lobby() TO authenticated;
 GRANT ALL ON FUNCTION public.get_lobby() TO service_role;
+
+
+--
+-- Name: FUNCTION get_lounge_list(); Type: ACL; Schema: public; Owner: -
+--
+
+REVOKE ALL ON FUNCTION public.get_lounge_list() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_lounge_list() TO service_role;
+GRANT ALL ON FUNCTION public.get_lounge_list() TO authenticated;
 
 
 --

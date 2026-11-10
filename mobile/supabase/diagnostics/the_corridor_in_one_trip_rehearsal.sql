@@ -3,6 +3,8 @@
 -- ════════════════════════════════════════════════════════════════════════════
 --   node mobile/supabase/diagnostics/rehearse.cjs the_corridor_in_one_trip_rehearsal.sql
 --
+-- 20261109_02 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml).
 -- The Lounge's corridor in one call answers each reader what the separate reads
 -- answer them, under the same rules. A private salon is kept by its host, with
 -- a seated member, a member at its door, a banned one and a muted one; the host
@@ -16,10 +18,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
--- The train applies it here first (with_train); a sealed copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261109_02_the_corridor_in_one_trip.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

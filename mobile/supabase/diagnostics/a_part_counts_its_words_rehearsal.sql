@@ -3,6 +3,8 @@
 -- ════════════════════════════════════════════════════════════════════════════
 --   node mobile/supabase/diagnostics/rehearse.cjs a_part_counts_its_words_rehearsal.sql
 --
+-- 20261109_01 is applied on production; this shows it still holds there, and
+-- on every sealed copy (db-integration.yml).
 -- A filing's words are counted by the house as the app counts them
 -- (readTimeOf: split on JavaScript's \s, empty pieces dropped, of full_content,
 -- else body), over the text as the house keeps it. Filings are written with an
@@ -17,10 +19,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
--- The train applies it here first (with_train); a sealed copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261109_01_a_part_counts_its_words.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_

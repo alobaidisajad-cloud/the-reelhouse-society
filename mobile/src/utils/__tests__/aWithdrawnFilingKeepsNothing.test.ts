@@ -64,6 +64,7 @@ const KEPT: Record<string, string> = {
   is_published: 'the house’s record',
   certify_count: 'the members’ acts, not the author’s',
   comment_count: 'the critiques, which survive',
+  words: 'the house’s count of the text, not the text: the emptying rewrites the text, so z_counts_its_words counts it again, to 0',
   created_at: 'orders the paper',
   updated_at: 'the house’s record',
   edited_at: 'the house’s record',
