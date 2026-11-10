@@ -2196,5 +2196,26 @@
     "proof": "m1",
     "commit": "1f48f0eb0b3905865d2ba7ef6df45d0ff498cb20",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-corridor-drawn-short",
+    "proof": null,
+    "commit": "b3cdaa83c4a5bae764cea343a5dc3ffb44cf47ea",
+    "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-page-waits-for-what-it-knows",
+    "mutant": "shape-series-reads-the-essays",
+    "proof": null,
+    "commit": "b3cdaa83c4a5bae764cea343a5dc3ffb44cf47ea",
+    "verdict": "caught"
+  },
+  {
+    "class": "UI-a-room-left-drawn-unlike-its-read",
+    "mutant": "shape-left-room-loses-its-last-word",
+    "proof": "m1",
+    "commit": "b3cdaa83c4a5bae764cea343a5dc3ffb44cf47ea",
+    "verdict": "caught"
   }
 ]
