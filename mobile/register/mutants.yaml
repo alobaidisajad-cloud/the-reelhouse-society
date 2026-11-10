@@ -1089,8 +1089,8 @@ mutants:
     source: shape
     edits:
       - file: ../.github/workflows/god_tier_ci.yml
-        find: "        id: install-13\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if bash \"$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh\"; then\n"
-        replace: "        id: install-13\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if false; then\n"
+        find: "        id: install-13\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if bash \"$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh\"; then\n"
+        replace: "        id: install-13\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if false; then\n"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
 
   - id: shape-install-reads-every-source
@@ -1098,8 +1098,8 @@ mutants:
     source: shape
     edits:
       - file: ../.github/workflows/load.yml
-        find: "        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n"
-        replace: "        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n"
+        find: "        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n"
+        replace: "        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install reads only Ubuntu's own sources, so a source it never uses cannot fail it" }
 
   - id: shape-frames-commit-again
@@ -2931,3 +2931,12 @@ mutants:
         find: "    unread_count: undefined,"
         replace: "    unread_count: undefined,\n    last_message_at: undefined,"
     proof: { file: src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts, test: "a request still at the door, withdrawn, takes no one off the count" }
+
+  - id: shape-install-before-the-runners-own
+    class: CI-retry-blocked-by-its-first-try
+    source: shape
+    edits:
+      - file: ../.github/workflows/e2e.yml
+        find: "        id: install-2\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n"
+        replace: "        id: install-2\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }

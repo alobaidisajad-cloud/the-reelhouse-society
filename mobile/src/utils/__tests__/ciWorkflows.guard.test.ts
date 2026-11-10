@@ -316,7 +316,16 @@ it('every Gradle run finds its Android packages installed by a step tried once m
 
 /** Whether a command installs through apt, and whether it waits for the lock a try cut short leaves. */
 const installsByApt = (run: string) => /\bapt(-get)? install\b|--with-deps\b/.test(run);
-const waitsForTheLock = (run: string) => /DPkg::Lock::Timeout/.test(run);
+/**
+ * dpkg's lock waited on (DPkg::Lock::Timeout), and before any apt is run, the runner's own apt run
+ * waited out: the timeout covers dpkg's lock alone, and an apt-get update met the lists lock held
+ * (db-integration 42758774140).
+ */
+const RUNNERS_OWN = "pgrep -f unattended-upgr";
+const waitsForTheLock = (run: string) => {
+  const firstApt = run.search(/sudo apt-get|apt\.postgresql\.org\.sh|kept-debs\.sh|--with-deps/);
+  return /DPkg::Lock::Timeout/.test(run) && run.includes(RUNNERS_OWN) && (firstApt < 0 || run.indexOf(RUNNERS_OWN) < firstApt);
+};
 
 it('every apt install waits for the lock a try cut short at its limit leaves held', () => {
   // God-Tier 39763330037: both first tries ran out of their five minutes, apt-get ran on, and each
