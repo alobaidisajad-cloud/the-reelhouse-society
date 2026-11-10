@@ -644,18 +644,19 @@ jobs:
     # Every screen the tests and generators BUILD (every sheet, error, empty and
     # loading state), measured for what mocked content cannot distort: STEAL,
     # NAMELESS, UNDER, SHADOW. (Word fit is the generators' job: tests carry stress
-    # content.) Split in three by test file (jest's --shard): each part draws and
+    # content.) Split in four by test file (jest's --shard; in three, a part outgrew its half hour
+    # as the tests built more screens: 42864988027): each part draws and
     # judges its own screens, as every finding is one screen's. The promise that
     # each file in mockups/touch-measured.txt still has a control measured beside
     # a neighbour is the whole run's, so captures-together keeps it over every part.
-    name: 🧷 Every screen the tests build, part ${{ matrix.part }} of 3 — touch, names, bars, shadows
+    name: 🧷 Every screen the tests build, part ${{ matrix.part }} of 4 — touch, names, bars, shadows
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     needs: strict-analysis
     strategy:
       fail-fast: false
       matrix:
-        part: [1, 2, 3]
+        part: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         # The whole history: the suite's tests read commits by name (the register's, the mutants').
@@ -764,7 +765,7 @@ jobs:
             --sites sites.txt > captures.txt 2>&1
           rc=$?
           grep -E "^\s+(STEAL|SMALL|NAMELESS|UNSAID|ORDER|UNDER|SHADOW)|finding|CLEAN" captures.txt
-          [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, size, name, reading-order, bar or shadow fault (part ${{ matrix.part }} of 3)" captures.txt error --drop 'clean +\('
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A screen the tests build has a touch, size, name, reading-order, bar or shadow fault (part ${{ matrix.part }} of 4)" captures.txt error --drop 'clean +\('
           exit $rc
 
       # Every handle a test draws, made fifteen letters long (a long, ordinary name;
@@ -777,7 +778,7 @@ jobs:
             --allow-name mockups/names-shortened-on-purpose.txt > names.txt 2>&1
           rc=$?
           grep -E "^\s+NAME|finding|CLEAN" names.txt
-          [ $rc -eq 0 ] || node e2e/annotate.mjs "A member's name is cut short on a screen the tests build (part ${{ matrix.part }} of 3)" names.txt error --drop 'clean +\('
+          [ $rc -eq 0 ] || node e2e/annotate.mjs "A member's name is cut short on a screen the tests build (part ${{ matrix.part }} of 4)" names.txt error --drop 'clean +\('
           exit $rc
 
       - name: Keep this part's measured controls and its record
@@ -803,7 +804,7 @@ jobs:
     if: ${{ !cancelled() && needs.captures.result != 'skipped' }}
     env:
       # How many parts captures runs (its matrix; ciWorkflows.guard holds them equal).
-      PARTS: 3
+      PARTS: 4
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0

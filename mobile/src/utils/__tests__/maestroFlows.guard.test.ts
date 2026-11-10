@@ -91,7 +91,13 @@ const FLOWS = FILES.map(asksIn);
 
 /** Android's own: a notice's title line in the shade, where a push is tapped (tap_the_notice.yaml). */
 const SYSTEM_IDS = new Set(['android:id/title']);
-const idExists = (id: string) => LITERAL_IDS.has(id) || SYSTEM_IDS.has(id) || TEMPLATE_IDS.some((t) => id.startsWith(t) && id.length > t.length);
+/**
+ * The run's own: the route mark of the room a tapped push opens, made by e2e/push-present.mjs as the
+ * app makes it (markOf, held to E2ERouteMark's routeMarkOf by pushPresent.test.ts).
+ */
+const RUN_IDS = new Set(['${PUSH_LANDS}']);
+const idExists = (id: string) => LITERAL_IDS.has(id) || SYSTEM_IDS.has(id) || RUN_IDS.has(id)
+  || TEMPLATE_IDS.some((t) => id.startsWith(t) && id.length > t.length);
 const textExists = (pattern: string) => {
   // Maestro's patterns are Java's: a leading (?i) means "ignore case".
   const ignoreCase = pattern.startsWith('(?i)');

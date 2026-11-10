@@ -543,8 +543,10 @@ it('runs jest and the captures in parts, each read together by a job that reads 
     expect([from, text.split(from).length]).toEqual([from, 2]);
     return parse(text.split(from).join(to)) as Workflow;
   };
-  expect(splitFaults(planted('      PARTS: 4\n', '      PARTS: 3\n'), zones)).toEqual(['jest-together reads 3 parts, but native-unit-tests runs 4']);
-  expect(splitFaults(planted('        part: [1, 2, 3]\n', '        part: [1, 2]\n'), zones)).toEqual(['captures-together reads 3 parts, but captures runs 2']);
+  const JEST_PARTS = '      # How many parts native-unit-tests runs (its matrix; ciWorkflows.guard holds them equal).\n      PARTS: 4\n';
+  const CAPTURE_PARTS = '      # How many parts captures runs (its matrix; ciWorkflows.guard holds them equal).\n      PARTS: 4\n';
+  expect(splitFaults(planted(JEST_PARTS, JEST_PARTS.replace('PARTS: 4', 'PARTS: 3')), zones)).toEqual(['jest-together reads 3 parts, but native-unit-tests runs 4']);
+  expect(splitFaults(planted(CAPTURE_PARTS, CAPTURE_PARTS.replace('PARTS: 4', 'PARTS: 2')), zones)).toEqual(['captures-together reads 2 parts, but captures runs 4']);
   expect(splitFaults(planted("z !== 'UTC'", "z !== 'Asia/Tokyo'"), zones)).toEqual(["no step runs every zone of test-timezones.js but the coverage run's (UTC)"]);
   expect(splitFaults(planted('TZ="$tz" JEST_OUTSIDE_UTC=1 npx jest', 'TZ="$tz" npx jest'), zones)).toEqual(['the other zones run the tooling\'s tests too: no JEST_OUTSIDE_UTC=1']);
   expect(splitFaults(planted('          TZ: UTC\n', '          TZ: Europe/Paris\n'), zones)).toEqual([

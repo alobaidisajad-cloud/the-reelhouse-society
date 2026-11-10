@@ -28,6 +28,13 @@ on:
   schedule:
     - cron: '0 7 * * 1'
   workflow_dispatch:
+    inputs:
+      # The house at the owner's scale (audit A-SCALE-PLAN): asked by hand until a run at it is green,
+      # so its findings are read before they hold back a push. A whole number of hundreds of thousands.
+      members:
+        description: 'Members in the house (100000, 500000)'
+        required: false
+        default: '100000'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
@@ -38,9 +45,11 @@ permissions:
 
 jobs:
   load:
-    name: 🏋️ Busy screens against 100,000 members
+    name: 🏋️ Busy screens against ${{ inputs.members || '100000' }} members
     runs-on: ubuntu-24.04
-    timeout-minutes: 75
+    # 100,000 members seed in ~9 minutes and the job ends in ~25; 500,000 (asked by hand) seed in
+    # what its first run measures, an hour or so. One limit for both, a number as every job's is.
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # The stack's ports kept before the job makes any connection that could be lent one: lent
@@ -118,7 +127,7 @@ jobs:
         run: |
           set +e
           psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
-            -f mobile/e2e/load/seed.sql > "$RUNNER_TEMP/seed.log" 2>&1
+            -v members="${{ inputs.members || '100000' }}" -f mobile/e2e/load/seed.sql > "$RUNNER_TEMP/seed.log" 2>&1
           rc=$?
           cat "$RUNNER_TEMP/seed.log"
           if [ $rc -ne 0 ]; then

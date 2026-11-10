@@ -533,17 +533,19 @@ for flow in $FLOW_LIST; do
     printf '%s\t%s\t%s\n' "$name" "$attempt" "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)" >> "$OUT/flow-starts.txt"
     # A push flow taps the message notify-push built for it, this attempt (e2e/push-present.mjs,
     # WORKLIST P4.22): sent through the stand-in, handed to the app as the link the E2E build presents.
-    push_link=""; push_title=""; push_from=""
+    # Its kind is in its name (push_tap_<kind>; push_tap alone, a follow), and so is the room it lands on.
+    push_link=""; push_title=""; push_lands=""
     case "$name" in push_tap*)
-      if sent=$(node mobile/e2e/push-present.mjs follow 2>> "$OUT/maestro.log"); then
-        push_link=$(sed -n 1p <<< "$sent"); push_title=$(sed -n 2p <<< "$sent"); push_from=$(sed -n 3p <<< "$sent")
+      push_kind="${name#push_tap_}"; [ "$push_kind" = "$name" ] && push_kind=follow
+      if sent=$(node mobile/e2e/push-present.mjs "$push_kind" 2>> "$OUT/maestro.log"); then
+        push_link=$(sed -n 1p <<< "$sent"); push_title=$(sed -n 2p <<< "$sent"); push_lands=$(sed -n 3p <<< "$sent")
       else
         echo "[push] notify-push sent nothing for $name" >> "$OUT/maestro.log"
       fi;;
     esac
     began=$(date +%s)
     timeout --signal=INT --kill-after=30 "$(( left < 600 ? left : 600 ))s" "$MAESTRO" test "$flow" \
-      -e PUSH_LINK="$push_link" -e PUSH_TITLE="$push_title" -e PUSH_FROM="$push_from" \
+      -e PUSH_LINK="$push_link" -e PUSH_TITLE="$push_title" -e PUSH_LANDS="$push_lands" \
       -e E2E_MEMBER_EMAIL="$E2E_MEMBER_EMAIL" \
       -e E2E_MEMBER_PASSWORD="$E2E_MEMBER_PASSWORD" \
       -e E2E_MEMBER_USERNAME="$E2E_MEMBER_USERNAME" \

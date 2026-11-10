@@ -1,10 +1,11 @@
 appId: com.reelhouse.society
 ---
-# The notice in the shade, tapped, and the sender's file it opens
-# (push_tap.yaml). The shade is opened by the phone itself (a swipe from the
-# edge never opened it, run 42622134690); the notice is found by the title
-# notify-push gave it (PUSH_TITLE), and the file by its sender's handle
-# (PUSH_FROM), both from the run (e2e/push-present.mjs).
+# The notice in the shade, tapped, and the room it opens (push_tap*.yaml).
+# The shade is opened by the phone itself (a swipe from the edge never opened
+# it, run 42622134690); the notice is found by the title notify-push gave it
+# (PUSH_TITLE), and the room by its route mark (PUSH_LANDS: the follower's
+# file, the log critiqued, the salon, the notices sheet), both from the run
+# (e2e/push-present.mjs).
 - runFlow:
     file: phone.yaml
     env:
@@ -22,9 +23,5 @@ appId: com.reelhouse.society
     text: ${PUSH_TITLE}
 - extendedWaitUntil:
     visible:
-      id: "screen-ready-member"
+      id: ${PUSH_LANDS}
     timeout: 30000
-# The file draws the handle as its name, in capitals, without its @
-# (run 42718741997).
-- assertVisible:
-    text: "(?i)${PUSH_FROM}"

@@ -1,0 +1,16 @@
+appId: com.reelhouse.society
+---
+# A critique of the member's log, pushed through notify-push and tapped
+# from the shade, opens the log critiqued, never the critic's file
+# (WORKLIST P4.22, 20261109_03). The app in front: the three states a tap
+# is made in are push_tap.yaml's, and the tap's path is one for every kind.
+- launchApp:
+    clearState: true
+- runFlow:
+    file: subflows/phone.yaml
+    env:
+      SET: notices_allowed
+      TO: "true"
+- runFlow: subflows/sign_in.yaml
+- openLink: ${PUSH_LINK}
+- runFlow: subflows/tap_the_notice.yaml

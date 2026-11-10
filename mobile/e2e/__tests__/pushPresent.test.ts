@@ -10,14 +10,18 @@
 import { spawnSync } from 'child_process';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
+import { basename } from 'path';
+import { files as universe } from '@/test-utils/universe';
 import { messageOf } from '@/src/utils/e2ePresent';
+import { routeMarkOf } from '@/src/components/layout/E2ERouteMark';
 
 const SCRIPT = pathToFileURL(join(__dirname, '..', 'push-present.mjs')).href;
 
 /** What the script's `name` answers for `arg`, asked through node. */
-function ask(name: 'messageFor' | 'linkOf' | 'TOKEN', arg?: unknown): unknown {
+function ask(name: 'messageFor' | 'linkOf' | 'TOKEN' | 'markOf' | 'kinds', arg?: unknown): unknown {
   const code = `import * as m from ${JSON.stringify(SCRIPT)}; const a = JSON.parse(process.argv[1]);
-    const v = typeof m[${JSON.stringify(name)}] === 'function' ? m[${JSON.stringify(name)}](a) : m[${JSON.stringify(name)}];
+    const v = ${JSON.stringify(name)} === 'kinds' ? Object.keys(m.KINDS)
+      : typeof m[${JSON.stringify(name)}] === 'function' ? m[${JSON.stringify(name)}](a) : m[${JSON.stringify(name)}];
     process.stdout.write(JSON.stringify(v ?? null));`;
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', code, JSON.stringify(arg ?? null)], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error(r.stderr);
@@ -45,4 +49,18 @@ it("takes nothing when no message reached the member's phone, or a body was not 
 it('hands the message whole to the link the E2E build presents', () => {
   const m = ours('A new follower');
   expect(messageOf(ask('linkOf', m) as string)).toEqual({ title: m.title, body: m.body, data: m.data, sound: 'default', channelId: 'members' });
+});
+
+it('waits for the room as the app marks it: a member\'s file, a log, a salon, the notices sheet', () => {
+  for (const path of ['/user/e2e_admin', '/log/00000000-0000-4000-8000-000000000001', '/lounge/00000000-0000-4000-b200-000000000001', '/notifications-modal']) {
+    expect(ask('markOf', path)).toBe(routeMarkOf(path));
+  }
+});
+
+it('sends every kind a push flow taps, and every push flow taps a kind it sends', () => {
+  // push_tap is the follow's (its three states); push_tap_<kind> each of the rest (run-flows.sh).
+  const flows = universe('flows').map((f) => basename(f)).filter((f) => /^push_tap.*\.yaml$/.test(f))
+    .map((f) => f.replace(/\.yaml$/, '').replace(/^push_tap_?/, '') || 'follow').sort();
+  expect(flows).toEqual((ask('kinds') as string[]).sort());
+  expect(flows).toEqual(['critique', 'follow', 'house', 'salon']);
 });

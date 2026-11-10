@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- e2e/load/seed.sql — a house of 100,000 members, for the load test (load.yml).
+-- e2e/load/seed.sql — a house of 100,000 members (or :members), for the load test (load.yml).
 -- ════════════════════════════════════════════════════════════════════════════
 -- Runs ONLY on the CI runner's throwaway copy of production's shape (built by
 -- e2e/db/bootstrap.mjs, sealed off from production as the E2E world is), as
@@ -24,6 +24,14 @@
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 \timing on
+-- The house's size: 100,000 members unless the run names another, a whole number of hundreds of
+-- thousands (psql -v members=500000, the owner's scale: audit A-SCALE-PLAN). :scale is that number
+-- of hundreds of thousands, by which what a house holds in proportion grows.
+\if :{?members}
+\else
+\set members 100000
+\endif
+SELECT :members / 100000 AS scale \gset
 SET session_replication_role = replica;
 SET synchronous_commit = off;
 SELECT setseed(0.4242);
@@ -46,7 +54,7 @@ INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, r
 SELECT pg_temp.mid(n), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
        'm' || n || '@load.test', jsonb_build_object('username', 'm' || n), '{"provider":"email"}'::jsonb,
        now() - (n % 1000) * interval '1 day', now(), now()
-  FROM generate_series(1, 100000) n;
+  FROM generate_series(1, :members) n;
 
 INSERT INTO public.profiles (id, username, role, tier, email, is_social_private, created_at, preferences, display_name, bio)
 SELECT pg_temp.mid(n), 'm' || n,
@@ -54,7 +62,7 @@ SELECT pg_temp.mid(n), 'm' || n,
        CASE WHEN n % 33 = 0 THEN 'auteur' WHEN n % 10 = 0 THEN 'archivist' ELSE 'cinephile' END,
        'm' || n || '@load.test', (n % 20 = 7), now() - (n % 1000) * interval '1 day', '{}'::jsonb,
        'Member ' || n, 'A member of the load test.'
-  FROM generate_series(1, 100000) n;
+  FROM generate_series(1, :members) n;
 -- The whale and the celebrity are Auteurs, public.
 UPDATE public.profiles SET role = 'auteur', tier = 'auteur', is_social_private = false WHERE id IN (pg_temp.mid(1), pg_temp.mid(2));
 
@@ -64,7 +72,7 @@ SELECT n, CASE WHEN n = 1 THEN 10000
                WHEN r < 0.03 THEN 80 + floor(random() * 1500)::int
                WHEN r < 0.25 THEN 15 + floor(random() * 65)::int
                ELSE floor(random() * 15)::int END AS logs
-  FROM (SELECT n, random() AS r FROM generate_series(1, 100000) n) x;
+  FROM (SELECT n, random() AS r FROM generate_series(1, :members) n) x;
 
 INSERT INTO public.logs (id, user_id, film_id, film_title, rating, review, watched_date, created_at, poster_path, year, status, view_count, viewing_history)
 SELECT gen_random_uuid(), pg_temp.mid(c.n), film,
@@ -87,12 +95,12 @@ SELECT viewing_id, id FROM public.logs;
 
 -- ── follows: ~25 each; a third of the house follows the celebrity ─────────────
 INSERT INTO public.interactions (user_id, target_user_id, type, created_at)
-SELECT pg_temp.mid(n), pg_temp.mid(((n * 31 + j * 7919) % 100000) + 1), 'follow', now() - (j % 500) * interval '1 hour'
-  FROM generate_series(1, 100000) n, generate_series(1, 25) j
- WHERE ((n * 31 + j * 7919) % 100000) + 1 <> n
+SELECT pg_temp.mid(n), pg_temp.mid(((n * 31 + j * 7919) % :members) + 1), 'follow', now() - (j % 500) * interval '1 hour'
+  FROM generate_series(1, :members) n, generate_series(1, 25) j
+ WHERE ((n * 31 + j * 7919) % :members) + 1 <> n
 ON CONFLICT DO NOTHING;
 INSERT INTO public.interactions (user_id, target_user_id, type)
-SELECT pg_temp.mid(n), pg_temp.mid(2), 'follow' FROM generate_series(3, 100000) n WHERE n % 3 = 0
+SELECT pg_temp.mid(n), pg_temp.mid(2), 'follow' FROM generate_series(3, :members) n WHERE n % 3 = 0
 ON CONFLICT DO NOTHING;
 -- And one member (4) who follows 2,000: the following feed is timed for them too.
 INSERT INTO public.interactions (user_id, target_user_id, type)
@@ -104,22 +112,22 @@ ON CONFLICT DO NOTHING;
 -- log once (20261023_01), so two drawn at random, which met now and then, made a house
 -- production cannot be, and its key could not be built over it.
 INSERT INTO public.interactions (user_id, target_log_id, type, created_at)
-SELECT pg_temp.mid(1 + (l.first + e * 7919) % 100000), l.id, 'endorse_log', l.created_at + interval '1 hour'
-  FROM (SELECT id, created_at, floor(random() * 100000)::int AS first FROM public.logs WHERE review IS NOT NULL) l,
+SELECT pg_temp.mid(1 + (l.first + e * 7919) % :members), l.id, 'endorse_log', l.created_at + interval '1 hour'
+  FROM (SELECT id, created_at, floor(random() * :members)::int AS first FROM public.logs WHERE review IS NOT NULL) l,
        generate_series(1, 2) e;
 
 -- ── watchlists: ~15 each ──────────────────────────────────────────────────────
 -- In bigint: n * 104729 reaches 10.5 billion, past an integer's 2.1.
 INSERT INTO public.watchlists (user_id, film_id, film_title, poster_path, year)
 SELECT pg_temp.mid(n), ((n::bigint * 104729 + j * 7) % 30000) + 1, 'Film ' || (((n::bigint * 104729 + j * 7) % 30000) + 1), '/p.jpg', 1990
-  FROM generate_series(1, 100000) n, generate_series(1, 15) j
+  FROM generate_series(1, :members) n, generate_series(1, 15) j
 ON CONFLICT (user_id, film_id) DO NOTHING;
 
 -- ── stacks: a tenth of the house keeps 1-10; ~15 films each ──────────────────
 INSERT INTO public.lists (id, user_id, title, description, is_ranked, created_at)
 SELECT gen_random_uuid(), pg_temp.mid(n), 'Stack ' || n || '-' || s, 'A stack for the load test.', (s % 2 = 0),
        now() - ((n + s) % 700) * interval '1 day'
-  FROM generate_series(1, 100000) n, generate_series(1, 1 + n % 10) s
+  FROM generate_series(1, :members) n, generate_series(1, 1 + n % 10) s
  WHERE n % 10 = 1;
 INSERT INTO public.list_items (list_id, film_id, film_title, rank_position, poster_path)
 -- In bigint: hashtext() spans the whole integer range, so adding to it (or
@@ -132,24 +140,24 @@ ON CONFLICT (list_id, film_id) DO NOTHING;
 INSERT INTO public.dispatch_posts (id, kind, user_id, author_username, title, body, full_content, created_at)
 SELECT ('00000000-0000-4000-9000-' || lpad(to_hex(p), 12, '0'))::uuid,
        (ARRAY['take','seeking','dossier'])[1 + p % 3],
-       pg_temp.mid(((p * 13) % 100000) + 1), 'm' || (((p * 13) % 100000) + 1),
+       pg_temp.mid(((p * 13) % :members) + 1), 'm' || (((p * 13) % :members) + 1),
        CASE WHEN p % 3 = 2 THEN 'An essay, number ' || p END,
        'A post for the load test, number ' || p || '.',
        CASE WHEN p % 3 = 2 THEN repeat('The long form, at length. ', 200) END,
        now() - (p % 3000) * interval '1 hour'
-  FROM generate_series(1, 40000) p;
+  FROM generate_series(1, 40000 * :scale) p;
 INSERT INTO public.dispatch_comments (post_id, user_id, author_username, body, created_at, certify_count)
-SELECT ('00000000-0000-4000-9000-' || lpad(to_hex(1 + floor(random() * 40000)::int), 12, '0'))::uuid,
+SELECT ('00000000-0000-4000-9000-' || lpad(to_hex(1 + floor(random() * 40000 * :scale)::int), 12, '0'))::uuid,
        pg_temp.mid(u), 'm' || u, 'A critique for the load test.', now() - floor(random() * 3000) * interval '1 hour',
        floor(random() * 20)::int
-  FROM (SELECT 1 + floor(random() * 100000)::int AS u FROM generate_series(1, 400000)) x;
+  FROM (SELECT 1 + floor(random() * :members)::int AS u FROM generate_series(1, 400000 * :scale)) x;
 INSERT INTO public.dispatch_comments (post_id, user_id, author_username, body, created_at, certify_count)
 SELECT ('00000000-0000-4000-9000-' || lpad(to_hex(1), 12, '0'))::uuid, pg_temp.mid(u), 'm' || u,
        'On the hot post.', now() - u * interval '1 second', u % 50
   FROM generate_series(3, 20002) u;
 INSERT INTO public.dispatch_certifications (user_id, post_id)
 SELECT pg_temp.mid(u), ('00000000-0000-4000-9000-' || lpad(to_hex(p), 12, '0'))::uuid
-  FROM generate_series(1, 40000) p, LATERAL (SELECT ((p * 7 + k * 15485863) % 100000) + 1 AS u FROM generate_series(1, 20) k) x
+  FROM generate_series(1, 40000 * :scale) p, LATERAL (SELECT ((p * 7 + k * 15485863) % :members) + 1 AS u FROM generate_series(1, 20) k) x
 ON CONFLICT DO NOTHING;
 -- One series at the ceiling: 24 parts (MOST_PARTS) of 25,000 characters (essay_ceiling), its words
 -- parted by every kind of space the app counts by, Arabic among them (the series page's read times).
@@ -163,12 +171,12 @@ SELECT ('00000000-0000-4000-9100-' || lpad(to_hex(n), 12, '0'))::uuid, 'dossier'
 -- ── the Lounge: 1,500 rooms; one with 200,000 messages ───────────────────────
 INSERT INTO public.lounges (id, name, description, creator_id, is_private, member_count, max_members, created_at)
 SELECT ('00000000-0000-4000-a000-' || lpad(to_hex(r), 12, '0'))::uuid, 'Room ' || r, 'A room for the load test.',
-       pg_temp.mid(((r * 61) % 100000) + 1), (r % 5 = 0), 0, 500, now() - r * interval '1 hour'
-  FROM generate_series(1, 1500) r;
+       pg_temp.mid(((r * 61) % :members) + 1), (r % 5 = 0), 0, 500, now() - r * interval '1 hour'
+  FROM generate_series(1, 1500 * :scale) r;
 INSERT INTO public.lounge_members (lounge_id, user_id, status, last_read_at)
-SELECT ('00000000-0000-4000-a000-' || lpad(to_hex(r), 12, '0'))::uuid, pg_temp.mid(((r * 61 + m * 977) % 100000) + 1), 'approved',
+SELECT ('00000000-0000-4000-a000-' || lpad(to_hex(r), 12, '0'))::uuid, pg_temp.mid(((r * 61 + m * 977) % :members) + 1), 'approved',
        now() - (m % 48) * interval '1 hour'
-  FROM generate_series(1, 1500) r, generate_series(0, 39) m
+  FROM generate_series(1, 1500 * :scale) r, generate_series(0, 39) m
 ON CONFLICT DO NOTHING;
 -- The whale sits in 200 rooms, so the unread counts have work to do.
 INSERT INTO public.lounge_members (lounge_id, user_id, status, last_read_at)
@@ -176,11 +184,11 @@ SELECT ('00000000-0000-4000-a000-' || lpad(to_hex(r), 12, '0'))::uuid, pg_temp.m
   FROM generate_series(1, 200) r
 ON CONFLICT DO NOTHING;
 INSERT INTO public.lounge_messages (lounge_id, user_id, content, created_at)
-SELECT ('00000000-0000-4000-a000-' || lpad(to_hex(1 + floor(random() * 1500)::int), 12, '0'))::uuid,
-       pg_temp.mid(1 + floor(random() * 100000)::int), 'A word in the room.', now() - floor(random() * 100000) * interval '1 minute'
-  FROM generate_series(1, 1300000);
+SELECT ('00000000-0000-4000-a000-' || lpad(to_hex(1 + floor(random() * 1500 * :scale)::int), 12, '0'))::uuid,
+       pg_temp.mid(1 + floor(random() * :members)::int), 'A word in the room.', now() - floor(random() * 100000) * interval '1 minute'
+  FROM generate_series(1, 1300000 * :scale);
 INSERT INTO public.lounge_messages (lounge_id, user_id, content, created_at)
-SELECT ('00000000-0000-4000-a000-' || lpad(to_hex(1), 12, '0'))::uuid, pg_temp.mid(((i * 61) % 100000) + 1),
+SELECT ('00000000-0000-4000-a000-' || lpad(to_hex(1), 12, '0'))::uuid, pg_temp.mid(((i * 61) % :members) + 1),
        'The busiest room in the house.', now() - i * interval '10 seconds'
   FROM generate_series(1, 200000) i;
 
@@ -188,12 +196,12 @@ SELECT ('00000000-0000-4000-a000-' || lpad(to_hex(1), 12, '0'))::uuid, pg_temp.m
 INSERT INTO public.log_comments (log_id, user_id, username, body, created_at)
 SELECT l.id, pg_temp.mid(u), 'm' || u, 'A critique of a log.', l.created_at + interval '2 hours'
   FROM (SELECT id, created_at FROM public.logs WHERE review IS NOT NULL ORDER BY id LIMIT 300000) l,
-       LATERAL (SELECT 1 + floor(random() * 100000)::int AS u) x;
+       LATERAL (SELECT 1 + floor(random() * :members)::int AS u) x;
 INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, created_at, is_read, group_key)
 SELECT pg_temp.mid(t), (ARRAY['follow','endorse','comment'])[1 + k % 3], 'm' || f, pg_temp.mid(f),
        'm' || f || ' did something.', now() - k * interval '7 minutes', (k % 4 <> 0), 'load:' || (k % 1000)
-  FROM generate_series(1, 2500000) k,
-       LATERAL (SELECT 1 + floor(random() * 100000)::int AS t, 1 + floor(random() * 100000)::int AS f) x;
+  FROM generate_series(1, 2500000 * :scale) k,
+       LATERAL (SELECT 1 + floor(random() * :members)::int AS t, 1 + floor(random() * :members)::int AS f) x;
 INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, created_at, is_read)
 SELECT pg_temp.mid(2), 'follow', 'm' || k, pg_temp.mid(k), 'm' || k || ' follows you.', now() - k * interval '1 minute', false
   FROM generate_series(3, 50000) k;

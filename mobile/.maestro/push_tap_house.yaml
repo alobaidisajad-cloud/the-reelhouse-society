@@ -1,0 +1,15 @@
+appId: com.reelhouse.society
+---
+# Word from the house, pushed through notify-push and tapped from the shade,
+# points at nothing and opens the notices sheet (WORKLIST P4.22). The app in
+# front: the three states a tap is made in are push_tap.yaml's.
+- launchApp:
+    clearState: true
+- runFlow:
+    file: subflows/phone.yaml
+    env:
+      SET: notices_allowed
+      TO: "true"
+- runFlow: subflows/sign_in.yaml
+- openLink: ${PUSH_LINK}
+- runFlow: subflows/tap_the_notice.yaml

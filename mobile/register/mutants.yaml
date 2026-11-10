@@ -2940,3 +2940,21 @@ mutants:
         find: "        id: install-2\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n"
         replace: "        id: install-2\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
+
+  - id: shape-push-kind-without-a-flow
+    class: E2E-push-tap-unproven
+    source: shape
+    edits:
+      - file: e2e/push-present.mjs
+        find: "  house: ({ member }) => ({"
+        replace: "  sheet: ({ member }) => ({"
+    proof: { file: e2e/__tests__/pushPresent.test.ts, test: "sends every kind a push flow taps, and every push flow taps a kind it sends" }
+
+  - id: shape-push-waits-for-another-mark
+    class: E2E-push-tap-unproven
+    source: shape
+    edits:
+      - file: e2e/push-present.mjs
+        find: "  const words = path.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');"
+        replace: "  const words = path.replace(/[^A-Za-z0-9]+/g, '-');"
+    proof: { file: e2e/__tests__/pushPresent.test.ts, test: "waits for the room as the app marks it: a member's file, a log, a salon, the notices sheet" }
