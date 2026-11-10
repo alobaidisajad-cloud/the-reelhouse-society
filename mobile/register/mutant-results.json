@@ -829,7 +829,7 @@
     "class": "DATA-one-flag-for-two-reads",
     "mutant": "shape-room-flag-lowered-by-salons",
     "proof": "m1",
-    "commit": "5e75069780a98d751c672deeb8ee178f7a9b639f",
+    "commit": "b63ea9c7ca8f327967b961259d394056eb7b4244",
     "verdict": "caught"
   },
   {
@@ -1613,7 +1613,7 @@
     "class": "WRITE-a-salon-founded-twice",
     "mutant": "shape-salon-drawn-twice",
     "proof": "m1",
-    "commit": "31fa4ec1a3b74da9aa926b6190ca0a28b8baf65f",
+    "commit": "b63ea9c7ca8f327967b961259d394056eb7b4244",
     "verdict": "caught"
   },
   {
