@@ -46,15 +46,15 @@ it('says the list could not be read when the corridor fails', async () => {
   expect(useLoungeStore.getState().lounges).toEqual([]);
 });
 
-it.each(['memberships', 'newest', 'hosted', 'joined', 'unread', 'pending', 'faces', 'last_words'])(
-  'says the list could not be read when the answer has no %s list, never a short list',
-  async (piece) => {
+it('says the list could not be read when the answer lacks any one of its lists, never a short list', async () => {
+  for (const piece of ['memberships', 'newest', 'hosted', 'joined', 'unread', 'pending', 'faces', 'last_words']) {
+    useLoungeStore.setState({ lounges: [], loungesFailed: false } as never);
     mockAnswer = { data: { ...WHOLE, [piece]: null }, error: null };
     await useLoungeStore.getState().fetchLounges();
-    expect(useLoungeStore.getState().loungesFailed).toBe(true);
-    expect(useLoungeStore.getState().lounges).toEqual([]);
-  },
-);
+    expect({ piece, failed: useLoungeStore.getState().loungesFailed, drawn: useLoungeStore.getState().lounges })
+      .toEqual({ piece, failed: true, drawn: [] });
+  }
+});
 
 it('says the list could not be read when the answer is not the corridor at all', async () => {
   mockAnswer = { data: [WHOLE], error: null };

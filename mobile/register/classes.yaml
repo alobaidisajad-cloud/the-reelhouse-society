@@ -1316,7 +1316,7 @@ classes:
     source: { kind: reviewer, ref: "study of the salon's opening for P0.112: speed lab 39889250983, the salon ready 2.7 s over its budget" }
     methods:
       - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page: each word with its reactions, counted and marked mine, and nothing else asked" }
-      - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "asks what needs only the member at once, and what needs their seats and rooms together after" }
+      - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "asks the house once for the whole corridor, and reads nothing else" }
     fix: "a page of words and its reactions in one request (MESSAGE_COLUMNS, the reactions embedded by their key; the contract proves the embed against the house, which answers a wrong key 400); the salons' seats, newest rooms and hosted rooms asked at once, then the joined rooms, unread counts, door requests and faces together (mutants shape-reactions-asked-apart, shape-salons-read-in-turn)"
     places: [none]
 
@@ -1836,6 +1836,8 @@ classes:
     source: { kind: reviewer, ref: "P4.53: every page opens at its floor (audit/final/P4-53-STUDY.md)" }
     methods:
       - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "seeds the page from the feed row it was opened from, its critiques still to come" }
+      - { kind: running, file: src/stores/__tests__/theSalonListIsWholeOrSaysSo.test.ts, test: "says the list could not be read when the answer lacks any one of its lists, never a short list" }
+      - { kind: running, file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "asks for the house’s count of each essay, never the essays, so the read time is the essay’s" }
       - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "draws the seeded record, the count of its critiques, and never says there are none" }
       - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "asks for the critiques with the record, not after it" }
       - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "keeps the card’s record when the house cannot be reached, its critiques said out of reach" }
@@ -1941,6 +1943,6 @@ classes:
     count: 1
     source: { kind: reviewer, ref: "the corridor's one trip (P4.53, 2026-11-10): the seat test's house answered the last words for the first time" }
     methods:
-      - { kind: running, file: src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts, test: "is drawn at once as the next read gives it (private: false)" }
+      - { kind: running, file: src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts, test: "a request still at the door, withdrawn, takes no one off the count" }
     fix: "leftBehind keeps the room's last_message_at: a room's last word is the room's, given to the directory (get_salon_last_words) as to its members, so a room left is drawn as the next read gives it"
     places: [emulator]
