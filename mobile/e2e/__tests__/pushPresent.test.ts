@@ -8,9 +8,8 @@
  * through node, as the run asks it.
  */
 import { spawnSync } from 'child_process';
-import { join } from 'path';
+import { basename, join } from 'path';
 import { pathToFileURL } from 'url';
-import { basename } from 'path';
 import { files as universe } from '@/test-utils/universe';
 import { messageOf } from '@/src/utils/e2ePresent';
 import { routeMarkOf } from '@/src/components/layout/E2ERouteMark';
