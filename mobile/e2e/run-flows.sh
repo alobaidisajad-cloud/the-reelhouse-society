@@ -734,10 +734,14 @@ slow=0
 times_args=(--flow-times "$OUT/flow-times.txt")
 # The ceilings are the flows' warm openings on the plain phone: a walk opens every screen cold,
 # and a variant's phone, or a lifecycle flow's changed one, is not the one they were measured on, so
-# their times are reported, and a screen that could not read still fails them.
-[ -f mobile/e2e/screen-ceilings.json ] && [ -z "${E2E_WALK:-}" ] && [ -z "${E2E_VARIANT:-}" ] && [ -z "${E2E_LIFECYCLE:-}" ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
+# their times are reported, and a screen that could not read still fails them. So are a shipped
+# client's (E2E_OLD_CLIENT): the ceilings are this code's openings, and that build is another app's
+# code, which no change here can make faster; what its run proves is that every screen it opens
+# still reads (TestFlight build 41's Lounge, 326 ms on a runner twice as slow as the day's, nightly
+# 42797186369). The house's reads it makes are timed at 100,000 members by load.yml.
+[ -f mobile/e2e/screen-ceilings.json ] && [ -z "${E2E_WALK:-}" ] && [ -z "${E2E_VARIANT:-}" ] && [ -z "${E2E_LIFECYCLE:-}" ] && [ -z "${E2E_OLD_CLIENT:-}" ] && times_args+=(--ceilings mobile/e2e/screen-ceilings.json)
 # A screen new to the gate is reported, not judged, while the learning file names it (screen-times.mjs).
-[ -f mobile/e2e/screen-ceilings.json ] && [ -f mobile/e2e/screen-learning.json ] && [ -z "${E2E_WALK:-}" ] && [ -z "${E2E_VARIANT:-}" ] && [ -z "${E2E_LIFECYCLE:-}" ] && times_args+=(--learning mobile/e2e/screen-learning.json)
+[ -f mobile/e2e/screen-ceilings.json ] && [ -f mobile/e2e/screen-learning.json ] && [ -z "${E2E_WALK:-}" ] && [ -z "${E2E_VARIANT:-}" ] && [ -z "${E2E_LIFECYCLE:-}" ] && [ -z "${E2E_OLD_CLIENT:-}" ] && times_args+=(--learning mobile/e2e/screen-learning.json)
 [ $flows_failed -eq 0 ] && [ $gone -eq 0 ] && [ "$not_judged" -eq 0 ] && times_args+=(--complete)
 [ -n "${E2E_SHARD:-}" ] && times_args+=(--record "$OUT/screen-record.json")
 if [ -n "${E2E_FAULTS:-}" ]; then

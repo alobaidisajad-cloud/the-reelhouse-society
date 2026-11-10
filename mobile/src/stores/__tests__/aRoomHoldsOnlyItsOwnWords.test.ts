@@ -140,13 +140,16 @@ describe('a room holds only its own words', () => {
 describe('the salons\' read and the room\'s read keep their own flags', () => {
   it('the salons read to the end lowers only theirs; the room read to the end lowers only its own', async () => {
     mockHouse = supabaseFake({
-      rows: { lounge_members: [], lounges: [], lounge_messages: [], profiles: PEOPLE, lounge_message_reactions: [] },
-      rpc: { get_lounge_unread_counts: [], get_salon_member_faces: [] },
+      rows: { lounge_messages: [], profiles: PEOPLE, lounge_message_reactions: [] },
+      rpc: {
+        get_lounge_list: { memberships: [], newest: [], hosted: [], joined: [], unread: [], pending: [], faces: [], last_words: [] },
+      },
     });
-    useLoungeStore.setState({ currentLoungeId: A, messagesLoading: true });
+    useLoungeStore.setState({ currentLoungeId: A, messagesLoading: true, loungesRead: false });
     await useLoungeStore.getState().fetchLounges();
-    expect({ salons: useLoungeStore.getState().loungesLoading, room: useLoungeStore.getState().messagesLoading })
-      .toEqual({ salons: false, room: true });
+    // Read to its end, not failed: a failed read lowers the salons' flag by its own path.
+    expect({ salons: useLoungeStore.getState().loungesLoading, read: useLoungeStore.getState().loungesRead, room: useLoungeStore.getState().messagesLoading })
+      .toEqual({ salons: false, read: true, room: true });
 
     useLoungeStore.setState({ loungesLoading: true });
     await useLoungeStore.getState().fetchMessages(A);

@@ -21,7 +21,8 @@ const ADA = '55555555-5555-4555-8555-555555555555';
 
 type Seat = { lounge_id: string; user_id: string; status: 'approved' | 'pending' | 'muted' | 'banned' };
 type Room = { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; cover_image: string | null; lastMessageAt: string | null };
-const mockHouse = { rooms: [] as Room[], seats: [] as Seat[], loseAnswer: false };
+/** `held`: the corridor's answer waits for it, so what a founding draws is seen before the read beneath it. */
+const mockHouse = { rooms: [] as Room[], seats: [] as Seat[], loseAnswer: false, held: null as Promise<void> | null };
 
 const counted = (id: string) => mockHouse.seats.filter((s) => s.lounge_id === id && s.status === 'approved').length;
 const asRow = ({ lastMessageAt: _unread, ...room }: Room) => ({ ...room, member_count: counted(room.id) });
@@ -64,6 +65,7 @@ jest.mock('../../lib/supabase', () => ({
     },
     rpc: async (fn: string, args: Record<string, unknown> = {}) => {
       if (fn === 'get_lounge_list') {
+        if (mockHouse.held) await mockHouse.held;
         // The corridor's one answer, each piece as 20261109_02 reads it: the member's seats, the
         // rooms (newest, hosted, joined), the unread counts of a member who sits somewhere, the
         // requests at the rooms hosted, the faces of the member's own rooms and the rest's last words.
@@ -137,6 +139,7 @@ beforeEach(() => {
   mockHouse.rooms = [{ id: SALON, name: 'The Nitrate Circle', description: 'Silent era.', is_private: false, creator_id: HOST, created_at: '2026-06-01T00:00:00Z', cover_image: null, lastMessageAt: '2026-10-01T20:00:00Z' }];
   mockHouse.seats = [{ lounge_id: SALON, user_id: HOST, status: 'approved' }, { lounge_id: SALON, user_id: ADA, status: 'approved' }];
   mockHouse.loseAnswer = false;
+  mockHouse.held = null;
   useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false });
 });
 
@@ -220,9 +223,16 @@ describe('a salon founded', () => {
       expect(await ask()).toBeNull();
       // The corridor's own read, between the two taps, already draws the room the house founded.
       await readAgain('room-noir');
+      // The read the founding starts beneath it is held, so the room it drew is what is seen.
+      let release = () => {};
+      mockHouse.held = new Promise<void>((done) => { release = done; });
       expect(await ask()).toBe('room-noir');
       expect(mockHouse.rooms.filter((r) => r.name === 'The Noir Corner')).toHaveLength(1);
       expect(mockHouse.seats.filter((s) => s.lounge_id === 'room-noir')).toHaveLength(1);
+      expect(useLoungeStore.getState().lounges.filter((l) => l.id === 'room-noir')).toHaveLength(1);
+      mockHouse.held = null;
+      release();
+      await readAgain('room-noir');
       expect(useLoungeStore.getState().lounges.filter((l) => l.id === 'room-noir')).toHaveLength(1);
     } finally {
       clock.mockRestore();
