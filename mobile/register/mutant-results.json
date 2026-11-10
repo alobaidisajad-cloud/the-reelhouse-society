@@ -59,7 +59,7 @@
     "class": "CI-gate-never-runs",
     "mutant": "shape-gate-on-pull-requests-alone",
     "proof": "m1",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "d3129803324fd03f34d84fd204a830f325c9cd67",
     "verdict": "caught"
   },
   {
@@ -458,7 +458,7 @@
     "class": "CI-schedule-stops-unheard",
     "mutant": "shape-heartbeat-silent",
     "proof": "m1",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "d3129803324fd03f34d84fd204a830f325c9cd67",
     "verdict": "caught"
   },
   {
@@ -724,7 +724,7 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-retry-blocked-by-lock",
     "proof": "m1",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "d3129803324fd03f34d84fd204a830f325c9cd67",
     "verdict": "caught"
   },
   {
@@ -794,7 +794,7 @@
     "class": "CI-install-fails-on-a-source-it-never-uses",
     "mutant": "shape-install-reads-every-source",
     "proof": "m1",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "d3129803324fd03f34d84fd204a830f325c9cd67",
     "verdict": "caught"
   },
   {
