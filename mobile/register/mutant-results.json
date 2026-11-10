@@ -857,7 +857,7 @@
     "class": "SPEED-read-waits-on-a-read-it-needs-not",
     "mutant": "shape-salons-read-in-turn",
     "proof": "m2",
-    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "commit": "89d789330da958e11abd84ddd1bcae0822227d77",
     "verdict": "caught"
   },
   {
@@ -2200,8 +2200,8 @@
   {
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-corridor-drawn-short",
-    "proof": null,
-    "commit": "b3cdaa83c4a5bae764cea343a5dc3ffb44cf47ea",
+    "proof": "m2",
+    "commit": "89d789330da958e11abd84ddd1bcae0822227d77",
     "verdict": "caught"
   },
   {
@@ -2215,7 +2215,7 @@
     "class": "UI-a-room-left-drawn-unlike-its-read",
     "mutant": "shape-left-room-loses-its-last-word",
     "proof": "m1",
-    "commit": "b3cdaa83c4a5bae764cea343a5dc3ffb44cf47ea",
+    "commit": "89d789330da958e11abd84ddd1bcae0822227d77",
     "verdict": "caught"
   }
 ]
