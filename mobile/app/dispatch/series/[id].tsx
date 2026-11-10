@@ -17,13 +17,14 @@
  * So `3 OF 3` counts what is really there. Less than the design imagined, and
  * true, which is the trade this app makes every time.
  *
- * ── AND WHY IT ASKS FOR THE WHOLE ESSAY ────────────────────────────────────
- * `FILING_FULL_COLUMNS`, not the card's. A dossier's `body` is a 500-character
- * EXCERPT, so a read time computed from it would say `1 MIN` under every essay
- * in the series — a fabricated number on a page whose entire job is helping
- * someone choose what to read next. The essay ceiling is 25,000 characters and
- * the list is bounded at 24, so the worst case is bounded too, and the real
- * case is four essays.
+ * ── AND WHERE ITS READ TIMES COME FROM ─────────────────────────────────────
+ * Each part's word count, as the house keeps it (`FILING_SERIES_COLUMNS`). A
+ * dossier's `body` is a 500-character EXCERPT, so a read time computed from it
+ * would say `1 MIN` under every essay in the series: a fabricated number on a
+ * page whose entire job is helping someone choose what to read next. The page
+ * read every part's whole essay to count it, up to 24 at 25,000 characters;
+ * the house counts each on every write (20261109_01), so the page is sent 24
+ * numbers. A part with no count shows no read time rather than a wrong one.
  */
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -35,10 +36,10 @@ import { PaperEmpty, PaperSheet } from '@/src/components/dispatch/paper/PaperFra
 import { PaperBack } from '@/src/components/dispatch/paper/PaperMore';
 import { SeriesList, type Part } from '@/src/components/dispatch/paper/PaperEssay';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
-import { readTimeOf } from '@/src/components/dispatch/readTime';
+import { readTimeForWords } from '@/src/components/dispatch/readTime';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { supabase } from '@/src/lib/supabase';
-import { FILING_FULL_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/dispatchTypes';
+import { FILING_SERIES_COLUMNS, parseFilingRows, type Filing } from '@/src/stores/dispatchTypes';
 import { nav } from '@/src/utils/typedRouter';
 import { useDispatch } from '@/src/stores/dispatch';
 import { logger } from '@/src/utils/logger';
@@ -88,7 +89,7 @@ function SeriesScreen({ id, from }: { id: string; from?: string }) {
           .from('dispatch_posts')
           // `exact`, so the page knows the difference between "these are all of
           // them" and "these are the first of them".
-          .select(FILING_FULL_COLUMNS, { count: 'exact' })
+          .select(FILING_SERIES_COLUMNS, { count: 'exact' })
           .eq('series_id', id)
           // The feed's own two gates, so a part cannot appear here that the
           // Dispatch itself would not show.
@@ -179,7 +180,7 @@ function SeriesScreen({ id, from }: { id: string; from?: string }) {
     // Roman-numbered margins are the design; an empty margin is not.
     n: String(f.partNumber ?? i + 1),
     title: f.title ?? '',
-    readTime: readTimeOf(f.fullContent ?? f.body),
+    ...(typeof f.words === 'number' ? { readTime: readTimeForWords(f.words) } : {}),
     certified: f.certifyCount,
     // `from` is the part the reader arrived from, so the page marks where they
     // already are. Absent when the series is reached any other way — and then

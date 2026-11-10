@@ -88,7 +88,7 @@ jest.mock('@/src/lib/supabase', () => ({
 const part = (over: Record<string, unknown> = {}) => ({
   id: '00000021-0000-4000-8000-000000000021', kind: 'dossier', user_id: 'u1', author_username: 'tomasreyes',
   title: 'The Empty Room', body: 'An excerpt, five hundred characters at most.',
-  full_content: Array.from({ length: 2400 }, () => 'word').join(' '), // 12 MIN
+  words: 2400, // the house's count of the essay: 12 MIN
   series_id: '00000020-0000-4000-8000-000000000020', series_title: 'Ozu, in four parts', part_number: 1,
   withheld_at: null, ended_at: null, ended_by: null,
   certify_count: 9, comment_count: 2,
@@ -147,15 +147,23 @@ describe('the series page', () => {
     expect(mockAsked.eq.series_id).toBe('00000020-0000-4000-8000-000000000020');
   });
 
-  it('asks for the ESSAY, so the read time is the essay’s', async () => {
+  it('asks for the house’s count of each essay, never the essays, so the read time is the essay’s', async () => {
     mockRows = [part()];
     const { getByText } = await mount();
 
-    // The card columns would have been enough to render this page, and the read
-    // time would have been a lie: 2,400 words is 12 minutes, the excerpt is one.
-    expect(mockAsked.columns).toContain('full_content');
+    // The excerpt would have said 1 MIN: 2,400 words is 12 minutes. The count is the
+    // house's (20261109_01), so 24 parts at the ceiling are 24 numbers, not their text.
+    expect(mockAsked.columns).toMatch(/\bwords\b/);
+    expect(mockAsked.columns).not.toContain('full_content');
     expect(getByText(/12 MIN/)).toBeTruthy();
     expect(getByText(/9 CERTIFIED/)).toBeTruthy();
+  });
+
+  it('shows no read time for a part the house has not counted, never the excerpt’s 1 MIN', async () => {
+    mockRows = [part({ words: null })];
+    const { getByText, queryByText } = await mount();
+    expect(getByText(/9 CERTIFIED/)).toBeTruthy();
+    expect(queryByText(/\d+ MIN/)).toBeNull();
   });
 
   it('leaves out what the reader could not open anyway', async () => {

@@ -211,6 +211,26 @@ const before = (a: { created_at: string; id: string }, b: { created_at: string; 
 export const ROOM_COLUMNS = 'id, name, description, is_private, creator_id, created_at, member_count, cover_image';
 type RoomRow = { id: string; name: string; description: string; is_private: boolean; creator_id: string; created_at: string; member_count: number; cover_image: string | null };
 
+/** get_lounge_list's answer: each piece as the separate reads answered it. */
+type Corridor = {
+  memberships: { lounge_id: string; last_read_at: string | null; status: string | null }[];
+  newest: RoomRow[];
+  hosted: RoomRow[];
+  joined: RoomRow[];
+  unread: { lounge_id: string; unread_count: number; last_message_at: string | null }[];
+  pending: { lounge_id: string }[];
+  faces: { lounge_id: string; username: string; avatar_url: string | null }[];
+  last_words: { lounge_id: string; last_message_at: string | null }[];
+};
+const CORRIDOR_PIECES: readonly (keyof Corridor)[] = ['memberships', 'newest', 'hosted', 'joined', 'unread', 'pending', 'faces', 'last_words'];
+
+/** The corridor, when every piece of it is a list; null when any is not (a read that failed). */
+export function corridorOf(data: unknown): Corridor | null {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+  const answer = data as Record<string, unknown>;
+  return CORRIDOR_PIECES.every((piece) => Array.isArray(answer[piece])) ? answer as Corridor : null;
+}
+
 /** Standings that keep a membership row but not a seat among "your salons". */
 const UNSEATED: readonly string[] = ['banned', 'muted'];
 
@@ -430,9 +450,11 @@ export function seatedIn(room: LoungeRoom): LoungeRoom {
 
 /**
  * A room as the next read will give it once this member has left: no longer
- * theirs (none of what is read only for one's own rooms — unread count, last
- * message, faces, door requests), and one fewer in its count only if they
- * were counted (member_count counts approved members).
+ * theirs (none of what is read only for one's own rooms — unread count, faces,
+ * door requests), and one fewer in its count only if they were counted
+ * (member_count counts approved members). When it last spoke stays: the
+ * directory gives every room its last word (get_salon_last_words), a room left
+ * as much as any.
  */
 export function leftBehind(room: LoungeRoom): LoungeRoom {
   const counted = room.membership_status === 'approved';
@@ -441,7 +463,6 @@ export function leftBehind(room: LoungeRoom): LoungeRoom {
     mine: false,
     membership_status: undefined,
     unread_count: undefined,
-    last_message_at: undefined,
     memberFaces: undefined,
     pending_count: 0,
     member_count: counted ? Math.max(0, (room.member_count ?? 1) - 1) : room.member_count,
@@ -511,122 +532,55 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     }
     set({ loungesLoading: true });
     try {
-      // Two waves, not five: what needs only the member is asked at once, and what needs
-      // their seats and their own rooms is asked together after.
-      // Three sources, merged: the newest rooms (private ones too; they need admission),
-      // the rooms joined, and the rooms hosted, whose door requests are counted below.
-      const [memberRes, browsableRes, myCreatedRes] = await Promise.all([
-        supabase.from('lounge_members')
-          .select('lounge_id, last_read_at, status')
-          .eq('user_id', user.id)
-          .limit(100),
-        supabase.from('lounges')
-          .select(ROOM_COLUMNS)
-          .order('created_at', { ascending: false })
-          .limit(50),
-        supabase.from('lounges')
-          .select(ROOM_COLUMNS)
-          .eq('creator_id', user.id),
-      ]);
-      // Thrown, not read as []: an empty list would say the member belongs to nothing.
-      if (memberRes.error) throw memberRes.error;
+      // The corridor in one trip (get_lounge_list, 20261109_02): the member's seats, the newest
+      // rooms (private ones too; they need admission), the rooms joined and hosted, the unread
+      // counts, the door requests at the rooms hosted, the faces of the member's own rooms and the
+      // last words of the rest, each read on the server under the rule it is read under alone.
+      const { data, error } = await supabase.rpc('get_lounge_list');
+      if (error) throw error;
+      // A piece that is not a list is a read that failed, never an empty one: a short list drawn as
+      // the whole house would hide the member's own salons, with nothing saying so.
+      const corridor = corridorOf(data);
+      if (!corridor) throw new Error('get_lounge_list answered without every piece of the corridor');
 
-      const memberships = memberRes.data ?? [];
+      const memberships = corridor.memberships;
       const myLoungeIds = memberships.map(r => r.lounge_id);
       // A seat a ban or a mute has taken is not one of "your salons": the room stays in the directory.
-      const seatedIds = memberships.filter((r) => !UNSEATED.includes(String((r as { status?: string }).status))).map((r) => r.lounge_id);
-      const statusMap = new Map(memberships.map(r => [r.lounge_id, (r as { status?: string }).status]));
-      const loungeIds = myLoungeIds;
-      const ownedIds = (myCreatedRes.data ?? []).map(l => l.id);
-      // Build the combined set of IDs the user "owns or joined"
+      const seatedIds = memberships.filter((r) => !UNSEATED.includes(String(r.status))).map((r) => r.lounge_id);
+      const statusMap = new Map(memberships.map(r => [r.lounge_id, r.status]));
+      // The rooms the member owns or joined.
       const ownedOrJoinedIds = new Set(seatedIds);
-      ownedIds.forEach((lid) => ownedOrJoinedIds.add(lid));
-      const facesIds = Array.from(ownedOrJoinedIds);
+      corridor.hosted.forEach((l) => ownedOrJoinedIds.add(l.id));
 
-      // The directory's rows: when the last word was said in each salon not the member's own.
-      const directoryIds = (browsableRes.data ?? []).map((l) => l.id).filter((lid) => !ownedOrJoinedIds.has(lid));
-      const [myJoinedRes, unreadRes, pendingRes, facesRes, lastWordsRes] = await Promise.all([
-        myLoungeIds.length > 0
-          ? supabase.from('lounges').select(ROOM_COLUMNS).in('id', myLoungeIds)
-          : Promise.resolve({ data: [] as RoomRow[], error: null }),
-        // Counted on the server, for auth.uid() and under row security (no id to forge,
-        // no unbounded download).
-        loungeIds.length > 0 ? supabase.rpc('get_lounge_unread_counts') : null,
-        // How many requests are at the door, per lounge you host (RLS lets the
-        // creator see pending rows). Powers the landing card "at the door" badge.
-        ownedIds.length > 0
-          ? supabase.from('lounge_members').select('lounge_id').in('lounge_id', ownedIds).eq('status', 'pending')
-          : null,
-        // Member faces (avatar stack) — ONLY for salons you host or joined, where
-        // the roster is readable. Bounded to 3 per salon by the RPC's window, so a
-        // 200-member salon costs the same as a 2-member one. Best-effort: any
-        // failure leaves the map empty and every card falls back to its count.
-        facesIds.length > 0
-          ? Promise.resolve(supabase.rpc('get_salon_member_faces', { p_lounge_ids: facesIds })).catch(() => null)
-          : null,
-        // Best-effort, as the faces are: an unanswered read leaves a row without its time.
-        directoryIds.length > 0
-          ? Promise.resolve(supabase.rpc('get_salon_last_words', { p_lounge_ids: directoryIds })).catch(() => null)
-          : null,
-      ]);
-      // A source that failed would draw a short list as the whole house: the read failed.
-      const unread = browsableRes.error ?? myJoinedRes.error ?? myCreatedRes.error;
-      if (unread) throw unread;
-
-      // Merge all three, deduplicating by id
+      // Merged, deduplicating by id.
       const allLoungesMap = new Map<string, RoomRow>();
-      if (browsableRes.data) browsableRes.data.forEach(l => allLoungesMap.set(l.id, l));
-      if (myJoinedRes.data) myJoinedRes.data.forEach(l => allLoungesMap.set(l.id, l));
-      if (myCreatedRes.data) myCreatedRes.data.forEach(l => allLoungesMap.set(l.id, l));
+      for (const l of [...corridor.newest, ...corridor.joined, ...corridor.hosted]) allLoungesMap.set(l.id, l);
 
       const unreadCounts: Record<string, number> = {};
       const lastMessageTimestamps: Record<string, string> = {};
-
-      if (unreadRes) {
-        // A failure leaves the badges at zero, not the list empty.
-        const { data: unreadRows, error: unreadError } = unreadRes;
-        if (unreadError) {
-          logger.error('[LoungeStore.fetchLounges] unread counts failed:', unreadError);
-        } else if (unreadRows) {
-          for (const row of unreadRows as { lounge_id: string; unread_count: number; last_message_at: string | null }[]) {
-            unreadCounts[row.lounge_id] = Number(row.unread_count) || 0;
-            if (row.last_message_at) lastMessageTimestamps[row.lounge_id] = row.last_message_at;
-          }
-        }
-        // Every room the member belongs to gets an entry, whether or not the call
-        // returned one — the UI reads these maps directly.
-        for (const id of loungeIds) {
-          if (!(id in unreadCounts)) unreadCounts[id] = 0;
-        }
+      for (const row of corridor.unread) {
+        unreadCounts[row.lounge_id] = Number(row.unread_count) || 0;
+        if (row.last_message_at) lastMessageTimestamps[row.lounge_id] = row.last_message_at;
+      }
+      // Every room the member belongs to gets an entry, whether or not the count named it: the UI
+      // reads these maps directly.
+      for (const id of myLoungeIds) {
+        if (!(id in unreadCounts)) unreadCounts[id] = 0;
       }
 
+      // How many requests are at the door, per room hosted: the landing card's "at the door" badge.
       const pendingCounts: Record<string, number> = {};
-      if (pendingRes) {
-        // Logged, not surfaced: the salon list itself is still correct, and a toast
-        // for a badge would be noise. But a silent zero means a host never learns
-        // somebody is waiting at their door, so it must be diagnosable.
-        const { data: pendingRows, error: pendingError } = pendingRes;
-        if (pendingError) logger.error('[LoungeStore.fetchLounges] pending-request count failed:', pendingError);
-        if (pendingRows) for (const r of pendingRows) pendingCounts[r.lounge_id] = (pendingCounts[r.lounge_id] || 0) + 1;
-      }
+      for (const r of corridor.pending) pendingCounts[r.lounge_id] = (pendingCounts[r.lounge_id] || 0) + 1;
 
-      // Faces are decorative: an unanswered read leaves the card its plain count.
+      // The faces of the member's own rooms (at most 3 a room), for the card's avatar stack.
       const facesMap: Record<string, { username: string; avatar_url: string | null }[]> = {};
-      const faceRows = facesRes?.data;
-      if (Array.isArray(faceRows)) {
-        for (const r of faceRows as { lounge_id: string; username: string; avatar_url: string | null }[]) {
-          (facesMap[r.lounge_id] ??= []).push({ username: r.username, avatar_url: r.avatar_url });
-        }
+      for (const r of corridor.faces) {
+        (facesMap[r.lounge_id] ??= []).push({ username: r.username, avatar_url: r.avatar_url });
       }
 
-      // A last word is the row's news, not its door: an unanswered read leaves the row without its
-      // time, and is logged so it can be found.
-      if (lastWordsRes?.error) logger.warn('[LoungeStore.fetchLounges] last words failed:', lastWordsRes.error);
-      const lastWordRows = lastWordsRes?.data;
-      if (Array.isArray(lastWordRows)) {
-        for (const r of lastWordRows as { lounge_id: string; last_message_at: string | null }[]) {
-          if (r.last_message_at) lastMessageTimestamps[r.lounge_id] = r.last_message_at;
-        }
+      // When the last word was said in each room of the directory: the row's news.
+      for (const r of corridor.last_words) {
+        if (r.last_message_at) lastMessageTimestamps[r.lounge_id] = r.last_message_at;
       }
 
       // Sort by recent activity

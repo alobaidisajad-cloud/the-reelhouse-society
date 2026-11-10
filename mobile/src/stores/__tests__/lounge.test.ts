@@ -89,17 +89,15 @@ describe('LoungeStore', () => {
 
       await useLoungeStore.getState().fetchLounges();
       expect(mockFrom).not.toHaveBeenCalled();
+      expect(mockRpc).not.toHaveBeenCalled();
     });
 
     // The Lounge polls every thirty seconds while open. A toast from here was a
     // toast every thirty seconds for as long as the signal was gone; the store
     // now records the failure and the screen that asked says it.
     it('a read that fails is recorded — and said by the screen, not toasted by the store', async () => {
-      const unanswered = Promise.resolve({ data: null, error: { message: 'Network request failed' } });
-      const down: Record<string, unknown> = { then: (ok: never, no: never) => unanswered.then(ok, no) };
-      for (const step of ['select', 'eq', 'order', 'limit']) down[step] = () => down;
-      // The seats, the newest rooms and the rooms hosted are asked together: all three unanswered.
-      mockFrom.mockReturnValueOnce(down).mockReturnValueOnce(down).mockReturnValueOnce(down);
+      // The corridor is one call (get_lounge_list): unanswered.
+      mockRpc.mockResolvedValueOnce({ data: null, error: { message: 'Network request failed' } });
       useLoungeStore.setState({ loungesFailed: false });
       await useLoungeStore.getState().fetchLounges();
       expect(useLoungeStore.getState().loungesFailed).toBe(true);

@@ -82,6 +82,12 @@ export interface Filing {
   body: string;
   /** Only a dossier has one, and only the reader asks for it. */
   fullContent: string | null;
+  /**
+   * The essay's words, as the house counts them on every write (full_content, else body, split as
+   * readTimeOf splits): asked only by a page that lists parts and prints their read times, so it is
+   * sent the count and never the essays. Absent where it was not asked for; null, not counted.
+   */
+  words?: number | null;
 
   source: string | null;
   sourceUrl: string | null;
@@ -178,6 +184,7 @@ export const FilingRowSchema = z.object({
   title: z.string().nullable().optional(),
   body: z.string(),
   full_content: z.string().nullable().optional(),
+  words: z.number().int().nonnegative().nullable().optional(),
   source: z.string().nullable().optional(),
   source_url: z.string().nullable().optional(),
 
@@ -320,6 +327,7 @@ export function toFiling(row: FilingRow): Filing {
     title: row.title ?? null,
     body: row.body,
     fullContent: row.full_content ?? null,
+    ...(row.words !== undefined ? { words: row.words } : {}),
     source: row.source ?? null,
     sourceUrl: row.source_url ?? null,
     options: row.options ?? null,
@@ -403,6 +411,12 @@ export const FILING_CARD_COLUMNS =
   'frozen_totals, answer_id, series_id, series_title, part_number, spoiler_label, ' +
   'withheld_at, ended_at, ended_by, certify_count, comment_count, created_at, edited_at, ' +
   'profiles!dispatch_posts_profile_fkey(username, avatar_url, member_no, tier, role, is_founding)';
+
+/**
+ * The card's columns and each part's word count, for the series page: its read times come from the
+ * count the house keeps, so a series of 24 essays at the ceiling is 24 numbers, not ~600 KB of text.
+ */
+export const FILING_SERIES_COLUMNS = FILING_CARD_COLUMNS.replace('title, body,', 'title, body, words,');
 
 /** The same, plus the essay — one filing, once, when it is opened. */
 export const FILING_FULL_COLUMNS = FILING_CARD_COLUMNS.replace(

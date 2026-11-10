@@ -197,35 +197,25 @@ describe('a page of words comes with its reactions, in one request', () => {
   });
 });
 
-describe('the salons are read in two waves, not five', () => {
-  it('asks what needs only the member at once, and what needs their seats and rooms together after', async () => {
-    const said: string[] = [];
-    const tell = (what: string, rows: Record<string, unknown>[]) => () => { said.push(what); return rows; };
-    const HOSTED = { id: B, name: 'Mine', description: '', is_private: false, creator_id: ME, created_at: '2026-10-01T00:00:00Z', member_count: 1 };
-    const house = supabaseFake({
-      answer: {
-        lounge_members: (ask: Ask) => (ask.filters.some(([, c]) => c === 'status')
-          ? tell('answered the door requests', [])()
-          : tell('answered the seats', [{ lounge_id: A, user_id: ME, status: 'approved', last_read_at: null }])()),
-        lounges: (ask: Ask) => {
-          const by = ask.filters[0]?.[1];
-          return by === 'creator_id' ? tell('answered the hosted', [HOSTED])()
-            : by === 'id' ? tell('answered the joined', [])()
-              : tell('answered the newest', [])();
+describe('the salons are read in one trip', () => {
+  it('asks the house once for the whole corridor, and reads nothing else', async () => {
+    const HOSTED = { id: B, name: 'Mine', description: '', is_private: false, creator_id: ME, created_at: '2026-10-01T00:00:00Z', member_count: 1, cover_image: null };
+    const asked: string[] = [];
+    mockHouse = supabaseFake({
+      rpc: {
+        get_lounge_list: () => {
+          asked.push('the corridor');
+          return {
+            memberships: [{ lounge_id: A, last_read_at: null, status: 'approved' }],
+            newest: [], hosted: [HOSTED], joined: [], unread: [], pending: [], faces: [], last_words: [],
+          };
         },
       },
-      rpc: { get_lounge_unread_counts: () => { said.push('asked the unread'); return []; }, get_salon_member_faces: () => { said.push('asked the faces'); return []; } },
     });
-    const from = house.client.from;
-    mockHouse = { ...house, client: { ...house.client, from: (t: string) => { said.push(`asked ${t}`); return from(t); } } };
-
     await useLoungeStore.getState().fetchLounges();
-    expect(said).toEqual([
-      'asked lounge_members', 'asked lounges', 'asked lounges',
-      'answered the seats', 'answered the newest', 'answered the hosted',
-      'asked lounges', 'asked the unread', 'asked lounge_members', 'asked the faces',
-      'answered the joined', 'answered the door requests',
-    ]);
+    // Five reads in two waves were two round trips on the phone's network (P4.53); one now.
+    expect(asked).toEqual(['the corridor']);
+    expect(mockHouse.asked).toEqual([]);
     expect(useLoungeStore.getState().lounges.map((l) => l.id)).toEqual([B]);
   });
 });

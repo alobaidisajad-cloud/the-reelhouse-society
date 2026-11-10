@@ -66,8 +66,8 @@
       "signature": "get_lobby()"
     },
     {
-      "name": "get_lounge_unread_counts",
-      "signature": "get_lounge_unread_counts()"
+      "name": "get_lounge_list",
+      "signature": "get_lounge_list()"
     },
     {
       "name": "get_moderation_history_for_users",
@@ -88,14 +88,6 @@
     {
       "name": "get_report_evidence",
       "signature": "get_report_evidence(p_report_id uuid)"
-    },
-    {
-      "name": "get_salon_last_words",
-      "signature": "get_salon_last_words(p_lounge_ids uuid[])"
-    },
-    {
-      "name": "get_salon_member_faces",
-      "signature": "get_salon_member_faces(p_lounge_ids uuid[])"
     },
     {
       "name": "get_taste_match",

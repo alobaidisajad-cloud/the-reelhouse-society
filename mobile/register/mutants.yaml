@@ -2904,3 +2904,30 @@ mutants:
         find: "const { LOW, DEFAULT, HIGH } = Notifications.AndroidImportance;"
         replace: "const LOW = 2, DEFAULT = 3, HIGH = 4;"
     proof: { file: src/lib/__tests__/theNoticesKnowTheirChannels.test.ts, test: "gives each its weight by expo's numbers: every notice shown, the quietest without sound, none folded away" }
+
+  - id: shape-corridor-drawn-short
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "  return CORRIDOR_PIECES.every((piece) => Array.isArray(answer[piece])) ? answer as Corridor : null;"
+        replace: "  return CORRIDOR_PIECES.some((piece) => Array.isArray(answer[piece])) ? answer as Corridor : null;"
+    proof: { file: src/stores/__tests__/theSalonListIsWholeOrSaysSo.test.ts, test: "says the list could not be read when the answer has no memberships list, never a short list" }
+
+  - id: shape-series-reads-the-essays
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/dispatchTypes.ts
+        find: "export const FILING_SERIES_COLUMNS = FILING_CARD_COLUMNS.replace('title, body,', 'title, body, words,');"
+        replace: "export const FILING_SERIES_COLUMNS = FILING_CARD_COLUMNS.replace('title, body,', 'title, body, full_content,');"
+    proof: { file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "asks for the house’s count of each essay, never the essays, so the read time is the essay’s" }
+
+  - id: shape-left-room-loses-its-last-word
+    class: UI-a-room-left-drawn-unlike-its-read
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    unread_count: undefined,"
+        replace: "    unread_count: undefined,\n    last_message_at: undefined,"
+    proof: { file: src/stores/__tests__/aSeatReadsAsTheHouseWillRead.test.ts, test: "is drawn at once as the next read gives it (private: false)" }

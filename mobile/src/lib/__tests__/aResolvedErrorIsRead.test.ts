@@ -43,9 +43,6 @@ const JUDGED: Record<string, { n: number; why: string }> = {
   'src/stores/domain/socialSlice.ts · [from] destructured without error (data)': {
     n: 1, why: 'the insert below answers: a follow already held is a duplicate, taken as followed',
   },
-  'src/stores/lounge.ts · Promise.all · facesRes': {
-    n: 1, why: 'member faces are decoration; a card without them shows its count',
-  },
   ...Object.fromEntries(['logsCount', 'ledgerCount', 'watchCount', 'vaultCount', 'listsCount'].map((c) => [
     `src/services/ProfileDataService.ts · Promise.all · ${c}`, { n: 1, why: 'read by `countRead()`' },
   ])),

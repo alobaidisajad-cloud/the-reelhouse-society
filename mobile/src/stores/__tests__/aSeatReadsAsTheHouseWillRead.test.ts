@@ -63,13 +63,27 @@ jest.mock('../../lib/supabase', () => ({
       return chain;
     },
     rpc: async (fn: string, args: Record<string, unknown> = {}) => {
-      const mine = mockHouse.seats.filter((s) => s.user_id === mockMe).map((s) => s.lounge_id);
-      if (fn === 'get_lounge_unread_counts') {
-        return { data: mockHouse.rooms.filter((r) => mine.includes(r.id)).map((r) => ({ lounge_id: r.id, unread_count: 0, last_message_at: r.lastMessageAt })), error: null };
-      }
-      if (fn === 'get_salon_member_faces') {
-        const ids = args.p_lounge_ids as string[];
-        return { data: mockHouse.seats.filter((s) => ids.includes(s.lounge_id) && s.status === 'approved').map((s) => ({ lounge_id: s.lounge_id, username: s.user_id === mockMe ? 'kane' : 'ada', avatar_url: null })), error: null };
+      if (fn === 'get_lounge_list') {
+        // The corridor's one answer, each piece as 20261109_02 reads it: the member's seats, the
+        // rooms (newest, hosted, joined), the unread counts of a member who sits somewhere, the
+        // requests at the rooms hosted, the faces of the member's own rooms and the rest's last words.
+        const seats = mockHouse.seats.filter((s) => s.user_id === mockMe);
+        const mine = seats.map((s) => s.lounge_id);
+        const hosted = mockHouse.rooms.filter((r) => r.creator_id === mockMe);
+        const own = new Set([...seats.filter((s) => s.status !== 'banned' && s.status !== 'muted').map((s) => s.lounge_id), ...hosted.map((r) => r.id)]);
+        return {
+          data: {
+            memberships: seats.map((s) => ({ lounge_id: s.lounge_id, last_read_at: null, status: s.status })),
+            newest: mockHouse.rooms.map(asRow),
+            hosted: hosted.map(asRow),
+            joined: mockHouse.rooms.filter((r) => mine.includes(r.id)).map(asRow),
+            unread: mine.length === 0 ? [] : mockHouse.rooms.filter((r) => mine.includes(r.id)).map((r) => ({ lounge_id: r.id, unread_count: 0, last_message_at: r.lastMessageAt })),
+            pending: mockHouse.seats.filter((s) => hosted.some((r) => r.id === s.lounge_id) && s.status === 'pending').map((s) => ({ lounge_id: s.lounge_id })),
+            faces: mockHouse.seats.filter((s) => own.has(s.lounge_id) && s.status === 'approved').map((s) => ({ lounge_id: s.lounge_id, username: s.user_id === mockMe ? 'kane' : 'ada', avatar_url: null })),
+            last_words: mockHouse.rooms.filter((r) => !own.has(r.id)).map((r) => ({ lounge_id: r.id, last_message_at: r.lastMessageAt })),
+          },
+          error: null,
+        };
       }
       if (fn === 'join_public_lounge') {
         mockHouse.seats.push({ lounge_id: args.p_lounge_id as string, user_id: mockMe, status: 'approved' });

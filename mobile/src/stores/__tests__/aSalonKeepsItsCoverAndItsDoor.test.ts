@@ -9,6 +9,8 @@
  * refusal for the rank with "check your connection": a lapsed member was told
  * to retry what no retry could give them. sendMessage already gave the door.
  */
+import * as path from 'path';
+import { readCode } from '@/test-utils/readCode';
 import { useLoungeStore } from '../lounge';
 
 const U1 = '33333333-3333-4333-8333-333333333333';
@@ -29,8 +31,9 @@ jest.mock('../../lib/supabase', () => ({
         Promise.resolve({ data: table === 'lounges' ? mockRooms : [], error: null }).then(res);
       return chain;
     },
-    rpc: async (fn: string) => (fn === 'get_lounge_unread_counts' || fn === 'get_salon_member_faces'
-      ? { data: [], error: null }
+    rpc: async (fn: string) => (fn === 'get_lounge_list'
+      // The corridor's one answer: the rooms as the newest and as the member's own.
+      ? { data: { memberships: [], newest: mockRooms, hosted: mockRooms, joined: [], unread: [], pending: [], faces: [], last_words: [] }, error: null }
       : { data: mockRpcError ? null : L1, error: mockRpcError }),
   },
 }));
@@ -62,9 +65,12 @@ describe('the cover', () => {
       creator_id: U1, created_at: '2026-09-01T00:00:00Z', member_count: 3, cover_image: '/still.jpg',
     }];
     await useLoungeStore.getState().fetchLounges();
-    const reads = mockSelects.filter((q) => q.table === 'lounges');
-    expect(reads.length).toBeGreaterThan(0);
-    for (const q of reads) expect(q.columns).toMatch(/\bcover_image\b/);
+    // The corridor's one call (get_lounge_list): each of its room pieces, the newest, the hosted and
+    // the joined, names the cover, as each separate read did.
+    const corridor = readCode(path.join(__dirname, '..', '..', '..', '..', 'supabase', 'migrations', '20261109_02_the_corridor_in_one_trip.sql'));
+    const rooms = corridor.match(/^\s*(newest|hosted|joined) AS \(\s*SELECT [^\n]*/gm) ?? [];
+    expect(rooms).toHaveLength(3);
+    for (const piece of rooms) expect(piece).toMatch(/\bl\.cover_image\b/);
     expect(useLoungeStore.getState().lounges[0].cover_image).toBe('/still.jpg');
   });
 });

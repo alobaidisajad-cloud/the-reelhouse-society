@@ -20,6 +20,8 @@ import { readCode } from '@/test-utils/readCode';
 
 /** Comments stripped — prose about a rule must not satisfy the rule. */
 const code = readCode(path.join(__dirname, '..', 'lounge.ts'));
+/** The corridor's one call (get_lounge_list), as production holds it. */
+const MIGRATION = readCode(path.join(__dirname, '..', '..', '..', '..', 'supabase', 'migrations', '20261109_02_the_corridor_in_one_trip.sql'));
 
 /**
  * Slice one function body out of the source.
@@ -70,18 +72,21 @@ describe('#55 · the class, not the two sites that were filed', () => {
     // The worst of the seven, and absent from the finding: on failure memberRows was
     // undefined, memberships fell back to [], and the list rendered as though the
     // member belonged to nothing — joined rooms gone, every unread count zero.
-    // The seats are asked beside the newest and the hosted rooms now; their failure still throws.
-    expect(code).toMatch(/if \(memberRes\.error\) throw memberRes\.error;/);
-    expect(code).toMatch(/const memberships = memberRes\.data \?\? \[\];/);
-    expect(code.indexOf('if (memberRes.error) throw memberRes.error;')).toBeLessThan(code.indexOf('const memberships = memberRes.data ?? [];'));
+    // The seats come in the corridor's one answer now (get_lounge_list): its failure throws, and
+    // so does an answer missing any piece, before a seat is read.
+    const body = fn('fetchLounges: async', 'fetchMessages: async');
+    expect(body).toMatch(/if \(error\) throw error;/);
+    expect(body).toMatch(/if \(!corridor\) throw new Error/);
+    expect(body.indexOf('if (!corridor) throw')).toBeLessThan(body.indexOf('const memberships = corridor.memberships;'));
   });
 
-  it('secondary reads are LOGGED but do not interrupt', () => {
-    // The salon list is still correct in these cases; a toast for a missing badge would be
-    // noise. Silence is the bug — noise is not the remedy. (A message's reactions come in its
-    // own page now, MESSAGE_COLUMNS: no read of their own to fail alone.)
-    expect(code).toMatch(/if \(pendingError\) logger\.error/);
-    expect(code).toMatch(/if \(unreadError\) \{\s*logger\.error/);
+  it('no piece of the corridor fails alone into a short list', () => {
+    // The door requests, the unread counts, the faces and the last words were reads of their own,
+    // each logged when it failed. They are pieces of the one answer now (P4.53): a piece that is not
+    // a list fails the whole read (corridorOf), and the Lounge keeps the corridor it drew and says so.
+    // (A message's reactions come in its own page, MESSAGE_COLUMNS: no read of their own to fail.)
+    expect(code).toMatch(/CORRIDOR_PIECES\.every\(\(piece\) => Array\.isArray\(answer\[piece\]\)\)/);
+    expect(code).not.toMatch(/pendingError|unreadError/);
   });
 
   it('a failed profile lookup is NOT written into the cache', () => {
@@ -159,8 +164,9 @@ describe('#54 · unread counts are computed once, on the server', () => {
     expect(code).not.toMatch(/unreadQuery/);
   });
 
-  it('one RPC replaces them', () => {
-    expect(f()).toMatch(/supabase\.rpc\('get_lounge_unread_counts'\)/);
+  it('one RPC replaces them, inside the corridor\'s one call', () => {
+    expect(f()).toMatch(/supabase\.rpc\('get_lounge_list'\)/);
+    expect(MIGRATION).toMatch(/FROM public\.get_lounge_unread_counts\(\) u/);
   });
 
   it('it is NOT the function the register recommended', () => {
@@ -170,15 +176,11 @@ describe('#54 · unread counts are computed once, on the server', () => {
     expect(code).not.toMatch(/get_user_lounges/);
   });
 
-  it('a failure degrades to a rendered list, not a broken screen', () => {
-    // This also covers the window before the migration is applied: the call fails,
-    // the badges are zero, the salons still list.
-    const body = f();
-    expect(body).toMatch(/if \(unreadError\) \{/);
-    expect(body).toMatch(/logger\.error\('\[LoungeStore\.fetchLounges\] unread counts failed:/);
-    // A stripped comment leaves blanks, so the space is squeezed before the
-    // window is measured, or a comment could push a `throw` out of reach.
-    expect(body.replace(/\s+/g, ' ')).not.toMatch(/if \(unreadError\)[\s\S]{0,120}throw/);
+  it('the counts are asked only of a member who sits somewhere, and answered as a list', () => {
+    // As the client asked them: a member in no salon is answered an empty list, never a null
+    // (the train of 2026-11-09 stopped on a JSON null for production's first member).
+    expect(MIGRATION).toMatch(/'unread', CASE WHEN EXISTS \(SELECT 1 FROM memberships\)/);
+    expect(MIGRATION).toMatch(/ELSE '\[\]'::jsonb END/);
   });
 
   it('every room the member belongs to still gets an entry', () => {
@@ -186,11 +188,10 @@ describe('#54 · unread counts are computed once, on the server', () => {
     expect(f()).toMatch(/if \(!\(id in unreadCounts\)\) unreadCounts\[id\] = 0;/);
   });
 
-  it('the salon list\'s OTHER queries are untouched — they were always bounded', () => {
-    // 100 memberships, 50 browsable, an IN over those ids, and your own rooms. Only the
-    // two message scans moved; widening the change would have been risk for nothing.
-    const body = f();
-    expect(body).toMatch(/\.limit\(100\)/);   // memberships
-    expect(body).toMatch(/\.limit\(50\)/);    // browsable
+  it('the salon list\'s other pieces stay bounded, in the corridor\'s one call', () => {
+    // 100 memberships and the 50 newest rooms, as the separate reads were; the joined rooms are
+    // those memberships' and the hosted ones the member's own.
+    expect(MIGRATION).toMatch(/WHERE lm\.user_id = me\.id LIMIT 100/);
+    expect(MIGRATION).toMatch(/ORDER BY l\.created_at DESC LIMIT 50/);
   });
 });

@@ -2,7 +2,7 @@
  * theCorridorOpensOnWhatItLastRead.test.ts — the Lounge opens on the corridor it last read (WORKLIST P4.53).
  *
  * The Lounge's store kept nothing on the phone, so every launch drew the corridor's skeletons until
- * five reads in two waves had answered. The corridor as it was drawn is kept now, for the member
+ * its reads had answered (five in two waves then; one call, get_lounge_list, now). The corridor as it was drawn is kept now, for the member
  * who read it, a day at most (utils/keptPages): a launch draws it at once and reads it again
  * beneath. A row kept by an older build is held to a room's shape as it is read back. Against the
  * house as strict as it is (test-utils/supabaseFake).
@@ -43,15 +43,19 @@ jest.mock('@/src/stores/mmkv-storage', () => {
 });
 const disk = (jest.requireMock('@/src/stores/mmkv-storage') as { storage: { __store: Map<string, string> } }).storage.__store;
 
-/** The house holding these salons, none of them the member's. */
+/** The house holding these salons, none of them the member's: the corridor's one answer. */
 const holding = (...rooms: ReturnType<typeof room>[]) => {
   mockHouse = supabaseFake({
-    rows: { lounges: rooms, lounge_members: [] },
-    rpc: { get_salon_last_words: [], get_lounge_unread_counts: [], get_salon_member_faces: [] },
+    rpc: {
+      get_lounge_list: {
+        memberships: [], newest: [...rooms].sort((a, b) => b.created_at.localeCompare(a.created_at)), hosted: [], joined: [],
+        unread: [], pending: [], faces: [], last_words: [],
+      },
+    },
   });
 };
 const unreachable = () => {
-  mockHouse = supabaseFake({ rows: { lounges: [], lounge_members: [] }, fail: { lounge_members: { message: 'Failed to fetch', code: '' } } });
+  mockHouse = supabaseFake({ rpc: { get_lounge_list: { error: { message: 'Failed to fetch', code: '' } } } });
 };
 const drawn = () => useLoungeStore.getState().lounges.map((l) => l.id);
 
