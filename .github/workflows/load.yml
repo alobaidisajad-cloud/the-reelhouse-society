@@ -124,6 +124,7 @@ jobs:
 
       # Logs are for signed-in readers only, so a failure says itself as an annotation.
       - name: Fill the house — 100,000 members
+        id: seed
         run: |
           set +e
           psql "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
@@ -180,8 +181,10 @@ jobs:
 
       # As supabase_admin, so a read over budget can show the plan INSIDE a
       # function as well as its call (auto_explain needs a superuser to load).
+      # Whatever the train's locks said, but never on a house the seed left half made: its times are
+      # no house's (load 42902610279 timed one, two reads "over budget" on a seed that had failed).
       - name: Time every busy screen's reads
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.seed.outcome == 'success' }}
         env:
           LOAD_DB_URL: postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
         run: node mobile/e2e/load/probe.mjs

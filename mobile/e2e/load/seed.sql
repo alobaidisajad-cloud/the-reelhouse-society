@@ -86,7 +86,8 @@ SELECT gen_random_uuid(), pg_temp.mid(c.n), film,
        1, '[]'::jsonb
   FROM load_counts c,
        LATERAL generate_series(1, c.logs) k,
-       LATERAL (SELECT CASE WHEN k = 1 AND c.n % 2 = 0 THEN 1 ELSE ((c.n * 7919 + k * 14729) % 30000) + 1 END AS film) f
+       -- In bigint: past 271,000 members, n * 7919 is past an integer's 2.1 billion (load 42902610279, 500,000).
+       LATERAL (SELECT CASE WHEN k = 1 AND c.n % 2 = 0 THEN 1 ELSE ((c.n::bigint * 7919 + k * 14729) % 30000) + 1 END AS film) f
 ON CONFLICT (user_id, film_id) DO NOTHING;
 
 -- Every log has its first viewing (logs_register_viewings makes it).
