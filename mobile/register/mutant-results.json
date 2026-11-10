@@ -787,14 +787,14 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-install-waits-on-the-mirror",
     "proof": "m1",
-    "commit": "7c2c8235a636bd165ed19d1929a23f45c9bd7bfc",
+    "commit": "c3d396d8ef84835acef352daad4877c14482f207",
     "verdict": "caught"
   },
   {
     "class": "CI-install-fails-on-a-source-it-never-uses",
     "mutant": "shape-install-reads-every-source",
     "proof": "m1",
-    "commit": "730b1b4a6895884179379f7bd0e0af039e5167d0",
+    "commit": "c3d396d8ef84835acef352daad4877c14482f207",
     "verdict": "caught"
   },
   {
@@ -2216,6 +2216,13 @@
     "mutant": "shape-left-room-loses-its-last-word",
     "proof": "m1",
     "commit": "89d789330da958e11abd84ddd1bcae0822227d77",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-retry-blocked-by-its-first-try",
+    "mutant": "shape-install-before-the-runners-own",
+    "proof": "m1",
+    "commit": "c3d396d8ef84835acef352daad4877c14482f207",
     "verdict": "caught"
   }
 ]
