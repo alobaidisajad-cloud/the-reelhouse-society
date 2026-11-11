@@ -3,7 +3,9 @@
   "firstRuns": {
     "push_tap_critique": "New on 2026-11-10 (WORKLIST P4.22, a critique's push opens the log critiqued): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
     "push_tap_salon": "New on 2026-11-10 (WORKLIST P4.22, an admission's push opens the salon): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
-    "push_tap_house": "New on 2026-11-10 (WORKLIST P4.22, word from the house opens the notices sheet): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list."
+    "push_tap_house": "New on 2026-11-10 (WORKLIST P4.22, word from the house opens the notices sheet): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
+    "email_link_customtab": "New on 2026-11-12 (WORKLIST P4.21, a reset email's link opened as a Chrome Custom Tab, as Gmail opens one): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
+    "email_link_chrome": "New on 2026-11-12 (WORKLIST P4.21, a reset email's link opened in plain Chrome): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list."
   },
   "shards": [
     {
@@ -11,40 +13,42 @@
       "launchWithAnimations": true,
       "flows": [
         "auth_flow",
-        "darkroom_search",
-        "error_recovery",
-        "lounge_flow",
-        "offline_resilience",
-        "session_survives_restart"
-      ],
-      "minutes": 38
-    },
-    {
-      "flows": [
         "boot_verification",
-        "browse_vault",
-        "film_log",
-        "house_link",
-        "login_flow",
-        "member_pages",
-        "push_tap_critique",
-        "push_tap_salon",
-        "trailer"
+        "error_recovery",
+        "log_film_flow",
+        "lounge_flow",
+        "push_tap",
+        "push_tap_salon"
       ],
-      "minutes": 38
+      "minutes": 43
     },
     {
       "flows": [
         "admin_second_key",
-        "auth_deep_link",
+        "darkroom_search",
+        "email_link_chrome",
         "flow_critical_path",
         "lobby_wall_flow",
-        "log_film_flow",
-        "push_tap",
-        "push_tap_house",
+        "push_tap_critique",
+        "session_survives_restart",
+        "trailer",
         "turned"
       ],
-      "minutes": 37
+      "minutes": 44
+    },
+    {
+      "flows": [
+        "auth_deep_link",
+        "browse_vault",
+        "email_link_customtab",
+        "film_log",
+        "house_link",
+        "login_flow",
+        "member_pages",
+        "offline_resilience",
+        "push_tap_house"
+      ],
+      "minutes": 43
     }
   ]
 }

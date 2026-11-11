@@ -3057,3 +3057,12 @@ mutants:
         find: 'const filmTitle = subject.data?.name ?? params.shareFilmTitle;'
         replace: 'const filmTitle = params.shareFilmTitle;'
     proof: { file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "shares the catalogue's name, never the words a link wrote" }
+
+  - id: shape-email-link-left-on-the-runner
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: e2e/email-link.mjs
+        find: 'export const forThePhone = (link, phoneApi = PHONE_API) => link.replace('
+        replace: 'export const forThePhone = (link, phoneApi = PHONE_API) => link || phoneApi.replace('
+    proof: { file: e2e/__tests__/emailLink.test.ts, test: 'reads the Auth link an email carries, its escapes undone, and points it at the stack as the phone reaches it' }

@@ -1,0 +1,14 @@
+appId: com.reelhouse.society
+---
+# A reset email's link, opened as a Chrome Custom Tab, as Gmail opens one
+# (WORKLIST P4.21). run-flows.sh runs e2e/email-link.mjs customtab first: it
+# asks the reset from the runner, reads the email from the mail catcher
+# and opens its link on the phone. The browser must hand the house's own
+# address (reelhouse://auth-callback) to the app, which opens at its email
+# screen. The link was asked by another phone (the runner), so the screen
+# says so, in the house's words, never the library's.
+# Its words are the email screen's alone (auth-callback), so the app is
+# there, past its start, and has said it.
+- extendedWaitUntil:
+    visible: ".*This link belongs to the phone that asked for it.*"
+    timeout: 90000

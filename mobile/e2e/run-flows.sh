@@ -549,6 +549,14 @@ for flow in $FLOW_LIST; do
       else
         echo "[push] notify-push sent nothing for $name" >> "$OUT/maestro.log"
       fi;;
+    # An email link flow waits for the app the link opens (e2e/email-link.mjs, WORKLIST P4.21):
+    # the reset asked, its email read and its link opened on the phone as its name says.
+    email_link_*)
+      if opened=$(node mobile/e2e/email-link.mjs "${name#email_link_}" 2>> "$OUT/maestro.log"); then
+        echo "[email] $name: opened $opened" >> "$OUT/maestro.log"
+      else
+        echo "[email] no link was opened for $name" >> "$OUT/maestro.log"
+      fi;;
     esac
     began=$(date +%s)
     timeout --signal=INT --kill-after=30 "$(( left < 600 ? left : 600 ))s" "$MAESTRO" test "$flow" \
