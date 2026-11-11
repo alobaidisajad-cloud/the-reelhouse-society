@@ -49,6 +49,12 @@ SELECT pg_temp.rh_case('every salon''s faces: the same three, in the same order'
       EXCEPT ALL SELECT salon, username, avatar_url, rn FROM rh_faces WHERE pass = 'before')) d)::text) AS done \gset rh_
 SELECT pg_temp.rh_case('never more than three a salon', '0',
   (SELECT count(*) FROM rh_faces WHERE pass = 'after' AND (rn < 1 OR rn > 3))::text) AS done \gset rh_
+-- The same faces, read the new way: each salon's members asked for in the order they joined, and
+-- no more than three of them, never the whole roster ranked (what the faces cost is not something
+-- a rolled-back rehearsal can time, so the function as stored says it).
+SELECT pg_temp.rh_case('each salon''s members are asked for in the order they joined, three at most', 'true',
+  (SELECT p.prosrc LIKE '%ORDER BY lm.joined_at ASC, lm.user_id ASC%LIMIT 3%' AND p.prosrc NOT LIKE '%PARTITION BY%'
+   FROM pg_proc p WHERE p.oid = 'public.get_salon_member_faces(uuid[])'::regprocedure)::text) AS done \gset rh_
 
 -- A member who neither sits in any of these salons nor hosts it: shown none of their faces.
 SELECT set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-4000-8000-0000000000aa', 'role', 'authenticated')::text, true) AS done \gset rh_
