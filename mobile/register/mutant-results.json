@@ -2298,8 +2298,8 @@
   {
     "class": "NAV-a-stranger-at-a-members-door",
     "mutant": "shape-door-left-unwalked",
-    "proof": "m7",
-    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
+    "proof": "m8",
+    "commit": "bfe704f288e04e804cfa00438cd6e717b69eee4c",
     "verdict": "caught"
   },
   {
