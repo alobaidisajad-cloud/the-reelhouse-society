@@ -12,7 +12,7 @@ import { join } from 'path';
 import { pathToFileURL } from 'url';
 
 const SCRIPT = join(__dirname, '..', 'variants.mjs');
-interface Variant { why: string; flows?: boolean; read?: string; answer?: string; ready?: string[]; judges?: string[]; setup: string[]; reset: string[] }
+interface Variant { why: string; flows?: boolean; read?: string; answer?: string; ready?: string[]; judges?: string[]; setup: string[]; reset: string[]; device?: { api: number; profile: string; target?: string } }
 const VARIANTS = (JSON.parse(readFileSync(join(__dirname, '..', 'variants.json'), 'utf8')) as { variants: Record<string, Variant> }).variants;
 const E2E_YML = readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8');
 const NIGHTLY = readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'nightly.yml'), 'utf8');
@@ -37,9 +37,15 @@ describe.each(Object.entries(VARIANTS))('%s', (name, v) => {
     expect(v.why.length).toBeGreaterThanOrEqual(30);
   });
 
-  it('sets something and puts it back, one command for each it set; plain alone is the phone as it is', () => {
+  it('sets something and puts it back, one command for each it set; plain alone is the phone as it is, and a phone of its own is asked it is that phone', () => {
     if (name === 'plain') {
       expect([v.setup, v.reset, v.read, v.flows]).toEqual([[], [], undefined, undefined]);
+      return;
+    }
+    // A variant that is its own phone (pages-16k) may set nothing; then the phone must say it is
+    // that phone before the run (ready), or the run stops.
+    if (v.setup.length === 0) {
+      expect({ device: Boolean(v.device), reset: v.reset, ready: (v.ready ?? []).length > 0 }).toEqual({ device: true, reset: [], ready: true });
       return;
     }
     expect(v.setup.length).toBeGreaterThan(0);
@@ -92,14 +98,23 @@ it('adds a judge only by a name run-flows.sh runs: cut text to the largest text,
   for (const j of Object.values(judges).flat()) expect(runFlows).toContain(`judges | grep -qx ${j}`);
 });
 
-it('runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16', () => {
+it('runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15', () => {
   const devices = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'device') as { commands: string[] }).commands.join(' ')]));
-  expect(Object.entries(devices).filter(([, d]) => d !== '34 pixel_6 ')).toEqual([['tablet', '36 pixel_tablet 4096M']]);
+  expect(Object.entries(devices).filter(([, d]) => d !== '34 pixel_6  google_apis')).toEqual([
+    ['tablet', '36 pixel_tablet 4096M google_apis'],
+    ['pages-16k', '35 pixel_6  google_apis_ps16k'],
+  ]);
+  // The 16 KB phone is that phone only when it says so: its page size asked until it is 16384.
+  const pages = VARIANTS['pages-16k'];
+  expect(pages?.ready).toEqual(['[ "$(getconf PAGE_SIZE)" = 16384 ]']);
   // The workflow keys the emulator, its image and its cache on this one answer.
   expect(E2E_YML).toMatch(/node mobile\/e2e\/variants\.mjs "\$\{E2E_VARIANT:-plain\}" device/);
   expect(E2E_YML).toMatch(/^ {10}api-level: \$\{\{ env\.E2E_API \}\}$/m);
   expect(E2E_YML).toMatch(/^ {10}profile: \$\{\{ env\.E2E_PROFILE \}\}$/m);
   expect(E2E_YML).toMatch(/^ {10}disk-size: \$\{\{ env\.E2E_DISK \}\}$/m);
+  expect(E2E_YML).toMatch(/^ {10}target: \$\{\{ env\.E2E_TARGET \}\}$/m);
+  // No image of the workflow's own: each is the variant's (a comment may name one).
+  expect(E2E_YML).not.toMatch(/system-images[^\n]*google_apis|\/google_apis\/|-google_apis-|target: google_apis/);
 });
 
 it('walks still until signed in only where motion is on, and says why', () => {
@@ -113,6 +128,7 @@ it('says which run each variant is: every flow and the walk, or the walk alone',
   expect(runs).toEqual({
     plain: ['walk'], 'motion-on': ['walk'], 'largest-text': ['flows'], 'bold-text': ['walk'],
     narrowest: ['flows'], 'three-button': ['walk'], 'right-to-left': ['flows'], dark: ['walk'], tablet: ['flows'],
+    'pages-16k': ['flows'],
   });
 });
 

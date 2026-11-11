@@ -3,7 +3,8 @@
   "device": {
     "why": "The emulator every run is on unless its variant names its own: a Pixel 6 on Android 14, the image kept in the cache.",
     "api": 34,
-    "profile": "pixel_6"
+    "profile": "pixel_6",
+    "target": "google_apis"
   },
   "variants": {
     "plain": {
@@ -65,6 +66,14 @@
       "answer": "^[01]$",
       "setup": ["settings put system accelerometer_rotation 0", "settings put system user_rotation 0"],
       "reset": ["settings put system accelerometer_rotation {was}", "settings put system user_rotation 0"]
+    },
+    "pages-16k": {
+      "why": "Android 15 on 16 KB memory pages (WORKLIST P4.29): phones from Android 15 on may run with 16 KB pages, and a native library built for 4 KB ones fails to load there, so the app crashes at its start or when it first reaches that library (MMKV, SecureStore, Reanimated, Skia). Its own system image (google_apis_ps16k), every flow on it: the start, the sign-in, the Archive's lock (MMKV and SecureStore) and the critical path. Nothing on the phone is set; the run is that phone only when the phone says its page is 16384 bytes (ready), and stops if it never does.",
+      "device": { "api": 35, "profile": "pixel_6", "target": "google_apis_ps16k", "why": "The only image with 16 KB pages Google ships for x86_64, which the runner's emulator runs." },
+      "flows": true,
+      "setup": [],
+      "ready": ["[ \"$(getconf PAGE_SIZE)\" = 16384 ]"],
+      "reset": []
     }
   }
 }

@@ -2967,3 +2967,12 @@ mutants:
         find: "          pre-emulator-launch-script: f=\"$ANDROID_AVD_HOME/test.avd/config.ini\"; sed -i '/^hw\\.keyboard/d' \"$f\" && printf 'hw.keyboard=no\\nhw.keyboard.lid=no\\n' >> \"$f\" && grep '^hw\\.keyboard' \"$f\""
         replace: "          pre-emulator-launch-script: f=\"$ANDROID_AVD_HOME/test.avd/config.ini\"; sed -i '/^hw\\.keyboard *=/d' \"$f\" && echo 'hw.keyboard=no' >> \"$f\" && grep '^hw\\.keyboard' \"$f\""
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "the emulator has no keyboard of keys and no dock's lid, as a member's phone and tablet have none" }
+
+  - id: shape-16k-phone-unproven
+    class: RUNTIME-native-library-on-16k-pages
+    source: shape
+    edits:
+      - file: e2e/variants.json
+        find: "      \"ready\": [\"[ \\\"$(getconf PAGE_SIZE)\\\" = 16384 ]\"],\n"
+        replace: ""
+    proof: { file: e2e/__tests__/variants.test.ts, test: "runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15" }
