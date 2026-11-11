@@ -72,9 +72,14 @@ jest.mock('@shopify/flash-list', () => {
 const OFFLINE = new TypeError('Network request failed');
 const GENUINE = Object.assign(new Error('permission denied'), { code: '42501' });
 
+/** The catalogue's answers for a share's subject: the film and the artist are on file. */
+const mockTmdb = jest.requireMock('@/src/lib/tmdb') as { tmdb: { detail: jest.Mock; person: jest.Mock } };
+
 beforeEach(() => {
     jest.clearAllMocks();
     mockParams = {};
+    mockTmdb.tmdb.detail.mockResolvedValue({ id: 550, title: 'Fight Club', release_date: '1999-10-15', poster_path: '/fc.jpg' });
+    mockTmdb.tmdb.person.mockResolvedValue({ id: 287, name: 'Brad Pitt' });
 });
 
 describe('SocialModal fetchData — finding 115', () => {
@@ -145,6 +150,36 @@ describe('SocialModal share — the handler brought in line with it', () => {
             expect(useLoungeStore.getState).toHaveBeenCalled();
         });
         expect(captureError).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * A share names its film or artist as the catalogue has it (P4.21). Of a link, only the number is
+ * held to a kind; its words are whatever it wrote, and were said to a salon over a card that opens
+ * another film. A number the catalogue never had is said, and nothing is offered to share.
+ */
+describe('SocialModal share, its subject read from the catalogue', () => {
+    const lounges = [{ lounge_id: 'l1', lounges: { id: 'l1', name: 'The Booth' } }];
+    beforeEach(() => { (LoungeService.getUserLounges as jest.Mock).mockResolvedValue(lounges); });
+
+    it("shares the catalogue's name, never the words a link wrote", async () => {
+        const sendMessage = jest.fn().mockResolvedValue(true);
+        (useLoungeStore.getState as jest.Mock).mockReturnValue({ sendMessage });
+        mockParams = { shareFilmId: '550', shareFilmTitle: 'Free Money Here' };
+        const screen = render(<SocialModal />);
+        expect(await screen.findByText('FIGHT CLUB (1999)')).toBeTruthy();
+        await fireEvent.press(await screen.findByLabelText('Share to The Booth'));
+        await waitFor(() => expect(sendMessage).toHaveBeenCalled());
+        expect(sendMessage.mock.calls[0]).toEqual(['l1', 'Check out Fight Club', 'film_share', { film_id: 550, film_title: 'Fight Club', film_poster: '/fc.jpg' }]);
+        expect(JSON.stringify(screen.toJSON())).not.toMatch(/Free Money/i);
+    });
+
+    it('a number the catalogue never had: said, and nothing offered to share', async () => {
+        mockTmdb.tmdb.person.mockResolvedValue(null);
+        mockParams = { personId: '999999999', personName: 'Nobody At All' };
+        const screen = render(<SocialModal />);
+        expect(await screen.findByText('Not in the Archive')).toBeTruthy();
+        expect([screen.queryByLabelText('Share to The Booth'), screen.queryByText('NOBODY AT ALL')]).toEqual([null, null]);
     });
 });
 

@@ -40,6 +40,7 @@ const REGISTER: Record<string, Count> = {
   'app/(modals)/log-modal.tsx': { empty: 1, why: 'an edit opened on a record that is not theirs, or was withdrawn (the empty state carries Buster)' },
   'app/(modals)/list-modal.tsx': { empty: 1, why: "a link to another member's stack: not yours to amend (the empty state carries Buster)" },
   'app/(modals)/cover-picker.tsx': { empty: 1, why: 'a link to a salon not yours to change (the empty state carries Buster)' },
+  'app/(modals)/social-modal.tsx': { empty: 1, why: 'a share of a film or an artist the catalogue never had (the empty state carries Buster)' },
   'src/components/MembersOnly.tsx': { empty: 1, why: 'a member-only screen opened signed out: asked in, and brought back (the empty state carries Buster)' },
   'src/components/lobby/LobbyWall.tsx': { offline: 1, why: 'the Lobby wall could not be reached' },
   'src/components/NotInTheArchive.tsx': { buster: 1, why: 'a link to nowhere: a route the app does not have, or an id of another shape' },

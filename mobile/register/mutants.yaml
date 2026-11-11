@@ -3048,3 +3048,12 @@ mutants:
         find: '"ram": "6144M"'
         replace: '"ram": "4096M"'
     proof: { file: e2e/__tests__/variants.test.ts, test: 'runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15' }
+
+  - id: shape-share-says-the-links-words
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: app/(modals)/social-modal.tsx
+        find: 'const filmTitle = subject.data?.name ?? params.shareFilmTitle;'
+        replace: 'const filmTitle = params.shareFilmTitle;'
+    proof: { file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "shares the catalogue's name, never the words a link wrote" }

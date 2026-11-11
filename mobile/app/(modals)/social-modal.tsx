@@ -9,6 +9,8 @@ import { ActivityIndicator, InteractionManager, StyleSheet, View } from 'react-n
 import { Text } from '@/src/components/text';
 
 import { EmptyState } from '@/src/components/EmptyStates';
+import { useQuery } from '@tanstack/react-query';
+import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
 import { LoungeService } from '@/src/services/LoungeService';
 import { ProfileService } from '@/src/services/ProfileWriteService';
@@ -150,6 +152,30 @@ export default function SocialModal() {
     // directly, so the sheet reads the rank itself: without it, the rope, never the salons.
     const speaking = useClearance('lounge-speaking');
     const roped = (mode === 'share-film' || mode === 'share-person') && !speaking.held;
+    // The film or artist a share names, as the catalogue has it (P4.21). Of a link, only the number
+    // is held to a kind; its words are whatever the link wrote, and the share would say them to a
+    // salon over a card that opens another film. Read from the catalogue (held already by the page
+    // the member came from), the share says the catalogue's name; a number it never had is said so,
+    // and nothing is shared. Unreachable, the words the opening page gave stand.
+    const subjectId = mode === 'share-film' ? Number(params.shareFilmId ?? 0) : mode === 'share-person' ? Number(params.personId ?? 0) : 0;
+    const subject = useQuery({
+        queryKey: ['share-subject', mode, subjectId],
+        enabled: valid && subjectId > 0,
+        retry: false,
+        queryFn: async () => {
+            if (mode === 'share-film') {
+                const d = await tmdb.detail(subjectId);
+                return d ? { name: d.title ?? null, year: d.release_date?.slice(0, 4) || null, poster: d.poster_path ?? null } : null;
+            }
+            const who = await tmdb.person(subjectId);
+            return who ? { name: who.name ?? null, year: null, poster: null } : null;
+        },
+    });
+    const subjectGone = subject.data === null;
+    const filmTitle = subject.data?.name ?? params.shareFilmTitle;
+    const filmYear = subject.data?.year ?? params.shareFilmYear;
+    const filmPoster = subject.data?.poster ?? params.shareFilmPoster;
+    const personName = subject.data?.name ?? params.personName;
     const user = useAuthStore((s) => s.user);
     /** Your own followers or following: said to you, not about "this member". */
     const isOwnCircle = !!user?.id && user.id === params.userId;
@@ -285,23 +311,23 @@ export default function SocialModal() {
             if (mode === 'share-film' && params.shareFilmId) {
                 success = await sendMessage(
                     loungeId,
-                    `Check out ${params.shareFilmTitle ?? 'this film'}`,
+                    `Check out ${filmTitle ?? 'this film'}`,
                     'film_share',
                     {
                         film_id: Number(params.shareFilmId),
-                        film_title: params.shareFilmTitle ?? undefined,
-                        film_poster: params.shareFilmPoster ?? undefined,
+                        film_title: filmTitle ?? undefined,
+                        film_poster: filmPoster ?? undefined,
                     }
                 );
             } else if (mode === 'share-person' && params.personId) {
                 success = await sendMessage(
                     loungeId,
-                    `Check out ${params.personName ?? 'this artist'}`,
+                    `Check out ${personName ?? 'this artist'}`,
                     'text',
                     {
                         metadata: {
                             personId: params.personId,
-                            personName: params.personName ?? null,
+                            personName: personName ?? null,
                         }
                     }
                 );
@@ -325,7 +351,7 @@ export default function SocialModal() {
         } finally {
             if (isMounted.current) setSharingTo(null);
         }
-    }, [user?.id, mode, params.shareFilmId, params.shareFilmTitle, params.shareFilmPoster, params.personId, params.personName, sharingTo]);
+    }, [user?.id, mode, params.shareFilmId, filmTitle, filmPoster, params.personId, personName, sharingTo]);
 
     // ── Render helpers ────────────────────────────────────────────────────────
     const renderSocialItem = useCallback(({ item, index }: { item: SocialProfile; index: number }) => (
@@ -354,28 +380,29 @@ export default function SocialModal() {
 
     // ── Share context banner ──────────────────────────────────────────────────
     const shareBanner = useMemo(() => {
-        if (mode === 'share-film' && params.shareFilmTitle) {
+        if (subjectGone) return null;
+        if (mode === 'share-film' && filmTitle) {
             return (
                 <View style={styles.shareBanner}>
                     <FilmIcon size={12} color={colors.sepia} strokeWidth={1.5} />
                     <Text style={styles.shareBannerText} numberOfLines={1}>
-                        {params.shareFilmTitle.toUpperCase()}{params.shareFilmYear ? ` (${params.shareFilmYear})` : ''}
+                        {filmTitle.toUpperCase()}{filmYear ? ` (${filmYear})` : ''}
                     </Text>
                 </View>
             );
         }
-        if (mode === 'share-person' && params.personName) {
+        if (mode === 'share-person' && personName) {
             return (
                 <View style={styles.shareBanner}>
                     <UserCircle2 size={12} color={colors.sepia} strokeWidth={1.5} />
                     <Text style={styles.shareBannerText} numberOfLines={1}>
-                        {params.personName.toUpperCase()}
+                        {personName.toUpperCase()}
                     </Text>
                 </View>
             );
         }
         return null;
-    }, [mode, params.shareFilmTitle, params.shareFilmYear, params.personName]);
+    }, [mode, subjectGone, filmTitle, filmYear, personName]);
 
     // ── Determine list data ──────────────────────────────────────────────────
     const isShareMode = mode === 'share-film' || mode === 'share-person';
@@ -406,7 +433,11 @@ export default function SocialModal() {
             {/* Share context banner */}
             {shareBanner}
 
-            {roped ? (
+            {subjectGone ? (
+                <View style={styles.center}>
+                    <EmptyState buster="suspicious" title="Not in the Archive" subtitle={mode === 'share-film' ? 'No film of that number is on file. Nothing has been shared.' : 'No artist of that number is on file. Nothing has been shared.'} />
+                </View>
+            ) : roped ? (
                 <View style={styles.center}>
                     <ClearanceGate rank={speaking.rank} standing={speaking.standing} names="Share to a salon" onPress={speaking.open} />
                 </View>
