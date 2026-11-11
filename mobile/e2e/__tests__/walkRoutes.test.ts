@@ -160,3 +160,68 @@ it('refuses to walk anything but a local stack, and says what it needs', () => {
   const bare = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8', env: { ...process.env, API_URL: '', SERVICE_ROLE_KEY: '' } });
   expect([bare.status, bare.stderr]).toEqual([2, expect.stringMatching(/^usage: node e2e\/walk-routes\.mjs/)]);
 });
+
+/**
+ * The link walk (e2e/links.json, WORKLIST P4.21): the doors as a stranger, each signed in from and
+ * landing on its own screen; each bad id by its screen's words; each route warm.
+ */
+describe('the link walk', () => {
+  const LINKS = JSON.parse(readFileSync(join(__dirname, '..', 'links.json'), 'utf8')) as {
+    doors: Record<string, string>; gone: Record<string, Record<string, { link: string; shows: string; lands?: string }>>;
+  };
+  const IDS = `await m.readIds(${WORLD})`;
+  const planned = () => ask(`m.linkPlan(${JSON.stringify(ROUTES)}, ${IDS}, ${JSON.stringify(LINKS)})`) as
+    { file: string; link: string; as: string; door?: string; says?: string; lands?: string; warm?: boolean }[];
+
+  it('names only routes the app has, a door for every screen that asks a stranger in, and every id route twice', () => {
+    for (const file of [...Object.keys(LINKS.doors), ...Object.keys(LINKS.gone)]) expect([file, file in ROUTES]).toEqual([file, true]);
+    // Every route that draws the members' door (MembersOnly, or the profile's prompt) has one here.
+    const asksIn = Object.keys(ROUTES).filter((f) => /<MembersOnly|profile-sign-in-prompt/.test(readFileSync(join(__dirname, '..', '..', f), 'utf8')));
+    expect(asksIn.filter((f) => !(f in LINKS.doors))).toEqual([]);
+    // Every route whose link takes an id is opened by a bad one.
+    const takesAnId = Object.entries(ROUTES).filter(([, r]) => /\{(filing|series|member|dossier|film|log|lounge|person|stack)\}/.test((r as { link: string }).link)).map(([f]) => f);
+    // The share sheet alone has no words of its own for one: of another shape it closes, and what
+    // it shares is what the page that opened it read (social-modal.tsx, resolveMode).
+    expect(takesAnId.filter((f) => !(f in LINKS.gone))).toEqual(['app/(modals)/social-modal.tsx']);
+  });
+
+  it("says each screen's own words, written in that screen's code", () => {
+    const source = (file: string) => {
+      const own = readFileSync(join(__dirname, '..', '..', file), 'utf8');
+      // The words a screen draws through the house's shared notices.
+      const shared = ['src/components/NotInTheArchive.tsx', 'src/components/film/FilmDetailLayout.tsx'].map((p) => readFileSync(join(__dirname, '..', '..', p), 'utf8'));
+      return [own, ...shared].join('\n');
+    };
+    const unsaid = Object.entries(LINKS.gone).flatMap(([file, kinds]) => Object.values(kinds)
+      .filter((g) => !source(g.lands ? 'app/dispatch/[id].tsx' : file).includes(g.shows)).map((g) => `${file}: ${g.shows}`));
+    expect(unsaid).toEqual([]);
+  });
+
+  it('walks the doors first as a stranger, then each bad id and each route warm as the member', () => {
+    const steps = planned();
+    const firstMember = steps.findIndex((s) => s.as === 'member');
+    expect(steps.slice(0, firstMember).every((s) => s.door)).toBe(true);
+    expect(steps.slice(firstMember).every((s) => !s.door)).toBe(true);
+    expect(steps.find((s) => s.file === 'door: app/settings.tsx')).toEqual({ file: 'door: app/settings.tsx', link: '/settings', lands: '/settings', as: 'guest', door: 'members-only-sign-in' });
+    expect(steps.find((s) => s.file === 'door: app/lounge/[id].tsx')?.link).toBe('/lounge/lo-1');
+    expect(steps.find((s) => s.file === 'missing: app/log/[id].tsx')).toEqual({ file: 'missing: app/log/[id].tsx', link: '/log/00000000-0000-4000-8000-000000000000', as: 'member', says: 'No Such Record' });
+    expect(steps.filter((s) => s.warm).length).toBeGreaterThan(25);
+  });
+
+  it('writes a flow: each door from a cleared app, in from its form, landing on its own mark; then signed in once, the rest with the app running', () => {
+    const flow = ask(`m.linkFlowOf(m.linkPlan(${JSON.stringify(ROUTES)}, ${IDS}, ${JSON.stringify(LINKS)}), '/x/sign_in.yaml', '/x/sign_in_here.yaml')`) as string;
+    const door = flow.split('# door: app/settings.tsx\n')[1]?.split('\n# ')[0] ?? '';
+    expect(door.split('\n').slice(0, 12)).toEqual([
+      '- launchApp:', '    clearState: true', '- stopApp', '- openLink: "reelhouse://settings"',
+      '- extendedWaitUntil:', '    visible:', '      id: "members-only-sign-in"', '    timeout: 30000',
+      '- tapOn:', '    id: "members-only-sign-in"', '- runFlow: "/x/sign_in_here.yaml"',
+      '- extendedWaitUntil:',
+    ]);
+    expect(door).toContain('      id: "e2e-route-settings"');
+    // Signed in once, after the last door; a bad id waits for its words, and nothing stops the app.
+    expect(flow.split('- runFlow: "/x/sign_in.yaml"').length).toBe(2);
+    const rest = flow.split('- runFlow: "/x/sign_in.yaml"')[1] ?? '';
+    expect(rest).not.toContain('- stopApp');
+    expect(rest).toContain('      text: "No Such Record"');
+  });
+});

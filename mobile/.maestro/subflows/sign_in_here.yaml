@@ -1,0 +1,38 @@
+appId: com.reelhouse.society
+---
+# Sign in as the seeded member from the form a door has just opened
+# (the link walk, e2e/walk-routes.mjs, WORKLIST P4.21), and stop there:
+# where the sign-in lands is the walk's to judge. The address and a fresh
+# password arrive from the run, as sign_in.yaml's do.
+- extendedWaitUntil:
+    visible:
+      id: "email-input"
+    timeout: 20000
+- tapOn:
+    id: "email-input"
+- inputText: ${E2E_MEMBER_EMAIL}
+- tapOn:
+    id: "password-input"
+- inputText: ${E2E_MEMBER_PASSWORD}
+- assertVisible:
+    id: "email-input"
+    text: ${E2E_MEMBER_EMAIL}
+- tapOn:
+    id: "sign-in-submit"
+# The form gone: the sign-in has answered.
+- extendedWaitUntil:
+    notVisible:
+      id: "sign-in-submit"
+    timeout: 30000
+# The seeded member is in their first days, so THE INITIATION rises over
+# wherever the sign-in landed, a beat after it: entered quietly, and what
+# stands beneath it is the walk's to wait for.
+- waitForAnimationToEnd:
+    timeout: 5000
+- runFlow:
+    when:
+      visible:
+        id: "initiation-enter-quietly"
+    commands:
+      - tapOn:
+          id: "initiation-enter-quietly"

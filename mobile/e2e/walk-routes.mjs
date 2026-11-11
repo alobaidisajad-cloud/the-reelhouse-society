@@ -155,6 +155,73 @@ export function flowOf(steps, signIn, { stillToSignIn = false, stillForMoments =
   return `${lines.join('\n')}\n`;
 }
 
+/**
+ * The link walk (e2e/links.json, WORKLIST P4.21): first as a stranger, each door of a member's
+ * screen, signed in from, landing on that screen itself; then as the member, each id route by a
+ * malformed and by a missing id, what its screen says; then each route opened warm, the app
+ * running. In that order, so the stranger's part starts from a cleared app.
+ */
+export function linkPlan(routes, ids, links) {
+  const route = (file) => {
+    const r = routes[file];
+    if (!r) throw new Error(`links.json names ${file}, which routes.json does not have`);
+    return r;
+  };
+  const doors = Object.entries(links.doors).map(([file, tap]) => {
+    const r = route(file);
+    return { file: `door: ${file}`, link: fillIn(file, r.link, ids), lands: fillIn(file, r.lands ?? r.link, ids).split('?')[0], as: 'guest', door: tap };
+  });
+  const gone = Object.entries(links.gone).flatMap(([file, kinds]) => {
+    route(file);
+    return Object.entries(kinds).map(([kind, g]) => ({ file: `${kind}: ${file}`, link: g.link, as: 'member', says: g.shows }));
+  });
+  const seen = new Set();
+  const warm = Object.entries(routes).flatMap(([file, r]) => {
+    const link = fillIn(file, r.link, ids);
+    if ((r.as ?? 'member') !== 'member' || seen.has(link)) return [];
+    seen.add(link);
+    return [{ file: `warm: ${file}`, link, lands: fillIn(file, r.lands ?? r.link, ids).split('?')[0], as: 'member', warm: true, ...(r.then ? { then: r.then } : {}) }];
+  });
+  return [...doors, ...gone, ...warm];
+}
+
+/**
+ * The link walk's Maestro flow: each door from a cleared app (the sign-in from the door's form is
+ * `signInHere`, landing on the route's own mark, past the first days' initiation when it rises);
+ * then signed in once, each bad id (its words) and each warm opening (its mark), the app running.
+ */
+export function linkFlowOf(steps, signIn, signInHere) {
+  const lines = ['appId: com.reelhouse.society', '---'];
+  const waitFor = (sel, ms = 30000) => ['- extendedWaitUntil:', '    visible:', sel, `    timeout: ${ms}`];
+  const capture = (i, s) => `- takeScreenshot: ${JSON.stringify(`${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}`)}`;
+  let signedIn = false;
+  steps.forEach((s, i) => {
+    const open = `- openLink: ${JSON.stringify(SCHEME + s.link.replace(/^\//, ''))}`;
+    lines.push(`# ${s.file}`);
+    if (s.door) {
+      // A stranger: the app cleared, the link opened cold, its door, and in from it.
+      lines.push('- launchApp:', '    clearState: true', '- stopApp', open,
+        ...waitFor(`      id: ${JSON.stringify(s.door)}`),
+        '- tapOn:', `    id: ${JSON.stringify(s.door)}`,
+        `- runFlow: ${JSON.stringify(signInHere)}`,
+        // Landed: the route itself, never the Lobby (the first days' initiation dismissed above).
+        ...waitFor(`      id: ${JSON.stringify(markOf(s.lands))}`),
+        '- waitForAnimationToEnd:', '    timeout: 8000', capture(i, s));
+      return;
+    }
+    if (!signedIn) {
+      lines.push('- launchApp:', '    clearState: true', `- runFlow: ${JSON.stringify(signIn)}`);
+      signedIn = true;
+    }
+    lines.push(open,
+      ...(s.then ? [...waitFor('      id: "e2e-route(-.+)?"'), '- tapOn:', `    id: ${JSON.stringify(s.then)}`] : []),
+      // A bad id: its screen's words. Warm: the route's own mark.
+      ...(s.says ? waitFor(`      text: ${JSON.stringify(s.says)}`) : waitFor(`      id: ${JSON.stringify(markOf(s.lands))}`)),
+      '- waitForAnimationToEnd:', '    timeout: 8000', capture(i, s));
+  });
+  return `${lines.join('\n')}\n`;
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const out = process.argv[2];
   const API = process.env.API_URL;
@@ -174,13 +241,18 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   };
   try {
     const { routes, moments } = JSON.parse(readFileSync(join(HERE, 'routes.json'), 'utf8'));
-    const steps = plan(routes, await readIds(ask), moments);
+    // The variant's walk (e2e/variants.json): `walk: links` walks e2e/links.json instead (P4.21);
+    // `stillToSignIn`: still until signed in, for the motion-on run.
+    const variant = JSON.parse(readFileSync(join(HERE, 'variants.json'), 'utf8')).variants[process.env.E2E_VARIANT ?? ''];
+    const links = variant?.walk === 'links';
+    const ids = await readIds(ask);
+    const steps = links ? linkPlan(routes, ids, JSON.parse(readFileSync(join(HERE, 'links.json'), 'utf8'))) : plan(routes, ids, moments);
     const shots = join(out, 'routes');
     mkdirSync(shots, { recursive: true });
-    // The variant's walk (e2e/variants.json `stillToSignIn`): still until signed in, for the motion-on run.
-    const variant = JSON.parse(readFileSync(join(HERE, 'variants.json'), 'utf8')).variants[process.env.E2E_VARIANT ?? ''];
-    writeFileSync(join(out, 'walk.yaml'), flowOf(steps, join(HERE, '..', '.maestro', 'subflows', 'sign_in.yaml').split('\\').join('/'),
-      { stillToSignIn: variant?.stillToSignIn === true, stillForMoments: variant?.stillForMoments === true }));
+    const subflow = (name) => join(HERE, '..', '.maestro', 'subflows', name).split('\\').join('/');
+    writeFileSync(join(out, 'walk.yaml'), links
+      ? linkFlowOf(steps, subflow('sign_in.yaml'), subflow('sign_in_here.yaml'))
+      : flowOf(steps, subflow('sign_in.yaml'), { stillToSignIn: variant?.stillToSignIn === true, stillForMoments: variant?.stillForMoments === true }));
     writeFileSync(join(out, 'walk.tsv'), steps.map((s, i) => `${s.file}\t${s.link}\t${String(i + 1).padStart(2, '0')}-${nameOf(s.file)}.png${s.part ? `\t${s.part}` : ''}`).join('\n') + '\n');
     const shown = steps.filter((s) => s.taps).length;
     console.log(`the walk: ${steps.length - shown} routes (${steps.filter((s) => s.as === 'guest').length} as a guest) and ${shown} moments, written to ${out}`);

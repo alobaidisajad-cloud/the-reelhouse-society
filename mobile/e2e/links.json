@@ -1,0 +1,62 @@
+{
+  "why": "The link walk (WORKLIST P4.21; the variant 'links' in e2e/variants.json, planned by e2e/walk-routes.mjs): every address of e2e/routes.json opened by a stranger, by a bad id and warm, each waiting for what that screen must say. `doors`: the routes only a member may open, each drawn for a stranger as the way in (its control's id); the walk taps it, signs in from the form it opens, and must land on the route itself, never the Lobby. `gone`: each route that takes an id, opened with an id of another shape (`malformed`) and with one of its shape that names nothing (`missing`), each with the words its screen says then, never an empty page or 'could not reach'. walkRoutes.test.ts holds this to the routes and each word to its screen's source.",
+  "doors": {
+    "app/(tabs)/profile.tsx": "profile-sign-in-prompt",
+    "app/settings.tsx": "members-only-sign-in",
+    "app/edit-profile.tsx": "members-only-sign-in",
+    "app/year-in-cinema.tsx": "members-only-sign-in",
+    "app/lounge/[id].tsx": "members-only-sign-in",
+    "app/(modals)/notifications-modal.tsx": "members-only-sign-in",
+    "app/(modals)/list-modal.tsx": "members-only-sign-in",
+    "app/(modals)/cover-picker.tsx": "members-only-sign-in",
+    "app/dispatch/compose.tsx": "members-only-sign-in"
+  },
+  "gone": {
+    "app/dispatch/[id].tsx": {
+      "malformed": { "link": "/dispatch/not-an-id", "shows": "ROUTE NOT IN THE ARCHIVE" },
+      "missing": { "link": "/dispatch/00000000-0000-4000-8000-000000000000", "shows": "This filing is no longer here." }
+    },
+    "app/dossier/[id].tsx": {
+      "malformed": { "link": "/dossier/not-an-id", "shows": "ROUTE NOT IN THE ARCHIVE" },
+      "missing": { "link": "/dossier/00000000-0000-4000-8000-000000000000", "shows": "This filing is no longer here.", "lands": "/dispatch/00000000-0000-4000-8000-000000000000" }
+    },
+    "app/dispatch/series/[id].tsx": {
+      "malformed": { "link": "/dispatch/series/not-an-id", "shows": "ROUTE NOT IN THE ARCHIVE" },
+      "missing": { "link": "/dispatch/series/00000000-0000-4000-8000-000000000000", "shows": "Nothing is left of this series." }
+    },
+    "app/dispatch/room/[username].tsx": {
+      "missing": { "link": "/dispatch/room/no_such_member", "shows": "No such member." }
+    },
+    "app/film/[id].tsx": {
+      "malformed": { "link": "/film/not-a-number", "shows": "Not in the Archive" },
+      "missing": { "link": "/film/999999999", "shows": "Not in the Archive" }
+    },
+    "app/film-reviews/[id].tsx": {
+      "malformed": { "link": "/film-reviews/not-a-number", "shows": "ROUTE NOT IN THE ARCHIVE" },
+      "missing": { "link": "/film-reviews/999999999", "shows": "ROUTE NOT IN THE ARCHIVE" }
+    },
+    "app/log/[id].tsx": {
+      "malformed": { "link": "/log/not-an-id", "shows": "ROUTE NOT IN THE ARCHIVE" },
+      "missing": { "link": "/log/00000000-0000-4000-8000-000000000000", "shows": "No Such Record" }
+    },
+    "app/lounge/[id].tsx": {
+      "malformed": { "link": "/lounge/not-an-id", "shows": "ROUTE NOT IN THE ARCHIVE" },
+      "missing": { "link": "/lounge/00000000-0000-4000-8000-000000000000", "shows": "Signal Lost" }
+    },
+    "app/person/[id].tsx": {
+      "malformed": { "link": "/person/not-a-number", "shows": "No Record On File" },
+      "missing": { "link": "/person/999999999", "shows": "No Record On File" }
+    },
+    "app/stacks/[id].tsx": {
+      "malformed": { "link": "/stacks/not-an-id", "shows": "ROUTE NOT IN THE ARCHIVE" },
+      "missing": { "link": "/stacks/00000000-0000-4000-8000-000000000000", "shows": "CLASSIFIED" }
+    },
+    "app/user/[username].tsx": {
+      "missing": { "link": "/user/no_such_member", "shows": "Member Not Found" }
+    },
+    "app/(modals)/cover-picker.tsx": {
+      "malformed": { "link": "/cover-picker?loungeId=not-an-id", "shows": "ROUTE NOT IN THE ARCHIVE" },
+      "missing": { "link": "/cover-picker?loungeId=00000000-0000-4000-8000-000000000000", "shows": "ROUTE NOT IN THE ARCHIVE" }
+    }
+  }
+}

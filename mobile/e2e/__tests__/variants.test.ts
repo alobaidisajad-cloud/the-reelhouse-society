@@ -12,7 +12,7 @@ import { join } from 'path';
 import { pathToFileURL } from 'url';
 
 const SCRIPT = join(__dirname, '..', 'variants.mjs');
-interface Variant { why: string; flows?: boolean; read?: string; answer?: string; ready?: string[]; judges?: string[]; setup: string[]; reset: string[]; device?: { api: number; profile: string; target?: string } }
+interface Variant { why: string; flows?: boolean; walk?: string; read?: string; answer?: string; ready?: string[]; judges?: string[]; setup: string[]; reset: string[]; device?: { api: number; profile: string; target?: string; ram?: string } }
 const VARIANTS = (JSON.parse(readFileSync(join(__dirname, '..', 'variants.json'), 'utf8')) as { variants: Record<string, Variant> }).variants;
 const E2E_YML = readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'e2e.yml'), 'utf8');
 const NIGHTLY = readFileSync(join(__dirname, '..', '..', '..', '.github', 'workflows', 'nightly.yml'), 'utf8');
@@ -40,6 +40,11 @@ describe.each(Object.entries(VARIANTS))('%s', (name, v) => {
   it('sets something and puts it back, one command for each it set; plain alone is the phone as it is, and a phone of its own is asked it is that phone', () => {
     if (name === 'plain') {
       expect([v.setup, v.reset, v.read, v.flows]).toEqual([[], [], undefined, undefined]);
+      return;
+    }
+    // A variant that walks another walk on the plain phone (links, e2e/links.json) sets nothing.
+    if (v.walk !== undefined) {
+      expect({ walk: v.walk, setup: v.setup, reset: v.reset, device: v.device, flows: v.flows }).toEqual({ walk: 'links', setup: [], reset: [], device: undefined, flows: undefined });
       return;
     }
     // A variant that is its own phone (pages-16k) may set nothing; then the phone must say it is
@@ -100,9 +105,10 @@ it('adds a judge only by a name run-flows.sh runs: cut text to the largest text,
 
 it('runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15', () => {
   const devices = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'device') as { commands: string[] }).commands.join(' ')]));
-  expect(Object.entries(devices).filter(([, d]) => d !== '34 pixel_6  google_apis')).toEqual([
-    ['tablet', '36 pixel_tablet 4096M google_apis'],
-    ['pages-16k', '35 pixel_6  google_apis_ps16k'],
+  expect(Object.entries(devices).filter(([, d]) => d !== '34 pixel_6  google_apis 4096M')).toEqual([
+    ['tablet', '36 pixel_tablet 4096M google_apis 4096M'],
+    // With the memory a phone on 16 KB pages needs: in 4 GB its system died (run 42969525169).
+    ['pages-16k', '35 pixel_6  google_apis_ps16k 6144M'],
   ]);
   // The 16 KB phone is that phone only when it says so: its page size asked until it is 16384.
   const pages = VARIANTS['pages-16k'];
@@ -113,6 +119,7 @@ it('runs each variant on the phone every run has, unless it names its own: the t
   expect(E2E_YML).toMatch(/^ {10}profile: \$\{\{ env\.E2E_PROFILE \}\}$/m);
   expect(E2E_YML).toMatch(/^ {10}disk-size: \$\{\{ env\.E2E_DISK \}\}$/m);
   expect(E2E_YML).toMatch(/^ {10}target: \$\{\{ env\.E2E_TARGET \}\}$/m);
+  expect(E2E_YML).toMatch(/^ {10}ram-size: \$\{\{ env\.E2E_RAM \}\}$/m);
   // No image of the workflow's own: each is the variant's (a comment may name one).
   expect(E2E_YML).not.toMatch(/system-images[^\n]*google_apis|\/google_apis\/|-google_apis-|target: google_apis/);
 });
@@ -128,7 +135,7 @@ it('says which run each variant is: every flow and the walk, or the walk alone',
   expect(runs).toEqual({
     plain: ['walk'], 'motion-on': ['walk'], 'largest-text': ['flows'], 'bold-text': ['walk'],
     narrowest: ['flows'], 'three-button': ['walk'], 'right-to-left': ['flows'], dark: ['walk'], tablet: ['flows'],
-    'pages-16k': ['flows'],
+    'pages-16k': ['flows'], links: ['walk'],
   });
 });
 

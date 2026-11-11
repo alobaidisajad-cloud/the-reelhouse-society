@@ -3030,3 +3030,21 @@ mutants:
         find: 'if (onFile.data === false) return <NotInTheArchive />;'
         replace: ''
     proof: { file: app/__tests__/aLinkToNowhereIsSaidSo.test.tsx, test: 'a film the catalogue does not have: not in the archive, never "no member has written"' }
+
+  - id: shape-door-left-unwalked
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: e2e/links.json
+        find: '    "app/(modals)/cover-picker.tsx": "members-only-sign-in",'
+        replace: ''
+    proof: { file: e2e/__tests__/walkRoutes.test.ts, test: 'names only routes the app has, a door for every screen that asks a stranger in, and every id route twice' }
+
+  - id: shape-16k-phone-starved
+    class: RUNTIME-native-library-on-16k-pages
+    source: shape
+    edits:
+      - file: e2e/variants.json
+        find: '"ram": "6144M"'
+        replace: '"ram": "4096M"'
+    proof: { file: e2e/__tests__/variants.test.ts, test: 'runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15' }

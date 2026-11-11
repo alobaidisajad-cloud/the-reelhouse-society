@@ -32,7 +32,7 @@ export function commandsFor(variants, name, step, was, device = FILE.device) {
   if (step === 'ready') return { commands: v.ready ?? [] };
   if (step === 'runs') return { commands: [v.flows ? 'flows' : 'walk'] };
   if (step === 'judges') return { commands: v.judges ?? [] };
-  if (step === 'device') { const d = v.device ?? device; return { commands: [String(d.api), d.profile, d.disk ?? '', d.target ?? device.target] }; }
+  if (step === 'device') { const d = v.device ?? device; return { commands: [String(d.api), d.profile, d.disk ?? '', d.target ?? device.target, d.ram ?? device.ram] }; }
   if (step !== 'reset') return { refused: `a step is read, setup, ready, reset, runs, judges or device, not ${step}` };
   if (v.reset.some((c) => c.includes('{was}')) && !was) return { refused: `${name}'s reset puts back what was read, and was given nothing` };
   if (v.answer && !new RegExp(v.answer).test(was ?? '')) return { refused: `${name}'s read answered ${was}, which ${v.answer} does not match: nothing is put back` };

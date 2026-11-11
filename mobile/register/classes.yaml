@@ -1976,6 +1976,7 @@ classes:
       - { kind: running, file: app/(modals)/__tests__/theCoverIsTheHostsToChoose.test.tsx, test: "reads the salon’s host from the house, and draws the picker for its host" }
       - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "reads the stack from the house, and its curator amends it whole" }
       - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "its first page alone is never taken as whole: the films past it are never sent away" }
+      - { kind: static, file: e2e/__tests__/walkRoutes.test.ts, test: "names only routes the app has, a door for every screen that asks a stranger in, and every id route twice" }
       - { kind: running, file: app/__tests__/aLinkToNowhereIsSaidSo.test.tsx, test: 'a film the catalogue does not have: not in the archive, never "no member has written"' }
     fix: "a guest has a standing of their own (useClearance 'guest'): every rope says the room is for members and opens the sign-in, carrying where they stood (PathTracker notes the path and its query; askIn for every member's act); the sign-in returns to any screen of the app by its shape (src/utils/signInReturn.ts, held to app/'s routes), closing back to it (dismissTo); Settings, the editor, the year, the desk and a salon draw MembersOnly signed out; the cover picker and the stack editor read their row from the house on a cold link; a film's reviews ask after the film when none is on file"
     places: [emulator, simulator]

@@ -41,7 +41,7 @@ on:
         default: ''
       # A variant run (WORKLIST P0.86): every route opened cold by deep link and captured
       # (e2e/walk-routes.mjs), on one machine, the phone set as the variant has it and put back
-      # after (run-flows.sh). The variants (mobile/e2e/variants.json): plain, motion-on, largest-text, bold-text, narrowest, three-button, right-to-left, dark, tablet, pages-16k
+      # after (run-flows.sh). The variants (mobile/e2e/variants.json): plain, motion-on, largest-text, bold-text, narrowest, three-button, right-to-left, dark, tablet, pages-16k, links
       variant:
         type: string
         required: false
@@ -141,6 +141,7 @@ jobs:
       profile: ${{ steps.device.outputs.profile }}
       disk: ${{ steps.device.outputs.disk }}
       target: ${{ steps.device.outputs.target }}
+      ram: ${{ steps.device.outputs.ram }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -162,6 +163,7 @@ jobs:
           echo "profile=$(sed -n 2p <<< "$device")" >> "$GITHUB_OUTPUT"
           echo "disk=$(sed -n 3p <<< "$device")" >> "$GITHUB_OUTPUT"
           echo "target=$(sed -n 4p <<< "$device")" >> "$GITHUB_OUTPUT"
+          echo "ram=$(sed -n 5p <<< "$device")" >> "$GITHUB_OUTPUT"
 
       # Before the package cache is keyed: the client's own lock file decides it.
       - name: The shipped client's app, over this harness
@@ -406,6 +408,7 @@ jobs:
       E2E_PROFILE: ${{ needs.build.outputs.profile }}
       E2E_DISK: ${{ needs.build.outputs.disk }}
       E2E_TARGET: ${{ needs.build.outputs.target }}
+      E2E_RAM: ${{ needs.build.outputs.ram }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # The stack's ports kept before the job makes any connection that could be lent one: lent
@@ -756,7 +759,7 @@ jobs:
           arch: x86_64
           profile: ${{ env.E2E_PROFILE }}
           disk-size: ${{ env.E2E_DISK }}
-          ram-size: 4096M
+          ram-size: ${{ env.E2E_RAM }}
           heap-size: 576M
           disable-animations: true
           # The renderer. The emulator died a second after the film page opened, in
@@ -791,13 +794,29 @@ jobs:
         if: ${{ !cancelled() }}
         run: node mobile/e2e/what-the-app-asked.mjs "$RUNNER_TEMP/gateway.jsonl"
 
+      # The sealed world's containers as the run ended: each one's state, exit code, whether the
+      # kernel took it for memory, and when it stopped. The functions runtime stopped mid-run in
+      # 42969141230 and every flow after it failed, the record saying only "name resolution
+      # failed": one that stopped is now said, with when and why, beside the flows it failed.
+      - name: The sealed world, as the run ended
+        if: always()
+        run: |
+          docker ps -a --filter name=reelhouse-e2e --format '{{.Names}}' | while read -r c; do
+            docker inspect --format '{{.Name}} {{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} started={{.State.StartedAt}} finished={{.State.FinishedAt}} {{.State.Error}}' "$c"
+          done > "$RUNNER_TEMP/containers.txt" 2>&1 || true
+          grep -v ' running ' "$RUNNER_TEMP/containers.txt" > "$RUNNER_TEMP/containers-stopped.txt" || true
+          if [ -s "$RUNNER_TEMP/containers-stopped.txt" ]; then
+            node mobile/e2e/annotate.mjs "A container of the sealed world was not running when the run ended" "$RUNNER_TEMP/containers-stopped.txt" warning
+          fi
+
       - name: TMDB requests with no recording
         if: always()
         run: |
           # Everything the functions runtime printed, kept for the logs artifact too.
           docker logs supabase_edge_runtime_reelhouse-e2e > "$RUNNER_TEMP/functions.log" 2>&1 || true
-          # The checks ask for two paths on purpose; they are not gaps.
-          grep -o 'E2E-TMDB-MISS .*' "$RUNNER_TEMP/functions.log" 2>/dev/null | grep -v 'e2e-never-recorded\|/movie/999999999' \
+          # The checks ask for three paths on purpose (the link walk's film and artist that never
+          # were, e2e/links.json, among them); they are not gaps.
+          grep -o 'E2E-TMDB-MISS .*' "$RUNNER_TEMP/functions.log" 2>/dev/null | grep -v 'e2e-never-recorded\|/movie/999999999\|/person/999999999' \
             | sed 's/^E2E-TMDB-MISS //' | sort -u > "$RUNNER_TEMP/tmdb-misses.txt" || true
           # A miss is a flow shown "nothing" where a member is shown the film: the
           # world is not production's, so the run fails until it is recorded.
@@ -817,7 +836,7 @@ jobs:
         if: always()
         run: |
           node mobile/e2e/scrub.mjs \
-            "$RUNNER_TEMP/functions.log" "$RUNNER_TEMP/gateway.jsonl" "$RUNNER_TEMP/fault-proxy.txt" \
+            "$RUNNER_TEMP/functions.log" "$RUNNER_TEMP/containers.txt" "$RUNNER_TEMP/gateway.jsonl" "$RUNNER_TEMP/fault-proxy.txt" \
             "$RUNNER_TEMP/maestro.log" "$RUNNER_TEMP/flow-reports" "$RUNNER_TEMP/flow-screens" \
             "$RUNNER_TEMP/flow-hierarchy" "$RUNNER_TEMP/maestro-debug" "$RUNNER_TEMP/first-attempts" \
             "$RUNNER_TEMP/keyboard-room" "$RUNNER_TEMP/keyboard-room.txt" "$RUNNER_TEMP/screen.txt" \
@@ -850,6 +869,7 @@ jobs:
           include-hidden-files: true
           path: |
             ${{ runner.temp }}/functions.log
+            ${{ runner.temp }}/containers.txt
             ${{ runner.temp }}/gateway.jsonl
             ${{ runner.temp }}/fault-proxy.txt
             ${{ runner.temp }}/maestro.log

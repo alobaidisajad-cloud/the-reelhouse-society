@@ -1,10 +1,11 @@
 {
   "why": "The phone as each variant run has it (WORKLIST P0.86): each name's adb shell commands set before the run touches the phone and put back once it ends, so nothing outlives its run. Where the phone's own value is not a fixed default, `read` takes it first (the last word of its answer, which must match `answer`) and a reset's {was} puts it back. `ready`, for a setting the system takes a while to apply, is asked until it answers yes (exit 0). `flows`: the run takes every flow before the route walk, on three machines; every other variant walks the routes alone, on one. `judges`: what else fails the run on that phone (cut-text: e2e/cut-text-judges.mjs). run-flows.sh runs them (e2e/variants.mjs); variants.test.ts holds every one to a setup, a reset and a reason. `device`: the emulator a variant runs on, when not the one every other run has (below).",
   "device": {
-    "why": "The emulator every run is on unless its variant names its own: a Pixel 6 on Android 14, the image kept in the cache.",
+    "why": "The emulator every run is on unless its variant names its own: a Pixel 6 on Android 14, the image kept in the cache, with 4 GB of memory.",
     "api": 34,
     "profile": "pixel_6",
-    "target": "google_apis"
+    "target": "google_apis",
+    "ram": "4096M"
   },
   "variants": {
     "plain": {
@@ -69,10 +70,16 @@
     },
     "pages-16k": {
       "why": "Android 15 on 16 KB memory pages (WORKLIST P4.29): phones from Android 15 on may run with 16 KB pages, and a native library built for 4 KB ones fails to load there, so the app crashes at its start or when it first reaches that library (MMKV, SecureStore, Reanimated, Skia). Its own system image (google_apis_ps16k), every flow on it: the start, the sign-in, the Archive's lock (MMKV and SecureStore) and the critical path. Nothing on the phone is set; the run is that phone only when the phone says its page is 16384 bytes (ready), and stops if it never does.",
-      "device": { "api": 35, "profile": "pixel_6", "target": "google_apis_ps16k", "why": "The only image with 16 KB pages Google ships for x86_64, which the runner's emulator runs." },
+      "device": { "api": 35, "profile": "pixel_6", "target": "google_apis_ps16k", "why": "The only image with 16 KB pages Google ships for x86_64, which the runner's emulator runs.", "ram": "6144M", "ramWhy": "A system on 16 KB pages holds more memory for the same work: in 4 GB it ran out at its start, killed 187 processes and then died itself, taking the app with it (run 42969525169), where the plain phone killed none. Every phone shipped with 16 KB pages has 8 GB or more; the runner has room for 6." },
       "flows": true,
       "setup": [],
       "ready": ["[ \"$(getconf PAGE_SIZE)\" = 16384 ]"],
+      "reset": []
+    },
+    "links": {
+      "why": "Every address as a stranger, by a bad id and warm (WORKLIST P4.21): the plain phone, walking e2e/links.json instead of the routes. Each member's door is signed in from and must land on its own screen, never the Lobby; each id route, malformed and missing, says its screen's words, never an empty page or 'could not reach'; each route opens with the app running.",
+      "walk": "links",
+      "setup": [],
       "reset": []
     }
   }
