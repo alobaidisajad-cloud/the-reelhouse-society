@@ -103,12 +103,12 @@ it('adds a judge only by a name run-flows.sh runs: cut text to the largest text,
   for (const j of Object.values(judges).flat()) expect(runFlows).toContain(`judges | grep -qx ${j}`);
 });
 
-it('runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15', () => {
+it('runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 16 too', () => {
   const devices = Object.fromEntries(Object.keys(VARIANTS).map((n) => [n, (commandsFor(n, 'device') as { commands: string[] }).commands.join(' ')]));
   expect(Object.entries(devices).filter(([, d]) => d !== '34 pixel_6  google_apis 4096M')).toEqual([
     ['tablet', '36 pixel_tablet 4096M google_apis 4096M'],
     // With the memory a phone on 16 KB pages needs: in 4 GB its system died (run 42969525169).
-    ['pages-16k', '35 pixel_6  google_apis_ps16k 6144M'],
+    ['pages-16k', '36 pixel_6  google_apis_ps16k 6144M'],
   ]);
   // The 16 KB phone is that phone only when it says so: its page size asked until it is 16384.
   const pages = VARIANTS['pages-16k'];

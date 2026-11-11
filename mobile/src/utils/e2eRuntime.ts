@@ -52,8 +52,13 @@ let written = false;
 export function traceRuntimeOnce(): void {
   if (written || !E2E_BUILD) return;
   written = true;
-  const all = runtimeNames(runtime.reads);
-  for (const of of runtime.reads) {
-    for (const line of runtimeLines(of, all[of])) e2eTrace('runtime', line);
-  }
+  // Read at rest, on the next turn: the first screen's effect can run inside the event that
+  // opened it (a link, a tap), while the renderer holds a global `event` for that event alone,
+  // and the record took it for the runtime's own (the link walk, run 43019772957).
+  setTimeout(() => {
+    const all = runtimeNames(runtime.reads);
+    for (const of of runtime.reads) {
+      for (const line of runtimeLines(of, all[of])) e2eTrace('runtime', line);
+    }
+  }, 0);
 }

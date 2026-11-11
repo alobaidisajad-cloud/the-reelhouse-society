@@ -2975,7 +2975,7 @@ mutants:
       - file: e2e/variants.json
         find: "      \"ready\": [\"[ \\\"$(getconf PAGE_SIZE)\\\" = 16384 ]\"],\n"
         replace: ""
-    proof: { file: e2e/__tests__/variants.test.ts, test: "runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15" }
+    proof: { file: e2e/__tests__/variants.test.ts, test: "runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 16 too" }
 
   - id: shape-guest-sold-a-rank
     class: NAV-a-stranger-at-a-members-door
@@ -3047,7 +3047,7 @@ mutants:
       - file: e2e/variants.json
         find: '"ram": "6144M"'
         replace: '"ram": "4096M"'
-    proof: { file: e2e/__tests__/variants.test.ts, test: 'runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15' }
+    proof: { file: e2e/__tests__/variants.test.ts, test: 'runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 16 too' }
 
   - id: shape-share-says-the-links-words
     class: NAV-a-stranger-at-a-members-door

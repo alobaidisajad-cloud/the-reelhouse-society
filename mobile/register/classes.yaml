@@ -1958,8 +1958,8 @@ classes:
     count: 0
     source: { kind: reviewer, ref: "WORKLIST P4.29" }
     methods:
-      - { kind: static, file: e2e/__tests__/variants.test.ts, test: "runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15" }
-    fix: "a variant names its emulator's system image as well as its Android and profile (variants.json device.target, e2e.yml E2E_TARGET everywhere the image is), and pages-16k runs every flow on Android 15's 16 KB-page image (google_apis_ps16k): the start, the sign-in, the Archive's lock (MMKV and SecureStore) and the critical path; the run is that phone only when the phone says its page is 16384 bytes (ready), and stops if it never does. It runs nightly with every variant"
+      - { kind: static, file: e2e/__tests__/variants.test.ts, test: "runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 16 too" }
+    fix: "a variant names its emulator's system image as well as its Android and profile (variants.json device.target, e2e.yml E2E_TARGET everywhere the image is), and pages-16k runs every flow on Android 16's 16 KB-page image (google_apis_ps16k, with 6 GB): the start, the sign-in, the Archive's lock (MMKV and SecureStore) and the critical path; the run is that phone only when the phone says its page is 16384 bytes (ready), and stops if it never does. It runs nightly with every variant"
     places: [emulator]
 
   - id: NAV-a-stranger-at-a-members-door

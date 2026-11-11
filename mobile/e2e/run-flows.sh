@@ -49,7 +49,14 @@ if [ -n "${E2E_OLD_CLIENT:-}" ]; then
   own=(--own "$OUT/own-crashes.json")
 fi
 
-adb install -r "$APK" || { echo "::error title=E2E::the app would not install"; exit 1; }
+# Asked up to three times: the package service answers a moment after the phone says it booted, and
+# a slow phone (the 16 KB one) refused the first ask with "Broken pipe" (run 43019767529).
+installed=0
+for attempt in 1 2 3; do
+  if adb install -r "$APK"; then installed=1; break; fi
+  [ "$attempt" -lt 3 ] && sleep 15
+done
+[ $installed -eq 1 ] || { echo "::error title=E2E::the app would not install"; exit 1; }
 # The house's address opens the app (house_link). Android gives the app a link only once the
 # website's link file names it, and that file ships at launch prep; until then the address is
 # approved for the app here (settle_phone, before every flow), as the file will approve it on a
