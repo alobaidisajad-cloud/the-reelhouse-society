@@ -62,15 +62,20 @@ export function readLaunches(log) {
 }
 
 /**
- * Globals a native module installs on the runtime when the module first starts, which can come
- * before or after the first screen writes the runtime: each launch may have them or not, so they are
- * never held to the copy, either way. Each named with what installs it. Nothing else is excused.
+ * Globals installed on the runtime by something that first happens before or after the first screen
+ * writes the runtime: each launch may have them or not, so they are never held to the copy, either
+ * way. Each named with what installs it. Nothing else is excused.
  */
 export const INSTALLED_LATE = {
   // Its native module installs it as a JSI function when it first starts; the app reads it only
   // under __DEV__ (useViewRefHandler). Sealed E2E 40183148664: a launch had it, once the Lobby was
   // drawn only when first seen and that launch's first screen wrote the runtime at another moment.
   isViewFlatteningDisabled: 'react-native-gesture-handler',
+  // React Native's EventTarget (src/private/webapis/dom/events/EventTarget.js) sets global.event
+  // while it hands an event to its listeners, and puts back what was there: after its first event
+  // the global is there, holding undefined, as a browser's window.event is. The link walk's first
+  // door signs in before the first screen writes the runtime (runs 43019772957, 43059341183).
+  event: 'react-native (EventTarget)',
 };
 
 /** How a runtime differs from the copy, one line a built-in ([] when equal). */

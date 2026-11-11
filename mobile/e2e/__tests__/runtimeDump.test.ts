@@ -66,6 +66,15 @@ it('holds a global a native module installs late to no moment, and only that one
   expect(onABuiltIn.out).toContain('AbortSignal: the phone has isViewFlatteningDisabled, the copy does not');
 });
 
+it("holds the global React Native's EventTarget leaves after its first event to no moment either", () => {
+  // The link walk's first door signs in before the first screen writes the runtime (43059341183):
+  // an event handed out by then leaves global.event there, holding undefined.
+  const signedIn = run([...launch(100, { ...PHONE, globalThis: [...GLOBALS, 'event'] }), ...launch(200, PHONE)], PHONE);
+  expect(signedIn.code).toBe(0);
+  const onABuiltIn = run(launch(100, { ...PHONE, AbortSignal: ['prototype', 'abort', 'event'] }), PHONE);
+  expect(onABuiltIn.out).toContain('AbortSignal: the phone has event, the copy does not');
+});
+
 it('says NO to a part that never reached the log', () => {
   const lines = launch(100, PHONE);
   const cut = lines.filter((l) => !l.includes('"part":2,'));
