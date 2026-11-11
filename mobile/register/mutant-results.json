@@ -192,7 +192,7 @@
     "class": "EDGE-function-unexercised",
     "mutant": "shape-function-fixed-address",
     "proof": "m3",
-    "commit": "a14da415dc2a3268919e221ea7487a1140723753",
+    "commit": "f45e95c6dab493d717e45a13a6f702e00c6c9582",
     "verdict": "caught"
   },
   {
