@@ -59,7 +59,7 @@
     "class": "CI-gate-never-runs",
     "mutant": "shape-gate-on-pull-requests-alone",
     "proof": "m1",
-    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
+    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
     "verdict": "caught"
   },
   {
@@ -458,7 +458,7 @@
     "class": "CI-schedule-stops-unheard",
     "mutant": "shape-heartbeat-silent",
     "proof": "m1",
-    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
+    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
     "verdict": "caught"
   },
   {
@@ -556,7 +556,7 @@
     "class": "E2E-record-not-kept",
     "mutant": "shape-variant-record-not-kept",
     "proof": "m1",
-    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
+    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
     "verdict": "caught"
   },
   {
@@ -724,7 +724,7 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-retry-blocked-by-lock",
     "proof": "m1",
-    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
+    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
     "verdict": "caught"
   },
   {
@@ -794,7 +794,7 @@
     "class": "CI-install-fails-on-a-source-it-never-uses",
     "mutant": "shape-install-reads-every-source",
     "proof": "m1",
-    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
+    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
     "verdict": "caught"
   },
   {
@@ -2222,7 +2222,7 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-install-before-the-runners-own",
     "proof": "m1",
-    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
+    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
     "verdict": "caught"
   },
   {
@@ -2243,7 +2243,14 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-tablet-keeps-its-lid",
     "proof": "m7",
-    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
+    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-native-library-on-16k-pages",
+    "mutant": "shape-16k-phone-unproven",
+    "proof": "m1",
+    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
     "verdict": "caught"
   }
 ]
