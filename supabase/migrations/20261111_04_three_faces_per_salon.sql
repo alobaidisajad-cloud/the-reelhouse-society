@@ -14,7 +14,7 @@
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
--- add-only (3): it only fixes: the same faces, in the same order, under the same rule, read without ranking every member (the rehearsal compares every salon's)
+-- add-only (3): it only fixes: the calls replayed, every salon's faces as its host asks for them, before and after, the same (three_faces_per_salon_rehearsal.sql)
 CREATE OR REPLACE FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[])
   RETURNS TABLE(lounge_id uuid, username text, avatar_url text, rn integer)
   LANGUAGE sql STABLE SECURITY DEFINER
