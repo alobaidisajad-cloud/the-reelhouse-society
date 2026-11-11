@@ -45,7 +45,7 @@
     "class": "CI-gate-never-runs",
     "mutant": "past-nightly-cancels-push",
     "proof": "m2",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
@@ -59,7 +59,7 @@
     "class": "CI-gate-never-runs",
     "mutant": "shape-gate-on-pull-requests-alone",
     "proof": "m1",
-    "commit": "d3129803324fd03f34d84fd204a830f325c9cd67",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
@@ -80,21 +80,21 @@
     "class": "CI-check-passes-on-nothing",
     "mutant": "shape-build-step-let-fail",
     "proof": "m1",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
     "class": "CI-background-job-left-running",
     "mutant": "shape-log-stream-left-running",
     "proof": "m1",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
     "class": "CI-background-job-left-running",
     "mutant": "shape-node-child-unwaited",
     "proof": "m2",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
@@ -458,7 +458,7 @@
     "class": "CI-schedule-stops-unheard",
     "mutant": "shape-heartbeat-silent",
     "proof": "m1",
-    "commit": "d3129803324fd03f34d84fd204a830f325c9cd67",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
@@ -556,7 +556,7 @@
     "class": "E2E-record-not-kept",
     "mutant": "shape-variant-record-not-kept",
     "proof": "m1",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
@@ -724,7 +724,7 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-retry-blocked-by-lock",
     "proof": "m1",
-    "commit": "d3129803324fd03f34d84fd204a830f325c9cd67",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
@@ -787,14 +787,14 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-install-waits-on-the-mirror",
     "proof": "m1",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
     "class": "CI-install-fails-on-a-source-it-never-uses",
     "mutant": "shape-install-reads-every-source",
     "proof": "m1",
-    "commit": "d3129803324fd03f34d84fd204a830f325c9cd67",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
@@ -2222,7 +2222,7 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-install-before-the-runners-own",
     "proof": "m1",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   },
   {
@@ -2243,7 +2243,7 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-tablet-keeps-its-lid",
     "proof": "m7",
-    "commit": "c5b712eeb3d68d6b3de99b89a0d69e5aa4172672",
+    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
     "verdict": "caught"
   }
 ]
