@@ -2308,5 +2308,12 @@
     "proof": "m1",
     "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
     "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-stranger-at-a-members-door",
+    "mutant": "shape-share-says-the-links-words",
+    "proof": "m9",
+    "commit": "def78796d0b70424c214b83cd7481fd9104e1fc9",
+    "verdict": "caught"
   }
 ]
