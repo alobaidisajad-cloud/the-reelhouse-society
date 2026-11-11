@@ -4,8 +4,8 @@
     "push_tap_critique": "New on 2026-11-10 (WORKLIST P4.22, a critique's push opens the log critiqued): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
     "push_tap_salon": "New on 2026-11-10 (WORKLIST P4.22, an admission's push opens the salon): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
     "push_tap_house": "New on 2026-11-10 (WORKLIST P4.22, word from the house opens the notices sheet): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
-    "email_link_customtab": "New on 2026-11-12 (WORKLIST P4.21, a reset email's link opened as a Chrome Custom Tab, as Gmail opens one): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
-    "email_link_chrome": "New on 2026-11-12 (WORKLIST P4.21, a reset email's link opened in plain Chrome): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list."
+    "email_link_customtab": "New on 2026-11-11 (WORKLIST P4.21, a reset email's link opened as a Chrome Custom Tab, as Gmail opens one): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list.",
+    "email_link_chrome": "New on 2026-11-11 (WORKLIST P4.21, a reset email's link opened in plain Chrome): weighed by the estimate for a flow with no runs (UNMEASURED_SECONDS) until its first runs are added (flow-history.mjs --add <run id>); then it leaves this list."
   },
   "shards": [
     {
