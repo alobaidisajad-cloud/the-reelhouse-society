@@ -357,6 +357,17 @@ it('every apt install waits for the lock a try cut short at its limit leaves hel
   expect(installsByApt('npx playwright install chromium')).toBe(false);
 });
 
+it('every Postgres client install reads Postgres\'s own source alone, never every source again', () => {
+  // Run 43042887899: the setup script (apt.postgresql.org.sh) read every source again, and a slow
+  // Ubuntu mirror held the step past its five minutes on all four machines.
+  const ALONE = 'sudo apt-get update -q -o Dir::Etc::sourcelist=sources.list.d/pgdg.list -o Dir::Etc::sourceparts=- -o APT::Get::List-Cleanup=0';
+  const steps = workflows.flatMap((w) => Object.entries(w.wf.jobs).flatMap(([job, j]) => ((j.steps ?? []) as RunStep[])
+    .filter((s) => s.run && /postgresql-client-\d+/.test(s.run)).map((s) => ({ at: `${w.file} › ${job} › ${s.name}`, run: s.run! }))));
+  expect(steps.length).toBeGreaterThanOrEqual(10);
+  expect(steps.filter((s) => /apt\.postgresql\.org\.sh/.test(s.run) || !s.run.includes(ALONE)
+    || s.run.indexOf(ALONE) > s.run.search(/apt-get install[^\n]*postgresql-client-\d+/)).map((s) => s.at)).toEqual([]);
+});
+
 /** The line that leaves apt only Ubuntu's own sources (its archive, or the runner's list of its mirrors). */
 const ONLY_UBUNTU = 'grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f';
 
