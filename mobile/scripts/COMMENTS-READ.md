@@ -1259,7 +1259,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/everyCapAnswersToItsColumn.test.ts | 2026-10-03 | read whole: every new cap answers to its column or says why it is smaller |
 | src/utils/__tests__/everyChannelIsPrivate.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyClassIsAccountedFor.test.ts | 2026-10-15 | new |
-| src/utils/__tests__/everyMutantIsSound.guard.test.ts | 2026-11-08 | edited: push-present.mjs named as no judge: the push flow judges the tap (P4.22); edited: critical-path.mjs named as no judge, with why; edited: no mutant planted in an applied migration; edited: a two-document flow parses; a broken document of it does not; new |
+| src/utils/__tests__/everyMutantIsSound.guard.test.ts | 2026-11-11 | edited: email-link.mjs named as no judge; edited: push-present.mjs named as no judge: the push flow judges the tap (P4.22); edited: critical-path.mjs named as no judge, with why; edited: no mutant planted in an applied migration; edited: a two-document flow parses; a broken document of it does not; new |
 | src/utils/__tests__/everyControlHasAName.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/everyFileSurvivedTheShell.guard.test.ts | 2026-10-15 | edited: everything a person edits, from the shared file list: flows, workflows and both supabase/ trees included |
 | src/utils/__tests__/everyMemberKeyHasAnEraser.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
