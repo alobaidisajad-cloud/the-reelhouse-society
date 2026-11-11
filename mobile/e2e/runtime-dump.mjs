@@ -71,7 +71,7 @@ export const INSTALLED_LATE = {
   // under __DEV__ (useViewRefHandler). Sealed E2E 40183148664: a launch had it, once the Lobby was
   // drawn only when first seen and that launch's first screen wrote the runtime at another moment.
   isViewFlatteningDisabled: 'react-native-gesture-handler',
-  // React Native's EventTarget (src/private/webapis/dom/events/EventTarget.js) sets global.event
+  // React Native's EventTarget (node_modules/react-native/src/private/webapis/dom/events/EventTarget.js) sets global.event
   // while it hands an event to its listeners, and puts back what was there: after its first event
   // the global is there, holding undefined, as a browser's window.event is. The link walk's first
   // door signs in before the first screen writes the runtime (runs 43019772957, 43059341183).
