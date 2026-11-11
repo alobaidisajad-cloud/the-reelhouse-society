@@ -5,6 +5,7 @@ SET LOCAL statement_timeout = '30s';
 
 -- add-only (3): it only fixes: the trigger as it was before 20261111_01, which every shipped client wrote under
 DROP TRIGGER a_keeps_what_it_is ON public.notifications;
+-- add-only (3): it only fixes: the trigger as it was before 20261111_01, which every shipped client wrote under
 CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.notifications FOR EACH ROW
   EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'type', 'from_user_id', 'from_username', 'related_lounge_id',
     'film_id', 'poster_path', 'title', 'body', 'message', 'metadata', 'group_key', 'created_at');

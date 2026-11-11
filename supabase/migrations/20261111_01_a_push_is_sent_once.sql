@@ -28,6 +28,7 @@ ALTER TABLE public.notifications ADD COLUMN pushed_at timestamptz;
 -- As live, with pushed_at kept from a member's own update.
 -- add-only (3): it only fixes: a member's update of their notice (is_read, the only column any client writes) lands as before; replayed as the member in a_push_is_sent_once_rehearsal.sql
 DROP TRIGGER a_keeps_what_it_is ON public.notifications;
+-- add-only (3): it only fixes: the same trigger, keeping one more column, the house's own (pushed_at), which no client writes; a member's update of their notice replayed as the member in a_push_is_sent_once_rehearsal.sql
 CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.notifications FOR EACH ROW
   EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'type', 'from_user_id', 'from_username', 'related_lounge_id',
     'film_id', 'poster_path', 'title', 'body', 'message', 'metadata', 'group_key', 'created_at', 'pushed_at');
