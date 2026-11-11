@@ -47,9 +47,10 @@ jobs:
   load:
     name: 🏋️ Busy screens against ${{ inputs.members || '100000' }} members
     runs-on: ubuntu-24.04
-    # 100,000 members seed in ~9 minutes and the job ends in ~25; 500,000 (asked by hand) seed in
-    # what its first run measures, an hour or so. One limit for both, a number as every job's is.
-    timeout-minutes: 150
+    # 100,000 members seed in ~9 minutes and the job ends in ~25; 500,000 (asked by hand) seeded in
+    # 2 h 3 min, the job in 2 h 8 (load 42924788249, 38 GB): its limit with room. One limit for both,
+    # a number as every job's is.
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # The stack's ports kept before the job makes any connection that could be lent one: lent
