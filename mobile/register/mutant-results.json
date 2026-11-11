@@ -87,7 +87,7 @@
     "class": "CI-background-job-left-running",
     "mutant": "shape-log-stream-left-running",
     "proof": "m1",
-    "commit": "a07be9bb737239cd508b0a925cca9520e30f7683",
+    "commit": "b616dde6a0e8c08fb0d3de5ddd8a2c03a11a4eff",
     "verdict": "caught"
   },
   {
@@ -388,7 +388,7 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-refusal-sent",
     "proof": "m3",
-    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
+    "commit": "b616dde6a0e8c08fb0d3de5ddd8a2c03a11a4eff",
     "verdict": "caught"
   },
   {
@@ -521,14 +521,14 @@
     "class": "E2E-launch-unmeasured",
     "mutant": "shape-cold-table-unwritten",
     "proof": "m3",
-    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
+    "commit": "b616dde6a0e8c08fb0d3de5ddd8a2c03a11a4eff",
     "verdict": "caught"
   },
   {
     "class": "E2E-ceiling-not-measured",
     "mutant": "shape-shard-starts-cold",
     "proof": "m1",
-    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
+    "commit": "b616dde6a0e8c08fb0d3de5ddd8a2c03a11a4eff",
     "verdict": "caught"
   },
   {
@@ -542,21 +542,21 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-phone-unsettled",
     "proof": "m6",
-    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
+    "commit": "b616dde6a0e8c08fb0d3de5ddd8a2c03a11a4eff",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-input-swallowed",
     "proof": "m4",
-    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
+    "commit": "b616dde6a0e8c08fb0d3de5ddd8a2c03a11a4eff",
     "verdict": "caught"
   },
   {
     "class": "E2E-record-not-kept",
     "mutant": "shape-variant-record-not-kept",
     "proof": "m1",
-    "commit": "a07be9bb737239cd508b0a925cca9520e30f7683",
+    "commit": "b616dde6a0e8c08fb0d3de5ddd8a2c03a11a4eff",
     "verdict": "caught"
   },
   {
@@ -2222,7 +2222,7 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-install-before-the-runners-own",
     "proof": "m1",
-    "commit": "a07be9bb737239cd508b0a925cca9520e30f7683",
+    "commit": "b616dde6a0e8c08fb0d3de5ddd8a2c03a11a4eff",
     "verdict": "caught"
   },
   {
@@ -2243,7 +2243,7 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-tablet-keeps-its-lid",
     "proof": "m7",
-    "commit": "a07be9bb737239cd508b0a925cca9520e30f7683",
+    "commit": "b616dde6a0e8c08fb0d3de5ddd8a2c03a11a4eff",
     "verdict": "caught"
   },
   {
@@ -2314,6 +2314,13 @@
     "mutant": "shape-share-says-the-links-words",
     "proof": "m9",
     "commit": "def78796d0b70424c214b83cd7481fd9104e1fc9",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-stranger-at-a-members-door",
+    "mutant": "shape-email-link-left-on-the-runner",
+    "proof": "m10",
+    "commit": "b616dde6a0e8c08fb0d3de5ddd8a2c03a11a4eff",
     "verdict": "caught"
   }
 ]
