@@ -10,6 +10,7 @@ import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 import { Bookmark } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
@@ -54,7 +55,7 @@ export const Print = React.memo(function Print({ item, place }: {
   const saving = useRef(false);
   const toggleSave = async () => {
     if (!isAuthenticated) {
-      nav.push('/login');
+      askIn();
       return;
     }
     if (saving.current) return;

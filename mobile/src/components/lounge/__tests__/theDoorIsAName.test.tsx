@@ -42,7 +42,8 @@ describe('the door is a name, not a rank', () => {
   it('and the button joins — the sign-UP form, not the ranks', async () => {
     const r = render(<LoungeGate />);
     await fireEvent.press(r.getByTestId('lounge-gate-cta'));
-    expect(mockPush).toHaveBeenCalledWith('/login', { action: 'signup' });
+    // Joining, and brought back to where the gate stood (P4.21); here, no screen is noted.
+    expect(mockPush).toHaveBeenCalledWith('/login?action=signup');
     expect(r.getByLabelText('Join the Society — free. Opens sign up.')).toBeTruthy();
   });
 

@@ -59,6 +59,7 @@ import { captureRef } from 'react-native-view-shot';
 import { z } from 'zod';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 import { memberPath } from '@/src/utils/memberPath';
 import { EmptyOffline, EmptyState, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { BusterEyes } from '@/src/components/Buster';
@@ -530,7 +531,7 @@ function LogDetailScreen({ id }: { id: string }) {
   }, [queryClient, id]);
 
   const handlePostComment = async () => {
-    if (!isAuthenticated) { nav.push('/login'); return; }
+    if (!isAuthenticated) { askIn(); return; }
     if (!newComment.trim() || posting) return;
 
     // Pre-flight Log ID validation to prevent stuck UI on malformed ID
@@ -962,7 +963,7 @@ function LogDetailScreen({ id }: { id: string }) {
               setSelectedComment({ id: comment.id, user_id: comment.user_id, username: comment.username });
               setCommentReportSheetVisible(true);
             } : undefined}
-            onSignIn={isAuthenticated ? undefined : () => { nav.push('/login'); }}
+            onSignIn={isAuthenticated ? undefined : () => { askIn(); }}
             unread={!!logQueryData?.critiquesUnread}
             reading={!!logQueryData?.seeded}
             onReread={() => { void rereadLog(); }}

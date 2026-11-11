@@ -12,6 +12,7 @@ import { useSocialStore } from '@/src/stores/socialStore';
 import { followUser, hydrateFollowing, unfollowUser } from '@/src/stores/domain/socialSlice';
 import { shouldRepairHandleRoute, wasMyHandle } from '@/src/utils/handleHistory';
 import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 import reelToast from '@/src/utils/reelToast';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import { logger } from '@/src/utils/logger';
@@ -317,7 +318,7 @@ export function useProfileController(usernameOverride?: string) {
   }, [data, activeTab, roomFilters]);
 
   const toggleFollow = useCallback(async () => {
-    if (!isAuthenticated) { nav.push('/login'); return; }
+    if (!isAuthenticated) { askIn(); return; }
     if (followLoading) return;
     // Not known whether they follow: the list is asked for again, never a follow filed blind.
     if (!followKnown) { rereadFollows(); return; }

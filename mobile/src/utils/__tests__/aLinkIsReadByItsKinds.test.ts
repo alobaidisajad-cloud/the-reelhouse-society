@@ -47,7 +47,7 @@ describe('each kind', () => {
   it('a screen to return to after signing in: one of returnAfterSignIn’s, and no other', () => {
     // The Lobby too: where a sign-in lands with none.
     expect([`/list-modal?editId=${ID}`, '/(tabs)'].map(P.returnTo)).toEqual([`/list-modal?editId=${ID}`, '/(tabs)']);
-    expect(['https://evil.example', '/settings', '//evil.example', `/list-modal?editId=${ID}&then=/settings`].map(P.returnTo)).toEqual(Array(4).fill(undefined));
+    expect(['https://evil.example', '/tribunal', '//evil.example', `/list-modal?editId=${ID}&then=/settings`].map(P.returnTo)).toEqual(Array(4).fill(undefined));
   });
 });
 

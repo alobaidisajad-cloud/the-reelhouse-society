@@ -44,6 +44,7 @@ import type { Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 import { useClearance } from '@/src/hooks/useClearance';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
@@ -339,6 +340,16 @@ export default function DispatchScreen() {
                     action="TRY AGAIN"
                     onAction={onRefresh}
                   />
+                ) : savedOnly && !me ? (
+                  // A stranger has kept nothing because keeping is a member's: said so, never "nothing yet" (P4.21).
+                  <PaperEmpty said="empty"
+                    title="Keeping is for members."
+                    body="Join, and the bookmark on any filing keeps it here."
+                    action="JOIN THE SOCIETY"
+                    onAction={() => askIn('signup')}
+                    quiet="TAP THE BOOKMARK ABOVE TO GO BACK"
+                    onQuiet={() => useDispatch.getState().setSavedOnly(false)}
+                  />
                 ) : savedOnly ? (
                   <PaperEmpty said="empty"
                     title="You have kept nothing yet."
@@ -352,7 +363,7 @@ export default function DispatchScreen() {
                     body="Filing is for members."
                     action="JOIN THE SOCIETY"
                     // Sign-up, not the ranks: membership is free, and so is filing.
-                    onAction={() => nav.push('/login', { action: 'signup' })}
+                    onAction={() => askIn('signup')}
                     end
                   />
                 ) : empty.action ? (

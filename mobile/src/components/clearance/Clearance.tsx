@@ -25,8 +25,18 @@ const nameFor = (rank: Rank) => (rank === 'auteur' ? 'THE AUTEUR' : 'THE ARCHIVI
 /**
  * Never held the rank, or held it and stopped (`entitlement_source` set): told differently.
  * `reading`: the member's rank not yet read (useClearance); the rope sells nothing then.
+ * `guest`: no member at all. What they lack is a way in, not a rank: the rope says the room is
+ * for members and opens the sign-in, which brings them back (the rank is sold once they are in).
  */
-export type Standing = 'stranger' | 'lapsed' | 'reading';
+export type Standing = 'stranger' | 'lapsed' | 'reading' | 'guest';
+
+/** The rope's call to act, by the standing: the one copy every rope draws. */
+export function ropeCta(standing: Standing): string {
+  return standing === 'reading' ? '✦ ASK AGAIN'
+    : standing === 'lapsed' ? '✦ RESUME YOUR STANDING'
+    : standing === 'guest' ? '✦ IDENTIFY YOURSELF'
+    : '✦ ASCEND THE RANKS';
+}
 
 /**
  * What a control roped by its rank says aloud, for a control drawn whole with a key in its
@@ -36,6 +46,7 @@ export function ropeSpoken(names: string, rank: Rank, standing: Standing): strin
   const name = rank === 'auteur' ? 'The Auteur' : 'The Archivist';
   return standing === 'reading' ? `${names}. Your rank is being read. Ask again.`
     : standing === 'lapsed' ? `${names}. Your dues have lapsed. ${name} opens this again. Opens the Society.`
+    : standing === 'guest' ? `${names}. For members. ${name} opens this. Identify yourself. Opens the sign-in.`
     : `${names}. Clearance required. ${name} opens this. Opens the Society.`;
 }
 
@@ -60,14 +71,17 @@ export const ClearanceGate = React.memo(function ClearanceGate({
   const reading = standing === 'reading';
   const ink = reading ? colors.fog : inkFor(rank);
 
-  const heading = reading ? '[ YOUR RANK, BEING READ ]' : lapsed ? '[ YOUR DUES HAVE LAPSED ]' : '[ CLEARANCE REQUIRED ]';
-  const cta = reading ? '✦ ASK AGAIN' : lapsed ? '✦ RESUME YOUR STANDING' : '✦ ASCEND THE RANKS';
+  const guest = standing === 'guest';
+  const heading = reading ? '[ YOUR RANK, BEING READ ]' : lapsed ? '[ YOUR DUES HAVE LAPSED ]' : guest ? '[ FOR MEMBERS ]' : '[ CLEARANCE REQUIRED ]';
+  const cta = ropeCta(standing);
   // The name comes FIRST, because it is the only place a member who cannot see
   // the locked instrument learns what is behind the rope.
   const spoken = reading
     ? `${names}. Your rank is being read. Ask again.`
     : lapsed
     ? `${names}. Your dues have lapsed. ${nameFor(rank)} opens this again. Resume your standing. Opens the Society.`
+    : guest
+    ? `${names}. For members. ${nameFor(rank)} opens this. Identify yourself. Opens the sign-in.`
     : `${names}. Clearance required. ${nameFor(rank)} opens this. Ascend the ranks. Opens the Society.`;
 
   return (

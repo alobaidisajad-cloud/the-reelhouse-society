@@ -6,7 +6,7 @@ import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import type { Rank } from '@/src/constants/gatedFeatures';
-import type { Standing } from '@/src/components/clearance/Clearance';
+import { ropeCta, ropeSpoken, type Standing } from '@/src/components/clearance/Clearance';
 import { st } from './LogModalStyles';
 
 /**
@@ -45,18 +45,18 @@ export default React.memo(function LogClearanceGate({
       hitSlop={null}
       haptic="light"
       accessibilityRole="button"
-      accessibilityLabel={reading
-        ? `${names}. Your rank is being read. Ask again.`
+      accessibilityLabel={reading || standing === 'guest'
+        ? ropeSpoken(names, rank, standing)
         : lapsed
         ? `${names}. Your dues have lapsed. ${label} opens this again. Resume your standing. Opens the Society.`
         : `${names}. Clearance required. ${label} opens this. Ascend the ranks. Opens the Society.`}
     >
       <View pointerEvents="none">
         <Text style={st.gateSub} {...scaledTextProps}>
-          {reading ? '[ YOUR RANK, BEING READ ]' : lapsed ? '[ YOUR DUES HAVE LAPSED ]' : '[ CLEARANCE REQUIRED ]'}
+          {reading ? '[ YOUR RANK, BEING READ ]' : lapsed ? '[ YOUR DUES HAVE LAPSED ]' : standing === 'guest' ? '[ FOR MEMBERS ]' : '[ CLEARANCE REQUIRED ]'}
         </Text>
         <Text style={[st.gateCta, { color: tint }]} {...scaledTextProps}>
-          {reading ? '✦ ASK AGAIN' : lapsed ? '✦ RESUME YOUR STANDING' : '✦ ASCEND THE RANKS'}
+          {ropeCta(standing)}
         </Text>
       </View>
     </PressableScale>

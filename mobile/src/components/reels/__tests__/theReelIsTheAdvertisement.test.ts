@@ -65,8 +65,8 @@ describe('the reel is the advertisement', () => {
   describe('the acts still ask, where the act is', () => {
     it('there is one way to ask, not one per button', () => {
       expect(reel).toMatch(/const askForAName = useCallback\(/);
-      // A bare '/login', as every other act gate in the app asks.
-      expect(reel).toMatch(/askForAName = useCallback\(\(\) => \{[\s\S]{0,160}?'\/login'/);
+      // The one way in, as every other act gate in the app asks: brought back to the reel (P4.21).
+      expect(reel).toMatch(/askForAName = useCallback\(\(\) => \{[\s\S]{0,160}?askIn\(\)/);
     });
 
     it('EVERY act that writes asks first — the class, not the three I remembered', () => {

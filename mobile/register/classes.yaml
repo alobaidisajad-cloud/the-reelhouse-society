@@ -1168,7 +1168,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 286
+    count: 285
     source: { kind: reviewer, ref: "P0.65 (DB-42, COD-11)" }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
@@ -1961,3 +1961,21 @@ classes:
       - { kind: static, file: e2e/__tests__/variants.test.ts, test: "runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15" }
     fix: "a variant names its emulator's system image as well as its Android and profile (variants.json device.target, e2e.yml E2E_TARGET everywhere the image is), and pages-16k runs every flow on Android 15's 16 KB-page image (google_apis_ps16k): the start, the sign-in, the Archive's lock (MMKV and SecureStore) and the critical path; the run is that phone only when the phone says its page is 16384 bytes (ready), and stops if it never does. It runs nightly with every variant"
     places: [emulator]
+
+  - id: NAV-a-stranger-at-a-members-door
+    title: "A screen opened signed out, or a member's act tried by a stranger, drew a blank page (Settings, the profile editor), a false 'never existed' (a salon), a 'could not reach' (the year), sold a rank instead of a way in, or asked a sign-in that landed on the Lobby, losing what they were doing; and a cold link to a host's or curator's own screen (the cover, an amend) refused them because a list was unread"
+    seriousness: serious
+    area: navigation
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "WORKLIST P4.21" }
+    methods:
+      - { kind: running, file: src/hooks/__tests__/useClearance.test.ts, test: "a guest's rope opens the sign-in, carrying where they stood, and never the Society page" }
+      - { kind: running, file: src/components/__tests__/aStrangerIsAskedInAndBroughtBack.test.tsx, test: "reaches every screen the app has, but its doors" }
+      - { kind: running, file: src/hooks/__tests__/signingInTellsTheTruth.test.tsx, test: "on the screen that asked, closed back to" }
+      - { kind: running, file: app/(modals)/__tests__/theCoverIsTheHostsToChoose.test.tsx, test: "reads the salon’s host from the house, and draws the picker for its host" }
+      - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "reads the stack from the house, and its curator amends it whole" }
+      - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "its first page alone is never taken as whole: the films past it are never sent away" }
+      - { kind: running, file: app/__tests__/aLinkToNowhereIsSaidSo.test.tsx, test: 'a film the catalogue does not have: not in the archive, never "no member has written"' }
+    fix: "a guest has a standing of their own (useClearance 'guest'): every rope says the room is for members and opens the sign-in, carrying where they stood (PathTracker notes the path and its query; askIn for every member's act); the sign-in returns to any screen of the app by its shape (src/utils/signInReturn.ts, held to app/'s routes), closing back to it (dismissTo); Settings, the editor, the year, the desk and a salon draw MembersOnly signed out; the cover picker and the stack editor read their row from the house on a cold link; a film's reviews ask after the film when none is on file"
+    places: [emulator, simulator]

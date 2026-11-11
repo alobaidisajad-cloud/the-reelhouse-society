@@ -18,6 +18,7 @@ import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { nav } from '@/src/utils/typedRouter';
 import { Arrive } from '@/src/components/Arrive';
+import { logger } from '@/src/utils/logger';
 
 
 /** The back button's row and the gap under it: the form starts this far below the header's top. */
@@ -45,12 +46,16 @@ export default function ResetPasswordScreen() {
   const strong = passwordIsAccepted(password);
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getSession();
+    supabase.auth.getSession().then(({ data }) => {
       // No session means the recovery link was expired/used — nothing to guard.
       if (!data?.session) storage.delete('recovery_pending');
       setHasSession(!!data?.session);
-    })();
+    }, (e: unknown) => {
+      // The phone's session could not be read: the way to ask for a new link, never a spinner
+      // for ever (P4.21). What the recovery guards is left as it was.
+      logger.warn('[reset-password] the session could not be read', e);
+      setHasSession(false);
+    });
   }, []);
 
   const handleReset = async () => {

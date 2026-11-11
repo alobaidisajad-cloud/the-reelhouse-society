@@ -259,11 +259,13 @@ describe('the test crash, the admin\'s alone (P4.45)', () => {
     expect(r.queryByText('ADMINISTRATION')).toBeNull();
   });
 
-  it('signed out, the page draws nothing at all, the test crash among it', async () => {
+  // Signed out, the page is the members' door (P4.21): no setting and no test crash is drawn on it.
+  it('signed out, the page is the door alone, the test crash not among it', async () => {
     mockUser = null;
     const r = mount();
     await act(async () => {});
-    expect(r.toJSON()).toBeNull();
+    expect(r.getByText('For Members')).toBeTruthy();
+    expect(JSON.stringify(r.toJSON())).not.toMatch(/crash|CRASH|SIGN OUT|Sign out/);
   });
 });
 

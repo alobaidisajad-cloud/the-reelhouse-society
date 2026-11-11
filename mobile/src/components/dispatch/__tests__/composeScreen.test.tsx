@@ -164,6 +164,37 @@ beforeEach(() => {
 });
 afterEach(() => { jest.useRealTimers(); jest.restoreAllMocks(); });
 
+/**
+ * A stranger at the desk (P4.21). The Concierge offers "File to the Dispatch" to everyone, and a
+ * link names the desk too: a reader who is not a member was told "Filing is for members." in a
+ * toast and taken back, the way in never offered. The desk is the members' room: it says so,
+ * offers the way in, and the sign-in brings them back to the desk they asked for.
+ */
+describe('a stranger at the desk', () => {
+  for (const [kind, next] of [
+    [undefined, '/dispatch/compose'],
+    ['take', '/dispatch/compose?kind=take'],
+    ['wire', '/dispatch/compose?kind=wire'],
+    ['ballot', '/dispatch/compose?kind=ballot'],
+    ['dossier', '/dispatch/compose?kind=dossier'],
+  ] as const) {
+    it(`is asked in at ${next}, and brought back to it`, async () => {
+      mockUser = null;
+      at({ kind });
+      const { getByText, getByTestId, queryByText } = render(<ComposeScreen />);
+      await flush();
+      expect(getByText('For Members')).toBeTruthy();
+      // No desk is drawn for a reader who cannot file, and nothing is said and taken away.
+      expect([queryByText('TAKE'), queryByText('FILE IT')]).toEqual([null, null]);
+      expect(mockToast.error).not.toHaveBeenCalled();
+      await press(getByTestId('members-only-sign-in'));
+      // Pushed; or replaced, as the router's helper does the fourth time one screen is opened (typedRouter).
+      const sent = [...(router.push as jest.Mock).mock.calls, ...(router.replace as jest.Mock).mock.calls];
+      expect(sent).toContainEqual([`/login?next=${encodeURIComponent(next)}`]);
+    });
+  }
+});
+
 describe('the door', () => {
   it('asks which form when no kind is chosen', async () => {
     const { getByText } = render(<ComposeScreen />);

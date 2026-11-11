@@ -37,6 +37,7 @@ import { formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useClock } from '@/src/hooks/useClock';
 import { useWritingRoom } from '@/src/hooks/useWritingRoom';
 import { useDoor } from '@/src/hooks/useDoor';
+import { MembersOnly } from '@/src/components/MembersOnly';
 import {
   pullDraft, pushDraft, dropDraft, whichCopy, SYNC_EVERY_MS, type RemoteDraft,
 } from '@/src/utils/draftSync';
@@ -102,27 +103,13 @@ export default function ComposeScreen() {
     const user = useAuthStore((s) => s.user);
     const kind: FilingKind | '' = params.kind ?? (params.edit ? 'dossier' : '');
 
-    const isMounted = useRef(true);
-    useEffect(() => {
-        isMounted.current = true;
-        return () => { isMounted.current = false; };
-    }, []);
-    // Signed out: said here, before any form. The Concierge offers "File to the Dispatch" to
-    // everyone, and a desk has nothing to draw for a reader who is not a member.
-    useEffect(() => {
-        if (user) return;
-        reelToast.error('Filing is for members.');
-        // The wait matters: this fires while the modal is still animating in,
-        // and unguarded both pops land, costing two screens instead of one.
-        InteractionManager.runAfterInteractions(() => {
-            if (isMounted.current) nav.back();
-        });
-    }, [user]);
-
     // The door (`posts_door`: two days a member, five films) is checked above every desk. useDoor
     // fails OPEN: a read that times out meets the server's refusal, never a lockout.
     const door = useDoor();
-    if (user && !door.loading && !door.open) return <TheDoor door={door} />;
+    // Signed out: said here, before any form. The Concierge offers "File to the Dispatch" to
+    // everyone; a reader who is not a member is asked in, and brought back to this desk (P4.21).
+    if (!user) return <MembersOnly next={params.kind ? `/dispatch/compose?kind=${params.kind}` : '/dispatch/compose'} />;
+    if (!door.loading && !door.open) return <TheDoor door={door} />;
 
     // An unrecognised kind in a link is not a crash and not a blank screen; it
     // is somebody arriving without having chosen, which is what the picker is.

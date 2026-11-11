@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useFocusEffect } from 'expo-router';
 import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 import { Arrive } from '@/src/components/Arrive';
 import { useScrollToTop } from "expo-router/react-navigation";
 
@@ -281,7 +282,7 @@ export default function ReelScreen() {
   /** A stranger reads this page; each act asks for a name where it is, as every act gate does. */
   const askForAName = useCallback(() => {
     TactileEngine.destroy();
-    nav.push('/login');
+    askIn();
   }, []);
 
   const switchFeedFilter = useCallback((f: FeedFilter) => {

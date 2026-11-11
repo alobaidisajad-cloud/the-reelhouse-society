@@ -35,6 +35,8 @@ const mockOpenSociety = jest.fn();
 jest.mock('@/src/utils/openSociety', () => ({
   openSociety: (...a: unknown[]) => mockOpenSociety(...a),
   societyHref: jest.requireActual('@/src/utils/openSociety').societyHref,
+  // Where the member stands, as the root layout notes it: the film page these cards sit on.
+  currentHref: () => '/film/603',
 }));
 jest.mock('@/src/utils/gateTelemetry', () => ({ recordGateEvent: jest.fn() }));
 jest.mock('@/src/utils/TactileEngine', () => ({
@@ -100,7 +102,8 @@ describe('the key leads where it says', () => {
     await setUser(null);
     const api = render(card);
     await fireEvent.press(api.getByLabelText('Share to a lounge. Sign in first.'));
-    expect(mockPush).toHaveBeenCalledWith('/login');
+    // And brought back to the page the card stood on, once in (P4.21).
+    expect(mockPush).toHaveBeenCalledWith(`/login?next=${encodeURIComponent('/film/603')}`);
     expect(mockOpenSociety).not.toHaveBeenCalled();
   });
 

@@ -291,22 +291,28 @@ describe('every door into a session', () => {
   });
 });
 
-// P4.19: a stranger sent to sign in by a member-only screen lands on it, and nowhere a link could choose.
+// P4.19, P4.21: a stranger sent to sign in lands on the screen that asked, and nowhere a link could
+// choose. That screen is beneath the sign-in: it is closed back to, never drawn a second time.
 describe('where a sign-in lands', () => {
   const STACK = '11111111-1111-4111-8111-111111111111';
-  it.each([
-    ['the screen that asked', `/list-modal?editId=${STACK}`, `/list-modal?editId=${STACK}`],
-    ['the Lobby, for a screen no member-only door asks for', '/settings', '/(tabs)'],
-    ['the Lobby, when nothing asked', undefined, '/(tabs)'],
-  ])('%s', async (_name, next, lands) => {
-    const replace = (jest.requireMock('expo-router') as { router: { replace: jest.Mock } }).router.replace;
-    replace.mockClear();
-    (jest.requireMock('expo-router') as { useLocalSearchParams: jest.Mock }).useLocalSearchParams.mockReturnValue(next ? { next } : {});
+  const signIn = async (asked: Record<string, string>) => {
+    const { router, useLocalSearchParams } = jest.requireMock('expo-router') as { router: { replace: jest.Mock; dismissTo: jest.Mock }; useLocalSearchParams: jest.Mock };
+    router.replace.mockClear(); router.dismissTo.mockClear();
+    useLocalSearchParams.mockReturnValue(asked);
     useAuthStore.setState({ login: jest.fn().mockResolvedValue(undefined) } as never);
     const { result } = await renderHook(() => useAuthFlow());
     await act(async () => { result.current.setEmailOrUsername('kane@house.test'); result.current.setPassword('Rosebud-1941!'); });
     await act(async () => { await result.current.handleLoginSubmit(); });
-    expect(replace).toHaveBeenCalledWith(lands);
+    useLocalSearchParams.mockReturnValue({});
+    return { dismissTo: router.dismissTo.mock.calls, replace: router.replace.mock.calls };
+  };
+  it('on the screen that asked, closed back to', async () => {
+    expect(await signIn({ next: `/list-modal?editId=${STACK}` })).toEqual({ dismissTo: [[`/list-modal?editId=${STACK}`]], replace: [] });
+    expect(await signIn({ next: '/settings' })).toEqual({ dismissTo: [['/settings']], replace: [] });
+  });
+  it('on the Lobby, when nothing asked or a door did', async () => {
+    expect(await signIn({})).toEqual({ dismissTo: [], replace: [['/(tabs)']] });
+    expect(await signIn({ next: '/tribunal' })).toEqual({ dismissTo: [], replace: [['/(tabs)']] });
   });
 });
 

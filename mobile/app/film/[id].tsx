@@ -20,6 +20,7 @@ import { youtubeKey } from '@/src/utils/outsideValues';
 import { FilmDetailContextValue, FilmDetailProvider } from '@/src/providers/FilmDetailProvider';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 
 const EMPTY_ARRAY = [] as never[];
 const EMPTY_OBJECT = {} as Record<string, never>;
@@ -66,13 +67,13 @@ export default function FilmDetailScreen() {
   }), [filmId, data?.detail?.title, data?.detail?.poster_path]);
 
   const handleLog = useCallback(() => {
-    if (!isAuthenticated) { nav.push('/login'); return; }
+    if (!isAuthenticated) { askIn(); return; }
     TactileEngine.mutate();
     nav.push('/log-modal', existingLog ? { editLogId: existingLog.id, ...filmParams } : filmParams);
   }, [isAuthenticated, existingLog, filmParams]);
 
   const handleRewatch = useCallback(() => {
-    if (!isAuthenticated) { nav.push('/login'); return; }
+    if (!isAuthenticated) { askIn(); return; }
     TactileEngine.rigid();
     nav.push('/log-modal', filmParams);
   }, [isAuthenticated, filmParams]);
@@ -118,7 +119,7 @@ export default function FilmDetailScreen() {
   }, []);
 
   const handleOpenLounge = useCallback(() => {
-    if (!isAuthenticated) { nav.push('/login'); return; }
+    if (!isAuthenticated) { askIn(); return; }
     TactileEngine.selection();
     // The Lounge is not film-scoped: the corridor, which every member may walk
     // into and read; the rope waits at the seat inside each room. (A film id is

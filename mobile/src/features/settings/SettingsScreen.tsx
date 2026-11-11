@@ -65,6 +65,7 @@ import { erasedBySigningOut, keptFor } from '@/src/utils/keptOnThisPhone';
 import { counted } from '@/src/utils/counted';
 import { Arrive } from '@/src/components/Arrive';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
+import { MembersOnly } from '@/src/components/MembersOnly';
 import { RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomParts';
 
 /** The phone's answer about its lock, or no lock: a check that hangs or fails is a no. */
@@ -494,9 +495,11 @@ export function SettingsScreen() {
   // Drawn from what this phone holds, so ready at once: the lab's control page (WORKLIST P0.112).
   // Unless the member's profile is not yet read (a login's first moments, or a read that gave
   // up): then the form is not drawn, and the page reads it.
-  const readyMark = useScreenReady('settings', profileKnown ? 'ready' : profileFailed ? 'failed' : 'reading');
+  // Signed out, the door is the page: drawn at once.
+  const readyMark = useScreenReady('settings', !user || profileKnown ? 'ready' : profileFailed ? 'failed' : 'reading');
 
-  if (!user) return null;
+  // A stranger has no settings to be shown: they are asked in, and brought back here (P4.21).
+  if (!user) return <>{readyMark}<MembersOnly next="/settings" /></>;
 
   const appVersion = Constants.expoConfig?.version ?? '';
   // Not while a code is being checked: the answer would land on a closed sheet.

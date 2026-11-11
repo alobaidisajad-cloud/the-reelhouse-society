@@ -96,6 +96,8 @@ export const PaperPicker = memo(function PaperPicker({
                   ? `${f.name}. ${f.line} Your rank is being read. Ask again.`
                   : lockedStanding === 'lapsed'
                   ? `${f.name}. ${f.line} Your dues have lapsed. The Auteur opens this again. Opens the Society.`
+                  : lockedStanding === 'guest'
+                  ? `${f.name}. ${f.line} For members. The Auteur opens this. Identify yourself. Opens the sign-in.`
                   : `${f.name}. ${f.line} Clearance required. The Auteur opens this. Opens the Society.`)
               : f.locked ? `${f.name}. Auteurs only. ${f.line}`
                 : f.inProgress ? `${f.name}. One in progress. ${f.line}`

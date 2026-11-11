@@ -17,6 +17,7 @@ export function expoRouterMock(): Record<string, unknown> {
     router: {
       push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(),
       canGoBack: jest.fn(() => true), canDismiss: jest.fn(() => true), dismiss: jest.fn(), dismissAll: jest.fn(),
+      dismissTo: jest.fn(),
     },
     useRouter: jest.fn(() => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() })),
     useLocalSearchParams: jest.fn(() => ({})),

@@ -65,6 +65,12 @@ const ROW = {
   certify_count: [{ count: 0 }], critique_count: [{ count: 0 }],
 };
 
+// The film is on file at the catalogue: with no critique, the page asks after it (P4.21), and a
+// film it has is the archive's own empty (aLinkToNowhereIsSaidSo.test holds one it does not have).
+beforeEach(() => {
+  (jest.requireMock('@/src/lib/tmdb') as { tmdb: { detail: jest.Mock } }).tmdb.detail.mockResolvedValue({ id: 631, title: 'Sunrise' });
+});
+
 async function mount() {
   let r!: ReturnType<typeof render>;
   await act(async () => { r = render(<FilmReviewsScreen />); });
@@ -78,13 +84,13 @@ it('reviews it could not read are not "the projection box awaits" — said, and 
   expect(r.getByText('Transmission Interrupted')).toBeTruthy();
   mockAnswer = { data: [], error: null };
   await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
-  expect(r.getByText('The projection box awaits.')).toBeTruthy();
+  expect(await r.findByText('The projection box awaits.')).toBeTruthy();
 });
 
 it('a film with no reviews still says so', async () => {
   mockAnswer = { data: [], error: null };
   const r = await mount();
-  expect(r.getByText('The projection box awaits.')).toBeTruthy();
+  expect(await r.findByText('The projection box awaits.')).toBeTruthy();
   expect(r.queryByText('Transmission Interrupted')).toBeNull();
 });
 

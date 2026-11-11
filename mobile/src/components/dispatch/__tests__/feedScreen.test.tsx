@@ -57,6 +57,8 @@ jest.mock('@/src/utils/typedRouter', () => ({
 jest.mock('@/src/utils/openSociety', () => ({
   openSociety: (href: string) => { mockPushed.push(href); },
   societyHref: jest.requireActual('@/src/utils/openSociety').societyHref,
+  // Where the member stands, as the root layout notes it: the Dispatch.
+  currentHref: () => '/dispatch',
 }));
 
 /** Every render of a filing's row, counted by its one "Share this filing" control; of its words, by their door. */
@@ -462,7 +464,8 @@ describe('an empty page, in every shape it takes', () => {
     await pressIt(getByLabelText('JOIN THE SOCIETY'));
     // Membership is free, so joining is the sign-UP form — not the paid ranks,
     // where this used to send a visitor who only wanted to file a take.
-    expect(mockPushed).toEqual(['/login?action=signup']);
+    // And brought back to the Dispatch once joined (P4.21).
+    expect(mockPushed).toEqual([`/login?action=signup&next=${encodeURIComponent('/dispatch')}`]);
   });
 
   for (const [section, title, action] of [

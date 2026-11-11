@@ -23,6 +23,7 @@ import { BusterEyes } from '@/src/components/Buster';
 import TryAgain from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
 import { Arrive } from '@/src/components/Arrive';
+import { MembersOnly } from '@/src/components/MembersOnly';
 
 type SlideType = 'intro' | 'total' | 'verdict' | 'rhythm' | 'top' | 'outro';
 
@@ -93,7 +94,8 @@ export default function YearInCinemaScreen() {
   });
   const stats = year.data ?? null;
   // No member, no year to read; a failed read with no year kept says so, and asking again loads.
-  const phase = !memberId || (year.isError && !year.isFetching && !stats) ? 'error' : stats ? 'ready' : 'loading';
+  // A stranger has no year to develop: never "the projector jammed" (P4.21).
+  const phase = !memberId ? 'stranger' : year.isError && !year.isFetching && !stats ? 'error' : stats ? 'ready' : 'loading';
   const { refetch } = year;
   const load = useCallback(() => { void refetch(); }, [refetch]);
 
@@ -210,6 +212,8 @@ export default function YearInCinemaScreen() {
       </View>
     );
   }, [currentIndex, width, slideHeight, stats, slides, user, edge, thisYear]);
+
+  if (phase === 'stranger') return <MembersOnly next="/year-in-cinema" />;
 
   if (phase === 'loading') {
     return (

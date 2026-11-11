@@ -1746,8 +1746,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/clearance/Clearance.tsx
-        find: "  const cta = reading ? '✦ ASK AGAIN' : lapsed"
-        replace: "  const cta = lapsed"
+        find: "return standing === 'reading' ? '✦ ASK AGAIN'"
+        replace: "return standing === 'never' ? '✦ ASK AGAIN'"
     proof: { file: src/components/clearance/__tests__/oneRopeNotThree.test.tsx, test: "sells nothing to a member whose rank is not yet read: it says so, and asks again" }
 
   - id: shape-critique-heart-pressable-unread
@@ -2976,3 +2976,57 @@ mutants:
         find: "      \"ready\": [\"[ \\\"$(getconf PAGE_SIZE)\\\" = 16384 ]\"],\n"
         replace: ""
     proof: { file: e2e/__tests__/variants.test.ts, test: "runs each variant on the phone every run has, unless it names its own: the tablet, on Android 16; 16 KB pages, on Android 15" }
+
+  - id: shape-guest-sold-a-rank
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: src/hooks/useClearance.ts
+        find: 'guest ? ''guest'' : '
+        replace: ''
+    proof: { file: src/hooks/__tests__/useClearance.test.ts, test: 'a guest''s rope opens the sign-in, carrying where they stood, and never the Society page' }
+
+  - id: shape-settings-returns-to-the-lobby
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: src/utils/signInReturn.ts
+        find: 'at(''/settings''),'
+        replace: ''
+    proof: { file: src/components/__tests__/aStrangerIsAskedInAndBroughtBack.test.tsx, test: 'reaches every screen the app has, but its doors' }
+
+  - id: shape-sign-in-draws-the-screen-twice
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: src/hooks/useAuthFlow.ts
+        find: 'params.next ? nav.dismissTo(landing) : '
+        replace: ''
+    proof: { file: src/hooks/__tests__/signingInTellsTheTruth.test.tsx, test: 'on the screen that asked, closed back to' }
+
+  - id: shape-cover-host-unread
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: app/(modals)/cover-picker.tsx
+        find: 'const host = heldHost ?? read.data;'
+        replace: 'const host = heldHost;'
+    proof: { file: app/(modals)/__tests__/theCoverIsTheHostsToChoose.test.tsx, test: 'reads the salon’s host from the house, and draws the picker for its host' }
+
+  - id: shape-amend-first-page-taken-whole
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: '(viewedStack ?? toAmend.data ?? undefined)?.filmCount'
+        replace: 'viewedStack?.filmCount'
+    proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: 'its first page alone is never taken as whole: the films past it are never sent away' }
+
+  - id: shape-reviews-of-no-film
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: app/film-reviews/[id].tsx
+        find: 'if (onFile.data === false) return <NotInTheArchive />;'
+        replace: ''
+    proof: { file: app/__tests__/aLinkToNowhereIsSaidSo.test.tsx, test: 'a film the catalogue does not have: not in the archive, never "no member has written"' }

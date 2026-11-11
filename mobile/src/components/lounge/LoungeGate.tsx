@@ -7,7 +7,7 @@ import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { Text } from '@/src/components/text';
-import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import PressableScale from '@/src/components/PressableScale';
@@ -42,7 +42,7 @@ export function LoungeGate({ mark }: { mark?: React.ReactNode } = {}) {
         {/* Sign-UP, not sign-in: the label promises membership, and a bare
             '/login' opens the sign-in form (authRouting.test pins this). */}
         <PressableScale touch="commit" testID="lounge-gate-cta" style={s.join} hitSlop={null}
-          onPress={() => nav.push('/login', { action: 'signup' })} haptic="medium"
+          onPress={() => askIn('signup')} haptic="medium"
           accessibilityRole="button" accessibilityLabel="Join the Society — free. Opens sign up.">
           <Text style={s.joinWord} {...scaledTextProps}>✦ JOIN THE SOCIETY</Text>
         </PressableScale>

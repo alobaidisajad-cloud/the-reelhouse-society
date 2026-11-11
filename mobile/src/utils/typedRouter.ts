@@ -74,6 +74,20 @@ export const nav = {
     }
   },
 
+  /**
+   * Back to a screen already beneath, the screens over it closed (a sign-in returning to the
+   * screen that asked: it is revealed, never drawn twice); when it is not beneath (a cold link),
+   * the current screen becomes it, as replace does.
+   */
+  dismissTo: (path: string) => {
+    const baseRoute = path.split('?').shift() ?? path;
+    const at = pushHistory.lastIndexOf(baseRoute);
+    // Beneath: the history ends at it. Not beneath: it takes the current screen's place.
+    if (at !== -1) pushHistory.length = at + 1;
+    else pushHistory.splice(Math.max(0, pushHistory.length - 1), Infinity, baseRoute);
+    (router.dismissTo as any)(path as Href);
+  },
+
   // Native Navigation Tracking
   // Handles iOS swipe-back and Android hardware back button which bypass nav.back()
   // Called from a global layout effect tracking usePathname()

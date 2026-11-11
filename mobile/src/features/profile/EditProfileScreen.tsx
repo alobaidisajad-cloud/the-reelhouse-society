@@ -41,6 +41,7 @@ import reelToast from '@/src/utils/reelToast';
 import { logger } from '@/src/utils/logger';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Arrive } from '@/src/components/Arrive';
+import { MembersOnly } from '@/src/components/MembersOnly';
 
 /**
  * THE BACKDROP — an Auteur privilege, and now a choice.
@@ -161,7 +162,8 @@ export function EditProfileScreen() {
   // ScrollView scrolls to the field. Container padding removed —
   // it made room without scrolling to the field.
 
-  if (!user) return null;
+  // A stranger has no file to edit: they are asked in, and brought back here (P4.21).
+  if (!user) return <MembersOnly next="/edit-profile" />;
 
   return (
     // One ground, the inner one, which carries the room's light (a painted

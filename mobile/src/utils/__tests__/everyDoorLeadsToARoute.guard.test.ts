@@ -98,7 +98,10 @@ const COMPUTED: { at: string; text: string; from: string }[] = [
   { at: 'src/components/reels/MemberRegistry.tsx', text: 'memberPath(member.username, member.id)', from: 'memberPath: checked below' },
   { at: 'src/components/layout/ConciergeButton.tsx', text: 'route', from: 'handleAction\'s callers: /log-modal, /list-modal, /dispatch/compose: checked below' },
   { at: 'src/utils/openNoticeFromPush.ts', text: 'route', from: 'noticeRoute, or the notices sheet: checked below' },
-  { at: 'src/hooks/useAuthFlow.ts', text: 'landing', from: 'returnAfterSignIn (MembersOnly.tsx): the three member-only screens\' own shapes, or /(tabs) (aStrangerIsAskedInAndBroughtBack)' },
+  { at: 'src/hooks/useAuthFlow.ts', text: 'landing', from: 'returnAfterSignIn (signInReturn.ts): a screen of the app by its shape, or /(tabs) (aStrangerIsAskedInAndBroughtBack)' },
+  { at: 'src/components/MembersOnly.tsx', text: 'signInHref(next)', from: 'signInHref (signInReturn.ts): /login, told a screen of the app to return to' },
+  { at: 'src/hooks/useClearance.ts', text: 'signInHref(returnTo ?? currentHref())', from: 'signInHref (signInReturn.ts): /login, told where the guest stood' },
+  { at: 'src/utils/askIn.ts', text: 'signInHref(currentHref(), action)', from: 'signInHref (signInReturn.ts): /login, told where the stranger stood' },
 ];
 
 it('reads the routes app/ makes and the targets the code writes', () => {

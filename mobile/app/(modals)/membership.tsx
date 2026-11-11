@@ -18,6 +18,7 @@ import { View, StyleSheet, ScrollView, AppState, useWindowDimensions, Platform }
 import { Text } from '@/src/components/text';
 
 import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 import TactileEngine from '@/src/utils/TactileEngine';
 
 import {
@@ -283,7 +284,7 @@ export default function MembershipScreen() {
 
   const handleCheckout = async (tier: string) => {
     if (!isAuthenticated || !user) {
-      nav.push('/login');
+      askIn();
       return;
     }
     if (storeUnavailable()) return;
@@ -325,7 +326,7 @@ export default function MembershipScreen() {
   };
 
   const handleFoundingCheckout = async () => {
-    if (!isAuthenticated || !user) { nav.push('/login'); return; }
+    if (!isAuthenticated || !user) { askIn(); return; }
     if (storeUnavailable()) return;
     // Synchronous mutex guard
     if (purchaseMutex.current) return;
@@ -394,7 +395,7 @@ export default function MembershipScreen() {
   const handleRestore = async () => {
     // Restored with no one signed in, the store would move the purchase to an
     // anonymous buyer, and the house would have no member to grant it to.
-    if (!isAuthenticated || !user) { nav.push('/login'); return; }
+    if (!isAuthenticated || !user) { askIn(); return; }
     if (purchaseMutex.current) return;
     purchaseMutex.current = true;
     setIsRestoring(true);

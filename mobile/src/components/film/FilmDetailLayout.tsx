@@ -41,6 +41,7 @@ import { useFilmStore } from '@/src/stores/films';
 import { useFilmAnimations } from '@/src/hooks/useFilmAnimations';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 import { useFilmDetailContext } from '@/src/providers/FilmDetailProvider';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline } from '@/src/components/EmptyStates';
@@ -178,7 +179,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
    * pressed for — the row turns brass and the chip appears under their finger.
    */
   const toggleWatchlist = useCallback(() => {
-    if (!isAuthenticated) { nav.push('/login'); return; }
+    if (!isAuthenticated) { askIn(); return; }
     if (!film?.id) return;
     TactileEngine.selection();
     if (isWatchlisted) {
@@ -200,7 +201,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
    * on the tray differs by rank.
    */
   const openLounge = useCallback(() => {
-    if (!isAuthenticated) { nav.push('/login'); return; }
+    if (!isAuthenticated) { askIn(); return; }
     handleOpenLounge();
   }, [isAuthenticated, handleOpenLounge]);
 

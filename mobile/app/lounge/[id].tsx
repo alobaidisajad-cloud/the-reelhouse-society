@@ -30,6 +30,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { NotInTheArchive } from '@/src/components/NotInTheArchive';
+import { MembersOnly } from '@/src/components/MembersOnly';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -55,7 +56,7 @@ import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { useBottomEdge, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { nav } from '@/src/utils/typedRouter';
 import { useClearance } from '@/src/hooks/useClearance';
-import { ropeSpoken } from '@/src/components/clearance/Clearance';
+import { ropeCta, ropeSpoken } from '@/src/components/clearance/Clearance';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatClockTime, formatDateMonthDay } from '@/src/utils/timeAgo';
@@ -385,10 +386,17 @@ function formatDay(iso: string, now: number): string {
 // `door=1`: a salon's notice opened it (noticeRoute), so its host is shown who waits at the door.
 const PARAMS = { id: P.uuid, door: P.oneOf('1') };
 
-/** The route: a link of another shape is a page not in the archive (routeParams, P4.4). */
+/**
+ * The route: a link of another shape is a page not in the archive (routeParams, P4.4). A salon is
+ * the members' (its row is read by members alone): a stranger is asked in, and brought back to
+ * it, never told it "never existed" by a read that could not see it (P4.21).
+ */
 export default function LoungeRoomScreenRoute() {
   const { id, door } = useRouteParams(PARAMS);
-  return id ? <LoungeRoomScreen id={id} toTheDoor={door === '1'} /> : <NotInTheArchive />;
+  const member = useAuthStore((s) => !!s.user);
+  if (!id) return <NotInTheArchive />;
+  if (!member) return <MembersOnly next={door === '1' ? `/lounge/${id}?door=1` : `/lounge/${id}`} />;
+  return <LoungeRoomScreen id={id} toTheDoor={door === '1'} />;
 }
 
 function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean }) {
@@ -932,11 +940,11 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
             haptic="medium"
             accessibilityRole="button"
             // Its own words first: the rope says what it opens after them.
-            accessibilityLabel={speaking.standing === 'reading'
+            accessibilityLabel={speaking.standing === 'reading' || speaking.standing === 'guest'
               ? ropeSpoken('Speak in this salon', speaking.rank, speaking.standing)
               : `Ascend the ranks. ${ropeSpoken('Speak in this salon', speaking.rank, speaking.standing)}`}
           >
-            <Text style={s.previewBtnText}>{speaking.standing === 'reading' ? '✦ ASK AGAIN' : '✦ ASCEND THE RANKS'}</Text>
+            <Text style={s.previewBtnText}>{speaking.standing === 'lapsed' ? '✦ ASCEND THE RANKS' : ropeCta(speaking.standing)}</Text>
           </PressableScale>
         </View>
       )}
@@ -977,11 +985,11 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
             accessibilityRole="button"
             accessibilityLabel={seat.held
               ? 'Take a seat in this salon'
-              : seat.standing === 'reading' ? 'Take a seat. Your rank is being read. Ask again.'
+              : seat.standing === 'reading' || seat.standing === 'guest' ? ropeSpoken('Take a seat', seat.rank, seat.standing)
               : `Take a seat. ${seat.rank === 'auteur' ? 'The Auteur' : 'The Archivist'} opens this. Opens the Society.`}
           >
             <Text style={s.previewBtnText}>
-              {seat.held ? 'TAKE A SEAT' : seat.standing === 'reading' ? '✦ ASK AGAIN' : '✦ ASCEND THE RANKS'}
+              {seat.held ? 'TAKE A SEAT' : seat.standing === 'lapsed' ? '✦ ASCEND THE RANKS' : ropeCta(seat.standing)}
             </Text>
           </PressableScale>
         </Arrive>

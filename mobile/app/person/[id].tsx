@@ -24,6 +24,7 @@ import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { LinearGradient } from 'expo-linear-gradient';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 import { useQuery } from '@tanstack/react-query';
 import { tmdb } from '@/src/lib/tmdb';
 import { useArchiveStore } from '@/src/stores/films';
@@ -250,7 +251,7 @@ export default function PersonDetailScreen() {
   // sheet; everyone else is taken to the Society, told what they reached for.
   const handleLoungeShare = useCallback(() => {
     if (!user) {
-      nav.push('/login');
+      askIn();
       return;
     }
     const shareThem = () => {

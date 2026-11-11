@@ -120,8 +120,10 @@ const PARAMS = { action: P.oneOf('signup', 'login', 'forgot_password', 'resend_s
 
 export function useAuthFlow() {
   const params = useRouteParams(PARAMS);
-  // Where a sign-in lands: the member-only screen that sent the stranger here, or the Lobby.
+  // Where a sign-in lands: the screen that sent the stranger here, or the Lobby. That screen is
+  // usually beneath the sign-in, and is revealed (never drawn twice); from a cold link it is opened.
   const landing = params.next ?? '/(tabs)';
+  const arrive = () => (params.next ? nav.dismissTo(landing) : nav.replace(landing));
   const { login, signup } = useAuthStore(useShallow((s) => ({ login: s.login, signup: s.signup })));
 
   // Right on the first frame; the effect below follows the route changing after.
@@ -236,7 +238,7 @@ export function useAuthFlow() {
       await login(creds.email, creds.password);
       credentialsRef.current.password = '';
       setAwaitingConfirmation(false);
-      nav.replace(landing);
+      arrive();
     } catch (err: unknown) {
       const raw = messageOf(err);
       reelToast.error(raw ? mapAuthError(raw).message : 'Verification check failed.');
@@ -308,7 +310,7 @@ export function useAuthFlow() {
     try {
       if (isLogin) {
         await login(emailOrUsername.trim(), password);
-        nav.replace(landing);
+        arrive();
       } else {
         const formattedUsername = usernameCheck!.sanitized;
         const result = await signup(emailOrUsername.trim(), password, formattedUsername);
@@ -316,7 +318,7 @@ export function useAuthFlow() {
           setConfirmedEmail(emailOrUsername.trim());
           setAwaitingConfirmation(true);
         } else {
-          nav.replace(landing);
+          arrive();
         }
       }
     } catch (error: unknown) {

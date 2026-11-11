@@ -15,13 +15,13 @@
  * evening's fiddling, and keeps one, as the essay does.
  *
  * ── A DESK WITH NOBODY AT IT ────────────────────────────────────────────────
- * The picker is reachable signed out (the Concierge is in the bar for everyone),
- * so every desk says "Filing is for members." and goes back
- * (`useSendBackIfNotAMember`, the essay desk's own answer), never a blank modal.
+ * The picker is reachable signed out (the Concierge is in the bar for everyone):
+ * the route (app/dispatch/compose.tsx) asks a stranger in before any desk is
+ * drawn, and the sign-in brings them back to it (P4.21).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { characterCount } from '@/src/utils/text';
-import { InteractionManager, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { houseNow } from '@/src/lib/houseClock';
@@ -72,21 +72,6 @@ function useMe() {
  * Signed out: say so and go back, once. `isMounted` because this fires while
  * the modal is still animating in, where an unguarded pop could land twice.
  */
-function useSendBackIfNotAMember(me: unknown) {
-  const isMounted = useRef(true);
-  useEffect(() => {
-    isMounted.current = true;
-    return () => { isMounted.current = false; };
-  }, []);
-  useEffect(() => {
-    if (me) return;
-    reelToast.error('Filing is for members.');
-    InteractionManager.runAfterInteractions(() => {
-      if (isMounted.current) nav.back();
-    });
-  }, [me]);
-}
-
 // ── THE SHORT DESKS ─────────────────────────────────────────────────────────
 
 /** `?edit=<id>`: an amend, by its filing's id (routeParams, P4.4). */
@@ -94,7 +79,6 @@ const DESK_PARAMS = { edit: P.uuid };
 
 export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire' }) {
   const me = useMe();
-  useSendBackIfNotAMember(me);
   const edge = useBottomEdge();
   const hour = useOpeningHour();
 
@@ -228,7 +212,6 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
 
 export function ComposeBallotScreen() {
   const me = useMe();
-  useSendBackIfNotAMember(me);
   const edge = useBottomEdge();
   const hour = useOpeningHour();
 

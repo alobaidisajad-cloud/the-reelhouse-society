@@ -17,6 +17,8 @@ import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { Stack } from 'expo-router';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { NotInTheArchive } from '@/src/components/NotInTheArchive';
+import { useQuery } from '@tanstack/react-query';
+import { tmdb } from '@/src/lib/tmdb';
 import { ArrowLeft } from 'lucide-react-native';
 import {
   useBottomEdge, useContentBottom, usePushedHeaderTop,
@@ -168,6 +170,18 @@ function FilmReviewsScreen({ filmId, title }: { filmId: string; title?: string }
     <ActivityCard item={item} index={index} onFilmPress={handleFilmPress} />
   ), [handleFilmPress]);
 
+  // No critique on file: the film itself is asked after, so a number the catalogue never had is a
+  // path that leads nowhere, never "no member has written on this film yet" (P4.21). Unreachable,
+  // the archive's own answer stands: no member has written on it.
+  const onFile = useQuery({
+    queryKey: ['film-on-file', filmId],
+    enabled: !loading && !failed && logs.length === 0,
+    retry: false,
+    queryFn: async () => (await tmdb.detail(Number(filmId))) !== null,
+  });
+  if (onFile.data === false) return <NotInTheArchive />;
+  const asking = !loading && !failed && logs.length === 0 && onFile.isPending;
+
   return (
     <View style={s.container}>
       <RoomLight room="film" />
@@ -189,7 +203,7 @@ function FilmReviewsScreen({ filmId, title }: { filmId: string; title?: string }
       </View>
 
       {/* Content */}
-      {loading ? (
+      {loading || asking ? (
         <View style={s.listContent}><ReelReading /></View>
       ) : (
         <CinematicFlashList

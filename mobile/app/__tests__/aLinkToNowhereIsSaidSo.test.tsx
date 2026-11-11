@@ -43,3 +43,39 @@ describe.each(ROUTES)('%s opened by a link of another shape', (_what, Route, par
     expect(render(<Route />).getByText('ROUTE NOT IN THE ARCHIVE')).toBeTruthy();
   });
 });
+
+/**
+ * A film's reviews for a number the catalogue never had (P4.21): the archive holds no critique of
+ * it, and the page said "No member has written on this film yet", as if the film were there.
+ * The film is asked after when no critique is on file: one not there is a path that leads nowhere;
+ * one there is the archive's own empty.
+ */
+describe('a film’s reviews, no critique on file', () => {
+  // The client the page reads with, as this file loads it.
+  const { supabase } = require('@/src/lib/supabase') as typeof import('@/src/lib/supabase');
+  const { tmdb } = jest.requireMock('@/src/lib/tmdb') as { tmdb: { detail: jest.Mock } };
+  beforeEach(() => {
+    // The archive answers: no critique of this film.
+    const page: Record<string, unknown> = new Proxy({}, {
+      get: (_t, k) => (k === 'then' ? (ok: (v: unknown) => void) => ok({ data: [], error: null }) : () => page),
+    });
+    jest.spyOn(supabase, 'from').mockReturnValue(page as never);
+    (useLocalSearchParams as jest.Mock).mockReturnValue({ id: '999999999', title: 'Nothing' });
+  });
+  afterEach(() => { jest.restoreAllMocks(); tmdb.detail.mockReset(); tmdb.detail.mockResolvedValue(null); });
+
+  it('a film the catalogue does not have: not in the archive, never "no member has written"', async () => {
+    tmdb.detail.mockResolvedValue(null);
+    const r = render(<FilmReviews />);
+    expect(await r.findByText('ROUTE NOT IN THE ARCHIVE')).toBeTruthy();
+    expect(r.queryByText('No member has written on this film yet.')).toBeNull();
+    expect(tmdb.detail).toHaveBeenCalledWith(999999999);
+  });
+
+  it('a film it has: the archive’s own empty', async () => {
+    tmdb.detail.mockResolvedValue({ id: 999999999, title: 'Nothing' });
+    const r = render(<FilmReviews />);
+    expect(await r.findByText('No member has written on this film yet.')).toBeTruthy();
+    expect(r.queryByText('ROUTE NOT IN THE ARCHIVE')).toBeNull();
+  });
+});

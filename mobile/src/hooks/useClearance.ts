@@ -24,7 +24,9 @@ import { GATED_FEATURES, RANK_WEIGHT, type Rank } from '@/src/constants/gatedFea
 import type { Standing } from '@/src/components/clearance/Clearance';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { recordGateEvent } from '@/src/utils/gateTelemetry';
-import { openSociety, societyHref } from '@/src/utils/openSociety';
+import { currentHref, openSociety, societyHref } from '@/src/utils/openSociety';
+import { signInHref } from '@/src/utils/signInReturn';
+import { nav } from '@/src/utils/typedRouter';
 import { profileRead } from '@/src/utils/profileRead';
 import { raceDeadline } from '@/src/utils/raceDeadline';
 
@@ -38,7 +40,10 @@ export interface Clearance {
   held: boolean;
   /** The rank that opens it — for the rope's ink and its name. */
   rank: Rank;
-  /** Never held it, held it and stopped, or not yet known (`reading`). The rope says different things. */
+  /**
+   * Never held it, held it and stopped, not yet known (`reading`), or no member at all (`guest`).
+   * The rope says different things.
+   */
   standing: Standing;
   /**
    * Opens the Society page, told why they came and where to return them (the law above);
@@ -83,7 +88,8 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
   const held = weight >= RANK_WEIGHT[rank];
 
   // Only `grant_entitlement` writes `entitlement_source`: one without the weight is "come back".
-  const standing: Standing = rankUnread ? 'reading' : onceHeldARank ? 'lapsed' : 'stranger';
+  const guest = weight < 0;
+  const standing: Standing = guest ? 'guest' : rankUnread ? 'reading' : onceHeldARank ? 'lapsed' : 'stranger';
 
   /** A rank being read again for a tap: a second tap meanwhile asks nothing more. */
   const asking = useRef(false);
@@ -94,6 +100,10 @@ export function useClearance(featureId: string, returnTo?: string): Clearance {
     if (standing === 'reading') { void useAuthStore.getState().rereadProfile(); return; }
     // Every rope in the app reports here, the one way through.
     recordGateEvent('gate_tapped', { featureId, rank, standing });
+    // No member: the way in, which brings them back to where they stood (the screen's own
+    // return when it names one), and the rope sells the rank then if they lack it. Over the
+    // screen, presented or pushed: it is the screen they come back to.
+    if (standing === 'guest') { nav.push(signInHref(returnTo ?? currentHref())); return; }
     // openSociety dismisses only a PRESENTED screen: a pushed one (a salon) stays behind the page.
     const toSociety = () => openSociety(societyHref(featureId, rank, returnTo));
     if (rankAge() < ROPE_TRUSTS_MS) { toSociety(); return; }

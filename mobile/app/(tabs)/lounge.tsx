@@ -51,8 +51,9 @@ export default function LoungeScreen() {
   const firstRead = !loungesRead;
   // Nothing to show because nothing could be read: said, not "found no salon".
   const salonsLost = loungesFailed && lounges.length === 0;
+  // A stranger is shown the gate at once, and no salon is read for them: the gate is the page.
   const readyMark = useScreenReady('lounges',
-    firstRead && lounges.length === 0 ? 'reading' : salonsLost ? 'failed' : 'ready');
+    !isAuthenticated ? 'ready' : firstRead && lounges.length === 0 ? 'reading' : salonsLost ? 'failed' : 'ready');
   // The page starts below the top bar, and ends above the tab bar: both drawn over it.
   const topPad = useTabContentTop();
   const endPad = useTabContentBottom();

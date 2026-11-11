@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
 import { noteCurrentPath } from '@/src/utils/openSociety';
+import { useAddressQuery } from '@/src/utils/routeParams';
 import { nav } from '@/src/utils/typedRouter';
 
 /**
@@ -12,13 +13,15 @@ import { nav } from '@/src/utils/typedRouter';
  * from instead of opening the film over it.
  *
  * Its own tiny component, so the pathname changing on every navigation
- * re-renders this and nothing else.
+ * re-renders this and nothing else. The screen's query is noted with it (a guest's rope and
+ * every way in return to the screen whole: the film a log was begun for, P4.21).
  */
 export function PathTracker() {
   const pathname = usePathname();
+  const query = useAddressQuery();
   useEffect(() => {
-    noteCurrentPath(pathname);
+    noteCurrentPath(pathname, query);
     nav.syncState(pathname);
-  }, [pathname]);
+  }, [pathname, query]);
   return null;
 }

@@ -40,7 +40,7 @@ export default function ProfileTab() {
           <CentredRoom kind="tab" style={s.centre}>
             <Buster size={80} mood="unimpressed" message="The archive awaits your identity." />
             <Text style={s.prompt}>Identify yourself to access your dossier</Text>
-            <IdentifyYourself testID="profile-sign-in-prompt" />
+            <IdentifyYourself testID="profile-sign-in-prompt" next="/profile" />
           </CentredRoom>
         </View>
       </FrozenTab>

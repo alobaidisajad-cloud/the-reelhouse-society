@@ -38,10 +38,20 @@ import type { Rank } from '@/src/constants/gatedFeatures';
 import { nav } from '@/src/utils/typedRouter';
 
 let currentPath: string | null = null;
+let currentQuery = '';
 
-/** Written by `PathTracker` in the root layout. Nothing else should call it. */
-export function noteCurrentPath(pathname: string | null): void {
+/**
+ * Written by `PathTracker` in the root layout. Nothing else should call it. `query`: the screen's
+ * own query (its dynamic segments left out), so where the member stands is known whole.
+ */
+export function noteCurrentPath(pathname: string | null, query = ''): void {
   currentPath = pathname;
+  currentQuery = query;
+}
+
+/** Where the member stands, path and query: what a sign-in asked for there brings them back to. */
+export function currentHref(): string | null {
+  return currentPath === null ? null : currentQuery ? `${currentPath}?${currentQuery}` : currentPath;
 }
 
 /** The Society page, told why the member came and where they were. */

@@ -20,7 +20,6 @@
  * prints' and then printed something else".
  */
 import React, { act } from 'react';
-import { InteractionManager } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 
 import { ComposeShortScreen, ComposeBallotScreen } from '@/src/components/dispatch/ComposeDesks';
@@ -28,8 +27,6 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
 const mockFiled: Record<string, unknown>[] = [];
 
-/** Flipped by the signed-out block at the foot of this file. */
-let mockSignedOut = false;
 /** `?edit=` and the filing the store holds for it — the amending block below. */
 let mockEditId: string | undefined;
 let mockHeld: Record<string, unknown> | null = null;
@@ -43,14 +40,11 @@ let mockAmendOffline = false;
 jest.mock('@/src/stores/auth', () => ({
   useAuthStore: Object.assign(
     (sel?: (s: unknown) => unknown) => {
-      const state = {
-        user: mockSignedOut
-          ? null
-          : { id: 'u1', username: 'me', member_no: 7, avatar_url: null },
-      };
+      // A member: the route asks a stranger in before a desk is drawn (composeScreen.test).
+      const state = { user: { id: 'u1', username: 'me', member_no: 7, avatar_url: null } };
       return typeof sel === 'function' ? sel(state) : state;
     },
-    { getState: () => ({ user: mockSignedOut ? null : { id: 'u1', username: 'me' } }) },
+    { getState: () => ({ user: { id: 'u1', username: 'me' } }) },
   ),
 }));
 
@@ -320,66 +314,6 @@ describe('the desks, read aloud', () => {
         }
         expect(echoed).toEqual([]);
       });
-    });
-  }
-});
-
-/**
- * ── A DESK WITH NOBODY AT IT ────────────────────────────────────────────────
- * Both short desks ended `if (!me) return null` — a screen that renders NOTHING.
- * Rendered and read back, the whole tree was `[]`.
- *
- * And it was reachable, not theoretical: the brass Concierge is in the nav bar
- * for everyone, its "File to the Dispatch" row is not gated, and the picker
- * offered all five forms to a signed-out reader. Tap one and you got an empty
- * modal — no header, no back control, no sentence.
- *
- * A blank screen is the worst answer an app can give. It says nothing about
- * what happened, what to do, or that anything happened at all.
- */
-describe('a signed-out reader who reaches a desk', () => {
-  const noBody = (tree: unknown) => {
-    const out: string[] = [];
-    const walk = (n: any) => {
-      if (n == null) return;
-      if (typeof n === 'string') { if (n.trim()) out.push(n.trim()); return; }
-      if (Array.isArray(n)) { n.forEach(walk); return; }
-      walk(n.children);
-    };
-    walk(tree);
-    return out;
-  };
-
-  beforeEach(() => { mockSignedOut = true; });
-  afterEach(() => { mockSignedOut = false; });
-
-  // Held as factories, not as elements sitting in an array. The desks are a data
-  // table here rather than rendered children, so React never asked for a key —
-  // but the linter cannot tell those apart, and building each desk only when its
-  // own case runs is the honest shape anyway.
-  for (const [name, mount] of [
-    ['a take', () => <ComposeShortScreen kind="take" />],
-    ['a seeking', () => <ComposeShortScreen kind="seeking" />],
-    ['a wire', () => <ComposeShortScreen kind="wire" />],
-    ['a ballot', () => <ComposeBallotScreen />],
-  ] as const) {
-    it(`${name} — is told why, and taken back`, async () => {
-      const back = jest.requireMock('expo-router').router.back as jest.Mock;
-      back.mockClear();
-      // The pop waits for the entrance to settle; here it settles at once.
-      const settled = jest.spyOn(InteractionManager, 'runAfterInteractions').mockImplementation(
-        ((fn: () => void) => { fn(); return { cancel() {} }; }) as never,
-      );
-      const { toJSON } = render(mount());
-      await act(async () => { await Promise.resolve(); });
-
-      // Still nothing drawn — but that is now ONE frame before the pop, with a
-      // sentence already on screen, rather than a screen a member is left on.
-      expect(noBody(toJSON())).toEqual([]);
-      expect(String(mockToast.error.mock.calls[0]?.[0])).toBe('Filing is for members.');
-      // And TAKEN BACK, once: a sentence over a desk they cannot use is not a way out.
-      expect(back).toHaveBeenCalledTimes(1);
-      settled.mockRestore();
     });
   }
 });

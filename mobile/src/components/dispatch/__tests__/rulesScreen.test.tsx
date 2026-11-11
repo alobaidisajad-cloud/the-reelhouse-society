@@ -18,7 +18,6 @@
  *   asserts the line presses through to the route rather than merely existing.
  */
 import React, { act } from 'react';
-import { InteractionManager } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 
 import RulesScreen from '@/app/dispatch/rules';
@@ -95,14 +94,17 @@ describe('the house rules', () => {
     // and the picker test above still green.
     const push = jest.requireMock('expo-router').router.push as jest.Mock;
     push.mockClear();
-    // A visitor is sent back after the entrance settles; held, so nothing leaves.
-    const held = jest.spyOn(InteractionManager, 'runAfterInteractions')
-      .mockReturnValue({ cancel() {} } as never);
-    const { getByLabelText } = render(<ComposeScreen />);
-    await act(async () => { await Promise.resolve(); });
-    await act(async () => { await fireEvent.press(getByLabelText('Read the house rules')); });
-    expect(push).toHaveBeenCalledWith('/dispatch/rules');
-    held.mockRestore();
+    // A member's writing room: a stranger is asked in before any picker is drawn (P4.21).
+    const { useAuthStore } = require('@/src/stores/auth') as typeof import('@/src/stores/auth');
+    useAuthStore.setState({ user: { id: 'u1', username: 'me' } as never });
+    try {
+      const { getByLabelText } = render(<ComposeScreen />);
+      await act(async () => { await Promise.resolve(); });
+      await act(async () => { await fireEvent.press(getByLabelText('Read the house rules')); });
+      expect(push).toHaveBeenCalledWith('/dispatch/rules');
+    } finally {
+      useAuthStore.setState({ user: null });
+    }
   });
 
   it('and the picker without a door does not draw a dead line', async () => {

@@ -748,16 +748,12 @@ function StackDetailScreen({ id }: { id: string }) {
   // Sharing a stack into a salon is speaking there: without the rank, LOUNGE opens the rope.
   const { held: canShare, rank: shareRank, standing: shareStanding, openOr: openShare } = useClearance('lounge-speaking', `/stacks/${id}`);
   const handleOpenShareLounge = useCallback(async () => {
-    if (!user) {
-      TactileEngine.selection();
-      reelToast.error('You must be logged in to access the lounge.');
-      return;
-    }
-    // A rank read again at the rope and found held opens the salon list at once.
+    // A rank read again at the rope and found held opens the salon list at once. A stranger's
+    // rope is the way in, which brings them back to this stack (useClearance, P4.21).
     if (!canShare) { openShare(() => setShowLoungeShare(true)); return; }
     TactileEngine.selection();
     setShowLoungeShare(true);
-  }, [user, canShare, openShare]);
+  }, [canShare, openShare]);
 
   const handleDelete = useCallback(() => {
     TactileEngine.destroy();
@@ -1039,7 +1035,7 @@ function StackDetailScreen({ id }: { id: string }) {
 
                   {/* Who may not speak in a salon holds the brass key; its label says it opens the Society. */}
                   <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={null} haptic="selection" accessibilityRole="button"
-                    accessibilityLabel={canShare || !user ? 'Share to lounge' : ropeSpoken('Share to lounge', shareRank, shareStanding)}>
+                    accessibilityLabel={canShare ? 'Share to lounge' : ropeSpoken('Share to lounge', shareRank, shareStanding)}>
                     {canShare || !user
                       ? <MessageCircle size={16} strokeWidth={2} color={colors.fog} />
                       : <KeyRound size={16} strokeWidth={2} color={colors.sepia} style={s.actionKeyDim} />}

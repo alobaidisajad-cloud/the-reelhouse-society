@@ -187,7 +187,9 @@ const ROUTES: Route[] = [
   { file: 'app/(admin)/tribunal.tsx', draw: () => { const C = require('@/app/(admin)/tribunal').default; return <C />; },
     arrange: () => { mockRole = 'admin'; secondKey(true); } },
   { file: 'app/stacks/[id].tsx', params: { id: '00000023-0000-4000-8000-000000000023' }, draw: () => { const C = require('@/app/stacks/[id]').default; return <C />; } },
-  { file: 'app/film-reviews/[id].tsx', params: { id: '550', title: 'Fight Club' }, draw: () => { const C = require('@/app/film-reviews/[id]').default; return <C />; } },
+  // The film is on file: with no critique, the page asks after it (P4.21), and draws its own empty.
+  { file: 'app/film-reviews/[id].tsx', params: { id: '550', title: 'Fight Club' }, draw: () => { const C = require('@/app/film-reviews/[id]').default; return <C />; },
+    arrange: () => { (jest.requireMock('@/src/lib/tmdb') as { tmdb: { detail: jest.Mock } }).tmdb.detail.mockResolvedValue({ id: 550, title: 'Fight Club' }); } },
   { file: 'app/dispatch/[id].tsx', params: { id: '00000024-0000-4000-8000-000000000024' }, draw: () => { const C = require('@/app/dispatch/[id]').default; return <C />; } },
   { file: 'app/edit-profile.tsx', draw: () => { const C = require('@/app/edit-profile').default; return <C />; } },
   { file: 'app/dispatch/archive.tsx', draw: () => { const C = require('@/app/dispatch/archive').default; return <C />; } },

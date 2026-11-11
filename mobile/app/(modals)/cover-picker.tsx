@@ -28,6 +28,9 @@ import { useAuthStore } from '@/src/stores/auth';
 import { EmptyState } from '@/src/components/EmptyStates';
 import { WayOut } from '@/src/components/TryAgain';
 import { MembersOnly } from '@/src/components/MembersOnly';
+import { RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomParts';
+import { supabase } from '@/src/lib/supabase';
+import { useQuery } from '@tanstack/react-query';
 
 const PARAMS = { loungeId: P.uuid };
 
@@ -36,7 +39,23 @@ export default function CoverPicker() {
   const top = useModalTop();
   const setLoungeCover = useLoungeStore(s => s.setLoungeCover);
   const me = useAuthStore((st) => st.user?.id);
-  const hosts = useLoungeStore((st) => !!me && st.lounges.some((l) => l.id === loungeId && l.creator_id === me));
+  // The salon's host, as the corridor holds it; a cold link (or the return after a sign-in) finds
+  // the corridor unread, and reads the salon's host from the house (P4.21): never "not yours" to
+  // the host because a list was not read.
+  const heldHost = useLoungeStore((st) => st.lounges.find((l) => l.id === loungeId)?.creator_id);
+  const read = useQuery({
+    queryKey: ['salon-host', loungeId],
+    enabled: !!me && !!loungeId && heldHost === undefined,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('lounges').select('creator_id').eq('id', loungeId as string).maybeSingle();
+      if (error) throw error;
+      // No row: no such salon, or one this member may not see.
+      return data ? (data.creator_id as string) : null;
+    },
+  });
+  const host = heldHost ?? read.data;
+  const hosts = !!me && host === me;
 
   const handlePick = useCallback((film: LogSearchResult) => {
     if (!loungeId) { nav.back(); return; }
@@ -56,6 +75,28 @@ export default function CoverPicker() {
   if (!me) {
     return <MembersOnly next={`/cover-picker?loungeId=${loungeId}`} style={{ paddingTop: top }} />;
   }
+
+  if (heldHost === undefined && read.isPending) {
+    return (
+      <View style={[s.container, s.notYours, { paddingTop: top }]}>
+        <RoomLight room="default" />
+        <RoomRetrieving room="the salon" />
+      </View>
+    );
+  }
+
+  if (heldHost === undefined && read.isError) {
+    return (
+      <View style={[s.container, s.notYours, { paddingTop: top }]}>
+        <RoomLight room="default" />
+        <RoomUnreachable room="the salon" onRetry={() => { void read.refetch(); }} />
+        <WayOut label="Close" onPress={() => nav.back()} />
+      </View>
+    );
+  }
+
+  // No such salon (withdrawn, or never one): said as the house says a path that leads nowhere.
+  if (host === null) return <NotInTheArchive />;
 
   if (!hosts) {
     return (

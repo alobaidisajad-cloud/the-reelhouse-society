@@ -8,7 +8,8 @@ import { renderHook } from '@testing-library/react-native';
 
 import { useClearance } from '@/src/hooks/useClearance';
 import { recordGateEvent } from '@/src/utils/gateTelemetry';
-import { openSociety } from '@/src/utils/openSociety';
+import { noteCurrentPath, openSociety } from '@/src/utils/openSociety';
+import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
 
 let mockUser: Record<string, unknown> | null = null;
@@ -25,6 +26,7 @@ jest.mock('@/src/stores/auth', () => ({
 jest.mock('@/src/utils/gateTelemetry', () => ({ recordGateEvent: jest.fn() }));
 jest.mock('@/src/utils/TactileEngine', () => ({ __esModule: true, default: { selection: jest.fn() } }));
 jest.mock('@/src/utils/openSociety', () => ({ ...jest.requireActual('@/src/utils/openSociety'), openSociety: jest.fn() }));
+jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn() } }));
 
 /** Features of each rank, from gatedFeatures.ts. */
 const ARCHIVIST = 'the-lounge';
@@ -75,9 +77,36 @@ it('reads the member\'s highest rank, their role\'s or their store\'s', async ()
   expect((await clearance(AUTEUR)).held).toBe(true);
 });
 
-it('opens nothing to someone signed out, not even the first rank', async () => {
+it('opens nothing to someone signed out, not even the first rank, and calls them a guest', async () => {
   mockUser = null;
-  expect(await clearance(ARCHIVIST)).toMatchObject({ held: false, rank: 'archivist', standing: 'stranger' });
+  expect(await clearance(ARCHIVIST)).toMatchObject({ held: false, rank: 'archivist', standing: 'guest' });
+});
+
+/**
+ * A guest's rope (P4.21): what they lack is a way in, not a rank. Sold the rank, they were sent to
+ * the Society page, whose purchase asks a sign-in, which landed on the Lobby: all lost. The rope
+ * opens the sign-in, told where they stood; signed in, they are brought back, and the rank is
+ * sold there if they lack it.
+ */
+it("a guest's rope opens the sign-in, carrying where they stood, and never the Society page", async () => {
+  mockUser = null;
+  noteCurrentPath('/person/608');
+  (await clearance(AUTEUR)).open();
+  expect(nav.push).toHaveBeenCalledWith(`/login?next=${encodeURIComponent('/person/608')}`);
+  expect(recordGateEvent).toHaveBeenCalledWith('gate_tapped', { featureId: AUTEUR, rank: 'auteur', standing: 'guest' });
+  // The screen's own return, when it names one, and its query whole.
+  noteCurrentPath('/social-modal', 'personId=608&personName=Ingrid%20Bergman');
+  (await clearance(AUTEUR)).open();
+  expect(nav.push).toHaveBeenLastCalledWith(`/login?next=${encodeURIComponent('/social-modal?personId=608&personName=Ingrid%20Bergman')}`);
+  (await clearance(AUTEUR, '/dispatch/compose')).open();
+  expect(nav.push).toHaveBeenLastCalledWith(`/login?next=${encodeURIComponent('/dispatch/compose')}`);
+  // A place no sign-in returns to: the sign-in alone, and the Lobby after.
+  noteCurrentPath('/tribunal');
+  (await clearance(AUTEUR)).open();
+  expect(nav.push).toHaveBeenLastCalledWith('/login');
+  expect(openSociety).not.toHaveBeenCalled();
+  expect(mockReread).not.toHaveBeenCalled();
+  noteCurrentPath(null);
 });
 
 it('names the rank that opens the feature', async () => {

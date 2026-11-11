@@ -5,7 +5,9 @@
  */
 import { nav } from '@/src/utils/typedRouter';
 import { RemoteImage } from '@/src/components/Picture';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { NotInTheArchive } from '@/src/components/NotInTheArchive';
+import { RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomParts';
 import { StackService } from '@/src/services/StackService';
 import { logger } from '@/src/utils/logger';
 import { P, useRouteParams } from '@/src/utils/routeParams';
@@ -186,11 +188,24 @@ export default function ListModal() {
     // Edit mode: a stack of the member's own. One cached from viewing another member's page is
     // never theirs to amend, whatever a link names (P4.4): the form is not drawn for it.
     const me = useAuthStore((s) => s.user?.id);
-    const cachedStack = params.editId ? queryClient.getQueryData<any>(['stack', params.editId])?.list : undefined;
+    const heldStack = readId ? lists.find((l: any) => l.id === readId) : undefined;
+    const viewedStack = params.editId ? queryClient.getQueryData<any>(['stack', params.editId])?.list : undefined;
+    // A cold link (and the return after a sign-in) finds the member's stacks unread: the stack is
+    // read from the house, so its own curator may amend it, and one not there is said to be gone,
+    // never an empty form under "could not be opened" (P4.21).
+    const toAmend = useQuery({
+        queryKey: ['stack-to-amend', readId],
+        enabled: !!me && !!readId && !heldStack && !viewedStack,
+        retry: false,
+        queryFn: async () => (await StackService.getStackFullPayload(readId as string)) ?? null,
+    });
+    const cachedStack = viewedStack ?? toAmend.data ?? undefined;
     const notYours = !!cachedStack && !!me && cachedStack.userId !== me && !lists.some((l: any) => l.id === params.editId);
     const editList = params.editId
-        ? lists.find((l: any) => l.id === params.editId) || (cachedStack && !notYours ? cachedStack : null)
+        ? heldStack || (cachedStack && !notYours ? cachedStack : null)
         : null;
+    /** The stack this amend names, still being read from the house, or not readable, or not there. */
+    const askingAfter = !!readId && !heldStack && !viewedStack;
 
     const [title, setTitle] = useState(editList?.title || '');
     const titleRef = useRef<TextInput>(null);
@@ -245,8 +260,10 @@ export default function ListModal() {
     // deletes every item (the write and its offline replay alike), `undefined`
     // leaves them. The cached stack holds at most 500, with the true count
     // beside it; with no count, the store's copy (read whole) is taken as whole.
+    // The stack as read for this sheet (a cold link) carries its count too: its first page alone
+    // is never taken as whole, or a save would delete the films past it.
     const trueFilmCount: number | undefined =
-        params.editId ? queryClient.getQueryData<any>(['stack', params.editId])?.list?.filmCount : undefined;
+        params.editId ? (viewedStack ?? toAmend.data ?? undefined)?.filmCount : undefined;
     /** The stack this sheet has read whole, past its first page (below). */
     const [readWhole, setReadWhole] = useState<string | null>(null);
     const holdingsAreComplete =
@@ -663,6 +680,20 @@ export default function ListModal() {
     // A stranger is asked in, and brought back to the stack they were sent to.
     if (!me) {
         return <MembersOnly next={params.editId ? `/list-modal?editId=${params.editId}` : '/list-modal'} style={{ paddingTop: handleTop }} />;
+    }
+
+    // An amend whose id is of another shape, or names no stack: a path that leads nowhere.
+    if (params.editId === NO_SUCH_STACK || (askingAfter && toAmend.data === null)) return <NotInTheArchive />;
+    if (askingAfter && toAmend.isError) {
+        return (
+            <View style={[s.container, s.notYours, { paddingTop: handleTop }]}>
+                <RoomUnreachable room="the stack" onRetry={() => { void toAmend.refetch(); }} />
+                <WayOut label="Close" onPress={() => nav.back()} />
+            </View>
+        );
+    }
+    if (askingAfter && toAmend.isPending) {
+        return <View style={[s.container, s.notYours, { paddingTop: handleTop }]}><RoomRetrieving room="the stack" /></View>;
     }
 
     // Another member's stack, named by a link: never offered to amend, and said plainly.

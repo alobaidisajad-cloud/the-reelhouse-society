@@ -45,7 +45,17 @@ jest.mock('@tanstack/react-query', () => ({
     getQueryData: (k: unknown[]) => (k[0] === 'stack' ? mockCachedStack : undefined),
     setQueryData: jest.fn(), removeQueries: jest.fn(), invalidateQueries: jest.fn(),
   }),
+  // The stack an amend names, read from the house when neither the member's stacks nor a viewed
+  // page hold it (a cold link, the return after a sign-in): its answer, as each case sets it.
+  useQuery: (o: { queryKey: unknown[]; enabled?: boolean }) => {
+    mockAsked.push({ key: o.queryKey, enabled: !!o.enabled });
+    return o.enabled ? { ...mockAmend, refetch: mockRefetch } : { data: undefined, isPending: true, isError: false, refetch: mockRefetch };
+  },
 }));
+/** The house's answer for the stack to amend: still coming, unless a case says otherwise. */
+let mockAmend: { data?: unknown; isPending: boolean; isError: boolean } = { isPending: true, isError: false };
+const mockAsked: { key: unknown[]; enabled: boolean }[] = [];
+const mockRefetch = jest.fn();
 jest.mock('@/src/stores/films', () => {
   const useListStore = (sel?: (s: unknown) => unknown) => {
     const state = { lists: mockLists, createList: mockCreateList, updateList: mockUpdateList };
@@ -121,6 +131,8 @@ beforeEach(() => {
   mockParams = {};
   mockLists = [];
   mockCachedStack = undefined;
+  mockAmend = { isPending: true, isError: false };
+  mockAsked.length = 0;
   require('@/src/stores/auth').useAuthStore.setState({ user: { id: 'me' } });
   require('@/src/utils/memberDrafts').clearDraft('me', 'stack');
 });
@@ -134,9 +146,11 @@ describe('the form can never destroy a stack', () => {
     // so they believe they are starting something — and saves. By then the
     // store HAS resolved, so the edit branch runs, carrying films: [] and
     // deleting every list_item in the stack.
+    // Now no form stands while the stack is read: there is nothing blank to type into or file.
     mockParams = { editId: STACK_ID };
     const r = mount();
-    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack title'), 'Anything'); });
+    expect(r.getByText('RETRIEVING THE STACK')).toBeTruthy();
+    expect([r.queryByLabelText('Stack title'), r.queryByLabelText(/SAVE THE AMENDMENTS|FILE THE STACK/)]).toEqual([null, null]);
 
     mockLists = [STACK];                                  // the stack lands late
     rerender(r);
@@ -150,7 +164,7 @@ describe('the form can never destroy a stack', () => {
   it('hydrates the whole form the moment the stack arrives', async () => {
     mockParams = { editId: STACK_ID };
     const r = mount();
-    expect(r.getByLabelText('Stack title').props.value).toBe('');
+    expect(r.queryByLabelText('Stack title')).toBeNull();
     mockLists = [STACK];
     rerender(r);
     await waitFor(() => expect(r.getByLabelText('Stack title').props.value).toBe('Neon Noir Masterpieces'));
@@ -255,41 +269,78 @@ describe('the form can never destroy a stack', () => {
     expect(mockUpdateList.mock.calls[0][1].films).toHaveLength(2);
   });
 
-  it('says so, rather than creating a duplicate, when the stack cannot be opened', async () => {
-    mockParams = { editId: STACK_ID };                    // resolves to nothing
+  it('a stack the house does not have: a path that leads nowhere, and nothing is filed', async () => {
+    mockParams = { editId: STACK_ID };
+    mockAmend = { data: null, isPending: false, isError: false };
     const r = mount();
-    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack title'), 'Anything'); });
-    await waitFor(() => expect(r.getByText('THIS STACK COULD NOT BE OPENED')).toBeTruthy());
-    await act(async () => { await fireEvent.press(r.getByLabelText(/SAVE THE AMENDMENTS/)); });
-    await act(async () => {});
+    expect(r.getByText('ROUTE NOT IN THE ARCHIVE')).toBeTruthy();
+    expect([r.queryByLabelText('Stack title'), r.queryByLabelText(/SAVE THE AMENDMENTS|FILE THE STACK/)]).toEqual([null, null]);
     expect(mockCreateList).not.toHaveBeenCalled();
-    expect(mockUpdateList).not.toHaveBeenCalled();
   });
 
   it.each([['not an id', 'abc'], ['an id and more', `${STACK_ID}' OR 1=1`]])(
-    'and the same for a link whose stack id is %s: an amend that cannot be opened, never a new stack (P4.4)', async (_why, editId) => {
+    'and the same for a link whose stack id is %s: never a new stack, and nothing asked of the house (P4.4)', async (_why, editId) => {
       mockParams = { editId };
       const r = mount();
-      await waitFor(() => expect(r.getByText('THIS STACK COULD NOT BE OPENED')).toBeTruthy());
-      expect(r.getByText('Amend a Stack')).toBeTruthy();
-      await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack title'), 'Anything'); });
-      await act(async () => { await fireEvent.press(r.getByLabelText(/SAVE THE AMENDMENTS/)); });
-      await act(async () => {});
+      expect(r.getByText('ROUTE NOT IN THE ARCHIVE')).toBeTruthy();
+      expect([r.queryByText('Curate a Stack'), r.queryByLabelText(/SAVE THE AMENDMENTS|FILE THE STACK/)]).toEqual([null, null]);
+      expect(mockAsked.filter((a) => a.enabled)).toEqual([]);
       expect(mockCreateList).not.toHaveBeenCalled();
-      expect(mockUpdateList).not.toHaveBeenCalled();
     });
 
-  it('and still calls itself an amendment while the stack has not arrived', async () => {
-    // The mode is what the member asked for, not what happened to load. Read off
-    // `editList`, the sheet called itself "Curate a Stack" with a FILE THE STACK
-    // button for the whole window before the store resolved — the very
-    // contradiction this page was opened to remove, just later.
+  it('while the stack is read, never offers to curate a new one', async () => {
+    // The mode is what the member asked for, not what happened to load: the sheet once called
+    // itself "Curate a Stack" with a FILE THE STACK button before the store resolved.
     mockParams = { editId: STACK_ID };
     const r = mount();
-    await waitFor(() => expect(r.getByText('Amend a Stack')).toBeTruthy());
-    expect(r.getByText('SAVE THE AMENDMENTS')).toBeTruthy();
-    expect(r.queryByText('Curate a Stack')).toBeNull();
-    expect(r.queryByText('FILE THE STACK')).toBeNull();
+    expect(r.getByText('RETRIEVING THE STACK')).toBeTruthy();
+    expect([r.queryByText('Curate a Stack'), r.queryByText('FILE THE STACK')]).toEqual([null, null]);
+    expect(mockAsked.filter((a) => a.enabled).map((a) => a.key)).toContainEqual(['stack-to-amend', STACK_ID]);
+  });
+});
+
+/**
+ * A cold link to amend (P4.21): the member's stacks unread, and no page of the stack viewed, the
+ * stack is read from the house. Before, the sheet drew an empty form under "THIS STACK COULD NOT
+ * BE OPENED" to its own curator: the very screen P4.19's return after a sign-in lands on.
+ */
+describe('a cold link to amend', () => {
+  it('reads the stack from the house, and its curator amends it whole', async () => {
+    mockParams = { editId: STACK_ID };
+    mockAmend = { data: { ...STACK, filmCount: 2 }, isPending: false, isError: false };
+    const r = mount();
+    await waitFor(() => expect(r.getByLabelText('Stack title').props.value).toBe('Neon Noir Masterpieces'));
+    expect(r.getByLabelText('Remove Blade Runner')).toBeTruthy();
+    await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+    await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
+    expect(mockUpdateList.mock.calls[0][1].films).toHaveLength(2);
+  });
+
+  it('its first page alone is never taken as whole: the films past it are never sent away', async () => {
+    mockParams = { editId: STACK_ID };
+    mockAmend = { data: { ...STACK, filmCount: 620 }, isPending: false, isError: false };
+    const r = mount();
+    await waitFor(() => expect(r.getByText(/larger than this sheet can hold/)).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+    await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
+    expect('films' in mockUpdateList.mock.calls[0][1]).toBe(false);
+  });
+
+  it("another member's stack: not theirs to amend", async () => {
+    mockParams = { editId: STACK_ID };
+    mockAmend = { data: { ...STACK, userId: 'them', filmCount: 2 }, isPending: false, isError: false };
+    const r = mount();
+    expect(r.getByText('Not Yours to Amend')).toBeTruthy();
+    expect(r.queryByLabelText('Stack title')).toBeNull();
+  });
+
+  it('a read that fails: said, with the way to ask again and a way out', async () => {
+    mockParams = { editId: STACK_ID };
+    mockAmend = { data: undefined, isPending: false, isError: true };
+    const r = mount();
+    expect(r.getByText('The stack could not be reached.')).toBeTruthy();
+    expect(r.getByLabelText('Close')).toBeTruthy();
+    expect(r.queryByLabelText('Stack title')).toBeNull();
   });
 });
 

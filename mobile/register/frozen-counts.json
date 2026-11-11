@@ -12,7 +12,6 @@
     "mobile/app/dispatch/series/[id].tsx": 1,
     "mobile/app/log/[id].tsx": 7,
     "mobile/app/lounge/[id].tsx": 12,
-    "mobile/app/reset-password.tsx": 1,
     "mobile/app/stacks/[id].tsx": 6,
     "mobile/app/user/[username].tsx": 5,
     "mobile/src/components/atmosphere/useSharedImage.ts": 1,

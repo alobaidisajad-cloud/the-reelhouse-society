@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
+import { askIn } from '@/src/utils/askIn';
 import { Heart, MessageSquare, Edit3, Bookmark, MessageCircle, KeyRound } from 'lucide-react-native';
 import { useWatchlistStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
@@ -88,7 +89,7 @@ export const ActionDeck = React.memo(function ActionDeck({
 
   const handleCertify = useCallback(() => {
     if (!useAuthStore.getState().user) {
-        nav.push('/login');
+        askIn();
         return;
     }
     if (isAnimating.current) return;
@@ -108,7 +109,7 @@ export const ActionDeck = React.memo(function ActionDeck({
 
   const handleCritique = useCallback(() => {
     if (!useAuthStore.getState().user) {
-        nav.push('/login');
+        askIn();
         return;
     }
     TactileEngine.selection();
@@ -117,7 +118,7 @@ export const ActionDeck = React.memo(function ActionDeck({
 
   const handleSaveOrEdit = useCallback(() => {
     if (!useAuthStore.getState().user) {
-        nav.push('/login');
+        askIn();
         return;
     }
     TactileEngine.mutate();
@@ -151,7 +152,7 @@ export const ActionDeck = React.memo(function ActionDeck({
 
   const handleLounge = useCallback(() => {
     if (!useAuthStore.getState().user) {
-        nav.push('/login');
+        askIn();
         return;
     }
     if (!canShare) {

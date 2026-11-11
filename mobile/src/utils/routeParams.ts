@@ -14,9 +14,9 @@
  * everyRouteReadsThroughTheParser fails on any other read of a route's parameters.
  */
 import { useMemo } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useGlobalSearchParams, useLocalSearchParams, useSegments } from 'expo-router';
 import { cleanForStorage } from '@/src/utils/sanitizeInput';
-import { returnAfterSignIn } from '@/src/components/MembersOnly';
+import { returnAfterSignIn } from '@/src/utils/signInReturn';
 
 /** A value's kind: the value in it, or undefined for one of another shape. */
 export type Kind<T> = (raw: string) => T | undefined;
@@ -76,4 +76,25 @@ export function useRouteParams<S extends Shape>(shape: S): Parsed<S> {
   const key = Object.keys(shape).map((k) => `${k}=${String(raw[k] ?? '')}`).join('&');
   // eslint-disable-next-line react-hooks/exhaustive-deps -- read again when a named value changes, not the object around it
   return useMemo(() => readParams(raw, shape), [key, shape]);
+}
+
+/**
+ * The address's query: each of its values that is not one of the path's own dynamic segments
+ * (`[id]` is already in the path), in a stable order. Never read as values: it is carried to the
+ * sign-in as where the member stood, and held there to the screens' shapes (signInReturn.ts).
+ */
+export function queryOf(params: Record<string, string | string[] | undefined>, segments: readonly string[]): string {
+  // `[id]` names `id`; a catch-all `[...rest]` names `rest`.
+  const inPath = new Set(segments.filter((s) => s.startsWith('[') && s.endsWith(']'))
+    .map((s) => s.slice(1, -1)).map((n) => (n.startsWith('...') ? n.slice(3) : n)));
+  return Object.keys(params).filter((k) => !inPath.has(k)).sort().flatMap((k) => {
+    const v = params[k];
+    const first = Array.isArray(v) ? v[0] : v;
+    return typeof first === 'string' && first !== '' ? [`${encodeURIComponent(k)}=${encodeURIComponent(first)}`] : [];
+  }).join('&');
+}
+
+/** The current address's own query (queryOf), for PathTracker alone. */
+export function useAddressQuery(): string {
+  return queryOf(useGlobalSearchParams() as Record<string, string | string[] | undefined>, useSegments());
 }

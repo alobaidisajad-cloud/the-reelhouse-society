@@ -165,7 +165,7 @@ function SeriesScreen({ id, from }: { id: string; from?: string }) {
             Nothing is left of this series.
           </Text>
           <Text style={p.emptyBody} {...scaledTextProps}>
-            Its parts have been withdrawn, or the house removed them.
+            Its parts were withdrawn or removed by the house, or it was never filed.
           </Text>
         </View>
       </View>

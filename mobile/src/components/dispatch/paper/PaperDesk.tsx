@@ -460,7 +460,7 @@ export const ShareSheet = memo(function ShareSheet({
   const roped = !!lounge && !lounge.held;
   const rows: [typeof Send, string, string][] = [
     [roped ? KeyRound : Send, 'TO THE LOUNGE', roped
-      ? lounge.standing === 'reading' ? 'Your rank is being read' : lounge.standing === 'lapsed' ? 'Your dues have lapsed' : `${lounge.rank === 'auteur' ? 'The Auteur' : 'The Archivist'} opens this`
+      ? lounge.standing === 'reading' ? 'Your rank is being read' : lounge.standing === 'lapsed' ? 'Your dues have lapsed' : lounge.standing === 'guest' ? 'For members: identify yourself' : `${lounge.rank === 'auteur' ? 'The Auteur' : 'The Archivist'} opens this`
       : 'Drop it into a room'],
     ...(card
       ? ([[Bookmark, 'SAVE THE CARD', 'A picture, to your photos']] as [typeof Send, string, string][])

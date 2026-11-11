@@ -4,7 +4,8 @@
  * A link to the notices, to amend a stack or to change a salon's cover, opened by a stranger,
  * drew a false "nothing here": no notices, a stack not theirs, a salon not theirs. Each says now
  * that it is for members, offers the way in, and remembers where it was asked to go: once the
- * member has signed in they land on it (returnAfterSignIn), not on the Lobby.
+ * member has signed in they land on it (returnAfterSignIn, src/utils/signInReturn.ts), not on the
+ * Lobby. Every screen only a member can open draws it signed out (P4.21).
  */
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
@@ -16,23 +17,9 @@ import { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/Tr
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { colors, fonts } from '@/src/theme/theme';
 import { nav } from '@/src/utils/typedRouter';
+import { signInHref } from '@/src/utils/signInReturn';
 
-const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-
-/**
- * The screens a sign-in may return to, and nothing else: the address comes from a link, so it
- * is held to these shapes before the app goes there (any other lands on the Lobby).
- */
-const RETURNS: RegExp[] = [
-  /^\/notifications-modal$/,
-  new RegExp(`^/list-modal(\\?editId=${UUID})?$`),
-  new RegExp(`^/cover-picker\\?loungeId=${UUID}$`),
-];
-
-/** Where a sign-in goes: the screen that asked, when it is one of those, or the Lobby. */
-export function returnAfterSignIn(next: string | null | undefined): string {
-  return next && RETURNS.some((r) => r.test(next)) ? next : '/(tabs)';
-}
+export { returnAfterSignIn } from '@/src/utils/signInReturn';
 
 const SLOP = { top: 15, bottom: 15, left: 15, right: 15 } as const;
 /** Above a way out, the way in reaches down only half the gap between them (TryAgain.tsx). */
@@ -44,7 +31,7 @@ export function IdentifyYourself({ next, testID, aboveAWayOut = false }: { next?
     <PressableScale room
       testID={testID}
       style={s.cta}
-      onPress={() => nav.push(next ? `/login?next=${encodeURIComponent(next)}` : '/login')}
+      onPress={() => nav.push(signInHref(next))}
       hitSlop={aboveAWayOut ? SLOP_ABOVE_A_WAY_OUT : SLOP}
       haptic="medium"
       accessibilityRole="button"
