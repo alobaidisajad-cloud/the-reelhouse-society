@@ -87,7 +87,7 @@
     "class": "CI-background-job-left-running",
     "mutant": "shape-log-stream-left-running",
     "proof": "m1",
-    "commit": "a2479c96fd798fa6de8bd2666efca235e6642f9e",
+    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
     "verdict": "caught"
   },
   {
@@ -388,7 +388,7 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-refusal-sent",
     "proof": "m3",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
     "verdict": "caught"
   },
   {
@@ -521,14 +521,14 @@
     "class": "E2E-launch-unmeasured",
     "mutant": "shape-cold-table-unwritten",
     "proof": "m3",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
     "verdict": "caught"
   },
   {
     "class": "E2E-ceiling-not-measured",
     "mutant": "shape-shard-starts-cold",
     "proof": "m1",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
     "verdict": "caught"
   },
   {
@@ -542,14 +542,14 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-phone-unsettled",
     "proof": "m6",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-input-swallowed",
     "proof": "m4",
-    "commit": "176449117f53b829d301577694a108a03aba3f0b",
+    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
     "verdict": "caught"
   },
   {
@@ -2250,7 +2250,7 @@
     "class": "RUNTIME-native-library-on-16k-pages",
     "mutant": "shape-16k-phone-unproven",
     "proof": "m1",
-    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
+    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
     "verdict": "caught"
   },
   {
@@ -2306,7 +2306,7 @@
     "class": "RUNTIME-native-library-on-16k-pages",
     "mutant": "shape-16k-phone-starved",
     "proof": "m1",
-    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
+    "commit": "e8521204ac0b3c04f391f3124a821df589910a58",
     "verdict": "caught"
   },
   {
