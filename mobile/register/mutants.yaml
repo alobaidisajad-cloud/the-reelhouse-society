@@ -1747,7 +1747,7 @@ mutants:
     edits:
       - file: src/components/clearance/Clearance.tsx
         find: "return standing === 'reading' ? '✦ ASK AGAIN'"
-        replace: "return standing === 'never' ? '✦ ASK AGAIN'"
+        replace: "return false && standing === 'reading' ? '✦ ASK AGAIN'"
     proof: { file: src/components/clearance/__tests__/oneRopeNotThree.test.tsx, test: "sells nothing to a member whose rank is not yet read: it says so, and asks again" }
 
   - id: shape-critique-heart-pressable-unread
@@ -2982,8 +2982,8 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useClearance.ts
-        find: 'guest ? ''guest'' : '
-        replace: ''
+        find: 'const guest = weight < 0;'
+        replace: 'const guest = weight < -1;'
     proof: { file: src/hooks/__tests__/useClearance.test.ts, test: 'a guest''s rope opens the sign-in, carrying where they stood, and never the Society page' }
 
   - id: shape-settings-returns-to-the-lobby

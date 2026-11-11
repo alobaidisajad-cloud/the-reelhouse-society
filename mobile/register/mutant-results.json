@@ -423,7 +423,7 @@
     "class": "TYPE-word-see-through-unseen",
     "mutant": "shape-lounge-label-faded",
     "proof": "m1",
-    "commit": "483b94e2611b26ea1156a39a60fb3e4a3d4f5a52",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -731,14 +731,14 @@
     "class": "DATA-read-keyed-on-a-replaced-object",
     "mutant": "shape-salon-keyed-on-user",
     "proof": "m1",
-    "commit": "c09b474eaf98166921cca1bc4f074c4d5b5aa447",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "DATA-read-keyed-on-a-replaced-object",
     "mutant": "shape-read-keyed-unjudged",
     "proof": "m2",
-    "commit": "c09b474eaf98166921cca1bc4f074c4d5b5aa447",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -843,7 +843,7 @@
     "class": "DATA-another-rooms-words-shown",
     "mutant": "shape-screen-draws-held-words",
     "proof": "m2",
-    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -885,7 +885,7 @@
     "class": "DATA-settings-saved-over-an-unread-profile",
     "mutant": "shape-settings-form-over-unread",
     "proof": "m1",
-    "commit": "2c627027a0da0831d125349a8629763cd9d8820f",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -976,7 +976,7 @@
     "class": "UI-unknown-mark-drawn-as-off",
     "mutant": "shape-row-unknown-never",
     "proof": "m5",
-    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1011,35 +1011,35 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-transcript-empty-while-reading",
     "proof": "m1",
-    "commit": "5e75069780a98d751c672deeb8ee178f7a9b639f",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-film-invites-while-reading",
     "proof": "m2",
-    "commit": "5e75069780a98d751c672deeb8ee178f7a9b639f",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-film-reading-never",
     "proof": "m3",
-    "commit": "5e75069780a98d751c672deeb8ee178f7a9b639f",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-stack-critiques-empty-while-reading",
     "proof": "m4",
-    "commit": "5e75069780a98d751c672deeb8ee178f7a9b639f",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-corridor-empty-before-read",
     "proof": "m5",
-    "commit": "5e75069780a98d751c672deeb8ee178f7a9b639f",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1109,14 +1109,14 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-orbit-quiet-unread",
     "proof": "m15",
-    "commit": "5e75069780a98d751c672deeb8ee178f7a9b639f",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-orbit-quiet-failed",
     "proof": "m16",
-    "commit": "5e75069780a98d751c672deeb8ee178f7a9b639f",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1235,7 +1235,7 @@
     "class": "DATA-marks-known-from-the-pages",
     "mutant": "shape-unknown-offered-as-unseen",
     "proof": "m8",
-    "commit": "b9d2a3040a4727a04973506e948cb729aac31223",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1249,28 +1249,28 @@
     "class": "DATA-marks-known-from-the-pages",
     "mutant": "shape-hunt-counted-short",
     "proof": "m10",
-    "commit": "b9d2a3040a4727a04973506e948cb729aac31223",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "UI-unknown-mark-drawn-as-off",
     "mutant": "shape-stack-heart-filed-blind",
     "proof": "m7",
-    "commit": "86a80392c4d3adb20ee913cae3965387d8663ac4",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "UI-unknown-mark-drawn-as-off",
     "mutant": "shape-log-heart-filed-blind",
     "proof": "m9",
-    "commit": "86a80392c4d3adb20ee913cae3965387d8663ac4",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "UI-unknown-mark-drawn-as-off",
     "mutant": "shape-follow-filed-blind",
     "proof": "m11",
-    "commit": "8ccf7dd830b37f9e76c35bcbf23279a99251c9bf",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1284,21 +1284,21 @@
     "class": "DATA-rank-sold-before-it-was-read",
     "mutant": "shape-rank-unread-sold",
     "proof": "m1",
-    "commit": "b511158fe591a6d4fa6708d387212ad565c40c16",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "DATA-rank-sold-before-it-was-read",
     "mutant": "shape-rank-unread-a-stranger",
     "proof": "m1",
-    "commit": "b511158fe591a6d4fa6708d387212ad565c40c16",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "DATA-rank-sold-before-it-was-read",
     "mutant": "shape-rope-sells-while-reading",
     "proof": "m2",
-    "commit": "b511158fe591a6d4fa6708d387212ad565c40c16",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1319,7 +1319,7 @@
     "class": "DATA-marks-known-from-the-pages",
     "mutant": "shape-darkroom-save-inked-unread",
     "proof": "m11",
-    "commit": "9b4502dabdc257fc2a95308e05bb844563c0ff9f",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1396,7 +1396,7 @@
     "class": "LOOK-the-reel-lit-as-noise",
     "mutant": "shape-reel-beam-returns",
     "proof": "m1",
-    "commit": "b40fded90e94ee7e51f0e1cd5999d503d3219adb",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1452,14 +1452,14 @@
     "class": "SPEED-a-mark-redraws-the-words",
     "mutant": "shape-row-handlers-made-anew",
     "proof": "m1",
-    "commit": "6b259339d66ec1535c8d30c4aacb765d9f6e33dd",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-mark-redraws-the-words",
     "mutant": "shape-words-unmemoised",
     "proof": "m1",
-    "commit": "6b259339d66ec1535c8d30c4aacb765d9f6e33dd",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1718,14 +1718,14 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-log-critiques-after-record",
     "proof": "m3",
-    "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-log-unseeded",
     "proof": "m1",
-    "commit": "2aa2f068db25961dcef817da535f443f8c5b392d",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1739,7 +1739,7 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-log-failure-drops-card",
     "proof": "m4",
-    "commit": "6781a3b80eaf5c8813730fce325951a1ead0c2d4",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1760,7 +1760,7 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-person-offline-told-late",
     "proof": "m8",
-    "commit": "6781a3b80eaf5c8813730fce325951a1ead0c2d4",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1809,7 +1809,7 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-stack-unseeded-from-card",
     "proof": "m13",
-    "commit": "57f864093fdba60c4f8ae397ccceaedeea034862",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1858,7 +1858,7 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-room-read-every-column",
     "proof": "m16",
-    "commit": "2d55c235c8248687e6c43de58c90858736ffee7b",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1872,14 +1872,14 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-year-forgotten-when-closed",
     "proof": "m18",
-    "commit": "62285ad33c772c6b0af0d0562c750eaa0209b0e9",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-year-never-read-again",
     "proof": "m18",
-    "commit": "cc462e5d2289de7881de12cae562d98feade6b6a",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1914,21 +1914,21 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-reel-asks-all-at-once",
     "proof": "m25",
-    "commit": "321c3c09ef6c3c5f7970208a7e09ef4f26b7ef05",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-reel-stacks-held-when-turned",
     "proof": "m27",
-    "commit": "321c3c09ef6c3c5f7970208a7e09ef4f26b7ef05",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-reel-never-asks-after",
     "proof": "m26",
-    "commit": "321c3c09ef6c3c5f7970208a7e09ef4f26b7ef05",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1949,7 +1949,7 @@
     "class": "SPEED-a-screen-takes-a-store-whole",
     "mutant": "shape-film-page-takes-the-session-whole",
     "proof": "m1",
-    "commit": "9e143413fc4e716e09a0cfda8c93baa0049f9186",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -1998,7 +1998,7 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-paper-spinner-over-kept",
     "proof": "m35",
-    "commit": "d0b2abd6e1f4dcd6a1a3a3bef17eb7b117e46f92",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -2026,7 +2026,7 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-film-page-drawn-in-one-commit",
     "proof": "m36",
-    "commit": "49e26993e1230618301da6f9197a226370c41b7d",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -2166,21 +2166,21 @@
     "class": "UI-notice-opens-elsewhere",
     "mutant": "shape-door-not-met",
     "proof": "m2",
-    "commit": "af9f5b6fbaab8223af4b4848156270fde08b3674",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "UI-notice-opens-elsewhere",
     "mutant": "shape-door-met-by-a-guest",
     "proof": "m3",
-    "commit": "af9f5b6fbaab8223af4b4848156270fde08b3674",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
     "class": "UI-notice-opens-elsewhere",
     "mutant": "shape-door-met-twice",
     "proof": "m4",
-    "commit": "af9f5b6fbaab8223af4b4848156270fde08b3674",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   },
   {
@@ -2251,6 +2251,48 @@
     "mutant": "shape-16k-phone-unproven",
     "proof": "m1",
     "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-stranger-at-a-members-door",
+    "mutant": "shape-guest-sold-a-rank",
+    "proof": "m1",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-stranger-at-a-members-door",
+    "mutant": "shape-settings-returns-to-the-lobby",
+    "proof": "m2",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-stranger-at-a-members-door",
+    "mutant": "shape-sign-in-draws-the-screen-twice",
+    "proof": "m3",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-stranger-at-a-members-door",
+    "mutant": "shape-cover-host-unread",
+    "proof": "m4",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-stranger-at-a-members-door",
+    "mutant": "shape-amend-first-page-taken-whole",
+    "proof": "m6",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-stranger-at-a-members-door",
+    "mutant": "shape-reviews-of-no-film",
+    "proof": "m7",
+    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
     "verdict": "caught"
   }
 ]
