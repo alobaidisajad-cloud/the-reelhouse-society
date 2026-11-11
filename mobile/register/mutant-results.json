@@ -556,7 +556,7 @@
     "class": "E2E-record-not-kept",
     "mutant": "shape-variant-record-not-kept",
     "proof": "m1",
-    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
+    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
     "verdict": "caught"
   },
   {
@@ -605,14 +605,14 @@
     "class": "E2E-route-never-opened",
     "mutant": "shape-walk-captures-unwaited",
     "proof": "m3",
-    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
+    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
     "verdict": "caught"
   },
   {
     "class": "E2E-system-mode-unseen",
     "mutant": "shape-moment-taps-dropped",
     "proof": "m2",
-    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
+    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
     "verdict": "caught"
   },
   {
@@ -640,7 +640,7 @@
     "class": "E2E-system-mode-unseen",
     "mutant": "shape-keyboard-never-on",
     "proof": "m3",
-    "commit": "7c7871b1961dcd998b45a56cb4f4bd9475880a44",
+    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
     "verdict": "caught"
   },
   {
@@ -2222,7 +2222,7 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-install-before-the-runners-own",
     "proof": "m1",
-    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
+    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
     "verdict": "caught"
   },
   {
@@ -2243,14 +2243,14 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-tablet-keeps-its-lid",
     "proof": "m7",
-    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
+    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
     "verdict": "caught"
   },
   {
     "class": "RUNTIME-native-library-on-16k-pages",
     "mutant": "shape-16k-phone-unproven",
     "proof": "m1",
-    "commit": "f55cd04a7e41c0f9f3602b1856fb45bfcf2c69a1",
+    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
     "verdict": "caught"
   },
   {
@@ -2293,6 +2293,20 @@
     "mutant": "shape-reviews-of-no-film",
     "proof": "m7",
     "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-stranger-at-a-members-door",
+    "mutant": "shape-door-left-unwalked",
+    "proof": "m7",
+    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
+    "verdict": "caught"
+  },
+  {
+    "class": "RUNTIME-native-library-on-16k-pages",
+    "mutant": "shape-16k-phone-starved",
+    "proof": "m1",
+    "commit": "9a163c80f4df7e1deb32106c9051b8db4f81627d",
     "verdict": "caught"
   }
 ]
