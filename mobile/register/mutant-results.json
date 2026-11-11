@@ -2238,5 +2238,12 @@
     "proof": "m5",
     "commit": "176449117f53b829d301577694a108a03aba3f0b",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-phone-only-as-the-runner-has-it",
+    "mutant": "shape-tablet-keeps-its-lid",
+    "proof": "m7",
+    "commit": "c5b712eeb3d68d6b3de99b89a0d69e5aa4172672",
+    "verdict": "caught"
   }
 ]
