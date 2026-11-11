@@ -188,6 +188,10 @@ jobs:
         if: ${{ !cancelled() && steps.seed.outcome == 'success' }}
         env:
           LOAD_DB_URL: postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
+          # The house as seeded, for the summary; and the plans of the six slowest reads, within
+          # budget too: what a speed batch studies (audit A-SCALE-PLAN).
+          LOAD_MEMBERS: ${{ inputs.members || '100000' }}
+          LOAD_PLAN_SLOWEST: '6'
         run: node mobile/e2e/load/probe.mjs
 
       # The lock report goes with the train: the user reads it before applying.

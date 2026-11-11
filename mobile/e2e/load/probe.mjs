@@ -169,12 +169,15 @@ function slowestInside(log) {
 }
 
 const rows = [];
+/** Each read's median, for the slowest's plans below. */
+const medians = [];
 let over = 0;
 for (const p of PROBES) {
   const budget = p.budget ?? BUDGET;
   try {
     const t = time(p);
     const median = t[2];
+    medians.push({ p, median });
     const ok = median <= budget;
     if (!ok) over++;
     rows.push(`| ${p.screen} | ${p.what} | ${median.toFixed(1)} | ${t[4].toFixed(1)} | ${budget} | ${ok ? '✓' : '✗ OVER'} |`);
@@ -193,7 +196,17 @@ for (const p of PROBES) {
   }
 }
 
+// The plans of the slowest reads, within budget too, when the run asks (LOAD_PLAN_SLOWEST=n): what a
+// speed batch studies, since the bar is the fastest a read can be (audit A-SCALE-PLAN).
+const slowest = Number(process.env.LOAD_PLAN_SLOWEST ?? 0);
+if (slowest > 0) {
+  for (const { p, median } of [...medians].sort((a, b) => b.median - a.median).slice(0, slowest)) {
+    console.log(`\n══ ${p.screen} · ${p.what}: median ${median.toFixed(1)} ms ══\n${plan(p)}`);
+  }
+}
+
+const members = Number(process.env.LOAD_MEMBERS ?? 100000).toLocaleString('en-US');
 const table = ['| Screen | Read | Median ms | Worst ms | Budget | |', '|---|---|---|---|---|---|', ...rows].join('\n');
-if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Load: 100,000 members\n\n${table}\n`);
+if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Load: ${members} members\n\n${table}\n`);
 console.log(`\n${PROBES.length - over} of ${PROBES.length} within budget`);
 process.exit(over ? 1 : 0);
