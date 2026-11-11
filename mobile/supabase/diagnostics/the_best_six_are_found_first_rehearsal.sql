@@ -4,7 +4,7 @@
 --   psql "$SUPABASE_DB_URL" -X -q -t -A -f mobile/supabase/diagnostics/the_best_six_are_found_first_rehearsal.sql
 --
 -- An index built CONCURRENTLY cannot be built inside this file's transaction,
--- so the train builds it alone, and this checks it holds: the index is there and
+-- so the train built it alone on production (2026-11-11), and this checks it still holds: the index is there and
 -- whole, and a member's six highest rated, as the app asks for them
 -- (ProfileDataService.fetchHighestRated), are read through it. Sequential scans
 -- are switched off for the plan alone, so a plan that cannot use the index shows

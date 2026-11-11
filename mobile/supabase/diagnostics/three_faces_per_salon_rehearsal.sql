@@ -3,10 +3,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 --   node mobile/supabase/diagnostics/rehearse.cjs three_faces_per_salon_rehearsal.sql --with-train
 --
--- Every salon's faces, as its host sees them, are read by get_salon_member_faces as it stands;
--- then the train applies 20261111_04 here (with_train), and every salon's faces are read again:
--- the same three, in the same order, for every salon (on the load lab's full house too, where
--- the train runs this before it applies anything). A member who neither sits in a salon nor
+-- 20261111_04 is applied on production (2026-11-11), its faces held there to the old function's
+-- before it was applied; this shows it still holds there: every salon's faces, as its host sees
+-- them, read twice the same, never more than three, each salon's members read in the order they
+-- joined. A member who neither sits in a salon nor
 -- hosts it is shown none of its faces. Read each NOTICE as case|expected|got ; the last line is
 -- the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
@@ -33,10 +33,6 @@ BEGIN
 END $$;
 SELECT pg_temp.rh_read_faces('before') AS done \gset rh_
 
--- The train applies it here first (with_train); a sealed copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261111_04_three_faces_per_salon.sql
-\endif
 
 SELECT pg_temp.rh_read_faces('after') AS done \gset rh_
 

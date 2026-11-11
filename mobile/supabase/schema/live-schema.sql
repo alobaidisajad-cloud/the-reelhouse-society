@@ -2449,24 +2449,27 @@ CREATE FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[]) RETURNS TABLE
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH ranked AS (
-    SELECT
-      lm.lounge_id, p.username, p.avatar_url,
-      row_number() OVER (PARTITION BY lm.lounge_id ORDER BY lm.joined_at ASC, lm.user_id ASC) AS rn
-    FROM public.lounge_members lm
-    JOIN public.profiles p ON p.id = lm.user_id
-    WHERE lm.lounge_id = ANY(p_lounge_ids)
-      AND lm.status = 'approved'
-      AND p.username IS NOT NULL
-      AND NOT public.is_hidden_by(auth.uid(), lm.user_id)
-      AND (
-        EXISTS (SELECT 1 FROM public.lounge_members me
-                WHERE me.lounge_id = lm.lounge_id AND me.user_id = auth.uid() AND me.status = 'approved')
-        OR auth.uid() = (SELECT creator_id FROM public.lounges WHERE id = lm.lounge_id)
-      )
-  )
-  SELECT lounge_id, username, avatar_url, rn::integer
-  FROM ranked WHERE rn <= 3 ORDER BY lounge_id, rn;
+  SELECT r.id, f.username, f.avatar_url, f.rn::integer
+  FROM (SELECT DISTINCT x.id FROM unnest(p_lounge_ids) AS x(id)) r
+  CROSS JOIN LATERAL (
+    SELECT first3.username, first3.avatar_url,
+           row_number() OVER (ORDER BY first3.joined_at, first3.user_id) AS rn
+    FROM (
+      SELECT lm.user_id, lm.joined_at, p.username, p.avatar_url
+      FROM public.lounge_members lm
+      JOIN public.profiles p ON p.id = lm.user_id
+      WHERE lm.lounge_id = r.id
+        AND lm.status = 'approved'
+        AND p.username IS NOT NULL
+        AND NOT public.is_hidden_by(auth.uid(), lm.user_id)
+      ORDER BY lm.joined_at ASC, lm.user_id ASC
+      LIMIT 3
+    ) first3
+  ) f
+  WHERE EXISTS (SELECT 1 FROM public.lounge_members me
+                WHERE me.lounge_id = r.id AND me.user_id = auth.uid() AND me.status = 'approved')
+     OR auth.uid() = (SELECT l.creator_id FROM public.lounges l WHERE l.id = r.id)
+  ORDER BY r.id, f.rn;
 $$;
 
 
@@ -6001,6 +6004,7 @@ CREATE TABLE public.notifications (
     body text,
     metadata jsonb,
     group_key text,
+    pushed_at timestamp with time zone,
     CONSTRAINT notifications_body_len CHECK ((char_length(body) <= 1000)),
     CONSTRAINT notifications_from_username_len CHECK ((char_length(from_username) <= 100)),
     CONSTRAINT notifications_group_key_len CHECK ((char_length(group_key) <= 200)),
@@ -7036,6 +7040,13 @@ CREATE INDEX idx_logs_social_pulse_covering ON public.logs USING btree (created_
 
 
 --
+-- Name: idx_logs_user_highest_rated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_logs_user_highest_rated ON public.logs USING btree (user_id, rating DESC, watched_date DESC NULLS LAST, id DESC) WHERE (rating >= (4)::numeric);
+
+
+--
 -- Name: idx_logs_user_id_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7054,6 +7065,13 @@ CREATE INDEX idx_logs_user_watched_id ON public.logs USING btree (user_id, watch
 --
 
 CREATE INDEX idx_logs_watched_date ON public.logs USING btree (watched_date DESC);
+
+
+--
+-- Name: idx_lounge_members_faces; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_lounge_members_faces ON public.lounge_members USING btree (lounge_id, joined_at, user_id) WHERE (status = 'approved'::text);
 
 
 --
@@ -7718,7 +7736,7 @@ CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.lounges FOR EACH ROW E
 -- Name: notifications a_keeps_what_it_is; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.notifications FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'type', 'from_user_id', 'from_username', 'related_lounge_id', 'film_id', 'poster_path', 'title', 'body', 'message', 'metadata', 'group_key', 'created_at');
+CREATE TRIGGER a_keeps_what_it_is BEFORE UPDATE ON public.notifications FOR EACH ROW EXECUTE FUNCTION public.a_row_keeps_what_it_is('user_id', 'type', 'from_user_id', 'from_username', 'related_lounge_id', 'film_id', 'poster_path', 'title', 'body', 'message', 'metadata', 'group_key', 'created_at', 'pushed_at');
 
 
 --

@@ -174,14 +174,34 @@ section('notify-push — the database\'s push sender, behind its own secret');
          (${literal(two.id)}, 'ExponentPushToken[fn-live-1]', 'ios'),
          (${literal(two.id)}, 'ExpoPushToken[fn-Dead-2]', 'android'),
          (${literal(two.id)}, 'not-an-expo-token', 'web');`);
-  const record = { id: randomUUID(), user_id: two.id, type: 'follow', from_username: one.username, message: 'is following you.' };
+  // A notice as the house writes it (its trigger's own call goes to production's address here, which
+  // the seal blocks): notify-push is named its id, and reads the rest from the house.
+  const write = (userId, { ago = '0 seconds', message = 'is following you.' } = {}) => {
+    const id = randomUUID();
+    sql(`INSERT INTO public.notifications (id, user_id, type, from_username, from_user_id, message, created_at)
+           VALUES (${literal(id)}, ${literal(userId)}, 'follow', ${literal(one.username)}, ${literal(one.id)}, ${literal(message)}, now() - interval ${literal(ago)})`);
+    return id;
+  };
+  const push = (body, secret = SECRET.shared) => fn('notify-push', { body, auth: null, headers: secret ? { 'x-function-secret': secret } : {} });
+  const record = { id: write(two.id), user_id: two.id, type: 'follow', from_username: one.username, message: 'is following you.' };
 
   const bare = await fn('notify-push', { body: { record }, auth: null });
-  const wrong = await fn('notify-push', { body: { record }, auth: null, headers: { 'x-function-secret': `${SECRET.shared.slice(0, -1)}x` } });
+  const wrong = await push({ record }, `${SECRET.shared.slice(0, -1)}x`);
   check(bare.status === 401 && wrong.status === 401, 'refused without its secret, and with a wrong one of the same length', `${said(bare)} / ${said(wrong)}`);
   check((await drain()).length === 0, 'and Expo is never asked');
 
-  const sent = await fn('notify-push', { body: { type: 'INSERT', table: 'notifications', record }, auth: null, headers: { 'x-function-secret': SECRET.shared } });
+  await scriptStandIns({ expo: { status: 500 } });
+  const down = await push({ type: 'INSERT', table: 'notifications', record });
+  await drain();
+  check(down.status === 500, 'Expo failing is a failure, never "delivered"', said(down));
+  check(sql(`SELECT coalesce(pushed_at::text, 'waiting') FROM public.notifications WHERE id = ${literal(record.id)}`) === 'waiting',
+    'and the notice is let go, to be pushed by a later call');
+  // Expo answers again: a script merges, so its failure is taken back by name.
+  await scriptStandIns({ expo: {} });
+
+  // The caller's words are never pushed: the house's are, to the member the house wrote to.
+  const forged = { ...record, user_id: three.id, from_username: 'the_house', message: 'Your account is locked: sign in at reelhouse.example.' };
+  const sent = await push({ type: 'INSERT', table: 'notifications', record: forged });
   const seen = await drain();
   const messages = seen[0] ? JSON.parse(seen[0].body) : [];
   check(sent.status === 200 && sent.json?.delivered === 1 && sent.json?.pruned === 1, 'one delivered, the dead token pruned', said(sent));
@@ -190,16 +210,18 @@ section('notify-push — the database\'s push sender, behind its own secret');
   await drain();
   check(tokenless.status === 401, 'and the Expo stand-in refuses a push without it, as Expo does', `HTTP ${tokenless.status}`);
   check(seen.length === 1 && messages.length === 2 && messages.every((m) => m.title === 'A New Follower' && m.body === `@${one.username} is following you.` && m.data?.notificationId === record.id),
-    'Expo is sent one message per Expo token (never the other), titled by kind, the sender named', JSON.stringify(messages).slice(0, 300));
+    'Expo is sent one message per Expo token (never the other), titled by kind, in the house\'s words, never the caller\'s', JSON.stringify(messages).slice(0, 300));
   check(sql(`SELECT string_agg(token, ',' ORDER BY token) FROM public.push_tokens WHERE user_id = ${literal(two.id)}`) === 'ExponentPushToken[fn-live-1],not-an-expo-token',
     'the token Expo called dead is gone, the others kept');
 
-  await scriptStandIns({ expo: { status: 500 } });
-  const down = await fn('notify-push', { body: { record }, auth: null, headers: { 'x-function-secret': SECRET.shared } });
-  await drain();
-  check(down.status === 500, 'Expo failing is a failure, never "delivered"', said(down));
+  const again = await push({ record });
+  check(again.status === 200 && again.json?.skipped && (await drain()).length === 0, 'a notice is pushed once: asked again, Expo is not', said(again));
+  const unknown = await push({ record: { ...record, id: randomUUID() } });
+  check(unknown.status === 200 && unknown.json?.skipped && (await drain()).length === 0, 'a notice the house never wrote is pushed nothing', said(unknown));
+  const stale = await push({ record: { ...record, id: write(two.id, { ago: '1 hour' }) } });
+  check(stale.status === 200 && stale.json?.skipped && (await drain()).length === 0, 'nor one written an hour ago: a late call is no delivery', said(stale));
 
-  const lonely = await fn('notify-push', { body: { record: { ...record, user_id: three.id } }, auth: null, headers: { 'x-function-secret': SECRET.shared } });
+  const lonely = await push({ record: { ...record, id: write(three.id), user_id: three.id } });
   check(lonely.status === 200 && lonely.json?.delivered === 0, 'a member with no device is no error', said(lonely));
   await drain();
 

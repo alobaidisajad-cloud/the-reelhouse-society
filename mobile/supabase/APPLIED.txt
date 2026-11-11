@@ -229,3 +229,7 @@ society_report_system.sql
 20261109_01_a_part_counts_its_words.sql
 20261109_02_the_corridor_in_one_trip.sql
 20261109_03_a_critique_opens_what_it_is_on.sql
+20261111_01_a_push_is_sent_once.sql
+20261111_02_the_faces_are_found_in_order.sql
+20261111_03_the_best_six_are_found_first.sql
+20261111_04_three_faces_per_salon.sql

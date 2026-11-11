@@ -219,7 +219,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/functions/place.mjs | 2026-10-16 | edited: serves send-email too (SERVED_UNDEPLOYED), names paytabs-handler with why not (NOT_SERVED); Resend's address and the Expo access token set; Auth mail as production's (withMail: confirmations, 300 an hour, the House's templates) |
 | e2e/functions/seal-vendors.sh | 2026-10-16 | new: the services the functions call go nowhere from any container, after the functions are loaded |
 | e2e/functions/stand-ins.mjs | 2026-10-16 | edited: Resend and Sentry stood in for; Expo refuses a push without the access token |
-| e2e/functions/suites.mjs | 2026-10-16 | edited: its means from world.mjs; send-email asked; Auth stopped (the same 503 for a known and an unknown handle); no key at all against the public key alone, as production's gateway answers; the push trigger changed in its address alone |
+| e2e/functions/suites.mjs | 2026-11-11 | edited: notify-push claims a notice once; a copied secret pushes nothing new; edited: its means from world.mjs; send-email asked; Auth stopped (the same 503 for a known and an unknown handle); no key at all against the public key alone, as production's gateway answers; the push trigger changed in its address alone |
 | e2e/functions/warm.mjs | 2026-10-16 | edited: send-email loaded too; the CDN named as e2e.yml names it |
 | e2e/functions/world.mjs | 2026-10-16 | new: the means suites.mjs and payments.mjs share: a call as callers make it, a statement as the house, the stand-ins steered and read back, a member made, each check said and the verdict |
 | e2e/glide-log-level.mjs | 2026-10-08 | written: the APK hands Glide level 6 (ERROR), once, as a constant |
@@ -1427,7 +1427,7 @@ without one). "Read" is the day its comments were last read against its code.
 | supabase/diagnostics/rehearse.cjs | 2026-10-15 | new |
 | supabase/diagnostics/train.cjs | 2026-10-22 | edited: each index built CONCURRENTLY first, alone, outside any transaction; one left not whole dropped and built once more; probed by its rehearsal of its name before any rehearsal; CI passed on these exact database files first (MUST_PASS, read with gh) |
 | supabase/functions/fetch-rss/index.ts | 2026-10-16 | edited: the limit holds until the body is read; the house named as it is; the per-address count bounded; the stand-in's address can be named by the settings |
-| supabase/functions/notify-push/index.ts | 2026-10-30 | edited: v5: each message names its kind's Android channel; edited: Expo's address can be named by the settings; each chunk sent within a time limit; a prune that failed is said, not counted |
+| supabase/functions/notify-push/index.ts | 2026-11-11 | edited: v6, the notice read by its id with the house key and claimed once (pushed_at), released on a failure; edited: v5: each message names its kind's Android channel; edited: Expo's address can be named by the settings; each chunk sent within a time limit; a prune that failed is said, not counted |
 | supabase/functions/_shared/storeRecord.ts | 2026-10-16 | edited: the store's address can be named by the settings (RevenueCat's own by default); its whole answer read within a time limit |
 | supabase/functions/revenuecat-webhook/decide.ts | 2026-10-03 | rewritten: an event names whom to read again (both sides of a transfer), never what they hold |
 | supabase/functions/revenuecat-webhook/index.ts | 2026-10-16 | edited: the store's address from the settings |
@@ -1720,3 +1720,4 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/askIn.ts | 2026-11-11 | new: a stranger sent to the sign-in from where they stand |
 | src/utils/signInReturn.ts | 2026-11-11 | new: the one table of screens a sign-in returns to, and the doors it never does |
 | .maestro/subflows/sign_in_here.yaml | 2026-11-11 | new: the sign-in from a form a door opened, past the initiation |
+| src/utils/__tests__/aPushIsTheHousesOwn.guard.test.ts | 2026-11-11 | new: notify-push reads its notice by id and claims it once |

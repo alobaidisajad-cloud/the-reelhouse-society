@@ -12,6 +12,12 @@
  * omits the `x-function-secret` header, the request is rejected (fail closed).
  * The DB trigger reads the secret from Supabase Vault and sends it automatically.
  * Stale tokens that Expo reports as DeviceNotRegistered are pruned automatically.
+ * v6 (2026-11-11): the caller names a notice by its id, and nothing else is taken from it. The
+ * notice is read from the house and claimed (pushed_at, 20261111_01) while it is fresh, so it is
+ * pushed once, in its own words. The secret travels in the trigger's request, which waits in
+ * pg_net's queue where any role that can log in may read it (Supabase cannot narrow pg_net's grants
+ * per project, SU-546605); whoever reads it can now push only a notice already due, never words of
+ * their own. A send Expo refused lets the claim go.
  *
  * v5 (2026-10-30): each message names its kind's Android channel (KIND_CHANNEL), which the app
  * creates at start; a kind with none goes to 'default'.
@@ -41,6 +47,12 @@ const EXPO_ACCESS_TOKEN = Deno.env.get('EXPO_ACCESS_TOKEN') || '' // optional
 const EXPO_PUSH_URL = Deno.env.get('EXPO_PUSH_URL') || 'https://exp.host/--/api/v2/push/send'
 // How long Expo may take to take one chunk, its answer read: past it, the send failed.
 const EXPO_LIMIT_MS = 10_000
+// How long after it was written a notice may be pushed: the trigger calls at once, and a call later
+// than this is no delivery of it.
+const PUSH_WINDOW_MS = 15 * 60_000
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+/** What a push is made of, read from the house: never the caller's words. */
+const NOTICE_COLUMNS = 'id, user_id, type, from_username, message, related_lounge_id'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -117,16 +129,26 @@ serve(async (req) => {
     })
   }
 
+  const admin = createClient(SUPABASE_URL, SERVICE_KEY)
+  // The notice this call claimed, let go again if its send fails.
+  let claimed: string | null = null
   try {
     const body = await req.json().catch(() => ({}))
-    const record: NotificationRecord = body?.record ?? body ?? {}
-    if (!record.user_id || !record.message) {
-      return new Response(JSON.stringify({ skipped: 'no user_id/message' }), {
+    const id = [body?.record?.id, body?.id].find((v) => typeof v === 'string' && UUID.test(v))
+    // Claimed while fresh, once: a second call for it, or a late one, pushes nothing.
+    const { data: record, error: claimError } = id
+      ? await admin.from('notifications')
+          .update({ pushed_at: new Date().toISOString() })
+          .eq('id', id).is('pushed_at', null).gte('created_at', new Date(Date.now() - PUSH_WINDOW_MS).toISOString())
+          .select(NOTICE_COLUMNS).maybeSingle<NotificationRecord>()
+      : { data: null, error: null }
+    if (claimError) throw claimError
+    if (!record?.id || !record.user_id || !record.message) {
+      return new Response(JSON.stringify({ skipped: 'no notice due a push' }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
-
-    const admin = createClient(SUPABASE_URL, SERVICE_KEY)
+    claimed = record.id
 
     // Recipient's device tokens.
     const { data: tokens, error } = await admin
@@ -203,6 +225,11 @@ serve(async (req) => {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
+    // Not sent: the notice is let go, so a later call may push it while it is fresh.
+    if (claimed) {
+      const { error: releaseError } = await admin.from('notifications').update({ pushed_at: null }).eq('id', claimed)
+      if (releaseError) console.error('[notify-push] the claim was not let go:', releaseError.code ?? releaseError.message)
+    }
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

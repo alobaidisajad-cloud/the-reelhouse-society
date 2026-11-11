@@ -3,6 +3,7 @@
 -- ════════════════════════════════════════════════════════════════════════════
 --   node mobile/supabase/diagnostics/rehearse.cjs a_push_is_sent_once_rehearsal.sql --with-train
 --
+-- 20261111_01 is applied on production (2026-11-11); this shows it still holds there.
 -- A notice is written for a member as the house writes one: it waits to be pushed (no pushed_at).
 -- The member marks it read, as every client does, and tries to mark it pushed too: it is read, and
 -- still waits. notify-push's claim (the service role, while the notice is fresh) takes it once: a
@@ -12,10 +13,6 @@
 \set ON_ERROR_STOP 1
 BEGIN;
 \ir rehearsal_kit.sql
--- The train applies it here first (with_train); a sealed copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261111_01_a_push_is_sent_once.sql
-\endif
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
