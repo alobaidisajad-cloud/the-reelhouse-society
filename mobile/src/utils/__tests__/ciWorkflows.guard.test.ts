@@ -282,6 +282,19 @@ it('the emulator finds every package it would download already installed, by a s
   }
 });
 
+it("the emulator has no keyboard of keys and no dock's lid, as a member's phone and tablet have none", () => {
+  // The Pixel Tablet's profile declares a keyboard and its lid: with hw.keyboard=no written and
+  // hw.keyboard.lid=yes kept, Android still read a keyboard and drew the screen's keyboard as a bar,
+  // then nothing (nightly 42800672252). Every hw.keyboard line goes, and both are written no.
+  const e2e = workflows.find((w) => w.file === 'e2e.yml')!;
+  const step = Object.values(e2e.wf.jobs).flatMap((j) => (j.steps ?? []) as RunStep[])
+    .find((s) => s.uses && actionOf(s.uses) === 'reactivecircus/android-emulator-runner')!;
+  const script = String((step.with as Record<string, unknown>)['pre-emulator-launch-script'] ?? '');
+  expect(script).toContain("sed -i '/^hw\\.keyboard/d'");
+  expect(script).toMatch(/hw\.keyboard=no\\n/);
+  expect(script).toMatch(/hw\.keyboard\.lid=no\\n/);
+});
+
 /**
  * Each Gradle run that downloads nothing itself, as `job › step` faults: it
  * passes android.builder.sdkDownload=false, after a step of its job that

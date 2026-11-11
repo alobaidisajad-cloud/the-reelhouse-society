@@ -2958,3 +2958,12 @@ mutants:
         find: "  const words = path.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');"
         replace: "  const words = path.replace(/[^A-Za-z0-9]+/g, '-');"
     proof: { file: e2e/__tests__/pushPresent.test.ts, test: "waits for the room as the app marks it: a member's file, a log, a salon, the notices sheet" }
+
+  - id: shape-tablet-keeps-its-lid
+    class: E2E-phone-only-as-the-runner-has-it
+    source: shape
+    edits:
+      - file: ../.github/workflows/e2e.yml
+        find: "          pre-emulator-launch-script: f=\"$ANDROID_AVD_HOME/test.avd/config.ini\"; sed -i '/^hw\\.keyboard/d' \"$f\" && printf 'hw.keyboard=no\\nhw.keyboard.lid=no\\n' >> \"$f\" && grep '^hw\\.keyboard' \"$f\""
+        replace: "          pre-emulator-launch-script: f=\"$ANDROID_AVD_HOME/test.avd/config.ini\"; sed -i '/^hw\\.keyboard *=/d' \"$f\" && echo 'hw.keyboard=no' >> \"$f\" && grep '^hw\\.keyboard' \"$f\""
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "the emulator has no keyboard of keys and no dock's lid, as a member's phone and tablet have none" }
