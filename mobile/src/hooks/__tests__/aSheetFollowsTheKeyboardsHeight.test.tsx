@@ -23,7 +23,7 @@ beforeEach(() => {
   listeners = {};
   jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, fn: Handler) => {
     (listeners[event] ??= []).push(fn);
-    return { remove: () => { listeners[event] = listeners[event].filter((f) => f !== fn); } };
+    return { remove: () => { listeners[event] = (listeners[event] ?? []).filter((f) => f !== fn); } };
   }) as never);
 });
 afterEach(() => {
