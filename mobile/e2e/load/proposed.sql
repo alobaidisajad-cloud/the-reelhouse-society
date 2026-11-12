@@ -124,10 +124,14 @@ $_$;
 -- table, and lists_title_trigram (built for this) is never used, because the
 -- OR with the handle and the empty search hides it. The same answer:
 --   · no search: the same walk as today;
---   · a search: the matches read by the trigram indexes (the title's, and the
---     authors' handles', then their stacks), sorted newest first BEFORE any
---     per-stack check, then checked lazily in that order until the page is
---     full (a word every stack has stops at 60, as the walk did).
+--   · a search of few matches (under 1,000, counted by the trigram indexes):
+--     the matches read by the trigram indexes (the title's, and the authors'
+--     handles', then their stacks), sorted newest first BEFORE any per-stack
+--     check, then checked lazily in that order until the page is full;
+--   · a search of many: today's walk, which stops at its page at once.
+-- Load 43284739569 (100k), the first form (matches always): a rare word 85.8 ->
+-- 7.7 ms, a handle 292.7 -> 4.4, but a word every stack has 6.5 -> 94.7 (all
+-- 20,000 sorted): hence the count, and the walk for many.
 -- Made under its own name, beside today's, so probe.mjs times both on the same
 -- runner in the same run (a rare word, a word every stack has, a handle); the
 -- migration, if it earns one, replaces get_filtered_stacks_auth_cursor_v2.
@@ -137,26 +141,51 @@ CREATE OR REPLACE FUNCTION public.get_filtered_stacks_proposed(p_search text DEF
     SET search_path TO 'public', 'pg_temp'
     AS $$
   WITH
-  -- The matches of a search, newest first, before anything is asked of them.
+  -- A search that matches many stacks walks them newest first, as with no search, and stops
+  -- at its page; one that matches few is read by its matches. Counted by the trigram indexes,
+  -- to 1,000 at most (load 43284739569: the walk 6.5 ms for a word every stack has and 292.7
+  -- for a handle; the matches 94.7 and 4.4).
+  many AS MATERIALIZED (
+    SELECT count(*) >= 1000 AS walk FROM (
+      SELECT l.id FROM lists l
+       WHERE COALESCE(p_search, '') <> '' AND l.is_private = false
+         AND l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+      UNION ALL
+      SELECT l.id FROM profiles pu JOIN lists l ON l.user_id = pu.id
+       WHERE COALESCE(p_search, '') <> '' AND l.is_private = false
+         AND pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+      LIMIT 1000
+    ) counted
+  ),
+  -- The matches of a few, newest first, before anything is asked of them.
   matched AS MATERIALIZED (
     SELECT m.id, m.created_at, m.user_id FROM (
       SELECT l.id, l.created_at, l.user_id
         FROM lists l
-       WHERE COALESCE(p_search, '') <> '' AND l.is_private = false
+       WHERE COALESCE(p_search, '') <> '' AND NOT (SELECT walk FROM many) AND l.is_private = false
          AND l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
       UNION
       SELECT l.id, l.created_at, l.user_id
         FROM profiles pu JOIN lists l ON l.user_id = pu.id
-       WHERE COALESCE(p_search, '') <> '' AND l.is_private = false
+       WHERE COALESCE(p_search, '') <> '' AND NOT (SELECT walk FROM many) AND l.is_private = false
          AND pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
     ) m
      WHERE p_cursor_created_at IS NULL OR (m.created_at, m.id) < (p_cursor_created_at, p_cursor_id)
      ORDER BY m.created_at DESC, m.id DESC
   ),
   page AS (
+    -- No search, or a search of many: today's walk, today's test of each stack.
     (SELECT l.id, l.created_at
        FROM lists l
-      WHERE COALESCE(p_search, '') = ''
+      WHERE (COALESCE(p_search, '') = '' OR (SELECT walk FROM many))
+        AND (
+          COALESCE(p_search, '') = ''
+          OR l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+          OR l.user_id IN (
+            SELECT pu.id FROM profiles pu
+             WHERE pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+          )
+        )
         AND l.is_private = false
         AND NOT COALESCE(l.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
         AND public.can_view_user_data(l.user_id)

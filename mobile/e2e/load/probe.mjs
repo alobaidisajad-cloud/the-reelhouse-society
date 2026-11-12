@@ -50,8 +50,9 @@ const PROBES = [
   // A word every stack has (the walk's best case, a search's worst), and a member's handle (the seed's 'm' || n).
   { screen: 'Reel', what: 'stacks, searched for a word every stack has', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('stack', false, 60)" },
   { screen: 'Reel', what: 'stacks, searched by an author\'s handle', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('m2001', false, 60)" },
-  // The same three, by the search under measurement (e2e/load/proposed.sql), when it is there.
-  ...(PROPOSED_STACKS ? [['stack 12', 'a rare word'], ['stack', 'a word every stack has'], ['m2001', 'an author\'s handle']].map(([q, what]) => (
+  { screen: 'Reel', what: 'stacks, searched by a handle many members share', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('m1', false, 60)" },
+  // The same, by the search under measurement (e2e/load/proposed.sql), when it is there.
+  ...(PROPOSED_STACKS ? [['stack 12', 'a rare word'], ['stack', 'a word every stack has'], ['m2001', 'an author\'s handle'], ['m1', 'a handle many members share']].map(([q, what]) => (
     { screen: 'Reel', what: `stacks, searched for ${what}, as proposed`, as: MEMBER, sql: `SELECT * FROM public.get_filtered_stacks_proposed('${q.replace(/'/g, "''")}', false, 60)` })) : []),
   // A member's file
   { screen: 'Profile', what: 'the counts, of the whale', as: MEMBER, sql: `SELECT public.get_profile_counts('${WHALE}')` },
@@ -231,6 +232,7 @@ if (PROPOSED_STACKS) {
     : '';
   const cases = [
     ["''", 'no search'], ["'stack 12'", 'a rare word'], ["'stack'", 'a word every stack has'], ["'m2001'", 'a handle'],
+    ["'m1'", 'a handle many share'],
     ["'stack 1', true", 'the following filter'],
     ...(after ? [[`'stack', false, 60, '${after}'::timestamptz, '${first[29]}'::uuid`, 'the next page']] : []),
   ];
