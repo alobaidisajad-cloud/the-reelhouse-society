@@ -15,6 +15,9 @@
 --   · the films a member logged are joined once, for the genres and the
 --     obscurity both (today twice);
 --   · the autopsy is read once per log.
+-- Load 43255933243 (100k): 73.2 -> 60.7 ms. Its plan: the logs 11.9 ms, the
+-- films' 10,000 lookups 21.9, the genres' COUNT(DISTINCT) a sort of 20,000
+-- names, ~20 ms: now grouped (a hash of ~20), measured on the next push.
 -- ════════════════════════════════════════════════════════════════════════════
 CREATE OR REPLACE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS jsonb
     LANGUAGE sql STABLE SECURITY DEFINER
@@ -57,7 +60,11 @@ CREATE OR REPLACE FUNCTION public.get_public_profile_analytics(p_user_id uuid) R
           (SELECT coalesce(max(n), 0) FROM (
              SELECT COUNT(*) AS n FROM user_logs GROUP BY on_day
            ) days) AS busiest_day_count,
-          (SELECT COUNT(DISTINCT g) FROM films_read, LATERAL unnest(films_read.genres) AS g) AS genres_count
+          -- Grouped, not sorted: COUNT(DISTINCT) sorted the whale's 20,000 genre names to find ~20.
+          (SELECT COUNT(*) FROM (
+             SELECT g FROM films_read, LATERAL unnest(films_read.genres) AS g
+             WHERE g IS NOT NULL GROUP BY g
+           ) kinds) AS genres_count
         FROM user_logs
       ),
       decades AS (
