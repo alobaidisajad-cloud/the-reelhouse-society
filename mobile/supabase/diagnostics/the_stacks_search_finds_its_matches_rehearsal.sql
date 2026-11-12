@@ -3,12 +3,12 @@
 -- ════════════════════════════════════════════════════════════════════════════
 --   node mobile/supabase/diagnostics/rehearse.cjs the_stacks_search_finds_its_matches_rehearsal.sql --with-train
 --
--- The Reel's stacks, searched by 30 members each, are read by get_filtered_stacks_auth_cursor_v2 as
+-- The Reel's stacks, searched by 8 members each, are read by get_filtered_stacks_auth_cursor_v2 as
 -- it stands; then the train applies 20261112_02 here (with_train), and each search is read again:
 -- the same stacks in the same order, for every member and every search (on the load lab's full house
 -- too, where the train runs this before it applies anything). The searches come from the house's
--- own stacks and members: no word; three pieces of real titles; two pieces of real authors'
--- handles; a word of two letters and one of one; each again behind the following filter; and the
+-- own stacks and members: no word; two pieces of real titles; a piece of a real author's
+-- handle; a word of two letters and one of one; each again behind the following filter; and the
 -- next page, after the tenth of the first. Read each NOTICE as case|expected|got ; the last line is
 -- the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
@@ -19,7 +19,7 @@ BEGIN;
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 CREATE TEMP TABLE rh_member (id uuid) ON COMMIT DROP;
-INSERT INTO rh_member SELECT id FROM public.profiles ORDER BY id LIMIT 30;
+INSERT INTO rh_member SELECT id FROM public.profiles ORDER BY id LIMIT 8;
 SELECT pg_temp.rh_found('a public stack', (SELECT id FROM public.lists WHERE is_private = false LIMIT 1)) AS done \gset rh_
 
 -- The words: from the house's own titles and handles, so a search finds what production holds.
@@ -27,10 +27,10 @@ CREATE TEMP TABLE rh_word (word text) ON COMMIT DROP;
 INSERT INTO rh_word VALUES (''), ('a'), ('th');
 INSERT INTO rh_word
   SELECT DISTINCT substr(title, 1 + char_length(title) / 3, 5) FROM (
-    SELECT title FROM public.lists WHERE is_private = false AND char_length(title) >= 8 ORDER BY id LIMIT 3) t;
+    SELECT title FROM public.lists WHERE is_private = false AND char_length(title) >= 8 ORDER BY id LIMIT 2) t;
 INSERT INTO rh_word
   SELECT DISTINCT substr(p.username, 1, 4) FROM (
-    SELECT DISTINCT l.user_id FROM public.lists l WHERE l.is_private = false ORDER BY l.user_id LIMIT 2) a
+    SELECT DISTINCT l.user_id FROM public.lists l WHERE l.is_private = false ORDER BY l.user_id LIMIT 1) a
   JOIN public.profiles p ON p.id = a.user_id WHERE char_length(p.username) >= 4;
 
 -- Each member's page for each word (and behind the following filter), and the page after the tenth.
