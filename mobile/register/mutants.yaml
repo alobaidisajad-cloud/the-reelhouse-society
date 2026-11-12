@@ -3120,3 +3120,12 @@ mutants:
         find: 'export const NEVER_LEFT_MS = 5;'
         replace: 'export const NEVER_LEFT_MS = 5000;'
     proof: { file: e2e/__tests__/attempt.test.ts, test: 'not when a request left the phone (it took time, or was answered), nor when Android gave the network back' }
+
+  - id: shape-shipped-keyboard-judged-as-ours
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: 'if [ $room_rc -ne 0 ] && [ -n "${E2E_OLD_CLIENT:-}" ]; then'
+        replace: 'if [ $room_rc -ne 0 ] && [ -z "${E2E_OLD_CLIENT:-}" ]; then'
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "reports its keyboard's room, and fails only a run of this app on it" }

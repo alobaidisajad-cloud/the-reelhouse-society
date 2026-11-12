@@ -116,6 +116,7 @@ classes:
       - { kind: static, file: e2e/__tests__/keyboardRoom.test.ts, test: "every probe is judged on the letters, then again after the emoji key, with the panel checked each time" }
       - { kind: static, file: e2e/__tests__/keyboardRoom.test.ts, test: "every probe judges the field the member types in and the press that sends or saves it" }
       - { kind: running, file: src/hooks/__tests__/aSheetFollowsTheKeyboardsHeight.test.tsx, test: "rises by the keyboard, and follows each new height it says while open" }
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "reports its keyboard's room, and fails only a run of this app on it" }
     fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers)"
     places: [emulator]
 

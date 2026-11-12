@@ -517,7 +517,11 @@ for probe in ${probes[@]+"${probes[@]}"}; do
   done
 done
 keys_off
-if [ $room_rc -ne 0 ]; then
+if [ $room_rc -ne 0 ] && [ -n "${E2E_OLD_CLIENT:-}" ]; then
+  # A shipped client's layout is that build's, never to change: its run asks whether it still works
+  # against this database, as its flows say. Its keyboard's room is reported, as its screen times are.
+  node mobile/e2e/annotate.mjs "The keyboard's room in ${E2E_OLD_CLIENT} is reported (its layout is that build's)" "$OUT/keyboard-room.txt" warning
+elif [ $room_rc -ne 0 ]; then
   rc=1
   node mobile/e2e/annotate.mjs "The keyboard covers what a member needs" "$OUT/keyboard-room.txt"
 else

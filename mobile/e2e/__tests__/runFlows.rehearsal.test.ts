@@ -115,6 +115,7 @@ say() { echo "$(date +'%m-%d %H:%M:%S.%3N')  $1  $(( $1 + 20 )) $2 $3: $4" >> "$
 # The keyboard's letters while a field's tap left them up, its emoji panel after the emoji key, each
 # with the key Gboard names on it (?123, ABC); no keyboard at all otherwise.
 if [ "$1" = hierarchy ]; then
+  [ -f "$T/state/no-keys" ] && { echo '{"attributes":{},"children":[]}'; exit 0; }
   case "$(cat "$T/state/panel" 2>/dev/null)" in
     letters) echo '{"attributes":{},"children":[{"attributes":{"accessibilityText":"Symbol keyboard","bounds":"[0,2200][120,2300]"}}]}' ;;
     emoji) echo '{"attributes":{},"children":[{"attributes":{"accessibilityText":"Letter keyboard","bounds":"[0,2200][120,2300]"}}]}' ;;
@@ -406,6 +407,18 @@ describe('a shipped client\'s own crash (E2E_OLD_CLIENT, from the real old-clien
     expect(said).toContain('crash during c_flow: java.lang.IllegalStateException: a rehearsed crash');
     expect(said).toContain(`${OWN}: during a_flow:`);
     always(r);
+  });
+
+  it('reports its keyboard\'s room, and fails only a run of this app on it', async () => {
+    // A keyboard whose panel cannot be named: the room is not judged clear.
+    const old = await rehearse(['a_flow'], {}, { env: OLD, state: { 'no-keys': '1' } });
+    expect({ status: old.status, errors: annotations(old, 'error') }).toEqual({ status: 0, errors: [] });
+    expect(titled(old, 'warning', "The keyboard's room in TestFlight build 41 is reported (its layout is that build's)"))
+      .toMatch(/stack, letters: the keyboard shows neither its letters nor its emoji panel/);
+    const mine = await rehearse(['a_flow'], {}, { env: { E2E_OLD_CLIENT: '' }, state: { 'no-keys': '1' } });
+    expect(mine.status).toBe(1);
+    expect(titled(mine, 'error', 'The keyboard covers what a member needs')).toMatch(/stack, letters: the keyboard shows neither/);
+    always(old);
   });
 
   it('is the app\'s crash in a run of this app: not run again, and the run fails', async () => {
