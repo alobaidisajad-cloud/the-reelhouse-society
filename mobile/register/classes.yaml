@@ -178,6 +178,9 @@ classes:
     methods:
       - { kind: running, file: e2e/__tests__/attempt.test.ts, test: "does not, when its own log names a step" }
       - { kind: running, file: e2e/__tests__/attempt.test.ts, test: "never runs a FLOW again once it had begun — it may have saved something — and says it is no verdict on the app" }
+      - { kind: running, file: e2e/__tests__/attempt.test.ts, test: "not when the flow turned airplane mode on itself: its own doing, the app's answer" }
+      - { kind: running, file: e2e/__tests__/attempt.test.ts, test: "not when a write landed in the attempt: it may have saved something" }
+      - { kind: running, file: e2e/__tests__/attempt.test.ts, test: "not when a request left the phone (it took time, or was answered), nor when Android gave the network back" }
     fix: "attempt.mjs runs an attempt again only when three records agree Maestro never began a step (mutant judge-begun-flow-run-again)"
     places: [emulator]
 

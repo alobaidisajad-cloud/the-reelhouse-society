@@ -29,6 +29,12 @@
  *   may have saved something (verify-writes.mjs wants exactly one row) — it is
  *   reported as no verdict on the app instead.
  *
+ *   KEPT OFF THE NETWORK (flows and probes): a step failed, but Android had given the app no
+ *   network (its own `[e2e] net` line said so and nothing after said otherwise), every request
+ *   from then on failed on the phone within NEVER_LEFT_MS, none answered, and no write landed in
+ *   the attempt. Not when the flow turned airplane mode itself. Run 43125165954: lounge_flow's
+ *   relaunch after `pm clear` had no network for a minute; the sign-in never left the phone.
+ *
  * And never, whatever Maestro said: when the attempt ran out of its time, the
  * emulator is gone, the app crashed or froze in it (the device's log, or
  * Maestro's own crash/ANR report), it was already the second attempt, the run
@@ -95,6 +101,42 @@ export function recordedSteps(debugDir) {
   return steps;
 }
 
+/** A request that writes nothing the house keeps: the films' proxy (a read), a sign-in. */
+const NOT_A_WRITE = /^\/(functions\/v1\/tmdb-proxy|auth\/v1\/token)\b/;
+/** The longest a request may take and still have failed on the phone, never having left it. */
+export const NEVER_LEFT_MS = 5;
+
+/**
+ * Did the phone keep the app off the network: Android told the app it had none (the app's own
+ * `[e2e] net` line, from NetInfo, which reads Android's answer, not the app's), it never said
+ * otherwise after, and every request the app made from then on failed on the phone within
+ * NEVER_LEFT_MS, none answered. Null unless all of it holds, or when any write landed in the
+ * attempt (a flow that may have saved something is never run twice). Run 43125165954: lounge_flow's
+ * second launch after `pm clear` had no network for over a minute; nothing reached the gateway.
+ */
+export function offTheNetwork(lines) {
+  const traces = [];
+  for (const l of lines) {
+    const m = /\[e2e\] (net|request) (\{.*\})\s*$/.exec(l);
+    if (!m) continue;
+    try { traces.push({ kind: m[1], at: l.slice(0, 18), ...JSON.parse(m[2]) }); } catch { /* not a trace */ }
+  }
+  const wrote = traces.some((t) => t.kind === 'request' && t.method !== 'GET' && t.status >= 200 && t.status < 300
+    && !NOT_A_WRITE.test(String(t.path ?? '')));
+  if (wrote) return null;
+  const lastNet = traces.map((t) => t.kind).lastIndexOf('net');
+  if (lastNet < 0 || traces[lastNet].connected !== false) return null;
+  const after = traces.slice(lastNet + 1).filter((t) => t.kind === 'request');
+  if (!after.length || !after.every((t) => t.error && t.status === undefined && t.ms <= NEVER_LEFT_MS)) return null;
+  return { since: traces[lastNet].at.trim(), failed: after.length };
+}
+
+/** Whether the flow turned airplane mode itself (its recorded steps): then no network was its own doing. */
+export function cutTheNetwork(debugDir) {
+  return walk(debugDir, (e) => /^commands.*\.json$/.test(e))
+    .some((f) => { try { return /airplane/i.test(readFileSync(f, 'utf8')); } catch { return true; } });
+}
+
 /** Maestro's own log for the attempt: present at all, the steps it began, and a transport death in it. */
 export function maestroLog(debugDir) {
   const files = walk(debugDir, (e) => e === 'maestro.log');
@@ -141,8 +183,12 @@ export function decide(o) {
 
   const neverBegan = !!junit?.failed && steps === 0 && log.present && log.steps === 0;
   const death = junit?.cls && TRANSPORT_DEATHS.includes(junit.cls) ? junit.cls : (!junit?.firstLine && log.death) || null;
+  const offline = junit?.failed && !death && !neverBegan ? offTheNetwork(lines) : null;
+  if (offline) evidence.push(`the app's network, as Android gave it: none from ${offline.since}; ${offline.failed} request${offline.failed === 1 ? '' : 's'} after, each failed on the phone within ${NEVER_LEFT_MS} ms; no write landed`);
   let kind;
   if (neverBegan) kind = 'Maestro never began a step';
+  else if (offline && cutTheNetwork(o.debug)) return final('a step failed with no network, which the flow turned off itself: the app\'s answer');
+  else if (offline) kind = 'the phone kept the app off the network (Android gave it none; nothing left the phone)';
   else if (death && o.kind === 'probe') kind = `Maestro lost its connection to the phone (${death.split('.').pop()})`;
   else if (death) {
     const record = `${steps} step${steps === 1 ? '' : 's'} on record${log.present ? `, ${log.steps} in its log` : ', and no log of its own'}`;

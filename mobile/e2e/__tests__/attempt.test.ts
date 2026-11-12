@@ -218,6 +218,65 @@ describe('never run again, whatever Maestro said', () => {
   });
 });
 
+describe('the phone kept the app off the network', () => {
+  // Run 43125165954's lounge_flow, its shape: the first launch online, signed out (reads only);
+  // the relaunch after pm clear told by Android it has no network, and every request failing on the
+  // phone at once, the sign-in among them; the gateway saw nothing of it.
+  const JS = (time: string, msg: string) => line(time, 12066, 'W', 'ReactNativeJS', `[e2e] ${msg}`);
+  const req = (time: string, method: string, path: string, rest: string) =>
+    JS(time, `request {"method":"${method}","path":"${path}","at":"2026-11-12T00:48:45.127Z",${rest}}`);
+  const ONLINE = JS('00:48:30', 'net {"type":"wifi","connected":true,"reachable":true}')
+    + req('00:48:31', 'GET', '/rest/v1/house_settings?select=min_build_ios', '"ms":1121,"status":200')
+    + req('00:48:31', 'POST', '/functions/v1/tmdb-proxy', '"ms":1192,"status":200');
+  const NONE = JS('00:48:45', 'net {"type":"unknown","connected":false,"reachable":false}');
+  const FAILED = (time: string, method = 'POST', path = '/auth/v1/token?grant_type=password') =>
+    req(time, method, path, '"ms":0,"error":"TypeError: Network request failed"');
+  const STEPPED = () => { junit('Assertion is false: id: initiation-enter-quietly is visible'); commands([STEP, { ...STEP, metadata: { status: 'FAILED' } }]); maestroLog(2); };
+
+  it('runs it again, once, and says what Android gave the app — run 43125165954', () => {
+    STEPPED(); deviceLog(ONLINE + NONE + FAILED('00:48:45', 'GET', '/rest/v1/house_settings') + FAILED('00:49:33'));
+    const d = decide();
+    expect(d).toMatchObject({ status: 0, verdict: 'retry', why: 'run again: the phone kept the app off the network (Android gave it none; nothing left the phone)' });
+    expect(d.evidence).toContain("the app's network, as Android gave it: none from 10-04 00:48:45.100; 2 requests after, each failed on the phone within 5 ms; no write landed");
+  });
+
+  it('not when the flow turned airplane mode on itself: its own doing, the app\'s answer', () => {
+    STEPPED();
+    commands([STEP, { command: { toggleAirplaneModeCommand: {} }, metadata: { status: 'COMPLETED' } }, { ...STEP, metadata: { status: 'FAILED' } }]);
+    deviceLog(ONLINE + NONE + FAILED('00:49:33'));
+    expect(decide()).toMatchObject({ status: 1, why: 'not run again: a step failed with no network, which the flow turned off itself: the app\'s answer' });
+  });
+
+  it('not when a write landed in the attempt: it may have saved something', () => {
+    STEPPED();
+    deviceLog(ONLINE + req('00:48:32', 'POST', '/rest/v1/logs', '"ms":80,"status":201') + NONE + FAILED('00:49:33'));
+    expect(decide()).toMatchObject({ status: 1, why: 'not run again: a step failed, which is the app\'s answer' });
+  });
+
+  it('not when a request left the phone (it took time, or was answered), nor when Android gave the network back', () => {
+    for (const after of [
+      req('00:49:33', 'POST', '/auth/v1/token?grant_type=password', '"ms":3000,"error":"TypeError: Network request failed"'),
+      FAILED('00:49:33') + req('00:49:34', 'GET', '/rest/v1/profiles', '"ms":40,"status":200'),
+      FAILED('00:49:33') + JS('00:49:40', 'net {"type":"wifi","connected":true,"reachable":true}'),
+    ]) {
+      STEPPED(); deviceLog(ONLINE + NONE + after);
+      expect(decide()).toMatchObject({ status: 1, why: 'not run again: a step failed, which is the app\'s answer' });
+    }
+  });
+
+  it('not when Android never said there was none, nor with no request to show it', () => {
+    STEPPED(); deviceLog(ONLINE + FAILED('00:49:33'));
+    expect(decide()).toMatchObject({ status: 1 });
+    STEPPED(); deviceLog(ONLINE + NONE);
+    expect(decide()).toMatchObject({ status: 1 });
+  });
+
+  it('and within the run\'s limits, as every other: never a second time', () => {
+    STEPPED(); deviceLog(ONLINE + NONE + FAILED('00:49:33'));
+    expect(decide({ attempt: 2 })).toMatchObject({ status: 1, why: 'not run again: the phone kept the app off the network (Android gave it none; nothing left the phone), again, on its second attempt' });
+  });
+});
+
 describe('a shipped client\'s own crash (--own)', () => {
   // Build 41's crash in log_film_flow, cut from Sealed E2E 38679641286 (its second crash dropped).
   const RUN = readFileSync(join(__dirname, 'fixtures', 'own-crash-e2e-38679641286.txt'), 'utf8')
