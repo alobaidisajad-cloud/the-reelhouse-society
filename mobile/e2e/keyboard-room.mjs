@@ -44,19 +44,22 @@ export function keyboardHeight(windows) {
 }
 
 /**
- * Whether the keyboard shows its letters: Gboard names each letter key, so a
- * `maestro hierarchy` with the keyboard up holds a key called "Q". Its emoji
- * panel has none: the letters gone is the panel open.
+ * Which panel the keyboard shows, by the key Gboard names on each (a `maestro hierarchy` with the
+ * keyboard up holds its keys): the letters carry "Symbol keyboard" (the ?123 key), the emoji panel
+ * "Letter keyboard" (the ABC key back). An address field's letters name no "Q", so the letters are
+ * never read from a letter (run 43242130602). Null when neither key is there: the panel not known.
  */
-export function showsLetters(tree) {
-  let found = false;
+export function panelOf(tree) {
+  const names = new Set();
   const walk = (node) => {
-    if (found || !node || typeof node !== 'object') return;
-    if ((node.attributes?.accessibilityText ?? '').trim() === 'Q') { found = true; return; }
+    if (!node || typeof node !== 'object') return;
+    names.add((node.attributes?.accessibilityText ?? '').trim());
     for (const c of node.children ?? []) walk(c);
   };
   walk(tree);
-  return found;
+  if (names.has('Symbol keyboard')) return 'letters';
+  if (names.has('Letter keyboard')) return 'emoji';
+  return null;
 }
 
 /** The first element matching `#id` or `"text"`, with its bounds. */
@@ -120,6 +123,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.arg
 } else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.argv[2] === '--panel') {
   // Which of its panels the keyboard shows, and how tall it stands: run-flows.sh asks after each
   // change, so a press that did not open the emoji panel fails, by name, before anything is judged.
+  // A keyboard whose panel cannot be named fails too: a check that cannot say which has said nothing.
   const [want, hierarchyFile, windowsFile] = process.argv.slice(3);
   let tree = null;
   try { tree = JSON.parse(readFileSync(hierarchyFile ?? '', 'utf8')); } catch { /* said below */ }
@@ -127,9 +131,10 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.arg
   try { windows = readFileSync(windowsFile ?? '', 'utf8'); } catch { /* said below as no window */ }
   const height = keyboardHeight(windows);
   if (!tree) { console.log('the keyboard: the screen could not be read, so its panel is not known'); process.exit(1); }
-  const shows = showsLetters(tree) ? 'letters' : 'emoji';
-  console.log(`the keyboard shows its ${shows === 'letters' ? 'letters' : 'emoji panel'}${height == null ? ', and no window of its own' : `, ${height}px tall`}`
-    + (shows === want ? '' : ` (it should show its ${want === 'letters' ? 'letters' : 'emoji panel'})`));
+  const shows = panelOf(tree);
+  const said = (p) => (p === 'letters' ? 'its letters' : p === 'emoji' ? 'its emoji panel' : 'neither its letters nor its emoji panel');
+  console.log(`the keyboard shows ${said(shows)}${height == null ? ', and no window of its own' : `, ${height}px tall`}`
+    + (shows === want ? '' : ` (it should show ${said(want)})`));
   process.exit(shows === want && height != null ? 0 : 1);
 } else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const [name, target, hierarchyFile, windowsFile, dumpFile] = process.argv.slice(2);

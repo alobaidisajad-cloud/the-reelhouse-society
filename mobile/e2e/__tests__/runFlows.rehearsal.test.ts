@@ -112,10 +112,14 @@ echo "$*" >> "$T/state/calls"
 [ -e "$HOME/.maestro/sessions" ] && echo "$*" >> "$T/state/stale-sessions"
 mkdir -p "$HOME/.maestro"; echo "MAESTRO_SESSION=1" > "$HOME/.maestro/sessions"
 say() { echo "$(date +'%m-%d %H:%M:%S.%3N')  $1  $(( $1 + 20 )) $2 $3: $4" >> "$T/device.log"; }
-# The keyboard's letters while a field's tap left them up (Gboard names its keys), none on its emoji panel.
+# The keyboard's letters while a field's tap left them up, its emoji panel after the emoji key, each
+# with the key Gboard names on it (?123, ABC); no keyboard at all otherwise.
 if [ "$1" = hierarchy ]; then
-  if [ "$(cat "$T/state/panel" 2>/dev/null)" = letters ]; then echo '{"attributes":{},"children":[{"attributes":{"accessibilityText":"Q","bounds":"[0,1700][90,1800]"}}]}'
-  else echo '{"attributes":{},"children":[]}'; fi
+  case "$(cat "$T/state/panel" 2>/dev/null)" in
+    letters) echo '{"attributes":{},"children":[{"attributes":{"accessibilityText":"Symbol keyboard","bounds":"[0,2200][120,2300]"}}]}' ;;
+    emoji) echo '{"attributes":{},"children":[{"attributes":{"accessibilityText":"Letter keyboard","bounds":"[0,2200][120,2300]"}}]}' ;;
+    *) echo '{"attributes":{},"children":[]}' ;;
+  esac
   exit 0
 fi
 flow="$2"; name=$(basename "$flow" .yaml); out=""; dbg=""; shots=""

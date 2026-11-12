@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "..", "run", "dev", "--", "--port", "5173", "--strictPort"],
+      "port": 5173
+    },
+    {
+      "name": "lobby-mockups",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/539c2ae9-33c3-4442-b8b9-4f9dd91cf140/scratchpad/serve-mock.cjs", "C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/539c2ae9-33c3-4442-b8b9-4f9dd91cf140/scratchpad/mock", "5310"],
+      "port": 5310
+    },
+    {
+      "name": "paper-mockups",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/OMEN/AppData/Local/Temp/claude/C--Users-OMEN-OneDrive-Desktop-divisionops-reelhouse-mobile/c7a02814-9003-43c3-91ea-17b542c9b630/scratchpad/serve-mockups.cjs"],
+      "port": 4317
+    },
+    {
+      "name": "buster-check",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/OMEN/AppData/Local/Temp/claude/a749811e40b28e34/c7a02814-9003-43c3-91ea-17b542c9b630/scratchpad/serve.cjs", "C:/Users/OMEN/OneDrive/Desktop/divisionops/reelhouse", "5199"],
+      "port": 5199
+    }
+  ]
+}

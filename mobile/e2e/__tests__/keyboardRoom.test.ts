@@ -142,9 +142,10 @@ describe('the keyboard’s panel, and its height', () => {
     attributes: { bounds: '[0,0][1080,2400]' },
     children: [
       { attributes: { 'resource-id': 'review-input', bounds: '[60,1300][1020,1400]' } },
+      // The names Gboard gave its keys in run 43242130602's hierarchies.
       ...(letters
-        ? ['Q', 'W', 'Emoji button'].map((k, i) => ({ attributes: { accessibilityText: k, bounds: `[${i * 100},1700][${i * 100 + 90},1800]` } }))
-        : ['Smileys and emotions', 'Search emoji'].map((k, i) => ({ attributes: { accessibilityText: k, bounds: `[${i * 100},1700][${i * 100 + 90},1800]` } }))),
+        ? ['Q', 'W', 'Symbol keyboard', 'Emoji button'].map((k, i) => ({ attributes: { accessibilityText: k, bounds: `[${i * 100},1700][${i * 100 + 90},1800]` } }))
+        : ['Letter keyboard', 'Smileys and Emotions', 'Search for emoji'].map((k, i) => ({ attributes: { accessibilityText: k, bounds: `[${i * 100},1700][${i * 100 + 90},1800]` } }))),
     ],
   });
   function panel(want: string, tree: object | null, ime: string | null) {
@@ -171,6 +172,20 @@ describe('the keyboard’s panel, and its height', () => {
 
   it('fails letters asked for that are not there', () => {
     expect(panel('letters', keys(false), SHOWN).status).toBe(1);
+  });
+
+  it('reads an address field’s letters, which name no letter key, by the ?123 key — run 43242130602', () => {
+    const address = { attributes: {}, children: ['@', '.', 'Shift', 'Symbol keyboard', 'Emoji button', 'Go'].map((k) => ({ attributes: { accessibilityText: k } })) };
+    expect(panel('letters', address, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall' });
+  });
+
+  it('fails a keyboard whose panel it cannot name: no key of either in the screen', () => {
+    const bare = { attributes: {}, children: [{ attributes: { accessibilityText: 'Recovery email address' } }] };
+    for (const want of ['letters', 'emoji']) {
+      const r = panel(want, bare, SHOWN);
+      expect(r.status).toBe(1);
+      expect(r.out).toMatch(/^the keyboard shows neither its letters nor its emoji panel, 1005px tall \(it should show its/);
+    }
   });
 
   it('fails when no keyboard window stands, or the screen could not be read', () => {
