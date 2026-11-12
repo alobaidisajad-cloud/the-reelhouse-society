@@ -1,0 +1,20 @@
+appId: com.reelhouse.society
+---
+# The keyboard changed while open (WORKLIST P4.35): Gboard's emoji key,
+# pressed as a member presses it, the field still focused. Gboard names its
+# keys, so the key is found by its name. An address field's layout may keep
+# no emoji key; its toolbar's GIF key opens the same panel (emoji, GIFs,
+# stickers), so that one is pressed there. run-flows.sh then checks the
+# letters are gone and judges the room again.
+- runFlow:
+    when:
+      notVisible: "Emoji button"
+    commands:
+      - tapOn: "GIF Keyboard"
+- runFlow:
+    when:
+      visible: "Emoji button"
+    commands:
+      - tapOn: "Emoji button"
+- waitForAnimationToEnd:
+    timeout: 3000

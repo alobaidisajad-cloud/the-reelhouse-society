@@ -1,0 +1,7 @@
+appId: com.reelhouse.society
+---
+# The address field, not focused on arrival, raises the keyboard.
+- tapOn:
+    id: "recovery-email-input"
+- waitForAnimationToEnd:
+    timeout: 3000

@@ -136,12 +136,65 @@ describe('the keyboard room', () => {
   });
 });
 
+describe('the keyboard’s panel, and its height', () => {
+  /** A hierarchy with the keyboard up: Gboard's letter keys among the app's, or its emoji panel. */
+  const keys = (letters: boolean) => ({
+    attributes: { bounds: '[0,0][1080,2400]' },
+    children: [
+      { attributes: { 'resource-id': 'review-input', bounds: '[60,1300][1020,1400]' } },
+      ...(letters
+        ? ['Q', 'W', 'Emoji button'].map((k, i) => ({ attributes: { accessibilityText: k, bounds: `[${i * 100},1700][${i * 100 + 90},1800]` } }))
+        : ['Smileys and emotions', 'Search emoji'].map((k, i) => ({ attributes: { accessibilityText: k, bounds: `[${i * 100},1700][${i * 100 + 90},1800]` } }))),
+    ],
+  });
+  function panel(want: string, tree: object | null, ime: string | null) {
+    if (tree) writeFileSync(join(dir, 'h.json'), JSON.stringify(tree));
+    writeFileSync(join(dir, 'w.txt'), windows(ime));
+    const r = spawnSync(process.execPath, [SCRIPT, '--panel', want, join(dir, tree ? 'h.json' : 'none.json'), join(dir, 'w.txt')], { encoding: 'utf8' });
+    return { status: r.status, out: r.stdout.trim() };
+  }
+
+  it('says the letters are showing, and how tall the keyboard stands', () => {
+    expect(panel('letters', keys(true), SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall' });
+  });
+
+  it('says the emoji panel opened when the letters are gone', () => {
+    const taller = SHOWN.replace(/frame=\[0,1395\]/, 'frame=[0,1290]');
+    expect(panel('emoji', keys(false), taller)).toEqual({ status: 0, out: 'the keyboard shows its emoji panel, 1110px tall' });
+  });
+
+  it('fails a press that opened nothing: the letters still there', () => {
+    const r = panel('emoji', keys(true), SHOWN);
+    expect(r.status).toBe(1);
+    expect(r.out).toBe('the keyboard shows its letters, 1005px tall (it should show its emoji panel)');
+  });
+
+  it('fails letters asked for that are not there', () => {
+    expect(panel('letters', keys(false), SHOWN).status).toBe(1);
+  });
+
+  it('fails when no keyboard window stands, or the screen could not be read', () => {
+    expect(panel('emoji', keys(false), null)).toEqual({ status: 1, out: 'the keyboard shows its emoji panel, and no window of its own' });
+    expect(panel('letters', null, SHOWN)).toEqual({ status: 1, out: 'the keyboard: the screen could not be read, so its panel is not known' });
+  });
+
+  it('reads the height on the emulator’s shape: the frame below the status bar, the top as an inset', () => {
+    const seen = [
+      '    mViewVisibility=0x0 mHaveFrame=true mObscured=false',
+      '    mGivenContentInsets=[0,1389][0,0] mGivenVisibleInsets=[0,1389][0,0]',
+      '    Frames: parent=[0,128][1080,2400] display=[0,128][1080,2400] frame=[0,128][1080,2400] last=[0,128][1080,2400] insetsChanged=false',
+      '    isOnScreen=true',
+    ].join('\n');
+    expect(panel('letters', keys(true), seen).out).toBe('the keyboard shows its letters, 883px tall');
+  });
+});
+
 describe('what the runner measures exists', () => {
   const runner = readFileSync(join(__dirname, '..', 'run-flows.sh'), 'utf8');
-  const probes = [...runner.matchAll(/'(\w+)\|([#"][^']+)'/g)].map((m) => ({ name: m[1], target: m[2] }));
+  const probes = [...runner.matchAll(/'(\w+)\|([#"][^']+)'/g)].map((m) => ({ name: m[1], targets: m[2].split('|') }));
 
   it('every probe has its two flows', () => {
-    expect(probes.map((p) => p.name)).toEqual(['stack', 'log']);
+    expect(probes.map((p) => p.name)).toEqual(['stack', 'log', 'recovery']);
     for (const { name } of probes) {
       for (const f of [`${name}.yaml`, `${name}.tap.yaml`]) {
         expect(() => readFileSync(join(__dirname, '..', '..', '.maestro', 'keyboard', f))).not.toThrow();
@@ -149,10 +202,34 @@ describe('what the runner measures exists', () => {
     }
   });
 
+  it('every probe judges the field the member types in and the press that sends or saves it', () => {
+    expect(probes.map((p) => p.targets)).toEqual([
+      ['#stack-note-input', '"FILE THE STACK"'],
+      ['#review-input', '#submit-log-button'],
+      ['#recovery-email-input', '#recovery-submit-button'],
+    ]);
+    // The field judged is the one its tap flow focuses.
+    for (const { name, targets } of probes) {
+      const tap = readFileSync(join(__dirname, '..', '..', '.maestro', 'keyboard', `${name}.tap.yaml`), 'utf8');
+      expect(tap).toContain(`id: "${targets[0].slice(1)}"`);
+    }
+  });
+
+  it('every probe is judged on the letters, then again after the emoji key, with the panel checked each time', () => {
+    const loop = runner.slice(runner.indexOf('measure letters'), runner.indexOf('measure emoji') + 'measure emoji || room_rc=1'.length);
+    expect(loop).toMatch(/measure letters \|\| room_rc=1[\s\S]*"\$FLOWS\/keyboard\/emoji\.tap\.yaml"[\s\S]*measure emoji \|\| room_rc=1/);
+    const measure = runner.slice(runner.indexOf('measure() {'), runner.indexOf('\n}\n', runner.indexOf('measure() {')));
+    expect(measure).toContain('keyboard-room.mjs --panel "$panel"');
+    expect(measure).toMatch(/for t in "\$\{needs\[@\]\}"; do\s+node mobile\/e2e\/keyboard-room\.mjs "\$name, \$panel" "\$t"/);
+    const emoji = readFileSync(join(__dirname, '..', '..', '.maestro', 'keyboard', 'emoji.tap.yaml'), 'utf8');
+    expect(emoji).toMatch(/tapOn: "Emoji button"/);
+    expect(emoji).not.toMatch(/launchApp|hideKeyboard|back/i);
+  });
+
   it('and every id it taps or measures is one the app sets', () => {
     const flows = universe('flows', { under: ['.maestro/keyboard'] }).map((f) => readFileSync(f, 'utf8'));
     const ids = new Set(flows.flatMap((y) => [...y.matchAll(/id: "([\w-]+)"/g)].map((m) => m[1])));
-    for (const p of probes) if (p.target.startsWith('#')) ids.add(p.target.slice(1));
+    for (const p of probes) for (const t of p.targets) if (t.startsWith('#')) ids.add(t.slice(1));
     expect(ids.size).toBeGreaterThan(5);
     const root = join(__dirname, '..', '..');
     const code = appSource();

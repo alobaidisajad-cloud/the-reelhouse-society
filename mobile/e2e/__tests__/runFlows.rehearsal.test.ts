@@ -112,10 +112,16 @@ echo "$*" >> "$T/state/calls"
 [ -e "$HOME/.maestro/sessions" ] && echo "$*" >> "$T/state/stale-sessions"
 mkdir -p "$HOME/.maestro"; echo "MAESTRO_SESSION=1" > "$HOME/.maestro/sessions"
 say() { echo "$(date +'%m-%d %H:%M:%S.%3N')  $1  $(( $1 + 20 )) $2 $3: $4" >> "$T/device.log"; }
-if [ "$1" = hierarchy ]; then echo '{"attributes":{},"children":[]}'; exit 0; fi
+# The keyboard's letters while a field's tap left them up (Gboard names its keys), none on its emoji panel.
+if [ "$1" = hierarchy ]; then
+  if [ "$(cat "$T/state/panel" 2>/dev/null)" = letters ]; then echo '{"attributes":{},"children":[{"attributes":{"accessibilityText":"Q","bounds":"[0,1700][90,1800]"}}]}'
+  else echo '{"attributes":{},"children":[]}'; fi
+  exit 0
+fi
 flow="$2"; name=$(basename "$flow" .yaml); out=""; dbg=""; shots=""
 while [ $# -gt 0 ]; do case "$1" in --output) out="$2"; shift ;; --debug-output) dbg="$2"; shift ;; --test-output-dir) shots="$2"; shift ;; esac; shift; done
-case "$flow" in *.tap.yaml) exit 0 ;; esac
+case "$flow" in */emoji.tap.yaml) echo emoji > "$T/state/panel"; exit 0 ;; *.tap.yaml) echo letters > "$T/state/panel"; exit 0 ;; esac
+rm -f "$T/state/panel"
 echo "maestro: $name" >> "$T/state/order"
 echo 16631 > "$T/state/pid"   # every flow opens with launchApp
 n=$(( $(cat "$T/state/count-$name" 2>/dev/null || echo 0) + 1 )); echo $n > "$T/state/count-$name"
@@ -215,7 +221,11 @@ const WINDOWS = [
 ].join('\n');
 const DUMP = '<?xml version="1.0" encoding="UTF-8"?><hierarchy rotation="0">' +
   '<node index="0" text="FILE THE STACK" resource-id="" content-desc="" bounds="[600,1300][1000,1367]" />' +
-  '<node index="1" text="" resource-id="com.reelhouse.society:id/review-input" content-desc="" bounds="[60,1400][1020,1517]" /></hierarchy>';
+  '<node index="1" text="" resource-id="com.reelhouse.society:id/review-input" content-desc="" bounds="[60,1400][1020,1517]" />' +
+  '<node index="2" text="" resource-id="stack-note-input" content-desc="" bounds="[60,1100][1020,1200]" />' +
+  '<node index="3" text="" resource-id="submit-log-button" content-desc="" bounds="[600,1200][1000,1280]" />' +
+  '<node index="4" text="" resource-id="recovery-email-input" content-desc="" bounds="[60,900][1020,1000]" />' +
+  '<node index="5" text="" resource-id="recovery-submit-button" content-desc="" bounds="[60,1050][1020,1150]" /></hierarchy>';
 
 interface Run { status: number | null; stdout: string; stderr: string; T: string; out: string }
 
@@ -238,7 +248,7 @@ function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { e
   const local = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${now.toTimeString().slice(0, 8)}`;
   writeFileSync(join(T, 'device.log'), `${local}.000  525  545 I ActivityManager: the device boots\n`);
   for (const f of [...flows, 'config']) writeFileSync(join(T, 'flows', `${f}.yaml`), 'appId: com.reelhouse.society\n---\n');
-  for (const f of ['stack', 'stack.tap', 'log', 'log.tap']) writeFileSync(join(T, 'flows', 'keyboard', `${f}.yaml`), 'appId: com.reelhouse.society\n---\n');
+  for (const f of ['stack', 'stack.tap', 'log', 'log.tap', 'recovery', 'recovery.tap', 'emoji.tap']) writeFileSync(join(T, 'flows', 'keyboard', `${f}.yaml`), 'appId: com.reelhouse.society\n---\n');
   for (const [name, steps] of Object.entries(scenario)) writeFileSync(join(T, 'scenario', name), `${steps.join('\n')}\n`);
   for (const [k, v] of Object.entries(opts.state ?? {})) writeFileSync(join(T, 'state', k), v);
   // The committed copy of the phone's runtime, as the fake launches write it.
@@ -309,7 +319,29 @@ it('a hiccup is run again and the run is green, with a warning that says so', as
   // The animation scale the emulator had lost is put back, and said so.
   expect(titled(r, 'warning', "The phone's animations were not off")).toContain("before the stack probe: window_animation_scale was '1.0'; set to 0");
   expect(readFileSync(join(r.T, 'state', 'window_animation_scale'), 'utf8').trim()).toBe('0');
-  expect(file(r, 'keyboard-room.txt')).toMatch(/^stack: "FILE THE STACK" clear/m);
+  expect(file(r, 'keyboard-room.txt')).toMatch(/^stack, letters: "FILE THE STACK" clear/m);
+  // Each probe: the panel, then the field and its press, on the letters and again on the emoji panel.
+  const room = file(r, 'keyboard-room.txt').split('\n').filter((l) => /^\w+, (letters|emoji): /.test(l));
+  expect(room).toEqual([
+    'stack, letters: the keyboard shows its letters, 883px tall',
+    'stack, letters: #stack-note-input clear — its foot at 1200px, the keyboard from 1517px',
+    'stack, letters: "FILE THE STACK" clear — its foot at 1367px, the keyboard from 1517px',
+    'stack, emoji: the keyboard shows its emoji panel, 883px tall',
+    'stack, emoji: #stack-note-input clear — its foot at 1200px, the keyboard from 1517px',
+    'stack, emoji: "FILE THE STACK" clear — its foot at 1367px, the keyboard from 1517px',
+    'log, letters: the keyboard shows its letters, 883px tall',
+    'log, letters: #review-input clear — its foot at 1517px, the keyboard from 1517px',
+    'log, letters: #submit-log-button clear — its foot at 1280px, the keyboard from 1517px',
+    'log, emoji: the keyboard shows its emoji panel, 883px tall',
+    'log, emoji: #review-input clear — its foot at 1517px, the keyboard from 1517px',
+    'log, emoji: #submit-log-button clear — its foot at 1280px, the keyboard from 1517px',
+    'recovery, letters: the keyboard shows its letters, 883px tall',
+    'recovery, letters: #recovery-email-input clear — its foot at 1000px, the keyboard from 1517px',
+    'recovery, letters: #recovery-submit-button clear — its foot at 1150px, the keyboard from 1517px',
+    'recovery, emoji: the keyboard shows its emoji panel, 883px tall',
+    'recovery, emoji: #recovery-email-input clear — its foot at 1000px, the keyboard from 1517px',
+    'recovery, emoji: #recovery-submit-button clear — its foot at 1150px, the keyboard from 1517px',
+  ]);
   always(r);
 });
 
@@ -482,7 +514,7 @@ describe('one shard of the flows (E2E_SHARD, with a map of the scenario\'s flows
     expect(file(r, 'motion', 'result.txt')).toBe('A launch with animations on: alive at 1 s (pid 16631), no crash, the first screen ready.\n');
     // The measured launch comes after the one with animations on, the same pid read again by its line.
     expect(file(r, 'cold-start.txt')).toMatch(/^\| 1 \| before the first flow \| 1234 ms \|.*\| not measured: am's time is taken at the measured launch alone \|.*\n\| 2 \| the measured launch \(run-flows\.sh\) \| 1234 ms \|.*\| 1312 ms \| 41\.0 MB \|$/m);
-    expect(file(r, 'keyboard-room.txt')).toMatch(/^stack: "FILE THE STACK" clear/m);
+    expect(file(r, 'keyboard-room.txt')).toMatch(/^stack, emoji: "FILE THE STACK" clear/m);
     expect(file(r, 'flows-run.txt')).toBe('a_flow\n');
     always(r);
   });
@@ -621,7 +653,7 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
     const r = await flows('largest-text', { a_flow: ['step-failed', 'pass'] });
     // A flow that fails at the largest text is a finding: the run fails, by its own report.
     expect(r.status).toBe(1);
-    expect(order(r)).toEqual(['adb: settings put system font_scale 2.0', 'maestro: stack', 'maestro: log', 'maestro: a_flow', 'adb: settings put system font_scale 1.0']);
+    expect(order(r)).toEqual(['adb: settings put system font_scale 2.0', 'maestro: stack', 'maestro: log', 'maestro: recovery', 'maestro: a_flow', 'adb: settings put system font_scale 1.0']);
     // Not held to the plain phone's ceilings: a variant's times are reported.
     expect(titled(r, 'error', 'A screen could not read or is slower than its ceiling')).toBe('');
     always(r);
@@ -635,7 +667,7 @@ describe('a variant run (E2E_VARIANT): the phone set before the run touches it, 
       'adb: CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale',
       'adb: CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale ar-IQ',
       'adb: am get-config | grep -q ldrtl', 'adb: am get-config | grep -q ldrtl', 'adb: am get-config | grep -q ldrtl',
-      'maestro: stack', 'maestro: log', 'maestro: a_flow',
+      'maestro: stack', 'maestro: log', 'maestro: recovery', 'maestro: a_flow',
       'adb: CLASSPATH=/data/local/tmp/house-phone.dex app_process / HouseLocale en-US',
     ]);
     expect(file(r, 'variant.txt')).toMatch(/^helper: \/runner\/house-phone\/classes\.dex: 1 file pushed, 0 skipped\.\nread: .* -> en-US\nset: .* HouseLocale ar-IQ -> ar-IQ\nready: am get-config \| grep -q ldrtl\nsettled: /);

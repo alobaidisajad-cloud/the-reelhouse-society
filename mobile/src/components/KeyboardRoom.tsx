@@ -9,10 +9,12 @@
  *
  * This is that resize, done once: while the keyboard is up, the app's root ends
  * where the keyboard begins. React Native's keyboard events say when, from a
- * layout listener, so they arrive with system animations off too; Reanimated's
- * height, from the insets animation, follows the keyboard when it changes
- * height while open. The larger of the two is the room: an over-estimate leaves
- * a gap, never a covered field.
+ * layout listener, so they arrive with system animations off too, and say it
+ * again when the keyboard changes height while open (the emoji panel; RN 0.86's
+ * ReactRootView re-emits keyboardDidShow on a new height); Reanimated's height,
+ * from the insets animation, follows it as well. The larger of the two is the
+ * room: an over-estimate leaves a gap, never a covered field. The keyboard
+ * probes (e2e/run-flows.sh) measure it on the letters and on the emoji panel.
  *
  * iOS never resized a window; its screens make their own room. RN `<Modal>`s are
  * windows of their own, with their own room (useModalKeyboardPadding).

@@ -350,7 +350,12 @@ timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
 # keyboard showed, since then nothing was measured. They run before the flows,
 # with what the flows' own time leaves (RESERVE), so they can never starve them;
 # on one shard, the one e2e/shards.json names.
-probes=('stack|"FILE THE STACK"' 'log|#review-input')
+# Each probe names the field the member types in and the press that sends or saves it, and both
+# are judged twice (WORKLIST P4.35): on the keyboard's letters, then on its emoji panel, a keyboard
+# that changed while open. The recovery card is a sheet over a sheet: a Modal of its own window,
+# over the sign-in sheet, which makes its room from the keyboard's events alone.
+probes=('stack|#stack-note-input|"FILE THE STACK"' 'log|#review-input|#submit-log-button'
+  'recovery|#recovery-email-input|#recovery-submit-button')
 [ "$PROBES" = yes ] || probes=()
 keys_on() {
   # A tablet's emulator declares a keyboard of keys, and Android then keeps the one on the screen
@@ -368,12 +373,44 @@ keys_off() {
   timeout 20 adb shell settings delete secure enabled_input_methods > /dev/null 2>&1
   timeout 20 adb shell settings delete secure default_input_method > /dev/null 2>&1
 }
+# One look at the keyboard and the screen as they stand, kept as <name>.<panel>.*: Android's window
+# list, Maestro's hierarchy and Android's own dump of the app's window. The panel is checked first
+# (a press that opened nothing has changed nothing), then each thing the member needs is judged
+# against the keyboard's top.
+measure() {
+  local panel=$1 at="$OUT/keyboard-room/$name.$1" said t bad=0
+  local -a needs
+  sleep 1   # the keyboard's own entrance, so its frame is where it stops
+  timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$at.windows.txt"
+  rm -rf "$HOME/.maestro/sessions"
+  timeout 60 "$MAESTRO" hierarchy > "$at.json" 2>/dev/null
+  # Android's own dump of the app's window, measured first (keyboard-room.mjs).
+  timeout 30 adb shell uiautomator dump /sdcard/keyboard-room.xml > /dev/null 2>&1
+  timeout 20 adb exec-out cat /sdcard/keyboard-room.xml > "$at.xml" 2>/dev/null
+  said="$(node mobile/e2e/keyboard-room.mjs --panel "$panel" "$at.json" "$at.windows.txt")" || bad=1
+  echo "$name, $panel: $said" >> "$OUT/keyboard-room.txt"
+  IFS='|' read -r -a needs <<< "$targets"
+  for t in "${needs[@]}"; do
+    node mobile/e2e/keyboard-room.mjs "$name, $panel" "$t" "$at.json" "$at.windows.txt" "$at.xml" >> "$OUT/keyboard-room.txt" || bad=1
+  done
+  if [ $bad -ne 0 ]; then
+    # What was on the screen, so a target that was not found says where it looked.
+    node mobile/e2e/screen.mjs "$at.json" | head -n 14 | sed "s/^/  $name screen · /" >> "$OUT/keyboard-room.txt"
+    # And what the keyboard's own service said, so a keyboard that never showed says why.
+    timeout 20 adb shell dumpsys input_method 2>/dev/null | tr -d '\r' \
+      | grep -E 'mInputShown|mShowRequested|mCurMethodId|HardKeyboard|hardKeyboard' | head -n 6 | sed "s/^ */  $name ime · /" >> "$OUT/keyboard-room.txt"
+  fi
+  # The keyboard window's own lines, so the measure can be checked by eye.
+  awk '/Window #[0-9]+ Window\{[0-9a-f]+ u[0-9]+ InputMethod\}/ {p=1; print; next} /Window #[0-9]+/ {p=0} p' \
+    "$at.windows.txt" | grep -E 'rame|Insets|isOnScreen|Visibility' | head -n 8 | sed "s/^ */  $name, $panel · /" >> "$OUT/keyboard-room.txt"
+  return $bad
+}
 mkdir -p "$OUT/keyboard-room"
 : > "$OUT/keyboard-room.txt"
 [ ${#probes[@]} -eq 0 ] && echo "The keyboard's probes run in another shard (e2e/shards.json)." > "$OUT/keyboard-room.txt"
 room_rc=0
 for probe in ${probes[@]+"${probes[@]}"}; do
-  name=${probe%%|*}; target=${probe#*|}
+  name=${probe%%|*}; targets=${probe#*|}
   attempt=1; probe_before=""
   while :; do
     if [ $gone -eq 1 ]; then echo "$name: skipped (the emulator was gone)" >> "$OUT/keyboard-room.txt"; room_rc=1; break; fi
@@ -470,25 +507,12 @@ for probe in ${probes[@]+"${probes[@]}"}; do
       echo "$name: no keyboard window on either tap, the run's first keyboard cold: the probe is run again from its start" >> "$OUT/keyboard-room.txt"
       attempt=2; continue
     fi
-    sleep 1   # the keyboard's own entrance, so its frame is where it stops
-    timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$OUT/keyboard-room/$name.windows.txt"
+    measure letters || room_rc=1
+    # The keyboard changed while open (WORKLIST P4.35): Gboard's emoji key, pressed as a member
+    # presses it. The field keeps its focus, and the room must follow the keyboard's new height.
     rm -rf "$HOME/.maestro/sessions"
-    timeout 60 "$MAESTRO" hierarchy > "$OUT/keyboard-room/$name.json" 2>/dev/null
-    # Android's own dump of the app's window, measured first (keyboard-room.mjs).
-    timeout 30 adb shell uiautomator dump /sdcard/keyboard-room.xml > /dev/null 2>&1
-    timeout 20 adb exec-out cat /sdcard/keyboard-room.xml > "$OUT/keyboard-room/$name.xml" 2>/dev/null
-    if ! node mobile/e2e/keyboard-room.mjs "$name" "$target" "$OUT/keyboard-room/$name.json" "$OUT/keyboard-room/$name.windows.txt" \
-        "$OUT/keyboard-room/$name.xml" >> "$OUT/keyboard-room.txt"; then
-      room_rc=1
-      # What was on the screen, so a target that was not found says where it looked.
-      node mobile/e2e/screen.mjs "$OUT/keyboard-room/$name.json" | head -n 14 | sed "s/^/  $name screen · /" >> "$OUT/keyboard-room.txt"
-      # And what the keyboard's own service said, so a keyboard that never showed says why.
-      timeout 20 adb shell dumpsys input_method 2>/dev/null | tr -d '\r' \
-        | grep -E 'mInputShown|mShowRequested|mCurMethodId|HardKeyboard|hardKeyboard' | head -n 6 | sed "s/^ */  $name ime · /" >> "$OUT/keyboard-room.txt"
-    fi
-    # The keyboard window's own lines, so the measure can be checked by eye.
-    awk '/Window #[0-9]+ Window\{[0-9a-f]+ u[0-9]+ InputMethod\}/ {p=1; print; next} /Window #[0-9]+/ {p=0} p' \
-      "$OUT/keyboard-room/$name.windows.txt" | grep -E 'rame|Insets|isOnScreen|Visibility' | head -n 8 | sed "s/^ */  $name · /" >> "$OUT/keyboard-room.txt"
+    timeout 120 "$MAESTRO" test "$FLOWS/keyboard/emoji.tap.yaml" >> "$OUT/keyboard-room/$name.log" 2>&1
+    measure emoji || room_rc=1
     break
   done
 done

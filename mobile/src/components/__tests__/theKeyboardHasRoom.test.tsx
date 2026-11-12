@@ -89,7 +89,17 @@ describe('on Android', () => {
     expect(room().paddingBottom).toBeUndefined();
   });
 
-  it('follows a keyboard that grew while open, which RN does not report', async () => {
+  it('follows a keyboard that grew while open, as RN says it again (0.86: ReactRootView re-emits on a new height)', async () => {
+    const { room } = draw();
+    await emit('keyboardDidShow', 300);
+    await emit('keyboardDidShow', 420);
+    expect(room().paddingBottom).toBe(468);
+    // and one that shrank: the emoji panel closed, the letters back
+    await emit('keyboardDidShow', 300);
+    expect(room().paddingBottom).toBe(348);
+  });
+
+  it('follows a keyboard that grew while open, by Reanimated, when RN has not said it yet', async () => {
     const { room } = draw();
     await emit('keyboardDidShow', 300);
     await settle(Reanimated.KeyboardState.OPEN, 420);

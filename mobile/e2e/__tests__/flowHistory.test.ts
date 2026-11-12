@@ -63,7 +63,8 @@ describe('the map a history makes', () => {
     ...[100, 110, 120, 130, 140, 150, 160, 170, 180, 400].map((s) => ({ run: s, shard: 2, part: 'heavy', seconds: s })),
     { run: 1, shard: 1, part: 'launch', seconds: 60 },
     { run: 1, shard: 1, part: 'stack probe', seconds: 120 },
-    { run: 1, shard: 1, part: 'log probe', seconds: 120 },
+    { run: 1, shard: 1, part: 'log probe', seconds: 90 },
+    { run: 1, shard: 1, part: 'recovery probe', seconds: 30 },
     { run: 1, shard: 3, part: 'light', seconds: 30 },
     { run: 1, shard: 3, part: 'middle', seconds: 90 },
   ] };

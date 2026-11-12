@@ -42,7 +42,7 @@ export const UNMEASURED_SECONDS = 420;
 /** Each shard's minutes: its weight, and this much more. */
 export const MARGIN = 1.25;
 /** The parts only shard 1 runs, with the probes and the launch. */
-export const FIRST_SHARD_PARTS = ['launch', 'stack probe', 'log probe'];
+export const FIRST_SHARD_PARTS = ['launch', 'stack probe', 'log probe', 'recovery probe'];
 
 /** A device clock ("MM-DD HH:MM:SS.mmm") in seconds; null when it is not one. */
 export const clockSeconds = (text) => {

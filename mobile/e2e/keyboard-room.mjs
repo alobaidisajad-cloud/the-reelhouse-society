@@ -4,6 +4,8 @@
  *
  *   node e2e/keyboard-room.mjs <name> <target> <hierarchy> <windows>
  *   node e2e/keyboard-room.mjs --top <windows>     exit 0 once the keyboard's window is there and drawn
+ *   node e2e/keyboard-room.mjs --panel <letters|emoji> <hierarchy> <windows>
+ *                                                  exit 0 when the keyboard shows that panel (its height said)
  *
  * <target> is `#id` or `"text"`. The hierarchy is `maestro hierarchy`; the
  * windows are `adb shell dumpsys window windows`, read for the input method's
@@ -29,6 +31,32 @@ export function keyboardTop(windows) {
   const inset = given ? Number(RECT.exec(given[1])?.[2] ?? 0) : 0;
   const top = Number(r[2]) + inset;
   return top > 0 && Number(r[4]) > top ? top : null;
+}
+
+/** The input method window's visible height, in pixels, or null when none is shown. */
+export function keyboardHeight(windows) {
+  const top = keyboardTop(windows);
+  if (top == null) return null;
+  const blocks = windows.replace(/\r\n/g, '\n').split(/\n(?=\s*Window #\d+)/);
+  const ime = blocks.find((b) => /^\s*Window #\d+ Window\{\w+ u\d+ InputMethod\}/.test(b)) ?? '';
+  const frame = /(?:^|\s)(?:m)?[Ff]rame=(\[[^\]]+\]\[[^\]]+\])/m.exec(ime);
+  return Number(RECT.exec(frame[1])[4]) - top;
+}
+
+/**
+ * Whether the keyboard shows its letters: Gboard names each letter key, so a
+ * `maestro hierarchy` with the keyboard up holds a key called "Q". Its emoji
+ * panel has none: the letters gone is the panel open.
+ */
+export function showsLetters(tree) {
+  let found = false;
+  const walk = (node) => {
+    if (found || !node || typeof node !== 'object') return;
+    if ((node.attributes?.accessibilityText ?? '').trim() === 'Q') { found = true; return; }
+    for (const c of node.children ?? []) walk(c);
+  };
+  walk(tree);
+  return found;
 }
 
 /** The first element matching `#id` or `"text"`, with its bounds. */
@@ -89,6 +117,20 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.arg
   let windows = '';
   try { windows = readFileSync(process.argv[3] ?? '', 'utf8'); } catch { /* none yet */ }
   process.exit(keyboardTop(windows) == null ? 1 : 0);
+} else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.argv[2] === '--panel') {
+  // Which of its panels the keyboard shows, and how tall it stands: run-flows.sh asks after each
+  // change, so a press that did not open the emoji panel fails, by name, before anything is judged.
+  const [want, hierarchyFile, windowsFile] = process.argv.slice(3);
+  let tree = null;
+  try { tree = JSON.parse(readFileSync(hierarchyFile ?? '', 'utf8')); } catch { /* said below */ }
+  let windows = '';
+  try { windows = readFileSync(windowsFile ?? '', 'utf8'); } catch { /* said below as no window */ }
+  const height = keyboardHeight(windows);
+  if (!tree) { console.log('the keyboard: the screen could not be read, so its panel is not known'); process.exit(1); }
+  const shows = showsLetters(tree) ? 'letters' : 'emoji';
+  console.log(`the keyboard shows its ${shows === 'letters' ? 'letters' : 'emoji panel'}${height == null ? ', and no window of its own' : `, ${height}px tall`}`
+    + (shows === want ? '' : ` (it should show its ${want === 'letters' ? 'letters' : 'emoji panel'})`));
+  process.exit(shows === want && height != null ? 0 : 1);
 } else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const [name, target, hierarchyFile, windowsFile, dumpFile] = process.argv.slice(2);
   if (!name || !target || !hierarchyFile || !windowsFile) {

@@ -1,0 +1,25 @@
+appId: com.reelhouse.society
+---
+# A sheet over a sheet: the recovery card, a Modal of its own window, over
+# the sign-in sheet, reached as auth_flow reaches it, with no keyboard on the
+# device. A Modal never resizes for the keyboard: it makes its room from the
+# keyboard's events alone (useModalKeyboardHeight).
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "profile-tab"
+    timeout: 20000
+- tapOn:
+    id: "profile-tab"
+- tapOn:
+    id: "profile-sign-in-prompt"
+- extendedWaitUntil:
+    visible:
+      id: "email-input"
+    timeout: 15000
+- tapOn: "Forgot your credentials?"
+- extendedWaitUntil:
+    visible:
+      id: "recovery-submit-button"
+    timeout: 10000

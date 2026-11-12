@@ -3066,3 +3066,30 @@ mutants:
         find: 'export const forThePhone = (link, phoneApi = PHONE_API) => link.replace('
         replace: 'export const forThePhone = (link, phoneApi = PHONE_API) => link || phoneApi.replace('
     proof: { file: e2e/__tests__/emailLink.test.ts, test: 'reads the Auth link an email carries, its escapes undone, and points it at the stack as the phone reaches it' }
+
+  - id: shape-keyboard-panel-unchecked
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/keyboard-room.mjs
+        find: 'process.exit(shows === want && height != null ? 0 : 1);'
+        replace: 'process.exit(height != null ? 0 : 1);'
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: 'fails a press that opened nothing: the letters still there' }
+
+  - id: shape-keyboard-emoji-not-judged
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: '    measure emoji || room_rc=1'
+        replace: '    : measure emoji'
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: 'every probe is judged on the letters, then again after the emoji key, with the panel checked each time' }
+
+  - id: shape-sheet-keeps-the-first-height
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: src/hooks/useModalKeyboardPadding.ts
+        find: 'height.value = withTiming(e.endCoordinates?.height ?? 0, {'
+        replace: 'height.value = withTiming(height.value || (e.endCoordinates?.height ?? 0), {'
+    proof: { file: src/hooks/__tests__/aSheetFollowsTheKeyboardsHeight.test.tsx, test: 'rises by the keyboard, and follows each new height it says while open' }
