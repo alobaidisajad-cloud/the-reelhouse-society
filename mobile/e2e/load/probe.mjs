@@ -32,6 +32,10 @@ const HOT_POST = '00000000-0000-4000-9000-000000000001';
 
 /** The budget, in milliseconds of database time, for a read a screen waits on. */
 const BUDGET = 100;
+/** Whether the house holds the stacks search under measurement (e2e/load/proposed.sql), timed beside today's. */
+const PROPOSED_STACKS = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-c',
+  "SELECT to_regprocedure('public.get_filtered_stacks_proposed(text, boolean, integer, timestamp with time zone, uuid, integer)') IS NOT NULL"],
+{ encoding: 'utf8' }).trim() === 't';
 
 const PROBES = [
   // The Lobby
@@ -43,6 +47,12 @@ const PROBES = [
   { screen: 'Reel', what: 'the following feed, for a member who follows 2,000', as: mid(4), sql: 'SELECT * FROM public.get_following_feed_auth_cursor(40)' },
   { screen: 'Reel', what: 'stacks, first page', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('', false, 60)" },
   { screen: 'Reel', what: 'stacks, searched', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('stack 12', false, 60)" },
+  // A word every stack has (the walk's best case, a search's worst), and a member's handle (the seed's 'm' || n).
+  { screen: 'Reel', what: 'stacks, searched for a word every stack has', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('stack', false, 60)" },
+  { screen: 'Reel', what: 'stacks, searched by an author\'s handle', as: MEMBER, sql: "SELECT * FROM public.get_filtered_stacks_auth_cursor_v2('m2001', false, 60)" },
+  // The same three, by the search under measurement (e2e/load/proposed.sql), when it is there.
+  ...(PROPOSED_STACKS ? [['stack 12', 'a rare word'], ['stack', 'a word every stack has'], ['m2001', 'an author\'s handle']].map(([q, what]) => (
+    { screen: 'Reel', what: `stacks, searched for ${what}, as proposed`, as: MEMBER, sql: `SELECT * FROM public.get_filtered_stacks_proposed('${q.replace(/'/g, "''")}', false, 60)` })) : []),
   // A member's file
   { screen: 'Profile', what: 'the counts, of the whale', as: MEMBER, sql: `SELECT public.get_profile_counts('${WHALE}')` },
   { screen: 'Profile', what: 'the honours and passport, of the whale', as: MEMBER, sql: `SELECT public.get_public_profile_analytics('${WHALE}')` },
@@ -203,6 +213,37 @@ if (slowest > 0) {
   for (const { p, median } of [...medians].sort((a, b) => b.median - a.median).slice(0, slowest)) {
     console.log(`\n══ ${p.screen} · ${p.what}: median ${median.toFixed(1)} ms ══\n${plan(p)}`);
   }
+}
+
+// The stacks search under measurement answers as today's does: the same stacks in the same order, for
+// every way the Reel asks (no search, a rare word, a word every stack has, a handle, the following
+// filter, the next page after a cursor). A faster search that answers otherwise is not the same read.
+if (PROPOSED_STACKS) {
+  const ask = (fn, args) => {
+    const sql = `BEGIN; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', '${claims(MEMBER)}', true);\n`
+      + `SELECT coalesce(string_agg(id::text, ',' ORDER BY n), '') FROM public.${fn}(${args}) WITH ORDINALITY AS t(id, title, description, username, user_id, created_at, films, film_count, certify_count, is_ranked, n);\nROLLBACK;`;
+    return execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-c', sql], { encoding: 'utf8' }).trim().split('\n').filter(Boolean).pop() ?? '';
+  };
+  // The next page: after the 30th of the rare word's first page.
+  const first = ask('get_filtered_stacks_auth_cursor_v2', "'stack', false, 30").split(',');
+  const after = first.length === 30
+    ? execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-c', `SELECT created_at FROM public.lists WHERE id = '${first[29]}'`], { encoding: 'utf8' }).trim()
+    : '';
+  const cases = [
+    ["''", 'no search'], ["'stack 12'", 'a rare word'], ["'stack'", 'a word every stack has'], ["'m2001'", 'a handle'],
+    ["'stack 1', true", 'the following filter'],
+    ...(after ? [[`'stack', false, 60, '${after}'::timestamptz, '${first[29]}'::uuid`, 'the next page']] : []),
+  ];
+  let differ = 0;
+  for (const [args, what] of cases) {
+    const full = args.includes(',') ? args : `${args}, false, 60`;
+    const today = ask('get_filtered_stacks_auth_cursor_v2', full);
+    const proposed = ask('get_filtered_stacks_proposed', full);
+    const same = today === proposed;
+    if (!same) differ++;
+    console.log(`${same ? '✓' : '✗'} stacks search, as proposed, answers as today's for ${what} (${today.split(',').filter(Boolean).length} stacks)`);
+  }
+  if (differ) { over++; console.log(`::error title=Load — the stacks search as proposed::answers otherwise than today's in ${differ} case(s)`); }
 }
 
 const members = Number(process.env.LOAD_MEMBERS ?? 100000).toLocaleString('en-US');
