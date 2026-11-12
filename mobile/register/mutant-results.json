@@ -325,7 +325,7 @@
     "class": "E2E-app-failure-run-again",
     "mutant": "judge-begun-flow-run-again",
     "proof": "judge",
-    "commit": "6fb7eea814e7d09f2cde61c26db20d670a3da4ca",
+    "commit": "aa3ea991d69e042413232a7aa857d6f736946177",
     "verdict": "caught"
   },
   {
@@ -2342,6 +2342,27 @@
     "mutant": "shape-sheet-keeps-the-first-height",
     "proof": "m5",
     "commit": "b373d4a28f2c94488e050e3b89994522943ead6f",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-app-failure-run-again",
+    "mutant": "shape-offline-retry-despite-airplane",
+    "proof": "m3",
+    "commit": "aa3ea991d69e042413232a7aa857d6f736946177",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-app-failure-run-again",
+    "mutant": "shape-offline-retry-after-a-write",
+    "proof": "m4",
+    "commit": "aa3ea991d69e042413232a7aa857d6f736946177",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-app-failure-run-again",
+    "mutant": "shape-offline-retry-for-a-slow-request",
+    "proof": "m5",
+    "commit": "aa3ea991d69e042413232a7aa857d6f736946177",
     "verdict": "caught"
   }
 ]
