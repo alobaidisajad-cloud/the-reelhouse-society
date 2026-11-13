@@ -22,7 +22,7 @@ describe('on iOS', () => {
     Platform.OS = 'ios';
     const r = render(<CandlelightHalo size={180} intensity={0.38} />);
     const json = JSON.stringify(r.toJSON());
-    const tree = r.toJSON() as { props: { testID: string; nativeID: string; style: { width: number } } };
+    const tree = r.toJSON() as unknown as { props: { testID: string; nativeID: string; style: { width: number } } };
     expect(tree.props.testID).toBe('candlelight-halo');
     // The native background it stands for, carried for the drawings, and no native gradient drawn.
     expect(tree.props.nativeID).toBe(candlelightImage(180, 0.38));
@@ -35,9 +35,9 @@ describe('on iOS', () => {
       for (const c of n.children ?? []) { const hit = find(c, type); if (hit) return hit; }
       return null;
     };
-    const rect = find(r.toJSON() as Node, 'SkiaRect');
+    const rect = find(r.toJSON() as unknown as Node, 'SkiaRect');
     expect(rect?.props).toMatchObject({ x: 0, y: 0, width: 180, height: 180, dither: true });
-    const gradient = find(r.toJSON() as Node, 'SkiaRadialGradient');
+    const gradient = find(r.toJSON() as unknown as Node, 'SkiaRadialGradient');
     expect(gradient?.props).toMatchObject({
       c: { x: 90, y: 90 }, r: 90, positions: [0, 0.42, 1],
       colors: [rgbaOf(colors.flicker, 0.38), rgbaOf(colors.sepia, 0.38 * 0.32), rgbaOf(colors.sepia, 0)],
@@ -48,7 +48,7 @@ describe('on iOS', () => {
 describe('on Android', () => {
   it('keeps the native gradient, which Android draws dithered', () => {
     Platform.OS = 'android';
-    const tree = render(<CandlelightHalo size={180} intensity={0.38} />).toJSON() as { props: { style: Record<string, unknown> } };
+    const tree = render(<CandlelightHalo size={180} intensity={0.38} />).toJSON() as unknown as { props: { style: Record<string, unknown> } };
     expect(tree.props.style.experimental_backgroundImage).toBe(candlelightImage(180, 0.38));
   });
 });
