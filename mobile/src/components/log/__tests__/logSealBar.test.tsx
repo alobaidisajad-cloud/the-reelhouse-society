@@ -113,3 +113,44 @@ describe('the press', () => {
     expect(bar({ rating: 4, sealed: true }).getByText('✦ RECORD SEALED')).toBeTruthy();
   });
 });
+
+describe('while the member writes', () => {
+  // A keyboard up, as Reanimated reports it on the UI thread: the reaction answers at once.
+  const Reanimated = jest.requireMock('react-native-reanimated');
+  const typing = (height: number) => {
+    (Reanimated.useAnimatedKeyboard as jest.Mock).mockImplementation(() => ({ height: { value: height }, state: { value: height > 0 ? 2 : 0 } }));
+    (Reanimated.useAnimatedReaction as jest.Mock).mockImplementation((prepare: () => unknown, react: (n: unknown, b: unknown) => void) => {
+      require('react').useEffect(() => { react(prepare(), false); }, []);
+    });
+  };
+  afterEach(() => {
+    (Reanimated.useAnimatedKeyboard as jest.Mock).mockImplementation(() => ({ height: { value: 0 }, state: { value: 0 } }));
+    (Reanimated.useAnimatedReaction as jest.Mock).mockImplementation(() => undefined);
+  });
+
+  it('keeps the press on the keys, so the record is sealed without putting the keyboard away', async () => {
+    typing(300);
+    const onSeal = jest.fn();
+    const r = bar({ rating: 4, onSeal });
+    // The press stays, named, and answers (it slid away once: Sealed E2E 43242130602).
+    expect(r.getByText('SEAL THE RECORD')).toBeTruthy();
+    await fireEvent.press(r.getByTestId('submit-log-button'));
+    expect(onSeal).toHaveBeenCalled();
+    // The filing line waits for the keyboard to go: the bar is the press alone.
+    expect(r.queryByText(/^FILED ·/)).toBeNull();
+    // Drawn, not merely mounted: the bar (the press's outermost holder) is neither faded out nor
+    // pushed down past the keys, as it was when it slid away.
+    const { StyleSheet } = jest.requireActual('react-native');
+    let node = r.getByTestId('submit-log-button').parent;
+    let style: Record<string, unknown> = {};
+    while (node) { if (node.props?.style) style = StyleSheet.flatten(node.props.style) ?? style; node = node.parent; }
+    expect(style.opacity ?? 1).toBe(1);
+    const down = ((style.transform as { translateY?: number }[] | undefined) ?? []).reduce((y, t) => y + (t.translateY ?? 0), 0);
+    expect(down).toBeLessThanOrEqual(0);
+  });
+
+  it('gives the filing line back when the keyboard goes', () => {
+    typing(0);
+    expect(bar({ rating: 4 }).getByText(/^FILED ·/)).toBeTruthy();
+  });
+});

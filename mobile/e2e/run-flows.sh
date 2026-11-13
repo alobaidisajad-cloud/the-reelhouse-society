@@ -396,6 +396,9 @@ measure() {
   for t in "${needs[@]}"; do
     node mobile/e2e/keyboard-room.mjs "$name, $panel" "$t" "$at.json" "$at.windows.txt" "$at.xml" >> "$OUT/keyboard-room.txt" || bad=1
   done
+  # And the field above its press, neither drawn over the other: a field the scroll brings to the
+  # keyboard's top lies under a press that rides there, and both are clear of the keys.
+  node mobile/e2e/keyboard-room.mjs --apart "$name, $panel" "${needs[0]}" "${needs[1]}" "$at.json" "$at.xml" >> "$OUT/keyboard-room.txt" || bad=1
   if [ $bad -ne 0 ]; then
     # What was on the screen, so a target that was not found says where it looked.
     node mobile/e2e/screen.mjs "$at.json" | head -n 14 | sed "s/^/  $name screen · /" >> "$OUT/keyboard-room.txt"

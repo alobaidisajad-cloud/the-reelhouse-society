@@ -90,8 +90,23 @@ describe('the seal reserves enough room for itself', () => {
     expect(readCode(SCREEN)).toMatch(/const scrollEnd = useAboveDockedBar\(SEAL_BAR_HEIGHT\)/);
     expect(readCode(SCREEN)).toMatch(/paddingBottom: scrollEnd/);
     expect(readCode(SEAL)).toMatch(/const edge = useBottomEdge\(\)/);
-    expect(readCode(SEAL)).toMatch(/translateY:[\s\S]{0,80}SEAL_BAR_HEIGHT \+ edge/);
     expect(readCode(SEAL)).toMatch(/paddingBottom: edge \+ DOCKED_BAR_GAP/);
+  });
+
+  it('while writing, SLIM_SEAL_HEIGHT covers the slim bar, and the scroll ends above it', () => {
+    const seal = readCode(SEAL);
+    const slim = Number(seal.match(/SLIM_SEAL_HEIGHT\s*=\s*([\d\s+]+);/)![1].split('+').reduce((a, n) => a + Number(n), 0));
+    const writing = style(seal, 'barWriting');
+    const press = style(seal, 'press');
+    const real = num(writing, 'paddingTop')! + num(press, 'minHeight')! + num(writing, 'paddingBottom')!;
+    expect(real).toBeGreaterThan(0);
+    expect(slim).toBeGreaterThanOrEqual(real);
+    // The bar is never faded or pushed away while writing; on iOS it rises by the keys.
+    expect(seal).not.toMatch(/opacity:\s*keyboard/);
+    expect(seal).toMatch(/translateY: RIDES_THE_KEYS \? -keyboard\.height\.value : 0/);
+    // Android: the scroll ends at the slim bar's top while writing; iOS: the field is brought above it.
+    expect(readCode(SCREEN)).toMatch(/writing && Platform\.OS === 'android' && \{ marginBottom: SLIM_SEAL_HEIGHT \}/);
+    expect(readCode(SCREEN)).toMatch(/reveal\(focused, e\.endCoordinates\.height \+ SLIM_SEAL_HEIGHT\)/);
   });
 });
 

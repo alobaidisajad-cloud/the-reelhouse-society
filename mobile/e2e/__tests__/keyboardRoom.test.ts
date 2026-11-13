@@ -204,6 +204,34 @@ describe('the keyboard’s panel, and its height', () => {
   });
 });
 
+describe('a field and its press, apart', () => {
+  // The log form's review, brought by the scroll to the keyboard's top, under a seal riding there:
+  // each clear of the keys, the field covered all the same.
+  const tree = (pressTop: number) => ({ attributes: {}, children: [
+    { attributes: { 'resource-id': 'review-input', bounds: '[60,1100][1020,1517]' } },
+    { attributes: { 'resource-id': 'submit-log-button', bounds: `[60,${pressTop}][1020,${pressTop + 144}]` } },
+  ] });
+  function apartRun(t: object | null) {
+    if (t) writeFileSync(join(dir, 'h.json'), JSON.stringify(t));
+    const r = spawnSync(process.execPath, [SCRIPT, '--apart', 'log, letters', '#review-input', '#submit-log-button', join(dir, t ? 'h.json' : 'none.json')], { encoding: 'utf8' });
+    return { status: r.status, out: r.stdout.trim() };
+  }
+
+  it('passes a field that ends above its press', () => {
+    expect(apartRun(tree(1517))).toEqual({ status: 0, out: 'log, letters: #review-input and #submit-log-button stand apart (#review-input 1100..1517px, #submit-log-button 1517..1661px)' });
+  });
+
+  it('fails a field the press is drawn over, and says by how much', () => {
+    expect(apartRun(tree(1349))).toEqual({ status: 1, out: 'log, letters: #review-input UNDER #submit-log-button — 144px of it drawn over (#review-input 1100..1517px, #submit-log-button 1349..1493px)' });
+  });
+
+  it('fails when either is not on the screen: nothing was compared', () => {
+    const r = apartRun({ attributes: {}, children: [tree(1517).children[0]] });
+    expect(r).toEqual({ status: 1, out: 'log, letters: #submit-log-button not found on screen, so #review-input and #submit-log-button were not compared' });
+    expect(apartRun(null).status).toBe(1);
+  });
+});
+
 describe('what the runner measures exists', () => {
   const runner = readFileSync(join(__dirname, '..', 'run-flows.sh'), 'utf8');
   const probes = [...runner.matchAll(/'(\w+)\|([#"][^']+)'/g)].map((m) => ({ name: m[1], targets: m[2].split('|') }));
@@ -238,6 +266,7 @@ describe('what the runner measures exists', () => {
     // The screen kept beside each measure, with the keyboard in it (Maestro's screenshot leaves it out).
     expect(measure).toContain('adb exec-out screencap -p > "$at.png"');
     expect(measure).toMatch(/for t in "\$\{needs\[@\]\}"; do\s+node mobile\/e2e\/keyboard-room\.mjs "\$name, \$panel" "\$t"/);
+    expect(measure).toContain('keyboard-room.mjs --apart "$name, $panel" "${needs[0]}" "${needs[1]}" "$at.json" "$at.xml" >> "$OUT/keyboard-room.txt" || bad=1');
     const emoji = readFileSync(join(__dirname, '..', '..', '.maestro', 'keyboard', 'emoji.tap.yaml'), 'utf8');
     expect(emoji).toMatch(/tapOn: "Emoji button"/);
     expect(emoji).not.toMatch(/launchApp|hideKeyboard|back/i);

@@ -1,7 +1,7 @@
-import React from 'react';
-import { StyleSheet, Image } from 'react-native';
+import React, { useState } from 'react';
+import { Platform, StyleSheet, Image } from 'react-native';
 import { Text } from '@/src/components/text';
-import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedKeyboard, useAnimatedReaction, useAnimatedStyle } from 'react-native-reanimated';
 
 import { colors, fonts } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
@@ -17,6 +17,24 @@ const MARK = require('../../../assets/images/reelhouse-logo.png');
 
 /** Height of the bar itself, so the scroll can end above it. */
 export const SEAL_BAR_HEIGHT = 104;
+/** The bar while the member writes: its press alone, 8 above and 8 below. */
+export const SLIM_SEAL_HEIGHT = 8 + 48 + 8;
+/** Whether the bar rises by the keyboard itself: iOS, where no window ends at the keys. */
+const RIDES_THE_KEYS = Platform.OS === 'ios';
+
+/**
+ * Whether the member is writing: a keyboard is up. From the keyboard's own frame on the UI
+ * thread (useAnimatedKeyboard), never its events, so it changes with the frame, not after it.
+ */
+export function useWriting() {
+    const keyboard = useAnimatedKeyboard();
+    const [writing, setWriting] = useState(false);
+    useAnimatedReaction(
+        () => keyboard.height.value > 0,
+        (now, before) => { if (now !== before) runOnJS(setWriting)(now); },
+    );
+    return writing;
+}
 
 interface Props {
     status: 'watched' | 'rewatched' | 'abandoned';
@@ -52,11 +70,18 @@ interface Props {
  * filing mark on the finished record. Not a summary resembling it: the same
  * code. You cannot see one thing here and get another there.
  *
- * ── IT GETS OUT OF THE WAY WHILE YOU WRITE ──────────────────────────────────
- * Driven by `useAnimatedKeyboard`, not keyboard events, because the scroll uses
- * `keyboardDismissMode="interactive"` — dragging dismisses the keyboard
- * CONTINUOUSLY, and a bar driven by events would sit still and then jump. This
- * one rides the drag, on the UI thread.
+ * ── IT STAYS WHILE YOU WRITE ────────────────────────────────────────────────
+ * With the keyboard up the bar keeps its press alone (SLIM_SEAL_HEIGHT), riding
+ * the keys: the record can be sealed without first putting the keyboard away,
+ * as every composer lets its member send (it once slid away while one wrote,
+ * and a member had to know to close the keyboard to find it: the keyboard
+ * probe found it missing, Sealed E2E 43242130602). The filing line returns
+ * when the keyboard goes. Driven by `useAnimatedKeyboard`, not keyboard events,
+ * because the scroll uses `keyboardDismissMode="interactive"`: dragging
+ * dismisses the keyboard CONTINUOUSLY, and a bar driven by events would sit
+ * still and then jump. This one rides the drag, on the UI thread. On Android the
+ * app's root already ends at the keys (KeyboardRoom), so the bar stands there;
+ * on iOS no window ends there, so the bar rises by the keyboard's height.
  */
 export default React.memo(function LogSealBar({
     status, rating, review, abandonedReason, date, watchedWith, physicalMedia,
@@ -64,14 +89,13 @@ export default React.memo(function LogSealBar({
 }: Props) {
     const edge = useBottomEdge();
     const keyboard = useAnimatedKeyboard();
+    const writing = useWriting();
 
     const blockReason = validateLogSubmission(status, rating, review, abandonedReason);
     const ready = blockReason === null;
 
-    // Writing deserves the whole sheet. The bar returns the moment you look up.
     const barStyle = useAnimatedStyle(() => ({
-        transform: [{ translateY: keyboard.height.value > 0 ? SEAL_BAR_HEIGHT + edge : 0 }],
-        opacity: keyboard.height.value > 0 ? 0 : 1,
+        transform: [{ translateY: RIDES_THE_KEYS ? -keyboard.height.value : 0 }],
     }));
 
     const mark = buildFilingMark({
@@ -98,10 +122,12 @@ export default React.memo(function LogSealBar({
             : isEditing ? 'RESEAL THE RECORD' : 'SEAL THE RECORD';
 
     return (
-        <Animated.View style={[s.bar, { paddingBottom: edge + DOCKED_BAR_GAP }, barStyle]}>
-            <Text style={s.line} numberOfLines={1} {...scaledTextProps}>
-                {line}
-            </Text>
+        <Animated.View style={[s.bar, !writing && { paddingBottom: edge + DOCKED_BAR_GAP }, writing && s.barWriting, barStyle]}>
+            {!writing && (
+                <Text style={s.line} numberOfLines={1} {...scaledTextProps}>
+                    {line}
+                </Text>
+            )}
             <PressableScale
                 testID="submit-log-button"
                 style={[s.press, !ready && UNREADY.plate, sealed && s.pressSealed]}
@@ -133,6 +159,8 @@ const s = StyleSheet.create({
         borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.sepiaBorder,
         paddingHorizontal: 20, paddingTop: 12,
     },
+    // While writing: the press alone on the keys, the safe area under the keyboard, not the bar.
+    barWriting: { paddingTop: 8, paddingBottom: 8 },
     line: {
         fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog,
         textAlign: 'center', marginBottom: 11, includeFontPadding: false,

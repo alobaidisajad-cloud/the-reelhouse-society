@@ -38,13 +38,15 @@ export function useRevealHost(dock: number) {
   const scroller = useRef<MeasuredScroll>(null);
   const at = useRef(0);
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => { at.current = e.nativeEvent.contentOffset.y; }, []);
-  const reveal = useCallback((node: View) => {
+  // `over`: what covers the scroll's foot now, when it is more than the bar at rest (a keyboard
+  // and the bar riding it, on iOS, where the scroll's frame runs on under the keys).
+  const reveal = useCallback((node: Pick<View, 'measureInWindow'>, over: number = dock) => {
     const view = scroller.current;
     if (!view) return;
     // Both in the window's own coordinates, so neither the sheet's top nor the status bar counts.
     view.measureInWindow((_vx: number, viewTop: number, _vw: number, viewHeight: number) => {
       node.measureInWindow((_x: number, top: number, _w: number, height: number) => {
-        const by = revealBy({ top, height }, { top: viewTop, height: viewHeight }, dock);
+        const by = revealBy({ top, height }, { top: viewTop, height: viewHeight }, over);
         if (by > 0) view.scrollTo({ y: at.current + by, animated: true });
       });
     });

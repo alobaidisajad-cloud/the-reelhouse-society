@@ -49,6 +49,19 @@ describe('useRevealHost: the scroll moves from where it stands', () => {
     result.current.reveal({ measureInWindow: (cb: any) => cb(0, 700, 300, 100) } as any);
     expect(scrollTo.mock.calls).toEqual([[{ y: 40 + 206, animated: true }]]);
   });
+  it('brings a field above what covers the foot now, when told: the keyboard and the seal riding it', async () => {
+    // iOS: the scroll's frame runs on under the keys, 50..686; a keyboard of 300 and the seal of 64 on
+    // it leave the field room to 322. A field ending at 400 (RN's own reveal stops at the keys' top).
+    const { result } = await renderHook(() => useRevealHost(80));
+    const scrollTo = jest.fn();
+    (result.current.scroller as any).current = { measureInWindow: (cb: any) => cb(0, 50, 300, 636), scrollTo };
+    result.current.reveal({ measureInWindow: (cb: any) => cb(0, 300, 300, 100) } as any, 300 + 64);
+    expect(scrollTo.mock.calls).toEqual([[{ y: 400 + REVEAL_MARGIN - (686 - 364), animated: true }]]);
+    // The bar at rest alone would leave it where it is.
+    scrollTo.mockClear();
+    result.current.reveal({ measureInWindow: (cb: any) => cb(0, 300, 300, 100) } as any);
+    expect(scrollTo.mock.calls).toEqual([]);
+  });
   it('does not scroll for what is already in view', async () => {
     const { result } = await renderHook(() => useRevealHost(80));
     const scrollTo = jest.fn();

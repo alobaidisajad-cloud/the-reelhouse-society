@@ -3129,3 +3129,39 @@ mutants:
         find: 'if [ $room_rc -ne 0 ] && [ -n "${E2E_OLD_CLIENT:-}" ]; then'
         replace: 'if [ $room_rc -ne 0 ] && [ -z "${E2E_OLD_CLIENT:-}" ]; then'
     proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "reports its keyboard's room, and fails only a run of this app on it" }
+
+  - id: shape-seal-hides-while-writing
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: src/components/log/LogSealBar.tsx
+        find: 'transform: [{ translateY: RIDES_THE_KEYS ? -keyboard.height.value : 0 }],'
+        replace: 'transform: [{ translateY: RIDES_THE_KEYS ? -keyboard.height.value : 0 }], opacity: keyboard.height.value > 0 ? 0 : 1,'
+    proof: { file: src/components/log/__tests__/logSealBar.test.tsx, test: 'keeps the press on the keys, so the record is sealed without putting the keyboard away' }
+
+  - id: shape-scroll-ends-under-the-seal
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: app/(modals)/log-modal.tsx
+        find: "writing && Platform.OS === 'android' && { marginBottom: SLIM_SEAL_HEIGHT }"
+        replace: "writing && Platform.OS === 'android' && { marginBottom: 0 }"
+    proof: { file: src/components/log/__tests__/logComposer.test.ts, test: 'while writing, SLIM_SEAL_HEIGHT covers the slim bar, and the scroll ends above it' }
+
+  - id: shape-reveal-ignores-the-keys
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: src/components/layout/RevealAboveDock.tsx
+        find: 'const by = revealBy({ top, height }, { top: viewTop, height: viewHeight }, over);'
+        replace: 'const by = revealBy({ top, height }, { top: viewTop, height: viewHeight }, dock);'
+    proof: { file: src/components/layout/__tests__/whatIsOpenedIsBroughtAboveTheDock.test.tsx, test: 'brings a field above what covers the foot now, when told: the keyboard and the seal riding it' }
+
+  - id: judge-field-under-its-press
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/keyboard-room.mjs
+        find: 'return overlapX > 0 && overlapY > 0'
+        replace: 'return overlapX > 0 && overlapY > 9999'
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: 'fails a field the press is drawn over, and says by how much' }

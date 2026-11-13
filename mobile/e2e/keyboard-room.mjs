@@ -4,6 +4,8 @@
  *
  *   node e2e/keyboard-room.mjs <name> <target> <hierarchy> <windows>
  *   node e2e/keyboard-room.mjs --top <windows>     exit 0 once the keyboard's window is there and drawn
+ *   node e2e/keyboard-room.mjs --apart <name> <field> <press> <hierarchy> [dump.xml]
+ *                                                  exit 0 when neither is drawn over the other
  *   node e2e/keyboard-room.mjs --panel <letters|emoji> <hierarchy> <windows>
  *                                                  exit 0 when the keyboard shows that panel (its height said)
  *
@@ -105,6 +107,19 @@ export function findTargetXml(xml, target) {
   return null;
 }
 
+/**
+ * Whether a field and its press stand apart: neither drawn over the other. Both clear of the keys
+ * is not enough: a field the scroll brings to the keyboard's top lies under a press riding there.
+ */
+export function apart(name, a, b, boxA, boxB) {
+  if (!boxA || !boxB) return { ok: false, line: `${name}: ${!boxA ? a : b} not found on screen, so ${a} and ${b} were not compared` };
+  const overlapX = Math.min(boxA.right, boxB.right) - Math.max(boxA.left, boxB.left);
+  const overlapY = Math.min(boxA.bottom, boxB.bottom) - Math.max(boxA.top, boxB.top);
+  return overlapX > 0 && overlapY > 0
+    ? { ok: false, line: `${name}: ${a} UNDER ${b} — ${overlapY}px of it drawn over (${a} ${boxA.top}..${boxA.bottom}px, ${b} ${boxB.top}..${boxB.bottom}px)` }
+    : { ok: true, line: `${name}: ${a} and ${b} stand apart (${a} ${boxA.top}..${boxA.bottom}px, ${b} ${boxB.top}..${boxB.bottom}px)` };
+}
+
 /** One line saying what was measured, and whether it is a finding. */
 export function verdict(name, target, bounds, top) {
   if (top == null) return { ok: false, line: `${name}: NO KEYBOARD on screen — nothing was measured` };
@@ -120,6 +135,17 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.arg
   let windows = '';
   try { windows = readFileSync(process.argv[3] ?? '', 'utf8'); } catch { /* none yet */ }
   process.exit(keyboardTop(windows) == null ? 1 : 0);
+} else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.argv[2] === '--apart') {
+  // A field and its press, neither over the other: run-flows.sh asks after judging each against the keys.
+  const [name, a, b, hierarchyFile, dumpFile] = process.argv.slice(3);
+  let tree = null;
+  try { tree = JSON.parse(readFileSync(hierarchyFile ?? '', 'utf8')); } catch { /* the dump alone, then */ }
+  let dump = '';
+  try { dump = dumpFile ? readFileSync(dumpFile, 'utf8') : ''; } catch { /* the hierarchy alone, then */ }
+  const find = (t) => (dump && findTargetXml(dump, t)) || (tree && findTarget(tree, t)) || null;
+  const v = apart(name, a, b, find(a), find(b));
+  console.log(v.line);
+  process.exit(v.ok ? 0 : 1);
 } else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.argv[2] === '--panel') {
   // Which of its panels the keyboard shows, and how tall it stands: run-flows.sh asks after each
   // change, so a press that did not open the emoji panel fails, by name, before anything is judged.

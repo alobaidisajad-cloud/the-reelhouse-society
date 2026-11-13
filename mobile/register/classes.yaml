@@ -117,6 +117,10 @@ classes:
       - { kind: static, file: e2e/__tests__/keyboardRoom.test.ts, test: "every probe judges the field the member types in and the press that sends or saves it" }
       - { kind: running, file: src/hooks/__tests__/aSheetFollowsTheKeyboardsHeight.test.tsx, test: "rises by the keyboard, and follows each new height it says while open" }
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "reports its keyboard's room, and fails only a run of this app on it" }
+      - { kind: running, file: src/components/log/__tests__/logSealBar.test.tsx, test: "keeps the press on the keys, so the record is sealed without putting the keyboard away" }
+      - { kind: static, file: src/components/log/__tests__/logComposer.test.ts, test: "while writing, SLIM_SEAL_HEIGHT covers the slim bar, and the scroll ends above it" }
+      - { kind: running, file: src/components/layout/__tests__/whatIsOpenedIsBroughtAboveTheDock.test.tsx, test: "brings a field above what covers the foot now, when told: the keyboard and the seal riding it" }
+      - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "fails a field the press is drawn over, and says by how much" }
     fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers)"
     places: [emulator]
 

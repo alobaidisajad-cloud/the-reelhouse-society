@@ -2,14 +2,14 @@ import { nav } from '@/src/utils/typedRouter';
 import { askIn } from '@/src/utils/askIn';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { ScrollView, View } from 'react-native';
+import { Keyboard, Platform, ScrollView, TextInput, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useAboveDockedBar, useModalTop } from '@/src/components/layout/navMetrics';
 
 import LogForm from '@/src/components/log/LogForm';
 import { st } from '@/src/components/log/LogModalStyles';
 import LogSearchEngine from '@/src/components/log/LogSearchEngine';
-import LogSealBar, { SEAL_BAR_HEIGHT } from '@/src/components/log/LogSealBar';
+import LogSealBar, { SEAL_BAR_HEIGHT, SLIM_SEAL_HEIGHT, useWriting } from '@/src/components/log/LogSealBar';
 import LogAtmosphere from '@/src/components/log/LogAtmosphere';
 import { RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomParts';
 import { EmptyState } from '@/src/components/EmptyStates';
@@ -40,6 +40,19 @@ export default function LogModalScreen() {
     const scrollEnd = useAboveDockedBar(SEAL_BAR_HEIGHT);
     // What the member opens low on the docket is brought above the seal, never left under it.
     const { scroller, onScroll, reveal } = useRevealHost(scrollEnd);
+    // While the member writes the seal stays, slim, on the keys (LogSealBar), and what they write
+    // stays above it. Android: the scroll ends at the seal's top, so the field Android scrolls into
+    // view, line by line, is never under it. iOS: the scroll brings the field to the keyboard's top,
+    // where the seal rides; once the keyboard stands, the field is brought above the seal too.
+    const writing = useWriting();
+    React.useEffect(() => {
+        if (Platform.OS !== 'ios') return undefined;
+        const shown = Keyboard.addListener('keyboardDidShow', (e) => {
+            const focused = TextInput.State.currentlyFocusedInput();
+            if (focused) reveal(focused, e.endCoordinates.height + SLIM_SEAL_HEIGHT);
+        });
+        return () => shown.remove();
+    }, [reveal]);
     const handleTop = useModalTop();
     // Each step the form shows, for the sealed E2E: a flow that lands on the wrong one says when.
     React.useEffect(() => { e2eTrace('log.step', { step, film: film?.id ?? null }); }, [step, film?.id]);
@@ -114,7 +127,7 @@ export default function LogModalScreen() {
                     // The scroll must END above the docked seal, or the last index
                     // entry hides behind it. One measured number: the bar's own
                     // height plus the safe area.
-                    <ScrollView ref={scroller} onScroll={onScroll} scrollEventThrottle={16} style={st.formScroll} contentContainerStyle={[st.formContent, { paddingBottom: scrollEnd }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+                    <ScrollView ref={scroller} onScroll={onScroll} scrollEventThrottle={16} style={[st.formScroll, writing && Platform.OS === 'android' && { marginBottom: SLIM_SEAL_HEIGHT }]} contentContainerStyle={[st.formContent, { paddingBottom: scrollEnd }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
                         <RevealAboveDock.Provider value={reveal}>
                             <LogForm flow={flow} user={user} />
                         </RevealAboveDock.Provider>
