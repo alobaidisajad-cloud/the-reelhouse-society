@@ -19,7 +19,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { View, StyleSheet, Platform, AccessibilityInfo, Pressable } from 'react-native';
 import { Text } from '@/src/components/text';
-import { InIosSheet, useOverlayTop, useColumnWidth } from '@/src/components/layout/navMetrics';
+import { InIosSheet, readingColumn, useOverlayTop, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { E2ERouteMark } from '@/src/components/layout/E2ERouteMark';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { useReduceMotion } from '@/src/hooks/useReduceMotion';
@@ -151,7 +151,7 @@ function ToastScreen({ children, navigation, presentation }: {
     return (
       <ScreenDepth.Provider value={depth}>
         <InIosSheet.Provider value={inSheet}>
-          <View style={styles.layer} accessibilityViewIsModal>
+          <View style={readingColumn} accessibilityViewIsModal>
             {children}
             {pill}
           </View>
@@ -160,11 +160,14 @@ function ToastScreen({ children, navigation, presentation }: {
     );
   }
   // An overlay in this route starts from its top: a sheet's own, or the status bar's edge.
+  // The page and its toast stand in the reading column, on the screen's ink (app/_layout).
   return (
     <ScreenDepth.Provider value={depth}>
       <InIosSheet.Provider value={inSheet}>
-        {children}
-        {pill}
+        <View style={readingColumn}>
+          {children}
+          {pill}
+        </View>
       </InIosSheet.Provider>
     </ScreenDepth.Provider>
   );
@@ -320,7 +323,6 @@ export function spokenLabel(label: string): string {
 }
 
 const styles = StyleSheet.create({
-  layer: { flex: 1 },
   container: {
     position: 'absolute',
     // top is navMetrics' overlay top — see inline style

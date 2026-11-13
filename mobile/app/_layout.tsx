@@ -23,7 +23,6 @@ import { rehydrateDiscoverStore } from '@/src/stores/discover';
 import { rehydrateNotificationStore } from '@/src/stores/notificationStore';
 import { rehydrateVaultStore } from '@/src/stores/vaultStore';
 import { colors } from '@/src/theme/theme';
-import { readingColumn } from '@/src/components/layout/navMetrics';
 import { CourierPrime_400Regular, CourierPrime_400Regular_Italic, CourierPrime_700Bold } from '@expo-google-fonts/courier-prime';
 import { Rye_400Regular, useFonts } from '@expo-google-fonts/rye';
 import { Spectral_400Regular, Spectral_400Regular_Italic, Spectral_500Medium } from '@expo-google-fonts/spectral';
@@ -175,9 +174,11 @@ export default function RootLayout() {
             screenLayout={toastScreenLayout}
             screenOptions={{
               headerShown: false,
-              // Every screen in the reading column: the whole phone on a phone; on a wider window
-              // (an iPad, an unfolded phone) the column, centred, the house's ink beyond it (navMetrics).
-              contentStyle: [{ backgroundColor: colors.ink }, readingColumn],
+              // Every screen the house's ink from edge to edge, its page in the reading column
+              // (toastScreenLayout): the whole phone on a phone; on a wider window (an iPad, an
+              // unfolded phone) the column, centred, the ink beyond it. The column was this style
+              // once, and the screen's own ground beyond it was the system's: white on the iPad.
+              contentStyle: SCREEN_GROUND,
               animation: 'none', // Shutter-Cut Navigation: Instant mechanical cut
             }}
           >
@@ -232,6 +233,9 @@ export default function RootLayout() {
     </BoldTextProvider>
   );
 }
+
+/** A screen's ground, the window's whole width: the page stands in its column on it (ToastHost). */
+export const SCREEN_GROUND = { flex: 1, backgroundColor: colors.ink } as const;
 
 const styles = StyleSheet.create({
   root: {

@@ -829,6 +829,19 @@ classes:
     fix: "The new-filings pill is drawn in the paper's column, where the list keeps its gutter (NEW_FILINGS_ROOM), not at the screen's top under the status bar and the floating bar (mutant shape-pill-at-the-screens-top); the keyboard's cases are E2E-keyboard-covers-the-field's (the salon sheet, the stack's act)"
     places: [none]
 
+  - id: LAYOUT-wide-window-ground-unpainted
+    title: On a window wider than the page (an iPad, an unfolded phone) the ground beyond the reading column is the system's, white, so the house is a dark strip on a white window and a sheet a white card
+    seriousness: layout
+    area: app
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "ios-launch 43460332274, the iPad's first photographs: white beyond the column upright and on its side, the sign-in sheet on a white card" }
+    methods:
+      - { kind: running, file: src/components/layout/__tests__/theGroundSpansTheWindow.test.tsx, test: "draws a pushed page in the reading column" }
+      - { kind: running, file: src/components/layout/__tests__/theGroundSpansTheWindow.test.tsx, test: "gives every screen the ink from edge to edge, no column of its own" }
+    fix: "Every screen's content style is the ink at the window's whole width (SCREEN_GROUND, app/_layout); the page and its toast stand in the reading column inside it, drawn by the layout every route is wrapped in (toastScreenLayout), pushed or presented; the iPad job photographs it on every push (mutants shape-page-not-in-its-column, shape-screen-ground-unpainted)"
+    places: [none]
+
   - id: LAYOUT-ornament-over-words
     title: An ornament pasted over a bill (the one-sheet's snipe) stands over its words where a long name or a large text size raises them, on a small phone
     seriousness: layout

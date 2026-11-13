@@ -3300,6 +3300,24 @@ mutants:
         replace: "                accessibilityLabel={ready ? label : `${label}. ${blockReason}`}"
     proof: { file: src/components/log/__tests__/logSealBar.test.tsx, test: "says aloud the words the press shows while it asks for more, after the act" }
 
+  - id: shape-page-not-in-its-column
+    class: LAYOUT-wide-window-ground-unpainted
+    source: shape
+    edits:
+      - file: src/components/ToastHost.tsx
+        find: "        <View style={readingColumn}>"
+        replace: "        <View style={{ flex: 1 }}>"
+    proof: { file: src/components/layout/__tests__/theGroundSpansTheWindow.test.tsx, test: "draws a pushed page in the reading column" }
+
+  - id: shape-screen-ground-unpainted
+    class: LAYOUT-wide-window-ground-unpainted
+    source: shape
+    edits:
+      - file: app/_layout.tsx
+        find: "export const SCREEN_GROUND = { flex: 1, backgroundColor: colors.ink } as const;"
+        replace: "export const SCREEN_GROUND = { flex: 1 } as const;"
+    proof: { file: src/components/layout/__tests__/theGroundSpansTheWindow.test.tsx, test: "gives every screen the ink from edge to edge, no column of its own" }
+
   - id: shape-glow-given-no-room
     class: LOOK-ios-glow-cut-or-banded
     source: shape
