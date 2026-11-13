@@ -10,7 +10,8 @@
  * per-frame JS), and pointerEvents-safe.
  */
 import React, { memo } from 'react';
-import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { Platform, View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { Canvas, RadialGradient, Rect, vec } from '@shopify/react-native-skia';
 import { Text } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { LucideIcon } from 'lucide-react-native';
@@ -38,7 +39,27 @@ export const CandlelightHalo = memo(function CandlelightHalo({
   size: number;
   intensity?: number;
 }) {
-  return <View style={{ width: size, height: size, experimental_backgroundImage: candlelightImage(size, intensity) }} pointerEvents="none" />;
+  const image = candlelightImage(size, intensity);
+  if (Platform.OS !== 'ios') return <View style={{ width: size, height: size, experimental_backgroundImage: image }} pointerEvents="none" />;
+  // iOS draws a native gradient without dither: on the iPhone the halo's light held one level for
+  // 12 to 40 px at a time, rings on the dark ground (ios-launch 43371370114; Android's is dithered,
+  // no run over 2 px). So iOS draws the same light in Skia, dithered: the same stops, the same
+  // circle. The native background it stands for rides along as `nativeID`, for the drawings.
+  const r = size / 2;
+  return (
+    <View testID="candlelight-halo" nativeID={image} style={{ width: size, height: size }} pointerEvents="none">
+      <Canvas style={{ width: size, height: size }}>
+        <Rect x={0} y={0} width={size} height={size} dither>
+          <RadialGradient
+            c={vec(r, r)}
+            r={r}
+            colors={[rgbaOf(colors.flicker, intensity), rgbaOf(colors.sepia, intensity * 0.32), rgbaOf(colors.sepia, 0)]}
+            positions={[0, 0.42, 1]}
+          />
+        </Rect>
+      </Canvas>
+    </View>
+  );
 });
 
 // ── Film-strip perforations — the frame edges of the admission reel ──

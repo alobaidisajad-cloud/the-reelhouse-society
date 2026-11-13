@@ -32,6 +32,7 @@ import {
   TextInput as RNTextInput,
   type LayoutChangeEvent,
   type NativeSyntheticEvent,
+  type StyleProp,
   type TextInputProps,
   type TextLayoutEventData,
   type TextProps,
@@ -56,7 +57,51 @@ function housed<P extends TextProps | TextInputProps>(props: P, scale: number): 
     const fix = androidTracking(merged.style, merged.allowFontScaling, scale);
     if (fix) return { ...merged, style: [merged.style, fix] };
   }
+  if (Platform.OS === 'ios') {
+    const room = glowRoom(merged.style);
+    if (room) return { ...merged, style: [merged.style, room] };
+  }
   return merged;
+}
+
+/**
+ * 4. A glow has room to fall. iOS draws a Text's shadow inside the Text's own box, so a glow
+ *    whose words fill their box is cut in a hard rectangle: the sign-in title's "The House"
+ *    glowed inside a box on the iPhone (ios-launch 43371370114), its box hugging its longest
+ *    line. Android draws past its box. So on iOS a Text whose styles ask for a shadow is given
+ *    padding of the shadow's reach (its radius and its offset), and the same negative margin:
+ *    its words, their wrapping and its place stand where they stood, and the glow has room.
+ *    The reach is the largest any of its styles asks, so a glow that breathes (the title's,
+ *    4 to 10) has room at its widest. A Text with a ground or a border keeps its box, and so
+ *    does one whose spacing is not a number.
+ */
+export function glowRoom(style: StyleProp<TextStyle>): TextStyle | null {
+  let reach = 0;
+  for (const part of [style].flat(Infinity as 1)) {
+    const s = StyleSheet.flatten(part as StyleProp<TextStyle>);
+    const radius = Number(s?.textShadowRadius ?? 0);
+    if (!(radius > 0)) continue;
+    const off = s?.textShadowOffset ?? { width: 0, height: 0 };
+    reach = Math.max(reach, Math.ceil(radius + Math.max(Math.abs(off.width ?? 0), Math.abs(off.height ?? 0))));
+  }
+  if (!reach) return null;
+  const flat = StyleSheet.flatten(style) ?? {};
+  if (flat.backgroundColor || flat.borderWidth || flat.borderTopWidth || flat.borderBottomWidth) return null;
+  const sides = ['Top', 'Bottom', 'Left', 'Right'] as const;
+  const of = (kind: 'padding' | 'margin', side: (typeof sides)[number]) => {
+    const axis = side === 'Top' || side === 'Bottom' ? `${kind}Vertical` : `${kind}Horizontal`;
+    const v = (flat as Record<string, unknown>)[`${kind}${side}`] ?? (flat as Record<string, unknown>)[axis] ?? (flat as Record<string, unknown>)[kind] ?? 0;
+    return typeof v === 'number' ? v : null;
+  };
+  const room: Record<string, number> = {};
+  for (const side of sides) {
+    const pad = of('padding', side);
+    const mar = of('margin', side);
+    if (pad === null || mar === null) return null;
+    room[`padding${side}`] = pad + reach;
+    room[`margin${side}`] = mar - reach;
+  }
+  return room as TextStyle;
 }
 
 /**

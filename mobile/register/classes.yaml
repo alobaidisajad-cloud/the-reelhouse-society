@@ -780,6 +780,20 @@ classes:
     fix: "react-native-svg's root is RNSVGSvgViewAndroid on Android and RNSVGSvgView on iOS; the renderer (zz-render.lib) draws both as an svg, by one root test (isSvgRoot), so an Android render paints its art as the iOS one does (mutant shape-android-svg-root-unknown)"
     places: [none]
 
+  - id: LOOK-ios-glow-cut-or-banded
+    title: On the iPhone a glow is drawn cut or in rings, where the same screen on Android is smooth (a Text's shadow clipped to its own box; a native gradient drawn without dither)
+    seriousness: layout
+    area: tests
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "the iPhone check's first photograph, ios-launch 43371370114, 2026-11-13" }
+    methods:
+      - { kind: running, file: src/components/text/__tests__/aGlowHasRoomToFall.test.tsx, test: "gives a glowing Text room on iOS, where its glow is drawn inside its box" }
+      - { kind: running, file: src/components/text/__tests__/aGlowHasRoomToFall.test.tsx, test: "makes room for the widest glow any of its styles asks, so a breathing glow has room at its peak" }
+      - { kind: running, file: src/theme/__tests__/theHaloIsDitheredOnIos.test.tsx, test: "draws the halo in Skia, dithered, with the native gradient’s own stops and circle" }
+    fix: "the house Text gives every shadowed Text on iOS padding of its glow's reach and the same negative margin (glowRoom), so the glow falls into room and the layout stands; the sign-in title states its glow's peak; the candlelight halo is drawn on iOS in Skia, dithered, with the native gradient's own stops (mutants shape-glow-given-no-room, shape-glow-room-at-its-rest, shape-halo-banded-again); the iPhone check's judge reads the halo's longest run"
+    places: [simulator]
+
   - id: LAYOUT-ornament-over-words
     title: An ornament pasted over a bill (the one-sheet's snipe) stands over its words where a long name or a large text size raises them, on a small phone
     seriousness: layout

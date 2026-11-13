@@ -607,6 +607,10 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, text
     return `<div data-grad="${grad}"${rnAttr(rn)} style="${style};background-image:linear-gradient(${dir},${stops.join(',')})">${kids}</div>`;
   }
 
+  // The candlelight halo, Skia on iOS (dithered): drawn from the native background it stands for.
+  if (p.testID === 'candlelight-halo') {
+    return `<div${rnAttr(rn)} style="${css(st, false)};background-image:${String(p.nativeID ?? '')}"></div>`;
+  }
   // The bloom is Skia, which does not run here: drawn from the same `BLOOM` numbers.
   if (p.testID === 'room-bloom') {
     return bloomHtml(String(p.nativeID ?? ''), css(st, false), opts);

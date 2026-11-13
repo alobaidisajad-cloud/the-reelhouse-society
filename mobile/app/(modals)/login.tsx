@@ -40,6 +40,12 @@ const HEADER_ROW = 56;
 /** Between the header's lower edge and the titles. */
 const BELOW_THE_HEADER = 16;
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
+/**
+ * The title's glow at its widest, stated beside its style so the house Text gives the glow room at
+ * its peak (glowRoom: on iOS a glow is drawn inside the Text's own box, and "The House" glowed in a
+ * hard rectangle, ios-launch 43371370114). The breathing style below overrides it from 4 to here.
+ */
+const TITLE_GLOW_PEAK = { textShadowRadius: 10 } as const;
 
 // ── Subtle animated pulse for the gold accent line ──
 function PulsingRule() {
@@ -150,8 +156,7 @@ export default function LoginScreen() {
     // CONST-1: channels match base sepia (#B8891A = rgb(184,137,26))
     textShadowColor: `rgba(184, 137, 26, ${interpolate(titleGlow.value, [0, 1], [0.15, 0.55])})`,
     textShadowOffset: { width: 0, height: 0 },
-    // Past ~10 iOS paints a box behind the glyphs, not a halo.
-    textShadowRadius: interpolate(titleGlow.value, [0, 1], [4, 10]),
+    textShadowRadius: interpolate(titleGlow.value, [0, 1], [4, TITLE_GLOW_PEAK.textShadowRadius]),
   }));
 
   // ── Field focus — the ledger line under the active field warms to brass ──
@@ -241,7 +246,7 @@ export default function LoginScreen() {
           {/* Capped for the same reason as the gate's masthead: a fixed
               lineHeight is a ceiling the font grows through, and uncapped the
               multiplier is unbounded. */}
-          <AnimatedText {...displayTextProps} style={[s.title, titleGlowStyle]}>
+          <AnimatedText {...displayTextProps} style={[s.title, TITLE_GLOW_PEAK, titleGlowStyle]}>
             {isLogin ? 'Enter\nThe House' : 'Join\nThe Society'}
           </AnimatedText>
 

@@ -3187,3 +3187,30 @@ mutants:
       - file: ar-languages.txt
         find: "    ar"
         replace: "    en"
+
+  - id: shape-glow-given-no-room
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: src/components/text/index.tsx
+        find: "  if (Platform.OS === 'ios') {\n    const room = glowRoom(merged.style);"
+        replace: "  if (Platform.OS === 'web') {\n    const room = glowRoom(merged.style);"
+    proof: { file: src/components/text/__tests__/aGlowHasRoomToFall.test.tsx, test: 'gives a glowing Text room on iOS, where its glow is drawn inside its box' }
+
+  - id: shape-glow-room-at-its-rest
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: src/components/text/index.tsx
+        find: '    reach = Math.max(reach, Math.ceil(radius + Math.max(Math.abs(off.width ?? 0), Math.abs(off.height ?? 0))));'
+        replace: '    reach = Math.ceil(radius + Math.max(Math.abs(off.width ?? 0), Math.abs(off.height ?? 0)));'
+    proof: { file: src/components/text/__tests__/aGlowHasRoomToFall.test.tsx, test: 'makes room for the widest glow any of its styles asks, so a breathing glow has room at its peak' }
+
+  - id: shape-halo-banded-again
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: src/components/auth/AuthChrome.tsx
+        find: '<Rect x={0} y={0} width={size} height={size} dither>'
+        replace: '<Rect x={0} y={0} width={size} height={size}>'
+    proof: { file: src/theme/__tests__/theHaloIsDitheredOnIos.test.tsx, test: 'draws the halo in Skia, dithered, with the native gradient’s own stops and circle' }
