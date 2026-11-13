@@ -3300,6 +3300,24 @@ mutants:
         replace: "                accessibilityLabel={ready ? label : `${label}. ${blockReason}`}"
     proof: { file: src/components/log/__tests__/logSealBar.test.tsx, test: "says aloud the words the press shows while it asks for more, after the act" }
 
+  - id: shape-halo-judge-blind
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: e2e/ios-sign-in-judge.mjs
+        find: "export const HALO_RUN_MAX = 4;"
+        replace: "export const HALO_RUN_MAX = 400;"
+    proof: { file: e2e/__tests__/iosSignInJudge.test.ts, test: "fails a glow held one colour for more than HALO_RUN_MAX pixels: rings" }
+
+  - id: shape-halo-read-into-the-header
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: e2e/ios-sign-in-judge.mjs
+        find: "    const span = foot === null ? Math.round(60 * scale) : top - Math.round(foot * scale) - 2;"
+        replace: "    const span = Math.round(60 * scale);"
+    proof: { file: e2e/__tests__/iosSignInJudge.test.ts, test: "judges the glow up to the header, never into its flat grey" }
+
   - id: shape-splash-dark-again
     class: LOOK-native-parts-drawn-light
     source: shape

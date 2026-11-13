@@ -9,11 +9,12 @@
  * turned right to left would mirror them). The Arabic run counts only if the simulator said its
  * language was Arabic (ar-languages.txt, `defaults read -g AppleLanguages`). Exits 1 on either.
  *
- * THE HALO'S LIGHT (reported): a column of pixels from the seal's top edge upward through the
- * candlelight halo, read from the English photograph: the longest run of one colour inside the
- * glow. Android's glow is dithered (one level a pixel, no run over 2 px, run 43125165954); a glow
- * drawn without dither shows the same colour for several pixels, and on a dark ground a member may
- * see rings. Reported with its numbers, so the first iOS reading sets the bar.
+ * THE HALO'S LIGHT (judged): a column of pixels from the seal's top edge upward through the
+ * candlelight halo, read from the English photograph, stopping at the foot of the sheet's header
+ * (the full-width box that holds the close button): the longest run of one colour inside the glow.
+ * Android's glow is dithered (no run over 2 px, run 43125165954); so is iOS's, read this way (2 px,
+ * ios-launch 43517908839). The first reading ran 60pt up into the header's flat grey and took its
+ * runs (up to 40 px) for rings. A run over HALO_RUN_MAX fails: rings a member may see on the dark.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -25,6 +26,31 @@ const RECT = /\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]/;
 export const CONTROLS = ['email-input', 'password-input', 'sign-in-submit'];
 /** The seal the halo lights, by its spoken label (SocietySeal). */
 export const SEAL = 'The ReelHouse Society seal';
+/** The sheet's close button, by its label: its full-width box is the header the halo stops at. */
+export const CLOSE = 'Close login';
+/** The longest run of one colour a smooth glow shows on a phone's photograph, in pixels. */
+export const HALO_RUN_MAX = 4;
+
+/** The foot of the sheet's header: the nearest full-width box holding the close button, or null. */
+export function headerFoot(tree) {
+  let screen = null;
+  let foot = null;
+  const walk = (node, chain) => {
+    if (!node || typeof node !== 'object' || foot !== null) return;
+    const a = node.attributes ?? {};
+    const r = RECT.exec(a.bounds || '');
+    const box = r ? { left: +r[1], top: +r[2], right: +r[3], bottom: +r[4] } : null;
+    if (box && !screen && box.right > 0) screen = box;
+    if (a.accessibilityText === CLOSE && screen) {
+      const header = [...chain].reverse().find((b) => b && b.left === screen.left && b.right === screen.right);
+      foot = header ? header.bottom : null;
+      return;
+    }
+    for (const c of node.children ?? []) walk(c, [...chain, box]);
+  };
+  walk(tree, []);
+  return foot;
+}
 
 /** Each id's box in a `maestro hierarchy`, and the screen's own (the root's bounds). */
 export function boxes(tree, ids = CONTROLS) {
@@ -83,8 +109,9 @@ async function main(dir) {
   const side = sameSide(en.found, ar.found);
   if (!side.ok) ok = false;
   out.push(`left to right, the system in Arabic: ${side.ok ? 'no control moved' : 'A CONTROL MOVED, or was not found'}`, ...side.lines.map((l) => `  ${l}`));
-  // The halo: the seal's top edge, a column at its middle, up through the glow.
-  const seal = boxes(read('en.json'), [SEAL]).found[SEAL];
+  // The halo: the seal's top edge, a column at its middle, up through the glow to the header's foot.
+  const tree = read('en.json');
+  const seal = boxes(tree, [SEAL]).found[SEAL];
   if (seal && existsSync(join(dir, 'en.png')) && en.screen) {
     const { PNG } = createRequire(import.meta.url)('pngjs');
     const png = PNG.sync.read(readFileSync(join(dir, 'en.png')));
@@ -92,10 +119,14 @@ async function main(dir) {
     const at = (x, y) => { const i = (png.width * y + x) << 2; return [png.data[i], png.data[i + 1], png.data[i + 2]]; };
     const x = Math.round(((seal.left + seal.right) / 2) * scale);
     const top = Math.round(seal.top * scale) - 2;
-    const r = longestRun(at, x, top, Math.round(60 * scale));
-    out.push(`the halo (reported): above the seal, ${r.levels} colours, the longest run of one ${r.longest} px at ${scale}x (Android, dithered: 2 px)`);
+    const foot = headerFoot(tree);
+    const span = foot === null ? Math.round(60 * scale) : top - Math.round(foot * scale) - 2;
+    const r = longestRun(at, x, top, span);
+    const smooth = r.longest <= HALO_RUN_MAX;
+    if (!smooth) ok = false;
+    out.push(`the halo: ${smooth ? 'smooth' : 'BANDED'}, above the seal${foot === null ? '' : ' to the header'}, ${r.levels} colours over ${span} px, the longest run of one ${r.longest} px at ${scale}x (at most ${HALO_RUN_MAX})`);
   } else {
-    out.push('the halo (reported): not read (no seal in the tree, or no photograph)');
+    out.push('the halo (not judged): not read (no seal in the tree, or no photograph)');
   }
   console.log(out.join('\n'));
   return ok;

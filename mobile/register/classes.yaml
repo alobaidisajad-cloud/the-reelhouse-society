@@ -814,7 +814,9 @@ classes:
       - { kind: running, file: src/components/text/__tests__/aGlowHasRoomToFall.test.tsx, test: "gives a glowing Text room on iOS, where its glow is drawn inside its box" }
       - { kind: running, file: src/components/text/__tests__/aGlowHasRoomToFall.test.tsx, test: "makes room for the widest glow any of its styles asks, so a breathing glow has room at its peak" }
       - { kind: running, file: src/theme/__tests__/theHaloIsDitheredOnIos.test.tsx, test: "draws the halo in Skia, dithered, with the native gradient’s own stops and circle" }
-    fix: "the house Text gives every shadowed Text on iOS padding of its glow's reach and the same negative margin (glowRoom), so the glow falls into room and the layout stands; the sign-in title states its glow's peak; the candlelight halo is drawn on iOS in Skia, dithered, with the native gradient's own stops (mutants shape-glow-given-no-room, shape-glow-room-at-its-rest, shape-halo-banded-again); the iPhone check's judge reads the halo's longest run"
+      - { kind: running, file: e2e/__tests__/iosSignInJudge.test.ts, test: "fails a glow held one colour for more than HALO_RUN_MAX pixels: rings" }
+      - { kind: running, file: e2e/__tests__/iosSignInJudge.test.ts, test: "judges the glow up to the header, never into its flat grey" }
+    fix: "the house Text gives every shadowed Text on iOS padding of its glow's reach and the same negative margin (glowRoom), so the glow falls into room and the layout stands; the sign-in title states its glow's peak; the candlelight halo is drawn on iOS in Skia, dithered, with the native gradient's own stops (mutants shape-glow-given-no-room, shape-glow-room-at-its-rest, shape-halo-banded-again); the iPhone check's judge fails a halo held one colour over 4 px, read up to the sheet's header and not into its flat grey, which the first reading took for rings (mutants shape-halo-judge-blind, shape-halo-read-into-the-header)"
     places: [simulator]
 
   - id: LAYOUT-placed-from-another-box

@@ -75,9 +75,44 @@ describe('the halo\'s light', () => {
     expect(runOf('(x, y) => { const v = 40 - Math.floor(y / 5); return [v, v, v]; }')).toBe(5);
   });
 
-  it('is reported, never judged, until a reading sets the bar', () => {
+  it('is not judged without a photograph', () => {
     const r = judge(sheet(), sheet());
-    expect(r.out).toMatch(/^the halo \(reported\): /m);
+    expect(r.status).toBe(0);
+    expect(r.out).toMatch(/^the halo \(not judged\): /m);
+  });
+
+  /** The sheet with its header (a full-width box holding the close button), at 1x. */
+  const withHeader = () => ({
+    ...sheet(),
+    children: [
+      { attributes: { bounds: '[0,62][402,100]' }, children: [{ attributes: { accessibilityText: 'Close login', bounds: '[22,66][70,96]' } }] },
+      ...sheet().children,
+    ],
+  });
+  /** A 402x874 photograph whose column above the seal holds `level(y)`, the header's flat grey above it. */
+  const photo = (level: (y: number) => number) => {
+    const { PNG } = jest.requireActual('pngjs') as typeof import('pngjs');
+    const png = new PNG({ width: 402, height: 874 });
+    for (let y = 0; y < 874; y++) for (let x = 0; x < 402; x++) {
+      const v = y < 100 ? 30 : level(y);
+      const i = (402 * y + x) << 2;
+      png.data[i] = v; png.data[i + 1] = v; png.data[i + 2] = v; png.data[i + 3] = 255;
+    }
+    writeFileSync(join(dir, 'en.png'), PNG.sync.write(png));
+  };
+
+  it('judges the glow up to the header, never into its flat grey', () => {
+    photo((y) => 40 + (y % 2) + Math.floor(y / 2));
+    const r = judge(withHeader(), withHeader());
+    expect(r.status).toBe(0);
+    expect(r.out).toMatch(/^the halo: smooth, above the seal to the header, \d+ colours over 16 px/m);
+  });
+
+  it('fails a glow held one colour for more than HALO_RUN_MAX pixels: rings', () => {
+    photo((y) => 40 + Math.floor(y / 6));
+    const r = judge(withHeader(), withHeader());
+    expect(r.status).toBe(1);
+    expect(r.out).toMatch(/^the halo: BANDED, .* the longest run of one 6 px/m);
   });
 });
 

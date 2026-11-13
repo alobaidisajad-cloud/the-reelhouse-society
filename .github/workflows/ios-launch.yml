@@ -245,7 +245,7 @@ jobs:
 
       # WORKLIST P4.27 on iOS: the layout locked left to right natively. The sign-in sheet, photographed
       # and read in English, then again with the simulator in Arabic: no control may move. And the
-      # candlelight halo's light read from the English photograph (reported: e2e/ios-sign-in-judge.mjs).
+      # candlelight halo's light read from the English photograph (judged to the sheet's header: e2e/ios-sign-in-judge.mjs).
       - name: The sign-in sheet in English and in Arabic, and the halo's light
         if: always()
         working-directory: mobile
@@ -268,7 +268,7 @@ jobs:
           if ! sheet ar; then tail -n 40 "$S/ar.txt" > "$S/why.txt"; node e2e/annotate.mjs "The sign-in sheet did not open on the iPhone simulator in Arabic" "$S/why.txt"; exit 1; fi
           node e2e/ios-sign-in-judge.mjs "$S" > "$S/verdict.txt"; rc=$?
           cat "$S/verdict.txt"
-          if [ $rc -ne 0 ]; then node e2e/annotate.mjs "The iPhone's layout is not left to right in Arabic" "$S/verdict.txt"; else node e2e/annotate.mjs "The sign-in sheet on the iPhone, English and Arabic" "$S/verdict.txt" notice; fi
+          if [ $rc -ne 0 ]; then node e2e/annotate.mjs "The iPhone's sign-in sheet: a control moved in Arabic, or its halo is banded" "$S/verdict.txt"; else node e2e/annotate.mjs "The sign-in sheet on the iPhone, English and Arabic" "$S/verdict.txt" notice; fi
           exit $rc
 
       # Maestro writes its screenshots under a hidden .maestro folder, which the upload skips unless asked.
