@@ -3261,6 +3261,24 @@ mutants:
         replace: ""
     proof: { file: src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx, test: "applies a whole year as its last digit is typed, the keyboard still up" }
 
+  - id: shape-stack-act-under-the-keys
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "        return up ? { bottom: keyboard.height.value, paddingBottom: DOCKED_BAR_GAP } : { bottom: 0, paddingBottom: edge + DOCKED_BAR_GAP };"
+        replace: "        return up ? { bottom: 0, paddingBottom: DOCKED_BAR_GAP } : { bottom: 0, paddingBottom: edge + DOCKED_BAR_GAP };"
+    proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "on iOS, rides the keyboard, its own gap below it" }
+
+  - id: shape-stack-field-left-under-the-bar
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "            if (by > 0) list.scrollToOffset({ offset: at + by, animated: true });"
+        replace: ""
+    proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "brings a focused field under the bar above it, and leaves one already clear" }
+
   - id: shape-glow-given-no-room
     class: LOOK-ios-glow-cut-or-banded
     source: shape

@@ -13,7 +13,9 @@ import { logger } from '@/src/utils/logger';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, InteractionManager, Keyboard, Platform, StyleSheet, View } from 'react-native';
-import { Text, TextInput } from '@/src/components/text';
+import type { FlatList } from 'react-native';
+import { Text, TextInput, focusedInput } from '@/src/components/text';
+import { revealBy } from '@/src/components/layout/RevealAboveDock';
 import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import Animated, { cancelAnimation, ReduceMotion, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
@@ -50,6 +52,24 @@ const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
 /** The docked bar's height above the inset; list-modal.curate.test.tsx checks it. */
 export const CURATE_BAR_HEIGHT = 104;
+
+/**
+ * Brings the focused field above the docked bar where the bar rides the keys, if it stands under it:
+ * the list's frame and the field, each measured in the window, by the log's rule (revealBy). `at` is
+ * the list's scroll offset now.
+ */
+type RevealList = Pick<FlatList<unknown>, 'getNativeScrollRef' | 'scrollToOffset'>;
+export function revealAboveBar(list: RevealList | null, at: number) {
+    const focused = focusedInput();
+    const scroll = list?.getNativeScrollRef() as unknown as Pick<View, 'measureInWindow'> | null | undefined;
+    if (!list || !focused || !scroll) return;
+    scroll.measureInWindow((_vx, viewTop, _vw, viewHeight) => {
+        focused.measureInWindow((_x, top, _w, height) => {
+            const by = revealBy({ top, height }, { top: viewTop, height: viewHeight }, CURATE_BAR_HEIGHT);
+            if (by > 0) list.scrollToOffset({ offset: at + by, animated: true });
+        });
+    });
+}
 
 // Every control here is 48pt by its own box. A hitSlop halo is invisible to both
 // platforms' accessibility, and past the floor only takes area from a neighbour.
@@ -178,6 +198,23 @@ export default function ListModal() {
     const animatedContainerStyle = useAnimatedStyle(() => ({
         paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
     }));
+    // THE ACT rides the keys on iOS. The container's padding makes the list's room, but the bar is
+    // absolute at bottom 0, which no parent's padding moves (Yoga), so it stood under the keyboard.
+    // Android's root already ends at the keyboard (KeyboardRoom). With the keys up the home indicator
+    // is under them, and the bar keeps its own gap alone.
+    const barStyle = useAnimatedStyle(() => {
+        const up = Platform.OS === 'ios' && keyboard.height.value > 0;
+        return up ? { bottom: keyboard.height.value, paddingBottom: DOCKED_BAR_GAP } : { bottom: 0, paddingBottom: edge + DOCKED_BAR_GAP };
+    });
+    // And what the member types in stands above the bar: iOS brings a focused field to the list's foot,
+    // where the bar now rides, so once the keyboard stands the field is brought above the bar too.
+    const listRef = useRef<RevealList>(null);
+    const listAt = useRef(0);
+    useEffect(() => {
+        if (Platform.OS !== 'ios') return undefined;
+        const shown = Keyboard.addListener('keyboardDidShow', () => revealAboveBar(listRef.current, listAt.current));
+        return () => shown.remove();
+    }, []);
 
     const isMounted = useRef(true);
     useEffect(() => {
@@ -709,6 +746,9 @@ export default function ListModal() {
     return (
         <Animated.View style={[s.container, animatedContainerStyle]}>
             <DraggableFlatList
+                // Typed by the drag list as gesture-handler's FlatList; the instance it hands is React Native's.
+                ref={listRef as unknown as React.RefObject<never>}
+                onScrollOffsetChange={(y) => { listAt.current = y; }}
                 data={films}
                 onDragBegin={() => { setMovingId(null); TactileEngine.navigate(); }}
                 onDragEnd={({ data }) => setFilms(data)}
@@ -730,7 +770,7 @@ export default function ListModal() {
 
             {/* THE ACT, docked (the composer's seal is the same): never scrolled to,
                 and a refusal says why. */}
-            <View style={[s.bar, { paddingBottom: edge + DOCKED_BAR_GAP }]}>
+            <Animated.View style={[s.bar, barStyle]}>
                 <Text style={s.barLine} numberOfLines={1} {...scaledTextProps}>{barLine}</Text>
                 <PressableScale
                     style={[s.barPress, !canFile && UNREADY.plate]}
@@ -747,7 +787,7 @@ export default function ListModal() {
                     <Text style={[s.barPressText, !canFile && UNREADY.words]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{fileLabel}</Text>
                 </PressableScale>
                 {/* No CANCEL: the way out is CLOSE, top right, or pulling the sheet down. */}
-            </View>
+            </Animated.View>
         </Animated.View>
     );
 }

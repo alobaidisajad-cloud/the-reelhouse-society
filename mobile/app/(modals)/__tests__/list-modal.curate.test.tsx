@@ -827,3 +827,77 @@ describe('a new stack half-built', () => {
     expect(readDraft('me', 'stack')).toBeNull();
   });
 });
+
+// THE ACT stays on the keys while the member types (the save-in-reach sweep, 2026-11-13). The
+// container's padding made the list's room for the keyboard, but the bar is absolute at bottom 0,
+// which no parent's padding moves: on iOS FILE THE STACK stood under the keyboard. Now it rides the
+// keys there, and a field the keyboard brought to the list's foot is brought above the bar.
+describe('the docked act stays on the keys while the member types', () => {
+  const Reanimated = require('react-native-reanimated');
+  const { bottomEdge } = require('@/src/components/layout/navMetrics');
+  const keyboard = { height: { value: 0 }, state: { value: 0 } };
+  const was = RN.Platform.OS;
+  beforeEach(() => {
+    keyboard.height.value = 0;
+    (Reanimated.useAnimatedKeyboard as jest.Mock).mockImplementation(() => keyboard);
+  });
+  afterEach(() => {
+    RN.Platform.OS = was;
+    (Reanimated.useAnimatedKeyboard as jest.Mock).mockImplementation(() => ({ height: { value: 0 }, state: { value: 0 } }));
+  });
+
+  type Node = { props: Record<string, unknown>; children: (Node | string)[] | null };
+  /** The style of the nearest absolute box holding `words`. */
+  const barHolding = (tree: unknown, words: string) => {
+    const walk = (n: Node | string | null, path: Node[]): Node[] | null => {
+      if (!n || typeof n === 'string') return null;
+      const here = [...path, n];
+      if ((n.children ?? []).includes(words)) return here;
+      for (const c of n.children ?? []) { const f = walk(c, here); if (f) return f; }
+      return null;
+    };
+    const path = walk(tree as Node, []) ?? [];
+    return path.map((n) => flat(n.props.style)).reverse().find((st) => (st as Record<string, unknown>).position === 'absolute');
+  };
+
+  it('on iOS, rides the keyboard, its own gap below it', async () => {
+    RN.Platform.OS = 'ios';
+    keyboard.height.value = 336;
+    const r = await mount();
+    const bar = barHolding(r.toJSON(), 'FILE THE STACK');
+    expect({ bottom: bar?.bottom, foot: bar?.paddingBottom }).toEqual({ bottom: 336, foot: DOCKED_BAR_GAP });
+  });
+
+  it('with no keyboard, and on Android (the root ends at the keyboard), stands on the edge', async () => {
+    for (const os of ['ios', 'android'] as const) {
+      RN.Platform.OS = os;
+      keyboard.height.value = os === 'android' ? 336 : 0;
+      const r = await mount();
+      const bar = barHolding(r.toJSON(), 'FILE THE STACK');
+      expect({ os, bottom: bar?.bottom, foot: bar?.paddingBottom }).toEqual({ os, bottom: 0, foot: bottomEdge(0) + DOCKED_BAR_GAP });
+      r.unmount();
+    }
+  });
+
+  it('brings a focused field under the bar above it, and leaves one already clear', () => {
+    const { revealAboveBar, CURATE_BAR_HEIGHT } = require('../list-modal');
+    const text = require('@/src/components/text');
+    const scrollToOffset = jest.fn();
+    // The list's frame: 100 to 600 in the window; the bar covers its last CURATE_BAR_HEIGHT.
+    const list = {
+      getNativeScrollRef: () => ({ measureInWindow: (cb: (...a: number[]) => void) => cb(0, 100, 375, 500) }),
+      scrollToOffset,
+    };
+    const field = (top: number) => ({ measureInWindow: (cb: (...a: number[]) => void) => cb(0, top, 300, 40) });
+    const spy = jest.spyOn(text, 'focusedInput');
+    spy.mockReturnValue(field(560) as never);
+    revealAboveBar(list, 50);
+    // its foot at 600 + 12 of margin, the bar's top at 600 - CURATE_BAR_HEIGHT
+    expect(scrollToOffset).toHaveBeenCalledWith({ offset: 50 + (600 + 12 - (600 - CURATE_BAR_HEIGHT)), animated: true });
+    scrollToOffset.mockClear();
+    spy.mockReturnValue(field(200) as never);
+    revealAboveBar(list, 50);
+    expect(scrollToOffset).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+});
