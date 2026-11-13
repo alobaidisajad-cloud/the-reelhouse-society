@@ -3252,6 +3252,15 @@ mutants:
         replace: "        // (as CinematicFlashList's rows did). Before {...rest}, so a page may still ask otherwise.\n        keyboardShouldPersistTaps=\"never\""
     proof: { file: src/components/layout/__tests__/flashListKeyboard.test.tsx, test: "passes taps through to its presses while the keyboard is open" }
 
+  - id: shape-year-waits-for-the-keyboard
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: src/components/darkroom/DarkroomFilterPanel.tsx
+        find: "    if (text.length === YEAR_DIGITS) commitYear(end, text);"
+        replace: ""
+    proof: { file: src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx, test: "applies a whole year as its last digit is typed, the keyboard still up" }
+
   - id: shape-glow-given-no-room
     class: LOOK-ios-glow-cut-or-banded
     source: shape

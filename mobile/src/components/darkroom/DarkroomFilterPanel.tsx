@@ -64,8 +64,8 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
    * held to the catalogue's range, and a year past the other end moves both to it.
    * An emptied field lets go of its end.
    */
-  const commitYear = (end: 'from' | 'to') => {
-    const raw = parseInt(end === 'from' ? localYearFrom : localYearTo, 10);
+  const commitYear = (end: 'from' | 'to', typed = end === 'from' ? localYearFrom : localYearTo) => {
+    const raw = parseInt(typed, 10);
     let year: number | null = null;
     if (!isNaN(raw)) {
       year = raw < 100 ? raw + (raw < 30 ? 2000 : 1900) : raw;
@@ -82,6 +82,12 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
       updateFilter(end === 'from' ? { yearFrom: year, decade: null } : { yearTo: year, decade: null });
     }
     (end === 'from' ? setLocalYearFrom : setLocalYearTo)(year ? String(year) : '');
+  };
+  // A whole year is applied as its last digit is typed, the keyboard still up: the number pad has
+  // no key to say "done", so the films answer the year without it being put away first.
+  const typeYear = (end: 'from' | 'to', text: string) => {
+    (end === 'from' ? setLocalYearFrom : setLocalYearTo)(text);
+    if (text.length === YEAR_DIGITS) commitYear(end, text);
   };
   return (
     <PresenceView name="darkroom.filters" style={s.panel}
@@ -107,8 +113,9 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
       <Heading>CUSTOM YEAR RANGE</Heading>
       <View style={s.years}>
         <Text style={s.yearWord} {...scaledTextProps}>FROM</Text>
-        {/* onEndEditing, not onSubmitEditing: the iPhone's number pad has no return key,
-            so a year typed there was never applied. Editing ends on a tap away too. */}
+        {/* A whole year applies as it is typed (typeYear); a shorter one, or one emptied, when
+            editing ends: onEndEditing, not onSubmitEditing, as the iPhone's number pad has no
+            return key. Editing ends on a tap away too. */}
         <TextInput
           style={s.year}
           {...scaledTextProps}
@@ -117,7 +124,7 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
           keyboardAppearance="dark"
           maxLength={YEAR_DIGITS}
           value={localYearFrom}
-          onChangeText={setLocalYearFrom}
+          onChangeText={(text) => typeYear('from', text)}
           onEndEditing={() => commitYear('from')}
           returnKeyType="done"
           accessibilityLabel="From the year"
@@ -131,7 +138,7 @@ export const DarkroomFilterPanel = React.memo(function DarkroomFilterPanel({
           keyboardAppearance="dark"
           maxLength={YEAR_DIGITS}
           value={localYearTo}
-          onChangeText={setLocalYearTo}
+          onChangeText={(text) => typeYear('to', text)}
           onEndEditing={() => commitYear('to')}
           returnKeyType="done"
           accessibilityLabel="To the year"

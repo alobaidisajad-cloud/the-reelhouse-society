@@ -1,6 +1,6 @@
 /**
  * aYearTypedOnAnIPhoneIsApplied.test.tsx — the Darkroom's year range takes the
- * year when editing ENDS, not only on "return".
+ * year when editing ENDS, not only on "return"; a whole year as it is typed.
  *
  * The fields use the number pad, and the iPhone's number pad has no return key:
  * on onSubmitEditing alone, a year typed there was never applied. Editing ends on
@@ -39,6 +39,20 @@ const typeThenLeave = async (field: unknown, text: string) => {
 };
 
 describe('the Darkroom’s year range', () => {
+  it('applies a whole year as its last digit is typed, the keyboard still up', async () => {
+    const onUpdate = jest.fn();
+    const r = render(<Panel onUpdate={onUpdate} />);
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('From the year'), '195'); });
+    expect(onUpdate).not.toHaveBeenCalled();
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('From the year'), '1950'); });
+    expect(onUpdate).toHaveBeenCalledWith({ yearFrom: 1950, decade: null });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('To the year'), '1959'); });
+    expect(onUpdate).toHaveBeenLastCalledWith({ yearTo: 1959, decade: null });
+    // and once editing ends, nothing is written again
+    await act(async () => { await fireEvent(r.getByLabelText('To the year'), 'endEditing'); });
+    expect(onUpdate).toHaveBeenCalledTimes(2);
+  });
+
   it('applies a year when editing ends, with no return key pressed', async () => {
     const onUpdate = jest.fn();
     const r = render(<Panel onUpdate={onUpdate} />);
