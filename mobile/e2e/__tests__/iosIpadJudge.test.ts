@@ -18,7 +18,7 @@ const tree = (w: number, h: number, id: string, box: string) => ({
   attributes: { bounds: `[0,0][${w},${h}]` },
   children: [{ attributes: { 'resource-id': id, bounds: box } }],
 });
-const GOOD: Record<string, object> = {
+const GOOD = {
   'upright-lobby': tree(1032, 1376, 'home-tab', '[464,1290][568,1350]'),
   'upright-sign-in': tree(1032, 1376, 'sign-in-submit', '[200,900][832,952]'),
   'side-sign-in': tree(1376, 1032, 'sign-in-submit', '[372,800][1004,852]'),

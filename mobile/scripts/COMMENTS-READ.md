@@ -184,7 +184,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/__tests__/splashHandoff.test.ts | 2026-10-04 | written with splash-handoff.mjs, on run 37201431874's own lines |
 | e2e/__tests__/coldStart.test.ts | 2026-10-21 | written with cold-start.mjs, on run 39625257830's admin shard's own lines |
 | e2e/__tests__/startStack.test.ts | 2026-10-15 | edited: the ports reserved and waited for, against a fake kernel |
-| e2e/__tests__/iosSimulator.test.ts | 2026-10-25 | new: the script against a stand-in xcrun listing macos-26's simulators, and one with no iPhone 17 Pro; both jobs choose by it |
+| e2e/__tests__/iosSimulator.test.ts | 2026-11-13 | edited: the iPad asked for is picked, a missing one names the iPads; new: the script against a stand-in xcrun listing macos-26's simulators, and one with no iPhone 17 Pro; both jobs choose by it |
 | e2e/__tests__/theRunKeepsWhatItWrites.test.ts | 2026-10-17 | new |
 | e2e/__tests__/variants.test.ts | 2026-11-11 | edited: the 16 KB phone on Android 16; edited: the 16 KB phone with 6 GB; a variant may name its walk (links); edited: a phone of its own may set nothing and is asked it is that phone; each device names its image; pages-16k runs every flow; edited: only the motion-on walk is still to sign in and for its moments, and says why; edited: only the motion-on walk is still until signed in, and it says why; edited: the tablet's data size, and the workflow reading it; edited: every variant on the phone every run has but the tablet, on Android 16; the workflow keys its emulator on that answer; edited: tablet runs every flow; new |
 | e2e/__tests__/verifyWrites.test.ts | 2026-10-15 | edited: one shard's list of flows is what is checked, every flow without one |
@@ -226,7 +226,7 @@ without one). "Read" is the day its comments were last read against its code.
 | e2e/grounds-judges.mjs | 2026-10-17 | edited: the dark walk read against the plain walk, whose emulator is light; a ground moved either way |
 | e2e/ios-crash.mjs | 2026-10-15 | new |
 | e2e/ios-launch.cjs | 2026-10-15 | true as written |
-| e2e/ios-simulator.sh | 2026-10-25 | new: the iPhone 17 Pro on the newest iOS, or the iPhones there are and a failure; read against the macos-26 image's simulators (no iPhone 16 Pro) and the iPhone launch check on PR #128 |
+| e2e/ios-simulator.sh | 2026-11-13 | edited: the device to pick may be named (the iPad), and a missing one lists its own kind; new: the iPhone 17 Pro on the newest iOS, or the iPhones there are and a failure; read against the macos-26 image's simulators (no iPhone 16 Pro) and the iPhone launch check on PR #128 |
 | e2e/keyboard-room.mjs | 2026-11-11 | edited: a field and its press judged apart, neither drawn over the other; edited: the panel read by the key Gboard names on each (?123, ABC), never by a letter; edited: the keyboard’s panel and height said, a press that opened nothing fails; edited: --top: the keyboard's window there and drawn yet, for run-flows.sh to wait on; written with the keyboard probe |
 | e2e/load/probe.mjs | 2026-11-11 | edited: a handle many members share searched, today’s and as proposed, and held to the same answer; edited: a word every stack has and a handle searched; the stacks search as proposed timed beside today’s and held to the same answer; edited: the plans of the n slowest reads, within budget too (LOAD_PLAN_SLOWEST), and the summary names the house's size; edited: a series of 24 parts at the essay ceiling timed as read today and with each part's words as stored (20261109_01); the Lounge's corridor in one trip (get_lounge_list) for the member in 200 rooms, a member, and a host; edited: a member's room, first page, as useMemberRoom asks it, timed; edited: psql's error is shown beside a plan it could not make |
 | e2e/plugins/withCleartextTraffic.js | 2026-09-29 | true; one line narrowed |
@@ -1734,3 +1734,7 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/ios/sign_in_sheet.yaml | 2026-11-11 | new: the sign-in sheet reached signed out and left standing, on the iPhone simulator |
 | src/components/text/__tests__/aGlowHasRoomToFall.test.tsx | 2026-11-11 | new: a glow given room on iOS, its spacing kept, the widest glow’s reach |
 | src/theme/__tests__/theHaloIsDitheredOnIos.test.tsx | 2026-11-11 | new: the halo drawn dithered on iOS with the native gradient’s stops |
+| e2e/ios-ipad-judge.mjs | 2026-11-13 | new: the app on an iPad, upright and on its side, each stage judged (an iPad’s window, held the way the stage says, its control there) |
+| e2e/__tests__/iosIpadJudge.test.ts | 2026-11-13 | new: the iPad judge says no to a refused turn, an iPhone’s window, a stage never reached, a control lost or outside |
+| .maestro/ios/ipad_lobby.yaml | 2026-11-13 | new: the Lobby, signed out, as an iPad opens it fresh |
+| .maestro/ios/turn_sideways.yaml | 2026-11-13 | new: the iPad turned on its side with the sign-in sheet open |
