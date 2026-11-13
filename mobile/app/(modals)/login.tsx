@@ -156,7 +156,8 @@ export default function LoginScreen() {
     // CONST-1: channels match base sepia (#B8891A = rgb(184,137,26))
     textShadowColor: `rgba(184, 137, 26, ${interpolate(titleGlow.value, [0, 1], [0.15, 0.55])})`,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: interpolate(titleGlow.value, [0, 1], [4, TITLE_GLOW_PEAK.textShadowRadius]),
+    // Its peak, 10, is TITLE_GLOW_PEAK's (aTextGlowHasRoom.guard reads this expression's largest value).
+    textShadowRadius: interpolate(titleGlow.value, [0, 1], [4, 10]),
   }));
 
   // ── Field focus — the ledger line under the active field warms to brass ──

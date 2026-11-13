@@ -89,7 +89,8 @@ const ROOM_VIEW = "      <View style={{ position: 'absolute', top: 0, left: 0, w
 const ROOM_SIGNATURE = 'export const RoomLight = memo(function RoomLight({ room, hem, art }: LightProps) {\n';
 const VIGNETTE_STYLE = '    experimental_backgroundImage: VIGNETTE_IMAGE,\n';
 const VIGNETTE_VIEW = '  return <View style={styles.vignette} pointerEvents="none" />;\n';
-const HALO_VIEW = '  return <View style={{ width: size, height: size, experimental_backgroundImage: candlelightImage(size, intensity) }} pointerEvents="none" />;\n';
+// The halo as Android draws it (a native gradient; iOS draws it in Skia, dithered): the lab's phone is Android.
+const HALO_VIEW = "  if (Platform.OS !== 'ios') return <View style={{ width: size, height: size, experimental_backgroundImage: image }} pointerEvents=\"none\" />;\n";
 const SPOT_VIEW = '  return <View style={[spotStyles.wrap, { experimental_backgroundImage: spotlightImage(tint, opacity) }]} pointerEvents="none" />;\n';
 const WELCOME_LIGHT = '        <RoomLight room="lobby" />\n        {readyMark}\n';
 
