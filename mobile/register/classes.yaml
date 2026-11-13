@@ -805,6 +805,18 @@ classes:
     fix: "the house Text gives every shadowed Text on iOS padding of its glow's reach and the same negative margin (glowRoom), so the glow falls into room and the layout stands; the sign-in title states its glow's peak; the candlelight halo is drawn on iOS in Skia, dithered, with the native gradient's own stops (mutants shape-glow-given-no-room, shape-glow-room-at-its-rest, shape-halo-banded-again); the iPhone check's judge reads the halo's longest run"
     places: [simulator]
 
+  - id: LAYOUT-placed-from-another-box
+    title: A box placed by an inset (absolute, top or bottom) inside a parent other than the one its room was kept in, so it stands where no room was kept, under a bar, the status bar or the keyboard
+    seriousness: layout
+    area: app
+    status: OPEN
+    count: 0
+    source: { kind: reviewer, ref: "the sweep for boxes a padding was meant to move, 2026-11-13" }
+    methods:
+      - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "draws the pill in the paper's column, in the gutter kept above the list, not at the screen's top" }
+    fix: "The new-filings pill is drawn in the paper's column, where the list keeps its gutter (NEW_FILINGS_ROOM), not at the screen's top under the status bar and the floating bar (mutant shape-pill-at-the-screens-top); the keyboard's cases are E2E-keyboard-covers-the-field's (the salon sheet, the stack's act)"
+    places: [none]
+
   - id: LAYOUT-ornament-over-words
     title: An ornament pasted over a bill (the one-sheet's snipe) stands over its words where a long name or a large text size raises them, on a small phone
     seriousness: layout

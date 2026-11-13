@@ -3279,6 +3279,18 @@ mutants:
         replace: ""
     proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "brings a focused field under the bar above it, and leaves one already clear" }
 
+  - id: shape-pill-at-the-screens-top
+    class: LAYOUT-placed-from-another-box
+    source: shape
+    edits:
+      - file: app/(tabs)/dispatch.tsx
+        find: "          <Presence>{newCount > 0 ? <NewFilings key=\"new\" count={newCount} onPress={takeTheNew} /> : null}</Presence>\n"
+        replace: ""
+      - file: app/(tabs)/dispatch.tsx
+        find: "        {readyMark}\n"
+        replace: "        {readyMark}\n        <Presence>{newCount > 0 ? <NewFilings key=\"new\" count={newCount} onPress={takeTheNew} /> : null}</Presence>\n"
+    proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "draws the pill in the paper's column, in the gutter kept above the list, not at the screen's top" }
+
   - id: shape-glow-given-no-room
     class: LOOK-ios-glow-cut-or-banded
     source: shape

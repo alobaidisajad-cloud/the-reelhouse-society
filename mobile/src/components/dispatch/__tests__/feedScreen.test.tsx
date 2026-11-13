@@ -379,6 +379,22 @@ describe('the Dispatch feed', () => {
     expect(mockListProps.refreshControl.props.refreshing).toBe(true);
   });
 
+  // It stood at the screen's own top, 5pt down: under the status bar and the floating bar, unseen,
+  // while the gutter kept for it at the list's head (NEW_FILINGS_ROOM) stood empty below the index.
+  it('draws the pill in the paper\'s column, in the gutter kept above the list, not at the screen\'s top', async () => {
+    const { StyleSheet } = jest.requireActual('react-native');
+    const { PAPER_MAX } = jest.requireActual('@/src/components/dispatch/paper/paperMetrics');
+    put({ filings: [filing()], newCount: 3 });
+    const { getByLabelText } = await mount();
+    const column: string[] = [];
+    let at = getByLabelText('3 new filings. Go to the top.').parent;
+    while (at) {
+      if ((StyleSheet.flatten(at.props.style) ?? {}).maxWidth === PAPER_MAX) column.push('the paper\'s column');
+      at = at.parent;
+    }
+    expect(column).toEqual(['the paper\'s column']);
+  });
+
   it('shows no pill when nothing has arrived', async () => {
     put({ filings: [filing()], newCount: 0 });
     const { queryByLabelText, getByText } = await mount();
