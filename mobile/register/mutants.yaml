@@ -3210,6 +3210,27 @@ mutants:
         find: "[0,0][1032,1376]"
         replace: "[0,0][402,874]"
 
+  - id: shape-salon-sheet-padded-from-outside
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: src/components/lounge/CreateLoungeSheet.tsx
+        find: "      <View style={s.sheetKeyboard}>"
+        replace: "      <View style={[s.sheetKeyboard, kbPad]}>"
+      - file: src/components/lounge/CreateLoungeSheet.tsx
+        find: "            style={[s.sheet, { maxHeight: tallest }, sheetStyle, kbPad]}"
+        replace: "            style={[s.sheet, { maxHeight: tallest }, sheetStyle, { paddingBottom: sheetFoot }]}"
+    proof: { file: src/components/layout/__tests__/aSheetRisesWithItsAct.test.tsx, test: "rises with the keyboard, its act inside the box that rose" }
+
+  - id: shape-salon-sheet-never-rises
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: src/components/lounge/CreateLoungeSheet.tsx
+        find: "            style={[s.sheet, { maxHeight: tallest }, sheetStyle, kbPad]}"
+        replace: "            style={[s.sheet, { maxHeight: tallest }, sheetStyle, { paddingBottom: sheetFoot }]}"
+    proof: { file: src/components/layout/__tests__/aSheetRisesWithItsAct.test.tsx, test: "rises with the keyboard, its act inside the box that rose" }
+
   - id: shape-glow-given-no-room
     class: LOOK-ios-glow-cut-or-banded
     source: shape

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useEffectEvent, useRef } from 'react';
 import { characterCount } from '@/src/utils/text';
 import { InColumn } from '@/src/components/layout/InColumn';
-import { View, StyleSheet, Modal, Switch, Keyboard, ActivityIndicator } from 'react-native';
+import { View, ScrollView, StyleSheet, Modal, Switch, Keyboard, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/src/components/text';
 import { nav } from '@/src/utils/typedRouter';
 import * as Crypto from 'expo-crypto';
@@ -22,7 +23,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { ToastHost } from '@/src/components/ToastHost';
 import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
-import { useSheetBottom } from '@/src/components/layout/navMetrics';
+import { overlayTop, useSheetBottom } from '@/src/components/layout/navMetrics';
 
 export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
 
@@ -90,9 +91,12 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
     },
   });
 
-  // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
-  // platform (Android's resize mode can't reach them) — pad on BOTH.
-  const animatedContainerStyle = useModalKeyboardPadding();
+  // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either platform (Android's resize
+  // mode can't reach them), so the sheet itself rises by the keyboard on BOTH. On the sheet, not its
+  // container: an absolute sheet at bottom 0 stands where it stands whatever its parent's padding.
+  // It stops below the status bar; its fields scroll and ESTABLISH stays on the keys.
+  const kbPad = useModalKeyboardPadding(sheetFoot);
+  const tallest = useWindowDimensions().height - overlayTop(useSafeAreaInsets().top);
 
   const handleClose = () => {
     Keyboard.dismiss();
@@ -145,7 +149,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
     <Modal statusBarTranslucent transparent visible={isRendered} animationType="none" onRequestClose={handleClose}>
       <InColumn>
       <GestureHandlerRootView style={{ flex: 1 }} onAccessibilityEscape={handleClose}>
-      <Animated.View style={[s.sheetKeyboard, animatedContainerStyle]}>
+      <View style={s.sheetKeyboard}>
         <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
           <HouseBlur intensity={90} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(6,5,4,0.6)' }]}>
             <PressableScale touch="wayOut" style={s.sheetBackdrop} onPress={handleClose} accessibilityLabel="Close sheet" />
@@ -153,7 +157,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
         </Animated.View>
 
           <Animated.View 
-            style={[s.sheet, sheetStyle, { paddingBottom: sheetFoot }]}
+            style={[s.sheet, { maxHeight: tallest }, sheetStyle, kbPad]}
           >
           <GestureDetector gesture={pan}>
             <View style={{ backgroundColor: 'transparent' }}>
@@ -166,6 +170,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
             </View>
           </GestureDetector>
 
+          <ScrollView style={s.sheetBody} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={s.field}>
             <View style={s.labelLine}>
               <Text style={s.fieldLabel} {...scaledTextProps}>SALON NAME</Text>
@@ -261,6 +266,8 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
             />
           </View>
 
+          </ScrollView>
+
           <View style={s.sheetActions}>
             <PressableScale touch="wayOut" style={s.sheetBtnGhost} onPress={onClose} disabled={creating} haptic="selection" accessibilityLabel="Cancel">
               <Text style={s.sheetBtnGhostText} {...scaledTextProps} numberOfLines={1}>[ CANCEL ]</Text>
@@ -279,7 +286,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
             </PressableScale>
           </View>
           </Animated.View>
-      </Animated.View>
+      </View>
       </GestureHandlerRootView>
       <ToastHost />
       </InColumn>
@@ -292,6 +299,8 @@ const LEAST_NAME = 2;
 
 const s = StyleSheet.create({
   sheetKeyboard: { flex: 1 },
+  // The fields: as tall as they are, less what the keyboard takes once the sheet is at its tallest.
+  sheetBody: { flexGrow: 0, flexShrink: 1 },
   sheetBackdrop: { flex: 1 },
   sheet: {
     position: 'absolute',

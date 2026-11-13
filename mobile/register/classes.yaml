@@ -121,6 +121,9 @@ classes:
       - { kind: static, file: src/components/log/__tests__/logComposer.test.ts, test: "while writing, SLIM_SEAL_HEIGHT covers the slim bar, and the scroll ends above it" }
       - { kind: running, file: src/components/layout/__tests__/whatIsOpenedIsBroughtAboveTheDock.test.tsx, test: "brings a field above what covers the foot now, when told: the keyboard and the seal riding it" }
       - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "fails a field the press is drawn over, and says by how much" }
+      - { kind: running, file: src/components/layout/__tests__/aSheetRisesWithItsAct.test.tsx, test: "rises with the keyboard, its act inside the box that rose" }
+      - { kind: running, file: src/components/layout/__tests__/aSheetRisesWithItsAct.test.tsx, test: "says no to an act inside a sheet pinned to the bottom of a container that took the padding" }
+      - { kind: static, file: src/components/layout/__tests__/aSheetRisesWithItsAct.test.tsx, test: "draws every file that pads by the keyboard, or names why it is drawn elsewhere" }
     fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers)"
     places: [emulator]
 
