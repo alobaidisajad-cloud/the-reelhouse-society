@@ -3188,6 +3188,28 @@ mutants:
         find: "    ar"
         replace: "    en"
 
+  - id: judge-ios-ipad-never-turned
+    class: E2E-phone-only-as-the-runner-has-it
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/ios-ipad
+      run: [node, e2e/ios-ipad-judge.mjs, "{dir}"]
+    edits:
+      - file: side-sign-in.json
+        find: "[0,0][1376,1032]"
+        replace: "[0,0][1032,1376]"
+
+  - id: judge-ios-ipad-an-iphones-window
+    class: E2E-phone-only-as-the-runner-has-it
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/ios-ipad
+      run: [node, e2e/ios-ipad-judge.mjs, "{dir}"]
+    edits:
+      - file: upright-lobby.json
+        find: "[0,0][1032,1376]"
+        replace: "[0,0][402,874]"
+
   - id: shape-glow-given-no-room
     class: LOOK-ios-glow-cut-or-banded
     source: shape

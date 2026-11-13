@@ -3,7 +3,7 @@
  *
  * e2e/ios-simulator.sh is run against a stand-in `xcrun` that answers `simctl list devices
  * available` as the macos-26 image does (iOS 26.2, 26.4 and 26.5, no iPhone 16 Pro), and as an
- * image with no iPhone 17 Pro would.
+ * image with no iPhone 17 Pro would; and asked for the iPad the launch check turns on its side.
  */
 import { spawnSync } from 'child_process';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
@@ -20,19 +20,22 @@ const MACOS_26 = [
   '    iPhone 16e (11111111-1111-1111-1111-111111111111) (Shutdown)',
   '    iPhone 17 Pro (22222222-2222-2222-2222-222222222222) (Shutdown)',
   '    iPhone 17 Pro Max (33333333-3333-3333-3333-333333333333) (Shutdown)',
+  '    iPad Pro 13-inch (M5) (77777777-7777-7777-7777-777777777777) (Shutdown)',
   '-- iOS 26.5 --',
   '    iPhone 17 (44444444-4444-4444-4444-444444444444) (Shutdown)',
   '    iPhone 17 Pro (55555555-5555-5555-5555-555555555555) (Shutdown)',
   '    iPhone 17 Pro Max (66666666-6666-6666-6666-666666666666) (Shutdown)',
+  '    iPad Air 11-inch (M3) (88888888-8888-8888-8888-888888888888) (Shutdown)',
+  '    iPad Pro 13-inch (M5) (99999999-9999-9999-9999-999999999999) (Shutdown)',
 ].join('\n');
 
 /** The script run with an `xcrun` that lists `devices`. */
-function pick(devices: string) {
+function pick(devices: string, ...asked: string[]) {
   const T = mkdtempSync(join(tmpdir(), 'ios-simulator-'));
   mkdirSync(join(T, 'bin'));
   writeFileSync(join(T, 'devices'), `${devices}\n`);
   writeFileSync(join(T, 'bin', 'xcrun'), `#!/usr/bin/env bash\ncat "${posix(join(T, 'devices'))}"\n`, { mode: 0o755 });
-  return spawnSync(BASH, [posix(join(MOBILE, 'e2e', 'ios-simulator.sh'))], {
+  return spawnSync(BASH, [posix(join(MOBILE, 'e2e', 'ios-simulator.sh')), ...asked], {
     encoding: 'utf8',
     env: { ...process.env, PATH: `${join(T, 'bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}` },
   });
@@ -51,7 +54,23 @@ it('with no iPhone 17 Pro, fails and names the iPhones there are', () => {
   expect(r.stderr).toContain('iPhone 17 Pro Max (66666666');
 });
 
-it('is how both iPhone jobs choose their simulator', () => {
+it('names the iPad asked for on the newest iOS, never the iPhone or the other iPad', () => {
+  const r = pick(MACOS_26, 'iPad Pro 13-inch');
+  expect({ status: r.status, id: r.stdout.trim() }).toEqual({ status: 0, id: '99999999-9999-9999-9999-999999999999' });
+});
+
+it('with no such iPad, fails and names the iPads there are, not the iPhones', () => {
+  const r = pick(MACOS_26.split('\n').filter((l) => !l.includes('iPad Pro')).join('\n'), 'iPad Pro 13-inch');
+  expect(r.status).toBe(1);
+  expect(r.stdout).toBe('');
+  expect(r.stderr).toContain('no iPad Pro 13-inch simulator on this image; its iPads:');
+  expect(r.stderr).toContain('iPad Air 11-inch (M3) (88888888');
+  expect(r.stderr).not.toContain('iPhone 17 Pro (');
+});
+
+it('is how both iPhone jobs choose their simulator, and the launch check its iPad', () => {
+  const launch = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'ios-launch.yml'), 'utf8');
+  expect(launch).toContain("IPAD=$(bash e2e/ios-simulator.sh 'iPad Pro 13-inch')");
   for (const workflow of ['ios-launch.yml', 'speed-lab.yml']) {
     const text = readFileSync(join(MOBILE, '..', '.github', 'workflows', workflow), 'utf8');
     expect(`${workflow}: ${text.includes('DEV=$(bash e2e/ios-simulator.sh)')}`).toBe(`${workflow}: true`);

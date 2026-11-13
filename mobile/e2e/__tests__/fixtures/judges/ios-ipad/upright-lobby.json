@@ -1,0 +1,13 @@
+{
+ "attributes": {
+  "bounds": "[0,0][1032,1376]"
+ },
+ "children": [
+  {
+   "attributes": {
+    "resource-id": "home-tab",
+    "bounds": "[464,1290][568,1350]"
+   }
+  }
+ ]
+}

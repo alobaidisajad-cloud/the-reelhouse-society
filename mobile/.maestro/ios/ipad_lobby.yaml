@@ -1,0 +1,14 @@
+appId: com.reelhouse.society
+---
+# The Lobby, signed out, as an iPad opens it fresh: ios-launch.yml photographs
+# it and reads its tree upright, then again once the iPad is on its side
+# (WORKLIST P4.33: every window the app is drawn at, the iPad's among them).
+# It needs no server: what the Lobby cannot read it says it cannot.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "home-tab"
+    timeout: 60000
+- waitForAnimationToEnd:
+    timeout: 5000

@@ -245,6 +245,7 @@ Decisions, as of 2026-09-28:
 | `e2e/__tests__/anonKey.test.ts` | The E2E workflow and the sealed world's config.toml. |
 | `e2e/__tests__/attack.test.ts` | The attack matrix, the schema snapshot and the pending migrations: every table, view and callable function production will have must have its written rules. |
 | `e2e/__tests__/glideLogLevel.test.ts` | The E2E workflow and package.json. |
+| `e2e/__tests__/iosIpadJudge.test.ts` | The iPhone launch workflow, for the iPad's job: its stages, photographs and judge. |
 | `e2e/__tests__/iosLaunch.test.ts` | The iPhone launch workflow. |
 | `e2e/__tests__/iosSignInJudge.test.ts` | The iPhone launch workflow, for the sign-in sheet's English and Arabic step. |
 | `e2e/__tests__/keyboardRoom.test.ts` | The flow runner, the keyboard flows and the app's code, for the ids a probe taps. |

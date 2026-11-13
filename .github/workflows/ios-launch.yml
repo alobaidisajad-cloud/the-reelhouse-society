@@ -9,7 +9,8 @@ name: 📱 iPhone launch
 # on. It must be alive at 5 s and at 25 s, and its first screen must say it is
 # ready by 25 s in the app's own log stream (a launch that never drew fails). No
 # backend: the first screen needs none. Then, on the same simulator, the flows
-# that need no server (mobile/e2e/ios-flows.json), by Maestro.
+# that need no server (mobile/e2e/ios-flows.json), by Maestro. Beside it, from
+# the same build, the app on an iPad, upright and on its side (WORKLIST P4.33).
 
 on:
   push:
@@ -25,10 +26,11 @@ permissions:
   contents: read
 
 jobs:
-  launch:
-    name: 📱 The app opens on an iPhone
+  # The Release build, once: the iPhone and the iPad each take it from here and run side by side.
+  build:
+    name: 📱 The iOS build
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -71,6 +73,46 @@ jobs:
           fi
           mkdir -p "$RUNNER_TEMP/ios"
           cp -R "$(ls -d ios/build/Build/Products/Release-iphonesimulator/*.app | head -n 1)" "$RUNNER_TEMP/ios/app.app"
+          tar -czf "$RUNNER_TEMP/app.tgz" -C "$RUNNER_TEMP/ios" app.app
+
+      # Packed: an artifact keeps no file modes, and an app whose binary lost its own never starts.
+      - name: The build, kept for the iPhone and the iPad
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ios-app
+          path: ${{ runner.temp }}/app.tgz
+          if-no-files-found: error
+          retention-days: 1
+
+  launch:
+    name: 📱 The app opens on an iPhone
+    needs: build
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Xcode 26.6, as the store build
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install the app's packages
+        working-directory: mobile
+        run: npm ci
+
+      # The build, as the build job left it: packed, so the app's files keep their modes.
+      - name: The build, fetched
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ios-app
+          path: ${{ runner.temp }}/ios-app
+      - name: The build, unpacked
+        run: mkdir -p "$RUNNER_TEMP/ios" && tar -xzf "$RUNNER_TEMP/ios-app/app.tgz" -C "$RUNNER_TEMP/ios"
 
       - name: Launched on a fresh simulator, animations on
         working-directory: mobile
@@ -236,6 +278,109 @@ jobs:
         with:
           name: ios-flows
           path: ${{ runner.temp }}/ios-flows
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+
+  ipad:
+    name: 📱 The app on an iPad
+    needs: build
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Xcode 26.6, as the store build
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+
+      # The iPad's scripts (the simulator's pick, the judge, the notes) use node's own modules alone.
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+
+      # The build, as the build job left it: packed, so the app's files keep their modes.
+      - name: The build, fetched
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ios-app
+          path: ${{ runner.temp }}/ios-app
+      - name: The build, unpacked
+        run: mkdir -p "$RUNNER_TEMP/ios" && tar -xzf "$RUNNER_TEMP/ios-app/app.tgz" -C "$RUNNER_TEMP/ios"
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Maestro at one release, checked against the digest recorded when it was pinned: kept in the
+      # cache once fetched, and fetched only when not kept, asked again on a refused answer (it is a
+      # GitHub release, and on 2026-11-08 those timed out for hours and the download failed its digest).
+      - name: Maestro 2.10.0, kept
+        id: maestro-kept
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.maestro-dist
+          key: maestro-cli-2.10.0
+
+      - name: Install Maestro 2.10.0
+        run: |
+          if [ ! -x "$HOME/.maestro-dist/maestro/bin/maestro" ]; then
+            curl -fsSL --retry 5 --retry-all-errors --retry-delay 15 -o "$RUNNER_TEMP/maestro.zip" https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.10.0/maestro.zip
+            echo "29b675e10cc12080e445e9bfb2e2b4e4dfb9c0f2e30d5884120d258b5e1cd991  $RUNNER_TEMP/maestro.zip" | shasum -a 256 -c -
+            unzip -q "$RUNNER_TEMP/maestro.zip" -d "$HOME/.maestro-dist"
+          fi
+          echo "MAESTRO_BIN=$HOME/.maestro-dist/maestro/bin/maestro" >> "$GITHUB_ENV"
+
+      - name: Maestro 2.10.0, saved
+        if: steps.maestro-kept.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.maestro-dist
+          key: maestro-cli-2.10.0
+
+      # WORKLIST P4.33 on iOS: the iPad. The same Release build on the widest iPad the app is drawn at
+      # (1032 by 1376 points; on its side 1376, the drawings' widest), opened fresh: the Lobby and the
+      # sign-in sheet upright, the sheet through a turn on its side, the Lobby on its side. Each stage
+      # photographed and its tree read; e2e/ios-ipad-judge.mjs judges each (an iPad's window, held the
+      # way the stage says, its control there).
+      - name: The app on an iPad, upright and on its side
+        working-directory: mobile
+        env:
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: "180000"
+        run: |
+          set +e
+          S="$RUNNER_TEMP/ios-flows/ipad"
+          mkdir -p "$S"
+          IPAD=$(bash e2e/ios-simulator.sh 'iPad Pro 13-inch') || exit 1
+          xcrun simctl boot "$IPAD"
+          xcrun simctl bootstatus "$IPAD" -b > /dev/null
+          if ! xcrun simctl install "$IPAD" "$RUNNER_TEMP/ios/app.app" > "$S/install.txt" 2>&1; then
+            node e2e/annotate.mjs "The app did not install on the iPad simulator" "$S/install.txt"; exit 1
+          fi
+          stage() {
+            "$MAESTRO_BIN" --device "$IPAD" test ".maestro/ios/$2.yaml" --debug-output "$S/$1" > "$S/$1.txt" 2>&1 < /dev/null || return 1
+            xcrun simctl io "$IPAD" screenshot "$S/$1.png" > /dev/null 2>&1
+            "$MAESTRO_BIN" --device "$IPAD" hierarchy > "$S/$1.json" 2> /dev/null < /dev/null
+          }
+          for s in "upright-lobby ipad_lobby" "upright-sign-in sign_in_sheet" "side-sign-in turn_sideways" "side-lobby ipad_lobby"; do
+            set -- $s
+            if ! stage "$1" "$2"; then
+              xcrun simctl io "$IPAD" screenshot "$S/$1.png" > /dev/null 2>&1
+              tail -n 40 "$S/$1.txt" > "$S/why.txt"; node e2e/annotate.mjs "The iPad stage $1 did not run" "$S/why.txt"
+            fi
+          done
+          node e2e/ios-ipad-judge.mjs "$S" > "$S/verdict.txt"; rc=$?
+          cat "$S/verdict.txt"
+          if [ $rc -ne 0 ]; then node e2e/annotate.mjs "The app on the iPad is not as each stage asks" "$S/verdict.txt"; else node e2e/annotate.mjs "The app on the iPad, upright and on its side" "$S/verdict.txt" notice; fi
+          xcrun simctl shutdown "$IPAD" > /dev/null 2>&1
+          exit $rc
+
+      - name: Keep the iPad's records
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ios-ipad
+          path: ${{ runner.temp }}/ios-flows/ipad
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

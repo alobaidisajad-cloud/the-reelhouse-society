@@ -1,0 +1,13 @@
+{
+ "attributes": {
+  "bounds": "[0,0][1032,1376]"
+ },
+ "children": [
+  {
+   "attributes": {
+    "resource-id": "sign-in-submit",
+    "bounds": "[200,900][832,952]"
+   }
+  }
+ ]
+}

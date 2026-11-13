@@ -1,0 +1,12 @@
+appId: com.reelhouse.society
+---
+# The iPad turned on its side with the sign-in sheet open (sign_in_sheet.yaml
+# left it standing): the sheet must stand through the turn, its press still
+# there. iPad multitasking gives the app every orientation (release-guard).
+- setOrientation: LANDSCAPE_LEFT
+- waitForAnimationToEnd:
+    timeout: 8000
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-submit"
+    timeout: 20000

@@ -292,6 +292,9 @@ classes:
       - { kind: running, file: e2e/__tests__/iosSignInJudge.test.ts, test: "fails a control that moved, and says by how much" }
       - { kind: running, file: e2e/__tests__/iosSignInJudge.test.ts, test: "counts nothing when the simulator never said it was in Arabic" }
       - { kind: static, file: e2e/__tests__/iosSignInJudge.test.ts, test: "photographs and reads the sheet in English, then in Arabic, read back, then judges" }
+      - { kind: running, file: e2e/__tests__/iosIpadJudge.test.ts, test: "fails a turn the app refused: the window still upright" }
+      - { kind: running, file: e2e/__tests__/iosIpadJudge.test.ts, test: "fails an iPhone's window shown on the iPad" }
+      - { kind: static, file: e2e/__tests__/iosIpadJudge.test.ts, test: "is run by the iPhone check on an iPad, after each stage is photographed and read" }
     fix: "e2e/variants.json names each setting a member may choose (largest text, bold text, the narrowest width, three-button navigation, the phone in Arabic, dark mode, motion on, a tablet on Android 16, on its side), with its commands to set, to wait for and to put back; run-flows.sh sets one before the run touches the phone and puts it back at its end, every command sent (mutant shape-variant-input-swallowed), a variant not in the list running nothing (mutant shape-variant-refusal-sent), and a variant that set anything waiting for the phone to settle, its load under 1.0 for up to three minutes, said either way (the dark mode's switch kept the launcher, System UI and the Google app busy, and the dark walk ran at half the plain one's speed: 39614969442, 39642887150; mutant shape-variant-phone-unsettled); largest text, the narrowest width, Arabic and the tablet run every flow (the tablet on its own emulator, e2e/variants.json's device) on three machines and the walk on a fourth; every night runs every variant. Each variant's own pass rules are P0.86's next part"
     places: [emulator]
 
