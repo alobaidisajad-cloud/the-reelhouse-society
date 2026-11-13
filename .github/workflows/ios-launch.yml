@@ -201,6 +201,34 @@ jobs:
           done
           exit $rc
 
+      # WORKLIST P4.27 on iOS: the layout locked left to right natively. The sign-in sheet, photographed
+      # and read in English, then again with the simulator in Arabic: no control may move. And the
+      # candlelight halo's light read from the English photograph (reported: e2e/ios-sign-in-judge.mjs).
+      - name: The sign-in sheet in English and in Arabic, and the halo's light
+        if: always()
+        working-directory: mobile
+        env:
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: "180000"
+        run: |
+          set +e
+          S="$RUNNER_TEMP/ios-flows/sign-in"
+          mkdir -p "$S"
+          sheet() {
+            "$MAESTRO_BIN" --device "$SIM_DEVICE" test .maestro/ios/sign_in_sheet.yaml --debug-output "$S/$1" > "$S/$1.txt" 2>&1 < /dev/null || return 1
+            xcrun simctl io "$SIM_DEVICE" screenshot "$S/$1.png" > /dev/null 2>&1
+            "$MAESTRO_BIN" --device "$SIM_DEVICE" hierarchy > "$S/$1.json" 2> /dev/null < /dev/null
+          }
+          if ! sheet en; then tail -n 40 "$S/en.txt" > "$S/why.txt"; node e2e/annotate.mjs "The sign-in sheet did not open on the iPhone simulator" "$S/why.txt"; exit 1; fi
+          # The whole system in Arabic, as a member's phone is: read back, so a run that never took it says so.
+          xcrun simctl spawn "$SIM_DEVICE" defaults write -g AppleLanguages -array ar
+          xcrun simctl spawn "$SIM_DEVICE" defaults write -g AppleLocale -string ar_IQ
+          xcrun simctl spawn "$SIM_DEVICE" defaults read -g AppleLanguages > "$S/ar-languages.txt" 2>&1
+          if ! sheet ar; then tail -n 40 "$S/ar.txt" > "$S/why.txt"; node e2e/annotate.mjs "The sign-in sheet did not open on the iPhone simulator in Arabic" "$S/why.txt"; exit 1; fi
+          node e2e/ios-sign-in-judge.mjs "$S" > "$S/verdict.txt"; rc=$?
+          cat "$S/verdict.txt"
+          if [ $rc -ne 0 ]; then node e2e/annotate.mjs "The iPhone's layout is not left to right in Arabic" "$S/verdict.txt"; else node e2e/annotate.mjs "The sign-in sheet on the iPhone, English and Arabic" "$S/verdict.txt" notice; fi
+          exit $rc
+
       # Maestro writes its screenshots under a hidden .maestro folder, which the upload skips unless asked.
       - name: Keep the flows' records
         if: always()

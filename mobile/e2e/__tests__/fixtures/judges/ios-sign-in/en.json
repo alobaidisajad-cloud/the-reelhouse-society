@@ -1,0 +1,31 @@
+{
+ "attributes": {
+  "bounds": "[0,0][402,874]"
+ },
+ "children": [
+  {
+   "attributes": {
+    "accessibilityText": "The ReelHouse Society seal",
+    "bounds": "[155,120][247,212]"
+   }
+  },
+  {
+   "attributes": {
+    "resource-id": "email-input",
+    "bounds": "[40,420][362,470]"
+   }
+  },
+  {
+   "attributes": {
+    "resource-id": "password-input",
+    "bounds": "[40,500][362,550]"
+   }
+  },
+  {
+   "attributes": {
+    "resource-id": "sign-in-submit",
+    "bounds": "[40,600][362,652]"
+   }
+  }
+ ]
+}

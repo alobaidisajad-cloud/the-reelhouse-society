@@ -3157,7 +3157,7 @@ mutants:
         replace: 'const by = revealBy({ top, height }, { top: viewTop, height: viewHeight }, dock);'
     proof: { file: src/components/layout/__tests__/whatIsOpenedIsBroughtAboveTheDock.test.tsx, test: 'brings a field above what covers the foot now, when told: the keyboard and the seal riding it' }
 
-  - id: judge-field-under-its-press
+  - id: shape-field-under-its-press
     class: E2E-keyboard-covers-the-field
     source: shape
     edits:
@@ -3165,3 +3165,25 @@ mutants:
         find: 'return overlapX > 0 && overlapY > 0'
         replace: 'return overlapX > 0 && overlapY > 9999'
     proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: 'fails a field the press is drawn over, and says by how much' }
+
+  - id: judge-ios-control-moved
+    class: E2E-phone-only-as-the-runner-has-it
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/ios-sign-in
+      run: [node, e2e/ios-sign-in-judge.mjs, "{dir}"]
+    edits:
+      - file: ar.json
+        find: "[40,420][362,470]"
+        replace: "[10,420][332,470]"
+
+  - id: judge-ios-arabic-never-taken
+    class: E2E-phone-only-as-the-runner-has-it
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/judges/ios-sign-in
+      run: [node, e2e/ios-sign-in-judge.mjs, "{dir}"]
+    edits:
+      - file: ar-languages.txt
+        find: "    ar"
+        replace: "    en"

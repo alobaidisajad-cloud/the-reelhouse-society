@@ -1,0 +1,23 @@
+appId: com.reelhouse.society
+---
+# The sign-in sheet, reached signed out as a member reaches it, and left
+# standing: ios-launch.yml photographs it and reads its tree, once in English
+# and once with the simulator in Arabic (WORKLIST P4.27: the layout locked
+# left to right natively), and reads the halo's light from the photograph.
+# It needs no server: nothing here is asked of the house.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: "home-tab"
+    timeout: 60000
+- tapOn:
+    id: "profile-tab"
+- tapOn:
+    id: "profile-sign-in-prompt"
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-submit"
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 5000

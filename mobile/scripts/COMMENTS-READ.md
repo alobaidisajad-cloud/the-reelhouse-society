@@ -1729,3 +1729,6 @@ without one). "Read" is the day its comments were last read against its code.
 | .maestro/keyboard/recovery.yaml | 2026-11-11 | new: the recovery card over the sign-in sheet, reached with no keyboard |
 | .maestro/keyboard/recovery.tap.yaml | 2026-11-11 | new: the recovery address focused, raising the keyboard |
 | src/hooks/__tests__/aSheetFollowsTheKeyboardsHeight.test.tsx | 2026-11-11 | new: a Modal’s room follows each height the keyboard says, both platforms |
+| e2e/ios-sign-in-judge.mjs | 2026-11-11 | new: the iPhone sign-in sheet judged left to right in Arabic, the halo’s light read |
+| e2e/__tests__/iosSignInJudge.test.ts | 2026-11-11 | new: a control moved, or Arabic never taken, fails; the halo reported |
+| .maestro/ios/sign_in_sheet.yaml | 2026-11-11 | new: the sign-in sheet reached signed out and left standing, on the iPhone simulator |
