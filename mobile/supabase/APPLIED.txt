@@ -233,3 +233,5 @@ society_report_system.sql
 20261111_02_the_faces_are_found_in_order.sql
 20261111_03_the_best_six_are_found_first.sql
 20261111_04_three_faces_per_salon.sql
+20261112_01_the_honours_read_less.sql
+20261112_02_the_stacks_search_finds_its_matches.sql

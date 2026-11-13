@@ -1846,35 +1846,75 @@ CREATE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search text DEFAULT 
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH page AS (
-    SELECT l.id
-      FROM lists l
-     WHERE l.is_private = false
-       AND NOT COALESCE(l.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
-       AND (
-         COALESCE(p_search, '') = ''
-         OR l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-         OR l.user_id IN (
-           SELECT pu.id FROM profiles pu
-            WHERE pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
-         )
-       )
-       AND public.can_view_user_data(l.user_id)
-       AND (
-         p_filter_following = false
-         OR EXISTS (
-           SELECT 1 FROM interactions i
-           WHERE i.target_user_id = l.user_id
-             AND i.user_id = auth.uid()
-             AND i.type = 'follow'
-         )
-       )
-       AND (
-         p_cursor_created_at IS NULL
-         OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id)
-       )
-     ORDER BY l.created_at DESC, l.id DESC
-     LIMIT p_limit
+  WITH
+  -- A search that matches many stacks walks them newest first, as with no search, and stops
+  -- at its page; one that matches few is read by its matches. Counted by the trigram indexes,
+  -- to 1,000 at most (load 43284739569: the walk 6.5 ms for a word every stack has and 292.7
+  -- for a handle; the matches 94.7 and 4.4).
+  -- Under three letters no trigram index can find a word (it is made of three-letter pieces): such
+  -- a search walks, uncounted (load 43292798767: "m1" counted by the indexes took 506.9 ms).
+  many AS MATERIALIZED (
+    SELECT CASE WHEN char_length(COALESCE(p_search, '')) < 3 THEN true ELSE (
+      SELECT count(*) >= 1000 FROM (
+        SELECT l.id FROM lists l
+         WHERE l.is_private = false
+           AND l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+        UNION ALL
+        SELECT l.id FROM profiles pu JOIN lists l ON l.user_id = pu.id
+         WHERE l.is_private = false
+           AND pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+        LIMIT 1000
+      ) counted) END AS walk
+  ),
+  -- The matches of a few, newest first, before anything is asked of them.
+  matched AS MATERIALIZED (
+    SELECT m.id, m.created_at, m.user_id FROM (
+      SELECT l.id, l.created_at, l.user_id
+        FROM lists l
+       WHERE COALESCE(p_search, '') <> '' AND NOT (SELECT walk FROM many) AND l.is_private = false
+         AND l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+      UNION
+      SELECT l.id, l.created_at, l.user_id
+        FROM profiles pu JOIN lists l ON l.user_id = pu.id
+       WHERE COALESCE(p_search, '') <> '' AND NOT (SELECT walk FROM many) AND l.is_private = false
+         AND pu.username ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+    ) m
+     WHERE p_cursor_created_at IS NULL OR (m.created_at, m.id) < (p_cursor_created_at, p_cursor_id)
+     ORDER BY m.created_at DESC, m.id DESC
+  ),
+  page AS (
+    -- No search, or a search of many: today's walk, today's test of each stack.
+    (SELECT l.id, l.created_at
+       FROM lists l
+      WHERE (COALESCE(p_search, '') = '' OR (SELECT walk FROM many))
+        AND (
+          COALESCE(p_search, '') = ''
+          OR l.title ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+          -- The author's handle, looked up as the walk reaches each stack (a scalar subquery is
+          -- never folded into a join): the walk stops at its page, never reading every member
+          -- whose handle holds the word (today's IN (...) did, 219.4 ms for "m1").
+          OR (SELECT pu.username FROM profiles pu WHERE pu.id = l.user_id)
+               ILIKE '%' || like_escape(p_search) || '%' ESCAPE '\'
+        )
+        AND l.is_private = false
+        AND NOT COALESCE(l.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
+        AND public.can_view_user_data(l.user_id)
+        AND (p_filter_following = false OR EXISTS (
+              SELECT 1 FROM interactions i
+               WHERE i.target_user_id = l.user_id AND i.user_id = auth.uid() AND i.type = 'follow'))
+        AND (p_cursor_created_at IS NULL OR (l.created_at, l.id) < (p_cursor_created_at, p_cursor_id))
+      ORDER BY l.created_at DESC, l.id DESC
+      LIMIT p_limit)
+    UNION ALL
+    -- Read in the order it was kept (newest first), each asked only as it is reached.
+    (SELECT m.id, m.created_at
+       FROM matched m
+      WHERE NOT COALESCE(m.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
+        AND public.can_view_user_data(m.user_id)
+        AND (p_filter_following = false OR EXISTS (
+              SELECT 1 FROM interactions i
+               WHERE i.target_user_id = m.user_id AND i.user_id = auth.uid() AND i.type = 'follow'))
+      LIMIT p_limit)
   )
   SELECT
     l.id, l.title, l.description,
@@ -2237,35 +2277,44 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
     WHEN auth.uid() IS NULL OR NOT public.can_view_user_data(p_user_id)
       THEN '{"error": "forbidden"}'::jsonb
     ELSE (
-      WITH user_logs AS (
-        SELECT *,
+      WITH user_logs AS MATERIALIZED (
+        SELECT film_id, rating, status, view_count,
+          physical_media IS NOT NULL AS on_media,
+          length(review) > 20 AS reviewed,
+          coalesce(watched_date, (created_at AT TIME ZONE 'UTC')::date) AS on_day,
           -- A year of one to four digits; anything else is not a year.
-          CASE WHEN year::text ~ '^\d{1,4}$' THEN year::text::int END AS year_int
+          CASE WHEN year ~ '^\d{1,4}$' THEN year::int END AS year_int,
+          CASE WHEN is_autopsied = true THEN autopsy END AS autopsy
         FROM public.logs WHERE user_id = p_user_id
+      ),
+      -- The films this member logged, each once, joined once.
+      films_read AS MATERIALIZED (
+        SELECT f.popularity, f.genres
+        FROM (SELECT DISTINCT film_id FROM user_logs WHERE film_id > 0) mine
+        JOIN public.films f ON f.id = mine.film_id
       ),
       stamps AS (
         SELECT
           COUNT(*) AS total_logs,
           COUNT(*) FILTER (WHERE year_int < 1960) AS pre_1960_count,
           COUNT(*) FILTER (WHERE rating = 5) AS perfect_ratings_count,
-          bool_or(physical_media IS NOT NULL) AS has_physical_media,
+          bool_or(on_media) AS has_physical_media,
           bool_or(status = 'abandoned') AS has_abandoned,
           COUNT(DISTINCT (year_int / 10) * 10) FILTER (WHERE year_int IS NOT NULL) AS decades_logged_count,
           -- A rewatch is kept on its log; two logs of one film count too.
           -- (coalesce: a member with no logs has rewatched nothing, not "unknown".)
           (coalesce(bool_or(status = 'rewatched' OR coalesce(view_count, 1) > 1), false)
             OR EXISTS (SELECT 1 FROM user_logs GROUP BY film_id HAVING COUNT(*) > 1)) AS has_rewatched,
-          COUNT(*) FILTER (WHERE length(review) > 20) AS reviews_count,
+          COUNT(*) FILTER (WHERE reviewed) AS reviews_count,
           COUNT(*) FILTER (WHERE coalesce(rating, 0) <= 0) AS unrated_count,
           (SELECT coalesce(max(n), 0) FROM (
-             SELECT COUNT(*) AS n FROM user_logs
-              GROUP BY coalesce(watched_date, (created_at AT TIME ZONE 'UTC')::date)
+             SELECT COUNT(*) AS n FROM user_logs GROUP BY on_day
            ) days) AS busiest_day_count,
-          (SELECT COUNT(DISTINCT g) FROM (
-             SELECT DISTINCT film_id FROM user_logs WHERE film_id > 0
-           ) mine
-           JOIN public.films f ON f.id = mine.film_id,
-           LATERAL unnest(f.genres) AS g) AS genres_count
+          -- Grouped, not sorted: COUNT(DISTINCT) sorted the whale's 20,000 genre names to find ~20.
+          (SELECT COUNT(*) FROM (
+             SELECT g FROM films_read, LATERAL unnest(films_read.genres) AS g
+             WHERE g IS NOT NULL GROUP BY g
+           ) kinds) AS genres_count
         FROM user_logs
       ),
       decades AS (
@@ -2276,13 +2325,12 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
       -- The film page's obscurity mark (obscurityScore), for each film read.
       obscurity AS (
         SELECT
-          round(avg(CASE WHEN f.popularity <= 0 THEN 99
-                         ELSE greatest(2, least(99, round(100 - (log(greatest(f.popularity, 1)) / log(5000)) * 98)))
+          round(avg(CASE WHEN popularity <= 0 THEN 99
+                         ELSE greatest(2, least(99, round(100 - (log(greatest(popularity, 1)) / log(5000)) * 98)))
                     END)) AS obscurity_index,
           COUNT(*) AS obscurity_films
-        FROM (SELECT DISTINCT film_id FROM user_logs WHERE film_id > 0) mine
-        JOIN public.films f ON f.id = mine.film_id
-        WHERE f.popularity IS NOT NULL
+        FROM films_read
+        WHERE popularity IS NOT NULL
       ),
       dna AS (
         SELECT
@@ -2294,19 +2342,19 @@ CREATE FUNCTION public.get_public_profile_analytics(p_user_id uuid) RETURNS json
       ),
       autopsies AS (
         SELECT
-          AVG(CASE WHEN (autopsy::jsonb) ? '_v'
-                THEN COALESCE(((autopsy::jsonb)->>'story')::numeric, ((autopsy::jsonb)->>'screenplay')::numeric, ((autopsy::jsonb)->>'script')::numeric)
-                ELSE NULLIF(COALESCE((autopsy::jsonb)->>'story', (autopsy::jsonb)->>'screenplay', (autopsy::jsonb)->>'script')::numeric, 0)
+          AVG(CASE WHEN autopsy ? '_v'
+                THEN COALESCE((autopsy->>'story')::numeric, (autopsy->>'screenplay')::numeric, (autopsy->>'script')::numeric)
+                ELSE NULLIF(COALESCE(autopsy->>'story', autopsy->>'screenplay', autopsy->>'script')::numeric, 0)
               END) AS avg_story,
-          AVG(CASE WHEN (autopsy::jsonb) ? '_v'
-                THEN COALESCE(((autopsy::jsonb)->>'cinematography')::numeric, ((autopsy::jsonb)->>'visuals')::numeric, ((autopsy::jsonb)->>'acting')::numeric)
-                ELSE NULLIF(COALESCE((autopsy::jsonb)->>'cinematography', (autopsy::jsonb)->>'visuals', (autopsy::jsonb)->>'acting')::numeric, 0)
+          AVG(CASE WHEN autopsy ? '_v'
+                THEN COALESCE((autopsy->>'cinematography')::numeric, (autopsy->>'visuals')::numeric, (autopsy->>'acting')::numeric)
+                ELSE NULLIF(COALESCE(autopsy->>'cinematography', autopsy->>'visuals', autopsy->>'acting')::numeric, 0)
               END) AS avg_cinematography,
-          AVG(CASE WHEN (autopsy::jsonb) ? '_v'
-                THEN COALESCE(((autopsy::jsonb)->>'sound')::numeric, ((autopsy::jsonb)->>'score')::numeric, ((autopsy::jsonb)->>'editing')::numeric)
-                ELSE NULLIF(COALESCE((autopsy::jsonb)->>'sound', (autopsy::jsonb)->>'score', (autopsy::jsonb)->>'editing')::numeric, 0)
+          AVG(CASE WHEN autopsy ? '_v'
+                THEN COALESCE((autopsy->>'sound')::numeric, (autopsy->>'score')::numeric, (autopsy->>'editing')::numeric)
+                ELSE NULLIF(COALESCE(autopsy->>'sound', autopsy->>'score', autopsy->>'editing')::numeric, 0)
               END) AS avg_sound
-        FROM user_logs WHERE is_autopsied = true AND autopsy IS NOT NULL
+        FROM user_logs WHERE autopsy IS NOT NULL
       )
       SELECT jsonb_build_object(
         'stamps', (SELECT to_jsonb(s.*) FROM stamps s),

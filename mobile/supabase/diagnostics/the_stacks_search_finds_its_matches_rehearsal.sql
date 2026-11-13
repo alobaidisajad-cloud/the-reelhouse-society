@@ -3,10 +3,10 @@
 -- ════════════════════════════════════════════════════════════════════════════
 --   node mobile/supabase/diagnostics/rehearse.cjs the_stacks_search_finds_its_matches_rehearsal.sql --with-train
 --
--- The Reel's stacks, searched by 8 members each, are read by get_filtered_stacks_auth_cursor_v2 as
--- it stands; then the train applies 20261112_02 here (with_train), and each search is read again:
--- the same stacks in the same order, for every member and every search (on the load lab's full house
--- too, where the train runs this before it applies anything). The searches come from the house's
+-- The Reel's stacks, searched by 8 members each, are read by get_filtered_stacks_auth_cursor_v2:
+-- 20261112_02 is applied on production (2026-11-13), each search held there to the old function's
+-- before it was applied; this shows it still holds there: each search read twice, the same stacks in
+-- the same order, for every member and every search. The searches come from the house's
 -- own stacks and members: no word; two pieces of real titles; a piece of a real author's
 -- handle; a word of two letters and one of one; each again behind the following filter; and the
 -- next page, after the tenth of the first. Read each NOTICE as case|expected|got ; the last line is
@@ -60,11 +60,6 @@ BEGIN
   PERFORM set_config('request.jwt.claims', '', true);
 END $$;
 SELECT pg_temp.rh_read('before') AS done \gset rh_
-
--- The train applies it here first (with_train); a sealed copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261112_02_the_stacks_search_finds_its_matches.sql
-\endif
 
 SELECT pg_temp.rh_read('after') AS done \gset rh_
 
