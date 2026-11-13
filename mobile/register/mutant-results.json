@@ -2285,7 +2285,7 @@
     "class": "NAV-a-stranger-at-a-members-door",
     "mutant": "shape-amend-first-page-taken-whole",
     "proof": "m6",
-    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "commit": "ce46939c3fd8b528291f01edb9f81f7e03ca31b4",
     "verdict": "caught"
   },
   {
@@ -2461,6 +2461,20 @@
     "mutant": "shape-year-waits-for-the-keyboard",
     "proof": "m16",
     "commit": "91cc49a26efadefcffb75efd0ee84758eb68df7b",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-stack-act-under-the-keys",
+    "proof": "m17",
+    "commit": "ce46939c3fd8b528291f01edb9f81f7e03ca31b4",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-stack-field-left-under-the-bar",
+    "proof": "m18",
+    "commit": "ce46939c3fd8b528291f01edb9f81f7e03ca31b4",
     "verdict": "caught"
   },
   {
