@@ -85,8 +85,9 @@ const WELCOME_FILE = 'app/(tabs)/index.tsx';
 
 const SVG_IMPORT = "import Svg, { Defs as SvgDefs, Ellipse as SvgEllipse, LinearGradient as SvgLinear, RadialGradient as SvgRadial, Rect as SvgRect, Stop as SvgStop } from 'react-native-svg';\n";
 
-const ROOM_VIEW = "      <View style={{ position: 'absolute', top: 0, left: 0, width: W, height: H, experimental_backgroundImage: roomLightImage(g, H) }} />\n";
-const ROOM_SIGNATURE = 'export const RoomLight = memo(function RoomLight({ room, hem, art }: LightProps) {\n';
+// The light's own layer (LightLayer), laid `width` wide from `left`: the window's, on a wide window.
+const ROOM_VIEW = "      <View style={{ position: 'absolute', top: 0, left, width, height: H, experimental_backgroundImage: roomLightImage(g, H) }} />\n";
+const ROOM_SIGNATURE = 'function LightLayer({ room, hem, art, width, left }: LightProps & { width: number; left: number }) {\n';
 const VIGNETTE_STYLE = '    experimental_backgroundImage: VIGNETTE_IMAGE,\n';
 const VIGNETTE_VIEW = '  return <View style={styles.vignette} pointerEvents="none" />;\n';
 // The halo as Android draws it (a native gradient; iOS draws it in Skia, dithered): the lab's phone is Android.
@@ -103,7 +104,7 @@ const svgRoom = [
     "import { StyleSheet, View, useWindowDimensions } from 'react-native';\n" + SVG_IMPORT + "import { useSvgId } from '@/src/utils/svgId';\n"),
   edit(ROOM_FILE, ROOM_SIGNATURE, ROOM_SIGNATURE + "  const id = useSvgId('');\n"),
   edit(ROOM_FILE, ROOM_VIEW, [
-    '      <Svg width={W} height={H} style={StyleSheet.absoluteFill}>',
+    "      <Svg width={width} height={H} style={{ position: 'absolute', top: 0, left, width, height: H }}>",
     '        <SvgDefs>',
     '          <SvgRadial id={`pool${id}`} gradientUnits="userSpaceOnUse" cx={g.pool.cx} cy={g.pool.cy} rx={g.pool.rx} ry={g.pool.ry}>',
     '            {g.pool.stops.map(([at, a]) => (',
@@ -121,9 +122,9 @@ const svgRoom = [
     '            ))}',
     '          </SvgRadial>',
     '        </SvgDefs>',
-    '        <SvgRect x={0} y={0} width={W} height={H} fill={`url(#pool${id})`} />',
-    '        <SvgRect x={0} y={0} width={W} height={H} fill={`url(#floor${id})`} />',
-    '        <SvgRect x={0} y={0} width={W} height={H} fill={`url(#corners${id})`} />',
+    '        <SvgRect x={0} y={0} width={width} height={H} fill={`url(#pool${id})`} />',
+    '        <SvgRect x={0} y={0} width={width} height={H} fill={`url(#floor${id})`} />',
+    '        <SvgRect x={0} y={0} width={width} height={H} fill={`url(#corners${id})`} />',
     '      </Svg>',
     '',
   ].join('\n')),
@@ -187,7 +188,7 @@ const svgSpotlight = [
 ];
 
 // No light: every view stays where it is, with nothing painted in it.
-const noRoom = [edit(ROOM_FILE, ROOM_VIEW, "      <View style={{ position: 'absolute', top: 0, left: 0, width: W, height: H }} />\n")];
+const noRoom = [edit(ROOM_FILE, ROOM_VIEW, "      <View style={{ position: 'absolute', top: 0, left, width, height: H }} />\n")];
 const noVignette = [edit(VIGNETTE_FILE, VIGNETTE_STYLE, '')];
 const noHalo = [edit(HALO_FILE, HALO_VIEW, '  return <View style={{ width: size, height: size }} pointerEvents="none" />;\n')];
 

@@ -1478,7 +1478,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/heartbeatsAreKept.test.ts | 2026-10-22 | written: every scheduled workflow has its heartbeat on its own schedule, checking in only when the schedule fired; the check-in's refusals |
 | scripts/batch-report.cjs | 2026-10-22 | written: a batch's report from the register, a line to answer for every class closed by a process; never written over (P0.58) |
 | src/utils/__tests__/theBatchReportIsAnswered.test.ts | 2026-10-22 | written: the report's lines, only those classes; the latest here leaves no answer empty |
-| e2e/lab/arm.mjs | 2026-11-11 | edited: the halo’s arms edit the Android line, iOS drawing it in Skia; edited: the Reel's frames taken apart by what they hold (still, poster, words, breakdown, deck), a frame having no layers |
+| e2e/lab/arm.mjs | 2026-11-13 | edited: the room’s arms edit the light’s own layer (LightLayer, `width` from `left`); edited: the halo’s arms edit the Android line, iOS drawing it in Skia; edited: the Reel's frames taken apart by what they hold (still, poster, words, breakdown, deck), a frame having no layers |
 | e2e/lab/proofs.mjs | 2026-10-22 | written: each scene's shots judged: still, present against no light, main against SVG within the study's bar; a signed luma grid against none (P0.103) |
 | e2e/lab/analyze.mjs | 2026-10-22 | written: the timed starts per build; each against A by a permutation test, called at Holm's p under 0.01; the A/A pair must call nothing; the log read by cold-start.mjs (P0.104) |
 | e2e/lab/lab.sh | 2026-10-22 | written: one emulator boot, settled; the shots in two rounds of opposite order; the timed starts, each measured by one shell call; a trace per timed build (P0.104) |
