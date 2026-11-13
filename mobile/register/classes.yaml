@@ -838,7 +838,7 @@ classes:
     source: { kind: history, ref: "ios-launch 43460332274, the iPad's first photographs: a white window and a white sheet card; the config read showed UIUserInterfaceStyle Automatic, set by expo-splash-screen for a dark splash identical to the light one" }
     methods:
       - { kind: static, file: src/theme/__tests__/theGroundLadder.test.ts, test: "is what the splash screen and the icon are painted with" }
-      - { kind: running, file: src/utils/__tests__/releaseGuard.guard.test.ts, test: "says no to %s, in either format" }
+      - { kind: running, file: src/utils/__tests__/releaseGuard.guard.test.ts, test: "refuses a build that is not dark to iOS, and says what the plist holds" }
     fix: "The splash names no dark variant (any dark splash makes expo-splash-screen set UIUserInterfaceStyle Automatic); app.json's userInterfaceStyle dark then reaches the Info.plist as Dark (expo config --type introspect: Dark); release-guard refuses a build whose Info.plist is not Dark (mutant shape-splash-dark-again)"
     places: [none]
 

@@ -188,13 +188,24 @@ describe('the Info.plist', () => {
     ['a development client setting', { DEV_CLIENT_TRY_TO_LAUNCH_LAST_BUNDLE: false }, 'development client'],
     ['an iPad held upright only', { 'UISupportedInterfaceOrientations~ipad': ['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationPortraitUpsideDown'] }, 'UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight'],
     ['the iPad full screen only', { UIRequiresFullScreen: true }, 'Split View'],
-    // The iPad's first photographs: white beyond the page and a white sheet card, the plist Automatic.
-    ['the phone’s own style, light on a light phone', { UIUserInterfaceStyle: 'Automatic' }, 'UIUserInterfaceStyle is Automatic, not Dark'],
   ])('says no to %s, in either format', (_, change, said) => {
     const plist = { ...PLIST, ...change };
     for (const read of [G.parsePlist(toXmlPlist(plist)), G.parsePlist(toBinaryPlist(plist))]) {
       expect(G.checkPlist(read).join('\n')).toContain(said);
     }
+  });
+
+  // The iPad's first photographs: a white window beyond the page and a white sheet card, the
+  // Info.plist Automatic (a dark splash variant set it): iOS drew its own parts light.
+  it('refuses a build that is not dark to iOS, and says what the plist holds', () => {
+    for (const style of ['Automatic', 'Light', undefined]) {
+      const { UIUserInterfaceStyle: _kept, ...without } = PLIST;
+      const plist = style ? { ...without, UIUserInterfaceStyle: style } : without;
+      for (const read of [G.parsePlist(toXmlPlist(plist)), G.parsePlist(toBinaryPlist(plist))]) {
+        expect(G.checkPlist(read).join('\n')).toContain(`UIUserInterfaceStyle is ${style ?? 'unset'}, not Dark`);
+      }
+    }
+    expect(G.checkPlist(G.parsePlist(toXmlPlist(PLIST)))).toEqual([]);
   });
 });
 
