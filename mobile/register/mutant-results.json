@@ -976,7 +976,7 @@
     "class": "UI-unknown-mark-drawn-as-off",
     "mutant": "shape-row-unknown-never",
     "proof": "m5",
-    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "commit": "79137aecc854cfcc8fe2a2017888c9bbeb540af7",
     "verdict": "caught"
   },
   {
@@ -1452,14 +1452,14 @@
     "class": "SPEED-a-mark-redraws-the-words",
     "mutant": "shape-row-handlers-made-anew",
     "proof": "m1",
-    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "commit": "79137aecc854cfcc8fe2a2017888c9bbeb540af7",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-mark-redraws-the-words",
     "mutant": "shape-words-unmemoised",
     "proof": "m1",
-    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "commit": "79137aecc854cfcc8fe2a2017888c9bbeb540af7",
     "verdict": "caught"
   },
   {
@@ -1998,7 +1998,7 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-paper-spinner-over-kept",
     "proof": "m35",
-    "commit": "1146cac76b5c3a266ce6061b7ec1b4d0831b4285",
+    "commit": "79137aecc854cfcc8fe2a2017888c9bbeb540af7",
     "verdict": "caught"
   },
   {
@@ -2285,7 +2285,7 @@
     "class": "NAV-a-stranger-at-a-members-door",
     "mutant": "shape-amend-first-page-taken-whole",
     "proof": "m6",
-    "commit": "ce46939c3fd8b528291f01edb9f81f7e03ca31b4",
+    "commit": "79137aecc854cfcc8fe2a2017888c9bbeb540af7",
     "verdict": "caught"
   },
   {
@@ -2467,14 +2467,21 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-stack-act-under-the-keys",
     "proof": "m17",
-    "commit": "ce46939c3fd8b528291f01edb9f81f7e03ca31b4",
+    "commit": "79137aecc854cfcc8fe2a2017888c9bbeb540af7",
     "verdict": "caught"
   },
   {
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-stack-field-left-under-the-bar",
     "proof": "m18",
-    "commit": "ce46939c3fd8b528291f01edb9f81f7e03ca31b4",
+    "commit": "79137aecc854cfcc8fe2a2017888c9bbeb540af7",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-placed-from-another-box",
+    "mutant": "shape-pill-at-the-screens-top",
+    "proof": "m1",
+    "commit": "79137aecc854cfcc8fe2a2017888c9bbeb540af7",
     "verdict": "caught"
   },
   {
