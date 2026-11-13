@@ -976,7 +976,7 @@
     "class": "UI-unknown-mark-drawn-as-off",
     "mutant": "shape-row-unknown-never",
     "proof": "m5",
-    "commit": "46c57c870c23f5ca6d0f82c365af854fe2c6bc72",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
@@ -1452,14 +1452,14 @@
     "class": "SPEED-a-mark-redraws-the-words",
     "mutant": "shape-row-handlers-made-anew",
     "proof": "m1",
-    "commit": "46c57c870c23f5ca6d0f82c365af854fe2c6bc72",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-mark-redraws-the-words",
     "mutant": "shape-words-unmemoised",
     "proof": "m1",
-    "commit": "46c57c870c23f5ca6d0f82c365af854fe2c6bc72",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
@@ -1907,7 +1907,7 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-cache-rule-not-handed",
     "proof": "m24",
-    "commit": "cc462e5d2289de7881de12cae562d98feade6b6a",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
@@ -1998,7 +1998,7 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-paper-spinner-over-kept",
     "proof": "m35",
-    "commit": "46c57c870c23f5ca6d0f82c365af854fe2c6bc72",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
@@ -2285,7 +2285,7 @@
     "class": "NAV-a-stranger-at-a-members-door",
     "mutant": "shape-amend-first-page-taken-whole",
     "proof": "m6",
-    "commit": "46c57c870c23f5ca6d0f82c365af854fe2c6bc72",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
@@ -2376,7 +2376,7 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-seal-hides-while-writing",
     "proof": "m7",
-    "commit": "46c57c870c23f5ca6d0f82c365af854fe2c6bc72",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
@@ -2467,28 +2467,42 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-stack-act-under-the-keys",
     "proof": "m17",
-    "commit": "46c57c870c23f5ca6d0f82c365af854fe2c6bc72",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-stack-field-left-under-the-bar",
     "proof": "m18",
-    "commit": "46c57c870c23f5ca6d0f82c365af854fe2c6bc72",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
     "class": "LAYOUT-placed-from-another-box",
     "mutant": "shape-pill-at-the-screens-top",
     "proof": "m1",
-    "commit": "46c57c870c23f5ca6d0f82c365af854fe2c6bc72",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
     "class": "UI-shown-but-not-said",
     "mutant": "shape-seal-shows-what-it-never-says",
     "proof": "m1",
-    "commit": "46c57c870c23f5ca6d0f82c365af854fe2c6bc72",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-wide-window-ground-unpainted",
+    "mutant": "shape-page-not-in-its-column",
+    "proof": "m1",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-wide-window-ground-unpainted",
+    "mutant": "shape-screen-ground-unpainted",
+    "proof": "m2",
+    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
     "verdict": "caught"
   },
   {
