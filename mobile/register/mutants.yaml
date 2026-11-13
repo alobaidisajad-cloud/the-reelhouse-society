@@ -3300,6 +3300,15 @@ mutants:
         replace: "                accessibilityLabel={ready ? label : `${label}. ${blockReason}`}"
     proof: { file: src/components/log/__tests__/logSealBar.test.tsx, test: "says aloud the words the press shows while it asks for more, after the act" }
 
+  - id: shape-splash-dark-again
+    class: LOOK-native-parts-drawn-light
+    source: shape
+    edits:
+      - file: app.json
+        find: "          \"resizeMode\": \"contain\",\n          \"backgroundColor\": \"#0D0B09\"\n"
+        replace: "          \"resizeMode\": \"contain\",\n          \"backgroundColor\": \"#0D0B09\",\n          \"dark\": { \"backgroundColor\": \"#0D0B09\", \"image\": \"./assets/images/splash-icon.png\" }\n"
+    proof: { file: src/theme/__tests__/theGroundLadder.test.ts, test: "is what the splash screen and the icon are painted with" }
+
   - id: shape-page-not-in-its-column
     class: LAYOUT-wide-window-ground-unpainted
     source: shape

@@ -344,7 +344,7 @@ without one). "Read" is the day its comments were last read against its code.
 | scripts/press-again.cjs | 2026-10-16 | new: the finder of TST-14, a second press of the same control in a test with no timer advanced and no real wait between |
 | scripts/private-settings.cjs | 2026-10-16 | edited: once a value is read, an error nobody catches is printed with every value read hidden; a rejection reaches the same handler |
 | scripts/register.cjs | 2026-10-15 | new |
-| scripts/release-guard.cjs | 2026-10-31 | edited: the app's own activity takes a turn, a fold and a split-screen resize in place; the iPad holds every turn and never asks for full screen; edited: the fault proxy's port among the E2E world's addresses |
+| scripts/release-guard.cjs | 2026-11-13 | edited: a build whose Info.plist style is not Dark refused (iOS would draw its own parts light on the dark house); edited: the app's own activity takes a turn, a fold and a split-screen resize in place; the iPad holds every turn and never asks for full screen; edited: the fault proxy's port among the E2E world's addresses |
 | scripts/resume.cjs | 2026-11-05 | edited: the E2E's two waiting lists, each entry with its days left, DUE in its last three; edited: the nightly's last nights said at the start of every session; edited: says why gh could not be asked |
 | scripts/schema-snapshot.mjs | 2026-10-15 | edited: the address from the private settings file; default privileges that name no schema |
 | scripts/secret-shapes.cjs | 2026-09-29 | true as written |
@@ -1166,7 +1166,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/theme/__tests__/everyStyleIsRead.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/theme/__tests__/lightFloor.test.ts | — |  |
 | src/theme/__tests__/nothingOvershoots.guard.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
-| src/theme/__tests__/theGroundLadder.test.ts | 2026-11-04 | edited: the sheet over art is the log page's bar; the Auteur's sheet is gone |
+| src/theme/__tests__/theGroundLadder.test.ts | 2026-11-13 | edited: the splash names no dark variant, which set iOS’s style to Automatic; edited: the sheet over art is the log page's bar; the Auteur's sheet is gone |
 | src/theme/__tests__/theLightIsReadable.test.ts | 2026-10-08 | written: every light gradient read back through React Native's own parser |
 | src/theme/__tests__/theRoomIsLit.test.ts | 2026-11-04 | edited: a room's own lamp (HungLight) is its light; edited: the card's back face is gone |
 | src/theme/__tests__/theTextBoxGrowsWithItsText.test.ts | 2026-11-04 | edited: the baths, the rail card, the desk and the directory row plan by the text scale; edited: the widths the opened log plans: the breakdown's columns, the viewings to a row, the quote's balance |
@@ -1308,7 +1308,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/raceDeadline.test.ts | 2026-10-04 | written whole |
 | src/utils/__tests__/recommendations.test.ts | — |  |
 | src/utils/__tests__/rehearsalsRunInCi.guard.test.ts | 2026-10-22 | read whole: no row picked by a helper's call itself, said no to on a planted case and held for every rehearsal; the rules said no to first; the kit, the seed and CI's order |
-| src/utils/__tests__/releaseGuard.guard.test.ts | 2026-10-31 | edited: says no to an app rebuilt by a turn or a fold, an activity it cannot find, an iPad held upright only, and full screen only; edited: Android's sitemap link opened closed, iOS's closed or handed to the app running in that one shape |
+| src/utils/__tests__/releaseGuard.guard.test.ts | 2026-11-13 | edited: an Info.plist in the phone’s own style refused; edited: says no to an app rebuilt by a turn or a fold, an activity it cannot find, an iPad held upright only, and full screen only; edited: Android's sitemap link opened closed, iOS's closed or handed to the app running in that one shape |
 | src/utils/__tests__/requestReview.test.ts | — |  |
 | src/utils/__tests__/resumeSaysWhereTheWorkStands.test.ts | 2026-11-05 | edited: the waiting lists said with their days left, DUE in the last three, read from the committed files; edited: the nightly's red run of nights, and green said plainly; new: the next class is the one that matters most, a journal keeps what was written in it, every worktree finds the same journals, the next train is the pending migrations |
 | src/utils/__tests__/revenuecatWebhookDecide.test.ts | 2026-10-25 | edited: AbortSignal.timeout stood in for, as Deno has it (the test setup no longer takes it away); the store is asked at the address the settings name, always with a time limit, and gives up before the app does |

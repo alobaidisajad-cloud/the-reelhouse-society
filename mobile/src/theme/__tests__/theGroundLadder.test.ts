@@ -182,7 +182,10 @@ describe('the ground ladder', () => {
       (p: unknown) => Array.isArray(p) && p[0] === 'expo-splash-screen',
     )[1];
     expect(splash.backgroundColor.toUpperCase()).toBe(colors.ink.toUpperCase());
-    expect(splash.dark.backgroundColor.toUpperCase()).toBe(colors.ink.toUpperCase());
+    // No dark variant: the house is dark in either style, and any dark splash makes
+    // expo-splash-screen set iOS's UIUserInterfaceStyle to Automatic (withIosSplashInfoPlist),
+    // so iOS drew its own parts light on a light phone: the iPad's white window and white sheet.
+    expect(splash.dark).toBeUndefined();
     expect(app.expo.android.adaptiveIcon.backgroundColor.toUpperCase())
       .toBe(colors.ink.toUpperCase());
   });

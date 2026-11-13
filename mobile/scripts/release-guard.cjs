@@ -252,6 +252,10 @@ function checkPlist(plist) {
   const locked = IPAD_TURNS.filter((o) => !turns.includes(o));
   if (locked.length) found.push(`the iPad cannot hold the app ${locked.join(', ')} (UISupportedInterfaceOrientations~ipad): decision 8, every iPad window works`);
   if (plist.UIRequiresFullScreen === true) found.push('UIRequiresFullScreen is true: the iPad refuses the app Split View and Slide Over (decision 8)');
+  // The house is dark: otherwise iOS draws its own parts (an alert, a sheet's card, a keyboard asked
+  // for no appearance, the ground beyond the page) in the phone's light style, white on a dark app.
+  // app.json's userInterfaceStyle reaches the Info.plist only through expo-system-ui's plugin.
+  if (plist.UIUserInterfaceStyle !== 'Dark') found.push(`UIUserInterfaceStyle is ${plist.UIUserInterfaceStyle ?? 'unset'}, not Dark: iOS draws its own parts light on the dark house`);
   const text = JSON.stringify(plist);
   for (const host of E2E_HOSTS) if (text.includes(host)) found.push(`the E2E host ${host}`);
   return found;
