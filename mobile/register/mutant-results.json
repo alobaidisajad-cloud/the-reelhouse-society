@@ -87,7 +87,7 @@
     "class": "CI-background-job-left-running",
     "mutant": "shape-log-stream-left-running",
     "proof": "m1",
-    "commit": "1567f6e5b6b3c63917dfb235b135f7b89690b329",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
@@ -290,7 +290,7 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "judge-keyboard-covers",
     "proof": "judge",
-    "commit": "8928ae22ab64e1b1a53902ae5ad0e4c097ef7ac1",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
@@ -388,7 +388,7 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-refusal-sent",
     "proof": "m3",
-    "commit": "1567f6e5b6b3c63917dfb235b135f7b89690b329",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
@@ -521,14 +521,14 @@
     "class": "E2E-launch-unmeasured",
     "mutant": "shape-cold-table-unwritten",
     "proof": "m3",
-    "commit": "1567f6e5b6b3c63917dfb235b135f7b89690b329",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
     "class": "E2E-ceiling-not-measured",
     "mutant": "shape-shard-starts-cold",
     "proof": "m1",
-    "commit": "1567f6e5b6b3c63917dfb235b135f7b89690b329",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
@@ -542,14 +542,14 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-phone-unsettled",
     "proof": "m6",
-    "commit": "1567f6e5b6b3c63917dfb235b135f7b89690b329",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "shape-variant-input-swallowed",
     "proof": "m4",
-    "commit": "1567f6e5b6b3c63917dfb235b135f7b89690b329",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
@@ -717,7 +717,7 @@
     "class": "E2E-no-flow-on-ios",
     "mutant": "shape-ios-flows-unrun",
     "proof": "m1",
-    "commit": "ced511e2cf3eb59f495697fb5c8faae3b6ca9fc8",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
@@ -759,7 +759,7 @@
     "class": "E2E-ios-driver-start-unwaited",
     "mutant": "shape-ios-driver-default-wait",
     "proof": "m1",
-    "commit": "b3897ee3a79554e4fce4d1a30bcc83a1580d773a",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
@@ -780,7 +780,7 @@
     "class": "E2E-ios-link-question-unanswered",
     "mutant": "shape-ios-link-question-unanswered",
     "proof": "m1",
-    "commit": "7d13a895bf529c431573250fd092431150f27c9e",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
@@ -2327,14 +2327,14 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-keyboard-panel-unchecked",
     "proof": "m2",
-    "commit": "1567f6e5b6b3c63917dfb235b135f7b89690b329",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-keyboard-emoji-not-judged",
     "proof": "m3",
-    "commit": "1567f6e5b6b3c63917dfb235b135f7b89690b329",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   },
   {
@@ -2369,7 +2369,49 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-shipped-keyboard-judged-as-ours",
     "proof": "m6",
-    "commit": "1567f6e5b6b3c63917dfb235b135f7b89690b329",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-seal-hides-while-writing",
+    "proof": "m7",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-scroll-ends-under-the-seal",
+    "proof": "m8",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-reveal-ignores-the-keys",
+    "proof": "m9",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-field-under-its-press",
+    "proof": "m10",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-phone-only-as-the-runner-has-it",
+    "mutant": "judge-ios-control-moved",
+    "proof": "judge",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-phone-only-as-the-runner-has-it",
+    "mutant": "judge-ios-arabic-never-taken",
+    "proof": "judge",
+    "commit": "8a7769d00ec1b7ddbb397f9173838e701c15789a",
     "verdict": "caught"
   }
 ]
