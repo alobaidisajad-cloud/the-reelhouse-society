@@ -246,6 +246,7 @@ Decisions, as of 2026-09-28:
 | `e2e/__tests__/attack.test.ts` | The attack matrix, the schema snapshot and the pending migrations: every table, view and callable function production will have must have its written rules. |
 | `e2e/__tests__/glideLogLevel.test.ts` | The E2E workflow and package.json. |
 | `e2e/__tests__/iosLaunch.test.ts` | The iPhone launch workflow. |
+| `e2e/__tests__/iosSignInJudge.test.ts` | The iPhone launch workflow, for the sign-in sheet's English and Arabic step. |
 | `e2e/__tests__/keyboardRoom.test.ts` | The flow runner, the keyboard flows and the app's code, for the ids a probe taps. |
 | `e2e/__tests__/prefetchDownloadOnly.test.ts` | The E2E workflow (.github/workflows/e2e.yml). |
 | `e2e/__tests__/runFlows.rehearsal.test.ts` | The flow runner, its screen ceilings and the state its own run wrote. |

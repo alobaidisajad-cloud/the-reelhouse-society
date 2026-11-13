@@ -2,8 +2,8 @@ import { nav } from '@/src/utils/typedRouter';
 import { askIn } from '@/src/utils/askIn';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Keyboard, Platform, ScrollView, TextInput, View } from 'react-native';
-import { Text } from '@/src/components/text';
+import { Keyboard, Platform, ScrollView, View } from 'react-native';
+import { Text, focusedInput } from '@/src/components/text';
 import { useAboveDockedBar, useModalTop } from '@/src/components/layout/navMetrics';
 
 import LogForm from '@/src/components/log/LogForm';
@@ -48,7 +48,7 @@ export default function LogModalScreen() {
     React.useEffect(() => {
         if (Platform.OS !== 'ios') return undefined;
         const shown = Keyboard.addListener('keyboardDidShow', (e) => {
-            const focused = TextInput.State.currentlyFocusedInput();
+            const focused = focusedInput();
             if (focused) reveal(focused, e.endCoordinates.height + SLIM_SEAL_HEIGHT);
         });
         return () => shown.remove();

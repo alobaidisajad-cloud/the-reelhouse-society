@@ -95,7 +95,8 @@ describe('the seal reserves enough room for itself', () => {
 
   it('while writing, SLIM_SEAL_HEIGHT covers the slim bar, and the scroll ends above it', () => {
     const seal = readCode(SEAL);
-    const slim = Number(seal.match(/SLIM_SEAL_HEIGHT\s*=\s*([\d\s+]+);/)![1].split('+').reduce((a, n) => a + Number(n), 0));
+    const sum = seal.match(/SLIM_SEAL_HEIGHT\s*=\s*([\d\s+]+);/)?.[1] ?? '';
+    const slim = sum ? sum.split('+').reduce((a, n) => a + Number(n), 0) : NaN;
     const writing = style(seal, 'barWriting');
     const press = style(seal, 'press');
     const real = num(writing, 'paddingTop')! + num(press, 'minHeight')! + num(writing, 'paddingBottom')!;

@@ -355,4 +355,9 @@ export const TextInput = forwardRef<TextInput, TextInputProps>(function TextInpu
   return <RNTextInput ref={ref} {...housed(props, scale)} />;
 });
 
+/** The field the member is typing in now, or null: React Native's own record of it, asked here. */
+export function focusedInput() {
+  return RNTextInput.State.currentlyFocusedInput();
+}
+
 export type { TextProps, TextInputProps };
