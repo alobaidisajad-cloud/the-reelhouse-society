@@ -149,6 +149,16 @@ describe('while the member writes', () => {
     expect(down).toBeLessThanOrEqual(0);
   });
 
+  it('says on the press itself what is wanted, while the record is not yet worth sealing', () => {
+    typing(300);
+    // The filing line is gone while writing, so the dim press says it (the drawing shown to the owner).
+    expect(bar().getByText('A VERDICT, OR A FEW WORDS')).toBeTruthy();
+    expect(bar({ status: 'abandoned' }).getByText('WHY DID YOU STOP?')).toBeTruthy();
+    // Worth sealing, it names the act; and a screen reader hears the act and the reason either way.
+    expect(bar({ rating: 4 }).getByText('SEAL THE RECORD')).toBeTruthy();
+    expect(bar().getByTestId('submit-log-button').props.accessibilityLabel).toMatch(/^SEAL THE RECORD\. /);
+  });
+
   it('gives the filing line back when the keyboard goes', () => {
     typing(0);
     expect(bar({ rating: 4 }).getByText(/^FILED ·/)).toBeTruthy();

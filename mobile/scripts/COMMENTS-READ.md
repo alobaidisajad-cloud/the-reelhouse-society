@@ -619,7 +619,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/__tests__/logComposerRender.test.tsx | 2026-10-28 | edited: a control found by the name it now says, its shown words first; edited: a control found by the name it now says, its shown words first;  |
 | src/components/log/__tests__/LogForm.fields.test.tsx | — |  |
 | src/components/log/__tests__/logRender.test.tsx | 2026-11-04 | edited: the slate, the essay and the viewings as drawn now |
-| src/components/log/__tests__/logSealBar.test.tsx | 2026-11-11 | edited: while writing, the press drawn on the keys and answering; the line back after |
+| src/components/log/__tests__/logSealBar.test.tsx | 2026-11-11 | edited: the slim press says what is wanted until the record is worth sealing; edited: while writing, the press drawn on the keys and answering; the line back after |
 | src/components/log/__tests__/logSearchEngine.test.tsx | — |  |
 | src/components/log/__tests__/logStacksChips.test.tsx | — |  |
 | src/components/log/__tests__/logSurfaces.test.ts | 2026-11-03 | edited: the surfaces are the frame's files |
@@ -645,7 +645,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/components/log/LogModalStyles.ts | 2026-10-29 | edited: the field's ledger line in the ink that reads (colors.fieldEdge, 3:1 and more); edited: editWait, the waiting words centred |
 | src/components/log/logRecord.ts | 2026-10-01 | histories to the present |
 | src/components/log/LogReviewBody.tsx | 2026-11-05 | edited: the review and pull quote: each slur struck for a reader who asked; an opening on a struck word raises no letter; rewritten whole: the quote as a title card, the essay with the record's initial, the Vault as its own section on paper |
-| src/components/log/LogSealBar.tsx | 2026-11-11 | edited: the seal stays while writing, slim on the keys; it rides them on iOS; edited: the unready seal is hollow (UNREADY); the note on why it still answers moved beside the press |
+| src/components/log/LogSealBar.tsx | 2026-11-11 | edited: while writing, a press not yet worth sealing says what is wanted; edited: the seal stays while writing, slim on the keys; it rides them on iOS; edited: the unready seal is hollow (UNREADY); the note on why it still answers moved beside the press |
 | src/components/log/LogSearchEngine.tsx | 2026-10-29 | edited: the field's ledger line in the ink that reads (colors.fieldEdge, 3:1 and more); edited: a control named by the words it shows, first (label in name); edited: pictures through Picture; a result with no poster keeps its column with the house mark: the rows no longer go ragged; foot from useContentBottom |
 | src/components/log/LogVerdict.tsx | 2026-10-26 | edited: the verdict word ignites through useIgnition and rests on a plain style; edited: the word's lit box spans the slot, so Yoga and the browser measure it alike |
 | src/components/log/NoteSheet.tsx | 2026-10-30 | edited: its Modal holds the reading column (InColumn) first; edited: its controls a slip on costs something (delete, file, close, go back) carry their touch weight; edited: its frosted glass drawn through HouseBlur; foot from useSheetBottom |

@@ -120,6 +120,9 @@ export default React.memo(function LogSealBar({
         : submitting
             ? 'SEALING RECORD…'
             : isEditing ? 'RESEAL THE RECORD' : 'SEAL THE RECORD';
+    // While writing the line above is gone, so a press not yet worth sealing says itself what is
+    // wanted, in the line's own words; worth sealing, it names the act.
+    const words = writing && !ready && !sealed && !submitting ? line : label;
 
     return (
         <Animated.View style={[s.bar, !writing && { paddingBottom: edge + DOCKED_BAR_GAP }, writing && s.barWriting, barStyle]}>
@@ -146,7 +149,7 @@ export default React.memo(function LogSealBar({
                 accessibilityState={{ disabled: submitting }}
             >
                 <Image source={MARK} style={s.mark} resizeMode="contain" />
-                <Text style={[s.pressText, !ready && UNREADY.words]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{label}</Text>
+                <Text style={[s.pressText, !ready && UNREADY.words]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{words}</Text>
             </PressableScale>
         </Animated.View>
     );
