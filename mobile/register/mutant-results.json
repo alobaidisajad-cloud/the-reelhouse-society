@@ -472,7 +472,7 @@
     "class": "TYPE-marks-pile-over-rows",
     "mutant": "shape-marks-piled",
     "proof": "m1",
-    "commit": "714b03d8007be67c781664959fab4a66413cd7f1",
+    "commit": "91e9c3133cbda3515d60ff3b1ffc6bc069d26412",
     "verdict": "caught"
   },
   {
@@ -500,7 +500,7 @@
     "class": "MOCKUP-android-svg-lost",
     "mutant": "shape-android-svg-root-unknown",
     "proof": "m1",
-    "commit": "9b535e9dfacda92e5929c483b196e23b83cef3be",
+    "commit": "91e9c3133cbda3515d60ff3b1ffc6bc069d26412",
     "verdict": "caught"
   },
   {
@@ -570,7 +570,7 @@
     "class": "E2E-text-cut-unseen",
     "mutant": "shape-cut-unsaid",
     "proof": "m1",
-    "commit": "714b03d8007be67c781664959fab4a66413cd7f1",
+    "commit": "91e9c3133cbda3515d60ff3b1ffc6bc069d26412",
     "verdict": "caught"
   },
   {
@@ -598,7 +598,7 @@
     "class": "E2E-text-cut-unseen",
     "mutant": "shape-cut-unconfirmed",
     "proof": "m2",
-    "commit": "714b03d8007be67c781664959fab4a66413cd7f1",
+    "commit": "91e9c3133cbda3515d60ff3b1ffc6bc069d26412",
     "verdict": "caught"
   },
   {
@@ -1361,14 +1361,14 @@
     "class": "TEXT-nested-takes-the-house-ceiling",
     "mutant": "shape-nested-text-housed",
     "proof": "m1",
-    "commit": "714b03d8007be67c781664959fab4a66413cd7f1",
+    "commit": "91e9c3133cbda3515d60ff3b1ffc6bc069d26412",
     "verdict": "caught"
   },
   {
     "class": "TEXT-nested-takes-the-house-ceiling",
     "mutant": "shape-render-nested-own-cap",
     "proof": "m3",
-    "commit": "8bccd95e9f26e94d1018f53af055743e5e46a152",
+    "commit": "91e9c3133cbda3515d60ff3b1ffc6bc069d26412",
     "verdict": "caught"
   },
   {
@@ -2376,7 +2376,7 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-seal-hides-while-writing",
     "proof": "m7",
-    "commit": "714b03d8007be67c781664959fab4a66413cd7f1",
+    "commit": "91e9c3133cbda3515d60ff3b1ffc6bc069d26412",
     "verdict": "caught"
   },
   {
@@ -2412,6 +2412,27 @@
     "mutant": "judge-ios-arabic-never-taken",
     "proof": "judge",
     "commit": "714b03d8007be67c781664959fab4a66413cd7f1",
+    "verdict": "caught"
+  },
+  {
+    "class": "LOOK-ios-glow-cut-or-banded",
+    "mutant": "shape-glow-given-no-room",
+    "proof": "m1",
+    "commit": "91e9c3133cbda3515d60ff3b1ffc6bc069d26412",
+    "verdict": "caught"
+  },
+  {
+    "class": "LOOK-ios-glow-cut-or-banded",
+    "mutant": "shape-glow-room-at-its-rest",
+    "proof": "m2",
+    "commit": "91e9c3133cbda3515d60ff3b1ffc6bc069d26412",
+    "verdict": "caught"
+  },
+  {
+    "class": "LOOK-ios-glow-cut-or-banded",
+    "mutant": "shape-halo-banded-again",
+    "proof": "m3",
+    "commit": "91e9c3133cbda3515d60ff3b1ffc6bc069d26412",
     "verdict": "caught"
   }
 ]
