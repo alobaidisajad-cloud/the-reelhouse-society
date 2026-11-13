@@ -3216,7 +3216,10 @@ mutants:
     edits:
       - file: src/components/lounge/CreateLoungeSheet.tsx
         find: "      <View style={s.sheetKeyboard}>"
-        replace: "      <View style={[s.sheetKeyboard, kbPad]}>"
+        replace: "      <Animated.View style={[s.sheetKeyboard, kbPad]}>"
+      - file: src/components/lounge/CreateLoungeSheet.tsx
+        find: "      </View>\n      </GestureHandlerRootView>"
+        replace: "      </Animated.View>\n      </GestureHandlerRootView>"
       - file: src/components/lounge/CreateLoungeSheet.tsx
         find: "            style={[s.sheet, { maxHeight: tallest }, sheetStyle, kbPad]}"
         replace: "            style={[s.sheet, { maxHeight: tallest }, sheetStyle, { paddingBottom: sheetFoot }]}"
