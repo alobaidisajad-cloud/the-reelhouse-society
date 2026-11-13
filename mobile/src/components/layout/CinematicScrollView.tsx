@@ -89,6 +89,7 @@ export const CinematicScrollView = React.forwardRef<Animated.ScrollView, Cinemat
         onScroll={onScroll}
         showsHorizontalScrollIndicator={false}
         overScrollMode="never"
+        keyboardShouldPersistTaps="handled"
         ref={ref as any}
         {...rest}
       />
@@ -107,6 +108,10 @@ export const CinematicScrollView = React.forwardRef<Animated.ScrollView, Cinemat
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         overScrollMode="never"
+        // A tap on a press while a field below it is focused reaches the press: with RN's default
+        // ('never') the first tap only put the keyboard away, and FILE CRITIQUE on a log needed two
+        // (as CinematicFlashList's rows did). Before {...rest}, so a page may still ask otherwise.
+        keyboardShouldPersistTaps="handled"
         {...rest}
       />
       <CinematicScrollbar

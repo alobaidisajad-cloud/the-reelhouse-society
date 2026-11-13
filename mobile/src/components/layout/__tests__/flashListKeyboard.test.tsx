@@ -17,6 +17,7 @@ import { render, act } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { CinematicFlashList, ANCHORED_BELOW_THE_TOP } from '../CinematicFlashList';
+import { CinematicScrollView } from '../CinematicScrollView';
 
 /**
  * Both components below set state one tick after render — the guard when its
@@ -96,5 +97,22 @@ describe('a list never eats the first tap after a search', () => {
     );
     await act(async () => { await Promise.resolve(); });
     expect(listProps(t)).toContain('handled');
+  });
+});
+
+// The page scroll the log, the Lobby, a member's file and the essay desk stand in: the log's
+// critique field sits above FILE CRITIQUE inside it, and the first tap on FILE only put the keyboard
+// away (the save-in-reach sweep, 2026-11-13). The default lives in the scroll, as the list's does.
+describe('a page never eats the first tap on a press below its field', () => {
+  it('passes taps through to its presses while the keyboard is open', async () => {
+    const t = render(<CinematicScrollView><Text>FILE CRITIQUE</Text></CinematicScrollView>);
+    await act(async () => { await Promise.resolve(); });
+    expect(listProps(t)).toContain('"keyboardShouldPersistTaps":"handled"');
+  });
+
+  it('a page can still ask otherwise', async () => {
+    const t = render(<CinematicScrollView keyboardShouldPersistTaps="always"><Text>FILE CRITIQUE</Text></CinematicScrollView>);
+    await act(async () => { await Promise.resolve(); });
+    expect(listProps(t)).toContain('"keyboardShouldPersistTaps":"always"');
   });
 });

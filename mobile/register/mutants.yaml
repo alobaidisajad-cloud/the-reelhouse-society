@@ -3234,6 +3234,24 @@ mutants:
         replace: "            style={[s.sheet, { maxHeight: tallest }, sheetStyle, { paddingBottom: sheetFoot }]}"
     proof: { file: src/components/layout/__tests__/aSheetRisesWithItsAct.test.tsx, test: "rises with the keyboard, its act inside the box that rose" }
 
+  - id: shape-critique-composer-under-the-keys
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperCritiques.tsx
+        find: "  const lift = useKeyboardLift(bottomInset, ABOVE_THE_KEYS);"
+        replace: "  const lift = { paddingBottom: bottomInset };"
+    proof: { file: src/components/dispatch/paper/__tests__/theCritiqueRidesTheKeys.test.tsx, test: "on iOS, rises by the keyboard and the room above it, FILE with it" }
+
+  - id: shape-page-eats-the-first-tap
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: src/components/layout/CinematicScrollView.tsx
+        find: "        // (as CinematicFlashList's rows did). Before {...rest}, so a page may still ask otherwise.\n        keyboardShouldPersistTaps=\"handled\""
+        replace: "        // (as CinematicFlashList's rows did). Before {...rest}, so a page may still ask otherwise.\n        keyboardShouldPersistTaps=\"never\""
+    proof: { file: src/components/layout/__tests__/flashListKeyboard.test.tsx, test: "passes taps through to its presses while the keyboard is open" }
+
   - id: shape-glow-given-no-room
     class: LOOK-ios-glow-cut-or-banded
     source: shape

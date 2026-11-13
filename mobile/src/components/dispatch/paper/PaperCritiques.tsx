@@ -1,6 +1,8 @@
 import { memo, useState } from 'react';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, ActivityIndicator } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useKeyboardLift } from '@/src/hooks/useKeyboardLift';
 import { Text, TextInput } from '@/src/components/text';
 import { ArrowLeft, ChevronUp, Heart, MessageSquare, MoreHorizontal, Share2, Bookmark } from 'lucide-react-native';
 
@@ -339,6 +341,9 @@ export const CritiqueFooter = memo(function CritiqueFooter({
   );
 });
 
+/** Between the critique composer's field and the keyboard's top, while one is up. */
+const ABOVE_THE_KEYS = 10;
+
 /**
  * One docked thing, ever — this REPLACES the action bar rather than stacking.
  *
@@ -373,9 +378,12 @@ export const CritiqueComposer = memo(function CritiqueComposer({
   const left = MAX_LENGTHS.critique - text.length;
   const empty = text.trim().length === 0;
   const blocked = empty || !!sending;
+  // Docked under the page, on the keys while one is up: on iOS nothing moves a view for the
+  // keyboard, so the composer rises by it; Android's root already ends there (KeyboardRoom).
+  const lift = useKeyboardLift(bottomInset, ABOVE_THE_KEYS);
 
   return (
-    <View style={[p.dockCompose, { paddingBottom: bottomInset }]}>
+    <Animated.View style={[p.dockCompose, lift]}>
       <View style={p.avatar}>
         <RemoteImage uri={me.avatar} style={p.plateArt} contentFit="cover" fallback={<Text style={p.avatarMark} {...decorativeTextProps} {...UNSPOKEN}>{initialOf(me.name)}</Text>} />
       </View>
@@ -411,7 +419,7 @@ export const CritiqueComposer = memo(function CritiqueComposer({
       >
         <Text style={[p.btnText, empty && UNREADY.words]} {...scaledTextProps}>{sending ? '…' : 'FILE'}</Text>
       </PressableScale>
-    </View>
+    </Animated.View>
   );
 });
 
