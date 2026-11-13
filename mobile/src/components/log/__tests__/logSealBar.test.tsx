@@ -159,6 +159,18 @@ describe('while the member writes', () => {
     expect(bar().getByTestId('submit-log-button').props.accessibilityLabel).toMatch(/^SEAL THE RECORD\. /);
   });
 
+  // What is read on a control is in its name (the captures' UNSAID check, God-Tier 43460339159): the
+  // press showing "A VERDICT, OR A FEW WORDS" was heard as the act and the reason, never those words.
+  it('says aloud the words the press shows while it asks for more, after the act', () => {
+    typing(300);
+    expect(bar().getByTestId('submit-log-button').props.accessibilityLabel)
+      .toMatch(/^SEAL THE RECORD\. A VERDICT, OR A FEW WORDS\. /);
+    expect(bar({ status: 'abandoned' }).getByTestId('submit-log-button').props.accessibilityLabel)
+      .toMatch(/^SEAL THE RECORD\. WHY DID YOU STOP\? [A-Z]/);
+    typing(0);
+    expect(bar().getByTestId('submit-log-button').props.accessibilityLabel).not.toMatch(/A VERDICT, OR A FEW WORDS/);
+  });
+
   it('gives the filing line back when the keyboard goes', () => {
     typing(0);
     expect(bar({ rating: 4 }).getByText(/^FILED ·/)).toBeTruthy();

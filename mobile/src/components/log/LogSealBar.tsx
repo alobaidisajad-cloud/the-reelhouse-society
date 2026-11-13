@@ -83,6 +83,9 @@ interface Props {
  * app's root already ends at the keys (KeyboardRoom), so the bar stands there;
  * on iOS no window ends there, so the bar rises by the keyboard's height.
  */
+/** Words ended as a sentence once: a question keeps its mark, anything else takes a full stop. */
+const sentence = (words: string) => (/[.?!]$/.test(words) ? words : `${words}.`);
+
 export default React.memo(function LogSealBar({
     status, rating, review, abandonedReason, date, watchedWith, physicalMedia,
     submitting, sealed, isEditing, onSeal,
@@ -145,7 +148,9 @@ export default React.memo(function LogSealBar({
                 // Android-only, so announcing the dim state is not portable, and a
                 // button that reads "Seal the record" while doing nothing is a
                 // dead end for anyone who cannot see that it is dim.
-                accessibilityLabel={ready ? label : `${label}. ${blockReason}`}
+                // While the press shows what is wanted, it is said too: what is read on a control is
+                // in its name, after the act it does.
+                accessibilityLabel={ready ? label : words === label ? `${label}. ${blockReason}` : `${label}. ${sentence(words)} ${blockReason}`}
                 accessibilityState={{ disabled: submitting }}
             >
                 <Image source={MARK} style={s.mark} resizeMode="contain" />

@@ -3291,6 +3291,15 @@ mutants:
         replace: "        {readyMark}\n        <Presence>{newCount > 0 ? <NewFilings key=\"new\" count={newCount} onPress={takeTheNew} /> : null}</Presence>\n"
     proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "draws the pill in the paper's column, in the gutter kept above the list, not at the screen's top" }
 
+  - id: shape-seal-shows-what-it-never-says
+    class: UI-shown-but-not-said
+    source: shape
+    edits:
+      - file: src/components/log/LogSealBar.tsx
+        find: "                accessibilityLabel={ready ? label : words === label ? `${label}. ${blockReason}` : `${label}. ${sentence(words)} ${blockReason}`}"
+        replace: "                accessibilityLabel={ready ? label : `${label}. ${blockReason}`}"
+    proof: { file: src/components/log/__tests__/logSealBar.test.tsx, test: "says aloud the words the press shows while it asks for more, after the act" }
+
   - id: shape-glow-given-no-room
     class: LOOK-ios-glow-cut-or-banded
     source: shape

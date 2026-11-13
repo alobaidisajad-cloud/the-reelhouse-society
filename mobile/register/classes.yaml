@@ -718,6 +718,18 @@ classes:
     fix: "wordsAreSolid also reads, as a text style, any style a <Text> in the same file wears; the words it found set solid (LOUNGE, the calendar's coming days, the series picker, no reason given, three at 0.9), the marks named (a locked glyph, the unrated —, an unseen measuring copy) (mutant shape-lounge-label-faded)"
     places: [none]
 
+  - id: UI-shown-but-not-said
+    title: A control shows words its spoken name does not hold, so a member who hears the screen and one who sees it are told different things, and voice control cannot name it by what it shows
+    seriousness: layout
+    area: app
+    status: OPEN
+    count: 1
+    source: { kind: history, ref: "God-Tier 43460339159: the log's slim seal showed A VERDICT, OR A FEW WORDS and was heard as the act and the reason alone (the captures' UNSAID check)" }
+    methods:
+      - { kind: running, file: src/components/log/__tests__/logSealBar.test.tsx, test: "says aloud the words the press shows while it asks for more, after the act" }
+    fix: "The seal's name holds the words it shows while it asks for more, after the act it does; the captures' UNSAID check (layout.cjs, every screen the tests build, every push) finds any other (mutant shape-seal-shows-what-it-never-says)"
+    places: [none]
+
   - id: UI-unready-faded
     title: A control that cannot act yet faded to 0.3-0.6 of itself, or its brass swapped for the card's dark, so its own words (SHARE TO LOUNGE, FILE REPORT, FILE THE ESSAY) fell to about 1.5:1 and could not be read
     seriousness: layout
