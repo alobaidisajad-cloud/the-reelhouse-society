@@ -854,6 +854,8 @@ classes:
     methods:
       - { kind: running, file: src/components/layout/__tests__/theGroundSpansTheWindow.test.tsx, test: "draws a pushed page in the reading column" }
       - { kind: running, file: src/components/layout/__tests__/theGroundSpansTheWindow.test.tsx, test: "gives every screen the ink from edge to edge, no column of its own" }
+      - { kind: running, file: src/components/atmosphere/__tests__/theRoomFillsAWideWindow.test.tsx, test: "on a wide window, lights the window behind the column and lays the page's light from its left edge" }
+      - { kind: running, file: src/components/atmosphere/__tests__/theRoomFillsAWideWindow.test.tsx, test: "lays a photograph's veil of light from the window's left edge too, so it meets the room" }
     fix: "Every screen's content style is the ink at the window's whole width (SCREEN_GROUND, app/_layout); the page and its toast stand in the reading column inside it, drawn by the layout every route is wrapped in (toastScreenLayout), pushed or presented; the iPad job photographs it on every push (mutants shape-page-not-in-its-column, shape-screen-ground-unpainted)"
     places: [none]
 

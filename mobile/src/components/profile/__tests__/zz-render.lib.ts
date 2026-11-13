@@ -618,7 +618,8 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, text
   // A veil's light, Skia too: drawn at rest from the component's own `lightGeometry`,
   // masked by the veil's stops, ending at the hem.
   if (p.testID === 'room-veil-light') {
-    const r = JSON.parse(String(p.nativeID)) as { room: Room; hem: number; art: string | null; stops: [number, number][]; W: number; H: number };
+    // W: the window's width the light is laid at; L: from where (the column's inset, 0 on a phone).
+    const r = JSON.parse(String(p.nativeID)) as { room: Room; hem: number; art: string | null; stops: [number, number][]; W: number; H: number; L?: number };
     const g = lightGeometry(r.room, r.W, r.H, r.hem);
     const k = ++veilSeq;
     const ramp = `linear-gradient(180deg,${r.stops.map(([at, a]) => `rgba(0,0,0,${a}) ${at * 100}%`).join(',')})`;
@@ -637,7 +638,7 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, text
     const bloom = r.art
       ? bloomHtml(r.art, `position:absolute;top:0px;left:${g.bloom.left}px;width:${g.bloom.width}px;height:${g.bloom.height}px;overflow:hidden`, opts)
       : '';
-    return `<div data-t="room-veil-light" style="position:absolute;top:0px;left:0px;width:${r.W}px;height:${r.hem}px;` +
+    return `<div data-t="room-veil-light" style="position:absolute;top:0px;left:${r.L ?? 0}px;width:${r.W}px;height:${r.hem}px;` +
       `-webkit-mask-image:${ramp};mask-image:${ramp}">${svg}${bloom}</div>`;
   }
 

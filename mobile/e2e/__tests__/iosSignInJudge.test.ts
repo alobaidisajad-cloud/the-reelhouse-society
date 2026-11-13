@@ -91,7 +91,11 @@ describe('the halo\'s light', () => {
   });
   /** A 402x874 photograph whose column above the seal holds `level(y)`, the header's flat grey above it. */
   const photo = (level: (y: number) => number) => {
-    const { PNG } = jest.requireActual('pngjs') as typeof import('pngjs');
+    // pngjs ships no types: the two parts of it used here.
+    type Png = { data: Buffer };
+    const { PNG } = jest.requireActual('pngjs') as {
+      PNG: { new (size: { width: number; height: number }): Png; sync: { write(png: Png): Buffer } };
+    };
     const png = new PNG({ width: 402, height: 874 });
     for (let y = 0; y < 874; y++) for (let x = 0; x < 402; x++) {
       const v = y < 100 ? 30 : level(y);

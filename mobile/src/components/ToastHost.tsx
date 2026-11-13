@@ -21,6 +21,7 @@ import { View, StyleSheet, Platform, AccessibilityInfo, Pressable } from 'react-
 import { Text } from '@/src/components/text';
 import { InIosSheet, readingColumn, useOverlayTop, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { E2ERouteMark } from '@/src/components/layout/E2ERouteMark';
+import { WideRoomHost } from '@/src/components/atmosphere/RoomLight';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import type { Stack } from 'expo-router';
@@ -151,23 +152,28 @@ function ToastScreen({ children, navigation, presentation }: {
     return (
       <ScreenDepth.Provider value={depth}>
         <InIosSheet.Provider value={inSheet}>
-          <View style={readingColumn} accessibilityViewIsModal>
-            {children}
-            {pill}
-          </View>
+          <WideRoomHost>
+            <View style={readingColumn} accessibilityViewIsModal>
+              {children}
+              {pill}
+            </View>
+          </WideRoomHost>
         </InIosSheet.Provider>
       </ScreenDepth.Provider>
     );
   }
   // An overlay in this route starts from its top: a sheet's own, or the status bar's edge.
-  // The page and its toast stand in the reading column, on the screen's ink (app/_layout).
+  // The page and its toast stand in the reading column, on the screen's ink (app/_layout), the
+  // room's light carried across the window around it (WideRoomHost).
   return (
     <ScreenDepth.Provider value={depth}>
       <InIosSheet.Provider value={inSheet}>
-        <View style={readingColumn}>
-          {children}
-          {pill}
-        </View>
+        <WideRoomHost>
+          <View style={readingColumn}>
+            {children}
+            {pill}
+          </View>
+        </WideRoomHost>
       </InIosSheet.Provider>
     </ScreenDepth.Provider>
   );
