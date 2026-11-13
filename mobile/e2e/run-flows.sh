@@ -387,6 +387,9 @@ measure() {
   # Android's own dump of the app's window, measured first (keyboard-room.mjs).
   timeout 30 adb shell uiautomator dump /sdcard/keyboard-room.xml > /dev/null 2>&1
   timeout 20 adb exec-out cat /sdcard/keyboard-room.xml > "$at.xml" 2>/dev/null
+  # And the screen as the member sees it, the keyboard with it (screencap draws every window; a
+  # Maestro screenshot leaves the keyboard's out): what was measured, to be looked at.
+  timeout 20 adb exec-out screencap -p > "$at.png" 2>/dev/null
   said="$(node mobile/e2e/keyboard-room.mjs --panel "$panel" "$at.json" "$at.windows.txt")" || bad=1
   echo "$name, $panel: $said" >> "$OUT/keyboard-room.txt"
   IFS='|' read -r -a needs <<< "$targets"

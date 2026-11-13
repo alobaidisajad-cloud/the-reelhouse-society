@@ -235,6 +235,8 @@ describe('what the runner measures exists', () => {
     expect(loop).toMatch(/measure letters \|\| room_rc=1[\s\S]*"\$FLOWS\/keyboard\/emoji\.tap\.yaml"[\s\S]*measure emoji \|\| room_rc=1/);
     const measure = runner.slice(runner.indexOf('measure() {'), runner.indexOf('\n}\n', runner.indexOf('measure() {')));
     expect(measure).toContain('keyboard-room.mjs --panel "$panel"');
+    // The screen kept beside each measure, with the keyboard in it (Maestro's screenshot leaves it out).
+    expect(measure).toContain('adb exec-out screencap -p > "$at.png"');
     expect(measure).toMatch(/for t in "\$\{needs\[@\]\}"; do\s+node mobile\/e2e\/keyboard-room\.mjs "\$name, \$panel" "\$t"/);
     const emoji = readFileSync(join(__dirname, '..', '..', '.maestro', 'keyboard', 'emoji.tap.yaml'), 'utf8');
     expect(emoji).toMatch(/tapOn: "Emoji button"/);
