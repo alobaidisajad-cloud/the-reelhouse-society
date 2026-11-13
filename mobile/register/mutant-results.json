@@ -101,14 +101,14 @@
     "class": "BUILD-identity-drifts",
     "mutant": "shape-update-feed-elsewhere",
     "proof": "m1",
-    "commit": "9b535e9dfacda92e5929c483b196e23b83cef3be",
+    "commit": "22e0e9d610650305aab2259cce44fd6bfdcf0f70",
     "verdict": "caught"
   },
   {
     "class": "BUILD-identity-drifts",
     "mutant": "shape-sentry-project-unread",
     "proof": "m2",
-    "commit": "9b535e9dfacda92e5929c483b196e23b83cef3be",
+    "commit": "22e0e9d610650305aab2259cce44fd6bfdcf0f70",
     "verdict": "caught"
   },
   {
@@ -1424,7 +1424,7 @@
     "class": "BUILD-a-library-takes-another-ndk",
     "mutant": "shape-one-ndk-unrun",
     "proof": "m2",
-    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
+    "commit": "22e0e9d610650305aab2259cce44fd6bfdcf0f70",
     "verdict": "caught"
   },
   {
@@ -1466,7 +1466,7 @@
     "class": "RUNTIME-gwp-asan-crashes-hermes",
     "mutant": "shape-gwp-asan-unrun",
     "proof": "m2",
-    "commit": "acbc95fa76321fde00900b1e3639619199cec2a6",
+    "commit": "22e0e9d610650305aab2259cce44fd6bfdcf0f70",
     "verdict": "caught"
   },
   {
@@ -2489,6 +2489,13 @@
     "mutant": "shape-seal-shows-what-it-never-says",
     "proof": "m1",
     "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "verdict": "caught"
+  },
+  {
+    "class": "LOOK-native-parts-drawn-light",
+    "mutant": "shape-splash-dark-again",
+    "proof": "m1",
+    "commit": "22e0e9d610650305aab2259cce44fd6bfdcf0f70",
     "verdict": "caught"
   },
   {
