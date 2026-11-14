@@ -454,7 +454,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                 animationType="slide"
                 onRequestClose={closeSheet}
             >
-              <InColumn>
+              <InColumn scrim={{ color: colors.soot, onPress: () => { TactileEngine.selection(); setSheet(null); } }}>
                 <Animated.View style={[s.modalOverlay, kbPad]} onAccessibilityEscape={closeSheet}>
                     <Pressable
                         style={StyleSheet.absoluteFill}
@@ -655,7 +655,8 @@ const s = StyleSheet.create({
     shimmerTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, borderRadius: 6, zIndex: 4 },
 
     // ── the sheet ──
-    modalOverlay: { ...EDGE_LIT, flex: 1, backgroundColor: colors.soot, justifyContent: 'flex-end' },
+    // Its ground is the scrim InColumn draws across the window.
+    modalOverlay: { ...EDGE_LIT, flex: 1, justifyContent: 'flex-end' },
     sheet: {
         backgroundColor: colors.ink,
         borderTopLeftRadius: 16,

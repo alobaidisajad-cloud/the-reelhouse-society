@@ -14,7 +14,7 @@
  * Motion: transform/opacity only, house timing curves, no bounce anywhere.
  */
 import React, { useEffect, useState } from 'react';
-import { InColumn } from '@/src/components/layout/InColumn';
+import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { HouseBlur } from '@/src/components/HouseBlur';
@@ -133,6 +133,9 @@ interface InitiationModalProps {
 export default function InitiationModal({ visible, username, memberNo, onComplete }: InitiationModalProps) {
   const [beat, setBeat] = useState(0);
   const reduceMotion = useReduceMotion();
+  // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
+  // column dims with the page.
+  const fill = useWindowFill();
   const current = BEATS[beat];
   const isFinal = beat === BEATS.length - 1;
 
@@ -157,8 +160,8 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
       <InColumn>
       <PresenceView name="initiation" style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={handleQuiet}>
         {/* The house is real, behind the door — the living Lobby, blurred. */}
-        <HouseBlur intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={s.dim} />
+        <HouseBlur intensity={60} tint="dark" style={fill} />
+        <View style={[s.dim, fill]} />
 
         <CentredCard style={s.room}>
           <Arrive name="initiation-card" duration={420} easing={CURVE} rise={0} style={s.card}>

@@ -3345,6 +3345,27 @@ mutants:
         replace: "        {null}"
     proof: { file: src/components/atmosphere/__tests__/theRoomFillsAWideWindow.test.tsx, test: "on a wide window, lights the window behind the column and lays the page's light from its left edge" }
 
+  - id: shape-scrim-stops-at-the-column
+    class: LAYOUT-wide-window-ground-unpainted
+    source: shape
+    edits:
+      - file: src/components/layout/InColumn.tsx
+        find: "  return { position: 'absolute' as const, top: 0, bottom: 0, left: inset ? -inset : 0, right: inset ? -inset : 0 };"
+        replace: "  return { position: 'absolute' as const, top: 0, bottom: 0, left: 0, right: 0 };"
+    proof: { file: src/components/layout/__tests__/aScrimDimsTheWindow.test.tsx, test: "on a wide window, dims from edge to edge, in the modal's own colour, and closes on a press beyond the column" }
+
+  - id: shape-sheet-scrim-in-the-column
+    class: LAYOUT-wide-window-ground-unpainted
+    source: shape
+    edits:
+      - file: src/components/moderation/ReportSheet.tsx
+        find: "<Animated.View style={[fill, blurStyle]}>"
+        replace: "<Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>"
+      - file: src/components/moderation/ReportSheet.tsx
+        find: "  const fill = useWindowFill();"
+        replace: "  const fill = null;"
+    proof: { file: src/components/layout/__tests__/everyModalHoldsTheColumn.guard.test.ts, test: "dims the whole window behind every modal that holds the column" }
+
   - id: shape-page-not-in-its-column
     class: LAYOUT-wide-window-ground-unpainted
     source: shape

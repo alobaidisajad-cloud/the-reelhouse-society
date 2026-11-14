@@ -1,5 +1,5 @@
 import PressableScale from '@/src/components/PressableScale';
-import { InColumn } from '@/src/components/layout/InColumn';
+import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { LoungeMessage, ReactionSummary } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
 import { REACTION_META, REACTION_ORDER } from './reactions';
@@ -53,6 +53,9 @@ function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReaction
   });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
+  // column dims with the page.
+  const fill = useWindowFill();
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
 
   const pan = Gesture.Pan()
@@ -79,7 +82,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReaction
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
       <InColumn>
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
-      <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
+      <Animated.View style={[fill, blurStyle]}>
         <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
           {/* The sheet's only close besides a drag, so a screen reader is given it by name. */}
           <PressableScale touch="wayOut" style={s.actionBackdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">

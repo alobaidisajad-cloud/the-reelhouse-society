@@ -51,7 +51,7 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
       animationType="fade"
       onRequestClose={onClose}
     >
-      <InColumn>
+      <InColumn scrim={{ color: colors.inkwell, onPress: onClose }}>
       <View style={s.modalOverlay} onAccessibilityEscape={onClose}>
         {/* The ground closes it for a finger; a screen reader has "Close recovery".
             The card's scroll ends above the keyboard, as a Modal never resizes for it. */}
@@ -162,9 +162,9 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
 }
 
 const s = StyleSheet.create({
+  // Its ground is the scrim InColumn draws across the window.
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.inkwell,
   },
   room: {
     paddingHorizontal: 24,

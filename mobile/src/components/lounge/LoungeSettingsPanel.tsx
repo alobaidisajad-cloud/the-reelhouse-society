@@ -1,6 +1,6 @@
 import { useShallow } from 'zustand/react/shallow';
 import PressableScale from '@/src/components/PressableScale';
-import { InColumn } from '@/src/components/layout/InColumn';
+import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
@@ -41,6 +41,9 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
   const struck = useStruck();
   const { leaveLounge, deleteLounge, setMemberStatus, removeMember, setLoungeCover } = useLoungeStore(useShallow((s) => ({ leaveLounge: s.leaveLounge, deleteLounge: s.deleteLounge, setMemberStatus: s.setMemberStatus, removeMember: s.removeMember, setLoungeCover: s.setLoungeCover })));
   const [expanded, setExpanded] = useState<string | null>(null);
+  // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
+  // column dims with the page.
+  const fill = useWindowFill();
 
   // Only approved/muted/banned are "members"; pending live in the At-the-Door panel.
   const roster = members.filter(m => m.status !== 'pending');
@@ -165,7 +168,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
     {visible ? (
     <Modal key="settings" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <InColumn>
-      <HouseBlur intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
+      <HouseBlur intensity={50} tint="dark" style={fill}>
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants"><View /></PressableScale>
       </HouseBlur>

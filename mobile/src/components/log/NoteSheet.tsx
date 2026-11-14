@@ -18,7 +18,7 @@
  * Same ink, handle, backdrop and gesture as the house's other sheets.
  */
 import { HouseBlur } from '@/src/components/HouseBlur';
-import { InColumn } from '@/src/components/layout/InColumn';
+import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { Lock, Pencil, Trash2 } from 'lucide-react-native';
 import React from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
@@ -63,6 +63,9 @@ export default function NoteSheet({
   const { isRendered, opacity, translateY } = useSheetPresence({ visible });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
+  // column dims with the page.
+  const fill = useWindowFill();
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
 
   const pan = Gesture.Pan()
@@ -82,7 +85,7 @@ export default function NoteSheet({
     <Modal statusBarTranslucent transparent visible animationType="none" onRequestClose={onClose}>
       <InColumn>
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={onClose}>
-        <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
+        <Animated.View style={[fill, blurStyle]}>
           <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
             <PressableScale touch="wayOut" style={styles.backdrop} onPress={onClose} accessibilityLabel="Close the note" accessibilityRole="button">
               <View style={StyleSheet.absoluteFill} />

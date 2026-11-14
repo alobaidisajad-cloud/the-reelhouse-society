@@ -10,7 +10,7 @@
  * noir bureau.
  */
 import { HouseBlur } from '@/src/components/HouseBlur';
-import { InColumn } from '@/src/components/layout/InColumn';
+import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import React, { useCallback, useRef, useState } from 'react';
 import { useWindowDimensions, Modal, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -183,6 +183,9 @@ function ReportSheet({
   });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
+  // column dims with the page.
+  const fill = useWindowFill();
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
   // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
   // platform — the context field rises with the keyboard on BOTH.
@@ -252,7 +255,7 @@ function ReportSheet({
       <InColumn>
       <GestureHandlerRootView style={StyleSheet.absoluteFill} onAccessibilityEscape={handleDismiss}>
         {/* Backdrop: closes it for a finger; a screen reader has the named DISMISS. */}
-        <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
+        <Animated.View style={[fill, blurStyle]}>
           <HouseBlur intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
             <PressableScale
               style={styles.backdrop}

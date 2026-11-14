@@ -206,7 +206,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
 
     return (
         <Modal statusBarTranslucent visible transparent animationType="fade" onRequestClose={close}>
-          <InColumn>
+          <InColumn scrim={{ color: 'rgba(0,0,0,0.85)', onPress: close }}>
             <View style={s.overlay} onAccessibilityEscape={close}>
                 {/* The ground BEHIND the card, not around it: an accessible element
                     hides what it holds from VoiceOver, so a card inside it could
@@ -290,7 +290,8 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
 }
 
 const s = StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)' },
+    // Its ground is the scrim InColumn draws across the window.
+    overlay: { flex: 1 },
     room: { alignItems: 'center', paddingHorizontal: 24 },
     card: { ...EDGE_LIT,
         width: '100%', maxWidth: 400, padding: 32,

@@ -1,6 +1,6 @@
 import { useShallow } from 'zustand/react/shallow';
 import PressableScale from '@/src/components/PressableScale';
-import { InColumn } from '@/src/components/layout/InColumn';
+import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { RemoteImage } from '@/src/components/Picture';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
@@ -30,6 +30,9 @@ interface Props {
 
 export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved }: Props) {
   const sheetFoot = useSheetBottom();
+  // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
+  // column dims with the page.
+  const fill = useWindowFill();
   const { approveMember, declineMember } = useLoungeStore(useShallow((s) => ({ approveMember: s.approveMember, declineMember: s.declineMember })));
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -47,7 +50,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
     {visible ? (
     <Modal key="door" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <InColumn>
-      <HouseBlur intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
+      <HouseBlur intensity={50} tint="dark" style={fill}>
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants"><View /></PressableScale>
       </HouseBlur>

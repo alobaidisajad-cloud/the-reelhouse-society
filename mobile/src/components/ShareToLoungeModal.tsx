@@ -208,7 +208,7 @@ function ShareSheet({
 
     return (
         <Modal statusBarTranslucent visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-          <InColumn>
+          <InColumn scrim={{ color: 'rgba(0,0,0,0.85)' }}>
             <Animated.View style={[s.overlay, animatedSheetStyle]} accessibilityViewIsModal={true} onAccessibilityEscape={onClose}>
                 <View style={[s.card, { paddingBottom: sheetFoot }]}>
                     <View style={s.header}>
@@ -285,7 +285,8 @@ function ShareSheet({
 }
 
 const s = StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' },
+    // Its ground is the scrim InColumn draws across the window.
+    overlay: { flex: 1, justifyContent: 'flex-end' },
     card: {
         backgroundColor: colors.ink, borderTopLeftRadius: 16, borderTopRightRadius: 16,
         borderTopWidth: 2, borderTopColor: colors.sepia, padding: 24,

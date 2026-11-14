@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { RotateCcw, X } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';
-import { InColumn } from '@/src/components/layout/InColumn';
+import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { HouseBlur } from '@/src/components/HouseBlur';
 import { Text } from '@/src/components/text';
 import { ToastHost } from '@/src/components/ToastHost';
@@ -52,13 +52,16 @@ export function UnsentChangesPlate() {
 
 function UnsentChangesSheet({ visible, held, onClose }: { visible: boolean; held: readonly QueuedMutation[]; onClose: () => void }) {
   const sheetFoot = useSheetBottom();
+  // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
+  // column dims with the page.
+  const fill = useWindowFill();
   // Kept open while the sheet slides away.
   return (
     <Presence>
     {visible ? (
     <Modal key="unsent" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <InColumn>
-      <HouseBlur intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
+      <HouseBlur intensity={50} tint="dark" style={fill}>
         {/* The ground closes it for a finger; a screen reader has the named Close. */}
         <PressableScale style={s.backdrop} onPress={onClose} accessible={false} importantForAccessibility="no-hide-descendants"><View /></PressableScale>
       </HouseBlur>

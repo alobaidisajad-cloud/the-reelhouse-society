@@ -246,7 +246,7 @@ function ActionModal({
 
   return (
     <Modal statusBarTranslucent visible={state.visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <InColumn>
+      <InColumn scrim={{ color: 'rgba(0,0,0,0.7)' }}>
       <KeyboardAvoidingView
         onAccessibilityEscape={handleClose}
         style={s.modalOverlay}
@@ -1367,9 +1367,9 @@ const s = StyleSheet.create({
   historyDate: { fontFamily: fonts.sub, fontSize: 10, color: colors.fogQuiet, marginTop: 2 },
 
   // ── Modal ──────────────────────────────────────────────────────────────
+  // Its ground is the scrim InColumn draws across the window.
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'flex-end',
   },
   modalSheet: {

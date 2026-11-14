@@ -57,6 +57,15 @@ it('lays every modal out in the reading column, but those that are the whole win
   expect(MODALS.filter((m) => !m.held && !(m.file in WHOLE_WINDOW)).map((m) => `${m.file}:${m.line}`)).toEqual([]);
 });
 
+// The room's light fills the window around the column (WideRoomHost): a scrim stopped at the column
+// dimmed the page and left the room lit around it. Each modal that holds the column dims the window.
+it('dims the whole window behind every modal that holds the column', () => {
+  const held = [...new Set(MODALS.filter((m) => m.held).map((m) => m.file))];
+  expect(held.length).toBeGreaterThan(10);
+  const bare = held.filter((f) => !/useWindowFill\(\)|<InWindow>|<InColumn scrim=/.test(readFileSync(join(MOBILE, f), 'utf8')));
+  expect(bare).toEqual([]);
+});
+
 it('names no modal as the whole window\'s that is gone, or that holds the column after all', () => {
   const files = [...new Set(MODALS.map((m) => m.file))];
   expect(Object.keys(WHOLE_WINDOW).filter((f) => !files.includes(f))).toEqual([]);

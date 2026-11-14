@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useEffectEvent, useRef } from 'react';
 import { characterCount } from '@/src/utils/text';
-import { InColumn } from '@/src/components/layout/InColumn';
+import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { View, ScrollView, StyleSheet, Modal, Switch, Keyboard, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/src/components/text';
@@ -141,6 +141,9 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
     });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
+  // column dims with the page.
+  const fill = useWindowFill();
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
 
   if (!isRendered) return null;
@@ -150,7 +153,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
       <InColumn>
       <GestureHandlerRootView style={{ flex: 1 }} onAccessibilityEscape={handleClose}>
       <View style={s.sheetKeyboard}>
-        <Animated.View style={[StyleSheet.absoluteFill, blurStyle]}>
+        <Animated.View style={[fill, blurStyle]}>
           <HouseBlur intensity={90} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(6,5,4,0.6)' }]}>
             <PressableScale touch="wayOut" style={s.sheetBackdrop} onPress={handleClose} accessibilityLabel="Close sheet" />
           </HouseBlur>

@@ -1,6 +1,6 @@
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { InColumn } from '@/src/components/layout/InColumn';
+import { InColumn, InWindow } from '@/src/components/layout/InColumn';
 import { View, StyleSheet, Alert, Modal, type LayoutChangeEvent, type ScrollView } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
@@ -685,7 +685,7 @@ export function SettingsScreen() {
 
       <Modal statusBarTranslucent visible={otpModalVisible} animationType="fade" transparent onRequestClose={closeOtp}>
         <InColumn>
-        <HouseBlur intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+        <InWindow><HouseBlur intensity={80} tint="dark" style={StyleSheet.absoluteFill} /></InWindow>
         {/* RN Modal windows never resize for the keyboard, so the screen's
             automaticallyAdjustKeyboardInsets cannot reach inside one: the card's
             own scroll ends above the keys (CentredCard), on both platforms. */}

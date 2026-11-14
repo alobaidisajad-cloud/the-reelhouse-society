@@ -8,7 +8,7 @@
  * so it behaves identically at 3 requests or 3,000.
  */
 import React from 'react';
-import { InColumn } from '@/src/components/layout/InColumn';
+import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { RemoteImage } from '@/src/components/Picture';
 import { Alert, Modal, View, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -77,6 +77,9 @@ const RequestRow = React.memo(function RequestRow({
 
 export default function FollowRequestsPanel({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const sheetFoot = useSheetBottom();
+  // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
+  // column dims with the page.
+  const fill = useWindowFill();
   const {
     items, loading, loadingMore, hasMore, search, busyId, failed, moreFailed,
     setSearch, loadMore, retry, accept, decline, declineAll,
@@ -109,8 +112,8 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
     <Modal key="door" statusBarTranslucent transparent visible animationType="fade" onRequestClose={onClose}>
       <InColumn>
       <View style={s.host} onAccessibilityEscape={onClose}>
-        <HouseBlur intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
-        <Pressable style={s.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
+        <HouseBlur intensity={45} tint="dark" style={fill} />
+        <Pressable style={fill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
         <PresenceView name="follow-requests" style={[s.sheet, kbPad]}
           enter={{ kind: 'SlideInDown', duration: MS.considered, easing: arrive() }}
           exit={{ kind: 'SlideOutDown', duration: MS.quick, easing: leave() }}>
@@ -202,7 +205,6 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
 
 const s = StyleSheet.create({
   host: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { flex: 1 },
   sheet: {
     maxHeight: '85%', minHeight: '45%', backgroundColor: colors.ink,
     borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingHorizontal: 24, paddingTop: 10,

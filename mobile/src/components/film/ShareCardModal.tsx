@@ -137,7 +137,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
 
   return (
     <Modal statusBarTranslucent visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <InColumn>
+      <InColumn scrim={{ color: 'rgba(5, 3, 1, 0.9)', onPress: onClose }}>
       <View style={s.overlay} onAccessibilityEscape={onClose}>
         {/* The ground closes it for a finger; a screen reader has the named ✕. */}
         <CentredCard onGround={onClose} style={s.room}>
@@ -192,9 +192,9 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
 });
 
 const s = StyleSheet.create({
+  // Its ground is the scrim InColumn draws across the window.
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(5, 3, 1, 0.9)',
   },
   room: {
     paddingHorizontal: 20,
