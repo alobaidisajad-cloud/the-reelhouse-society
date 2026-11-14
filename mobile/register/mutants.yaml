@@ -936,8 +936,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/atmosphere/RoomLight.tsx
-        find: "width: W, height: H, experimental_backgroundImage: roomLightImage(g, H) }} />"
-        replace: "width: W, height: H, experimental_backgroundImage: roomLightImage(g, H), opacity: 1 }} />"
+        find: "left, width, height: H, experimental_backgroundImage: roomLightImage(g, H) }} />"
+        replace: "left, width, height: H, experimental_backgroundImage: roomLightImage(g, H), opacity: 1 }} />"
     proof: { file: e2e/__tests__/speedLab.test.ts, test: "every build the lab makes applies to the tree as committed, each text found exactly once" }
 
   - id: shape-blank-light-passes
