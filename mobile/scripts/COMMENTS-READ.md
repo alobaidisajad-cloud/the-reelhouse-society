@@ -890,7 +890,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aScrollIsOneTransaction.test.tsx | 2026-10-15 | new |
 | src/hooks/__tests__/aSheetComesAndGoesOnce.test.tsx | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/hooks/__tests__/aSheetStaysAboveTheKeyboard.test.tsx | 2026-10-22 | edited: the mock's plain style read through unknown (Reanimated 4.3 types an animated style as a handle) |
-| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-11-14 | edited: a rescue draws anew, a landing keeps its view, every caller draws under the key; edited: the hook itself in every run: a drawing run's stand-in for useArrival is unmocked here; edited: the ratchet at its end: no mount-time entrance left |
+| src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx | 2026-11-14 | edited: a rescued arrival is a new view, read by its ref; edited: a rescue draws anew, a landing keeps its view, every caller draws under the key; edited: the hook itself in every run: a drawing run's stand-in for useArrival is unmocked here; edited: the ratchet at its end: no mount-time entrance left |
 | src/hooks/__tests__/aSlowPhoneIsKnownAtOnce.test.tsx | 2026-10-02 | Written 2026-10-02 (launch audit): a throttled phone is known on the first render. |
 | src/hooks/__tests__/everyMainScreenTracesItsScroll.guard.test.ts | 2026-10-15 | new |
 | src/hooks/__tests__/signingInTellsTheTruth.test.tsx | 2026-11-11 | edited: a sign-in closes back to the screen that asked; none asked, the Lobby; edited: the submit plate found by the name it now says; edited: a refused form points at its field; edited: a sign-in lands where the member-only screen asked, or the Lobby; |
@@ -1212,7 +1212,7 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/__tests__/anAddressIsToldFromAHandle.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aNarrowedWriteMustSeeItsRefusal.test.ts | 2026-10-15 | edited: its files come from the shared file list (test-utils/universe.js) |
 | src/utils/__tests__/anExcerptNeverEndsInHalfAnEmoji.test.ts | — |  |
-| src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-10-15 | new |
+| src/utils/__tests__/animationConfigsAreLiterals.guard.test.ts | 2026-11-14 | edited: the walker's floor at 140, the stamp an ignition; new |
 | src/utils/__tests__/anOlderBuildsDossierStillLands.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aQueuedFilingIsCutToEachColumn.test.ts | 2026-10-16 | new |
 | src/utils/__tests__/aQueuedFollowFindsItsMember.test.ts | 2026-10-27 | edited: the line is said without the handle; edited: the rank sync's request through the shared fetch, here the test's own; new |

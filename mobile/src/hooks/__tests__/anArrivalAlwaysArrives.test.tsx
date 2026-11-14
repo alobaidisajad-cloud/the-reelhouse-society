@@ -73,17 +73,23 @@ describe('an arrival', () => {
       React.useEffect(() => { mounts.n += 1; }, []);
       return null;
     }
+    // The view itself, by its ref: drawn anew, it is a new one (a ref is given each view once).
+    const views: unknown[] = [];
+    const seen = (v: unknown) => { if (v) views.push(v); };
     (e2eTrace as jest.Mock).mockClear();
     const r = render(
-      <Arrive name="outer" duration={300} testID="outer">
+      <Arrive name="outer" duration={300} testID="outer" {...({ ref: seen } as object)}>
         <Counted />
         <Arrive name="inner" duration={900} testID="inner" />
       </Arrive>,
     );
     expect(mounts.n).toBe(1);
+    expect(views).toHaveLength(1);
     expect(StyleSheet.flatten(r.getByTestId('inner').props.style)).not.toEqual(expect.objectContaining(ARRIVED));
     React.act(() => { jest.advanceTimersByTime(300 + ARRIVAL_GRACE_MS); });
     (withTiming as jest.Mock).mockImplementation(real);
+    expect(views).toHaveLength(2);
+    expect(views[1]).not.toBe(views[0]);
     expect(mounts.n).toBe(2);
     React.act(() => { jest.advanceTimersByTime(900 + ARRIVAL_GRACE_MS); });
     // Drawn anew, the inner one is arrived from its first frame, and never rescued itself.
