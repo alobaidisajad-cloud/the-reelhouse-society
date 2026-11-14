@@ -255,8 +255,16 @@ jobs:
           set +e
           S="$RUNNER_TEMP/ios-flows/sign-in"
           mkdir -p "$S"
+          # The app's own JS console through each run ($1.app.txt): the E2E build's traces say whether a
+          # stalled entrance was rescued (arrival.rescued), which tells a starved runner from the app.
           sheet() {
-            "$MAESTRO_BIN" --device "$SIM_DEVICE" test .maestro/ios/sign_in_sheet.yaml --debug-output "$S/$1" > "$S/$1.txt" 2>&1 < /dev/null || return 1
+            xcrun simctl spawn "$SIM_DEVICE" log stream --level info --style compact \
+              --predicate 'subsystem == "com.facebook.react.log" AND category == "javascript"' > "$S/$1.app.txt" 2>&1 &
+            said=$!
+            "$MAESTRO_BIN" --device "$SIM_DEVICE" test .maestro/ios/sign_in_sheet.yaml --debug-output "$S/$1" > "$S/$1.txt" 2>&1 < /dev/null
+            local rc=$?
+            kill "$said" 2> /dev/null
+            [ $rc -eq 0 ] || return 1
             xcrun simctl io "$SIM_DEVICE" screenshot "$S/$1.png" > /dev/null 2>&1
             "$MAESTRO_BIN" --device "$SIM_DEVICE" hierarchy > "$S/$1.json" 2> /dev/null < /dev/null
           }
@@ -357,8 +365,15 @@ jobs:
           if ! xcrun simctl install "$IPAD" "$RUNNER_TEMP/ios/app.app" > "$S/install.txt" 2>&1; then
             node e2e/annotate.mjs "The app did not install on the iPad simulator" "$S/install.txt"; exit 1
           fi
+          # The app's own JS console through each stage ($1.app.txt), as the iPhone's sign-in step keeps it.
           stage() {
-            "$MAESTRO_BIN" --device "$IPAD" test ".maestro/ios/$2.yaml" --debug-output "$S/$1" > "$S/$1.txt" 2>&1 < /dev/null || return 1
+            xcrun simctl spawn "$IPAD" log stream --level info --style compact \
+              --predicate 'subsystem == "com.facebook.react.log" AND category == "javascript"' > "$S/$1.app.txt" 2>&1 &
+            said=$!
+            "$MAESTRO_BIN" --device "$IPAD" test ".maestro/ios/$2.yaml" --debug-output "$S/$1" > "$S/$1.txt" 2>&1 < /dev/null
+            local rc=$?
+            kill "$said" 2> /dev/null
+            [ $rc -eq 0 ] || return 1
             xcrun simctl io "$IPAD" screenshot "$S/$1.png" > /dev/null 2>&1
             "$MAESTRO_BIN" --device "$IPAD" hierarchy > "$S/$1.json" 2> /dev/null < /dev/null
           }
