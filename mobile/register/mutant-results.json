@@ -486,7 +486,7 @@
     "class": "UI-actions-twice",
     "mutant": "shape-reader-undocked",
     "proof": "m1",
-    "commit": "b9cc8784849544f1b9238e0e00b050937ad2de99",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
@@ -969,14 +969,14 @@
     "class": "UI-unknown-mark-drawn-as-off",
     "mutant": "shape-reader-unknown-default",
     "proof": "m4",
-    "commit": "3f523c51491c570128f0d4f7ee7ae196c6ab6993",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
     "class": "UI-unknown-mark-drawn-as-off",
     "mutant": "shape-row-unknown-never",
     "proof": "m5",
-    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
@@ -1452,14 +1452,14 @@
     "class": "SPEED-a-mark-redraws-the-words",
     "mutant": "shape-row-handlers-made-anew",
     "proof": "m1",
-    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-mark-redraws-the-words",
     "mutant": "shape-words-unmemoised",
     "proof": "m1",
-    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
@@ -1788,21 +1788,21 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-reader-ignores-opened",
     "proof": "m10",
-    "commit": "c198b39bccb7aea576c6349030470acc948e0ea5",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-reader-critiques-after",
     "proof": "m11",
-    "commit": "c198b39bccb7aea576c6349030470acc948e0ea5",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-next-part-not-kept",
     "proof": "m12",
-    "commit": "c198b39bccb7aea576c6349030470acc948e0ea5",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
@@ -1998,7 +1998,7 @@
     "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-paper-spinner-over-kept",
     "proof": "m35",
-    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
@@ -2404,14 +2404,14 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "judge-ios-control-moved",
     "proof": "judge",
-    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "judge-ios-arabic-never-taken",
     "proof": "judge",
-    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
@@ -2481,7 +2481,7 @@
     "class": "LAYOUT-placed-from-another-box",
     "mutant": "shape-pill-at-the-screens-top",
     "proof": "m1",
-    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
@@ -2495,14 +2495,14 @@
     "class": "LOOK-ios-glow-cut-or-banded",
     "mutant": "shape-halo-judge-blind",
     "proof": "m4",
-    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
     "class": "LOOK-ios-glow-cut-or-banded",
     "mutant": "shape-halo-read-into-the-header",
     "proof": "m5",
-    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   },
   {
@@ -2573,6 +2573,27 @@
     "mutant": "shape-halo-banded-again",
     "proof": "m3",
     "commit": "91cc49a26efadefcffb75efd0ee84758eb68df7b",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-reader-inset-for-the-keyboard",
+    "proof": "m20",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-placed-from-another-box",
+    "mutant": "shape-pill-under-the-paper",
+    "proof": "m1",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
+    "verdict": "caught"
+  },
+  {
+    "class": "LOOK-ios-glow-cut-or-banded",
+    "mutant": "shape-halo-judged-on-nothing",
+    "proof": "m6",
+    "commit": "78b6876ac21be55cb78b5d6bac031213e2c8dc73",
     "verdict": "caught"
   }
 ]
