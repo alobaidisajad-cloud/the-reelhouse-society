@@ -19,13 +19,13 @@ function windowOf(width: number) {
 }
 const boxOf = (node: { props: { style?: unknown } }) => StyleSheet.flatten(node.props.style as never) as Record<string, unknown>;
 
-it('on a wide window, dims from edge to edge, in the modal\'s own colour, and closes on a press beyond the column', () => {
+it('on a wide window, dims from edge to edge, in the modal\'s own colour, and closes on a press beyond the column', async () => {
   windowOf(1024);
   const onPress = jest.fn();
   const r = render(<InColumn scrim={{ color: 'rgba(0,0,0,0.85)', onPress }}><Text>the sheet</Text></InColumn>);
   const scrim = r.getByTestId('modal-scrim', { includeHiddenElements: true });
   expect(boxOf(scrim)).toMatchObject({ position: 'absolute', top: 0, bottom: 0, left: -232, right: -232, backgroundColor: 'rgba(0,0,0,0.85)' });
-  fireEvent.press(scrim);
+  await fireEvent.press(scrim);
   expect(onPress).toHaveBeenCalledTimes(1);
   // The sheet itself stays in the column: the column lets the scrim be seen beyond it.
   expect(boxOf(r.getByText('the sheet').parent as never)).toMatchObject({ maxWidth: 560, overflow: 'visible' });
