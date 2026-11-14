@@ -250,6 +250,8 @@ function ShareSheet({
                                 renderItem={renderLoungeItem as any}
                                 showsVerticalScrollIndicator={false}
                                 keyboardDismissMode="on-drag"
+                                // A salon chosen while the message is typed is chosen on the first press.
+                                keyboardShouldPersistTaps="handled"
                             />
 
                             <TextInput

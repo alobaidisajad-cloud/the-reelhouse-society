@@ -250,6 +250,8 @@ export default function SearchModal() {
             <FlashList
               horizontal
               data={TABS}
+              // A tab pressed while the search is typed changes the tab on the first press.
+              keyboardShouldPersistTaps="handled"
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={st.tabsContent}
               estimatedItemSize={70}

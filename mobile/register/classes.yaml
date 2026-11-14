@@ -127,6 +127,7 @@ classes:
       - { kind: running, file: src/components/dispatch/paper/__tests__/theCritiqueRidesTheKeys.test.tsx, test: "on iOS, rises by the keyboard and the room above it, FILE with it" }
       - { kind: running, file: src/components/layout/__tests__/flashListKeyboard.test.tsx, test: "passes taps through to its presses while the keyboard is open" }
       - { kind: running, file: src/components/darkroom/__tests__/aYearTypedOnAnIPhoneIsApplied.test.tsx, test: "applies a whole year as its last digit is typed, the keyboard still up" }
+      - { kind: static, file: src/components/__tests__/aListBesideAFieldKeepsTheTap.guard.test.ts, test: "reads the app at all, and finds the lists beside its fields" }
       - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "on iOS, rides the keyboard, its own gap below it" }
       - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "brings a focused field under the bar above it, and leaves one already clear" }
     fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers)"

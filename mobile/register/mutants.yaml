@@ -3375,6 +3375,15 @@ mutants:
         replace: "export const SCREEN_GROUND = { flex: 1 } as const;"
     proof: { file: src/components/layout/__tests__/theGroundSpansTheWindow.test.tsx, test: "gives every screen the ink from edge to edge, no column of its own" }
 
+  - id: shape-search-tabs-let-the-tap-go
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: app/(modals)/search-modal.tsx
+        find: "              keyboardShouldPersistTaps=\"handled\"\n              showsHorizontalScrollIndicator={false}"
+        replace: "              showsHorizontalScrollIndicator={false}"
+    proof: { file: src/components/__tests__/aListBesideAFieldKeepsTheTap.guard.test.ts, test: "reads the app at all, and finds the lists beside its fields" }
+
   - id: shape-glow-given-no-room
     class: LOOK-ios-glow-cut-or-banded
     source: shape
