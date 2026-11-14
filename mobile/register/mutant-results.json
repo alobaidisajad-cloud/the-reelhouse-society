@@ -500,7 +500,7 @@
     "class": "MOCKUP-android-svg-lost",
     "mutant": "shape-android-svg-root-unknown",
     "proof": "m1",
-    "commit": "91cc49a26efadefcffb75efd0ee84758eb68df7b",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
@@ -668,7 +668,7 @@
     "class": "LIGHT-unproven-on-device",
     "mutant": "shape-lab-arm-drifted",
     "proof": "m1",
-    "commit": "ddb79777c686ed7dddbcef792b009bf0a0288f8f",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
@@ -717,7 +717,7 @@
     "class": "E2E-no-flow-on-ios",
     "mutant": "shape-ios-flows-unrun",
     "proof": "m1",
-    "commit": "e04076ec69e6e8fbd0154f2898b11f61d086efb4",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
@@ -759,7 +759,7 @@
     "class": "E2E-ios-driver-start-unwaited",
     "mutant": "shape-ios-driver-default-wait",
     "proof": "m1",
-    "commit": "e04076ec69e6e8fbd0154f2898b11f61d086efb4",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
@@ -780,7 +780,7 @@
     "class": "E2E-ios-link-question-unanswered",
     "mutant": "shape-ios-link-question-unanswered",
     "proof": "m1",
-    "commit": "e04076ec69e6e8fbd0154f2898b11f61d086efb4",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
@@ -990,7 +990,7 @@
     "class": "SPEED-still-light-redrawn-under-scroll",
     "mutant": "shape-light-never-kept",
     "proof": "m1",
-    "commit": "d8fcad585237de34138d9041fe9b6a52b35ed8f1",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
@@ -1158,14 +1158,14 @@
     "class": "SPEED-canvas-drawn-out-of-sight",
     "mutant": "shape-veil-lift-unheld",
     "proof": "m1",
-    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
     "class": "SPEED-canvas-drawn-out-of-sight",
     "mutant": "shape-veil-written-each-frame",
     "proof": "m1",
-    "commit": "527a4aff5367e714c1f4c10dff878e9f2fad3941",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
@@ -1368,7 +1368,7 @@
     "class": "TEXT-nested-takes-the-house-ceiling",
     "mutant": "shape-render-nested-own-cap",
     "proof": "m3",
-    "commit": "91cc49a26efadefcffb75efd0ee84758eb68df7b",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
@@ -2404,14 +2404,14 @@
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "judge-ios-control-moved",
     "proof": "judge",
-    "commit": "e04076ec69e6e8fbd0154f2898b11f61d086efb4",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
     "class": "E2E-phone-only-as-the-runner-has-it",
     "mutant": "judge-ios-arabic-never-taken",
     "proof": "judge",
-    "commit": "e04076ec69e6e8fbd0154f2898b11f61d086efb4",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
@@ -2495,14 +2495,14 @@
     "class": "LOOK-ios-glow-cut-or-banded",
     "mutant": "shape-halo-judge-blind",
     "proof": "m4",
-    "commit": "e04076ec69e6e8fbd0154f2898b11f61d086efb4",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
     "class": "LOOK-ios-glow-cut-or-banded",
     "mutant": "shape-halo-read-into-the-header",
     "proof": "m5",
-    "commit": "e04076ec69e6e8fbd0154f2898b11f61d086efb4",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
@@ -2514,9 +2514,23 @@
   },
   {
     "class": "LAYOUT-wide-window-ground-unpainted",
+    "mutant": "shape-room-stops-at-the-column",
+    "proof": "m3",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-wide-window-ground-unpainted",
+    "mutant": "shape-wide-window-left-dark",
+    "proof": "m3",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-wide-window-ground-unpainted",
     "mutant": "shape-page-not-in-its-column",
     "proof": "m1",
-    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "commit": "d2dffd7af7825dcfe970a250df6d3d5276662096",
     "verdict": "caught"
   },
   {
