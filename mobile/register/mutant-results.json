@@ -416,7 +416,7 @@
     "class": "UI-unready-faded",
     "mutant": "shape-resend-faded-over-lines",
     "proof": "m1",
-    "commit": "330fc24696df2bdb31a145fd93841c0f376b3ba2",
+    "commit": "b1964e28e613bd616c379035dc9bc797c0e8d182",
     "verdict": "caught"
   },
   {
@@ -2636,6 +2636,34 @@
     "mutant": "shape-scrollbar-stands-at-its-glow",
     "proof": "m3",
     "commit": "b963a95484882f9d1bc54ae6090888bbce860dda",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-android-stacks-by-elevation",
+    "mutant": "shape-stacking-guard-blind",
+    "proof": "m5",
+    "commit": "b1964e28e613bd616c379035dc9bc797c0e8d182",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-android-stacks-by-elevation",
+    "mutant": "shape-stacking-guard-unread",
+    "proof": "m8",
+    "commit": "b1964e28e613bd616c379035dc9bc797c0e8d182",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-android-stacks-by-elevation",
+    "mutant": "shape-top-bar-stands-low",
+    "proof": null,
+    "commit": "b1964e28e613bd616c379035dc9bc797c0e8d182",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-android-stacks-by-elevation",
+    "mutant": "shape-vignette-stands-low",
+    "proof": null,
+    "commit": "b1964e28e613bd616c379035dc9bc797c0e8d182",
     "verdict": "caught"
   }
 ]
