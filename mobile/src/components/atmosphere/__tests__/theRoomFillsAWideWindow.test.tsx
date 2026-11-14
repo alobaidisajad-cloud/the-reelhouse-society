@@ -22,8 +22,8 @@ function lights(tree: unknown) {
   const walk = (n: Node | string | null) => {
     if (!n || typeof n === 'string') return;
     if (n.props.testID === 'room-light') {
-      const layer = (n.children ?? [])[0] as Node;
-      const st = StyleSheet.flatten(layer.props.style as never) as Record<string, unknown>;
+      const layer = (n.children ?? []).find((c): c is Node => typeof c !== 'string');
+      const st = (layer ? StyleSheet.flatten(layer.props.style as never) : {}) as Record<string, unknown>;
       found.push({ left: st.left, width: st.width, image: st.experimental_backgroundImage });
     }
     (n.children ?? []).forEach(walk);
@@ -49,11 +49,14 @@ const page = (room: React.ReactNode) => (
 it('on a wide window, lights the window behind the column and lays the page\'s light from its left edge', () => {
   windowOf(1024);
   const r = render(page(<RoomLight room="lobby" />));
-  const [behind, own] = lights(r.toJSON());
-  expect(behind).toMatchObject({ left: 0, width: 1024 });
-  expect(own).toMatchObject({ left: -(1024 - 560) / 2, width: 1024 });
+  const drawn = lights(r.toJSON());
+  // Behind the column, the window's whole width; the page's own, from the window's left edge.
+  expect(drawn).toEqual([
+    expect.objectContaining({ left: 0, width: 1024 }),
+    expect.objectContaining({ left: -(1024 - 560) / 2, width: 1024 }),
+  ]);
   // One light, from one geometry: they meet at the column's edges with no seam.
-  expect(own.image).toEqual(behind.image);
+  expect(new Set(drawn.map((l) => l.image)).size).toBe(1);
   r.unmount();
 });
 
