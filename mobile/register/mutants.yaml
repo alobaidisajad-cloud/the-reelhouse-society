@@ -3536,3 +3536,39 @@ mutants:
         find: "        elevation: SCROLLBAR_STANDS + 1,\n"
         replace: ""
     proof: { file: src/components/profile/__tests__/theFileLetsItsViewsLeave.test.tsx, test: "the Cinema DNA card, closed, fades and then leaves the tree" }
+
+  - id: shape-beam-cut-again
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: src/components/home/ProjectorBeam.tsx
+        find: "      {wide ? <BeamShaft width={width * 1.5} height={height} /> : ("
+        replace: "      {false ? <BeamShaft width={width * 1.5} height={height} /> : ("
+    proof: { file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "on a wide window, is a shaft inside the page, drawn in Skia, dithered, its light an ellipse falling away" }
+
+  - id: shape-beam-straight-fade
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: src/components/home/ProjectorBeam.tsx
+        find: "(peak * Math.cos((t * Math.PI) / 2) ** 2).toFixed(4)"
+        replace: "(peak * (1 - t)).toFixed(4)"
+    proof: { file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "falls away as a real light does: brightest at its heart, eased to nothing, never a straight fade" }
+
+  - id: shape-beam-judge-band-blind
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: e2e/ios-ipad-judge.mjs
+        find: "export const BEAM_RUN_MAX = 4;"
+        replace: "export const BEAM_RUN_MAX = 400;"
+    proof: { file: e2e/__tests__/iosIpadJudge.test.ts, test: "fails a beam drawn without dither: one colour held across a band" }
+
+  - id: shape-beam-judge-edge-blind
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: e2e/ios-ipad-judge.mjs
+        find: "export const BEAM_STEP_MAX = 1.5;"
+        replace: "export const BEAM_STEP_MAX = 99;"
+    proof: { file: e2e/__tests__/iosIpadJudge.test.ts, test: "fails a beam cut by the page's edge: a straight line in the light" }

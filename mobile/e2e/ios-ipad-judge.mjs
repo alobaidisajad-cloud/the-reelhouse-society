@@ -13,11 +13,14 @@
  *     the app refused leaves the window upright);
  *   - its control found (the Lobby's tab, the sheet's press), and inside the window.
  * Each control's box is printed, so the photographs (<stage>.png) are read with their numbers.
- * Exits 1 on any stage that fails.
+ * And the welcome's projector beam, read from the upright Lobby's photograph across the page and
+ * down its heart: no colour held over BEAM_RUN_MAX pixels (a band), no step over BEAM_STEP_MAX
+ * levels between neighbouring stretches (an edge). Exits 1 on any stage, or a beam, that fails.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
 import { boxes } from './ios-sign-in-judge.mjs';
 
 /** The narrowest iPad's short side in points (iPad mini, 744): the drawings' narrowest iPad. */
@@ -51,17 +54,86 @@ export function judgeStage(stage, tree) {
   };
 }
 
+/** The longest run of one colour a smooth light shows on the photograph, in pixels (the halo's). */
+export const BEAM_RUN_MAX = 4;
+/** The largest step, in levels, between two neighbouring 8-pixel stretches of a smooth light. */
+export const BEAM_STEP_MAX = 1.5;
+/** Where the beam is read, as shares of the upright window: across the page at its middle, and down its heart. */
+export const BEAM_ACROSS_AT = 0.6;
+export const BEAM_DOWN = [0.52, 0.84];
+
+/**
+ * A line of the photograph, read as light: the longest run of one colour, the levels counted, and
+ * the largest step between neighbouring 8-pixel stretches (an edge; dither's noise averages away).
+ */
+export function lightAlong(pixelAt, points) {
+  let run = 0, longest = 0, last = null;
+  const seen = new Set();
+  const level = [];
+  for (const [x, y] of points) {
+    const c = pixelAt(x, y);
+    const key = c.join(',');
+    seen.add(key);
+    run = key === last ? run + 1 : 1;
+    last = key;
+    longest = Math.max(longest, run);
+    level.push((c[0] + c[1] + c[2]) / 3);
+  }
+  let step = 0;
+  for (let i = 0; i + 16 <= level.length; i += 1) {
+    const mean = (a, b) => level.slice(a, b).reduce((s, v) => s + v, 0) / (b - a);
+    step = Math.max(step, Math.abs(mean(i, i + 8) - mean(i + 8, i + 16)));
+  }
+  return { longest, levels: seen.size, step: +step.toFixed(2) };
+}
+
+/**
+ * The welcome's projector beam, upright: drawn on the iPad as a shaft inside the page, its light
+ * must fall away with no band and no edge, across the page and down its heart (ProjectorBeam).
+ */
+export function judgeBeam(tree, png) {
+  const { screen } = boxes(tree, []);
+  if (!screen || !png) return { ok: false, line: 'the beam: NOT READ (no window, or no photograph)' };
+  const scale = png.width / screen.width;
+  const at = (x, y) => { const i = (png.width * y + x) << 2; return [png.data[i], png.data[i + 1], png.data[i + 2]]; };
+  const column = Math.min(screen.width, 560);
+  const left = Math.round(((screen.width - column) / 2 + 8) * scale);
+  const right = Math.round(((screen.width + column) / 2 - 8) * scale);
+  const middle = Math.round((screen.width / 2) * scale);
+  const across = Array.from({ length: right - left }, (_, i) => [left + i, Math.round(screen.height * BEAM_ACROSS_AT * scale)]);
+  const [top, bottom] = BEAM_DOWN.map((f) => Math.round(screen.height * f * scale));
+  const down = Array.from({ length: bottom - top }, (_, i) => [middle, top + i]);
+  const a = lightAlong(at, across);
+  const d = lightAlong(at, down);
+  const faults = [];
+  for (const [name, r] of [['across the page', a], ['down its heart', d]]) {
+    if (r.levels < 2) faults.push(`${name}: one colour, no light read`);
+    if (r.longest > BEAM_RUN_MAX) faults.push(`${name}: BANDED, one colour for ${r.longest} px`);
+    if (r.step > BEAM_STEP_MAX) faults.push(`${name}: AN EDGE, a step of ${r.step} levels`);
+  }
+  const said = `across ${a.levels} colours, longest run ${a.longest} px, largest step ${a.step}; down ${d.levels} colours, longest run ${d.longest} px, largest step ${d.step} (at most ${BEAM_RUN_MAX} px and ${BEAM_STEP_MAX})`;
+  return { ok: faults.length === 0, line: `the beam: ${faults.length ? `FAILED (${faults.join('; ')})` : 'smooth, no band and no edge'}, ${said}` };
+}
+
 function main(dir) {
   let ok = true;
   const out = [];
+  const trees = {};
   for (const stage of STAGES) {
     const file = join(dir, `${stage.name}.json`);
     let tree = null;
     try { tree = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null; } catch { tree = null; }
+    trees[stage.name] = tree;
     const v = judgeStage(stage, tree);
     if (!v.ok) ok = false;
     out.push(v.line);
   }
+  // The beam, read from the upright welcome's photograph.
+  const shot = join(dir, 'upright-lobby.png');
+  const { PNG } = createRequire(import.meta.url)('pngjs');
+  const beam = judgeBeam(trees['upright-lobby'], existsSync(shot) ? PNG.sync.read(readFileSync(shot)) : null);
+  if (!beam.ok) ok = false;
+  out.push(beam.line);
   console.log([`the iPad, upright and on its side: ${ok ? 'every stage in place' : 'A STAGE FAILED'}`, ...out.map((l) => `  ${l}`)].join('\n'));
   return ok;
 }
