@@ -114,7 +114,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     // The developing-plate reveal — opacity + a faint settle, timing only; each draw reveals,
     // the same film drawn twice included.
     const [reveals, setReveals] = useState(0);
-    const { style: plateStyle } = useIgnition(result ? reveals : null, { duration: 520, from: 1.04, easing: CURVE, name: 'roulette.plate' });
+    const { style: plateStyle, key: plateDrawn } = useIgnition(result ? reveals : null, { duration: 520, from: 1.04, easing: CURVE, name: 'roulette.plate' });
 
     // Clean up on unmount
     useEffect(() => {
@@ -255,7 +255,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                 <Text {...scaledTextProps} style={s.oracleSpoken}>THE ORACLE HAS SPOKEN</Text>
                                 <View style={s.gate}>
                                     <Perforations />
-                                    <Animated.View style={[s.gateWindow, s.resultPosterWrap, plateStyle]}>
+                                    <Animated.View key={plateDrawn} style={[s.gateWindow, s.resultPosterWrap, plateStyle]}>
                                         <RemoteImage uri={posterUri(result)} style={s.poster} transition={150} fallback={<View style={[s.posterBlank, s.posterBlankResult]}>
                                                 <Text {...scaledTextProps} style={s.posterBlankTitle} numberOfLines={3}>{result.title ?? result.name}</Text>
                                             </View>} />

@@ -2,7 +2,7 @@
 import React from 'react';
 import type { StyleProp, ViewProps, ViewStyle } from 'react-native';
 import Animated, { type AnimatedStyle, type WithTimingConfig } from 'react-native-reanimated';
-import { useArrival } from '@/src/hooks/useArrival';
+import { ArrivedAtOnce, useArrival } from '@/src/hooks/useArrival';
 
 export function Arrive({ name, duration = 600, delay, rise, easing, style, children, ...view }: Omit<ViewProps, 'style'> & {
   /** What arrived, for the E2E report when it had to be set. */
@@ -17,5 +17,10 @@ export function Arrive({ name, duration = 600, delay, rise, easing, style, child
   children?: React.ReactNode;
 }) {
   const arrival = useArrival({ duration, delay, rise, easing, name });
-  return <Animated.View {...view} style={[style, arrival]}>{children}</Animated.View>;
+  // Rescued, a new view (its key), and what it holds arrives at once (useArrival).
+  return (
+    <Animated.View key={arrival.key} {...view} style={[style, arrival.style]}>
+      {arrival.anew ? <ArrivedAtOnce.Provider value>{children}</ArrivedAtOnce.Provider> : children}
+    </Animated.View>
+  );
 }

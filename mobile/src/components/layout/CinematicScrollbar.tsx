@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, ViewStyle } from 'react-native';
+import { StyleSheet, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useDerivedValue, withTiming, withDelay, SharedValue, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/src/theme/theme';
@@ -131,29 +131,43 @@ export const CinematicScrollbar: React.FC<CinematicScrollbarProps> = ({
   });
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
         styles.track,
         style,
         geometryStyle,
         motionStyle
-      ]} 
+      ]}
       pointerEvents="none"
-    />
+    >
+      <View style={styles.thumb} />
+    </Animated.View>
   );
 };
 
+/** Over everything the screen draws, on both platforms (see `track`). */
+export const SCROLLBAR_STANDS = 999;
+
 const styles = StyleSheet.create({
+  /**
+   * Places the thumb over the page. Android stacks siblings by elevation before zIndex, so it
+   * stands at an elevation over theirs too (a page's veil stands at 90). It draws nothing, so
+   * Android casts no shadow from it: the glow is the thumb's own, inside it.
+   */
   track: {
     position: 'absolute',
     width: 5, // Base width for scaleX animation (visual width is 5 * scaleX, i.e. 3px to 5px)
+    zIndex: SCROLLBAR_STANDS,
+    elevation: SCROLLBAR_STANDS,
+  },
+  thumb: {
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.sepia,
     borderRadius: 2.5,
-    zIndex: 999,
     shadowColor: colors.sepia,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 3,
-  }
+  },
 });

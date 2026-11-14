@@ -226,7 +226,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // re-runs only when a different member's dossier is opened. Developed, each beat rests on a
   // plain style: the member Nº never waits on an animated style reaching it.
   const reducedMotion = useReduceMotion();
-  const { lit: plate, rests: developed } = useIgnition(`${targetUser?.id ?? ''}:${reducedMotion}`, {
+  const { lit: plate, rests: developed, key: plateDrawn } = useIgnition(`${targetUser?.id ?? ''}:${reducedMotion}`, {
     duration: reducedMotion ? 250 : 900, from: 1, easing: Easing.bezier(0.33, 0, 0.15, 1), name: 'member.plate',
   });
 
@@ -1014,7 +1014,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         {/* ═══ THE MEMBERSHIP PLATE — atmosphere ends at the stats grid ═══ */}
         <View style={s.headerWrap} onLayout={(e) => setPlateH(Math.round(e.nativeEvent.layout.y + e.nativeEvent.layout.height))}>
           {/* Tier atmosphere — breathes up as the plate develops */}
-          <AnimatedView style={[StyleSheet.absoluteFill, atmosphereDevelop]} pointerEvents="none">
+          <AnimatedView key={`atmosphere-${plateDrawn}`} style={[StyleSheet.absoluteFill, atmosphereDevelop]} pointerEvents="none">
             {isAuteurPlus ? (
               <ProfileBackdrop user={targetUser as never} hem={plateH || undefined} scrollY={scrollY} />
             ) : isArchivistPlus ? (
@@ -1044,7 +1044,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           <View style={[s.headerContent, { paddingTop: heroTop }]}>
 
             {/* ══ THE IDENT — a mounted print, and the particulars beside it ══ */}
-            <AnimatedView style={[s.identRow, portraitDevelop]}>
+            <AnimatedView key={`portrait-${plateDrawn}`} style={[s.identRow, portraitDevelop]}>
               <View style={s.portraitWrap}>
                 <View style={s.plate}>
                   <RemoteImage uri={targetUser.avatar_url} style={s.plateImage} contentFit="cover" transition={150} accessibilityIgnoresInvertColors fallback={<View style={s.plateInitialWrap}>
@@ -1062,7 +1062,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 {/* The rank, stamped on the corner at a hand's angle, on the
                     develop's last beat. `style` is the position only: the mark's
                     look is RankBadge's alone. */}
-                <AnimatedView style={stampDevelop}>
+                <AnimatedView key={`stamp-${plateDrawn}`} style={stampDevelop}>
                   <RankBadge rank={rankOf(targetUser)} style={s.tierStamp} />
                 </AnimatedView>
               </View>

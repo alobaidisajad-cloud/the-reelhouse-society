@@ -20,7 +20,8 @@ import { Text } from '@/src/components/text';
 import { HouseBlur } from '@/src/components/HouseBlur';
 // Reanimated's: it knows the setting on the first frame, so a member who asked
 // for less motion never sees the entrance begin.
-import Animated, { Easing, useSharedValue, useAnimatedStyle, withDelay, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, ReduceMotion } from 'react-native-reanimated';
+import { useIgnition } from '@/src/hooks/useArrival';
 import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 
@@ -89,36 +90,35 @@ export function stampLines(handle: string): string[] {
  *  largest text (largest-text run 40847116101: cut at its smallest size); each tier fits its own.
  *  Never a fake number: if the serial hasn't landed yet, the handle stands alone. */
 function MemberStamp({ username, memberNo, reduceMotion }: { username: string; memberNo: number | null; reduceMotion: boolean }) {
-  const opacity = useSharedValue(reduceMotion ? 1 : 0);
-  const scale = useSharedValue(reduceMotion ? 1 : 1.06);
+  // The stamp lands: a single weighted press. An ignition, so it is certain to land: it rests on
+  // a plain style once its time is past, and a press that stalled is drawn anew (useIgnition).
+  const { style, key } = useIgnition('stamp', {
+    duration: 320, delay: reduceMotion ? 0 : 350, from: 1.06, easing: CURVE,
+    reduceMotion: reduceMotion ? ReduceMotion.Always : ReduceMotion.Never, name: 'initiation.stamp',
+  });
 
   useEffect(() => {
-    if (reduceMotion) return;
-    // The stamp lands: a single weighted press, one soft tick when it settles
-    // (haptic scheduled from JS so the worklets stay pure).
-    opacity.value = withDelay(350, withTiming(1, { duration: 320, easing: CURVE }));
-    scale.value = withDelay(350, withTiming(1, { duration: 320, easing: CURVE }));
+    if (reduceMotion) return undefined;
+    // One soft tick as it settles (haptic scheduled from JS so the worklets stay pure).
     const tick = setTimeout(() => TactileEngine.selection(), 680);
     return () => clearTimeout(tick);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const style = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ rotate: '-2deg' }, { scale: scale.value }],
-  }));
-
   const handle = `@${username.toUpperCase()}`;
   const serial = memberNo != null ? `MEMBER Nº ${String(memberNo).padStart(4, '0')}` : null;
 
   return (
-    // Read as one stamp, as it is seen.
-    <Animated.View style={[s.stamp, style]} accessible accessibilityLabel={serial ? `${handle} · ${serial}` : handle}>
-      {stampLines(handle).map((line) => (
-        <Text key={line} style={s.stampText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{line}</Text>
-      ))}
-      {serial ? <Text style={s.stampSerial} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{serial}</Text> : null}
-    </Animated.View>
+    // Set at a slant, as a hand sets a rubber stamp; the press inside it lands.
+    <View style={s.stampTilt}>
+      {/* Read as one stamp, as it is seen. */}
+      <Animated.View key={key} style={[s.stamp, style]} accessible accessibilityLabel={serial ? `${handle} · ${serial}` : handle}>
+        {stampLines(handle).map((line) => (
+          <Text key={line} style={s.stampText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{line}</Text>
+        ))}
+        {serial ? <Text style={s.stampSerial} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{serial}</Text> : null}
+      </Animated.View>
+    </View>
   );
 }
 
@@ -260,6 +260,7 @@ const s = StyleSheet.create({
   title: { fontFamily: fonts.display, fontSize: 23, color: colors.parchment, textAlign: 'center', lineHeight: 30, marginBottom: 12 },
   body: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 21, maxWidth: 300 },
 
+  stampTilt: { maxWidth: '100%', transform: [{ rotate: '-2deg' }] },
   stamp: {
     alignItems: 'center',
     borderWidth: 1.5, borderColor: colors.bloodReel, borderRadius: 4,

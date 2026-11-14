@@ -18,6 +18,7 @@ const REGISTER: Record<string, { rests: string } | { why: string }> = {
   'src/components/Buster.tsx': { rests: 'SHOWN' },
   'src/components/film/FilmActionTray.tsx': { rests: 'RISEN_SCRIM' },
   'src/components/layout/ConciergeButton.tsx': { rests: 'risen ?' },
+  'src/components/layout/tabIconMotion.ts': { rests: 'DOT_CHOSEN' },
   'app/person/[id].tsx': { why: 'its header fades in as the page scrolls, and is hidden at rest by design' },
   'app/stacks/[id].tsx': { why: 'its header fades in as the page scrolls, and is hidden at rest by design' },
   'app/log/[id].tsx': { why: 'its bar’s scrim comes in as the page goes under it, and is clear over the projection at rest' },
@@ -32,7 +33,8 @@ function hiddenAtBirth(files: string[]): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const file of files) {
     const text = readFileSync(file, 'utf8');
-    const born = [...text.matchAll(/const (\w+) = useSharedValue\(0\)/g)].map((m) => m[1] ?? '');
+    // Born at 0, or at 0 unless it is to arrive at once (`atOnce ? 1 : 0`, useArrival).
+    const born = [...text.matchAll(/const (\w+) = useSharedValue\((?:0|\w+ \? 1 : 0)\)/g)].map((m) => m[1] ?? '');
     if (!born.length) continue;
     const styles = [...text.matchAll(/useAnimatedStyle\(\(\) => \(?\{([\s\S]*?)\}\)?\)/g)].map((m) => m[1] ?? '');
     const hidden = born.filter((v) => styles.some((s) => new RegExp(`opacity:[^,}]*\\b${v}\\.value`).test(s)));

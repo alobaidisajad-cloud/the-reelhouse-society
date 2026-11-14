@@ -152,8 +152,12 @@ export function grownFor(own: ViewStyle, seen: { w: number; h: number } | null, 
   // screen's words off its top), and a 38pt disc drew 38×44.
   const outerKeys = new Set<string>([...PLACING, ...SIZES.filter((k) => relative(own[k]))]);
   const pick = (keep: boolean) => Object.fromEntries(Object.entries(rest).filter(([k]) => outerKeys.has(k) === keep)) as ViewStyle;
+  // The elevation goes on both: Android stacks siblings by it before their zIndex, so the outer box
+  // that stands among them must carry it, and the inner box that draws keeps it for its shadow (the
+  // outer one has no ground to cast one from).
+  const stands = num(own.elevation) && own.elevation !== 0 ? { elevation: own.elevation } : null;
   return {
-    outer: { ...pick(true), ...each('margin', (v, g) => v - g), ...each('padding', (_v, g) => g) },
+    outer: { ...pick(true), ...stands, ...each('margin', (v, g) => v - g), ...each('padding', (_v, g) => g) },
     inner: {
       ...pick(false), ...each('padding', (v) => v),
       ...(num(own.width) ? null : { alignSelf: 'stretch' }),

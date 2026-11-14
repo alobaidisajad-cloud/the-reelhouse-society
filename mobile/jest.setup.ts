@@ -706,7 +706,7 @@ if (process.env.MOCKUPS) {
     const actual = jest.requireActual('@/src/hooks/useArrival');
     return {
       ...actual,
-      useArrival: () => actual.ARRIVED,
+      useArrival: () => ({ style: actual.ARRIVED, key: actual.drawnAnew(0), anew: false }),
       useIgnition: (...args: Parameters<typeof actual.useIgnition>) => ({ ...actual.useIgnition(...args), style: actual.IGNITED, rests: true }),
     };
   });

@@ -3437,3 +3437,57 @@ mutants:
         find: "    if (span < HALO_SPAN_MIN || r.levels < 2) {"
         replace: "    if (false) {"
     proof: { file: e2e/__tests__/iosSignInJudge.test.ts, test: "fails a halo it could not measure: a header found at the seal, a column too short to read" }
+
+  - id: shape-rescue-restyled-not-redrawn
+    class: UI-a-rescue-undone-by-the-last-animated-props
+    source: shape
+    edits:
+      - file: src/components/Arrive.tsx
+        find: "    <Animated.View key={arrival.key} {...view} style={[style, arrival.style]}>"
+        replace: "    <Animated.View {...view} style={[style, arrival.style]}>"
+    proof: { file: src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx, test: "that never moves is drawn anew, and what it holds arrives at once" }
+
+  - id: shape-ignition-drawn-unkeyed
+    class: UI-a-rescue-undone-by-the-last-animated-props
+    source: shape
+    edits:
+      - file: src/components/auth/SocietySeal.tsx
+        find: "    <View key={drawn} style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>"
+        replace: "    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>"
+    proof: { file: src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx, test: "is drawn anew, wherever a rescue or a plain resting style is" }
+
+  - id: shape-tab-choosing-unrescued
+    class: UI-a-rescue-undone-by-the-last-animated-props
+    source: shape
+    edits:
+      - file: src/components/layout/tabIconMotion.ts
+        find: "        setRescues((n) => n + 1);\n"
+        replace: ""
+    proof: { file: src/components/layout/__tests__/aTabIsChosenWhole.test.tsx, test: "chosen while the frames stand still, is set lit with its dot, and drawn anew" }
+
+  - id: shape-pressable-stands-low
+    class: LAYOUT-android-stacks-by-elevation
+    source: shape
+    edits:
+      - file: src/components/PressableScale.tsx
+        find: "    outer: { ...pick(true), ...stands, "
+        replace: "    outer: { ...pick(true), "
+    proof: { file: src/components/__tests__/PressableScale.touch.test.tsx, test: "stands at its elevation among its siblings, and keeps it on the ground it draws" }
+
+  - id: shape-film-back-lifted-again
+    class: LAYOUT-android-stacks-by-elevation
+    source: shape
+    edits:
+      - file: src/components/film/FilmDetailLayout.tsx
+        find: "  floatingBack: { position: 'absolute', top: 54, left: 16, zIndex: 50 },"
+        replace: "  floatingBack: { position: 'absolute', top: 54, left: 16, zIndex: 50, elevation: 8 },"
+    proof: { file: src/components/film/__tests__/filmPageWiring.test.ts, test: "nor on Android, where its elevation is the circle's, inside the box that places it" }
+
+  - id: shape-scrollbar-stands-at-its-glow
+    class: LAYOUT-android-stacks-by-elevation
+    source: shape
+    edits:
+      - file: src/components/layout/CinematicScrollbar.tsx
+        find: "    elevation: SCROLLBAR_STANDS,"
+        replace: "    elevation: 3,"
+    proof: { file: src/components/layout/__tests__/theScrollbarStandsOverThePage.test.tsx, test: "stands over the page by its elevation as by its zIndex, and glows from the thumb inside" }

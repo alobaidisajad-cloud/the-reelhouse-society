@@ -358,9 +358,11 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
             light must not move when the page arrives. */}
         <RoomLight room="film" hem={BACKDROP_H} />
         <Animated.View style={[s.floatingBack, { top: headerTop, zIndex: 100 }]}>
-          <PressableScale touch="wayOut" style={s.backTouch} onPress={goBack} accessibilityLabel="Go back">
-            <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
-          </PressableScale>
+          <View style={s.backCircle}>
+            <PressableScale touch="wayOut" style={s.backTouch} onPress={goBack} accessibilityLabel="Go back">
+              <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
+            </PressableScale>
+          </View>
         </Animated.View>
         <FilmHeroSkeleton skeletonAnimStyle={skeletonAnimStyle} backdropHeight={BACKDROP_H} bottomInset={edge} />
       </View>
@@ -422,9 +424,11 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
         style={[s.floatingBack, { top: headerTop }, immersiveAnimatedStyle]}
         importantForAccessibility={trayOpen ? 'no-hide-descendants' : 'auto'}
       >
-        <PressableScale touch="wayOut" style={s.backTouch} onPress={goBack} accessibilityLabel="Go back">
-          <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
-        </PressableScale>
+        <View style={s.backCircle}>
+          <PressableScale touch="wayOut" style={s.backTouch} onPress={goBack} accessibilityLabel="Go back">
+            <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
+          </PressableScale>
+        </View>
       </Animated.View>
 
       {/* ...and takes over from it, over the same fifty points. */}
@@ -634,10 +638,14 @@ const s = StyleSheet.create({
    * forms of one control and must sit at one height — and under the tray (60)
    * and the stub (70): the scrim covers everything except the tray and the
    * handle that raised it, never a way off the film while its acts are open.
+   * It only places the control: Android stacks siblings by elevation before
+   * zIndex, so the circle's elevation (its shadow) is on the box inside it,
+   * where it cannot lift the control over the tray's scrim.
    */
+  floatingBack: { position: 'absolute', top: 54, left: 16, zIndex: 50 },
+  backCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.sepiaBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8, alignItems: 'center', justifyContent: 'center' },
   // The circle's inside (its 1pt border off), so the way back grows a known 7 each side to 48.
   backTouch: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
-  floatingBack: { position: 'absolute', top: 54, left: 16, zIndex: 50, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.sepiaBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8, alignItems: 'center', justifyContent: 'center' },
   /** Your own critique: a brass edge rather than a box, so it reads as yours
       at a glance without needing a second label to say so. */
   mine: { paddingLeft: 17, paddingRight: 4, paddingVertical: 2, overflow: 'hidden' },

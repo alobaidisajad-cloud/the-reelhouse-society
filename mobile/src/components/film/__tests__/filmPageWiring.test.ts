@@ -213,6 +213,18 @@ describe('what the scrim must cover, and what it must not', () => {
     expect(back).toBeLessThan(zOf(tray));
   });
 
+  /**
+   * Android stacks siblings by elevation before zIndex: the circle's elevation (its shadow), on the
+   * box that placed it, lifted the way back over the tray's scrim again, tappable, on Android alone.
+   */
+  it('nor on Android, where its elevation is the circle\'s, inside the box that places it', () => {
+    const placing = /floatingBack: \{[^}]*\}/.exec(layout)?.[0] ?? '';
+    expect(placing).toMatch(/zIndex: 50/);
+    expect(placing).not.toMatch(/elevation/);
+    expect(layout).toMatch(/backCircle: \{[^\n]*elevation: \d+/);
+    expect(layout).toMatch(/<View style=\{s\.backCircle\}>\s*<PressableScale touch="wayOut" style=\{s\.backTouch\}/);
+  });
+
   it('nor does the header it hands over to', () => {
     expect(zOf(header)).toBeLessThan(zOf(tray));
   });

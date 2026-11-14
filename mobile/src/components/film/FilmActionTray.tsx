@@ -49,6 +49,7 @@ import { trayMaxHeight } from './filmStubMetrics';
 import { EDGE_LIT } from '@/src/theme/light';
 import { UNINKED } from '@/src/theme/unready';
 import { e2eTrace, useTraceRendering } from '@/src/utils/e2eTrace';
+import { drawnAnew } from '@/src/hooks/useArrival';
 
 /** The scrim, matching the Concierge's. Not a blur — Android. */
 const SCRIM = 'rgba(13,11,9,0.66)';
@@ -183,6 +184,10 @@ export const FilmActionTray = memo(function FilmActionTray({
   // 38790116312: the tray open, its scrim and acts nowhere on the screen), so the
   // resting state never waits on an animation having drawn it.
   const [risen, setRisen] = useState(false);
+  // Rescued, the scrim and the tray are new views as well (drawnAnew): Reanimated lays the props
+  // it last wrote over every React commit until a view unmounts, so a plain style alone never
+  // reaches a rise that stalled.
+  const [rescues, setRescues] = useState(0);
   // It rises on its own shared value, not a mount-time `entering` animation,
   // which can fail to start and leave an OPEN tray transparent. Closing, it is
   // drawn through its fall and a timer unmounts it: it never holds the page.
@@ -195,6 +200,7 @@ export const FilmActionTray = memo(function FilmActionTray({
         const at = rise.value;
         if (at < 1) {
           e2eTrace('tray.rise.rescued', { at });
+          setRescues((n) => n + 1);
           rise.value = 1;
         }
         setRisen(true);
@@ -229,7 +235,7 @@ export const FilmActionTray = memo(function FilmActionTray({
       pointerEvents={visible ? 'auto' : 'none'}
       testID="film-action-tray"
     >
-      <Animated.View style={[s.scrim, risen ? RISEN_SCRIM : scrimStyle]}>
+      <Animated.View key={`scrim-${drawnAnew(rescues)}`} style={[s.scrim, risen ? RISEN_SCRIM : scrimStyle]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={handleScrim}
@@ -239,7 +245,7 @@ export const FilmActionTray = memo(function FilmActionTray({
         />
       </Animated.View>
 
-      <Animated.View style={[s.tray, { maxHeight, paddingBottom: dockHeight + 6 }, risen ? RISEN_TRAY : trayStyle]}>
+      <Animated.View key={`tray-${drawnAnew(rescues)}`} style={[s.tray, { maxHeight, paddingBottom: dockHeight + 6 }, risen ? RISEN_TRAY : trayStyle]}>
         {/* The tear line the stub was torn along. */}
         <View style={s.perf} pointerEvents="none">
           {PERF_HOLES.map((k) => <View key={k} style={s.perfHole} />)}

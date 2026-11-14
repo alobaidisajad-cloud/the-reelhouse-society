@@ -66,6 +66,17 @@ describe('grownFor: the sum', () => {
     expect(g.inner).not.toHaveProperty('flexGrow');
     expect(g.inner).not.toHaveProperty('flex');
   });
+
+  /**
+   * The person page's way back (zIndex 100, elevation 100) under its veil (zIndex 90, elevation 90):
+   * Android stacks siblings by elevation before zIndex, and it is the outer box that stands among
+   * them, so the veil was drawn over the only way off the page once it faded in.
+   */
+  it('stands at its elevation among its siblings, and keeps it on the ground it draws', () => {
+    const g = grownFor({ backgroundColor: 'red', width: 36, height: 36, position: 'absolute', zIndex: 100, elevation: 100 }, null)!;
+    expect(g.outer).toMatchObject({ zIndex: 100, elevation: 100 });
+    expect(g.inner).toMatchObject({ elevation: 100 });
+  });
 });
 
 describe('touchAxes: where growth has nowhere to come from', () => {

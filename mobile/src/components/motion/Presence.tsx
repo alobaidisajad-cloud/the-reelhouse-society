@@ -20,7 +20,7 @@ import type { LayoutChangeEvent, LayoutRectangle, StyleProp, ViewProps, ViewStyl
 import Animated, { cancelAnimation, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withDelay, withTiming, type AnimatedStyle, type SharedValue, type WithTimingConfig } from 'react-native-reanimated';
 import { useReduceMotion } from '@/src/hooks/useReduceMotion';
 import { useSafeAreaFrame } from 'react-native-safe-area-context';
-import { ARRIVAL_GRACE_MS, ARRIVAL_RISE } from '@/src/hooks/useArrival';
+import { ARRIVAL_GRACE_MS, ARRIVAL_RISE, ArrivedAtOnce, drawnAnew } from '@/src/hooks/useArrival';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 
 /** Reanimated's duration for a preset given none. */
@@ -239,7 +239,9 @@ export function PresenceView({
   const screen = useSafeAreaFrame();
   const leaving = stage?.leaving ?? false;
 
-  const start = enter && !reduced ? entranceFrom(enter.kind, screen.height) : REST;
+  // Inside a view drawn anew by a rescue, it arrives at once (ArrivedAtOnce).
+  const atOnce = useContext(ArrivedAtOnce);
+  const start = enter && !reduced && !atOnce ? entranceFrom(enter.kind, screen.height) : REST;
   const opacity = useSharedValue(start.opacity);
   const x = useSharedValue(start.x);
   const y = useSharedValue(start.y);
@@ -248,6 +250,9 @@ export function PresenceView({
   // nothing of it on the screen), so where a view rests never waits on an animation having
   // drawn it. Leaving, it takes its animated style back.
   const [arrived, setArrived] = useState(start === REST);
+  // Rescued, it is a new view as well: Reanimated lays the props it last wrote over every React
+  // commit until the view unmounts, so a plain style alone never reaches it (drawnAnew).
+  const [rescues, setRescues] = useState(0);
 
   // The frame the layout last gave it: read by the exit as it starts, and drawn by the pin.
   const box = useRef<LayoutRectangle | null>(null);
@@ -281,7 +286,7 @@ export function PresenceView({
   useEffect(() => {
     if (leaving) return undefined;
     const { enter: e, reduced: r, screen: s } = live.current;
-    if (!e || r) {
+    if (!e || r || atOnce) {
       [opacity, x, y].forEach((v) => cancelAnimation(v));
       pose(opacity, x, y, REST);
       setArrived(true);
@@ -293,6 +298,7 @@ export function PresenceView({
     const rescue = setTimeout(() => {
       if (opacity.value < 1 || y.value !== 0) {
         e2eTrace('arrival.rescued', { name, at: opacity.value });
+        setRescues((n) => n + 1);
         pose(opacity, x, y, REST);
       }
       setArrived(true);
@@ -306,7 +312,7 @@ export function PresenceView({
   useLayoutEffect(() => {
     if (!leaving) return undefined;
     const { exit: e, reduced: r, screen: s } = live.current;
-    if (!e || r) {
+    if (!e || r || atOnce) {
       leave();
       return undefined;
     }
@@ -354,6 +360,7 @@ export function PresenceView({
   return (
     <StageContext.Provider value={holds}>
       <Animated.View
+        key={drawnAnew(rescues)}
         {...rest}
         style={[style, arrived ? restingStyle(fading, moving) : animated, pin ? pinAt(pin) : null]}
         onLayout={measured}
@@ -361,7 +368,7 @@ export function PresenceView({
         accessibilityElementsHidden={leaving || rest.accessibilityElementsHidden}
         importantForAccessibility={leaving ? 'no-hide-descendants' : rest.importantForAccessibility}
       >
-        {children}
+        {rescues > 0 ? <ArrivedAtOnce.Provider value>{children}</ArrivedAtOnce.Provider> : children}
       </Animated.View>
     </StageContext.Provider>
   );

@@ -52,7 +52,8 @@ import { BRASS, BRASS_STOPS, BRASS_START, BRASS_END, CROWN, RIM } from '@/src/th
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT } from '@/src/theme/light';
 import { arrive, MS } from '@/src/theme/motion';
-import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
+import { ARRIVAL_GRACE_MS, drawnAnew } from '@/src/hooks/useArrival';
+import { e2eTrace } from '@/src/utils/e2eTrace';
 
 const OPEN_MS = 200;
 const CLOSE_MS = 160;
@@ -266,6 +267,10 @@ export const ConciergeButton = memo(function ConciergeButton() {
   // film tray, Sealed E2E run 38790116312) would otherwise leave an invisible sheet over the
   // app, taking every touch.
   const [risen, setRisen] = useState(false);
+  // Rescued, the backdrop and the card are new views as well (drawnAnew): Reanimated lays the
+  // props it last wrote over every React commit until a view unmounts, so a plain style alone
+  // never reaches a rise that stalled.
+  const [rescues, setRescues] = useState(0);
   const timers = useRef<{ rise?: ReturnType<typeof setTimeout>; close?: ReturnType<typeof setTimeout> }>({});
   useEffect(() => () => {
     clearTimeout(timers.current.rise);
@@ -288,7 +293,15 @@ export const ConciergeButton = memo(function ConciergeButton() {
     progress.value = withTiming(1, { duration: OPEN_MS, easing: Easing.out(Easing.quad) });
     clearTimeout(timers.current.close);
     clearTimeout(timers.current.rise);
-    timers.current.rise = setTimeout(() => setRisen(true), OPEN_MS + ARRIVAL_GRACE_MS);
+    timers.current.rise = setTimeout(() => {
+      const at = progress.value;
+      if (at < 1) {
+        e2eTrace('concierge.rise.rescued', { at });
+        setRescues((n) => n + 1);
+        progress.value = 1;
+      }
+      setRisen(true);
+    }, OPEN_MS + ARRIVAL_GRACE_MS);
   }, [progress]);
 
   const handleAction = useCallback((route: string) => {
@@ -364,7 +377,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
         onRequestClose={closeSheet}
       >
         {/* Backdrop — iOS: native blur; Android: plain scrim */}
-        <Animated.View style={[StyleSheet.absoluteFill, risen ? RISEN_BACKDROP : backdropStyle]}>
+        <Animated.View key={`backdrop-${drawnAnew(rescues)}`} style={[StyleSheet.absoluteFill, risen ? RISEN_BACKDROP : backdropStyle]}>
           {Platform.OS === 'ios' ? (
             <HouseBlur tint="dark" intensity={40} style={StyleSheet.absoluteFill} />
           ) : null}
@@ -406,7 +419,7 @@ export const ConciergeButton = memo(function ConciergeButton() {
             </PressableScale>
           </View>
 
-          <Animated.View style={[s.cardWrap, { top: cardTop, width: cardWidth }, risen ? (reducedMotion ? RISEN_BACKDROP : RISEN_CARD) : cardStyle]}>
+          <Animated.View key={`card-${drawnAnew(rescues)}`} style={[s.cardWrap, { top: cardTop, width: cardWidth }, risen ? (reducedMotion ? RISEN_BACKDROP : RISEN_CARD) : cardStyle]}>
             <ConciergeCard onLog={onLog} onStack={onStack} onFile={onFile} />
 
             {/* The notch, pointing back at the button. Drawn AFTER the card so its

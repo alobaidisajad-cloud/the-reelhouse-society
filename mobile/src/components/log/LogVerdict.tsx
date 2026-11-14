@@ -45,12 +45,12 @@ export default React.memo(function LogVerdict({ status, rating }: Props) {
     // The house's own signature: ignite. The same gesture as the Society's mark
     // at the door and the seal at the end — transform and opacity only, so it
     // is GPU-composited and costs no layout.
-    const { style: litStyle } = useIgnition(word, { duration: 420, from: 0.94, easing: Easing.out(Easing.cubic), name: 'log.verdict' });
+    const { style: litStyle, key: drawn } = useIgnition(word, { duration: 420, from: 0.94, easing: Easing.out(Easing.cubic), name: 'log.verdict' });
 
     return (
         <View style={s.slot}>
             {word ? (
-                <Animated.View style={[s.lit, litStyle]}>
+                <Animated.View key={drawn} style={[s.lit, litStyle]}>
                     <Text
                         style={[s.word, abandoned && s.wordAbandoned]}
                         {...displayTextProps}

@@ -322,14 +322,14 @@ Decisions, as of 2026-09-28:
 | `src/components/dispatch/__tests__/theWritingRoomExplainsItself.test.ts` | Each tool on the rail carries its name. |
 | `src/components/dispatch/__tests__/yourOwnRankOnYourOwnByline.test.ts` | Every composing screen builds the author from the one helper. |
 | `src/components/film/__tests__/castRailFits.test.ts` | The rail uses the height computation it is tested with. |
-| `src/components/film/__tests__/filmPageWiring.test.ts` | The film page's fades and retired pieces, where a render cannot reach. |
+| `src/components/film/__tests__/filmPageWiring.test.ts` | The film page's fades and retired pieces, where a render cannot reach; and which box carries the way back's elevation, an order only Android's drawing shows. |
 | `src/components/film/__tests__/footageRailFits.test.ts` | The rail uses the numbers it is tested with. |
 | `src/components/film/__tests__/stubFits.test.ts` | The stub's caller keeps the date short. |
 | `src/components/layout/__tests__/theThumbStaysInItsTrack.test.ts` | The scrollbar uses the clamped thumb. |
 | `src/components/lounge/__tests__/theCorridorIsOpen.test.ts` | No layer of the Lounge refuses a member. |
 | `src/components/lounge/__tests__/thePollRunsWhileWatched.test.ts` | The corridor polls only while it is on screen. |
 | `src/components/reels/__tests__/theReelIsTheAdvertisement.test.ts` | The Reel shows itself to a visitor rather than a wall. |
-| `src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx` | A ratchet: the count of mount-time `entering` animations across the app, which only falls as each moves to useArrival. A count over every file is the rule; no render reaches it. (The rescue itself is tested by mounting.) |
+| `src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx` | A ratchet: the count of mount-time `entering` animations across the app, which only falls as each moves to useArrival. A count over every file is the rule; no render reaches it. (The rescue itself is tested by mounting.) And that every rescue, plain resting style and hook handing back a key draws its view under that key: a key is how a view is drawn anew, which only the source of each caller shows. |
 | `src/hooks/__tests__/theArchivePagesOnWhatTheServerGave.test.ts` | The archive pages on the server's count. |
 | `src/services/__tests__/profileRoomFilters.test.ts` | Each room filter reaches the query it sends. |
 | `src/stores/__tests__/followGraph.wiring.guard.test.ts` | The follow loader's one way into the store, and the layout that reads the saved list. |

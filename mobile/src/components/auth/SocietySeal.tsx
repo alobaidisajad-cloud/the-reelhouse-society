@@ -38,7 +38,7 @@ export function SocietySeal({ size = 92 }: { size?: number }) {
 
   // The lamp warms up: once per mount, i.e. once per visit to the door, never re-fired
   // while typing or toggling modes. Lit, the mark rests on a plain style.
-  const { style: logoStyle, lit: ignite } = useIgnition('door', {
+  const { style: logoStyle, lit: ignite, key: drawn } = useIgnition('door', {
     duration: 900, delay: 150, from: 0.92, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.Never, name: 'society.seal',
   });
   const sheen = useSharedValue(0);   // one-time glint: 0 → peak → 0
@@ -85,7 +85,8 @@ export function SocietySeal({ size = 92 }: { size?: number }) {
   }));
 
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+    // Drawn anew once rescued (drawnAnew): the halo and the mark move on the ignition.
+    <View key={drawn} style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       {/* Halo blooms behind the mark, bleeding softly past its bounds */}
       <Animated.View
         pointerEvents="none"

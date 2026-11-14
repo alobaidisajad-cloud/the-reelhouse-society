@@ -8,10 +8,8 @@ import { ROOMS, roomToReopen } from '@/src/utils/lastRoom';
 import { useAuthStore } from '@/src/stores/auth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HouseBlur } from '@/src/components/HouseBlur';
-import Animated, {
-  useAnimatedStyle, useSharedValue, withTiming,
-} from 'react-native-reanimated';
-import { arrive, MS } from '@/src/theme/motion';
+import Animated from 'react-native-reanimated';
+import { useTabIconMotion } from '@/src/components/layout/tabIconMotion';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Newspaper, Film, Clapperboard, User,
@@ -29,31 +27,9 @@ import { tabBarBottomPadding, tabBarHeight } from '@/src/components/layout/navMe
 
 // ════════════════════════════════════════════════════════════════
 //  TAB ICON: icons only, no labels. The chosen one grows a little, lights, and
-//  wears a dot beneath it; the Lobby's is the house's own eye, lit in flicker.
+//  wears a dot beneath it (useTabIconMotion); the Lobby's is the house's own eye,
+//  lit in flicker.
 // ════════════════════════════════════════════════════════════════
-
-/** The choosing, on the house's curve (src/theme/motion.ts): no bounce. */
-function useTabIconMotion(focused: boolean) {
-  const scale = useSharedValue(focused ? 1.15 : 1);
-  const iconOpacity = useSharedValue(focused ? 1 : 0.35);
-  const dotScale = useSharedValue(focused ? 1 : 0);
-
-  React.useEffect(() => {
-    scale.value = withTiming(focused ? 1.15 : 1, { duration: MS.quick, easing: arrive() });
-    iconOpacity.value = withTiming(focused ? 1 : 0.35, { duration: MS.base });
-    dotScale.value = withTiming(focused ? 1 : 0, { duration: MS.quick, easing: arrive() });
-  }, [focused, scale, iconOpacity, dotScale]);
-
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: iconOpacity.value,
-  }));
-  const dotStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: dotScale.value }],
-    opacity: dotScale.value,
-  }));
-  return { iconStyle, dotStyle };
-}
 
 function TabIcon({
   IconComponent,
@@ -62,10 +38,10 @@ function TabIcon({
   IconComponent: typeof Newspaper;
   focused: boolean;
 }) {
-  const { iconStyle, dotStyle } = useTabIconMotion(focused);
+  const { iconStyle, dotStyle, key } = useTabIconMotion(focused);
   return (
     <View style={s.tabIconRoot}>
-      <Animated.View collapsable={false} style={[s.tabIconInner, iconStyle]}>
+      <Animated.View key={`icon-${key}`} collapsable={false} style={[s.tabIconInner, iconStyle]}>
         <IconComponent
           size={22}
           color={focused ? colors.sepia : colors.bone}
@@ -73,7 +49,7 @@ function TabIcon({
         />
       </Animated.View>
       <View style={s.indicatorSlot}>
-        <Animated.View collapsable={false} style={[s.indicatorDot, { backgroundColor: colors.sepia }, dotStyle]} />
+        <Animated.View key={`dot-${key}`} collapsable={false} style={[s.indicatorDot, { backgroundColor: colors.sepia }, dotStyle]} />
       </View>
     </View>
   );
@@ -84,15 +60,15 @@ function TabIcon({
 const HOUSE_EYE = require('../../assets/images/reelhouse-eye.png');
 
 function LobbyTabIcon({ focused }: { focused: boolean }) {
-  const { iconStyle, dotStyle } = useTabIconMotion(focused);
+  const { iconStyle, dotStyle, key } = useTabIconMotion(focused);
   const iconColor = focused ? colors.flicker : colors.bone;
   return (
     <View style={s.tabIconRoot}>
-      <Animated.View collapsable={false} style={[s.tabIconInner, iconStyle]}>
+      <Animated.View key={`icon-${key}`} collapsable={false} style={[s.tabIconInner, iconStyle]}>
         <AssetImage source={HOUSE_EYE} style={s.houseEye} tintColor={iconColor} contentFit="contain" accessible={false} />
       </Animated.View>
       <View style={s.indicatorSlot}>
-        <Animated.View collapsable={false} style={[
+        <Animated.View key={`dot-${key}`} collapsable={false} style={[
           s.indicatorDot,
           { backgroundColor: colors.flicker },
           s.centerGlow,
