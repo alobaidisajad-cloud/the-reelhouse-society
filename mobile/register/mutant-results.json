@@ -2467,14 +2467,14 @@
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-stack-act-under-the-keys",
     "proof": "m17",
-    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "commit": "d03be6fc49aeadd54957b64aaa76aeb666f579c0",
     "verdict": "caught"
   },
   {
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-stack-field-left-under-the-bar",
     "proof": "m18",
-    "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "commit": "d03be6fc49aeadd54957b64aaa76aeb666f579c0",
     "verdict": "caught"
   },
   {
@@ -2550,8 +2550,8 @@
   {
     "class": "E2E-keyboard-covers-the-field",
     "mutant": "shape-search-tabs-let-the-tap-go",
-    "proof": "m17",
-    "commit": "eebefd76135cf17812c5b34b09c842b5a472e4b4",
+    "proof": "m19",
+    "commit": "d03be6fc49aeadd54957b64aaa76aeb666f579c0",
     "verdict": "caught"
   },
   {
