@@ -8,9 +8,8 @@
  * and sets it arrived if it has not by the end, saying so to the E2E report.
  *
  * A rescued view is drawn ANEW, not only restyled. Reanimated keeps the props it last wrote to a
- * view and lays them over every React commit until that view unmounts (ReanimatedCommitHook,
- * UpdatesRegistryManager.collectProps), so a plain resting style never reaches a view whose motion
- * stalled: the iPhone's and the iPad's sign-in sheets (ios-launch 43586955860) had their form, seal
+ * view and lays them over every React commit until that view unmounts (its Fabric commit hook), so
+ * a plain resting style never reaches a view whose motion stalled: the iPhone's and the iPad's sign-in sheets (ios-launch 43586955860) had their form, seal
  * and button rescued at 0 and still transparent a minute on. A new view holds none of those props.
  */
 import { createContext, useContext, useEffect, useState } from 'react';

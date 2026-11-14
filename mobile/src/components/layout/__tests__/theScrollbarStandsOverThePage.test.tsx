@@ -28,7 +28,8 @@ describe('the scrollbar', () => {
     expect(stand).not.toHaveProperty('backgroundColor');
     expect(stand).not.toHaveProperty('shadowColor');
     expect(SCROLLBAR_STANDS).toBeGreaterThan(90);
-    const thumb = flat(tree.children[0].props.style);
+    expect(tree.children).toHaveLength(1);
+    const thumb = flat(tree.children.find(() => true)?.props.style);
     expect(thumb).toMatchObject({ elevation: 3, borderRadius: 2.5 });
     expect(thumb.backgroundColor).toBeTruthy();
   });
