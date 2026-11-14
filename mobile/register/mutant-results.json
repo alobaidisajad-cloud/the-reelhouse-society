@@ -416,7 +416,7 @@
     "class": "UI-unready-faded",
     "mutant": "shape-resend-faded-over-lines",
     "proof": "m1",
-    "commit": "b1964e28e613bd616c379035dc9bc797c0e8d182",
+    "commit": "90c632602765358d5de7142d744160a24fe1f6b5",
     "verdict": "caught"
   },
   {
@@ -2642,28 +2642,35 @@
     "class": "LAYOUT-android-stacks-by-elevation",
     "mutant": "shape-stacking-guard-blind",
     "proof": "m5",
-    "commit": "b1964e28e613bd616c379035dc9bc797c0e8d182",
+    "commit": "90c632602765358d5de7142d744160a24fe1f6b5",
     "verdict": "caught"
   },
   {
     "class": "LAYOUT-android-stacks-by-elevation",
     "mutant": "shape-stacking-guard-unread",
     "proof": "m8",
-    "commit": "b1964e28e613bd616c379035dc9bc797c0e8d182",
+    "commit": "90c632602765358d5de7142d744160a24fe1f6b5",
     "verdict": "caught"
   },
   {
     "class": "LAYOUT-android-stacks-by-elevation",
     "mutant": "shape-top-bar-stands-low",
-    "proof": null,
-    "commit": "b1964e28e613bd616c379035dc9bc797c0e8d182",
+    "proof": "m9",
+    "commit": "90c632602765358d5de7142d744160a24fe1f6b5",
     "verdict": "caught"
   },
   {
     "class": "LAYOUT-android-stacks-by-elevation",
     "mutant": "shape-vignette-stands-low",
-    "proof": null,
-    "commit": "b1964e28e613bd616c379035dc9bc797c0e8d182",
+    "proof": "m9",
+    "commit": "90c632602765358d5de7142d744160a24fe1f6b5",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-android-stacks-by-elevation",
+    "mutant": "shape-dna-card-under-the-scrollbar",
+    "proof": "m10",
+    "commit": "90c632602765358d5de7142d744160a24fe1f6b5",
     "verdict": "caught"
   }
 ]
