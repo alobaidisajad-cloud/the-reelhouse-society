@@ -112,6 +112,18 @@ describe('the halo\'s light', () => {
     expect(r.out).toMatch(/^the halo: smooth, above the seal to the header, \d+ colours over 16 px/m);
   });
 
+  it('fails a halo it could not measure: a header found at the seal, a column too short to read', () => {
+    photo((y) => 40 + (y % 2) + Math.floor(y / 2));
+    // The full-width box holding the close button reaches down past the seal's top.
+    const low = { ...withHeader(), children: [
+      { attributes: { bounds: '[0,62][402,130]' }, children: [{ attributes: { accessibilityText: 'Close login', bounds: '[22,66][70,96]' } }] },
+      ...sheet().children,
+    ] };
+    const r = judge(low, low);
+    expect(r.status).toBe(1);
+    expect(r.out).toMatch(/^the halo: NOT READ, -?\d+ px above the seal to the header/m);
+  });
+
   it('fails a glow held one colour for more than HALO_RUN_MAX pixels: rings', () => {
     photo((y) => 40 + Math.floor(y / 6));
     const r = judge(withHeader(), withHeader());

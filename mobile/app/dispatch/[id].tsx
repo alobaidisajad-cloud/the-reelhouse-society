@@ -455,10 +455,10 @@ function FilingReader({ id }: { id: string }) {
         <ScrollView
           ref={scroller}
           {...traceProps}
-          // The app's law for a router screen: the OS moves the content for the
-          // keyboard. KeyboardAvoidingView is for a Modal, and using it here would
-          // fight the inset the system already applies.
-          automaticallyAdjustKeyboardInsets
+          // No inset of its own for the keyboard: the page's one field is the critique
+          // composer docked under it, which rides the keys on iOS (useKeyboardLift), so
+          // the page already ends above it. The OS's inset, set once as the keyboard
+          // came and kept, left ~230pt of blank ink to scroll past while writing.
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: scrollEnd }}

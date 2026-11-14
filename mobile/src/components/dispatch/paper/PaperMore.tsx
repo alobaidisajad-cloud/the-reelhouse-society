@@ -18,7 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, ChevronUp, Search, ArrowLeft, Lock, ExternalLink, MoreHorizontal } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, effects, fonts } from '@/src/theme/theme';
 import type { Standing } from '@/src/components/clearance/Clearance';
 import { BRASS, BRASS_STOPS } from '@/src/theme/brass';
 import { scaledTextProps, decorativeTextProps, displayTextProps, deckLabelProps } from '@/src/constants/textScaling';
@@ -769,6 +769,8 @@ export const LoungeCard = memo(function LoungeCard({
 
 /** The gutter the list reserves while filings are held: 31pt of pill plus 10pt clear. */
 export const NEW_FILINGS_ROOM = 41;
+/** Higher than the paper it stands over (effects.shadowSurface), where Android draws by elevation. */
+export const NEW_FILINGS_ELEVATION = effects.shadowSurface.elevation + 2;
 
 export const NewFilings = memo(function NewFilings({
   count, onPress,
@@ -1129,8 +1131,12 @@ const m = StyleSheet.create({
   },
 
   // ── held filings ──────────────────────────────────────────────────────────
-  /** In the gutter the page reserves (`NEW_FILINGS_ROOM`), so it covers no writing. */
-  newWrap: { position: 'absolute', left: 0, right: 0, top: 5, alignItems: 'center', zIndex: 1 },
+  /**
+   * In the gutter the page reserves (`NEW_FILINGS_ROOM`), so it covers no writing. Above the paper
+   * on both platforms: Android draws by elevation before zIndex, and the paper stands at
+   * the elevation of effects.shadowSurface, so the pill stands higher or is drawn under it.
+   */
+  newWrap: { position: 'absolute', left: 0, right: 0, top: 5, alignItems: 'center', zIndex: 1, elevation: NEW_FILINGS_ELEVATION },
   /** Filled brass: the one control that must be found without being looked for. */
   newPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,

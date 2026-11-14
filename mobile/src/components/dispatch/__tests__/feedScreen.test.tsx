@@ -393,6 +393,11 @@ describe('the Dispatch feed', () => {
       at = at.parent;
     }
     expect(column).toEqual(['the paper\'s column']);
+    // And above the paper on Android, which draws by elevation before zIndex (the review of 2026-11-14).
+    const { effects } = jest.requireActual('@/src/theme/theme');
+    let wrap = getByLabelText('3 new filings. Go to the top.').parent;
+    while (wrap && (StyleSheet.flatten(wrap.props.style) ?? {}).position !== 'absolute') wrap = wrap.parent;
+    expect((StyleSheet.flatten(wrap?.props.style) ?? {}).elevation).toBeGreaterThan(effects.shadowSurface.elevation);
   });
 
   it('shows no pill when nothing has arrived', async () => {

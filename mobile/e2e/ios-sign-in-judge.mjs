@@ -30,6 +30,8 @@ export const SEAL = 'The ReelHouse Society seal';
 export const CLOSE = 'Close login';
 /** The longest run of one colour a smooth glow shows on a phone's photograph, in pixels. */
 export const HALO_RUN_MAX = 4;
+/** The shortest column, in pixels, that holds enough of the glow to judge (the iPhone's: 44). */
+export const HALO_SPAN_MIN = 12;
 
 /** The foot of the sheet's header: the nearest full-width box holding the close button, or null. */
 export function headerFoot(tree) {
@@ -122,9 +124,16 @@ async function main(dir) {
     const foot = headerFoot(tree);
     const span = foot === null ? Math.round(60 * scale) : top - Math.round(foot * scale) - 2;
     const r = longestRun(at, x, top, span);
-    const smooth = r.longest <= HALO_RUN_MAX;
-    if (!smooth) ok = false;
-    out.push(`the halo: ${smooth ? 'smooth' : 'BANDED'}, above the seal${foot === null ? '' : ' to the header'}, ${r.levels} colours over ${span} px, the longest run of one ${r.longest} px at ${scale}x (at most ${HALO_RUN_MAX})`);
+    // A column too short to hold a glow, or one colour from end to end, measured nothing: a header
+    // found too low (a box the screen's width that is not the header) would pass any halo.
+    if (span < HALO_SPAN_MIN || r.levels < 2) {
+      ok = false;
+      out.push(`the halo: NOT READ, ${span} px above the seal${foot === null ? '' : ' to the header'} and ${r.levels} colours (at least ${HALO_SPAN_MIN} px and 2 colours)`);
+    } else {
+      const smooth = r.longest <= HALO_RUN_MAX;
+      if (!smooth) ok = false;
+      out.push(`the halo: ${smooth ? 'smooth' : 'BANDED'}, above the seal${foot === null ? '' : ' to the header'}, ${r.levels} colours over ${span} px, the longest run of one ${r.longest} px at ${scale}x (at most ${HALO_RUN_MAX})`);
+    }
   } else {
     out.push('the halo (not judged): not read (no seal in the tree, or no photograph)');
   }

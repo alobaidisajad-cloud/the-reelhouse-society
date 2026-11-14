@@ -130,7 +130,8 @@ classes:
       - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "on iOS, rides the keyboard, its own gap below it" }
       - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "brings a focused field under the bar above it, and leaves one already clear" }
       - { kind: static, file: src/components/__tests__/aListBesideAFieldKeepsTheTap.guard.test.ts, test: "reads the app at all, and finds the lists beside its fields" }
-    fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers)"
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "gives the page no keyboard inset of its own while the composer rides the keys" }
+    fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers); the reading page takes no inset of its own for the keyboard, where the critique composer docked under it already rides the keys and the OS's inset left blank ink to scroll past (mutant shape-reader-inset-for-the-keyboard)"
     places: [emulator]
 
   - id: E2E-phone-runtime-changed-unseen
@@ -817,7 +818,8 @@ classes:
       - { kind: running, file: src/theme/__tests__/theHaloIsDitheredOnIos.test.tsx, test: "draws the halo in Skia, dithered, with the native gradient’s own stops and circle" }
       - { kind: running, file: e2e/__tests__/iosSignInJudge.test.ts, test: "fails a glow held one colour for more than HALO_RUN_MAX pixels: rings" }
       - { kind: running, file: e2e/__tests__/iosSignInJudge.test.ts, test: "judges the glow up to the header, never into its flat grey" }
-    fix: "the house Text gives every shadowed Text on iOS padding of its glow's reach and the same negative margin (glowRoom), so the glow falls into room and the layout stands; the sign-in title states its glow's peak; the candlelight halo is drawn on iOS in Skia, dithered, with the native gradient's own stops (mutants shape-glow-given-no-room, shape-glow-room-at-its-rest, shape-halo-banded-again); the iPhone check's judge fails a halo held one colour over 4 px, read up to the sheet's header and not into its flat grey, which the first reading took for rings (mutants shape-halo-judge-blind, shape-halo-read-into-the-header)"
+      - { kind: running, file: e2e/__tests__/iosSignInJudge.test.ts, test: "fails a halo it could not measure: a header found at the seal, a column too short to read" }
+    fix: "the house Text gives every shadowed Text on iOS padding of its glow's reach and the same negative margin (glowRoom), so the glow falls into room and the layout stands; the sign-in title states its glow's peak; the candlelight halo is drawn on iOS in Skia, dithered, with the native gradient's own stops (mutants shape-glow-given-no-room, shape-glow-room-at-its-rest, shape-halo-banded-again); the iPhone check's judge fails a halo held one colour over 4 px, read up to the sheet's header and not into its flat grey, which the first reading took for rings (mutants shape-halo-judge-blind, shape-halo-read-into-the-header), and fails a column too short or too flat to have measured a glow (mutant shape-halo-judged-on-nothing)"
     places: [simulator]
 
   - id: LAYOUT-placed-from-another-box
@@ -829,7 +831,7 @@ classes:
     source: { kind: reviewer, ref: "the sweep for boxes a padding was meant to move, 2026-11-13" }
     methods:
       - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "draws the pill in the paper's column, in the gutter kept above the list, not at the screen's top" }
-    fix: "The new-filings pill is drawn in the paper's column, where the list keeps its gutter (NEW_FILINGS_ROOM), not at the screen's top under the status bar and the floating bar (mutant shape-pill-at-the-screens-top); the keyboard's cases are E2E-keyboard-covers-the-field's (the salon sheet, the stack's act)"
+    fix: "The new-filings pill is drawn in the paper's column, where the list keeps its gutter (NEW_FILINGS_ROOM), not at the screen's top under the status bar and the floating bar (mutant shape-pill-at-the-screens-top), and stands higher than the paper, where Android draws by elevation before zIndex (mutant shape-pill-under-the-paper); the keyboard's cases are E2E-keyboard-covers-the-field's (the salon sheet, the stack's act)"
     places: [none]
 
   - id: LOOK-native-parts-drawn-light

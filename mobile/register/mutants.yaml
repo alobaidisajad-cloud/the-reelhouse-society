@@ -3410,3 +3410,30 @@ mutants:
         find: '<Rect x={0} y={0} width={size} height={size} dither>'
         replace: '<Rect x={0} y={0} width={size} height={size}>'
     proof: { file: src/theme/__tests__/theHaloIsDitheredOnIos.test.tsx, test: 'draws the halo in Skia, dithered, with the native gradient’s own stops and circle' }
+
+  - id: shape-reader-inset-for-the-keyboard
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "          // came and kept, left ~230pt of blank ink to scroll past while writing.\n          keyboardDismissMode=\"interactive\"\n"
+        replace: "          // came and kept, left ~230pt of blank ink to scroll past while writing.\n          automaticallyAdjustKeyboardInsets\n          keyboardDismissMode=\"interactive\"\n"
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "gives the page no keyboard inset of its own while the composer rides the keys" }
+
+  - id: shape-pill-under-the-paper
+    class: LAYOUT-placed-from-another-box
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperMore.tsx
+        find: "zIndex: 1, elevation: NEW_FILINGS_ELEVATION },"
+        replace: "zIndex: 1 },"
+    proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "draws the pill in the paper's column, in the gutter kept above the list, not at the screen's top" }
+
+  - id: shape-halo-judged-on-nothing
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: e2e/ios-sign-in-judge.mjs
+        find: "    if (span < HALO_SPAN_MIN || r.levels < 2) {"
+        replace: "    if (false) {"
+    proof: { file: e2e/__tests__/iosSignInJudge.test.ts, test: "fails a halo it could not measure: a header found at the seal, a column too short to read" }

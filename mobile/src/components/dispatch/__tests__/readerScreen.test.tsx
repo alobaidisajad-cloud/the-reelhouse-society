@@ -388,6 +388,26 @@ describe('the reader', () => {
     expect(queryByLabelText(/^Certify this filing/)).toBeNull();
   });
 
+  // The composer rides the keys on iOS and the page ends above it: an inset the OS set as the
+  // keyboard came, and kept, left ~230pt of blank ink to scroll past while writing (the review
+  // of 2026-11-14). The page takes no keyboard inset of its own.
+  it('gives the page no keyboard inset of its own while the composer rides the keys', async () => {
+    const r = await mount();
+    await act(async () => { await fireEvent.press(r.getByLabelText('Write a critique')); });
+    // Every vertical scroll drawn, as the host view React Native renders it.
+    type Node = { type: string; props: Record<string, unknown>; children: (Node | string)[] | null };
+    const pages: Node[] = [];
+    const walk = (n: Node | string | null) => {
+      if (!n || typeof n === 'string') return;
+      if (n.type === 'RCTScrollView' && !n.props.horizontal) pages.push(n);
+      (n.children ?? []).forEach(walk);
+    };
+    const tree = r.toJSON() as unknown as Node | Node[];
+    (Array.isArray(tree) ? tree : [tree]).forEach(walk);
+    expect(pages.length).toBeGreaterThan(0);
+    expect(pages.map((v) => !!v.props.automaticallyAdjustKeyboardInsets)).toEqual(pages.map(() => false));
+  });
+
   it('sends a critique, and puts it on the page', async () => {
     const { getByLabelText } = await mount();
     await act(async () => { await fireEvent.press(getByLabelText('Write a critique')); });
