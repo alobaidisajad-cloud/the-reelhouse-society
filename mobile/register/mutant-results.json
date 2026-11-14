@@ -409,7 +409,7 @@
     "class": "UI-unready-faded",
     "mutant": "shape-share-faded",
     "proof": "m1",
-    "commit": "159451655d521cc230b9c6f6ae54c007083e1784",
+    "commit": "eebefd76135cf17812c5b34b09c842b5a472e4b4",
     "verdict": "caught"
   },
   {
@@ -1046,7 +1046,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-share-empty-before-read",
     "proof": "m6",
-    "commit": "159451655d521cc230b9c6f6ae54c007083e1784",
+    "commit": "eebefd76135cf17812c5b34b09c842b5a472e4b4",
     "verdict": "caught"
   },
   {
@@ -2545,6 +2545,13 @@
     "mutant": "shape-screen-ground-unpainted",
     "proof": "m2",
     "commit": "3b637ba6c6915e30764b1966d7938d6db1965234",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-keyboard-covers-the-field",
+    "mutant": "shape-search-tabs-let-the-tap-go",
+    "proof": "m17",
+    "commit": "eebefd76135cf17812c5b34b09c842b5a472e4b4",
     "verdict": "caught"
   },
   {
