@@ -3327,23 +3327,14 @@ mutants:
         replace: "          \"resizeMode\": \"contain\",\n          \"backgroundColor\": \"#0D0B09\",\n          \"dark\": { \"backgroundColor\": \"#0D0B09\", \"image\": \"./assets/images/splash-icon.png\" }\n"
     proof: { file: src/theme/__tests__/theGroundLadder.test.ts, test: "is what the splash screen and the icon are painted with" }
 
-  - id: shape-room-stops-at-the-column
+  - id: shape-room-carried-past-the-column
     class: LAYOUT-wide-window-ground-unpainted
     source: shape
     edits:
       - file: src/components/atmosphere/RoomLight.tsx
-        find: "  return <LightLayer {...light} width={window} left={inset ? -inset : 0} />;"
-        replace: "  return <LightLayer {...light} width={window - 2 * inset} left={0} />;"
-    proof: { file: src/components/atmosphere/__tests__/theRoomFillsAWideWindow.test.tsx, test: "on a wide window, lights the window behind the column and lays the page's light from its left edge" }
-
-  - id: shape-wide-window-left-dark
-    class: LAYOUT-wide-window-ground-unpainted
-    source: shape
-    edits:
-      - file: src/components/atmosphere/RoomLight.tsx
-        find: "        {inset > 0 && lit ? <LightLayer {...lit.light} width={window} left={0} /> : null}"
-        replace: "        {null}"
-    proof: { file: src/components/atmosphere/__tests__/theRoomFillsAWideWindow.test.tsx, test: "on a wide window, lights the window behind the column and lays the page's light from its left edge" }
+        find: "  return <LightLayer {...light} width={useColumnWidth()} left={0} />;"
+        replace: "  return <LightLayer {...light} width={useWindowDimensions().width} left={0} />;"
+    proof: { file: src/components/atmosphere/__tests__/theRoomStaysInItsColumn.test.tsx, test: "on a wide window, lays the light in the column, from its own edge, once" }
 
   - id: shape-scrim-stops-at-the-column
     class: LAYOUT-wide-window-ground-unpainted

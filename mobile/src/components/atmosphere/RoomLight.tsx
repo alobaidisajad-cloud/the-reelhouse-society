@@ -19,7 +19,7 @@
  * A photograph at the top of the screen is the one exception, and it has its
  * own answer: `RoomVeil`, below.
  */
-import { createContext, memo, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { memo, useMemo } from 'react';
 import { useColumnWidth } from '@/src/components/layout/navMetrics';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient as Fade } from 'expo-linear-gradient';
@@ -50,58 +50,6 @@ interface LightProps {
   art?: string | null;
 }
 
-/**
- * How far the window runs past the page's column on each side: 0 on a phone, where the column is
- * the window; on an iPad, an unfolded phone or a Split View, half of what the column leaves.
- */
-export function useWideInset(): { window: number; inset: number } {
-  const window = useWindowDimensions().width;
-  const column = useColumnWidth();
-  return { window, inset: Math.max(0, (window - column) / 2) };
-}
-
-/** Where a screen in front hands its light to the window around its column (WideRoomHost). */
-const WideHost = createContext<((key: object, light: LightProps | null) => void) | null>(null);
-
-/**
- * THE ROOM ACROSS A WIDE WINDOW. Each page stands in the reading column; on a window wider than the
- * column its light stopped at the column's edges, a lit strip on a dark window. So the light is
- * drawn at the WINDOW's width: the screen's own RoomLight inside the column, laid from the window's
- * left edge (clipped by the column), and this host behind the column, the same light from the same
- * geometry over the whole window. The two meet pixel for pixel at the column's edges. Each route's
- * layout holds one (toastScreenLayout); a host inside a host leaves the window to the outer one.
- */
-export function WideRoomHost({ children }: { children: ReactNode }) {
-  const outer = useContext(WideHost);
-  const [lit, setLit] = useState<{ key: object; light: LightProps } | null>(null);
-  const publish = useCallback((key: object, light: LightProps | null) => {
-    setLit((now) => (light ? { key, light } : now?.key === key ? null : now));
-  }, []);
-  const { window, inset } = useWideInset();
-  if (outer) return <>{children}</>;
-  return (
-    <WideHost.Provider value={publish}>
-      <View style={wideStyles.host}>
-        {inset > 0 && lit ? <LightLayer {...lit.light} width={window} left={0} /> : null}
-        {children}
-      </View>
-    </WideHost.Provider>
-  );
-}
-
-/** A screen's light handed to its host while the screen is in front and the window is wide. */
-function usePublishedLight({ room, hem, art }: LightProps, inset: number) {
-  const publish = useContext(WideHost);
-  const seen = useScreenSeen();
-  // This screen's own token: the host forgets the light only if it is still this screen's.
-  const [key] = useState(() => ({}));
-  useEffect(() => {
-    if (!publish || !seen || inset <= 0) return undefined;
-    publish(key, { room, hem, art });
-    return () => publish(key, null);
-  }, [publish, seen, inset, key, room, hem, art]);
-}
-
 /** The light itself, `width` wide from `left`: the pool, the floor, the corners and any bloom. */
 function LightLayer({ room, hem, art, width, left }: LightProps & { width: number; left: number }) {
   const { height: H } = useWindowDimensions();
@@ -121,15 +69,17 @@ function LightLayer({ room, hem, art, width, left }: LightProps & { width: numbe
   );
 }
 
+/**
+ * The room's light, in the page's column: on a phone the whole screen; on a wide window (an iPad)
+ * the column alone, the house's ink beyond it. Carried across the window it met the window's edges,
+ * but not the grounds a screen lays over it in its column (the welcome's wash, beam and vignette):
+ * beside the page the bare light, on the page the light under them, a seam at the column's edge
+ * (ios-launch 43545408116, the iPad's photographs). A page lit in its column on the dark holds on
+ * every screen; theRoomStaysInItsColumn holds it so.
+ */
 export const RoomLight = memo(function RoomLight(light: LightProps) {
-  const { window, inset } = useWideInset();
-  usePublishedLight(light, inset);
-  // Laid from the window's left edge, the window wide: on a phone that is the column itself; on a
-  // wide window the column clips it, and it meets the host's light behind the column.
-  return <LightLayer {...light} width={window} left={inset ? -inset : 0} />;
+  return <LightLayer {...light} width={useColumnWidth()} left={0} />;
 });
-
-const wideStyles = StyleSheet.create({ host: { flex: 1 } });
 
 /**
  * RoomVeil — how a photograph at the top of the screen fades into the room.
@@ -198,10 +148,9 @@ export function heldLift(lifted: number, hem: number, screenHeight: number): num
  */
 function VeilLight({ room, hem, art, stops, lifted }: LightProps & { hem: number; stops: VeilStops; lifted?: SharedValue<number> }) {
   const { height: H } = useWindowDimensions();
-  // The room's light at the window's width, laid from its left edge, as RoomLight lays it: on a
-  // wide window the veil's light meets the light around the column, pixel for pixel.
-  const { window: W, inset } = useWideInset();
-  const L = inset ? -inset : 0;
+  // The room's light in the page's column, as RoomLight lays it.
+  const W = useColumnWidth();
+  const L = 0;
   const g = lightGeometry(room, W, H, hem);
   const image = useSharedImage(art);
   const opacity = useBloomOpacity(image);

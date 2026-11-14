@@ -318,3 +318,13 @@ export const readingColumn = { flex: 1, width: '100%', maxWidth: READING_MAX, al
 export function useColumnWidth(): number {
   return Math.min(useWindowDimensions().width, READING_MAX);
 }
+
+/**
+ * How far the window runs past the page's column on each side: 0 on a phone, where the column is
+ * the window; on an iPad, an unfolded phone or a Split View, half of what the column leaves.
+ */
+export function useWideInset(): { window: number; inset: number } {
+  const window = useWindowDimensions().width;
+  const column = useColumnWidth();
+  return { window, inset: Math.max(0, (window - column) / 2) };
+}

@@ -18,10 +18,9 @@ const rel = (f: string) => relative(MOBILE, f).split('\\').join('/');
 
 /** Where the window's own width is meant. */
 const WHOLE_WINDOW: Record<string, string> = {
-  'src/components/layout/navMetrics.ts': 'useColumnWidth itself: the window, held to the column',
+  'src/components/layout/navMetrics.ts': 'useColumnWidth itself: the window, held to the column; useWideInset, what the window leaves beside it',
   'src/components/Preloader.tsx': 'drawn over the whole window, outside the navigator, before any page',
   'src/components/film/ShareCardModal.tsx': 'its own window; the preview is scaled to it and never past full size',
-  'src/components/atmosphere/RoomLight.tsx': 'the room’s light fills the window around the column (useWideInset), laid from the window’s edge',
 };
 
 /** Each read of the window's width in a file: `{ width } = useWindowDimensions()` or `useWindowDimensions().width`. */

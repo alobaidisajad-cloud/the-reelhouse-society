@@ -5,9 +5,8 @@
  * so on a window wider than the column (an iPad, an unfolded phone) its sheet or card would span the
  * whole window, and whatever it placed by the page's edges would stand at the window's. Inside
  * InColumn it lays out exactly as on a phone, centred where the page is. Its SCRIM is the one part
- * that reaches the window's edges: the room's light fills the window around the column
- * (WideRoomHost), and a scrim stopped at the column dimmed the page and left the room lit around
- * it, the sheet's focus inverted. So the column here does not clip, and a scrim stands from the
+ * that reaches the window's edges: a scrim stopped at the column dimmed the page and left the
+ * window beside it as it was, and a press beside the sheet did nothing. So the column here does not clip, and a scrim stands from the
  * window's left edge to its right: a modal's own (its box from useWindowFill, or held in InWindow),
  * or one InColumn draws for it (`scrim`: its colour, and the press that closes it). On a phone the
  * column is the window and nothing moves. everyModalHoldsTheColumn holds every <Modal> to it, and
@@ -15,8 +14,7 @@
  */
 import React, { type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
-import { readingColumn } from '@/src/components/layout/navMetrics';
-import { useWideInset } from '@/src/components/atmosphere/RoomLight';
+import { readingColumn, useWideInset } from '@/src/components/layout/navMetrics';
 
 /** The reading column, letting what reaches past it (a scrim) be seen. */
 const MODAL_COLUMN = { ...readingColumn, overflow: 'visible' } as const;
