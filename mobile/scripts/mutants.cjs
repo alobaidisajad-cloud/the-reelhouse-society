@@ -33,6 +33,7 @@
 const { createHash } = require('crypto');
 const { execFileSync, spawnSync } = require('child_process');
 const { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } = require('fs');
+const { Buffer } = require('buffer');
 const { tmpdir } = require('os');
 const { dirname, extname, join, relative } = require('path');
 
