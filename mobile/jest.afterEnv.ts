@@ -114,3 +114,24 @@ afterEach(() => {
       'src/test-support/swallowedTypeError.ts. Do not silence this any other way.',
   );
 });
+
+/**
+ * ── TWO VIEWS STACKED ONE WAY ON IOS AND THE OTHER ON ANDROID ───────────────
+ * Every tree a test draws is read (test-utils/stackingOrder.js): iOS draws a stacking context's
+ * views by zIndex, Android by elevation first, so a view meant over its siblings by its zIndex is
+ * drawn under one with a higher elevation on Android alone. That left the person page's way back
+ * under its veil, the film's way back over the tray's scrim (tappable), the scrollbar under a veil,
+ * and the Dispatch's pill under the paper, each on Android alone, each under green tests.
+ */
+afterEach(() => {
+  const found = G.__misordered as Set<string> | undefined;
+  if (!found || found.size === 0) return;
+  const lines = [...found];
+  found.clear();
+  throw new Error(
+    'This test drew two views iOS and Android stack the other way round:\n\n  ' +
+      lines.join('\n  ') +
+      '\n\nGive the view meant on top an elevation at least its sibling\'s (a box that draws no ' +
+      'ground casts no shadow), or keep a shadow\'s elevation on a box inside the one that is placed.',
+  );
+});

@@ -34,10 +34,10 @@ export const loginStyles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 20,
-    zIndex: 99,   // under the header (100), over the scrolling content
-    // Android stacks by elevation, not zIndex: an elevated card would cover it.
-    elevation: 99,
-    shadowColor: 'transparent', // elevation draws a shadow; this wants the order only
+    // Under the header (100), over the scrolling content. No elevation: what is elevated in the
+    // scroll is drawn inside the scroll view, never among the fade's siblings, and an elevation
+    // here stood the fade over the header on Android, which stacks by elevation before zIndex.
+    zIndex: 99,
   },
   scroll: {
     flexGrow: 1,

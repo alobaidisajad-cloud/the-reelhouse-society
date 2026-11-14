@@ -125,6 +125,8 @@ const s = StyleSheet.create({
     position: 'absolute',
     right: 24,
     zIndex: 10,
+    // Over the card on Android too, which stacks by elevation before zIndex (the button draws no ground: no shadow).
+    elevation: 10,
     width: 44,
     height: 44,
     alignItems: 'flex-end',

@@ -185,6 +185,8 @@ const s = StyleSheet.create({
     top: 16,
     right: 16,
     zIndex: 10,
+    // Over the card on Android too, which stacks by elevation before zIndex (the button draws no ground: no shadow).
+    elevation: 10,
     padding: 8,
   },
   modalHeader: {

@@ -227,6 +227,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 100,
+    // Over the page on Android too, which stacks by elevation before zIndex: the Dispatch's paper
+    // stands at 10. It draws no ground (its shell inside does), so Android casts no shadow from it.
+    elevation: 100,
   },
   // Built from navMetrics, not from literals. The Concierge card anchors itself
   // by computing where this button lands, so a number typed twice is a menu

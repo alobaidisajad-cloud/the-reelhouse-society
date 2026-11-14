@@ -17,7 +17,12 @@ export function Vignette() {
 const styles = StyleSheet.create({
   vignette: {
     ...StyleSheet.absoluteFill,
+    // Over everything the screen draws, the top bar (elevation 100) too, on Android as on iOS:
+    // Android stacks by elevation before zIndex. Its edges are the screen's, so any shadow it
+    // casts falls past them.
     zIndex: 899,
+    elevation: 899,
+    shadowColor: 'transparent',
     experimental_backgroundImage: VIGNETTE_IMAGE,
   },
 });

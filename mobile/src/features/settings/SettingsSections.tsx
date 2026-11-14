@@ -50,14 +50,15 @@ const RANKS = ['CINEPHILE', 'ARCHIVIST', 'AUTEUR'] as const;
 // ═══ REUSABLE COMPONENTS ═══
 export const SectionCard = ({ children, danger }: { children: React.ReactNode; danger?: boolean }) => (
   <View style={[st.sectionCard, danger && st.sectionCardDanger]}>
+    {/* The wash, then the line over it: drawn in order, the same on both platforms. */}
+    <LinearGradient
+      colors={danger ? ['rgba(162,36,36,0.05)', 'transparent'] : ['rgba(184,137,26,0.03)', 'transparent']}
+      style={[StyleSheet.absoluteFill, WASH]}
+    />
     <LinearGradient
       colors={danger ? ['transparent', 'rgba(162,36,36,0.2)', 'transparent'] : ['transparent', 'rgba(184,137,26,0.2)', 'transparent']}
       start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
       style={st.sectionTopLine}
-    />
-    <LinearGradient
-      colors={danger ? ['rgba(162,36,36,0.05)', 'transparent'] : ['rgba(184,137,26,0.03)', 'transparent']}
-      style={[StyleSheet.absoluteFill, WASH]}
     />
     {children}
   </View>
@@ -767,7 +768,7 @@ export function ExperienceSection() {
 const st = StyleSheet.create({
   sectionCard: { ...EDGE_LIT, backgroundColor: colors.soot, borderWidth: 1, borderColor: '#30261A', borderRadius: 6, marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' },
   sectionCardDanger: { borderColor: 'rgba(162,36,36,0.5)', backgroundColor: 'rgba(162,36,36,0.03)' },
-  sectionTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, zIndex: 10 },
+  sectionTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1 },
   sectionHeaderWrap: { padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionHeaderIcon: { marginTop: -1 },

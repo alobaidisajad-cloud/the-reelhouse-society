@@ -39,7 +39,8 @@ jest.mock('react-native/Libraries/Modal/Modal', () => {
     __esModule: true,
     default: (props: Record<string, any>) => {
       mockModal.props = props;
-      return props.visible ? ReactLocal.createElement(ViewLocal, null, props.children) : null;
+      // A window of its own, as the real one is: never flattened into the page beneath it.
+      return props.visible ? ReactLocal.createElement(ViewLocal, { collapsable: false }, props.children) : null;
     },
   };
 });

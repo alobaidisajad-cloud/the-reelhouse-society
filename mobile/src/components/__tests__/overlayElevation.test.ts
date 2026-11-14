@@ -77,6 +77,12 @@ const EXEMPT: Record<string, string> = {
     // it would put a dark wash over the member's own portrait and name on
     // Android: this test's inversion, applied backwards.
     heroTopFade: 'verified: a backdrop layer beneath the hero — no elevated siblings, ordered by zIndex 3 vs 4',
+    // VERIFIED 2026-11-14, with the stacking survey of every rendered test. The sign-in sheet's
+    // headerFade stands among the backdrop, the header (zIndex 100, no elevation) and the scroll
+    // view: the elevated cards are drawn inside the scroll view, never among the fade's siblings.
+    // Elevated at 99, it stood over the header on Android. The stacking guard
+    // (test-utils/stackingOrder.js, every render) now reads this order as it is drawn.
+    headerFade: 'verified: its only elevated neighbours are inside the scroll view; elevated, it stood over the header on Android',
 };
 
 /** Brace-balanced so a nested object cannot truncate a block. */

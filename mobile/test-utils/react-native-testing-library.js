@@ -12,6 +12,7 @@ const React = require('react');
 const { QueryClient, QueryClientProvider } = require('@tanstack/react-query');
 const { testQueryClient } = require('./testQueryClient');
 const { createRoot } = require('test-renderer');
+const { misordered } = require('./stackingOrder');
 const { getQueriesForInstance } = require(
   path.resolve(__dirname, '../node_modules/@testing-library/react-native/dist/within.js')
 );
@@ -53,7 +54,20 @@ function renderSync(element, options = {}) {
     renderer.render(wrap(element));
   });
 
+  // Every tree a test draws is read for two views iOS and Android would stack the other way round
+  // (stackingOrder.js), as drawn, as drawn again, and as it stands when it goes; jest.afterEnv.ts
+  // fails the test that drew one.
+  let drawn = true;
+  const readStacking = () => {
+    if (!drawn) return;
+    const seen = (globalThis.__misordered = globalThis.__misordered || new Set());
+    for (const line of misordered(renderer.container.toJSON())) seen.add(line);
+  };
+  readStacking();
+
   const unmount = () => {
+    readStacking();
+    drawn = false;
     React.act(() => {
       renderer.unmount();
     });
@@ -63,6 +77,7 @@ function renderSync(element, options = {}) {
     React.act(() => {
       renderer.render(wrap(component));
     });
+    readStacking();
   };
 
   const toJSON = () => {

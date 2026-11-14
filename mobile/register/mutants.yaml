@@ -3491,3 +3491,39 @@ mutants:
         find: "    elevation: SCROLLBAR_STANDS,"
         replace: "    elevation: 3,"
     proof: { file: src/components/layout/__tests__/theScrollbarStandsOverThePage.test.tsx, test: "stands over the page by its elevation as by its zIndex, and glows from the thumb inside" }
+
+  - id: shape-stacking-guard-blind
+    class: LAYOUT-android-stacks-by-elevation
+    source: shape
+    edits:
+      - file: test-utils/stackingOrder.js
+        find: "        if (!t[over].absolute) continue;"
+        replace: "        continue;"
+    proof: { file: test-utils/__tests__/stackingOrder.test.tsx, test: "names a view meant on top by its zIndex that Android draws under an elevated sibling" }
+
+  - id: shape-stacking-guard-unread
+    class: LAYOUT-android-stacks-by-elevation
+    source: shape
+    edits:
+      - file: test-utils/react-native-testing-library.js
+        find: "  readStacking();\n\n  const unmount = () => {"
+        replace: "\n  const unmount = () => {"
+    proof: { file: test-utils/__tests__/stackingOrder.test.tsx, test: "is read from every render a test makes, and failed after it" }
+
+  - id: shape-top-bar-stands-low
+    class: LAYOUT-android-stacks-by-elevation
+    source: shape
+    edits:
+      - file: src/components/layout/TopNavBar.tsx
+        find: "    elevation: 100,\n"
+        replace: ""
+    proof: { file: src/components/layout/__tests__/everyTabStartsBelowTheBar.test.tsx, test: "starts below the bar at every inset: as built, then as measured" }
+
+  - id: shape-vignette-stands-low
+    class: LAYOUT-android-stacks-by-elevation
+    source: shape
+    edits:
+      - file: src/components/CinematicOverlays.tsx
+        find: "    elevation: 899,\n"
+        replace: ""
+    proof: { file: src/components/layout/__tests__/everyTabStartsBelowTheBar.test.tsx, test: "starts below the bar at every inset: as built, then as measured" }
