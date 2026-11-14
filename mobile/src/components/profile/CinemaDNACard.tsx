@@ -16,6 +16,7 @@ import type { ProfileAnalyticsPayload } from './NoirPassport';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { standingFor } from '@/src/constants/standing';
 import { RoomRetrieving, RoomUnreachable } from './RoomParts';
+import { SCROLLBAR_STANDS } from '@/src/components/layout/CinematicScrollbar';
 
 /** A reading needs this many films before it says anything. */
 const DNA_FLOOR = 5;
@@ -195,6 +196,10 @@ const s = StyleSheet.create({
         ...StyleSheet.absoluteFill,
         backgroundColor: colors.ink,
         zIndex: 100005,
+        // Over all the page draws, its scrollbar too, on Android as on iOS: Android stacks by
+        // elevation before zIndex. Its edges are the screen's, so its shadow falls past them.
+        elevation: SCROLLBAR_STANDS + 1,
+        shadowColor: 'transparent',
         justifyContent: 'center',
         alignItems: 'center',
     },

@@ -3527,3 +3527,12 @@ mutants:
         find: "    elevation: 899,\n"
         replace: ""
     proof: { file: src/components/layout/__tests__/everyTabStartsBelowTheBar.test.tsx, test: "starts below the bar at every inset: as built, then as measured" }
+
+  - id: shape-dna-card-under-the-scrollbar
+    class: LAYOUT-android-stacks-by-elevation
+    source: shape
+    edits:
+      - file: src/components/profile/CinemaDNACard.tsx
+        find: "        elevation: SCROLLBAR_STANDS + 1,\n"
+        replace: ""
+    proof: { file: src/components/profile/__tests__/theFileLetsItsViewsLeave.test.tsx, test: "the Cinema DNA card, closed, fades and then leaves the tree" }
