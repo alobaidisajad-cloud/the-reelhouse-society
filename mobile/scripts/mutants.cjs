@@ -217,16 +217,22 @@ const judge = (m, dir) => {
   return { status: r.status, said: lf(`${r.stdout}${r.stderr}`).trim().split('\n').slice(0, 2).join(' / ') };
 };
 
-/** Every file under a folder, by its path inside it (forward slashes): its text. */
+/** A picture among a judge's records: carried as its bytes, never read as text, never edited. */
+const PICTURE = /\.(png|jpe?g|webp)$/i;
+
+/** Every file under a folder, by its path inside it (forward slashes): its text, or a picture's bytes. */
 const readFolder = (dir, under = '') => {
   const out = {};
   for (const entry of readdirSync(join(dir, under), { withFileTypes: true })) {
     const rel = under ? `${under}/${entry.name}` : entry.name;
     if (entry.isDirectory()) Object.assign(out, readFolder(dir, rel));
-    else out[rel] = readFileSync(join(dir, rel), 'utf8');
+    else out[rel] = PICTURE.test(rel) ? readFileSync(join(dir, rel)) : readFileSync(join(dir, rel), 'utf8');
   }
   return out;
 };
+
+/** Whether a record is unchanged: a picture's bytes, or a text's lines whatever their endings. */
+const same = (a, b) => (Buffer.isBuffer(a) || Buffer.isBuffer(b) ? Buffer.isBuffer(a) && Buffer.isBuffer(b) && a.equals(b) : lf(a) === lf(b));
 
 /** Each of a judge's files written under a folder, at the path `as` gives it (a name the repo ignores, kept under another). */
 const writeAll = (dir, files, as = {}) => {
@@ -247,11 +253,12 @@ const runJudge = (m) => {
   const bad = { ...good };
   for (const e of m.edits ?? []) {
     if (!(e.file in bad)) return { verdict: 'invalid', why: `no log named ${e.file}` };
+    if (Buffer.isBuffer(bad[e.file])) return { verdict: 'invalid', why: `${e.file} is a picture: an edit names a text` };
     const made = applyEdits(bad[e.file], [e]);
     if (made.notApplied) return { verdict: 'NOT-APPLIED', why: `${e.file}: ${made.notApplied}` };
     bad[e.file] = made.text;
   }
-  if (Object.keys(good).every((f) => lf(good[f]) === lf(bad[f]))) return { verdict: 'invalid', why: 'the bad logs are the good logs' };
+  if (Object.keys(good).every((f) => same(good[f], bad[f]))) return { verdict: 'invalid', why: 'the bad logs are the good logs' };
   const dir = mkdtempSync(join(tmpdir(), 'judge-'));
   try {
     writeAll(join(dir, 'good'), good, m.judge.as);
