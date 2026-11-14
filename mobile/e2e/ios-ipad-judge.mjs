@@ -54,6 +54,8 @@ export function judgeStage(stage, tree) {
   };
 }
 
+/** The page's column on a wide window, in points: navMetrics' READING_MAX (iosIpadJudge.test.ts holds them equal). */
+export const PAGE_COLUMN = 560;
 /** The longest run of one colour a smooth light shows on the photograph, in pixels (the halo's). */
 export const BEAM_RUN_MAX = 4;
 /** The largest step, in levels, between two neighbouring 8-pixel stretches of a smooth light. */
@@ -96,14 +98,17 @@ export function judgeBeam(tree, png) {
   if (!screen || !png) return { ok: false, line: 'the beam: NOT READ (no window, or no photograph)' };
   const scale = png.width / screen.width;
   const at = (x, y) => { const i = (png.width * y + x) << 2; return [png.data[i], png.data[i + 1], png.data[i + 2]]; };
-  const column = Math.min(screen.width, 560);
-  const left = Math.round(((screen.width - column) / 2 + 8) * scale);
-  const right = Math.round(((screen.width + column) / 2 - 8) * scale);
+  const column = Math.min(screen.width, PAGE_COLUMN);
+  const line = (from, to, y) => Array.from({ length: to - from }, (_, i) => [from + i, y]);
+  const y = Math.round(screen.height * BEAM_ACROSS_AT * scale);
+  // An edge is looked for across the whole page; a band only in the beam's lit middle half, where
+  // light falls: the bare ground beyond it holds one colour by nature and would read as a band.
+  const across = line(Math.round(((screen.width - column) / 2 + 8) * scale), Math.round(((screen.width + column) / 2 - 8) * scale), y);
+  const heart = line(Math.round(((screen.width - column / 2) / 2) * scale), Math.round(((screen.width + column / 2) / 2) * scale), y);
   const middle = Math.round((screen.width / 2) * scale);
-  const across = Array.from({ length: right - left }, (_, i) => [left + i, Math.round(screen.height * BEAM_ACROSS_AT * scale)]);
   const [top, bottom] = BEAM_DOWN.map((f) => Math.round(screen.height * f * scale));
   const down = Array.from({ length: bottom - top }, (_, i) => [middle, top + i]);
-  const a = lightAlong(at, across);
+  const a = { ...lightAlong(at, heart), step: lightAlong(at, across).step };
   const d = lightAlong(at, down);
   const faults = [];
   for (const [name, r] of [['across the page', a], ['down its heart', d]]) {

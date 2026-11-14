@@ -100,7 +100,8 @@ export function useIgnition(of: string | number | null, { duration, delay = 0, f
   /** What ignited, for the E2E report when it had to be set. */
   name: string;
 }) {
-  const atOnce = useContext(ArrivedAtOnce);
+  // At rest from its first frame inside a view drawn anew, or asked for no motion at all: never a frame unseen.
+  const atOnce = useContext(ArrivedAtOnce) || reduceMotion === ReduceMotion.Always;
   const lit = useSharedValue(atOnce ? 1 : 0);
   const [restsOn, setRestsOn] = useState<string | number | null>(null);
   const [rescues, setRescues] = useState(0);
@@ -128,7 +129,7 @@ export function useIgnition(of: string | number | null, { duration, delay = 0, f
     opacity: lit.value,
     transform: [{ scale: from + (1 - from) * lit.value }],
   }));
-  // Inside a view drawn anew, every ignition rests where it ends: none moves (ArrivedAtOnce).
+  // Inside a view drawn anew, or asked for no motion, it rests where it ends: none moves.
   const rests = atOnce || restsOn === of;
   return { style: rests ? IGNITED : igniting, lit, rests, key: drawnAnew(rescues), anew: rescues > 0 };
 }

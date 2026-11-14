@@ -124,6 +124,8 @@ afterEach(() => {
  * and the Dispatch's pill under the paper, each on Android alone, each under green tests.
  */
 afterEach(() => {
+  // Every tree still drawn, read as the test leaves it: this runs before RNTL's cleanup unmounts them.
+  for (const read of [...((G.__liveStacking as Set<() => void> | undefined) ?? [])]) read();
   const found = G.__misordered as Set<string> | undefined;
   if (!found || found.size === 0) return;
   const lines = [...found];

@@ -3506,8 +3506,8 @@ mutants:
     source: shape
     edits:
       - file: test-utils/react-native-testing-library.js
-        find: "  readStacking();\n\n  const unmount = () => {"
-        replace: "\n  const unmount = () => {"
+        find: "  readStacking();\n  // Read again by the after-each check itself"
+        replace: "  // Read again by the after-each check itself"
     proof: { file: test-utils/__tests__/stackingOrder.test.tsx, test: "is read from every render a test makes, and failed after it" }
 
   - id: shape-top-bar-stands-low
@@ -3572,3 +3572,30 @@ mutants:
         find: "export const BEAM_STEP_MAX = 1.5;"
         replace: "export const BEAM_STEP_MAX = 99;"
     proof: { file: e2e/__tests__/iosIpadJudge.test.ts, test: "fails a beam cut by the page's edge: a straight line in the light" }
+
+  - id: shape-stacking-read-only-at-the-start
+    class: LAYOUT-android-stacks-by-elevation
+    source: shape
+    edits:
+      - file: test-utils/react-native-testing-library.js
+        find: "  live.add(readStacking);\n"
+        replace: ""
+    proof: { file: test-utils/__tests__/stackingOrder.test.tsx, test: "reads a tree as the test leaves it: what a press opened is judged in its own test" }
+
+  - id: shape-still-ignition-blinks
+    class: UI-a-rescue-undone-by-the-last-animated-props
+    source: shape
+    edits:
+      - file: src/hooks/useArrival.ts
+        find: "  const atOnce = useContext(ArrivedAtOnce) || reduceMotion === ReduceMotion.Always;"
+        replace: "  const atOnce = useContext(ArrivedAtOnce);"
+    proof: { file: src/hooks/__tests__/anArrivalAlwaysArrives.test.tsx, test: "asked for no motion at all, rests on its plain style from its first frame" }
+
+  - id: shape-beam-judged-off-the-page
+    class: LOOK-ios-glow-cut-or-banded
+    source: shape
+    edits:
+      - file: e2e/ios-ipad-judge.mjs
+        find: "export const PAGE_COLUMN = 560;"
+        replace: "export const PAGE_COLUMN = 600;"
+    proof: { file: e2e/__tests__/iosIpadJudge.test.ts, test: "reads the page where the app lays it: its column is the app's own READING_MAX" }

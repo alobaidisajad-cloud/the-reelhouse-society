@@ -64,10 +64,15 @@ function renderSync(element, options = {}) {
     for (const line of misordered(renderer.container.toJSON())) seen.add(line);
   };
   readStacking();
+  // Read again by the after-each check itself, as the tree stands when the test ends: what a press
+  // opened (a tray, a sheet) is judged in the test that opened it, before RNTL's cleanup unmounts it.
+  const live = (globalThis.__liveStacking = globalThis.__liveStacking || new Set());
+  live.add(readStacking);
 
   const unmount = () => {
     readStacking();
     drawn = false;
+    live.delete(readStacking);
     React.act(() => {
       renderer.unmount();
     });

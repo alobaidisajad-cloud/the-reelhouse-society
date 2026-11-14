@@ -121,3 +121,12 @@ describe('the welcome\'s projector beam, upright', () => {
     expect(r.out).toMatch(/the beam: NOT READ/);
   });
 });
+
+it('reads the page where the app lays it: its column is the app\'s own READING_MAX', () => {
+  const metrics = readFileSync(join(__dirname, '..', '..', 'src', 'components', 'layout', 'navMetrics.ts'), 'utf8');
+  const judgeSource = readFileSync(SCRIPT, 'utf8');
+  const app = Number(/export const READING_MAX = (\d+);/.exec(metrics)?.[1]);
+  const judged = Number(/export const PAGE_COLUMN = (\d+);/.exec(judgeSource)?.[1]);
+  expect(app).toBeGreaterThan(0);
+  expect(judged).toBe(app);
+});

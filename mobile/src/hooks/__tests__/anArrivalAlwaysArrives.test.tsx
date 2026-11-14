@@ -5,7 +5,7 @@
 import React from 'react';
 import { readCode } from '@/test-utils/readCode';
 import { files as universe } from '@/test-utils/universe';
-import Animated, { withTiming } from 'react-native-reanimated';
+import Animated, { ReduceMotion, withTiming } from 'react-native-reanimated';
 import { render } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { useArrival, useIgnition, ARRIVAL_GRACE_MS, ARRIVED, IGNITED } from '../useArrival';
@@ -139,6 +139,16 @@ describe('an ignition', () => {
     React.act(() => { jest.advanceTimersByTime(300 + ARRIVAL_GRACE_MS); });
     expect(mounts.n).toBe(2);
     expect(r.getByTestId('lit').props.style).toBe(IGNITED);
+  });
+
+  /** The Initiation's stamp, for a member who asked for less motion: never one frame unseen, then a pop. */
+  it('asked for no motion at all, rests on its plain style from its first frame', () => {
+    function Still() {
+      const { style } = useIgnition('stamp', { duration: 320, delay: 0, from: 1.06, reduceMotion: ReduceMotion.Always, name: 'still' });
+      return <Animated.View testID="still" style={style} />;
+    }
+    const r = render(<Still />);
+    expect(r.getByTestId('still').props.style).toBe(IGNITED);
   });
 
   it('that lights keeps its view', () => {
