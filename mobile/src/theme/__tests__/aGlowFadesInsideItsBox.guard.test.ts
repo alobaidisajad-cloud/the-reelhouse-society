@@ -176,7 +176,7 @@ it('reads each user’s box from its source', () => {
   expect(plateLeast).toBeGreaterThan(250);
   expect(profile.headerWrap.overflow).toBe('hidden');
   // The file's scroll starts at the top of the screen: its content has a foot and no top padding.
-  expect(readCode('app/user/[username].tsx')).toMatch(/<CinematicScrollView contentContainerStyle=\{\{ paddingBottom: endPad \}\}/);
+  expect(readCode('app/user/[username].tsx')).toMatch(/<CinematicScrollView ref=\{scrollRef\} contentContainerStyle=\{\{ paddingBottom: endPad \}\}/);
   expect(welcomeTop).toBeGreaterThanOrEqual(0);
   // The welcome's scroll is the page's whole height: its holder has no top padding, its content has the bar's.
   const welcome = readCode(WELCOME).split('if (!isAuthenticated) {')[1]?.split('</FrozenTab>')[0] ?? '';

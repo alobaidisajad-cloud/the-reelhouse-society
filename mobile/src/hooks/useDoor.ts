@@ -100,9 +100,10 @@ async function readDoor(): Promise<DoorRead> {
  * read a second time. Gone with the member at sign-out.
  */
 let lastAnswer: { for: string; read: DoorRead } | null = null;
-/** The answer forgotten: at sign-out, and between tests that each ask the door afresh. */
+/** The answer forgotten, between tests that each ask the door afresh. */
 export function forgetDoor(): void { lastAnswer = null; }
-registerStoreReset(forgetDoor);
+// And at sign-out: the next member's door is theirs to ask.
+registerStoreReset(() => { lastAnswer = null; });
 
 export function useDoor(): Door {
   const userId = useAuthStore((s) => s.user?.id);

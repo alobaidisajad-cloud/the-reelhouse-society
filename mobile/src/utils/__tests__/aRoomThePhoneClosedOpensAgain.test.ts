@@ -82,7 +82,7 @@ it('on a phone with no room left, remembers nothing and throws nothing: the room
 it('names a page of the app for every room, and a draft kind each takes up', () => {
   expect(Object.entries(ROOMS).map(([room, { href, draft }]) => [room, href, draft])).toEqual([
     ['edit-profile', '/edit-profile', 'profile'],
-    ['log-modal', '/log-modal', 'log'],
+    ['log-modal', '/log-modal?resume=draft', 'log'],
     ['essay', '/dispatch/compose?kind=dossier', 'dossier'],
   ]);
 });

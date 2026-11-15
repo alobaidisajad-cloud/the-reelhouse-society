@@ -41,6 +41,9 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
   const struck = useStruck();
   const { leaveLounge, deleteLounge, setMemberStatus, removeMember, setLoungeCover } = useLoungeStore(useShallow((s) => ({ leaveLounge: s.leaveLounge, deleteLounge: s.deleteLounge, setMemberStatus: s.setMemberStatus, removeMember: s.removeMember, setLoungeCover: s.setLoungeCover })));
   const [expanded, setExpanded] = useState<string | null>(null);
+  /** The room still stands: a way home deferred past the alert never pops a screen the member has since gone to. */
+  const isMounted = useRef(true);
+  useEffect(() => () => { isMounted.current = false; }, []);
   // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
   // column dims with the page.
   const fill = useWindowFill();
@@ -56,7 +59,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         // Only once out: a refused leave is said by the store, and the room stays.
         if (!(await leaveLounge(lounge.id))) return;
         onClose();
-        InteractionManager.runAfterInteractions(() => nav.dismissTo('/(tabs)/lounge'));
+        InteractionManager.runAfterInteractions(() => { if (isMounted.current) nav.dismissTo('/(tabs)/lounge'); });
       }},
     ]);
   };
@@ -69,7 +72,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         // A salon the house would not destroy is still standing: its host stays in it.
         if (!(await deleteLounge(lounge.id))) return;
         onClose();
-        InteractionManager.runAfterInteractions(() => nav.dismissTo('/(tabs)/lounge'));
+        InteractionManager.runAfterInteractions(() => { if (isMounted.current) nav.dismissTo('/(tabs)/lounge'); });
       }},
     ]);
   };

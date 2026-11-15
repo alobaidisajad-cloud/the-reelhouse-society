@@ -31,7 +31,7 @@ const REGISTER: Record<string, { reads: number; why: string }> = {
   'src/components/lobby/Masthead.tsx': { reads: 1, why: 'the wall’s own clock, read on the hour and on every return (useWallClock)' },
   'src/components/profile/WatchlistRoulette.tsx': { reads: 1, why: 'the verdict is written as the wheel stops, a press’s own moment' },
   'src/hooks/useInitiation.ts': { reads: 1, why: 'a new member’s welcome, decided once inside an effect (shouldInitiate)' },
-  'src/hooks/useLogFlow.ts': { reads: 3, why: 'the day a log is filed under, set as the composer opens or is cleared: the member’s choice, never moved under them' },
+  'src/hooks/useLogFlow.ts': { reads: 4, why: 'the day a log is filed under, set as the composer opens, is cleared, or takes another film: the member’s choice, never moved under them' },
 };
 
 /** A function passed to one of these is run later, at a moment of its own. */

@@ -528,7 +528,7 @@ describe('leaving the room', () => {
     // that already has one.
     expect(alerts[0][0]).toBe('Leave this essay?');
     // Leaving need not lose it: kept for later is offered beside discarding.
-    expect(alerts[0][2].map((b) => b.text)).toEqual(['Keep writing', 'Keep for later', 'Discard']);
+    expect(alerts[0]?.[2]?.map((b) => b.text)).toEqual(['Keep writing', 'Keep for later', 'Discard']);
     spy.mockRestore();
   });
 
@@ -541,7 +541,7 @@ describe('leaving the room', () => {
     const r = await open();
     await type(r.getByLabelText('Essay content body'), 'An opening line.');
     await press(r.getByLabelText(/Cancel/));
-    await act(async () => { alerts[0][2].find((b) => b.text === 'Keep for later')!.onPress!(); });
+    await act(async () => { alerts[0]?.[2]?.find((b) => b.text === 'Keep for later')?.onPress?.(); });
     expect(router.back).toHaveBeenCalledTimes(1);
     r.unmount();
     expect(JSON.parse(mockStore.get(DRAFT_KEY)!).data.content).toBe('An opening line.');
@@ -559,7 +559,7 @@ describe('leaving the room', () => {
     await act(async () => { jest.advanceTimersByTime(1200); });
     expect(mockStore.has(DRAFT_KEY)).toBe(true);
     await press(r.getByLabelText(/Cancel/));
-    await act(async () => { alerts[0][2].find((b) => b.text === 'Discard')!.onPress!(); });
+    await act(async () => { alerts[0]?.[2]?.find((b) => b.text === 'Discard')?.onPress?.(); });
     pushed.mockClear();
     r.unmount();
     expect(mockStore.has(DRAFT_KEY)).toBe(false);

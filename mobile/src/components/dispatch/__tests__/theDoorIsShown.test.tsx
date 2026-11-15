@@ -221,7 +221,12 @@ describe('the door', () => {
     const first = await mount();
     first.unmount();
     const r = render(<ComposeScreen />);
+    // The sheet's ground and its way out, while the door is asked again.
+    expect(r.getByLabelText('Back')).toBeTruthy();
     expect(r.queryByText('WHAT ARE YOU FILING?')).toBeNull();
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    // Asked, and failing open again: the forms.
+    expect(r.getByText('WHAT ARE YOU FILING?')).toBeTruthy();
   });
 
   it('has a way back out', async () => {

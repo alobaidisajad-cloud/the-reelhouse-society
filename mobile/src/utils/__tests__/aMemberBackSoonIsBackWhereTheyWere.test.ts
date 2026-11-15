@@ -64,12 +64,13 @@ it('the tab bar remembers each tab as it is shown, stamps the time as the app le
   const layout = readFileSync(join(__dirname, '..', '..', '..', 'app', '(tabs)', '_layout.tsx'), 'utf8');
   expect(layout).toMatch(/screenListeners=\{\(\{ route \}\) => \(\{ focus: \(\) => rememberTab\(route\.name\) \}\)\}/);
   expect(layout).toMatch(/if \(next !== 'active'\) stampTab\(\)/);
-  expect(layout).toMatch(/if \(launchedAt\.current === '\/'\) \{\s+void Linking\.getInitialURL\(\)\.catch\(\(\) => null\)\.then\(\(url\) => \{\s+const tab = tabToReopenAfter\(url\);/);
+  // (And not for a launch a tapped notification made: theLaunchingTapIsReadOnce.)
+  expect(layout).toMatch(/if \(launchedAt\.current === '\/'\) \{\s+void Promise\.all\(\[Linking\.getInitialURL\(\)\.catch\(\(\) => null\), launchingNotification\(\)\]\)\.then\(\(\[url, tapped\]\) => \{[\s\S]{0,300}?const tab = tapped \? null : tabToReopenAfter\(url\);/);
   // Only a member still on the Lobby once the link is read: one a link or a tap took on stays there.
   expect(layout).toMatch(/here\.current = pathname;/);
   expect(layout).toMatch(/if \(!gone && here\.current === '\/'\) \{\s+if \(tab\) router\.navigate\(`\/\$\{tab\}` as Href\);\s+if \(room\) nav\.push\(ROOMS\[room\]\.href\);\s+\}/);
   // A writing room is reopened only for a launch no link made, as the tab is.
-  expect(layout).toMatch(/const room = pageOfLaunch\(url\) \? null : roomToReopen\(useAuthStore\.getState\(\)\.user\?\.id\);/);
+  expect(layout).toMatch(/const room = pageOfLaunch\(url\) \|\| tapped \? null : roomToReopen\(useAuthStore\.getState\(\)\.user\?\.id\);/);
   expect(layout).not.toMatch(/\btabToReopen\(\)/);
 });
 

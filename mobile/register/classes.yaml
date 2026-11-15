@@ -2546,7 +2546,7 @@ classes:
       - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "an amendment kept on the phone is never re-filed while the essay as filed cannot be read" }
       - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "another member's essay is not amended from this room" }
       - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "an amend left as it opened leaves without asking, and keeps no copy" }
-      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "an amend with changes asks to discard the AMENDMENTS, saying the essay stays as filed" }
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "an amend with changes asks about the AMENDMENTS, saying the essay stays as filed if they go" }
       - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "shows the essay's film as filed, and offers no change an amendment would drop" }
     fix: "the essay desk opens an amend on the essay as filed: whole from the reader (opened, its full text), read from the house when not held, and re-files nothing until it is in the room; an amend as it opened keeps no copy and leaves without asking; its film and series are shown as filed (mutants shape-amend-opens-empty, shape-amend-refiled-unread, shape-amend-keeps-the-essay-as-a-draft)"
     places: [none]
@@ -2753,6 +2753,7 @@ classes:
       - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "closed within a second of typing, it keeps the last words" }
       - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "closed within a beat of typing, it keeps the last edit" }
       - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "KEEP FOR LATER leaves with the essay kept, as it stands" }
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "asks before discarding words" }
       - { kind: running, file: src/hooks/__tests__/theLogSheetOpensWhereItWasAsked.test.tsx, test: "back to the search keeps the words at once, and offers them as they stand" }
     fix: "every way out of a short desk with words in it asks first (useAskBeforeLeaving, and BACK's own question); the essay, ballot and stack keep the save not yet written as the sheet closes (the log's pattern), the essay's after its backup so the phone's copy is the later; CANCEL offers KEEP FOR LATER beside DISCARD (mutants shape-take-left-without-asking, shape-essay-last-second-dropped, shape-ballot-last-second-dropped, shape-stack-last-second-dropped, shape-cancel-only-discards)"
     places: [none]

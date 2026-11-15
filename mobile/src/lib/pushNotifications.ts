@@ -10,6 +10,7 @@ import { supabase } from './supabase';
 import { logger } from '../utils/logger';
 import { storage } from '../stores/mmkv-storage';
 import * as Notifications from 'expo-notifications';
+import type { NotificationResponse } from 'expo-notifications';
 import { ensureNoticeChannels } from './noticeChannels';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
@@ -253,16 +254,16 @@ export function deliverEachTapOnce(onTap: (data: Record<string, string>) => void
  * told of the launching one), so each notification request is delivered once,
  * by its identifier.
  */
-let launchRead: Promise<Notifications.NotificationResponse | null> | null = null;
+let launchRead: Promise<NotificationResponse | null> | null = null;
 let launchDelivered = false;
 
 /**
  * The notification whose tap launched the app, read once and shared by both who ask: the tap is
- * opened from it (below), and the tabs' launch reopen stands aside for it (app/(tabs)/_layout.tsx).
+ * opened from it (below), and the tabs' launch reopen stands aside for it, in app/(tabs)/_layout.tsx.
  * Read twice, the two raced to push, and a member who tapped "a new critique" could land in the
  * writing room the launch reopened instead.
  */
-export function launchingNotification(): Promise<Notifications.NotificationResponse | null> {
+export function launchingNotification(): Promise<NotificationResponse | null> {
   launchRead ??= Notifications.getLastNotificationResponseAsync().catch((e: unknown) => {
     logger.warn('[Push] could not read the launching notification:', e);
     return null;

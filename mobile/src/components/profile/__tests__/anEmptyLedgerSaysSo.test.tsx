@@ -58,7 +58,7 @@ it("and so do the archive's and the calendar's, the profile's other doors to log
   for (const [file, label] of [
     ['src/components/profile/ProfileArchiveTab.tsx', 'Record a screening'],
     ['src/components/profile/NitrateCalendarGrid.tsx', 'Ignite the timeline — log a film'],
-  ]) {
+  ] as const) {
     const line = readCode(file).split('\n').find((l) => l.includes(`accessibilityLabel="${label}"`));
     expect(line).toContain("nav.push('/log-modal')");
   }
