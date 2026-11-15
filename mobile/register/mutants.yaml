@@ -4464,7 +4464,7 @@ mutants:
     edits:
       - file: src/stores/vaultStore.ts
         find: "              if (m.type === 'set_viewing_note' && m.payload.log_id === logId && typeof m.payload.notes === 'string') {"
-        replace: "              if (m.type === 'never' && m.payload.log_id === logId && typeof m.payload.notes === 'string') {"
+        replace: "              if (m.type === 'remove_viewing' && m.payload.log_id === logId && typeof m.payload.notes === 'string') {"
     proof: { file: src/stores/__tests__/vaultStore.test.ts, test: "read again, keeps a note written with no signal that the queue still holds" }
 
   - id: shape-vault-reread-brings-back-a-removal
@@ -4473,7 +4473,7 @@ mutants:
     edits:
       - file: src/stores/vaultStore.ts
         find: "              } else if (m.type === 'remove_viewing_note' && notesLog[viewingId] === logId) {"
-        replace: "              } else if (m.type === 'never' && notesLog[viewingId] === logId) {"
+        replace: "              } else if (m.type === 'remove_viewing' && notesLog[viewingId] === logId) {"
     proof: { file: src/stores/__tests__/vaultStore.test.ts, test: "read again, keeps gone a note removed with no signal that the queue still holds" }
 
   - id: shape-watchlist-reread-drops-waiting
