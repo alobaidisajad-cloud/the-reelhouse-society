@@ -179,3 +179,28 @@ describe('the member\'s own sign-out names what it erases', () => {
     expect(mockEvents).toEqual(['sent add_critique', 'sent add_watchlist', 'logout']);
   });
 });
+
+/**
+ * Signed out with an edit unsaved, the leave was stopped to ask "Discard changes?" after the
+ * session had ended: "Keep editing" left a signed-out member on a members-only page (review round
+ * 1, 2026-11-14). Signing out leaves without asking.
+ */
+it('signed out with an edit unsaved, leaves for the door without asking to keep it', async () => {
+  online(false);
+  const { usePreventRemove } = jest.requireMock('expo-router/react-navigation') as { usePreventRemove: jest.Mock };
+  const { nav } = jest.requireMock('@/src/utils/typedRouter') as { nav: { replace: jest.Mock } };
+  nav.replace.mockClear();
+  const r = render(<SettingsScreen />);
+  await act(async () => {});
+  await waitFor(() => expect(r.getAllByText('Settings').length).toBeGreaterThan(0));
+  // An edit: the form is changed, and the leave would ask.
+  await act(async () => { await fireEvent(r.getByLabelText('Biometric security'), 'valueChange', true); });
+  expect(usePreventRemove.mock.calls.at(-1)?.[0]).toBe(true);
+
+  mockAlert.mockClear();
+  await act(async () => { await fireEvent.press(r.getByLabelText('SIGN OUT')); });
+  const [, , buttons] = mockAlert.mock.calls.find((c) => c[0] === 'Depart the Society') as [string, string, Button[]];
+  await act(async () => { await buttons.find((b) => b.text === 'SIGN OUT')?.onPress?.(); });
+  expect(usePreventRemove.mock.calls.at(-1)?.[0]).toBe(false);
+  expect(nav.replace).toHaveBeenCalledWith('/login');
+});

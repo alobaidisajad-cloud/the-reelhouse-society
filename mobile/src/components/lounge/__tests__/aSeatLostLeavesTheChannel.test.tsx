@@ -24,7 +24,7 @@ jest.mock('@/src/stores/lounge', () => {
   const { create: mockCreate } = jest.requireActual('zustand');
   const noop = () => {};
   const useLoungeStore = mockCreate(() => ({
-    lounges: [], currentMessages: [], currentLoungeId: '00000011-0000-4000-8000-000000000011', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false, presentCount: 0, typingUsers: [],
+    lounges: [], currentMessages: [], currentLoungeId: '00000011-0000-4000-8000-000000000011', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false, presentCount: 0, typingUsers: [], coversSet: {},
     fetchMessages: noop, sendMessage: noop,
     subscribeToLounge: (id: string, opts: { seated?: boolean; onMembership?: () => void }) => mockSubscribe(id, opts),
     markRead: noop, withdrawMessage: noop, retryMessage: noop, toggleReaction: noop,

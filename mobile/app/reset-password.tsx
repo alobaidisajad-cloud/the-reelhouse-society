@@ -18,6 +18,7 @@ import { mapAuthError } from '@/src/hooks/useAuthFlow';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { nav } from '@/src/utils/typedRouter';
 import { Arrive } from '@/src/components/Arrive';
+import { useNavigation } from 'expo-router/react-navigation';
 import { logger } from '@/src/utils/logger';
 
 
@@ -44,6 +45,16 @@ export default function ResetPasswordScreen() {
 
   // The sign-up form's rules and meter: one password rule, drawn one way.
   const strong = passwordIsAccepted(password);
+
+  // Left by any way out (Android's back, the iOS swipe, as the screen's own BACK TO LOBBY): a
+  // recovery left unfinished ends its session now. Only the screen's own button did, and the flag
+  // it left signed the member out at a later launch, whatever they had signed in with since.
+  const navigation = useNavigation();
+  useEffect(() => navigation.addListener('beforeRemove', () => {
+    if (storage.getString('recovery_pending') !== 'true') return;
+    storage.delete('recovery_pending');
+    void endSessionHere();
+  }), [navigation]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {

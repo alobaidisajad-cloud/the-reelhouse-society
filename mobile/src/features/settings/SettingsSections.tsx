@@ -342,27 +342,35 @@ export function PasswordChangePanel() {
         email,
         password: currentPassword
       });
-      // Only a refusal of the password says the password is wrong.
+      // Only a refusal of the password says the password is wrong: said under its field, and that
+      // field alone emptied. The new password the member chose, typed twice, stays where it is.
       if (verifyError) {
         if (!isNetworkError(verifyError)) captureAuthRefusal('sign_in');
-        throw new Error(verifyError.message.includes(BAD_CREDENTIALS) ? 'Incorrect current cipher.' : mapAuthError(verifyError.message).message);
+        if (verifyError.message.includes(BAD_CREDENTIALS)) {
+          if (isMountedRef.current) {
+            setCurrentPassword('');
+            refuse('current', 'Incorrect current cipher.', ['', newPassword, confirmPassword]);
+          }
+          return;
+        }
+        throw new Error(mapAuthError(verifyError.message).message);
       }
 
       await AuthService.updatePassword(newPassword);
       reelToast.success('Credentials re-encrypted.');
+      // Changed: the fields are emptied, and the form put away.
       if (isMountedRef.current) {
         setShowPasswordChange(false);
-      }
-    } catch (e: unknown) {
-      const raw = (e as { message?: unknown } | null)?.message;
-      reelToast.error(typeof raw === 'string' && raw ? mapAuthError(raw).message : 'Re-encryption failed.');
-    } finally {
-      if (isMountedRef.current) {
-        setChangingPassword(false);
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
       }
+    } catch (e: unknown) {
+      // Not changed (the house unreached, or refused): every field kept, to press again.
+      const raw = (e as { message?: unknown } | null)?.message;
+      reelToast.error(typeof raw === 'string' && raw ? mapAuthError(raw).message : 'Re-encryption failed.');
+    } finally {
+      if (isMountedRef.current) setChangingPassword(false);
     }
   };
 

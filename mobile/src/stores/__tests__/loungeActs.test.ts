@@ -263,3 +263,31 @@ describe('the open room’s messages', () => {
     expect(msgs.find((m) => m.id === 'm2')!.avatar_url).toBeUndefined();
   });
 });
+
+/**
+ * A room opened from a link is in no list: it drew the cover it read on opening after the host
+ * changed it, or removed it, from the room itself (review round 1, 2026-11-14).
+ */
+describe('a salon\'s cover, as this phone sets it', () => {
+  it('is kept for the room wherever it is drawn, and goes back to what was read when refused', async () => {
+    useLoungeStore.setState({ lounges: [], coversSet: {} } as never);
+    mockRpc.mockResolvedValueOnce({ data: null, error: null });
+    expect(await useLoungeStore.getState().setLoungeCover(L1, null)).toBe(true);
+    expect(useLoungeStore.getState().coversSet).toEqual({ [L1]: null });
+
+    mockRpc.mockResolvedValueOnce({ data: null, error: null });
+    await useLoungeStore.getState().setLoungeCover(L1, '/now.jpg');
+    expect(useLoungeStore.getState().coversSet[L1]).toBe('/now.jpg');
+
+    // Refused: the cover this phone had set before stands again.
+    mockRpc.mockResolvedValueOnce({ data: null, error: { message: 'permission denied' } });
+    expect(await useLoungeStore.getState().setLoungeCover(L1, '/refused.jpg')).toBe(false);
+    expect(useLoungeStore.getState().coversSet[L1]).toBe('/now.jpg');
+
+    // Refused with nothing set before: the room draws the cover it read.
+    useLoungeStore.setState({ coversSet: {} } as never);
+    mockRpc.mockResolvedValueOnce({ data: null, error: { message: 'permission denied' } });
+    await useLoungeStore.getState().setLoungeCover(L1, '/refused.jpg');
+    expect(L1 in useLoungeStore.getState().coversSet).toBe(false);
+  });
+});

@@ -23,7 +23,7 @@ import { useDispatch } from '@/src/stores/dispatch';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { toFiling } from '@/src/stores/dispatchTypes';
-import { clearDraft, draftKey, writeDraft } from '@/src/utils/memberDrafts';
+import { clearDraft, draftKey, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { storage } from '@/src/stores/mmkv-storage';
 
 let mockRow: Record<string, unknown> | null = null;
@@ -202,6 +202,8 @@ const AS_BUILT = useDispatch.getState();
 
 beforeEach(() => {
   mockUser = { id: 'u1', username: 'me' };
+  // Each test opens on no critique draft: words a test left in the box are kept as the page goes.
+  for (const filing of ['00000017-0000-4000-8000-000000000017', '00000018-0000-4000-8000-000000000018']) clearDraft('u1', 'critique', filing);
   mockRow = row();
   mockRowFails = false;
   mockRowPending = false;
@@ -386,6 +388,76 @@ describe('the reader', () => {
 
     expect(getByLabelText('Your critique')).toBeTruthy();
     expect(queryByLabelText(/^Certify this filing/)).toBeNull();
+  });
+
+  /**
+   * A press of CRITIQUE was for good: nothing put the composer away but filing, and the bar's
+   * CERTIFY, SAVE and SHARE were gone until the page was left (review round 1, 2026-11-14).
+   */
+  it('puts the composer away with its ✕, its words kept, and brings the bar back', async () => {
+    const r = await mount();
+    await act(async () => { await fireEvent.press(r.getByLabelText('Write a critique')); });
+    // Opened by the press, the field takes the keys at once.
+    expect(r.getByLabelText('Your critique').props.autoFocus).toBe(true);
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Your critique'), 'Half a thought.'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Put the critique away')); });
+    expect(r.queryByLabelText('Your critique')).toBeNull();
+    expect(r.getByLabelText(/^Certify this filing/)).toBeTruthy();
+    expect(r.getByLabelText('Save')).toBeTruthy();
+    // Opened again, the words are where they were left.
+    await act(async () => { await fireEvent.press(r.getByLabelText('Write a critique')); });
+    expect(r.getByLabelText('Your critique').props.value).toBe('Half a thought.');
+  });
+
+  /** The last second's typing was lost when the page went before the words had rested (review round 1). */
+  it('keeps the words at once when the page goes before they rest', async () => {
+    const r = await mount();
+    await act(async () => { await fireEvent.press(r.getByLabelText('Write a critique')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Your critique'), 'Written, then gone.'); });
+    await act(async () => { r.unmount(); });
+    expect(readDraft<{ body: string }>('u1', 'critique', '00000017-0000-4000-8000-000000000017')?.data.body).toBe('Written, then gone.');
+  });
+
+  it('puts the composer away on Android\'s back, before the page is left', async () => {
+    const { BackHandler } = require('react-native') as typeof import('react-native');
+    const listeners: (() => boolean)[] = [];
+    const spy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_e, fn) => {
+      listeners.push(fn as () => boolean);
+      return { remove: () => { listeners.splice(listeners.indexOf(fn as () => boolean), 1); } };
+    });
+    try {
+      const r = await mount();
+      await act(async () => { await fireEvent.press(r.getByLabelText('Write a critique')); });
+      let handled = false;
+      await act(async () => { handled = [...listeners].reverse().some((fn) => fn()); });
+      expect(handled).toBe(true);
+      expect(r.queryByLabelText('Your critique')).toBeNull();
+      expect(r.getByLabelText(/^Certify this filing/)).toBeTruthy();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  /** The share sheet is drawn on the page: Android's back left the page with it (review round 1). */
+  it('closes the share sheet on Android\'s back, before the page is left', async () => {
+    const { BackHandler } = require('react-native') as typeof import('react-native');
+    const listeners: (() => boolean)[] = [];
+    const spy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_e, fn) => {
+      listeners.push(fn as () => boolean);
+      return { remove: () => { listeners.splice(listeners.indexOf(fn as () => boolean), 1); } };
+    });
+    try {
+      const r = await mount();
+      expect(listeners).toHaveLength(0);
+      await act(async () => { await fireEvent.press(r.getAllByLabelText(/^Share/)[0]!); });
+      expect(listeners.length).toBeGreaterThan(0);
+      let handled = false;
+      await act(async () => { handled = [...listeners].reverse().some((fn) => fn()); });
+      expect(handled).toBe(true);
+      expect(listeners).toHaveLength(0);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   // The composer rides the keys on iOS and the page ends above it: an inset the OS set as the

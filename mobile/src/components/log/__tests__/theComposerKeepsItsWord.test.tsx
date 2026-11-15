@@ -24,7 +24,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import { openSociety } from '@/src/utils/openSociety';
 import { validateLogSubmission, useLogFlow } from '@/src/hooks/useLogFlow';
-import { writeDraft, readDraft } from '@/src/utils/memberDrafts';
+import { writeDraft, readDraft, clearDraft } from '@/src/utils/memberDrafts';
 import { buildFilingMark } from '@/src/components/log/logRecord';
 import { tmdb } from '@/src/lib/tmdb';
 
@@ -104,7 +104,11 @@ function stateOf(r: R, label: string | RegExp): Record<string, unknown> {
   return hits[0].props.accessibilityState;
 }
 
-beforeEach(() => { (openSociety as jest.Mock).mockClear(); });
+beforeEach(() => {
+  (openSociety as jest.Mock).mockClear();
+  // Each test opens on no draft: one kept as the last test's sheet went is not this test's.
+  for (const scope of [undefined, '843']) clearDraft('33333333-3333-4333-8333-333333333333', 'log', scope);
+});
 
 describe('every control the composer owns is there, by name', () => {
   // A restructure's one bad outcome is a control quietly disappearing. Asked
@@ -147,15 +151,15 @@ describe('every control the composer owns is there, by name', () => {
     // The button is gone from an edit (above); this is the hook it called, so
     // the rule holds for anything that calls it next.
     const USER = '33333333-3333-4333-8333-333333333333';
-    writeDraft(USER, 'log', { filmId: '550', review: 'Half a review of Fight Club.' });
+    writeDraft(USER, 'log', { filmId: '843', review: 'Half a review of In the Mood for Love.' });
     await act(async () => { member('auteur'); useFilmStore.setState({ logs: [LOG] } as never); });
     (useLocalSearchParams as jest.Mock).mockReturnValue({ editLogId: '00000015-0000-4000-8000-000000000015' });
     const edit = await renderHook(() => useLogFlow());
     await act(async () => { edit.result.current.discardDraft(); });
-    expect(readDraft<{ review: string }>(USER, 'log')?.data.review).toBe('Half a review of Fight Club.');
+    expect(readDraft<{ review: string }>(USER, 'log')?.data.review).toBe('Half a review of In the Mood for Love.');
     await edit.unmount();
 
-    // …while a new record's own discard does clear it.
+    // …while the new record's own discard, on its film, does clear it.
     (useLocalSearchParams as jest.Mock).mockReturnValue(FILM);
     const fresh = await renderHook(() => useLogFlow());
     await act(async () => { fresh.result.current.discardDraft(); });

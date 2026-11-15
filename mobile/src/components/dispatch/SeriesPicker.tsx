@@ -25,6 +25,7 @@
  * to whoever is writing it, and offering to join somebody else's would be
  * offering to put words in their sequence.
  */
+import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -153,6 +154,8 @@ export function SeriesPicker({ visible, ...sheet }: PickerProps) {
 
 function SeriesSheet({ chosen, onClose, onSet, onClear, bottomInset }: Omit<PickerProps, 'visible'>) {
   const userId = useAuthStore((s) => s.user?.id);
+  // Drawn in the essay room, not a Modal: Android's back closes the sheet, not the room.
+  useBackCloses(true, onClose);
   const [begun, setBegun] = useState<Begun[]>([]);
   // The list could not be read: said, so it is not taken for "none begun" and
   // a member does not begin a second series under a name they already use.

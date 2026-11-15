@@ -77,9 +77,13 @@ jest.mock('@/src/stores/blockStore', () => {
     (useBlockStore as unknown as { getState: () => unknown }).getState = () => state;
     return { useBlockStore };
 });
-jest.mock('@/src/stores/auth', () => ({
-    useAuthStore: (sel?: (s: unknown) => unknown) => { const s = { user: { id: 'u1', username: 'cinephile' } }; return sel ? sel(s) : s; },
-}));
+jest.mock('@/src/stores/auth', () => {
+    const s = { user: { id: 'u1', username: 'cinephile' } };
+    const useAuthStore = (sel?: (st: unknown) => unknown) => (sel ? sel(s) : s);
+    // Read as the store is read outside a render too: who is signed in when the words are kept.
+    useAuthStore.getState = () => s;
+    return { useAuthStore };
+});
 jest.mock('@/src/services/StackService', () => ({
   STACK_COMMENT_PAGE: 50,
     StackService: { getStackFullPayload: jest.fn(), getStackComments: jest.fn() },

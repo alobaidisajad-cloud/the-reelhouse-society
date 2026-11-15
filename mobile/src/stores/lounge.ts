@@ -105,6 +105,12 @@ export interface LoungeMessageMeta {
 
 export interface LoungeState {
   lounges: LoungeRoom[];
+  /**
+   * Each salon's cover as this phone last set it (null: removed), whatever list holds the salon:
+   * a room opened from a link is in no list, and it drew the cover it read on opening after the
+   * host had changed it, or removed it, from the room itself.
+   */
+  coversSet: Record<string, string | null>;
   /** The last read of the salons could not be answered. The screens say so. */
   loungesFailed: boolean;
   /** The salons are being read (fetchLounges). */
@@ -510,6 +516,7 @@ function keptRooms(rows: unknown[] | null): LoungeRoom[] {
 
 export const useLoungeStore = create<LoungeState>()((set, get) => ({
   lounges: [],
+  coversSet: {},
   loungesFailed: false,
   loungesLoading: false,
   loungesRead: false,
@@ -1132,8 +1139,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   setLoungeCover: async (loungeId, cover) => {
         const startedAs = useAuthStore.getState().user?.id ?? null;
     const prev = get().lounges.find(l => l.id === loungeId)?.cover_image ?? null;
-    // Optimistic: patch the single lounges collection so the card updates instantly.
-    set(s => ({ lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: cover } : l) }));
+    const prevSet = get().coversSet;
+    // Optimistic: patch the lounges collection so the card updates instantly, and the room's
+    // own cover wherever it is drawn (coversSet).
+    set(s => ({
+      lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: cover } : l),
+      coversSet: { ...s.coversSet, [loungeId]: cover },
+    }));
     try {
       const { error } = await supabase.rpc('set_lounge_cover', { p_lounge_id: loungeId, p_cover_image: cover });
       if (error) throw error;
@@ -1142,7 +1154,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       logger.warn('[LoungeStore.setLoungeCover] failed:', e);
       // Revert the optimistic patch on failure — the host sees the truth.
       if (!memberUnchanged(startedAs)) return false;
-      set(s => ({ lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: prev } : l) }));
+      set(s => {
+        // The room's cover goes back to what this phone had set before, or to what it read.
+        const coversSet = { ...s.coversSet };
+        if (loungeId in prevSet) coversSet[loungeId] = prevSet[loungeId] ?? null; else delete coversSet[loungeId];
+        return { lounges: s.lounges.map(l => l.id === loungeId ? { ...l, cover_image: prev } : l), coversSet };
+      });
       reelToast.error('Could not update the salon cover.');
       return false;
     }
@@ -1699,7 +1716,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
-    useLoungeStore.setState({ lounges: [], loungesFailed: false, loungesLoading: false, loungesRead: false, currentMessages: [], currentLoungeId: null, messagesLoading: false, messagesFailed: false, sending: false, presentCount: 0, typingUsers: [] });
+    useLoungeStore.setState({ lounges: [], coversSet: {}, loungesFailed: false, loungesLoading: false, loungesRead: false, currentMessages: [], currentLoungeId: null, messagesLoading: false, messagesFailed: false, sending: false, presentCount: 0, typingUsers: [] });
     _lastCreateAt = -Infinity;
     _lastTypingBroadcastAt = -Infinity;
     // Every module-level memory, or the next member on this phone inherits it.

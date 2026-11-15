@@ -111,6 +111,32 @@ describe('tmdb.search', () => {
     expect(global.fetch).toHaveBeenCalledTimes(3);   // tried, then said
   }, 10000);
 
+  /** The catalogue's answer, by the path each read asks for (the proxy is posted `{ path }`). */
+  const answerBy = (by: (path: string) => unknown) => (global.fetch as jest.Mock).mockImplementation(async (_url: string, init: { body: string }) => {
+    const { path } = JSON.parse(init.body) as { path: string };
+    return new Response(JSON.stringify(by(path)), { status: 200 });
+  });
+
+  /** A series drawn as a film opened another film by its number, its name "undefined" (review round 1). */
+  it('a search only series answered gives no film: a series is never handed back as one', async () => {
+    answerBy((path) => (path.startsWith('/search/multi')
+      ? { results: [{ id: 1399, media_type: 'tv', name: 'A Series', poster_path: '/s.jpg' }], total_pages: 1 }
+      : { results: [] }));
+    const result = await tmdb.search('aseries');
+    expect(result.searchType).toBe('failed');
+    expect(result.results).toEqual([]);
+  });
+
+  /** A fallback answers page 1 alone: its page count drew "developing" for ever (review round 1). */
+  it('a typo tier\'s answer is one page, so its next page is never asked for', async () => {
+    answerBy((path) => (path.includes('query=the%20godfathr%20part')
+      ? { results: [], total_pages: 0 }
+      : { results: [{ id: 238, media_type: 'movie', title: 'The Godfather', popularity: 90 }], total_pages: 7 }));
+    const result = await tmdb.search('the godfathr part');
+    expect(result.searchType).toBe('typo');
+    expect(result.total_pages).toBe(1);
+  });
+
   it('a search the catalogue answered with nothing is "failed", after every tier', async () => {
     (global.fetch as jest.Mock).mockImplementation(async () => new Response(JSON.stringify({ results: [] }), { status: 200 }));
     const result = await tmdb.search('zzqxv');

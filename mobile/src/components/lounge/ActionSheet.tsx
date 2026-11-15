@@ -45,11 +45,20 @@ function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReaction
   const [internalMsg, setInternalMsg] = React.useState<LoungeMessage | null>(null);
   const [internalIsSelf, setInternalIsSelf] = React.useState(false);
 
+  // REPORT closes the sheet and asks for the report sheet once this one is gone: a Modal opened
+  // while another is still on the screen is the iOS trap, and the report sheet never rose.
+  const reportWhenGone = React.useRef<LoungeMessage | null>(null);
+
   // The message is held from the moment it opens, so the sheet keeps its words
   // while it falls after the caller has let go of them.
   const { isRendered, opacity, translateY } = useSheetPresence({
     visible: visible && !!msg,
     onOpen: () => { setInternalMsg(msg); setInternalIsSelf(isSelf); },
+    onGone: () => {
+      const asked = reportWhenGone.current;
+      reportWhenGone.current = null;
+      if (asked) onReport?.(asked);
+    },
   });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
@@ -142,7 +151,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReaction
               block (as the Dispatch says of its own): no row that cannot work. */}
           {!internalIsSelf && !!internalMsg.user_id && (
             <>
-              <PressableScale style={s.actionBtn} hitSlop={null} onPress={() => { onReport?.(internalMsg); onClose(); }} accessibilityRole="button">
+              <PressableScale style={s.actionBtn} hitSlop={null} onPress={() => { reportWhenGone.current = internalMsg; onClose(); }} accessibilityRole="button">
                 <ShieldAlert size={18} color={colors.fog} strokeWidth={1.5} />
                 <Text style={s.actionBtnText}>REPORT MESSAGE</Text>
               </PressableScale>

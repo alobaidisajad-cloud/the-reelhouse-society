@@ -7,8 +7,9 @@
  * `[words, setWords, letGo]`: letGo is for words the house or the queue now holds; words the
  * house refused are put back with setWords, so the member never types them twice.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { clearDraft, readDraft, writeDraft, type DraftKind } from '@/src/utils/memberDrafts';
+import { useAuthStore } from '@/src/stores/auth';
 
 /** How long the box rests before its words are kept: a keystroke is not a write. */
 export const KEPT_WORDS_REST_MS = 1000;
@@ -23,14 +24,26 @@ export function useKeptWords(memberId: string | null | undefined, kind: DraftKin
     setWords(readDraft<{ body?: string }>(memberId, kind, scope ?? undefined)?.data.body ?? '');
   }
 
+  // The words are kept once they rest, and at once if the screen goes, or the place changes, before
+  // they have: the last second's typing was lost (all of a short critique). Never for a member no
+  // longer signed in: a draft kept after the sign-out (or a deletion's wipe) is theirs left behind.
+  const unsaved = useRef<(() => void) | null>(null);
   useEffect(() => {
-    if (!memberId || !scope) return;
-    const t = setTimeout(() => {
+    if (!memberId || !scope) return undefined;
+    const save = () => {
+      if (useAuthStore.getState().user?.id !== memberId) return;
       if (words.trim()) writeDraft(memberId, kind, { body: words }, scope);
       else clearDraft(memberId, kind, scope);
-    }, KEPT_WORDS_REST_MS);
+    };
+    unsaved.current = save;
+    const t = setTimeout(() => { unsaved.current = null; save(); }, KEPT_WORDS_REST_MS);
     return () => clearTimeout(t);
   }, [words, memberId, kind, scope]);
+  useEffect(() => () => {
+    const save = unsaved.current;
+    unsaved.current = null;
+    save?.();
+  }, [place]);
 
   const letGo = useCallback(() => {
     setWords('');

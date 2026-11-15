@@ -32,20 +32,24 @@ export function LogModerationHost() {
   const muteUser = useBlockStore((s) => s.muteUser);
   // The report form outlives the sheet that opened it: the log it is about is kept apart.
   const [reporting, setReporting] = useState<LogAsked | null>(null);
+  // The log the sheet was last asked about, held while the sheet falls after `done`: it asks for
+  // the report sheet only once it is gone (ContentActionSheet), and must still know whose log.
+  const [held, setHeld] = useState<LogAsked | null>(null);
+  if (asked && asked !== held) setHeld(asked);
   return (
     <>
-      {asked ? (
+      {held ? (
         <ContentActionSheet
-          visible
-          targetUserId={asked.userId}
-          targetUsername={asked.username}
+          visible={!!asked}
+          targetUserId={held.userId}
+          targetUsername={held.username}
           contentType="log"
-          contentId={asked.logId}
+          contentId={held.logId}
           onClose={done}
-          onReport={() => { setReporting(asked); done(); }}
+          onReport={() => setReporting(held)}
           // The store rolls a refused block or mute back and says so itself: nothing here waits on it.
-          onBlock={() => { void blockUser(asked.userId); done(); }}
-          onMute={() => { void muteUser(asked.userId); done(); }}
+          onBlock={() => { void blockUser(held.userId); done(); }}
+          onMute={() => { void muteUser(held.userId); done(); }}
         />
       ) : null}
       {reporting ? (

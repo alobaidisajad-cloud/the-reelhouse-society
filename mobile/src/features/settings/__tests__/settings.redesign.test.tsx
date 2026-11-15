@@ -494,8 +494,27 @@ describe('changing the password says what went wrong', () => {
     return toast.error.mock.calls.map((c) => String(c[0]));
   };
 
-  it('a refused current password is called incorrect', async () => {
-    expect(await changeWith({ message: 'Invalid login credentials' })).toEqual(['Incorrect current cipher.']);
+  /**
+   * A wrong current password emptied all three fields, the new password typed twice with them
+   * (review round 1, 2026-11-14): it is said under its own field, which alone is emptied.
+   */
+  it('a refused current password is called incorrect under its field, the new one kept as typed', async () => {
+    const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
+    (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValueOnce({ data: { user: null, session: null }, error: { message: 'Invalid login credentials' } });
+    const toast = jest.requireMock('@/src/utils/reelToast').default as { error: jest.Mock };
+    toast.error.mockClear();
+    const r = await settle(mount());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Change password')); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Current password'), 'Old#Pass12'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('New password'), 'New#Pass123'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Confirm password'), 'New#Pass123'); });
+    await act(async () => { await fireEvent(r.getByLabelText('Confirm password'), 'submitEditing'); });
+    expect(r.getByText('Incorrect current cipher.')).toBeTruthy();
+    expect(r.getByLabelText('Current password').props.accessibilityHint).toBe('Incorrect current cipher.');
+    expect(r.getByLabelText('Current password').props.value).toBe('');
+    expect(r.getByLabelText('New password').props.value).toBe('New#Pass123');
+    expect(r.getByLabelText('Confirm password').props.value).toBe('New#Pass123');
+    expect(toast.error).not.toHaveBeenCalled();
   });
 
   it('with no connection, never that the password is wrong', async () => {
@@ -705,7 +724,9 @@ describe('the way out, and the way to leave for good', () => {
     expect(fn).toMatch(/requestAccountDeletion/);
     expect(fn).toMatch(/logout\(\)/);
     expect(fn).toMatch(/storage\.clearAll\(\)/);
-    expect(fn).toMatch(/nav\.replace\('\/login'\)/);
+    // The way out is taken once the edit guard has let go: leaving is set, then replaced to.
+    expect(fn).toMatch(/setLeavingTo\('\/login'\)/);
+    expect(SCREEN).toMatch(/if \(leavingTo\) nav\.replace\(leavingTo\)/);
   });
 });
 

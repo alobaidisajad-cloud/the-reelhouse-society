@@ -3,7 +3,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X } from 'lucide-react-native';
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useOverlayTop } from '@/src/components/layout/navMetrics';
 import { WebView } from 'react-native-webview';
@@ -110,6 +110,9 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
     const key = youtubeKey(videoId);
     // What the player said of this play: the sealed run waits for 'ready' (trailer.yaml).
     const [said, setSaid] = useState<'ready' | 'refused' | null>(null);
+    // Refused, why: 100 is no such video; any other refusal is YouTube's own to play (101, 150,
+    // 153). Said over the player, never YouTube's grey "Video unavailable" alone with no way on.
+    const [refusal, setRefusal] = useState<number | null>(null);
 
     useEffect(() => {
         const wv = webviewRef.current;
@@ -117,6 +120,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
         if (visible) {
             setShouldRender(true);
             setSaid(null);
+            setRefusal(null);
         } else {
             wv?.injectJavaScript(STOP_PLAYBACK_JS);
             timer = setTimeout(() => setShouldRender(false), 300);
@@ -159,6 +163,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                             const heard = heardFromPlayer(e.nativeEvent.data);
                             if (!heard) return;
                             setSaid(heard.said);
+                            if (heard.said === 'refused') setRefusal(heard.code ?? 0);
                             e2eTrace(`trailer.${heard.said}`, heard.said === 'refused' ? { code: heard.code } : undefined);
                         }}
                         // Nothing YouTube writes (cookies, storage, cache) outlives one play.
@@ -176,6 +181,24 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                         renderLoading={() => <ActivityIndicator size="large" color={colors.sepia} style={StyleSheet.absoluteFill} />}
                     />
                     {said && <View testID={`trailer-${said}`} collapsable={false} pointerEvents="none" style={s.said} />}
+                    {said === 'refused' ? (
+                        <View style={s.refused}>
+                            <Text style={s.refusedWords}>
+                                {refusal === 100 ? 'THIS FOOTAGE IS NO LONGER ON YOUTUBE.' : 'YOUTUBE PLAYS THIS FOOTAGE ONLY ON ITS OWN.'}
+                            </Text>
+                            {refusal === 100 ? null : (
+                                <PressableScale room
+                                    style={s.refusedBtn}
+                                    onPress={() => { void Linking.openURL(`https://www.youtube.com/watch?v=${key}`).catch(() => { /* no YouTube to open: the words still say why */ }); }}
+                                    haptic="medium"
+                                    accessibilityRole="link"
+                                    accessibilityLabel="Watch on YouTube"
+                                >
+                                    <Text style={s.refusedBtnText}>WATCH ON YOUTUBE</Text>
+                                </PressableScale>
+                            )}
+                        </View>
+                    ) : null}
                 </View>
                 <Text style={s.trailerLabel} numberOfLines={2}>{label}</Text>
                 <ToastHost />
@@ -229,6 +252,39 @@ const s = StyleSheet.create({
     },
     // A point, undrawn: what the player said, for the sealed run to read.
     said: { position: 'absolute', left: 0, bottom: 0, width: 1, height: 1 },
+    /** A refusal said over the player: YouTube's grey panel is never left to speak alone. */
+    refused: {
+        ...StyleSheet.absoluteFill,
+        zIndex: 3,
+        elevation: 3,
+        backgroundColor: colors.soot,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 14,
+        paddingHorizontal: 24,
+    },
+    refusedWords: {
+        fontFamily: fonts.sub,
+        fontSize: 11,
+        letterSpacing: 1.5,
+        color: colors.bone,
+        textAlign: 'center',
+        includeFontPadding: false,
+    },
+    refusedBtn: {
+        borderWidth: 1,
+        borderColor: colors.sepia,
+        borderRadius: 2,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+    },
+    refusedBtnText: {
+        fontFamily: fonts.sub,
+        fontSize: 11,
+        letterSpacing: 1.5,
+        color: colors.sepia,
+        includeFontPadding: false,
+    },
     trailerLabel: {
         fontFamily: fonts.sub,
         fontSize: 10,

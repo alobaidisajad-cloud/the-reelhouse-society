@@ -67,6 +67,36 @@ it('a next batch that could not be read is said, and asked for again', async () 
   expect(r.getAllByLabelText(/Film 2/).length).toBeGreaterThan(0);
 });
 
+/**
+ * A batch that failed stepped the page back, which asked the batch before again (uncached, it
+ * failed too while the line was down), and so on to page 1, which laid the prints kept on the phone
+ * over every batch the member had developed (review round 1, 2026-11-14).
+ */
+it('a batch that fails keeps the sheet whole, its page where it failed, and asks no earlier batch again', async () => {
+  // Pages 1 and 2 answer once; page 3 fails; every page after the line drops fails.
+  let down = false;
+  mockTmdb.discover.mockImplementation((p: Record<string, string>) => {
+    if (down || p.page === '3') { down = true; return away(); }
+    return Promise.resolve(page(Number(p.page)));
+  });
+  let r!: ReturnType<typeof render>;
+  await act(async () => { r = render(<DarkroomScreen />); await settle(); });
+  await act(async () => { useDiscoverStore.getState().setPage(2); await settle(); });
+  await act(async () => { useDiscoverStore.getState().setPage(3); await settle(); });
+  expect(r.getByText('THE NEXT BATCH COULD NOT BE DEVELOPED.')).toBeTruthy();
+  expect(useDiscoverStore.getState().page).toBe(3);
+  expect(r.getAllByLabelText(/Film 1/).length).toBeGreaterThan(0);
+  expect(r.getAllByLabelText(/Film 2/).length).toBeGreaterThan(0);
+  const asked = mockTmdb.discover.mock.calls.map(([p]: [Record<string, string>]) => p.page);
+  expect(asked).toEqual(['1', '2', '3']);
+
+  // Asked again, it is the failed batch that is asked, and the sheet stays whole while it fails.
+  await act(async () => { await fireEvent.press(r.getByLabelText('Try again: develop the next batch')); await settle(); });
+  const again = mockTmdb.discover.mock.calls.map(([p]: [Record<string, string>]) => p.page);
+  expect(again.slice(3)).toEqual(['3']);
+  expect(r.getAllByLabelText(/Film 2/).length).toBeGreaterThan(0);
+});
+
 it('each mood is a button with its meaning, its choice a state, and a key of its own', async () => {
   const error = jest.spyOn(console, 'error').mockImplementation(() => {});
   const r = render(<DarkroomMoodBar mood={MOODS[0]} handleSelectMood={() => {}} />);

@@ -23,9 +23,13 @@ jest.mock('expo-router', () => ({
     useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() }),
     router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() },
 }));
-jest.mock('@/src/stores/auth', () => ({
-    useAuthStore: () => ({ user: { id: 'u1', username: 'cinephile', tier: 'auteur' }, isAuthenticated: true }),
-}));
+jest.mock('@/src/stores/auth', () => {
+    const s = { user: { id: 'u1', username: 'cinephile', tier: 'auteur' }, isAuthenticated: true };
+    const useAuthStore = () => s;
+    // Read as the store is read outside a render too: who is signed in when the draft is kept.
+    useAuthStore.getState = () => s;
+    return { useAuthStore };
+});
 // ONE stable object. Returning a fresh one per render gives `logs` a new
 // identity every time, and the hook's form-reset effect depends on `logs` —
 // that loops forever. Zustand hands back a stable reference in the real app.

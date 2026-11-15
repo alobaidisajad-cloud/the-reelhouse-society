@@ -19,6 +19,7 @@
  * the route (app/dispatch/compose.tsx) asks a stranger in before any desk is
  * drawn, and the sign-in brings them back to it (P4.21).
  */
+import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { characterCount } from '@/src/utils/text';
 import { StyleSheet, View } from 'react-native';
@@ -351,6 +352,8 @@ export function FilmPicker({
   bottomInset: number;
 }) {
   const [query, setQuery] = useState('');
+  // Drawn in the desk, not a Modal: Android's back closes the picker, not the desk beneath it.
+  useBackCloses(visible, onClose);
   // Debounced, and the LAST request wins (useCatalogueSearch): a late early
   // reply must not paint results for a query the member has already changed.
   const search = useCatalogueSearch(query, { delay: 280, minLength: 2, enabled: visible });

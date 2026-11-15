@@ -534,7 +534,12 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
     return () => { cancelled = true; };
   }, [id, refreshMembership, loadAttempt]);
 
-  const activeLounge = localLounge || lounges.find(l => l.id === id);
+  // The salon as read on opening, its cover as this phone last set it (coversSet): changed or
+  // removed from the room, the read one was drawn on until the room was opened again.
+  const readLounge = localLounge || lounges.find(l => l.id === id);
+  const coverWasSet = useLoungeStore((s) => (id ? id in s.coversSet : false));
+  const coverSet = useLoungeStore((s) => (id ? s.coversSet[id] ?? null : null));
+  const activeLounge = readLounge && coverWasSet ? { ...readLounge, cover_image: coverSet } : readLounge;
   // This room's words, and its read's flags: until the store holds this room, what it holds is
   // another room's (left before this one opened), never to be drawn under this one's name.
   const currentMessages = useLoungeStore((s) => (s.currentLoungeId === id ? s.currentMessages : NO_WORDS));
@@ -574,6 +579,10 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   // Seated: the roster's, or the room's own count until the roster is read.
   const seated = members.filter(m => m.status !== 'pending').length || activeLounge?.member_count || 0;
 
+  // A request just sent stands in only until the roster shows it: from then the roster says, and a
+  // host's decline is the door to ask again, never "your request is with the host" for ever.
+  if (pending && myStatus === 'pending') setPending(false);
+
   // What gate (if any) replaces the transcript.
   const gate: RoomGate = !activeLounge ? 'chat' : roomGate({
     isPrivate: !!activeLounge.is_private,
@@ -604,6 +613,7 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
         break;
     }
   }, [router]);
+  // Called by the action sheet once it is gone (ActionSheet): the report sheet never rises over it.
   const handleReport = useCallback((msg: LoungeMessage) => {
     setSelectedMessage(msg); setActionSheetMsg(null); setReportSheetVisible(true);
   }, []);

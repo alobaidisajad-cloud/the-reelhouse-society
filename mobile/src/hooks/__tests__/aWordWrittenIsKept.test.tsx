@@ -5,6 +5,7 @@
  */
 import { act, renderHook } from '@testing-library/react-native';
 import { KEPT_WORDS_REST_MS, useKeptWords } from '../useKeptWords';
+import { useAuthStore } from '@/src/stores/auth';
 
 const mockDrafts = new Map<string, string>();
 jest.mock('@/src/utils/memberDrafts', () => ({
@@ -17,7 +18,7 @@ jest.mock('@/src/utils/memberDrafts', () => ({
 }));
 
 // The clock is stood still only after each render: the render itself settles on real timers.
-beforeEach(() => { mockDrafts.clear(); });
+beforeEach(() => { mockDrafts.clear(); useAuthStore.setState({ user: { id: 'me' } } as never); });
 afterEach(() => { jest.useRealTimers(); });
 
 it('keeps the words once the box rests, and takes them up when the member comes back', async () => {
@@ -49,4 +50,31 @@ it('keeps nothing for no member or no place', async () => {
   jest.useFakeTimers();
   await act(async () => { result.current[1]('Words'); jest.advanceTimersByTime(KEPT_WORDS_REST_MS); });
   expect(mockDrafts.size).toBe(0);
+});
+
+/** The last second's typing was lost when the box went before it rested (review round 1, 2026-11-14). */
+it('keeps the words at once when the box goes before they rest, and never for a member signed out', async () => {
+  const box = await renderHook(() => useKeptWords('me', 'critique', 'log:L'));
+  jest.useFakeTimers();
+  await act(async () => { box.result.current[1]('Gone in a second'); });
+  expect(mockDrafts.get('me|critique|log:L')).toBeUndefined();
+  await act(async () => { await box.unmount(); });
+  expect(mockDrafts.get('me|critique|log:L')).toBe('Gone in a second');
+
+  // Signed out while writing: the box going keeps nothing of theirs on the phone.
+  mockDrafts.clear();
+  const after = await renderHook(() => useKeptWords('me', 'critique', 'log:M'));
+  await act(async () => { after.result.current[1]('Not to be left'); });
+  useAuthStore.setState({ user: null } as never);
+  await act(async () => { await after.unmount(); });
+  expect(mockDrafts.size).toBe(0);
+});
+
+it('keeps the last place\'s words at once when the box moves to another place before they rest', async () => {
+  const { result, rerender } = await renderHook(({ room }: { room: string }) => useKeptWords('me', 'salon', room), { initialProps: { room: 'R1' } });
+  jest.useFakeTimers();
+  await act(async () => { result.current[1]('For room one'); });
+  await rerender({ room: 'R2' });
+  expect(mockDrafts.get('me|salon|R1')).toBe('For room one');
+  expect(result.current[0]).toBe('');
 });

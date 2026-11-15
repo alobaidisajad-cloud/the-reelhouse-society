@@ -68,7 +68,18 @@ export function ContentActionSheet({
   hideMute = false,
 }: ContentActionSheetProps) {
   const sheetFoot = useSheetBottom();
-  const { isRendered, opacity, translateY } = useSheetPresence({ visible });
+  // REPORT closes the sheet and asks for the report sheet once this one is gone, never over it: a
+  // Modal opened while another is still on the screen is the iOS trap, and it never rose.
+  const [reportWhenGone, setReportWhenGone] = useState(false);
+  const { isRendered, opacity, translateY } = useSheetPresence({
+    visible,
+    onGone: () => {
+      if (!reportWhenGone) return;
+      setReportWhenGone(false);
+      onReport();
+    },
+  });
+  const reportOnceGone = useCallback(() => { setReportWhenGone(true); onClose(); }, [onClose]);
 
   // The member's own blocks, read before any is offered: unknown, a block looked like none, and
   // MUTE turned it into a mute. Asked for here when the sheet opens on a list not yet read.
@@ -132,7 +143,7 @@ export function ContentActionSheet({
     label: 'REPORT TO THE TRIBUNAL',
     icon: <ShieldAlert size={18} color={colors.fog} strokeWidth={1.5} />,
     destructive: false,
-    onPress: onReport,
+    onPress: reportOnceGone,
     accessibilityLabel: `Report ${targetUsername} to the Tribunal`,
   });
 

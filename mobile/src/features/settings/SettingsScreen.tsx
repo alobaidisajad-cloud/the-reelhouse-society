@@ -197,6 +197,12 @@ export function SettingsScreen() {
   }, [sendOtp, setOtpCode, setOtpError, setOtpModalVisible]);
 
   /** The one erasure, whichever check (the phone's lock or the emailed code) let the member through. */
+  // Signed out, or the account deleted: the session is gone, and the screen leaves without asking
+  // to keep edits no one can save. Asked first, a member could "Keep editing" a members-only page
+  // they were no longer signed in to (and after a deletion, an account that was gone).
+  const [leavingTo, setLeavingTo] = useState<'/login' | null>(null);
+  useEffect(() => { if (leavingTo) nav.replace(leavingTo); }, [leavingTo]);
+
   const completeAccountDeletion = useCallback(async (): Promise<void> => {
     try {
       await AuthService.requestAccountDeletion();
@@ -209,7 +215,7 @@ export function SettingsScreen() {
     // else this install ever wrote — drafts, receipts, flags, throttles.
     storage.clearAll();
     TactileEngine.destroy();
-    nav.replace('/login');
+    setLeavingTo('/login');
   }, [logout]);
 
   const executePendingOtpAction = async () => {
@@ -390,7 +396,7 @@ export function SettingsScreen() {
   const saving = isUpdatingUser;
 
   /** Every exit asks first: the arrow, the iOS swipe and Android's back alike. */
-  usePreventRemove(isDirty && !saving, ({ data }) => {
+  usePreventRemove(isDirty && !saving && !leavingTo, ({ data }) => {
     Alert.alert('Discard changes?', 'You have unsaved modifications in your dossier.', [
       { text: 'Keep editing', style: 'cancel' },
       { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
@@ -413,7 +419,7 @@ export function SettingsScreen() {
         // or with Face ID failing, a member can always sign out.
         logout().catch(() => {});
         TactileEngine.destroy();
-        nav.replace('/login');
+        setLeavingTo('/login');
       }},
     ]);
   };

@@ -137,6 +137,11 @@ export interface DispatchState {
   critiquesLoadingMore: Record<string, boolean>;
   /** Whether the server has more beyond what has been asked for. */
   critiquesHasMore: Record<string, boolean>;
+  /**
+   * Whether the last page asked for could not be read: the footer says so and asks again. A first
+   * page that failed was drawn as no critiques under a MORE that pressed did nothing.
+   */
+  critiquesFailed: Record<string, boolean>;
   /** The order the loaded pages were fetched IN, so a page can be continued. */
   critiquesOrder: Record<string, CritiqueOrder>;
   certifiedCritiqueIds: Set<string>;
@@ -307,6 +312,7 @@ const emptyState = () => ({
   critiquesLoading: {} as Record<string, boolean>,
   critiquesLoadingMore: {} as Record<string, boolean>,
   critiquesHasMore: {} as Record<string, boolean>,
+  critiquesFailed: {} as Record<string, boolean>,
   critiquesOrder: {} as Record<string, CritiqueOrder>,
   certifiedCritiqueIds: new Set<string>(),
   critiqueMarksKnown: new Set<string>(),
@@ -1238,6 +1244,9 @@ async function readCritiquePage(
     const { critiques } = parseCritiqueRows(data ?? []);
 
     set((st) => {
+      // An answer in an order no longer chosen is the other order's: the member switched while it
+      // was on its way, and its rows would stand under the wrong heading.
+      if ((st.critiquesOrder[postId] ?? order) !== order) return {};
       const existing = from === 0 ? [] : (st.critiques[postId] ?? []);
       const seen = new Set(existing.map((c) => c.id));
       const merged = [...existing, ...critiques.filter((c) => !seen.has(c.id))];
@@ -1250,12 +1259,15 @@ async function readCritiquePage(
           ...st.critiquesHasMore,
           [postId]: (data ?? []).length === COMMENT_PAGE_SIZE,
         },
+        critiquesFailed: { ...st.critiquesFailed, [postId]: false },
       };
     });
     await loadCritiqueCertifications(critiques, set, startedAs);
   } catch (e) {
-    // Not marked "no more": the footer's control stays, so a failed page can be pressed again.
+    // Said as failed, and asked again from the footer: the page that failed, first or next.
     if (!isNetworkError(e)) captureError(e, { where: 'dispatch.readCritiquePage' });
+    if (!memberUnchanged(startedAs)) return;
+    set((st) => ((st.critiquesOrder[postId] ?? order) !== order ? {} : { critiquesFailed: { ...st.critiquesFailed, [postId]: true } }));
   }
 }
 

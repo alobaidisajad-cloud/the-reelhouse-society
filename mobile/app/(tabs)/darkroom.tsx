@@ -200,9 +200,11 @@ export default function DarkRoomScreen() {
         }
 
         if (active && reqId === fetchRequestId.current) {
-          // Detect network failure to prevent permanent page skipping
+          // A batch that failed is said at the sheet's foot and asked again from there, the sheet
+          // standing as it was. Stepping the page back asked the batch before again, uncached, and
+          // each failure stepped once more, until page 1 laid the twenty prints kept on the phone
+          // over every batch the member had developed.
           if (isNetworkFailure && page > 1) {
-            useDiscoverStore.getState().setPage(page - 1);
             setMoreFailedFor(cacheKey);
             return;
           }
@@ -239,11 +241,8 @@ export default function DarkRoomScreen() {
         }
       } catch (error) {
         if (__DEV__) console.error(error);
-        // Graceful Pagination Rollback on Hard Network Failure
-        if (active && reqId === fetchRequestId.current && page > 1) {
-          useDiscoverStore.getState().setPage(page - 1);
-          setMoreFailedFor(cacheKey);
-        }
+        // Said at the foot, and asked again from there (as a failed answer above).
+        if (active && reqId === fetchRequestId.current && page > 1) setMoreFailedFor(cacheKey);
         if (active && reqId === fetchRequestId.current && page === 1) setUnreachable(true);
         // Optimistic cache was already injected at the start of fetchContent.
       } finally {
@@ -265,9 +264,11 @@ export default function DarkRoomScreen() {
     : loading || page < totalPages ? 'developing' as const
     : 'end' as const;
   const developNext = useCallback(() => { setMoreFailedFor(null); setPage(useDiscoverStore.getState().page + 1); }, [setPage]);
+  // The batch that failed, asked again: the page stands where it failed, so asking again reads it.
+  const developAgain = useCallback(() => { setMoreFailedFor(null); askAgain(); }, [askAgain]);
   const renderFooter = useCallback(() => (rows.length > 0 && !showSkeleton
-    ? <SheetFoot state={footState} onRetry={developNext} />
-    : null), [rows.length, showSkeleton, footState, developNext]);
+    ? <SheetFoot state={footState} onRetry={moreFailed ? developAgain : developNext} />
+    : null), [rows.length, showSkeleton, footState, developNext, developAgain, moreFailed]);
 
   const renderEmpty = useMemo(() => {
     // Developing: the sheet's still tiles, three rows of them, said as one. Nothing loops.

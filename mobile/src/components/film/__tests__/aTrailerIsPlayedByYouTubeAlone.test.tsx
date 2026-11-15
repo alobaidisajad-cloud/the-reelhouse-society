@@ -9,7 +9,7 @@
  * an undrawn point the sealed run waits for (trailer.yaml).
  */
 import React from 'react';
-import { act, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 
 import { heardFromPlayer, PLAYER_ORIGIN, playerMayLoad, TrailerModal } from '../TrailerModal';
 
@@ -57,6 +57,31 @@ describe('the trailer player', () => {
     await act(async () => { r.rerender(<TrailerModal visible={false} videoId={KEY} label="Official Trailer" onClose={jest.fn()} />); });
     await act(async () => { r.rerender(<TrailerModal visible videoId={KEY} label="Official Trailer" onClose={jest.fn()} />); });
     expect(r.queryByTestId('trailer-refused')).toBeNull();
+  });
+
+  /**
+   * A refusal was drawn as a one-pixel mark for the sealed run alone: the member saw YouTube's
+   * grey "Video unavailable" with no word from the house and no way on (review round 1, 2026-11-14).
+   */
+  it('says a refusal over the player, and offers YouTube\'s own where YouTube plays it alone', async () => {
+    const open = jest.spyOn(require('react-native').Linking, 'openURL').mockResolvedValue(true);
+    try {
+      mockSeen.length = 0;
+      const r = render(<TrailerModal visible videoId={KEY} label="Official Trailer" onClose={jest.fn()} />);
+      await act(async () => { mockSeen.at(-1)!.onMessage({ nativeEvent: { data: '{"event":"onError","info":150}' } }); });
+      expect(r.getByText('YOUTUBE PLAYS THIS FOOTAGE ONLY ON ITS OWN.')).toBeTruthy();
+      await act(async () => { await fireEvent.press(r.getByLabelText('Watch on YouTube')); });
+      expect(open).toHaveBeenCalledWith(`https://www.youtube.com/watch?v=${KEY}`);
+
+      // No such video: said, with nowhere to send the member.
+      mockSeen.length = 0;
+      const gone = render(<TrailerModal visible videoId={KEY} label="Official Trailer" onClose={jest.fn()} />);
+      await act(async () => { mockSeen.at(-1)!.onMessage({ nativeEvent: { data: '{"event":"onError","info":100}' } }); });
+      expect(gone.getByText('THIS FOOTAGE IS NO LONGER ON YOUTUBE.')).toBeTruthy();
+      expect(gone.queryByLabelText('Watch on YouTube')).toBeNull();
+    } finally {
+      open.mockRestore();
+    }
   });
 
   it('hears the player’s ready and its refusal, and nothing else', () => {

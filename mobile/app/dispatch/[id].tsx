@@ -11,9 +11,10 @@
  *
  * ── ONE DOCKED THING, EVER ──────────────────────────────────────────────────
  * The action bar and the critique composer occupy the same place and never
- * stack: pressing CRITIQUE replaces the bar with the field, and dismissing the
- * field brings the bar back. Two docked rows would take a third of a small
- * phone's screen and leave the writing in a slot.
+ * stack: pressing CRITIQUE replaces the bar with the field, its cursor in it, and
+ * putting it away (its ✕, or Android's back) brings the bar back, the words kept.
+ * Two docked rows would take a third of a small phone's screen and leave the
+ * writing in a slot.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Image, Platform, ScrollView, Share, View } from 'react-native';
@@ -67,6 +68,7 @@ import { useUnsent } from '@/src/stores/offlineQueueStore';
 import { HOUSE_WEB } from '@/src/constants/support';
 import { useAboveDockedBar, useBottomEdge, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { useScrollTrace } from '@/src/hooks/useScrollTrace';
+import { useBackCloses } from '@/src/hooks/useBackCloses';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
@@ -106,6 +108,7 @@ function FilingReader({ id }: { id: string }) {
   const opened = useDispatch((s) => s.opened);
   const critiquesLoading = useDispatch((s) => s.critiquesLoading);
   const critiquesLoadingMore = useDispatch((s) => s.critiquesLoadingMore);
+  const critiquesFailed = useDispatch((s) => s.critiquesFailed);
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const certifiedCritiqueIds = useDispatch((s) => s.certifiedCritiqueIds);
   const critiqueMarksKnown = useDispatch((s) => s.critiqueMarksKnown);
@@ -126,6 +129,12 @@ function FilingReader({ id }: { id: string }) {
   const readyMark = useScreenReady('reader', loading ? 'reading' : !held && unreachable ? 'failed' : 'ready');
   const [order, setOrder] = useState<CritiqueOrder>(FIRST_ORDER);
   const [composing, setComposing] = useState(false);
+  // Opened by a press of CRITIQUE, the field takes the keys; opened on a kept draft, it waits.
+  const [focusOnOpen, setFocusOnOpen] = useState(false);
+  const openComposer = useCallback(() => { setFocusOnOpen(true); setComposing(true); }, []);
+  // Put away (its ✕, or Android's back) with its words kept: the bar, and its acts, come back.
+  const closeComposer = useCallback(() => { setFocusOnOpen(false); setComposing(false); }, []);
+  useBackCloses(composing, closeComposer);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -141,14 +150,26 @@ function FilingReader({ id }: { id: string }) {
     setComposing(!!kept);
   }
 
+  // Kept once the words rest, and at once if the page goes, or the filing changes, before they
+  // have (the last second's typing was lost); never for a member no longer signed in.
+  const unsavedCritique = useRef<(() => void) | null>(null);
   useEffect(() => {
-    if (!id || !me?.id) return;
-    const t = setTimeout(() => {
-      if (draft.trim()) writeDraft(me.id, 'critique', { body: draft }, id);
-      else clearDraft(me.id, 'critique', id);
-    }, 1000);
+    if (!id || !me?.id) return undefined;
+    const memberId = me.id;
+    const save = () => {
+      if (useAuthStore.getState().user?.id !== memberId) return;
+      if (draft.trim()) writeDraft(memberId, 'critique', { body: draft }, id);
+      else clearDraft(memberId, 'critique', id);
+    };
+    unsavedCritique.current = save;
+    const t = setTimeout(() => { unsavedCritique.current = null; save(); }, 1000);
     return () => clearTimeout(t);
   }, [draft, id, me?.id]);
+  useEffect(() => () => {
+    const save = unsavedCritique.current;
+    unsavedCritique.current = null;
+    save?.();
+  }, [draftKey]);
   // Each scroll measured on the phones, as one transaction (useScrollTrace).
   const { traceProps } = useScrollTrace();
   const scroller = useRef<ScrollView>(null);
@@ -159,6 +180,8 @@ function FilingReader({ id }: { id: string }) {
 
   const [actions, setActions] = useState(false);
   const [sharing, setSharing] = useState(false);
+  // The share sheet is drawn on the page, not a Modal: Android's back closes it, not the page.
+  useBackCloses(sharing, () => setSharing(false));
   const [toLounge, setToLounge] = useState(false);
   // Sharing a filing into a salon is speaking there: without the rank, TO THE LOUNGE opens the rope.
   const speaking = useClearance('lounge-speaking', `/dispatch/${id}`);
@@ -563,7 +586,7 @@ function FilingReader({ id }: { id: string }) {
                 // Share, the byline and the film need no account.
                 onVote={me ? (i) => useDispatch.getState().vote(live.id, i) : undefined}
                 onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
-                onCritique={me ? () => setComposing(true) : undefined}
+                onCritique={me ? openComposer : undefined}
                 onShare={() => setSharing(true)}
                 onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
                 onAuthor={() => openAuthor(author?.name)}
@@ -599,7 +622,7 @@ function FilingReader({ id }: { id: string }) {
                 // just below; the house takes no new one under words that are gone.
                 onCritique={ended
                   ? () => scroller.current?.scrollTo({ y: critiquesAt.current, animated: true })
-                  : me ? () => setComposing(true) : undefined}
+                  : me ? openComposer : undefined}
                 onShare={() => setSharing(true)}
                 onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
                 onAuthor={() => openAuthor(author?.name)}
@@ -671,6 +694,14 @@ function FilingReader({ id }: { id: string }) {
               loading={!!critiquesLoading[id]}
               loadingMore={!!critiquesLoadingMore[id]}
               onMore={() => useDispatch.getState().loadMoreCritiques(live.id)}
+              failed={!!critiquesFailed[id]}
+              // The page that failed, asked again: the first, in the order chosen, or the next. Not
+              // waited on: a read that fails says so itself (critiquesFailed).
+              onRetry={() => {
+                void (rows.length === 0
+                  ? useDispatch.getState().fetchCritiques(live.id, order)
+                  : useDispatch.getState().loadMoreCritiques(live.id));
+              }}
             />
           </PaperSheet>
         </ScrollView>
@@ -692,6 +723,8 @@ function FilingReader({ id }: { id: string }) {
               onChangeText={setDraft}
               onFile={fileCritique}
               sending={sending}
+              onClose={closeComposer}
+              autoFocus={focusOnOpen}
               bottomInset={edge + COMPOSER_GAP}
             />
           ) : (
@@ -704,7 +737,7 @@ function FilingReader({ id }: { id: string }) {
               saveKnown={saveKnown}
               bottomInset={edge + POST_DOCK_GAP}
               onCertify={(next) => useDispatch.getState().certify(live.id, next)}
-              onCritique={() => setComposing(true)}
+              onCritique={openComposer}
               onShare={() => setSharing(true)}
               onSave={(next) => useDispatch.getState().save(live.id, next)}
             />

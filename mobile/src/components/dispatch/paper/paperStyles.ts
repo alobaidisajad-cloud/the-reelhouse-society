@@ -586,6 +586,12 @@ export const p = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: colors.sepiaBorder,
     backgroundColor: colors.ink,
   },
+  /** The composer's way back to the bar: a ring the size of the byline's, its words kept. */
+  dockClose: {
+    width: 30, height: 30, borderRadius: 15,
+    borderWidth: 1, borderColor: colors.sepiaBorder,
+    alignItems: 'center', justifyContent: 'center',
+  },
   // The critique's ledger line: the docked line a member writes on.
   dockInput: { flex: 1, fontFamily: fonts.serif, fontSize: 13.5, color: colors.fog, borderBottomWidth: 1, borderBottomColor: colors.fieldEdge },
 

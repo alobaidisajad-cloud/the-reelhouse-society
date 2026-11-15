@@ -359,6 +359,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // Signed in on screen at once, and remembered for the next launch — with the
     // profile when the caller already holds it (signup reads it for the handle).
     const completeUser = { ...authedUser, ...(profile ?? {}), following: [] } as unknown as User;
+    // A session signed in to replaces a recovery left unfinished (the recovery link's own session
+    // never comes here: auth-callback sends it to the reset). Its flag, left, ended this session at
+    // the next launch, as if the reset had just been abandoned.
+    storage.delete('recovery_pending');
     if (profile) rankWasRead(authedUser.id);
     storage.set('last_user_id', authedUser.id);
     setSensitive(`ironvault_user_cache_${authedUser.id}`, JSON.stringify(completeUser));

@@ -4,7 +4,7 @@ import { View, ActivityIndicator } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useKeyboardLift } from '@/src/hooks/useKeyboardLift';
 import { Text, TextInput } from '@/src/components/text';
-import { ArrowLeft, ChevronUp, Heart, MessageSquare, MoreHorizontal, Share2, Bookmark } from 'lucide-react-native';
+import { ArrowLeft, ChevronUp, Heart, MessageSquare, MoreHorizontal, Share2, Bookmark, X } from 'lucide-react-native';
 
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';
@@ -22,6 +22,7 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { Credit, UNINKED, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { saidStruck, useStruck } from '@/src/components/StruckWords';
+import { TryAgainLine } from '@/src/components/TryAgain';
 
 export interface Critique {
   id: string;
@@ -299,17 +300,31 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
  * reading, and replacing those with a spinner would throw away their position.
  */
 export const CritiqueFooter = memo(function CritiqueFooter({
-  shown, total, loading, loadingMore, onMore,
+  shown, total, loading, loadingMore, onMore, failed, onRetry,
 }: {
   shown: number; total: number;
   loading?: boolean; loadingMore?: boolean;
   onMore: () => void;
+  /** The last page asked for could not be read: said, and asked again (onRetry). */
+  failed?: boolean;
+  onRetry?: () => void;
 }) {
   const left = Math.max(0, total - shown);
   if (loading) {
     return (
       <View style={{ paddingVertical: 16, alignItems: 'center' }}>
         <ActivityIndicator size="small" color={colors.sepia} />
+      </View>
+    );
+  }
+  // A read that failed is said, never drawn as no critiques under a MORE that does nothing.
+  if (failed && onRetry && !loadingMore) {
+    return (
+      <View style={{ paddingVertical: 16, alignItems: 'center', gap: 6 }}>
+        <Text style={p.ballotFoot} {...scaledTextProps}>
+          {shown === 0 ? 'THE CRITIQUES COULD NOT BE READ' : 'THE NEXT CRITIQUES COULD NOT BE READ'}
+        </Text>
+        <TryAgainLine onPress={onRetry} what={shown === 0 ? 'read the critiques' : 'read the next critiques'} />
       </View>
     );
   }
@@ -363,13 +378,17 @@ const ABOVE_THE_KEYS = 10;
  */
 export const CritiqueComposer = memo(function CritiqueComposer({
   me, placeholder = 'Say what you think…', bottomInset = 26,
-  value, onChangeText, onFile, sending,
+  value, onChangeText, onFile, sending, onClose, autoFocus,
 }: {
   me: PaperAuthor; placeholder?: string; bottomInset?: number;
   value?: string;
   onChangeText?: (t: string) => void;
   onFile?: () => void;
   sending?: boolean;
+  /** Puts the composer away, its words kept, and brings the bar back (✕, and Android's back). */
+  onClose?: () => void;
+  /** Opened by a press of CRITIQUE: the field takes the keys at once. */
+  autoFocus?: boolean;
 }) {
   const [own, setOwn] = useState('');
   const text = value ?? own;
@@ -384,6 +403,18 @@ export const CritiqueComposer = memo(function CritiqueComposer({
 
   return (
     <Animated.View style={[p.dockCompose, lift]}>
+      {onClose ? (
+        <PressableScale touch="wayOut"
+          style={p.dockClose}
+          onPress={onClose}
+          haptic="light"
+          accessibilityRole="button"
+          accessibilityLabel="Put the critique away"
+          accessibilityHint="Your words are kept for when you come back"
+        >
+          <X size={16} color={colors.bone} strokeWidth={1.5} />
+        </PressableScale>
+      ) : null}
       <View style={p.avatar}>
         <RemoteImage uri={me.avatar} style={p.plateArt} contentFit="cover" fallback={<Text style={p.avatarMark} {...decorativeTextProps} {...UNSPOKEN}>{initialOf(me.name)}</Text>} />
       </View>
@@ -394,6 +425,7 @@ export const CritiqueComposer = memo(function CritiqueComposer({
         placeholder={placeholder}
         placeholderTextColor={colors.fog}
         multiline
+        autoFocus={autoFocus}
         // The same ceiling the column carries, so the keyboard stops where the
         // database would have refused — rather than letting a member write past
         // it and be told afterwards.

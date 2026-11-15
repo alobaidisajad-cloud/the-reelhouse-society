@@ -239,6 +239,19 @@ describe('AuthStore', () => {
       expect(state.user?.username).toBe('cinephile1');
     });
 
+    /**
+     * A reset left by the swipe kept its flag, and the next launch ended the session signed in to
+     * since, as if the reset had just been abandoned (review round 1, 2026-11-14).
+     */
+    it('a sign-in clears a recovery left unfinished, so the next launch keeps this session', async () => {
+      mockSignIn.mockResolvedValue({ data: { user: { id: 'u1', email: 'test@reel.app' } }, error: null });
+      mockFrom.mockReturnValue({ select: () => ({ eq: () => ({ single: async () => ({ data: { id: 'u1', username: 'a', role: 'cinephile' }, error: null }) }) }) });
+      const { storage } = jest.requireMock('../mmkv-storage') as { storage: { delete: jest.Mock } };
+      storage.delete.mockClear();
+      await useAuthStore.getState().login('test@reel.app', 'password123');
+      expect(storage.delete).toHaveBeenCalledWith('recovery_pending');
+    });
+
     it('a member whose rank lapsed is known as one, and only by asking for their own', async () => {
       // The ropes greet a lapsed member as one coming back. The source that last
       // ranked them is no column anyone may read, so the house is asked for theirs.

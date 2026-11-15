@@ -28,15 +28,17 @@ export function focusField(input: TextInput | null | undefined): void {
 
 /**
  * A refused press, kept with the form it was made against: the reason stands
- * until the form changes, and the member is sent to the field it is about.
+ * until the form changes, and the member is sent to the field it is about. A
+ * refusal that empties a field names the form as it is left (`leftAs`), or the
+ * emptying itself would take the reason away.
  */
 export function useFieldRefusal<F extends string>(formNow: readonly unknown[], refs: Record<F, { current: TextInput | null }>) {
   const against = JSON.stringify(formNow);
   const [refusal, setRefusal] = useState<{ field: F; message: string; against: string } | null>(null);
   const standing = refusal && refusal.against === against ? refusal : null;
   return {
-    refuse: (field: F, message: string) => {
-      setRefusal({ field, message, against });
+    refuse: (field: F, message: string, leftAs?: readonly unknown[]) => {
+      setRefusal({ field, message, against: leftAs ? JSON.stringify(leftAs) : against });
       focusField(refs[field].current);
     },
     wrongWith: (field: F) => (standing?.field === field ? standing.message : undefined),

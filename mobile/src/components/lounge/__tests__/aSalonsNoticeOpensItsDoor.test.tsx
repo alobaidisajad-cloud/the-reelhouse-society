@@ -13,6 +13,7 @@ import { create } from 'zustand';
 
 import LoungeRoomScreen from '@/app/lounge/[id]';
 import { supabaseFake } from '@/test-utils/supabaseFake';
+import { useNotificationStore } from '@/src/stores/notificationStore';
 
 const ROOM_ID = '00000000-0000-4000-b200-000000000001';
 const HOST = '00000000-0000-4000-a000-0000000000aa';
@@ -30,7 +31,7 @@ jest.mock('@/src/stores/lounge', () => {
   const noop = () => {};
   const useLoungeStore = mockCreate(() => ({
     lounges: [], currentMessages: [], currentLoungeId: '00000000-0000-4000-b200-000000000001', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false,
-    presentCount: 0, typingUsers: [],
+    presentCount: 0, typingUsers: [], coversSet: {},
     fetchMessages: noop, sendMessage: noop, markRead: noop,
     subscribeToLounge: (_id: string, opts: { onMembership?: () => void }) => { mockOnMembership = opts?.onMembership ?? null; return noop; },
     withdrawMessage: noop, retryMessage: noop, toggleReaction: noop,
@@ -52,6 +53,11 @@ jest.mock('expo-router/react-navigation', () => ({ ...jest.requireActual('expo-r
 jest.mock('@/src/hooks/useOfflineAware', () => ({ useOfflineAware: () => ({ isOffline: false }) }));
 jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ held: true, open: () => {} }) }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
+/** The room's settings, as handed the salon: the cover they show is the one it is given. */
+let mockSettingsCover: unknown = 'unseen';
+jest.mock('@/src/components/lounge/LoungeSettingsPanel', () => ({
+  LoungeSettingsPanel: ({ lounge }: { lounge: { cover_image?: string | null } }) => { mockSettingsCover = lounge.cover_image; return null; },
+}));
 
 const { useLoungeStore } = jest.requireMock('@/src/stores/lounge') as {
   useLoungeStore: ReturnType<typeof create> & { setState: (s: object) => void };
@@ -81,7 +87,7 @@ beforeEach(() => {
   mockHouse = supabaseFake({ rows: { lounges: [ROOM] } });
   mockRoster = [{ user_id: HOST, status: 'approved', username: 'host' }, SEATED, WAITING];
   useRouter.mockReturnValue({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() });
-  useLoungeStore.setState({ currentMessages: [], lounges: [] });
+  useLoungeStore.setState({ currentMessages: [], lounges: [], coversSet: {} });
 });
 
 it('a host opened from a notice is shown who waits at the door', async () => {
@@ -126,4 +132,44 @@ it('the door is shown once: closed, a new roster read does not open it again', a
   await settle();
   expect(r.getByLabelText('2 at the door')).toBeTruthy();
   expect(r.queryByText('At the Door')).toBeNull();
+});
+
+/**
+ * A request sent was kept as "requesting" for good: once the host declined and the roster no
+ * longer held it, the member was still told their request was with the host (review round 1).
+ */
+it('a request the host declines is the door to ask again, never "with the host" for ever', async () => {
+  const ASKER = '00000000-0000-4000-a000-0000000000dd';
+  mockRoster = [{ user_id: HOST, status: 'approved', username: 'host' }, SEATED];
+  const r = await open(ASKER, {});
+  expect(r.getByText('REQUEST A SEAT')).toBeTruthy();
+
+  // Asked: the roster now holds the request.
+  mockRoster = [...mockRoster, { user_id: ASKER, status: 'pending', username: 'kane' }];
+  await act(async () => { await fireEvent.press(r.getByText('REQUEST A SEAT')); });
+  await settle();
+  expect(r.getByText('Your request is with the host.')).toBeTruthy();
+
+  // Declined: the roster no longer holds it. A private door has no channel, so the next notice
+  // heard is what asks the roster again.
+  mockRoster = mockRoster.filter((m) => m.user_id !== ASKER);
+  expect(mockOnMembership).toBeNull();
+  await act(async () => { useNotificationStore.setState({ noticesHeard: useNotificationStore.getState().noticesHeard + 1 }); });
+  await settle();
+  expect(r.queryByText('Your request is with the host.')).toBeNull();
+  expect(r.getByText('REQUEST A SEAT')).toBeTruthy();
+});
+
+/**
+ * A cover the host changed or took away was kept in the Lounge list alone: the room had read its
+ * own record when it opened, and its settings showed the old cover (review round 1).
+ */
+it('a cover the host sets or takes away is the one the room\'s settings show, at once', async () => {
+  mockSettingsCover = 'unseen';
+  await open(HOST, {});
+  expect(mockSettingsCover).toBeUndefined();
+  await act(async () => { useLoungeStore.setState({ coversSet: { [ROOM_ID]: '/new-cover.jpg' } }); });
+  expect(mockSettingsCover).toBe('/new-cover.jpg');
+  await act(async () => { useLoungeStore.setState({ coversSet: { [ROOM_ID]: null } }); });
+  expect(mockSettingsCover).toBeNull();
 });

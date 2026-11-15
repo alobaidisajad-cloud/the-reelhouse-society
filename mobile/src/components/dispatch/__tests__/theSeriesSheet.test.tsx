@@ -56,6 +56,23 @@ beforeEach(() => {
 });
 
 describe('the series sheet', () => {
+  it('closes on Android\'s back, before the essay room beneath is left', async () => {
+    const { BackHandler } = require('react-native') as typeof import('react-native');
+    const heard: (() => boolean | null | undefined)[] = [];
+    const spy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_e, fn) => {
+      heard.unshift(fn as () => boolean);
+      return { remove: () => { heard.splice(heard.indexOf(fn as () => boolean), 1); } };
+    });
+    try {
+      let closed = false;
+      render(<SeriesPicker visible chosen={null} bottomInset={0} onClose={() => { closed = true; }} onSet={() => {}} onClear={() => {}} />);
+      await flush();
+      let took = false;
+      await act(async () => { took = heard.some((h) => h() === true); });
+      expect(took).toBe(true);
+      expect(closed).toBe(true);
+    } finally { spy.mockRestore(); }
+  });
   it('says a list it could not read, rather than offering none', async () => {
     mockError = { message: 'TypeError: Network request failed' };
     const r = render(sheet());

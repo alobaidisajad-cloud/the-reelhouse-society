@@ -23,7 +23,7 @@ import { COMMENT_PAGE_SIZE } from '../dispatchTypes';
 
 interface Ask { order: [string, unknown][]; range: [number, number] | null; eq: Record<string, unknown>; }
 let mockAsks: Ask[] = [];
-let mockRows: unknown[][] = [];
+let mockRows: (unknown[] | Error)[] = [];
 
 jest.mock('../../lib/supabase', () => ({
   supabase: {
@@ -39,7 +39,7 @@ jest.mock('../../lib/supabase', () => ({
       chain.range = (a: number, b: number) => {
         ask.range = [a, b];
         const page = mockRows.shift() ?? [];
-        const result = Promise.resolve({ data: page, error: null });
+        const result = Promise.resolve(page instanceof Error ? { data: null, error: page } : { data: page, error: null });
         // The store wraps every read in `withAbortSignal`, which calls
         // `.abortSignal(signal)` on the builder. A mock that returns a bare
         // Promise throws there, the store swallows it, and the test sees an
@@ -185,5 +185,39 @@ describe('the number the footer prints', () => {
     await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
     const [from, to] = mockAsks.find((a) => a.range)!.range!;
     expect(printed).toBe(to - from + 1);
+  });
+});
+
+/**
+ * A first page that could not be read was drawn as no critiques under "N MORE", whose press did
+ * nothing: no page had said there were more (review round 1, 2026-11-14).
+ */
+describe('a page of critiques that could not be read', () => {
+  it('is said as failed, the first page or the next, and a read that lands clears it', async () => {
+    mockRows = [new Error('Network request failed')];
+    await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    expect(useDispatch.getState().critiquesFailed.p1).toBe(true);
+    expect(useDispatch.getState().critiques.p1 ?? []).toHaveLength(0);
+
+    mockRows = [fullPage(0), new Error('Network request failed')];
+    await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    expect(useDispatch.getState().critiquesFailed.p1).toBe(false);
+    await useDispatch.getState().loadMoreCritiques('p1');
+    expect(useDispatch.getState().critiquesFailed.p1).toBe(true);
+    // The rows already read stay, and the next page can be asked again.
+    expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE);
+    mockRows = [fullPage(COMMENT_PAGE_SIZE)];
+    await useDispatch.getState().loadMoreCritiques('p1');
+    expect(useDispatch.getState().critiquesFailed.p1).toBe(false);
+    expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE * 2);
+  });
+
+  it('never draws an answer in an order the member has already left', async () => {
+    // NEWEST asked, then CERTIFIED at once: NEWEST's answer, arriving under CERTIFIED, is not drawn.
+    mockRows = [[row(1), row(2)], [row(7, 9), row(8, 5)]];
+    const first = useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    const second = useDispatch.getState().fetchCritiques('p1', 'CERTIFIED');
+    await Promise.all([first, second]);
+    expect(useDispatch.getState().critiques.p1?.map((c) => c.id)).toEqual(['c7', 'c8']);
   });
 });

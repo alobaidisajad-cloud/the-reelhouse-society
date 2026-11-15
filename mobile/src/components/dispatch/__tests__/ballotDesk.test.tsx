@@ -186,6 +186,24 @@ describe('the film picker', () => {
     await press(getByLabelText('Close, without naming a film'));
     expect(closed).toBe(true);
   });
+
+  it('closes on Android\'s back, before the desk beneath is left', async () => {
+    const { BackHandler } = require('react-native') as typeof import('react-native');
+    const heard: (() => boolean | null | undefined)[] = [];
+    const spy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_e, fn) => {
+      heard.unshift(fn as () => boolean);
+      return { remove: () => { heard.splice(heard.indexOf(fn as () => boolean), 1); } };
+    });
+    try {
+      let closed = false;
+      render(<FilmPicker visible onClose={() => { closed = true; }} bottomInset={0} onPick={() => {}} />);
+      await act(async () => { await Promise.resolve(); });
+      let took = false;
+      await act(async () => { took = heard.some((h) => h() === true); });
+      expect(took).toBe(true);
+      expect(closed).toBe(true);
+    } finally { spy.mockRestore(); }
+  });
 });
 
 describe('the ballot desk', () => {

@@ -238,6 +238,18 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
   return promise;
 }
 
+/**
+ * A search no tier answered: the catalogue's own answer, its films and people alone. A series is
+ * no film: drawn as one, its number opened another film, or none, and its name read "undefined".
+ */
+function failedWith(data: TMDBSearchResponse): TMDBSearchResponse {
+  return {
+    ...data,
+    results: (data.results ?? []).filter((r: TMDBSearchResult) => r.media_type === 'movie' || r.media_type === 'person'),
+    searchType: 'failed',
+  };
+}
+
 export const tmdb = {
   // ── Search ──
   search: async (asked: string, page = 1) => {
@@ -316,8 +328,7 @@ export const tmdb = {
 
     // Budget check: skip fallback tiers if Tier 1 already consumed most of the time budget
     if (monotonicNow() - searchStart > SEARCH_BUDGET_MS) {
-        data.searchType = 'failed';
-        return data;
+        return failedWith(data);
     }
 
     // TIER 2: Typo Fallback — also routed through fetchTMDB
@@ -373,6 +384,9 @@ export const tmdb = {
                 ids.add(key); return true;
             });
             winner.data.searchType = 'typo';
+            // One page: the fallback asks for page 1 alone, so a second page would be the first
+            // again, its prints all held, under a foot that said more were developing for ever.
+            winner.data.total_pages = 1;
             winner.data.matchedContext = `IGNORED "${winner.fallback.dropped.toUpperCase()}"`;
             return winner.data;
         }
@@ -380,8 +394,7 @@ export const tmdb = {
 
     // Budget check: skip semantic tier if budget exhausted
     if (monotonicNow() - searchStart > SEARCH_BUDGET_MS) {
-        data.searchType = 'failed';
-        return data;
+        return failedWith(data);
     }
 
     // TIER 3: Semantic Logic — also routed through fetchTMDB
@@ -405,6 +418,8 @@ export const tmdb = {
             if (discoverData?.results?.length) {
                 return {
                     ...discoverData,
+                    // One page, as the typo tier's: it is asked for page 1 alone.
+                    total_pages: 1,
                     searchType: 'semantic',
                     matchedContext: words.join(', '),
                 } as TMDBSearchResponse;
@@ -412,8 +427,7 @@ export const tmdb = {
         }
     }
 
-    data.searchType = 'failed';
-    return data;
+    return failedWith(data);
   },
 
   // ── Film Details ──

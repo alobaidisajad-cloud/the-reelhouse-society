@@ -164,6 +164,36 @@ const PARAMS = { filmId: P.tmdbId, editLogId: P.uuid, filmTitle: P.words(300), f
 /** The record a link named by an id of another shape: none has it, so it is withdrawn, and never asked for. */
 const NO_SUCH_LOG = 'no-such-log';
 
+/**
+ * A new record's drafts: one for each film, and the latest of them unscoped, the one a sheet opened
+ * on no film takes up. A single draft for every film was cleared by the next film's empty form:
+ * opening the sheet on film B lost film A's unsent review, rating and private note.
+ */
+type LogDraft = { filmId?: unknown; review?: string; rating?: number; privateNotes?: string } & Record<string, unknown>;
+function keepLogDraft(userId: string | undefined, draft: LogDraft & { filmId: unknown }): void {
+  // The latest is another film's, kept only there (written before drafts were per film): it is
+  // given its own film's place before this film takes the latest's.
+  const prev = readDraft<LogDraft>(userId, 'log')?.data;
+  if (prev?.filmId != null && String(prev.filmId) !== String(draft.filmId) && !readDraft(userId, 'log', String(prev.filmId))) {
+    writeDraft(userId, 'log', prev, String(prev.filmId));
+  }
+  writeDraft(userId, 'log', draft, String(draft.filmId));
+  writeDraft(userId, 'log', draft);
+}
+/** This film's draft gone, and the latest with it only if it is this film's. */
+function dropLogDraft(userId: string | undefined, filmId: unknown): void {
+  if (filmId != null) clearDraft(userId, 'log', String(filmId));
+  const latest = readDraft<LogDraft>(userId, 'log');
+  if (latest && (filmId == null || String(latest.data?.filmId) === String(filmId))) clearDraft(userId, 'log');
+}
+/** A film's own draft: its own, or the latest when that is the film's (kept before drafts were per film). */
+function logDraftFor(userId: string | undefined, filmId: unknown): LogDraft | null {
+  const own = readDraft<LogDraft>(userId, 'log', String(filmId))?.data;
+  if (own) return own;
+  const latest = readDraft<LogDraft>(userId, 'log')?.data;
+  return latest && String(latest.filmId) === String(filmId) ? latest : null;
+}
+
 export function useLogFlow() {
     const params = useRouteParams(PARAMS);
     const { user, isAuthenticated } = useAuthStore(useShallow((s) => ({ user: s.user, isAuthenticated: s.isAuthenticated })));
@@ -501,17 +531,20 @@ export function useLogFlow() {
                         setNoteTouched(true);
                     }
                 }
-                // If already on the film, just hydrate the fields
-                else if (parsed.filmId === film?.id) {
-                    if (parsed.review) setReview(parsed.review);
-                    if (parsed.rating) setRating(parsed.rating);
-                    if (parsed.privateNotes) {
-                        setDraftNoteFor(parsed.filmId);
-                        setPrivateNotes(parsed.privateNotes);
-                        setNoteTouched(true);
-                    }
-                }
             } catch (err: unknown) { if (__DEV__) console.warn('[LogModal] draft restore failed:', err); }
+        }
+        // Opened on a film: that film's own draft, never another's.
+        if (film?.id) {
+            const own = logDraftFor(user?.id, film.id) as { review?: string; rating?: number; privateNotes?: string } | null;
+            if (own) {
+                if (own.review) setReview(own.review);
+                if (own.rating) setRating(own.rating);
+                if (own.privateNotes) {
+                    setDraftNoteFor(film.id);
+                    setPrivateNotes(own.privateNotes);
+                    setNoteTouched(true);
+                }
+            }
         }
     }
 
@@ -541,22 +574,36 @@ export function useLogFlow() {
         pendingTasks.current = [];
     }, []);
 
+    // Kept once the form rests, and at once if the sheet goes before it has (the last second's
+    // typing was lost); never for a member no longer signed in, and never once sealed or discarded
+    // (unsavedLog is let go there), or a record just sealed would reopen as a draft.
+    const unsavedLog = useRef<(() => void) | null>(null);
     useEffect(() => {
         if (editLogId || !filmId) return;
-        if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
-        draftTimerRef.current = setTimeout(() => {
+        const memberId = user?.id;
+        const save = () => {
+            if (useAuthStore.getState().user?.id !== memberId) return;
             if (review.trim() || rating > 0 || privateNotes.trim()) {
-                writeDraft(user?.id, 'log', ({
+                keepLogDraft(memberId, {
                     filmId, review, rating, privateNotes,
-                    filmTitle, filmName, 
-                    filmPoster, filmYear
-                }));
+                    filmTitle, filmName,
+                    filmPoster, filmYear,
+                });
             } else {
-                clearDraft(user?.id, 'log');
+                // This film's empty form clears this film's draft, never another film's.
+                dropLogDraft(memberId, filmId);
             }
-        }, 1000);
+        };
+        unsavedLog.current = save;
+        if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+        draftTimerRef.current = setTimeout(() => { unsavedLog.current = null; save(); }, 1000);
         return () => { if (draftTimerRef.current) clearTimeout(draftTimerRef.current); };
     }, [review, rating, privateNotes, filmId, filmTitle, filmName, filmPoster, filmYear, editLogId, user?.id]);
+    useEffect(() => () => {
+        const save = unsavedLog.current;
+        unsavedLog.current = null;
+        save?.();
+    }, []);
 
     // ── DRAFT HANDLERS ──
     const selectFilm = (f: LogSearchResult) => {
@@ -588,10 +635,11 @@ export function useLogFlow() {
                 // any write of it still waiting. An app ended mid-send reopens no sheet to seal it twice.
                 await addLog(logData, { onKeptAhead: () => {
                     if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
-                    clearDraft(user?.id, 'log');
+                    unsavedLog.current = null;
+                    dropLogDraft(user?.id, filmId);
                 } });
             }
-            clearDraft(user?.id, 'log');
+            if (!isEditing) { unsavedLog.current = null; dropLogDraft(user?.id, filmId); }
             TactileEngine.success();
             e2eTrace('log.seal.saved');
             // One brass beat, "RECORD SEALED", then dismiss (never after unmount).
@@ -618,7 +666,7 @@ export function useLogFlow() {
             e2eTrace('log.seal.failed', { code: (err as { code?: string })?.code ?? null, network: isNetworkError(err) });
             // Not sealed: the words are on the phone again, as the form still holds them.
             if (!editLogId && filmId && (review.trim() || rating > 0 || privateNotes.trim())) {
-                writeDraft(user?.id, 'log', { filmId, review, rating, privateNotes, filmTitle, filmName, filmPoster, filmYear });
+                keepLogDraft(user?.id, { filmId, review, rating, privateNotes, filmTitle, filmName, filmPoster, filmYear });
             }
             // The core write's failures surface here; a network one is queued, not a defect.
             // Changed elsewhere since it was opened is an answer, not a fault.
@@ -653,7 +701,8 @@ export function useLogFlow() {
     // Explicit draft discard — clears MMKV and resets form state
     const discardDraft = useCallback(() => {
         // The draft is the one unsent NEW record: an edit has none to discard.
-        if (!editLogId) clearDraft(user?.id, 'log');
+        unsavedLog.current = null;
+        if (!editLogId) dropLogDraft(user?.id, film?.id);
         setRating(0);
         setReview('');
         setStatus('watched');
@@ -673,7 +722,7 @@ export function useLogFlow() {
         setStep(0);
         // `user?.id` is the draft's KEY: without it, after a change of member,
         // the wrong member's draft would be discarded. (Setters are stable.)
-    }, [user?.id, editLogId]);
+    }, [user?.id, editLogId, film?.id]);
 
     const toggleList = (listId: string) => {
         if (!film?.id) return;

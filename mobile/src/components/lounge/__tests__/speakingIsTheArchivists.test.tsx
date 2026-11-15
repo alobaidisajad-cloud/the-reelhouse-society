@@ -35,7 +35,7 @@ jest.mock('@/src/stores/lounge', () => {
   const noop = () => {};
   const useLoungeStore = mockCreate(() => ({
     lounges: [], currentMessages: [], currentLoungeId: '5a1e0c00-0000-4000-8000-000000000001', messagesLoading: false, messagesFailed: false, loungesLoading: false, sending: false,
-    presentCount: 0, typingUsers: [],
+    presentCount: 0, typingUsers: [], coversSet: {},
     fetchMessages: noop, sendMessage: noop, subscribeToLounge: () => noop, markRead: noop,
     withdrawMessage: noop, retryMessage: noop, toggleReaction: jest.fn(),
     requestMembership: async () => 'ok', joinPublicLounge: async () => true,
