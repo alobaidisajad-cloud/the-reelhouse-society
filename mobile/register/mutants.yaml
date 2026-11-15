@@ -3542,18 +3542,18 @@ mutants:
     source: shape
     edits:
       - file: src/components/home/ProjectorBeam.tsx
-        find: "      {wide ? <BeamShaft width={width * 1.5} height={height} /> : ("
-        replace: "      {false ? <BeamShaft width={width * 1.5} height={height} /> : ("
-    proof: { file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "on a wide window, is a shaft inside the page, drawn in Skia, dithered, its light an ellipse falling away" }
+        find: "      {wide ? <BeamShaft width={width} height={height} swing={beamSwing} /> : ("
+        replace: "      {false ? <BeamShaft width={width} height={height} swing={beamSwing} /> : ("
+    proof: { file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "on a wide window, is a shaft drawn flat by its shader over the page, the view only flickering" }
 
-  - id: shape-beam-straight-fade
+  - id: shape-beam-cut-at-its-plane
     class: LOOK-ios-glow-cut-or-banded
     source: shape
     edits:
       - file: src/components/home/ProjectorBeam.tsx
-        find: "(peak * Math.cos((t * Math.PI) / 2) ** 2).toFixed(4)"
-        replace: "(peak * (1 - t)).toFixed(4)"
-    proof: { file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "falls away as a real light does: brightest at its heart, eased to nothing, never a straight fade" }
+        find: "  float t = length((p - float2(0.0, beam.y * -0.04)) / float2(beam.x * 0.26, beam.y * 0.48));"
+        replace: "  float t = length((p - float2(0.0, beam.y * -0.3)) / float2(beam.x * 0.26, beam.y * 0.48));"
+    proof: { file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "begins under the welcome softly, never in a line, its heart where the approved beam has it" }
 
   - id: shape-beam-judge-band-blind
     class: LOOK-ios-glow-cut-or-banded
