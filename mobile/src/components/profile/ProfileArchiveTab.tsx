@@ -406,7 +406,7 @@ export default function ProfileArchiveTab({
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={r.ownIcon} />
           <Text {...scaledTextProps} style={r.ownTitle}>The Archive Awaits</Text>
-          <PressableScale style={r.ownAct} onPress={() => nav.push('/search-modal')} haptic accessibilityRole="button" accessibilityLabel="Record a screening">
+          <PressableScale style={r.ownAct} onPress={() => nav.push('/log-modal')} haptic accessibilityRole="button" accessibilityLabel="Record a screening">
             <Text {...scaledTextProps} style={r.ownActText}>RECORD A SCREENING</Text>
           </PressableScale>
 

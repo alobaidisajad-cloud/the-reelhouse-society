@@ -20,6 +20,7 @@ import { useNotificationStore, type AppNotification } from '@/src/stores/notific
 import { nav } from '@/src/utils/typedRouter';
 import { supabase } from '@/src/lib/supabase';
 import { readCode } from '@/test-utils/readCode';
+import { noteCurrentPath } from '@/src/utils/openSociety';
 
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), back: jest.fn(), replace: jest.fn() } }));
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn() } }));
@@ -43,6 +44,7 @@ const notice = (over: Partial<AppNotification>): AppNotification => ({
 });
 
 beforeEach(() => {
+  noteCurrentPath(null);
   jest.mocked(nav.push).mockClear();
   jest.mocked(supabase.from).mockReset();
   useNotificationStore.setState({ notifications: [] });
@@ -85,6 +87,17 @@ describe('where a notice leads', () => {
 });
 
 describe('a tapped push', () => {
+  it('about the page already in front, opens no second copy over it (review round 4)', async () => {
+    useNotificationStore.setState({ notifications: [notice({ id: 'n1', film_id: 603 })], markRead: jest.fn(async () => {}) } as never);
+    noteCurrentPath('/film/603');
+    await expect(openNoticeFromPush('n1')).resolves.toBe('/film/603');
+    expect(nav.push).not.toHaveBeenCalled();
+    // Elsewhere, the same tap opens it.
+    noteCurrentPath('/lounge');
+    await openNoticeFromPush('n1');
+    expect(nav.push).toHaveBeenCalledWith('/film/603');
+  });
+
   it('opens a loaded notice where the sheet would, and marks it read', async () => {
     const markRead = jest.fn(async () => {});
     useNotificationStore.setState({ notifications: [notice({ id: 'n1', film_id: 603 })], markRead } as never);

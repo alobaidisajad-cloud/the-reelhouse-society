@@ -7,8 +7,10 @@
  * button that did nothing, under a sentence about a filter nobody had set.
  */
 import React, { act } from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import ProfileLedgerTab from '../ProfileLedgerTab';
+import { nav } from '@/src/utils/typedRouter';
+import { readCode } from '@/test-utils/readCode';
 
 jest.mock('expo-haptics', () => ({ impactAsync: jest.fn(), notificationAsync: jest.fn(), selectionAsync: jest.fn() }));
 
@@ -38,6 +40,28 @@ it('and the member is shown their own blank ledger, with the way to fill it', as
   const r = await mount({ isSelf: true });
   expect(r.getByText('A Blank Ledger')).toBeTruthy();
   expect(r.getByLabelText('Draft a critique')).toBeTruthy();
+});
+
+/**
+ * The way to fill it opens the Log sheet (review round 4): it opened the general search, which has
+ * no way to log, so the member had to find the film, open it, and log from there.
+ */
+it('the way to fill it opens the Log sheet, on its own search', async () => {
+  const push = jest.spyOn(nav, 'push').mockImplementation(() => {});
+  const r = await mount({ isSelf: true });
+  await act(async () => { await fireEvent.press(r.getByLabelText('Draft a critique')); });
+  expect(push).toHaveBeenCalledWith('/log-modal');
+  push.mockRestore();
+});
+
+it("and so do the archive's and the calendar's, the profile's other doors to log a film", () => {
+  for (const [file, label] of [
+    ['src/components/profile/ProfileArchiveTab.tsx', 'Record a screening'],
+    ['src/components/profile/NitrateCalendarGrid.tsx', 'Ignite the timeline — log a film'],
+  ]) {
+    const line = readCode(file).split('\n').find((l) => l.includes(`accessibilityLabel="${label}"`));
+    expect(line).toContain("nav.push('/log-modal')");
+  }
 });
 
 it('a rating that matched nothing still says so, with the way back', async () => {

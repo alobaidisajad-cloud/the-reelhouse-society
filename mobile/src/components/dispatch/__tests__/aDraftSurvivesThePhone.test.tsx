@@ -112,6 +112,6 @@ describe('the backup goes when the house has the words', () => {
   it('and never before — the local clear is what proves the order', () => {
     // `if (filed)` guards both: nothing is thrown away until there is a row to
     // throw it away for.
-    expect(room).toMatch(/if \(filed\) \{ clearDraft\(user\?\.id, 'dossier'\); void dropDraft/);
+    expect(room).toMatch(/if \(filed\) \{ finished\.current = true; clearDraft\(user\?\.id, 'dossier'\); void dropDraft/);
   });
 });

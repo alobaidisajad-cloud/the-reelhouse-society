@@ -20,7 +20,9 @@ const ME = '33333333-3333-4333-8333-333333333333';
 beforeEach(() => {
   jest.clearAllMocks();
   useAuthStore.setState({ user: { id: ME, username: 'me', tier: 'archivist', role: 'cinephile' } as never });
-  (useLocalSearchParams as jest.Mock).mockReturnValue({});
+  // The launch reopening the sheet the phone closed: the draft is taken up at once
+  // (opened by the member, it is offered on the search: theLogSheetOpensWhereItWasAsked).
+  (useLocalSearchParams as jest.Mock).mockReturnValue({ resume: 'draft' });
   clearDraft(ME, 'log');
 });
 

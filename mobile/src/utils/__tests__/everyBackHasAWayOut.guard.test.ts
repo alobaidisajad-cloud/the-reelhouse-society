@@ -32,3 +32,19 @@ it('every back goes through nav.back(), or checks canGoBack() first', () => {
       .map((line) => `${f.rel}: ${line.trim()}`));
   expect(raw).toEqual([]);
 });
+
+/**
+ * And every dismissal (review round 4): a bare `router.dismiss()` left nav's own history behind
+ * (the social sheet's, on the way to a member's file), and with nothing to dismiss it does nothing.
+ * `nav.dismiss()` keeps the history in step and goes to the Lobby where there is nothing to close.
+ */
+it('every dismissal goes through nav.dismiss()', () => {
+  const raw = FILES
+    .filter((f) => f.rel !== 'src/utils/typedRouter.ts')
+    .flatMap((f) => f.src.split('\n')
+      .filter((line) => line.includes('router.dismiss()'))
+      .map((line) => `${f.rel}: ${line.trim()}`));
+  expect(raw).toEqual([]);
+  // The one that is left, where nav keeps it.
+  expect(FILES.find((f) => f.rel === 'src/utils/typedRouter.ts')?.src).toContain('router.dismiss();');
+});

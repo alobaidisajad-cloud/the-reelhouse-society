@@ -11,7 +11,7 @@ import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { HouseBlur } from '@/src/components/HouseBlur';
 import { Ban, Crown, DoorClosed, Image as ImageIcon, LogOut, MoreHorizontal, Trash2, Users, Volume2, VolumeX, X } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Alert, InteractionManager, Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { useStruck } from '@/src/components/StruckWords';
@@ -56,7 +56,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         // Only once out: a refused leave is said by the store, and the room stays.
         if (!(await leaveLounge(lounge.id))) return;
         onClose();
-        InteractionManager.runAfterInteractions(() => nav.replace('/(tabs)/lounge'));
+        InteractionManager.runAfterInteractions(() => nav.dismissTo('/(tabs)/lounge'));
       }},
     ]);
   };
@@ -69,21 +69,32 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         // A salon the house would not destroy is still standing: its host stays in it.
         if (!(await deleteLounge(lounge.id))) return;
         onClose();
-        InteractionManager.runAfterInteractions(() => nav.replace('/(tabs)/lounge'));
+        InteractionManager.runAfterInteractions(() => nav.dismissTo('/(tabs)/lounge'));
       }},
     ]);
   };
 
   // ── Salon cover (host-only) ──
-  // Hand off from this Modal to the route-modal picker AFTER it dismisses — the
-  // same proven InteractionManager sequence used for leave/delete above, so we
-  // never stack a Modal on a Modal (the Android-hostile pattern).
+  // The Concierge's presentation law: the picker (a route modal) is asked for only once this
+  // sheet (an RN Modal) is gone from the screen. Asked while it was still sliding away, iOS was
+  // asked to present one sheet while another left, and the picker could fail to appear. The
+  // trip is parked, and taken as the sheet's contents leave the screen, or by a backstop if its
+  // exit never ends.
+  const coverPending = useRef(false);
+  const toCover = useCallback(() => {
+    if (!coverPending.current) return;
+    coverPending.current = false;
+    nav.push('/cover-picker', { loungeId: lounge.id });
+  }, [lounge.id]);
   const handleChangeCover = useCallback(() => {
+    coverPending.current = true;
     onClose();
-    InteractionManager.runAfterInteractions(() => {
-      nav.push('/cover-picker', { loungeId: lounge.id });
-    });
-  }, [onClose, lounge.id]);
+  }, [onClose]);
+  useEffect(() => {
+    if (visible || !coverPending.current) return undefined;
+    const t = setTimeout(toCover, COVER_BACKSTOP_MS);
+    return () => clearTimeout(t);
+  }, [visible, toCover]);
 
   const handleRemoveCover = useCallback(() => {
     TactileEngine.selection();
@@ -177,6 +188,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         exit={{ kind: 'SlideOutDown', duration: MS.quick, easing: leave() }}>
       <Arrive name="lounge.settings" duration={MS.considered} rise={SETTINGS_RISE} style={[s.sheet, { paddingBottom: sheetFoot }]}>
       <View style={s.body} onAccessibilityEscape={onClose}>
+        <WhenGone run={() => requestAnimationFrame(toCover)} />
         <View style={s.handle} />
         <View style={s.headerRow}>
           <View style={{ flex: 1, marginRight: 12 }}>
@@ -248,6 +260,16 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
 
 /** How far the sheet rises as it arrives. */
 const SETTINGS_RISE = 320;
+
+/** The exit's backstop: the sheet's slide (MS.quick) is long over by now. */
+const COVER_BACKSTOP_MS = 600;
+
+/** Runs `run` as it leaves the screen: drawn inside the sheet, it goes when the sheet has gone. */
+function WhenGone({ run }: { run: () => void }) {
+  const ran = useEffectEvent(run);
+  useEffect(() => () => ran(), []);
+  return null;
+}
 
 const s = StyleSheet.create({
   backdrop: { flex: 1 },

@@ -253,6 +253,23 @@ export function deliverEachTapOnce(onTap: (data: Record<string, string>) => void
  * told of the launching one), so each notification request is delivered once,
  * by its identifier.
  */
+let launchRead: Promise<Notifications.NotificationResponse | null> | null = null;
+let launchDelivered = false;
+
+/**
+ * The notification whose tap launched the app, read once and shared by both who ask: the tap is
+ * opened from it (below), and the tabs' launch reopen stands aside for it (app/(tabs)/_layout.tsx).
+ * Read twice, the two raced to push, and a member who tapped "a new critique" could land in the
+ * writing room the launch reopened instead.
+ */
+export function launchingNotification(): Promise<Notifications.NotificationResponse | null> {
+  launchRead ??= Notifications.getLastNotificationResponseAsync().catch((e: unknown) => {
+    logger.warn('[Push] could not read the launching notification:', e);
+    return null;
+  });
+  return launchRead;
+}
+
 export async function setupNotificationResponseHandler(
   onNotificationTapped: (data: Record<string, string>) => void
 ): Promise<(() => void) | null> {
@@ -260,8 +277,11 @@ export async function setupNotificationResponseHandler(
   const subscription = Notifications.addNotificationResponseReceivedListener(deliver);
 
   try {
-    const launching = await Notifications.getLastNotificationResponseAsync();
-    if (launching) {
+    // Notifications.getLastNotificationResponseAsync(), once for the run (launchingNotification),
+    // and delivered once whatever later setups ask.
+    const launching = await launchingNotification();
+    if (launching && !launchDelivered) {
+      launchDelivered = true;
       deliver(launching);
       await Notifications.clearLastNotificationResponseAsync?.();
     }

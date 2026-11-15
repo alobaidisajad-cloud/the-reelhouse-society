@@ -3,7 +3,8 @@ import { houseIso } from '@/src/lib/houseClock';
 import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
 import { RemoteImage } from '@/src/components/Picture';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
+import { useScrollToTop } from 'expo-router/react-navigation';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { saidStruck, useStruck } from '@/src/components/StruckWords';
@@ -158,6 +159,10 @@ function VelvetGate({ title, line, isSelf, onAscend }: { title: string; line: st
 
 export default function UserProfileScreen({ usernameOverride, isRootTab = false }: { usernameOverride?: string, isRootTab?: boolean } = {}) {
   const router = useRouter();
+  // The file's scroll: the Profile tab, tapped again, takes it to the top (as the other five tabs
+  // do); pushed, there is no tab to tap and the hook does nothing.
+  const scrollRef = useRef<ComponentRef<typeof CinematicScrollView>>(null);
+  useScrollToTop(scrollRef);
   // Your own file is a tab under the top bar; anyone's, pushed, has no bar above it.
   const tabTop = useTabContentTop();
   const pushedTop = usePushedHeaderTop();
@@ -1007,7 +1012,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         </View>
       )}
 
-      <CinematicScrollView contentContainerStyle={{ paddingBottom: endPad }} showsVerticalScrollIndicator={false}
+      <CinematicScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: endPad }} showsVerticalScrollIndicator={false}
         externalScrollY={scrollY} bottomInset={foot} scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}>
 

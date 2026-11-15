@@ -22,7 +22,8 @@ export const LAST_ROOM_KEY = 'last_room';
 /** Each writing room a launch may reopen: its address, and the draft it takes up there. */
 export const ROOMS = {
   'edit-profile': { href: '/edit-profile', draft: 'profile' },
-  'log-modal': { href: '/log-modal', draft: 'log' },
+  // Reopened as the member left it, on the film they were writing (useLogFlow's `resume`).
+  'log-modal': { href: '/log-modal?resume=draft', draft: 'log' },
   essay: { href: '/dispatch/compose?kind=dossier', draft: 'dossier' },
 } as const satisfies Record<string, { href: string; draft: DraftKind }>;
 export type RoomName = keyof typeof ROOMS;

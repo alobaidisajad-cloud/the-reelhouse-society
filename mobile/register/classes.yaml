@@ -372,14 +372,17 @@ classes:
     seriousness: behaviour
     area: navigation
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: history, ref: "the route walk, runs 39614962131 and 39614969442: /auth-callback opened on the profile; Sealed E2E 39642840944: the Tribunal's link, 118 ms after a relaunch, lost and the profile reopened" }
     methods:
       - { kind: static, file: plugins/__tests__/withLinkDuringLaunch.test.ts, test: "keeps each new intent as the activity's own, then hands it on, first in the class" }
       - { kind: running, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "reopens the tab only for a launch that names no page" }
       - { kind: running, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "names the page a launch link names, and none for the app or the site alone" }
       - { kind: static, file: src/utils/__tests__/aMemberBackSoonIsBackWhereTheyWere.test.ts, test: "the tab bar remembers each tab as it is shown, stamps the time as the app leaves, and reopens only a launch that began at the Lobby, by no link that names a page" }
-    fix: "the tab bar reads the launch link itself (Linking.getInitialURL) and reopens the last tab only when that link names no page (lastTab.ts pageOfLaunch, tabToReopenAfter), and only a member still on the Lobby once it is read (the admin flow's relaunch, 2026-10-21: a link opened just after launch was pulled back to the last tab); each reopen or its absence is said to the E2E log (tabs.reopen) so the route walk shows which it was (mutant shape-every-link-names-nothing); and a link that reaches the app before React is up, which React Native drops, is the link the app opens: MainActivity keeps each new intent as its own (plugins/withLinkDuringLaunch.js), so Linking.getInitialURL reads the latest (mutant shape-new-intent-not-kept)"
+      - { kind: running, file: src/lib/__tests__/theLaunchingTapIsReadOnce.test.ts, test: "is read from the system once, however many ask" }
+      - { kind: running, file: src/lib/__tests__/theLaunchingTapIsReadOnce.test.ts, test: "its tap is opened once, however often the handler is set up" }
+      - { kind: static, file: src/lib/__tests__/theLaunchingTapIsReadOnce.test.ts, test: "the tabs reopen neither a tab nor a room over a launch a tap made" }
+    fix: "the tab bar reads the launch link itself (Linking.getInitialURL) and reopens the last tab only when that link names no page (lastTab.ts pageOfLaunch, tabToReopenAfter), and only a member still on the Lobby once it is read (the admin flow's relaunch, 2026-10-21: a link opened just after launch was pulled back to the last tab); each reopen or its absence is said to the E2E log (tabs.reopen) so the route walk shows which it was (mutant shape-every-link-names-nothing); and a link that reaches the app before React is up, which React Native drops, is the link the app opens: MainActivity keeps each new intent as its own (plugins/withLinkDuringLaunch.js), so Linking.getInitialURL reads the latest (mutant shape-new-intent-not-kept); review round 4 (navigation): a launch a tapped notification made was overridden the same way, the tabs' reopen pushing the writing room over the notice's page; the launching notification is read once and shared (launchingNotification), the tap opened from it once, and the tabs reopen neither a tab nor a room over it (mutant shape-reopen-over-a-tapped-launch)"
     places: [emulator]
 
   - id: RN-react-destroyed-on-mount
@@ -2661,11 +2664,19 @@ classes:
     seriousness: behaviour
     area: states
     status: OPEN
-    count: 1
+    count: 7
     source: { kind: reviewer, ref: "review round 3, every feature, 2026-11-15" }
     methods:
       - { kind: running, file: src/components/__tests__/theInitiationTellsTheTruth.test.tsx, test: "opens again at the first beat, with its own stamp, for the next new member on the phone" }
-    fix: "each opening starts at the first beat (mutant shape-initiation-opens-on-the-last-beat)"
+      - { kind: running, file: src/hooks/__tests__/theLogSheetOpensWhereItWasAsked.test.tsx, test: "opened with a record unsent, the sheet stands on the search and offers it" }
+      - { kind: running, file: src/components/log/__tests__/logSearchEngine.test.tsx, test: "is offered before anything is searched for, and hands back its film" }
+      - { kind: running, file: src/hooks/__tests__/theLogSheetOpensWhereItWasAsked.test.tsx, test: "another film opens a clean form: nothing of the last film is carried onto it" }
+      - { kind: running, file: src/hooks/__tests__/theLogSheetOpensWhereItWasAsked.test.tsx, test: "the same film taken again keeps all it holds" }
+      - { kind: running, file: src/components/log/__tests__/theLogSheetGoesBackAStep.test.tsx, test: "a film being written is a room a launch may reopen; back on the search, it is left" }
+      - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "is said to be taken up, and START CLEAN empties the desk and the draft" }
+      - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "a ballot taken up says so, with START CLEAN, which empties the desk and the draft" }
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "says a ballot is in progress, as it says an essay is (review round 4)" }
+    fix: "each opening starts at the first beat (mutant shape-initiation-opens-on-the-last-beat); review round 4 (navigation, the owner's own find, 2026-11-15): the Log sheet took up the last unsent record at every opening and its film held the sheet until it was sealed; it now opens on its search and offers the record at its head (waitingDraft, YOUR UNSENT RECORD), the launch that reopens it after the phone closed it alone taking the film up at once (resume=draft), and only a film being written is a room a launch reopens; another film taken opens a clean form, nothing of the last one's carried onto it; the stack sheet and the ballot desk opened on the last half-built one in silence and now say it was taken up, with START CLEAN, and the picker says a ballot is in progress (mutants shape-log-sheet-takes-up-the-last-film, shape-another-film-carries-the-last-form, shape-stack-taken-up-in-silence, shape-ballot-taken-up-in-silence)"
     places: [none]
 
   - id: READ-a-reread-that-drops-waiting-writes
@@ -2682,4 +2693,132 @@ classes:
       - { kind: running, file: src/stores/__tests__/watchlistSlice.test.ts, test: "read again, keeps the saves and removals the queue still holds" }
       - { kind: running, file: src/stores/__tests__/watchlistSlice.test.ts, test: "a next page joins the list as it stands when it lands, not the copy taken before" }
     fix: "the Vault's read and the watchlist's lay the queue's waiting writes over the house's answer, in order, as the lists, marks and follows already do; a next page joins the list as it stands when it lands (mutants shape-vault-reread-drops-a-note, shape-vault-reread-brings-back-a-removal, shape-watchlist-reread-drops-waiting, shape-next-page-on-an-old-copy)"
+    places: [none]
+
+  - id: NAV-a-replace-that-builds-a-second-tab-app
+    title: "Filing a take, a ballot or an essay ended with router.replace('/(tabs)/dispatch'): the sheet is a route on the root stack over the tab app, so the replace put a NEW tab app where the sheet was, two tab apps mounted (each with its bar, Concierge and listeners), Android's back walking through the old one before the app closed, and one more for every filing; leaving or incinerating a salon, the sign-in, reset and link screens' way home, the page for a path that leads nowhere, and the app's own crash net did the same"
+    seriousness: behaviour
+    area: navigation
+    status: OPEN
+    count: 11
+    source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/theTabsAreReturnedToNeverRebuilt.guard.test.ts, test: "no screen replaces itself with the tabs (where a tab app may be beneath)" }
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "files the essay, and only then throws the draft away" }
+      - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "files and goes home to the Dispatch already beneath, never building a second" }
+      - { kind: running, file: src/components/lounge/__tests__/aRefusedLeaveStaysInTheRoom.test.tsx, test: "goes to the corridor once it is destroyed" }
+    fix: "every way home closes back to the tab app already there (nav.dismissTo, which makes one only when none is beneath); an amend goes back to the filing it amended; a replace into the tabs is left only behind canGoBack(), where nothing is beneath (mutants shape-filing-replaces-the-tabs, shape-salon-exit-replaces-the-tabs)"
+    places: [none]
+
+  - id: WRITE-a-way-out-that-keeps-what-was-let-go
+    title: "The essay room's backup, made as the room closed, uploaded the essay again right after filing (or discarding) had let its draft go: the next time the desk opened, on any phone, it filled itself with the essay already filed, or thrown away"
+    seriousness: behaviour
+    area: dispatch
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "a filed essay is not backed up again as the room closes, so it never returns as a draft" }
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "DISCARD leaves with nothing kept, on the phone or in the house" }
+    fix: "a room filed or discarded is finished: its way out backs nothing up and keeps nothing on the phone (mutant shape-finished-room-backs-up)"
+    places: [none]
+
+  - id: NAV-a-back-that-skips-or-strays
+    title: "A back that did not go one step back: Android's back on a film in the Log sheet, and on a Dispatch desk, closed the whole sheet; BACK on an amended take, seeking or wire cleared its form but kept its amend, and the route opened the ESSAY desk on a take; and back from a film to the Log search found the search emptied"
+    seriousness: behaviour
+    area: navigation
+    status: OPEN
+    count: 5
+    source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/components/log/__tests__/theLogSheetGoesBackAStep.test.tsx, test: "Android's back on a film goes back to the search, and the sheet stays open" }
+      - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "Android's back is BACK: to the forms, the sheet still open" }
+      - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "Android's back is BACK: to the forms, the ballot kept" }
+      - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK goes back to the filing, never to another desk" }
+      - { kind: running, file: src/hooks/__tests__/theLogSheetOpensWhereItWasAsked.test.tsx, test: "going back from a film finds the search as it was left" }
+      - { kind: running, file: src/components/log/__tests__/logSearchEngine.test.tsx, test: "the search kept above it is drawn as kept, and each change goes back up" }
+    fix: "Android's back on a step is its on-screen back (useBackCloses): the Log sheet's film back to its search, a desk back to the choice of form; an amend has no form to choose and goes back to its filing; the Log sheet keeps its search's words across a film (mutants shape-log-android-back-closes, shape-desk-android-back-closes, shape-amend-back-to-the-forms, shape-log-search-forgotten)"
+    places: [none]
+
+  - id: WRITE-words-lost-on-the-way-out
+    title: "Words lost on a way out: a take, seeking or wire (whose desk keeps no draft) went without a word on a swipe, Android's back or BACK; the essay, the ballot and the stack dropped what was typed in the last second before the sheet went (the essay then calling words written on this phone \"newer, written elsewhere\"); and the essay's CANCEL offered only to discard it"
+    seriousness: behaviour
+    area: states
+    status: OPEN
+    count: 5
+    source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK with words asks first, and only a discard goes to the forms" }
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "a room left with words in it backs them up, and keeps the last second of them, as it closes" }
+      - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "closed within a second of typing, it keeps the last words" }
+      - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "closed within a beat of typing, it keeps the last edit" }
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "KEEP FOR LATER leaves with the essay kept, as it stands" }
+      - { kind: running, file: src/hooks/__tests__/theLogSheetOpensWhereItWasAsked.test.tsx, test: "back to the search keeps the words at once, and offers them as they stand" }
+    fix: "every way out of a short desk with words in it asks first (useAskBeforeLeaving, and BACK's own question); the essay, ballot and stack keep the save not yet written as the sheet closes (the log's pattern), the essay's after its backup so the phone's copy is the later; CANCEL offers KEEP FOR LATER beside DISCARD (mutants shape-take-left-without-asking, shape-essay-last-second-dropped, shape-ballot-last-second-dropped, shape-stack-last-second-dropped, shape-cancel-only-discards)"
+    places: [none]
+
+  - id: UI-a-room-drawn-before-its-door
+    title: "The Dispatch sheet drew its picker of forms while its door (two days, five films) was still being read, then swapped the whole sheet to the door for a new member who could not file yet, on every opening: a form could be tapped into before the door replaced it"
+    seriousness: behaviour
+    area: dispatch
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/components/dispatch/__tests__/theDoorIsShown.test.tsx, test: "draws nothing while it is still asking" }
+      - { kind: running, file: src/components/dispatch/__tests__/theDoorIsShown.test.tsx, test: "the next opening starts from the answer, drawn at once, and asks again behind it" }
+      - { kind: running, file: src/components/dispatch/__tests__/theDoorIsShown.test.tsx, test: "an answer that could not be had is never remembered: the next opening asks first" }
+    fix: "while the door is asked the sheet draws its ground and its way out, nothing to tap into; the house's answer is remembered for the run (forgotten at sign-out), so later openings are drawn at once and asked again behind it (mutants shape-picker-before-the-door, shape-door-not-remembered)"
+    places: [none]
+
+  - id: NAV-a-sheet-asked-for-over-one-still-there
+    title: "A screen asked for over one still on screen: the salon settings asked for the cover picker while they were still sliding away (on iOS, one sheet asked for while another leaves); and a tapped push about the page already in front stacked a second copy of it"
+    seriousness: behaviour
+    area: navigation
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "the picker is asked for only once the settings have gone, and once" }
+      - { kind: running, file: src/utils/__tests__/theTappedNoticeOpensIt.test.ts, test: "about the page already in front, opens no second copy over it (review round 4)" }
+    fix: "the cover trip is parked and taken as the settings leave the screen, or by a backstop (the Concierge's presentation law); a push about the page in front opens nothing over it (mutants shape-cover-asked-while-leaving, shape-push-stacks-a-copy)"
+    places: [none]
+
+  - id: NAV-a-door-to-the-wrong-room
+    title: "A way that led somewhere other than where it said: the profile's DRAFT A CRITIQUE, RECORD A SCREENING and IGNITE THE TIMELINE (log a film) opened the general search, which has no way to log; and withdrawing a record from its editor went back onto that record's page, which said \"No Such Record\" to the member who had just withdrawn it"
+    seriousness: behaviour
+    area: navigation
+    status: OPEN
+    count: 4
+    source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx, test: "the way to fill it opens the Log sheet, on its own search" }
+      - { kind: static, file: src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx, test: "and so do the archive's and the calendar's, the profile's other doors to log a film" }
+      - { kind: running, file: app/__tests__/aRecordWithdrawnLeavesItsPage.test.tsx, test: "the member's own record, withdrawn from its editor, takes its page with it, saying nothing" }
+    fix: "the profile's doors to log a film open the Log sheet; the page of one's own record, read and then withdrawn, leaves with it and says nothing as it goes (mutants shape-log-door-opens-search, shape-withdrawn-page-stays)"
+    places: [none]
+
+  - id: UI-the-keys-not-where-the-hand-is
+    title: "The keyboard where the member's hand was not: the top bar's Search opened with its field unfocused (a second tap to type), and amending a stack raised the keyboard over the films the member came to reorder"
+    seriousness: behaviour
+    area: states
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "opens ready to be typed into: the keys are up at once (review round 4)" }
+      - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "an amend opens with the keyboard down: it came for its films" }
+    fix: "the Search opens with its keys up; a stack's title takes the keys only on a fresh stack, never an amend or a stack taken up (mutants shape-search-not-focused, shape-amend-raises-the-keys)"
+    places: [none]
+
+  - id: NAV-a-tab-tapped-again-that-does-nothing
+    title: "The Profile tab, tapped again, did not take the member's file to its top, as each of the other five tabs does: its scroll was handed to no one"
+    seriousness: behaviour
+    area: navigation
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "the Profile tab, tapped again, takes the file to its top: the file's own scroll is the one handed over (review round 4)" }
+    fix: "the member's file hands its scroll to useScrollToTop (mutant shape-profile-scroll-not-handed)"
     places: [none]

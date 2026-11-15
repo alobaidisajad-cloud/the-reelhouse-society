@@ -24,6 +24,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 import ComposeScreen from '@/app/dispatch/compose';
 import { draftKey } from '@/src/utils/memberDrafts';
+import * as draftSync from '@/src/utils/draftSync';
 
 /**
  * The router, with `setParams` — which the shared setup mock does not carry, so
@@ -36,7 +37,7 @@ jest.mock('expo-router', () => {
   return {
     ...require('@/test-utils/expoRouterMock').expoRouterMock(),
     router: {
-      push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(), canGoBack: () => true,
+      push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(), dismissTo: jest.fn(), canGoBack: () => true,
       setParams: (p: Record<string, string>) => { mockParams.push(p); },
     },
     useLocalSearchParams: jest.fn(() => ({})),
@@ -160,6 +161,8 @@ beforeEach(() => {
   mockToast.error.mockClear(); mockToast.success.mockClear();
   at({});
   mockParams.length = 0;
+  // Each case's own ways out: what an earlier case pushed, replaced or dismissed is not this one's.
+  for (const way of ['push', 'replace', 'back', 'navigate', 'dismissTo'] as const) (router[way] as jest.Mock).mockClear();
   mockAppState.reset();
   jest.spyOn(AppState, 'addEventListener').mockImplementation(
     ((_type: string, handler: (s: string) => void) => {
@@ -208,6 +211,15 @@ describe('the door', () => {
     await flush();
     expect(getByText('TAKE')).toBeTruthy();
     expect(getByText('ESSAY')).toBeTruthy();
+  });
+
+  it('says a ballot is in progress, as it says an essay is (review round 4)', async () => {
+    require('@/src/utils/memberDrafts').writeDraft('u1', 'ballot', { question: 'Which Ozu?', slots: [], closes: '2 DAYS' });
+    const { getAllByLabelText } = render(<ComposeScreen />);
+    await flush();
+    const marked = getAllByLabelText(/One in progress/).map((n) => String(n.props.accessibilityLabel));
+    expect(marked).toHaveLength(1);
+    expect(marked[0]).toMatch(/^Ballot./i);
   });
 
   it('turns a member without the tier away at the route, not at the desk', async () => {
@@ -293,6 +305,33 @@ describe('the writing room', () => {
     expect(mockFiled[0].title).toBe('The Empty Room');
     expect(mockFiled[0].fullContent).toBe('Ozu frames a room and then leaves it.');
     expect(mockStore.has(DRAFT_KEY)).toBe(false);
+    // Home to the Dispatch already beneath, never a second tab app built over the first.
+    expect(router.dismissTo).toHaveBeenCalledWith('/(tabs)/dispatch');
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it('a filed essay is not backed up again as the room closes, so it never returns as a draft', async () => {
+    const pushed = jest.spyOn(draftSync, 'pushDraft').mockResolvedValue(undefined as never);
+    const r = await open();
+    await type(r.getByLabelText('Essay headline'), 'The Empty Room');
+    await type(r.getByLabelText('Essay content body'), 'Ozu frames a room and then leaves it.');
+    await press(r.getByLabelText('File the essay'));
+    await flush();
+    expect(mockFiled).toHaveLength(1);
+    pushed.mockClear();
+    r.unmount();
+    expect(pushed).not.toHaveBeenCalled();
+    expect(mockStore.has(DRAFT_KEY)).toBe(false);
+  });
+
+  it('a room left with words in it backs them up, and keeps the last second of them, as it closes', async () => {
+    const pushed = jest.spyOn(draftSync, 'pushDraft').mockResolvedValue(undefined as never);
+    const r = await open();
+    await type(r.getByLabelText('Essay headline'), 'The Empty Room');
+    // Closed before the words have rested the second the phone waits.
+    r.unmount();
+    expect(JSON.parse(mockStore.get(DRAFT_KEY)!).data.title).toBe('The Empty Room');
+    expect(pushed).toHaveBeenCalledWith('u1', 'dossier', expect.objectContaining({ title: 'The Empty Room' }), expect.any(String), '');
   });
 
   it('KEEPS the draft when the filing is refused', async () => {
@@ -487,7 +526,44 @@ describe('leaving the room', () => {
     // The form's own name, not "Draft" — the app says DOSSIER on every label and
     // button, and a member reads "Discard Draft?" as a fourth word for a thing
     // that already has one.
-    expect(alerts[0][0]).toBe('Discard this essay?');
+    expect(alerts[0][0]).toBe('Leave this essay?');
+    // Leaving need not lose it: kept for later is offered beside discarding.
+    expect(alerts[0][2].map((b) => b.text)).toEqual(['Keep writing', 'Keep for later', 'Discard']);
+    spy.mockRestore();
+  });
+
+  it('KEEP FOR LATER leaves with the essay kept, as it stands', async () => {
+    const alerts: [string, string, { text: string; onPress?: () => void }[]][] = [];
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(
+      ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
+    );
+    (router.back as jest.Mock).mockClear();
+    const r = await open();
+    await type(r.getByLabelText('Essay content body'), 'An opening line.');
+    await press(r.getByLabelText(/Cancel/));
+    await act(async () => { alerts[0][2].find((b) => b.text === 'Keep for later')!.onPress!(); });
+    expect(router.back).toHaveBeenCalledTimes(1);
+    r.unmount();
+    expect(JSON.parse(mockStore.get(DRAFT_KEY)!).data.content).toBe('An opening line.');
+    spy.mockRestore();
+  });
+
+  it('DISCARD leaves with nothing kept, on the phone or in the house', async () => {
+    const alerts: [string, string, { text: string; onPress?: () => void }[]][] = [];
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation(
+      ((t: string, m: string, b: never) => { alerts.push([t, m, b]); }) as never,
+    );
+    const pushed = jest.spyOn(draftSync, 'pushDraft').mockResolvedValue(undefined as never);
+    const r = await open();
+    await type(r.getByLabelText('Essay content body'), 'An opening line.');
+    await act(async () => { jest.advanceTimersByTime(1200); });
+    expect(mockStore.has(DRAFT_KEY)).toBe(true);
+    await press(r.getByLabelText(/Cancel/));
+    await act(async () => { alerts[0][2].find((b) => b.text === 'Discard')!.onPress!(); });
+    pushed.mockClear();
+    r.unmount();
+    expect(mockStore.has(DRAFT_KEY)).toBe(false);
+    expect(pushed).not.toHaveBeenCalled();
     spy.mockRestore();
   });
 
@@ -632,12 +708,16 @@ describe('amending a dossier that already exists', () => {
     expect(alert).not.toHaveBeenCalled();
   });
 
-  it('an amend with changes asks to discard the AMENDMENTS, saying the essay stays as filed', async () => {
+  it('an amend with changes asks about the AMENDMENTS, saying the essay stays as filed if they go', async () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const { getByLabelText } = await openEdit();
     await type(getByLabelText('Essay content body'), 'The second version.');
     await press(getByLabelText('Cancel, and leave the writing room'));
-    expect(alert).toHaveBeenCalledWith('Discard these amendments?', 'The essay stays as it was filed. The changes made here will be lost.', expect.anything());
+    expect(alert).toHaveBeenCalledWith(
+      'Leave these amendments?',
+      'Keep them for later and they wait for you here. Discard them and the essay stays as it was filed.',
+      [expect.objectContaining({ text: 'Keep writing' }), expect.objectContaining({ text: 'Keep for later' }), expect.objectContaining({ text: 'Discard' })],
+    );
   });
 
   it("shows the essay's film as filed, and offers no change an amendment would drop", async () => {
@@ -666,6 +746,9 @@ describe('amending a dossier that already exists', () => {
     expect(mockFiled).toHaveLength(0);
     expect(mockAmended[0][0]).toBe('00000017-0000-4000-8000-000000000017');
     expect(mockAmended[0][1].fullContent).toBe('The second version.');
+    // Back to the essay it amended, never to the Dispatch's front page.
+    expect(router.back).toHaveBeenCalled();
+    expect(router.dismissTo).not.toHaveBeenCalled();
   });
 
   it('prints the read time the published page will print', async () => {

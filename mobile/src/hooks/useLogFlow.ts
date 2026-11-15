@@ -160,7 +160,12 @@ export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
 }
 
 /** A log begun from a link: the film by its number, its title, poster path and year in their kinds. */
-const PARAMS = { filmId: P.tmdbId, editLogId: P.uuid, filmTitle: P.words(300), filmPoster: P.posterPath, filmYear: P.year };
+/**
+ * `resume=draft`: the launch reopening the sheet the phone closed behind the member (lastRoom.ts),
+ * who was writing in it, takes their draft up at once. Opened any other way, the sheet opens where
+ * it was asked to, on the search, and the draft waits at its head (`waitingDraft`).
+ */
+const PARAMS = { filmId: P.tmdbId, editLogId: P.uuid, filmTitle: P.words(300), filmPoster: P.posterPath, filmYear: P.year, resume: P.oneOf('draft') };
 /** The record a link named by an id of another shape: none has it, so it is withdrawn, and never asked for. */
 const NO_SUCH_LOG = 'no-such-log';
 
@@ -170,6 +175,34 @@ const NO_SUCH_LOG = 'no-such-log';
  * opening the sheet on film B lost film A's unsent review, rating and private note.
  */
 type LogDraft = { filmId?: unknown; review?: string; rating?: number; privateNotes?: string } & Record<string, unknown>;
+
+/** The record a member began and did not send, offered at the head of the search. */
+export interface WaitingDraft {
+    film: SelectedFilm;
+    /** Its stars, 0 for none. */
+    rating: number;
+    /** Words were written: a review, or a note to the Vault. */
+    wrote: boolean;
+}
+
+const wordsIn = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v : undefined);
+
+/** The latest draft as a film to go back to, or none when it names no film. */
+export function waitingDraftOf(held: LogDraft | null | undefined): WaitingDraft | null {
+    const id = Number(held?.filmId);
+    if (!held || !Number.isInteger(id) || id <= 0) return null;
+    return {
+        film: {
+            id,
+            title: wordsIn(held.filmTitle),
+            name: wordsIn(held.filmName),
+            poster_path: wordsIn(held.filmPoster) ?? null,
+            release_date: wordsIn(held.filmYear),
+        },
+        rating: typeof held.rating === 'number' && held.rating > 0 ? held.rating : 0,
+        wrote: !!(wordsIn(held.review) || wordsIn(held.privateNotes)),
+    };
+}
 function keepLogDraft(userId: string | undefined, draft: LogDraft & { filmId: unknown }): void {
   // The latest is another film's, kept only there (written before drafts were per film): it is
   // given its own film's place before this film takes the latest's.
@@ -513,8 +546,10 @@ export function useLogFlow() {
         if (held) {
             try {
                 const parsed = held.data as any;
-                // If opening modal fresh, auto-restore the film and draft state
-                if (!film?.id && parsed.filmId) {
+                // Only the launch that reopens the sheet the phone closed takes the film up at once;
+                // opened by the member, the sheet stands on the search and offers it (waitingDraft).
+                // Taken up at every opening, the last film unsent held the sheet until it was sent.
+                if (params.resume === 'draft' && !film?.id && parsed.filmId) {
                     setFilm({
                         id: parsed.filmId,
                         title: parsed.filmTitle,
@@ -613,6 +648,24 @@ export function useLogFlow() {
         const keep = unsavedLog.current;
         unsavedLog.current = null;
         keep?.();
+        if (!editLogId && f.id !== film?.id) {
+            // Another film is another record: nothing of the last one's (its status, its day, its
+            // company, its autopsy, its poster and header, which are that film's pictures) is
+            // carried onto it. The same film taken again keeps all it holds.
+            setStatus(_loggedIndex[f.id] ? 'rewatched' : 'watched');
+            setIsSpoiler(false);
+            setAbandonedReason('');
+            setDate(localCalendarDate());
+            setWatchedWith('');
+            setPhysicalMedia('None');
+            setAutopsy({ ...AUTOPSY_INIT });
+            setAltPoster(null);
+            setEditorialHeader(null);
+            setDropCap(false);
+            setPullQuote('');
+            setAutopsyOpen(false);
+            setMoreOpen(false);
+        }
         if (!editLogId) {
             const own = logDraftFor(user?.id, f.id) as { review?: string; rating?: number; privateNotes?: string } | null;
             setReview(own?.review ?? '');
@@ -625,6 +678,24 @@ export function useLogFlow() {
         setStep(1);
         TactileEngine.selection();
     };
+
+    /** What the search holds: kept by the flow, so going back from a film finds it as it was left. */
+    const [searchQuery, setSearchQuery] = useState('');
+
+    /** Back to the search from a film: its words kept at once, so the search offers them as they stand. */
+    const backToSearch = useCallback(() => {
+        const keep = unsavedLog.current;
+        unsavedLog.current = null;
+        if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+        keep?.();
+        setStep(0);
+    }, []);
+
+    // The record left unsent, read as the search opens (and each time it is come back to).
+    const waitingDraft = useMemo(
+        () => (editLogId || step !== 0 ? null : waitingDraftOf(readDraft<LogDraft>(user?.id, 'log')?.data)),
+        [editLogId, step, user?.id],
+    );
 
     // ── SUBMIT LOG ──
     const handleLog = async () => {
@@ -752,7 +823,10 @@ export function useLogFlow() {
         isAuthenticated,
         isAuteur,
         isPremium,
-        step, setStep,
+        step, setStep, backToSearch,
+        searchQuery, setSearchQuery,
+        /** The record begun and not sent, offered at the head of the search; none in an edit. */
+        waitingDraft,
         film, setFilm,
         isRewatchMode, previousLog,
         status, setStatus,

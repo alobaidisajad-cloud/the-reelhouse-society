@@ -218,6 +218,8 @@ export default function SearchModal() {
           <TextInput
             ref={inputRef}
             style={st.input}
+            // Opened to search: the keys are up at once, as the Log sheet's search has them.
+            autoFocus
             placeholder="Search the archives..."
             placeholderTextColor={colors.fog}
             value={query}

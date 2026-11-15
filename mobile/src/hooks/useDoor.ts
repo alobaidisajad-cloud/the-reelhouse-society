@@ -38,6 +38,7 @@
 import { useEffect, useState } from 'react';
 
 import { supabase } from '@/src/lib/supabase';
+import { registerStoreReset } from '@/src/stores/resetAllStores';
 import { useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
 
@@ -93,16 +94,32 @@ async function readDoor(): Promise<DoorRead> {
   }
 }
 
+/**
+ * The last answer this run, with the member it was read for: the next opening starts from it,
+ * so the sheet is drawn at once (and asked again behind it), never a blank while the door is
+ * read a second time. Gone with the member at sign-out.
+ */
+let lastAnswer: { for: string; read: DoorRead } | null = null;
+/** The answer forgotten: at sign-out, and between tests that each ask the door afresh. */
+export function forgetDoor(): void { lastAnswer = null; }
+registerStoreReset(forgetDoor);
+
 export function useDoor(): Door {
   const userId = useAuthStore((s) => s.user?.id);
   // Held with the member it was read for: another member's door is not this one's,
   // and until theirs comes it is still being asked.
-  const [answer, setAnswer] = useState<{ for: string; read: DoorRead } | null>(null);
+  const [answer, setAnswer] = useState<{ for: string; read: DoorRead } | null>(() => lastAnswer);
 
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
-    void readDoor().then((read) => { if (!cancelled) setAnswer({ for: userId, read }); });
+    void readDoor().then((read) => {
+      if (cancelled) return;
+      const next = { for: userId, read };
+      // Only the house's answer is remembered: an unanswered read fails open for this opening alone.
+      if (read !== UNANSWERED) lastAnswer = next;
+      setAnswer(next);
+    });
     return () => { cancelled = true; };
   }, [userId]);
 

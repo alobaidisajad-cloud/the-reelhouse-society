@@ -5,7 +5,7 @@
  */
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
-import { useRouter } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
@@ -14,8 +14,6 @@ import Buster from '@/src/components/Buster';
 import { CentredRoom } from '@/src/components/layout/CentredRoom';
 
 export function NotInTheArchive() {
-  const router = useRouter();
-
   return (
     <View style={s.container}>
       <RoomLight room="default" />
@@ -27,7 +25,9 @@ export function NotInTheArchive() {
         </Text>
         <PressableScale
           style={s.backBtn}
-          onPress={() => (router.replace as any)('/(tabs)')}
+          // To the Lobby already beneath (a link from inside the app), or made, opened cold: never a
+          // second tab app replaced over the first.
+          onPress={() => nav.dismissTo('/(tabs)')}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           haptic="selection"
           accessibilityRole="button"

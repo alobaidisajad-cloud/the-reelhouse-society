@@ -45,6 +45,7 @@ import { WayOut } from '@/src/components/TryAgain';
 import { useAuthStore } from '@/src/stores/auth';
 import { MembersOnly } from '@/src/components/MembersOnly';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
+import { TakenUpLine } from '@/src/components/TakenUpLine';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 // At module scope: made inside the component, it would be a new type, and remount, each render.
@@ -257,25 +258,58 @@ export default function ListModal() {
     const [saving, setSaving] = useState(false);
 
     // A new stack half-built is kept as the member left it: swiped away, the sheet opens on it
-    // again. Taken up as it renders, once per member; kept a beat after each change; gone once filed.
+    // again, SAID (the line every writing room draws over a draft it took up), with START CLEAN.
+    // Taken up silently, it held the sheet: a new stack meant emptying the old one by hand.
+    // Taken up as it renders, once per member; kept a beat after each change; gone once filed.
     const [draftFor, setDraftFor] = useState<string | null>(null);
+    /** The stack taken up, as it was kept, and when: the line stands until the form differs from it. */
+    const [takenUp, setTakenUp] = useState<{ at: string; as: string } | null>(null);
     if (!params.editId && me && draftFor !== me) {
         setDraftFor(me);
-        const kept = readDraft<{ title?: string; description?: string; isPrivate?: boolean; isRanked?: boolean; films?: ListFilm[] }>(me, 'stack')?.data;
-        if (kept?.title) setTitle(kept.title);
-        if (kept?.description) setDescription(kept.description);
-        if (kept?.isPrivate) setIsPrivate(true);
-        if (kept?.isRanked) setIsRanked(true);
-        if (Array.isArray(kept?.films)) setFilms(kept.films);
+        const held = readDraft<{ title?: string; description?: string; isPrivate?: boolean; isRanked?: boolean; films?: ListFilm[] }>(me, 'stack');
+        const kept = held?.data;
+        const was = {
+            title: kept?.title || '', description: kept?.description || '',
+            isPrivate: !!kept?.isPrivate, isRanked: !!kept?.isRanked, films: Array.isArray(kept?.films) ? kept.films : [],
+        };
+        setTitle(was.title);
+        setDescription(was.description);
+        setIsPrivate(was.isPrivate);
+        setIsRanked(was.isRanked);
+        setFilms(was.films);
+        if (was.title || was.description || was.films.length) setTakenUp({ at: held?.savedAt ?? '', as: JSON.stringify(was) });
     }
+    const formNow = JSON.stringify({ title, description, isPrivate, isRanked, films });
+    const showTakenUp = !!takenUp && takenUp.as === formNow;
+    /** Filed: the sheet keeps nothing on its way out. */
+    const filedStack = useRef(false);
+    /** The draft not yet written (it is written once the form rests): written at once if the sheet goes first. */
+    const unkept = useRef<(() => void) | null>(null);
     useEffect(() => {
         if (params.editId || !me || saving) return undefined;
-        const t = setTimeout(() => {
+        const keep = () => {
             if (title.trim() || description.trim() || films.length) writeDraft(me, 'stack', { title, description, isPrivate, isRanked, films });
             else clearDraft(me, 'stack');
-        }, 600);
+        };
+        unkept.current = keep;
+        const t = setTimeout(() => { unkept.current = null; keep(); }, 600);
         return () => clearTimeout(t);
     }, [params.editId, me, saving, title, description, isPrivate, isRanked, films]);
+    useEffect(() => () => {
+        const keep = unkept.current;
+        unkept.current = null;
+        if (!filedStack.current) keep?.();
+    }, []);
+    const startClean = useCallback(() => {
+        unkept.current = null;
+        if (me) clearDraft(me, 'stack');
+        setTitle('');
+        setDescription('');
+        setIsPrivate(false);
+        setIsRanked(false);
+        setFilms([]);
+        setTakenUp(null);
+    }, [me]);
 
     // The form fills when the stack first ARRIVES, not only at mount: a stack
     // not yet loaded would open an empty form whose save deletes every film.
@@ -473,6 +507,8 @@ export default function ListModal() {
                     isRanked,
                     films: films.map(f => ({ id: f.id, title: f.title, poster: f.poster_path ?? null })),
                 });
+                filedStack.current = true;
+                unkept.current = null;
                 if (me) clearDraft(me, 'stack');
             }
             // The Reel's STACKS (['feed', 'stacks', …]), which stays mounted under this sheet.
@@ -532,6 +568,7 @@ export default function ListModal() {
 
             {/* THE PLATE — the name, in the face the catalogue will set it in. */}
             <View style={s.sec}>
+                {showTakenUp ? <TakenUpLine savedAt={takenUp?.at || null} onStartClean={startClean} style={s.takenUp} /> : null}
                 <Text style={s.label}>TITLE</Text>
                 <TextInput
                     ref={titleRef}
@@ -542,7 +579,8 @@ export default function ListModal() {
                     onChangeText={setTitle}
                     placeholder="Neon Noir Masterpieces"
                     placeholderTextColor={colors.fog}
-                    autoFocus
+                    // A fresh stack only: an amend came for its films, and a stack taken up is read first.
+                    autoFocus={!params.editId && !takenUp}
                     testID="stack-title-input"
                     maxLength={MAX_LENGTHS.listTitle}
                     selectionColor={'rgba(218,165,32,0.3)'}
@@ -810,6 +848,7 @@ const s = StyleSheet.create({
     closeBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.3, color: colors.fog, includeFontPadding: false },
 
     sec: { paddingHorizontal: 20, marginTop: 20 },
+    takenUp: { marginBottom: 12 },
     secTight: { paddingHorizontal: 20, marginTop: 8 },
     label: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.4, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
     input: {

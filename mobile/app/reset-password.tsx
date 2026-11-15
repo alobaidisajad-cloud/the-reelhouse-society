@@ -103,7 +103,7 @@ export default function ResetPasswordScreen() {
 
       // The "3 SECONDS" the screen promises; cleared if the screen goes first.
       redirectTimerRef.current = setTimeout(() => {
-        nav.replace('/(tabs)');
+        nav.dismissTo('/(tabs)');
       }, 3000);
     } catch (err: unknown) {
       reelToast.error(err instanceof Error ? mapAuthError(err.message).message : 'Failed to reset password.');
@@ -171,7 +171,7 @@ export default function ResetPasswordScreen() {
             </PressableScale>
             <PressableScale touch="wayOut"
               style={{ marginTop: 16, padding: 8 }}
-              onPress={() => nav.replace('/(tabs)')}
+              onPress={() => nav.dismissTo('/(tabs)')}
               pressedScale={0.95}
               haptic="light"
               accessibilityRole="button"

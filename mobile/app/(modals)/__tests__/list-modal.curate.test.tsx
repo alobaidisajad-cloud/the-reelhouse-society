@@ -901,3 +901,55 @@ describe('the docked act stays on the keys while the member types', () => {
     spy.mockRestore();
   });
 });
+
+/**
+ * A stack half-built, taken up (review round 4, navigation). Swiped away, the sheet opened on it
+ * again in silence, the keyboard up on its old title: a new stack meant emptying the old one by
+ * hand, field by field and film by film. Now the line every writing room draws says it was taken
+ * up, START CLEAN empties the desk and the draft, the keyboard waits, and the last edit before the
+ * sheet goes is kept with it.
+ */
+describe('a stack taken up from its draft', () => {
+  const memberDrafts = () => require('@/src/utils/memberDrafts');
+  const KEPT = { title: 'Half Built', description: 'A note.', isPrivate: true, isRanked: false, films: FILMS.slice(0, 2) };
+
+  it('is said to be taken up, and START CLEAN empties the desk and the draft', async () => {
+    memberDrafts().writeDraft('me', 'stack', KEPT);
+    const r = mount();
+    expect(r.getByTestId('stack-title-input').props.value).toBe('Half Built');
+    expect(r.getByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeTruthy();
+    // Read first: the keyboard does not rise over a stack taken up.
+    expect(r.getByTestId('stack-title-input').props.autoFocus).toBe(false);
+    await act(async () => { await fireEvent.press(r.getByLabelText('Start clean, and discard what was here')); });
+    expect(r.getByTestId('stack-title-input').props.value).toBe('');
+    expect(r.queryByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeNull();
+    expect(memberDrafts().readDraft('me', 'stack')).toBeNull();
+  });
+
+  it('a fresh stack says nothing was taken up, and the keyboard rises on its title', () => {
+    const r = mount();
+    expect(r.queryByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeNull();
+    expect(r.getByTestId('stack-title-input').props.autoFocus).toBe(true);
+  });
+
+  it('the line goes once the stack is changed', async () => {
+    memberDrafts().writeDraft('me', 'stack', KEPT);
+    const r = mount();
+    await act(async () => { await fireEvent.changeText(r.getByTestId('stack-title-input'), 'Half Built, Finished'); });
+    expect(r.queryByText(/TAKEN UP WHERE YOU LEFT IT/)).toBeNull();
+  });
+
+  it('closed within a beat of typing, it keeps the last edit', async () => {
+    const r = mount();
+    await act(async () => { await fireEvent.changeText(r.getByTestId('stack-title-input'), 'Neon Noir'); });
+    r.unmount();
+    expect(memberDrafts().readDraft('me', 'stack')?.data.title).toBe('Neon Noir');
+  });
+
+  it('an amend opens with the keyboard down: it came for its films', () => {
+    mockParams = { editId: STACK_ID };
+    mockLists = [STACK];
+    const r = mount();
+    expect(r.getByTestId('stack-title-input').props.autoFocus).toBe(false);
+  });
+});

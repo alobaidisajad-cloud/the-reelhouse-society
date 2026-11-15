@@ -17,6 +17,7 @@ import { InteractionManager } from 'react-native';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { noticeRoute } from '@/src/utils/noticeRoute';
 import { nav } from '@/src/utils/typedRouter';
+import { currentHref } from '@/src/utils/openSociety';
 
 export const NOTICES_SHEET = '/notifications-modal';
 
@@ -25,7 +26,9 @@ export async function openNoticeFromPush(notificationId: string): Promise<string
   const notice = await store.getNotice(notificationId);
   if (notice && !notice.read) void store.markRead(notice.id);
   const route = (notice && noticeRoute(notice)) || NOTICES_SHEET;
-  InteractionManager.runAfterInteractions(() => nav.push(route));
+  // The page it is about already in front (the notices sheet open, the film on screen): it is
+  // shown, and a second copy is never stacked on it.
+  InteractionManager.runAfterInteractions(() => { if (currentHref() !== route) nav.push(route); });
   return route;
 }
 

@@ -503,7 +503,7 @@ export default function ProfileLedgerTab({
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <PenTool size={32} color={colors.sepia} strokeWidth={1} style={r.ownIcon} />
           <Text {...scaledTextProps} style={r.ownTitle}>A Blank Ledger</Text>
-          <PressableScale style={r.ownAct} onPress={() => nav.push('/search-modal')} haptic accessibilityRole="button" accessibilityLabel="Draft a critique">
+          <PressableScale style={r.ownAct} onPress={() => nav.push('/log-modal')} haptic accessibilityRole="button" accessibilityLabel="Draft a critique">
             <Text {...scaledTextProps} style={r.ownActText}>DRAFT A CRITIQUE</Text>
           </PressableScale>
         </Animated.View>

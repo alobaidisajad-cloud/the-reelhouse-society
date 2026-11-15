@@ -5,6 +5,7 @@ import { AppState, Linking, View, StyleSheet, Platform } from 'react-native';
 import { pageOfLaunch, rememberTab, stampTab, TABS_HOME, tabToReopenAfter } from '@/src/utils/lastTab';
 import { e2eTrace } from '@/src/utils/e2eTrace';
 import { ROOMS, roomToReopen } from '@/src/utils/lastRoom';
+import { launchingNotification } from '@/src/lib/pushNotifications';
 import { useAuthStore } from '@/src/stores/auth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HouseBlur } from '@/src/components/HouseBlur';
@@ -174,12 +175,14 @@ export default function TabLayout() {
   React.useEffect(() => {
     let gone = false;
     if (launchedAt.current === '/') {
-      void Linking.getInitialURL().catch(() => null).then((url) => {
-        const tab = tabToReopenAfter(url);
+      void Promise.all([Linking.getInitialURL().catch(() => null), launchingNotification()]).then(([url, tapped]) => {
+        // A launch a tapped notification made opens what it was about (openNoticeFromPush), as a
+        // launch a link made opens the link: neither a tab nor a room is reopened over it.
+        const tab = tapped ? null : tabToReopenAfter(url);
         // A writing room the phone closed behind the member, with their words still in its
         // draft, opens again over its tab (lastRoom.ts): never for a launch a link made.
-        const room = pageOfLaunch(url) ? null : roomToReopen(useAuthStore.getState().user?.id);
-        e2eTrace('tabs.reopen', { tab, room, link: pageOfLaunch(url) || null, moved: here.current !== '/' });
+        const room = pageOfLaunch(url) || tapped ? null : roomToReopen(useAuthStore.getState().user?.id);
+        e2eTrace('tabs.reopen', { tab, room, link: pageOfLaunch(url) || null, notice: !!tapped, moved: here.current !== '/' });
         if (!gone && here.current === '/') {
           if (tab) router.navigate(`/${tab}` as Href);
           if (room) nav.push(ROOMS[room].href);

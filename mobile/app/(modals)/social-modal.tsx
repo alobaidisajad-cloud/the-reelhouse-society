@@ -2,7 +2,6 @@ import { nav } from '@/src/utils/typedRouter';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
 import { RemoteImage } from '@/src/components/Picture';
-import { router } from 'expo-router';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, InteractionManager, StyleSheet, View } from 'react-native';
@@ -295,7 +294,7 @@ export default function SocialModal() {
 
     // ── Handlers ──────────────────────────────────────────────────────────────
     const handleProfilePress = useCallback((username: string) => {
-        router.dismiss();
+        nav.dismiss();
         InteractionManager.runAfterInteractions(() => {
             nav.push(`/user/${username}`);
         });

@@ -205,7 +205,7 @@ export default function AuthCallbackScreen() {
 
                 <PressableScale
                   style={s.retryBtnSecondary}
-                  onPress={() => nav.replace('/(tabs)')}
+                  onPress={() => nav.dismissTo('/(tabs)')}
                   pressedScale={0.97}
                   haptic="light"
                 >

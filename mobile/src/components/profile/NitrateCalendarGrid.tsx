@@ -147,7 +147,7 @@ export default function NitrateCalendarGrid({ days, isSelf }: Props) {
 
       {drawn === 0 && isSelf && (
         <Animated.View style={[s.ctaContainer, flickerStyle]}>
-          <PressableScale style={s.ctaBtn} onPress={() => nav.push('/search-modal')} haptic accessibilityRole="button" accessibilityLabel="Ignite the timeline — log a film">
+          <PressableScale style={s.ctaBtn} onPress={() => nav.push('/log-modal')} haptic accessibilityRole="button" accessibilityLabel="Ignite the timeline — log a film">
             <Flame size={14} color={colors.flicker} style={{ marginRight: 8 }} />
             <Text {...scaledTextProps} style={s.ctaText}>IGNITE THE TIMELINE</Text>
           </PressableScale>

@@ -134,6 +134,12 @@ describe('the search room', () => {
     return r;
   }
 
+  it('opens ready to be typed into: the keys are up at once (review round 4)', async () => {
+    mockSearchResult.mockReturnValue(answer());
+    const r = await render(<SearchModal />, { wrapper: Wrapper });
+    expect(r.getByLabelText('Search the archives').props.autoFocus).toBe(true);
+  });
+
   it('names each tab, its results and which is chosen', async () => {
     mockSearchResult.mockReturnValue(answer());
     const r = await open();

@@ -20,9 +20,9 @@
  * drawn, and the sign-in brings them back to it (P4.21).
  */
 import { useBackCloses } from '@/src/hooks/useBackCloses';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { characterCount } from '@/src/utils/text';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { houseNow } from '@/src/lib/houseClock';
@@ -52,6 +52,8 @@ import { useClock } from '@/src/hooks/useClock';
 import Animated from 'react-native-reanimated';
 import { UnderSheet } from '@/src/components/layout/UnderSheet';
 import { nav } from '@/src/utils/typedRouter';
+import { useAskBeforeLeaving } from '@/src/hooks/useAskBeforeLeaving';
+import { TakenUpLine } from '@/src/components/TakenUpLine';
 
 /** The hour the filing will carry: from the shared clock, the desk is drawn again only when the hour turns. */
 function useOpeningHour(): string {
@@ -109,6 +111,44 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   const [spoiler, setSpoiler] = useState(() => !!existing?.spoilerLabel);
   const [finding, setFinding] = useState(false);
   const [sending, setSending] = useState(false);
+  /** Filed or amended: the desk is leaving, and asks nothing on its way out. */
+  const [done, setDone] = useState<'filed' | 'amended' | null>(null);
+
+  /**
+   * What would be lost by leaving. This desk keeps no draft, so every way out with words in it
+   * asks first: swiped down, Android's back, BACK to the forms. An amend loses only its changes.
+   */
+  const unsaved = !done && !sending && (amending
+    ? body !== (existing?.body ?? '') || source !== (existing?.source ?? '') || spoiler !== !!existing?.spoilerLabel
+    : !!(body.trim() || source.trim() || film));
+  const LEAVE_TITLE = amending ? 'Discard these amendments?' : 'Discard what you wrote?';
+  const LEAVE_WORDS = amending
+    ? 'It stays as it was filed. The changes made here will be lost.'
+    : 'This desk keeps no draft. Leave now and these words are gone.';
+  useAskBeforeLeaving(unsaved, { title: LEAVE_TITLE, message: LEAVE_WORDS });
+
+  // The way out once the house has it: an amend back to the filing it amended; a filing to the
+  // Dispatch the member came from (dismissed to, never replaced: a replace built a second tab
+  // app over the first).
+  useEffect(() => {
+    if (done === 'amended') nav.back();
+    else if (done === 'filed') nav.dismissTo('/(tabs)/dispatch');
+  }, [done]);
+
+  /**
+   * BACK, on screen and Android's: a new filing goes back to the choice of form (asked first
+   * when it holds words); an amend has no form to choose, and goes back to the filing.
+   */
+  const onBack = useCallback(() => {
+    if (amending) { nav.back(); return; }
+    const toForms = () => router.setParams({ kind: '' });
+    if (!unsaved) { toForms(); return; }
+    Alert.alert(LEAVE_TITLE, LEAVE_WORDS, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: toForms },
+    ]);
+  }, [amending, unsaved, LEAVE_TITLE, LEAVE_WORDS]);
+  useBackCloses(!amending && !finding, onBack);
 
   const remaining = MAX_LENGTHS.filingBody - body.length;
 
@@ -131,7 +171,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
         });
         // Queued is not gone, as the essay's desk says it.
         reelToast.success(amended?.offline ? 'Amended. It goes out when the wire is back.' : 'Amended');
-        nav.back();
+        setDone('amended');
       } catch (e) {
         // the new words are still in the field
         reelToast.error(isChangedSince(e) ? FILING_CHANGED_SINCE : 'It could not be amended.');
@@ -157,7 +197,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
           : null,
       });
       reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Filed');
-      router.replace('/(tabs)/dispatch');
+      setDone('filed');
     } catch {
       // "Still here", not "kept": this desk keeps no draft.
       reelToast.error('It did not go. Your words are still here.');
@@ -188,8 +228,8 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
           source={source}
           onSource={kind === 'wire' ? setSource : undefined}
           onBody={setBody}
-          // BACK returns to the choice of form, not out of the modal.
-          onBack={() => router.setParams({ kind: '' })}
+          // BACK returns to the choice of form, not out of the modal (an amend, to its filing).
+          onBack={onBack}
           onFile={onFile}
           onFilm={() => setFinding(true)}
           // A still is its film's; before a film is named, the desk says so.
@@ -227,6 +267,9 @@ export function ComposeBallotScreen() {
   const [closes, setCloses] = useState<ClosingTime>(DEFAULT_CLOSING);
   const [finding, setFinding] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  /** When the ballot taken up was kept; null once it is touched, or for a fresh desk. */
+  const [takenUpAt, setTakenUpAt] = useState<string | null>(null);
+  const [filedBallot, setFiledBallot] = useState(false);
 
   // The draft. Its deadline is safe to restore: `closes` is a relative label
   // (`2 DAYS`), made a time only at filing, so it can never restore as past.
@@ -239,6 +282,8 @@ export function ComposeBallotScreen() {
       slots?: ({ film: PaperFilm; id: number } | null)[];
       closes?: string;
     }>(userId, 'ballot');
+    // Said, as every writing room says a draft it took up, with the way to a clean desk.
+    if (held && (held.data.question || held.data.slots?.some(Boolean))) setTakenUpAt(held.savedAt ?? '');
     if (held?.data.question) setQuestion(held.data.question);
     // Only a closing time the desk still offers: an unknown one would highlight nothing.
     if (isClosingTime(held?.data.closes)) setCloses(held.data.closes);
@@ -249,17 +294,43 @@ export function ComposeBallotScreen() {
     }
   }
 
+  // Kept once the desk rests a second, and at once if it closes first (the last second's words).
+  const unkept = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (!userId) return;
-    const t = setTimeout(() => {
+    const keep = () => {
       if (question.trim() || slots.some(Boolean)) {
         writeDraft(userId, 'ballot', { question, slots, closes });
       } else {
         clearDraft(userId, 'ballot');
       }
-    }, 1000);
+    };
+    unkept.current = keep;
+    const t = setTimeout(() => { unkept.current = null; keep(); }, 1000);
     return () => clearTimeout(t);
   }, [question, slots, closes, userId]);
+  useEffect(() => () => {
+    const keep = unkept.current;
+    unkept.current = null;
+    keep?.();
+  }, []);
+
+  // Once open, to the Dispatch the member came from (dismissed to, never replaced).
+  useEffect(() => { if (filedBallot) nav.dismissTo('/(tabs)/dispatch'); }, [filedBallot]);
+
+  /** Any change lets the line about the ballot taken up go, as the essay's does on a keystroke. */
+  const touched = <A extends unknown[]>(act: (...a: A) => void) => (...a: A) => { setTakenUpAt(null); act(...a); };
+  const startClean = useCallback(() => {
+    unkept.current = null;
+    clearDraft(userId, 'ballot');
+    setQuestion('');
+    setSlots(Array.from({ length: BALLOT_MAX }, () => null));
+    setCloses(DEFAULT_CLOSING);
+    setTakenUpAt(null);
+  }, [userId]);
+  const toForms = useCallback(() => router.setParams({ kind: '' }), []);
+  // Android's back is BACK: to the choice of form, the ballot kept.
+  useBackCloses(finding === null, toForms);
 
   const filled = slots.filter(Boolean).length;
   const ready = filled >= BALLOT_MIN && question.trim().length > 0 && !sending;
@@ -286,9 +357,10 @@ export function ComposeBallotScreen() {
         options,
         closesAt,
       });
+      unkept.current = null;
       clearDraft(userId, 'ballot'); // only once the house has it
       reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'The ballot is open');
-      router.replace('/(tabs)/dispatch');
+      setFiledBallot(true);
     } catch (e) {
       // Reached by link without the rank: the house says why, and the way to it.
       if (showTierDoor(e, { returnTo: '/dispatch/compose?kind=ballot', also: 'Your question is kept.' })) return;
@@ -310,15 +382,16 @@ export function ComposeBallotScreen() {
           me={me}
           hour={hour}
           question={question}
-          onQuestion={setQuestion}
+          onQuestion={touched(setQuestion)}
           options={slots.map((s) => s?.film ?? null)}
           closes={closes}
           ready={ready}
-          onRemove={(i) => setSlots((prev) => prev.map((s, n) => (n === i ? null : s)))}
+          onRemove={touched((i: number) => setSlots((prev) => prev.map((s, n) => (n === i ? null : s))))}
           onChoose={(i) => setFinding(i)}
-          onCloses={setCloses}
-          onBack={() => router.setParams({ kind: '' })}
+          onCloses={touched(setCloses)}
+          onBack={toForms}
           onFile={onFile}
+          takenUp={takenUpAt !== null ? <TakenUpLine savedAt={takenUpAt || null} onStartClean={startClean} /> : null}
         />
       </UnderSheet>
       <FilmPicker
@@ -331,6 +404,7 @@ export function ComposeBallotScreen() {
             reelToast.error('That film is already on this ballot.');
             return;
           }
+          setTakenUpAt(null);
           setSlots((prev) => prev.map((s, n) => (n === finding ? { film: f, id } : s)));
           setFinding(null);
         }}

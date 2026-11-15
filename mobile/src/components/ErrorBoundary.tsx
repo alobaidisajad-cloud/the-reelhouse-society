@@ -97,7 +97,8 @@ export default class ErrorBoundary extends Component<Props, State> {
     // navigation tree), this will throw — but we still reset the boundary
     // state so the component tree can attempt a clean re-mount.
     try {
-      (router.replace as any)('/(tabs)');
+      // Back to the tab app beneath (or one made, if none is): a replace built a second over it.
+      router.dismissTo('/(tabs)');
     } catch {
       // Router context may be corrupt — the state reset below will
       // still allow the component tree to re-mount cleanly.

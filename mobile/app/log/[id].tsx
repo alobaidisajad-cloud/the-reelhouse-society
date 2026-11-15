@@ -11,6 +11,7 @@ import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-quer
 import * as Crypto from 'expo-crypto';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { P, useRouteParams } from '@/src/utils/routeParams';
+import { useFocusEffect } from 'expo-router';
 import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
@@ -371,6 +372,12 @@ function LogDetailScreen({ id }: { id: string }) {
   });
 
   const log = logQueryData?.log ?? null;
+  // The member's own record, read here and then withdrawn from its editor above this page: the
+  // page leaves with it, and is never left standing as "No Such Record" for the one who withdrew it.
+  const [ownRead, setOwnRead] = useState<string | null>(null);
+  if (log && user?.id && log.user_id === user.id && ownRead !== log.id) setOwnRead(log.id);
+  const withdrawnHere = !log && !logQueryFailed && !!id && ownRead === id;
+  useFocusEffect(useCallback(() => { if (withdrawnHere) nav.back(); }, [withdrawnHere]));
   const filedAgo = useTimeAgo(log?.created_at);
   const profile = logQueryData?.profile ?? null;
   const comments = logQueryData?.comments ?? [];
@@ -762,6 +769,16 @@ function LogDetailScreen({ id }: { id: string }) {
       <View style={[s.container, s.centerFull]}>
         <RoomLight room="film" />
         <EmptyOffline onRetry={() => { void rereadLog(); }} wayOut={{ label: wayOut, onPress: () => { nav.back(); } }} />
+        {readyMark}
+      </View>
+    );
+  }
+
+  // Withdrawn by the member here: the page is leaving, and says nothing of it.
+  if (withdrawnHere) {
+    return (
+      <View style={[s.container, s.centerFull]}>
+        <RoomLight room="film" />
         {readyMark}
       </View>
     );

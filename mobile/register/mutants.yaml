@@ -4493,3 +4493,237 @@ mutants:
         find: "        const now = get().watchlist;"
         replace: "        const now = state.watchlist;"
     proof: { file: src/stores/__tests__/watchlistSlice.test.ts, test: "a next page joins the list as it stands when it lands, not the copy taken before" }
+
+  - id: shape-log-sheet-takes-up-the-last-film
+    class: STATE-a-screen-opened-where-the-last-left
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "                if (params.resume === 'draft' && !film?.id && parsed.filmId) {"
+        replace: "                if (!film?.id && parsed.filmId) {"
+    proof: { file: src/hooks/__tests__/theLogSheetOpensWhereItWasAsked.test.tsx, test: "opened with a record unsent, the sheet stands on the search and offers it" }
+
+  - id: shape-another-film-carries-the-last-form
+    class: STATE-a-screen-opened-where-the-last-left
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "        if (!editLogId && f.id !== film?.id) {"
+        replace: "        if (!editLogId && f.id !== film?.id && false) {"
+    proof: { file: src/hooks/__tests__/theLogSheetOpensWhereItWasAsked.test.tsx, test: "another film opens a clean form: nothing of the last film is carried onto it" }
+
+  - id: shape-stack-taken-up-in-silence
+    class: STATE-a-screen-opened-where-the-last-left
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "                {showTakenUp ? <TakenUpLine savedAt={takenUp?.at || null} onStartClean={startClean} style={s.takenUp} /> : null}"
+        replace: "                {null}"
+    proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "is said to be taken up, and START CLEAN empties the desk and the draft" }
+
+  - id: shape-ballot-taken-up-in-silence
+    class: STATE-a-screen-opened-where-the-last-left
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "          takenUp={takenUpAt !== null ? <TakenUpLine savedAt={takenUpAt || null} onStartClean={startClean} /> : null}"
+        replace: "          takenUp={null}"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "a ballot taken up says so, with START CLEAN, which empties the desk and the draft" }
+
+  - id: shape-reopen-over-a-tapped-launch
+    class: NAV-launch-link-overridden
+    source: shape
+    edits:
+      - file: app/(tabs)/_layout.tsx
+        find: "        const tab = tapped ? null : tabToReopenAfter(url);"
+        replace: "        const tab = tabToReopenAfter(url);"
+    proof: { file: src/lib/__tests__/theLaunchingTapIsReadOnce.test.ts, test: "the tabs reopen neither a tab nor a room over a launch a tap made" }
+
+  - id: shape-filing-replaces-the-tabs
+    class: NAV-a-replace-that-builds-a-second-tab-app
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "    else if (done === 'filed') nav.dismissTo('/(tabs)/dispatch');"
+        replace: "    else if (done === 'filed') router.replace('/(tabs)/dispatch');"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "files and goes home to the Dispatch already beneath, never building a second" }
+
+  - id: shape-salon-exit-replaces-the-tabs
+    class: NAV-a-replace-that-builds-a-second-tab-app
+    source: shape
+    edits:
+      - file: src/components/lounge/LoungeSettingsPanel.tsx
+        find: "        if (!(await deleteLounge(lounge.id))) return;\n        onClose();\n        InteractionManager.runAfterInteractions(() => nav.dismissTo('/(tabs)/lounge'));"
+        replace: "        if (!(await deleteLounge(lounge.id))) return;\n        onClose();\n        InteractionManager.runAfterInteractions(() => nav.replace('/(tabs)/lounge'));"
+    proof: { file: src/components/lounge/__tests__/aRefusedLeaveStaysInTheRoom.test.tsx, test: "goes to the corridor once it is destroyed" }
+
+  - id: shape-finished-room-backs-up
+    class: WRITE-a-way-out-that-keeps-what-was-let-go
+    source: shape
+    edits:
+      - file: app/dispatch/compose.tsx
+        find: "            if (finished.current) return;\n            // Not settled"
+        replace: "            // Not settled"
+    proof: { file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "a filed essay is not backed up again as the room closes, so it never returns as a draft" }
+
+  - id: shape-log-android-back-closes
+    class: NAV-a-back-that-skips-or-strays
+    source: shape
+    edits:
+      - file: app/(modals)/log-modal.tsx
+        find: "    useBackCloses(editReady && step === 1 && !isEditing && !submitting && !flow.sealed, flow.backToSearch);"
+        replace: "    useBackCloses(false, flow.backToSearch);"
+    proof: { file: src/components/log/__tests__/theLogSheetGoesBackAStep.test.tsx, test: "Android's back on a film goes back to the search, and the sheet stays open" }
+
+  - id: shape-desk-android-back-closes
+    class: NAV-a-back-that-skips-or-strays
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "  useBackCloses(!amending && !finding, onBack);"
+        replace: "  useBackCloses(false, onBack);"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "Android's back is BACK: to the forms, the sheet still open" }
+
+  - id: shape-amend-back-to-the-forms
+    class: NAV-a-back-that-skips-or-strays
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "    if (amending) { nav.back(); return; }\n    const toForms"
+        replace: "    const toForms"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK goes back to the filing, never to another desk" }
+
+  - id: shape-log-search-forgotten
+    class: NAV-a-back-that-skips-or-strays
+    source: shape
+    edits:
+      - file: src/components/log/LogSearchEngine.tsx
+        find: "    const query = keptQuery ?? ownQuery;"
+        replace: "    const query = ownQuery;"
+    proof: { file: src/components/log/__tests__/logSearchEngine.test.tsx, test: "the search kept above it is drawn as kept, and each change goes back up" }
+
+  - id: shape-take-left-without-asking
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "    if (!unsaved) { toForms(); return; }"
+        replace: "    { toForms(); return; }"
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK with words asks first, and only a discard goes to the forms" }
+
+  - id: shape-essay-last-second-dropped
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: app/dispatch/compose.tsx
+        find: "        if (!finished.current) keep?.();\n"
+        replace: ""
+    proof: { file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "a room left with words in it backs them up, and keeps the last second of them, as it closes" }
+
+  - id: shape-ballot-last-second-dropped
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "  useEffect(() => () => {\n    const keep = unkept.current;\n    unkept.current = null;\n    keep?.();\n  }, []);\n"
+        replace: ""
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "closed within a second of typing, it keeps the last words" }
+
+  - id: shape-stack-last-second-dropped
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "        if (!filedStack.current) keep?.();\n"
+        replace: ""
+    proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "closed within a beat of typing, it keeps the last edit" }
+
+  - id: shape-cancel-only-discards
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: app/dispatch/compose.tsx
+        find: "                                        { text: 'Keep for later', onPress: () => { nav.back(); } },\n"
+        replace: ""
+    proof: { file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "asks before discarding words" }
+
+  - id: shape-picker-before-the-door
+    class: UI-a-room-drawn-before-its-door
+    source: shape
+    edits:
+      - file: app/dispatch/compose.tsx
+        find: "    if (door.loading) return <DoorAsked />;\n"
+        replace: ""
+    proof: { file: src/components/dispatch/__tests__/theDoorIsShown.test.tsx, test: "draws nothing while it is still asking" }
+
+  - id: shape-door-not-remembered
+    class: UI-a-room-drawn-before-its-door
+    source: shape
+    edits:
+      - file: src/hooks/useDoor.ts
+        find: "      if (read !== UNANSWERED) lastAnswer = next;\n"
+        replace: ""
+    proof: { file: src/components/dispatch/__tests__/theDoorIsShown.test.tsx, test: "the next opening starts from the answer, drawn at once, and asks again behind it" }
+
+  - id: shape-cover-asked-while-leaving
+    class: NAV-a-sheet-asked-for-over-one-still-there
+    source: shape
+    edits:
+      - file: src/components/lounge/LoungeSettingsPanel.tsx
+        find: "    coverPending.current = true;\n    onClose();"
+        replace: "    coverPending.current = true;\n    onClose();\n    nav.push('/cover-picker', { loungeId: lounge.id });"
+    proof: { file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "the picker is asked for only once the settings have gone, and once" }
+
+  - id: shape-push-stacks-a-copy
+    class: NAV-a-sheet-asked-for-over-one-still-there
+    source: shape
+    edits:
+      - file: src/utils/openNoticeFromPush.ts
+        find: "{ if (currentHref() !== route) nav.push(route); }"
+        replace: "{ nav.push(route); }"
+    proof: { file: src/utils/__tests__/theTappedNoticeOpensIt.test.ts, test: "about the page already in front, opens no second copy over it (review round 4)" }
+
+  - id: shape-log-door-opens-search
+    class: NAV-a-door-to-the-wrong-room
+    source: shape
+    edits:
+      - file: src/components/profile/ProfileLedgerTab.tsx
+        find: "onPress={() => nav.push('/log-modal')} haptic accessibilityRole=\"button\" accessibilityLabel=\"Draft a critique\""
+        replace: "onPress={() => nav.push('/search-modal')} haptic accessibilityRole=\"button\" accessibilityLabel=\"Draft a critique\""
+    proof: { file: src/components/profile/__tests__/anEmptyLedgerSaysSo.test.tsx, test: "the way to fill it opens the Log sheet, on its own search" }
+
+  - id: shape-withdrawn-page-stays
+    class: NAV-a-door-to-the-wrong-room
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "  useFocusEffect(useCallback(() => { if (withdrawnHere) nav.back(); }, [withdrawnHere]));\n"
+        replace: ""
+    proof: { file: app/__tests__/aRecordWithdrawnLeavesItsPage.test.tsx, test: "the member's own record, withdrawn from its editor, takes its page with it, saying nothing" }
+
+  - id: shape-search-not-focused
+    class: UI-the-keys-not-where-the-hand-is
+    source: shape
+    edits:
+      - file: app/(modals)/search-modal.tsx
+        find: "            autoFocus\n            placeholder=\"Search the archives...\""
+        replace: "            placeholder=\"Search the archives...\""
+    proof: { file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "opens ready to be typed into: the keys are up at once (review round 4)" }
+
+  - id: shape-amend-raises-the-keys
+    class: UI-the-keys-not-where-the-hand-is
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "                    autoFocus={!params.editId && !takenUp}"
+        replace: "                    autoFocus={!takenUp}"
+    proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "an amend opens with the keyboard down: it came for its films" }
+
+  - id: shape-profile-scroll-not-handed
+    class: NAV-a-tab-tapped-again-that-does-nothing
+    source: shape
+    edits:
+      - file: app/user/[username].tsx
+        find: "      <CinematicScrollView ref={scrollRef} contentContainerStyle"
+        replace: "      <CinematicScrollView contentContainerStyle"
+    proof: { file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "the Profile tab, tapped again, takes the file to its top: the file's own scroll is the one handed over (review round 4)" }

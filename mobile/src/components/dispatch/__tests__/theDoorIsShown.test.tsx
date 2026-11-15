@@ -28,6 +28,7 @@ import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
 import ComposeScreen from '@/app/dispatch/compose';
+import { forgetDoor } from '@/src/hooks/useDoor';
 
 let mockUser: Record<string, unknown> | null = {
   id: 'u1', username: 'me', tier: 'free', created_at: '2026-09-09T00:00:00Z',
@@ -50,6 +51,7 @@ jest.mock('expo-router', () => ({
     back: () => mockBack(),
     canGoBack: () => true,
     replace: (h: string) => { mockReplaced.push(h); },
+    dismissTo: jest.fn(),
     push: (h: string) => { mockPushed.push(h); },
     setParams: jest.fn(),
   },
@@ -101,6 +103,7 @@ const mount = async () => {
 };
 
 beforeEach(() => {
+  forgetDoor();
   mockUser = { id: 'u1', username: 'me', tier: 'free', created_at: '2026-09-09T00:00:00Z' };
   mockParams = {};
   mockStanding = null;
@@ -193,9 +196,32 @@ describe('the door', () => {
     mockStanding = { films: 12, films_needed: 5, days: 40, days_needed: 2, may_file: true };
     const r = render(<ComposeScreen />);
     expect(r.queryByText('The door opens shortly.')).toBeNull();
+    // Nor a picker the member could tap into before the door replaced it: the sheet's ground,
+    // and its way out.
+    expect(r.queryByText('WHAT ARE YOU FILING?')).toBeNull();
+    expect(r.getByLabelText('Back')).toBeTruthy();
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
     // Asked and answered: the member who may file is let through.
     expect(r.getByText('WHAT ARE YOU FILING?')).toBeTruthy();
+  });
+
+  it('the next opening starts from the answer, drawn at once, and asks again behind it', async () => {
+    mockStanding = { films: 12, films_needed: 5, days: 40, days_needed: 2, may_file: true };
+    const first = await mount();
+    first.unmount();
+    mockRpcNames.length = 0;
+    const r = render(<ComposeScreen />);
+    expect(r.getByText('WHAT ARE YOU FILING?')).toBeTruthy();
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(mockRpcNames).toEqual(['dispatch_door']);
+  });
+
+  it('an answer that could not be had is never remembered: the next opening asks first', async () => {
+    mockRpcError = { message: 'network' };
+    const first = await mount();
+    first.unmount();
+    const r = render(<ComposeScreen />);
+    expect(r.queryByText('WHAT ARE YOU FILING?')).toBeNull();
   });
 
   it('has a way back out', async () => {

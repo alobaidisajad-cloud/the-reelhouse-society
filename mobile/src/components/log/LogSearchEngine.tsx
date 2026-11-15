@@ -16,6 +16,7 @@ import SearchUnreachable from '@/src/components/search/SearchUnreachable';
 import { useCatalogueSearch } from '@/src/hooks/useCatalogueSearch';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
 import { useContentBottom } from '@/src/components/layout/navMetrics';
+import type { WaitingDraft } from '@/src/hooks/useLogFlow';
 
 export interface LogSearchResult {
     id: number;
@@ -30,6 +31,47 @@ export interface LogSearchResult {
 
 interface Props {
     onSelectFilm: (film: LogSearchResult) => void;
+    /** The record begun and not sent: offered before anything is searched for. */
+    waiting?: WaitingDraft | null;
+    /** The search's words, when they are kept above it (the Log sheet keeps them across a film). */
+    query?: string;
+    onQueryChange?: (query: string) => void;
+}
+
+/** What waits in an unsent record, in the words a result's particulars use. */
+export function waitingMeta(w: WaitingDraft): string {
+    const year = w.film.release_date?.slice(0, 4);
+    const stars = w.rating > 0 ? `${w.rating} OF 5` : '';
+    const words = w.wrote ? 'WORDS KEPT' : '';
+    return [year, stars, words].filter(Boolean).join(' · ');
+}
+
+/**
+ * The record left unsent, at the head of the search. The sheet opens where it was asked to; the
+ * member's words wait here, one tap from where they left them, and never stand in the way of
+ * another film.
+ */
+function WaitingRecord({ waiting, onSelectFilm }: { waiting: WaitingDraft; onSelectFilm: (film: LogSearchResult) => void }) {
+    const title = waiting.film.title || waiting.film.name || 'Untitled';
+    const meta = waitingMeta(waiting);
+    return (
+        <View style={st.waitingWrap}>
+            <Text style={st.waitingLabel}>YOUR UNSENT RECORD</Text>
+            <PressableScale style={[st.resultRow, st.waitingRow]} onPress={() => onSelectFilm(waiting.film)} haptic="selection" pressedScale={0.96}
+                accessibilityRole="button" accessibilityLabel={`Continue your unsent record of ${title}${meta ? `, ${meta.split(' · ').join(', ').toLowerCase()}` : ''}`}>
+                <RemoteImage uri={tmdb.poster(waiting.film.poster_path, 'w92')} style={st.resultPoster} contentFit="cover" transition={150} fallback={<PosterMark style={st.resultPoster} size={12} />} />
+                <View style={st.resultFlex}>
+                    <Text style={st.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{title}</Text>
+                    {meta ? (
+                        <View style={st.resultMetaRow}>
+                            <Text style={st.resultMeta}>{meta}</Text>
+                        </View>
+                    ) : null}
+                </View>
+                <Text style={st.waitingGo}>CONTINUE</Text>
+            </PressableScale>
+        </View>
+    );
 }
 
 /**
@@ -74,10 +116,12 @@ const LogSearchResultRow = React.memo(({ r, onSelectFilm }: { r: LogSearchResult
     );
 });
 
-export default function LogSearchEngine({ onSelectFilm }: Props) {
+export default function LogSearchEngine({ onSelectFilm, waiting, query: keptQuery, onQueryChange }: Props) {
     // Drawn in a modal: its last result clears the home indicator.
     const end = useContentBottom();
-    const [query, setQuery] = useState('');
+    const [ownQuery, setOwnQuery] = useState('');
+    const query = keptQuery ?? ownQuery;
+    const setQuery = onQueryChange ?? setOwnQuery;
     const search = useCatalogueSearch(query);
     const { searching, searchType, matchedContext: searchContext, unreachable } = search;
     // A person has no record to log: films only, and eight at most.
@@ -135,6 +179,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                 />
             </View>
             </View>
+            {waiting && !query.trim() && <WaitingRecord waiting={waiting} onSelectFilm={onSelectFilm} />}
             {searching && (
                 <View style={st.searchingWrap}><Text style={st.searchingText}>TRANSMITTING QUERY...</Text></View>
             )}
@@ -196,6 +241,10 @@ const st = StyleSheet.create({
     resultMeta: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 1, includeFontPadding: false },
     noResultsWrap: { alignItems: 'center', paddingVertical: 40 },
     noResultsText: { fontFamily: fonts.sub, fontSize: 13, color: colors.fog },
+    waitingWrap: { marginTop: 16, gap: 8 },
+    waitingLabel: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 2.4, includeFontPadding: false },
+    waitingRow: { borderColor: colors.sepia },
+    waitingGo: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 1.6, includeFontPadding: false },
 });
 
 

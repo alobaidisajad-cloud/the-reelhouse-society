@@ -76,6 +76,9 @@ const tmdbFilm = (id: number, title: string, year: string) => ({
 });
 
 beforeEach(() => {
+  // A fresh desk each case: the desk keeps its last words as it closes, and the last case's
+  // ballot would otherwise be taken up by this one.
+  clearDraft('u1', 'ballot');
   mockResults = []; mockFiled.length = 0;
   mockToast.error.mockClear(); mockToast.success.mockClear();
   jest.useFakeTimers({ doNotFake: ['nextTick'] });

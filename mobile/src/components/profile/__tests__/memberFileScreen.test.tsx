@@ -191,6 +191,16 @@ describe('the four states the page can be in', () => {
     for (const section of ['THE HOLDINGS']) expect(r.getByText(section)).toBeTruthy();
     expect(r.getByText('THE VIEWING CALENDAR')).toBeTruthy();
   });
+
+  it("the Profile tab, tapped again, takes the file to its top: the file's own scroll is the one handed over (review round 4)", async () => {
+    const navigation = require('expo-router/react-navigation');
+    const handed = jest.spyOn(navigation, 'useScrollToTop');
+    await mount({}, {}, { isRootTab: true });
+    const ref = handed.mock.calls[handed.mock.calls.length - 1]?.[0] as { current: unknown } | undefined;
+    // Handed the scroll itself, drawn: a ref left empty scrolls nothing when the tab is tapped.
+    expect(ref?.current).toBeTruthy();
+    handed.mockRestore();
+  });
 });
 
 describe('the ident block', () => {

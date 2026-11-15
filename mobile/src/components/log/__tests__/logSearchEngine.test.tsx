@@ -9,7 +9,7 @@
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
-import LogSearchEngine, { resultMeta } from '../LogSearchEngine';
+import LogSearchEngine, { resultMeta, waitingMeta } from '../LogSearchEngine';
 import { tmdb } from '@/src/lib/tmdb';
 
 jest.mock('lucide-react-native', () => {
@@ -270,5 +270,41 @@ describe('a result names its particulars, and only the ones it has', () => {
   it('a film with no date has no year, and no dangling separator', () => {
     expect(resultMeta({ vote_average: 7.9 })).toBe('TMDB 7.9');
     expect(resultMeta({})).toBe('');
+  });
+});
+
+describe('a record begun and not sent waits at the head of the search', () => {
+  const WAITING = { film: { id: 603, title: 'The Matrix', poster_path: '/m.jpg', release_date: '1999-03-31' }, rating: 4, wrote: true };
+
+  it('is offered before anything is searched for, and hands back its film', async () => {
+    const onSelectFilm = jest.fn();
+    const r = render(<LogSearchEngine onSelectFilm={onSelectFilm} waiting={WAITING} />);
+    expect(r.getByText('YOUR UNSENT RECORD')).toBeTruthy();
+    await fireEvent.press(r.getByLabelText('Continue your unsent record of The Matrix, 1999, 4 of 5, words kept'));
+    expect(onSelectFilm).toHaveBeenCalledWith(WAITING.film);
+  });
+
+  it('steps aside while a film is searched for, and comes back when the search is cleared', async () => {
+    const r = render(<LogSearchEngine onSelectFilm={jest.fn()} waiting={WAITING} />);
+    await type(r, 'chinatown');
+    expect(r.getByText('Chinatown')).toBeTruthy();
+    expect(r.queryByText('YOUR UNSENT RECORD')).toBeNull();
+    await type(r, '');
+    expect(r.getByText('YOUR UNSENT RECORD')).toBeTruthy();
+  });
+
+  it('the search kept above it is drawn as kept, and each change goes back up', async () => {
+    const onQueryChange = jest.fn();
+    const r = render(<LogSearchEngine onSelectFilm={jest.fn()} query="seventh" onQueryChange={onQueryChange} />);
+    // Back from a film, the words the member searched with are still in the field.
+    expect(r.getByLabelText('Search for a film to log').props.value).toBe('seventh');
+    await fireEvent.changeText(r.getByLabelText('Search for a film to log'), 'seventh seal');
+    expect(onQueryChange).toHaveBeenCalledWith('seventh seal');
+  });
+
+  it('says what waits in it, and only what does', () => {
+    expect(waitingMeta(WAITING)).toBe('1999 · 4 OF 5 · WORDS KEPT');
+    expect(waitingMeta({ ...WAITING, rating: 0 })).toBe('1999 · WORDS KEPT');
+    expect(waitingMeta({ film: { id: 1 }, rating: 3.5, wrote: false })).toBe('3.5 OF 5');
   });
 });

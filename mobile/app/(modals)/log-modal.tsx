@@ -22,14 +22,16 @@ import { Arrive } from '@/src/components/Arrive';
 import { ChevronLeft, X } from 'lucide-react-native';
 import { e2eTrace, e2eTraceAt } from '@/src/utils/e2eTrace';
 import { RevealAboveDock, useRevealHost } from '@/src/components/layout/RevealAboveDock';
+import { useBackCloses } from '@/src/hooks/useBackCloses';
 
 export default function LogModalScreen() {
 
     const user = useAuthStore((s) => s.user);
     const flow = useLogFlow();
-    const { isAuthenticated, step, film, isEditing, editReady, selectFilm, submitting, setStep } = flow;
-    // A new record is a room a launch may reopen, its draft holding the film; an edit keeps none.
-    useWritingRoom('log-modal', !isEditing);
+    const { isAuthenticated, step, film, isEditing, editReady, selectFilm, submitting } = flow;
+    // A film being written is a room a launch may reopen, its draft holding the film; the search
+    // is not (a launch would open it on the last film unsent), and an edit keeps no draft.
+    useWritingRoom('log-modal', !isEditing && step === 1);
 
     // KEYBOARD LAW (router-screen form): the ScrollView's
     // automaticallyAdjustKeyboardInsets scrolls the FOCUSED field above the
@@ -54,6 +56,9 @@ export default function LogModalScreen() {
         return () => shown.remove();
     }, [reveal]);
     const handleTop = useModalTop();
+    // Android's back on a film is the chevron's: back to the search, the sheet still open. (An
+    // edit has no search; a seal under way is let finish.)
+    useBackCloses(editReady && step === 1 && !isEditing && !submitting && !flow.sealed, flow.backToSearch);
     // Each step the form shows, for the sealed E2E: a flow that lands on the wrong one says when.
     React.useEffect(() => { e2eTrace('log.step', { step, film: film?.id ?? null }); }, [step, film?.id]);
 
@@ -90,7 +95,7 @@ export default function LogModalScreen() {
                     <View style={st.headerLeft}>
                         {isEditing && <View style={st.editBadge}><Text style={st.editBadgeText}>EDITING</Text></View>}
                         {step === 1 && !isEditing && (
-                            <PressableScale touch="wayOut" onPress={() => { e2eTrace('log.back'); setStep(0); }} hitSlop={null} haptic="selection" style={st.backBtn} accessibilityRole="button" accessibilityLabel="Back to search">
+                            <PressableScale touch="wayOut" onPress={() => { e2eTrace('log.back'); flow.backToSearch(); }} hitSlop={null} haptic="selection" style={st.backBtn} accessibilityRole="button" accessibilityLabel="Back to search">
                                 <ChevronLeft size={20} color={colors.fog} strokeWidth={2.5} />
                             </PressableScale>
                         )}
@@ -119,7 +124,7 @@ export default function LogModalScreen() {
 
                 {/* ════ STEP 0: SEARCH ════ */}
                 {editReady && step === 0 && (
-                    <LogSearchEngine onSelectFilm={selectFilm} />
+                    <LogSearchEngine onSelectFilm={selectFilm} waiting={flow.waitingDraft} query={flow.searchQuery} onQueryChange={flow.setSearchQuery} />
                 )}
 
                 {/* ════ STEP 1: LOG FORM ════ */}

@@ -179,7 +179,7 @@ export default function LoginScreen() {
         confirmedEmail={confirmedEmail}
         resending={resending}
         onResend={handleResend}
-        onClose={() => { setAwaitingConfirmation(false); nav.replace('/(tabs)'); }}
+        onClose={() => { setAwaitingConfirmation(false); nav.dismissTo('/(tabs)'); }}
         resendCooldown={resendCooldown}
         onManualConfirm={handleManualConfirmationCheck}
         submitting={submitting}

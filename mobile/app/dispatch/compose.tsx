@@ -129,6 +129,9 @@ export default function ComposeScreen() {
     // everyone; a reader who is not a member is asked in, and brought back to this desk (P4.21).
     if (!user) return <MembersOnly next={params.kind ? `/dispatch/compose?kind=${params.kind}` : '/dispatch/compose'} />;
     if (!door.loading && !door.open) return <TheDoor door={door} />;
+    // The door not yet answered (the first opening of a run; later ones remember it): the sheet's
+    // own ground, never a picker a member could tap before the door replaces it.
+    if (door.loading) return <DoorAsked />;
 
     // An unrecognised kind in a link is not a crash and not a blank screen; it
     // is somebody arriving without having chosen, which is what the picker is.
@@ -159,6 +162,10 @@ function KindPicker() {
         () => readDraft(user?.id, 'dossier') !== null,
         [user?.id],
     );
+    const hasBallotDraft = useMemo(
+        () => readDraft(user?.id, 'ballot') !== null,
+        [user?.id],
+    );
 
     return (
         <View style={[p.screen, { justifyContent: 'flex-end' }]}>
@@ -169,8 +176,8 @@ function KindPicker() {
                     forms={FORMS.map((f) => ({
                         ...f,
                         locked: f.locked ? !holds(f.kind) : false,
-                        // The room keeps ONE unfinished essay; the picker says so.
-                        inProgress: f.kind === 'dossier' && hasDossierDraft,
+                        // The rooms keep ONE unfinished essay and ONE ballot; the picker says so.
+                        inProgress: (f.kind === 'dossier' && hasDossierDraft) || (f.kind === 'ballot' && hasBallotDraft),
                     }))}
                     onPick={(k) => router.setParams({ kind: k })}
                     onLocked={(k) => (k === 'ballot' ? ballots.open() : essays.open())}
@@ -218,6 +225,17 @@ function TheDoor({ door }: { door: ReturnType<typeof useDoor> }) {
                     onLog={() => (router.replace as (h: string) => void)('/log-modal')}
                 />
             </ScrollView>
+        </View>
+    );
+}
+
+/** The sheet while its door is asked: its ground and its way out, nothing to tap into. */
+function DoorAsked() {
+    return (
+        <View style={p.screen}>
+            <RoomLight room="dispatch" />
+            <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
+            <PaperBack label="THE DISPATCH" onBack={() => nav.back()} presented />
         </View>
     );
 }
@@ -445,6 +463,12 @@ function ComposeDossierScreen() {
      * or when the member answers. A phone that opened with no draft of its own,
      * or a room that only reached the house late, asks on any difference.
      */
+    /**
+     * The room is done with: filed, or discarded. Its way out backs nothing up and keeps nothing on
+     * the phone: the backup the room made as it closed, after the filing had let the draft go,
+     * brought a filed (or discarded) essay back as a draft the next time the desk opened.
+     */
+    const finished = useRef(false);
     const settled = useRef(false);
     const asking = useRef(false);
     const late = useRef(false);
@@ -498,6 +522,7 @@ function ComposeDossierScreen() {
     useEffect(() => {
         if (!user?.id) return;
         const backUp = (leaving = false) => {
+            if (finished.current) return;
             // Not settled: ask the house again (it may be back), and push nothing.
             if (!settled.current) { if (!leaving) void reconcile(); return; }
             const t = titleRef.current, c = contentRef.current;
@@ -532,14 +557,22 @@ function ComposeDossierScreen() {
         }
     }
 
+    /**
+     * The phone's copy not yet written (it is written once the words rest a second): written at
+     * once if the room closes first, so the last second's words are never lost, and the house's
+     * backup, made as the room closes, is never the newer copy of words written on this phone.
+     */
+    const unkept = useRef<(() => void) | null>(null);
     useEffect(() => {
         if (!edit || !user?.id || amendRead !== 'held') return;
-        const t = setTimeout(() => {
+        const keep = () => {
             // Only an amendment is kept: the essay as filed is the house's, and kept here it
             // would open next time as words taken up. Cleared on landing or by START CLEAN.
             if (untouched) { clearDraft(user.id, 'edit', edit); return; }
             setSaveFailed(!writeDraft(user.id, 'edit', { title, content }, edit));
-        }, 1000);
+        };
+        unkept.current = keep;
+        const t = setTimeout(() => { unkept.current = null; keep(); }, 1000);
         return () => clearTimeout(t);
     }, [title, content, edit, user?.id, amendRead, untouched]);
 
@@ -562,15 +595,24 @@ function ComposeDossierScreen() {
     useEffect(() => {
         if (edit) return;
         if (saveTimer.current) clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => {
+        const keep = () => {
             if (title.trim() || content.trim()) {
                 setSaveFailed(!writeDraft(user?.id, 'dossier', { title, content, film, series }));
             } else {
                 clearDraft(user?.id, 'dossier');
             }
-        }, 1000);
+        };
+        unkept.current = keep;
+        saveTimer.current = setTimeout(() => { unkept.current = null; keep(); }, 1000);
         return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
     }, [title, content, film, series, edit, user?.id]);
+    // Declared after the backup's, so it runs after it as the room closes: the phone's copy is
+    // the later, and the next opening takes it up without asking which is newer.
+    useEffect(() => () => {
+        const keep = unkept.current;
+        unkept.current = null;
+        if (!finished.current) keep?.();
+    }, []);
 
     // ── Background flush — guarantees a long essay survives an immediate OS kill ──
     useEffect(() => {
@@ -677,6 +719,7 @@ function ComposeDossierScreen() {
                 });
                 // The amended words are the house's now (or the queue's, which holds them whole),
                 // so the phone's copy goes, and the backup, which exists only until then.
+                finished.current = true;
                 clearDraft(user?.id, 'edit', edit);
                 void dropDraft(user?.id, 'edit', edit);
                 reelToast.success(amended?.offline ? 'Amended. It goes out when the wire is back.' : 'Essay updated');
@@ -698,10 +741,13 @@ function ComposeDossierScreen() {
                     partNumber: series?.part ?? null,
                 });
                 // Deleted only once the write is accepted: nothing goes before there is a row.
-                if (filed) { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
+                if (filed) { finished.current = true; clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
                 reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Essay filed');
             }
-            router.replace('/(tabs)/dispatch');
+            // An amend goes back to the essay it amended; a filing, to the Dispatch the member
+            // came from (dismissed to, never replaced: a replace built a second tab app over the first).
+            if (edit) nav.back();
+            else nav.dismissTo('/(tabs)/dispatch');
 
         } catch (err) {
             // A refused filing keeps the draft and SAYS so — unless the phone also refused the
@@ -732,22 +778,28 @@ function ComposeDossierScreen() {
                         if (!amendsNothing && (title.trim() || content.trim())) {
                             // No save mark anywhere; a refused save is said here, at the exit.
                             const lost = saveFailed && !edit;
+                            const discard = { text: 'Discard', style: 'destructive' as const, onPress: () => {
+                                // This room's copy only, and its backup too, or it reappears
+                                // on the next phone; and nothing kept on the way out.
+                                finished.current = true;
+                                if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
+                                else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
+                                nav.back();
+                            } };
                             Alert.alert(
-                                lost ? 'This is not being kept' : edit ? 'Discard these amendments?' : 'Discard this essay?',
+                                lost ? 'This is not being kept' : edit ? 'Leave these amendments?' : 'Leave this essay?',
                                 lost
                                     ? 'Your phone is out of space, so nothing here has been saved. File it now, or free some room and come back.'
-                                    : edit ? 'The essay stays as it was filed. The changes made here will be lost.'
-                                        : 'What you have written will be lost.',
-                                [
-                                    { text: lost ? 'Go back' : 'Keep writing', style: 'cancel' },
-                                    { text: 'Discard', style: 'destructive', onPress: () => {
-                                        // This room's copy only, and its backup too,
-                                        // or it reappears on the next phone.
-                                        if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
-                                        else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
-                                        nav.back();
-                                    } },
-                                ],
+                                    : edit ? 'Keep them for later and they wait for you here. Discard them and the essay stays as it was filed.'
+                                        : 'Keep it for later and it waits for you here. Discard it and it is gone.',
+                                lost
+                                    ? [{ text: 'Go back', style: 'cancel' }, discard]
+                                    : [
+                                        { text: 'Keep writing', style: 'cancel' },
+                                        // Kept as it stands: the way out writes the phone's copy.
+                                        { text: 'Keep for later', onPress: () => { nav.back(); } },
+                                        discard,
+                                    ],
                             );
                         } else {
                             nav.back();

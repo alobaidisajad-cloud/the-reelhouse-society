@@ -13,9 +13,10 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import { LoungeSettingsPanel } from '../LoungeSettingsPanel';
 import { useLoungeStore } from '@/src/stores/lounge';
 
-const mockReplace = jest.fn();
+/** The way home: to the Lounge tab already beneath the room (dismissed to, never replaced). */
+const mockHome = jest.fn();
 jest.mock('@/src/utils/typedRouter', () => ({
-  nav: { push: jest.fn(), replace: (...a: unknown[]) => mockReplace(...a), back: jest.fn() },
+  nav: { push: jest.fn(), dismissTo: (...a: unknown[]) => mockHome(...a), back: jest.fn() },
 }));
 jest.mock('@shopify/flash-list', () => require('@/mockups/tabs/flashListMock').makeFlashListMock());
 
@@ -24,7 +25,7 @@ const deleteLounge = jest.fn(async () => true);
 const room = { id: 'l1', name: 'The Nitrate Circle', description: '', creator_id: 'host', is_private: false, cover_image: null } as never;
 
 beforeEach(() => {
-  mockReplace.mockClear();
+  mockHome.mockClear();
   leaveLounge.mockReset().mockResolvedValue(true);
   deleteLounge.mockReset().mockResolvedValue(true);
   useLoungeStore.setState({ leaveLounge, deleteLounge } as never);
@@ -46,14 +47,14 @@ describe('the salon panel', () => {
     await act(async () => { await fireEvent.press(r.getByText('INCINERATE SALON')); });
     expect(deleteLounge).toHaveBeenCalledWith('l1');
     expect(onClose).not.toHaveBeenCalled();
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockHome).not.toHaveBeenCalled();
   });
 
   it('goes to the corridor once it is destroyed', async () => {
     const { r, onClose } = panel(true);
     await act(async () => { await fireEvent.press(r.getByText('INCINERATE SALON')); });
     expect(onClose).toHaveBeenCalled();
-    expect(mockReplace).toHaveBeenCalledWith('/(tabs)/lounge');
+    expect(mockHome).toHaveBeenCalledWith('/(tabs)/lounge');
   });
 
   it('stays in the room when the leave did not take', async () => {
@@ -62,12 +63,12 @@ describe('the salon panel', () => {
     await act(async () => { await fireEvent.press(r.getByText('STEP OUT OF SALON')); });
     expect(leaveLounge).toHaveBeenCalledWith('l1');
     expect(onClose).not.toHaveBeenCalled();
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockHome).not.toHaveBeenCalled();
   });
 
   it('goes to the corridor once the member is out', async () => {
     const { r } = panel(false);
     await act(async () => { await fireEvent.press(r.getByText('STEP OUT OF SALON')); });
-    expect(mockReplace).toHaveBeenCalledWith('/(tabs)/lounge');
+    expect(mockHome).toHaveBeenCalledWith('/(tabs)/lounge');
   });
 });

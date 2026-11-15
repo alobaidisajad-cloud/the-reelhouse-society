@@ -78,7 +78,7 @@ jest.mock('expo-router', () => {
     ...actual,
     // `canGoBack` as the real router has it: `nav.back()` asks it first, and
     // without it the way back out of a desk threw instead of going.
-    router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn(), canGoBack: () => true },
+    router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), dismissTo: jest.fn(), setParams: jest.fn(), canGoBack: () => true },
     useLocalSearchParams: () => ({ edit: mockEditId }),
     Stack: { Screen: () => null },
   };

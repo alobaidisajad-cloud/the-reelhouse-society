@@ -31,5 +31,13 @@ export function navigationMock(): Record<string, unknown> {
     useNavigation: () => {
       try { return actual.useNavigation(); } catch { return OUTSIDE_A_NAVIGATOR; }
     },
+    // Nor is there a tab to tap again, so nothing scrolls to the top (a member's file drawn alone).
+    useScrollToTop: (ref: unknown) => {
+      try { return actual.useScrollToTop(ref); } catch { return undefined; }
+    },
+    // And nothing can remove it, so nothing is held back (useAskBeforeLeaving on a desk drawn alone).
+    usePreventRemove: (prevent: boolean, onRemove: unknown) => {
+      try { return actual.usePreventRemove(prevent, onRemove); } catch { return undefined; }
+    },
   };
 }

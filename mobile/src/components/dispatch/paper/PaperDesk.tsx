@@ -10,7 +10,7 @@
  * A control whose handler is absent (the harness) is disabled and says so:
  * aDeskControlNeverAnswersWithNothing.test.tsx.
  */
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
@@ -176,9 +176,11 @@ export const WireDesk = memo(function WireDesk({
  */
 export const BallotDesk = memo(function BallotDesk({
   me, hour, question, options, closes,
-  onQuestion, onRemove, onChoose, onCloses, onBack, onFile, ready,
+  onQuestion, onRemove, onChoose, onCloses, onBack, onFile, ready, takenUp,
 }: {
   me: PaperAuthor; hour: string; question: string;
+  /** The line over a ballot the desk took up from its draft, with START CLEAN. */
+  takenUp?: ReactNode;
   options: (PaperFilm | null)[]; closes: ClosingTime;
   /** Absent in the harness, where the question is a drawn line. */
   onQuestion?: (text: string) => void;
@@ -195,6 +197,7 @@ export const BallotDesk = memo(function BallotDesk({
     <View style={p.desk}>
       <DeskHead kind="ballot" ready={ready ?? (filled >= 2 && !!question)} onBack={onBack} onFile={onFile} />
       <DeskDoc>
+        {takenUp}
         <View style={p.postRow}>
           <View style={p.margin}>
             <Text style={p.marginValue} {...decorativeTextProps}>{hour}</Text>
