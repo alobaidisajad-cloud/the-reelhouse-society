@@ -2316,3 +2316,45 @@ classes:
       - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "a refused current password is called incorrect under its field, the new one kept as typed" }
     fix: "a wrong current password is said under its own field, which alone is emptied; a refusal that empties a field names the form as it is left (useFieldRefusal leftAs) (mutant shape-refusal-gone-with-the-field)"
     places: [none]
+
+  - id: LOOK-a-light-cut-by-its-tilt
+    title: "The iPad's projector shaft, tilted back as the phone's beam is, was drawn by iOS only where its plane stood before the page: the light began at the window's middle in a straight line, at its brightest, and its foot met the page's sides in two lines"
+    seriousness: layout
+    area: home
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "the iPad photographs of ios-launch 43670385265, read again by hand, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "on a wide window, is a shaft drawn flat by its shader over the page, the view only flickering" }
+      - { kind: running, file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "begins under the welcome softly, never in a line, its heart where the approved beam has it" }
+      - { kind: running, file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "holds no edge where the judge reads it, and falls away before the page's sides at every height" }
+      - { kind: running, file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "holds no band: no run of one colour stands as a stair in its light" }
+      - { kind: running, file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "sways to either side with no edge and nothing past the page" }
+    fix: "on a wide window the shaft is drawn flat by a shader (SHAFT_SKSL) that takes each pixel back through the phone beam's tilt to the beam's own plane, so it is lit as the approved beam is, and falls away to nothing before the page's sides; its gold is grained by two summed grains, a level either way; the view only flickers; the shader is compiled and drawn by CanvasKit in its test and read as the judge reads a photograph (mutants shape-shaft-tilted-again, shape-shaft-to-the-page-sides, shape-shaft-ungrained)"
+    places: [simulator]
+
+  - id: E2E-a-judge-reads-beside-the-fault
+    title: "The iPad's judge read the beam's heart from 0.52 of the window alone, and across the page at one height from inside its edges: the light cut at the window's middle and stopped at the page's sides passed as 'banded' alone"
+    seriousness: behaviour
+    area: e2e
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "the iPad photographs of ios-launch 43670385265, read again by hand, 2026-11-15" }
+    methods:
+      - { kind: running, file: e2e/__tests__/iosIpadJudge.test.ts, test: "fails a beam that begins in a straight line, as iOS drew a tilted shaft (43670385265)" }
+      - { kind: running, file: e2e/__tests__/iosIpadJudge.test.ts, test: "fails a light that meets the page's sides low on the page, a line where it stops" }
+      - { kind: running, file: e2e/__tests__/iosIpadJudge.test.ts, test: "passes a light that rests on one level for long, its dither leaving one colour there" }
+    fix: "the heart is read from under the welcome's rule to above its button (BEAM_DOWN), across at three heights from the margin to the margin (BEAM_ACROSS_AT, BEAM_MARGIN), and a run of one colour is a band only as a stair, all of its neighbours before on one side and after on the other (mutants shape-judge-reads-from-the-middle, shape-judge-reads-inside-the-page, shape-judge-counts-every-run)"
+    places: [none]
+
+  - id: CI-a-job-runs-what-it-never-installed
+    title: "The iPad's job installs no packages, and its judge came to read its photograph through pngjs: on the runner it stopped at its first line, and the four stages photographed were never judged, while its test passed on a checkout where every package is installed"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "the iPad photographs of ios-launch 43670385265, read again by hand, 2026-11-15" }
+    methods:
+      - { kind: running, file: e2e/__tests__/iosIpadJudge.test.ts, test: "judges where no package is installed, as the iPad job runs it" }
+    fix: "the iPhone's and the iPad's judges read their photographs through png.mjs, Node's own zlib, and the iPad's judge is run in its test from a folder no installed package can be reached from (mutant shape-judge-needs-a-package)"
+    places: [none]

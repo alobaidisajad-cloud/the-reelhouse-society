@@ -1,7 +1,9 @@
 /**
  * png.mjs — a PNG read into its pixels, for the E2E judges that look at a capture
- * (e2e/grounds-judges.mjs). Node's own zlib only: the captures are Android's screencap, 8-bit
- * RGB or RGBA, not interlaced, and anything else is refused by name rather than misread.
+ * (e2e/grounds-judges.mjs, and the iPhone's and the iPad's judges). Node's own zlib only, so a job
+ * that installs no packages can read its photographs: the captures are Android's screencap and
+ * the simulator's screenshot, 8-bit RGB or RGBA, not interlaced, and anything else is refused by
+ * name rather than misread.
  */
 import { Buffer } from 'node:buffer';
 import { inflateSync } from 'node:zlib';

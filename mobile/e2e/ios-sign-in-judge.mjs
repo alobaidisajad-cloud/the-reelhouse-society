@@ -19,7 +19,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { createRequire } from 'node:module';
+import { decodePng } from './png.mjs';
 
 const RECT = /\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]/;
 /** The sheet's controls, by the ids the app sets. */
@@ -115,10 +115,9 @@ async function main(dir) {
   const tree = read('en.json');
   const seal = boxes(tree, [SEAL]).found[SEAL];
   if (seal && existsSync(join(dir, 'en.png')) && en.screen) {
-    const { PNG } = createRequire(import.meta.url)('pngjs');
-    const png = PNG.sync.read(readFileSync(join(dir, 'en.png')));
+    const png = decodePng(readFileSync(join(dir, 'en.png')));
     const scale = png.width / en.screen.width;
-    const at = (x, y) => { const i = (png.width * y + x) << 2; return [png.data[i], png.data[i + 1], png.data[i + 2]]; };
+    const at = (x, y) => { const i = (png.width * y + x) << 2; return [png.pixels[i], png.pixels[i + 1], png.pixels[i + 2]]; };
     const x = Math.round(((seal.left + seal.right) / 2) * scale);
     const top = Math.round(seal.top * scale) - 2;
     const foot = headerFoot(tree);

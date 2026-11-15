@@ -2,13 +2,13 @@
  * ProjectorBeam — the front door's projector sweep; culled once scrolled a screen down.
  */
 import { memo, useCallback } from 'react';
-import { Canvas, RadialGradient, Rect, vec } from '@shopify/react-native-skia';
+import { Canvas, Rect, Shader, Skia } from '@shopify/react-native-skia';
 import { useColumnWidth, useWideInset } from '@/src/components/layout/navMetrics';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Animated, {
   SharedValue,
-  useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming,
+  useSharedValue, useAnimatedStyle, useDerivedValue, withRepeat, withSequence, withTiming,
   Easing, cancelAnimation
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,7 +53,9 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
   const style = useAnimatedStyle(() => {
     const isCulled = scrollY.value > height;
     if (isCulled) return { transform: [{ translateY: -3000 }], opacity: 0 };
-    
+    // The shaft is drawn already tilted (BeamShaft): only its flicker is the view's.
+    if (wide) return { opacity: flicker.value };
+
     return {
       opacity: flicker.value,
       transform: [
@@ -68,7 +70,7 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
 
   return (
     <Animated.View style={[StyleSheet.absoluteFill, style, { alignItems: 'center', zIndex: 0 }]} pointerEvents="none">
-      {wide ? <BeamShaft width={width * 1.5} height={height} /> : (
+      {wide ? <BeamShaft width={width} height={height} swing={beamSwing} /> : (
         <LinearGradient
           colors={['rgba(218,165,32,0.15)', 'rgba(184,137,26,0.06)', 'transparent']}
           locations={[0, 0.4, 0.9]}
@@ -81,30 +83,70 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
 
 /** The shaft's brightest gold, at its heart. */
 export const SHAFT_PEAK = 0.17;
-/** Its light as a real beam's falls away: cosine-squared from the heart to nothing, never a straight fade. */
-export function shaftStops(peak = SHAFT_PEAK, steps = 12): { colors: string[]; positions: number[] } {
-  const positions = Array.from({ length: steps + 1 }, (_, i) => i / steps);
-  return {
-    positions,
-    colors: positions.map((t) => `rgba(218,165,32,${(peak * Math.cos((t * Math.PI) / 2) ** 2).toFixed(4)})`),
-  };
-}
 
 /**
- * On a window wider than the page (an iPad), the beam is a shaft of light inside the page: wider
- * than the page, the phone's beam was cut by the page's edges, two straight lines down the screen.
- * Its light is an ellipse, 26% of the beam wide and 48% of it tall, falling away on every side
- * before any edge, drawn in Skia and dithered so the dark gold holds no level long enough to band.
+ * The shaft, as the phone's beam is laid (a page and a half wide, a window tall, tilted back 55°
+ * under a 400-point perspective, stretched 1.5 down and lifted 100), drawn flat: each pixel is
+ * taken back through the tilt to the beam's own plane, and lit as that plane is lit. Tilted as a
+ * view instead, iOS drew only the half of the plane before the page: the light stopped at the
+ * window's middle in a straight line, at its brightest (ios-launch 43670385265, the photograph read
+ * by ios-ipad-judge.mjs). The light is an ellipse on the plane, 26% of the beam wide and 48% of it
+ * tall about a heart at 46% down, falling away cosine-squared to nothing; within the last 45% of
+ * the page's half-width it falls away again, to nothing at the page's edge, where its glow had
+ * stopped in two lines down the screen. Each pixel's gold moves by up to a level either way (two
+ * grains summed, so every level is broken, not only those near a half), and no level stands long
+ * enough to band. `size` is the page's width and the window's height, `swing` the sway in radians.
  */
-function BeamShaft({ width, height }: { width: number; height: number }) {
-  const c = vec(width / 2, height * 0.46);
-  const rx = width * 0.26;
-  const ry = height * 0.48;
-  const { colors, positions } = shaftStops();
+export const SHAFT_SKSL = `
+uniform float2 size;
+uniform float swing;
+
+const float D = 400.0;
+const float SIN_TILT = 0.8191520;
+const float COS_TILT = 0.5735764;
+const float PEAK = ${SHAFT_PEAK.toFixed(2)};
+const float QUARTER = 1.5707963;
+
+float grain(float2 p) {
+  return fract(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+half4 main(float2 pos) {
+  float2 s = pos - size * 0.5;
+  float across = COS_TILT * D + s.y * SIN_TILT;
+  if (across <= 0.0) { return half4(0.0); }
+  float y = s.y * D / across;
+  float k = D / (D - y * SIN_TILT);
+  float2 p = float2(s.x / k, y);
+  float c = cos(swing);
+  float n = sin(swing);
+  p = float2(c * p.x + n * p.y, c * p.y - n * p.x);
+  p.y = p.y / 1.5 + 100.0;
+  float2 beam = float2(size.x * 1.5, size.y);
+  if (abs(p.x) > beam.x * 0.5 || abs(p.y) > beam.y * 0.5) { return half4(0.0); }
+  float t = length((p - float2(0.0, beam.y * -0.04)) / float2(beam.x * 0.26, beam.y * 0.48));
+  if (t >= 1.0) { return half4(0.0); }
+  float l = cos(t * QUARTER);
+  float u = abs(s.x) / (size.x * 0.5);
+  float e = u <= 0.55 ? 1.0 : (u >= 1.0 ? 0.0 : cos((u - 0.55) / 0.45 * QUARTER));
+  float a = PEAK * l * l * e * e;
+  float3 gold = float3(218.0, 165.0, 32.0) / 255.0 * a;
+  float d = (grain(pos) + grain(pos + float2(17.0, 31.0)) - 1.0) / 255.0 * smoothstep(0.0, 0.0008, a);
+  return half4(half3(max(gold + d, float3(0.0))), half(a));
+}
+`;
+
+const SHAFT = Skia.RuntimeEffect.Make(SHAFT_SKSL);
+
+/** On a window wider than the page (an iPad), the beam is this shaft of light inside the page. */
+function BeamShaft({ width, height, swing }: { width: number; height: number; swing: SharedValue<number> }) {
+  // The sway, as the phone's beam turns: a tenth of the swing is 1.5°.
+  const uniforms = useDerivedValue(() => ({ size: [width, height], swing: (swing.value * 15 * Math.PI) / 180 }));
+  if (!SHAFT) return null;
   return (
     <Canvas testID="projector-shaft" style={{ width, height }}>
-      <Rect x={0} y={0} width={width} height={height} dither>
-        <RadialGradient c={c} r={rx} colors={colors} positions={positions} origin={c} transform={[{ scaleY: ry / rx }]} />
+      <Rect x={0} y={0} width={width} height={height}>
+        <Shader source={SHAFT} uniforms={uniforms} />
       </Rect>
     </Canvas>
   );

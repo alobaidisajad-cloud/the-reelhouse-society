@@ -13,15 +13,18 @@
  *     the app refused leaves the window upright);
  *   - its control found (the Lobby's tab, the sheet's press), and inside the window.
  * Each control's box is printed, so the photographs (<stage>.png) are read with their numbers.
- * And the welcome's projector beam, read from the upright Lobby's photograph across the page and
- * down its heart: no colour held over BEAM_RUN_MAX pixels (a band), no step over BEAM_STEP_MAX
- * levels between neighbouring stretches (an edge). Exits 1 on any stage, or a beam, that fails.
+ * And the welcome's projector beam, read from the upright Lobby's photograph down its heart, from
+ * under the welcome's rule to above its button, and across the page at three heights, from the
+ * margin on one side to the margin on the other: no colour held over BEAM_RUN_MAX pixels where the
+ * light moves (a band), no step over BEAM_STEP_MAX levels between neighbouring stretches (an edge).
+ * Exits 1 on any stage, or a beam, that fails. Its photographs are read by png.mjs, Node's own
+ * zlib: the iPad's job installs no packages.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { createRequire } from 'node:module';
 import { boxes } from './ios-sign-in-judge.mjs';
+import { decodePng } from './png.mjs';
 
 /** The narrowest iPad's short side in points (iPad mini, 744): the drawings' narrowest iPad. */
 export const IPAD_SHORTEST = 744;
@@ -56,37 +59,58 @@ export function judgeStage(stage, tree) {
 
 /** The page's column on a wide window, in points: navMetrics' READING_MAX (iosIpadJudge.test.ts holds them equal). */
 export const PAGE_COLUMN = 560;
-/** The longest run of one colour a smooth light shows on the photograph, in pixels (the halo's). */
+/** The longest run of one colour a smooth light shows where it moves, in pixels (the halo's). */
 export const BEAM_RUN_MAX = 4;
 /** The largest step, in levels, between two neighbouring 8-pixel stretches of a smooth light. */
 export const BEAM_STEP_MAX = 1.5;
-/** Where the beam is read, as shares of the upright window: across the page at its middle, and down its heart. */
-export const BEAM_ACROSS_AT = 0.6;
-export const BEAM_DOWN = [0.52, 0.84];
+/**
+ * Where the beam is read, as shares of the upright window: across the page at three heights below
+ * the welcome's words, and down its heart from under the rule (0.37) to above the button (0.84).
+ * The heart was once read from 0.52 alone, and the light cut at the window's middle passed.
+ */
+export const BEAM_ACROSS_AT = [0.5, 0.65, 0.8];
+export const BEAM_DOWN = [0.39, 0.83];
+/** How far into the margin beside the page a line across is read, in points: an edge at the page's side is a step there. */
+export const BEAM_MARGIN = 24;
 
 /**
- * A line of the photograph, read as light: the longest run of one colour, the levels counted, and
- * the largest step between neighbouring 8-pixel stretches (an edge; dither's noise averages away).
+ * A line of the photograph, read as light: the longest run of one colour, the longest where the
+ * light moves across it (a band: dither leaves one colour where the light rests on a level, and the
+ * eye sees no step there), the levels counted, and the largest step between neighbouring 8-pixel
+ * stretches (an edge; dither's noise averages away).
  */
 export function lightAlong(pixelAt, points) {
-  let run = 0, longest = 0, last = null;
-  const seen = new Set();
+  const keys = [];
   const level = [];
   for (const [x, y] of points) {
     const c = pixelAt(x, y);
-    const key = c.join(',');
-    seen.add(key);
-    run = key === last ? run + 1 : 1;
-    last = key;
-    longest = Math.max(longest, run);
+    keys.push(c.join(','));
     level.push((c[0] + c[1] + c[2]) / 3);
   }
-  let step = 0;
-  for (let i = 0; i + 16 <= level.length; i += 1) {
-    const mean = (a, b) => level.slice(a, b).reduce((s, v) => s + v, 0) / (b - a);
-    step = Math.max(step, Math.abs(mean(i, i + 8) - mean(i + 8, i + 16)));
+  const mean = (a, b) => {
+    const from = Math.max(0, a), to = Math.min(level.length, b);
+    return to > from ? level.slice(from, to).reduce((s, v) => s + v, 0) / (to - from) : NaN;
+  };
+  // A band is a stair: the 8 pixels before it all on one side of its level, the 8 after all on the
+  // other. Dither never leaves one: around a run of one colour its neighbours fall on both sides.
+  const side = (a, b, v) => {
+    const s = level.slice(Math.max(0, a), Math.min(level.length, b));
+    if (s.length < 8) return 0;
+    return s.every((x) => x < v) ? -1 : s.every((x) => x > v) ? 1 : 0;
+  };
+  let longest = 0, banded = 0;
+  for (let start = 0, i = 1; i <= keys.length; i++) {
+    if (i < keys.length && keys[i] === keys[start]) continue;
+    const run = i - start;
+    longest = Math.max(longest, run);
+    const before = side(start - 8, start, level[start]);
+    const after = side(i, i + 8, level[start]);
+    if (before !== 0 && after === -before) banded = Math.max(banded, run);
+    start = i;
   }
-  return { longest, levels: seen.size, step: +step.toFixed(2) };
+  let step = 0;
+  for (let i = 0; i + 16 <= level.length; i += 1) step = Math.max(step, Math.abs(mean(i, i + 8) - mean(i + 8, i + 16)));
+  return { longest, banded, levels: new Set(keys).size, step: +step.toFixed(2) };
 }
 
 /**
@@ -100,23 +124,33 @@ export function judgeBeam(tree, png) {
   const at = (x, y) => { const i = (png.width * y + x) << 2; return [png.data[i], png.data[i + 1], png.data[i + 2]]; };
   const column = Math.min(screen.width, PAGE_COLUMN);
   const line = (from, to, y) => Array.from({ length: to - from }, (_, i) => [from + i, y]);
-  const y = Math.round(screen.height * BEAM_ACROSS_AT * scale);
-  // An edge is looked for across the whole page; a band only in the beam's lit middle half, where
-  // light falls: the bare ground beyond it holds one colour by nature and would read as a band.
-  const across = line(Math.round(((screen.width - column) / 2 + 8) * scale), Math.round(((screen.width + column) / 2 - 8) * scale), y);
-  const heart = line(Math.round(((screen.width - column / 2) / 2) * scale), Math.round(((screen.width + column / 2) / 2) * scale), y);
+  const inside = (x) => Math.min(png.width - 1, Math.max(0, x));
+  // An edge is looked for across the whole page and into the margin each side (a light that meets
+  // the page's side stops there in a line); a band only in the beam's lit middle half, where light
+  // falls: the bare ground beyond it holds one colour by nature.
+  const rows = BEAM_ACROSS_AT.map((f) => {
+    const y = Math.round(screen.height * f * scale);
+    const across = line(inside(Math.round(((screen.width - column) / 2 - BEAM_MARGIN) * scale)), inside(Math.round(((screen.width + column) / 2 + BEAM_MARGIN) * scale)), y);
+    const heart = line(Math.round(((screen.width - column / 2) / 2) * scale), Math.round(((screen.width + column / 2) / 2) * scale), y);
+    return { ...lightAlong(at, heart), step: lightAlong(at, across).step };
+  });
   const middle = Math.round((screen.width / 2) * scale);
   const [top, bottom] = BEAM_DOWN.map((f) => Math.round(screen.height * f * scale));
   const down = Array.from({ length: bottom - top }, (_, i) => [middle, top + i]);
-  const a = { ...lightAlong(at, heart), step: lightAlong(at, across).step };
+  const a = {
+    levels: Math.min(...rows.map((r) => r.levels)),
+    longest: Math.max(...rows.map((r) => r.longest)),
+    banded: Math.max(...rows.map((r) => r.banded)),
+    step: Math.max(...rows.map((r) => r.step)),
+  };
   const d = lightAlong(at, down);
   const faults = [];
   for (const [name, r] of [['across the page', a], ['down its heart', d]]) {
     if (r.levels < 2) faults.push(`${name}: one colour, no light read`);
-    if (r.longest > BEAM_RUN_MAX) faults.push(`${name}: BANDED, one colour for ${r.longest} px`);
+    if (r.banded > BEAM_RUN_MAX) faults.push(`${name}: BANDED, one colour for ${r.banded} px where the light moves`);
     if (r.step > BEAM_STEP_MAX) faults.push(`${name}: AN EDGE, a step of ${r.step} levels`);
   }
-  const said = `across ${a.levels} colours, longest run ${a.longest} px, largest step ${a.step}; down ${d.levels} colours, longest run ${d.longest} px, largest step ${d.step} (at most ${BEAM_RUN_MAX} px and ${BEAM_STEP_MAX})`;
+  const said = `across ${a.levels} colours, longest band ${a.banded} px (run ${a.longest}), largest step ${a.step}; down ${d.levels} colours, longest band ${d.banded} px (run ${d.longest}), largest step ${d.step} (at most ${BEAM_RUN_MAX} px and ${BEAM_STEP_MAX})`;
   return { ok: faults.length === 0, line: `the beam: ${faults.length ? `FAILED (${faults.join('; ')})` : 'smooth, no band and no edge'}, ${said}` };
 }
 
@@ -135,8 +169,8 @@ function main(dir) {
   }
   // The beam, read from the upright welcome's photograph.
   const shot = join(dir, 'upright-lobby.png');
-  const { PNG } = createRequire(import.meta.url)('pngjs');
-  const beam = judgeBeam(trees['upright-lobby'], existsSync(shot) ? PNG.sync.read(readFileSync(shot)) : null);
+  const photo = existsSync(shot) ? decodePng(readFileSync(shot)) : null;
+  const beam = judgeBeam(trees['upright-lobby'], photo && { width: photo.width, height: photo.height, data: photo.pixels });
   if (!beam.ok) ok = false;
   out.push(beam.line);
   console.log([`the iPad, upright and on its side: ${ok ? 'every stage in place' : 'A STAGE FAILED'}`, ...out.map((l) => `  ${l}`)].join('\n'));

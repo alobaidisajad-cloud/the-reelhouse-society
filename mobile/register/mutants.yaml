@@ -3759,7 +3759,7 @@ mutants:
     edits:
       - file: src/components/film/TrailerModal.tsx
         find: "                    {said === 'refused' ? ("
-        replace: "                    {said === 'never' ? ("
+        replace: "                    {said === null ? ("
     proof: { file: src/components/film/__tests__/aTrailerIsPlayedByYouTubeAlone.test.tsx, test: "says a refusal over the player, and offers YouTube's own where YouTube plays it alone" }
 
   - id: shape-a-series-handed-back
@@ -3851,3 +3851,66 @@ mutants:
         find: "    const save = unsavedCritique.current;"
         replace: "    const save = null as (() => void) | null;"
     proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "keeps the words at once when the page goes before they rest" }
+
+  - id: shape-shaft-tilted-again
+    class: LOOK-a-light-cut-by-its-tilt
+    source: shape
+    edits:
+      - file: src/components/home/ProjectorBeam.tsx
+        find: "    if (wide) return { opacity: flicker.value };"
+        replace: "    if (wide && !wide) return { opacity: flicker.value };"
+    proof: { file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "on a wide window, is a shaft drawn flat by its shader over the page, the view only flickering" }
+
+  - id: shape-shaft-to-the-page-sides
+    class: LOOK-a-light-cut-by-its-tilt
+    source: shape
+    edits:
+      - file: src/components/home/ProjectorBeam.tsx
+        find: "  float e = u <= 0.55 ? 1.0 : (u >= 1.0 ? 0.0 : cos((u - 0.55) / 0.45 * QUARTER));"
+        replace: "  float e = u > 2.0 ? 0.0 : 1.0;"
+    proof: { file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "holds no edge where the judge reads it, and falls away before the page's sides at every height" }
+
+  - id: shape-shaft-ungrained
+    class: LOOK-a-light-cut-by-its-tilt
+    source: shape
+    edits:
+      - file: src/components/home/ProjectorBeam.tsx
+        find: "  float d = (grain(pos) + grain(pos + float2(17.0, 31.0)) - 1.0) / 255.0 * smoothstep(0.0, 0.0008, a);"
+        replace: "  float d = 0.0 * grain(pos);"
+    proof: { file: src/components/home/__tests__/theBeamFallsAwayInsideThePage.test.tsx, test: "holds no band: no run of one colour stands as a stair in its light" }
+
+  - id: shape-judge-reads-from-the-middle
+    class: E2E-a-judge-reads-beside-the-fault
+    source: shape
+    edits:
+      - file: e2e/ios-ipad-judge.mjs
+        find: "export const BEAM_DOWN = [0.39, 0.83];"
+        replace: "export const BEAM_DOWN = [0.52, 0.84];"
+    proof: { file: e2e/__tests__/iosIpadJudge.test.ts, test: "fails a beam that begins in a straight line, as iOS drew a tilted shaft (43670385265)" }
+
+  - id: shape-judge-reads-inside-the-page
+    class: E2E-a-judge-reads-beside-the-fault
+    source: shape
+    edits:
+      - file: e2e/ios-ipad-judge.mjs
+        find: "export const BEAM_MARGIN = 24;"
+        replace: "export const BEAM_MARGIN = -8;"
+    proof: { file: e2e/__tests__/iosIpadJudge.test.ts, test: "fails a light that meets the page's sides low on the page, a line where it stops" }
+
+  - id: shape-judge-counts-every-run
+    class: E2E-a-judge-reads-beside-the-fault
+    source: shape
+    edits:
+      - file: e2e/ios-ipad-judge.mjs
+        find: "    if (before !== 0 && after === -before) banded = Math.max(banded, run);"
+        replace: "    if (before === before) banded = Math.max(banded, run);"
+    proof: { file: e2e/__tests__/iosIpadJudge.test.ts, test: "passes a light that rests on one level for long, its dither leaving one colour there" }
+
+  - id: shape-judge-needs-a-package
+    class: CI-a-job-runs-what-it-never-installed
+    source: shape
+    edits:
+      - file: e2e/ios-sign-in-judge.mjs
+        find: "import { decodePng } from './png.mjs';"
+        replace: "import { decodePng } from './png.mjs';\nimport 'pngjs';"
+    proof: { file: e2e/__tests__/iosIpadJudge.test.ts, test: "judges where no package is installed, as the iPad job runs it" }

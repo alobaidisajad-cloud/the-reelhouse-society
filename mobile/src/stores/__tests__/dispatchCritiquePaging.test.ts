@@ -23,7 +23,8 @@ import { COMMENT_PAGE_SIZE } from '../dispatchTypes';
 
 interface Ask { order: [string, unknown][]; range: [number, number] | null; eq: Record<string, unknown>; }
 let mockAsks: Ask[] = [];
-let mockRows: (unknown[] | Error)[] = [];
+/** Each read's answer, in turn: rows, a failure, or a promise of either (an answer held back). */
+let mockRows: (unknown[] | Error | Promise<unknown[] | Error>)[] = [];
 
 jest.mock('../../lib/supabase', () => ({
   supabase: {
@@ -38,8 +39,7 @@ jest.mock('../../lib/supabase', () => ({
       chain.order = (k: string, o: unknown) => { ask.order.push([k, o]); return self(); };
       chain.range = (a: number, b: number) => {
         ask.range = [a, b];
-        const page = mockRows.shift() ?? [];
-        const result = Promise.resolve(page instanceof Error ? { data: null, error: page } : { data: page, error: null });
+        const result = Promise.resolve(mockRows.shift() ?? []).then((page) => (page instanceof Error ? { data: null, error: page } : { data: page, error: null }));
         // The store wraps every read in `withAbortSignal`, which calls
         // `.abortSignal(signal)` on the builder. A mock that returns a bare
         // Promise throws there, the store swallows it, and the test sees an
@@ -213,11 +213,14 @@ describe('a page of critiques that could not be read', () => {
   });
 
   it('never draws an answer in an order the member has already left', async () => {
-    // NEWEST asked, then CERTIFIED at once: NEWEST's answer, arriving under CERTIFIED, is not drawn.
-    mockRows = [[row(1), row(2)], [row(7, 9), row(8, 5)]];
+    // NEWEST asked, then CERTIFIED at once; NEWEST's answer comes last, under CERTIFIED, and is not drawn.
+    let answerNewest: (rows: unknown[]) => void = () => {};
+    mockRows = [new Promise<unknown[]>((res) => { answerNewest = res; }), [row(7, 9), row(8, 5)]];
     const first = useDispatch.getState().fetchCritiques('p1', 'NEWEST');
-    const second = useDispatch.getState().fetchCritiques('p1', 'CERTIFIED');
-    await Promise.all([first, second]);
+    await useDispatch.getState().fetchCritiques('p1', 'CERTIFIED');
+    expect(useDispatch.getState().critiques.p1?.map((c) => c.id)).toEqual(['c7', 'c8']);
+    answerNewest([row(1), row(2)]);
+    await first;
     expect(useDispatch.getState().critiques.p1?.map((c) => c.id)).toEqual(['c7', 'c8']);
   });
 });
