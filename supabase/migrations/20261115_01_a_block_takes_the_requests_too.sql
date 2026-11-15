@@ -17,7 +17,7 @@
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
--- add-only (3): it only fixes: a block takes the requests between the two as it took the follows (a_block_takes_the_requests_too_rehearsal.sql)
+-- add-only (3): it only fixes: the calls replayed as the members themselves, a block made and a mute raised to one, take the requests between the two as they took the follows, and nothing else (a_block_takes_the_requests_too_rehearsal.sql)
 CREATE OR REPLACE FUNCTION public.sever_follows_on_block() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -33,7 +33,7 @@ BEGIN
   RETURN NEW;
 END $$;
 
--- add-only (3): it only fixes: a request across a block admits no one, and every other request is admitted as before (a_block_takes_the_requests_too_rehearsal.sql)
+-- add-only (3): it only fixes: the calls replayed as the members themselves, a request with no block between admitted, told and counted as before, and one across a block admitting no one (a_block_takes_the_requests_too_rehearsal.sql)
 CREATE OR REPLACE FUNCTION public.accept_follow_request(requester_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
