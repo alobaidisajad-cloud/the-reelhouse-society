@@ -6,6 +6,7 @@
  */
 import React, { useState } from 'react';
 import { create } from 'zustand';
+import { useIsFocused } from 'expo-router/react-navigation';
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import { useBlockStore } from '@/src/stores/blockStore';
@@ -26,7 +27,11 @@ registerStoreReset(() => { useAsked.getState().done(); });
 export const askAboutLog = (log: LogAsked) => useAsked.getState().ask(log);
 
 export function LogModerationHost() {
-  const asked = useAsked((s) => s.asked);
+  // Asked of the screen in front alone: a tab left mounted beneath (the Reel, under a film's Log
+  // Archive) holds a host too, and both opened their sheet, two stacked over one log.
+  const focused = useIsFocused();
+  const askedOfAny = useAsked((s) => s.asked);
+  const asked = focused ? askedOfAny : null;
   const done = useAsked((s) => s.done);
   const blockUser = useBlockStore((s) => s.blockUser);
   const muteUser = useBlockStore((s) => s.muteUser);

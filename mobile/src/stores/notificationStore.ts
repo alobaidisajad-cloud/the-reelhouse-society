@@ -213,7 +213,9 @@ export const useNotificationStore = create<NotificationState>()(
             set({ fetchFailed: true });
         }
         } finally {
-            set({ loading: false, _fetching: false });
+            // Lowered for this read alone: an older page still on its way keeps the list reading.
+            // Signed out meanwhile, the reset has lowered them already.
+            if (stillSignedIn(user.id)) set((state) => ({ loading: state._fetchingMore, _fetching: false }));
         }
     },
 
@@ -256,6 +258,10 @@ export const useNotificationStore = create<NotificationState>()(
                 return [r.data];
             });
             set(state => {
+                // Asked after a list a refresh has since replaced: this page follows that list, not
+                // this one, and laid under the new first page with its cursor it hid every notice
+                // between them until the next refresh.
+                if (state._cursor !== _cursor) return {};
                 // De-duplicated by id, as an arrival over the socket may already be here.
                 const existingIds = new Set(state.notifications.map(n => n.id));
                 const deduped = validated.filter(n => !existingIds.has(n.id));
@@ -282,7 +288,7 @@ export const useNotificationStore = create<NotificationState>()(
             set({ moreFailed: true });
         }
         } finally {
-            set({ loading: false, _fetchingMore: false });
+            if (stillSignedIn(user.id)) set((state) => ({ loading: state._fetching, _fetchingMore: false }));
         }
     },
 

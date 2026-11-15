@@ -138,13 +138,26 @@ export default function TabLayout() {
   const initiation = useInitiation();
   // After the curtain closes; never once the tabs have gone (a sign-out within it).
   const openLog = useLater();
+  // LOG YOUR FIRST FILM opens the log once the Initiation's Modal is gone (onGone), never on a
+  // timer from the tap: on iOS a route presented while the Modal still dismissed was refused, and
+  // a new member's first act opened nothing.
+  const logOnceGone = React.useRef(false);
+  // Never once the tabs have gone (a sign-out within the fade): the door is said gone after them.
+  const tabsHere = React.useRef(true);
+  React.useEffect(() => {
+    tabsHere.current = true;
+    return () => { tabsHere.current = false; };
+  }, []);
   const handleInitiationComplete = React.useCallback((action: 'log' | 'quiet') => {
+    logOnceGone.current = action === 'log';
     initiation.dismiss();
-    if (action === 'log') {
-      openLog.later(() => nav.push('/log-modal'), 250);
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initiation.dismiss, openLog]);
+  }, [initiation.dismiss]);
+  const handleInitiationGone = React.useCallback(() => {
+    if (!logOnceGone.current || !tabsHere.current) return;
+    logOnceGone.current = false;
+    openLog.later(() => nav.push('/log-modal'), 0);
+  }, [openLog]);
 
   // A member back within the half hour is back on their tab (lastTab.ts) — behind
   // the launch curtain, so the Lobby is never glimpsed first. Only a launch that
@@ -253,6 +266,7 @@ export default function TabLayout() {
       username={initiation.username}
       memberNo={initiation.memberNo}
       onComplete={handleInitiationComplete}
+      onGone={handleInitiationGone}
     />
     </>
   );

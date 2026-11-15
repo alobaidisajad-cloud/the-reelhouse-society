@@ -250,6 +250,18 @@ let _lastCreateAt = -Infinity;
  */
 const _keptRooms = new Map<string, LoungeMessage[]>();
 const KEPT_ROOMS = 5;
+/**
+ * A room's words changed where they are held: on screen while it is the room open, else as kept for
+ * it, as a send answered after the member opened another room is.
+ */
+function inRoomWords(loungeId: string, change: (words: LoungeMessage[]) => LoungeMessage[]): void {
+  if (useLoungeStore.getState().currentLoungeId === loungeId) {
+    useLoungeStore.setState((s) => (s.currentLoungeId === loungeId ? { currentMessages: change(s.currentMessages) } : {}));
+    return;
+  }
+  const kept = _keptRooms.get(loungeId);
+  if (kept) _keptRooms.set(loungeId, change(kept));
+}
 const CREATE_COOLDOWN = 30000; // 30s between lounge creations
 
 // ── THE HOUSE PULSE — typing broadcast throttle + expiry ──
@@ -1006,23 +1018,18 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (error) throw error;
       
       if (!memberUnchanged(startedAs)) return false;
-      set(s => {
-        if (s.currentLoungeId !== loungeId) return s;
-        const alreadyReplaced = s.currentMessages.some(m => m.id === data.id);
-        if (alreadyReplaced) {
-          return { currentMessages: s.currentMessages.filter(m => m.id !== optimisticMsg.id) };
-        }
-        return {
-          currentMessages: s.currentMessages.map(m =>
-            m.id === optimisticMsg.id
-              ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const }
-              : m
-          ).sort((a, b) => {
-            const diff = (dateOf(a.created_at).getTime() || 0) - (dateOf(b.created_at).getTime() || 0);
-            return diff !== 0 ? diff : byKey(a.id, b.id);
-          })
-        };
-      });
+      // Sent, where it stands: its id is the one it was written with, so the house's answer names
+      // the message on screen itself. Taken for a second copy, it was taken off the screen, and
+      // came back only with the channel's echo; an echo heard first had already marked it sent,
+      // and the message was gone. In a room left before the answer, its kept copy is marked.
+      inRoomWords(loungeId, (words) => words.map(m =>
+        m.id === optimisticMsg.id
+          ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const }
+          : m
+      ).sort((a, b) => {
+        const diff = (dateOf(a.created_at).getTime() || 0) - (dateOf(b.created_at).getTime() || 0);
+        return diff !== 0 ? diff : byKey(a.id, b.id);
+      }));
       return true;
     } catch (error: unknown) {
       // Neither queued as the next member nor marked in their transcript.
@@ -1044,14 +1051,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // carries the member's sentence across the trip to the Society and back:
       // renew, return, tap it, and it sends. Removing it would make them type
       // it again as the price of paying.
-      set(s => {
-        if (s.currentLoungeId !== loungeId) return s;
-        return {
-          currentMessages: s.currentMessages.map(m =>
-            m.id === optimisticMsg.id ? { ...m, status: 'failed' as const } : m
-          ),
-        };
-      });
+      // Failed where it stands, on screen or kept for a room left: kept 'sending', it was never
+      // offered again, and its words never went.
+      inRoomWords(loungeId, (words) => words.map(m =>
+        m.id === optimisticMsg.id ? { ...m, status: 'failed' as const } : m
+      ));
       // The server said why, in a sentence written for this member. Say it,
       // instead of "Failed to send message." over a retry that cannot succeed.
       if (showTierDoor(error, { returnTo: `/lounge/${loungeId}` })) return false;

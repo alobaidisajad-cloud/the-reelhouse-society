@@ -1,5 +1,5 @@
 import type { FeedItem, StackData } from '@/src/schemas/feed.schema';
-import { FeedService, FEED_PAGE, STACKS_PAGE } from '@/src/services/FeedService';
+import { FeedService, FEED_PAGE, STACKS_PAGE, type FeedPage } from '@/src/services/FeedService';
 import { useAuthStore } from '@/src/stores/auth';
 import { useSocialStore } from '@/src/stores/followStore';
 import { e2eTrace } from '@/src/utils/e2eTrace';
@@ -7,8 +7,13 @@ import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import type { FeedReturn } from '@/src/hooks/useFeedTop';
 
-/** A full page continues from its last row; a short one is the last. The id breaks a tied time. */
-function nextCursor<T extends { id: string }>(page: T[], size: number, at: (row: T) => string) {
+/**
+ * The page's own word, from the rows the server sent (FeedPage): a full page continues, a short one
+ * is the last. A page restored from the saved cache carries none, and is judged by its length:
+ * a full page continues from its last row. The id breaks a tied time.
+ */
+function nextCursor<T extends { id: string }>(page: FeedPage<T>, size: number, at: (row: T) => string) {
+  if (page.next !== undefined) return page.next ?? undefined;
   if (page.length < size) return undefined;
   const last = page[page.length - 1];
   return `${at(last)}|${last.id}`;

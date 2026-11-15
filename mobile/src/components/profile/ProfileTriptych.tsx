@@ -248,7 +248,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
             if (error) throw error;
         } catch (e: unknown) {
             if (isNetworkError(e)) {
-                enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
+                // The changed key alone, as the live send: the whole copy, replayed, put back keys another device had changed.
+                enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: { favorites: next } } });
             } else {
                 updateUser({ preferences: currentPrefs });
                 logger.warn('[ProfileTriptych] favourites refused:', e);

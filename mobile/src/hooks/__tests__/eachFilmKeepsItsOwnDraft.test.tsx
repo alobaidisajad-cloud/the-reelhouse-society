@@ -78,3 +78,33 @@ it('keeps the words at once when the sheet goes before they rest, and keeps none
   expect(readDraft(ME, 'log', '550')).toBeNull();
   expect(readDraft(ME, 'log')).toBeNull();
 });
+
+/**
+ * A film picked from the sheet's own search (selectFilm, review round 2): the words of the film
+ * left stood in the form, were saved under the film taken, and the form's rest then cleared the
+ * film taken's own draft. The film left keeps its words at once; the film taken opens on its own.
+ */
+it('picking another film keeps the first film\'s words for it, and opens the second on its own draft', async () => {
+  writeDraft(ME, 'log', { ...A, filmId: 550, filmTitle: 'The Seventh Seal', review: 'Death plays chess.', rating: 3, privateNotes: '' }, '550');
+  (useLocalSearchParams as jest.Mock).mockReturnValue({ filmId: '603', filmTitle: 'The Matrix' });
+  const h = await renderHook(() => useLogFlow());
+  await waitFor(() => expect(h.result.current.film?.id).toBe(603));
+  await act(async () => { h.result.current.setReview('Red pill.'); });
+
+  await act(async () => { h.result.current.selectFilm({ id: 550, title: 'The Seventh Seal' } as never); });
+  expect(h.result.current.film?.id).toBe(550);
+  expect(h.result.current.review).toBe('Death plays chess.');
+  expect(h.result.current.rating).toBe(3);
+  expect(readDraft<typeof A>(ME, 'log', '603')?.data).toMatchObject({ review: 'Red pill.' });
+
+  jest.useFakeTimers();
+  await act(async () => { jest.advanceTimersByTime(1500); });
+  expect(readDraft<typeof A>(ME, 'log', '550')?.data).toMatchObject({ review: 'Death plays chess.' });
+
+  // A film with no draft opens on an empty form, not on the last film's words.
+  await act(async () => { h.result.current.selectFilm({ id: 238, title: 'Casablanca' } as never); });
+  expect(h.result.current.review).toBe('');
+  expect(h.result.current.rating).toBe(0);
+  await act(async () => { await h.unmount(); });
+  clearDraft(ME, 'log', '238');
+});

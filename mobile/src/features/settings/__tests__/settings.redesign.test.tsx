@@ -41,6 +41,8 @@ const mockRequestDeletion = jest.fn(() => Promise.resolve());
 const mockNavReplace = jest.fn();
 const mockRequestPermission = jest.fn(() => Promise.resolve('granted'));
 const mockAlert = jest.fn();
+/** The form's preferences filed through the house's key-by-key merge: 'saved', 'kept' offline, or refused. */
+const mockSavePrefs = jest.fn((_changes: Record<string, unknown>): Promise<'saved' | 'kept'> => Promise.resolve('saved'));
 
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { back: jest.fn(), push: jest.fn(), replace: (...a: unknown[]) => mockNavReplace(...a) } }));
 jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navigationMock').navigationMock(),
@@ -55,6 +57,7 @@ jest.mock('@/src/stores/auth', () => {
   };
   (useAuthStore as unknown as { getState: () => unknown }).getState = () => ({
     user: mockUser, setPreference: jest.fn(() => Promise.resolve()), rereadProfile: () => mockReread(),
+    savePreferences: (c: Record<string, unknown>) => mockSavePrefs(c),
   });
   return { useAuthStore };
 });
@@ -662,14 +665,17 @@ describe('the keys the trigger reads', () => {
 
   it('are the exact keys the app writes, at EVERY save path', () => {
     // Two paths save: the ordinary save, and the one that resumes after an
-    // emailed security code. Both go through `amendments`, the one place each
-    // key is written, so they cannot disagree with the database or each other.
+    // emailed security code. Both go through `fileAmendments`, which reads
+    // `amendments`, the one place each key is written, so they cannot disagree with
+    // the database or each other; the preferences go through the house's key-by-key
+    // merge, never the profile write (which drops them).
     for (const key of KEYS) {
       const writes = (CODE_SCREEN.match(new RegExp(`${key}: data\\.`, 'g')) || []).length;
       expect(`${key} written ${writes} time(s)`).toBe(`${key} written 1 time(s)`);
     }
-    expect((CODE_SCREEN.match(/updateUserMutation\(amendments\(/g) || []).length).toBe(2);
-    expect(CODE_SCREEN).not.toMatch(/updateUserMutation\(\{/);
+    expect((CODE_SCREEN.match(/await fileAmendments\(/g) || []).length).toBe(2);
+    expect(CODE_SCREEN).toMatch(/const fileAmendments = async \(data: SettingsFormData\)[^]*?amendments\(data\)[^]*?savePreferences\(changed\)/);
+    expect(CODE_SCREEN).not.toMatch(/updateUserMutation\([^)]*preferences/);
   });
 
   it('and the same keys are what it reads back in, at BOTH read sites', () => {
@@ -1108,5 +1114,49 @@ describe("the phone's lock, put away, and the store's subscription", () => {
     mockUser = { ...BASE };
     const [, free] = await pressDelete(await settle(mount()));
     expect(free).not.toMatch(/subscription/);
+  });
+});
+
+/**
+ * SAVE files what the member changed (review round 2). The profile write drops preferences
+ * (ProfileWriteService), and SAVE said "amended" over settings the house never had: the notices
+ * kept coming, and the lock was off again on the next phone. The changed keys go through the
+ * house's merge, and the toast says what became of them.
+ */
+describe('SAVE', () => {
+  const toast = () => jest.requireMock('@/src/utils/reelToast').default as jest.Mock & { error: jest.Mock; success: jest.Mock };
+  const changeAndSave = async () => {
+    const r = await settle(mount());
+    await act(async () => { await fireEvent(r.getByLabelText('New Followers'), 'valueChange', false); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Save settings')); });
+    await act(async () => {});
+    return r;
+  };
+  beforeEach(() => {
+    mockUser = { ...BASE, preferences: { notif_follows: true } };
+    mockSavePrefs.mockReset().mockResolvedValue('saved');
+    toast().success.mockClear(); toast().error.mockClear();
+  });
+
+  it('files only the keys changed, and says amended once the house has them', async () => {
+    const r = await changeAndSave();
+    expect(mockSavePrefs.mock.calls).toEqual([[{ notif_follows: false }]]);
+    expect(toast().success).toHaveBeenCalledWith('Your dossier has been amended.');
+    r.unmount();
+  });
+
+  it('with no network, says they are kept on the phone, not amended', async () => {
+    mockSavePrefs.mockResolvedValue('kept');
+    const r = await changeAndSave();
+    expect(toast().success).toHaveBeenCalledWith('Kept on this phone. Filed once the house is reached.');
+    r.unmount();
+  });
+
+  it('refused, says so, and never amended', async () => {
+    mockSavePrefs.mockRejectedValue(new Error('refused'));
+    const r = await changeAndSave();
+    expect(toast().error).toHaveBeenCalledWith('Your settings could not be filed. Nothing was changed.');
+    expect(toast().success).not.toHaveBeenCalled();
+    r.unmount();
   });
 });

@@ -83,7 +83,8 @@ function BackdropSetting({ user }: { user: { id: string; preferences?: Record<st
       if (error) throw error;
     } catch (e: unknown) {
       if (isNetworkError(e)) {
-        enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updated } });
+        // The changed key alone, as the live send: the whole copy, replayed, put back keys another device had changed.
+        enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: { backdrop: next } } });
       } else {
         updateUser({ preferences: currentPrefs });
         logger.warn('[EditProfile] backdrop refused:', e);

@@ -212,8 +212,10 @@ describe('#49 · member content never reaches disk unencrypted', () => {
     // silently, and left the flag set forever. The member's change was gone.
     const auth = readCode('src/stores/auth.ts');
 
-    // The key now HOLDS the preferences, and is written ungated.
-    expect(auth).toMatch(/storage\.set\(`dirty_prefs_\$\{user\.id\}`, JSON\.stringify\(prefs\)\)/);
+    // The key now HOLDS the preferences changed (their keys alone, review round 2), and is written
+    // ungated: setPreference hands its change to addPendingPrefs, which writes the plain store.
+    expect(auth).toMatch(/function addPendingPrefs[^]*?storage\.set\(`dirty_prefs_\$\{userId\}`, JSON\.stringify\(/);
+    expect(auth).toMatch(/setPreference: async[^]*?addPendingPrefs\(user\.id, \{ \[key\]: value \}\)/);
     // Both readers go through the one helper rather than reaching into the cache.
     expect((auth.match(/readPendingPrefs\(/g) ?? []).length).toBeGreaterThanOrEqual(3);
     // And no reader still tests the bare legacy flag inline.

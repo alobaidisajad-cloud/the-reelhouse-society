@@ -3914,3 +3914,309 @@ mutants:
         find: "import { decodePng } from './png.mjs';"
         replace: "import { decodePng } from './png.mjs';\nimport 'pngjs';"
     proof: { file: e2e/__tests__/iosIpadJudge.test.ts, test: "judges where no package is installed, as the iPad job runs it" }
+
+  - id: shape-pref-pending-whole-copy
+    class: WRITE-a-preference-sent-whole
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "    addPendingPrefs(user.id, { [key]: value });"
+        replace: "    addPendingPrefs(user.id, prefs);"
+    proof: { file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "sends the key it changed, never the phone’s whole copy" }
+
+  - id: shape-pref-offline-snaps-back
+    class: WRITE-a-preference-sent-whole
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "      if (outcome !== 'refused') return;"
+        replace: "      if (outcome === 'sent' || outcome === 'none') return;"
+    proof: { file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "made with no network stays on, kept to be sent, its key alone" }
+
+  - id: shape-pref-refusal-takes-all
+    class: WRITE-a-preference-sent-whole
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "preferences: takenBack(state.user.preferences ?? {}, baseline, windowChanges) }"
+        replace: "preferences: { ...baseline } }"
+    proof: { file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "refused takes back its own keys, and a key changed while it was away stays" }
+
+  - id: shape-favourites-queued-whole
+    class: WRITE-a-preference-sent-whole
+    source: shape
+    edits:
+      - file: src/components/profile/ProfileTriptych.tsx
+        find: "preferences: { favorites: next } } });"
+        replace: "preferences: updatedPrefs } });"
+    proof: { file: src/utils/__tests__/aPreferenceIsSentByItsKey.guard.test.ts, test: "each names the keys it changed, never a whole copy" }
+
+  - id: shape-reread-drops-pending
+    class: WRITE-a-preference-sent-whole
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "const updatedUser = s.user ? ({ ...s.user, ...withPendingPrefs(id, data) } as User) : null;"
+        replace: "const updatedUser = s.user ? ({ ...s.user, ...data } as User) : null;"
+    proof: { file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "lays the keys still pending over the house’s copy, key by key" }
+
+  - id: shape-save-files-nothing
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "        filed = await useAuthStore.getState().savePreferences(changed);"
+        replace: "        filed = 'saved';"
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "files only the keys changed, and says amended once the house has them" }
+
+  - id: shape-save-kept-said-amended
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "  const filedSaid = (filed: 'saved' | 'kept', amended: string) => (filed === 'kept'"
+        replace: "  const filedSaid = (filed: 'saved' | 'kept', amended: string) => (filed === ('never' as string)"
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "with no network, says they are kept on the phone, not amended" }
+
+  - id: shape-save-sends-untouched-keys
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "    const opened = amendments(formOpenedWith as SettingsFormData).preferences as Record<string, unknown>;"
+        replace: "    const opened = (useAuthStore.getState().user?.preferences ?? {}) as Record<string, unknown>;"
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "files only the keys changed, and says amended once the house has them" }
+
+  - id: shape-deck-says-saved-at-the-tap
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: src/components/feed/ActionDeck.tsx
+        find: "        removeFromWatchlist(filmId);"
+        replace: "        removeFromWatchlist(filmId);\n        require('@/src/utils/reelToast').default.success('Removed from watchlist');"
+    proof: { file: src/components/__tests__/ActionDeck.test.tsx, test: "says nothing at the tap: the store says how the save went, once" }
+
+  - id: shape-sign-in-over-keeps-the-first
+    class: AUTH-a-member-signed-in-over-another
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "    if (before && before !== authedUser.id) {"
+        replace: "    if (before && before !== before) {"
+    proof: { file: src/stores/__tests__/aMemberSignedInOverAnotherLeavesThemBehind.test.ts, test: "leaves the one on screen behind first, then signs the next in" }
+
+  - id: shape-launch-keeps-the-cached-member
+    class: AUTH-a-member-signed-in-over-another
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "        if (onScreen && onScreen !== session.user.id) {"
+        replace: "        if (onScreen && onScreen !== onScreen) {"
+    proof: { file: src/stores/__tests__/aMemberSignedInOverAnotherLeavesThemBehind.test.ts, test: "takes the cached member off the screen and opens on the session’s member, blocks read" }
+
+  - id: shape-restore-reads-no-blocks
+    class: AUTH-a-member-signed-in-over-another
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "          if (!useBlockStore.getState().blocksKnown) {"
+        replace: "          if (!useBlockStore.getState().blocksKnown && session.user.id === \"\") {"
+    proof: { file: src/stores/__tests__/aMemberSignedInOverAnotherLeavesThemBehind.test.ts, test: "takes the cached member off the screen and opens on the session’s member, blocks read" }
+
+  - id: shape-a-late-load-by-import
+    class: TEST-code-loaded-where-jest-cannot-follow
+    source: shape
+    edits:
+      - file: src/utils/memoryManager.ts
+        find: "      const { useDiscoverStore } = require('../stores/discover') as typeof import('../stores/discover');"
+        replace: "      void import('../stores/discover');\r\n      const { useDiscoverStore } = require('../stores/discover') as typeof import('../stores/discover');"
+    proof: { file: src/utils/__tests__/noCodeIsLoadedWhereTestsCannotFollow.guard.test.ts, test: "loads no module with import()" }
+
+  - id: shape-leave-behind-loaded-by-import
+    class: TEST-code-loaded-where-jest-cannot-follow
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "    const { resetAllStores } = require('./resetAllStores') as typeof import('./resetAllStores');\n    await resetAllStores(previousUserId);"
+        replace: "    const { resetAllStores } = await import('./resetAllStores');\n    await resetAllStores(previousUserId);"
+    proof: { file: src/stores/__tests__/aMemberSignedInOverAnotherLeavesThemBehind.test.ts, test: "leaves the one on screen behind first, then signs the next in" }
+
+  - id: shape-sent-taken-for-a-copy
+    class: WRITE-a-sent-message-taken-off-the-screen
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "        m.id === optimisticMsg.id\n          ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const }"
+        replace: "        m.id === optimisticMsg.id && !words.some((w) => w.id === data.id)\n          ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const }"
+    proof: { file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "stays on the screen, marked sent" }
+
+  - id: shape-sent-in-a-room-left-lost
+    class: WRITE-a-sent-message-taken-off-the-screen
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "  if (kept) _keptRooms.set(loungeId, change(kept));"
+        replace: "  if (kept && kept.length < 0) _keptRooms.set(loungeId, change(kept));"
+    proof: { file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "answered after another room was opened, is sent in the room’s kept words" }
+
+  - id: shape-a-reported-thing-not-blocked
+    class: WRITE-a-block-asked-not-carried-out
+    source: shape
+    edits:
+      - file: src/stores/reportStore.ts
+        find: "      return blockAsAsked(payload).then(() => ({ status: 'duplicate'"
+        replace: "      return Promise.resolve().then(() => ({ status: 'duplicate'"
+    proof: { file: src/stores/__tests__/aReportsBlockIsCarriedOutWhateverItsAnswer.test.ts, test: "already filed, the phone remembers: blocks, and asks the house nothing" }
+
+  - id: shape-blocked-as-the-next-member
+    class: WRITE-a-block-asked-not-carried-out
+    source: shape
+    edits:
+      - file: src/stores/reportStore.ts
+        find: "!payload.target_user_id || !stillSignedIn(payload.reporter_id)) return;"
+        replace: "!payload.target_user_id) return;"
+    proof: { file: src/stores/__tests__/aReportsBlockIsCarriedOutWhateverItsAnswer.test.ts, test: "never as the next member: signed out while it was asked, nothing is blocked" }
+
+  - id: shape-older-page-under-a-new-list
+    class: READ-an-answer-drawn-under-an-order-left
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "                if (state._cursor !== _cursor) return {};"
+        replace: "                if (state._cursor === \"\" && _cursor === \"\") return {};"
+    proof: { file: src/stores/__tests__/anOlderPageFollowsItsOwnList.test.ts, test: "an older page asked before a refresh is not laid under the refreshed list" }
+
+  - id: shape-refresh-ends-the-older-reading
+    class: READ-an-answer-drawn-under-an-order-left
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "            set((state) => ({ loading: state._fetchingMore, _fetching: false }));"
+        replace: "            set({ loading: false, _fetching: false });"
+    proof: { file: src/stores/__tests__/anOlderPageFollowsItsOwnList.test.ts, test: "a refresh ending first leaves the list reading while its older page is away" }
+
+  - id: shape-page-cursor-from-rows-kept
+    class: READ-a-page-judged-by-the-rows-kept
+    source: shape
+    edits:
+      - file: src/services/FeedService.ts
+        find: "  const last = sent[sent.length - 1] as { created_at?: unknown; id?: unknown } | undefined;\n  const next = sent.length >= size"
+        replace: "  const last = rows[rows.length - 1] as { created_at?: unknown; id?: unknown } | undefined;\n  const next = rows.length >= size"
+    proof: { file: src/services/__tests__/aDroppedRowEndsNoReel.test.ts, test: "a full page with a malformed row continues, from the last row SENT" }
+
+  - id: shape-next-page-by-length
+    class: READ-a-page-judged-by-the-rows-kept
+    source: shape
+    edits:
+      - file: src/hooks/useFeeds.ts
+        find: "  if (page.next !== undefined) return page.next ?? undefined;"
+        replace: "  if (page.next !== undefined && page.length < 0) return page.next ?? undefined;"
+    proof: { file: src/hooks/__tests__/useFeeds.test.ts, test: "short by a dropped row, continues from the cursor the server’s rows gave" }
+
+  - id: shape-film-page-keeps-the-hidden
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: src/hooks/useFilmDetail.ts
+        find: "    select: (film) => (film?.reviews.length"
+        replace: "    select: (film) => (film?.reviews.length === -1"
+    proof: { file: src/hooks/__tests__/aMemberHiddenLeavesTheFilmsPages.test.tsx, test: "the film page: a reviewer blocked since its read leaves it at once" }
+
+  - id: shape-archive-filtered-once
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/film-reviews/[id].tsx
+        find: "(r) => r.user_id ?? ''), [logs, whoIsHidden]);"
+        replace: "(r) => r.user_id ?? ''), [logs, whoIsHidden.length]);"
+    proof: { file: src/hooks/__tests__/aMemberHiddenLeavesTheFilmsPages.test.tsx, test: "the Log Archive: a member blocked since its read leaves it at once" }
+
+  - id: shape-room-purges-for-its-sheet-alone
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "  useEffect(() => { useLoungeStore.getState().purgeHiddenMessages(); }, [whoIsHidden]);"
+        replace: "  useEffect(() => { useLoungeStore.getState().purgeHiddenMessages(); }, [whoIsHidden.length]);"
+    proof: { file: src/components/lounge/__tests__/aRoomBeneathAnotherHearsNothing.test.tsx, test: "a member blocked from anywhere leaves the room at once" }
+
+  - id: shape-room-beneath-listens
+    class: DATA-another-rooms-words-shown
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "    if (!id || !listening || !onScreen) return;"
+        replace: "    if (!id || !listening) return;"
+    proof: { file: src/components/lounge/__tests__/aRoomBeneathAnotherHearsNothing.test.tsx, test: "leaves its channel when another room is opened over it, and joins again back in front" }
+
+  - id: shape-room-back-in-front-waits
+    class: DATA-another-rooms-words-shown
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "    if (!onScreen || !id || useLoungeStore.getState().currentLoungeId === id) return;"
+        replace: "    if (!onScreen || !id || useLoungeStore.getState().currentLoungeId !== null) return;"
+    proof: { file: src/components/lounge/__tests__/aRoomBeneathAnotherHearsNothing.test.tsx, test: "back in front after another room held the store, reads its own words again" }
+
+  - id: shape-room-beneath-reads-on-return
+    class: DATA-another-rooms-words-shown
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "    if (!onScreen) return undefined;"
+        replace: "    if (!onScreen && !id) return undefined;"
+    proof: { file: src/components/lounge/__tests__/aRoomBeneathAnotherHearsNothing.test.tsx, test: "a return to the app is read by the room in front alone" }
+
+  - id: shape-door-gone-before-it-is
+    class: UI-a-modal-over-a-falling-modal
+    source: shape
+    edits:
+      - file: src/components/InitiationModal.tsx
+        find: "    if (Platform.OS === 'ios') setTimeout(gone, GONE_TAIL_MS);"
+        replace: "    if (Platform.OS === 'ios') gone();"
+    proof: { file: src/components/__tests__/theFirstLogOpensOnceTheDoorIsGone.test.tsx, test: "on iOS: and, as a backstop, a tail after the Modal leaves the tree; never before" }
+
+  - id: shape-quiet-entry-opens-the-log
+    class: UI-a-modal-over-a-falling-modal
+    source: shape
+    edits:
+      - file: app/(tabs)/_layout.tsx
+        find: "    if (!logOnceGone.current || !tabsHere.current) return;"
+        replace: "    if (!tabsHere.current) return;"
+    proof: { file: src/components/__tests__/theTabsOpenTheFirstLogOnTheDoorsWord.test.tsx, test: "entering quietly opens nothing when the door is gone" }
+
+  - id: shape-picked-film-takes-the-last-words
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "            const own = logDraftFor(user?.id, f.id) as { review?: string; rating?: number; privateNotes?: string } | null;"
+        replace: "            const own = { review, rating, privateNotes } as { review?: string; rating?: number; privateNotes?: string } | null;"
+    proof: { file: src/hooks/__tests__/eachFilmKeepsItsOwnDraft.test.tsx, test: "picking another film keeps the first film's words for it, and opens the second on its own draft" }
+
+  - id: shape-a-part-never-asked
+    class: CI-gate-never-runs
+    source: shape
+    edits:
+      - file: ../.github/workflows/god_tier_ci.yml
+        find: "--part ${{ matrix.part }}/6"
+        replace: "--part ${{ matrix.part }}/5"
+    proof: { file: src/utils/__tests__/theMutantsJobRunsEveryPart.guard.test.ts, test: "the matrix holds every part from 1 to n, and the step asks for its own part of that n" }
+
+  - id: shape-host-beneath-opens-its-sheet
+    class: UI-a-sheet-opened-by-a-screen-beneath
+    source: shape
+    edits:
+      - file: src/components/moderation/LogModerationHost.tsx
+        find: "  const asked = focused ? askedOfAny : null;"
+        replace: "  const asked = focused || !focused ? askedOfAny : null;"
+    proof: { file: src/components/moderation/__tests__/aLogIsAskedOfTheScreenInFront.test.tsx, test: "a host beneath another screen opens nothing, and opens the sheet once it is in front" }
+
+  - id: shape-hidden-section-heard
+    class: UI-a-hidden-section-heard
+    source: shape
+    edits:
+      - file: src/components/reels/sectionLayers.ts
+        find: "export const heardIf = (chosen: boolean) => (chosen\n"
+        replace: "export const heardIf = (chosen: boolean) => (chosen || !chosen\n"
+    proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "the section not shown is not heard, on either platform" }

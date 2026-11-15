@@ -227,14 +227,14 @@ export function SettingsScreen() {
 
       const nextVal = nextBiometricStateRef.current;
       try {
-        await updateUserMutation(amendments({ ...data, biometricLock: nextVal }));
+        const filed = await fileAmendments({ ...data, biometricLock: nextVal });
         if (isMountedRef.current) {
           reset({ ...data, biometricLock: nextVal });
           TactileEngine.success();
-          reelToast.success('Your dossier has been amended.');
+          reelToast.success(filedSaid(filed, 'Your dossier has been amended.'));
         }
       } catch {
-        // Mutation error handled globally; prevent reset/success falsely.
+        // Said where it failed (fileAmendments, useUpdateUser); never reset or "amended" falsely.
       }
     }
   };
@@ -296,7 +296,37 @@ export function SettingsScreen() {
     },
   });
 
-  const { control, handleSubmit, reset, setValue, formState: { isDirty, dirtyFields } } = useForm<SettingsFormData>({
+  /**
+   * The form filed: its preferences that changed through the house's key-by-key merge
+   * (savePreferences), the profile's own column through updateUser. The profile write drops
+   * preferences (ProfileWriteService), and Save said "amended" over settings the house never had:
+   * the notices kept coming, others could still endorse and annotate, and the lock was off again
+   * at the next launch. 'kept' while the house cannot be reached; a refusal is said, and thrown.
+   */
+  const fileAmendments = async (data: SettingsFormData): Promise<'saved' | 'kept'> => {
+    const { is_social_private, preferences } = amendments(data);
+    // Changed from what the form opened with, not from the profile's copy: a key the profile never
+    // held reads as its default on the form, and sent unasked it put back what another phone set.
+    const opened = amendments(formOpenedWith as SettingsFormData).preferences as Record<string, unknown>;
+    const changed = Object.fromEntries(Object.entries(preferences).filter(([k, v]) => JSON.stringify(opened[k]) !== JSON.stringify(v)));
+    let filed: 'saved' | 'kept' = 'saved';
+    if (Object.keys(changed).length > 0) {
+      try {
+        filed = await useAuthStore.getState().savePreferences(changed);
+      } catch (err) {
+        reelToast.error('Your settings could not be filed. Nothing was changed.');
+        throw err;
+      }
+    }
+    if (is_social_private !== !!useAuthStore.getState().user?.is_social_private) await updateUserMutation({ is_social_private });
+    return filed;
+  };
+  const filedSaid = (filed: 'saved' | 'kept', amended: string) => (filed === 'kept'
+    ? 'Kept on this phone. Filed once the house is reached.'
+    : amended);
+
+  // formOpenedWith: the values the form opened with, or was last reset to (a save, a fresh read).
+  const { control, handleSubmit, reset, setValue, formState: { isDirty, dirtyFields, defaultValues: formOpenedWith } } = useForm<SettingsFormData>({
     resolver: zodResolver(SettingsSchema),
     defaultValues: {
       socialVisibility: (user?.is_social_private ? 'private' : 'public') as 'public' | 'private',
@@ -378,17 +408,13 @@ export function SettingsScreen() {
     }
 
     try {
-      await updateUserMutation(amendments(data));
+      const filed = await fileAmendments(data);
       if (isMountedRef.current) {
         reset(data);
         TactileEngine.success();
-        if (biometricCanceled) {
-          reelToast.success('Settings saved (Biometric update canceled)');
-        } else {
-          reelToast.success('Your dossier has been amended.');
-        }
+        reelToast.success(filedSaid(filed, biometricCanceled ? 'Settings saved (Biometric update canceled)' : 'Your dossier has been amended.'));
       }
-    } catch { /* surfaced by useUpdateUser's onError */ }
+    } catch { /* said where it failed: fileAmendments, useUpdateUser's onError */ }
   };
   // The form's check is made at the press, not as the screen draws.
   const handleSave = () => handleSubmit(save)();

@@ -46,6 +46,12 @@ export interface AuthState {
   updateUser: (updates: Partial<User>) => Promise<void>;
   setLocalTierHint: (updates: { tier?: string; is_founding?: boolean }) => void;
   setPreference: (key: string, value: unknown) => Promise<void>;
+  /**
+   * Preferences filed now, these keys alone, and waited for: 'saved' once the house has them, 'kept'
+   * while it cannot be reached (sent at the next launch or return); refused, they are taken back and
+   * it throws.
+   */
+  savePreferences: (changes: Record<string, unknown>) => Promise<'saved' | 'kept'>;
   getPreference: (key: string, fallback?: unknown) => unknown;
   restoreSession: () => Promise<void>;
   hydrateFromCache: () => void;
@@ -98,6 +104,73 @@ export function readPendingPrefs(userId: string): Record<string, unknown> | null
     const prefs = JSON.parse(raw);
     return prefs && typeof prefs === 'object' ? prefs as Record<string, unknown> : null;
   } catch { return null; }
+}
+
+/**
+ * Keys a member changed, added to those the house has not yet taken. Only the keys changed are
+ * pending and sent: the house merges by key (update_my_preferences), so the phone's whole copy,
+ * sent, put back every key another device had changed since this phone last read them.
+ */
+function addPendingPrefs(userId: string, changes: Record<string, unknown>): void {
+  storage.set(`dirty_prefs_${userId}`, JSON.stringify({ ...(readPendingPrefs(userId) ?? {}), ...changes }));
+}
+
+/** Keys the house has taken, or that were let go: off the pending list, any changed since kept on it. */
+function settlePendingPrefs(userId: string, settled: Record<string, unknown>): void {
+  const pending = readPendingPrefs(userId);
+  if (!pending) return;
+  const left = Object.fromEntries(Object.entries(pending)
+    .filter(([k, v]) => !(k in settled) || JSON.stringify(settled[k]) !== JSON.stringify(v)));
+  if (Object.keys(left).length > 0) storage.set(`dirty_prefs_${userId}`, JSON.stringify(left));
+  else storage.delete(`dirty_prefs_${userId}`);
+}
+
+/**
+ * A refused window taken back: each key it changed returns to what it was before, unless it was
+ * changed again since (that newer change is its own window's). Other keys are left as they stand.
+ */
+function takenBack(
+  now: Record<string, unknown>, before: Record<string, unknown>, sent: Record<string, unknown>,
+): Record<string, unknown> {
+  const back = { ...now };
+  for (const k of Object.keys(sent)) {
+    if (JSON.stringify(back[k]) !== JSON.stringify(sent[k])) continue;
+    if (k in before) back[k] = before[k];
+    else delete back[k];
+  }
+  return back;
+}
+
+/** The keys a window changed: those whose value differs from the window's opening snapshot. */
+function changedFrom(before: Record<string, unknown>, after: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(after).filter(([k, v]) => JSON.stringify(before[k]) !== JSON.stringify(v)));
+}
+
+/** A profile as the house sent it, the member's pending preferences laid over its own. */
+function withPendingPrefs<T extends object>(userId: string, profile: T): T {
+  const pending = readPendingPrefs(userId);
+  if (!pending) return profile;
+  const own = (profile as { preferences?: unknown }).preferences;
+  return { ...profile, preferences: { ...(own && typeof own === 'object' ? own : {}), ...pending } };
+}
+
+/**
+ * The pending preferences sent, merged by the house key by key. 'kept' while it cannot be reached:
+ * they stay pending, and the screen keeps them (a toggle made offline snapped back a second later,
+ * unsaid). 'refused' only for a refusal the house made.
+ */
+async function sendPendingPrefs(userId: string): Promise<'sent' | 'none' | 'kept' | 'refused'> {
+  const pending = readPendingPrefs(userId);
+  if (!pending) return 'none';
+  try {
+    // A failure is ANSWERED (supabase-js resolves it), not thrown.
+    const { error } = await supabase.rpc('update_my_preferences', { p_preferences: pending });
+    if (error) return isNetworkError(error) ? 'kept' : 'refused';
+  } catch (err) {
+    return isNetworkError(err) ? 'kept' : 'refused';
+  }
+  settlePendingPrefs(userId, pending);
+  return 'sent';
 }
 
 /**
@@ -155,6 +228,35 @@ async function readRankHistory(userId: string): Promise<void> {
  * The member's session ended elsewhere: their unsent writes go aside under a
  * key of their own (a toggle is not kept), their drafts stay, and they are told.
  */
+/**
+ * A member left behind by another signing in on this phone without a sign-out (a confirmation link
+ * for another account, the sign-in form, a reset finished for another account): what was theirs on
+ * the screen goes first, as their sign-out takes it, or the next member opened on their notices,
+ * their logs and their lists, the notice channel still theirs. Their unsent writes and drafts wait
+ * for them. The session is already the next member's, so nothing is asked of the house as theirs:
+ * the phone's push token is claimed by the next member as it registers (register_push_token).
+ */
+async function leaveBehind(previousUserId: string): Promise<void> {
+  keepForTheirReturn(previousUserId);
+  try {
+    const { teardownNotificationRealtime } = require('./notificationStore') as typeof import('./notificationStore');
+    teardownNotificationRealtime();
+  } catch { /* nothing live to end */ }
+  try {
+    const { resetAllStores } = require('./resetAllStores') as typeof import('./resetAllStores');
+    await resetAllStores(previousUserId);
+  } catch (err) {
+    captureError(err instanceof Error ? err : new Error(String(err)), { context: 'leave_behind' });
+  }
+  try { queryClient.clear(); } catch { /* the next reads fill it */ }
+  _prefTimers.forEach((t) => clearTimeout(t));
+  _prefTimers.clear();
+  _prefBaselines.clear();
+  storage.delete(`ironvault_user_cache_${previousUserId}`);
+  storage.delete('REELHOUSE_QUERY_CACHE');
+  storage.delete('nitrate_memory_feed');
+}
+
 function keepForTheirReturn(memberId: string | null): void {
   let held = { kept: 0, lapsed: 0 };
   try {
@@ -250,28 +352,26 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession();
       e2eTrace('auth.restore', { session: !!session?.user, cached: lastUserId !== undefined });
       if (session?.user) {
+        // Another member's session than the one on screen: the one on screen goes first, as their
+        // sign-out takes them, and their follow list is not this member's.
+        const onScreen = get().user?.id ?? null;
+        if (onScreen && onScreen !== session.user.id) {
+          set({ user: null, isAuthenticated: false });
+          await leaveBehind(onScreen);
+          cachedFollowing = [];
+        }
         welcomeBack(session.user.id);
         // Unsynced preferences first, MERGED server-side (another device may
         // have set other keys meanwhile).
-        const pendingPrefs = readPendingPrefs(session.user.id);
-        if (pendingPrefs) {
-          try {
-            // A failure is ANSWERED (supabase-js resolves it), not thrown.
-            const { error } = await supabase.rpc('update_my_preferences', { p_preferences: pendingPrefs });
-            if (!error) storage.delete(`dirty_prefs_${session.user.id}`);
-          } catch {
-            // Kept on disk for the next launch either way, and preferred below
-            // over the server's older copy.
-          }
-        }
+        // Kept on disk when unreached, and laid below over the server's older copy.
+        await sendPendingPrefs(session.user.id);
 
         const { data: profile } = await supabase
           .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', session.user.id).single();
         if (profile) {
           rankWasRead(session.user.id);
-          // Unsynced preferences win over the server's copy (see setPreference).
-          const stillPending = readPendingPrefs(session.user.id);
-          const finalPrefs = stillPending ?? profile.preferences;
+          // Unsynced preferences win over the server's copy, key by key (see setPreference).
+          const finalPrefs = withPendingPrefs(session.user.id, profile as { preferences?: unknown }).preferences;
           // Profile edits updateUser has not yet had confirmed, so this restore
           // (post-purchase polling runs it) never reverts one in flight.
           const pendingProfileEdits = readPendingProfile(session.user.id);
@@ -282,6 +382,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           storage.set('last_user_id', session.user.id);
           setSensitive(`ironvault_user_cache_${session.user.id}`, JSON.stringify(completeUser));
           set({ user: completeUser, isAuthenticated: true, loading: false });
+          // The member's blocks, as a sign-in reads them (adoptSession): signed in here by a reset,
+          // after a sign-out had cleared them, every member they had blocked or muted was shown.
+          if (!useBlockStore.getState().blocksKnown) {
+            useBlockStore.getState().hydrateFromCache(session.user.id);
+            void useBlockStore.getState().syncFromServer(session.user.id);
+          }
           // Hydrate following from DB in background (authoritative source)
           hydrateFollowing();
           // Every film they have logged and saved, whole (marksLedger).
@@ -303,7 +409,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           // Not by their own hand: what they had not yet sent waits for them.
           keepForTheirReturn(staleUserId);
           try {
-            const { resetAllStores } = await import('./resetAllStores');
+            const { resetAllStores } = require('./resetAllStores') as typeof import('./resetAllStores');
             await resetAllStores(staleUserId);
             if (staleUserId) storage.delete(`ironvault_user_cache_${staleUserId}`);
             storage.delete('last_user_id');
@@ -356,9 +462,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   adoptSession: (authedUser, profile) => {
+    // Signed in over another member, never signed out: they are left behind first, then this member
+    // comes in by the same door, the screen holding no one between (the boot runs again for them).
+    const before = get().user?.id ?? null;
+    if (before && before !== authedUser.id) {
+      set({ user: null, isAuthenticated: false, loading: true });
+      void leaveBehind(before).then(() => {
+        // Not if someone else came in, or the sign-in was undone, meanwhile.
+        if (get().user === null) get().adoptSession(authedUser, profile);
+      });
+      return;
+    }
     // Signed in on screen at once, and remembered for the next launch — with the
     // profile when the caller already holds it (signup reads it for the handle).
-    const completeUser = { ...authedUser, ...(profile ?? {}), following: [] } as unknown as User;
+    const completeUser = { ...authedUser, ...(profile ? withPendingPrefs(authedUser.id, profile) : {}), following: [] } as unknown as User;
     // A session signed in to replaces a recovery left unfinished (the recovery link's own session
     // never comes here: auth-callback sends it to the reset). Its flag, left, ended this session at
     // the next launch, as if the reset had just been abandoned.
@@ -393,7 +510,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         if (profileData && memberUnchanged(authedUser.id)) {
            rankWasRead(authedUser.id);
            set((s) => {
-             const updatedUser = s.user ? { ...s.user, ...profileData } : null;
+             const updatedUser = s.user ? { ...s.user, ...withPendingPrefs(authedUser.id, profileData) } : null;
              if (updatedUser) {
                storage.set('last_user_id', updatedUser.id);
                setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
@@ -413,12 +530,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   rereadProfile: async () => {
     const id = get().user?.id ?? null;
     if (!id) return false;
+    // What waited for the house goes first, then the read; still unreached, it is laid over the read.
+    await sendPendingPrefs(id);
     const { data, error } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', id).single();
     // Only onto the member it was read for, as the login's read lands.
     if (error || !data || !memberUnchanged(id)) return profileRead(get().user);
     rankWasRead(id);
     set((s) => {
-      const updatedUser = s.user ? ({ ...s.user, ...data } as User) : null;
+      const updatedUser = s.user ? ({ ...s.user, ...withPendingPrefs(id, data) } as User) : null;
       if (updatedUser) setSensitive(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
       return { user: updatedUser };
     });
@@ -479,13 +598,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     // 2. Clean up Realtime WebSocket immediately to stop background heartbeat
     try {
-      const { teardownNotificationRealtime } = await import('./notificationStore');
+      const { teardownNotificationRealtime } = require('./notificationStore') as typeof import('./notificationStore');
       teardownNotificationRealtime();
     } catch { cleanupErrors.push('realtime'); }
 
     // 3. Every store's own reset, so nothing crosses to the next member.
     try {
-      const { resetAllStores } = await import('./resetAllStores');
+      const { resetAllStores } = require('./resetAllStores') as typeof import('./resetAllStores');
       // Their id, for per-member caches: step 1 already cleared it from the store.
       await resetAllStores(previousUserId);
     } catch { cleanupErrors.push('stores'); }
@@ -633,8 +752,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // 2. Optimistic update (Cache)
     setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify({ ...get().user, preferences: prefs }));
 
-    // 3. The PENDING change, never gated on encryption: it must survive a kill.
-    storage.set(`dirty_prefs_${user.id}`, JSON.stringify(prefs));
+    // 3. The PENDING change, this key alone, never gated on encryption: it must survive a kill.
+    addPendingPrefs(user.id, { [key]: value });
 
     if (_prefTimers.has(timerKey)) {
       clearTimeout(_prefTimers.get(timerKey)!);
@@ -643,30 +762,52 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // 4. The send, debounced: one call for a burst of changes, always after the last.
     _prefTimers.set(timerKey, setTimeout(async () => {
       _prefTimers.delete(timerKey);
-      try {
-        const currentPrefs = get().user?.preferences;
-        if (!currentPrefs) { _prefBaselines.delete(user.id); return; }
-        // Server-side JSONB merge (COMP-7 cross-device): keys set on other
-        // devices are preserved instead of being overwritten by this blob.
-        const { error } = await supabase.rpc('update_my_preferences', { p_preferences: currentPrefs });
-        if (error) throw error;
-        storage.delete(`dirty_prefs_${user.id}`);
-        _prefBaselines.delete(user.id);
-      } catch {
-        // Refused: the WHOLE window reverts together, to its opening snapshot.
-        const baseline = _prefBaselines.get(user.id) ?? {};
-        _prefBaselines.delete(user.id);
-        // Not after a logout (likely, inside a one-second window): it would
-        // rewrite the departed member's cache, which the logout deleted.
-        if (!memberUnchanged(user.id)) return;
-        set((state) => ({ user: state.user ? { ...state.user, preferences: { ...baseline } } : null }));
-        setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify(get().user));
-        // The disk follows the screen, or the next launch re-applies the undone
-        // change; unless a newer window has begun, whose change is still pending.
-        if (!_prefTimers.has(timerKey)) storage.delete(`dirty_prefs_${user.id}`);
-        if (__DEV__) console.warn('[setPreference] DB sync failed, rolled back window locally');
-      }
+      // The window's snapshot and its changes, taken before the send: a change made while it is
+      // away opens a window of its own, with its own snapshot.
+      const baseline = _prefBaselines.get(user.id) ?? {};
+      _prefBaselines.delete(user.id);
+      const windowChanges = changedFrom(baseline, get().user?.preferences ?? {});
+      // The keys changed, merged by the house key by key (COMP-7 cross-device).
+      const outcome = await sendPendingPrefs(user.id);
+      // Sent, or kept for when the house is reached: the screen keeps the change.
+      if (outcome !== 'refused') return;
+      // Refused: the window's keys revert together. Not after a logout (likely, inside a one-second
+      // window): it would rewrite the departed member's cache, which the logout deleted.
+      if (!memberUnchanged(user.id)) return;
+      set((state) => ({ user: state.user ? { ...state.user, preferences: takenBack(state.user.preferences ?? {}, baseline, windowChanges) } : null }));
+      setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify(get().user));
+      // The disk follows the screen, or the next launch re-applies the undone change; a key changed
+      // again since stays pending, as its own window's.
+      settlePendingPrefs(user.id, windowChanges);
+      if (__DEV__) console.warn('[setPreference] DB sync failed, rolled back window locally');
     }, 1000));
+  },
+
+  savePreferences: async (changes) => {
+    const user = get().user;
+    if (!user) throw new Error('No member signed in.');
+    const before = { ...(user.preferences ?? {}) };
+    const prefs = { ...before, ...changes };
+    set((state) => ({ user: state.user ? { ...state.user, preferences: prefs } : null }));
+    setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify({ ...get().user, preferences: prefs }));
+    addPendingPrefs(user.id, changes);
+    // A toggle's window still waiting goes with these, now.
+    const timerKey = `pref:${user.id}`;
+    if (_prefTimers.has(timerKey)) {
+      clearTimeout(_prefTimers.get(timerKey)!);
+      _prefTimers.delete(timerKey);
+      _prefBaselines.delete(user.id);
+    }
+    const outcome = await sendPendingPrefs(user.id);
+    if (outcome === 'refused') {
+      if (memberUnchanged(user.id)) {
+        set((state) => ({ user: state.user ? { ...state.user, preferences: takenBack(state.user.preferences ?? {}, before, changes) } : null }));
+        setSensitive(`ironvault_user_cache_${user.id}`, JSON.stringify(get().user));
+        settlePendingPrefs(user.id, changes);
+      }
+      throw new Error('The house refused the settings.');
+    }
+    return outcome === 'kept' ? 'kept' : 'saved';
   },
 
   getPreference: (key, fallback = null) => {

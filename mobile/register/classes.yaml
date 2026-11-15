@@ -1117,14 +1117,16 @@ classes:
     seriousness: code
     area: tooling
     status: OPEN
-    count: 0
+    count: 1
     source: { kind: history, ref: "God-Tier 38889096174: the push's jest and captures cancelled by the nightly, which GitHub started five hours late" }
     methods:
       - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "runs every gate on a push to main or on a schedule, or names why not (CI-02)" }
       - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "cancels only an older run of its own kind (CI-02)" }
       - { kind: static, file: src/utils/__tests__/everyCheckRuns.guard.test.ts, test: "runs every script file, from a workflow, a hook, an npm script or another script, or a test that loads it, or says why by hand" }
       - { kind: static, file: src/utils/__tests__/everyCheckRuns.guard.test.ts, test: "runs the preflight before every store build asks EAS" }
-    fix: "every workflow runs on a push to main or on a schedule, or is named with why (the website's Lighthouse gate by hand, the alert after the others); God-Tier, the load test and the iPhone launch key their cancelling by the event too, so a late nightly never cancels a push's run nor a push the nightly's; every script file is run by a workflow, a hook, an npm script, another script or a test, or named as run by hand; the store builds run through npm (build:ios, build:android), so the preflight always runs first"
+      - { kind: static, file: src/utils/__tests__/theMutantsJobRunsEveryPart.guard.test.ts, test: "the matrix holds every part from 1 to n, and the step asks for its own part of that n" }
+      - { kind: static, file: src/utils/__tests__/theMutantsJobRunsEveryPart.guard.test.ts, test: "a part that fails leaves the other parts running" }
+    fix: "every workflow runs on a push to main or on a schedule, or is named with why (the website's Lighthouse gate by hand, the alert after the others); God-Tier, the load test and the iPhone launch key their cancelling by the event too, so a late nightly never cancels a push's run nor a push the nightly's; every script file is run by a workflow, a hook, an npm script, another script or a test, or named as run by hand; the store builds run through npm (build:ios, build:android), so the preflight always runs first; the push's mutants run in six parts side by side, each asking its own part of the same six, so a push that changes the runner is judged inside the job's time (mutant shape-a-part-never-asked)"
     places: [none]
 
   - id: CI-check-passes-on-nothing
@@ -1311,12 +1313,16 @@ classes:
     seriousness: serious
     area: lounge
     status: OPEN
-    count: 2
+    count: 3
     source: { kind: reviewer, ref: "study of the salon's opening for P0.112: fetchMessages changed the room and kept its words" }
     methods:
       - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "lets the last room's words go the moment another opens, and keeps the same room's while it is read again" }
       - { kind: running, file: src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx, test: "the last room's words, still held, are never drawn under this room's name" }
-    fix: "fetchMessages lets another room's words go the moment a room opens, keeping the same room's while it is read again; the screen takes only the words of the room it shows (currentLoungeId === id), so a room's words can be drawn under no other name (mutants shape-room-keeps-last-words, shape-screen-draws-held-words)"
+      - { kind: running, file: src/components/lounge/__tests__/aRoomBeneathAnotherHearsNothing.test.tsx, test: "leaves its channel when another room is opened over it, and joins again back in front" }
+      - { kind: running, file: src/components/lounge/__tests__/aRoomBeneathAnotherHearsNothing.test.tsx, test: "back in front after another room held the store, reads its own words again" }
+      - { kind: running, file: src/components/lounge/__tests__/aRoomBeneathAnotherHearsNothing.test.tsx, test: "back in front with its own words still held, reads nothing again" }
+      - { kind: running, file: src/components/lounge/__tests__/aRoomBeneathAnotherHearsNothing.test.tsx, test: "a return to the app is read by the room in front alone" }
+    fix: "fetchMessages lets another room's words go the moment a room opens, keeping the same room's while it is read again; the screen takes only the words of the room it shows (currentLoungeId === id), so a room's words can be drawn under no other name (mutants shape-room-keeps-last-words, shape-screen-draws-held-words); a room beneath another (a notice opened over it) neither listens nor reads: its channel is left and joined again in front, a return to the app is read by the room in front, and back in front it reads its own words when the store holds another room's (mutants shape-room-beneath-listens, shape-room-back-in-front-waits, shape-room-beneath-reads-on-return)"
     places: [none]
 
   - id: DB-certification-held-twice
@@ -1576,16 +1582,20 @@ classes:
     places: [none]
 
   - id: COPY-said-before-it-was-true
-    title: "The Lobby's rank bill told every unranked member \"The house has seen your taste\": a member who had just joined, or whose ledger was still being read, had shown it none, and the first words the house said of them were not true"
+    title: "The house said a thing was done before it was: the Lobby's rank bill told every unranked member \"The house has seen your taste\" before it had seen any; the settings' SAVE said \"Your dossier has been amended\" over preferences the profile write dropped; the Reel's SAVE said \"Saved\" at the tap, over a save that could still fail"
     seriousness: behaviour
     area: copy
     status: OPEN
-    count: 1
+    count: 3
     source: { kind: reviewer, ref: "the first minute, read as a new member (2026-10-24): lobby-empty drawn and read" }
     methods:
       - { kind: running, file: src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx, test: "to a member with nothing logged, or whose ledger is still read: never that the house has seen their taste" }
       - { kind: running, file: src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx, test: "to a member whose ledger holds a film: the house has seen their taste" }
-    fix: "the line is said only once the member's ledger is read whole and holds a film (marksLedger); before, the bill says what is true of anyone: The house keeps its best seats / for those who keep the record. The Lobby's other words about a member are true by their rank (mutant shape-taste-claimed-unseen)"
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "files only the keys changed, and says amended once the house has them" }
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "with no network, says they are kept on the phone, not amended" }
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "refused, says so, and never amended" }
+      - { kind: running, file: src/components/__tests__/ActionDeck.test.tsx, test: "says nothing at the tap: the store says how the save went, once" }
+    fix: "the line is said only once the member's ledger is read whole and holds a film (marksLedger); before, the bill says what is true of anyone: The house keeps its best seats / for those who keep the record. The Lobby's other words about a member are true by their rank (mutant shape-taste-claimed-unseen); SAVE files the changed preferences through the house's key-by-key merge (savePreferences), keys changed from what the form opened with, and says amended, kept on this phone, or refused (mutants shape-save-files-nothing, shape-save-kept-said-amended, shape-save-sends-untouched-keys); the Reel's SAVE leaves the saying to the store, once (mutant shape-deck-says-saved-at-the-tap)"
     places: [none]
 
   - id: LOOK-stand-in-eye
@@ -2156,11 +2166,11 @@ classes:
     places: [none]
 
   - id: WRITE-words-let-go-unsent
-    title: "Words written were let go before they were kept or sent: a salon message sent within 800ms of the last was refused as a double-tap after the composer had let go of it; the last second of a critique, a log or a stack's critique was lost when its page went before the words rested; and a film's log draft was wiped when the sheet opened on another film"
+    title: "Words written were let go before they were kept or sent: a salon message sent within 800ms of the last was refused as a double-tap after the composer had let go of it; the last second of a critique, a log or a stack's critique was lost when its page went before the words rested; a film's log draft was wiped when the sheet opened on another film; and a film picked from the log sheet's search took the last film's words, then wiped its own draft"
     seriousness: serious
     area: lounge
     status: OPEN
-    count: 4
+    count: 5
     source: { kind: reviewer, ref: "review round 1, the Dispatch, Lounge and log, 2026-11-14" }
     methods:
       - { kind: running, file: src/stores/__tests__/loungeActs.test.ts, test: "sends other words at once, however soon after the last" }
@@ -2171,7 +2181,8 @@ classes:
       - { kind: running, file: src/hooks/__tests__/aWordWrittenIsKept.test.tsx, test: "keeps the words at once when the box goes before they rest, and never for a member signed out" }
       - { kind: running, file: src/hooks/__tests__/aWordWrittenIsKept.test.tsx, test: "keeps the last place's words at once when the box moves to another place before they rest" }
       - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "keeps the words at once when the page goes before they rest" }
-    fix: "only the same words sent again to a room inside 800ms are a double-tap; other words are another message, sent (mutant shape-throttle-eats-other-words); each film keeps its own log draft, so another film's sheet takes none away (keepLogDraft, logDraftFor, dropLogDraft), and a critique, a log or kept words are kept at once when their page goes or moves before they rest, for the member who wrote them alone (mutants shape-a-films-draft-taken-by-another, shape-log-let-go-on-leaving, shape-kept-words-let-go-on-leaving, shape-critique-let-go-on-leaving)"
+      - { kind: running, file: src/hooks/__tests__/eachFilmKeepsItsOwnDraft.test.tsx, test: "picking another film keeps the first film's words for it, and opens the second on its own draft" }
+    fix: "only the same words sent again to a room inside 800ms are a double-tap; other words are another message, sent (mutant shape-throttle-eats-other-words); each film keeps its own log draft, so another film's sheet takes none away (keepLogDraft, logDraftFor, dropLogDraft), and a critique, a log or kept words are kept at once when their page goes or moves before they rest, for the member who wrote them alone (mutants shape-a-films-draft-taken-by-another, shape-log-let-go-on-leaving, shape-kept-words-let-go-on-leaving, shape-critique-let-go-on-leaving); a film picked from the sheet keeps the last film's words for it at once and opens on its own draft, or on none (mutant shape-picked-film-takes-the-last-words)"
     places: [none]
 
   - id: UI-a-sheet-with-no-way-out
@@ -2191,15 +2202,18 @@ classes:
     places: [none]
 
   - id: READ-an-answer-drawn-under-an-order-left
-    title: "A filing's critiques asked in one order and answered after the member chose the other were drawn under the new heading: the rows of the order left, in the order chosen"
+    title: "An answer asked under one state was laid under another: a filing's critiques asked in one order and answered after the member chose the other were drawn under the new heading; an older page of notices asked before a refresh was laid under the refreshed list, its cursor taken, every notice between the two hidden"
     seriousness: behaviour
     area: dispatch
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: reviewer, ref: "review round 1, the Dispatch, Lounge and log, 2026-11-14" }
     methods:
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "never draws an answer in an order the member has already left" }
-    fix: "an answer whose order is no longer the filing's chosen one is dropped, its rows and its failure alike (mutant shape-answer-of-an-order-left)"
+      - { kind: running, file: src/stores/__tests__/anOlderPageFollowsItsOwnList.test.ts, test: "an older page asked before a refresh is not laid under the refreshed list" }
+      - { kind: running, file: src/stores/__tests__/anOlderPageFollowsItsOwnList.test.ts, test: "an older page asked on the list it followed is laid under it" }
+      - { kind: running, file: src/stores/__tests__/anOlderPageFollowsItsOwnList.test.ts, test: "a refresh ending first leaves the list reading while its older page is away" }
+    fix: "an answer whose order is no longer the filing's chosen one is dropped, its rows and its failure alike (mutant shape-answer-of-an-order-left); an older page of notices joins only the list whose cursor it followed, and each read lowers the list's reading for itself (mutants shape-older-page-under-a-new-list, shape-refresh-ends-the-older-reading)"
     places: [none]
 
   - id: READ-the-next-page-asks-an-old-one
@@ -2216,17 +2230,22 @@ classes:
     places: [none]
 
   - id: UI-a-modal-over-a-falling-modal
-    title: "REPORT on an action sheet opened the report sheet while the action sheet was still falling: two Modals at once, the iPhone trap, and the report sheet never rose (the salon, the Dispatch, a log, a stack, a member's file, a log in a list)"
+    title: "A Modal was asked to rise while another was still falling, the iPhone trap: REPORT on an action sheet opened the report sheet over it (the salon, the Dispatch, a log, a stack, a member's file, a log in a list), and the Initiation's LOG YOUR FIRST FILM pushed the log 250ms after the tap, while its door still dismissed: a new member's first act opened nothing"
     seriousness: serious
     area: moderation
     status: OPEN
-    count: 6
+    count: 7
     source: { kind: reviewer, ref: "review round 1, the Dispatch, Lounge and log, 2026-11-14" }
     methods:
       - { kind: running, file: src/components/moderation/__tests__/aReportRisesOnceItsSheetIsGone.test.tsx, test: "closes the sheet, and asks for the report sheet only once it is gone" }
       - { kind: running, file: src/components/moderation/__tests__/aReportRisesOnceItsSheetIsGone.test.tsx, test: "in a salon, hands the message to report once the sheet is gone" }
       - { kind: running, file: src/components/moderation/__tests__/aReportRisesOnceItsSheetIsGone.test.tsx, test: "for a log in a list, reports the log the sheet was asked about, once the sheet is gone" }
-    fix: "the sheets hold REPORT until they are gone (useSheetPresence's onGone, once per fall, at its end or when it should have ended), so no screen can open the report sheet over them; the log's host keeps the log asked about while its sheet falls (mutants shape-report-over-the-falling-sheet, shape-salon-report-over-the-falling-sheet, shape-log-report-for-no-log)"
+      - { kind: running, file: src/components/__tests__/theFirstLogOpensOnceTheDoorIsGone.test.tsx, test: "on iOS: by the Modal’s own onDismiss" }
+      - { kind: running, file: src/components/__tests__/theFirstLogOpensOnceTheDoorIsGone.test.tsx, test: "on iOS: and, as a backstop, a tail after the Modal leaves the tree; never before" }
+      - { kind: running, file: src/components/__tests__/theFirstLogOpensOnceTheDoorIsGone.test.tsx, test: "on Android: as the Modal leaves the tree" }
+      - { kind: running, file: src/components/__tests__/theTabsOpenTheFirstLogOnTheDoorsWord.test.tsx, test: "LOG YOUR FIRST FILM: the door is closed, and the log opens only once it is gone" }
+      - { kind: running, file: src/components/__tests__/theTabsOpenTheFirstLogOnTheDoorsWord.test.tsx, test: "entering quietly opens nothing when the door is gone" }
+    fix: "the sheets hold REPORT until they are gone (useSheetPresence's onGone, once per fall, at its end or when it should have ended), so no screen can open the report sheet over them; the log's host keeps the log asked about while its sheet falls (mutants shape-report-over-the-falling-sheet, shape-salon-report-over-the-falling-sheet, shape-log-report-for-no-log); the Initiation says when its door is gone (onGone: iOS's onDismiss, or a tail after the Modal leaves the tree; Android at once) and the tabs open the first log only then, once (mutants shape-door-gone-before-it-is, shape-quiet-entry-opens-the-log)"
     places: [none]
 
   - id: UI-a-change-shown-only-elsewhere
@@ -2357,4 +2376,144 @@ classes:
     methods:
       - { kind: running, file: e2e/__tests__/iosIpadJudge.test.ts, test: "judges where no package is installed, as the iPad job runs it" }
     fix: "the iPhone's and the iPad's judges read their photographs through png.mjs, Node's own zlib, and the iPad's judge is run in its test from a folder no installed package can be reached from (mutant shape-judge-needs-a-package)"
+    places: [none]
+
+  - id: WRITE-a-preference-sent-whole
+    title: "A preference was sent as the phone's whole copy, or not kept: the house merges preferences key by key, and every key another device had changed since this phone read them was put back (a toggle's send, the favourites and the backdrop queued offline); a toggle made with no network snapped back a second later, unsaid; and a refusal took back every key on the screen, a newer change made while it was away included"
+    seriousness: serious
+    area: settings
+    status: OPEN
+    count: 5
+    source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "sends the key it changed, never the phone’s whole copy" }
+      - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "made with no network stays on, kept to be sent, its key alone" }
+      - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "thrown offline (a fetch that never answered) is kept the same way" }
+      - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "refused takes back its own keys, and a key changed while it was away stays" }
+      - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "refused, takes back the key it changed even if the same key was sent before it" }
+      - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "files only the keys it changed and waits for the house: saved" }
+      - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "with no network says kept, keeps the change on screen and pending" }
+      - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "refused throws and takes back what it changed, nothing else" }
+      - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "takes a toggle’s waiting window with it, in one send" }
+      - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "lays the keys still pending over the house’s copy, key by key" }
+      - { kind: static, file: src/utils/__tests__/aPreferenceIsSentByItsKey.guard.test.ts, test: "each names the keys it changed, never a whole copy" }
+    fix: "the keys changed alone are pending (dirty_prefs) and sent, and laid over every read of the profile key by key; a send the house cannot be reached for keeps them, on screen and pending; a refusal takes back its own window's keys, a key changed since staying as its own window's; savePreferences files the settings' changes and waits for the answer; the favourites and the backdrop queue their changed key alone (mutants shape-pref-pending-whole-copy, shape-pref-offline-snaps-back, shape-pref-refusal-takes-all, shape-favourites-queued-whole, shape-reread-drops-pending)"
+    places: [none]
+
+  - id: AUTH-a-member-signed-in-over-another
+    title: "A member signed in over another, never signed out (a confirmation link for another account, the sign-in form, a reset finished for another account), opened on the first member's notices, logs and lists, the notice channel still theirs; and a launch whose session was another member's than the one cached opened on the cached member's things, their follow list and no blocks read"
+    seriousness: serious
+    area: auth
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aMemberSignedInOverAnotherLeavesThemBehind.test.ts, test: "leaves the one on screen behind first, then signs the next in" }
+      - { kind: running, file: src/stores/__tests__/aMemberSignedInOverAnotherLeavesThemBehind.test.ts, test: "the same member again is no switch: nothing is taken" }
+      - { kind: running, file: src/stores/__tests__/aMemberSignedInOverAnotherLeavesThemBehind.test.ts, test: "a sign-in undone while the first was being left does not come back" }
+      - { kind: running, file: src/stores/__tests__/aMemberSignedInOverAnotherLeavesThemBehind.test.ts, test: "takes the cached member off the screen and opens on the session’s member, blocks read" }
+      - { kind: running, file: src/stores/__tests__/aMemberSignedInOverAnotherLeavesThemBehind.test.ts, test: "the same member as cached is not left behind" }
+    fix: "the member on screen is left behind first (leaveBehind: their writes and drafts kept for them, the notice channel ended, every store reset, the cached reads cleared), the screen holding no one between, then the next member comes in by the same door; a restore on another member's session does the same and reads the member's blocks (mutants shape-sign-in-over-keeps-the-first, shape-launch-keeps-the-cached-member, shape-restore-reads-no-blocks)"
+    places: [none]
+
+  - id: TEST-code-loaded-where-jest-cannot-follow
+    title: "A module loaded late with import() never ran under jest: import() throws there (no VM modules), and each sat in a try whose catch hid it, so the sign-out's store reset and channel teardown, a stale session's reset, and the memory trim were never run by any test, whatever their tests said"
+    seriousness: code
+    area: tests
+    status: OPEN
+    count: 6
+    source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/noCodeIsLoadedWhereTestsCannotFollow.guard.test.ts, test: "loads no module with import()" }
+      - { kind: static, file: src/utils/__tests__/noCodeIsLoadedWhereTestsCannotFollow.guard.test.ts, test: "would see one" }
+      - { kind: running, file: src/stores/__tests__/aMemberSignedInOverAnotherLeavesThemBehind.test.ts, test: "leaves the one on screen behind first, then signs the next in" }
+    fix: "a module loaded late is required inside the function (require(...) as typeof import(...)): as late, the same import loop broken, and run by jest as by the phone (mutants shape-a-late-load-by-import, shape-leave-behind-loaded-by-import)"
+    places: [none]
+
+  - id: WRITE-a-sent-message-taken-off-the-screen
+    title: "A salon message the house took was taken off the screen: its answer named the message by its own id, read as a second copy and removed, so it came back only with the channel's echo, and was gone when the echo came first; a send answered after the member opened another room was left 'sending' in that room's kept words for good, never marked sent nor offered again"
+    seriousness: serious
+    area: lounge
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "stays on the screen, marked sent" }
+      - { kind: running, file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "stays when the channel’s echo was heard first and had marked it sent" }
+      - { kind: running, file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "answered after another room was opened, is sent in the room’s kept words" }
+      - { kind: running, file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "refused after another room was opened, is failed in the room’s kept words: offered again" }
+    fix: "the answer marks the message sent where it stands, on screen or in the words kept for a room left (inRoomWords), and a failure marks it failed the same way (mutants shape-sent-taken-for-a-copy, shape-sent-in-a-room-left-lost)"
+    places: [none]
+
+  - id: WRITE-a-block-asked-not-carried-out
+    title: "\"Report and block\" blocked only when the report was filed or kept before it was tried: on a thing reported before (the phone's memory or the house's 23505), or a report kept after its send failed on the network, the sheet closed with the author still seen"
+    seriousness: serious
+    area: moderation
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aReportsBlockIsCarriedOutWhateverItsAnswer.test.ts, test: "filed: blocks" }
+      - { kind: running, file: src/stores/__tests__/aReportsBlockIsCarriedOutWhateverItsAnswer.test.ts, test: "kept offline before it was tried: blocks" }
+      - { kind: running, file: src/stores/__tests__/aReportsBlockIsCarriedOutWhateverItsAnswer.test.ts, test: "kept after the send failed on the network: blocks" }
+      - { kind: running, file: src/stores/__tests__/aReportsBlockIsCarriedOutWhateverItsAnswer.test.ts, test: "already filed, the house says (23505): blocks" }
+      - { kind: running, file: src/stores/__tests__/aReportsBlockIsCarriedOutWhateverItsAnswer.test.ts, test: "already filed, the phone remembers: blocks, and asks the house nothing" }
+      - { kind: running, file: src/stores/__tests__/aReportsBlockIsCarriedOutWhateverItsAnswer.test.ts, test: "a report without block blocks no one, whatever its answer" }
+      - { kind: running, file: src/stores/__tests__/aReportsBlockIsCarriedOutWhateverItsAnswer.test.ts, test: "never as the next member: signed out while it was asked, nothing is blocked" }
+    fix: "the block asked with a report is carried out whatever became of the report, filed, kept or already filed, never as the next member (blockAsAsked) (mutants shape-a-reported-thing-not-blocked, shape-blocked-as-the-next-member)"
+    places: [none]
+
+  - id: READ-a-page-judged-by-the-rows-kept
+    title: "A Reel page was judged by the rows it kept, not those the server sent: a full page with one row dropped as malformed read as short, the last, and the Reel said \"The End\" over logs still to come; its cursor was the last row kept, not the last sent (the house's logs, the following, the stacks)"
+    seriousness: behaviour
+    area: states
+    status: OPEN
+    count: 3
+    source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/services/__tests__/aDroppedRowEndsNoReel.test.ts, test: "a full page with a malformed row continues, from the last row SENT" }
+      - { kind: running, file: src/services/__tests__/aDroppedRowEndsNoReel.test.ts, test: "a short page is the last" }
+      - { kind: running, file: src/services/__tests__/aDroppedRowEndsNoReel.test.ts, test: "the word is off the page’s items: a list or the saved cache reads only its rows" }
+      - { kind: running, file: src/hooks/__tests__/useFeeds.test.ts, test: "short by a dropped row, continues from the cursor the server’s rows gave" }
+      - { kind: running, file: src/hooks/__tests__/useFeeds.test.ts, test: "full, but the server said it was the last: stops" }
+    fix: "each page carries the server's word (FeedPage's next: the cursor after the last row sent, or null for a short page), off its items, and the next page is asked by it; a page restored from the saved cache has none and is judged by its length (mutants shape-page-cursor-from-rows-kept, shape-next-page-by-length)"
+    places: [none]
+
+  - id: DATA-a-hidden-member-drawn-on
+    title: "A member blocked or muted stayed drawn under the toast that said their words were hidden: the film page kept its critiques half an hour, the Log Archive filtered its rows once as they arrived, and a salon purged its messages only for its own sheet's BLOCK, not a report that blocked or a block from another screen"
+    seriousness: behaviour
+    area: moderation
+    status: OPEN
+    count: 3
+    source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/hooks/__tests__/aMemberHiddenLeavesTheFilmsPages.test.tsx, test: "the film page: a reviewer blocked since its read leaves it at once" }
+      - { kind: running, file: src/hooks/__tests__/aMemberHiddenLeavesTheFilmsPages.test.tsx, test: "the Log Archive: a member blocked since its read leaves it at once" }
+      - { kind: running, file: src/components/lounge/__tests__/aRoomBeneathAnotherHearsNothing.test.tsx, test: "a member blocked from anywhere leaves the room at once" }
+    fix: "what is drawn is drawn through who is hidden now (useWhoIsHidden, a value that changes with every block, mute or unblock): the film page's critiques in its select, the archive's rows, and the salon purges whenever it changes (mutants shape-film-page-keeps-the-hidden, shape-archive-filtered-once, shape-room-purges-for-its-sheet-alone)"
+    places: [none]
+
+  - id: UI-a-sheet-opened-by-a-screen-beneath
+    title: "A log's ··· opened two sheets, one over the other: every screen that draws logs holds a host, a tab stays mounted under the screens pushed over it, and the host beneath heard the ask too"
+    seriousness: behaviour
+    area: moderation
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/components/moderation/__tests__/aLogIsAskedOfTheScreenInFront.test.tsx, test: "a host beneath another screen opens nothing, and opens the sheet once it is in front" }
+      - { kind: running, file: src/components/moderation/__tests__/aLogIsAskedOfTheScreenInFront.test.tsx, test: "the host in front opens the sheet" }
+    fix: "a log's ask is answered by the host of the screen in front alone (useIsFocused) (mutant shape-host-beneath-opens-its-sheet)"
+    places: [none]
+
+  - id: UI-a-hidden-section-heard
+    title: "The Reel's section not shown was still read by TalkBack: on Android an unseen view (opacity 0, no touches) is read, and a second title, switch and search field were walked over the section shown"
+    seriousness: behaviour
+    area: app
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
+    methods:
+      - { kind: running, file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "the section not shown is not heard, on either platform" }
+    fix: "the section not chosen is out of a screen reader's reach as well as out of sight (heardIf: no-hide-descendants on Android, accessibilityElementsHidden on iOS) (mutant shape-hidden-section-heard)"
     places: [none]

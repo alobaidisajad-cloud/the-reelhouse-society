@@ -60,7 +60,7 @@ const MEMBER_CACHE = /^`ironvault_user_cache_\$\{[\w.]+\}`$|^CACHE_KEYS\.USER\(/
 const FAMILIES: Record<string, { writers: [string, RegExp][]; opened: string; screens?: string[]; ownFixtures?: true }> = {
   'member-cache': { writers: [['src/stores/auth.ts', MEMBER_CACHE], ['src/hooks/useEditProfile.ts', MEMBER_CACHE], ['src/hooks/useUpdateUser.ts', MEMBER_CACHE]], opened: HERE },
   'pending-profile': { writers: [['src/stores/auth.ts', /^`dirty_profile_\$\{user\.id\}`$/]], opened: HERE },
-  'pending-prefs': { writers: [['src/stores/auth.ts', /^`dirty_prefs_\$\{user\.id\}`$/]], opened: HERE },
+  'pending-prefs': { writers: [['src/stores/auth.ts', /^`dirty_prefs_\$\{userId\}`$/]], opened: HERE },
   'import-receipt': { writers: [['src/features/archive/undoImport.ts', /^RECEIPT_KEY$/]], opened: HERE },
   'auth-throttle': { writers: [['src/hooks/useAuthThrottle.ts', /^STORAGE_KEY$/]], opened: HERE },
   'sign-out-owed': { writers: [['src/lib/endSession.ts', /^OWED_KEY$/]], opened: HERE },

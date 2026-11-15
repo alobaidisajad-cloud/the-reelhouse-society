@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { tmdb } from '@/src/lib/tmdb';
 import { FilmService } from '@/src/services/FilmService';
 import { buildRecommendationPool } from '@/src/utils/recommendations';
@@ -12,6 +13,10 @@ function poolFromDetail(detail: unknown, filmId: number) {
 }
 
 export function useFilmDetail(filmId: number, validFilmId: boolean) {
+  // The critiques kept for half an hour are drawn through who is hidden now: a member blocked or
+  // muted since (from the Log Archive, a log) left the page only when it was read again. The page
+  // is drawn again when who is hidden changes, and select runs again with it.
+  useWhoIsHidden();
   return useQuery({
     queryKey: ['film', filmId],
     queryFn: async () => {
@@ -75,6 +80,9 @@ export function useFilmDetail(filmId: number, validFilmId: boolean) {
       };
     },
     staleTime: 30 * 60 * 1000,  // 30 min
+    select: (film) => (film?.reviews.length
+      ? { ...film, reviews: filterContentByBlocks(film.reviews, (r) => r.user_id ?? '') }
+      : film),
     // Not a feed: back in the app once older than that, the page is read again (P4.7).
     refetchOnWindowFocus: true,
     enabled: validFilmId,

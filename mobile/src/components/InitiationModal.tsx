@@ -13,9 +13,9 @@
  *   • ~20s unskipped, 2s skipped
  * Motion: transform/opacity only, house timing curves, no bounce anywhere.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
-import { Modal, StyleSheet, View } from 'react-native';
+import { Modal, Platform, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { HouseBlur } from '@/src/components/HouseBlur';
 // Reanimated's: it knows the setting on the first frame, so a member who asked
@@ -128,9 +128,32 @@ interface InitiationModalProps {
   memberNo: number | null;
   /** 'log' → open the log modal; 'quiet' → simply enter the house. */
   onComplete: (action: 'log' | 'quiet') => void;
+  /**
+   * The door is gone: the Modal has left the screen, so a modal route may be pushed. On iOS a
+   * presentation asked while another is still dismissing is refused, and the first log never
+   * opened. Said on iOS's onDismiss, or GONE_TAIL_MS after the Modal leaves the tree (its own fade
+   * dismisses it then), whichever is first; on Android at once. It may be said twice.
+   */
+  onGone?: () => void;
 }
 
-export default function InitiationModal({ visible, username, memberNo, onComplete }: InitiationModalProps) {
+/** The iOS Modal's own dismissal after it leaves the tree, and a margin: the backstop for onDismiss. */
+export const GONE_TAIL_MS = 450;
+
+/** Mounted inside the Modal: says the door is gone once the Modal leaves the tree. */
+function DoorWatch({ onGone }: { onGone?: () => void }) {
+  const live = useRef(onGone);
+  useLayoutEffect(() => { live.current = onGone; });
+  useEffect(() => () => {
+    const gone = live.current;
+    if (!gone) return;
+    if (Platform.OS === 'ios') setTimeout(gone, GONE_TAIL_MS);
+    else gone();
+  }, []);
+  return null;
+}
+
+export default function InitiationModal({ visible, username, memberNo, onComplete, onGone }: InitiationModalProps) {
   const [beat, setBeat] = useState(0);
   const reduceMotion = useReduceMotion();
   // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
@@ -156,7 +179,8 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
   return (
     <Presence>
     {visible ? (
-    <Modal key="initiation" statusBarTranslucent visible transparent animationType="fade" onRequestClose={handleQuiet}>
+    <Modal key="initiation" statusBarTranslucent visible transparent animationType="fade" onRequestClose={handleQuiet} onDismiss={onGone}>
+      <DoorWatch onGone={onGone} />
       <InColumn>
       <PresenceView name="initiation" style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={handleQuiet}>
         {/* The house is real, behind the door — the living Lobby, blurred. */}

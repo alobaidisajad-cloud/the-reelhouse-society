@@ -9,6 +9,7 @@
  *
  * Usage, as a film's reviews read it: `filterContentByBlocks(mapped, (r) => r.user_id ?? '')`.
  */
+import { useMemo } from 'react';
 import { useBlockStore } from '../stores/blockStore';
 
 /**
@@ -24,4 +25,15 @@ export function filterContentByBlocks<T>(
 ): T[] {
   const { isHidden } = useBlockStore.getState();
   return items.filter((item) => !isHidden(getUserId(item)));
+}
+
+/**
+ * Who is hidden now, as a value that changes whenever anyone is blocked, muted or let back: a
+ * list filtered once as it arrived kept a member blocked since on the screen, under the toast that
+ * said their words were hidden. Its parts are the store's own sets, a new one on every change.
+ */
+export function useWhoIsHidden(): readonly [ReadonlySet<string>, ReadonlySet<string>] {
+  const blocked = useBlockStore((s) => s._blockedIndex);
+  const muted = useBlockStore((s) => s._mutedIndex);
+  return useMemo(() => [blocked, muted] as const, [blocked, muted]);
 }

@@ -28,6 +28,8 @@ import { safeOpenURL } from '@/src/utils/linking';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
+import { useIsFocused } from 'expo-router/react-navigation';
+import { useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import { MembersOnly } from '@/src/components/MembersOnly';
@@ -466,6 +468,9 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   const askForRoomAgain = useCallback(() => setLoadAttempt((n) => n + 1), []);
 
   const blockUser = useBlockStore((s) => s.blockUser);
+  // In front, or under another screen: a notice opens another room over this one (nav.push), and
+  // the store and the channel are then that room's.
+  const onScreen = useIsFocused();
 
   const handleInputChange = useCallback((text: string) => {
     setInput(text);
@@ -617,22 +622,26 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   const handleReport = useCallback((msg: LoungeMessage) => {
     setSelectedMessage(msg); setActionSheetMsg(null); setReportSheetVisible(true);
   }, []);
-  // blockUser updates the store before it awaits the server, so the purge sees the
-  // block at once and the member's messages leave the room as the toast says.
   const handleBlock = useCallback((userId: string) => {
     setActionSheetMsg(null);
     blockUser(userId);
-    useLoungeStore.getState().purgeHiddenMessages();
   }, [blockUser]);
+  // Whoever is blocked or muted, from wherever (this sheet, a report that blocks, another screen),
+  // their messages leave the room at once, as the toast says: the store's lists change before the
+  // server is asked. Only this sheet's BLOCK purged, and a report that blocked left them drawn.
+  const whoIsHidden = useWhoIsHidden();
+  useEffect(() => { useLoungeStore.getState().purgeHiddenMessages(); }, [whoIsHidden]);
 
-  // ── Re-fetch on foreground ──
+  // ── Re-fetch on foreground ── by the room in front alone: a room beneath another, reading its
+  // words, took the store from the room on screen.
   useEffect(() => {
+    if (!onScreen) return undefined;
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active' && id) { fetchMessages(id); markRead(id); refreshMembership(); }
     });
     return () => sub.remove();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, onScreen]);
 
   // ── Initial fetch ──
   useEffect(() => {
@@ -642,6 +651,17 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
     return () => { markRead(id); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+  // Back in front after another room was opened over it: the store holds that room's words, and
+  // this one waited for its own for good ("retrieving" while its sends never showed). Its words are
+  // read again, those it kept drawn at once.
+  useEffect(() => {
+    if (!onScreen || !id || useLoungeStore.getState().currentLoungeId === id) return;
+    // Not awaited: the read says its own failure on the room (messagesFailed), and a read mark
+    // that fails is marked again at the next visit.
+    void fetchMessages(id);
+    void markRead(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onScreen]);
 
   // ── The live channel (messages, reactions, seats, presence, typing) ──
   // Joined only when the salon's own rules let this member receive it (an open
@@ -650,11 +670,13 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   // seat lost in a private salon leaves the channel at once.
   const listening = !!activeLounge && (!activeLounge.is_private || myStatus === 'approved');
   const seatedHere = myStatus === 'approved';
+  // Heard only while in front: under another room, this room's channel wrote its presence and its
+  // typists into that room's header, and that room's leaving took the channel from this one.
   useEffect(() => {
-    if (!id || !listening) return;
+    if (!id || !listening || !onScreen) return;
     return subscribeToLounge(id, { seated: seatedHere, onMembership: () => { refreshMembership(); } });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, listening, seatedHere]);
+  }, [id, listening, seatedHere, onScreen]);
 
   // A member waiting at a private door has no channel to hear the door open on;
   // their admission arrives as a notice, so each new notice asks again.

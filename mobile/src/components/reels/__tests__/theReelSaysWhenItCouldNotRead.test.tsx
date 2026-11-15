@@ -243,6 +243,23 @@ it('once the crossfade is over, each section is drawn shown or hidden as its tou
 });
 
 /**
+ * The section not shown is out of a screen reader's reach too (review round 2): on Android an
+ * unseen view is still read, and TalkBack walked the hidden section's title, switch and search
+ * field over the one shown. Each layer is heard as it is seen, from the press on.
+ */
+it('the section not shown is not heard, on either platform', async () => {
+  const r = await mount();
+  const all = { includeHiddenElements: true };
+  const heard = (s: 'logs' | 'stacks') => {
+    const p = r.getByTestId(`reels-${s}-layer`, all).props;
+    return p.importantForAccessibility !== 'no-hide-descendants' && p.accessibilityElementsHidden !== true ? 'heard' : 'unheard';
+  };
+  expect([heard('logs'), heard('stacks')]).toEqual(['heard', 'unheard']);
+  await act(async () => { await fireEvent.press(r.getAllByLabelText('Stacks')[0]!); });
+  expect([heard('logs'), heard('stacks')]).toEqual(['unheard', 'heard']);
+});
+
+/**
  * The Reel's light, calmed (WORKLIST P0.110): it stacked a lamp, a wash, a projector beam
  * swinging and flickering over the feed, a sheen sweeping the curate button and two pulses,
  * and read as noise. It is one lamp over the room's floor; nothing on it breathes, sweeps or

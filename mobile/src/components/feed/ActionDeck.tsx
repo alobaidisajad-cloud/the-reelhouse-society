@@ -9,7 +9,6 @@ import { useWatchlistStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { deckLabelProps } from '@/src/constants/textScaling';
-import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing } from 'react-native-reanimated';
@@ -131,9 +130,10 @@ export const ActionDeck = React.memo(function ActionDeck({
         filmYear: year ? String(year) : '',
       });
     } else {
+      // The store says how it went, once (watchlistSlice): said here too, at the tap, it said
+      // "Saved" before a save that then failed, and a screen reader heard every outcome twice.
       if (filmSaved) {
         removeFromWatchlist(filmId);
-        reelToast.success('Removed from watchlist');
       } else {
         addToWatchlist({
           id: filmId,
@@ -141,7 +141,6 @@ export const ActionDeck = React.memo(function ActionDeck({
           poster_path: posterPath,
           release_date: year ? `${year}-01-01` : undefined,
         });
-        reelToast.success('Saved to watchlist ✦');
       }
       bookmarkScale.value = withSequence(
         withTiming(1.18, { duration: 110, easing: Easing.out(Easing.quad) }),

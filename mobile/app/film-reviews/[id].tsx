@@ -10,7 +10,7 @@
  * The poster press is overridden to go BACK: the member came from this
  * film's page, so the card must never stack a duplicate on top of it.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
@@ -30,7 +30,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import PressableScale from '@/src/components/PressableScale';
 import { ActivityCard } from '@/src/components/feed/ActivityCard';
 import { FeedItemSchema, type FeedItem } from '@/src/schemas/feed.schema';
-import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
+import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { logCountsSelect, withLogCountFilters, liftLogCounts } from '@/src/services/logCounts';
 import { tellMarks } from '@/src/stores/tellMarks';
 import { useAuthStore } from '@/src/stores/auth';
@@ -94,6 +94,12 @@ function FilmReviewsScreen({ filmId, title }: { filmId: string; title?: string }
   const headerTop = usePushedHeaderTop();
 
   const [logs, setLogs] = useState<FeedItem[]>([]);
+  // Drawn through who is hidden now: a member blocked or muted from this page (its ··· opens the
+  // Tribunal's sheet) leaves it at once, as the toast says, not at its next reading.
+  // filterContentByBlocks reads the block store itself; whoIsHidden is the change that redraws it.
+  const whoIsHidden = useWhoIsHidden();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const shownLogs = useMemo(() => filterContentByBlocks(logs, (r) => r.user_id ?? ''), [logs, whoIsHidden]);
   const [loading, setLoading] = useState(true);
   const [fetchingMore, setFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -208,7 +214,7 @@ function FilmReviewsScreen({ filmId, title }: { filmId: string; title?: string }
       ) : (
         <CinematicFlashList
           bottomInset={edge}
-          data={logs}
+          data={shownLogs}
           keyExtractor={(item: FeedItem) => item.id}
           renderItem={renderLog}
           onEndReached={() => fetchLogs(true)}

@@ -9,3 +9,11 @@
 export const CROSSFADE_MS = 300;
 export const SHOWN = { opacity: 1 } as const;
 export const HIDDEN = { opacity: 0 } as const;
+/**
+ * The layer not chosen is out of a screen reader's reach as well as out of sight: on Android an
+ * unseen view (opacity 0, no touches) is still read, and TalkBack walked a second title, switch and
+ * search field over the section shown.
+ */
+export const heardIf = (chosen: boolean) => (chosen
+  ? { importantForAccessibility: 'auto' as const, accessibilityElementsHidden: false }
+  : { importantForAccessibility: 'no-hide-descendants' as const, accessibilityElementsHidden: true });

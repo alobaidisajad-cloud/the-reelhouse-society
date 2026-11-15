@@ -77,6 +77,22 @@ const STACK_CARD_POSTERS = 4;
 export const FEED_PAGE = 40;
 export const STACKS_PAGE = 60;
 
+/**
+ * A page as the server sent it: its rows that could be read, and `next`, the cursor after the LAST
+ * ROW SENT, or null when the server sent a short page (the last). A row dropped as malformed left a
+ * full page short, read as the last, and the Reel said "The End" over logs still to come; its
+ * cursor was the last row kept, not the last sent. Held off the array's items, so the lists that
+ * read the cache's pages as rows read them as before; a page restored from the saved cache has no
+ * `next`, and is judged by its length until it is read again (useFeeds).
+ */
+export type FeedPage<T> = T[] & { readonly next?: string | null };
+function sentAs<T>(rows: T[], sent: unknown[], size: number): FeedPage<T> {
+  const last = sent[sent.length - 1] as { created_at?: unknown; id?: unknown } | undefined;
+  const next = sent.length >= size && typeof last?.created_at === 'string' && typeof last.id === 'string'
+    ? `${last.created_at}|${last.id}` : null;
+  return Object.defineProperty(rows, 'next', { value: next, enumerable: false }) as FeedPage<T>;
+}
+
 /** Tell the shared count store what this page of logs said, and when it was asked. */
 function tellFeed(items: FeedItem[], askedAt: number): FeedItem[] {
   tellMarks('log', items.map((i) => ({ id: i.id, certify: i.certify_count, critique: i.critique_count, certified: i.certified })), askedAt);
@@ -108,7 +124,7 @@ export function parseCursor(pageParam?: string): { cursorDate: string | null; cu
  */
 export const FeedService = {
   /** The community feed, newest first. */
-  async getCommunityFeed({ pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}): Promise<FeedItem[]> {
+  async getCommunityFeed({ pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}): Promise<FeedPage<FeedItem>> {
     const { cursorDate, cursorId } = parseCursor(pageParam);
     // Taken BEFORE the request: see tellMarkCounts.
     const askedAt = Date.now();
@@ -120,11 +136,11 @@ export const FeedService = {
     if (error) throw new FeedServiceError(error);
     if (!data || data.length === 0) return [];
     const rows = parseRowsSafely(data, FollowingFeedRowSchema, 'getCommunityFeed');
-    return tellFeed(rows.map((d) => FeedItemSchema.parse(d)), askedAt);
+    return sentAs(tellFeed(rows.map((d) => FeedItemSchema.parse(d)), askedAt), data, FEED_PAGE);
   },
 
   /** The logs of the members the viewer follows, newest first. */
-  async getFollowingFeed({ pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}): Promise<FeedItem[]> {
+  async getFollowingFeed({ pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}): Promise<FeedPage<FeedItem>> {
     const { cursorDate, cursorId } = parseCursor(pageParam);
     const askedAt = Date.now();
     const { data, error } = await withAbortSignal(supabase.rpc('get_following_feed_auth_cursor', {
@@ -135,14 +151,14 @@ export const FeedService = {
     if (error) throw new FeedServiceError(error);
     if (!data || data.length === 0) return [];
     const rows = parseRowsSafely(data, FollowingFeedRowSchema, 'getFollowingFeed');
-    return tellFeed(rows.map((d) => FeedItemSchema.parse(d)), askedAt);
+    return sentAs(tellFeed(rows.map((d) => FeedItemSchema.parse(d)), askedAt), data, FEED_PAGE);
   },
 
   /**
    * Curated stacks, newest first, searched and filtered on the server.
    * @param followingCount - whom the viewer follows: none means no followed stacks to ask for
    */
-  async getStacksFeed(filter: 'all' | 'following', search: string, { pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}, followingCount = 0): Promise<StackData[]> {
+  async getStacksFeed(filter: 'all' | 'following', search: string, { pageParam, signal }: { pageParam?: string; signal?: AbortSignal } = {}, followingCount = 0): Promise<FeedPage<StackData>> {
     if (filter === 'following' && followingCount === 0) return [];
     const { cursorDate, cursorId } = parseCursor(pageParam);
     // A stack's card shows its certify count; certifying on its page moves it at once.
@@ -172,6 +188,6 @@ export const FeedService = {
     }));
     // The card draws no heart, so only the count is told.
     tellMarks('list', stacks.map((st) => ({ id: st.id, certify: st.certifyCount })), askedAt);
-    return stacks;
+    return sentAs(stacks, data, STACKS_PAGE);
   },
 };

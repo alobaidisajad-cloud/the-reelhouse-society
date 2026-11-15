@@ -98,3 +98,25 @@ describe('the stacks feed', () => {
     expect(result.current.hasNextPage).toBe(false);
   });
 });
+
+// The page's own word, from the rows the server sent (FeedPage), decides the next page; a page with
+// none (restored from the saved cache) is judged by its length, as above.
+describe('a page carrying the server’s word', () => {
+  const withNext = <T extends object>(page: T[], next: string | null) =>
+    Object.defineProperty(page, 'next', { value: next, enumerable: false });
+
+  it('short by a dropped row, continues from the cursor the server’s rows gave', async () => {
+    mockCommunity.mockResolvedValueOnce(withNext(logs(FEED_PAGE - 1), 'sent-last|log-39')).mockResolvedValueOnce(logs(2, FEED_PAGE));
+    const { result } = await renderFeed(() => useCommunityFeed());
+    await waitFor(() => expect(result.current.hasNextPage).toBe(true));
+    await act(async () => { await result.current.fetchNextPage(); });
+    expect(pageParamOf(mockCommunity.mock.calls[1])).toBe('sent-last|log-39');
+  });
+
+  it('full, but the server said it was the last: stops', async () => {
+    mockStacks.mockResolvedValueOnce(withNext(stacks(STACKS_PAGE), null));
+    const { result } = await renderFeed(() => useStacksFeed('all', ''));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.hasNextPage).toBe(false);
+  });
+});

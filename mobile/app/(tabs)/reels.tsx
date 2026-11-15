@@ -47,7 +47,7 @@ import { useScreenSeen } from '@/src/hooks/useScreenSeen';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
 import { ARRIVAL_GRACE_MS } from '@/src/hooks/useArrival';
-import { CROSSFADE_MS, HIDDEN, SHOWN } from '@/src/components/reels/sectionLayers';
+import { CROSSFADE_MS, HIDDEN, SHOWN, heardIf } from '@/src/components/reels/sectionLayers';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: string; onChangeText: (text: string) => void; onClear: () => void }) => {
@@ -488,7 +488,7 @@ export default function ReelScreen() {
         renderToHardwareTextureAndroid={seen}
       />
 
-      <Animated.View testID="reels-logs-layer" pointerEvents={section === 'logs' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, crossfaded ? (section === 'logs' ? SHOWN : HIDDEN) : logsOpacityStyle]}>
+      <Animated.View testID="reels-logs-layer" {...heardIf(section === 'logs')} pointerEvents={section === 'logs' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, crossfaded ? (section === 'logs' ? SHOWN : HIDDEN) : logsOpacityStyle]}>
         <ReelsFeedList
           feed={activeFeed}
           refreshing={isManualRefreshing}
@@ -507,7 +507,7 @@ export default function ReelScreen() {
         />
       </Animated.View>
 
-      <Animated.View testID="reels-stacks-layer" pointerEvents={section === 'stacks' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, crossfaded ? (section === 'stacks' ? SHOWN : HIDDEN) : stacksOpacityStyle]}>
+      <Animated.View testID="reels-stacks-layer" {...heardIf(section === 'stacks')} pointerEvents={section === 'stacks' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, crossfaded ? (section === 'stacks' ? SHOWN : HIDDEN) : stacksOpacityStyle]}>
         <ReelsStackList
           stacks={filteredStacks}
           refreshing={isManualRefreshing}

@@ -607,7 +607,21 @@ export function useLogFlow() {
 
     // ── DRAFT HANDLERS ──
     const selectFilm = (f: LogSearchResult) => {
-        setFilm({ id: f.id, title: f.title, name: f.name, poster_path: f.poster_path, release_date: f.release_date }); 
+        // The film left keeps its words at once, as the sheet going does; the film taken opens on
+        // its own draft, or on none. Kept as they stood, the last film's words were saved under
+        // this one, and an empty form's rest cleared this film's own draft a second later.
+        const keep = unsavedLog.current;
+        unsavedLog.current = null;
+        keep?.();
+        if (!editLogId) {
+            const own = logDraftFor(user?.id, f.id) as { review?: string; rating?: number; privateNotes?: string } | null;
+            setReview(own?.review ?? '');
+            setRating(own?.rating ?? 0);
+            setDraftNoteFor(own?.privateNotes ? f.id : null);
+            setPrivateNotes(own?.privateNotes ?? '');
+            setNoteTouched(!!own?.privateNotes);
+        }
+        setFilm({ id: f.id, title: f.title, name: f.name, poster_path: f.poster_path, release_date: f.release_date });
         setStep(1);
         TactileEngine.selection();
     };

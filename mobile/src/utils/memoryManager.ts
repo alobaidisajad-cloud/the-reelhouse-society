@@ -58,15 +58,16 @@ class MemoryManager {
     
     // 3. Trim the discover store's accumulated films if available
     try {
-      // Dynamic ESM import to avoid circular dependency — fire-and-forget is safe here
-      import('../stores/discover').then(({ useDiscoverStore }) => {
-        const currentFilms = useDiscoverStore.getState().accumulatedFilms;
-        if (currentFilms.length > 50) {
-          useDiscoverStore.getState().setAccumulatedFilms(currentFilms.slice(-50));
-        }
-      }).catch(() => { /* Non-critical — discover store may not be initialized */ });
+      // Required here, not at the top, to avoid the circular import. A require, not import():
+      // under jest import() throws (no VM modules) and the catch hid it, so no test ever ran this.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded late, past the import loop
+      const { useDiscoverStore } = require('../stores/discover') as typeof import('../stores/discover');
+      const currentFilms = useDiscoverStore.getState().accumulatedFilms;
+      if (currentFilms.length > 50) {
+        useDiscoverStore.getState().setAccumulatedFilms(currentFilms.slice(-50));
+      }
     } catch {
-      // Non-critical — import itself failed
+      // Non-critical — the discover store may not be initialized
     }
     
     // 5. Request GC if Hermes exposes it

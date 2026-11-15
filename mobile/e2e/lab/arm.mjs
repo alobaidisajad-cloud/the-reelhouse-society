@@ -436,7 +436,7 @@ const edgeNone = [edit(LIGHT_FILE, EDGE_HIGHLIGHT + EDGE_FACE, '')];
 // the salon at 1134, the room at 1601; holding the Lobby's wall back, Lq, gave 170 ms, not called,
 // and 17 MB). What the room itself does as it opens, each switched off alone, and all four (Ls0).
 const SALON_FILE = 'app/lounge/[id].tsx';
-const roomNotLive = [edit(SALON_FILE, '    if (!id || !listening) return;\n', '    if (globalThis || !id || !listening) return;\n')];
+const roomNotLive = [edit(SALON_FILE, '    if (!id || !listening || !onScreen) return;\n', '    if (globalThis || !id || !listening || !onScreen) return;\n')];
 const roomNotMarked = [edit(SALON_FILE, '    fetchMessages(id);\n    markRead(id);\n    return () => { markRead(id); };\n', '    fetchMessages(id);\n    return () => {};\n')];
 const roomPlainPresses = [edit(SALON_FILE, "import PressableScale from '@/src/components/PressableScale';\n",
   'const PressableScale = ({ style, children }: React.ComponentProps<typeof View> & Record<string, unknown>) => <View style={style}>{children}</View>;\n')];

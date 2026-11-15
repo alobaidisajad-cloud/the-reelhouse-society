@@ -27,6 +27,11 @@ jest.mock('@/src/utils/TactileEngine', () => ({
   default: { selection: jest.fn(), mutate: jest.fn(), navigate: jest.fn(), destroy: jest.fn(), success: jest.fn(), error: jest.fn() },
 }));
 jest.mock('@/src/components/ShareToLoungeModal', () => ({ __esModule: true, default: () => null }));
+const mockToast = jest.fn();
+jest.mock('@/src/utils/reelToast', () => ({
+  __esModule: true,
+  default: Object.assign((...a: unknown[]) => mockToast(...a), { success: (...a: unknown[]) => mockToast(...a), error: (...a: unknown[]) => mockToast(...a) }),
+}));
 
 // eslint-disable-next-line import/first
 import { ActionDeck } from '../feed/ActionDeck';
@@ -94,6 +99,21 @@ describe('the acts', () => {
     expect(saved.getByLabelText('Save: on your watchlist. Takes it off').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
     await fireEvent.press(saved.getByLabelText('Save: on your watchlist. Takes it off'));
     expect(mockWatch.removeFromWatchlist).toHaveBeenCalledWith(603);
+  });
+
+  it('says nothing at the tap: the store says how the save went, once', async () => {
+    // Said at the tap too, "Saved" stood over a save that then failed, and a screen reader heard
+    // every outcome twice (review round 2).
+    mockToast.mockClear();
+    await setUser({ id: 'u2', username: 'reader' });
+    const r = render(deck());
+    await fireEvent.press(r.getByLabelText('Save film to your watchlist'));
+    mockWatch._watchlistIndex = { 603: true };
+    const saved = render(deck({ itemId: 'log-2' }));
+    await fireEvent.press(saved.getByLabelText('Save: on your watchlist. Takes it off'));
+    expect(mockWatch.addToWatchlist).toHaveBeenCalled();
+    expect(mockWatch.removeFromWatchlist).toHaveBeenCalled();
+    expect(mockToast).not.toHaveBeenCalled();
   });
 
   it('a stranger is asked for a name at the act, and nothing is marked', async () => {

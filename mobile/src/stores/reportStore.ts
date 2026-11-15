@@ -36,6 +36,17 @@ interface ReportState {
 /** The reporter signed out before the report was sent: it was not filed. */
 const LEFT: ReportResult = { status: 'error', message: 'Signed out before the report was sent.' };
 
+/**
+ * The block the member asked for with the report, carried out whatever became of the report: filed,
+ * kept to file later, or already filed. Only the filed and the offline answers blocked, and "block"
+ * on a thing reported before, or on a report kept after a network failure, closed the sheet with
+ * the author still seen. Never as the next member.
+ */
+async function blockAsAsked(payload: ReportPayload): Promise<void> {
+  if (!payload.block_target || !payload.target_user_id || !stillSignedIn(payload.reporter_id)) return;
+  await useBlockStore.getState().blockUser(payload.target_user_id);
+}
+
 export const useReportStore = create<ReportState>()((set, get) => ({
   isSubmitting: false,
   recentReports: new Set<string>(),
@@ -52,7 +63,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
     // Duplicate check
     if (get().recentReports.has(payload.content_id)) {
       reelToast("You've already reported this content.");
-      return { status: 'duplicate', message: "You've already reported this content." };
+      return blockAsAsked(payload).then(() => ({ status: 'duplicate', message: "You've already reported this content." }));
     }
 
     set({ isSubmitting: true });
@@ -89,11 +100,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
           set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
           TactileEngine.success();
           reelToast('Report saved offline. Will be filed when connected.');
-
-          if (payload.block_target && payload.target_user_id) {
-            await useBlockStore.getState().blockUser(payload.target_user_id);
-          }
-
+          await blockAsAsked(payload);
           return { status: 'queued' };
         }
         // No room on the phone to keep it (the member has been told): not filed, and not tried again here.
@@ -116,6 +123,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
         if (error.code === '23505') {
           if (stillSignedIn(startedAs)) set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
           reelToast("You've already reported this content.");
+          await blockAsAsked(payload);
           return { status: 'duplicate', message: "You've already reported this content." };
         }
         if (error.message?.includes('Rate limit')) {
@@ -129,6 +137,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
             set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
             TactileEngine.success();
             reelToast('Report saved offline. Will be filed when connected.');
+            await blockAsAsked(payload);
             return { status: 'queued' };
           }
         }
@@ -141,10 +150,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
       TactileEngine.success();
       reelToast('Report filed. The Tribunal will review.');
 
-      // Handle optional block
-      if (payload.block_target && payload.target_user_id) {
-        await useBlockStore.getState().blockUser(payload.target_user_id);
-      }
+      await blockAsAsked(payload);
 
       return { status: 'submitted' };
     } catch (err) {
