@@ -65,6 +65,7 @@ src/components/dispatch/SeriesPicker.tsx · Close, without setting a series · w
 src/components/dispatch/paper/PaperComposer.tsx · Back, without filing · wayOut
 src/components/dispatch/paper/PaperComposer.tsx · {amending ? (canFile ? 'Amend it' : 'Amend it. Not ready yet') : (canFile ? 'File it' : 'File it. Not ready yet')} · commit
 src/components/dispatch/paper/PaperCritiques.tsx · Back · wayOut
+src/components/dispatch/paper/PaperCritiques.tsx · Put the critique away · wayOut
 src/components/dispatch/paper/PaperCritiques.tsx · Report this critique · destructive
 src/components/dispatch/paper/PaperCritiques.tsx · Withdraw this critique · destructive
 src/components/dispatch/paper/PaperCritiques.tsx · {empty ? 'File this critique. Write something first.' : 'File this critique'} · commit
