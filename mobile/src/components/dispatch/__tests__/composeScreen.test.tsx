@@ -581,7 +581,7 @@ describe('amending a dossier that already exists', () => {
     await type(getByLabelText('Essay content body'), 'The first version, corrected.');
     await press(getByLabelText('Re-file the essay'));
     await flush();
-    expect(mockAmended[0][1]).toMatchObject({ title: 'The Empty Room', fullContent: 'The first version, corrected.' });
+    expect(mockAmended).toEqual([[ESSAY_ID, expect.objectContaining({ title: 'The Empty Room', fullContent: 'The first version, corrected.' })]]);
   });
 
   it('an essay that could not be read is said, asked again, and never written over', async () => {

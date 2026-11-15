@@ -92,8 +92,10 @@ describe('every store starts again whole when a member signs out', () => {
     expect(made).toEqual([...Object.keys(STORES), ...ASKED_ELSEWHERE].sort());
   });
 
-  it.each(Object.keys(STORES))('%s puts back every value it holds', async (file) => {
+  /** One store soiled whole, one real reset, and the values it did not put back. */
+  const leftOver = async (file: string): Promise<string[]> => {
     const store = STORES[file];
+    if (!store) throw new Error(`${file} is not among the stores asked here`);
     const keys = valuesOf(store.getState());
     expect(keys.length).toBeGreaterThan(0);
 
@@ -105,7 +107,19 @@ describe('every store starts again whole when a member signs out', () => {
     await resetAllStores('u1');
 
     const after = store.getState() as Record<string, unknown>;
-    expect(keys.filter((k) => after[k] === LAST_MEMBERS)).toEqual([]);
+    return keys.filter((k) => after[k] === LAST_MEMBERS);
+  };
+
+  // The two whose lists were written by hand, by name (the register names them); the rest in turn.
+  it('src/stores/notificationStore.ts puts back every value it holds', async () => {
+    expect(await leftOver('src/stores/notificationStore.ts')).toEqual([]);
+  });
+  it('src/stores/lounge.ts puts back every value it holds', async () => {
+    expect(await leftOver('src/stores/lounge.ts')).toEqual([]);
+  });
+  const BY_NAME = ['src/stores/notificationStore.ts', 'src/stores/lounge.ts'];
+  it.each(Object.keys(STORES).filter((f) => !BY_NAME.includes(f)))('%s puts back every value it holds', async (file) => {
+    expect(await leftOver(file)).toEqual([]);
   });
 
   it("the notices' reading flags come down, so the next member's first read runs", async () => {

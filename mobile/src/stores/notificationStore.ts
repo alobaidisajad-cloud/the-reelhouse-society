@@ -137,7 +137,7 @@ export interface NotificationState {
 /**
  * Every value the store holds, as it starts: what it is made with and what a sign-out puts back,
  * one list. The reset's own list named six of eleven, and a read a sign-out cut short left
- * `_fetching` raised: the next member's notices never read again (noticesStartAgain.test).
+ * `_fetching` raised: the next member's notices never read again (everyStoreStartsAgain.guard).
  */
 export const noticesAtStart = () => ({
     notifications: [] as NotificationState['notifications'],

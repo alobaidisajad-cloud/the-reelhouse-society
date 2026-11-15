@@ -1431,8 +1431,8 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useFollowRequests.ts
-        find: "    items, loading: loading || (enabled && answeredFor !== search), loadingMore,"
-        replace: "    items, loading, loadingMore,"
+        find: "    items: shown, loading: loading || (enabled && answeredFor !== search), loadingMore,"
+        replace: "    items: shown, loading, loadingMore,"
     proof: { file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "opens reading, before its read has begun, and says the door is empty only once answered" }
 
   - id: shape-own-room-empty-before-answer

@@ -25,7 +25,7 @@ const openingWords = (from: string): { words: string[]; open: boolean } => {
   for (;;) {
     const m = re.exec(rest);
     if (!m) return { words, open: !/^\s*\]/.test(rest) };
-    words.push(m[1]);
+    words.push(m[1] ?? '');
     if (m[2] === ']') return { words, open: false };
     rest = rest.slice(m[0].length);
   }

@@ -41,5 +41,7 @@ describe('the critiques\' footer', () => {
     const r = render(<CritiqueFooter shown={33} total={80} more={false} onRetry={jest.fn()} onMore={onMore} />);
     expect(r.queryByText(/MORE · /)).toBeNull();
     expect(r.queryByRole('button')).toBeNull();
+    // The foot is drawn, as the end of the thread.
+    expect(r.getByText('✦', { includeHiddenElements: true })).toBeTruthy();
   });
 });

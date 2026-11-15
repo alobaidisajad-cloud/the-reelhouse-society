@@ -90,7 +90,11 @@ jest.mock('@/src/stores/films', () => {
   return { useListStore };
 });
 jest.mock('@/src/stores/blockStore', () => {
-  const state = { blockUser: jest.fn(), muteUser: jest.fn(), isBlocked: () => false, isMuted: () => false };
+  const state = {
+    blockUser: jest.fn(), muteUser: jest.fn(), isBlocked: () => false, isMuted: () => false,
+    // The critiques are drawn through who is hidden now: nobody here.
+    isHidden: () => false, _blockedIndex: new Set<string>(), _mutedIndex: new Set<string>(),
+  };
   const useBlockStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
   (useBlockStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useBlockStore };
