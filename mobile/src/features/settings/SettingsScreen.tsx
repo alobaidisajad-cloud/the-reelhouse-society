@@ -201,7 +201,7 @@ export function SettingsScreen() {
   // to keep edits no one can save. Asked first, a member could "Keep editing" a members-only page
   // they were no longer signed in to (and after a deletion, an account that was gone).
   const [leavingTo, setLeavingTo] = useState<'/login' | null>(null);
-  useEffect(() => { if (leavingTo) nav.replace(leavingTo); }, [leavingTo]);
+  useEffect(() => { if (leavingTo === '/login') nav.replace('/login'); }, [leavingTo]);
 
   const completeAccountDeletion = useCallback(async (): Promise<void> => {
     try {

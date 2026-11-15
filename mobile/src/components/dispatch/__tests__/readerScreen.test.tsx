@@ -404,7 +404,8 @@ describe('the reader', () => {
     expect(r.queryByLabelText('Your critique')).toBeNull();
     expect(r.getByLabelText(/^Certify this filing/)).toBeTruthy();
     expect(r.getByLabelText('Save')).toBeTruthy();
-    // Opened again, the words are where they were left.
+    // Opened again, past PressableScale's 400 ms, the words are where they were left.
+    await act(() => new Promise((res) => setTimeout(res, 450)));
     await act(async () => { await fireEvent.press(r.getByLabelText('Write a critique')); });
     expect(r.getByLabelText('Your critique').props.value).toBe('Half a thought.');
   });

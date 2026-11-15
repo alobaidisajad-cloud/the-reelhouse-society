@@ -149,6 +149,8 @@ describe('the following reel, before the follow list is known', () => {
       await act(async () => { r.rerender(<QueryClientProvider client={testQueryClient({ queries: { enabled: false } })}><ReelScreen /></QueryClientProvider>); });
       expect(r.queryByLabelText('Reading the reel')).toBeNull();
       expect(r.queryByText('Your orbit is quiet.')).toBeNull();
+      // Everyone's reel, as it arrived (empty here): drawn, not waiting.
+      expect(r.getByText('The projection booth is dark.')).toBeTruthy();
     } finally {
       mockAuth = MEMBER;
     }

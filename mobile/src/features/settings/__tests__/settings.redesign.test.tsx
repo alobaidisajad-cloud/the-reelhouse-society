@@ -726,7 +726,7 @@ describe('the way out, and the way to leave for good', () => {
     expect(fn).toMatch(/storage\.clearAll\(\)/);
     // The way out is taken once the edit guard has let go: leaving is set, then replaced to.
     expect(fn).toMatch(/setLeavingTo\('\/login'\)/);
-    expect(SCREEN).toMatch(/if \(leavingTo\) nav\.replace\(leavingTo\)/);
+    expect(SCREEN).toMatch(/if \(leavingTo === '\/login'\) nav\.replace\('\/login'\)/);
   });
 });
 

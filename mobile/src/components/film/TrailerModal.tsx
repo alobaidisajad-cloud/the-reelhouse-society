@@ -3,7 +3,8 @@ import { colors, fonts } from '@/src/theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X } from 'lucide-react-native';
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
+import { safeOpenURL } from '@/src/utils/linking';
 import { Text } from '@/src/components/text';
 import { useOverlayTop } from '@/src/components/layout/navMetrics';
 import { WebView } from 'react-native-webview';
@@ -189,7 +190,8 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                             {refusal === 100 ? null : (
                                 <PressableScale room
                                     style={s.refusedBtn}
-                                    onPress={() => { void Linking.openURL(`https://www.youtube.com/watch?v=${key}`).catch(() => { /* no YouTube to open: the words still say why */ }); }}
+                                    // Through the house's one door out (safeOpenURL): it says so itself when nothing can open it.
+                                    onPress={() => { void safeOpenURL(`https://www.youtube.com/watch?v=${key}`); }}
                                     haptic="medium"
                                     accessibilityRole="link"
                                     accessibilityLabel="Watch on YouTube"
