@@ -4091,8 +4091,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/notificationStore.ts
-        find: "            set((state) => ({ loading: state._fetchingMore, _fetching: false }));"
-        replace: "            set({ loading: false, _fetching: false });"
+        find: "if (stillSignedIn(user.id)) set((state) => ({ loading: state._fetchingMore, _fetching: false }));"
+        replace: "if (stillSignedIn(user.id)) set({ loading: false, _fetching: false });"
     proof: { file: src/stores/__tests__/anOlderPageFollowsItsOwnList.test.ts, test: "a refresh ending first leaves the list reading while its older page is away" }
 
   - id: shape-page-cursor-from-rows-kept
