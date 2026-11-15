@@ -4553,8 +4553,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/lounge/LoungeSettingsPanel.tsx
-        find: "        if (!(await deleteLounge(lounge.id))) return;\n        onClose();\n        InteractionManager.runAfterInteractions(() => nav.dismissTo('/(tabs)/lounge'));"
-        replace: "        if (!(await deleteLounge(lounge.id))) return;\n        onClose();\n        InteractionManager.runAfterInteractions(() => nav.replace('/(tabs)/lounge'));"
+        find: "        if (!(await deleteLounge(lounge.id))) return;\n        onClose();\n        InteractionManager.runAfterInteractions(() => { if (isMounted.current) nav.dismissTo('/(tabs)/lounge'); });"
+        replace: "        if (!(await deleteLounge(lounge.id))) return;\n        onClose();\n        InteractionManager.runAfterInteractions(() => { if (isMounted.current) nav.replace('/(tabs)/lounge'); });"
     proof: { file: src/components/lounge/__tests__/aRefusedLeaveStaysInTheRoom.test.tsx, test: "goes to the corridor once it is destroyed" }
 
   - id: shape-finished-room-backs-up
