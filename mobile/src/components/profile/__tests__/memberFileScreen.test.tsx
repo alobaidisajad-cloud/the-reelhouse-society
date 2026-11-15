@@ -171,7 +171,19 @@ describe('the four states the page can be in', () => {
     expect(r.queryByText('THE TRIPTYCH')).toBeNull();
     // But their identity and the follow button are still there to act on.
     expect(r.getByText('TOMAS')).toBeTruthy();
-    expect(r.getByLabelText(/^(Requested: the follow request is sent|Request to follow this member|Follow this member)$/)).toBeTruthy();
+    expect(r.getByLabelText(/^(Requested: withdraw the follow request|Request to follow this member|Follow this member)$/)).toBeTruthy();
+  });
+
+  it('a request pending can be taken back: REQUESTED is pressed, and asks toggleFollow to withdraw it', async () => {
+    const toggleFollow = jest.fn();
+    const r = await mount(
+      { isFollowing: false, isRequested: true, followKnown: true, isSelf: false, toggleFollow },
+      { targetUser: baseUser({ is_social_private: true }) },
+    );
+    const requested = r.getByLabelText('Requested: withdraw the follow request');
+    expect(requested.props.accessibilityState?.disabled).toBeFalsy();
+    await act(async () => { await fireEvent.press(requested); });
+    expect(toggleFollow).toHaveBeenCalledTimes(1);
   });
 
   it('an open dossier shows every section in order', async () => {

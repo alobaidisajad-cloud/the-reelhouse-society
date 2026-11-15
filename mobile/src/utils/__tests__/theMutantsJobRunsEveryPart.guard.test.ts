@@ -9,7 +9,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const CI = readFileSync(join(__dirname, '..', '..', '..', '..', '.github', 'workflows', 'god_tier_ci.yml'), 'utf8');
+// As the runner reads it, whatever the checkout's line ends (a Windows checkout's CRLF found no job).
+const CI = readFileSync(join(__dirname, '..', '..', '..', '..', '.github', 'workflows', 'god_tier_ci.yml'), 'utf8').replace(/\r\n/g, '\n');
 const job = CI.slice(CI.indexOf('\n  mutants:\n'), CI.indexOf('\n  # ──', CI.indexOf('\n  mutants:\n')));
 
 it('the matrix holds every part from 1 to n, and the step asks for its own part of that n', () => {

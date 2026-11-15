@@ -44,6 +44,8 @@ import { refreshFollowRequestCount } from '@/src/hooks/useFollowRequests';
 import { useSocialStore } from '@/src/stores/followStore';
 // eslint-disable-next-line import/first
 import FollowRequestsPanel from '../FollowRequestsPanel';
+// eslint-disable-next-line import/first
+import { useBlockStore } from '@/src/stores/blockStore';
 
 const down = { data: null, error: { message: 'Network request failed' }, count: undefined };
 const petitioner = { id: 'i1', user_id: 'u1', created_at: '2026-10-01T00:00:00Z', profiles: { username: 'orson', avatar_url: null } };
@@ -84,6 +86,18 @@ describe('the panel', () => {
     expect(r.queryByText("No one's at the door.")).toBeNull();
     await waitFor(() => expect(r.getByText("No one's at the door.")).toBeTruthy());
     expect(r.queryByLabelText('Reading the door')).toBeNull();
+  });
+
+  it('offers no member hidden now, to be admitted across a block', async () => {
+    const blocked = { id: 'i2', user_id: 'u2', created_at: '2026-10-02T00:00:00Z', profiles: { username: 'welles', avatar_url: null } };
+    mockAnswer = { data: [blocked, petitioner], error: null, count: 2 };
+    let r!: ReturnType<typeof render>;
+    await act(async () => { r = render(<FollowRequestsPanel visible onClose={() => {}} />); });
+    await waitFor(() => expect(r.getByText('@WELLES')).toBeTruthy());
+    await act(async () => { useBlockStore.setState({ blocked: ['u2'], _blockedIndex: new Set(['u2']) }); });
+    expect(r.queryByText('@WELLES')).toBeNull();
+    expect(r.getByText('@ORSON')).toBeTruthy();
+    await act(async () => { useBlockStore.setState({ blocked: [], _blockedIndex: new Set() }); });
   });
 
   it('says the door could not be reached, never that no one is there', async () => {

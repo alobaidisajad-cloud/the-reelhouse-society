@@ -1156,7 +1156,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 <PressableScale touch="commit"
                   style={[s.act, followKnown && !isFollowing && !isRequested && s.actSolid, !followKnown && UNREADY.plate, followLoading && { opacity: 0.5 }]}
                   onPress={toggleFollow}
-                  disabled={followLoading || isRequested}
+                  // REQUESTED takes the request back (toggleFollow, unfollowUser): disabled, a request
+                  // filed by mistake stood at the other member's door for good.
+                  disabled={followLoading}
                   pressedScale={0.96}
                   hitSlop={{ top: 0, bottom: 0, left: 5, right: 5 }}
                   haptic="medium"
@@ -1164,7 +1166,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   accessibilityState={{ busy: !followKnown && followingKnown !== 'failed' }}
                   accessibilityLabel={!followKnown
                     ? (followingKnown === 'failed' ? 'Ask again: your follows could not be read' : 'Reading whether you follow this member')
-                    : isFollowing ? 'Following: unfollow this member' : isRequested ? 'Requested: the follow request is sent' : targetUser.is_social_private ? 'Request to follow this member' : 'Follow this member'}
+                    : isFollowing ? 'Following: unfollow this member' : isRequested ? 'Requested: withdraw the follow request' : targetUser.is_social_private ? 'Request to follow this member' : 'Follow this member'}
                 >
                   <Text
                     {...scaledTextProps}

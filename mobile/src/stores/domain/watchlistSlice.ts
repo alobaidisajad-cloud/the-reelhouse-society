@@ -3,7 +3,7 @@ import { captureError } from '../../lib/sentry';
 import { supabase } from '../../lib/supabase';
 import { WatchlistItem } from '../../types';
 import { isNetworkError } from '../../utils/networkError';
-import { enqueueMutation } from '../../utils/offlineQueue';
+import { enqueueMutation, getOfflineQueue } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
 import { useAuthStore } from '../auth';
 import { runWithMutex } from './helpers/promiseMutex';
@@ -81,7 +81,23 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
         // No arbitrary cap: keyset pagination bounds each fetch and the list is
         // virtualized, so capping here only served to silently drop a power
         // user's items past 500 whenever loadMore ran.
-        const nextWatchlist = loadMore ? [...state.watchlist, ...newItems] : newItems;
+        // A next page joins the list as it stands NOW (a save or a removal made while it was on its
+        // way stays made), never the copy taken before it was asked.
+        const now = get().watchlist;
+        const held = new Set(now.map((w) => w.id));
+        let nextWatchlist = loadMore ? [...now, ...newItems.filter((w) => !held.has(w.id))] : newItems;
+        // And the member's own saves and removals still waiting to be sent, in the order they were
+        // made: read again while the queue held them, a film saved offline left the list (and one
+        // removed came back) until the next read after they were sent.
+        for (const q of getOfflineQueue()) {
+            const filmId = Number(q.payload.film_id);
+            if (!Number.isFinite(filmId)) continue;
+            if (q.type === 'remove_watchlist') nextWatchlist = nextWatchlist.filter((w) => w.id !== filmId);
+            if (q.type === 'add_watchlist' && !nextWatchlist.some((w) => w.id === filmId)) {
+                const poster = (q.payload.poster_path as string | null | undefined) ?? null;
+                nextWatchlist = [{ id: filmId, title: String(q.payload.film_title ?? ''), poster, poster_path: poster, year: (q.payload.year as number | null | undefined) ?? null }, ...nextWatchlist];
+            }
+        }
         // Laid over the ledger, never in place of it (marksLedger.ts); without it, the pages are all.
         const idx: Record<number, true> = (get() as { marksKnown?: string }).marksKnown === 'held' ? { ...get()._watchlistIndex } : {};
         nextWatchlist.forEach(w => { idx[w.id] = true; });

@@ -61,6 +61,10 @@ let mockUser: Record<string, unknown> | null = { id: 'u1', username: 'me', tier:
 let mockFiled: Record<string, unknown>[] = [];
 let mockAmended: [string, Record<string, unknown>][] = [];
 let mockFileFails = false;
+/** The essays the reader holds whole (the store's `opened`), and what a read of one answers. */
+let mockOpened: Record<string, Record<string, unknown>> = {};
+let mockHydrate: (id: string) => Promise<unknown> = async () => null;
+let mockHydrated: string[] = [];
 /** The wire is down: the store keeps the write for later and says so. */
 let mockOffline = false;
 const mockStore = new Map<string, string>();
@@ -99,6 +103,8 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
 jest.mock('@/src/stores/dispatch', () => ({
   useDispatch: {
     getState: () => ({
+      opened: mockOpened,
+      hydrate: (id: string) => { mockHydrated.push(id); return mockHydrate(id); },
       file: async (d: Record<string, unknown>) => {
         if (mockFileFails) throw new Error('refused');
         mockFiled.push(d);
@@ -148,6 +154,7 @@ const flush = async () => { await act(async () => { await Promise.resolve(); });
 beforeEach(() => {
   mockUser = { id: 'u1', username: 'me', tier: 'auteur' };
   mockFiled = []; mockAmended = []; mockFileFails = false; mockOffline = false;
+  mockOpened = {}; mockHydrate = async () => null; mockHydrated = [];
   mockStore.clear();
   mockStoreFull = false;
   mockToast.error.mockClear(); mockToast.success.mockClear();
@@ -526,17 +533,120 @@ describe('leaving the room', () => {
 });
 
 describe('amending a dossier that already exists', () => {
+  const ESSAY_ID = '00000017-0000-4000-8000-000000000017';
+  /** The member's essay as the reader holds it: its opening in `body`, the whole in `fullContent`. */
+  const essay = (over: Record<string, unknown> = {}) => ({
+    id: ESSAY_ID, kind: 'dossier', authorId: 'u1', title: 'The Empty Room',
+    body: 'The first', fullContent: 'The first version.', film: null, subjectId: null,
+    seriesId: null, seriesTitle: null, partNumber: null, ...over,
+  });
+  /** As the reader's "Amend it" opens it: the essay held, and only its id in the link. */
   const openEdit = async () => {
-    at({ kind: 'dossier', edit: '00000017-0000-4000-8000-000000000017', initialTitle: 'The Empty Room', initialContent: 'The first version.' });
+    mockOpened = { [ESSAY_ID]: essay() };
+    at({ kind: 'dossier', edit: ESSAY_ID });
     const r = render(<ComposeScreen />);
     await flush();
     return r;
   };
 
-  it('opens with the essay already in it', async () => {
+  it('opens with the essay already in it, read from the essay the reader holds', async () => {
     const { getByDisplayValue } = await openEdit();
     expect(getByDisplayValue('The Empty Room')).toBeTruthy();
     expect(getByDisplayValue('The first version.')).toBeTruthy();
+    expect(mockHydrated).toEqual([]);
+  });
+
+  it('opens on the WHOLE essay, never the opening the paper holds', async () => {
+    mockOpened = { [ESSAY_ID]: essay({ fullContent: null }) };
+    mockHydrate = async () => essay({ fullContent: 'The whole of it, every line.' });
+    at({ kind: 'dossier', edit: ESSAY_ID });
+    const { getByDisplayValue, queryByDisplayValue } = render(<ComposeScreen />);
+    await flush(); await flush();
+    expect(getByDisplayValue('The whole of it, every line.')).toBeTruthy();
+    expect(queryByDisplayValue('The first')).toBeNull();
+  });
+
+  it('a cold link reads the essay first, and re-files nothing until it is here', async () => {
+    let answer: (v: unknown) => void = () => {};
+    mockHydrate = () => new Promise((r) => { answer = r; });
+    at({ kind: 'dossier', edit: ESSAY_ID });
+    const { getByText, getByLabelText, getByDisplayValue } = render(<ComposeScreen />);
+    await flush();
+    expect(mockHydrated).toEqual([ESSAY_ID]);
+    expect(getByText('READING THE ESSAY AS FILED…')).toBeTruthy();
+    await press(getByLabelText('Re-file the essay. Not yet: the essay as filed is not here'));
+    expect(mockAmended).toHaveLength(0);
+    await act(async () => { answer(essay()); });
+    expect(getByDisplayValue('The first version.')).toBeTruthy();
+    await type(getByLabelText('Essay content body'), 'The first version, corrected.');
+    await press(getByLabelText('Re-file the essay'));
+    await flush();
+    expect(mockAmended[0][1]).toMatchObject({ title: 'The Empty Room', fullContent: 'The first version, corrected.' });
+  });
+
+  it('an essay that could not be read is said, asked again, and never written over', async () => {
+    mockHydrate = async () => 'unreachable';
+    at({ kind: 'dossier', edit: ESSAY_ID });
+    const { getByText, getByLabelText, getByDisplayValue } = render(<ComposeScreen />);
+    await flush(); await flush();
+    expect(getByText('THE ESSAY COULD NOT BE READ')).toBeTruthy();
+    await press(getByLabelText('Re-file the essay. Not yet: the essay as filed is not here'));
+    expect(mockAmended).toHaveLength(0);
+    mockHydrate = async () => essay();
+    await press(getByLabelText(/read the essay again/i));
+    await flush(); await flush();
+    expect(mockHydrated).toEqual([ESSAY_ID, ESSAY_ID]);
+    expect(getByDisplayValue('The first version.')).toBeTruthy();
+  });
+
+  it('an amendment kept on the phone is never re-filed while the essay as filed cannot be read', async () => {
+    mockStore.set(draftKey('u1', 'edit', ESSAY_ID), JSON.stringify({
+      v: 2, savedAt: '2026-11-14T21:40:00.000Z', data: { title: 'The Empty Room', content: 'Only the lines typed last night.' },
+    }));
+    mockHydrate = async () => 'unreachable';
+    at({ kind: 'dossier', edit: ESSAY_ID });
+    const { getByDisplayValue, getByLabelText } = render(<ComposeScreen />);
+    await flush(); await flush();
+    expect(getByDisplayValue('Only the lines typed last night.')).toBeTruthy();
+    await press(getByLabelText('Re-file the essay. Not yet: the essay as filed is not here'));
+    await flush();
+    expect(mockAmended).toHaveLength(0);
+  });
+
+  it("another member's essay is not amended from this room", async () => {
+    mockOpened = { [ESSAY_ID]: essay({ authorId: 'u2' }) };
+    mockHydrate = async () => essay({ authorId: 'u2' });
+    at({ kind: 'dossier', edit: ESSAY_ID });
+    const { getByText, queryByDisplayValue } = render(<ComposeScreen />);
+    await flush(); await flush();
+    expect(getByText('THIS ESSAY CAN NO LONGER BE AMENDED')).toBeTruthy();
+    expect(queryByDisplayValue('The first version.')).toBeNull();
+  });
+
+  it('an amend left as it opened leaves without asking, and keeps no copy', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { getByLabelText } = await openEdit();
+    await act(async () => { jest.advanceTimersByTime(1200); });
+    expect(mockStore.has(draftKey('u1', 'edit', ESSAY_ID))).toBe(false);
+    await press(getByLabelText('Cancel, and leave the writing room'));
+    expect(alert).not.toHaveBeenCalled();
+  });
+
+  it('an amend with changes asks to discard the AMENDMENTS, saying the essay stays as filed', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { getByLabelText } = await openEdit();
+    await type(getByLabelText('Essay content body'), 'The second version.');
+    await press(getByLabelText('Cancel, and leave the writing room'));
+    expect(alert).toHaveBeenCalledWith('Discard these amendments?', 'The essay stays as it was filed. The changes made here will be lost.', expect.anything());
+  });
+
+  it("shows the essay's film as filed, and offers no change an amendment would drop", async () => {
+    mockOpened = { [ESSAY_ID]: essay({ subjectId: 603, film: { title: 'The Matrix', director: '1999', posterPath: null, backdropPath: null } }) };
+    at({ kind: 'dossier', edit: ESSAY_ID });
+    const { getByLabelText } = render(<ComposeScreen />);
+    await flush();
+    const slot = getByLabelText('Film: The Matrix, 1999, as filed');
+    expect(slot.props.accessibilityState?.disabled ?? slot.props.disabled).toBeTruthy();
   });
 
   it('opens on an amend as build 41 kept it, over the published words (savedJsonOpensWhole)', async () => {

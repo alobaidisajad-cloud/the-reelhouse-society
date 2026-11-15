@@ -53,7 +53,8 @@ import { excerptFor } from '@/src/components/dispatch/excerpt';
 // Every text here takes a ceiling: React Native's own default scales without one.
 import { scaledTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { useDispatch } from '@/src/stores/dispatch';
-import type { FilingKind } from '@/src/stores/dispatchTypes';
+import type { Filing, FilingKind } from '@/src/stores/dispatchTypes';
+import { TryAgainLine } from '@/src/components/TryAgain';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { UnderSheet } from '@/src/components/layout/UnderSheet';
@@ -97,6 +98,24 @@ const wordsOf = (text?: string): string => {
 const PARAMS = { kind: P.oneOf<FilingKind>('take', 'seeking', 'wire', 'ballot', 'dossier'), edit: P.uuid };
 /** A dossier begun from a link: its title and its opening words, cut as the desk cuts them. */
 const DOSSIER_PARAMS = { edit: P.uuid, initialTitle: P.words(MAX_LENGTHS.filingTitle), initialContent: P.words(MAX_LENGTHS.filingEssay) };
+
+/** The member's own essay as the reader holds it, whole; null when only its opening is held. */
+const essayAsFiled = (id: string): Filing | null => {
+    const one = useDispatch.getState().opened[id];
+    const me = useAuthStore.getState().user?.id;
+    return one && one.kind === 'dossier' && one.fullContent != null && !!me && one.authorId === me ? one : null;
+};
+/** The essay's words: its full text (a dossier's body is only the opening). */
+const textOf = (f: Filing): string => f.fullContent ?? f.body;
+const sameAsFiled = (f: Filing, title: string, content: string): boolean =>
+    title === (f.title ?? '') && content === textOf(f);
+/** The film as the desk holds one, from the filing's. */
+const filmOfFiled = (f: Filing | null) => (f?.film && f.subjectId != null
+    ? { id: f.subjectId, title: f.film.title, sub: f.film.director ?? null, image: f.film.posterPath ?? null, backdrop: f.film.backdropPath ?? null }
+    : null);
+const seriesOfFiled = (f: Filing | null): SeriesChoice | null => (f?.seriesId && f.seriesTitle && f.partNumber != null
+    ? { id: f.seriesId, title: f.seriesTitle, part: f.partNumber }
+    : null);
 
 export default function ComposeScreen() {
     const params = useRouteParams(PARAMS);
@@ -223,8 +242,21 @@ function ComposeDossierScreen() {
         paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
     }));
 
-    const [title, setTitle] = useState(initialTitle || '');
-    const [content, setContent] = useState(initialContent || '');
+    /**
+     * An amend opens on the essay as filed. The reader holds it whole (`opened`, its full text);
+     * the paper's copy has only its opening and is never used. Not held (a cold link, or the
+     * reader's twelve gone by), it is read first, and nothing is re-filed until it is here: a room
+     * that opened empty re-filed what was typed over the whole essay.
+     */
+    const [filed, setFiled] = useState<Filing | null>(() => (edit ? essayAsFiled(edit) : null));
+    const [amendRead, setAmendRead] = useState<'held' | 'reading' | 'unreachable' | 'gone'>(() => (!edit || filed ? 'held' : 'reading'));
+    const amendReadRef = useRef(amendRead);
+
+    const [title, setTitle] = useState(initialTitle || (filed?.title ?? ''));
+    const [content, setContent] = useState(initialContent || (filed ? textOf(filed) : ''));
+    /** An amend left as it opened: nothing to keep, to discard, or to ask about. */
+    const untouched = !!edit && !!filed && sameAsFiled(filed, title, content);
+    const filedRef = useRef(filed);
     const [isPublishing, setIsPublishing] = useState(false);
     const [isPreview, setIsPreview] = useState(false);
 
@@ -238,13 +270,14 @@ function ComposeDossierScreen() {
         image: string | null;
         /** The cover. Two pictures of one film — see `FilingDraft.film`. */
         backdrop: string | null;
-    } | null>(null);
+    } | null>(() => filmOfFiled(filed));
     const [filmOpen, setFilmOpen] = useState(false);
-    const [series, setSeries] = useState<SeriesChoice | null>(null);
+    // An amendment keeps the film and the series as filed (the store sends neither): shown, not offered.
+    const [series, setSeries] = useState<SeriesChoice | null>(() => seriesOfFiled(filed));
     const [seriesOpen, setSeriesOpen] = useState(false);
 
     // Live caret tracking — the toolbar wraps the selection AT the cursor.
-    const [selection, setSelection] = useState({ start: (initialContent || '').length, end: (initialContent || '').length });
+    const [selection, setSelection] = useState({ start: content.length, end: content.length });
     // Drives the caret for exactly one render after a toolbar edit, then releases.
     const [forcedSelection, setForcedSelection] = useState<{ start: number; end: number } | null>(null);
 
@@ -264,6 +297,8 @@ function ComposeDossierScreen() {
         contentRef.current = content;
         filmRef.current = film;
         seriesRef.current = series;
+        filedRef.current = filed;
+        amendReadRef.current = amendRead;
     });
 
     /** What the room opened with: an ISO time, 'unknown' (no time kept), 'unreadable', or null. */
@@ -277,6 +312,8 @@ function ComposeDossierScreen() {
         setTitle(d.title ?? '');
         setContent(d.content ?? '');
         setSelection({ start: (d.content ?? '').length, end: (d.content ?? '').length });
+        // An amendment's film and series are the filing's, whatever a copy says.
+        if (edit) return;
         setFilm(d.film ?? null);
         setSeries(d.series ?? null);
         if (d.series) {
@@ -287,7 +324,7 @@ function ComposeDossierScreen() {
                 if (part != null) setSeries((s) => (s && s.id === d.series!.id ? { ...s, part } : s));
             });
         }
-    }, [user?.id]);
+    }, [user?.id, edit]);
 
 
     // Guards the delayed back() below against a screen already gone.
@@ -296,6 +333,32 @@ function ComposeDossierScreen() {
         isMounted.current = true;
         return () => { isMounted.current = false; };
     }, []);
+
+    /** The essay to amend, read from the house when the phone does not hold it whole. */
+    const readFiled = useCallback(() => {
+        if (!edit) return;
+        setAmendRead('reading');
+        void useDispatch.getState().hydrate(edit).then((got) => {
+            if (!isMounted.current) return;
+            if (got === 'unreachable') { setAmendRead('unreachable'); return; }
+            // Gone, or no longer an essay of this member's: nothing here may be filed over it.
+            if (!got || got.kind !== 'dossier' || got.authorId !== user?.id) { setAmendRead('gone'); return; }
+            setFiled(got);
+            setFilm(filmOfFiled(got));
+            setSeries(seriesOfFiled(got));
+            // An amendment kept on this phone is already in the room, and is the newer work.
+            if (!titleRef.current && !contentRef.current) {
+                const text = textOf(got);
+                setTitle(got.title ?? '');
+                setContent(text);
+                setSelection({ start: text.length, end: text.length });
+            }
+            setAmendRead('held');
+        });
+    }, [edit, user?.id]);
+    useEffect(() => {
+        if (amendReadRef.current === 'reading') readFiled();
+    }, [readFiled]);
 
     useEffect(() => {
         if (!canWrite) {
@@ -392,6 +455,8 @@ function ComposeDossierScreen() {
     const memberId = user?.id;
     const reconcile = useCallback(async () => {
         if (!memberId || settled.current || asking.current) return;
+        // An amend asks only once the essay is in the room: an empty room takes the house's copy whole.
+        if (amendReadRef.current !== 'held') return;
         const remote = await pullDraft<DossierDraft>(memberId, edit ? 'edit' : 'dossier', edit ?? '');
         if (!isMounted.current || settled.current || asking.current) return;
         if (remote === 'unreachable') { late.current = true; return; }
@@ -418,7 +483,7 @@ function ComposeDossierScreen() {
         settled.current = true;
         setElsewhere(null);
     }, [elsewhere, applyDraft]);
-    useEffect(() => { void reconcile(); }, [reconcile]);
+    useEffect(() => { void reconcile(); }, [reconcile, amendRead]);
 
     /**
      * ── THE BACKUP, EVERY TWO MINUTES ────────────────────────────────────────
@@ -437,6 +502,8 @@ function ComposeDossierScreen() {
             if (!settled.current) { if (!leaving) void reconcile(); return; }
             const t = titleRef.current, c = contentRef.current;
             if (!t.trim() && !c.trim()) return;
+            // An amend's copy is its amendment: the essay as filed is already the house's.
+            if (edit && (!filedRef.current || sameAsFiled(filedRef.current, t, c))) return;
             void pushDraft(
                 user.id, edit ? 'edit' : 'dossier',
                 { title: t, content: c, film: filmRef.current, series: seriesRef.current },
@@ -466,17 +533,21 @@ function ComposeDossierScreen() {
     }
 
     useEffect(() => {
-        if (!edit || !user?.id) return;
+        if (!edit || !user?.id || amendRead !== 'held') return;
         const t = setTimeout(() => {
-            // An amend opens with words: cleared on landing or by START CLEAN, never by emptiness.
+            // Only an amendment is kept: the essay as filed is the house's, and kept here it
+            // would open next time as words taken up. Cleared on landing or by START CLEAN.
+            if (untouched) { clearDraft(user.id, 'edit', edit); return; }
             setSaveFailed(!writeDraft(user.id, 'edit', { title, content }, edit));
         }, 1000);
         return () => clearTimeout(t);
-    }, [title, content, edit, user?.id]);
+    }, [title, content, edit, user?.id, amendRead, untouched]);
 
     useEffect(() => {
         if (!edit || !user?.id) return;
         const sub = AppState.addEventListener('change', (state) => {
+            const was = filedRef.current;
+            if (!was || sameAsFiled(was, titleRef.current, contentRef.current)) return;
             if (state !== 'active') {
                 writeDraft(user.id, 'edit', {
                     title: titleRef.current, content: contentRef.current,
@@ -569,7 +640,8 @@ function ComposeDossierScreen() {
     };
 
     // Spaces are not a title or a body: the button judges as the filing does.
-    const ready = !!title.trim() && !!content.trim();
+    // An amend, only over the essay as filed: never over a room that could not read it.
+    const ready = !!title.trim() && !!content.trim() && amendRead === 'held';
 
     const handlePublish = async () => {
         if (!canWrite) {
@@ -655,14 +727,17 @@ function ComposeDossierScreen() {
             <UnderSheet open={filmOpen || seriesOpen}>
                 <View style={[styles.header, { paddingTop: headerTop }]}>
                     <PressableScale touch="wayOut" onPress={() => {
-                        if (title.trim() || content.trim()) {
+                        // An amend as it opened, or one whose essay never arrived: nothing to lose.
+                        const amendsNothing = !!edit && (untouched || !filed);
+                        if (!amendsNothing && (title.trim() || content.trim())) {
                             // No save mark anywhere; a refused save is said here, at the exit.
                             const lost = saveFailed && !edit;
                             Alert.alert(
-                                lost ? 'This is not being kept' : 'Discard this essay?',
+                                lost ? 'This is not being kept' : edit ? 'Discard these amendments?' : 'Discard this essay?',
                                 lost
                                     ? 'Your phone is out of space, so nothing here has been saved. File it now, or free some room and come back.'
-                                    : 'What you have written will be lost.',
+                                    : edit ? 'The essay stays as it was filed. The changes made here will be lost.'
+                                        : 'What you have written will be lost.',
                                 [
                                     { text: lost ? 'Go back' : 'Keep writing', style: 'cancel' },
                                     { text: 'Discard', style: 'destructive', onPress: () => {
@@ -777,14 +852,32 @@ function ComposeDossierScreen() {
                                     unreadable={restored === 'unreadable'}
                                     savedAt={restored === 'unknown' ? null : restored}
                                     onStartClean={() => {
-                                        setTitle(''); setContent(''); setFilm(null); setSeries(null);
+                                        // An amend starts again from the essay as filed, never from nothing.
+                                        const again = edit && filed ? textOf(filed) : '';
+                                        setTitle(edit && filed ? (filed.title ?? '') : ''); setContent(again);
+                                        setSelection({ start: again.length, end: again.length });
+                                        if (!edit) { setFilm(null); setSeries(null); }
                                         setRestored(null);
                                         if (edit) { clearDraft(user?.id, 'edit', edit); void dropDraft(user?.id, 'edit', edit); }
                                         else { clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
                                     }}
                                 />
                             ) : null}
+                            {/* The essay to amend, until it is in the room: nothing is written over it blind. */}
+                            {amendRead !== 'held' ? (
+                                <View style={styles.elsewhereBox}>
+                                    <Text style={styles.elsewhereHead} {...scaledTextProps} accessibilityLiveRegion="polite">
+                                        {amendRead === 'reading' ? 'READING THE ESSAY AS FILED…'
+                                            : amendRead === 'unreachable' ? 'THE ESSAY COULD NOT BE READ'
+                                                : 'THIS ESSAY CAN NO LONGER BE AMENDED'}
+                                    </Text>
+                                    {amendRead === 'unreachable' ? (
+                                        <TryAgainLine onPress={readFiled} what="read the essay again" />
+                                    ) : null}
+                                </View>
+                            ) : null}
                             <TextInput
+                                editable={amendRead === 'held'}
                                 style={styles.titleInput}
                                 placeholder="A title for this essay"
                                 placeholderTextColor={colors.fog}
@@ -808,10 +901,14 @@ function ComposeDossierScreen() {
                             <View style={styles.slots}>
                                 <PressableScale
                                     style={styles.slot} onPress={() => setFilmOpen(true)} haptic="selection"
+                                    // An amendment keeps the film as filed: shown, not offered.
+                                    disabled={!!edit}
                                     // The two slots are 48 each and touch: neither reaches into the other.
                                     hitSlop={null}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={film ? `Film: ${[film.title, film.sub].filter(Boolean).join(', ')}. Change it.` : 'Film: name the film this is about'}
+                                    accessibilityRole={edit ? 'text' : 'button'}
+                                    accessibilityLabel={edit
+                                        ? `Film: ${film ? [film.title, film.sub].filter(Boolean).join(', ') : 'none'}, as filed`
+                                        : film ? `Film: ${[film.title, film.sub].filter(Boolean).join(', ')}. Change it.` : 'Film: name the film this is about'}
                                 >
                                     <Text style={styles.slotLabel} {...actionLabelProps}>FILM</Text>
                                     <Text style={[styles.slotValue, film && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
@@ -820,9 +917,12 @@ function ComposeDossierScreen() {
                                 </PressableScale>
                                 <PressableScale
                                     style={[styles.slot, styles.slotRuled]} onPress={() => setSeriesOpen(true)} haptic="selection"
+                                    disabled={!!edit}
                                     hitSlop={null}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={series ? `Series: ${series.title}, part ${series.part}. Change it.` : 'Series: part of a series? Choose one'}
+                                    accessibilityRole={edit ? 'text' : 'button'}
+                                    accessibilityLabel={edit
+                                        ? `Series: ${series ? `${series.title}, part ${series.part}` : 'none'}, as filed`
+                                        : series ? `Series: ${series.title}, part ${series.part}. Change it.` : 'Series: part of a series? Choose one'}
                                 >
                                     <Text style={styles.slotLabel} {...actionLabelProps}>SERIES</Text>
                                     <Text style={[styles.slotValue, series && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
@@ -833,6 +933,7 @@ function ComposeDossierScreen() {
 
                             <TextInput
                                 ref={inputRef}
+                                editable={amendRead === 'held'}
                                 style={styles.contentInput}
                                 placeholder="Begin. The house is listening."
                                 placeholderTextColor={colors.fog}
@@ -904,6 +1005,7 @@ function ComposeDossierScreen() {
                                 accessibilityState={{ disabled: !ready || isPublishing, busy: isPublishing }}
                                 accessibilityLabel={
                                     isPublishing ? 'Filing the essay'
+                                        : edit && amendRead !== 'held' ? 'Re-file the essay. Not yet: the essay as filed is not here'
                                         : !ready ? 'File the essay. Not ready yet — it needs a title and a body'
                                             : edit ? 'Re-file the essay' : 'File the essay'
                                 }

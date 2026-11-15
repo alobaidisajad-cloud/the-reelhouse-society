@@ -67,3 +67,15 @@ it('draws a long handle as its two lines, still read aloud as one stamp', () => 
   expect([r.getByText('@THE_CINEMATHEQUE_'), r.getByText('NIGHT_KEEPER_')].every(Boolean)).toBe(true);
   expect(r.getByLabelText('@THE_CINEMATHEQUE_NIGHT_KEEPER_ · MEMBER Nº 1234')).toBeTruthy();
 });
+
+it('opens again at the first beat, with its own stamp, for the next new member on the phone', async () => {
+  // The tabs keep the Initiation mounted from one member to the next (only its Modal goes): a
+  // second new member opened on the last one's beat IV, past their own stamp.
+  const r = open();
+  await beat(r, 3);
+  expect(r.queryByText('@VERA')).toBeNull();
+  r.rerender(<InitiationModal visible={false} username="vera" memberNo={12} onComplete={jest.fn()} />);
+  await act(async () => { jest.advanceTimersByTime(1000); });
+  r.rerender(<InitiationModal visible username="orson" memberNo={13} onComplete={jest.fn()} />);
+  expect(r.getByLabelText('@ORSON · MEMBER Nº 0013')).toBeTruthy();
+});

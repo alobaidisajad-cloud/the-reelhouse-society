@@ -29,6 +29,7 @@ import TryAgain, { TryAgainLine } from '@/src/components/TryAgain';
 import { Arrive } from '@/src/components/Arrive';
 import { useClearance } from '@/src/hooks/useClearance';
 import { ClearanceGate } from '@/src/components/clearance/Clearance';
+import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 
 interface SocialProfile {
     id: string;
@@ -406,7 +407,12 @@ export default function SocialModal() {
 
     // ── Determine list data ──────────────────────────────────────────────────
     const isShareMode = mode === 'share-film' || mode === 'share-person';
-    const listData = isShareMode ? lounges : profiles;
+    // Drawn through who is hidden now: a member blocked or muted (the mute hides a member's face
+    // as a block does) stayed in these lists, a pull too.
+    const whoIsHidden = useWhoIsHidden();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; filterContentByBlocks reads the block store itself
+    const shownProfiles = useMemo(() => filterContentByBlocks(profiles, (p) => p.id), [profiles, whoIsHidden]);
+    const listData = isShareMode ? lounges : shownProfiles;
     const isEmpty = !loading && !failed && listData.length === 0;
 
     const retryFetch = useCallback(() => {
@@ -487,7 +493,7 @@ export default function SocialModal() {
             ) : (
                 <FlashList
                     maintainVisibleContentPosition={NOT_ANCHORED}
-                    data={profiles}
+                    data={shownProfiles}
                     estimatedItemSize={68}
                     keyExtractor={item => item.id}
                     contentContainerStyle={{ padding: 16, paddingBottom: end }}

@@ -465,7 +465,6 @@ export default function ListModal() {
                 // When the house last changed it as this phone read it, freshest first: its page's
                 // read, then the member's own list.
                 }, (cachedStack?.id === editList.id ? cachedStack.updatedAt : undefined) ?? editList.updatedAt ?? null);
-                queryClient.removeQueries({ queryKey: ['stack', editList.id] });
             } else {
                 await createList({
                     title: title.trim(),
@@ -476,7 +475,8 @@ export default function ListModal() {
                 });
                 if (me) clearDraft(me, 'stack');
             }
-            queryClient.invalidateQueries({ queryKey: ['stacks'] });
+            // The Reel's STACKS (['feed', 'stacks', …]), which stays mounted under this sheet.
+            queryClient.invalidateQueries({ queryKey: ['feed', 'stacks'] });
             TactileEngine.success();
             InteractionManager.runAfterInteractions(() => {
                 // May run after the sheet is gone, when back() would pop another screen.

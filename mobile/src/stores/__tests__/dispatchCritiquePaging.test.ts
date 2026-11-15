@@ -36,6 +36,14 @@ jest.mock('../../lib/supabase', () => ({
       chain.select = () => self();
       chain.eq = (k: string, v: unknown) => { ask.eq[k] = v; return self(); };
       chain.in = () => Promise.resolve({ data: [], error: null });
+      // A critique filed, and one withdrawn: both answered as landed.
+      chain.insert = () => Promise.resolve({ error: null });
+      chain.delete = () => {
+        const del: Record<string, unknown> = {};
+        del.eq = () => del;
+        del.select = () => Promise.resolve({ data: [{ id: 'gone' }], error: null });
+        return del;
+      };
       chain.order = (k: string, o: unknown) => { ask.order.push([k, o]); return self(); };
       chain.range = (a: number, b: number) => {
         ask.range = [a, b];
@@ -80,7 +88,7 @@ beforeEach(() => {
   mockRows = [];
   useDispatch.setState({
     critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
-    critiquesHasMore: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(),
+    critiquesHasMore: {}, critiquesRead: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(),
   });
 });
 
@@ -126,6 +134,35 @@ describe('paging a filing’s critiques', () => {
       [COMMENT_PAGE_SIZE, COMMENT_PAGE_SIZE * 2 - 1],
     ]);
     expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE * 2);
+  });
+
+  it("a critique of the member's own, set at the top, does not move the next page past a row", async () => {
+    // Under CERTIFIED the new critique (no certifications) sorts BELOW the rows read on the house;
+    // the next page began at the rows HELD, one past the true next row, and skipped it.
+    mockRows = [fullPage(0), fullPage(COMMENT_PAGE_SIZE)];
+    await useDispatch.getState().fetchCritiques('p1', 'CERTIFIED');
+    await useDispatch.getState().addCritique('p1', 'Mine, just now.');
+    expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE + 1);
+    await useDispatch.getState().loadMoreCritiques('p1');
+    const ranges = mockAsks.filter((a) => a.range).map((a) => a.range);
+    expect(ranges[1]).toEqual([COMMENT_PAGE_SIZE, COMMENT_PAGE_SIZE * 2 - 1]);
+  });
+
+  it('a row the house sent and the parser dropped still stands in the order: the next page follows it', async () => {
+    mockRows = [[...fullPage(0).slice(1), { id: null, body: 7 }], fullPage(COMMENT_PAGE_SIZE)];
+    await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    await useDispatch.getState().loadMoreCritiques('p1');
+    const ranges = mockAsks.filter((a) => a.range).map((a) => a.range);
+    expect(ranges[1]).toEqual([COMMENT_PAGE_SIZE, COMMENT_PAGE_SIZE * 2 - 1]);
+  });
+
+  it('a critique withdrawn from a page read moves the next page back one, so none is skipped', async () => {
+    mockRows = [fullPage(0), fullPage(COMMENT_PAGE_SIZE - 1)];
+    await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    await useDispatch.getState().removeCritique('c3', 'p1');
+    await useDispatch.getState().loadMoreCritiques('p1');
+    const ranges = mockAsks.filter((a) => a.range).map((a) => a.range);
+    expect(ranges[1]).toEqual([COMMENT_PAGE_SIZE - 1, COMMENT_PAGE_SIZE * 2 - 2]);
   });
 
   it('does not add a critique it is already holding', async () => {

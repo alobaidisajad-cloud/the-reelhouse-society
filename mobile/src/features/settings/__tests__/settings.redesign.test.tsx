@@ -14,7 +14,7 @@
  */
 import React, { act } from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { stripComments } from '@/test-utils/readCode';
@@ -75,7 +75,9 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
   storage: { clearAll: () => mockClearAll(), set: jest.fn(), getString: jest.fn(), delete: jest.fn(), getAllKeys: () => [] },
 }));
 jest.mock('@/src/services/AuthService', () => ({ AuthService: { requestAccountDeletion: () => mockRequestDeletion(), updatePassword: jest.fn() } }));
-jest.mock('@/src/hooks/useUpdateUser', () => ({ useUpdateUser: () => ({ mutateAsync: jest.fn(() => Promise.resolve()), isPending: false }) }));
+/** The profile's own write (visibility): it has no offline path, and is filed before preferences. */
+const mockUpdateUser = jest.fn((_u: Record<string, unknown>) => Promise.resolve());
+jest.mock('@/src/hooks/useUpdateUser', () => ({ useUpdateUser: () => ({ mutateAsync: (u: Record<string, unknown>) => mockUpdateUser(u), isPending: false }) }));
 jest.mock('@/src/services/ModerationService', () => ({ ModerationService: { getPendingCount: jest.fn(() => Promise.resolve(3)) } }));
 jest.mock('@/src/lib/pushNotifications', () => ({
   getPushPermissionState: jest.fn(() => Promise.resolve(mockPerm)),
@@ -602,6 +604,23 @@ describe('notifications — four switches nobody read', () => {
     const r = await settle(mount());
     await waitFor(() => expect(r.getByText('THIS DEVICE IS WITHHOLDING ALERTS')).toBeTruthy());
     expect(r.getByLabelText('Open system settings')).toBeTruthy();
+  });
+
+  it('reads the phone again on the way back from its settings, and is gone once alerts are allowed', async () => {
+    mockPerm = 'denied';
+    // The listeners the screen gave the phone's app state (a stand-in that records each one): spied
+    // on and put back, it answered nothing after, and every later screen failed to let go of it.
+    const listen = AppState.addEventListener as unknown as jest.Mock;
+    const from = listen.mock.calls.length;
+    const r = await settle(mount());
+    const heard = listen.mock.calls.slice(from).filter((c) => c[0] === 'change').map((c) => c[1] as (s: string) => void);
+    await waitFor(() => expect(r.getByText('THIS DEVICE IS WITHHOLDING ALERTS')).toBeTruthy());
+    // OPEN SYSTEM SETTINGS, alerts allowed there, and back.
+    mockPerm = 'granted';
+    // Back to the front: 'active' alone (a 'background' sent to every listener here locks the archive).
+    await act(async () => { for (const h of heard) h('active'); });
+    await waitFor(() => expect(r.queryByText('THIS DEVICE IS WITHHOLDING ALERTS')).toBeNull());
+    r.unmount();
   });
 
   it('and says it BEFORE the switches, not after', async () => {
@@ -1135,7 +1154,35 @@ describe('SAVE', () => {
   beforeEach(() => {
     mockUser = { ...BASE, preferences: { notif_follows: true } };
     mockSavePrefs.mockReset().mockResolvedValue('saved');
+    mockUpdateUser.mockReset().mockResolvedValue(undefined);
     toast().success.mockClear(); toast().error.mockClear();
+  });
+
+  const changeBothAndSave = async () => {
+    const r = await settle(mount());
+    await act(async () => { await fireEvent(r.getByLabelText('New Followers'), 'valueChange', false); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Private. Only your approved followers')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Save settings')); });
+    await act(async () => {});
+    return r;
+  };
+
+  it('files the visibility before the preferences: refused or unreached, nothing else is kept or sent', async () => {
+    mockUpdateUser.mockRejectedValue(new TypeError('Network request failed'));
+    const r = await changeBothAndSave();
+    expect(mockUpdateUser).toHaveBeenCalledWith({ is_social_private: true });
+    // Kept on the phone after a visibility that was taken back, "changes reverted" stood over them.
+    expect(mockSavePrefs).not.toHaveBeenCalled();
+    expect(toast().success).not.toHaveBeenCalled();
+    r.unmount();
+  });
+
+  it('the visibility saved and the preferences refused says which went', async () => {
+    mockSavePrefs.mockRejectedValue(new Error('refused'));
+    const r = await changeBothAndSave();
+    expect(mockUpdateUser).toHaveBeenCalledWith({ is_social_private: true });
+    expect(toast().error).toHaveBeenCalledWith('Your profile’s visibility was saved. Your other settings could not be filed.');
+    r.unmount();
   });
 
   it('files only the keys changed, and says amended once the house has them', async () => {

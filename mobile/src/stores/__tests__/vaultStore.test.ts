@@ -31,9 +31,11 @@ jest.mock('../../services/VaultService', () => ({
 }));
 
 const mockEnqueue = jest.fn((..._args: unknown[]) => true);
+/** The writes still waiting to be sent, as the queue holds them. */
+let mockQueued: { type: string; payload: Record<string, unknown> }[] = [];
 jest.mock('../../utils/offlineQueue', () => ({
   enqueueMutation: (...a: unknown[]) => mockEnqueue(...a),
-  getOfflineQueue: () => [],
+  getOfflineQueue: () => mockQueued,
 }));
 
 const mockRemoveItem = jest.fn();
@@ -63,6 +65,7 @@ const networkError = () => Object.assign(new TypeError('Network request failed')
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockQueued = [];
   useVaultStore.getState().clear();
   signIn(ALICE);
 });
@@ -87,6 +90,28 @@ describe('loading a log', () => {
     await useVaultStore.getState().loadForLog(LOG_A, { force: true });
     expect(useVaultStore.getState().noteFor(V2)).toBe('');
     expect(useVaultStore.getState().noteFor(V1)).toBe('kept');
+  });
+
+  it('read again, keeps a note written with no signal that the queue still holds', async () => {
+    mockQueued = [{ type: 'set_viewing_note', payload: { log_id: LOG_A, viewing_id: V2, notes: 'written on the train' } }];
+    mockFetch.mockResolvedValueOnce([{ viewing_id: V1, log_id: LOG_A, notes: 'the first night' }]);
+    await useVaultStore.getState().loadForLog(LOG_A, { force: true });
+    expect(useVaultStore.getState().noteFor(V2)).toBe('written on the train');
+    expect(useVaultStore.getState().noteFor(V1)).toBe('the first night');
+  });
+
+  it('read again, keeps gone a note removed with no signal that the queue still holds', async () => {
+    mockQueued = [{ type: 'remove_viewing_note', payload: { viewing_id: V1 } }];
+    mockFetch.mockResolvedValueOnce([{ viewing_id: V1, log_id: LOG_A, notes: 'removed on the train' }]);
+    await useVaultStore.getState().loadForLog(LOG_A, { force: true });
+    expect(useVaultStore.getState().noteFor(V1)).toBe('');
+  });
+
+  it("lays another log's waiting note on that log alone", async () => {
+    mockQueued = [{ type: 'set_viewing_note', payload: { log_id: LOG_B, viewing_id: V9, notes: 'another film' } }];
+    mockFetch.mockResolvedValueOnce([]);
+    await useVaultStore.getState().loadForLog(LOG_A, { force: true });
+    expect(useVaultStore.getState().noteFor(V9)).toBe('');
   });
 
   it('reloading one log leaves every other log’s notes alone', async () => {

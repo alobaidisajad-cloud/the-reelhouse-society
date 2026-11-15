@@ -33,4 +33,13 @@ describe('the critiques\' footer', () => {
     const r = render(<CritiqueFooter shown={30} total={80} onRetry={jest.fn()} onMore={jest.fn()} />);
     expect(r.getByText('50 MORE · 30 AT A TIME')).toBeTruthy();
   });
+
+  it('ends when the house has sent its last page, though its count holds critiques this member may not read', () => {
+    // 80 counted, 33 read and the last page short: the rest are hidden members' (blocked, muted, or
+    // who blocked this member), which the house never sends. MORE pressed asked nothing, for ever.
+    const onMore = jest.fn();
+    const r = render(<CritiqueFooter shown={33} total={80} more={false} onRetry={jest.fn()} onMore={onMore} />);
+    expect(r.queryByText(/MORE · /)).toBeNull();
+    expect(r.queryByRole('button')).toBeNull();
+  });
 });

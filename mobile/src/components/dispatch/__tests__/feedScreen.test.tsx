@@ -18,6 +18,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 import FeedScreen from '@/app/(tabs)/dispatch';
 import { focusManager } from '@tanstack/react-query';
 import { useDispatch } from '@/src/stores/dispatch';
+import { useBlockStore } from '@/src/stores/blockStore';
 import type { Filing } from '@/src/stores/dispatchTypes';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 
@@ -189,6 +190,19 @@ beforeEach(() => {
 const CERTIFY = /^Certify this($|\. \d)/;
 
 describe('the Dispatch feed', () => {
+  it('leaves a member hidden since off the paper at once, and draws them again when let back', async () => {
+    put({ filings: [filing({ id: 'f1', body: 'Kept on the page.' }), filing({ id: 'f2', authorId: 'u3', body: 'From a member blocked now.' })] });
+    const { getByText, queryByText } = await mount();
+    expect(getByText(/From a member blocked now/)).toBeTruthy();
+    await act(async () => { useBlockStore.setState({ blocked: ['u3'], _blockedIndex: new Set(['u3']) }); });
+    expect(queryByText(/From a member blocked now/)).toBeNull();
+    expect(getByText(/Kept on the page/)).toBeTruthy();
+    await act(async () => { useBlockStore.setState({ blocked: [], _blockedIndex: new Set(), muted: ['u3'], _mutedIndex: new Set(['u3']) }); });
+    expect(queryByText(/From a member blocked now/)).toBeNull();
+    await act(async () => { useBlockStore.setState({ muted: [], _mutedIndex: new Set() }); });
+    expect(getByText(/From a member blocked now/)).toBeTruthy();
+  });
+
   it('prints a filing, with the hour in the margin under LATEST', async () => {
     put({ filings: [filing()] });
     const { getByText, getByLabelText } = await mount();

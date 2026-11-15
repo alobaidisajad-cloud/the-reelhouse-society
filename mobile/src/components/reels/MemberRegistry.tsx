@@ -27,20 +27,21 @@ import type { NotableMember } from '@/src/services/MemberDiscoveryService';
 import { useAuthStore } from '@/src/stores/auth';
 import { useSocialStore } from '@/src/stores/followStore';
 import { useBlockStore } from '@/src/stores/blockStore';
+import { useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { followUser } from '@/src/stores/domain/socialSlice';
 import { RankBadge, rankOf } from '@/src/components/RankBadge';
 
 const MAX_ROWS = 6;
 
 /**
- * Pure exclusion core (unit-tested): drop self, already-followed, blocked,
- * and username-less rows; cap at MAX_ROWS. Kept side-effect-free so the
+ * Pure exclusion core (unit-tested): drop self, already-followed, hidden (blocked
+ * or muted: the mute hides a member's face as a block does), and username-less rows; cap at MAX_ROWS. Kept side-effect-free so the
  * registry's most important guarantee — never suggest someone you shouldn't —
  * is verifiable without rendering.
  */
 export function selectRegistryMembers(
   data: NotableMember[] | undefined,
-  opts: { myId: string | undefined; followingLower: Set<string>; isBlocked: (id: string) => boolean }
+  opts: { myId: string | undefined; followingLower: Set<string>; isHidden: (id: string) => boolean }
 ): NotableMember[] {
   if (!data || data.length === 0) return [];
   return data
@@ -48,7 +49,7 @@ export function selectRegistryMembers(
       !!m.username &&
       m.id !== opts.myId &&
       !opts.followingLower.has(m.username.toLowerCase()) &&
-      !opts.isBlocked(m.id)
+      !opts.isHidden(m.id)
     )
     .slice(0, MAX_ROWS);
 }
@@ -121,14 +122,15 @@ export function MemberRegistry({ visible }: { visible: boolean }) {
   const { data } = useNotableMembers(visible);
   const myId = useAuthStore((st) => st.user?.id);
   const following = useSocialStore((st) => st.following);
-  const blockedVersion = useBlockStore((st) => st._blockedIndex);
+  // A mute too: the block's set alone redrew the registry, and a muted member was offered to follow.
+  const whoIsHidden = useWhoIsHidden();
 
   const members = useMemo(() => {
     const followingLower = new Set(following.map((u) => (u || '').toLowerCase()));
-    return selectRegistryMembers(data, { myId, followingLower, isBlocked: useBlockStore.getState().isBlocked });
-    // blockedVersion in deps so re-filter runs if the block set changes.
+    return selectRegistryMembers(data, { myId, followingLower, isHidden: useBlockStore.getState().isHidden });
+    // whoIsHidden in deps so re-filter runs if anyone is blocked, muted or let back.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, myId, following, blockedVersion]);
+  }, [data, myId, following, whoIsHidden]);
 
   // Nothing notable to show: the empty state stands alone.
   if (!visible || members.length === 0) return null;

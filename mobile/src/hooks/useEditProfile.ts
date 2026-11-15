@@ -323,25 +323,8 @@ export function useEditProfile() {
             }
           });
 
-          // 3. Sync Lounge Members Query
-          queryClient.getQueriesData({ queryKey: ['lounge_members'] }).forEach(([queryKey, data]: any) => {
-            if (Array.isArray(data)) {
-              const newMembers = data.map((member: any) => {
-                if (member.user_id === user.id) {
-                  return {
-                    ...member,
-                    profiles: Array.isArray(member.profiles)
-                      ? [{ ...member.profiles[0], avatar_url: finalAvatarUrl }]
-                      : { ...member.profiles, avatar_url: finalAvatarUrl }
-                  };
-                }
-                return member;
-              });
-              queryClient.setQueryData(queryKey, newMembers);
-            }
-          });
-
-          // 4. The Lobby wall is read again below, on every save.
+          // 3. The Lobby wall is read again below, on every save. (A salon's members are the
+          // lounge store's, synced in 1.)
 
         } catch (syncErr) {
           if (__DEV__) console.warn('[useEditProfile] Avatar sync failed non-fatally:', syncErr);
@@ -349,10 +332,9 @@ export function useEditProfile() {
       }
 
       // Hard flush caches where manual iteration is impractical. This runs on
-      // EVERY save (not just avatar changes) so search results and any ['user']
-      // consumers reflect renamed handles, new display names, and edited bios.
+      // EVERY save (not just avatar changes) so search results reflect renamed
+      // handles, new display names, and edited bios.
       queryClient.removeQueries({ queryKey: ['universalSearch'] });
-      queryClient.removeQueries({ queryKey: ['user', user.id] });
       // The Lobby wall carries each honoured member's name and portrait: a member
       // who renames or re-photographs themselves must not hang there as they were
       // (an old name is a door to nobody). Read again, on every save.

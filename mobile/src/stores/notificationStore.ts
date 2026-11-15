@@ -11,6 +11,7 @@ import { useBlockStore } from './blockStore';
 import { zustandMMKVStorage, zustandMMKVStorageSensitive } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 import { stillSignedIn } from './domain/helpers/sessionGuard';
+import { hydrateFollowing } from './domain/socialSlice';
 
 /** The most held at once, in memory and MMKV, by EVERY path (~186KB at 500). */
 const LOCAL_NOTIFICATION_CAP = 500;
@@ -133,11 +134,13 @@ export interface NotificationState {
     setupRealtime: () => void | (() => void);
 }
 
-// ── NOTIFICATION STORE ──
-export const useNotificationStore = create<NotificationState>()(
-    persist(
-        (set, get) => ({
-    notifications: [],
+/**
+ * Every value the store holds, as it starts: what it is made with and what a sign-out puts back,
+ * one list. The reset's own list named six of eleven, and a read a sign-out cut short left
+ * `_fetching` raised: the next member's notices never read again (noticesStartAgain.test).
+ */
+export const noticesAtStart = () => ({
+    notifications: [] as NotificationState['notifications'],
     loading: false,
     fetchFailed: false,
     moreFailed: false,
@@ -146,9 +149,15 @@ export const useNotificationStore = create<NotificationState>()(
     _unreadCount: 0,
     noticesHeard: 0,
     noticesLive: true,
-
     _hasMore: true,
-    _cursor: null,
+    _cursor: null as string | null,
+});
+
+// ── NOTIFICATION STORE ──
+export const useNotificationStore = create<NotificationState>()(
+    persist(
+        (set, get) => ({
+    ...noticesAtStart(),
 
     fetchNotifications: async () => {
         const user = useAuthStore.getState().user;
@@ -515,6 +524,9 @@ export const useNotificationStore = create<NotificationState>()(
                     }
 
                     set((state) => ({ ...applyIncomingNotification(state, newNotif), noticesHeard: state.noticesHeard + 1 }));
+                    // A request answered: the follow is the house's now, and the phone's list said
+                    // REQUESTED, the dossier sealed under the notice that said it was open.
+                    if (newNotif.type === 'follow_accept') void hydrateFollowing();
                 }
             )
             .subscribe((status) => { watch.status(status); });
@@ -557,7 +569,8 @@ export const rehydrateNotificationStore = () => useNotificationStore.persist.reh
 // so the next member never rehydrates the previous one's notifications.
 registerStoreReset(() => {
     if (_realtimeCleanup) { _realtimeCleanup(); _realtimeCleanup = null; }
-    useNotificationStore.setState({ notifications: [], _unreadCount: 0, _hasMore: true, _cursor: null, fetchFailed: false, moreFailed: false });
+    // All of it, from the one list: a flag left raised holds every read after it.
+    useNotificationStore.setState(noticesAtStart());
     try { zustandMMKVStorage.removeItem('reelhouse-notifications'); } catch { /* noop */ }
 });
 

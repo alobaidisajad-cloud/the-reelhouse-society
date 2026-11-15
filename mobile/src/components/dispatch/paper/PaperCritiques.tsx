@@ -300,9 +300,11 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
  * reading, and replacing those with a spinner would throw away their position.
  */
 export const CritiqueFooter = memo(function CritiqueFooter({
-  shown, total, loading, loadingMore, onMore, failed, onRetry,
+  shown, total, more = true, loading, loadingMore, onMore, failed, onRetry,
 }: {
   shown: number; total: number;
+  /** Whether the house may hold a next page (false once a short page has come). */
+  more?: boolean;
   loading?: boolean; loadingMore?: boolean;
   onMore: () => void;
   /** The last page asked for could not be read: said, and asked again (onRetry). */
@@ -328,7 +330,7 @@ export const CritiqueFooter = memo(function CritiqueFooter({
       </View>
     );
   }
-  if (left <= 0) {
+  if (!more || left <= 0) {
     return <EndMark />;
   }
   return (

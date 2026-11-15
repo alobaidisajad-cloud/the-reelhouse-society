@@ -92,6 +92,18 @@ describe('deleteLounge', () => {
     expect(mockToastError).toHaveBeenCalled();
   });
 
+  it('puts the room back where it stood when neither the delete nor the read back can reach the house', async () => {
+    const other = { ...own, id: 'other', name: 'Another Room' };
+    useLoungeStore.setState({ lounges: [other, own, { ...other, id: 'third' }] } as never);
+    deleteResult = { data: null, error: { message: 'Network request failed' } };
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'Network request failed' } });
+
+    expect(await useLoungeStore.getState().deleteLounge(L1)).toBe(false);
+
+    expect(mockToastError).toHaveBeenCalledWith('Failed to incinerate lounge.');
+    expect(useLoungeStore.getState().lounges.map((l) => l.id)).toEqual(['other', L1, 'third']);
+  });
+
   it('reports success when a row really was destroyed', async () => {
     useLoungeStore.setState({ lounges: [own] } as never);
     deleteResult = { data: [{ id: L1 }], error: null };
@@ -112,6 +124,17 @@ describe('leaveLounge', () => {
 
     // The refusal must surface, not be swallowed into a cheerful no-op.
     expect(mockToastError).toHaveBeenCalled();
+  });
+
+  it('puts the seat back as it was when neither the leave nor the read back can reach the house', async () => {
+    useLoungeStore.setState({ lounges: [joined] } as never);
+    deleteResult = { data: null, error: { message: 'Network request failed' } };
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'Network request failed' } });
+
+    expect(await useLoungeStore.getState().leaveLounge(L1)).toBe(false);
+
+    expect(mockToastError).toHaveBeenCalledWith('Failed to leave — please try again.');
+    expect(useLoungeStore.getState().lounges).toEqual([joined]);
   });
 
   it('stays quiet when the row really was removed', async () => {

@@ -1,5 +1,5 @@
 import { logger } from '@/src/utils/logger';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '../stores/auth';
 import { User } from '../types';
 import { ProfileService } from '../services/ProfileWriteService';
@@ -9,8 +9,6 @@ import { setSensitive } from '../stores/mmkv-storage';
 import { CACHE_KEYS } from '../constants/cacheKeys';
 
 export function useUpdateUser() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationKey: ['updateUser'],
     mutationFn: async (updates: Partial<User>) => {
@@ -24,8 +22,6 @@ export function useUpdateUser() {
       const prevUser = state.user;
       
       if (prevUser) {
-        await queryClient.cancelQueries({ queryKey: ['user', prevUser.id] });
-
         const mappedUpdates: Record<string, unknown> = { ...updates };
         if ('isSocialPrivate' in mappedUpdates) {
           mappedUpdates.is_social_private = mappedUpdates.isSocialPrivate;
@@ -47,11 +43,5 @@ export function useUpdateUser() {
       }
       reelToast.error('Profile update failed \u2014 changes reverted.');
     },
-    onSettled: () => {
-      const user = useAuthStore.getState().user;
-      if (user) {
-        queryClient.invalidateQueries({ queryKey: ['user', user.id] });
-      }
-    }
   });
 }

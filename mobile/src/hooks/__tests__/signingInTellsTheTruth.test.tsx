@@ -346,3 +346,50 @@ describe('a refused form points at its field', () => {
     expect(r.getByLabelText('Password').props.accessibilityHint).toBeUndefined();
   });
 });
+
+describe('the handle field, between the two forms', () => {
+  /** The handle check's read, answered when the test says (`land`). */
+  const handleRead = () => {
+    let land: () => void = () => {};
+    const chain: Record<string, unknown> = {};
+    chain.select = () => chain;
+    chain.eq = () => chain;
+    chain.maybeSingle = () => new Promise((r) => { land = () => r({ data: { username: 'john' }, error: null }); });
+    const from = jest.spyOn(supabase, 'from').mockImplementation((() => chain) as never);
+    return { from, land: () => land() };
+  };
+
+  it('a check still waiting when the form is switched is never asked', async () => {
+    jest.useFakeTimers();
+    const read = handleRead();
+    const { result } = await renderHook(() => useAuthFlow());
+    await act(async () => { result.current.setIsLogin(false); });
+    await act(async () => { result.current.setUsername('john'); result.current.checkUsernameAvailability('john'); });
+    expect(result.current.usernameStatus).toBe('checking');
+    // To sign in, and back, inside the half second the check waits.
+    await act(async () => { result.current.toggleMode(); });
+    await act(async () => { result.current.toggleMode(); });
+    await act(async () => { jest.advanceTimersByTime(600); });
+    expect(read.from).not.toHaveBeenCalled();
+    expect(result.current.usernameStatus).toBe('idle');
+    read.from.mockRestore();
+    jest.useRealTimers();
+  });
+
+  it('a check on its way when the form is switched answers nothing to the empty field', async () => {
+    jest.useFakeTimers();
+    const read = handleRead();
+    const { result } = await renderHook(() => useAuthFlow());
+    await act(async () => { result.current.setIsLogin(false); });
+    await act(async () => { result.current.setUsername('john'); result.current.checkUsernameAvailability('john'); });
+    await act(async () => { jest.advanceTimersByTime(600); });
+    expect(read.from).toHaveBeenCalled();
+    await act(async () => { result.current.toggleMode(); });
+    await act(async () => { result.current.toggleMode(); });
+    await act(async () => { read.land(); await Promise.resolve(); await Promise.resolve(); });
+    expect(result.current.username).toBe('');
+    expect(result.current.usernameStatus).toBe('idle');
+    read.from.mockRestore();
+    jest.useRealTimers();
+  });
+});

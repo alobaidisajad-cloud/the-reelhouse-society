@@ -138,6 +138,13 @@ export interface DispatchState {
   /** Whether the server has more beyond what has been asked for. */
   critiquesHasMore: Record<string, boolean>;
   /**
+   * Where the next page begins: the rows the house has sent, less those withdrawn since. The rows
+   * HELD counted the member's own new critique, set at the top whatever the order, and under
+   * CERTIFIED (where it sorts below) the next page began one past the true next row and skipped it.
+   * Too few asks a row twice, which the merge drops; too many loses one.
+   */
+  critiquesRead: Record<string, number>;
+  /**
    * Whether the last page asked for could not be read: the footer says so and asks again. A first
    * page that failed was drawn as no critiques under a MORE that pressed did nothing.
    */
@@ -312,6 +319,7 @@ const emptyState = () => ({
   critiquesLoading: {} as Record<string, boolean>,
   critiquesLoadingMore: {} as Record<string, boolean>,
   critiquesHasMore: {} as Record<string, boolean>,
+  critiquesRead: {} as Record<string, number>,
   critiquesFailed: {} as Record<string, boolean>,
   critiquesOrder: {} as Record<string, CritiqueOrder>,
   certifiedCritiqueIds: new Set<string>(),
@@ -877,7 +885,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     // Its own write lands after the await too, so it is guarded as fetchCritiques' is.
     const startedAs = useAuthStore.getState().user?.id ?? null;
     const order = st0.critiquesOrder[postId] ?? 'NEWEST';
-    const from = (st0.critiques[postId] ?? []).length;
+    const from = st0.critiquesRead[postId] ?? (st0.critiques[postId] ?? []).length;
     set((s) => ({ critiquesLoadingMore: { ...s.critiquesLoadingMore, [postId]: true } }));
     await readCritiquePage(postId, order, from, set);
     if (!memberUnchanged(startedAs)) return;
@@ -948,6 +956,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     set((st) => ({
       critiques: { ...st.critiques, [postId]: (st.critiques[postId] ?? []).filter((c) => c.id !== id) },
+      // Gone from the house's order too: the rows after it move up one.
+      critiquesRead: { ...st.critiquesRead, [postId]: Math.max(0, (st.critiquesRead[postId] ?? 0) - 1) },
       ...patchFiling(st, postId, (f) => ({
         ...f, commentCount: Math.max(0, f.commentCount - 1),
       })),
@@ -978,6 +988,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         next.splice(Math.min(at, next.length), 0, before);
         return {
           critiques: { ...st.critiques, [postId]: next },
+          critiquesRead: { ...st.critiquesRead, [postId]: (st.critiquesRead[postId] ?? 0) + 1 },
           ...patchFiling(st, postId, (f) => ({ ...f, commentCount: f.commentCount + 1 })),
         };
       });
@@ -1258,6 +1269,11 @@ async function readCritiquePage(
         critiquesHasMore: {
           ...st.critiquesHasMore,
           [postId]: (data ?? []).length === COMMENT_PAGE_SIZE,
+        },
+        // As sent, as the end is judged: a row the parser drops still stood in the house's order.
+        critiquesRead: {
+          ...st.critiquesRead,
+          [postId]: (from === 0 ? 0 : (st.critiquesRead[postId] ?? from)) + (data ?? []).length,
         },
         critiquesFailed: { ...st.critiquesFailed, [postId]: false },
       };

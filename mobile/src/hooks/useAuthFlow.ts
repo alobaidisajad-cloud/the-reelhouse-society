@@ -362,6 +362,10 @@ export function useAuthFlow() {
     setEmailOrUsername('');
     setPassword('');
     setUsername('');
+    // A handle check still waiting, or on its way, is for a handle no longer in the field: its
+    // answer wrote TAKEN (or a tick) beside an empty one, and held REQUEST ADMISSION shut.
+    if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current);
+    usernameCheckRequestId.current += 1;
     setUsernameStatus('idle');
   };
 

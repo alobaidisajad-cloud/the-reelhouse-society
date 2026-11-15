@@ -16,7 +16,7 @@
  * Two docked rows would take a third of a small phone's screen and leave the
  * writing in a slot.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, Platform, ScrollView, Share, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { P, useRouteParams } from '@/src/utils/routeParams';
@@ -69,6 +69,7 @@ import { HOUSE_WEB } from '@/src/constants/support';
 import { useAboveDockedBar, useBottomEdge, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { useScrollTrace } from '@/src/hooks/useScrollTrace';
 import { useBackCloses } from '@/src/hooks/useBackCloses';
+import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
@@ -109,6 +110,7 @@ function FilingReader({ id }: { id: string }) {
   const critiquesLoading = useDispatch((s) => s.critiquesLoading);
   const critiquesLoadingMore = useDispatch((s) => s.critiquesLoadingMore);
   const critiquesFailed = useDispatch((s) => s.critiquesFailed);
+  const critiquesHasMore = useDispatch((s) => s.critiquesHasMore);
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const certifiedCritiqueIds = useDispatch((s) => s.certifiedCritiqueIds);
   const critiqueMarksKnown = useDispatch((s) => s.critiqueMarksKnown);
@@ -246,7 +248,12 @@ function FilingReader({ id }: { id: string }) {
     && nextFound.after === `${live.seriesId}:${live.partNumber}` ? nextFound.part : null;
 
   /** In the server's order, never re-sorted here: the critiques come in pages. */
-  const rows = critiques[id] ?? [];
+  const read = critiques[id];
+  // Drawn through who is hidden NOW: a member blocked or muted from this page (its ···, or a
+  // report's "also block") left their critiques under the toast that said they were hidden.
+  const whoIsHidden = useWhoIsHidden();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; filterContentByBlocks reads the block store itself
+  const rows = useMemo(() => filterContentByBlocks(read ?? [], (c) => c.authorId ?? ''), [read, whoIsHidden]);
   const ages = useTimesAgo(rows.map((c) => c.createdAt));
 
   /** Their Dispatch ROOM, which the byline promises; the room links their file. */
@@ -330,8 +337,8 @@ function FilingReader({ id }: { id: string }) {
 
   const openAmend = useCallback(() => {
     if (!live) return;
-    // The dossier desk takes its title and essay as params; the short desks read
-    // the filing out of the store, which the reader has already hydrated.
+    // Every desk reads the filing out of the store, which the reader has already
+    // hydrated (the essay's desk reads it from the house when it is not held).
     nav.push(live.kind === 'dossier'
       ? `/dispatch/compose?kind=dossier&edit=${live.id}`
       : `/dispatch/compose?kind=${live.kind}&edit=${live.id}`);
@@ -689,8 +696,12 @@ function FilingReader({ id }: { id: string }) {
             ))}
 
             <CritiqueFooter
-              shown={rows.length}
+              // Counted against every critique read, the hidden too: the count is the house's.
+              shown={read?.length ?? 0}
               total={live.commentCount}
+              // The house's own word that a page may follow: a count that holds critiques this
+              // member may not read never reaches its end, and its MORE answered with nothing.
+              more={critiquesHasMore[id] !== false}
               loading={!!critiquesLoading[id]}
               loadingMore={!!critiquesLoadingMore[id]}
               onMore={() => useDispatch.getState().loadMoreCritiques(live.id)}
@@ -698,7 +709,7 @@ function FilingReader({ id }: { id: string }) {
               // The page that failed, asked again: the first, in the order chosen, or the next. Not
               // waited on: a read that fails says so itself (critiquesFailed).
               onRetry={() => {
-                void (rows.length === 0
+                void ((read?.length ?? 0) === 0
                   ? useDispatch.getState().fetchCritiques(live.id, order)
                   : useDispatch.getState().loadMoreCritiques(live.id));
               }}

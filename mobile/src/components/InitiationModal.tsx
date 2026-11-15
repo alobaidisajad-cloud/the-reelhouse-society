@@ -155,6 +155,14 @@ function DoorWatch({ onGone }: { onGone?: () => void }) {
 
 export default function InitiationModal({ visible, username, memberNo, onComplete, onGone }: InitiationModalProps) {
   const [beat, setBeat] = useState(0);
+  // Each opening starts at the first beat. The tabs keep this mounted from one member to the next
+  // on the phone (only the Modal goes), and a second new member opened on the last one's beat IV,
+  // past their own stamp.
+  const [openFor, setOpenFor] = useState(visible);
+  if (visible !== openFor) {
+    setOpenFor(visible);
+    if (visible) setBeat(0);
+  }
   const reduceMotion = useReduceMotion();
   // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
   // column dims with the page.

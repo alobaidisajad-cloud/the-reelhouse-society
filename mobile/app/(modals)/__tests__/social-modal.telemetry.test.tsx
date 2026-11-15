@@ -15,6 +15,7 @@ import { addBreadcrumb, captureError } from '@/src/lib/sentry';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { LoungeService } from '@/src/services/LoungeService';
 import { useLoungeStore } from '@/src/stores/lounge';
+import { useBlockStore } from '@/src/stores/blockStore';
 
 /**
  * These components set state one tick after render — FlashList when it measures,
@@ -215,6 +216,21 @@ describe('SocialModal share, opened by its route without the rank to speak (P4.1
         const screen = render(<SocialModal />);
         expect(await screen.findByText(/reel/i)).toBeTruthy();
         expect(screen.queryByText('[ CLEARANCE REQUIRED ]')).toBeNull();
+    });
+});
+
+describe('who is drawn in a circle', () => {
+    it('a member blocked or muted since is not drawn in the list, a pull or no pull', async () => {
+        mockParams = { userId: '00000026-0000-4000-8000-000000000026', type: 'followers' };
+        (ProfileService.getSocialConnections as jest.Mock).mockResolvedValue({
+            profiles: [{ id: 'u3', username: 'reel', avatar_url: null }, { id: 'u4', username: 'wellesfan', avatar_url: null }], hasMore: false,
+        });
+        const screen = render(<SocialModal />);
+        expect(await screen.findByText(/wellesfan/i)).toBeTruthy();
+        await act(async () => { useBlockStore.setState({ muted: ['u4'], _mutedIndex: new Set(['u4']) }); });
+        expect(screen.queryByText(/wellesfan/i)).toBeNull();
+        expect(screen.getByText(/reel/i)).toBeTruthy();
+        await act(async () => { useBlockStore.setState({ muted: [], _mutedIndex: new Set() }); });
     });
 });
 

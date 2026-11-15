@@ -6,7 +6,8 @@
  * drives the Notices banner + profile door badge). Only mounts work while the
  * panel is open (`enabled`).
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { useAuthStore } from '@/src/stores/auth';
 import { useSocialStore } from '@/src/stores/followStore';
 import { FollowRequestService, FollowRequest } from '@/src/services/FollowRequestService';
@@ -171,8 +172,13 @@ export function useFollowRequests(enabled: boolean) {
     }
   }, [items, setCount]);
 
+  // A member blocked or muted is never offered at the door, to be admitted across it.
+  const whoIsHidden = useWhoIsHidden();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; filterContentByBlocks reads the block store itself
+  const shown = useMemo(() => filterContentByBlocks(items, (r) => r.requesterId), [items, whoIsHidden]);
+
   return {
-    items, loading: loading || (enabled && answeredFor !== search), loadingMore, refreshing, hasMore, search, busyId, failed, moreFailed,
+    items: shown, loading: loading || (enabled && answeredFor !== search), loadingMore, refreshing, hasMore, search, busyId, failed, moreFailed,
     setSearch, loadMore, refresh, retry, accept, decline, declineAll,
   };
 }

@@ -11,6 +11,7 @@
  */
 
 import { supabase } from '../../lib/supabase';
+import * as offlineQueue from '../../utils/offlineQueue';
 import { useLogStore } from '../films';
 
 // ── Mock Auth Store ──
@@ -68,6 +69,50 @@ describe('watchlistSlice', () => {
     // ── fetchWatchlist ──
 
     describe('fetchWatchlist', () => {
+        const answers = (rows: unknown[]) => {
+            const result = { data: rows, error: null };
+            const chain = {
+                select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), order: jest.fn().mockReturnThis(),
+                limit: jest.fn().mockReturnThis(), or: jest.fn().mockReturnThis(),
+                then: jest.fn((cb) => cb(result)),
+            };
+            (supabase.from as jest.Mock) = jest.fn(() => chain);
+        };
+
+        it('read again, keeps the saves and removals the queue still holds', async () => {
+            answers([makeWatchlistRow(0), makeWatchlistRow(1)]);
+            const queued = jest.spyOn(offlineQueue, 'getOfflineQueue').mockReturnValue([
+                { id: 'q1', type: 'add_watchlist', timestamp: 1, owner: 'test-user-id', payload: { user_id: 'test-user-id', film_id: 3000, film_title: 'Saved on the train', poster_path: null, year: 1999 } },
+                { id: 'q2', type: 'remove_watchlist', timestamp: 2, owner: 'test-user-id', payload: { user_id: 'test-user-id', film_id: 2001 } },
+            ] as never);
+            await useLogStore.getState().fetchWatchlist();
+            const s = useLogStore.getState();
+            expect(s.watchlist.map((w) => w.id)).toEqual([3000, 2000]);
+            expect(s._watchlistIndex[3000]).toBe(true);
+            expect(s._watchlistIndex[2001]).toBeUndefined();
+            queued.mockRestore();
+        });
+
+        it('a next page joins the list as it stands when it lands, not the copy taken before', async () => {
+            useLogStore.setState({ watchlist: [makeWatchlistItem(0)], watchlistHasMore: true, _watchlistCursor: '2024-02-01T12:00:00Z|wl-0' });
+            let land: ((v: unknown) => void) | null = null;
+            const chain = {
+                select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), order: jest.fn().mockReturnThis(),
+                limit: jest.fn().mockReturnThis(), or: jest.fn().mockReturnThis(),
+                then: jest.fn((cb) => new Promise((r) => { land = r as (v: unknown) => void; }).then(cb)),
+            };
+            (supabase.from as jest.Mock) = jest.fn(() => chain);
+            const more = useLogStore.getState().fetchWatchlist(true);
+            // The read asks for its answer a beat after it is made (an await): until then it is not away.
+            for (let i = 0; i < 50 && !land; i++) await Promise.resolve();
+            expect(land).not.toBeNull();
+            // Saved while the page was on its way.
+            useLogStore.setState((st) => ({ watchlist: [makeWatchlistItem(9), ...st.watchlist] }));
+            land!({ data: [makeWatchlistRow(1)], error: null });
+            await more;
+            expect(useLogStore.getState().watchlist.map((w) => w.id)).toEqual([2009, 2000, 2001]);
+        });
+
         it('should populate _watchlistIndex after fetch', async () => {
             const mockRows = Array.from({ length: 5 }, (_, i) => makeWatchlistRow(i));
             const mockResult = { data: mockRows, error: null };

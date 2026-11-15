@@ -53,6 +53,7 @@ import reelToast from '@/src/utils/reelToast';
 import { useUnsent } from '@/src/stores/offlineQueueStore';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 import { dateOf } from '@/src/utils/instant';
+import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 
 /** A filing, or a day's divider: one flat list, as a section list re-measures on every certify. */
 type Row =
@@ -95,7 +96,12 @@ const EMPTY: Record<Section, { title: string; body: string; action?: string }> =
 export default function DispatchScreen() {
   const me = useAuthStore((s) => s.user);
 
-  const filings = useDispatch((s) => s.filings);
+  const held = useDispatch((s) => s.filings);
+  // Drawn through who is hidden NOW: the house leaves them out of the next read, and a member
+  // blocked or muted since stayed on the paper under the toast that said they were hidden.
+  const whoIsHidden = useWhoIsHidden();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; filterContentByBlocks reads the block store itself
+  const filings = useMemo(() => filterContentByBlocks(held, (f) => f.authorId ?? ''), [held, whoIsHidden]);
   const section = useDispatch((s) => s.section);
   const sort = useDispatch((s) => s.sort);
   const savedOnly = useDispatch((s) => s.savedOnly);

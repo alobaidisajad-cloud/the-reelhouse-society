@@ -309,16 +309,22 @@ export function SettingsScreen() {
     // held reads as its default on the form, and sent unasked it put back what another phone set.
     const opened = amendments(formOpenedWith as SettingsFormData).preferences as Record<string, unknown>;
     const changed = Object.fromEntries(Object.entries(preferences).filter(([k, v]) => JSON.stringify(opened[k]) !== JSON.stringify(v)));
+    // The profile's own column FIRST, which has no offline path: refused or unreached, it is taken
+    // back and said (useUpdateUser), and nothing else has changed. Filed after preferences kept on
+    // the phone, its "changes reverted" stood over the preferences the phone was keeping to send.
+    const visibilityChanged = is_social_private !== !!useAuthStore.getState().user?.is_social_private;
+    if (visibilityChanged) await updateUserMutation({ is_social_private });
     let filed: 'saved' | 'kept' = 'saved';
     if (Object.keys(changed).length > 0) {
       try {
         filed = await useAuthStore.getState().savePreferences(changed);
       } catch (err) {
-        reelToast.error('Your settings could not be filed. Nothing was changed.');
+        reelToast.error(visibilityChanged
+          ? 'Your profile’s visibility was saved. Your other settings could not be filed.'
+          : 'Your settings could not be filed. Nothing was changed.');
         throw err;
       }
     }
-    if (is_social_private !== !!useAuthStore.getState().user?.is_social_private) await updateUserMutation({ is_social_private });
     return filed;
   };
   const filedSaid = (filed: 'saved' | 'kept', amended: string) => (filed === 'kept'

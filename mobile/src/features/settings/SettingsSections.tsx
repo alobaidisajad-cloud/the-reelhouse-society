@@ -1,6 +1,6 @@
 import { useShallow } from 'zustand/react/shallow';
 import React, { useRef } from 'react';
-import { Alert, View, StyleSheet, Linking, Platform } from 'react-native';
+import { Alert, AppState, View, StyleSheet, Linking, Platform } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -606,10 +606,16 @@ function PushPermissionNotice() {
 
   React.useEffect(() => {
     isMountedRef.current = true;
-    getPushPermissionState()
-      .then(s => { if (isMountedRef.current) setState(s); })
-      .catch(() => { if (isMountedRef.current) setState('unavailable'); });
-    return () => { isMountedRef.current = false; };
+    const read = () => {
+      getPushPermissionState()
+        .then(s => { if (isMountedRef.current) setState(s); })
+        .catch(() => { if (isMountedRef.current) setState('unavailable'); });
+    };
+    read();
+    // Asked again on the way back from the phone's settings (OPEN SYSTEM SETTINGS): read once,
+    // the banner said alerts were withheld over alerts that were being delivered.
+    const sub = AppState.addEventListener('change', (next) => { if (next === 'active') read(); });
+    return () => { isMountedRef.current = false; sub.remove(); };
   }, []);
 
   const ask = async () => {

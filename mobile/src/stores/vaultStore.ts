@@ -6,7 +6,7 @@ import { registerStoreReset } from './resetAllStores';
 import { VaultService } from '@/src/services/VaultService';
 import { captureError } from '@/src/lib/sentry';
 import { isNetworkError } from '@/src/utils/networkError';
-import { enqueueMutation } from '@/src/utils/offlineQueue';
+import { enqueueMutation, getOfflineQueue } from '@/src/utils/offlineQueue';
 import { useAuthStore } from '@/src/stores/auth';
 import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
@@ -115,6 +115,21 @@ export const useVaultStore = create<VaultState>()(
             for (const row of rows) {
               notes[row.viewing_id] = row.notes;
               notesLog[row.viewing_id] = row.log_id;
+            }
+            // And over the house's answer, this member's own writes still waiting to be sent, in
+            // the order they were made: read again on the way back to the front, a note written
+            // with no signal vanished from its viewing (and one removed came back) until a later
+            // read, though the queue was still holding it.
+            for (const m of getOfflineQueue()) {
+              const viewingId = m.payload.viewing_id;
+              if (typeof viewingId !== 'string') continue;
+              if (m.type === 'set_viewing_note' && m.payload.log_id === logId && typeof m.payload.notes === 'string') {
+                notes[viewingId] = m.payload.notes;
+                notesLog[viewingId] = logId;
+              } else if (m.type === 'remove_viewing_note' && notesLog[viewingId] === logId) {
+                delete notes[viewingId];
+                delete notesLog[viewingId];
+              }
             }
             const loading = { ...s.loading };
             delete loading[logId];

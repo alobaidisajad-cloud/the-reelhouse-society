@@ -63,6 +63,8 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { ropeSpoken } from '@/src/components/clearance/Clearance';
 import { characterCount } from '@/src/utils/text';
 import type { StackData } from '@/src/schemas/feed.schema';
+import { useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
+import { stackCritiques } from '@/src/components/critique/stackCritiques';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
@@ -545,27 +547,14 @@ function StackDetailScreen({ id }: { id: string }) {
   // (made here, as on a log), so it is never drawn twice and can be taken back
   // while it waits.
   const queued = useOfflineQueueStore((st) => st.queued);
-  const critiques = useMemo<Critique[]>(() => {
-    // Taken back and waiting to say so: gone from the page already.
-    const takenBack = new Set(queued.filter((m) => m.type === 'remove_list_comment').map((m) => m.payload.comment_id));
-    const held: Critique[] = (queryComments ?? [])
-      .filter((c) => !takenBack.has(c.id))
-      .map((c) => ({ ...c, body: c.content }));
-    const seen = new Set(held.map((c) => c.id));
-    const waiting: Critique[] = queued
-      .filter((m) => m.type === 'add_list_comment' && m.payload.list_id === id
-        && typeof m.payload.id === 'string' && !seen.has(m.payload.id) && !takenBack.has(m.payload.id))
-      .map((m) => ({
-        id: m.payload.id as string,
-        user_id: String(m.payload.user_id),
-        // The queue is only ever this member's (it is emptied at sign-out).
-        username: user?.username || 'anonymous',
-        avatar_url: user?.avatar_url ?? null,
-        body: String(m.payload.content),
-        created_at: new Date(m.timestamp).toISOString(),
-      }));
-    return [...held, ...waiting];
-  }, [queryComments, queued, id, user?.username, user?.avatar_url]);
+  // Drawn through who is hidden NOW: a member blocked or muted from this sheet (a report's "also
+  // block", or the curator's ···) stayed in it under the toast that said they were hidden.
+  const whoIsHidden = useWhoIsHidden();
+  const critiques = useMemo<Critique[]>(
+    () => stackCritiques(queryComments, queued, id, user),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; stackCritiques reads the block store itself
+    [queryComments, queued, id, user?.username, user?.avatar_url, whoIsHidden],
+  );
 
   // A critique the queue has just delivered leaves the queue before the next
   // read brings it back: read again, or it would vanish in between.
@@ -769,7 +758,7 @@ function StackDetailScreen({ id }: { id: string }) {
             try {
               await deleteList(id);
               queryClient.removeQueries({ queryKey: ['stack', id] });
-              queryClient.invalidateQueries({ queryKey: ['stacks'] });
+              queryClient.invalidateQueries({ queryKey: ['feed', 'stacks'] });
               TactileEngine.warn();
               nav.back();
              

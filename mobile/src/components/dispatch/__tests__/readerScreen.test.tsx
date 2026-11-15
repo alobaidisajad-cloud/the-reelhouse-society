@@ -517,6 +517,24 @@ describe('the reader', () => {
     clearDraft('u1', 'critique', '00000017-0000-4000-8000-000000000017');
   });
 
+  it("leaves a critique by a member hidden since off the page at once, and the foot ends on the house's word", async () => {
+    const critique = (n: number, user: string, body: string) => ({
+      id: 'c' + n, post_id: '00000017-0000-4000-8000-000000000017', user_id: user, author_username: 'm' + n,
+      body, certify_count: 0, created_at: '2026-08-28T22:0' + n + ':00Z', edited_at: null,
+      profiles: { username: 'm' + n, member_no: n, tier: 'free', role: null, is_founding: false },
+    });
+    mockRow = row({ comment_count: 5 });
+    mockCritiqueRows = [critique(1, 'u2', 'A critique that stays.'), critique(2, 'u3', 'A critique from one blocked now.')];
+    const { getByText, queryByText, queryByLabelText } = await mount();
+    expect(getByText('A critique from one blocked now.')).toBeTruthy();
+    // Five counted, two sent on a short page: the rest are the house's to keep back. No MORE.
+    expect(queryByLabelText(/read the next critiques/)).toBeNull();
+    await act(async () => { useBlockStore.setState({ blocked: ['u3'], _blockedIndex: new Set(['u3']) }); });
+    expect(queryByText('A critique from one blocked now.')).toBeNull();
+    expect(getByText('A critique that stays.')).toBeTruthy();
+    await act(async () => { useBlockStore.setState({ blocked: [], _blockedIndex: new Set() }); });
+  });
+
   it('re-reads the critiques when the order is changed, and not when it is not', async () => {
     const { getByLabelText } = await mount();
     expect(useDispatch.getState().critiquesOrder['00000017-0000-4000-8000-000000000017']).toBe('CERTIFIED');

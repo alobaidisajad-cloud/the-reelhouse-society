@@ -108,6 +108,11 @@ export function useProfileController(usernameOverride?: string) {
   const followingKnown = useSocialStore(s => s.followingKnown);
   const followKnown = isSelf || isFollowing || isRequested || followingKnown === 'held';
   const rereadFollows = useCallback(() => { void hydrateFollowing(); }, []);
+  // A request is the other member's to answer, and a decline sends no notice: a file opened on one
+  // pending asks the follow list again, or it stood REQUESTED and sealed until a relaunch.
+  useEffect(() => {
+    if (isRequested) void hydrateFollowing();
+  }, [isRequested, username]);
 
   const data = useProfileData({
     username: username ?? '',
@@ -298,6 +303,8 @@ export function useProfileController(usernameOverride?: string) {
   const onRefresh = useCallback(async () => {
     setRefreshingLocal(true);
     TactileEngine.navigate();
+    // A request pending: answered since, the file opens (or the request is gone) on this pull.
+    if (isRequested) await hydrateFollowing();
     // `false`: the member could not be read. The page stays as it was, and says so.
     const read = await data.fetchUserData();
 
@@ -315,7 +322,7 @@ export function useProfileController(usernameOverride?: string) {
 
     setRefreshingLocal(false);
     if (read === false) reelToast.error(REFRESH_FAILED);
-  }, [data, activeTab, roomFilters]);
+  }, [data, activeTab, roomFilters, isRequested]);
 
   const toggleFollow = useCallback(async () => {
     if (!isAuthenticated) { askIn(); return; }
@@ -342,7 +349,9 @@ export function useProfileController(usernameOverride?: string) {
     } catch (err) {
       // The store says why on every failure it catches; this one it did not.
       logger.warn('[Profile] follow failed:', err);
-      reelToast.error(`Could not ${leaving ? 'unfollow' : 'follow'} @${handle}. Please try again.`);
+      reelToast.error(isRequested
+        ? `The request to @${handle} could not be withdrawn. Please try again.`
+        : `Could not ${leaving ? 'unfollow' : 'follow'} @${handle}. Please try again.`);
     }
     // Rolled back by the same delta, and only on the member it was applied to
     // (the screen may have moved to another member meanwhile).

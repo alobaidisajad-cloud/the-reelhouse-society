@@ -3,7 +3,6 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import { onlineManager } from '@tanstack/react-query';
 import { houseIso } from '@/src/lib/houseClock';
-import { queryClient } from '../lib/queryClient';
 import { supabase } from '../lib/supabase';
 import { watchChannel } from '../lib/watchChannel';
 import { instantOf, dateOf } from '../utils/instant';
@@ -526,20 +525,28 @@ function keptRooms(rows: unknown[] | null): LoungeRoom[] {
   });
 }
 
-export const useLoungeStore = create<LoungeState>()((set, get) => ({
-  lounges: [],
-  coversSet: {},
+/**
+ * Every value the store holds, as it starts: what it is made with and what a sign-out puts back,
+ * one list (the reset's own list left `roomLive` as the last member's room had it).
+ */
+export const loungesAtStart = () => ({
+  lounges: [] as LoungeRoom[],
+  coversSet: {} as Record<string, string | null>,
   loungesFailed: false,
   loungesLoading: false,
   loungesRead: false,
-  currentMessages: [],
-  currentLoungeId: null,
+  currentMessages: [] as LoungeMessage[],
+  currentLoungeId: null as string | null,
   messagesLoading: false,
   messagesFailed: false,
   roomLive: true,
   sending: false,
   presentCount: 0,
-  typingUsers: [],
+  typingUsers: [] as string[],
+});
+
+export const useLoungeStore = create<LoungeState>()((set, get) => ({
+  ...loungesAtStart(),
 
   fetchLounges: async () => {
     const user = useAuthStore.getState().user;
@@ -1181,8 +1188,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         lounges: s.lounges.map(l => (l.id === loungeId ? seatedIn(l) : l)),
       }));
       await get().fetchLounges();
-      queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
-      queryClient.invalidateQueries({ queryKey: ['lounge_members', loungeId] });
       return true;
     } catch (e) {
       logger.error('[LoungeStore.joinPublicLounge] failed:', e);
@@ -1451,6 +1456,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
     // At once, as the next read will have it: out of "your salons", into the
     // rooms to browse (a private one too: it is still there to ask at).
+    const seated = get().lounges.find((l) => l.id === loungeId);
     set(s => ({ lounges: s.lounges.map(l => (l.id === loungeId && isMine(l) ? leftBehind(l) : l)) }));
 
     // A delete that row security refuses answers 200 with no error, so the rows are asked
@@ -1463,20 +1469,24 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     if (error || !removed || removed.length === 0) {
       if (!memberUnchanged(startedAs)) return false;
       reelToast.error('Failed to leave — please try again.');
-      await get().fetchLounges(); // the seat is still theirs: read it back
+      // The seat is still theirs: put back as it was, then read. A read that fails (no signal,
+      // the usual reason a leave fails) kept the room drawn as left under the toast.
+      if (seated) set(s => ({ lounges: s.lounges.map(l => (l.id === loungeId ? seated : l)) }));
+      await get().fetchLounges();
       return false;
     }
-    queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
-    queryClient.invalidateQueries({ queryKey: ['lounge_members', loungeId] });
     return true;
   },
 
   deleteLounge: async (loungeId) => {
-    // No session capture: after the await only fetchLounges writes, and it guards itself.
+    // The member who asked: after the await, nothing is put back on another member's page.
     const user = useAuthStore.getState().user;
     if (!user) return false;
     
-    // Optimistic removal
+    // Optimistic removal, where it stood kept to put back.
+    const standing = get().lounges;
+    const at = standing.findIndex((l) => l.id === loungeId);
+    const room = at >= 0 ? standing[at] : null;
     set(s => ({ lounges: s.lounges.filter(l => l.id !== loungeId) }));
     
     // As in leaveLounge: a non-creator's delete touches no rows and still answers 200,
@@ -1487,12 +1497,18 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       .select('id');
 
     if (error || !destroyed || destroyed.length === 0) {
+      // Their failed act is not the next member's to see.
+      if (!memberUnchanged(user.id)) return false;
       reelToast.error('Failed to incinerate lounge.');
-      await get().fetchLounges(); // Revert
+      // Back where it stood, then read: a read that fails kept the room gone under the toast.
+      if (room) {
+        set(s => (s.lounges.some((l) => l.id === loungeId) ? {} : {
+          lounges: [...s.lounges.slice(0, at), room, ...s.lounges.slice(at)],
+        }));
+      }
+      await get().fetchLounges();
       return false;
     }
-    queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
-    queryClient.invalidateQueries({ queryKey: ['lounge_members', loungeId] });
     return true;
   },
 
@@ -1720,7 +1736,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
-    useLoungeStore.setState({ lounges: [], coversSet: {}, loungesFailed: false, loungesLoading: false, loungesRead: false, currentMessages: [], currentLoungeId: null, messagesLoading: false, messagesFailed: false, sending: false, presentCount: 0, typingUsers: [] });
+    useLoungeStore.setState(loungesAtStart());
     _lastCreateAt = -Infinity;
     _lastTypingBroadcastAt = -Infinity;
     // Every module-level memory, or the next member on this phone inherits it.
