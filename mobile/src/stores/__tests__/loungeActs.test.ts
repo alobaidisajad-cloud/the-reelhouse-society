@@ -149,7 +149,7 @@ describe('sending — where a member’s words can go missing', () => {
     expect(await useLoungeStore.getState().sendMessage(L1, 'Hello.')).toBe(false);
   });
 
-  it('THROTTLES a second send inside 800ms, so one tap is one message', async () => {
+  it('THROTTLES the same words sent again inside 800ms, so one tap is one message', async () => {
     // Not a nicety: without it a double-tap files the same sentence twice and
     // both land, because each is a legitimate insert.
     //
@@ -161,8 +161,21 @@ describe('sending — where a member’s words can go missing', () => {
     // what turns it into a test of the throttle rather than of nothing.
     nextResult = { data: { id: 'm1', lounge_id: L1, user_id: U1, content: 'One.' }, error: null };
     const first = await useLoungeStore.getState().sendMessage(L1, 'One.');
-    const second = await useLoungeStore.getState().sendMessage(L1, 'Two.');
+    const second = await useLoungeStore.getState().sendMessage(L1, 'One.');
     expect(`first=${first} second=${second}`).toBe('first=true second=false');
+  });
+
+  /**
+   * Other words inside 800ms are another message, not a double-tap: refused, the room's composer
+   * had already let go of them, and they were lost unsent (review round 1, 2026-11-14).
+   */
+  it('sends other words at once, however soon after the last', async () => {
+    nextResult = { data: { id: 'm1', lounge_id: L1, user_id: U1, content: 'One.' }, error: null };
+    const first = await useLoungeStore.getState().sendMessage(L1, 'One.');
+    nextResult = { data: { id: 'm2', lounge_id: L1, user_id: U1, content: 'Two.' }, error: null };
+    const second = await useLoungeStore.getState().sendMessage(L1, 'Two.');
+    expect(`first=${first} second=${second}`).toBe('first=true second=true');
+    expect(on('lounge_messages').filter((r) => r.op === 'upsert')).toHaveLength(2);
   });
 
   it('REPORTS FAILURE when the house refuses — it must not claim success', async () => {

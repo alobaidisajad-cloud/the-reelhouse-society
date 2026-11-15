@@ -26,10 +26,12 @@ jest.mock('expo-router/react-navigation', () => ({ ...require('@/test-utils/navi
 const mockTrace = jest.fn();
 jest.mock('@/src/utils/e2eTrace', () => ({ E2E_BUILD: false, e2eTrace: (...a: unknown[]) => mockTrace(...a) }));
 jest.mock('@shopify/flash-list', () => require('@/mockups/tabs/flashListMock').makeFlashListMock());
+/** Who holds the phone: signed in, unless a test signs them out. */
+const MEMBER = { isAuthenticated: true, user: { id: 'me', username: 'kane', role: 'archivist', tier: 'archivist', preferences: {} } };
+let mockAuth: Record<string, unknown> = MEMBER;
 jest.mock('@/src/stores/auth', () => {
-  const s = { isAuthenticated: true, user: { id: 'me', username: 'kane', role: 'archivist', tier: 'archivist', preferences: {} } };
-  const useAuthStore = (sel?: (x: unknown) => unknown) => (sel ? sel(s) : s);
-  (useAuthStore as any).getState = () => s;
+  const useAuthStore = (sel?: (x: unknown) => unknown) => (sel ? sel(mockAuth) : mockAuth);
+  (useAuthStore as any).getState = () => mockAuth;
   return { useAuthStore };
 });
 /** Who the member follows, and whether that list was read. */
@@ -136,6 +138,20 @@ describe('the following reel, before the follow list is known', () => {
   it('a list read, of nobody: the orbit is quiet', async () => {
     const r = await following();
     expect(r.getByText('Your orbit is quiet.')).toBeTruthy();
+  });
+
+  /** Signed out, no follow list is ever read: FOLLOWING, kept from before, waited for one forever. */
+  it('signed out, the reel and the stacks go back to everyone\'s, never waiting on a list no one reads', async () => {
+    const r = await following();
+    mockAuth = { isAuthenticated: false, user: null };
+    mockSocial = { following: [], followers: [], followingKnown: 'unread' };
+    try {
+      await act(async () => { r.rerender(<QueryClientProvider client={testQueryClient({ queries: { enabled: false } })}><ReelScreen /></QueryClientProvider>); });
+      expect(r.queryByLabelText('Reading the reel')).toBeNull();
+      expect(r.queryByText('Your orbit is quiet.')).toBeNull();
+    } finally {
+      mockAuth = MEMBER;
+    }
   });
 });
 

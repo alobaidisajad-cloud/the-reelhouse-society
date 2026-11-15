@@ -177,9 +177,10 @@ export interface LoungeState {
   syncGlobalAvatar: (userId: string, avatarUrl: string | null) => void;
 }
 
-// 800ms between sends PER ROOM: stops a double-tap, silently, without eating a
-// share sent to two rooms in a row.
-const _lastSendAt = new Map<string, number>();
+// The same words sent again to a room within 800ms: a double-tap, stopped silently, without
+// eating a share sent to two rooms in a row. Other words are another message: refused, the room's
+// composer had already let go of them, and they were lost unsent.
+const _lastSendAt = new Map<string, { at: number; words: string }>();
 const SEND_THROTTLE = 800;
 
 /** Messages held for an open room: four of loadMoreMessages' pages of 100. */
@@ -926,8 +927,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     if (!user || (!cleanContent && type === 'text')) return false;
 
     const now = monotonicNow();
-    if (now - (_lastSendAt.get(loungeId) ?? -Infinity) < SEND_THROTTLE) return false;
-    _lastSendAt.set(loungeId, now);
+    const last = _lastSendAt.get(loungeId);
+    const words = `${safeType}:${cleanContent}`;
+    if (last && last.words === words && now - last.at < SEND_THROTTLE) return false;
+    _lastSendAt.set(loungeId, { at: now, words });
 
     set({ sending: true });
 

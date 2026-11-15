@@ -204,6 +204,20 @@ describe('the ident block', () => {
     expect(r.queryByText('@TOMASREYES')).toBeNull();
   });
 
+  /**
+   * A persona is a sign-up's stamp ("The Midnight Devotee" on the web, "The Cinephile" a mobile
+   * sign-up writes), not a name: the file read it as the member's name, the same on many files,
+   * and the name the member edited never showed.
+   */
+  it('names the member by the name they gave, never by their sign-up persona', async () => {
+    const r = await mount({}, { targetUser: baseUser({ display_name: 'Tomas', persona: 'The Midnight Devotee' }) });
+    expect(r.getByText('TOMAS')).toBeTruthy();
+    expect(r.queryByText('THE MIDNIGHT DEVOTEE')).toBeNull();
+    const handleOnly = await mount({}, { targetUser: baseUser({ display_name: null, persona: 'The Cinephile' }) });
+    expect(handleOnly.getByText('TOMASREYES')).toBeTruthy();
+    expect(handleOnly.queryByText('THE CINEPHILE')).toBeNull();
+  });
+
   it('and does not echo a display name that IS the handle', async () => {
     // An ordinary case, and the one the null-name test would have missed.
     const r = await mount({}, { targetUser: baseUser({ display_name: 'tomasreyes', persona: null }) });

@@ -5,15 +5,18 @@
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { portraitInitial } from '../portraitInitial';
+import { fileName, portraitInitial } from '../portraitInitial';
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
 
 describe('portraitInitial', () => {
-  it('takes the name the file shows: persona, else display name, else handle', () => {
-    expect(portraitInitial({ persona: 'midnight usher', display_name: 'Ada', username: 'ada' })).toBe('M');
-    expect(portraitInitial({ persona: '', display_name: 'ada lovelace', username: 'zed' })).toBe('A');
-    expect(portraitInitial({ persona: null, display_name: null, username: 'kane' })).toBe('K');
+  it('takes the name the file shows: the name a member gave, else their handle, never their persona', () => {
+    // A sign-up's persona ("The Midnight Devotee") is a stamp of its choice, not the member's name.
+    expect(portraitInitial({ persona: 'midnight usher', display_name: 'Ada', username: 'ada' } as never)).toBe('A');
+    expect(portraitInitial({ display_name: '  ', username: 'zed' })).toBe('Z');
+    expect(portraitInitial({ display_name: null, username: 'kane' })).toBe('K');
+    expect(fileName({ persona: 'The Cinephile', display_name: null, username: 'kane' } as never)).toBe('kane');
+    expect(fileName({ display_name: 'Ada Lovelace', username: 'ada' })).toBe('Ada Lovelace');
   });
 
   it('never leaves a portrait blank', () => {
@@ -22,12 +25,12 @@ describe('portraitInitial', () => {
   });
 
   it('takes the whole first character a reader sees (every script: aCharacterIsNeverCut)', () => {
-    expect(portraitInitial({ persona: '🇮🇶 Sajad' })).toBe('🇮🇶'); // a flag: two regional letters
+    expect(portraitInitial({ display_name: '🇮🇶 Sajad' })).toBe('🇮🇶'); // a flag: two regional letters
     expect(portraitInitial({ display_name: 'élise' })).toBe('É'); // an accent written after its letter
   });
 
   it('puts one letter in the circle even where its capital is two', () => {
-    expect(portraitInitial({ persona: 'ßpiel' })).toBe('ß');
+    expect(portraitInitial({ display_name: 'ßpiel' })).toBe('ß');
   });
 
   it('is asked by both screens that show the member file: its plate and the portrait you are about to change', () => {

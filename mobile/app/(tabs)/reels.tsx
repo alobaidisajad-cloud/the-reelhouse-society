@@ -184,8 +184,13 @@ export default function ReelScreen() {
   });
   useScrollToTop(proxyScrollRef);
 
-  const [feedFilter, setFeedFilter] = useState<FeedFilter>('all');
-  const [stackFilter, setStackFilter] = useState<FeedFilter>('all');
+  // The member's choice of reel, kept while they are signed in. Signed out there is no one to
+  // follow, and no follow list is read: FOLLOWING, kept from before, waited for one forever, so a
+  // visitor is shown the main reel and the stacks of all.
+  const [feedChoice, setFeedFilter] = useState<FeedFilter>('all');
+  const [stackChoice, setStackFilter] = useState<FeedFilter>('all');
+  const feedFilter: FeedFilter = isAuthenticated ? feedChoice : 'all';
+  const stackFilter: FeedFilter = isAuthenticated ? stackChoice : 'all';
   const [stackSearch, setStackSearch] = useState('');
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 

@@ -3599,3 +3599,30 @@ mutants:
         find: "export const PAGE_COLUMN = 560;"
         replace: "export const PAGE_COLUMN = 600;"
     proof: { file: e2e/__tests__/iosIpadJudge.test.ts, test: "reads the page where the app lays it: its column is the app's own READING_MAX" }
+
+  - id: shape-name-from-the-persona
+    class: DATA-a-stamp-shown-as-the-name
+    source: shape
+    edits:
+      - file: app/user/[username].tsx
+        find: "    fileName(targetUser as { display_name?: string | null; username?: string | null } | null) || 'unknown',"
+        replace: "    (targetUser as { persona?: string | null } | null)?.persona || fileName(targetUser as { display_name?: string | null; username?: string | null } | null) || 'unknown',"
+    proof: { file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "names the member by the name they gave, never by their sign-up persona" }
+
+  - id: shape-following-kept-signed-out
+    class: STATE-a-choice-kept-past-sign-out
+    source: shape
+    edits:
+      - file: app/(tabs)/reels.tsx
+        find: "  const feedFilter: FeedFilter = isAuthenticated ? feedChoice : 'all';"
+        replace: "  const feedFilter: FeedFilter = feedChoice;"
+    proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "signed out, the reel and the stacks go back to everyone's, never waiting on a list no one reads" }
+
+  - id: shape-throttle-eats-other-words
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    if (last && last.words === words && now - last.at < SEND_THROTTLE) return false;"
+        replace: "    if (last && now - last.at < SEND_THROTTLE) return false;"
+    proof: { file: src/stores/__tests__/loungeActs.test.ts, test: "sends other words at once, however soon after the last" }

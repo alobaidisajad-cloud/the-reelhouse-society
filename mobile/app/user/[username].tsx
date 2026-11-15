@@ -31,7 +31,7 @@ import { useProfileController } from '@/src/hooks/useProfileController';
 
 import { Achievements } from '@/src/components/profile/Achievements';
 import { CinemaDNACard } from '@/src/components/profile/CinemaDNACard';
-import { portraitInitial } from '@/src/components/profile/portraitInitial';
+import { fileName, portraitInitial } from '@/src/components/profile/portraitInitial';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import NitrateCalendarGrid from '@/src/components/profile/NitrateCalendarGrid';
 import { NoirPassport } from '@/src/components/profile/NoirPassport';
@@ -317,7 +317,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // reader who asked (StruckWords); the handle is held to its own rules.
   const struck = useStruck();
   const heroName = struck(String(
-    targetUser?.persona || (targetUser as any)?.display_name || targetUser?.username || 'unknown',
+    fileName(targetUser as { display_name?: string | null; username?: string | null } | null) || 'unknown',
   )).toUpperCase();
   const heroHandle = `@${(targetUser?.username || 'unknown').toUpperCase()}`;
 
