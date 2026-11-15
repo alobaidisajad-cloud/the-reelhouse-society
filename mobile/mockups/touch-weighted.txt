@@ -27,7 +27,7 @@ app/(modals)/search-modal.tsx · Cancel: close search · wayOut
 app/(modals)/social-modal.tsx · Close social modal · wayOut
 app/dispatch/[id].tsx · Close, without sharing · wayOut
 app/dispatch/compose.tsx · Cancel, and leave the writing room · wayOut
-app/dispatch/compose.tsx · {isPublishing ? 'Filing the essay' : !ready ? 'File the essay. Not ready yet — it needs a title and a body' : edit ? 'Re-file the essay' : 'File the essay'} · commit
+app/dispatch/compose.tsx · {isPublishing ? 'Filing the essay' : edit && amendRead !== 'held' ? 'Re-file the essay. Not yet: the essay as filed is not here' : !ready ? 'File the essay. Not ready yet — it needs a title and a body' : edit ? 'Re-file the essay' : 'File the essay'} · commit
 app/film-reviews/[id].tsx · Go back · wayOut
 app/log/[id].tsx · Go back · wayOut
 app/log/[id].tsx · {wayOut} · wayOut
@@ -47,7 +47,7 @@ app/stacks/[id].tsx · Delete stack · destructive
 app/stacks/[id].tsx · Go back · wayOut
 app/user/[username].tsx · Go back · wayOut
 app/user/[username].tsx · Go back · wayOut
-app/user/[username].tsx · {!followKnown ? (followingKnown === 'failed' ? 'Ask again: your follows could not be read' : 'Reading whether you follow this member') : isFollowing ? 'Following: unfollow this member' : isRequested ? 'Requested: the follow request is sent' : targetUser.is_social_private ? 'Request to follow this member' : 'Follow this member'} · commit
+app/user/[username].tsx · {!followKnown ? (followingKnown === 'failed' ? 'Ask again: your follows could not be read' : 'Reading whether you follow this member') : isFollowing ? 'Following: unfollow this member' : isRequested ? 'Requested: withdraw the follow request' : targetUser.is_social_private ? 'Request to follow this member' : 'Follow this member'} · commit
 app/year-in-cinema.tsx · Close Year in Cinema · wayOut
 app/year-in-cinema.tsx · Close Year in Cinema · wayOut
 src/components/ShareToLoungeModal.tsx · Close · wayOut
