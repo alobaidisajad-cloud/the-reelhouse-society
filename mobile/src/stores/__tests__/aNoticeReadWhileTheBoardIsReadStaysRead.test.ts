@@ -74,7 +74,7 @@ const answerTheBoard = async (read: Promise<void>) => {
 let clock = 1_000_000;
 beforeEach(() => {
   clock += 1_000_000;
-  jest.spyOn(Date, 'now').mockImplementation(() => clock);
+  jest.spyOn(performance, 'now').mockImplementation(() => clock);
   mockRefused = new Set();
   mockPages = [];
   mockRows = [row(N1, '2026-11-16T10:00:02Z'), row(N2, '2026-11-16T10:00:01Z')];
