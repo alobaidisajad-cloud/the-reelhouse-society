@@ -1781,3 +1781,5 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/theLogSheetOpensWhereItWasAsked.test.tsx | 2026-11-15 | new: the owner's find; the sheet opens on its search and offers the record unsent; another film opens clean; the search kept |
 | src/lib/__tests__/theLaunchingTapIsReadOnce.test.ts | 2026-11-15 | new: the launching notification read once, its tap opened once, and the tabs' reopen standing aside for it |
 | src/utils/__tests__/theTabsAreReturnedToNeverRebuilt.guard.test.ts | 2026-11-15 | new: no screen replaces itself with the tabs where a tab app may be beneath |
+| e2e/maestro-reached-a-step.cjs | 2026-11-16 | new: a Maestro run that answered no step (its driver never started, its launch unanswered) is the harness's failure, given once more by the iPad job; a step that ran and failed is the app's |
+| e2e/__tests__/maestroReachedAStep.test.ts | 2026-11-16 | new: read on the iPad's four outputs from iPhone launch 43776770824, and the iPad job that asks it |

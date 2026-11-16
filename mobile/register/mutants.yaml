@@ -1066,6 +1066,23 @@ mutants:
         replace: ""
     proof: { file: e2e/__tests__/maestroReachedAStep.test.ts, test: "the iPad job gives a stage that reached no step once more, and never one whose step failed" }
 
+  - id: judge-ipad-no-step-answered
+    class: E2E-ios-driver-start-unwaited
+    source: judge
+    judge:
+      from: e2e/__tests__/fixtures/maestro-ipad-43776770824
+      run: [node, e2e/maestro-reached-a-step.cjs, "{dir}/every-step-ran.txt"]
+    edits:
+      - file: every-step-ran.txt
+        find: "Launch app \"com.reelhouse.society\" with clear state... COMPLETED"
+        replace: "Launch app \"com.reelhouse.society\" with clear state..."
+      - file: every-step-ran.txt
+        find: "Assert that id: home-tab is visible... COMPLETED"
+        replace: "Assert that id: home-tab is visible..."
+      - file: every-step-ran.txt
+        find: "Wait for animation to end within 5000 ms...WARNING: GL pipe is running in software mode (Renderer ID=0x1020400)\n COMPLETED"
+        replace: "Wait for animation to end within 5000 ms...WARNING: GL pipe is running in software mode (Renderer ID=0x1020400)\n"
+
   - id: shape-ipad-unreached-read-as-reached
     class: E2E-ios-driver-start-unwaited
     source: shape

@@ -1020,7 +1020,7 @@ classes:
       - { kind: static, file: e2e/__tests__/iosFlows.test.ts, test: "give Maestro's iPhone driver minutes to start, not its default" }
       - { kind: running, file: e2e/__tests__/maestroReachedAStep.test.ts, test: "a driver that never started, and a launch never answered, reached no step: the harness failed" }
       - { kind: static, file: e2e/__tests__/maestroReachedAStep.test.ts, test: "the iPad job gives a stage that reached no step once more, and never one whose step failed" }
-    fix: "the flows step gives the driver three minutes (MAESTRO_DRIVER_STARTUP_TIMEOUT, Maestro's own setting), and a test holds it at two or more; the iPad job gives a stage where Maestro reached no step once more (e2e/maestro-reached-a-step.cjs, read on that run's own outputs), and never one whose step ran and failed (mutants shape-ios-driver-default-wait, shape-ipad-harness-failure-final, shape-ipad-unreached-read-as-reached)"
+    fix: "the flows step gives the driver three minutes (MAESTRO_DRIVER_STARTUP_TIMEOUT, Maestro's own setting), and a test holds it at two or more; the iPad job gives a stage where Maestro reached no step once more (e2e/maestro-reached-a-step.cjs, read on that run's own outputs), and never one whose step ran and failed (mutants shape-ios-driver-default-wait, shape-ipad-harness-failure-final, shape-ipad-unreached-read-as-reached, judge-ipad-no-step-answered)"
     places: [simulator]
 
   - id: E2E-ios-cold-link-launch-hang
