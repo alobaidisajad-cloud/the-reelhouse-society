@@ -294,7 +294,10 @@ jobs:
     name: 📱 The app on an iPad
     needs: build
     runs-on: macos-26
-    timeout-minutes: 45
+    # Four stages, each starting Maestro's iOS driver (up to 3 min), and a stage whose driver never
+    # started tried once more: a slow runner took 36 min with no retry, and with one (iPhone launch
+    # 43842926090) was cut off at 45 still running.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
