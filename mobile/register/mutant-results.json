@@ -717,7 +717,7 @@
     "class": "E2E-no-flow-on-ios",
     "mutant": "shape-ios-flows-unrun",
     "proof": "m1",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
+    "commit": "f594484e733ee4ad08c9b89f10c7204d8fcb4753",
     "verdict": "caught"
   },
   {
@@ -759,7 +759,21 @@
     "class": "E2E-ios-driver-start-unwaited",
     "mutant": "shape-ios-driver-default-wait",
     "proof": "m1",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
+    "commit": "f594484e733ee4ad08c9b89f10c7204d8fcb4753",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-ios-driver-start-unwaited",
+    "mutant": "shape-ipad-harness-failure-final",
+    "proof": "m3",
+    "commit": "f594484e733ee4ad08c9b89f10c7204d8fcb4753",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-ios-driver-start-unwaited",
+    "mutant": "shape-ipad-unreached-read-as-reached",
+    "proof": "m2",
+    "commit": "f594484e733ee4ad08c9b89f10c7204d8fcb4753",
     "verdict": "caught"
   },
   {
@@ -780,7 +794,7 @@
     "class": "E2E-ios-link-question-unanswered",
     "mutant": "shape-ios-link-question-unanswered",
     "proof": "m1",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
+    "commit": "f594484e733ee4ad08c9b89f10c7204d8fcb4753",
     "verdict": "caught"
   },
   {
@@ -3461,7 +3475,7 @@
     "class": "NAV-a-replace-that-builds-a-second-tab-app",
     "mutant": "shape-salon-exit-replaces-the-tabs",
     "proof": "m4",
-    "commit": "65b753f63fb99a4cc27ef2f7504203c179bcd0df",
+    "commit": "f594484e733ee4ad08c9b89f10c7204d8fcb4753",
     "verdict": "caught"
   },
   {
@@ -3552,21 +3566,21 @@
     "class": "NAV-a-sheet-asked-for-over-one-still-there",
     "mutant": "shape-cover-asked-while-leaving",
     "proof": "m1",
-    "commit": "6a9435ebcca014cd7dfe5fae64a08222619474ae",
+    "commit": "f594484e733ee4ad08c9b89f10c7204d8fcb4753",
     "verdict": "caught"
   },
   {
     "class": "NAV-a-sheet-asked-for-over-one-still-there",
     "mutant": "shape-cover-frame-booked-unasked",
     "proof": "m3",
-    "commit": "6a9435ebcca014cd7dfe5fae64a08222619474ae",
+    "commit": "f594484e733ee4ad08c9b89f10c7204d8fcb4753",
     "verdict": "caught"
   },
   {
     "class": "NAV-a-sheet-asked-for-over-one-still-there",
     "mutant": "shape-cover-taken-by-a-salon-gone",
     "proof": "m4",
-    "commit": "6a9435ebcca014cd7dfe5fae64a08222619474ae",
+    "commit": "f594484e733ee4ad08c9b89f10c7204d8fcb4753",
     "verdict": "caught"
   },
   {
