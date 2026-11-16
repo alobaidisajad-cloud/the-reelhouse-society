@@ -168,6 +168,16 @@ DECLARE
 BEGIN
   IF v_me IS NULL THEN RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501'; END IF;
 
+  -- A request across a block admits no one: it is taken from the door instead. One can be
+  -- waiting there only if it was made in the same moment as the block.
+  IF public.a_block_stands_between(requester_id, v_me) THEN
+    DELETE FROM public.interactions
+     WHERE user_id = requester_id
+       AND target_user_id = v_me
+       AND type = 'follow_request';
+    RETURN;
+  END IF;
+
   -- Convert follow_request → follow
   UPDATE public.interactions
      SET type = 'follow'
@@ -4891,8 +4901,9 @@ CREATE FUNCTION public.sever_follows_on_block() RETURNS trigger
     AS $$
 BEGIN
   IF NEW.type = 'block' THEN
+    -- The follows and the requests, both ways: a request left waiting could be admitted later.
     DELETE FROM public.interactions
-    WHERE type = 'follow'
+    WHERE type IN ('follow', 'follow_request')
       AND ((user_id = NEW.blocker_id AND target_user_id = NEW.blocked_id)
         OR (user_id = NEW.blocked_id AND target_user_id = NEW.blocker_id));
   END IF;

@@ -3,7 +3,7 @@
 -- ════════════════════════════════════════════════════════════════════════════
 --   node mobile/supabase/diagnostics/rehearse.cjs a_block_takes_the_requests_too_rehearsal.sql --with-train
 --
--- The train applies 20261115_01 here (with_train); a sealed copy already holds it. Then nothing
+-- 20261115_01 is applied on production (2026-11-16); this shows it still holds there: nothing
 -- of a follow may stand across a block anywhere in the house, and four members in good standing,
 -- acting as themselves, find: a block takes the requests between the two both ways, with the
 -- notice the request left; a mute leaves a request waiting, and the same mute raised to a block
@@ -28,10 +28,6 @@ CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rehearsal_members), 4) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO authenticated;
 
--- The train applies it here first (with_train); a sealed copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261115_01_a_block_takes_the_requests_too.sql
-\endif
 
 DO $$ BEGIN
   PERFORM pg_temp.rh_case('nothing of a follow stands across a block in the house', '0',

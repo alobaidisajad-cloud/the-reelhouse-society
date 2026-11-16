@@ -235,3 +235,4 @@ society_report_system.sql
 20261111_04_three_faces_per_salon.sql
 20261112_01_the_honours_read_less.sql
 20261112_02_the_stacks_search_finds_its_matches.sql
+20261115_01_a_block_takes_the_requests_too.sql
