@@ -1,0 +1,6 @@
+Running on iPad Pro 13-inch (M5) - iOS 26.5 - 9F9B4A17-4195-40F0-8B46-728F6A6AA8EB
+ > Flow ipad_lobby
+Launch app "com.reelhouse.society" with clear state... COMPLETED
+Assert that id: home-tab is visible... COMPLETED
+Wait for animation to end within 5000 ms...WARNING: GL pipe is running in software mode (Renderer ID=0x1020400)
+ COMPLETED

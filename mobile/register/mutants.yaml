@@ -1057,6 +1057,24 @@ mutants:
         replace: ""
     proof: { file: e2e/__tests__/iosFlows.test.ts, test: "give Maestro's iPhone driver minutes to start, not its default" }
 
+  - id: shape-ipad-harness-failure-final
+    class: E2E-ios-driver-start-unwaited
+    source: shape
+    edits:
+      - file: ../.github/workflows/ios-launch.yml
+        find: "                stage \"$1\" \"$2\" && continue\n"
+        replace: ""
+    proof: { file: e2e/__tests__/maestroReachedAStep.test.ts, test: "the iPad job gives a stage that reached no step once more, and never one whose step failed" }
+
+  - id: shape-ipad-unreached-read-as-reached
+    class: E2E-ios-driver-start-unwaited
+    source: shape
+    edits:
+      - file: e2e/maestro-reached-a-step.cjs
+        find: "const ANSWER = /(?:^|\\s)(COMPLETED|FAILED)\\s*$/m;"
+        replace: "const ANSWER = /(COMPLETED|FAILED|Launch app)/m;"
+    proof: { file: e2e/__tests__/maestroReachedAStep.test.ts, test: "a driver that never started, and a launch never answered, reached no step: the harness failed" }
+
   - id: shape-ios-cold-link-once
     class: E2E-ios-cold-link-launch-hang
     source: shape

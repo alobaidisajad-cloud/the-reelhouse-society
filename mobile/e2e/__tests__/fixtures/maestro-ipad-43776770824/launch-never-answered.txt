@@ -1,0 +1,6 @@
+Running on iPad Pro 13-inch (M5) - iOS 26.5 - 9F9B4A17-4195-40F0-8B46-728F6A6AA8EB
+ > Flow sign_in_sheet
+Launch app "com.reelhouse.society" with clear state...
+==== Debug output (logs & screenshots) ====
+
+/Users/runner/work/_temp/ios-flows/ipad/upright-sign-in/.maestro/tests/2026-11-16_002014

@@ -1010,15 +1010,17 @@ classes:
     places: [none]
 
   - id: E2E-ios-driver-start-unwaited
-    title: "An iPhone flow failed before its first step: Maestro's iPhone driver, started again for each flow, outlived its default wait on a hosted Mac"
+    title: "An iPhone flow failed before its first step: Maestro's iPhone driver, started again for each flow, outlived its default wait on a hosted Mac; and on the iPad, a stage whose driver never started (or whose launch went unanswered) failed once and for all, and the stage after it turned a home screen on its side looking for a sheet never opened (iPhone launch 43776770824)"
     seriousness: code
     area: tests
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: history, ref: "iPhone launch 39893035439, auth_deep_link: iOS driver not ready in time" }
     methods:
       - { kind: static, file: e2e/__tests__/iosFlows.test.ts, test: "give Maestro's iPhone driver minutes to start, not its default" }
-    fix: "the flows step gives the driver three minutes (MAESTRO_DRIVER_STARTUP_TIMEOUT, Maestro's own setting), and a test holds it at two or more (mutant shape-ios-driver-default-wait)"
+      - { kind: running, file: e2e/__tests__/maestroReachedAStep.test.ts, test: "a driver that never started, and a launch never answered, reached no step: the harness failed" }
+      - { kind: static, file: e2e/__tests__/maestroReachedAStep.test.ts, test: "the iPad job gives a stage that reached no step once more, and never one whose step failed" }
+    fix: "the flows step gives the driver three minutes (MAESTRO_DRIVER_STARTUP_TIMEOUT, Maestro's own setting), and a test holds it at two or more; the iPad job gives a stage where Maestro reached no step once more (e2e/maestro-reached-a-step.cjs, read on that run's own outputs), and never one whose step ran and failed (mutants shape-ios-driver-default-wait, shape-ipad-harness-failure-final, shape-ipad-unreached-read-as-reached)"
     places: [simulator]
 
   - id: E2E-ios-cold-link-launch-hang
