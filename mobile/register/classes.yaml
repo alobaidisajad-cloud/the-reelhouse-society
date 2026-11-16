@@ -3107,8 +3107,8 @@ classes:
     source: { kind: reviewer, ref: "review round 6, every feature, 2026-11-16" }
     methods:
       - { kind: running, file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "a save with an empty link row leaves no draft behind it" }
-      - { kind: running, file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "a new handle the house writes in its own letters leaves no draft behind it" }
       - { kind: running, file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "an empty link row added and left is no draft; the link typed into it is kept" }
+      - { kind: running, file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "a new handle the house writes in its own letters leaves no draft behind it" }
     fix: "a form is measured as it would be saved (sanitizeLinks), and nothing is kept as a draft once the save has landed (mutants shape-saved-profile-leaves-a-draft, shape-empty-link-row-kept-as-a-draft)"
     places: [none]
 

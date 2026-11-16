@@ -4912,8 +4912,8 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useDispatchArchive.ts
-        find: "    film, filings: shown, certifiedAtFetch, count: shownCount, span, loading, filmFailed, more,"
-        replace: "    film, filings, certifiedAtFetch, count, span, loading, filmFailed, more,"
+        find: "    film, filings: shown, certifiedAtFetch, count: shownCount, span, loading, filmFailed, moreFailed, more,"
+        replace: "    film, filings, certifiedAtFetch, count, span, loading, filmFailed, moreFailed, more,"
     proof: { file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "a member blocked from a filing is no longer listed, nor counted" }
 
   - id: shape-series-stays-for-the-hidden
@@ -4921,8 +4921,8 @@ mutants:
     source: shape
     edits:
       - file: app/dispatch/series/[id].tsx
-        find: "  useFocusEffect(useCallback(() => { if (authorHidden) nav.back(); }, [authorHidden]));\n"
-        replace: ""
+        find: "  if (loading || authorHidden) {"
+        replace: "  if (loading) {"
     proof: { file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "leaves, as the reader does, and is never drawn as their list" }
 
   - id: shape-rollback-undoes-another
