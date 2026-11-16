@@ -114,6 +114,10 @@ function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReaction
                   <PressableScale
                     key={key}
                     style={r.pick}
+                    // A fifth of the sheet wide and the face's height tall by its own box: the
+                    // default 15pt halo laid each reaction 30pt over its neighbours, and a tap meant
+                    // for one could land on the next (the touch sweep, review round 6's picker test).
+                    hitSlop={null}
                     onPress={() => { TactileEngine.selection(); onReact(key); onClose(); }}
                     haptic="selection"
                     accessibilityRole="button"

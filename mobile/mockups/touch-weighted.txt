@@ -93,6 +93,8 @@ src/components/log/LogForm.tsx · Delete this entire log · destructive
 src/components/log/LogForm.tsx · Discard this draft · destructive
 src/components/log/LogForm.tsx · Remove this note · destructive
 src/components/log/LogForm.tsx · Remove this viewing · destructive
+src/components/log/LogForm.tsx · {deleting ? 'Deleting this log' : 'Confirm delete: this log is gone for good'} · destructive
+src/components/log/LogForm.tsx · {deleting ? 'Removing this viewing' : 'Remove it: this viewing goes, and the record steps back to the one before'} · destructive
 src/components/log/NoteSheet.tsx · Close the note · wayOut
 src/components/log/NoteSheet.tsx · Remove this note · destructive
 src/components/lounge/ActionSheet.tsx · Close · wayOut

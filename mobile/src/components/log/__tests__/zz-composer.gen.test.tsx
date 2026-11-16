@@ -90,6 +90,9 @@ const LISTS = [
   { id: 'l1', title: 'Rain on the Stairs', films: [] },
   { id: 'l2', title: '80s', films: [] },
 ];
+/** The states drawn on a record watched again, and the viewing before the latest. */
+const REWATCHED = new Set(['composer-rewatch', 'composer-remove-viewing']);
+const EARLIER = [{ viewingId: 'v-0', date: '2025-02-14', rating: 4, review: 'The first time, in the rain.', status: 'watched' }];
 /** Let the component's own timers and promises run (the search waits 400ms). */
 const settle = (ms = 0) => act(async () => { await new Promise((res) => setTimeout(res, ms)); });
 /** Past an entrance of `ms`, and its grace: drawn arrived, never at its first frame. */
@@ -141,6 +144,11 @@ const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof rende
   ['composer-edit', 'auteur', { editLogId: '00000015-0000-4000-8000-000000000015' }, async () => {}],
   ['composer-delete', 'auteur', { editLogId: '00000015-0000-4000-8000-000000000015' }, async (r) => {
     await fireEvent.press(r.getByLabelText('Delete this entire log'));
+  }],
+  // A record watched again: its latest viewing offered alone to remove, and asked about.
+  ['composer-rewatch', 'auteur', { editLogId: '00000015-0000-4000-8000-000000000015' }, async () => {}],
+  ['composer-remove-viewing', 'auteur', { editLogId: '00000015-0000-4000-8000-000000000015' }, async (r) => {
+    await fireEvent.press(r.getByLabelText('Remove this viewing'));
   }],
   // A member whose rank ended, over a note they wrote: read in full, theirs to
   // remove, not to change.
@@ -203,7 +211,7 @@ whenRendering('composer generator', () => {
 
   it.each(STATES)('writes %s', async (name, tier, params, act_) => {
     member(tier);
-    useFilmStore.setState({ logs: [LOG], lists: LISTS, _loggedIndex: {} } as never);
+    useFilmStore.setState({ logs: [REWATCHED.has(name) ? { ...LOG, viewingHistory: EARLIER } : LOG], lists: LISTS, _loggedIndex: {} } as never);
     useSocialStore.setState({ following: ['morpho', 'mara', 'vesper', 'halloway'] } as never);
     // The record's note, already fetched from the Vault — the fetch itself is
     // the server's, and this is a drawing.

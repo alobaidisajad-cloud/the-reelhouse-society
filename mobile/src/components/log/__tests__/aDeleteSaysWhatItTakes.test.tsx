@@ -110,7 +110,7 @@ it('a record watched again offers REMOVE THIS VIEWING, asked on its own, which t
   expect(removeLog).not.toHaveBeenCalled();
 
   await press(r.getByLabelText('Remove this viewing'));
-  await press(r.getByLabelText('Confirm: remove this viewing, the record steps back to the one before'));
+  await press(r.getByLabelText('Remove it: this viewing goes, and the record steps back to the one before'));
   expect(removeLog).toHaveBeenCalledTimes(1);
   expect(asked()).toEqual([LOG_ID, false]);
 });
@@ -119,7 +119,7 @@ it('a viewing that cannot be named without a connection is said, and the sheet s
   removeLog.mockImplementation(() => Promise.reject(new Error(VIEWING_NEEDS_CONNECTION)));
   const r = await open(TWICE);
   await press(r.getByLabelText('Remove this viewing'));
-  await press(r.getByLabelText('Confirm: remove this viewing, the record steps back to the one before'));
+  await press(r.getByLabelText('Remove it: this viewing goes, and the record steps back to the one before'));
   expect(said).toHaveBeenCalledWith('Removing a viewing needs a connection.');
   expect(r.getByText('REMOVE THIS VIEWING? THE RECORD STEPS BACK TO THE ONE BEFORE.')).toBeTruthy();
   expect(back).not.toHaveBeenCalled();
@@ -139,8 +139,11 @@ describe('a removal on its way is not asked for twice', () => {
     removeLog.mockImplementation(() => new Promise<void>((res, rej) => { land = res; fail = rej; }));
     return { land: () => land(), fail: (e: Error) => fail(e) };
   };
-  const REMOVE_IT = 'Confirm: remove this viewing, the record steps back to the one before';
+  const REMOVE_IT = 'Remove it: this viewing goes, and the record steps back to the one before';
   const CONFIRM_DELETE = 'Confirm delete: this log is gone for good';
+  // While busy, each says what it shows (REMOVING…, DELETING…): a name that holds the words drawn.
+  const REMOVING = 'Removing this viewing';
+  const DELETING = 'Deleting this log';
 
   it('REMOVE IT tapped twice in one breath removes the latest viewing once, never the whole record after it', async () => {
     const removal = holdRemoval();
@@ -161,10 +164,10 @@ describe('a removal on its way is not asked for twice', () => {
     await press(r.getByLabelText(REMOVE_IT));
     expect(r.getByText('REMOVING…')).toBeTruthy();
     expect(r.queryByText('REMOVE IT')).toBeNull();
-    expect(r.getByLabelText(REMOVE_IT).props.accessibilityState).toMatchObject({ disabled: true, busy: true });
+    expect(r.getByLabelText(REMOVING).props.accessibilityState).toMatchObject({ disabled: true, busy: true });
     expect(r.getByLabelText('Cancel: keep this viewing').props.accessibilityState).toMatchObject({ disabled: true });
 
-    await press(r.getByLabelText(REMOVE_IT));
+    await press(r.getByLabelText(REMOVING));
     await press(r.getByLabelText('Cancel: keep this viewing'));
     expect(removeLog).toHaveBeenCalledTimes(1);
     // CANCEL did not take the question away from under the removal.
@@ -179,10 +182,10 @@ describe('a removal on its way is not asked for twice', () => {
     await press(r.getByLabelText(CONFIRM_DELETE));
     expect(r.getByText('DELETING…')).toBeTruthy();
     expect(r.queryByText('CONFIRM DELETE')).toBeNull();
-    expect(r.getByLabelText(CONFIRM_DELETE).props.accessibilityState).toMatchObject({ disabled: true, busy: true });
+    expect(r.getByLabelText(DELETING).props.accessibilityState).toMatchObject({ disabled: true, busy: true });
     expect(r.getByLabelText('Cancel: keep this log').props.accessibilityState).toMatchObject({ disabled: true });
 
-    await press(r.getByLabelText(CONFIRM_DELETE));
+    await press(r.getByLabelText(DELETING));
     expect(removeLog).toHaveBeenCalledTimes(1);
     expect(asked()).toEqual([LOG_ID, true]);
     await act(async () => { removal.land(); });

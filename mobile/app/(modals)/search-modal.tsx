@@ -193,7 +193,8 @@ export default function SearchModal() {
           isError || downFor(t.key) ? ', not reached' : searching || !data ? '' : `, ${c} result${c === 1 ? '' : 's'}`}`}>
         <Icon size={11} color={active ? colors.ink : colors.fog} strokeWidth={active ? 2.5 : 1.5} />
         <Text style={[st.tabText, active && st.tabTextActive]}>{t.label}</Text>
-        {c > 0 && (
+        {/* A count drawn only once it is known, as it is said: a tab whose source was not reached shows none. */}
+        {c > 0 && !isError && !downFor(t.key) && (
           <View style={[st.tabCountBg, active && st.tabCountBgActive]}>
             <Text style={[st.tabCountNum, active && st.tabCountNumActive]}>
               {c > 99 ? '99+' : c}

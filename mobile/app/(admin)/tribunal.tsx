@@ -896,6 +896,10 @@ function TribunalScreen() {
                 >
                   <PressableScale
                     style={[s.reportCard, isSelected && s.reportCardSelected]}
+                    // A whole case card by its own box: the default 15pt halo laid each card 14pt
+                    // over the next in the docket, and a tap meant to select one could select its
+                    // neighbour (the touch sweep, review round 7's docket tests).
+                    hitSlop={null}
                     onPress={multiSelectMode ? () => toggleReportSelection(item.id) : undefined}
                     disabled={!multiSelectMode}
                     pressedScale={multiSelectMode ? 0.98 : 1}
@@ -1128,7 +1132,8 @@ function TribunalScreen() {
                 pressedScale={0.97}
                 disabled={loadMorePendingMutation.isPending}
                 accessibilityRole="button"
-                accessibilityLabel={`Load ${pendingRemaining} earlier cases`}
+                // Its name holds the words it shows ("LOAD EARLIER · N MORE"), as a voice control is spoken to.
+                accessibilityLabel={`Load earlier: ${pendingRemaining} more`}
               >
                 {loadMorePendingMutation.isPending ? (
                   <ActivityIndicator size="small" color={colors.sepia} />
