@@ -71,7 +71,7 @@ export function keyNames(tree) {
   const names = new Set();
   const walk = (node) => {
     if (!node || typeof node !== 'object') return;
-    names.add((node.attributes?.accessibilityText ?? '').replace(/[‎‏؜‪-‮⁦-⁩]/g, '').trim());
+    names.add((node.attributes?.accessibilityText ?? '').replace(/[\u200e\u200f\u061c\u202a-\u202e\u2066-\u2069]/g, '').trim());
     for (const c of node.children ?? []) walk(c);
   };
   walk(tree);

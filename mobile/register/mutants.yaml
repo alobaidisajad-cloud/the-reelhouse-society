@@ -3982,9 +3982,9 @@ mutants:
     source: shape
     edits:
       - file: src/components/profile/ProfileTriptych.tsx
-        find: "preferences: { favorites: next } } });"
-        replace: "preferences: updatedPrefs } });"
-    proof: { file: src/utils/__tests__/aPreferenceIsSentByItsKey.guard.test.ts, test: "each names the keys it changed, never a whole copy" }
+        find: "            await useAuthStore.getState().savePreferences({ favorites: next });"
+        replace: "            await useAuthStore.getState().savePreferences({ ...(useAuthStore.getState().user?.preferences ?? {}), favorites: next });"
+    proof: { file: src/components/profile/__tests__/aFilmMountedOfflineStaysMounted.test.tsx, test: "a film taken down offline stays down, kept to be sent, and the next read of the profile keeps it so" }
 
   - id: shape-reread-drops-pending
     class: WRITE-a-preference-sent-whole
@@ -5092,8 +5092,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/domain/logSlice/helpers/logOperations.ts
-        find: "                    reelMayHaveChanged(id);\n                    reelToast('Removed offline."
-        replace: "                    reelToast('Removed offline."
+        find: "                    reelMayHaveChanged(id);\n                    // And its own page leaves with it, as it does online"
+        replace: "                    // And its own page leaves with it, as it does online"
     proof: { file: src/stores/__tests__/theWallHearsWhatChanged.test.ts, test: "a log deleted with no connection (queued): its card leaves both Reels at once all the same" }
 
   - id: shape-amended-log-card-old
@@ -5101,8 +5101,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/domain/logSlice/helpers/logOperations.ts
-        find: "{ wallMayHaveChanged(); reelMayHaveChanged(); }"
-        replace: "{ wallMayHaveChanged(); }"
+        find: "Reel's cards show.\n            if (!queuedOffline) { wallMayHaveChanged(); reelMayHaveChanged(); }"
+        replace: "Reel's cards show.\n            if (!queuedOffline) { wallMayHaveChanged(); }"
     proof: { file: src/stores/__tests__/theWallHearsWhatChanged.test.ts, test: "a log amended: the Reel's feeds are read again, so its card shows the new rating and words" }
 
   - id: shape-visitor-save-says-saved

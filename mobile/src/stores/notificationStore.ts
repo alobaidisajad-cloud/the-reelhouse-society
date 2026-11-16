@@ -1,4 +1,5 @@
 import { houseIso } from '@/src/lib/houseClock';
+import { monotonicNow } from '@/src/lib/waits';
 import { logger } from '@/src/utils/logger';
 import { carriedForward, SAVED_VERSION } from './savedVersion';
 import { z } from 'zod';
@@ -201,7 +202,7 @@ function putBack(state: Board, removed: readonly AppNotification[]): Board {
  */
 const readHere = new Map<string, number>();
 const markingRead = (ids: readonly string[]) => { for (const id of ids) readHere.set(id, Infinity); };
-const markTaken = (ids: readonly string[]) => { const at = Date.now(); for (const id of ids) readHere.set(id, at); };
+const markTaken = (ids: readonly string[]) => { const at = monotonicNow(); for (const id of ids) readHere.set(id, at); };
 const markRefused = (ids: readonly string[]) => { for (const id of ids) readHere.delete(id); };
 
 export const useNotificationStore = create<NotificationState>()(
@@ -217,7 +218,7 @@ export const useNotificationStore = create<NotificationState>()(
         if (state._fetching) return;
 
         set({ loading: true, _fetching: true });
-        const askedAt = Date.now();
+        const askedAt = monotonicNow();
         try {
             // The badge is asked of the SERVER, never counted from one page of 30.
             const [{ data, error }, unreadRes] = await Promise.all([

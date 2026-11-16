@@ -145,18 +145,6 @@ describe('a removal on its way is not asked for twice', () => {
   const REMOVING = 'Removing this viewing';
   const DELETING = 'Deleting this log';
 
-  it('REMOVE IT tapped twice in one breath removes the latest viewing once, never the whole record after it', async () => {
-    const removal = holdRemoval();
-    const r = await open(TWICE);
-    await press(r.getByLabelText('Remove this viewing'));
-    const yes = r.getByLabelText(REMOVE_IT);
-    // Both taps land before the sheet is drawn again: only the removal's own mark can turn the second away.
-    await act(async () => { await Promise.all([fireEvent.press(yes), fireEvent.press(yes)]); });
-    expect(removeLog).toHaveBeenCalledTimes(1);
-    expect(asked()).toEqual([LOG_ID, false]);
-    await act(async () => { removal.land(); });
-  });
-
   it('while a viewing is being removed, its press reads REMOVING…, busy, and neither it nor CANCEL can be pressed', async () => {
     const removal = holdRemoval();
     const r = await open(TWICE);

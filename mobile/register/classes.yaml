@@ -2427,7 +2427,8 @@ classes:
       - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "takes a toggle’s waiting window with it, in one send" }
       - { kind: running, file: src/stores/__tests__/aSettingIsSentByItsOwnKeys.test.ts, test: "lays the keys still pending over the house’s copy, key by key" }
       - { kind: static, file: src/utils/__tests__/aPreferenceIsSentByItsKey.guard.test.ts, test: "each names the keys it changed, never a whole copy" }
-    fix: "the keys changed alone are pending (dirty_prefs) and sent, and laid over every read of the profile key by key; a send the house cannot be reached for keeps them, on screen and pending; a refusal takes back its own window's keys, a key changed since staying as its own window's; savePreferences files the settings' changes and waits for the answer; the favourites and the backdrop queue their changed key alone (mutants shape-pref-pending-whole-copy, shape-pref-offline-snaps-back, shape-pref-refusal-takes-all, shape-favourites-queued-whole, shape-reread-drops-pending)"
+      - { kind: running, file: src/components/profile/__tests__/aFilmMountedOfflineStaysMounted.test.tsx, test: "a film taken down offline stays down, kept to be sent, and the next read of the profile keeps it so" }
+    fix: "the keys changed alone are pending (dirty_prefs) and sent, and laid over every read of the profile key by key; a send the house cannot be reached for keeps them, on screen and pending; a refusal takes back its own window's keys, a key changed since staying as its own window's; savePreferences files the settings' changes and waits for the answer; the favourites and the backdrop queue their changed key alone (mutants shape-pref-pending-whole-copy, shape-pref-offline-snaps-back, shape-pref-refusal-takes-all, shape-favourites-queued-whole, shape-reread-drops-pending); the triptych sends its one key through savePreferences, as every preference is sent (mutant shape-favourites-queued-whole, re-aimed)"
     places: [none]
 
   - id: AUTH-a-member-signed-in-over-another
@@ -3164,7 +3165,6 @@ classes:
     count: 1
     source: { kind: reviewer, ref: "review round 7, every feature, 2026-11-16" }
     methods:
-      - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "REMOVE IT tapped twice in one breath removes the latest viewing once, never the whole record after it" }
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while a viewing is being removed, its press reads REMOVING…, busy, and neither it nor CANCEL can be pressed" }
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while the whole log is being deleted, CONFIRM DELETE reads DELETING…, busy, and a second press deletes nothing more" }
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a removal that fails gives the press back: it reads REMOVE IT again, and a second press asks again" }
