@@ -50,6 +50,7 @@ const REACHES_NATIVE = [
   'aLinkIsReadByItsKinds', 'anAddressIsToldFromAHandle', 'calendarDates', 'inputTrustBoundary', 'markdownSafety',
   'mutationExecutor.pbt', 'offlineQueue', 'prefetchPictures', 'queueErrorClassification', 'requestReview',
   'aTextIsCutWholeOnEveryPage', 'roomFilters', 'theDeadLetterIsNobodyElsesToKeep', 'tier', 'whatThisPhoneHoldsIsSaid', 'withRetry',
+  'theTactileChoiceFollowsTheAccount',
 ];
 const NATIVE_REFUSAL = '__fbBatchedBridgeConfig is not set';
 /** What the phone's host gives the bundle before it runs: its logging hook, printed here. */

@@ -58,7 +58,8 @@ export interface Query extends PromiseLike<Answer> {
   maybeSingle(): OneRow;
 }
 /** One row's answer: supabase-js hands back the builder still, so a read may be given its signal after. */
-export type OneRow = Promise<Answer> & { abortSignal(signal: AbortSignal): OneRow };
+// Optional in the type, so a test that stands its own answer in for one row still may.
+export type OneRow = Promise<Answer> & { abortSignal?(signal: AbortSignal): Promise<Answer> };
 const oneRow = (answer: Answer): OneRow => {
   const p = Promise.resolve(answer) as OneRow;
   p.abortSignal = () => p;
