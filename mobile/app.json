@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.reelhouse.society",
-      "buildNumber": "41",
+      "buildNumber": "42",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Your Society portrait is chosen from your photos. Only the photo you pick is used.",
         "NSCameraUsageDescription": "The camera takes your Society portrait, when you ask it to.",

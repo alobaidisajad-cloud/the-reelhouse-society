@@ -5110,7 +5110,7 @@ mutants:
     source: shape
     edits:
       - file: app/log/[id].tsx
-        find: "    if (!user) { askIn(); return; }\n    if (filmSaved) {"
+        find: "    if (!useAuthStore.getState().user) { askIn(); return; }\n    if (filmSaved) {"
         replace: "    if (filmSaved) {"
     proof: { file: app/log/__tests__/aStrangerIsAskedInOnARecord.test.tsx, test: "their SAVE asks them in, saves nothing, and says nothing of a save" }
 
@@ -5137,8 +5137,8 @@ mutants:
     source: shape
     edits:
       - file: app/log/[id].tsx
-        find: "      });\n    }\n  }, [log, user, filmSaved"
-        replace: "      });\n      reelToast.success('Saved to watchlist ✦');\n    }\n  }, [log, user, filmSaved"
+        find: "      });\n    }\n  }, [log, filmSaved"
+        replace: "      });\n      reelToast.success('Saved to watchlist ✦');\n    }\n  }, [log, filmSaved"
     proof: { file: app/log/__tests__/aStrangerIsAskedInOnARecord.test.tsx, test: "saves, and says nothing at the tap: the store’s own word is the only one" }
 
   - id: shape-whole-delete-takes-a-viewing

@@ -508,7 +508,8 @@ function LogDetailScreen({ id }: { id: string }) {
   // it said "Saved" before a save that then failed, and every outcome twice.
   const handleToggleSave = useCallback(() => {
     if (!log) return;
-    if (!user) { askIn(); return; }
+    // Asked at the tap, as the card asks: who is signed in, never the object a restore replaces.
+    if (!useAuthStore.getState().user) { askIn(); return; }
     if (filmSaved) {
       removeFromWatchlist(log.film_id);
     } else {
@@ -519,7 +520,7 @@ function LogDetailScreen({ id }: { id: string }) {
         release_date: log.year ? `${log.year}-01-01` : undefined,
       });
     }
-  }, [log, user, filmSaved, addToWatchlist, removeFromWatchlist]);
+  }, [log, filmSaved, addToWatchlist, removeFromWatchlist]);
 
   // The page's bar: clear over the projection, its scrim in as the page goes under it.
   const scrollY = useSharedValue(0);
