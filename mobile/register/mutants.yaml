@@ -4674,6 +4674,24 @@ mutants:
         replace: "    coverPending.current = true;\n    onClose();\n    nav.push('/cover-picker', { loungeId: lounge.id });"
     proof: { file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "the picker is asked for only once the settings have gone, and once" }
 
+  - id: shape-cover-frame-booked-unasked
+    class: NAV-a-sheet-asked-for-over-one-still-there
+    source: shape
+    edits:
+      - file: src/components/lounge/LoungeSettingsPanel.tsx
+        find: "        <WhenGone run={() => { if (coverPending.current) requestAnimationFrame(toCover); }} />"
+        replace: "        <WhenGone run={() => { requestAnimationFrame(toCover); }} />"
+    proof: { file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "settings closed with no trip asked for leave no frame booked behind them" }
+
+  - id: shape-cover-taken-by-a-salon-gone
+    class: NAV-a-sheet-asked-for-over-one-still-there
+    source: shape
+    edits:
+      - file: src/components/lounge/LoungeSettingsPanel.tsx
+        find: "    if (!coverPending.current || !isMounted.current) return;"
+        replace: "    if (!coverPending.current) return;"
+    proof: { file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "a salon gone from the screen takes no trip, though one was asked for" }
+
   - id: shape-push-stacks-a-copy
     class: NAV-a-sheet-asked-for-over-one-still-there
     source: shape

@@ -53,3 +53,31 @@ it('settings closed for any other reason take no trip', async () => {
   await act(async () => { jest.advanceTimersByTime(100); });
   expect(mockPush).not.toHaveBeenCalled();
 });
+
+it('settings closed with no trip asked for leave no frame booked behind them', async () => {
+  // A frame booked on every close outlived the screen that booked it (it held a test file open).
+  // The sheet's own exit books frames of its own; the trip's frame is the one more a trip asks for.
+  const framesBookedClosing = async (askForTrip: boolean) => {
+    const onClose = jest.fn();
+    const r = render(draw(true, onClose));
+    if (askForTrip) await act(async () => { await fireEvent.press(r.getByLabelText('Choose a film for the cover')); });
+    const raf = jest.spyOn(globalThis, 'requestAnimationFrame');
+    // The sheet's contents leave the screen (here, with the room).
+    r.unmount();
+    const n = raf.mock.calls.length;
+    raf.mockRestore();
+    return n;
+  };
+  const withTrip = await framesBookedClosing(true);
+  const without = await framesBookedClosing(false);
+  expect(withTrip - without).toBe(1);
+});
+
+it('a salon gone from the screen takes no trip, though one was asked for', async () => {
+  const onClose = jest.fn();
+  const r = render(draw(true, onClose));
+  await act(async () => { await fireEvent.press(r.getByLabelText('Choose a film for the cover')); });
+  r.unmount();
+  await act(async () => { jest.advanceTimersByTime(700); });
+  expect(mockPush).not.toHaveBeenCalled();
+});

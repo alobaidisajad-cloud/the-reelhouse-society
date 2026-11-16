@@ -2773,16 +2773,18 @@ classes:
     places: [none]
 
   - id: NAV-a-sheet-asked-for-over-one-still-there
-    title: "A screen asked for over one still on screen: the salon settings asked for the cover picker while they were still sliding away (on iOS, one sheet asked for while another leaves); and a tapped push about the page already in front stacked a second copy of it"
+    title: "A screen asked for over one still on screen: the salon settings asked for the cover picker while they were still sliding away (on iOS, one sheet asked for while another leaves); and a tapped push about the page already in front stacked a second copy of it; and the trip's frame was booked by every close of the settings, a trip asked for or not, and taken by a salon already gone (CI held a test file open on it, 2026-11-16)"
     seriousness: behaviour
     area: navigation
     status: OPEN
-    count: 2
+    count: 3
     source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
     methods:
       - { kind: running, file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "the picker is asked for only once the settings have gone, and once" }
       - { kind: running, file: src/utils/__tests__/theTappedNoticeOpensIt.test.ts, test: "about the page already in front, opens no second copy over it (review round 4)" }
-    fix: "the cover trip is parked and taken as the settings leave the screen, or by a backstop (the Concierge's presentation law); a push about the page in front opens nothing over it (mutants shape-cover-asked-while-leaving, shape-push-stacks-a-copy)"
+      - { kind: running, file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "settings closed with no trip asked for leave no frame booked behind them" }
+      - { kind: running, file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "a salon gone from the screen takes no trip, though one was asked for" }
+    fix: "the cover trip is parked and taken as the settings leave the screen, or by a backstop (the Concierge's presentation law); a push about the page in front opens nothing over it; the trip's frame is booked only when a trip waits, and a salon gone takes none (mutants shape-cover-asked-while-leaving, shape-push-stacks-a-copy, shape-cover-frame-booked-unasked, shape-cover-taken-by-a-salon-gone)"
     places: [none]
 
   - id: NAV-a-door-to-the-wrong-room

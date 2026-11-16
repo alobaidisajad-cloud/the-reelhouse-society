@@ -85,7 +85,8 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
   // exit never ends.
   const coverPending = useRef(false);
   const toCover = useCallback(() => {
-    if (!coverPending.current) return;
+    // A salon gone from the screen takes no trip: the member has left it.
+    if (!coverPending.current || !isMounted.current) return;
     coverPending.current = false;
     nav.push('/cover-picker', { loungeId: lounge.id });
   }, [lounge.id]);
@@ -191,7 +192,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         exit={{ kind: 'SlideOutDown', duration: MS.quick, easing: leave() }}>
       <Arrive name="lounge.settings" duration={MS.considered} rise={SETTINGS_RISE} style={[s.sheet, { paddingBottom: sheetFoot }]}>
       <View style={s.body} onAccessibilityEscape={onClose}>
-        <WhenGone run={() => requestAnimationFrame(toCover)} />
+        <WhenGone run={() => { if (coverPending.current) requestAnimationFrame(toCover); }} />
         <View style={s.handle} />
         <View style={s.headerRow}>
           <View style={{ flex: 1, marginRight: 12 }}>

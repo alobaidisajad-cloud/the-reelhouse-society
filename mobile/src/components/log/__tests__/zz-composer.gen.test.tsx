@@ -18,6 +18,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import { useVaultStore } from '@/src/stores/vaultStore';
 import { useSocialStore } from '@/src/stores/followStore';
+import { clearDraft, writeDraft } from '@/src/utils/memberDrafts';
 
 import LogModalScreen from '@/app/(modals)/log-modal';
 import { View } from 'react-native';
@@ -94,6 +95,11 @@ const settle = (ms = 0) => act(async () => { await new Promise((res) => setTimeo
 /** Past an entrance of `ms`, and its grace: drawn arrived, never at its first frame. */
 const arrived = (ms: number) => settle(ms + ARRIVAL_GRACE_MS + 1);
 
+/** The record left unsent before a state opens, if one was (the sheet reads it as it opens). */
+const UNSENT: Record<string, Record<string, unknown>> = {
+  'composer-waiting': { filmId: FILM.filmId, filmTitle: FILM.filmTitle, filmPoster: FILM.filmPoster, filmYear: FILM.filmYear, rating: 4, review: REVIEW },
+};
+
 /** Each state: who is writing, what the route was opened with, and what they did. */
 const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof render>) => Promise<void>][] = [
   // The first frame: finding the film — and what the search finds.
@@ -102,6 +108,8 @@ const STATES: [string, Tier, Record<string, string>, (r: ReturnType<typeof rende
     await fireEvent.changeText(r.getByLabelText('Search for a film to log'), 'mood');
     await settle(500);
   }],
+  // Come back to the sheet with a record begun and not sent: the search, and the record waiting.
+  ['composer-waiting', 'free', {}, async () => {}],
   // Signed out: the whole page is the way in.
   ['composer-signedout', 'out', FILM, async () => { await arrived(400); }],
   // A new record, as it opens — calm, every entry closed.
@@ -205,6 +213,10 @@ whenRendering('composer generator', () => {
       loadForLog: async () => {},
     } as never);
     (useLocalSearchParams as jest.Mock).mockReturnValue(params);
+    const me = '33333333-3333-4333-8333-333333333333';
+    clearDraft(me, 'log');
+    const unsent = UNSENT[name];
+    if (unsent) writeDraft(me, 'log', unsent);
     let r!: ReturnType<typeof render>;
     await act(async () => { r = render(<LogModalScreen />); });
     // Each press lands on its own (fireEvent acts for itself), so a step can
@@ -220,6 +232,7 @@ whenRendering('composer generator', () => {
     // floor is that sentence and its door (1,339 bytes as drawn), not a form's.
     expect(html.length).toBeGreaterThan(name === 'composer-signedout' ? 1000 : 1500);
     if (name === 'composer-signedout') expect(html).toContain('IDENTIFY YOURSELF');
+    if (unsent) expect(html).toContain('YOUR UNSENT RECORD');
     expect(html).toContain('data-press=');
   });
 });
