@@ -259,14 +259,21 @@ export const PaperComposer = memo(function PaperComposer({
       {/* Tools and the count on one rail — the count now has something to
           belong to instead of floating in the middle of the page. */}
       <View style={p.rail}>
-        <PressableScale room style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onFilm} accessibilityRole="button" accessibilityState={{ selected: !!film }} accessibilityLabel="Name a film">
-          <FilmIcon size={13} strokeWidth={2} color={film ? colors.sepia : colors.bone} />
-          <Text style={[p.rl, film && { color: colors.sepia }]} {...scaledTextProps}>FILM</Text>
-        </PressableScale>
-        <PressableScale room style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onStill} accessibilityRole="button" accessibilityLabel="Add a still">
-          <ImageIcon size={13} strokeWidth={2} color={colors.bone} />
-          <Text style={p.rl} {...scaledTextProps}>STILL</Text>
-        </PressableScale>
+        {/* An amendment sends the words, never the film (the critiques argue about that film), so
+            neither the film nor its still is offered: offered, a film chosen was drawn on the
+            desk and dropped by the amendment without a word (review round 6). */}
+        {amending ? null : (
+          <>
+            <PressableScale room style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onFilm} accessibilityRole="button" accessibilityState={{ selected: !!film }} accessibilityLabel="Name a film">
+              <FilmIcon size={13} strokeWidth={2} color={film ? colors.sepia : colors.bone} />
+              <Text style={[p.rl, film && { color: colors.sepia }]} {...scaledTextProps}>FILM</Text>
+            </PressableScale>
+            <PressableScale room style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onStill} accessibilityRole="button" accessibilityLabel="Add a still">
+              <ImageIcon size={13} strokeWidth={2} color={colors.bone} />
+              <Text style={p.rl} {...scaledTextProps}>STILL</Text>
+            </PressableScale>
+          </>
+        )}
         <PressableScale room style={p.railTool} hitSlop={{ top: 10, bottom: 10, left: 0, right: 0 }} onPress={onSpoiler} accessibilityRole="button" accessibilityState={{ selected: !!spoiler }} accessibilityLabel="Mark a spoiler">
           <AlertTriangle size={13} strokeWidth={2} color={spoiler ? colors.crimson : colors.bone} />
           <Text style={[p.rl, spoiler && { color: CRIMSON_INK }]} {...scaledTextProps}>SPOILER</Text>

@@ -37,7 +37,7 @@
  * it would turn each one into a dead tap. It routes to the same reader by way of
  * the redirect that address already has.
  */
-export type EndorseKind = 'log' | 'list' | 'dossier' | 'post';
+export type EndorseKind = 'log' | 'list' | 'dossier' | 'post' | 'critique';
 
 export interface EndorseTarget {
   kind: EndorseKind;
@@ -45,8 +45,13 @@ export interface EndorseTarget {
   id: string;
 }
 
+/**
+ * `critique`: a certification of a member's critique, keyed by the FILING it stands under, which
+ * is where a tap goes (20261116_01). It was written under the filing's own key, and three of them
+ * were told as "3 members certified your filing", a filing the critic never wrote.
+ */
 const KINDS: Record<string, EndorseKind> = {
-  log: 'log', list: 'list', dossier: 'dossier', post: 'post',
+  log: 'log', list: 'list', dossier: 'dossier', post: 'post', critique: 'critique',
 };
 
 /**
@@ -87,6 +92,9 @@ export function describeGroup(count: number, kind: EndorseKind, title?: string):
       // says "filing" unless the title names the thing, which for a dossier and
       // a ballot it does.
       return named ? `${people} certified your filing “${named}”` : `${people} certified your filing`;
+    case 'critique':
+      // Its filing is named by no column of the notice: the critique is the member's own.
+      return `${people} certified your critique`;
     case 'dossier':
       // `dossier` is the group KEY — a column value — and `essay` is the word.
       // The server's `dispatch_names()` says the same thing for the ungrouped
@@ -114,6 +122,7 @@ export function groupRoute(target: EndorseTarget | null): string | null {
     case 'list':
       return `/stacks/${target.id}`;
     case 'post':
+    case 'critique':
       return `/dispatch/${target.id}`;
     case 'dossier':
       // The old address, which redirects. Kept rather than rewritten to

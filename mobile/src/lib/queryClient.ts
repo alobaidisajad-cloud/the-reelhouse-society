@@ -15,11 +15,15 @@ import { defaultShouldDehydrateQuery, focusManager, onlineManager, QueryClient, 
 import { storage, setSensitive } from '../stores/mmkv-storage';
 import { e2eTrace } from '../utils/e2eTrace';
 import { QUERY_POLICY } from './queryPolicy';
+import { keepsEachPagesWord } from './feedPages';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 
 // ── Query Client Configuration ──────────────────────────────
 // The rules live in queryPolicy.ts, where the clients tests build read them too.
 export const queryClient = new QueryClient({ defaultOptions: QUERY_POLICY });
+// Every feed, whether or not its screen holds it (restored from the phone, or changed by a write
+// while the Reel is away), keeps each page's word on what follows through the cache (feedPages).
+queryClient.setQueryDefaults(['feed'], { structuralSharing: keepsEachPagesWord });
 
 // React Query hears of the connection from a browser's online/offline events,
 // which a phone never fires: without this it thinks it is always online, so a

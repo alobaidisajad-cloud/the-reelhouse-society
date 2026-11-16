@@ -16,7 +16,7 @@
  *   shown  — every toast, in order (reelToast and its .error/.success)
  */
 import { useFilmStore } from '../films';
-import { LOG_BUSY } from '../domain/logSlice/helpers/logOperations';
+import { LOG_BUSY, VIEWING_NEEDS_CONNECTION } from '../domain/logSlice/helpers/logOperations';
 import { enqueueMutation, letSentGo } from '@/src/utils/offlineQueue';
 import { supabase } from '@/src/lib/supabase';
 import reelToast from '@/src/utils/reelToast';
@@ -49,7 +49,8 @@ jest.mock('@/src/lib/supabase', () => {
 });
 jest.mock('@/src/lib/queryClient', () => ({
   queryClient: {
-    invalidateQueries: jest.fn(), setQueryData: jest.fn(),
+    // setQueriesData: the Reel's pages, a withdrawn record's card taken off them (reelRead.ts).
+    invalidateQueries: jest.fn(), setQueryData: jest.fn(), setQueriesData: jest.fn(),
     getQueryData: jest.fn(() => undefined), cancelQueries: jest.fn(() => Promise.resolve()),
   },
 }));
@@ -234,12 +235,23 @@ describe('removing a record', () => {
     expect(heard()).toEqual([]);
   });
 
-  it('a rewatch with no name for its viewing, and no signal to ask, is refused honestly', async () => {
+  it('a rewatch with no name for its viewing, and no signal to ask, is refused: thrown, so the sheet stays and says it', async () => {
     hold({ ...rewatched(), viewingId: undefined });
     mockDb = [{ data: null, error: OFFLINE }];
-    await store().removeLog('log-1');
-    expect(shown()).toEqual(['Removing a rewatch needs a connection.']);
+    const e = await settleThrow(store().removeLog('log-1')) as Error;
+    expect(e?.message).toBe(VIEWING_NEEDS_CONNECTION);
+    expect(shown()).toEqual([]);
     expect(VaultService.removeViewing).not.toHaveBeenCalled();
+    expect(store().logs.map((l) => l.viewCount)).toEqual([2]);
+  });
+
+  it('a record watched again, deleted whole, goes whole: every viewing with it, never its latest alone', async () => {
+    hold(rewatched());
+    mockDb = [{ error: null }];
+    await store().removeLog('log-1', true);
+    expect(store().logs).toEqual([]);
+    expect(VaultService.removeViewing).not.toHaveBeenCalled();
+    expect(shown()).toEqual(['"Fight Club" removed.']);
   });
 
   it('deleting a record toasts its title and announces nothing — the toast speaks', async () => {

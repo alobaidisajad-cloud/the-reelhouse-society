@@ -16,6 +16,7 @@ import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
+import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
 import { Platform, RefreshControl, Share, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { Extrapolation, interpolate, useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
@@ -461,6 +462,10 @@ function LogDetailScreen({ id }: { id: string }) {
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
   const [commentReportSheetVisible, setCommentReportSheetVisible] = useState(false);
   const [selectedComment, setSelectedComment] = useState<{ id: string; user_id: string; username: string } | null>(null);
+  // Its author blocked or muted (its ···, a REPORT that also blocks, or anywhere else): the page
+  // leaves, once the sheet that did it has closed, and is never left standing as their record.
+  const sheetOpen = actionSheetVisible || reportSheetVisible || commentReportSheetVisible;
+  const authorHidden = useLeavesWhenHidden(log?.user_id, sheetOpen);
   const viewShotRef = useRef<View>(null);
   // The share card says when every picture on it is drawn; handleShare waits for that.
   const shareCardDrawn = useRef<(() => void) | null>(null);
@@ -484,7 +489,8 @@ function LogDetailScreen({ id }: { id: string }) {
    */
   const endorsed = useInteractionStore(st => !!st._endorsedIndex[id]);
   // A certification made here is known; otherwise only the house's answer says.
-  const certifyKnown = endorsed || !!logQueryData?.certifiedKnown;
+  // A visitor holds no mark: known, and plain, never "Reading your mark" for good.
+  const certifyKnown = !user || endorsed || !!logQueryData?.certifiedKnown;
   const toggleEndorse = useInteractionStore(st => st.toggleEndorse);
 
   // SAVE, as on the feed card: read a review properly, decide you want the
@@ -496,13 +502,15 @@ function LogDetailScreen({ id }: { id: string }) {
   const addToWatchlist = useInteractionStore(st => st.addToWatchlist);
   const removeFromWatchlist = useInteractionStore(st => st.removeFromWatchlist);
 
-  // Mirrors the feed card's handler exactly, including the toasts — the same
-  // action on two surfaces should not confirm itself two different ways.
+  // Mirrors the feed card's handler exactly — the same action on two surfaces should not confirm
+  // itself two different ways. A visitor is asked in (the store saved nothing for them, under a
+  // "Saved" said here); a member hears the store say how it went, once: said here too, at the tap,
+  // it said "Saved" before a save that then failed, and every outcome twice.
   const handleToggleSave = useCallback(() => {
     if (!log) return;
+    if (!user) { askIn(); return; }
     if (filmSaved) {
       removeFromWatchlist(log.film_id);
-      reelToast.success('Removed from watchlist');
     } else {
       addToWatchlist({
         id: log.film_id,
@@ -510,9 +518,8 @@ function LogDetailScreen({ id }: { id: string }) {
         poster_path: log.poster_path,
         release_date: log.year ? `${log.year}-01-01` : undefined,
       });
-      reelToast.success('Saved to watchlist ✦');
     }
-  }, [log, filmSaved, addToWatchlist, removeFromWatchlist]);
+  }, [log, user, filmSaved, addToWatchlist, removeFromWatchlist]);
 
   // The page's bar: clear over the projection, its scrim in as the page goes under it.
   const scrollY = useSharedValue(0);
@@ -781,8 +788,8 @@ function LogDetailScreen({ id }: { id: string }) {
     );
   }
 
-  // Withdrawn by the member here: the page is leaving, and says nothing of it.
-  if (withdrawnHere) {
+  // Withdrawn by the member here, or its author hidden: the page is leaving, and says nothing of it.
+  if (withdrawnHere || (authorHidden && !sheetOpen)) {
     return (
       <View style={[s.container, s.centerFull]}>
         <RoomLight room="film" />
@@ -958,7 +965,7 @@ function LogDetailScreen({ id }: { id: string }) {
             // The store has already rolled back and said so; a rejection left
             // unhandled here would only reach the error tracker as noise.
             // Not known whether they certified it: the house is asked again, never a second filed blind.
-            onToggleEndorse={() => { if (!certifyKnown) { void rereadLog(); return; } toggleEndorse(id).catch(() => {}); }}
+            onToggleEndorse={() => { if (!user) { askIn(); return; } if (!certifyKnown) { void rereadLog(); return; } toggleEndorse(id).catch(() => {}); }}
             certifyKnown={certifyKnown}
             onCritiquePress={() => {
                // To the critiques, then the field, ready.

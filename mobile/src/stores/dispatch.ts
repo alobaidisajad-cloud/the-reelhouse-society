@@ -43,6 +43,7 @@ import { withAbortSignal } from '../utils/withAbortSignal';
 import { withTimeout } from '../utils/withTimeout';
 import { useAuthStore } from './auth';
 import { useBlockStore } from './blockStore';
+import { useOfflineQueueStore } from './offlineQueueStore';
 import { memberUnchanged } from './domain/helpers/sessionGuard';
 import { registerStoreReset } from './resetAllStores';
 import {
@@ -537,7 +538,24 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         'dispatch.hydrate',
       );
       if (error) throw error;
-      if (!data || !memberUnchanged(startedAs)) return null;
+      if (!memberUnchanged(startedAs)) return null;
+      if (!data) {
+        // The house no longer gives it to this member (withheld, withdrawn, or its author has
+        // blocked them since the paper was read): the paper's copy goes too, or the reader drew
+        // it whole from there with every act on it refused (review round 6). One filed on this
+        // phone and still in the queue is not in the house yet, and stays.
+        const waiting = useOfflineQueueStore.getState().queued
+          .some((m) => m.type === 'add_filing' && m.payload._tempId === id);
+        if (!waiting) {
+          set((st) => {
+            if (!st.filings.some((f) => f.id === id) && !st.opened[id]) return st;
+            const opened = { ...st.opened };
+            delete opened[id];
+            return { filings: st.filings.filter((f) => f.id !== id), opened };
+          });
+        }
+        return null;
+      }
       const { filings } = parseFilingRows([data]);
       const one = filings[0] ?? null;
       if (!one) return null;

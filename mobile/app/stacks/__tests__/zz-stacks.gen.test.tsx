@@ -29,7 +29,7 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
 }));
 jest.mock('@tanstack/react-query', () => ({
-  QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); },
+  QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); setQueryDefaults = () => {}; },
   useQueryClient: () => ({
     setQueryData: jest.fn(), getQueryData: jest.fn(), removeQueries: jest.fn(),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),
@@ -48,7 +48,11 @@ jest.mock('@/src/stores/films', () => {
   return { useListStore };
 });
 jest.mock('@/src/stores/blockStore', () => {
-  const state = { blockUser: jest.fn(), muteUser: jest.fn(), isBlocked: () => false, isMuted: () => false };
+  // Nobody hidden: the page leaves when its curator is (useLeavesWhenHidden asks isHidden).
+  const state = {
+    blockUser: jest.fn(), muteUser: jest.fn(), isBlocked: () => false, isMuted: () => false,
+    isHidden: () => false, _blockedIndex: new Set<string>(), _mutedIndex: new Set<string>(),
+  };
   const useBlockStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
   (useBlockStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useBlockStore };

@@ -2,8 +2,9 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { RemoteImage } from '@/src/components/Picture';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film, X } from 'lucide-react-native';
-import { Fragment, useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useFocusEffect } from 'expo-router';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '@/src/components/text';
 
@@ -98,6 +99,15 @@ export default function YearInCinemaScreen() {
   const phase = !memberId ? 'stranger' : year.isError && !year.isFetching && !stats ? 'error' : stats ? 'ready' : 'loading';
   const { refetch } = year;
   const load = useCallback(() => { void refetch(); }, [refetch]);
+  // Read again on every return to it: a film logged from here (LOG YOUR FIRST FILM) or anywhere
+  // while the member was away is counted. Only the opening read it, and the Log sheet's seal came
+  // back to "A Blank Reel" (review round 6). The first focus is the opening's own read.
+  const focusedBefore = useRef(false);
+  useFocusEffect(useCallback(() => {
+    // A stranger has no year to read (a refetch asks whatever `enabled` says).
+    if (focusedBefore.current && memberId) void refetch();
+    focusedBefore.current = true;
+  }, [refetch, memberId]));
 
   // The story adapts to the data — no hollow slides for stats you don't have.
   const slides = useMemo<SlideType[]>(() => {

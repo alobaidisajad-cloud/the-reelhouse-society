@@ -82,7 +82,16 @@ const amendmentsOf = (v: ProfileFormData): ProfileFormData => ({
   bio: v.bio ?? '',
   links: (v.links ?? []).map((l) => ({ title: l.title ?? '', url: l.url ?? '' })),
 });
-const sameAmendments = (a: ProfileFormData, b: ProfileFormData) => JSON.stringify(amendmentsOf(a)) === JSON.stringify(amendmentsOf(b));
+/**
+ * Whether two forms amend nothing between them. The links as they would be saved (an empty row
+ * and a trailing space are not kept, sanitizeLinks): measured as typed, a form saved with an empty
+ * row still differed from the profile it had just saved, and left a draft of nothing behind it
+ * (review round 6).
+ */
+const sameAmendments = (a: ProfileFormData, b: ProfileFormData) => {
+  const asSaved = (v: ProfileFormData) => ({ ...amendmentsOf(v), links: sanitizeLinks(amendmentsOf(v).links) });
+  return JSON.stringify(asSaved(a)) === JSON.stringify(asSaved(b));
+};
 
 /** How long the typing rests before its draft is kept; leaving the app keeps it at once. */
 export const PROFILE_DRAFT_REST_MS = 400;
@@ -182,6 +191,8 @@ export function useEditProfile() {
   // return to the profile — the confirmation the silent back lacked.
   const [sealed, setSealed] = useState(false);
   const sealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Saved: the form is the profile now, and nothing it holds is kept as a draft on its way out. */
+  const savedRef = useRef(false);
   useEffect(() => () => { if (sealTimerRef.current) clearTimeout(sealTimerRef.current); }, []);
 
   // The member's amendments, kept on this phone as they type (memberDrafts, kind 'profile'): the
@@ -214,6 +225,7 @@ export function useEditProfile() {
     let resting: ReturnType<typeof setTimeout> | null = null;
     const keep = () => {
       if (resting) { clearTimeout(resting); resting = null; }
+      if (savedRef.current) { clearDraft(memberId, 'profile'); return; }
       const values = form.getValues();
       if (sameAmendments(values, storedOf(useAuthStore.getState().user))) clearDraft(memberId, 'profile');
       else writeDraft(memberId, 'profile', amendmentsOf(values));
@@ -347,6 +359,9 @@ export function useEditProfile() {
         });
       }
 
+      // Saved: the store's change below lays the profile under the form, and the form's own
+      // answer to it is no draft.
+      savedRef.current = true;
       // Update local auth store
       useAuthStore.setState((state) => {
         const updatedUser = state.user ? {

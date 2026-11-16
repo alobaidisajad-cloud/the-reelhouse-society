@@ -38,6 +38,8 @@ jest.mock('expo-router', () => ({
 // Buster (in the failed state) pauses when its screen is not focused.
 jest.mock('expo-router/react-navigation', () => ({ ...jest.requireActual('expo-router/react-navigation'), useIsFocused: () => true }));
 const mockSetQueryData = jest.fn();
+/** Every read the page asked for again. */
+const mockInvalidate = jest.fn();
 /** What each query says after a pull: `error` when it reached nothing. */
 let mockQueryState: Record<string, { status: string } | undefined> = {};
 /** The critiques the page holds. */
@@ -65,11 +67,11 @@ jest.mock('@/src/utils/reelToast', () => {
 /** The stack query's options, so a test can run its real queryFn. */
 let mockStackOpts: { queryFn: () => Promise<{ list: Record<string, unknown> }> } | null = null;
 jest.mock('@tanstack/react-query', () => ({
-  QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); },
+  QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); setQueryDefaults = () => {}; },
   useQueryClient: () => ({
     setQueryData: mockSetQueryData, removeQueries: jest.fn(),
     getQueryData: jest.fn((key: unknown[]) => (key[0] === 'stackComments' ? mockComments : undefined)),
-    invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),
+    invalidateQueries: mockInvalidate, cancelQueries: jest.fn(() => Promise.resolve()),
     getQueryState: (key: unknown[]) => mockQueryState[String(key[0])],
     getQueryCache: () => ({ find: ({ queryKey }: { queryKey: unknown[] }) => (queryKey[0] === 'stackComments' && mockCritiquesAsked ? { isActive: () => true } : undefined) }),
     // As React Query matches: a held key that begins with the key asked for.
@@ -97,13 +99,15 @@ jest.mock('@/src/stores/films', () => {
   return { useListStore };
 });
 jest.mock('@/src/stores/blockStore', () => {
-  const state = {
-    blockUser: jest.fn(), muteUser: jest.fn(), isBlocked: () => false, isMuted: () => false,
-    // The critiques are drawn through who is hidden now: nobody here.
-    isHidden: () => false, _blockedIndex: new Set<string>(), _mutedIndex: new Set<string>(),
-  };
-  const useBlockStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
-  (useBlockStore as unknown as { getState: () => unknown }).getState = () => state;
+  // A store of its own, so a member hidden mid-test redraws the page as the real one does.
+  const { create } = require('zustand');
+  const useBlockStore = create((_set: unknown, get: () => { _blockedIndex: Set<string>; _mutedIndex: Set<string> }) => ({
+    blockUser: jest.fn(), muteUser: jest.fn(),
+    isBlocked: (u: string) => get()._blockedIndex.has(u), isMuted: (u: string) => get()._mutedIndex.has(u),
+    // The critiques are drawn through who is hidden now: nobody, unless a case hides someone.
+    isHidden: (u: string | null | undefined) => !!u && (get()._blockedIndex.has(u) || get()._mutedIndex.has(u)),
+    _blockedIndex: new Set<string>(), _mutedIndex: new Set<string>(),
+  }));
   return { useBlockStore };
 });
 jest.mock('@/src/stores/auth', () => {
@@ -151,8 +155,13 @@ jest.mock('@/src/components/ShareToLoungeModal', () => (p: { visible: boolean })
 let mockSpeaking: { held: boolean; standing: 'stranger' | 'lapsed' | 'reading' } = { held: true, standing: 'stranger' };
 const mockRope = jest.fn();
 jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ ...mockSpeaking, rank: 'archivist', open: mockRope, openOr: mockRope }) }));
-jest.mock('@/src/components/moderation/ReportSheet', () => () => null);
-jest.mock('@/src/components/moderation/ContentActionSheet', () => ({ ContentActionSheet: () => null }));
+/** The page's own sheets (no native gesture root here), stubbed to record what each is handed while open. */
+const mockActionProps: Record<string, unknown>[] = [];
+const mockReportProps: Record<string, unknown>[] = [];
+jest.mock('@/src/components/moderation/ReportSheet', () => (p: Record<string, unknown>) => { if (p.visible) mockReportProps.push(p); return null; });
+jest.mock('@/src/components/moderation/ContentActionSheet', () => ({
+  ContentActionSheet: (p: Record<string, unknown>) => { if (p.visible) mockActionProps.push(p); return null; },
+}));
 jest.mock('expo-blur', () => {
   const React = require('react');
   return { BlurView: (props: Record<string, unknown>) => React.createElement('BlurView', props) };
@@ -1335,5 +1344,105 @@ describe('review round 5', () => {
     mockStackData = { ...was, list: { ...was.list, critiqueCount: 1 } };
     r.rerender(<StackDetailScreen />);
     expect(JSON.stringify(r.toJSON())).toContain('Film Three');
+  });
+});
+
+describe('review round 6', () => {
+  const { useBlockStore } = jest.requireMock('@/src/stores/blockStore') as { useBlockStore: { setState: (s: Record<string, unknown>) => void } };
+  const { nav } = require('@/src/utils/typedRouter') as typeof import('@/src/utils/typedRouter');
+  const CURATOR = 'u2';
+  const nobodyHidden = () => useBlockStore.setState({ _blockedIndex: new Set<string>(), _mutedIndex: new Set<string>(), blockUser: jest.fn(), muteUser: jest.fn() });
+  /** The latest props a stubbed sheet was drawn with, open. */
+  const latest = (drawn: Record<string, unknown>[]) => {
+    const last = drawn[drawn.length - 1];
+    expect(last).toBeDefined();
+    return last!;
+  };
+  let back: jest.SpyInstance;
+  beforeEach(() => {
+    mockActionProps.length = 0;
+    mockReportProps.length = 0;
+    nobodyHidden();
+    back = jest.spyOn(nav, 'back').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    back.mockRestore();
+    nobodyHidden();
+    mockCommentsFailed = false;
+    mockComments = [];
+  });
+
+  /** Another member's stack, its curator not hidden yet. */
+  const theirs = async () => {
+    const r = mount({ userId: CURATOR, user: 'tomas', title: 'Their Noir' });
+    await waitFor(() => expect(r.getByText(/INDEXED REELS/)).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText('More options for this stack')); });
+    return r;
+  };
+
+  it("a muted curator's stack leaves the page once the sheet has closed, and is drawn as waiting, never as theirs", async () => {
+    // The store's step, as the page meets it: the member hidden at once.
+    useBlockStore.setState({ muteUser: (u: string) => { useBlockStore.setState({ _mutedIndex: new Set([u]) }); } });
+    const r = await theirs();
+    await act(async () => { (latest(mockActionProps).onMute as () => void)(); });
+    expect(back).toHaveBeenCalledTimes(1);
+    expect(r.queryByText(/INDEXED REELS/)).toBeNull();
+    expect(r.getByLabelText('Loading stack')).toBeTruthy();
+  });
+
+  it("a blocked curator's stack leaves the page too", async () => {
+    useBlockStore.setState({ blockUser: (u: string) => { useBlockStore.setState({ _blockedIndex: new Set([u]) }); } });
+    const r = await theirs();
+    await act(async () => { (latest(mockActionProps).onBlock as () => void)(); });
+    expect(back).toHaveBeenCalledTimes(1);
+    expect(r.queryByText(/INDEXED REELS/)).toBeNull();
+  });
+
+  it('a REPORT that also blocks: the stack stays under the report sheet, and leaves as the sheet closes', async () => {
+    const r = await theirs();
+    await act(async () => { (latest(mockActionProps).onReport as () => void)(); });
+    // The report sheet's own "also block", while it is still open.
+    await act(async () => { useBlockStore.setState({ _blockedIndex: new Set([CURATOR]) }); });
+    expect(back).not.toHaveBeenCalled();
+    expect(r.getByText(/INDEXED REELS/)).toBeTruthy();
+    await act(async () => { (latest(mockReportProps).onDismiss as () => void)(); });
+    expect(back).toHaveBeenCalledTimes(1);
+  });
+
+  describe('a critique filed when the critiques could not be read', () => {
+    /** The critiques as the cache holds them after every write the page made, from none read. */
+    const heldAfter = () => mockSetQueryData.mock.calls
+      .filter((c) => Array.isArray(c[0]) && c[0][0] === 'stackComments')
+      .reduce((held, [, w]) => (typeof w === 'function' ? w(held) : w), undefined as unknown);
+    const fileOne = async (words: string) => {
+      mockCommentsFailed = true;
+      mockComments = undefined as never;   // none read: the cache holds nothing
+      const r = mount({ critiqueCount: 3 });
+      await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
+      await act(async () => { await fireEvent.press(r.getByLabelText(/critiques?/i)); });
+      await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+      mockSetQueryData.mockClear();
+      mockInvalidate.mockClear();
+      await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), words); });
+      await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
+      return r;
+    };
+
+    it('keeps "could not be reached" and its TRY AGAIN, never becoming a list of the one; filed, the list is read again', async () => {
+      mockAddComment.mockResolvedValue({ id: 'real', user_id: 'u1', username: 'morpho', content: 'Filed blind.', created_at: '2026-01-01' });
+      const r = await fileOne('Filed blind.');
+      expect(mockAddComment).toHaveBeenCalledTimes(1);
+      expect(heldAfter()).toBeUndefined();
+      expect(r.getByText('The critiques could not be reached.')).toBeTruthy();
+      expect(r.getByLabelText('Try again: read the critiques')).toBeTruthy();
+      expect(mockInvalidate).toHaveBeenCalledWith({ queryKey: ['stackComments', STACK_ID] });
+    });
+
+    it('refused, it leaves the critiques unread, never an empty "No critiques yet"', async () => {
+      mockAddComment.mockRejectedValue(Object.assign(new Error('permission denied'), { code: '42501' }));
+      const r = await fileOne('Not let in.');
+      expect(heldAfter()).toBeUndefined();
+      expect(r.getByText('The critiques could not be reached.')).toBeTruthy();
+    });
   });
 });

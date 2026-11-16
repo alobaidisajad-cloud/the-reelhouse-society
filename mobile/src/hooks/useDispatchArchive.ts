@@ -73,6 +73,10 @@ export interface DispatchArchive {
   loading: boolean;
   /** The chosen film's first page could not be read: not the same as nothing left. */
   filmFailed: boolean;
+  /** A later page could not be read: said, and asked again only when the member asks. */
+  moreFailed: boolean;
+  /** Ask again for the page that could not be read. */
+  askForTheRest: () => void;
   more: boolean;
   choose: (m: ArchiveMatch) => void;
   clear: () => void;
@@ -118,6 +122,9 @@ export function useDispatchArchive(): DispatchArchive {
   const [span, setSpan] = useState('');
   const [loading, setLoading] = useState(false);
   const [filmFailed, setFilmFailed] = useState(false);
+  // A later page's failure only logged: the list ended as if it were the whole archive, and
+  // every scroll event asked again (review round 6).
+  const [moreFailed, setMoreFailed] = useState(false);
   const [more, setMore] = useState(false);
 
   const subjectId = useRef<number | null>(null);
@@ -210,7 +217,7 @@ export function useDispatchArchive(): DispatchArchive {
     if (id == null) return;
     const mine = filmSeq.current;
     setLoading(true);
-    if (from === 0) setFilmFailed(false);
+    if (from === 0) setFilmFailed(false); else setMoreFailed(false);
     try {
       const rows = await supabase
         .from('dispatch_posts')
@@ -228,8 +235,8 @@ export function useDispatchArchive(): DispatchArchive {
         .order('id', { ascending: false })
         .range(from, from + ARCHIVE_PAGE - 1);
       if (mine !== filmSeq.current) return;
-      // A later page: the rows drawn stay, and scrolling on asks again.
-      if (rows.error) { logger.warn('[archive] filings read failed', rows.error); if (from === 0) setFilmFailed(true); return; }
+      // A later page: the rows drawn stay, and the foot says the rest could not be reached.
+      if (rows.error) { logger.warn('[archive] filings read failed', rows.error); if (from === 0) setFilmFailed(true); else setMoreFailed(true); return; }
 
       const raw = rows.data?.length ?? 0;
       const { filings: got, dropped } = parseFilingRows(rows.data ?? []);
@@ -271,7 +278,7 @@ export function useDispatchArchive(): DispatchArchive {
         return next;
       });
     } catch (e) {
-      if (mine === filmSeq.current) { logger.warn('[archive] read failed', e); if (from === 0) setFilmFailed(true); }
+      if (mine === filmSeq.current) { logger.warn('[archive] read failed', e); if (from === 0) setFilmFailed(true); else setMoreFailed(true); }
     } finally {
       if (mine === filmSeq.current) setLoading(false);
     }
@@ -286,7 +293,7 @@ export function useDispatchArchive(): DispatchArchive {
     // film's offset and skip this one's opening filings.
     fetched.current = 0;
     setFilm(m.film);
-    setFilings([]); setCertifiedAtFetch(new Set()); setCount(0); setSpan(''); setMore(false); setFilmFailed(false);
+    setFilings([]); setCertifiedAtFetch(new Set()); setCount(0); setSpan(''); setMore(false); setFilmFailed(false); setMoreFailed(false);
     void page(0);
   }, [page]);
 
@@ -295,16 +302,18 @@ export function useDispatchArchive(): DispatchArchive {
     subjectId.current = null;
     fetched.current = 0;
     setFilm(null); setFilings([]); setCertifiedAtFetch(new Set()); setCount(0); setSpan(''); setMore(false);
-    setFilmFailed(false); setLoading(false);
+    setFilmFailed(false); setMoreFailed(false); setLoading(false);
   }, []);
 
   const loadMore = useCallback(() => {
-    if (loading || !more) return;
+    // Not again after a failure: the foot asks, when the member does.
+    if (loading || !more || moreFailed) return;
     // The offset the SERVER is at, not the number of rows on screen. Paging
     // from `filings.length` re-requested everything that failed to parse, so
     // one unreadable filing made the archive repeat rows at every seam after it.
     void page(fetched.current);
-  }, [loading, more, page]);
+  }, [loading, more, moreFailed, page]);
+  const askForTheRest = useCallback(() => { void page(fetched.current); }, [page]);
 
   const retry = useCallback(() => {
     if (subjectId.current != null) void page(0); else void search(query);
@@ -320,7 +329,7 @@ export function useDispatchArchive(): DispatchArchive {
   return {
     query, setQuery,
     matches, searching, settled: answered === query.trim(), searchFailed,
-    film, filings: shown, certifiedAtFetch, count: shownCount, span, loading, filmFailed, more,
-    choose, clear, loadMore, retry,
+    film, filings: shown, certifiedAtFetch, count: shownCount, span, loading, filmFailed, moreFailed, more,
+    choose, clear, loadMore, retry, askForTheRest,
   };
 }

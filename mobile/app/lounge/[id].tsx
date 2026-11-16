@@ -29,7 +29,7 @@ import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useIsFocused } from 'expo-router/react-navigation';
-import { useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
+import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import { MembersOnly } from '@/src/components/MembersOnly';
@@ -252,6 +252,8 @@ const ReactionChips = React.memo(({ reactions, canReact, onToggle }: {
             hitSlop={{ top: 4, bottom: 8, left: 3, right: 3 }}
             accessibilityRole="button"
             accessibilityLabel={`${meta?.label ?? r.reaction}, ${r.count}`}
+            // The member's own said, as drawn: a tap on it takes it back (review round 6).
+            accessibilityState={{ selected: !!r.mine }}
           >
             {Icon && <Icon size={11} color={r.mine ? colors.flicker : tint} strokeWidth={2} />}
             <Text style={[s.reactionChipCount, r.mine && s.reactionChipCountMine]}>{r.count}</Text>
@@ -573,7 +575,12 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   const reacting = useClearance('lounge-reacting', roomHref);
   const canSpeak = canPost && speaking.held;
   const canReact = canPost && reacting.held;
-  const pendingMembers = useMemo(() => members.filter(m => m.status === 'pending'), [members]);
+  // Whoever is blocked or muted, from wherever (a sheet here, a report that blocks, another screen).
+  const whoIsHidden = useWhoIsHidden();
+  // A member blocked or muted is never offered at the door, to be admitted across it, nor counted
+  // there, as at the follow-request door: the host was shown them with ADMIT (review round 6).
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; filterContentByBlocks reads the block store itself
+  const pendingMembers = useMemo(() => filterContentByBlocks(members.filter(m => m.status === 'pending'), (m) => m.user_id), [members, whoIsHidden]);
   // Opened from a notice: the host meets the door once the roster says someone waits, once.
   const metAtTheDoor = useRef(false);
   useEffect(() => {
@@ -626,10 +633,8 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
     setActionSheetMsg(null);
     blockUser(userId);
   }, [blockUser]);
-  // Whoever is blocked or muted, from wherever (this sheet, a report that blocks, another screen),
-  // their messages leave the room at once, as the toast says: the store's lists change before the
+  // Their messages leave the room at once, as the toast says: the store's lists change before the
   // server is asked. Only this sheet's BLOCK purged, and a report that blocked left them drawn.
-  const whoIsHidden = useWhoIsHidden();
   useEffect(() => { useLoungeStore.getState().purgeHiddenMessages(); }, [whoIsHidden]);
 
   // ── Re-fetch on foreground ── by the room in front alone: a room beneath another, reading its

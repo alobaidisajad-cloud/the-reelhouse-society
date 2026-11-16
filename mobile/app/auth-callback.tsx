@@ -39,8 +39,14 @@ export default function AuthCallbackScreen() {
   // it: it fired regardless, and pulled a member who had already gone back
   // to the page they left (and, in the tests, into the next test file).
   const onward = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Left before the link was answered: the answer still lands (a session confirmed is kept), but
+  // walks no one anywhere. The cleanup cleared only a timer already set, and at unmount none was:
+  // the answer then set one, and pulled the member off the screen they had gone to (round 6).
+  const left = useRef(false);
   const goOnward = (to: string, afterMs: number) => {
+    if (left.current) return;
     onward.current = setTimeout(() => InteractionManager.runAfterInteractions(() => {
+      if (left.current) return;
       try { router.dismissAll(); } catch {}
       nav.replace(to);
     }), afterMs);
@@ -121,7 +127,7 @@ export default function AuthCallbackScreen() {
 
   useEffect(() => {
     void verify().then(({ session, type }) => handleSuccessfulVerification(session, type)).catch(showFailure);
-    return () => { if (onward.current) clearTimeout(onward.current); };
+    return () => { left.current = true; if (onward.current) clearTimeout(onward.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

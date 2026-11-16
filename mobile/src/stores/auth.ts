@@ -361,6 +361,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           cachedFollowing = [];
         }
         welcomeBack(session.user.id);
+        // Who is on the phone as the restore begins (this member, from the cache, or no one): a
+        // sign-out, or another member's sign-in, made while it waits below is the phone's answer,
+        // and the restore lands nowhere. It set the member who had signed out back on screen,
+        // wrote them back to disk and booted them again, on a session that had ended (review
+        // round 6).
+        const restoringFor = get().user?.id ?? null;
         // Unsynced preferences first, MERGED server-side (another device may
         // have set other keys meanwhile).
         // Kept on disk when unreached, and laid below over the server's older copy.
@@ -368,6 +374,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
         const { data: profile } = await supabase
           .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', session.user.id).single();
+        if (!memberUnchanged(restoringFor)) { set({ loading: false }); return; }
         if (profile) {
           rankWasRead(session.user.id);
           // Unsynced preferences win over the server's copy, key by key (see setPreference).

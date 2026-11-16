@@ -39,7 +39,7 @@ jest.mock('@tanstack/react-query', () => ({
     // module scope, and that module is now reachable from this test through the
     // offline queue (#82's post-flush feed refresh). Without this the whole suite
     // fails to LOAD rather than failing an assertion, which is far harder to read.
-    QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); },
+    QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); setQueryDefaults = () => {}; },
     // queryClient.ts hands it the phone's connection, and the app's return, at module scope too.
     onlineManager: { setEventListener: () => {} },
     focusManager: { setEventListener: () => {} },
@@ -72,7 +72,11 @@ jest.mock('@/src/stores/films', () => {
     return { useListStore };
 });
 jest.mock('@/src/stores/blockStore', () => {
-    const state = { blockUser: jest.fn(), muteUser: jest.fn(), isBlocked: () => false, isMuted: () => false };
+    // Nobody hidden: the page leaves when its curator is (useLeavesWhenHidden asks isHidden).
+    const state = {
+        blockUser: jest.fn(), muteUser: jest.fn(), isBlocked: () => false, isMuted: () => false,
+        isHidden: () => false, _blockedIndex: new Set<string>(), _mutedIndex: new Set<string>(),
+    };
     const useBlockStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
     (useBlockStore as unknown as { getState: () => unknown }).getState = () => state;
     return { useBlockStore };

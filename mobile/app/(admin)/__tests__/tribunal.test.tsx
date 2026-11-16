@@ -13,6 +13,7 @@ import { supabaseFake } from '@/test-utils/supabaseFake';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import TribunalScreen from '../tribunal';
+import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 
 const mockResolveReportV2 = jest.fn().mockResolvedValue(undefined);
 const mockBulkDismiss = jest.fn().mockResolvedValue(undefined);
@@ -593,6 +594,66 @@ describe('TribunalScreen Integration', () => {
       const [userIds] = calls[0];
       // Every member on the docket, and the repeat offender once.
       expect([...userIds].sort()).toEqual(['target-user-3', 'target-user-4']);
+    });
+  });
+
+  // ── 8b. URGENT keeps its cases (review round 6) ─────────────────────────
+  // Opened again, or pulled, URGENT emptied its cases and waited for a read that brought a
+  // different answer; within the read's fresh window (or a read finding the same cases) none
+  // came, and it said "The docket is clear" over cases waiting.
+
+  describe('URGENT keeps its cases', () => {
+    beforeEach(() => {
+      mockAuthStore.user = ADMIN_USER;
+      mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
+      mockGetPriorityQueue.mockResolvedValue(PRIORITY_REPORTS);
+    });
+
+    const openUrgent = async (r: ReturnType<typeof renderTribunal>) => {
+      await act(async () => { jest.advanceTimersByTime(1000); });
+      await act(async () => { await fireEvent.press(r.getByLabelText('Urgent: the priority queue')); });
+      await waitFor(() => expect(r.getByText('IMPERSONATION')).toBeTruthy());
+    };
+    const pull = async (r: ReturnType<typeof renderTribunal>) => {
+      const list = r.container.queryAll((n) => n.props.refreshControl != null)[0];
+      expect(list).toBeDefined();
+      // The pull's read tries once more after a failure, on a timer: the clock is moved until it ends.
+      let ended = false;
+      await act(async () => { void list!.props.refreshControl.props.onRefresh().then(() => { ended = true; }); });
+      await waitFor(() => expect(ended).toBe(true));
+    };
+
+    it('URGENT opened a second time, after THE DOCKET, still shows its cases, never "The docket is clear"', async () => {
+      const r = renderTribunal();
+      await waitFor(() => expect(r.getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy());
+      await openUrgent(r);
+      await act(async () => { jest.advanceTimersByTime(1000); });
+      await act(async () => { await fireEvent.press(r.getByLabelText('The docket: pending reports')); });
+      await waitFor(() => expect(r.getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy());
+
+      await openUrgent(r);
+      expect(r.getByText('HARASSMENT')).toBeTruthy();
+      expect(r.queryByText('The docket is clear. The house rests.')).toBeNull();
+    });
+
+    it('a pull on URGENT keeps its cases, never "The docket is clear"', async () => {
+      const r = renderTribunal();
+      await waitFor(() => expect(r.getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy());
+      await openUrgent(r);
+      await pull(r);
+      expect(mockGetPriorityQueue).toHaveBeenCalledTimes(2);
+      expect(r.getByText('IMPERSONATION')).toBeTruthy();
+      expect(r.queryByText('The docket is clear. The house rests.')).toBeNull();
+    });
+
+    it('a pull on URGENT that reached nothing says so', async () => {
+      const r = renderTribunal();
+      await waitFor(() => expect(r.getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy());
+      await openUrgent(r);
+      mockGetPriorityQueue.mockRejectedValue(new Error('Network request failed'));
+      await pull(r);
+      const toast = jest.requireMock('@/src/utils/reelToast').default as { error: jest.Mock };
+      expect(toast.error).toHaveBeenCalledWith(REFRESH_FAILED);
     });
   });
 

@@ -7,7 +7,7 @@ import { useVaultStore } from '@/src/stores/vaultStore';
 import { supabase } from '@/src/lib/supabase';
 import { captureError } from '@/src/lib/sentry';
 import reelToast from '@/src/utils/reelToast';
-import { LOG_BUSY, heldLog } from '@/src/stores/domain/logSlice/helpers/logOperations';
+import { LOG_BUSY, VIEWING_NEEDS_CONNECTION, heldLog } from '@/src/stores/domain/logSlice/helpers/logOperations';
 import { LOG_SELECT_COLUMNS, mapLogRow, type LogRow } from '@/src/utils/mappers';
 import type { DomainLog } from '@/src/types';
 import { isNetworkError } from '@/src/utils/networkError';
@@ -307,7 +307,8 @@ export function useLogFlow() {
     // whenever there's already logistics content to reveal.
     const [moreOpen, setMoreOpen] = useState(false);
     const [calendarOpen, setCalendarOpen] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    // What a delete would take, asked before it does: the whole record, or its latest viewing.
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<false | 'log' | 'viewing'>(false);
     const [submitting, setSubmitting] = useState(false);
     // One-beat "RECORD SEALED" confirmation before the modal dismisses.
     const [sealed, setSealed] = useState(false);
@@ -808,17 +809,25 @@ export function useLogFlow() {
         }
     };
 
-    const handleDelete = async () => {
+    /**
+     * `whole`: the record and every viewing in it, as DELETE THIS ENTIRE LOG says. It was always
+     * asked for as a viewing, so on a record watched again it took the latest viewing alone under
+     * "this log is gone for good" (review round 6). A viewing alone is its own act, REMOVE THIS
+     * VIEWING: the record steps back to the one before.
+     */
+    const handleDelete = async (whole: boolean = true) => {
         if (!editLogId || !editReady) return;
         try {
-            await removeLog(editLogId, false, edited ?? undefined);
+            await removeLog(editLogId, whole, edited ?? undefined);
             TactileEngine.warn();
             setLettingGo(true);
             deferUntilIdle(() => {
                 nav.back();
             });
-        } catch {
-            reelToast.error('Failed to delete log.');
+        } catch (err) {
+            reelToast.error(whole ? 'Failed to delete log.'
+                : err instanceof Error && err.message === VIEWING_NEEDS_CONNECTION ? VIEWING_NEEDS_CONNECTION
+                : 'The viewing could not be removed. Try again.');
         }
     };
 
@@ -868,6 +877,8 @@ export function useLogFlow() {
         waitingDraft,
         film, setFilm,
         isRewatchMode, previousLog,
+        /** The record being amended holds earlier viewings: its latest alone may be removed. */
+        hasEarlierViewings: !!editLogId && (edited?.viewingHistory?.length ?? 0) > 0,
         status, setStatus,
         rating, setRating,
         review, setReview,

@@ -118,6 +118,8 @@ function ActionSheet({ visible, msg, isSelf, canReact, canReply, currentReaction
                     haptic="selection"
                     accessibilityRole="button"
                     accessibilityLabel={meta.label}
+                    // Given already: said, as drawn, for a tap here takes it back (review round 6).
+                    accessibilityState={{ selected: mine }}
                   >
                     <View style={[r.pickIcon, mine && r.pickIconMine]}>
                       <Icon size={20} color={meta.tint} strokeWidth={2} />

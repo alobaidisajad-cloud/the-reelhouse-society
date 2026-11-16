@@ -159,3 +159,54 @@ describe('amendments not yet sealed (review round 5)', () => {
     expect(flow.current.amendmentsUnsealed).toBe(false);
   });
 });
+
+/**
+ * Review round 6: DELETE THIS ENTIRE LOG was always asked of the store as a viewing, so on a
+ * record watched again it took the latest viewing alone, under "this log is gone for good". The
+ * whole record goes now; a viewing alone is its own act (REMOVE THIS VIEWING), and one that cannot
+ * be named without a connection is said, with the sheet left standing.
+ */
+describe('a record watched again (review round 6)', () => {
+  const EARLIER = '66666666-6666-4666-8666-666666666666';
+  const watchedTwice = (over: Record<string, unknown> = {}) => ({
+    ...oldRow(), view_count: 2,
+    viewing_history: [{ viewingId: EARLIER, date: '2023-01-05', rating: 3, review: 'The first time.', status: 'watched' }],
+    ...over,
+  });
+  const reelToast = require('@/src/utils/reelToast').default as { error: (m: string) => void };
+  const { nav } = require('@/src/utils/typedRouter') as typeof import('@/src/utils/typedRouter');
+  let said: jest.SpyInstance;
+  let back: jest.SpyInstance;
+  beforeEach(() => {
+    said = jest.spyOn(reelToast, 'error').mockImplementation(() => {});
+    back = jest.spyOn(nav, 'back').mockImplementation(() => {});
+  });
+  afterEach(() => { said.mockRestore(); back.mockRestore(); });
+
+  it('offers its latest viewing alone to remove; a record watched once does not', async () => {
+    const twice = await openEditor({ rows: { logs: [watchedTwice()], log_private_notes: [] } });
+    await waitFor(() => expect(twice.current.editReady).toBe(true));
+    expect(twice.current.hasEarlierViewings).toBe(true);
+    const once = await openEditor({ rows: { logs: [oldRow()], log_private_notes: [] } });
+    await waitFor(() => expect(once.current.editReady).toBe(true));
+    expect(once.current.hasEarlierViewings).toBe(false);
+  });
+
+  it('DELETE THIS ENTIRE LOG takes the whole record, every viewing in it', async () => {
+    const flow = await openEditor({ rows: { logs: [watchedTwice()], log_private_notes: [] } });
+    await waitFor(() => expect(flow.current.editReady).toBe(true));
+    await act(async () => { await flow.current.handleDelete(true); });
+    expect(mockHouse.rows('logs')).toEqual([]);
+    expect(said).not.toHaveBeenCalled();
+  });
+
+  it('a viewing that cannot be named without a connection is said, nothing is removed, and the sheet stays', async () => {
+    const flow = await openEditor({ rows: { logs: [watchedTwice({ viewing_id: null })], log_private_notes: [] } });
+    await waitFor(() => expect(flow.current.editReady).toBe(true));
+    await act(async () => { await flow.current.handleDelete(false); });
+    await settle();
+    expect(said).toHaveBeenCalledWith('Removing a viewing needs a connection.');
+    expect(back).not.toHaveBeenCalled();
+    expect(mockHouse.rows('logs')).toHaveLength(1);
+  });
+});

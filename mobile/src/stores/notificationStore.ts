@@ -121,6 +121,11 @@ export interface NotificationState {
     dismiss: (id: string) => Promise<void>;
     markGroupRead: (ids: string[]) => Promise<void>;
     dismissGroup: (ids: string[]) => Promise<void>;
+    /**
+     * A follow request answered at the door: the house takes its notice (a_request_takes_its_notice),
+     * so the board does too, unread count and all. `null`: every request (declined all at once).
+     */
+    forgetRequestNotices: (fromUserId: string | null) => void;
     /** Derived O(1) counter — updated on every mutation */
     _unreadCount: number;
     /** Keyset paging: whether there is more, and the last row's `created_at|id`. */
@@ -505,6 +510,20 @@ export const useNotificationStore = create<NotificationState>()(
             if (stillSignedIn(startedAs)) set((state) => putBack(state, previousState.filter((n) => ids.includes(n.id))));
         }
     },
+
+    // The board hides a request's notice (the door answers it), so the bell kept its unread count
+    // and READ ALL stood lit over a board with nothing to read until it was read again (review
+    // round 6).
+    forgetRequestNotices: (fromUserId) => set((state) => {
+        const gone = state.notifications.filter((n) => n.type === 'follow_request'
+            && (fromUserId === null || n.from_user_id === fromUserId));
+        if (gone.length === 0) return state;
+        const unreadGone = gone.filter((n) => !n.read).length;
+        return {
+            notifications: state.notifications.filter((n) => !gone.includes(n)),
+            _unreadCount: Math.max(0, state._unreadCount - unreadGone),
+        };
+    }),
 
     unreadCount: () => get()._unreadCount,
 

@@ -155,3 +155,44 @@ describe('the queue, replaying them', () => {
     expect(wallAsked()).toBe(0);
   });
 });
+
+/**
+ * Review round 6: the Reel's cards (['feed', 'community'], ['feed', 'following', me]) are kept as
+ * the wall is, and a record amended or deleted from its sheet left them as they were: the old
+ * rating on the card, and a deleted record's card opening a page that went straight back.
+ */
+describe('the Reel hears a record changed or gone', () => {
+  const COMMUNITY = ['feed', 'community'];
+  const FOLLOWING = ['feed', 'following', 'u1'];
+  const cards = (...idsHeld: string[]) => ({
+    pages: [Object.defineProperty(idsHeld.map((id) => ({ id, created_at: '2026-09-30T00:00:00Z' })), 'next', { value: null, enumerable: false })],
+    pageParams: [undefined],
+  });
+  const onTheReel = (key: string[]) =>
+    (queryClient.getQueryData<{ pages: { id: string }[][] }>(key)?.pages ?? []).flatMap((p) => p.map((row) => row.id));
+  const readAgain = (key: string[]) => invalidate.mock.calls.some(([f]) => JSON.stringify((f as { queryKey?: unknown })?.queryKey) === JSON.stringify(key));
+
+  beforeEach(() => {
+    queryClient.setQueryData(COMMUNITY, cards('l0', 'l1', 'l2'));
+    queryClient.setQueryData(FOLLOWING, cards('l1'));
+  });
+  afterEach(() => { queryClient.removeQueries({ queryKey: ['feed'] }); });
+
+  it("a log deleted: its card leaves both Reels at once, and they are read again", async () => {
+    await useFilmStore.getState().removeLog('l1');
+    expect([onTheReel(COMMUNITY), onTheReel(FOLLOWING)]).toEqual([['l0', 'l2'], []]);
+    expect([readAgain(COMMUNITY), readAgain(['feed', 'following'])]).toEqual([true, true]);
+  });
+
+  it('a log deleted with no connection (queued): its card leaves both Reels at once all the same', async () => {
+    mockOffline = true;
+    await useFilmStore.getState().removeLog('l1');
+    expect(jest.requireMock('@/src/utils/offlineQueue').enqueueMutation).toHaveBeenCalledWith(expect.objectContaining({ type: 'remove_log' }));
+    expect([onTheReel(COMMUNITY), onTheReel(FOLLOWING)]).toEqual([['l0', 'l2'], []]);
+  });
+
+  it("a log amended: the Reel's feeds are read again, so its card shows the new rating and words", async () => {
+    await useFilmStore.getState().updateLog('l1', { rating: 2 } as never);
+    expect([readAgain(COMMUNITY), readAgain(['feed', 'following'])]).toEqual([true, true]);
+  });
+});

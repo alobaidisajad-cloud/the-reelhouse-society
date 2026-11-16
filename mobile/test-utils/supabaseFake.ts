@@ -53,9 +53,17 @@ export interface Query extends PromiseLike<Answer> {
   upsert(values: Row | Row[], options?: unknown): Query;
   update(values: Row): Query;
   delete(): Query;
-  single(): Promise<Answer>;
-  maybeSingle(): Promise<Answer>;
+  /** Answers as a promise that still takes its abort signal, as supabase-js's builder does. */
+  single(): OneRow;
+  maybeSingle(): OneRow;
 }
+/** One row's answer: supabase-js hands back the builder still, so a read may be given its signal after. */
+export type OneRow = Promise<Answer> & { abortSignal(signal: AbortSignal): OneRow };
+const oneRow = (answer: Answer): OneRow => {
+  const p = Promise.resolve(answer) as OneRow;
+  p.abortSignal = () => p;
+  return p;
+};
 export type Ask = {
   table: string; op: 'select' | 'insert' | 'update' | 'upsert' | 'delete';
   columns: string[]; filters: [string, string, unknown][]; order: [string, boolean][];
@@ -366,8 +374,8 @@ export function supabaseFake(options: Options = {}) {
       upsert: write('upsert'),
       update: (values) => write('update')(values),
       delete: () => { ask.op = 'delete'; return chain; },
-      single: () => { ask.one = 'single'; return Promise.resolve(settle(ask)); },
-      maybeSingle: () => { ask.one = 'maybeSingle'; return Promise.resolve(settle(ask)); },
+      single: () => { ask.one = 'single'; return oneRow(settle(ask)); },
+      maybeSingle: () => { ask.one = 'maybeSingle'; return oneRow(settle(ask)); },
       then: (res, rej) => {
         try { return Promise.resolve(settle(ask)).then(res, rej); } catch (e) { return Promise.reject(e).then(res, rej); }
       },

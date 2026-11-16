@@ -9,8 +9,8 @@
  * The day divider is the interesting one. It is drawn only under LATEST: ordered
  * by certifications the list is not chronological, so a divider would announce a
  * boundary that is not there — three filings from Tuesday, one from June, two
- * more from Tuesday. And the FIRST day is deliberately not drawn, because the
- * running head above already names it.
+ * more from Tuesday. And the FIRST day is drawn only when the running head
+ * above does not already name it: on the paper, a first filing from today.
  */
 import React, { act } from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
@@ -20,6 +20,7 @@ import { focusManager } from '@tanstack/react-query';
 import { useDispatch } from '@/src/stores/dispatch';
 import { useBlockStore } from '@/src/stores/blockStore';
 import type { Filing } from '@/src/stores/dispatchTypes';
+import { dayLabel } from '@/src/components/dispatch/dayLabel';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 
 let mockUser: { id: string; username: string; tier?: string; is_social_private?: boolean } | null = { id: 'u1', username: 'me', is_social_private: false };
@@ -224,7 +225,26 @@ describe('the Dispatch feed', () => {
     expect(queryByText('21:00')).toBeNull();
   });
 
-  it('divides the days — but never before the first one', async () => {
+  it('divides the days, and draws none above a first filing from today', async () => {
+    const now = new Date();
+    const today = at(now.getFullYear(), now.getMonth() + 1, now.getDate(), 12);
+    const yesterday = at(now.getFullYear(), now.getMonth() + 1, now.getDate() - 1, 12);
+    put({
+      filings: [
+        filing({ id: 'a', createdAt: today, body: 'Today.' }),
+        filing({ id: 'c', createdAt: yesterday, body: 'Yesterday.' }),
+      ],
+    });
+    const { getByText, queryByText } = await mount();
+    // The running head already names today, so printing it again ten points
+    // below would be the same sentence twice.
+    expect(queryByText(dayLabel(today))).toBeNull();
+    expect(getByText(dayLabel(yesterday))).toBeTruthy();
+  });
+
+  // The running head prints TODAY, so a page whose newest filing was last Thursday read as filed
+  // today until the next divider (review round 6).
+  it('names the day above the first filing when it was not filed today', async () => {
     put({
       filings: [
         filing({ id: 'a', createdAt: at(2026, 8, 28, 21), body: 'Friday, late.' }),
@@ -232,11 +252,29 @@ describe('the Dispatch feed', () => {
         filing({ id: 'c', createdAt: at(2026, 8, 27, 9), body: 'Thursday.' }),
       ],
     });
-    const { getByText, queryByText } = await mount();
-    // The running head already names today, so printing it again ten points
-    // below would be the same sentence twice.
-    expect(queryByText('FRIDAY, AUGUST 28')).toBeNull();
+    const { getByText } = await mount();
+    expect(getByText('FRIDAY, AUGUST 28')).toBeTruthy();
     expect(getByText('THURSDAY, AUGUST 27')).toBeTruthy();
+  });
+
+  it('the saved page names the day above its first filing, even one filed today', async () => {
+    // Its head prints WHAT YOU KEPT, not the day.
+    const now = new Date();
+    const today = at(now.getFullYear(), now.getMonth() + 1, now.getDate(), 12);
+    put({ savedOnly: true, filings: [filing({ id: 'a', createdAt: today, body: 'Kept today.' })] });
+    const { getByText } = await mount();
+    expect(getByText('WHAT YOU KEPT')).toBeTruthy();
+    expect(getByText(dayLabel(today))).toBeTruthy();
+  });
+
+  it('the bookmark says it is selected on the saved page, and not on the paper', async () => {
+    put({ savedOnly: true, filings: [filing()] });
+    const saved = await mount();
+    expect(saved.getByLabelText('Your saved filings').props.accessibilityState).toMatchObject({ selected: true });
+    saved.unmount();
+    put({ savedOnly: false, filings: [filing()] });
+    const paper = await mount();
+    expect(paper.getByLabelText('Your saved filings').props.accessibilityState).toMatchObject({ selected: false });
   });
 
   it('draws no day dividers at all under CERTIFIED', async () => {
@@ -691,6 +729,26 @@ describe('a filing written while the wire was down', () => {
     await act(async () => { useOfflineQueueStore.setState({ queued: [] }); });
     expect(queryByText('NOT SENT YET · THE HOUSE HAS NOT SEEN THIS')).toBeNull();
     expect(getAllByLabelText(CERTIFY)).toHaveLength(2);
+  });
+
+  // One the page no longer held (the section changed while the wire was down) went from the
+  // paper as it went out, and the paper was not read again (review round 6).
+  it('when the queue delivers a filing the page does not hold, the paper is read again; one it holds is not', async () => {
+    put({ filings: [filing({ id: 'mine', authorId: 'u1' })] });
+    useOfflineQueueStore.setState({ queued: [queued('mine'), queued('elsewhere')] });
+    const flush = () => act(async () => { await new Promise((res) => setTimeout(res, 0)); });
+    await mount();
+    expect(mockPageAsks).toBe(0);
+
+    // The one on the page goes out: the page holds it, nothing to read.
+    await act(async () => { useOfflineQueueStore.setState({ queued: [queued('elsewhere')] }); });
+    await flush();
+    expect(mockPageAsks).toBe(0);
+
+    // The one the page does not hold goes out: the paper is read again, to find it.
+    await act(async () => { useOfflineQueueStore.setState({ queued: [] }); });
+    await flush();
+    expect(mockPageAsks).toBe(1);
   });
 });
 

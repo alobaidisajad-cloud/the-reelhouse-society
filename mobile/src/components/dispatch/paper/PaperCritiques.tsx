@@ -428,6 +428,9 @@ export const CritiqueComposer = memo(function CritiqueComposer({
         placeholderTextColor={colors.fog}
         multiline
         autoFocus={autoFocus}
+        // Held while it goes: it is sent as it stood at FILE and then let go of, so words written
+        // during the send were wiped as it landed (review round 6).
+        editable={!sending}
         // The same ceiling the column carries, so the keyboard stops where the
         // database would have refused — rather than letting a member write past
         // it and be told afterwards.

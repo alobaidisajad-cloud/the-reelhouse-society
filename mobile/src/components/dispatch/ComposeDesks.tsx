@@ -231,7 +231,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
           // BACK returns to the choice of form, not out of the modal (an amend, to its filing).
           onBack={onBack}
           onFile={onFile}
-          onFilm={() => setFinding(true)}
+          onFilm={amending ? undefined : () => setFinding(true)}
           // A still is its film's; before a film is named, the desk says so.
           onStill={() => (film
             ? reelToast.success('The film’s own still is used.')

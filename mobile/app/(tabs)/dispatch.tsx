@@ -165,6 +165,19 @@ export default function DispatchScreen() {
     onMomentumEnd: () => { isScrolling.value = false; },
   });
 
+  // A filing the queue has just delivered leaves the queue, and with it the page it was laid on
+  // while it waited: one the page does not hold (the section changed while the wire was down, so
+  // the page was read again and failed, or read without it) is read from the house, or it went
+  // from the paper as it went out, over "could not be reached" (review round 6).
+  const waitedBefore = useRef(unsent);
+  useEffect(() => {
+    const delivered = [...waitedBefore.current].filter((id) => !unsent.has(id));
+    waitedBefore.current = unsent;
+    if (delivered.length === 0) return;
+    const onPage = new Set(useDispatch.getState().filings.map((f) => f.id));
+    if (delivered.some((id) => !onPage.has(id))) void useDispatch.getState().fetch();
+  }, [unsent]);
+
   // Whenever the page on screen is unread: on opening, and after the store is
   // reset for another member while this tab stays mounted.
   useEffect(() => {
@@ -189,6 +202,8 @@ export default function DispatchScreen() {
     void useDispatch.getState().fetch();
   }, []);
 
+  // The paper's date turns at the member's midnight, with the paper open.
+  const todayIs = useToday();
   // A divider wherever the day changes, under LATEST only: ordered by
   // certifications the list is not chronological, so no day boundary is real.
   const rows = useMemo<Row[]>(() => {
@@ -199,14 +214,16 @@ export default function DispatchScreen() {
         const k = dayKey(f.createdAt);
         if (k && k !== day) {
           day = k;
-          // Never above the first: the running head already names that day.
-          if (out.length > 0) out.push({ type: 'day', key: `day-${k}`, label: dayLabel(f.createdAt) });
+          // Above the first only when the running head does not already name its day: the head
+          // prints TODAY (and the saved page, its title), so a page whose newest filing was
+          // last Thursday read as filed today until the next divider (review round 6).
+          if (out.length > 0 || savedOnly || k !== todayIs) out.push({ type: 'day', key: `day-${k}`, label: dayLabel(f.createdAt) });
         }
       }
       out.push({ type: 'filing', key: f.id, filing: f });
     }
     return out;
-  }, [filings, sort]);
+  }, [filings, sort, savedOnly, todayIs]);
 
   // The column at THIS screen's width, not a 390pt phone's.
   const screenWidth = useColumnWidth();
@@ -264,8 +281,6 @@ export default function DispatchScreen() {
   }, [sort, width, certifiedIds, savedIds, unsent, member]);
 
   const empty = EMPTY[section];
-  // The paper's date turns at the member's midnight, with the paper open.
-  const todayIs = useToday();
   const today = useMemo(() => dateOf(`${todayIs}T12:00:00`), [todayIs]);
   // The empty BALLOTS and ESSAYS pages' "WHAT AN AUTEUR CAN DO →": each its own
   // rope, so the tap names the form reached for; never shown to who holds it.

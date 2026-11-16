@@ -3,6 +3,7 @@ import { houseIso } from '@/src/lib/houseClock';
 import { queryClient } from '../../../../lib/queryClient';
 import { supabase } from '../../../../lib/supabase';
 import { wallMayHaveChanged } from '../../../../components/lobby/wallRead';
+import { reelMayHaveChanged } from '../../../../components/feed/reelRead';
 import { byKey } from '../../../../utils/order';
 import { standingFor } from '@/src/constants/standing';
 import type { DomainLog } from '../../../../types';
@@ -56,6 +57,8 @@ export function cleanLogWords(l: { review?: string | null; pullQuote?: string | 
 }
 
 export const LOG_BUSY = 'LOG_BUSY' as const;
+/** A viewing's removal must name it, and naming it needs the house: thrown, so the sheet stays. */
+export const VIEWING_NEEDS_CONNECTION = 'Removing a viewing needs a connection.';
 
 /**
  * A record of the member's, as the phone holds it: in the pages it has read, or
@@ -743,8 +746,8 @@ export const updateLogOp = async (
                     throw error;
                 }
             }
-            // A log's words, rating and spoiler mark are what the Lobby hangs.
-            if (!queuedOffline) wallMayHaveChanged();
+            // A log's words, rating and spoiler mark are what the Lobby hangs, and the Reel's cards show.
+            if (!queuedOffline) { wallMayHaveChanged(); reelMayHaveChanged(); }
 
             // The note, if this edit carried one: undefined is untouched, '' is the
             // member clearing it (never gated). A viewing operation writes its own note.
@@ -841,9 +844,9 @@ const removeRewatchOp = async (
         if (!stillSignedIn(startedAs)) return;
     }
     if (!leavingViewingId) {
-        // Nothing to name, nothing honest to queue (the database refuses it).
-        reelToast('Removing a rewatch needs a connection.');
-        return;
+        // Nothing to name, nothing honest to queue (the database refuses it). Thrown, so the
+        // caller says it and its sheet stays: returning closed the sheet as if it were done.
+        throw new Error(VIEWING_NEEDS_CONNECTION);
     }
 
     const updates: Partial<DomainLog> = {
@@ -927,12 +930,15 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             if (error) {
                 // Use shared network error detection
                 if (isNetworkError(error) && enqueueMutation({ type: 'remove_log', payload: { log_id: id, user_id: user.id } })) {
+                    // Its card leaves the Reel now, as the record left the member's pages.
+                    reelMayHaveChanged(id);
                     reelToast('Removed offline. Will sync when connected.');
                     return;
                 }
                 throw error;
             }
             wallMayHaveChanged();
+            reelMayHaveChanged(id);
             reelToast(`"${logToRemove.title}" removed.`);
         } catch (e: unknown) {
             if (__DEV__) console.warn(`[removeLog] Failed for log ${id}:`, e);

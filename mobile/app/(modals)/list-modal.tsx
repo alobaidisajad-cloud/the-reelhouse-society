@@ -46,6 +46,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { MembersOnly } from '@/src/components/MembersOnly';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { TakenUpLine } from '@/src/components/TakenUpLine';
+import { useAskBeforeLeaving } from '@/src/hooks/useAskBeforeLeaving';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 // At module scope: made inside the component, it would be a new type, and remount, each render.
@@ -315,16 +316,26 @@ export default function ListModal() {
     // not yet loaded would open an empty form whose save deletes every film.
     // Once per stack, so a later refetch never overwrites what was typed.
     const hydratedFor = useRef<string | null>(null);
+    /** The stack as the house holds it, as this sheet filled it: what an amendment is measured against. */
+    const [filledAs, setFilledAs] = useState<string | null>(null);
     useEffect(() => {
         if (!params.editId || !editList) return;
         if (hydratedFor.current === params.editId) return;
         hydratedFor.current = params.editId;
-        setTitle(editList.title ?? '');
-        setDescription(editList.description ?? '');
-        setIsPrivate(!!editList.isPrivate);
-        setIsRanked(!!editList.isRanked);
-        setFilms((editList.films ?? []).map((f: { id: number; title?: string; poster_path?: string | null; poster?: string | null }) =>
-            ({ id: f.id, title: f.title ?? '', poster_path: f.poster_path ?? f.poster ?? null })));
+        const filled = {
+            title: editList.title ?? '',
+            description: editList.description ?? '',
+            isPrivate: !!editList.isPrivate,
+            isRanked: !!editList.isRanked,
+            films: (editList.films ?? []).map((f: { id: number; title?: string; poster_path?: string | null; poster?: string | null }) =>
+                ({ id: f.id, title: f.title ?? '', poster_path: f.poster_path ?? f.poster ?? null })),
+        };
+        setTitle(filled.title);
+        setDescription(filled.description);
+        setIsPrivate(filled.isPrivate);
+        setIsRanked(filled.isRanked);
+        setFilms(filled.films);
+        setFilledAs(JSON.stringify(filled));
     }, [params.editId, editList]);
 
     // The films are sent only when this sheet holds ALL of them: `films: []`
@@ -366,6 +377,8 @@ export default function ListModal() {
             if (!live || all.length < trueFilmCount) return;
             queryClient.setQueryData(['stack', stackId], (was: any) => (was ? { ...was, list: { ...was.list, films: all } } : was));
             setFilms(all);
+            // The rest read is the house's too, never an amendment of the member's.
+            setFilledAs((was) => (was ? JSON.stringify({ ...JSON.parse(was), films: all }) : was));
             setReadWhole(stackId);
         })().catch((e) => logger.warn('[list-modal] the rest of the stack could not be read', e));
         return () => { live = false; };
@@ -377,6 +390,12 @@ export default function ListModal() {
     // The mode the member asked for, not what has loaded: before the stack arrives
     // (or if it never does) this is still an amendment.
     const isAmending = !!params.editId;
+    // An amendment keeps no draft (the new stack's does): it is asked about before any way out
+    // (CLOSE, a swipe, Android's back), as the Log sheet's and the essay's are, never lost to one.
+    useAskBeforeLeaving(isAmending && filledAs !== null && filledAs !== formNow && !saving, {
+        title: 'Discard these amendments?',
+        message: 'The stack stays as it was filed. The changes made here will be lost.',
+    });
     const fileLabel = saving ? 'FILING…' : (isAmending ? 'SAVE THE AMENDMENTS' : 'FILE THE STACK');
     // The stack's true size, as the notice above states it, not the part held here.
     const markCount = holdingsAreSealed && typeof trueFilmCount === 'number' ? trueFilmCount : films.length;

@@ -82,6 +82,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
         noteReady, noteUnreachable, removeVaultNote,
         availablePosters, availableBackdrops,
         isEditing,
+        hasEarlierViewings,
         handleDelete,
         discardDraft,
         hasUnsavedChanges,
@@ -621,17 +622,33 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         <Text style={[st.cancelText, { color: colors.fog }]}>DISCARD DRAFT</Text>
                     </PressableScale>
                 )}
+                {/* A record watched again holds two acts, each named for what it takes: its
+                    latest viewing (the record steps back to the one before), or all of it. */}
+                {isEditing && hasEarlierViewings && !showDeleteConfirm && (
+                    <PressableScale touch="destructive" style={st.deleteBtn} onPress={() => { setShowDeleteConfirm('viewing'); }} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Remove this viewing">
+                        <Text style={st.deleteBtnText}>REMOVE THIS VIEWING</Text>
+                    </PressableScale>
+                )}
                 {isEditing && !showDeleteConfirm && (
-                    <PressableScale touch="destructive" style={st.deleteBtn} onPress={() => { setShowDeleteConfirm(true); }} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Delete this entire log">
+                    <PressableScale touch="destructive" style={st.deleteBtn} onPress={() => { setShowDeleteConfirm('log'); }} hitSlop={null} haptic="light" accessibilityRole="button" accessibilityLabel="Delete this entire log">
                         <Trash2 size={14} color={colors.crimson} />
                         <Text style={st.deleteBtnText}>DELETE THIS ENTIRE LOG</Text>
                     </PressableScale>
                 )}
-                {showDeleteConfirm && (
+                {showDeleteConfirm === 'viewing' && (
                     <View style={st.deleteConfirm}>
-                        <Text style={st.deleteConfirmText}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</Text>
+                        <Text style={st.deleteConfirmText}>REMOVE THIS VIEWING? THE RECORD STEPS BACK TO THE ONE BEFORE.</Text>
                         <View style={st.deleteConfirmRow}>
-                            <PressableScale style={st.deleteYes} onPress={() => { TactileEngine.destroy(); handleDelete(); }} hitSlop={null} accessibilityRole="button" accessibilityLabel="Confirm delete: this log is gone for good"><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></PressableScale>
+                            <PressableScale style={st.deleteYes} onPress={() => { TactileEngine.destroy(); handleDelete(false); }} hitSlop={null} accessibilityRole="button" accessibilityLabel="Confirm: remove this viewing, the record steps back to the one before"><Text style={st.deleteBtnLabel}>REMOVE IT</Text></PressableScale>
+                            <PressableScale touch="wayOut" style={st.deleteNo} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Cancel: keep this viewing"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
+                        </View>
+                    </View>
+                )}
+                {showDeleteConfirm === 'log' && (
+                    <View style={st.deleteConfirm}>
+                        <Text style={st.deleteConfirmText}>{hasEarlierViewings ? 'DELETE THIS LOG AND EVERY VIEWING IN IT? THIS CANNOT BE UNDONE.' : 'DELETE THIS LOG? THIS CANNOT BE UNDONE.'}</Text>
+                        <View style={st.deleteConfirmRow}>
+                            <PressableScale style={st.deleteYes} onPress={() => { TactileEngine.destroy(); handleDelete(true); }} hitSlop={null} accessibilityRole="button" accessibilityLabel="Confirm delete: this log is gone for good"><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></PressableScale>
                             <PressableScale touch="wayOut" style={st.deleteNo} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Cancel: keep this log"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
                         </View>
                     </View>

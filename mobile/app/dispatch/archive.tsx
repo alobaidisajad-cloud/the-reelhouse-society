@@ -45,7 +45,7 @@ export default function ArchiveScreen() {
 
   const {
     query, setQuery, matches, searching, settled, searchFailed,
-    film, filings, certifiedAtFetch, count, span, loading, filmFailed, choose, clear, loadMore, retry,
+    film, filings, certifiedAtFetch, count, span, loading, filmFailed, moreFailed, choose, clear, loadMore, retry, askForTheRest,
   } = useDispatchArchive();
   const typed = characterCount(query.trim()) >= 2;
   // Typed, and not yet answered (the search waits 300ms for the last key).
@@ -167,6 +167,15 @@ export default function ArchiveScreen() {
             <Text style={p.emptyBody} {...scaledTextProps}>
               Nothing of this film is left standing.
             </Text>
+          ) : null}
+          {/* The rest not reached: said at the foot, never a list that simply ends. */}
+          {film && moreFailed && !loading ? (
+            <View style={{ gap: 10, alignItems: 'flex-start' }}>
+              <Text style={p.emptyBody} {...scaledTextProps}>
+                The rest of this film’s filings could not be reached.
+              </Text>
+              <TryAgainLine onPress={askForTheRest} what="ask for the rest" />
+            </View>
           ) : null}
         </PaperSheet>
       </ScrollView>

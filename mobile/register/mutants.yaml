@@ -4969,3 +4969,462 @@ mutants:
         find: "    () => (list ? [...list.films, ...(later.after === list.films ? later.films : [])] : []),"
         replace: "    () => (list ? [...list.films, ...(later.after === (list as unknown) ? later.films : [])] : []),"
     proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "the films read past the first page stay when a critique rewrites the stack’s count" }
+
+  - id: shape-stack-amend-leaves-unasked
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "filledAs !== null && filledAs !== formNow && !saving"
+        replace: "filledAs !== null && filledAs !== filledAs && !saving"
+    proof: { file: app/(modals)/__tests__/anAmendedStackAsksBeforeLeaving.test.tsx, test: "an amended stack asks \"Discard these amendments?\" on its way out, and an untouched one does not" }
+
+  - id: shape-stack-rest-read-as-amendment
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "setFilledAs((was) => (was ? JSON.stringify({ ...JSON.parse(was), films: all }) : was));"
+        replace: "setFilledAs((was) => was);"
+    proof: { file: app/(modals)/__tests__/anAmendedStackAsksBeforeLeaving.test.tsx, test: "the rest of a long stack, read after the sheet opened, is not counted as an amendment" }
+
+  - id: shape-saved-stack-asks
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "filledAs !== formNow && !saving, {"
+        replace: "filledAs !== formNow, {"
+    proof: { file: app/(modals)/__tests__/anAmendedStackAsksBeforeLeaving.test.tsx, test: "a saved amendment leaves without a word" }
+
+  - id: shape-hidden-author-leaves-from-under-a-sheet
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: src/hooks/useLeavesWhenHidden.ts
+        find: "if (hidden && !waitFor) nav.back();"
+        replace: "if (hidden) nav.back();"
+    proof: { file: app/log/__tests__/aHiddenAuthorsRecordLeaves.test.tsx, test: "a REPORT that also blocks: the page stays under the report sheet, and leaves as the sheet closes" }
+
+  - id: shape-log-stands-for-a-hidden-author
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "useLeavesWhenHidden(log?.user_id, sheetOpen)"
+        replace: "useLeavesWhenHidden(null, sheetOpen)"
+    proof: { file: app/log/__tests__/aHiddenAuthorsRecordLeaves.test.tsx, test: "a blocked author's log leaves the page once the sheet has closed, never drawn as theirs again" }
+
+  - id: shape-stack-stands-for-a-hidden-curator
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "useLeavesWhenHidden(list?.userId, sheetOpen)"
+        replace: "useLeavesWhenHidden(null, sheetOpen)"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a blocked curator's stack leaves the page too" }
+
+  - id: shape-reader-stands-on-a-mute
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "useLeavesWhenHidden(live?.authorId, sheetOpen)"
+        replace: "useLeavesWhenHidden(null, sheetOpen)"
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "muting the author from the ··· leaves the page once the sheet has closed, never drawing their filing again" }
+
+  - id: shape-series-stands-for-a-hidden-author
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/dispatch/series/[id].tsx
+        find: "useLeavesWhenHidden(parts.find((f) => !!f.authorId)?.authorId)"
+        replace: "useLeavesWhenHidden(null)"
+    proof: { file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "a muted author leaves too; another author stays" }
+
+  - id: shape-deleted-card-stays-on-the-reel
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/components/feed/reelRead.ts
+        find: "    if (withdrawnId) {"
+        replace: "    if (withdrawnId === '') {"
+    proof: { file: src/components/feed/__tests__/theReelHearsARecordChanged.test.ts, test: "a deleted record's card leaves the community and the following Reel at once, and both are read again" }
+
+  - id: shape-a-page-loses-its-word
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/lib/feedPages.ts
+        find: "    Object.defineProperty(page, 'next', { value: from.next, enumerable: false });"
+        replace: "    void page;"
+    proof: { file: src/components/feed/__tests__/theReelHearsARecordChanged.test.ts, test: "a page a card left keeps its word on what follows it, out of its rows" }
+
+  - id: shape-feeds-share-without-their-word
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "queryClient.setQueryDefaults(['feed'], {"
+        replace: "queryClient.setQueryDefaults(['never'], {"
+    proof: { file: src/components/feed/__tests__/theReelHearsARecordChanged.test.ts, test: "a page a card left keeps its word on what follows it, out of its rows" }
+
+  - id: shape-restored-page-taken-as-last
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/components/feed/reelRead.ts
+        find: "    : page.length >= FEED_PAGE && last ? `${last.created_at}|${last.id}` : null;"
+        replace: "    : null;"
+    proof: { file: src/components/feed/__tests__/theReelHearsARecordChanged.test.ts, test: "a full page restored from the saved cache, with no word, still goes on past its last card" }
+
+  - id: shape-deleted-log-card-stays
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "            wallMayHaveChanged();\n            reelMayHaveChanged(id);"
+        replace: "            wallMayHaveChanged();"
+    proof: { file: src/stores/__tests__/theWallHearsWhatChanged.test.ts, test: "a log deleted: its card leaves both Reels at once, and they are read again" }
+
+  - id: shape-queued-delete-card-stays
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "                    reelMayHaveChanged(id);\n                    reelToast('Removed offline."
+        replace: "                    reelToast('Removed offline."
+    proof: { file: src/stores/__tests__/theWallHearsWhatChanged.test.ts, test: "a log deleted with no connection (queued): its card leaves both Reels at once all the same" }
+
+  - id: shape-amended-log-card-old
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "{ wallMayHaveChanged(); reelMayHaveChanged(); }"
+        replace: "{ wallMayHaveChanged(); }"
+    proof: { file: src/stores/__tests__/theWallHearsWhatChanged.test.ts, test: "a log amended: the Reel's feeds are read again, so its card shows the new rating and words" }
+
+  - id: shape-visitor-save-says-saved
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "    if (!user) { askIn(); return; }\n    if (filmSaved) {"
+        replace: "    if (filmSaved) {"
+    proof: { file: app/log/__tests__/aStrangerIsAskedInOnARecord.test.tsx, test: "their SAVE asks them in, saves nothing, and says nothing of a save" }
+
+  - id: shape-visitor-certify-reading-forever
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "const certifyKnown = !user || endorsed ||"
+        replace: "const certifyKnown = endorsed ||"
+    proof: { file: app/log/__tests__/aStrangerIsAskedInOnARecord.test.tsx, test: "their CERTIFY is plain, never \"Reading your mark\", and asks them in" }
+
+  - id: shape-removal-said-at-the-tap
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "      removeFromWatchlist(log.film_id);\n    } else {"
+        replace: "      removeFromWatchlist(log.film_id);\n      reelToast.success('Removed from watchlist');\n    } else {"
+    proof: { file: app/log/__tests__/aStrangerIsAskedInOnARecord.test.tsx, test: "takes it off, and says nothing at the tap either" }
+
+  - id: shape-save-said-at-the-tap
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "      });\n    }\n  }, [log, user, filmSaved"
+        replace: "      });\n      reelToast.success('Saved to watchlist ✦');\n    }\n  }, [log, user, filmSaved"
+    proof: { file: app/log/__tests__/aStrangerIsAskedInOnARecord.test.tsx, test: "saves, and says nothing at the tap: the store’s own word is the only one" }
+
+  - id: shape-whole-delete-takes-a-viewing
+    class: WRITE-an-act-that-takes-other-than-it-says
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "await removeLog(editLogId, whole, edited ?? undefined);"
+        replace: "await removeLog(editLogId, false, edited ?? undefined);"
+    proof: { file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "DELETE THIS ENTIRE LOG takes the whole record, every viewing in it" }
+
+  - id: shape-log-confirm-takes-a-viewing
+    class: WRITE-an-act-that-takes-other-than-it-says
+    source: shape
+    edits:
+      - file: src/components/log/LogForm.tsx
+        find: "handleDelete(true); }} hitSlop={null}"
+        replace: "handleDelete(false); }} hitSlop={null}"
+    proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a record watched again: DELETE THIS ENTIRE LOG says every viewing goes, and takes the whole record" }
+
+  - id: shape-no-viewing-offered-alone
+    class: WRITE-an-act-that-takes-other-than-it-says
+    source: shape
+    edits:
+      - file: src/components/log/LogForm.tsx
+        find: "{isEditing && hasEarlierViewings && !showDeleteConfirm && ("
+        replace: "{isEditing && hasEarlierViewings && !showDeleteConfirm && !isEditing && ("
+    proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a record watched again offers REMOVE THIS VIEWING, asked on its own, which takes the latest viewing alone" }
+
+  - id: shape-unnamed-viewing-closes-the-sheet
+    class: WRITE-an-act-that-takes-other-than-it-says
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "        throw new Error(VIEWING_NEEDS_CONNECTION);"
+        replace: "        return;"
+    proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a viewing that cannot be named without a connection is said, and the sheet stays on its question" }
+
+  - id: shape-one-critique-taken-for-the-list
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "      if (!old) return old;\n      return [...old, optimisticComment];"
+        replace: "      if (!old) return [optimisticComment];\n      return [...old, optimisticComment];"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "keeps \"could not be reached\" and its TRY AGAIN, never becoming a list of the one; filed, the list is read again" }
+
+  - id: shape-urgent-emptied-on-return
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "    if (view === 'priority') setPriorityFrom(undefined);"
+        replace: "    if (view === 'priority') setPriorityItems([]);"
+    proof: { file: app/(admin)/__tests__/tribunal.test.tsx, test: "URGENT opened a second time, after THE DOCKET, still shows its cases, never \"The docket is clear\"" }
+
+  - id: shape-urgent-emptied-on-pull
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "      setPriorityFrom(undefined);\n      const r = await refetchPriority();"
+        replace: "      setPriorityItems([]);\n      const r = await refetchPriority();"
+    proof: { file: app/(admin)/__tests__/tribunal.test.tsx, test: "a pull on URGENT keeps its cases, never \"The docket is clear\"" }
+
+  - id: shape-urgent-pull-fails-unsaid
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "      const r = await refetchPriority();\n      if (r.isError) reelToast.error(REFRESH_FAILED);"
+        replace: "      await refetchPriority();"
+    proof: { file: app/(admin)/__tests__/tribunal.test.tsx, test: "a pull on URGENT that reached nothing says so" }
+
+  - id: shape-withheld-filing-kept
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "        if (!waiting) {"
+        replace: "        if (waiting) {"
+    proof: { file: src/stores/__tests__/aFilingTheHouseNoLongerGivesLeavesThePaper.test.ts, test: "a filing the house no longer gives leaves the page and the opened filings, so the reader says it is no longer here" }
+
+  - id: shape-amend-offers-a-film
+    class: WRITE-a-choice-offered-then-dropped
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperComposer.tsx
+        find: "{amending ? null : ("
+        replace: "{amending && !amending ? null : ("
+    proof: { file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "a new filing offers FILM and STILL; an amendment offers neither, the film stays as it was filed" }
+
+  - id: shape-critique-certified-as-filing
+    class: COPY-one-act-told-as-another
+    source: shape
+    edits:
+      - file: src/utils/endorsementGroupKey.ts
+        find: "post: 'post', critique: 'critique',"
+        replace: "post: 'post',"
+    proof: { file: src/utils/__tests__/aCertifiedCritiqueIsCalledACritique.test.ts, test: "a critique certified groups apart from the filing it stands under being certified" }
+
+  - id: shape-critique-group-called-filing
+    class: COPY-one-act-told-as-another
+    source: shape
+    edits:
+      - file: src/utils/endorsementGroupKey.ts
+        find: "      return `${people} certified your critique`;"
+        replace: "      return `${people} certified your filing`;"
+    proof: { file: src/utils/__tests__/aCertifiedCritiqueIsCalledACritique.test.ts, test: "three certifications of a critique read \"3 members certified your critique\"" }
+
+  - id: shape-critique-group-opens-nowhere
+    class: COPY-one-act-told-as-another
+    source: shape
+    edits:
+      - file: src/utils/endorsementGroupKey.ts
+        find: "    case 'post':\n    case 'critique':\n      return `/dispatch/${target.id}`;"
+        replace: "    case 'post':\n      return `/dispatch/${target.id}`;"
+    proof: { file: src/utils/__tests__/aCertifiedCritiqueIsCalledACritique.test.ts, test: "tapping a certified critique opens the filing it stands under" }
+
+  - id: shape-first-day-left-to-the-head
+    class: TIME-a-day-left-to-a-head-naming-another
+    source: shape
+    edits:
+      - file: app/(tabs)/dispatch.tsx
+        find: "if (out.length > 0 || savedOnly || k !== todayIs)"
+        replace: "if (out.length > 0 || savedOnly)"
+    proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "names the day above the first filing when it was not filed today" }
+
+  - id: shape-saved-page-first-day-unnamed
+    class: TIME-a-day-left-to-a-head-naming-another
+    source: shape
+    edits:
+      - file: app/(tabs)/dispatch.tsx
+        find: "if (out.length > 0 || savedOnly || k !== todayIs)"
+        replace: "if (out.length > 0 || k !== todayIs)"
+    proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the saved page names the day above its first filing, even one filed today" }
+
+  - id: shape-archive-rest-fails-unsaid
+    class: READ-a-later-page-failing-in-silence
+    source: shape
+    edits:
+      - file: src/hooks/useDispatchArchive.ts
+        find: "logger.warn('[archive] filings read failed', rows.error); if (from === 0) setFilmFailed(true); else setMoreFailed(true); return; }"
+        replace: "logger.warn('[archive] filings read failed', rows.error); if (from === 0) setFilmFailed(true); return; }"
+    proof: { file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "says the rest of the film could not be reached, asks again only when the member does, and then reads it" }
+
+  - id: shape-archive-asks-every-scroll
+    class: READ-a-later-page-failing-in-silence
+    source: shape
+    edits:
+      - file: src/hooks/useDispatchArchive.ts
+        find: "    if (loading || !more || moreFailed) return;"
+        replace: "    if (loading || !more) return;"
+    proof: { file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "says the rest of the film could not be reached, asks again only when the member does, and then reads it" }
+
+  - id: shape-answered-request-on-the-bell
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/hooks/useFollowRequests.ts
+        find: "    if (ok) useNotificationStore.getState().forgetRequestNotices(req.requesterId);"
+        replace: ""
+    proof: { file: src/hooks/__tests__/anAnsweredRequestLeavesTheBell.test.tsx, test: "admitting a member takes their request off the board and the bell, and leaves their other notices" }
+
+  - id: shape-declined-all-on-the-bell
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/hooks/useFollowRequests.ts
+        find: "    if (n >= 0) useNotificationStore.getState().forgetRequestNotices(null);"
+        replace: ""
+    proof: { file: src/hooks/__tests__/anAnsweredRequestLeavesTheBell.test.tsx, test: "declining all takes every request off the board and the bell" }
+
+  - id: shape-critique-written-while-sent
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperCritiques.tsx
+        find: "        editable={!sending}"
+        replace: "        editable"
+    proof: { file: src/components/dispatch/paper/__tests__/aCritiqueIsHeldWhileItGoes.test.tsx, test: "the critique cannot be written in while it is being sent, and can again once it has gone" }
+
+  - id: shape-delivered-filing-not-read
+    class: STATE-an-unsent-write-left-off-a-redrawn-page
+    source: shape
+    edits:
+      - file: app/(tabs)/dispatch.tsx
+        find: "    if (delivered.some((id) => !onPage.has(id))) void useDispatch.getState().fetch();"
+        replace: "    void onPage;"
+    proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "when the queue delivers a filing the page does not hold, the paper is read again; one it holds is not" }
+
+  - id: shape-bookmark-state-unsaid
+    class: UI-shown-but-not-said
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperFrame.tsx
+        find: "accessibilityLabel=\"Your saved filings\" accessibilityState={{ selected: !!saved }}"
+        replace: "accessibilityLabel=\"Your saved filings\""
+    proof: { file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "the bookmark says it is selected on the saved page, and not on the paper" }
+
+  - id: shape-sign-out-undone-at-launch
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "        if (!memberUnchanged(restoringFor)) { set({ loading: false }); return; }"
+        replace: "        void restoringFor;"
+    proof: { file: src/stores/__tests__/aSignOutWhileTheLaunchReadsStays.test.ts, test: "a member who signs out while the launch reads their profile stays signed out" }
+
+  - id: shape-host-shown-who-they-hid
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "filterContentByBlocks(members.filter(m => m.status === 'pending'), (m) => m.user_id)"
+        replace: "filterContentByBlocks(members.filter(m => m.status === 'pending'), () => '')"
+    proof: { file: src/components/lounge/__tests__/theHostIsNotShownWhoTheyHid.test.tsx, test: "shows only the member they have not hidden, with ADMIT" }
+
+  - id: shape-corridor-counts-the-hidden
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "        if (r.user_id && useBlockStore.getState().isHidden(r.user_id)) continue;"
+        replace: ""
+    proof: { file: src/stores/__tests__/theDoorCountsNoOneHidden.test.ts, test: "the card counts only who the host has not blocked or muted at the door" }
+
+  - id: shape-saved-profile-leaves-a-draft
+    class: STATE-a-draft-of-nothing-kept
+    source: shape
+    edits:
+      - file: src/hooks/useEditProfile.ts
+        find: "      if (savedRef.current) { clearDraft(memberId, 'profile'); return; }"
+        replace: ""
+    proof: { file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "a save with an empty link row leaves no draft behind it" }
+
+  - id: shape-empty-link-row-kept-as-a-draft
+    class: STATE-a-draft-of-nothing-kept
+    source: shape
+    edits:
+      - file: src/hooks/useEditProfile.ts
+        find: "  const asSaved = (v: ProfileFormData) => ({ ...amendmentsOf(v), links: sanitizeLinks(amendmentsOf(v).links) });"
+        replace: "  const asSaved = (v: ProfileFormData) => amendmentsOf(v);"
+    proof: { file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "an empty link row added and left is no draft; the link typed into it is kept" }
+
+  - id: shape-salon-search-kept-for-the-next
+    class: STATE-a-choice-kept-past-sign-out
+    source: shape
+    edits:
+      - file: app/(tabs)/lounge.tsx
+        find: "    setSearchQuery('');\n    setAsked(null);"
+        replace: "    setAsked(null);"
+    proof: { file: src/components/lounge/__tests__/theSalonSearchIsTheMembersOwn.test.tsx, test: "the next member on the phone opens the salons with the search empty, every salon shown" }
+
+  - id: shape-year-not-read-on-return
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: app/year-in-cinema.tsx
+        find: "    if (focusedBefore.current && memberId) void refetch();"
+        replace: "    void memberId;"
+    proof: { file: app/__tests__/aYearIsReadAgainOnReturn.test.tsx, test: "a return to the screen reads the year again, so a film logged meanwhile is counted" }
+
+  - id: shape-link-walks-after-leaving
+    class: NAV-a-walk-onward-after-the-member-left
+    source: shape
+    edits:
+      - file: app/auth-callback.tsx
+        find: "    return () => { left.current = true; if (onward.current) clearTimeout(onward.current); };"
+        replace: "    return () => { if (onward.current) clearTimeout(onward.current); };"
+    proof: { file: app/__tests__/aLinkAnsweredAfterLeavingWalksNoOne.test.tsx, test: "a member who leaves before the link is answered is walked nowhere once it is" }
+
+  - id: shape-own-reaction-unsaid
+    class: UI-shown-but-not-said
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "            accessibilityState={{ selected: !!r.mine }}"
+        replace: ""
+    proof: { file: src/components/lounge/__tests__/theHostIsNotShownWhoTheyHid.test.tsx, test: "the reaction the member gave is said chosen; another’s is not" }
+
+  - id: shape-picker-own-reaction-unsaid
+    class: UI-shown-but-not-said
+    source: shape
+    edits:
+      - file: src/components/lounge/ActionSheet.tsx
+        find: "                    accessibilityState={{ selected: mine }}"
+        replace: ""
+    proof: { file: src/components/lounge/__tests__/thePickerSaysWhichReactionIsYours.test.tsx, test: "the reaction the member gave is said chosen in the picker; the four others are not" }

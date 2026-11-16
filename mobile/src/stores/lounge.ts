@@ -224,7 +224,8 @@ type Corridor = {
   hosted: RoomRow[];
   joined: RoomRow[];
   unread: { lounge_id: string; unread_count: number; last_message_at: string | null }[];
-  pending: { lounge_id: string }[];
+  /** Who waits at the doors the member hosts, each named since 20261116_01 (absent before it). */
+  pending: { lounge_id: string; user_id?: string }[];
   faces: { lounge_id: string; username: string; avatar_url: string | null }[];
   last_words: { lounge_id: string; last_message_at: string | null }[];
 };
@@ -596,8 +597,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }
 
       // How many requests are at the door, per room hosted: the landing card's "at the door" badge.
+      // Never one the host has blocked or muted: the house leaves them out (20261116_01), and one
+      // hidden since this read is left out here, as the room's own door leaves them out.
       const pendingCounts: Record<string, number> = {};
-      for (const r of corridor.pending) pendingCounts[r.lounge_id] = (pendingCounts[r.lounge_id] || 0) + 1;
+      for (const r of corridor.pending) {
+        if (r.user_id && useBlockStore.getState().isHidden(r.user_id)) continue;
+        pendingCounts[r.lounge_id] = (pendingCounts[r.lounge_id] || 0) + 1;
+      }
 
       // The faces of the member's own rooms (at most 3 a room), for the card's avatar stack.
       const facesMap: Record<string, { username: string; avatar_url: string | null }[]> = {};

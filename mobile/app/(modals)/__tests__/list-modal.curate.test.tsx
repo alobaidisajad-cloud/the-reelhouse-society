@@ -36,7 +36,7 @@ jest.mock('@/src/utils/typedRouter', () => ({
   nav: { back: jest.fn(), push: jest.fn(), replace: jest.fn() },
 }));
 jest.mock('@tanstack/react-query', () => ({
-  QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); },
+  QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); setQueryDefaults = () => {}; },
   // The auth store (who is signed in) loads the app's query client, which listens for the network
   // and for the app coming back to the front.
   onlineManager: { setEventListener: () => {} },

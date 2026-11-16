@@ -65,6 +65,7 @@ import { ropeSpoken } from '@/src/components/clearance/Clearance';
 import { characterCount } from '@/src/utils/text';
 import type { StackData } from '@/src/schemas/feed.schema';
 import { useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
+import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
 import { stackCritiques } from '@/src/components/critique/stackCritiques';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
@@ -430,6 +431,10 @@ function StackDetailScreen({ id }: { id: string }) {
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
   const [commentReportSheetVisible, setCommentReportSheetVisible] = useState(false);
   const [selectedComment, setSelectedComment] = useState<ListComment | null>(null);
+  // Its curator blocked or muted (its ···, a REPORT that also blocks, or anywhere else): the page
+  // leaves, once the sheet that did it has closed, and is never left standing as their stack.
+  const sheetOpen = actionSheetVisible || reportSheetVisible || commentReportSheetVisible;
+  const curatorHidden = useLeavesWhenHidden(list?.userId, sheetOpen);
   const [descExpanded, setDescExpanded] = useState(false);
   // The epigraph's line count, and WHICH text it was measured for: a refresh can
   // bring new words without a remount, and an old answer must not decide the fold.
@@ -648,9 +653,11 @@ function StackDetailScreen({ id }: { id: string }) {
       created_at: houseIso()
     };
     
-    // CQRS Optimistic sync directly to cache
+    // Laid on the critiques as read. None read (the read failed, or is still out) is left
+    // unread: laid there, the one critique became the whole list, and the failure line and its
+    // TRY AGAIN went (review round 6). The house's list is read again once it is filed.
     queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) => {
-      if (!old) return [optimisticComment];
+      if (!old) return old;
       return [...old, optimisticComment];
     });
 
@@ -666,11 +673,14 @@ function StackDetailScreen({ id }: { id: string }) {
         content: content
       });
 
-      // The house's copy, with its cleaned words and joined profile.
-      queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) => {
-        if (!old) return [newComment];
-        return old.map(c => c.id === commentId ? newComment : c);
-      });
+      // The house's copy, with its cleaned words and joined profile; with none read, the house's
+      // list, asked again, brings it.
+      if (queryClient.getQueryData(['stackComments', id])) {
+        queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) =>
+          old?.map(c => c.id === commentId ? newComment : c));
+      } else {
+        void queryClient.invalidateQueries({ queryKey: ['stackComments', id] });
+      }
       letGoOfComment();
       // Filed, where members may certify or answer it: the moment to ask to send word.
       void offerWord('critique', user.id);
@@ -688,7 +698,7 @@ function StackDetailScreen({ id }: { id: string }) {
       } else {
         // Atomic Rollback
         queryClient.setQueryData(['stackComments', id], (old: ListComment[] | undefined) => {
-          if (!old) return [];
+          if (!old) return old;
           return old.filter(c => c.id !== commentId);
         });
         bumpCritiqueCount(-1);
@@ -809,7 +819,8 @@ function StackDetailScreen({ id }: { id: string }) {
     );
   }, [loggedIds, list?.isRanked, handlePressFilm, ITEM_WIDTH, ITEM_HEIGHT]);
 
-  if (loading) {
+  // Its curator hidden: the page is leaving, and is drawn as waiting, never as their stack.
+  if (loading || (curatorHidden && !sheetOpen)) {
     return (
       <View style={s.container}>
         <RoomLight room="default" />

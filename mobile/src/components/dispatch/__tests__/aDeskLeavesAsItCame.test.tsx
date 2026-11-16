@@ -163,6 +163,29 @@ describe('a short desk', () => {
       expect(held.filter((h) => h.remove.mock.calls.length === 0)).toEqual([]);
     });
   });
+
+  // An amendment sends the words, never the film: a film chosen on the desk was drawn there and
+  // dropped by the amendment without a word (review round 6).
+  it('a new filing offers FILM and STILL; an amendment offers neither, the film stays as it was filed', () => {
+    const fresh = render(<ComposeShortScreen kind="take" />);
+    expect(fresh.getByLabelText('Name a film')).toBeTruthy();
+    expect(fresh.getByLabelText('Add a still')).toBeTruthy();
+    fresh.unmount();
+
+    mockEditId = '00000019-0000-4000-8000-000000000019';
+    mockHeld = {
+      id: mockEditId, kind: 'take', authorId: 'u1', author: { name: 'me', memberNo: 7, tier: 'free' },
+      film: null, subjectId: null, subjectKind: null, title: null, body: 'Ozu never once stood up.',
+      fullContent: null, source: null, sourceUrl: null, options: null, closesAt: null, frozenTotals: null,
+      answerId: null, seriesId: null, seriesTitle: null, partNumber: null, spoilerLabel: null,
+      withheldAt: null, endedAt: null, endedBy: null, certifyCount: 0, commentCount: 0,
+      createdAt: '2026-08-28T21:00:00Z', editedAt: null,
+    };
+    const amend = render(<ComposeShortScreen kind="take" />);
+    expect(amend.getByLabelText('Amend it')).toBeTruthy();
+    expect(amend.queryByLabelText('Name a film')).toBeNull();
+    expect(amend.queryByLabelText('Add a still')).toBeNull();
+  });
 });
 
 describe('the ballot desk', () => {

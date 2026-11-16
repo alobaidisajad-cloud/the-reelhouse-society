@@ -70,6 +70,7 @@ import { useAboveDockedBar, useBottomEdge, useColumnWidth } from '@/src/componen
 import { useScrollTrace } from '@/src/hooks/useScrollTrace';
 import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
+import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
@@ -199,6 +200,10 @@ function FilingReader({ id }: { id: string }) {
   const closesPassed = useHasPassed(live?.closesAt);
   // Filed on this phone while the wire was down, and not gone yet.
   const pending = useUnsent('add_filing').has(id);
+  // Its author blocked or muted (the ···, a REPORT that also blocks, or anywhere else): the page
+  // leaves, once the sheet that did it has closed. It left on BLOCK alone, and stood on a mute.
+  const sheetOpen = actions || !!report;
+  const authorHidden = useLeavesWhenHidden(live?.authorId, sheetOpen);
 
   useEffect(() => {
     if (!id) return;
@@ -392,7 +397,8 @@ function FilingReader({ id }: { id: string }) {
     setActions(true);
   }, [live, me, amendable, openAmend, confirmWithdraw]);
 
-  if (loading) {
+  // Its author hidden: the page is leaving, and is drawn as waiting, never as their filing.
+  if (loading || (authorHidden && !sheetOpen)) {
     return (
       <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>
         <RoomLight room="dispatch" />
@@ -798,7 +804,6 @@ function FilingReader({ id }: { id: string }) {
           onBlock={() => {
             void blockUser(live.authorId as string);
             setActions(false);
-            nav.back(); // blocked: their filing is not what the member wants to see
           }}
           onMute={() => {
             void muteUser(live.authorId as string);

@@ -531,6 +531,58 @@ describe('a mark made in the archive', () => {
   });
 });
 
+describe('a later page that could not be read (review round 6)', () => {
+  // A later page's failure was only logged: the list ended as if it were the whole archive, and
+  // every scroll event asked again.
+  const ranges = () => mockAsked.filter((a) => a.range !== undefined).map((a) => a.range);
+  const scrollToTheFoot = async (r: ReturnType<typeof render>) => {
+    const list = r.container.queryAll((n) => typeof n.props.onScroll === 'function' && n.props.scrollEventThrottle === 200)[0];
+    expect(list).toBeDefined();
+    await act(async () => {
+      list!.props.onScroll({ nativeEvent: { layoutMeasurement: { height: 800 }, contentOffset: { y: 1000 }, contentSize: { height: 1500 } } });
+      for (let i = 0; i < 6; i++) await Promise.resolve();
+    });
+  };
+
+  it('says the rest of the film could not be reached, asks again only when the member does, and then reads it', async () => {
+    mockSearchRows = [hit()];
+    mockFilingRows = Array.from({ length: 20 }, (_, i) => filing({ id: `f${i}`, body: `Take ${i}.` }));
+    mockCount = 21;
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, 'stalker');
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
+      for (let i = 0; i < 6; i++) await Promise.resolve();
+    });
+    expect(ranges()).toEqual([[0, 19]]);
+
+    // The next page fails.
+    mockFilingError = { message: 'TypeError: Network request failed' };
+    await scrollToTheFoot(r);
+    expect(ranges()).toEqual([[0, 19], [20, 39]]);
+    expect(r.getByText('The rest of this film’s filings could not be reached.')).toBeTruthy();
+    // The rows drawn stay.
+    expect(r.getByText(/Take 19\./)).toBeTruthy();
+
+    // Scrolling on does not ask again by itself.
+    await scrollToTheFoot(r);
+    expect(ranges()).toEqual([[0, 19], [20, 39]]);
+
+    // The member asks: the rest is read, and the line goes.
+    mockFilingError = null;
+    mockFilingRows = [filing({ id: 'f20', body: 'The last take.' })];
+    await act(async () => { jest.advanceTimersByTime(1000); });
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText('Try again: ask for the rest'));
+      for (let i = 0; i < 6; i++) await Promise.resolve();
+    });
+    expect(ranges()).toEqual([[0, 19], [20, 39], [20, 39]]);
+    expect(r.getByText(/The last take\./)).toBeTruthy();
+    expect(r.queryByText('The rest of this film’s filings could not be reached.')).toBeNull();
+  });
+});
+
 describe('the archive after the reader (review round 5)', () => {
   const openStalker = async (rows: unknown[]) => {
     mockSearchRows = [hit()];

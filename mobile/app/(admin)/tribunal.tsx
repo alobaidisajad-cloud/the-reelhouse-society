@@ -603,10 +603,10 @@ function TribunalScreen() {
     setActiveView(view);
     setMultiSelectMode(false);
     setSelectedReports(new Set());
-    if (view === 'priority') {
-      setPriorityItems([]);
-      setHasMorePriority(true);
-    }
+    // Back to its first page, from the answer held: emptied, it waited for a read that brought a
+    // DIFFERENT answer, and within the query's fresh window (or a read finding the same cases,
+    // handed back as the same object) none came, so the docket said "clear" over waiting cases.
+    if (view === 'priority') setPriorityFrom(undefined);
   }, []);
 
   const onRefresh = useCallback(async () => {
@@ -616,9 +616,10 @@ function TribunalScreen() {
       // The docket stays as it was; a pull that reached nothing says so.
       if (r.isError) reelToast.error(REFRESH_FAILED);
     } else {
-      setPriorityItems([]);
-      setHasMorePriority(true);
-      refetchPriority();
+      // Back to its first page as held, then as read again; a pull that reached nothing says so.
+      setPriorityFrom(undefined);
+      const r = await refetchPriority();
+      if (r.isError) reelToast.error(REFRESH_FAILED);
     }
   }, [refetch, refetchPriority, activeView]);
 

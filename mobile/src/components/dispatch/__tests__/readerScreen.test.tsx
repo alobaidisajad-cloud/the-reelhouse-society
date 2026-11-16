@@ -223,6 +223,8 @@ beforeEach(() => {
   mockSheetProps.length = 0;
   mockReportProps.length = 0;
   mockBack.mockClear();
+  // Nobody hidden: a block or mute a test made leaves the next test's reader at once (review round 6).
+  useBlockStore.setState({ blocked: [], muted: [], _blockedIndex: new Set(), _mutedIndex: new Set() });
   at({ id: '00000017-0000-4000-8000-000000000017' });
   useDispatch.setState({
     ...AS_BUILT,
@@ -1413,5 +1415,54 @@ describe('the reader opens at its floor (P4.53)', () => {
     await act(async () => { await fireEvent.press(getByText('The Second Room')); });
     expect(mockPushed).toContain(`/dispatch/${NEXT}`);
     expect(useDispatch.getState().opened[NEXT]?.title).toBe('The Second Room');
+  });
+});
+
+/**
+ * Review round 6: the reader left on BLOCK alone (its own ···), and stood on a MUTE under the
+ * toast "Their content is now hidden". It now leaves on either, from anywhere, but never from
+ * under a sheet of its own still on it (a REPORT that also blocks blocks before it closes).
+ */
+describe('a filing whose author is hidden leaves the reader (review round 6)', () => {
+  const AUTHOR = 'u2';
+  const nobodyHidden = () => useBlockStore.setState({ blocked: [], muted: [], _blockedIndex: new Set(), _mutedIndex: new Set() });
+  beforeEach(nobodyHidden);
+  afterEach(nobodyHidden);
+
+  it('muting the author from the ··· leaves the page once the sheet has closed, never drawing their filing again', async () => {
+    mockUpserts.length = 0;
+    const { getByLabelText, getByText, queryByText } = await mount();
+    expect(getByText('The Empty Room')).toBeTruthy();
+    await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
+    const sheet = mockSheetProps[mockSheetProps.length - 1];
+    expect(sheet).toBeDefined();
+    await act(async () => { (sheet!.onMute as () => void)(); });
+    expect(mockUpserts).toEqual([{ table: 'user_blocks', row: expect.objectContaining({ blocked_id: AUTHOR, type: 'mute' }) }]);
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(queryByText('The Empty Room')).toBeNull();
+  });
+
+  it('a REPORT that also blocks: the page stays under the report sheet, and leaves as the sheet closes', async () => {
+    const { getByLabelText, getByText } = await mount();
+    await act(async () => { await fireEvent.press(getByLabelText('More, for this filing')); });
+    const sheet = mockSheetProps[mockSheetProps.length - 1];
+    expect(sheet).toBeDefined();
+    await act(async () => { (sheet!.onReport as () => void)(); });
+    expect(mockReportProps.length).toBeGreaterThan(0);
+    // The report sheet's own "also block", while it is still open.
+    await act(async () => { await useBlockStore.getState().blockUser(AUTHOR); });
+    expect(mockBack).not.toHaveBeenCalled();
+    expect(getByText('The Empty Room')).toBeTruthy();
+    const report = mockReportProps[mockReportProps.length - 1];
+    expect(report).toBeDefined();
+    await act(async () => { (report!.onDismiss as () => void)(); });
+    expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('an author muted from anywhere else, with no sheet of this page open, leaves at once', async () => {
+    const { getByText } = await mount();
+    expect(getByText('The Empty Room')).toBeTruthy();
+    await act(async () => { useBlockStore.setState({ muted: [AUTHOR], _mutedIndex: new Set([AUTHOR]) }); });
+    expect(mockBack).toHaveBeenCalledTimes(1);
   });
 });

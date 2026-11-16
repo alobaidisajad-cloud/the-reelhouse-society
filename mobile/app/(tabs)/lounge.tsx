@@ -141,6 +141,16 @@ export default function LoungeScreen() {
   const words = searchQuery.trim().toLowerCase();
   const [asked, setAsked] = useState<{ words: string; hits: LoungeRoom[] | null } | null>(null);
   const [askAgain, setAskAgain] = useState(0);
+  // The search is the member's own. The tab stays mounted through a sign-out, so the next person
+  // on the phone opened the corridor on the last one's words, narrowed by them (review round 6,
+  // as the Reel's choices were in round 5): when the member on the phone changes, it starts empty.
+  const memberKey = user?.id ?? null;
+  const [searchOf, setSearchOf] = useState(memberKey);
+  if (searchOf !== memberKey) {
+    setSearchOf(memberKey);
+    setSearchQuery('');
+    setAsked(null);
+  }
   useEffect(() => {
     if (characterCount(words) < SEARCH.least) return;
     let live = true;

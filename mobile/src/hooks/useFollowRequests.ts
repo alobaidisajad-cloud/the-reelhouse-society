@@ -11,6 +11,7 @@ import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContent
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useSocialStore } from '@/src/stores/followStore';
+import { useNotificationStore } from '@/src/stores/notificationStore';
 import { FollowRequestService, FollowRequest } from '@/src/services/FollowRequestService';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -147,6 +148,9 @@ export function useFollowRequests(enabled: boolean) {
       ? await FollowRequestService.accept(req.requesterId)
       : await FollowRequestService.decline(req.requesterId);
     busy.current.delete(req.requesterId);
+    // Answered: the house took its notice, and the bell lets it go too, whether or not the door
+    // is still open.
+    if (ok) useNotificationStore.getState().forgetRequestNotices(req.requesterId);
     if (!isMounted.current) return;
     if (!ok) {
       // Rollback: restore row + badge.
@@ -169,6 +173,7 @@ export function useFollowRequests(enabled: boolean) {
     hasMoreRef.current = false;
     setHasMore(false);
     const n = await FollowRequestService.declineAll();
+    if (n >= 0) useNotificationStore.getState().forgetRequestNotices(null);
     if (!isMounted.current) return;
     if (n < 0) {
       // Failure: restore, paging included, and re-count from the server.

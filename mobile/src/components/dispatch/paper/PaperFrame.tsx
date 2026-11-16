@@ -189,7 +189,9 @@ export const RunningHead = memo(function RunningHead({
       <View style={p.runHeadTools}>
         <PressableScale room
           hitSlop={IX_SLOP} onPress={onSaved} haptic
-          accessibilityRole="button" accessibilityLabel="Your saved filings"
+          // Whether the page is the saved filings, said as the index tabs say theirs: its lit fill
+          // was the only sign, and a tap on it there leaves them (review round 6).
+          accessibilityRole="button" accessibilityLabel="Your saved filings" accessibilityState={{ selected: !!saved }}
         >
           <Bookmark size={13} strokeWidth={2}
             color={saved ? colors.sepia : colors.fog}
