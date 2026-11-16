@@ -21,7 +21,7 @@ jest.mock('@/src/lib/supabase', () => ({
       const ops: Op[] = [];
       mockReads.push(ops);
       const chain: Record<string, unknown> = {};
-      for (const k of ['select', 'eq', 'order', 'limit', 'or', 'lt', 'ilike']) chain[k] = (...a: unknown[]) => { ops.push([k, ...a]); return chain; };
+      for (const k of ['select', 'eq', 'order', 'limit', 'or', 'lt', 'ilike', 'not']) chain[k] = (...a: unknown[]) => { ops.push([k, ...a]); return chain; };
       chain.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => Promise.resolve(mockAnswer).then(res, rej);
       return chain;
     },
@@ -125,5 +125,38 @@ describe('the panel', () => {
     await act(async () => { buttons.find((b) => b.text === 'Decline all')!.onPress!(); });
     expect(mockRpc).toHaveBeenCalledWith('decline_all_follow_requests');
     alert.mockRestore();
+  });
+});
+
+describe('review round 5', () => {
+  afterEach(() => { useBlockStore.setState({ blocked: [], muted: [], _blockedIndex: new Set(), _mutedIndex: new Set() }); });
+
+  it('counts no request from a member blocked or muted, as the door offers none', async () => {
+    useBlockStore.setState({ blocked: ['u2'], muted: ['u3'], _blockedIndex: new Set(['u2']), _mutedIndex: new Set(['u3']) });
+    mockAnswer = { data: null, error: null, count: 0 };
+    await refreshFollowRequestCount();
+    const not = mockReads.flat().find(([k]) => k === 'not');
+    expect(not).toEqual(['not', 'user_id', 'in', '(u2,u3)']);
+    expect(useSocialStore.getState().pendingRequestCount).toBe(0);
+  });
+
+  it('with nobody hidden, the count asks for every request', async () => {
+    await FollowRequestService.count('me');
+    expect(mockReads.flat().some(([k]) => k === 'not')).toBe(false);
+  });
+
+  it('a second ADMIT while the first is answered is taken, each row busy on its own', async () => {
+    const second = { id: 'i3', user_id: 'u4', created_at: '2026-10-03T00:00:00Z', profiles: { username: 'ford', avatar_url: null } };
+    mockAnswer = { data: [second, petitioner], error: null, count: 2 };
+    let answerFirst: (v: unknown) => void = () => {};
+    mockRpc.mockImplementationOnce(() => new Promise((r) => { answerFirst = r; }) as never);
+    let r!: ReturnType<typeof render>;
+    await act(async () => { r = render(<FollowRequestsPanel visible onClose={() => {}} />); });
+    await waitFor(() => expect(r.getByText('@ORSON')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Admit orson')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Admit ford')); });
+    expect(mockRpc).toHaveBeenCalledTimes(2);
+    expect(mockRpc.mock.calls.map((c) => (c[1] as { requester_id: string }).requester_id).sort()).toEqual(['u1', 'u4']);
+    await act(async () => { answerFirst({ data: 1, error: null }); });
   });
 });

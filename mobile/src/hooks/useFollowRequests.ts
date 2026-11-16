@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { useAuthStore } from '@/src/stores/auth';
+import { useBlockStore } from '@/src/stores/blockStore';
 import { useSocialStore } from '@/src/stores/followStore';
 import { FollowRequestService, FollowRequest } from '@/src/services/FollowRequestService';
 import reelToast from '@/src/utils/reelToast';
@@ -18,7 +19,9 @@ import TactileEngine from '@/src/utils/TactileEngine';
 export async function refreshFollowRequestCount(): Promise<void> {
   const myId = useAuthStore.getState().user?.id;
   if (!myId) return;
-  const n = await FollowRequestService.count(myId);
+  // The members the door leaves out (blocked or muted) are left out of its count too.
+  const { blocked, muted } = useBlockStore.getState();
+  const n = await FollowRequestService.count(myId, [...blocked, ...muted]);
   // A count that could not be read leaves the last one standing.
   if (n !== null) useSocialStore.getState().setPendingRequestCount(n);
 }
@@ -32,7 +35,9 @@ export function useFollowRequests(enabled: boolean) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearchRaw] = useState('');
-  const [busyId, setBusyId] = useState<string | null>(null);
+  /** The rows being answered: each busy on its own, so a second ADMIT is taken while the first is out. */
+  const [busyIds, setBusyIds] = useState<ReadonlySet<string>>(() => new Set());
+  const busy = useRef(new Set<string>());
   /** The door could not be read: unknown, not empty. */
   const [failed, setFailed] = useState(false);
   /** The next page could not be read. */
@@ -129,8 +134,10 @@ export function useFollowRequests(enabled: boolean) {
 
   // Optimistic resolve (accept/decline share the shape).
   const resolve = useCallback(async (req: FollowRequest, admit: boolean) => {
-    if (busyId) return;
-    setBusyId(req.requesterId);
+    // Only the same row twice is refused: another row's answer is its own.
+    if (busy.current.has(req.requesterId)) return;
+    busy.current.add(req.requesterId);
+    setBusyIds(new Set(busy.current));
     if (admit) TactileEngine.success(); else TactileEngine.selection();
     // Optimistic: drop the row + decrement the badge immediately.
     setItems(prev => prev.filter(r => r.requesterId !== req.requesterId));
@@ -139,6 +146,7 @@ export function useFollowRequests(enabled: boolean) {
     const ok = admit
       ? await FollowRequestService.accept(req.requesterId)
       : await FollowRequestService.decline(req.requesterId);
+    busy.current.delete(req.requesterId);
     if (!isMounted.current) return;
     if (!ok) {
       // Rollback: restore row + badge.
@@ -146,8 +154,8 @@ export function useFollowRequests(enabled: boolean) {
       setCount(useSocialStore.getState().pendingRequestCount + 1);
       reelToast.error(admit ? `Couldn't admit @${req.username}. Try again.` : `Couldn't decline. Try again.`);
     }
-    setBusyId(null);
-  }, [busyId, setCount]);
+    setBusyIds(new Set(busy.current));
+  }, [setCount]);
 
   const accept = useCallback((req: FollowRequest) => resolve(req, true), [resolve]);
   const decline = useCallback((req: FollowRequest) => resolve(req, false), [resolve]);
@@ -178,7 +186,7 @@ export function useFollowRequests(enabled: boolean) {
   const shown = useMemo(() => filterContentByBlocks(items, (r) => r.requesterId), [items, whoIsHidden]);
 
   return {
-    items: shown, loading: loading || (enabled && answeredFor !== search), loadingMore, refreshing, hasMore, search, busyId, failed, moreFailed,
+    items: shown, loading: loading || (enabled && answeredFor !== search), loadingMore, refreshing, hasMore, search, busyIds, failed, moreFailed,
     setSearch, loadMore, refresh, retry, accept, decline, declineAll,
   };
 }

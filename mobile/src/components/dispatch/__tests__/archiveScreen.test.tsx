@@ -27,6 +27,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 
 import ArchiveScreen from '@/app/dispatch/archive';
 import { useDispatch } from '@/src/stores/dispatch';
+import { useBlockStore } from '@/src/stores/blockStore';
 
 let mockUser: Record<string, unknown> | null = { id: 'u1', username: 'me', tier: 'archivist', is_social_private: false };
 jest.mock('@/src/stores/auth', () => ({
@@ -154,7 +155,7 @@ const store = () => useDispatch.setState({
   section: 'ALL', sort: 'LATEST', savedOnly: false, newCount: 0,
   certifiedIds: new Set(), savedIds: new Set(), myVotes: {},
   critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
-  critiquesHasMore: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(),
+  critiquesHasMore: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(), acted: {}, unsent: [],
 } as never);
 
 /**
@@ -527,5 +528,44 @@ describe('a mark made in the archive', () => {
     mockRowRenders.length = 0;
     await fireEvent.press(r.getAllByLabelText('Certify this. 5 members have certified this')[1]);
     expect(mockRowRenders).toHaveLength(1);
+  });
+});
+
+describe('the archive after the reader (review round 5)', () => {
+  const openStalker = async (rows: unknown[]) => {
+    mockSearchRows = [hit()];
+    mockFilingRows = rows;
+    mockCount = rows.length;
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, 'stalker');
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText(/Stalker[.] 1 filing/));
+      await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    });
+    return r;
+  };
+  afterEach(() => { useBlockStore.setState({ blocked: [], muted: [], _blockedIndex: new Set(), _mutedIndex: new Set() } as never); });
+  const drawn = (r: ReturnType<typeof render>) => JSON.stringify(r.toJSON());
+
+  it('a filing withdrawn in the reader is drawn withdrawn here, not in its old words', async () => {
+    const r = await openStalker([filing()]);
+    expect(drawn(r)).toContain('Stalker is not slow, it is patient.');
+    // The member opened it, withdrew it, and came back: the store keeps what the act left.
+    await act(async () => {
+      useDispatch.setState({ acted: { f1: { title: null, body: '', fullContent: null, source: null, sourceUrl: null, spoilerLabel: null, film: null, endedAt: '2026-11-16T10:00:00Z', endedBy: 'author', editedAt: null } } } as never);
+    });
+    expect(drawn(r)).not.toContain('Stalker is not slow, it is patient.');
+  });
+
+  it('a member blocked from a filing is no longer listed, nor counted', async () => {
+    const r = await openStalker([filing({ id: 'f1' }), filing({ id: 'f2', user_id: 'u3', author_username: 'ana', body: 'Another reading.' })]);
+    expect(drawn(r)).toContain('Stalker is not slow, it is patient.');
+    await act(async () => {
+      useBlockStore.setState({ blocked: ['u2'], _blockedIndex: new Set(['u2']) } as never);
+    });
+    expect(drawn(r)).not.toContain('Stalker is not slow, it is patient.');
+    expect(drawn(r)).toContain('Another reading.');
+    expect(r.getByText(/(^|[^0-9])1 FILING(?!S)/)).toBeTruthy();
   });
 });

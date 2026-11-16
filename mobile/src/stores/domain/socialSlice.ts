@@ -174,7 +174,13 @@ function commitHydratedGraph(userId: string, serverFollowing: string[], serverRe
 
 // ── Public API ──
 
-export async function followUser(targetUsername: string): Promise<boolean> {
+/**
+ * Follows a member, or asks to (a private one). `known`: the member's row as the screen read it
+ * (their file knows their id and whether they are private), laid in the handle cache so the first
+ * frame shows what will be filed. With nothing known, nothing is shown until the house answers: a
+ * guess of FOLLOWING on a private member unsealed their file and read it as an empty archive.
+ */
+export async function followUser(targetUsername: string, known?: { id: string; isPrivate: boolean }): Promise<boolean> {
   const store = useSocialStore.getState();
   if (store.isFollowing(targetUsername) || store.isRequested(targetUsername)) return true;
   if (isSocialThrottled(`follow:${targetUsername}`)) return false;
@@ -190,16 +196,17 @@ export async function followUser(targetUsername: string): Promise<boolean> {
     return false;
   }
 
-  // Shown at once, before any network: as a request if the member is known to be private.
+  if (known) _usernameProfileCache.set(targetUsername, { id: known.id, isPrivate: known.isPrivate, ts: Date.now() });
+  // Shown at once, before any network, only when it is known which it is: a request to a private
+  // member, a follow of an open one.
   const cachedProfile = _usernameProfileCache.get(targetUsername);
-  const isOptimisticallyPrivate = cachedProfile?.isPrivate ?? false;
+  const shownPrivate: boolean | null = cachedProfile ? cachedProfile.isPrivate : null;
   
-  if (isOptimisticallyPrivate) {
-    store.addRequested(targetUsername);
-  } else {
-    store.addFollowing(targetUsername);
+  if (shownPrivate !== null) {
+    if (shownPrivate) store.addRequested(targetUsername);
+    else store.addFollowing(targetUsername);
+    persistFollowingToCache(userId);
   }
-  persistFollowingToCache(userId);
 
   try {
     const targetProfile = await resolveUsernameToProfile(targetUsername);
@@ -210,8 +217,8 @@ export async function followUser(targetUsername: string): Promise<boolean> {
     const { id: targetId, isPrivate } = targetProfile;
     const interactionType = isPrivate ? 'follow_request' : 'follow';
 
-    // The profile says otherwise: the screen follows the profile.
-    if (isPrivate !== isOptimisticallyPrivate) {
+    // Shown now if it was not known before, or the profile says otherwise: the screen follows the profile.
+    if (isPrivate !== shownPrivate) {
       if (isPrivate) {
         store.removeFollowing(targetUsername);
         store.addRequested(targetUsername);
@@ -262,6 +269,12 @@ export async function followUser(targetUsername: string): Promise<boolean> {
         type: interactionType === 'follow_request' ? 'follow_request_user' : 'follow_user',
         payload: { user_id: userId, target_username: targetUsername, target_user_id: cached?.id ?? null },
       })) {
+        // Nothing was shown before the house was asked: the queued one is shown now.
+        if (shownPrivate === null) {
+          if (interactionType === 'follow_request') useSocialStore.getState().addRequested(targetUsername);
+          else useSocialStore.getState().addFollowing(targetUsername);
+          persistFollowingToCache(userId);
+        }
         reelToast('Follow saved offline. Will sync when connected.');
         return true;
       }
@@ -378,14 +391,16 @@ const HydrateRowSchema = z.object({
  */
 const _hydrating = new Map<string, { token: object; read: Promise<void> }>();
 
-export function hydrateFollowing(): Promise<void> {
+export function hydrateFollowing(opts?: { again?: boolean }): Promise<void> {
   const userId = useAuthStore.getState().user?.id;
   if (!userId) {
     logger.warn('[socialSlice.hydrateFollowing] No userId — skipping');
     return Promise.resolve();
   }
   const running = _hydrating.get(userId);
-  if (running) return running.read;
+  // `again`: the list changed in the house after the running read began (a block ended the
+  // follows), so a fresh read takes its place and the running one commits nothing.
+  if (running && !opts?.again) return running.read;
   const token = {};
   const current = () => _hydrating.get(userId)?.token === token && stillSignedIn(userId);
   const read = readFollowing(userId, current).finally(() => {

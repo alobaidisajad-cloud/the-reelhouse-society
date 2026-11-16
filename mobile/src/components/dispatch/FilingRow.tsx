@@ -22,7 +22,7 @@ import type { Filing } from '@/src/stores/dispatchTypes';
 import { nav } from '@/src/utils/typedRouter';
 
 export const FilingRow = memo(function FilingRow({
-  f, width, order, orderIs, certified, saved, member,
+  f: given, width, order, orderIs, certified, saved, member,
   pending = false, shift = 0, noByline = false, withFilm = true, toAuthor = true,
 }: {
   f: Filing;
@@ -48,6 +48,11 @@ export const FilingRow = memo(function FilingRow({
   /** The byline opens the member's room (not on the room itself). */
   toAuthor?: boolean;
 }) {
+  // Withdrawn or amended on this phone (in the reader, say): the row follows the words and marks
+  // the act left, wherever it is drawn (a room, an archive or a series held its own copy and kept
+  // printing the old words). Its counts stay the list's own.
+  const acted = useDispatch((s) => s.acted[given.id]);
+  const f: Filing = acted ? { ...given, ...acted } : given;
   // Whether this member's marks on this filing have been read: a signed-out reader has none to read.
   const certifyKnown = useDispatch((s) => !member || s.marksKnown.certified.has(f.id));
   const saveKnown = useDispatch((s) => !member || s.marksKnown.saved.has(f.id));

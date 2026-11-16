@@ -11,7 +11,7 @@
  * update and the rollback are two halves of one decision and only the first
  * half is visible while things are going well.
  */
-import { useDispatch } from '../dispatch';
+import { unsentOnPage, useDispatch } from '../dispatch';
 import type { Filing } from '../dispatchTypes';
 import { MAX_LENGTHS } from '../../utils/sanitizeInput';
 
@@ -139,7 +139,7 @@ const filing = (over: Partial<Filing> = {}): Filing => ({
 
 const reset = (over: Record<string, unknown> = {}) => {
   useDispatch.setState({
-    filings: [filing()], opened: {}, section: 'ALL', sort: 'LATEST', savedOnly: false,
+    filings: [filing()], opened: {}, acted: {}, unsent: [], section: 'ALL', sort: 'LATEST', savedOnly: false,
     loading: false, loadingMore: false, hasMore: false, newCount: 0, droppedRows: 0,
     certifiedIds: new Set(), savedIds: new Set(), myVotes: {},
     critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
@@ -462,5 +462,61 @@ describe('an update the house refuses in silence', () => {
     // landed or not, and every answer would be taken back.
     expect(mockSelects).toContainEqual({ table: 'dispatch_posts', op: 'update', columns: 'id' });
     expect(useDispatch.getState().filings[0].answerId).toBeNull();
+  });
+});
+
+// ── REVIEW ROUND 5 ──────────────────────────────────────────────────────────
+describe('a filing queued offline stays on every page it belongs on (review round 5)', () => {
+  it('is kept beside the page, and laid on the next page of its department while queued', async () => {
+    mockOutcome = 'offline';
+    reset({ filings: [] });
+    const res = await useDispatch.getState().file({ kind: 'take', body: 'Filed in a tunnel.' });
+    const id = res!.id;
+    // The member changes department and back: the page is emptied and read again without it.
+    useDispatch.setState({ filings: [filing({ id: 'f9', body: 'From the house.' })], section: 'TAKES' } as never);
+    const queued = new Set([id]);
+    expect(unsentOnPage(useDispatch.getState(), queued).map((f) => f.id)).toEqual([id, 'f9']);
+    // Never under another department, under WHAT YOU KEPT, or once the queue has sent it.
+    useDispatch.setState({ section: 'WIRE' } as never);
+    expect(unsentOnPage(useDispatch.getState(), queued).map((f) => f.id)).toEqual(['f9']);
+    useDispatch.setState({ section: 'ALL', savedOnly: true } as never);
+    expect(unsentOnPage(useDispatch.getState(), queued).map((f) => f.id)).toEqual(['f9']);
+    useDispatch.setState({ savedOnly: false } as never);
+    expect(unsentOnPage(useDispatch.getState(), new Set()).map((f) => f.id)).toEqual(['f9']);
+  });
+
+  it('is read from the queue itself when the app was opened again offline, and never twice', () => {
+    const row = { _tempId: 'q1', id: 'q1', kind: 'take', user_id: 'u1', author_username: 'me', body: 'From before the relaunch.', is_published: true, created_at: '2026-11-16T09:00:00Z' };
+    const st = { filings: [filing({ id: 'f9' })], unsent: [], section: 'ALL' as const, savedOnly: false };
+    const drawn = unsentOnPage(st, new Set(['q1']), [row]);
+    expect(drawn.map((f) => f.id)).toEqual(['q1', 'f9']);
+    expect(drawn[0]?.body).toBe('From before the relaunch.');
+    expect(drawn[0]?.author?.name).toBe('me');
+    // Once the page holds it (the house has it), it is drawn once.
+    expect(unsentOnPage({ ...st, filings: [filing({ id: 'q1' }), filing({ id: 'f9' })] }, new Set(['q1']), [row]).map((f) => f.id)).toEqual(['q1', 'f9']);
+  });
+});
+
+describe('a withdrawal or an amendment is kept for every list that draws the filing (review round 5)', () => {
+  it('keeps the words and the mark an amendment left', async () => {
+    await useDispatch.getState().amend('f1', { body: 'A better take.' });
+    const acted = useDispatch.getState().acted.f1;
+    expect(acted?.body).toBe('A better take.');
+    expect(acted?.editedAt).toBeTruthy();
+  });
+
+  it('keeps a withdrawal, emptied as the house empties it', async () => {
+    await useDispatch.getState().end('f1');
+    const acted = useDispatch.getState().acted.f1;
+    expect(acted?.body).toBe('');
+    expect(acted?.endedBy).toBe('author');
+  });
+
+  it('puts back what a refused act changed, so no list draws a change that never was', async () => {
+    mockOutcome = 'refused';
+    await expect(useDispatch.getState().end('f1')).rejects.toBeTruthy();
+    const acted = useDispatch.getState().acted.f1;
+    expect(acted?.body).toBe('A take.');
+    expect(acted?.endedAt).toBeNull();
   });
 });

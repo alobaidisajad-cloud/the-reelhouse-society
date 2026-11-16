@@ -43,6 +43,15 @@ export const nav = {
   },
 
   replace: (path: string, params?: Record<string, string>) => {
+    // Into the tabs: back to the tab app already beneath, never a second one over it. A replace
+    // of a screen on the root stack builds a NEW tab app (the sign-in's way home did, its target
+    // in a variable, where the guard of literal paths could not see it); dismissTo pops to the one
+    // there, or takes the current screen's place when none is beneath, as a replace would.
+    if (path.startsWith('/(tabs)')) {
+      const query = params ? Object.entries(params).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&') : '';
+      nav.dismissTo(query ? `${path}${path.includes('?') ? '&' : '?'}${query}` : path);
+      return;
+    }
     const baseRoute = path.split('?')[0];
     if (pushHistory.length > 0) {
       pushHistory[pushHistory.length - 1] = baseRoute;

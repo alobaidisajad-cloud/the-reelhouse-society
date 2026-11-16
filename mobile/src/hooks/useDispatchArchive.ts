@@ -20,7 +20,8 @@
  * it from the page in hand would print `2026–2026` under a film the house has
  * been arguing about since 2019.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { characterCount } from '@/src/utils/text';
 
 import { supabase } from '@/src/lib/supabase';
@@ -309,10 +310,17 @@ export function useDispatchArchive(): DispatchArchive {
     if (subjectId.current != null) void page(0); else void search(query);
   }, [page, search, query]);
 
+  // Drawn through who is hidden NOW, as the paper is: a member blocked or muted from a filing's
+  // reader stayed listed here when the member came back. The count leaves out those held here.
+  const whoIsHidden = useWhoIsHidden();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; filterContentByBlocks reads the block store itself
+  const shown = useMemo(() => filterContentByBlocks(filings, (f) => f.authorId ?? ''), [filings, whoIsHidden]);
+  const shownCount = Math.max(shown.length, count - (filings.length - shown.length));
+
   return {
     query, setQuery,
     matches, searching, settled: answered === query.trim(), searchFailed,
-    film, filings, certifiedAtFetch, count, span, loading, filmFailed, more,
+    film, filings: shown, certifiedAtFetch, count: shownCount, span, loading, filmFailed, more,
     choose, clear, loadMore, retry,
   };
 }

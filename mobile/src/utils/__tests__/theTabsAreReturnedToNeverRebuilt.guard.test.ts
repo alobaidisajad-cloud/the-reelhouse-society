@@ -44,3 +44,31 @@ describe('a screen goes home to the tab app already there', () => {
     expect("nav.dismissTo('/(tabs)/dispatch');".match(INTO_THE_TABS)).toBeNull();
   });
 });
+
+describe('a replace into the tabs held in a variable (review round 5)', () => {
+  // The sign-in's way home was `nav.replace(landing)`, landing '/(tabs)': a literal sweep cannot
+  // read a variable, so nav.replace itself returns to the tab app beneath.
+  const loadNav = () => {
+    jest.resetModules();
+    const router = { replace: jest.fn(), dismissTo: jest.fn(), push: jest.fn(), canGoBack: jest.fn(() => true) };
+    jest.doMock('expo-router', () => ({ router }));
+    const { nav } = require('@/src/utils/typedRouter') as typeof import('@/src/utils/typedRouter');
+    return { nav, router };
+  };
+
+  it('goes back to the tab app already there, never building another', () => {
+    const { nav, router } = loadNav();
+    const landing: string = '/(tabs)';
+    nav.replace(landing);
+    expect(router.dismissTo).toHaveBeenCalledWith('/(tabs)');
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it('carries its params as the address does, and leaves every other replace a replace', () => {
+    const { nav, router } = loadNav();
+    nav.replace('/(tabs)/dispatch', { section: 'wire & takes' });
+    expect(router.dismissTo).toHaveBeenCalledWith('/(tabs)/dispatch?section=wire%20%26%20takes');
+    nav.replace('/login');
+    expect(router.replace).toHaveBeenCalledWith('/login');
+  });
+});

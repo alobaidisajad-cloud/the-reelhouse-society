@@ -15,6 +15,7 @@ import { Alert, type AlertButton } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { resetMarkCounts } from '@/src/stores/markCounts';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
+import { useBlockStore } from '@/src/stores/blockStore';
 
 import LogDetailScreen from '../[id]';
 
@@ -188,5 +189,21 @@ describe('critiques that could not be read', () => {
     const answer = await mockOptions.queryFn({});
     expect(answer.critiquesUnread).toBe(true);
     films.setState({ logs: [] });
+  });
+});
+
+describe('a critic hidden since the page was read (review round 5)', () => {
+  const THEIRS = { id: 'c-theirs', user_id: 'u9', username: 'welles', avatar_url: null, body: 'A cheap trick.', created_at: '2026-09-27T10:00:00Z' };
+  afterEach(() => { useBlockStore.setState({ blocked: [], muted: [], _blockedIndex: new Set(), _mutedIndex: new Set() } as never); });
+
+  it('leaves the page at once, critique and count, under the toast that says so', async () => {
+    mockCache = { ...mockCache, comments: [MINE, THEIRS], commentTotal: 2 };
+    mockQuery = { data: mockCache, isLoading: false, refetch: rereadLog };
+    const r = await mount();
+    expect(r.getByText('A cheap trick.')).toBeTruthy();
+    // A REPORT's "also block" (or a mute from their file) lands.
+    await act(async () => { useBlockStore.setState({ blocked: ['u9'], _blockedIndex: new Set(['u9']) } as never); });
+    expect(r.queryByText('A cheap trick.')).toBeNull();
+    expect(r.getByText('A second look.')).toBeTruthy();
   });
 });

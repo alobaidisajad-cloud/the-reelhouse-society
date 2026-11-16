@@ -23,6 +23,7 @@ import { ChevronLeft, X } from 'lucide-react-native';
 import { e2eTrace, e2eTraceAt } from '@/src/utils/e2eTrace';
 import { RevealAboveDock, useRevealHost } from '@/src/components/layout/RevealAboveDock';
 import { useBackCloses } from '@/src/hooks/useBackCloses';
+import { useAskBeforeLeaving } from '@/src/hooks/useAskBeforeLeaving';
 
 export default function LogModalScreen() {
 
@@ -59,6 +60,12 @@ export default function LogModalScreen() {
     // Android's back on a film is the chevron's: back to the search, the sheet still open. (An
     // edit has no search; a seal under way is let finish.)
     useBackCloses(editReady && step === 1 && !isEditing && !submitting && !flow.sealed, flow.backToSearch);
+    // An edit keeps no draft: its amendments are asked about before any way out (CLOSE, a swipe,
+    // Android's back), as the essay's are, and never lost to one accidental swipe.
+    useAskBeforeLeaving(flow.amendmentsUnsealed && !submitting, {
+        title: 'Discard these amendments?',
+        message: 'The record stays as it was filed. The changes made here will be lost.',
+    });
     // Each step the form shows, for the sealed E2E: a flow that lands on the wrong one says when.
     React.useEffect(() => { e2eTrace('log.step', { step, film: film?.id ?? null }); }, [step, film?.id]);
 

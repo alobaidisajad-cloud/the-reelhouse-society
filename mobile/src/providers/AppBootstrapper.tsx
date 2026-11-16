@@ -24,6 +24,7 @@ import { e2eTrace } from '../utils/e2eTrace';
 import MemoryManager from '../utils/memoryManager';
 import { flushOfflineQueue } from '../utils/offlineQueue';
 import { resolveTier } from '../utils/tier';
+import { followTheAccountsTactileChoice } from '../utils/tactileFollowsTheAccount';
 
 /**
  * What a developer reads when a build is missing its server settings: one line
@@ -54,6 +55,9 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
   // Track whether boot has run to prevent double-init
   const hasBooted = useRef(false);
   const timeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // The member's Tactile Feedback choice comes back with their account, after any sign-out.
+  useEffect(() => followTheAccountsTactileChoice(), []);
 
   useEffect(() => {
     async function boot(currentUser: { id: string; username?: string | null; role?: string | null; is_founding?: boolean | null }) {

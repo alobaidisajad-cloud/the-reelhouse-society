@@ -49,10 +49,12 @@ jest.mock('@/src/utils/reelToast', () => {
 let mockFeeds: Record<'community' | 'following' | 'stacks', Record<string, unknown>>;
 /** Whether the screen last let each held feed be read (the hooks' `asked`). */
 const mockAsked: Record<'following' | 'stacks', unknown> = { following: undefined, stacks: undefined };
+/** The stacks the screen last asked for: [which reel, the search]. */
+let mockStacksAsked: unknown[] = [];
 jest.mock('@/src/hooks/useFeeds', () => ({
   useCommunityFeed: () => mockFeeds.community,
   useFollowingFeed: (...a: unknown[]) => { mockAsked.following = a[1]; return mockFeeds.following; },
-  useStacksFeed: (...a: unknown[]) => { mockAsked.stacks = a[3]; return mockFeeds.stacks; },
+  useStacksFeed: (...a: unknown[]) => { mockAsked.stacks = a[3]; mockStacksAsked = [a[0], a[1]]; return mockFeeds.stacks; },
 }));
 /** The lists' own props, as the screen last drew them (the pull lives there). */
 const mockListProps: Record<string, Record<string, any>> = {};
@@ -322,4 +324,25 @@ describe('the feeds the Reel does not open on', () => {
     expect(mockAsked.stacks).toBe(true);
     expect(mockAsked.following).toBe(false);
   });
+});
+
+// Review round 5: the tab stays mounted through a sign-out, so the next person on the phone was
+// shown the last member's stack search, and the next member their FOLLOWING choices.
+it('the next person on the phone is never handed the last member’s stack search or reels', async () => {
+  const r = await mount();
+  await act(async () => { await fireEvent.press(r.getAllByLabelText('Stacks')[0]!); });
+  const head = render(mockListProps.stacks?.ListHeaderComponent);
+  await act(async () => { await fireEvent.changeText(head.getByLabelText('Search curated stacks'), 'noir'); });
+  // The field hands its words on once the member pauses (400 ms).
+  await act(async () => { await new Promise((done) => setTimeout(done, 450)); });
+  head.unmount();
+  expect(mockStacksAsked[1]).toBe('noir');
+  // Signed out, and another member signs in on the same phone.
+  mockAuth = { isAuthenticated: true, user: { id: 'other', username: 'agnes', role: 'cinephile', tier: 'free', preferences: {} } };
+  try {
+    await act(async () => { r.rerender(<QueryClientProvider client={testQueryClient({ queries: { enabled: false } })}><ReelScreen /></QueryClientProvider>); });
+    expect(mockStacksAsked).toEqual(['all', '']);
+  } finally {
+    mockAuth = MEMBER;
+  }
 });

@@ -192,6 +192,16 @@ export default function ReelScreen() {
   const feedFilter: FeedFilter = isAuthenticated ? feedChoice : 'all';
   const stackFilter: FeedFilter = isAuthenticated ? stackChoice : 'all';
   const [stackSearch, setStackSearch] = useState('');
+  // Each member's own: the tab stays mounted through a sign-out, so the next person on the phone
+  // (a visitor, or another member) was shown the last one's stack search and FOLLOWING choices.
+  const memberKey = user?.id ?? null;
+  const [choicesOf, setChoicesOf] = useState(memberKey);
+  if (choicesOf !== memberKey) {
+    setChoicesOf(memberKey);
+    setFeedFilter('all');
+    setStackFilter('all');
+    setStackSearch('');
+  }
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
   // Each list's feeds are fetched again on return or reconnect only while it stands at its top.

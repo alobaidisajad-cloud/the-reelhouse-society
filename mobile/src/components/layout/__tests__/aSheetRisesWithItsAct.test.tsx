@@ -64,7 +64,7 @@ jest.mock('@/src/stores/auth', () => {
 jest.mock('@/src/hooks/useFollowRequests', () => ({
   useFollowRequests: () => ({
     items: [{ requesterId: 'u2', username: 'morpho', avatarUrl: null }], loading: false, loadingMore: false, hasMore: false,
-    search: '', busyId: null, failed: false, moreFailed: false,
+    search: '', busyIds: new Set(), failed: false, moreFailed: false,
     setSearch: jest.fn(), loadMore: jest.fn(), retry: jest.fn(), accept: jest.fn(), decline: jest.fn(), declineAll: jest.fn(),
   }),
 }));

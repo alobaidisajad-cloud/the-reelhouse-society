@@ -26,7 +26,10 @@
  * the house counts each on every write (20261109_01), so the page is sent 24
  * numbers. A part with no count shows no read time rather than a wrong one.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
+import { useBlockStore } from '@/src/stores/blockStore';
 import { ScrollView, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { P, useRouteParams } from '@/src/utils/routeParams';
@@ -121,7 +124,15 @@ function SeriesScreen({ id, from }: { id: string; from?: string }) {
     return () => { cancelled = true; };
   }, [id, attempt]);
 
-  if (loading) {
+  // A series is its author's: one blocked or muted (from a part's reader, say) is not what the
+  // member wants to see, so the page leaves as the reader does, never standing as their list.
+  const whoIsHidden = useWhoIsHidden();
+  const authorId = parts.find((f) => !!f.authorId)?.authorId ?? null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; isHidden reads the block store itself
+  const authorHidden = useMemo(() => !!authorId && useBlockStore.getState().isHidden(authorId), [authorId, whoIsHidden]);
+  useFocusEffect(useCallback(() => { if (authorHidden) nav.back(); }, [authorHidden]));
+
+  if (loading || authorHidden) {
     return (
       <View style={[p.screen, { justifyContent: 'center', alignItems: 'center' }]}>
         <RoomLight room="dispatch" />

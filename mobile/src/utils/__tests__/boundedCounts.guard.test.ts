@@ -116,7 +116,11 @@ describe('the unread badge is server truth, and survives a failed action', () =>
     // Five paths used to recompute it from the local list. Once the badge is
     // server truth, that SHRINKS it after any failed mark-read or dismiss.
     expect(store).not.toMatch(/_unreadCount: previousState\.filter/);
-    expect((store.match(/_unreadCount: previousUnread/g) ?? []).length).toBe(5);
+    // Each of the five refused writes undoes its own notices alone, counting back only those
+    // (review round 5): the badge it moves is the server's, never one rebuilt from the list.
+    expect((store.match(/set\(\(state\) => (unreadAgain|putBack)\(state, /g) ?? []).length).toBe(5);
+    expect(store).toMatch(/_unreadCount: state\._unreadCount \+ back/);
+    expect(store).toMatch(/_unreadCount: state\._unreadCount \+ missing\.filter/);
   });
 });
 

@@ -127,3 +127,35 @@ it('reads the record once, its viewing’s id in the same row: no second request
   expect(logReads).toHaveLength(1);
   expect(logReads[0]?.columns).toContain('viewing_id');
 });
+
+describe('amendments not yet sealed (review round 5)', () => {
+  // An edit keeps no draft, and the sheet let it go on any way out without a word: the sheet
+  // asks while amendmentsUnsealed holds (log-modal.tsx, useAskBeforeLeaving).
+  it('none on the record as it opened, and none while it is still being read', async () => {
+    const flow = await openEditor({ rows: { logs: [oldRow()], log_private_notes: [] } });
+    expect(flow.current.amendmentsUnsealed).toBe(false);
+    await waitFor(() => expect(flow.current.editReady).toBe(true));
+    await settle();
+    expect(flow.current.amendmentsUnsealed).toBe(false);
+  });
+
+  it('one changed field is an amendment, and changing it back is none', async () => {
+    const flow = await openEditor({ rows: { logs: [oldRow()], log_private_notes: [] } });
+    await waitFor(() => expect(flow.current.editReady).toBe(true));
+    await act(async () => { flow.current.setReview('Still the best lobby shootout ever filmed. And the rain.'); });
+    expect(flow.current.amendmentsUnsealed).toBe(true);
+    await act(async () => { flow.current.setReview('Still the best lobby shootout ever filmed.'); });
+    expect(flow.current.amendmentsUnsealed).toBe(false);
+    await act(async () => { flow.current.setRating(5); });
+    expect(flow.current.amendmentsUnsealed).toBe(true);
+  });
+
+  it('sealed, nothing is left to ask about', async () => {
+    const flow = await openEditor({ rows: { logs: [oldRow()], log_private_notes: [] } });
+    await waitFor(() => expect(flow.current.editReady).toBe(true));
+    await act(async () => { flow.current.setRating(5); });
+    await act(async () => { await flow.current.handleLog(); });
+    expect(flow.current.sealed).toBe(true);
+    expect(flow.current.amendmentsUnsealed).toBe(false);
+  });
+});

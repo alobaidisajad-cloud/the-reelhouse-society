@@ -81,7 +81,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
   // column dims with the page.
   const fill = useWindowFill();
   const {
-    items, loading, loadingMore, hasMore, search, busyId, failed, moreFailed,
+    items, loading, loadingMore, hasMore, search, busyIds, failed, moreFailed,
     setSearch, loadMore, retry, accept, decline, declineAll,
   } = useFollowRequests(visible);
   const pending = useSocialStore(s => s.pendingRequestCount);
@@ -179,7 +179,7 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
                 onEndReached={hasMore ? loadMore : undefined}
                 onEndReachedThreshold={0.5}
                 renderItem={({ item }: { item: FollowRequest }) => (
-                  <RequestRow item={item} busy={busyId === item.requesterId} onAccept={accept} onDecline={decline} />
+                  <RequestRow item={item} busy={busyIds.has(item.requesterId)} onAccept={accept} onDecline={decline} />
                 )}
                 ListFooterComponent={loadingMore
                   ? <View style={s.footerLoad}><ActivityIndicator size="small" color={colors.sepia} /></View>

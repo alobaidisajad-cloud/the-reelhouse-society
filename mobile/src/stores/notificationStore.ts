@@ -154,6 +154,37 @@ export const noticesAtStart = () => ({
 });
 
 // ── NOTIFICATION STORE ──
+/**
+ * A failed write undoes its own notices, and nothing else. Each rollback once wrote back the whole
+ * list as it stood before its own change: two notices dismissed offline, both refused, and the
+ * second rollback took the first one off the board again, its unread uncounted (review round 5).
+ */
+type Board = { notifications: AppNotification[]; _unreadCount: number };
+
+/** These notices read again (only those that were unread before the write), counted back. */
+function unreadAgain(state: Board, ids: ReadonlySet<string>): Board {
+    let back = 0;
+    const notifications = state.notifications.map((n) => {
+        if (!ids.has(n.id) || !n.read) return n;
+        back += 1;
+        return { ...n, read: false };
+    });
+    return { notifications, _unreadCount: state._unreadCount + back };
+}
+
+/** These notices put back where they stood (newest first, as the board reads), counted back. */
+function putBack(state: Board, removed: readonly AppNotification[]): Board {
+    const held = new Set(state.notifications.map((n) => n.id));
+    const missing = removed.filter((n) => !held.has(n.id));
+    if (missing.length === 0) return state;
+    const newerFirst = (a: AppNotification, b: AppNotification) =>
+        a.created_at === b.created_at ? (a.id < b.id ? 1 : -1) : (a.created_at < b.created_at ? 1 : -1);
+    return {
+        notifications: [...state.notifications, ...missing].sort(newerFirst),
+        _unreadCount: state._unreadCount + missing.filter((n) => !n.read).length,
+    };
+}
+
 export const useNotificationStore = create<NotificationState>()(
     persist(
         (set, get) => ({
@@ -304,7 +335,6 @@ export const useNotificationStore = create<NotificationState>()(
     markRead: async (id: string) => {
         const startedAs = useAuthStore.getState().user?.id ?? null;
         const previousState = get().notifications;
-        const previousUnread = get()._unreadCount;
         const wasUnread = previousState.some(n => n.id === id && !n.read);
 
         // Optimistic update
@@ -328,7 +358,7 @@ export const useNotificationStore = create<NotificationState>()(
         } catch (e) {
             logger.warn('[markRead] failed', id, e);
             // Only while still signed in: after a logout it would restore the last member's.
-            if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousUnread });
+            if (stillSignedIn(startedAs) && wasUnread) set((state) => unreadAgain(state, new Set([id])));
         }
     },
 
@@ -361,7 +391,6 @@ export const useNotificationStore = create<NotificationState>()(
         if (!user) return;
 
         const previousState = get().notifications;
-        const previousUnread = get()._unreadCount;
 
         // Optimistic Update
         set((state) => ({
@@ -374,15 +403,14 @@ export const useNotificationStore = create<NotificationState>()(
             if (error) throw error;
         } catch (e) {
             logger.warn(`[markAllRead] Failed:`, e);
-            // Rolled back only while still signed in, as in markRead.
-            if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousUnread });
+            // Rolled back only while still signed in, as in markRead: the ones it marked, alone.
+            if (stillSignedIn(startedAs)) set((state) => unreadAgain(state, new Set(previousState.filter((n) => !n.read).map((n) => n.id))));
         }
     },
 
     dismiss: async (id: string) => {
         const startedAs = useAuthStore.getState().user?.id ?? null;
         const previousState = get().notifications;
-        const previousUnread = get()._unreadCount;
         const wasDismissedUnread = previousState.some(n => n.id === id && !n.read);
 
         // Optimistic Update
@@ -403,8 +431,8 @@ export const useNotificationStore = create<NotificationState>()(
             if (error) throw error;
         } catch (e) {
             logger.warn('[dismiss] failed', id, e);
-            // Rolled back only while still signed in, as in markRead.
-            if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousUnread });
+            // Rolled back only while still signed in, as in markRead: this notice, put back.
+            if (stillSignedIn(startedAs)) set((state) => putBack(state, previousState.filter((n) => n.id === id)));
         }
     },
 
@@ -413,7 +441,6 @@ export const useNotificationStore = create<NotificationState>()(
         if (ids.length === 0) return;
 
         const previousState = get().notifications;
-        const previousUnread = get()._unreadCount;
         const unreadInGroup = previousState.filter(
             n => ids.includes(n.id) && !n.read
         ).length;
@@ -438,10 +465,8 @@ export const useNotificationStore = create<NotificationState>()(
             if (error) throw error;
         } catch (e) {
             logger.warn('[markGroupRead] failed', ids.length, e);
-            if (stillSignedIn(startedAs)) set({ // see markRead
-                notifications: previousState,
-                _unreadCount: previousUnread,
-            });
+            // See markRead: the group's notices that were unread, read again.
+            if (stillSignedIn(startedAs)) set((state) => unreadAgain(state, new Set(previousState.filter((n) => ids.includes(n.id) && !n.read).map((n) => n.id))));
         }
     },
 
@@ -450,7 +475,6 @@ export const useNotificationStore = create<NotificationState>()(
         if (ids.length === 0) return;
 
         const previousState = get().notifications;
-        const previousUnread = get()._unreadCount;
         const unreadDismissed = previousState.filter(
             n => ids.includes(n.id) && !n.read
         ).length;
@@ -477,10 +501,8 @@ export const useNotificationStore = create<NotificationState>()(
             if (error) throw error;
         } catch (e) {
             logger.warn('[dismissGroup] failed', ids.length, e);
-            if (stillSignedIn(startedAs)) set({ // see markRead
-                notifications: previousState,
-                _unreadCount: previousUnread,
-            });
+            // See markRead: the group, put back.
+            if (stillSignedIn(startedAs)) set((state) => putBack(state, previousState.filter((n) => ids.includes(n.id))));
         }
     },
 

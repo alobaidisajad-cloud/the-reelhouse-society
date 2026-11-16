@@ -15,6 +15,7 @@ import { useFocusEffect } from 'expo-router';
 import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { Platform, RefreshControl, Share, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { Extrapolation, interpolate, useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
@@ -380,8 +381,14 @@ function LogDetailScreen({ id }: { id: string }) {
   useFocusEffect(useCallback(() => { if (withdrawnHere) nav.back(); }, [withdrawnHere]));
   const filedAgo = useTimeAgo(log?.created_at);
   const profile = logQueryData?.profile ?? null;
-  const comments = logQueryData?.comments ?? [];
-  const commentTotal = logQueryData?.commentTotal ?? comments.length;
+  // A member blocked or muted since the page was read leaves it at once (a REPORT's "also block"
+  // said their words were hidden while the critique stood): drawn and counted without them.
+  const whoIsHidden = useWhoIsHidden();
+  const heldComments = logQueryData?.comments;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; filterContentByBlocks reads the block store itself
+  const comments = useMemo(() => filterContentByBlocks(heldComments ?? [], (c) => c.user_id), [heldComments, whoIsHidden]);
+  const hiddenHere = (heldComments?.length ?? 0) - comments.length;
+  const commentTotal = Math.max(comments.length, (logQueryData?.commentTotal ?? heldComments?.length ?? 0) - hiddenHere);
   // CERTIFY reads the shared store, as every card of this log does; the cached
   // page's number stands in until a fresh answer has been told to it. CRITIQUE
   // is this page's own total — the one the section header prints — because this

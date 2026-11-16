@@ -28,6 +28,7 @@ import { useAuthStore } from './auth';
 import { storage, setSensitive } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 import { stillSignedIn } from './domain/helpers/sessionGuard';
+import { hydrateFollowing } from './domain/socialSlice';
 
 // ── MMKV Key ────────────────────────────────────────────────────────────────
 const MMKV_KEY = (userId: string) => `reelhouse_blocks_${userId}`;
@@ -143,6 +144,9 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['universalSearch'] });
       wallMayHaveChanged();
+      // The house ended the follows and requests between the two (sever_follows_on_block): the
+      // follow list is read again, so their file no longer says FOLLOWING, nor after an unblock.
+      if (stillSignedIn(currentUser.id)) void hydrateFollowing({ again: true });
 
       // Success feedback
       TactileEngine.warn();

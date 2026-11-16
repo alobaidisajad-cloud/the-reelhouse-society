@@ -344,7 +344,9 @@ export function useProfileController(usernameOverride?: string) {
 
     let success = false;
     try {
-      success = leaving ? await unfollowUser(handle) : await followUser(handle);
+      // Their file knows whether they are private: the button shows a request, never a follow, for a sealed one.
+      const known = prevUser?.id ? { id: prevUser.id, isPrivate: !!prevUser.is_social_private } : undefined;
+      success = leaving ? await unfollowUser(handle) : await followUser(handle, known);
       // On false the store has already said why (or held a throttled or doubled tap).
     } catch (err) {
       // The store says why on every failure it catches; this one it did not.

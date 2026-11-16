@@ -203,6 +203,37 @@ export function waitingDraftOf(held: LogDraft | null | undefined): WaitingDraft 
         wrote: !!(wordsIn(held.review) || wordsIn(held.privateNotes)),
     };
 }
+/** An edit's form, field by field, as it can be told from the record that filled it (the note apart). */
+interface EditForm {
+    status: string; rating: number; review: string; isSpoiler: boolean; date: string;
+    watchedWith: string; physicalMedia: string; abandonedReason: string;
+    autopsy: Record<string, number | null>; altPoster: string | null; editorialHeader: string | null;
+    dropCap: boolean; pullQuote: string;
+}
+
+/** The form a record fills, as the fill below sets it. */
+function formAsFilled(log: DomainLog): EditForm {
+    let autopsy: Record<string, number | null> = { ...AUTOPSY_INIT };
+    if (log.autopsy) {
+        try { autopsy = loadAutopsyForEdit(typeof log.autopsy === 'string' ? JSON.parse(log.autopsy) : log.autopsy); }
+        catch { autopsy = { ...AUTOPSY_INIT }; }
+    }
+    return {
+        status: log.status ?? 'watched', rating: log.rating ?? 0, review: log.review ?? '',
+        isSpoiler: log.isSpoiler ?? false, date: log.watchedDate?.slice(0, 10) ?? localCalendarDate(),
+        watchedWith: log.watchedWith ?? '', physicalMedia: log.physicalMedia ?? 'None',
+        abandonedReason: log.abandonedReason ?? '', autopsy, altPoster: log.altPoster ?? null,
+        editorialHeader: log.editorialHeader ?? null, dropCap: log.dropCap ?? false, pullQuote: log.pullQuote ?? '',
+    };
+}
+
+/** One string per form, the autopsy's keys in a fixed order, so two equal forms are equal strings. */
+function editFormKey(f: EditForm): string {
+    const autopsy = Object.keys(f.autopsy).sort().map((k) => [k, f.autopsy[k] ?? null]);
+    return JSON.stringify([f.status, f.rating, f.review, f.isSpoiler, f.date, f.watchedWith, f.physicalMedia,
+        f.abandonedReason, autopsy, f.altPoster, f.editorialHeader, f.dropCap, f.pullQuote]);
+}
+
 function keepLogDraft(userId: string | undefined, draft: LogDraft & { filmId: unknown }): void {
   // The latest is another film's, kept only there (written before drafts were per film): it is
   // given its own film's place before this film takes the latest's.
@@ -366,6 +397,10 @@ export function useLogFlow() {
     // read, it threw away what the member had typed under a refresh.
     /** The record the form was filled from: what a seal or a delete acts on. */
     const [edited, setEdited] = useState<DomainLog | null>(null);
+    /** The form as the record filled it, to tell an amendment from none. */
+    const [filledForm, setFilledForm] = useState<string | null>(null);
+    /** Withdrawn from here: the sheet leaves without asking about its amendments. */
+    const [lettingGo, setLettingGo] = useState(false);
     const filledFor = edited?.id ?? null;
     const editReady = !editLogId || filledFor === editLogId;
 
@@ -384,6 +419,8 @@ export function useLogFlow() {
     if (formFor !== editLogId) {
         setFormFor(editLogId);
         setEdited(null);
+        setFilledForm(null);
+        setLettingGo(false);
         setRating(0);
         setReview('');
         setStatus(statusDefault);
@@ -406,6 +443,7 @@ export function useLogFlow() {
     if (editLogId && filledFor !== editLogId && editLog && editLog.id === editLogId) {
         const log = editLog;
         setEdited(log);
+        setFilledForm(editFormKey(formAsFilled(log)));
         setStatus((log.status ?? 'watched') as 'watched' | 'rewatched' | 'abandoned');
         setRating(log.rating ?? 0);
         setReview(log.review ?? '');
@@ -775,6 +813,7 @@ export function useLogFlow() {
         try {
             await removeLog(editLogId, false, edited ?? undefined);
             TactileEngine.warn();
+            setLettingGo(true);
             deferUntilIdle(() => {
                 nav.back();
             });
@@ -866,6 +905,14 @@ export function useLogFlow() {
         isEditing,
         /** An edit's record is in the form; until then the form is shut and the seal refuses. */
         editReady,
+        /**
+         * An edit holds amendments not yet sealed: the sheet asks before any way out lets them go
+         * (an edit keeps no draft, and one swipe threw them away without a word).
+         */
+        amendmentsUnsealed: !!editLogId && editReady && !sealed && !lettingGo && filledForm !== null && (
+            editFormKey({ status, rating, review, isSpoiler, date, watchedWith, physicalMedia, abandonedReason,
+                autopsy, altPoster, editorialHeader, dropCap, pullQuote }) !== filledForm
+            || (noteTouched && noteHydratedFor === editLogId && privateNotes !== storedNote)),
         /** Why an edit's record is not yet in the form: being read, unreachable, or not theirs. */
         editRead: editLogId === NO_SUCH_LOG ? 'withdrawn' as const : editRead,
         rereadEdit,

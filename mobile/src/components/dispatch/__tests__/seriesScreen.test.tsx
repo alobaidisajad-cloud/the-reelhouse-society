@@ -32,6 +32,7 @@ import SeriesScreen from '@/app/dispatch/series/[id]';
 import { TO_COME_INK } from '@/src/components/dispatch/paper/PaperEssay';
 import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { colors } from '@/src/theme/theme';
+import { useBlockStore } from '@/src/stores/blockStore';
 
 // ── what the router heard ───────────────────────────────────────────────────
 // `mock`-prefixed, because jest hoists these factories above every import and
@@ -396,5 +397,29 @@ describe('a part that is not out yet is still legible', () => {
       expect(src).toContain(`x.toCome && { color: TO_COME_INK.${slot} }`);
     }
     expect(src).not.toMatch(/toCome\s*&&\s*\{\s*opacity/);
+  });
+});
+
+describe('the series of a member hidden since (review round 5)', () => {
+  afterEach(() => { useBlockStore.setState({ blocked: [], muted: [], _blockedIndex: new Set(), _mutedIndex: new Set() } as never); });
+
+  it('leaves, as the reader does, and is never drawn as their list', async () => {
+    mockRows = [part()];
+    const r = await mount();
+    expect(r.getByText('The Empty Room')).toBeTruthy();
+    expect(mockBack).not.toHaveBeenCalled();
+    // Blocked from a part's reader: back on the series, which is theirs.
+    await act(async () => { useBlockStore.setState({ blocked: ['u1'], _blockedIndex: new Set(['u1']) } as never); });
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(r.queryByText('The Empty Room')).toBeNull();
+  });
+
+  it('a muted author leaves too; another author stays', async () => {
+    mockRows = [part()];
+    useBlockStore.setState({ muted: ['u9'], _mutedIndex: new Set(['u9']) } as never);
+    const r = await mount();
+    expect(r.getByText('The Empty Room')).toBeTruthy();
+    await act(async () => { useBlockStore.setState({ muted: ['u9', 'u1'], _mutedIndex: new Set(['u9', 'u1']) } as never); });
+    expect(mockBack).toHaveBeenCalledTimes(1);
   });
 });

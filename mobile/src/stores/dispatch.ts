@@ -98,6 +98,17 @@ export interface DispatchState {
   filings: Filing[];
   /** Filings opened by address (a notice, a link), which the page does not hold. See heldFiling. */
   opened: Record<string, Filing>;
+  /**
+   * What this member withdrew or amended on this phone, by filing: the words and the marks the act
+   * left. A list that holds its own copy (a room, an archive, a series) draws its rows through it.
+   */
+  acted: Record<string, Acted>;
+  /**
+   * The member's filings queued while the wire was down. The page is emptied by every change of
+   * department, sort or WHAT YOU KEPT, and redrawn from reads that do not hold them: they are laid
+   * over each page they belong on while the queue still holds them (unsentOnPage).
+   */
+  unsent: Filing[];
   section: Section;
   sort: Sort;
   savedOnly: boolean;
@@ -286,6 +297,51 @@ const heldFiling = (st: DispatchState, id: string): Filing | null =>
  * the pair, and a version that updated only `filings` would leave the reader —
  * which falls back to `opened` — showing the state before the act.
  */
+/** What withdrawing or amending changes on a filing: its words, and the marks they left. */
+const ACTED_FIELDS = ['title', 'body', 'fullContent', 'source', 'sourceUrl', 'spoilerLabel', 'film', 'endedAt', 'endedBy', 'editedAt'] as const;
+export type Acted = Pick<Filing, (typeof ACTED_FIELDS)[number]>;
+const actedOf = (f: Filing): Acted =>
+  Object.fromEntries(ACTED_FIELDS.map((k) => [k, f[k]])) as Acted;
+
+/**
+ * patchFiling for a withdrawal or an amendment: the act's words and marks kept in `acted` too, so
+ * every list drawing its own copy of the filing follows it. `base` is the filing as the act read
+ * it, for one the page no longer holds.
+ */
+const patchActed = (
+  st: DispatchState,
+  id: string,
+  next: (f: Filing) => Filing,
+  base: Filing,
+): Pick<DispatchState, 'filings' | 'opened' | 'acted'> => ({
+  ...patchFiling(st, id, next),
+  acted: { ...st.acted, [id]: actedOf(next(heldFiling(st, id) ?? base)) },
+});
+
+/**
+ * The page as drawn: the member's filings still queued (`queued`, the queue's ids) laid at its
+ * head where they belong (this department; never under WHAT YOU KEPT), unless the page holds them.
+ */
+export function unsentOnPage(
+  st: Pick<DispatchState, 'filings' | 'unsent' | 'section' | 'savedOnly'>,
+  queued: ReadonlySet<string>,
+  queuedRows: readonly Record<string, unknown>[] = [],
+): Filing[] {
+  if (st.savedOnly || queued.size === 0) return st.filings;
+  const onPage = new Set(st.filings.map((f) => f.id));
+  const kind = SECTION_KIND[st.section];
+  // The copy filed on this phone in this run; else the queue's own row (the app reopened offline),
+  // read as the house's rows are, its counts at nought as a filing not yet sent holds them.
+  const held = new Map(st.unsent.map((f) => [f.id, f]));
+  const fromQueue = parseFilingRows(queuedRows
+    .map((r) => ({ certify_count: 0, comment_count: 0, profiles: null, ...r, id: r._tempId ?? r.id }))
+    .filter((r) => typeof r.id === 'string' && !held.has(r.id))).filings;
+  const waiting = [...st.unsent, ...fromQueue]
+    .filter((f) => queued.has(f.id) && !onPage.has(f.id) && (kind === null || f.kind === kind))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  return waiting.length ? [...waiting, ...st.filings] : st.filings;
+}
+
 const patchFiling = (
   st: DispatchState,
   id: string,
@@ -301,6 +357,8 @@ const patchFiling = (
 const emptyState = () => ({
   filings: [] as Filing[],
   opened: {} as Record<string, Filing>,
+  acted: {} as Record<string, Acted>,
+  unsent: [] as Filing[],
   section: 'ALL' as Section,
   sort: 'LATEST' as Sort,
   savedOnly: false,
@@ -576,6 +634,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       if (!memberUnchanged(startedAs)) throw e;
       if (isNetworkError(e)) {
         if (enqueueMutation({ type: 'add_filing', payload: { _tempId: id, ...row } })) {
+          set((st) => ({ unsent: [optimistic, ...st.unsent.filter((f) => f.id !== id)] }));
           flushOfflineQueue();
           reelToast.success('Filed. It goes out when the wire is back.');
           return { id, offline: true };
@@ -612,7 +671,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       ...(opened ? { fullContent: opened.fullContent } : {}),
     }));
 
-    set((st) => patchFiling(st, id, (f) => ({
+    set((st) => patchActed(st, id, (f) => ({
       ...f,
       title: clean.title !== undefined ? clean.title : f.title,
       body: clean.body !== undefined ? clean.body : f.body,
@@ -621,7 +680,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       sourceUrl: clean.sourceUrl !== undefined ? clean.sourceUrl : f.sourceUrl,
       spoilerLabel: clean.spoilerLabel !== undefined ? clean.spoilerLabel : f.spoilerLabel,
       editedAt: now,
-    })));
+    }), filing));
 
     const dbUpdates = toUpdateRow(clean);
     try {
@@ -643,7 +702,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
           return { offline: true };
         }
       }
-      set((st) => patchFiling(st, id, () => before));
+      set((st) => patchActed(st, id, () => before, before));
       throw e;
     }
   },
@@ -671,7 +730,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       film: before.film ? { ...before.film, posterPath: null, backdropPath: null } : null,
       endedAt: houseIso(), endedBy: 'author',
     };
-    set((st) => patchFiling(st, id, () => ended));
+    set((st) => patchActed(st, id, () => ended, before));
 
     try {
       const { error } = await supabase.rpc('end_filing', { p_post: id, p_by: 'author' });
@@ -686,7 +745,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
           return { offline: true };
         }
       }
-      set((st) => patchFiling(st, id, () => before));
+      set((st) => patchActed(st, id, () => before, before));
       throw e;
     }
   },

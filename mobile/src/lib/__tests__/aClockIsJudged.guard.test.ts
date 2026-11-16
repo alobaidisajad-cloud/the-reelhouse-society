@@ -32,7 +32,7 @@ const JUDGED: Record<string, { readings: number; why: string }> = {
   'src/stores/blockStore.ts': { readings: 1, why: 'when this phone last kept the lists, read back on this phone' },
   'src/stores/dispatch.ts': { readings: 2, why: 'how long a read took to parse' },
   'src/stores/domain/archiveSlice.ts': { readings: 1, why: 'a row\'s id until the house gives it one' },
-  'src/stores/domain/socialSlice.ts': { readings: 2, why: 'a cached profile\'s stamp, read back through agedSince (the follow throttle is on monotonicNow)' },
+  'src/stores/domain/socialSlice.ts': { readings: 3, why: 'a cached profile\'s stamp (looked up, or laid by the member\'s own file as a follow is filed), read back through agedSince (the follow throttle is on monotonicNow)' },
   'src/stores/lounge.ts': { readings: 2, why: 'a cached profile\'s stamp, read back through agedSince, and a message\'s id until the house gives it one (the throttles are on monotonicNow)' },
   'src/stores/markCounts.ts': { readings: 2, why: 'when a tap was made, weighed against when a read was asked, both on this phone' },
   'src/hooks/useAuthThrottle.ts': { readings: 3, why: 'how long a member waits between tries' },

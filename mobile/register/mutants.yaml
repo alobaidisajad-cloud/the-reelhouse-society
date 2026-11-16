@@ -3035,8 +3035,8 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useAuthFlow.ts
-        find: 'params.next ? nav.dismissTo(landing) : '
-        replace: ''
+        find: "  const arrive = () => nav.dismissTo(landing);"
+        replace: "  const arrive = () => (params.next ? nav.replace(landing) : nav.dismissTo(landing));"
     proof: { file: src/hooks/__tests__/signingInTellsTheTruth.test.tsx, test: 'on the screen that asked, closed back to' }
 
   - id: shape-cover-host-unread
@@ -4780,3 +4780,192 @@ mutants:
         find: "      <CinematicScrollView ref={scrollRef} contentContainerStyle"
         replace: "      <CinematicScrollView contentContainerStyle"
     proof: { file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "the Profile tab, tapped again, takes the file to its top: the file's own scroll is the one handed over (review round 4)" }
+
+  - id: shape-edit-closes-unasked
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: app/(modals)/log-modal.tsx
+        find: "    useAskBeforeLeaving(flow.amendmentsUnsealed && !submitting, {"
+        replace: "    useAskBeforeLeaving(false, {"
+    proof: { file: src/components/log/__tests__/theLogSheetGoesBackAStep.test.tsx, test: "holds every way out once a field is amended, and none before" }
+
+  - id: shape-amendment-unseen
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "            editFormKey({ status, rating, review, isSpoiler, date, watchedWith, physicalMedia, abandonedReason,"
+        replace: "            false && editFormKey({ status, rating, review, isSpoiler, date, watchedWith, physicalMedia, abandonedReason,"
+    proof: { file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "one changed field is an amendment, and changing it back is none" }
+
+  - id: shape-sign-in-replaces-the-tabs
+    class: NAV-a-replace-that-builds-a-second-tab-app
+    source: shape
+    edits:
+      - file: src/utils/typedRouter.ts
+        find: "    if (path.startsWith('/(tabs)')) {"
+        replace: "    if (false) {"
+    proof: { file: src/utils/__tests__/theTabsAreReturnedToNeverRebuilt.guard.test.ts, test: "goes back to the tab app already there, never building another" }
+
+  - id: shape-block-keeps-the-follow
+    class: STATE-a-follow-the-house-ended-held-on
+    source: shape
+    edits:
+      - file: src/stores/blockStore.ts
+        find: "      if (stillSignedIn(currentUser.id)) void hydrateFollowing({ again: true });\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aBlockEndsTheFollowOnThePhone.test.ts, test: "a block that lands reads the follow list again, afresh" }
+
+  - id: shape-follow-reread-joins-the-old
+    class: STATE-a-follow-the-house-ended-held-on
+    source: shape
+    edits:
+      - file: src/stores/domain/socialSlice.ts
+        find: "  if (running && !opts?.again) return running.read;"
+        replace: "  if (running) return running.read;"
+    proof: { file: src/stores/__tests__/aFollowReadAgainTakesThePlaceOfTheOld.test.ts, test: "a read asked again replaces the running one, whose late answer lands nowhere" }
+
+  - id: shape-request-shown-as-follow
+    class: UI-a-guess-drawn-as-the-answer
+    source: shape
+    edits:
+      - file: src/stores/domain/socialSlice.ts
+        find: "  const shownPrivate: boolean | null = cachedProfile ? cachedProfile.isPrivate : null;"
+        replace: "  const shownPrivate: boolean | null = cachedProfile ? cachedProfile.isPrivate : false;"
+    proof: { file: src/stores/__tests__/aRequestIsShownAsARequest.test.ts, test: "with nothing known, shows nothing until the house says the member is private, then a request" }
+
+  - id: shape-door-counts-the-hidden
+    class: READ-a-foot-counting-what-it-cannot-read
+    source: shape
+    edits:
+      - file: src/services/FollowRequestService.ts
+        find: "    if (hidden.length) query = query.not('user_id', 'in', `(${hidden.join(',')})`);\n"
+        replace: ""
+    proof: { file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "counts no request from a member blocked or muted, as the door offers none" }
+
+  - id: shape-door-one-busy-for-all
+    class: UI-a-second-tap-dropped-unsaid
+    source: shape
+    edits:
+      - file: src/hooks/useFollowRequests.ts
+        find: "    if (busy.current.has(req.requesterId)) return;"
+        replace: "    if (busy.current.size > 0) return;"
+    proof: { file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "a second ADMIT while the first is answered is taken, each row busy on its own" }
+
+  - id: shape-tactile-never-read-back
+    class: STATE-a-saved-choice-never-read-back
+    source: shape
+    edits:
+      - file: src/utils/tactileFollowsTheAccount.ts
+        find: "    if (saved !== undefined && saved !== useSettingsStore.getState().tactileAudioEnabled) {"
+        replace: "    if (false) {"
+    proof: { file: src/utils/__tests__/theTactileChoiceFollowsTheAccount.test.ts, test: "takes the account’s saved choice as the member signs in, after the reset turned haptics on" }
+
+  - id: shape-reel-choices-kept-for-the-next
+    class: STATE-a-choice-kept-past-sign-out
+    source: shape
+    edits:
+      - file: app/(tabs)/reels.tsx
+        find: "  if (choicesOf !== memberKey) {"
+        replace: "  if (false) {"
+    proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "the next person on the phone is never handed the last member’s stack search or reels" }
+
+  - id: shape-unsent-left-off-the-page
+    class: STATE-an-unsent-write-left-off-a-redrawn-page
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "  return waiting.length ? [...waiting, ...st.filings] : st.filings;"
+        replace: "  return st.filings;"
+    proof: { file: src/stores/__tests__/dispatchWrites.test.ts, test: "is kept beside the page, and laid on the next page of its department while queued" }
+
+  - id: shape-row-prints-the-old-words
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/components/dispatch/FilingRow.tsx
+        find: "  const f: Filing = acted ? { ...given, ...acted } : given;"
+        replace: "  const f: Filing = given;"
+    proof: { file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "a filing withdrawn in the reader is drawn withdrawn here, not in its old words" }
+
+  - id: shape-act-kept-for-no-list
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "  acted: { ...st.acted, [id]: actedOf(next(heldFiling(st, id) ?? base)) },"
+        replace: "  acted: st.acted,"
+    proof: { file: src/stores/__tests__/dispatchWrites.test.ts, test: "keeps the words and the mark an amendment left" }
+
+  - id: shape-log-page-keeps-the-hidden
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "  const comments = useMemo(() => filterContentByBlocks(heldComments ?? [], (c) => c.user_id), [heldComments, whoIsHidden]);"
+        replace: "  const comments = useMemo(() => heldComments ?? [], [heldComments, whoIsHidden]);"
+    proof: { file: app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx, test: "leaves the page at once, critique and count, under the toast that says so" }
+
+  - id: shape-archive-keeps-the-hidden
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: src/hooks/useDispatchArchive.ts
+        find: "    film, filings: shown, certifiedAtFetch, count: shownCount, span, loading, filmFailed, more,"
+        replace: "    film, filings, certifiedAtFetch, count, span, loading, filmFailed, more,"
+    proof: { file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "a member blocked from a filing is no longer listed, nor counted" }
+
+  - id: shape-series-stays-for-the-hidden
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/dispatch/series/[id].tsx
+        find: "  useFocusEffect(useCallback(() => { if (authorHidden) nav.back(); }, [authorHidden]));\n"
+        replace: ""
+    proof: { file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "leaves, as the reader does, and is never drawn as their list" }
+
+  - id: shape-rollback-undoes-another
+    class: WRITE-a-rollback-that-undoes-another-write
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "            if (stillSignedIn(startedAs)) set((state) => putBack(state, previousState.filter((n) => n.id === id)));"
+        replace: "            if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousState.filter((n) => !n.read).length });"
+    proof: { file: src/stores/__tests__/aFailedWriteUndoesOnlyItsOwnNotice.test.ts, test: "two notices dismissed, both refused: both come back, in their places, and both are counted" }
+
+  - id: shape-stack-refresh-blames-the-critiques
+    class: COPY-a-failure-said-of-a-read-not-asked
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "      || (critiquesAsked && queryClient.getQueryState(['stackComments', id])?.status === 'error')) {"
+        replace: "      || (queryClient.getQueryState(['stackComments', id])?.status === 'error')) {"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a pull that worked says nothing, though the critiques failed earlier while their sheet is shut" }
+
+  - id: shape-visitor-certify-silent
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "    if (!user) { askIn(); return; }"
+        replace: "    if (!user) return;"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a visitor’s heart is plain, never \"Reading your mark\", and CERTIFY asks them in" }
+
+  - id: shape-stack-failure-said-twice
+    class: COPY-one-failure-said-twice
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "      // The store said why (\"Failed to certify list.\"); a second toast spoke the failure twice."
+        replace: "      reelToast.error('Certification failed. Reverted.');"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a refused certification is said once: the store has said why" }
+
+  - id: shape-later-films-dropped-on-a-count
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "    () => (list ? [...list.films, ...(later.after === list.films ? later.films : [])] : []),"
+        replace: "    () => (list ? [...list.films, ...(later.after === (list as unknown) ? later.films : [])] : []),"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "the films read past the first page stay when a critique rewrites the stack’s count" }

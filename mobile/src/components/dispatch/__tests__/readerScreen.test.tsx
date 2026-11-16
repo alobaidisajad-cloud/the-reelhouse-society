@@ -157,6 +157,12 @@ jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
+// A block that lands reads the follow list again (blockStore): its read is the follow store's
+// own tests' to answer, and here only that it was asked.
+jest.mock('@/src/stores/domain/socialSlice', () => ({
+  ...jest.requireActual('@/src/stores/domain/socialSlice'),
+  hydrateFollowing: jest.fn(() => Promise.resolve()),
+}));
 // The share sheet, as each test sets it: expo-sharing's own exports cannot be spied on (SDK 57).
 // Read when called: the module is loaded with the screen, before this file's lines have run.
 const mockSharing = { isAvailableAsync: jest.fn(async () => true), shareAsync: jest.fn(async (_u: unknown) => undefined) };

@@ -29,13 +29,19 @@ export interface FollowRequestPage {
 const PAGE_SIZE = 30;
 
 export const FollowRequestService = {
-  /** Live count of pending requests addressed to `myId`; null when it could not be counted. */
-  async count(myId: string): Promise<number | null> {
-    const { count, error } = await supabase
+  /**
+   * Live count of pending requests addressed to `myId`, leaving out the members in `hidden`
+   * (blocked or muted: the door never offers them, so the banner never counts them); null when
+   * it could not be counted.
+   */
+  async count(myId: string, hidden: readonly string[] = []): Promise<number | null> {
+    let query = supabase
       .from('interactions')
       .select('id', { count: 'exact', head: true })
       .eq('target_user_id', myId)
       .eq('type', 'follow_request');
+    if (hidden.length) query = query.not('user_id', 'in', `(${hidden.join(',')})`);
+    const { count, error } = await query;
     if (error) {
       logger.warn('[FollowRequestService.count] failed:', error.message);
       return null;

@@ -24,7 +24,7 @@ import { offerWord } from '@/src/lib/pushPrimer';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
-import { deckLabelProps } from '@/src/constants/textScaling';
+import { deckLabelProps, scaledTextProps } from '@/src/constants/textScaling';
 import { formatCount, UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { tmdb } from '@/src/lib/tmdb';
@@ -46,6 +46,7 @@ import { CritiqueRow, type Critique } from '@/src/components/critique/CritiqueRo
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
+import { askIn } from '@/src/utils/askIn';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { formatDateMonthYear } from '@/src/utils/timeAgo';
 import { z } from 'zod';
@@ -236,9 +237,12 @@ function StackDetailScreen({ id }: { id: string }) {
     await queryClient.invalidateQueries({ queryKey: ['stack', id] });
     await queryClient.invalidateQueries({ queryKey: ['stackComments', id] });
     setRefreshing(false);
-    // The page stays as it was; a pull that reached nothing says so, as every list does.
+    // The page stays as it was; a pull that reached nothing says so, as every list does. The
+    // critiques count only while their sheet asks for them: shut, their read is not refetched, and
+    // its old failure once said "Could not refresh" over a stack read that worked.
+    const critiquesAsked = queryClient.getQueryCache().find({ queryKey: ['stackComments', id] })?.isActive() ?? false;
     if (queryClient.getQueryState(['stack', id])?.status === 'error'
-      || queryClient.getQueryState(['stackComments', id])?.status === 'error') {
+      || (critiquesAsked && queryClient.getQueryState(['stackComments', id])?.status === 'error')) {
       reelToast.error(REFRESH_FAILED);
     }
   }, [queryClient, id]);
@@ -379,9 +383,11 @@ function StackDetailScreen({ id }: { id: string }) {
 
   // The films past the first page, read as the page is scrolled (P4.9): a stack of any size is
   // drawn whole, in its rank order. Held beside the read they follow; a stack read again starts over.
-  const [later, setLater] = useState<{ after: ListDetail | null; films: FilmItem[] }>({ after: null, films: [] });
+  // Keyed by the first page's films, not the list: a critique filed rewrites the list's count (a new
+  // object), and every film read past 500 was dropped with it.
+  const [later, setLater] = useState<{ after: FilmItem[] | null; films: FilmItem[] }>({ after: null, films: [] });
   const films = useMemo(
-    () => (list ? [...list.films, ...(later.after === list ? later.films : [])] : []),
+    () => (list ? [...list.films, ...(later.after === list.films ? later.films : [])] : []),
     [list, later],
   );
   const readingMore = useRef(false);
@@ -391,7 +397,7 @@ function StackDetailScreen({ id }: { id: string }) {
     try {
       const page = await StackService.getStackItemsPage(id, films.length);
       const held = new Set(films.map((f) => f.id));
-      setLater((was) => ({ after: list, films: [...(was.after === list ? was.films : []), ...page.filter((f) => !held.has(f.id))] }));
+      setLater((was) => ({ after: list.films, films: [...(was.after === list.films ? was.films : []), ...page.filter((f) => !held.has(f.id))] }));
     } catch (e) {
       logger.warn('[stacks] reading more films failed', e);
     } finally {
@@ -472,15 +478,17 @@ function StackDetailScreen({ id }: { id: string }) {
   // Null while unknown (drawn from the phone): never a count of nobody.
   const certifyCount = stackQueryData?.endorseCount ?? null;
   // A certification made here is known; otherwise only the house's answer says.
-  const certifyKnown = isCertified || !!stackQueryData?.certifiedKnown;
+  // A visitor holds no mark: known, and plain, never "Reading your mark" for good.
+  const certifyKnown = !user || isCertified || !!stackQueryData?.certifiedKnown;
 
   const isOwner = user?.id === list?.userId;
    
   const loggedIds = React.useMemo(() => new Set(Object.keys(loggedIndex).map(Number)), [loggedIndex]);
 
   const handleCertify = useCallback(async () => {
-    // Pre-flight Zod validation
-    if (!user || isCertifying || !z.string().uuid().safeParse(id).success) return;
+    // A visitor is asked in, as a log's CERTIFY asks; then the pre-flight Zod validation.
+    if (!user) { askIn(); return; }
+    if (isCertifying || !z.string().uuid().safeParse(id).success) return;
     // Whether they certified it is not known: a second certification is not filed blind.
     // The house is asked again instead.
     if (!certifyKnown) { void rereadStack(); return; }
@@ -510,7 +518,7 @@ function StackDetailScreen({ id }: { id: string }) {
         if (!old) return old;
         return { ...old, endorseCount: old.endorseCount == null ? null : Math.max(0, old.endorseCount + revertDelta) };
       });
-      reelToast.error('Certification failed. Reverted.');
+      // The store said why ("Failed to certify list."); a second toast spoke the failure twice.
     } finally {
       setIsCertifying(false);
     }
@@ -766,7 +774,7 @@ function StackDetailScreen({ id }: { id: string }) {
               logger.debug('[Stack] Delete failed:', err);
               addBreadcrumb('stacks.deleteStack failed', 'telemetry');
               if (!isNetworkError(err)) captureError(err, { scope: 'stacks.deleteStack', stackId: id });
-              reelToast.error('The collection resists destruction.');
+              // The store said why ("Failed to delete list — please try again."): said once.
             }
           },
         },
@@ -1150,6 +1158,14 @@ function StackDetailScreen({ id }: { id: string }) {
                 </PressableScale>
               </Animated.View>
             )}
+            {!user && (
+              <Animated.View style={[s.critiqueFoot, critiqueFootStyle]}>
+                <Text style={[s.commentEmpty, s.critiqueAsk]} {...scaledTextProps}>Sign in to file a critique.</Text>
+                <PressableScale onPress={() => { setShowComments(false); askIn(); }} style={s.critiqueSend} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Sign in to file a critique">
+                  <Text style={s.critiqueSignIn} {...scaledTextProps}>SIGN IN</Text>
+                </PressableScale>
+              </Animated.View>
+            )}
           </Arrive>
         </View>
       )}
@@ -1326,6 +1342,9 @@ const s = StyleSheet.create({
     minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.sepia, borderRadius: 4,
   },
+  // A visitor's foot: the ask where the field would be, and the way in where SEND would be.
+  critiqueAsk: { flex: 1, textAlign: 'left', alignSelf: 'center' },
+  critiqueSignIn: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.ink, paddingHorizontal: 14 },
 
   emptyState: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, marginBottom: 8 },

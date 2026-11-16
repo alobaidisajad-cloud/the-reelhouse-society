@@ -285,7 +285,9 @@ describe('every door into a session', () => {
     const r = render(<AuthCallbackScreen />);
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
     await act(async () => { jest.advanceTimersByTime(5000); });
-    expect(replace).toHaveBeenCalledWith('/(tabs)');
+    // Into the tabs, closed back to the tab app beneath, never a second one over it (review round 5).
+    expect((jest.requireMock('expo-router') as { router: { dismissTo: jest.Mock } }).router.dismissTo).toHaveBeenLastCalledWith('/(tabs)');
+    expect(replace).not.toHaveBeenCalledWith('/(tabs)');
     r.unmount();
     jest.useRealTimers();
   });
@@ -310,9 +312,10 @@ describe('where a sign-in lands', () => {
     expect(await signIn({ next: `/list-modal?editId=${STACK}` })).toEqual({ dismissTo: [[`/list-modal?editId=${STACK}`]], replace: [] });
     expect(await signIn({ next: '/settings' })).toEqual({ dismissTo: [['/settings']], replace: [] });
   });
+  // Closed back to the tab app beneath, never a second one built over it (review round 5).
   it('on the Lobby, when nothing asked or a door did', async () => {
-    expect(await signIn({})).toEqual({ dismissTo: [], replace: [['/(tabs)']] });
-    expect(await signIn({ next: '/tribunal' })).toEqual({ dismissTo: [], replace: [['/(tabs)']] });
+    expect(await signIn({})).toEqual({ dismissTo: [['/(tabs)']], replace: [] });
+    expect(await signIn({ next: '/tribunal' })).toEqual({ dismissTo: [['/(tabs)']], replace: [] });
   });
 });
 

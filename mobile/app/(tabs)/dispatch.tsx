@@ -39,7 +39,7 @@ import { dayKey, dayLabel, hourLabel } from '@/src/components/dispatch/dayLabel'
 import { FilingRow } from '@/src/components/dispatch/FilingRow';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useAuthStore } from '@/src/stores/auth';
-import { useDispatch, type Section } from '@/src/stores/dispatch';
+import { unsentOnPage, useDispatch, type Section } from '@/src/stores/dispatch';
 import type { Filing } from '@/src/stores/dispatchTypes';
 import { colors } from '@/src/theme/theme';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -50,7 +50,7 @@ import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
 import reelToast from '@/src/utils/reelToast';
-import { useUnsent } from '@/src/stores/offlineQueueStore';
+import { useOfflineQueueStore, useUnsent } from '@/src/stores/offlineQueueStore';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 import { dateOf } from '@/src/utils/instant';
 import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
@@ -96,7 +96,21 @@ const EMPTY: Record<Section, { title: string; body: string; action?: string }> =
 export default function DispatchScreen() {
   const me = useAuthStore((s) => s.user);
 
-  const held = useDispatch((s) => s.filings);
+  // Filed on this phone while the wire was down, and not gone yet: laid on every page it belongs on.
+  const unsent = useUnsent('add_filing');
+  const page = useDispatch((s) => s.filings);
+  const unsentHeld = useDispatch((s) => s.unsent);
+  const pageSection = useDispatch((s) => s.section);
+  const pageSaved = useDispatch((s) => s.savedOnly);
+  const held = useMemo(
+    () => unsentOnPage(
+      { filings: page, unsent: unsentHeld, section: pageSection, savedOnly: pageSaved },
+      unsent,
+      // The queue's own rows, read once per change of what it holds (`unsent` is that change).
+      useOfflineQueueStore.getState().queued.filter((m) => m.type === 'add_filing').map((m) => m.payload as Record<string, unknown>),
+    ),
+    [page, unsentHeld, pageSection, pageSaved, unsent],
+  );
   // Drawn through who is hidden NOW: the house leaves them out of the next read, and a member
   // blocked or muted since stayed on the paper under the toast that said they were hidden.
   const whoIsHidden = useWhoIsHidden();
@@ -119,8 +133,6 @@ export default function DispatchScreen() {
   const newCount = useDispatch((s) => s.newCount);
   const certifiedIds = useDispatch((s) => s.certifiedIds);
   const savedIds = useDispatch((s) => s.savedIds);
-  // Filed on this phone while the wire was down, and not gone yet.
-  const unsent = useUnsent('add_filing');
 
   // Below the floating bar, as it measured itself (navMetrics), not a copy; above the tab bar.
   const topPad = useTabContentTop();

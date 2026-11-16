@@ -28,8 +28,10 @@ jest.mock('expo-router/react-navigation', () => ({
   useNavigation: () => ({ addListener: () => () => {}, setOptions: jest.fn(), navigate: jest.fn(), goBack: jest.fn() }),
   usePreventRemove: jest.fn(),
 }));
-// The form and its seal are their own tests' to draw; here only the step is asked.
-jest.mock('@/src/components/log/LogForm', () => () => null);
+// The form and its seal are their own tests' to draw; here only the step is asked. The form's
+// flow is kept, so a test can amend a record as the member's typing would.
+let mockFlow: Record<string, (...a: unknown[]) => unknown> | null = null;
+jest.mock('@/src/components/log/LogForm', () => (props: { flow: Record<string, (...a: unknown[]) => unknown> }) => { mockFlow = props.flow; return null; });
 jest.mock('@/src/components/log/LogAtmosphere', () => () => null);
 jest.mock('@/src/components/log/LogSealBar', () => ({
   ...jest.requireActual('@/src/components/log/LogSealBar'),
@@ -102,4 +104,28 @@ it('the search alone is no room at all', async () => {
   (useLocalSearchParams as jest.Mock).mockReturnValue({});
   await render(<LogSheet />);
   expect(storage.getString(LAST_ROOM_KEY)).toBeUndefined();
+});
+
+describe('an edit asks before its amendments go (review round 5)', () => {
+  const LOG_ID = '66666666-6666-4666-8666-666666666666';
+  const preventing = () => {
+    const calls = (jest.requireMock('expo-router/react-navigation').usePreventRemove as jest.Mock).mock.calls;
+    return calls.at(-1)?.[0];
+  };
+  beforeEach(() => {
+    (jest.requireMock('expo-router/react-navigation').usePreventRemove as jest.Mock).mockClear();
+    useFilmStore.setState({
+      logs: [{ id: LOG_ID, filmId: 550, title: 'The Seventh Seal', rating: 4, review: 'Death plays well.', status: 'watched', watchedDate: '2026-11-01', createdAt: '2026-11-01T20:00:00Z' }],
+      _loggedIndex: { 550: true },
+    } as never);
+    (useLocalSearchParams as jest.Mock).mockReturnValue({ editLogId: LOG_ID, filmId: '550', filmTitle: 'The Seventh Seal' });
+  });
+
+  it('holds every way out once a field is amended, and none before', async () => {
+    await render(<LogSheet />);
+    expect(preventing()).toBe(false);
+    await act(async () => { mockFlow?.setReview?.('Death plays well, and cheats.'); });
+    // CLOSE, a swipe and Android's back are all a removal of the sheet: each is held and asked.
+    expect(preventing()).toBe(true);
+  });
 });

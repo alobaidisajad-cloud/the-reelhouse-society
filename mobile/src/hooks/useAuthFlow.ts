@@ -123,7 +123,8 @@ export function useAuthFlow() {
   // Where a sign-in lands: the screen that sent the stranger here, or the Lobby. That screen is
   // usually beneath the sign-in, and is revealed (never drawn twice); from a cold link it is opened.
   const landing = params.next ?? '/(tabs)';
-  const arrive = () => (params.next ? nav.dismissTo(landing) : nav.replace(landing));
+  // Back to the screen that asked, or the tab app beneath: never a second tab app over it.
+  const arrive = () => nav.dismissTo(landing);
   const { login, signup } = useAuthStore(useShallow((s) => ({ login: s.login, signup: s.signup })));
 
   // Right on the first frame; the effect below follows the route changing after.

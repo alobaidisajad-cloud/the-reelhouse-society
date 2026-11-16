@@ -48,6 +48,12 @@ let mockCommentsFailed = false;
 let mockCommentsReading = false;
 const mockRereadCritiques = jest.fn();
 const mockDeleteComment = jest.fn();
+/** The critiques' read is being asked for (their sheet is open). */
+let mockCritiquesAsked = false;
+/** Who is signed in: null for a visitor. */
+let mockAuthUser: { id: string; username: string } | null = { id: 'u1', username: 'morpho' };
+const mockAskIn = jest.fn();
+jest.mock('@/src/utils/askIn', () => ({ askIn: (...a: unknown[]) => mockAskIn(...a) }));
 /** The list's pull, as the screen hands it over. */
 let mockRefresh: { props: { onRefresh: () => Promise<void> } } | null = null;
 let mockEndReached: (() => Promise<void>) | null = null;
@@ -65,6 +71,7 @@ jest.mock('@tanstack/react-query', () => ({
     getQueryData: jest.fn((key: unknown[]) => (key[0] === 'stackComments' ? mockComments : undefined)),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),
     getQueryState: (key: unknown[]) => mockQueryState[String(key[0])],
+    getQueryCache: () => ({ find: ({ queryKey }: { queryKey: unknown[] }) => (queryKey[0] === 'stackComments' && mockCritiquesAsked ? { isActive: () => true } : undefined) }),
     // As React Query matches: a held key that begins with the key asked for.
     getQueriesData: ({ queryKey }: { queryKey: unknown[] }) => mockFeeds.filter(([held]) => queryKey.every((part, i) => held[i] === part)),
   }),
@@ -100,7 +107,7 @@ jest.mock('@/src/stores/blockStore', () => {
   return { useBlockStore };
 });
 jest.mock('@/src/stores/auth', () => {
-  const state = { user: { id: 'u1', username: 'morpho' } };
+  const state = { get user() { return mockAuthUser; } };
   // Read as a hook, and by the stack's offline stand-in with getState().
   return { useAuthStore: Object.assign((sel?: (s: unknown) => unknown) => (sel ? sel(state) : state), { getState: () => state }) };
 });
@@ -182,6 +189,8 @@ function flatText(n: Node): string {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockCritiquesAsked = false;
+  mockAuthUser = { id: 'u1', username: 'morpho' };
   mockBackHandlers.length = 0;
   jest.spyOn(require('react-native').BackHandler, 'addEventListener')
     .mockImplementation(((_e: string, h: () => boolean) => {
@@ -1265,5 +1274,66 @@ describe('a stack opened from the Reel’s card draws what the card held, at onc
   it('seeds nothing when no card holds the stack', () => {
     mockFeeds = [[['feed', 'stacks', 'all', '', 'u1'], { pages: [[{ ...CARD, id: '99999999-9999-4999-8999-999999999999' }]] }]];
     expect(seed()).toBeUndefined();
+  });
+});
+
+describe('review round 5', () => {
+  it('a pull that worked says nothing, though the critiques failed earlier while their sheet is shut', async () => {
+    mount();
+    mockQueryState = { stack: { status: 'success' }, stackComments: { status: 'error' } };
+    await act(async () => { await mockRefresh!.props.onRefresh(); });
+    expect(mockToastError).not.toHaveBeenCalled();
+    // Open, the critiques are asked for again by the pull, and their failure is said.
+    mockCritiquesAsked = true;
+    await act(async () => { await mockRefresh!.props.onRefresh(); });
+    expect(mockToastError).toHaveBeenCalledWith('Could not refresh — check your connection.');
+  });
+
+  it('a visitor’s heart is plain, never "Reading your mark", and CERTIFY asks them in', async () => {
+    mockAuthUser = null;
+    mockStackFailed = false;
+    mockStackData = { list: baseStack, endorseCount: 3, certifiedKnown: false };
+    const r = render(<StackDetailScreen />);
+    await waitFor(() => expect(r.getByText(/INDEXED REELS/)).toBeTruthy());
+    expect(r.queryByLabelText(/Reading your mark/)).toBeNull();
+    await act(async () => { await fireEvent.press(r.getByLabelText(/^Certify this stack/)); });
+    expect(mockAskIn).toHaveBeenCalledTimes(1);
+    expect(require('@/src/stores/films').useListStore.getState().toggleListEndorse).not.toHaveBeenCalled();
+  });
+
+  it('a visitor’s critiques sheet asks them in where the field would be', async () => {
+    mockAuthUser = null;
+    const r = mount({ critiqueCount: 0 });
+    await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText(/critiques?/i)); });
+    await waitFor(() => expect(r.getByText('Sign in to file a critique.')).toBeTruthy());
+    expect(r.queryByLabelText('Stack critique')).toBeNull();
+    await act(async () => { await fireEvent.press(r.getByLabelText('Sign in to file a critique')); });
+    expect(mockAskIn).toHaveBeenCalledTimes(1);
+  });
+
+  it('a refused certification is said once: the store has said why', async () => {
+    const { toggleListEndorse } = require('@/src/stores/films').useListStore.getState();
+    toggleListEndorse.mockRejectedValueOnce(Object.assign(new Error('refused'), { code: '42501' }));
+    const r = mount();
+    await waitFor(() => expect(r.getByText(/INDEXED REELS/)).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText(/^Certify this stack/)); });
+    expect(toggleListEndorse).toHaveBeenCalledTimes(1);
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it('the films read past the first page stay when a critique rewrites the stack’s count', async () => {
+    const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
+    StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 3, title: 'Film Three', poster_path: null }]);
+    const films = [{ id: 1, title: 'Film One', poster_path: null }, { id: 2, title: 'Film Two', poster_path: null }];
+    const r = mount({ films, filmCount: 3 });
+    await act(async () => {});
+    await act(async () => { await mockEndReached?.(); });
+    expect(JSON.stringify(r.toJSON())).toContain('Film Three');
+    // A critique filed: the cached stack is written again with its new count, the films as they were.
+    const was = mockStackData as { list: Record<string, unknown> };
+    mockStackData = { ...was, list: { ...was.list, critiqueCount: 1 } };
+    r.rerender(<StackDetailScreen />);
+    expect(JSON.stringify(r.toJSON())).toContain('Film Three');
   });
 });
