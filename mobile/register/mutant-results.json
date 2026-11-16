@@ -4153,9 +4153,9 @@
   {
     "class": "WRITE-a-second-tap-that-acts-again",
     "mutant": "shape-removal-pressed-twice",
-    "proof": "m1",
-    "commit": "61275ecf092c62bb4a2788cb082b1ff6b39140e6",
-    "verdict": "survived"
+    "proof": "m5",
+    "commit": "71724b8570df84a718fe7164b1840e2193afa6ae",
+    "verdict": "caught"
   },
   {
     "class": "WRITE-a-second-tap-that-acts-again",
