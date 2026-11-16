@@ -2935,7 +2935,7 @@ classes:
     methods:
       - { kind: running, file: src/stores/__tests__/aFailedWriteUndoesOnlyItsOwnNotice.test.ts, test: "two notices dismissed, both refused: both come back, in their places, and both are counted" }
       - { kind: running, file: src/stores/__tests__/aFailedWriteUndoesOnlyItsOwnNotice.test.ts, test: "one notice read and another dismissed, both refused: each undone alone" }
-      - { kind: running, file: src/stores/__tests__/aFailedWriteUndoesOnlyItsOwnNotice.test.ts, test: "a refused group leaves another notice dismissed meanwhile as it is" }
+      - { kind: running, file: src/stores/__tests__/aFailedWriteUndoesOnlyItsOwnNotice.test.ts, test: "a refused group leaves another notice read meanwhile as it is" }
     fix: "each refused write undoes its own notices alone: read again, or put back in their places, and counted back (mutant shape-rollback-undoes-another)"
     places: [none]
 
