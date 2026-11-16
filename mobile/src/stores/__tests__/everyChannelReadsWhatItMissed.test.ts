@@ -20,7 +20,8 @@ beforeEach(() => { (supabase.channel as unknown as jest.Mock).mockImplementation
 jest.mock('../../lib/queryClient', () => ({ queryClient: { invalidateQueries: jest.fn() } }));
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: { id: '33333333-3333-4333-8333-333333333333', username: 'me' } }) } }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
-jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }) } }));
+// The notices hear the block store (a member hidden leaves the board): heard here, never changed.
+jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }), subscribe: () => () => {} } }));
 jest.mock('../../utils/offlineQueue', () => ({ enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [] }));
 
 const dropAndReturn = () => { mockStatus?.('SUBSCRIBED'); mockStatus?.('CHANNEL_ERROR'); mockStatus?.('SUBSCRIBED'); };

@@ -12,6 +12,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useSocialStore } from '@/src/stores/followStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
+import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { FollowRequestService, FollowRequest } from '@/src/services/FollowRequestService';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -140,6 +141,7 @@ export function useFollowRequests(enabled: boolean) {
     busy.current.add(req.requesterId);
     setBusyIds(new Set(busy.current));
     if (admit) TactileEngine.success(); else TactileEngine.selection();
+    const me = useAuthStore.getState().user?.id;
     // Optimistic: drop the row + decrement the badge immediately.
     setItems(prev => prev.filter(r => r.requesterId !== req.requesterId));
     const cur = useSocialStore.getState().pendingRequestCount;
@@ -151,13 +153,16 @@ export function useFollowRequests(enabled: boolean) {
     // Answered: the house took its notice, and the bell lets it go too, whether or not the door
     // is still open.
     if (ok) useNotificationStore.getState().forgetRequestNotices(req.requesterId);
-    if (!isMounted.current) return;
-    if (!ok) {
-      // Rollback: restore row + badge.
-      setItems(prev => [req, ...prev].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)));
+    // A refusal is said, and the badge given back, though the door was closed meanwhile: the
+    // member was told nothing, and the petitioner was silently back at the next opening (review
+    // round 7). Never to the next member on the phone.
+    if (!ok && stillSignedIn(me)) {
       setCount(useSocialStore.getState().pendingRequestCount + 1);
       reelToast.error(admit ? `Couldn't admit @${req.username}. Try again.` : `Couldn't decline. Try again.`);
     }
+    if (!isMounted.current) return;
+    // Rollback: the row back on the door still open.
+    if (!ok) setItems(prev => [req, ...prev].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)));
     setBusyIds(new Set(busy.current));
   }, [setCount]);
 
@@ -168,20 +173,24 @@ export function useFollowRequests(enabled: boolean) {
     const snapshot = items;
     const hadMore = hasMoreRef.current;
     TactileEngine.warn();
+    const me = useAuthStore.getState().user?.id;
     setItems([]);
     setCount(0);
     hasMoreRef.current = false;
     setHasMore(false);
     const n = await FollowRequestService.declineAll();
     if (n >= 0) useNotificationStore.getState().forgetRequestNotices(null);
+    // Said, and counted again, though the door was closed meanwhile (as one answer is, above).
+    if (n < 0 && stillSignedIn(me)) {
+      reelToast.error("Couldn't clear the queue. Try again.");
+      refreshFollowRequestCount();
+    }
     if (!isMounted.current) return;
     if (n < 0) {
-      // Failure: restore, paging included, and re-count from the server.
+      // Failure: restore, paging included.
       setItems(snapshot);
       hasMoreRef.current = hadMore;
       setHasMore(hadMore);
-      reelToast.error("Couldn't clear the queue. Try again.");
-      refreshFollowRequestCount();
     }
   }, [items, setCount]);
 

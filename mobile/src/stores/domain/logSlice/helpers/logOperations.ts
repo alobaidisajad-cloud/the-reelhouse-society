@@ -473,6 +473,10 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                     _loggedIndex: (() => { const n = { ...state._loggedIndex }; if (log.filmId) n[log.filmId] = fullLog; return n; })()
                 };
             });
+            // A record filed is on the house's Reel and wall now, as one amended or withdrawn is:
+            // coming back from the sheet is not a focus, and the Reel held its old pages until a
+            // pull (review round 7). One still queued is not there yet.
+            if (!queuedOffline) { wallMayHaveChanged(); reelMayHaveChanged(); }
 
             // Predictive cache update for film/[id].tsx community reviews
             if (log.filmId) {
@@ -921,6 +925,8 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             }
         }
 
+        // Queued for the wire: the record's own copy is not read again here, offline.
+        let queued = false;
         try {
             const user = useAuthStore.getState().user;
             if (!user) { throw new Error('Must be authenticated to delete logs'); }
@@ -932,6 +938,11 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
                 if (isNetworkError(error) && enqueueMutation({ type: 'remove_log', payload: { log_id: id, user_id: user.id } })) {
                     // Its card leaves the Reel now, as the record left the member's pages.
                     reelMayHaveChanged(id);
+                    // And its own page leaves with it, as it does online: its copy says it is gone.
+                    // Read again offline, the read failed and kept the whole record, its EDIT
+                    // opening on nothing (review round 7).
+                    queued = true;
+                    queryClient.setQueryData(['log', id], (old: unknown) => (old && typeof old === 'object' ? { ...old, log: null } : old));
                     reelToast('Removed offline. Will sync when connected.');
                     return;
                 }
@@ -963,7 +974,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             // The caller toasts — one message per failure.
             throw e;
         } finally {
-            queryClient.invalidateQueries({ queryKey: ['log', id] });
+            if (!queued) queryClient.invalidateQueries({ queryKey: ['log', id] });
             if (logToRemove.filmId) {
                 queryClient.invalidateQueries({ queryKey: ['film', Number(logToRemove.filmId)] });
             }

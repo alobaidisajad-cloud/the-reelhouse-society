@@ -505,6 +505,16 @@ function TribunalScreen() {
     });
   }, [priorityItems, loadMoreMutation]);
 
+  // A judged case leaves both dockets at once. The read again of page one rebuilds a docket only
+  // when it changed, and a case judged on a page loaded later left page one as it was: the read
+  // handed back the same rows, nothing was rebuilt, and the case stood, to be refused when judged
+  // again (review round 7). A verdict closes the one report it names.
+  const leaveTheDocket = useCallback((ids: string[]) => {
+    const judged = new Set(ids);
+    setPriorityItems((prev) => prev.filter((r) => !judged.has(r.id)));
+    setPendingItems((prev) => prev.filter((r) => !judged.has(r.id)));
+  }, []);
+
   // ── Resolve V2 Mutation (for graduated actions) ────────────────────────
 
   const resolveV2Mutation = useMutation({
@@ -525,7 +535,8 @@ function TribunalScreen() {
         duration_hours: durationHours,
         notify_user: true,
       }),
-    onSuccess: () => {
+    onSuccess: (_answer, { reportId }) => {
+      leaveTheDocket([reportId]);
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'priority'] });
       TactileEngine.success();
@@ -542,7 +553,8 @@ function TribunalScreen() {
   const bulkDismissMutation = useMutation({
     mutationFn: (reportIds: string[]) =>
       ModerationService.bulkDismiss(reportIds, user!.id, 'Bulk dismissed by Tribunal admin'),
-    onSuccess: () => {
+    onSuccess: (_answer, reportIds) => {
+      leaveTheDocket(reportIds);
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'priority'] });
       TactileEngine.success();

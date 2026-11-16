@@ -771,3 +771,125 @@ describe('the Tribunal says what it knows', () => {
     alertSpy.mockRestore();
   });
 });
+
+// ── A judged case leaves the docket at once (review round 7) ──────────────────
+// The docket was rebuilt only when the read again of page one changed. A case judged on a page
+// LOAD MORE CASES brought left page one as it was: the read handed back the same rows, nothing
+// was rebuilt, and the case stood, to be refused when judged again. And until that read landed,
+// every judged case stood on the docket.
+
+describe('a judged case leaves the docket at once', () => {
+  type Page = { rows: typeof MOCK_REPORTS; total: number };
+  /** A read of the docket that waits until the test answers it. */
+  const heldRead = <T,>() => {
+    let answer: (v: T) => void = () => {};
+    const asked = new Promise<T>((res) => { answer = res; });
+    return { asked, answer };
+  };
+  type Button = { text: string; style?: string; onPress?: () => void };
+  const lastAlertButtons = (spy: jest.SpyInstance): Button[] => {
+    const call = spy.mock.calls[spy.mock.calls.length - 1] as unknown[] | undefined;
+    expect(call).toBeDefined();
+    return call![2] as Button[];
+  };
+  const press = async (buttons: Button[], pick: (b: Button) => boolean) => {
+    const button = buttons.find(pick);
+    expect(button).toBeDefined();
+    await act(async () => { button!.onPress!(); });
+  };
+  const caseNo = (i: number) => ({
+    id: `priority-${String(i).padStart(3, '0')}`,
+    content_type: 'log',
+    content_id: `content-${i}`,
+    reason: `Reason ${i}`,
+    status: 'pending',
+    created_at: '2024-06-16T10:00:00Z',
+    reporter: { id: `reporter-${i}`, username: `user_${i}` },
+    target_user_id: `target-${i}`,
+    target_user: { id: `target-${i}`, username: `target_${i}`, warning_count: 0 },
+    report_count: 1,
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+    mockAuthStore.user = ADMIN_USER;
+    mockGetPendingReports.mockResolvedValue({ rows: MOCK_REPORTS, total: MOCK_REPORTS.length });
+    mockGetPriorityQueue.mockResolvedValue([]);
+    mockGetModerationHistoryForUsers.mockResolvedValue({});
+    mockResolveReportV2.mockResolvedValue(undefined);
+    mockBulkDismiss.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('a case dismissed leaves the docket at once, before the docket is read again', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    const r = renderTribunal();
+    await waitFor(() => expect(r.getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy());
+    const reread = heldRead<Page>();
+    mockGetPendingReports.mockReturnValueOnce(reread.asked);
+
+    await act(async () => { await fireEvent.press(r.getAllByLabelText('Dismiss report')[0]!); });
+    await press(lastAlertButtons(alertSpy), (b) => b.text === 'Dismiss');
+    await waitFor(() => expect(mockResolveReportV2).toHaveBeenCalledTimes(1));
+
+    // The docket's read again is still away: the case leaves on the verdict alone.
+    await waitFor(() => expect(r.queryByText('HATE SPEECH IN FILM REVIEW')).toBeNull());
+    expect(r.getByText('SPAM DISPATCH FLOODING')).toBeTruthy();
+
+    await act(async () => { reread.answer({ rows: MOCK_REPORTS.slice(1), total: 1 }); });
+    alertSpy.mockRestore();
+  });
+
+  it('cases dismissed together leave the docket at once', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    const r = renderTribunal();
+    await waitFor(() => expect(r.getByLabelText('Enter multi-select mode')).toBeTruthy());
+    const reread = heldRead<Page>();
+    mockGetPendingReports.mockReturnValueOnce(reread.asked);
+
+    await act(async () => { await fireEvent.press(r.getByLabelText('Enter multi-select mode')); });
+    await waitFor(() => expect(r.getAllByRole('checkbox')).toHaveLength(2));
+    for (const box of r.getAllByRole('checkbox')) {
+      await act(async () => { await fireEvent.press(box); });
+    }
+    await act(async () => { await fireEvent.press(r.getByLabelText('Bulk dismiss 2 reports')); });
+    await press(lastAlertButtons(alertSpy), (b) => b.style === 'destructive');
+    await waitFor(() => expect(mockBulkDismiss).toHaveBeenCalledTimes(1));
+
+    await waitFor(() => expect(r.queryByText('HATE SPEECH IN FILM REVIEW')).toBeNull());
+    await waitFor(() => expect(r.queryByText('SPAM DISPATCH FLOODING')).toBeNull());
+
+    await act(async () => { reread.answer({ rows: [], total: 0 }); });
+    alertSpy.mockRestore();
+  });
+
+  it('a case judged on a page LOAD MORE CASES brought leaves the docket, though page one reads back unchanged', async () => {
+    const pageOne = Array.from({ length: 20 }, (_, i) => caseNo(i));
+    // Each read of page one hands back the same twenty cases, as the house would.
+    mockGetPriorityQueue.mockImplementation(async (_n: number, cursor?: unknown) => (cursor ? [caseNo(20)] : pageOne.map((c) => ({ ...c }))));
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    const r = renderTribunal();
+
+    await waitFor(() => expect(r.getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Urgent: the priority queue')); });
+    await waitFor(() => expect(r.getByLabelText('Load more priority reports')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Load more priority reports')); });
+    await waitFor(() => expect(r.getByText('REASON 20')).toBeTruthy());
+
+    const dismissals = r.getAllByLabelText('Dismiss report');
+    expect(dismissals).toHaveLength(21);
+    await act(async () => { await fireEvent.press(dismissals[20]!); });
+    await press(lastAlertButtons(alertSpy), (b) => b.text === 'Dismiss');
+    await waitFor(() => expect(mockResolveReportV2).toHaveBeenCalledWith('priority-020', 'dismiss', expect.anything()));
+
+    // Page one is read again and answers as it was: the judged case is gone all the same.
+    await waitFor(() => expect(mockGetPriorityQueue.mock.calls.filter(([, cursor]) => !cursor)).toHaveLength(2));
+    await waitFor(() => expect(r.queryByText('REASON 20')).toBeNull());
+    expect(r.getByText('REASON 19')).toBeTruthy();
+    alertSpy.mockRestore();
+  });
+});

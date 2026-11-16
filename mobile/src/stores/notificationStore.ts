@@ -126,6 +126,8 @@ export interface NotificationState {
      * so the board does too, unread count and all. `null`: every request (declined all at once).
      */
     forgetRequestNotices: (fromUserId: string | null) => void;
+    /** Members now hidden (blocked or muted): their notices leave the board and the bell. */
+    forgetNoticesFrom: (hidden: ReadonlySet<string>) => void;
     /** Derived O(1) counter — updated on every mutation */
     _unreadCount: number;
     /** Keyset paging: whether there is more, and the last row's `created_at|id`. */
@@ -190,6 +192,18 @@ function putBack(state: Board, removed: readonly AppNotification[]): Board {
     };
 }
 
+/**
+ * Notices this phone marked read, by when the house took the mark (Infinity while it is on its
+ * way). A read asked before a mark landed answers with the notice unread: a push tapped as the app
+ * opened was read by its tap, and the board's read, asked first and landing after, wrote it back
+ * unread, counted in the bell (review round 7). Such a read is answered with the mark laid over it;
+ * a mark the house took before a read was asked is in its answer, and is forgotten then.
+ */
+const readHere = new Map<string, number>();
+const markingRead = (ids: readonly string[]) => { for (const id of ids) readHere.set(id, Infinity); };
+const markTaken = (ids: readonly string[]) => { const at = Date.now(); for (const id of ids) readHere.set(id, at); };
+const markRefused = (ids: readonly string[]) => { for (const id of ids) readHere.delete(id); };
+
 export const useNotificationStore = create<NotificationState>()(
     persist(
         (set, get) => ({
@@ -203,6 +217,7 @@ export const useNotificationStore = create<NotificationState>()(
         if (state._fetching) return;
 
         set({ loading: true, _fetching: true });
+        const askedAt = Date.now();
         try {
             // The badge is asked of the SERVER, never counted from one page of 30.
             const [{ data, error }, unreadRes] = await Promise.all([
@@ -242,12 +257,17 @@ export const useNotificationStore = create<NotificationState>()(
             // skipped; from the RAW last row, or a bad last row would never be passed.
             const lastRaw = data[data.length - 1] as { created_at?: string; id?: string } | undefined;
             const cursor = lastRaw?.created_at && lastRaw?.id ? `${lastRaw.created_at}|${lastRaw.id}` : null;
+            // Marks this read was asked before the house took: laid over its answer (readHere).
+            const markedSince = new Set([...readHere].filter(([, at]) => at >= askedAt).map(([id]) => id));
+            for (const [id, at] of readHere) if (at < askedAt) readHere.delete(id);
+            const answeredUnread = validated.filter((n) => markedSince.has(n.id) && !n.read).length;
+            const shown = answeredUnread ? validated.map((n) => (markedSince.has(n.id) ? { ...n, read: true } : n)) : validated;
             set({
                 fetchFailed: false,
                 moreFailed: false,
-                notifications: validated,
+                notifications: shown,
                 // The server's count; the page's only as a fallback.
-                _unreadCount: unreadRes.error ? validated.filter(n => !n.read).length : (unreadRes.count ?? 0),
+                _unreadCount: unreadRes.error ? shown.filter(n => !n.read).length : Math.max(0, (unreadRes.count ?? 0) - answeredUnread),
                 // Did the SERVER send a full page (not: how many rows survived)?
                 _hasMore: !!cursor && data.length >= PAGE_SIZE,
                 _cursor: cursor,
@@ -349,6 +369,7 @@ export const useNotificationStore = create<NotificationState>()(
             ),
             _unreadCount: wasUnread ? state._unreadCount - 1 : state._unreadCount,
         }));
+        markingRead([id]);
 
         try {
             // The user_id filter is depth, not the guard: RLS already refuses
@@ -360,7 +381,9 @@ export const useNotificationStore = create<NotificationState>()(
                 .eq('id', id)
                 .eq('user_id', user.id);
             if (error) throw error;
+            markTaken([id]);
         } catch (e) {
+            markRefused([id]);
             logger.warn('[markRead] failed', id, e);
             // Only while still signed in: after a logout it would restore the last member's.
             if (stillSignedIn(startedAs) && wasUnread) set((state) => unreadAgain(state, new Set([id])));
@@ -457,6 +480,7 @@ export const useNotificationStore = create<NotificationState>()(
             ),
             _unreadCount: state._unreadCount - unreadInGroup,
         }));
+        markingRead(ids);
 
         try {
             const user = useAuthStore.getState().user;
@@ -468,7 +492,9 @@ export const useNotificationStore = create<NotificationState>()(
                 .in('id', ids)
                 .eq('user_id', user.id);
             if (error) throw error;
+            markTaken(ids);
         } catch (e) {
+            markRefused(ids);
             logger.warn('[markGroupRead] failed', ids.length, e);
             // See markRead: the group's notices that were unread, read again.
             if (stillSignedIn(startedAs)) set((state) => unreadAgain(state, new Set(previousState.filter((n) => ids.includes(n.id) && !n.read).map((n) => n.id))));
@@ -517,6 +543,19 @@ export const useNotificationStore = create<NotificationState>()(
     forgetRequestNotices: (fromUserId) => set((state) => {
         const gone = state.notifications.filter((n) => n.type === 'follow_request'
             && (fromUserId === null || n.from_user_id === fromUserId));
+        if (gone.length === 0) return state;
+        const unreadGone = gone.filter((n) => !n.read).length;
+        return {
+            notifications: state.notifications.filter((n) => !gone.includes(n)),
+            _unreadCount: Math.max(0, state._unreadCount - unreadGone),
+        };
+    }),
+
+    // The house withholds a hidden member's notices from every read (notifications_hide_blocked),
+    // but the board held what it had read: after a block or a mute the bell still counted theirs
+    // and the board drew them until it was read again, and offline for good (review round 7).
+    forgetNoticesFrom: (hidden) => set((state) => {
+        const gone = state.notifications.filter((n) => !!n.from_user_id && hidden.has(n.from_user_id));
         if (gone.length === 0) return state;
         const unreadGone = gone.filter((n) => !n.read).length;
         return {
@@ -612,7 +651,16 @@ registerStoreReset(() => {
     if (_realtimeCleanup) { _realtimeCleanup(); _realtimeCleanup = null; }
     // All of it, from the one list: a flag left raised holds every read after it.
     useNotificationStore.setState(noticesAtStart());
+    readHere.clear();
     try { zustandMMKVStorage.removeItem('reelhouse-notifications'); } catch { /* noop */ }
+});
+
+// A member hidden on this phone leaves the notices at once (forgetNoticesFrom). Heard here, where
+// the block store is already read: the block store reaching for this one would make the two load
+// each other.
+useBlockStore.subscribe((now, before) => {
+    if (now.blocked === before.blocked && now.muted === before.muted) return;
+    useNotificationStore.getState().forgetNoticesFrom(new Set([...now.blocked, ...now.muted]));
 });
 
 /** Closes the socket early, for auth.ts during logout. */

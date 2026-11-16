@@ -131,7 +131,10 @@ classes:
       - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "brings a focused field under the bar above it, and leaves one already clear" }
       - { kind: static, file: src/components/__tests__/aListBesideAFieldKeepsTheTap.guard.test.ts, test: "reads the app at all, and finds the lists beside its fields" }
       - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "gives the page no keyboard inset of its own while the composer rides the keys" }
-    fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers); the reading page takes no inset of its own for the keyboard, where the critique composer docked under it already rides the keys and the OS's inset left blank ink to scroll past (mutant shape-reader-inset-for-the-keyboard)"
+      - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "on Android, while the member writes, the list ends at the bar’s top" }
+      - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "reads the letters of a keyboard speaking Arabic, its names led by a direction mark — nightly 43848225969" }
+      - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "a panel it cannot name says the names it saw, words only, so the next run can be taught them" }
+    fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers); the reading page takes no inset of its own for the keyboard, where the critique composer docked under it already rides the keys and the OS's inset left blank ink to scroll past (mutant shape-reader-inset-for-the-keyboard); on Android the stack sheet's list ends at its measured bar while the member writes, as the log sheet's scroll ends at its seal (mutant shape-stack-list-under-the-bar); the panel is named in the phone's language, the right-to-left run's Arabic (mutant shape-keyboard-named-in-english-only)"
     places: [emulator]
 
   - id: E2E-phone-runtime-changed-unseen
@@ -2229,7 +2232,7 @@ classes:
     seriousness: behaviour
     area: dispatch
     status: OPEN
-    count: 3
+    count: 4
     source: { kind: reviewer, ref: "review round 1, the Dispatch, Lounge and log, 2026-11-14" }
     methods:
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "never draws an answer in an order the member has already left" }
@@ -2238,7 +2241,9 @@ classes:
       - { kind: running, file: src/stores/__tests__/anOlderPageFollowsItsOwnList.test.ts, test: "a refresh ending first leaves the list reading while its older page is away" }
       - { kind: running, file: src/hooks/__tests__/signingInTellsTheTruth.test.tsx, test: "a check still waiting when the form is switched is never asked" }
       - { kind: running, file: src/hooks/__tests__/signingInTellsTheTruth.test.tsx, test: "a check on its way when the form is switched answers nothing to the empty field" }
-    fix: "an answer whose order is no longer the filing's chosen one is dropped, its rows and its failure alike (mutant shape-answer-of-an-order-left); an older page of notices joins only the list whose cursor it followed, and each read lowers the list's reading for itself (mutants shape-older-page-under-a-new-list, shape-refresh-ends-the-older-reading); switching between sign-up and sign-in drops the handle check still waiting and the one on its way (mutants shape-handle-check-asked-after-the-switch, shape-handle-answer-after-the-switch)"
+      - { kind: running, file: src/stores/__tests__/dispatchReads.test.ts, test: "a count asked for ALL is not said as \"N NEW\" over TAKES, chosen while it was on its way" }
+      - { kind: running, file: src/stores/__tests__/dispatchReads.test.ts, test: "a count that lands after the page was read again says nothing over it; one landing on the page it counted is said" }
+    fix: "an answer whose order is no longer the filing's chosen one is dropped, its rows and its failure alike (mutant shape-answer-of-an-order-left); an older page of notices joins only the list whose cursor it followed, and each read lowers the list's reading for itself (mutants shape-older-page-under-a-new-list, shape-refresh-ends-the-older-reading); switching between sign-up and sign-in drops the handle check still waiting and the one on its way (mutants shape-handle-check-asked-after-the-switch, shape-handle-answer-after-the-switch); the paper's new-filings count is said only on the page it counted (mutant shape-pill-on-another-page)"
     places: [none]
 
   - id: READ-the-next-page-asks-an-old-one
@@ -2509,7 +2514,7 @@ classes:
     seriousness: behaviour
     area: moderation
     status: OPEN
-    count: 18
+    count: 20
     source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
     methods:
       - { kind: running, file: src/hooks/__tests__/aMemberHiddenLeavesTheFilmsPages.test.tsx, test: "the film page: a reviewer blocked since its read leaves it at once" }
@@ -2531,7 +2536,12 @@ classes:
       - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "muting the author from the ··· leaves the page once the sheet has closed, never drawing their filing again" }
       - { kind: running, file: src/components/lounge/__tests__/theHostIsNotShownWhoTheyHid.test.tsx, test: "shows only the member they have not hidden, with ADMIT" }
       - { kind: running, file: src/stores/__tests__/theDoorCountsNoOneHidden.test.ts, test: "the card counts only who the host has not blocked or muted at the door" }
-    fix: "what is drawn is drawn through who is hidden now (useWhoIsHidden, a value that changes with every block, mute or unblock): the film page's critiques in its select, the archive's rows, and the salon purges whenever it changes (mutants shape-film-page-keeps-the-hidden, shape-archive-filtered-once, shape-room-purges-for-its-sheet-alone); the Dispatch's paper and a filing's critiques, a stack's critiques (stackCritiques), the Registry by isHidden, a member's circles and the request door the same way (mutants shape-paper-keeps-the-hidden, shape-critiques-keep-the-hidden, shape-stack-critiques-keep-the-hidden, shape-registry-offers-the-muted, shape-door-offers-the-hidden, shape-circle-keeps-the-hidden); the log page, the archive and the series draw through who is hidden now (mutants shape-log-page-keeps-the-hidden, shape-archive-keeps-the-hidden, shape-series-stays-for-the-hidden); round 6: a log, a stack, a filing and a series leave once their author is hidden (useLeavesWhenHidden), from anywhere, waiting for the page’s own sheet to close; a host’s salon door and the corridor’s count leave out whoever the host has hidden (20261116_01 too) (mutants shape-hidden-author-leaves-from-under-a-sheet, shape-log-stands-for-a-hidden-author, shape-stack-stands-for-a-hidden-curator, shape-reader-stands-on-a-mute, shape-series-stands-for-a-hidden-author, shape-host-shown-who-they-hid, shape-corridor-counts-the-hidden)"
+      - { kind: running, file: src/components/dispatch/__tests__/roomScreen.test.tsx, test: "leaves once its member is blocked, and is drawn empty meanwhile, never as their room" }
+      - { kind: running, file: src/components/dispatch/__tests__/roomScreen.test.tsx, test: "a muted member’s room leaves too; another member muted leaves it standing" }
+      - { kind: running, file: src/components/dispatch/__tests__/roomScreen.test.tsx, test: "a room opened for a member already hidden leaves at once and never says \"Nothing filed yet.\"" }
+      - { kind: running, file: src/stores/__tests__/aHiddenMembersNoticesLeaveTheBoard.test.ts, test: "a member blocked takes their notices off the board, and their unread one off the bell" }
+      - { kind: running, file: src/stores/__tests__/aHiddenMembersNoticesLeaveTheBoard.test.ts, test: "a member muted takes their notices off the board and the bell, and leaves everyone else’s" }
+    fix: "what is drawn is drawn through who is hidden now (useWhoIsHidden, a value that changes with every block, mute or unblock): the film page's critiques in its select, the archive's rows, and the salon purges whenever it changes (mutants shape-film-page-keeps-the-hidden, shape-archive-filtered-once, shape-room-purges-for-its-sheet-alone); the Dispatch's paper and a filing's critiques, a stack's critiques (stackCritiques), the Registry by isHidden, a member's circles and the request door the same way (mutants shape-paper-keeps-the-hidden, shape-critiques-keep-the-hidden, shape-stack-critiques-keep-the-hidden, shape-registry-offers-the-muted, shape-door-offers-the-hidden, shape-circle-keeps-the-hidden); the log page, the archive and the series draw through who is hidden now (mutants shape-log-page-keeps-the-hidden, shape-archive-keeps-the-hidden, shape-series-stays-for-the-hidden); round 6: a log, a stack, a filing and a series leave once their author is hidden (useLeavesWhenHidden), from anywhere, waiting for the page’s own sheet to close; a host’s salon door and the corridor’s count leave out whoever the host has hidden (20261116_01 too) (mutants shape-hidden-author-leaves-from-under-a-sheet, shape-log-stands-for-a-hidden-author, shape-stack-stands-for-a-hidden-curator, shape-reader-stands-on-a-mute, shape-series-stands-for-a-hidden-author, shape-host-shown-who-they-hid, shape-corridor-counts-the-hidden); a member's Dispatch room leaves once they are hidden (mutant shape-room-stays-for-the-hidden); a member hidden takes their notices off the board and the bell (mutant shape-hidden-notices-kept)"
     places: [none]
 
   - id: UI-a-sheet-opened-by-a-screen-beneath
@@ -2670,11 +2680,16 @@ classes:
     seriousness: behaviour
     area: profile
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: reviewer, ref: "review round 3, every feature, 2026-11-15" }
     methods:
       - { kind: running, file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "a request pending can be taken back: REQUESTED is pressed, and asks toggleFollow to withdraw it" }
-    fix: "REQUESTED is pressed to withdraw the request, said as such (mutant shape-requested-held-shut)"
+      - { kind: running, file: src/features/settings/__tests__/thoseYouHaveHiddenAreLetBackFromSettings.test.tsx, test: "those blocked and muted are named by their handles, each with the way to let them back" }
+      - { kind: running, file: src/features/settings/__tests__/thoseYouHaveHiddenAreLetBackFromSettings.test.tsx, test: "with no one hidden, it says no one" }
+      - { kind: running, file: src/features/settings/__tests__/thoseYouHaveHiddenAreLetBackFromSettings.test.tsx, test: "names that could not be read are said to be out of reach, never a blank list; TRY AGAIN reads them" }
+      - { kind: running, file: src/features/settings/__tests__/thoseYouHaveHiddenAreLetBackFromSettings.test.tsx, test: "a block list never read is asked of the house; one that could not be read says so, and TRY AGAIN asks again" }
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "names those the member has hidden, where they are let back (review round 7)" }
+    fix: "REQUESTED is pressed to withdraw the request, said as such (mutant shape-requested-held-shut); Settings names those the member has blocked or muted, each with UNBLOCK or UNMUTE (mutants shape-hidden-never-let-back, shape-hidden-list-unmounted)"
     places: [none]
 
   - id: UI-a-permission-read-once
@@ -2714,7 +2729,7 @@ classes:
     seriousness: behaviour
     area: states
     status: OPEN
-    count: 2
+    count: 3
     source: { kind: reviewer, ref: "review round 3, every feature, 2026-11-15" }
     methods:
       - { kind: running, file: src/stores/__tests__/vaultStore.test.ts, test: "read again, keeps a note written with no signal that the queue still holds" }
@@ -2722,7 +2737,14 @@ classes:
       - { kind: running, file: src/stores/__tests__/vaultStore.test.ts, test: "lays another log's waiting note on that log alone" }
       - { kind: running, file: src/stores/__tests__/watchlistSlice.test.ts, test: "read again, keeps the saves and removals the queue still holds" }
       - { kind: running, file: src/stores/__tests__/watchlistSlice.test.ts, test: "a next page joins the list as it stands when it lands, not the copy taken before" }
-    fix: "the Vault's read and the watchlist's lay the queue's waiting writes over the house's answer, in order, as the lists, marks and follows already do; a next page joins the list as it stands when it lands (mutants shape-vault-reread-drops-a-note, shape-vault-reread-brings-back-a-removal, shape-watchlist-reread-drops-waiting, shape-next-page-on-an-old-copy)"
+      - { kind: running, file: src/stores/__tests__/aNoticeReadWhileTheBoardIsReadStaysRead.test.ts, test: "a notice read while the board was being read stays read, and the bell does not count it" }
+      - { kind: running, file: src/stores/__tests__/aNoticeReadWhileTheBoardIsReadStaysRead.test.ts, test: "a group read while the board was being read stays read, and the bell counts none of it" }
+      - { kind: running, file: src/stores/__tests__/aNoticeReadWhileTheBoardIsReadStaysRead.test.ts, test: "a mark the house refused is not laid over the read: that notice reads unread again, the one taken stays read" }
+      - { kind: running, file: src/stores/__tests__/aNoticeReadWhileTheBoardIsReadStaysRead.test.ts, test: "once a read asked after the mark has answered, the board shows the notice as the house holds it" }
+      - { kind: running, file: src/components/profile/__tests__/aFilmMountedOfflineStaysMounted.test.tsx, test: "a film taken down offline stays down, kept to be sent, and the next read of the profile keeps it so" }
+      - { kind: running, file: src/components/profile/__tests__/aFilmMountedOfflineStaysMounted.test.tsx, test: "a film change the house refuses is taken back and said, and a setting changed while it was away stays" }
+      - { kind: running, file: src/components/profile/__tests__/aFilmMountedOfflineStaysMounted.test.tsx, test: "the backdrop switched offline stays switched, kept to be sent, and the next read of the profile keeps it so" }
+    fix: "the Vault's read and the watchlist's lay the queue's waiting writes over the house's answer, in order, as the lists, marks and follows already do; a next page joins the list as it stands when it lands (mutants shape-vault-reread-drops-a-note, shape-vault-reread-brings-back-a-removal, shape-watchlist-reread-drops-waiting, shape-next-page-on-an-old-copy); a notice marked read while the board was read stays read; a triptych film and the backdrop changed offline are pending preferences, laid over every read (mutants shape-read-mark-under-the-board, shape-triptych-queued-apart, shape-backdrop-queued-apart)"
     places: [none]
 
   - id: NAV-a-replace-that-builds-a-second-tab-app
@@ -2760,7 +2782,7 @@ classes:
     seriousness: behaviour
     area: navigation
     status: OPEN
-    count: 5
+    count: 6
     source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
     methods:
       - { kind: running, file: src/components/log/__tests__/theLogSheetGoesBackAStep.test.tsx, test: "Android's back on a film goes back to the search, and the sheet stays open" }
@@ -2769,7 +2791,8 @@ classes:
       - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK goes back to the filing, never to another desk" }
       - { kind: running, file: src/hooks/__tests__/theLogSheetOpensWhereItWasAsked.test.tsx, test: "going back from a film finds the search as it was left" }
       - { kind: running, file: src/components/log/__tests__/logSearchEngine.test.tsx, test: "the search kept above it is drawn as kept, and each change goes back up" }
-    fix: "Android's back on a step is its on-screen back (useBackCloses): the Log sheet's film back to its search, a desk back to the choice of form; an amend has no form to choose and goes back to its filing; the Log sheet keeps its search's words across a film (mutants shape-log-android-back-closes, shape-desk-android-back-closes, shape-amend-back-to-the-forms, shape-log-search-forgotten)"
+      - { kind: running, file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "with a film open, it returns to the search with the words kept, never out of the Archive; with no film it is not taken" }
+    fix: "Android's back on a step is its on-screen back (useBackCloses): the Log sheet's film back to its search, a desk back to the choice of form; an amend has no form to choose and goes back to its filing; the Log sheet keeps its search's words across a film (mutants shape-log-android-back-closes, shape-desk-android-back-closes, shape-amend-back-to-the-forms, shape-log-search-forgotten); Android's back in the Archive takes the page's own two steps (mutant shape-archive-back-leaves)"
     places: [none]
 
   - id: WRITE-words-lost-on-the-way-out
@@ -2816,14 +2839,16 @@ classes:
     seriousness: behaviour
     area: navigation
     status: OPEN
-    count: 3
+    count: 4
     source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
     methods:
       - { kind: running, file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "the picker is asked for only once the settings have gone, and once" }
       - { kind: running, file: src/utils/__tests__/theTappedNoticeOpensIt.test.ts, test: "about the page already in front, opens no second copy over it (review round 4)" }
       - { kind: running, file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "settings closed with no trip asked for leave no frame booked behind them" }
       - { kind: running, file: src/components/lounge/__tests__/theCoverWaitsForTheSheetToGo.test.tsx, test: "a salon gone from the screen takes no trip, though one was asked for" }
-    fix: "the cover trip is parked and taken as the settings leave the screen, or by a backstop (the Concierge's presentation law); a push about the page in front opens nothing over it; the trip's frame is booked only when a trip waits, and a salon gone takes none (mutants shape-cover-asked-while-leaving, shape-push-stacks-a-copy, shape-cover-frame-booked-unasked, shape-cover-taken-by-a-salon-gone)"
+      - { kind: running, file: src/components/log/__tests__/aNoteIsEditedOnceItsSheetIsGone.test.tsx, test: "lets the note fall first, and opens the Log sheet only once the note is gone" }
+      - { kind: running, file: src/components/log/__tests__/aNoteIsEditedOnceItsSheetIsGone.test.tsx, test: "asks for the edit once, after the fall and never in the press" }
+    fix: "the cover trip is parked and taken as the settings leave the screen, or by a backstop (the Concierge's presentation law); a push about the page in front opens nothing over it; the trip's frame is booked only when a trip waits, and a salon gone takes none (mutants shape-cover-asked-while-leaving, shape-push-stacks-a-copy, shape-cover-frame-booked-unasked, shape-cover-taken-by-a-salon-gone); the Vault's EDIT NOTE opens the Log sheet once the note sheet is gone (mutant shape-note-edit-over-its-sheet)"
     places: [none]
 
   - id: NAV-a-door-to-the-wrong-room
@@ -2938,7 +2963,7 @@ classes:
     seriousness: behaviour
     area: dispatch
     status: OPEN
-    count: 6
+    count: 7
     source: { kind: reviewer, ref: "review round 5, every feature, 2026-11-16" }
     methods:
       - { kind: running, file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "a filing withdrawn in the reader is drawn withdrawn here, not in its old words" }
@@ -2954,7 +2979,8 @@ classes:
       - { kind: running, file: src/hooks/__tests__/anAnsweredRequestLeavesTheBell.test.tsx, test: "admitting a member takes their request off the board and the bell, and leaves their other notices" }
       - { kind: running, file: src/hooks/__tests__/anAnsweredRequestLeavesTheBell.test.tsx, test: "declining all takes every request off the board and the bell" }
       - { kind: running, file: app/__tests__/aYearIsReadAgainOnReturn.test.tsx, test: "a return to the screen reads the year again, so a film logged meanwhile is counted" }
-    fix: "a withdrawal or amendment keeps what it left in the store's acted, and every row drawn from its own copy follows it (mutants shape-row-prints-the-old-words, shape-act-kept-for-no-list); round 6: a log amended or deleted from its sheet reads the Reel again and takes a deleted record’s card off it at once, each page keeping its word on what follows through the cache (feedPages); a request answered at the door leaves the bell; Year in Cinema reads the year again on every return (mutants shape-deleted-card-stays-on-the-reel, shape-a-page-loses-its-word, shape-feeds-share-without-their-word, shape-restored-page-taken-as-last, shape-deleted-log-card-stays, shape-queued-delete-card-stays, shape-amended-log-card-old, shape-answered-request-on-the-bell, shape-declined-all-on-the-bell, shape-year-not-read-on-return)"
+      - { kind: running, file: src/stores/__tests__/aRecordFiledIsOnTheReelAtOnce.test.ts, test: "a record filed with no connection asks nothing of the Reel or the wall; one the house files is on both at once" }
+    fix: "a withdrawal or amendment keeps what it left in the store's acted, and every row drawn from its own copy follows it (mutants shape-row-prints-the-old-words, shape-act-kept-for-no-list); round 6: a log amended or deleted from its sheet reads the Reel again and takes a deleted record’s card off it at once, each page keeping its word on what follows through the cache (feedPages); a request answered at the door leaves the bell; Year in Cinema reads the year again on every return (mutants shape-deleted-card-stays-on-the-reel, shape-a-page-loses-its-word, shape-feeds-share-without-their-word, shape-restored-page-taken-as-last, shape-deleted-log-card-stays, shape-queued-delete-card-stays, shape-amended-log-card-old, shape-answered-request-on-the-bell, shape-declined-all-on-the-bell, shape-year-not-read-on-return); a record filed tells the Reel and the wall (mutant shape-filed-record-off-the-reel)"
     places: [none]
 
   - id: WRITE-a-rollback-that-undoes-another-write
@@ -3028,11 +3054,15 @@ classes:
     seriousness: behaviour
     area: dispatch
     status: OPEN
-    count: 1
+    count: 3
     source: { kind: reviewer, ref: "review round 6, every feature, 2026-11-16" }
     methods:
       - { kind: running, file: src/stores/__tests__/aFilingTheHouseNoLongerGivesLeavesThePaper.test.ts, test: "a filing the house no longer gives leaves the page and the opened filings, so the reader says it is no longer here" }
-    fix: "a filing the house no longer gives leaves the paper and the opened filings, so the reader says it is no longer here; one still waiting in the queue stays (mutants shape-withheld-filing-kept)"
+      - { kind: running, file: src/stores/__tests__/aRecordDeletedOfflineLeavesItsOwnPage.test.ts, test: "a record deleted with no connection: its own page reads it gone at once, and is not read again; online it is read again" }
+      - { kind: running, file: app/(admin)/__tests__/tribunal.test.tsx, test: "a case dismissed leaves the docket at once, before the docket is read again" }
+      - { kind: running, file: app/(admin)/__tests__/tribunal.test.tsx, test: "cases dismissed together leave the docket at once" }
+      - { kind: running, file: app/(admin)/__tests__/tribunal.test.tsx, test: "a case judged on a page LOAD MORE CASES brought leaves the docket, though page one reads back unchanged" }
+    fix: "a filing the house no longer gives leaves the paper and the opened filings, so the reader says it is no longer here; one still waiting in the queue stays (mutants shape-withheld-filing-kept); a record deleted offline: its own page reads it gone at once and is not read again offline (mutants shape-offline-delete-page-read-again, shape-offline-delete-copy-kept); a case judged leaves the Tribunal's dockets at once (mutant shape-judged-case-stands)"
     places: [none]
 
   - id: WRITE-a-choice-offered-then-dropped
@@ -3117,9 +3147,59 @@ classes:
     seriousness: behaviour
     area: navigation
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: reviewer, ref: "review round 6, every feature, 2026-11-16" }
     methods:
       - { kind: running, file: app/__tests__/aLinkAnsweredAfterLeavingWalksNoOne.test.tsx, test: "a member who leaves before the link is answered is walked nowhere once it is" }
-    fix: "a screen left before its answer walks no one anywhere once it comes (the session it confirmed is still kept) (mutants shape-link-walks-after-leaving)"
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "a new essay is still said filed, and the member is not taken to the Dispatch from where they went" }
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "an amend is still said updated, and the page the member went back to is not popped" }
+    fix: "a screen left before its answer walks no one anywhere once it comes (the session it confirmed is still kept) (mutants shape-link-walks-after-leaving); an essay filed after its desk was swiped away walks no one (mutant shape-essay-walks-after-leaving)"
+    places: [none]
+
+  - id: WRITE-a-second-tap-that-acts-again
+    title: "A press pressed again while its act was on its way acted again: REMOVE IT tapped twice on a film seen twice removed the latest viewing, and then, the record already stepped back, the whole record"
+    seriousness: behaviour
+    area: log
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 7, every feature, 2026-11-16" }
+    methods:
+      - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "REMOVE IT tapped twice in one breath removes the latest viewing once, never the whole record after it" }
+      - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while a viewing is being removed, its press reads REMOVING…, busy, and neither it nor CANCEL can be pressed" }
+      - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while the whole log is being deleted, CONFIRM DELETE reads DELETING…, busy, and a second press deletes nothing more" }
+      - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a removal that fails gives the press back: it reads REMOVE IT again, and a second press asks again" }
+    fix: "a removal on its way turns a second press away and says it is busy (REMOVING…, DELETING…), and a failed one gives the press back (mutants shape-removal-pressed-twice, shape-removal-press-not-busy, shape-failed-removal-keeps-the-press)"
+    places: [none]
+
+  - id: COPY-an-unknown-said-as-a-count
+    title: "A count said that nobody had: the search said \"0 RESULTS\" above \"could not be reached\" and told screen readers \"0 results\" for a source it never asked; a salon's header counted the roster rows its reader could read, \"1 MEMBER\" to a muted member in a full salon"
+    seriousness: behaviour
+    area: search
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 7, every feature, 2026-11-16" }
+    methods:
+      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a source that could not be asked: the count line says NOT REACHED, never 0 RESULTS, and its tab says so" }
+      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a search that failed: the count line says NOT REACHED, and every tab says not reached" }
+      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "while the search is out, a tab is named without a count" }
+      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a seated member is told the seated alone: the banned, the muted and the waiting are not counted" }
+      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "the host is told the seated alone too" }
+      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a muted member, whose roster holds their own row alone, is told the house’s count, never \"1 MEMBER\"" }
+      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a banned member reading the public room is told the house’s count, never \"1 MEMBER\"" }
+    fix: "a count is said only once it is known (NOT REACHED, a tab named without one while asked), and the salon counts the seated as the house does, from the roster only for one who reads it whole (mutants shape-unknown-count-said-zero, shape-unreached-tab-counted, shape-salon-counts-its-roster)"
+    places: [none]
+
+  - id: COPY-a-refusal-unsaid-once-the-screen-closed
+    title: "A refusal said only while its screen stood: ADMIT, DECLINE or DECLINE ALL refused after the Notices board was closed said nothing, the badge kept low, and the petitioner silently back at the next opening"
+    seriousness: behaviour
+    area: profile
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 7, every feature, 2026-11-16" }
+    methods:
+      - { kind: running, file: src/hooks/__tests__/aRefusedAnswerIsSaidAfterTheDoorCloses.test.tsx, test: "an admit refused after the door was closed is still said, and the badge given back" }
+      - { kind: running, file: src/hooks/__tests__/aRefusedAnswerIsSaidAfterTheDoorCloses.test.tsx, test: "a decline refused after the door was closed is still said, and the badge given back" }
+      - { kind: running, file: src/hooks/__tests__/aRefusedAnswerIsSaidAfterTheDoorCloses.test.tsx, test: "DECLINE ALL refused after the door was closed is still said, and the badge counted again" }
+      - { kind: running, file: src/hooks/__tests__/aRefusedAnswerIsSaidAfterTheDoorCloses.test.tsx, test: "refused after the member signed out, nothing is said and no badge is given to the next on the phone" }
+    fix: "a refusal at the door is said, and the badge given back, whether or not the door is still open, never to the next member on the phone (mutant shape-door-refusal-unsaid-once-closed)"
     places: [none]

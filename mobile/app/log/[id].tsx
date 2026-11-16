@@ -1078,7 +1078,8 @@ function LogDetailScreen({ id }: { id: string }) {
           canEdit={vault.openedNote.canEdit}
           onClose={vault.closeNote}
           // Editing a note is editing the record it belongs to: the same form,
-          // opened the same way as the deck's own EDIT — one door, not two.
+          // opened the same way as the deck's own EDIT — one door, not two. The
+          // sheet calls this once it is gone from the screen.
           onEdit={log.film_id ? () => {
             vault.closeNote();
             openEditor();

@@ -68,6 +68,8 @@ let mockHydrate: (id: string) => Promise<unknown> = async () => null;
 let mockHydrated: string[] = [];
 /** The wire is down: the store keeps the write for later and says so. */
 let mockOffline = false;
+/** When set, a filing or an amend is answered only once this settles: the house still on its way. */
+let mockFilingHeld: Promise<void> | null = null;
 const mockStore = new Map<string, string>();
 let mockStoreFull = false;
 const mockToast = { error: jest.fn(), success: jest.fn() };
@@ -107,11 +109,13 @@ jest.mock('@/src/stores/dispatch', () => ({
       opened: mockOpened,
       hydrate: (id: string) => { mockHydrated.push(id); return mockHydrate(id); },
       file: async (d: Record<string, unknown>) => {
+        if (mockFilingHeld) await mockFilingHeld;
         if (mockFileFails) throw new Error('refused');
         mockFiled.push(d);
         return { id: 'new' };
       },
       amend: async (id: string, u: Record<string, unknown>) => {
+        if (mockFilingHeld) await mockFilingHeld;
         if (mockFileFails) throw new Error('refused');
         mockAmended.push([id, u]);
         return mockOffline ? { offline: true } : undefined;
@@ -154,7 +158,7 @@ const flush = async () => { await act(async () => { await Promise.resolve(); });
 
 beforeEach(() => {
   mockUser = { id: 'u1', username: 'me', tier: 'auteur' };
-  mockFiled = []; mockAmended = []; mockFileFails = false; mockOffline = false;
+  mockFiled = []; mockAmended = []; mockFileFails = false; mockOffline = false; mockFilingHeld = null;
   mockOpened = {}; mockHydrate = async () => null; mockHydrated = [];
   mockStore.clear();
   mockStoreFull = false;
@@ -786,6 +790,59 @@ describe('amending a dossier that already exists', () => {
     await press(getByLabelText('Re-file the essay'));
     await flush();
     expect(mockStore.has(DRAFT_KEY)).toBe(true);
+  });
+});
+
+/**
+ * A desk swiped away while FILING… (review round 7). The essay still goes, and the toast says so;
+ * but the member is already elsewhere, and the desk that is gone takes them nowhere: an amend's
+ * back popped the reader they had gone back to, a filing's dismiss took them to the Dispatch from
+ * wherever they were.
+ */
+describe('an essay whose filing lands after the desk has gone', () => {
+  const ESSAY_ID = '00000017-0000-4000-8000-000000000017';
+
+  it('a new essay is still said filed, and the member is not taken to the Dispatch from where they went', async () => {
+    let release: () => void = () => {};
+    mockFilingHeld = new Promise<void>((res) => { release = res; });
+    at({ kind: 'dossier' });
+    const r = render(<ComposeScreen />);
+    await flush();
+    await type(r.getByLabelText('Essay headline'), 'The Empty Room');
+    await type(r.getByLabelText('Essay content body'), 'Ozu frames a room and then leaves it.');
+    await press(r.getByLabelText('File the essay'));
+    // Swiped away while the house had not yet answered.
+    r.unmount();
+    await act(async () => { release(); await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
+
+    expect(mockFiled).toHaveLength(1);
+    expect(mockToast.success).toHaveBeenCalledWith('Essay filed');
+    expect(router.dismissTo).not.toHaveBeenCalled();
+    expect(router.back).not.toHaveBeenCalled();
+  });
+
+  it('an amend is still said updated, and the page the member went back to is not popped', async () => {
+    let release: () => void = () => {};
+    mockFilingHeld = new Promise<void>((res) => { release = res; });
+    mockOpened = {
+      [ESSAY_ID]: {
+        id: ESSAY_ID, kind: 'dossier', authorId: 'u1', title: 'The Empty Room',
+        body: 'The first', fullContent: 'The first version.', film: null, subjectId: null,
+        seriesId: null, seriesTitle: null, partNumber: null,
+      },
+    };
+    at({ kind: 'dossier', edit: ESSAY_ID });
+    const r = render(<ComposeScreen />);
+    await flush();
+    await type(r.getByLabelText('Essay content body'), 'The second version.');
+    await press(r.getByLabelText('Re-file the essay'));
+    r.unmount();
+    await act(async () => { release(); await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
+
+    expect(mockAmended).toHaveLength(1);
+    expect(mockToast.success).toHaveBeenCalledWith('Essay updated');
+    expect(router.back).not.toHaveBeenCalled();
+    expect(router.dismissTo).not.toHaveBeenCalled();
   });
 });
 

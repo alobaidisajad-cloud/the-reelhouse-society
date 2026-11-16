@@ -20,7 +20,7 @@
 import { HouseBlur } from '@/src/components/HouseBlur';
 import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { Lock, Pencil, Trash2 } from 'lucide-react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -46,6 +46,7 @@ export interface NoteSheetProps {
   /** True only for the current viewing, and only with the rank to write. */
   canEdit: boolean;
   onClose: () => void;
+  /** Called once this sheet is gone from the screen, never while its Modal is still there. */
   onEdit?: () => void;
   onRemove: () => void;
 }
@@ -60,7 +61,18 @@ export default function NoteSheet({
   onRemove,
 }: NoteSheetProps) {
   const sheetFoot = useSheetBottom();
-  const { isRendered, opacity, translateY } = useSheetPresence({ visible });
+  // EDIT NOTE opens the Log sheet once this one is gone, never over it: a sheet presented while a
+  // Modal is still leaving is the iOS trap, and it never rose (review round 7; the report sheet
+  // waits the same way, ContentActionSheet).
+  const [editWhenGone, setEditWhenGone] = useState(false);
+  const { isRendered, opacity, translateY } = useSheetPresence({
+    visible: visible && !editWhenGone,
+    onGone: () => {
+      if (!editWhenGone) return;
+      setEditWhenGone(false);
+      onEdit?.();
+    },
+  });
 
   const blurStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   // The scrim reaches the window’s edges on a wide window (InColumn): the room lit around the
@@ -118,7 +130,7 @@ export default function NoteSheet({
               <PressableScale
                 style={styles.optionRow}
                 hitSlop={null}
-                onPress={() => { TactileEngine.selection(); onEdit(); }}
+                onPress={() => { TactileEngine.selection(); setEditWhenGone(true); }}
                 accessibilityRole="button"
                 accessibilityLabel="Edit this note"
               >

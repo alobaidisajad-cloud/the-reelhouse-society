@@ -746,6 +746,10 @@ function ComposeDossierScreen() {
             }
             // An amend goes back to the essay it amended; a filing, to the Dispatch the member
             // came from (dismissed to, never replaced: a replace built a second tab app over the first).
+            // Only from the desk still on the screen: one swiped away while FILING… popped the
+            // reader the member had gone back to, or took them to the Dispatch from elsewhere
+            // (review round 7). The toast above has said it went.
+            if (!isMounted.current) return;
             if (edit) nav.back();
             else nav.dismissTo('/(tabs)/dispatch');
 

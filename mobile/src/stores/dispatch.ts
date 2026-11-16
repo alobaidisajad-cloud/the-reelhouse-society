@@ -477,6 +477,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const newest = s.filings[0].createdAt;
     const kind = SECTION_KIND[s.section];
     const startedAs = useAuthStore.getState().user?.id ?? null;
+    // The page this count is for: a department changed or a page read again since (each a new
+    // generation) is another page, and the count landing on it put "N NEW" over a department it
+    // was not made for, or over filings already drawn (review round 7).
+    const countedFor = generation;
 
     try {
       let q = supabase
@@ -491,7 +495,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       if (error) throw error;
       if (!memberUnchanged(startedAs)) return;
       // A check that lands after the member changed the page announces nothing.
-      if (get().sort !== 'LATEST' || get().savedOnly) return;
+      if (countedFor !== generation || get().sort !== 'LATEST' || get().savedOnly) return;
       set({ newCount: count ?? 0 });
     } catch (e) {
       // An uncounted pill simply does not appear.

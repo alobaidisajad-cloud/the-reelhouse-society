@@ -59,6 +59,8 @@ export const ROOM_PAGE = 20;
 export interface MemberRoom {
   /** The byline at the head. Null until it is known, or if nobody answers. */
   author: PaperAuthor | null;
+  /** Whose room it is, once the house has said: the room leaves when they are hidden. */
+  memberId: string | null;
   filings: Filing[];
   filed: number;
   certified: number;
@@ -106,6 +108,7 @@ const MEMBER_COLUMNS = 'id, username, avatar_url, member_no, tier, role, is_foun
 
 export function useMemberRoom(username: string | undefined): MemberRoom {
   const [author, setAuthor] = useState<PaperAuthor | null>(null);
+  const [memberId, setMemberId] = useState<string | null>(null);
   const [filings, setFilings] = useState<Filing[]>([]);
   const [filed, setFiled] = useState(0);
   const [certified, setCertified] = useState(0);
@@ -140,7 +143,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
   const [readFor, setReadFor] = useState<string | null>(null);
   if (readFor !== readKey) {
     setReadFor(readKey);
-    setAuthor(null); setFilings([]); setFiled(0); setCertified(0); setTotalsKnown(false);
+    setAuthor(null); setMemberId(null); setFilings([]); setFiled(0); setCertified(0); setTotalsKnown(false);
     setCertifiedAtFetch(new Set());
     setMissing(!username); setFailed(false); setMore(false); setMoreFailed(false); setLoading(!!username);
   }
@@ -251,6 +254,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
         if (!who?.id) { setMissing(true); return; }
 
         userId.current = who.id as string;
+        setMemberId(who.id as string);
         setAuthor({
           // The handle the SERVER holds, not the one in the link. They differ
           // for one screen-width after a rename, and the head should say who
@@ -291,7 +295,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
   }, [loading, loadingMore, more, page]);
 
   return {
-    author, filings, filed, certified, totalsKnown, certifiedAtFetch,
+    author, memberId, filings, filed, certified, totalsKnown, certifiedAtFetch,
     loading, loadingMore, missing, failed, reload, more, moreFailed, loadMore,
   };
 }

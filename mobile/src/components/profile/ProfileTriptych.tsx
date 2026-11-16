@@ -9,7 +9,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Search, Plus, ArrowLeftRight, Trash2, Replace } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';
 
-import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
@@ -17,9 +16,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
 import { logger } from '@/src/utils/logger';
-import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
-import { isNetworkError } from '@/src/utils/networkError';
 import { readMounts, MOUNT_COUNT, CENTRE_MOUNT, type FavouriteFilm } from './favourites';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { ToastHost } from '@/src/components/ToastHost';
@@ -174,7 +171,6 @@ type Sheet = { index: number; mode: 'plate' | 'search' };
 const MOUNT_NAME = ['the centre', 'the left wing', 'the right wing'];
 
 export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: TriptychUser, isOwnProfile: boolean, userRole?: string }) {
-    const updateUser = useAuthStore((s) => s.updateUser);
     const width = useColumnWidth();
     const m = useMemo(() => triptychMetrics(width), [width]);
 
@@ -238,25 +234,18 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
      * rolled back — and said — when the server refuses.
      */
     const commit = useCallback(async (next: (FavouriteFilm | null)[]) => {
-        const currentPrefs = useAuthStore.getState().user?.preferences ?? {};
-        const updatedPrefs = { ...currentPrefs, favorites: next };
-        updateUser({ preferences: updatedPrefs });
-
+        // The member's preferences' own way (savePreferences): the changed key alone, sent and
+        // merged by the house; kept on the phone while it cannot be reached, laid over every read
+        // of the profile, and sent at the next launch or return; taken back, and said, on a
+        // refusal. Queued apart, a film mounted offline was read back as the old one at the next
+        // launch, and the next mount sent the old wings over it (review round 7).
         try {
-            // Send only the changed key; the server merges it (COMP-7 cross-device).
-            const { error } = await supabase.rpc('update_my_preferences', { p_preferences: { favorites: next } });
-            if (error) throw error;
+            await useAuthStore.getState().savePreferences({ favorites: next });
         } catch (e: unknown) {
-            if (isNetworkError(e)) {
-                // The changed key alone, as the live send: the whole copy, replayed, put back keys another device had changed.
-                enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: { favorites: next } } });
-            } else {
-                updateUser({ preferences: currentPrefs });
-                logger.warn('[ProfileTriptych] favourites refused:', e);
-                reelToast.error('Your favourites could not be changed. They are as they were.');
-            }
+            logger.warn('[ProfileTriptych] favourites refused:', e);
+            reelToast.error('Your favourites could not be changed. They are as they were.');
         }
-    }, [updateUser, user.id]);
+    }, []);
 
     const handleSetFilm = useCallback(async (film: TriptychSearchResult) => {
         if (sheet === null) return;

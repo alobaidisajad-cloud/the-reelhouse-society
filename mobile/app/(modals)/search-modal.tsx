@@ -77,17 +77,19 @@ export default function SearchModal() {
   const logs = useMemo(() => data?.logs || [], [data?.logs]);
   const lists = useMemo(() => data?.lists || [], [data?.lists]);
 
-  const tabSourceDown = useMemo(() => {
+  /** Whether the source a tab reads from could not be asked: its count is then unknown, not 0. */
+  const downFor = useCallback((key: string) => {
     const down = data?._down;
     if (!down) return false;
-    switch (tab) {
+    switch (key) {
       case 'films': case 'actors': case 'directors': return down.films;
       case 'people': return down.users;
       case 'logs': return down.logs;
       case 'lists': return down.lists;
       default: return down.films || down.users || down.logs || down.lists;
     }
-  }, [data?._down, tab]);
+  }, [data?._down]);
+  const tabSourceDown = downFor(tab);
   const retrySearch = useCallback(() => { void refetch(); }, [refetch]);
 
   // An emptied box is empty at once: waiting out the debounce would show the
@@ -185,7 +187,10 @@ export default function SearchModal() {
         haptic="selection"
         accessibilityRole="tab"
         accessibilityState={{ selected: active }}
-        accessibilityLabel={`${t.label.charAt(0)}${t.label.slice(1).toLowerCase()}, ${c} result${c === 1 ? '' : 's'}`}>
+        // A count is said only once it is known: while a search is out, or its source could not
+        // be asked, "0 results" was a count nobody had (review round 7).
+        accessibilityLabel={`${t.label.charAt(0)}${t.label.slice(1).toLowerCase()}${
+          isError || downFor(t.key) ? ', not reached' : searching || !data ? '' : `, ${c} result${c === 1 ? '' : 's'}`}`}>
         <Icon size={11} color={active ? colors.ink : colors.fog} strokeWidth={active ? 2.5 : 1.5} />
         <Text style={[st.tabText, active && st.tabTextActive]}>{t.label}</Text>
         {c > 0 && (
@@ -197,7 +202,7 @@ export default function SearchModal() {
         )}
       </PressableScale>
     );
-  }, [tab, counts]);
+  }, [tab, counts, isError, downFor, searching, data]);
 
   const keyExtractorTab = useCallback((t: typeof TABS[0]) => t.key, []);
 
@@ -265,7 +270,9 @@ export default function SearchModal() {
           {/* Count line */}
           <View style={st.countBar}>
             <Text style={st.countText}>
-              {searching ? 'SCANNING ARCHIVES…' : `${filtered.length} RESULT${filtered.length !== 1 ? 'S' : ''}`}
+              {searching ? 'SCANNING ARCHIVES…'
+                : !reachable && filtered.length === 0 ? 'NOT REACHED'
+                : `${filtered.length} RESULT${filtered.length !== 1 ? 'S' : ''}`}
             </Text>
           </View>
         </Arrive>

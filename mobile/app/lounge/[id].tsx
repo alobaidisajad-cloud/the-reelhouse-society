@@ -588,8 +588,11 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
     metAtTheDoor.current = true;
     setDoorOpen(true);
   }, [toTheDoor, isCreator, pendingMembers.length]);
-  // Seated: the roster's, or the room's own count until the roster is read.
-  const seated = members.filter(m => m.status !== 'pending').length || activeLounge?.member_count || 0;
+  // Seated: the members the house counts (member_count, approved alone, as the corridor's card
+  // says). The roster counts them only for one who reads it whole, the seated and the host: a muted
+  // or banned reader is given their own row alone, and read "1 MEMBER" in a full salon; and the
+  // banned and muted were counted as seated (review round 7).
+  const seated = (isApproved && members.filter(m => m.status === 'approved').length) || activeLounge?.member_count || 0;
 
   // A request just sent stands in only until the roster shows it: from then the roster says, and a
   // host's decline is the door to ask again, never "your request is with the host" for ever.

@@ -402,6 +402,11 @@ export function useLogFlow() {
     const [filledForm, setFilledForm] = useState<string | null>(null);
     /** Withdrawn from here: the sheet leaves without asking about its amendments. */
     const [lettingGo, setLettingGo] = useState(false);
+    // A removal on its way: a second tap is never a second removal. The first already shows the
+    // record stepped back, so a second REMOVE IT found no earlier viewing and deleted the whole
+    // record (review round 7). Held after a removal that went, as the sheet leaves.
+    const [deleting, setDeleting] = useState(false);
+    const deletingRef = useRef(false);
     const filledFor = edited?.id ?? null;
     const editReady = !editLogId || filledFor === editLogId;
 
@@ -816,7 +821,9 @@ export function useLogFlow() {
      * VIEWING: the record steps back to the one before.
      */
     const handleDelete = async (whole: boolean = true) => {
-        if (!editLogId || !editReady) return;
+        if (!editLogId || !editReady || deletingRef.current) return;
+        deletingRef.current = true;
+        setDeleting(true);
         try {
             await removeLog(editLogId, whole, edited ?? undefined);
             TactileEngine.warn();
@@ -825,6 +832,8 @@ export function useLogFlow() {
                 nav.back();
             });
         } catch (err) {
+            deletingRef.current = false;
+            setDeleting(false);
             reelToast.error(whole ? 'Failed to delete log.'
                 : err instanceof Error && err.message === VIEWING_NEEDS_CONNECTION ? VIEWING_NEEDS_CONNECTION
                 : 'The viewing could not be removed. Try again.');
@@ -909,6 +918,8 @@ export function useLogFlow() {
         moreOpen, setMoreOpen,
         calendarOpen, setCalendarOpen,
         showDeleteConfirm, setShowDeleteConfirm,
+        /** A removal (a viewing or the whole log) on its way: its confirmation waits, busy. */
+        deleting,
         submitting,
         sealed,
         availablePosters, availableBackdrops,

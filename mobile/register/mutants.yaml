@@ -5428,3 +5428,218 @@ mutants:
         find: "                    accessibilityState={{ selected: mine }}"
         replace: ""
     proof: { file: src/components/lounge/__tests__/thePickerSaysWhichReactionIsYours.test.tsx, test: "the reaction the member gave is said chosen in the picker; the four others are not" }
+  - id: shape-stack-list-under-the-bar
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "                containerStyle={listEndsAtBar ? [s.containerFlex, { marginBottom: barHeight }] : s.containerFlex}"
+        replace: "                containerStyle={s.containerFlex}"
+    proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "on Android, while the member writes, the list ends at the bar’s top" }
+
+  - id: shape-keyboard-named-in-english-only
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: e2e/keyboard-room.mjs
+        find: "const LETTERS_KEY = ['Symbol keyboard', 'لوحة مفاتيح الرموز'];"
+        replace: "const LETTERS_KEY = ['Symbol keyboard'];"
+    proof: { file: e2e/__tests__/keyboardRoom.test.ts, test: "reads the letters of a keyboard speaking Arabic, its names led by a direction mark — nightly 43848225969" }
+
+  - id: shape-removal-pressed-twice
+    class: WRITE-a-second-tap-that-acts-again
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "        if (!editLogId || !editReady || deletingRef.current) return;"
+        replace: "        if (!editLogId || !editReady) return;"
+    proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "REMOVE IT tapped twice in one breath removes the latest viewing once, never the whole record after it" }
+
+  - id: shape-removal-press-not-busy
+    class: WRITE-a-second-tap-that-acts-again
+    source: shape
+    edits:
+      - file: src/components/log/LogForm.tsx
+        find: "{deleting ? 'REMOVING…' : 'REMOVE IT'}"
+        replace: "{'REMOVE IT'}"
+    proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while a viewing is being removed, its press reads REMOVING…, busy, and neither it nor CANCEL can be pressed" }
+
+  - id: shape-failed-removal-keeps-the-press
+    class: WRITE-a-second-tap-that-acts-again
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "            deletingRef.current = false;\n            setDeleting(false);\n"
+        replace: ""
+    proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a removal that fails gives the press back: it reads REMOVE IT again, and a second press asks again" }
+
+  - id: shape-unknown-count-said-zero
+    class: COPY-an-unknown-said-as-a-count
+    source: shape
+    edits:
+      - file: app/(modals)/search-modal.tsx
+        find: "                : !reachable && filtered.length === 0 ? 'NOT REACHED'\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a source that could not be asked: the count line says NOT REACHED, never 0 RESULTS, and its tab says so" }
+
+  - id: shape-unreached-tab-counted
+    class: COPY-an-unknown-said-as-a-count
+    source: shape
+    edits:
+      - file: app/(modals)/search-modal.tsx
+        find: "isError || downFor(t.key) ? ', not reached' : "
+        replace: "false ? ', not reached' : "
+    proof: { file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a search that failed: the count line says NOT REACHED, and every tab says not reached" }
+
+  - id: shape-salon-counts-its-roster
+    class: COPY-an-unknown-said-as-a-count
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "  const seated = (isApproved && members.filter(m => m.status === 'approved').length) || activeLounge?.member_count || 0;"
+        replace: "  const seated = members.filter(m => m.status !== 'pending').length || activeLounge?.member_count || 0;"
+    proof: { file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a muted member, whose roster holds their own row alone, is told the house’s count, never \"1 MEMBER\"" }
+
+  - id: shape-offline-delete-page-read-again
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "            if (!queued) queryClient.invalidateQueries({ queryKey: ['log', id] });"
+        replace: "            queryClient.invalidateQueries({ queryKey: ['log', id] });"
+    proof: { file: src/stores/__tests__/aRecordDeletedOfflineLeavesItsOwnPage.test.ts, test: "a record deleted with no connection: its own page reads it gone at once, and is not read again; online it is read again" }
+
+  - id: shape-offline-delete-copy-kept
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "                    queryClient.setQueryData(['log', id], (old: unknown) => (old && typeof old === 'object' ? { ...old, log: null } : old));\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aRecordDeletedOfflineLeavesItsOwnPage.test.ts, test: "a record deleted with no connection: its own page reads it gone at once, and is not read again; online it is read again" }
+
+  - id: shape-filed-record-off-the-reel
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "            // pull (review round 7). One still queued is not there yet.\n            if (!queuedOffline) { wallMayHaveChanged(); reelMayHaveChanged(); }"
+        replace: "            // pull (review round 7). One still queued is not there yet."
+    proof: { file: src/stores/__tests__/aRecordFiledIsOnTheReelAtOnce.test.ts, test: "a record filed with no connection asks nothing of the Reel or the wall; one the house files is on both at once" }
+
+  - id: shape-note-edit-over-its-sheet
+    class: NAV-a-sheet-asked-for-over-one-still-there
+    source: shape
+    edits:
+      - file: src/components/log/NoteSheet.tsx
+        find: "onPress={() => { TactileEngine.selection(); setEditWhenGone(true); }}"
+        replace: "onPress={() => { TactileEngine.selection(); onEdit(); }}"
+    proof: { file: src/components/log/__tests__/aNoteIsEditedOnceItsSheetIsGone.test.tsx, test: "asks for the edit once, after the fall and never in the press" }
+
+  - id: shape-room-stays-for-the-hidden
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/dispatch/room/[username].tsx
+        find: "  const memberHidden = useLeavesWhenHidden(memberId);"
+        replace: "  const memberHidden = useLeavesWhenHidden(null);"
+    proof: { file: src/components/dispatch/__tests__/roomScreen.test.tsx, test: "leaves once its member is blocked, and is drawn empty meanwhile, never as their room" }
+
+  - id: shape-archive-back-leaves
+    class: NAV-a-back-that-skips-or-strays
+    source: shape
+    edits:
+      - file: app/dispatch/archive.tsx
+        find: "  useBackCloses(!!film, clear);\n"
+        replace: ""
+    proof: { file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "with a film open, it returns to the search with the words kept, never out of the Archive; with no film it is not taken" }
+
+  - id: shape-essay-walks-after-leaving
+    class: NAV-a-walk-onward-after-the-member-left
+    source: shape
+    edits:
+      - file: app/dispatch/compose.tsx
+        find: "            // (review round 7). The toast above has said it went.\n            if (!isMounted.current) return;\n"
+        replace: "            // (review round 7). The toast above has said it went.\n"
+    proof: { file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "a new essay is still said filed, and the member is not taken to the Dispatch from where they went" }
+
+  - id: shape-pill-on-another-page
+    class: READ-an-answer-drawn-under-an-order-left
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (countedFor !== generation || get().sort"
+        replace: "      if (get().sort"
+    proof: { file: src/stores/__tests__/dispatchReads.test.ts, test: "a count asked for ALL is not said as \"N NEW\" over TAKES, chosen while it was on its way" }
+
+  - id: shape-judged-case-stands
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "      leaveTheDocket([reportId]);\n"
+        replace: ""
+    proof: { file: app/(admin)/__tests__/tribunal.test.tsx, test: "a case judged on a page LOAD MORE CASES brought leaves the docket, though page one reads back unchanged" }
+
+  - id: shape-read-mark-under-the-board
+    class: READ-a-reread-that-drops-waiting-writes
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "            const markedSince = new Set([...readHere].filter(([, at]) => at >= askedAt).map(([id]) => id));"
+        replace: "            const markedSince = new Set<string>();"
+    proof: { file: src/stores/__tests__/aNoticeReadWhileTheBoardIsReadStaysRead.test.ts, test: "a notice read while the board was being read stays read, and the bell does not count it" }
+
+  - id: shape-hidden-notices-kept
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "    useNotificationStore.getState().forgetNoticesFrom(new Set([...now.blocked, ...now.muted]));\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aHiddenMembersNoticesLeaveTheBoard.test.ts, test: "a member blocked takes their notices off the board, and their unread one off the bell" }
+
+  - id: shape-door-refusal-unsaid-once-closed
+    class: COPY-a-refusal-unsaid-once-the-screen-closed
+    source: shape
+    edits:
+      - file: src/hooks/useFollowRequests.ts
+        find: "    if (!ok && stillSignedIn(me)) {"
+        replace: "    if (!ok && stillSignedIn(me) && isMounted.current) {"
+    proof: { file: src/hooks/__tests__/aRefusedAnswerIsSaidAfterTheDoorCloses.test.tsx, test: "an admit refused after the door was closed is still said, and the badge given back" }
+
+  - id: shape-hidden-never-let-back
+    class: UI-a-request-that-cannot-be-taken-back
+    source: shape
+    edits:
+      - file: src/features/settings/HiddenMembersSection.tsx
+        find: "    void (h.how === 'block' ? store.unblockUser(h.id) : store.unmuteUser(h.id));"
+        replace: "    void store;"
+    proof: { file: src/features/settings/__tests__/thoseYouHaveHiddenAreLetBackFromSettings.test.tsx, test: "those blocked and muted are named by their handles, each with the way to let them back" }
+
+  - id: shape-hidden-list-unmounted
+    class: UI-a-request-that-cannot-be-taken-back
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "          <HiddenMembersSection />\n"
+        replace: ""
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "names those the member has hidden, where they are let back (review round 7)" }
+
+  - id: shape-triptych-queued-apart
+    class: READ-a-reread-that-drops-waiting-writes
+    source: shape
+    edits:
+      - file: src/components/profile/ProfileTriptych.tsx
+        find: "            await useAuthStore.getState().savePreferences({ favorites: next });"
+        replace: "            useAuthStore.getState().updateUser({ preferences: { ...(useAuthStore.getState().user?.preferences ?? {}), favorites: next } });"
+    proof: { file: src/components/profile/__tests__/aFilmMountedOfflineStaysMounted.test.tsx, test: "a film taken down offline stays down, kept to be sent, and the next read of the profile keeps it so" }
+
+  - id: shape-backdrop-queued-apart
+    class: READ-a-reread-that-drops-waiting-writes
+    source: shape
+    edits:
+      - file: src/features/profile/EditProfileScreen.tsx
+        find: "      await useAuthStore.getState().savePreferences({ backdrop: next });"
+        replace: "      useAuthStore.getState().updateUser({ preferences: { ...(useAuthStore.getState().user?.preferences ?? {}), backdrop: next } });"
+    proof: { file: src/components/profile/__tests__/aFilmMountedOfflineStaysMounted.test.tsx, test: "the backdrop switched offline stays switched, kept to be sent, and the next read of the profile keeps it so" }

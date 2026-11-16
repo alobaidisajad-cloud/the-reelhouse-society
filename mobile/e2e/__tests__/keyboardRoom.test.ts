@@ -179,6 +179,20 @@ describe('the keyboard’s panel, and its height', () => {
     expect(panel('letters', address, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall' });
   });
 
+  it('reads the letters of a keyboard speaking Arabic, its names led by a direction mark — nightly 43848225969', () => {
+    // The names Gboard gave on the right-to-left run's phone (ar-IQ): its ?123 key, and its GIF key
+    // led by a right-to-left mark.
+    const arabic = { attributes: {}, children: ['ض', 'ص', '‏لوحة مفاتيح GIF', 'لوحة مفاتيح الرموز', 'مسافة'].map((k) => ({ attributes: { accessibilityText: k } })) };
+    expect(panel('letters', arabic, SHOWN)).toEqual({ status: 0, out: 'the keyboard shows its letters, 1005px tall' });
+  });
+
+  it('a panel it cannot name says the names it saw, words only, so the next run can be taught them', () => {
+    const unknown = { attributes: {}, children: ['ض', '‏مفتاح مجهول', 'Stack title'].map((k) => ({ attributes: { accessibilityText: k } })) };
+    const r = panel('emoji', unknown, SHOWN);
+    expect(r.status).toBe(1);
+    expect(r.out).toBe('the keyboard shows neither its letters nor its emoji panel, 1005px tall (it should show its emoji panel); the names on the screen: مفتاح مجهول | Stack title');
+  });
+
   it('fails a keyboard whose panel it cannot name: no key of either in the screen', () => {
     const bare = { attributes: {}, children: [{ attributes: { accessibilityText: 'Recovery email address' } }] };
     for (const want of ['letters', 'emoji']) {

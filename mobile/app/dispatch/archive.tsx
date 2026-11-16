@@ -35,6 +35,7 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { ClearanceGate } from '@/src/components/clearance/Clearance';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { TryAgainLine } from '@/src/components/TryAgain';
+import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { useContentBottom, useColumnWidth } from '@/src/components/layout/navMetrics';
 
 export default function ArchiveScreen() {
@@ -61,6 +62,9 @@ export default function ArchiveScreen() {
     // Back to the search, with what they typed, first; out of the archive second.
     if (film) clear(); else nav.back();
   }, [film, clear]);
+  // Android's back takes the same two steps: it left the Archive from a film, the film and the
+  // words typed for it lost (review round 7).
+  useBackCloses(!!film, clear);
 
   return (
     <View style={p.screen}>

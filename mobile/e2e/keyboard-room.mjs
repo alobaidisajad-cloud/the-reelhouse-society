@@ -52,16 +52,30 @@ export function keyboardHeight(windows) {
  * never read from a letter (run 43242130602). Null when neither key is there: the panel not known.
  */
 export function panelOf(tree) {
+  const names = keyNames(tree);
+  if (LETTERS_KEY.some((k) => names.has(k))) return 'letters';
+  if (EMOJI_PANEL_KEY.some((k) => names.has(k))) return 'emoji';
+  return null;
+}
+
+/**
+ * The key each panel names, in each language a run sets the phone to: Gboard speaks the phone's.
+ * The right-to-left run's phone is in Arabic (ar-IQ), where the ?123 key is "لوحة مفاتيح الرموز"
+ * (nightly 43848225969's hierarchy); a name not yet seen there is printed by --panel when it fails.
+ */
+const LETTERS_KEY = ['Symbol keyboard', 'لوحة مفاتيح الرموز'];
+const EMOJI_PANEL_KEY = ['Letter keyboard'];
+
+/** Every name in the screen, the marks that only set a direction taken out (Gboard leads with them). */
+export function keyNames(tree) {
   const names = new Set();
   const walk = (node) => {
     if (!node || typeof node !== 'object') return;
-    names.add((node.attributes?.accessibilityText ?? '').trim());
+    names.add((node.attributes?.accessibilityText ?? '').replace(/[‎‏؜‪-‮⁦-⁩]/g, '').trim());
     for (const c of node.children ?? []) walk(c);
   };
   walk(tree);
-  if (names.has('Symbol keyboard')) return 'letters';
-  if (names.has('Letter keyboard')) return 'emoji';
-  return null;
+  return names;
 }
 
 /** The first element matching `#id` or `"text"`, with its bounds. */
@@ -159,8 +173,12 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.arg
   if (!tree) { console.log('the keyboard: the screen could not be read, so its panel is not known'); process.exit(1); }
   const shows = panelOf(tree);
   const said = (p) => (p === 'letters' ? 'its letters' : p === 'emoji' ? 'its emoji panel' : 'neither its letters nor its emoji panel');
+  // A panel it cannot name says the names it saw (words, never single letters), so the next run
+  // can be taught them.
+  const seen = shows == null ? [...keyNames(tree)].filter((n) => [...n].length > 1).slice(-16) : [];
   console.log(`the keyboard shows ${said(shows)}${height == null ? ', and no window of its own' : `, ${height}px tall`}`
-    + (shows === want ? '' : ` (it should show ${said(want)})`));
+    + (shows === want ? '' : ` (it should show ${said(want)})`)
+    + (seen.length ? `; the names on the screen: ${seen.join(' | ')}` : ''));
   process.exit(shows === want && height != null ? 0 : 1);
 } else if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const [name, target, hierarchyFile, windowsFile, dumpFile] = process.argv.slice(2);

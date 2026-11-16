@@ -21,9 +21,6 @@ import { Toggle } from '@/src/components/Toggle';
 import { backdropIsOn } from '@/src/components/profile/ProfileBackdrop';
 import { pickBackdropFilm } from '@/src/components/profile/favourites';
 import { useAuthStore } from '@/src/stores/auth';
-import { supabase } from '@/src/lib/supabase';
-import { enqueueMutation } from '@/src/utils/offlineQueue';
-import { isNetworkError } from '@/src/utils/networkError';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
@@ -55,15 +52,15 @@ import { MembersOnly } from '@/src/components/MembersOnly';
  * The triptych directly above it already writes the moment a film is chosen,
  * with no Save. A switch that quietly needed one would be the only control on
  * the page that did, and the member would find out by leaving and losing it.
- * Same optimistic-then-reconcile shape as the triptych: apply locally, send the
- * one key (the RPC merges), queue it if the network is out, and on a real
- * refusal roll back and say so.
+ * The triptych's way, the member's preferences' own (savePreferences): apply
+ * locally, send the one key (the RPC merges), keep it pending while the house
+ * cannot be reached (laid over every read until sent), and on a real refusal
+ * roll back and say so.
  *
  * ── ABSENT MEANS ON ──────────────────────────────────────────────────────────
  * Only an explicit `false` takes the backdrop down.
  */
 function BackdropSetting({ user }: { user: { id: string; preferences?: Record<string, unknown> | null } }) {
-  const updateUser = useAuthStore(state => state.updateUser);
   const on = backdropIsOn(user?.preferences as { backdrop?: unknown } | null | undefined);
   const [busy, setBusy] = useState(false);
 
@@ -75,25 +72,15 @@ function BackdropSetting({ user }: { user: { id: string; preferences?: Record<st
     if (busy) return;
     setBusy(true);
     const next = !on;
-    const currentPrefs = useAuthStore.getState().user?.preferences ?? {};
-    const updated = { ...currentPrefs, backdrop: next };
-    updateUser({ preferences: updated });
     try {
-      const { error } = await supabase.rpc('update_my_preferences', { p_preferences: { backdrop: next } });
-      if (error) throw error;
+      await useAuthStore.getState().savePreferences({ backdrop: next });
     } catch (e: unknown) {
-      if (isNetworkError(e)) {
-        // The changed key alone, as the live send: the whole copy, replayed, put back keys another device had changed.
-        enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: { backdrop: next } } });
-      } else {
-        updateUser({ preferences: currentPrefs });
-        logger.warn('[EditProfile] backdrop refused:', e);
-        reelToast.error('The backdrop could not be changed. It is as it was.');
-      }
+      logger.warn('[EditProfile] backdrop refused:', e);
+      reelToast.error('The backdrop could not be changed. It is as it was.');
     } finally {
       setBusy(false);
     }
-  }, [busy, on, updateUser, user.id]);
+  }, [busy, on]);
 
   return (
     <BureauCard>

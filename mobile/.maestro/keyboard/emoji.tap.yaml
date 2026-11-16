@@ -5,12 +5,15 @@ appId: com.reelhouse.society
 # keys, so the key is found by its name. An address field's layout may keep
 # no emoji key; its toolbar's GIF key opens the same panel (emoji, GIFs,
 # stickers), so that one is pressed there. run-flows.sh then checks the
-# letters are gone and judges the room again.
+# letters are gone and judges the room again. Gboard speaks the phone's
+# language: on the right-to-left run's phone (Arabic) the letters keep no
+# emoji key, and the GIF key is "لوحة مفاتيح GIF", so it is found by the GIF
+# in its name (nightly 43848225969).
 - runFlow:
     when:
       notVisible: "Emoji button"
     commands:
-      - tapOn: "GIF Keyboard"
+      - tapOn: ".*GIF.*"
 - runFlow:
     when:
       visible: "Emoji button"

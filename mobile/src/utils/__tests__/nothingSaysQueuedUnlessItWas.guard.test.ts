@@ -56,7 +56,9 @@ const callers = files('appCode', { ext: ['.ts', '.tsx'] }).map(rel)
 
 describe('a write the phone could not keep', () => {
   it('is claimed nowhere: every claim of saving waits on enqueueMutation\'s answer', () => {
-    expect(callers.length).toBeGreaterThanOrEqual(15);
+    // 14 since the triptych and the backdrop keep an offline change through savePreferences, never
+    // the queue (review round 7).
+    expect(callers.length).toBeGreaterThanOrEqual(14);
     expect(callers.flatMap(({ f, text }) => claimsUnkept(f, text))).toEqual([]);
   });
 

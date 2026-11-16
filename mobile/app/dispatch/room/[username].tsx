@@ -29,6 +29,7 @@ import { columnWidth, PAPER_MAX } from '@/src/components/dispatch/paper/paperMet
 import { itemType } from '@/src/components/dispatch/paper/paperPerf';
 import { byMonth, dayOfMonth, type MonthRow } from '@/src/components/dispatch/dayLabel';
 import { useMemberRoom } from '@/src/hooks/useMemberRoom';
+import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
 import { useAuthStore } from '@/src/stores/auth';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
 import { useDispatch } from '@/src/stores/dispatch';
@@ -51,9 +52,13 @@ export default function MemberRoomScreen() {
   const me = useAuthStore((s) => s.user);
 
   const {
-    author, filings, filed, certified, totalsKnown, certifiedAtFetch,
+    author, memberId, filings, filed, certified, totalsKnown, certifiedAtFetch,
     loading, loadingMore, missing, failed, reload, more, moreFailed, loadMore,
   } = useMemberRoom(username);
+  // A room is its member's: one blocked or muted (from a filing's reader above it, say) is left,
+  // as their filing, series, log and stack are, never standing with every filing listed, nor
+  // opened later to "Nothing filed yet." over filings the house now withholds (review round 7).
+  const memberHidden = useLeavesWhenHidden(memberId);
 
   // The reader's marks, from the store: one made in the feed is already lit here.
   const certifiedIds = useDispatch((s) => s.certifiedIds);
@@ -106,6 +111,15 @@ export default function MemberRoomScreen() {
       />
     );
   }, [width, certifiedIds, savedIds, certifiedAtFetch, me]);
+
+  // While it leaves, the room is drawn empty, never as theirs.
+  if (memberHidden) {
+    return (
+      <View style={p.screen}>
+        <RoomLight room="dispatch" />
+      </View>
+    );
+  }
 
   // A stale link or a closed account: one fact to a reader, one page. (A read
   // that failed is not this: it is said in the room, with TRY AGAIN.)

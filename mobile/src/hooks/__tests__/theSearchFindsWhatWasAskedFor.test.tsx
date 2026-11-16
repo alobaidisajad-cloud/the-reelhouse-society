@@ -174,6 +174,38 @@ describe('the search room', () => {
     expect(r.queryByTestId('buster-suspicious', { includeHiddenElements: true })).toBeNull();
   });
 
+  // Review round 7: a source that could not be asked, or a search that failed, was counted
+  // "0 RESULTS", and each tab "0 results", while the search was still out too: a count nobody had.
+  it('a source that could not be asked: the count line says NOT REACHED, never 0 RESULTS, and its tab says so', async () => {
+    mockSearchResult.mockReturnValue(answer({ users: [], _partial: true, _down: { films: false, users: true, logs: false, lists: false } }));
+    const r = await open();
+    await waitFor(() => expect(r.getByText('NOT REACHED')).toBeTruthy());
+    expect(r.queryByText('0 RESULTS')).toBeNull();
+    expect(r.getByRole('tab', { name: 'All, not reached' })).toBeTruthy();
+    expect(r.getByRole('tab', { name: 'People, not reached' })).toBeTruthy();
+    // A source that answered keeps its count: none found is a count it has.
+    expect(r.getByRole('tab', { name: 'Films, 0 results' })).toBeTruthy();
+  });
+
+  it('a search that failed: the count line says NOT REACHED, and every tab says not reached', async () => {
+    mockSearchResult.mockReturnValue({ data: undefined, isFetching: false, isError: true, refetch: jest.fn() });
+    const r = await open();
+    await waitFor(() => expect(r.getByText('NOT REACHED')).toBeTruthy());
+    expect(r.queryByText('0 RESULTS')).toBeNull();
+    for (const name of ['All', 'Films', 'Actors', 'Directors', 'People', 'Logs', 'Lists']) {
+      expect(r.getByRole('tab', { name: `${name}, not reached` })).toBeTruthy();
+    }
+  });
+
+  it('while the search is out, a tab is named without a count', async () => {
+    mockSearchResult.mockReturnValue({ data: undefined, isFetching: true, isError: false, refetch: jest.fn() });
+    const r = await open();
+    await waitFor(() => expect(r.getByRole('tab', { name: 'All' })).toBeTruthy());
+    expect(r.getAllByText('SCANNING ARCHIVES…').length).toBeGreaterThanOrEqual(1);
+    expect(r.getByRole('tab', { name: 'People' })).toBeTruthy();
+    expect(r.queryByRole('tab', { name: /result/ })).toBeNull();
+  });
+
   it('an emptied box is empty at once', async () => {
     mockSearchResult.mockReturnValue(answer());
     const r = await open();

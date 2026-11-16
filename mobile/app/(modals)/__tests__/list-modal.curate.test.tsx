@@ -81,8 +81,8 @@ jest.mock('react-native-draggable-flatlist', () => {
   return {
     __esModule: true,
     ScaleDecorator: ({ children }: { children: React.ReactNode }) => children,
-    default: ({ ListHeaderComponent, ListFooterComponent, ListEmptyComponent, data, renderItem }: Record<string, any>) =>
-      React.createElement(View, null,
+    default: ({ ListHeaderComponent, ListFooterComponent, ListEmptyComponent, data, renderItem, containerStyle }: Record<string, any>) =>
+      React.createElement(View, { testID: 'stack-list', style: containerStyle },
         draw(ListHeaderComponent),
         ...(data ?? []).map((item: unknown, index: number) =>
           React.createElement(React.Fragment, { key: index },
@@ -876,6 +876,30 @@ describe('the docked act stays on the keys while the member types', () => {
       const bar = barHolding(r.toJSON(), 'FILE THE STACK');
       expect({ os, bottom: bar?.bottom, foot: bar?.paddingBottom }).toEqual({ os, bottom: 0, foot: bottomEdge(0) + DOCKED_BAR_GAP });
       r.unmount();
+    }
+  });
+
+  // Android scrolls the focused field to the list's foot; the list must end where the bar begins,
+  // or the note's last lines lie under FILE THE STACK (the emoji panel, a tablet: nightly 43848225969).
+  it('on Android, while the member writes, the list ends at the bar’s top', async () => {
+    const typing = (on: boolean) => (Reanimated.useAnimatedReaction as jest.Mock).mockImplementation(
+      (prepare: () => unknown, react: (n: unknown, b: unknown) => void) => {
+        require('react').useEffect(() => { if (on) react(prepare(), false); }, []);
+      });
+    const listEnd = (r: Awaited<ReturnType<typeof mount>>) => flat(r.getByTestId('stack-list').props.style).marginBottom;
+    try {
+      for (const [os, height, expected] of [['android', 336, 151], ['ios', 336, undefined], ['android', 0, undefined]] as const) {
+        RN.Platform.OS = os;
+        keyboard.height.value = height;
+        typing(height > 0);
+        const r = await mount();
+        const bar = r.getByTestId('stack-act-bar');
+        await act(async () => { bar.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, width: 375, height: 151 } } }); });
+        expect({ os, height, end: listEnd(r) }).toEqual({ os, height, end: expected });
+        r.unmount();
+      }
+    } finally {
+      (Reanimated.useAnimatedReaction as jest.Mock).mockImplementation(() => undefined);
     }
   });
 

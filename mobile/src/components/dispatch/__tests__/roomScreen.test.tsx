@@ -37,6 +37,7 @@ import { useLocalSearchParams } from 'expo-router';
 
 import RoomScreen from '@/app/dispatch/room/[username]';
 import { useDispatch } from '@/src/stores/dispatch';
+import { useBlockStore } from '@/src/stores/blockStore';
 
 // ── who is looking ──────────────────────────────────────────────────────────
 let mockUser: { id: string; username: string } | null = { id: 'u1', username: 'me' };
@@ -402,6 +403,46 @@ describe('a member’s room', () => {
     expect(mockAsked).toEqual([]);
     // …and says the one thing it can: there is nobody here.
     expect(r.getByText('No such member.')).toBeTruthy();
+  });
+});
+
+describe('the room of a member hidden since (review round 7)', () => {
+  const hide = (blocked: string[], muted: string[]) => useBlockStore.setState({
+    blocked, _blockedIndex: new Set(blocked), muted, _mutedIndex: new Set(muted),
+  } as never);
+  // In act: the room is still mounted when this runs, and hears the change.
+  afterEach(async () => { await act(async () => { hide([], []); }); });
+
+  it('leaves once its member is blocked, and is drawn empty meanwhile, never as their room', async () => {
+    mockRows = [filing()];
+    const r = await mount();
+    expect(r.getByText(/A take about a film/)).toBeTruthy();
+    expect(mockBack).not.toHaveBeenCalled();
+    // Blocked from a filing's reader above it: back on the room, which is theirs.
+    await act(async () => { hide(['u2'], []); });
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(r.queryByText(/A take about a film/)).toBeNull();
+    expect(r.queryAllByText('TOMASREYES')).toHaveLength(0);
+  });
+
+  it('a muted member’s room leaves too; another member muted leaves it standing', async () => {
+    mockRows = [filing()];
+    hide([], ['u9']);
+    const r = await mount();
+    expect(r.getAllByText('TOMASREYES')).toHaveLength(2);
+    expect(mockBack).not.toHaveBeenCalled();
+    await act(async () => { hide([], ['u9', 'u2']); });
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(r.queryAllByText('TOMASREYES')).toHaveLength(0);
+  });
+
+  it('a room opened for a member already hidden leaves at once and never says "Nothing filed yet."', async () => {
+    mockRows = [filing()];
+    hide(['u2'], []);
+    const r = await mount();
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(r.queryByText('Nothing filed yet.')).toBeNull();
+    expect(r.queryAllByText('TOMASREYES')).toHaveLength(0);
   });
 });
 

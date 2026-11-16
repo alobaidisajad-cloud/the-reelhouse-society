@@ -50,6 +50,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { SettingsSchema, type SettingsFormData } from '@/src/schemas/settings';
 
 import { PatronageSection, AccountSection, PrivacySection, NotificationsSection, ReadingSection, ExperienceSection, FrontDeskSection, SectionCard, SectionHead, ActionBtn } from '@/src/features/settings/SettingsSections';
+import { HiddenMembersSection } from '@/src/features/settings/HiddenMembersSection';
 import { openHousePage, writeToFrontDesk, copySupportAddress } from '@/src/utils/housePages';
 import { SUPPORT_EMAIL, SUPPORT_URL, TERMS_URL, PRIVACY_URL } from '@/src/constants/support';
 import { st } from '@/src/features/settings/settings.styles';
@@ -642,6 +643,11 @@ export function SettingsScreen() {
               : <RoomRetrieving room="your settings" />}
           </SectionCard>
         )}
+
+        {/* Those blocked or muted, and the one way back to each: every road to their file hides them. */}
+        <Arrive name="settingsscreen-8" duration={DEFAULT_DURATION} delay={250}>
+          <HiddenMembersSection />
+        </Arrive>
 
         {/* ── Chapter: this device, and your data ── */}
         <View style={st.ornRule}><View style={st.ornLine} /><View style={st.ornDiamond} /><View style={st.ornLine} /></View>

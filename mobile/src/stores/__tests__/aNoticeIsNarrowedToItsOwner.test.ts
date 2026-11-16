@@ -44,7 +44,8 @@ jest.mock('../auth', () => ({
   useAuthStore: { getState: () => ({ user: { id: ME, username: 'me' } }) },
 }));
 jest.mock('../resetAllStores', () => ({ registerStoreReset: jest.fn() }));
-jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }) } }));
+// The notices hear the block store (a member hidden leaves the board): heard here, never changed.
+jest.mock('../blockStore', () => ({ useBlockStore: { getState: () => ({ isHidden: () => false }), subscribe: () => () => {} } }));
 
 const notice = (id: string, read = false) => ({
   id, type: 'comment', read, created_at: '2026-09-11T10:00:00Z',

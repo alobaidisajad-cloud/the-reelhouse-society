@@ -14,12 +14,13 @@ import * as ImagePicker from 'expo-image-picker';
 import AvatarCropSheet from '@/src/components/profile/AvatarCropSheet';
 import { useEditProfile } from '@/src/hooks/useEditProfile';
 import { EditProfileScreen } from '../EditProfileScreen';
-import { supabase } from '@/src/lib/supabase';
 import reelToast from '@/src/utils/reelToast';
 
-const mockState: { user: Record<string, unknown>; updateUser: jest.Mock } = {
+const mockState: { user: Record<string, unknown>; updateUser: jest.Mock; savePreferences: jest.Mock } = {
   user: { id: 'u1', username: 'tomas', display_name: '', bio: '', social_links: [], created_at: '2026-01-01T00:00:00Z', preferences: { backdrop: true } },
   updateUser: jest.fn(),
+  // The member's preferences' own way (auth.ts savePreferences): the switch asks it, and it throws on a refusal.
+  savePreferences: jest.fn(async () => 'saved'),
 };
 jest.mock('@/src/stores/auth', () => {
   const useAuthStore = (sel?: (s: unknown) => unknown) => (sel ? sel(mockState) : mockState);
@@ -47,13 +48,14 @@ it('SAVE refused by a field says so at the top', async () => {
 });
 
 it('the backdrop switch, refused, flips back and says so', async () => {
-  (supabase.rpc as unknown) = jest.fn(async () => ({ error: { message: 'permission denied', code: '42501' } }));
+  mockState.savePreferences.mockRejectedValueOnce(new Error('The house refused the settings.'));
   const r = render(<EditProfileScreen />);
   await act(async () => { await new Promise((res) => setTimeout(res, 0)); });
   const sw = r.getByLabelText('Film backdrop on your profile');
   await act(async () => { await fireEvent(sw, 'valueChange', false); });
   expect(reelToast.error).toHaveBeenCalledWith('The backdrop could not be changed. It is as it was.');
-  expect(mockState.updateUser).toHaveBeenLastCalledWith({ preferences: { backdrop: true } });
+  // The one key asked of the store, which takes it back (aFilmMountedOfflineStaysMounted.test.tsx).
+  expect(mockState.savePreferences).toHaveBeenCalledWith({ backdrop: false });
 });
 
 it('a refused photo permission never blocks a portrait: the library opens, unasked', async () => {

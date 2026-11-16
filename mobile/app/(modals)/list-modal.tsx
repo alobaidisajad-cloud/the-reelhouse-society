@@ -16,6 +16,7 @@ import { AccessibilityInfo, InteractionManager, Keyboard, Platform, StyleSheet, 
 import type { FlatList } from 'react-native';
 import { Text, TextInput, focusedInput } from '@/src/components/text';
 import { revealBy } from '@/src/components/layout/RevealAboveDock';
+import { useWriting } from '@/src/components/log/LogSealBar';
 import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import Animated, { cancelAnimation, ReduceMotion, useAnimatedKeyboard, useAnimatedProps, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
@@ -212,6 +213,14 @@ export default function ListModal() {
     // where the bar now rides, so once the keyboard stands the field is brought above the bar too.
     const listRef = useRef<RevealList>(null);
     const listAt = useRef(0);
+    // Android: the root ends at the keyboard (KeyboardRoom), and Android scrolls the focused field
+    // into view at the list's foot, where the bar stands over it: the note's last lines lay under
+    // FILE THE STACK on the emoji panel and on a tablet (nightly 43848225969). While the member
+    // writes, the list ends at the bar's top, as the log sheet's scroll ends at its seal; the bar
+    // is measured, so a bar grown with the reader's text size is never under-counted.
+    const writing = useWriting();
+    const [barHeight, setBarHeight] = useState(0);
+    const listEndsAtBar = Platform.OS === 'android' && writing && barHeight > 0;
     useEffect(() => {
         if (Platform.OS !== 'ios') return undefined;
         const shown = Keyboard.addListener('keyboardDidShow', () => revealAboveBar(listRef.current, listAt.current));
@@ -818,7 +827,7 @@ export default function ListModal() {
                 contentContainerStyle={{ paddingBottom: scrollEnd }}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
-                containerStyle={s.containerFlex}
+                containerStyle={listEndsAtBar ? [s.containerFlex, { marginBottom: barHeight }] : s.containerFlex}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}
                 windowSize={3}
@@ -827,7 +836,7 @@ export default function ListModal() {
 
             {/* THE ACT, docked (the composer's seal is the same): never scrolled to,
                 and a refusal says why. */}
-            <Animated.View style={[s.bar, barStyle]}>
+            <Animated.View testID="stack-act-bar" style={[s.bar, barStyle]} onLayout={(e) => setBarHeight(e.nativeEvent.layout.height)}>
                 <Text style={s.barLine} numberOfLines={1} {...scaledTextProps}>{barLine}</Text>
                 <PressableScale
                     style={[s.barPress, !canFile && UNREADY.plate]}

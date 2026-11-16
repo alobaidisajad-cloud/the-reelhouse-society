@@ -23,6 +23,7 @@
  *   legal in a film title — `8_½` would otherwise match half the archive.
  */
 import React, { act } from 'react';
+import { BackHandler } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 
 import ArchiveScreen from '@/app/dispatch/archive';
@@ -619,5 +620,52 @@ describe('the archive after the reader (review round 5)', () => {
     expect(drawn(r)).not.toContain('Stalker is not slow, it is patient.');
     expect(drawn(r)).toContain('Another reading.');
     expect(r.getByText(/(^|[^0-9])1 FILING(?!S)/)).toBeTruthy();
+  });
+});
+
+describe('Android’s back in the archive (review round 7)', () => {
+  /** Every back handler the screen subscribed, as Android holds them: the newest is asked first. */
+  let held: { handler: () => boolean | null | undefined; remove: jest.Mock }[] = [];
+  let listening: jest.SpyInstance;
+  beforeEach(() => {
+    held = [];
+    listening = jest.spyOn(BackHandler, 'addEventListener').mockImplementation(((event: string, handler: () => boolean) => {
+      const sub = { handler, remove: jest.fn() };
+      if (event === 'hardwareBackPress') held.push(sub);
+      return { remove: sub.remove };
+    }) as never);
+  });
+  afterEach(() => { listening.mockRestore(); });
+  const standing = () => held.filter((h) => h.remove.mock.calls.length === 0);
+
+  it('with a film open, it returns to the search with the words kept, never out of the Archive; with no film it is not taken', async () => {
+    mockSearchRows = [hit()];
+    mockFilingRows = [filing()];
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, 'stalker');
+    // The search alone: Android's back is the system's, and leaves the Archive.
+    expect(standing()).toHaveLength(0);
+
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
+      await Promise.resolve(); await Promise.resolve();
+    });
+    expect(r.getByText(/Stalker is not slow/)).toBeTruthy();
+
+    const open = standing();
+    expect(open).toHaveLength(1);
+    const last = open[0];
+    expect(last).toBeDefined();
+    let taken: boolean | null | undefined;
+    await act(async () => { taken = last!.handler(); });
+    // Taken here: the press went no further, and the Archive stays.
+    expect(taken).toBe(true);
+    expect(mockBack).not.toHaveBeenCalled();
+    expect(r.getByLabelText('Search the archive for a film').props.value).toBe('stalker');
+    expect(r.queryByText(/Stalker is not slow/)).toBeNull();
+    expect(r.getByLabelText(/Stalker\. 1 filing/)).toBeTruthy();
+    // Back at the search, the next press is the system's again.
+    expect(standing()).toHaveLength(0);
   });
 });

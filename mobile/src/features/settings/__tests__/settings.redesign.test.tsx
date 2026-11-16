@@ -317,6 +317,12 @@ describe('the page says what it is', () => {
     expect(tag).toMatch(/accessibilityElementsHidden/);
     expect(tag).toMatch(/importantForAccessibility="no-hide-descendants"/);
   });
+
+  it('names those the member has hidden, where they are let back (review round 7)', async () => {
+    // Every road to a hidden member's file hides them: UNBLOCK and UNMUTE are offered here.
+    const r = await settle(mount());
+    expect(r.getByText('THOSE YOU HAVE HIDDEN')).toBeTruthy();
+  });
 });
 
 describe('membership & billing — the card that had no billing', () => {

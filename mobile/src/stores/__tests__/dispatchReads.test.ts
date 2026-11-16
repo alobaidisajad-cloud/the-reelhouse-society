@@ -24,6 +24,8 @@ let mockCount: number | null = null;
 let mockThrow: unknown = null;
 /** When set, the next page read answers with this instead: an answer still on its way. */
 let mockNext: Promise<unknown> | null = null;
+/** When set, the HEAD count answers only once this settles: a count still on its way. */
+let mockCountHeld: Promise<void> | null = null;
 
 jest.mock('../../lib/supabase', () => ({
   supabase: {
@@ -39,7 +41,10 @@ jest.mock('../../lib/supabase', () => ({
           // hands the builder to `withAbortSignal` and awaits what comes back.
           // Returning the outer chain from `eq` broke it, and the count arrived
           // as zero, which is indistinguishable from "nothing new".
-          const head: Record<string, unknown> = Promise.resolve({ count: mockCount, error: null }) as never;
+          const held = mockCountHeld;
+          const head: Record<string, unknown> = (held
+            ? held.then(() => ({ count: mockCount, error: null }))
+            : Promise.resolve({ count: mockCount, error: null })) as never;
           for (const m of ['eq', 'is', 'gt', 'abortSignal']) {
             head[m] = (k?: string, v?: unknown) => {
               if (m === 'gt' && k) ask.eq['gt:' + k] = v;
@@ -124,7 +129,7 @@ const reset = (over: Record<string, unknown> = {}) => {
 };
 
 beforeEach(() => {
-  mockAsks = []; mockPages = []; mockCount = null; mockThrow = null; mockNext = null;
+  mockAsks = []; mockPages = []; mockCount = null; mockThrow = null; mockNext = null; mockCountHeld = null;
   // A phone holding nothing: a page read in one test is kept (keptPages), and would open the next.
   storage.clearAll();
   reset();
@@ -363,6 +368,52 @@ describe('is there new paper above the page?', () => {
       // member did not put there.
       expect(mockAsks).toHaveLength(0);
     }
+  });
+});
+
+describe('a count that lands on another page (review round 7)', () => {
+  it('a count asked for ALL is not said as "N NEW" over TAKES, chosen while it was on its way', async () => {
+    mockPages = [fullPage()];
+    await useDispatch.getState().fetch();
+    let release: () => void = () => {};
+    mockCountHeld = new Promise<void>((res) => { release = res; });
+    mockCount = 3;
+    const counting = useDispatch.getState().checkForNew();
+    mockCountHeld = null;
+
+    mockPages = [fullPage()];
+    useDispatch.getState().setSection('TAKES');
+    await useDispatch.getState().fetch();
+    expect(useDispatch.getState().section).toBe('TAKES');
+
+    release();
+    await counting;
+    expect(useDispatch.getState().newCount).toBe(0);
+  });
+
+  it('a count that lands after the page was read again says nothing over it; one landing on the page it counted is said', async () => {
+    mockPages = [fullPage()];
+    await useDispatch.getState().fetch();
+    let release: () => void = () => {};
+    mockCountHeld = new Promise<void>((res) => { release = res; });
+    mockCount = 3;
+    const stale = useDispatch.getState().checkForNew();
+    mockCountHeld = null;
+
+    // Pulled: the page is read again, and already holds what the count was counting.
+    mockPages = [fullPage()];
+    await useDispatch.getState().fetch();
+    release();
+    await stale;
+    expect(useDispatch.getState().newCount).toBe(0);
+
+    // The same page, nothing changed while the count was out: it is said.
+    mockCountHeld = new Promise<void>((res) => { release = res; });
+    const fresh = useDispatch.getState().checkForNew();
+    mockCountHeld = null;
+    release();
+    await fresh;
+    expect(useDispatch.getState().newCount).toBe(3);
   });
 });
 

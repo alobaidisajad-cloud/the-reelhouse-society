@@ -509,18 +509,28 @@ describe('the body says the same six things in half the height', () => {
 // ════════════════════════════════════════════════════════════════════════════
 // DRIVEN — the altarpiece, actually rendered
 // ════════════════════════════════════════════════════════════════════════════
-const mockRpc = jest.fn((): Promise<{ error: unknown }> => Promise.resolve({ error: null }));
+const mockRpc = jest.fn((..._ask: unknown[]): Promise<{ error: unknown }> => Promise.resolve({ error: null }));
 const mockUpdateUser = jest.fn();
+/**
+ * The store's own way for a preference (auth.ts savePreferences, review round 7): the changed key
+ * sent, a refusal thrown. Its taking back, and its keeping offline, are the store's, driven through
+ * the real store in aFilmMountedOfflineStaysMounted.test.tsx.
+ */
+const mockSavePreferences = jest.fn(async (changes: Record<string, unknown>) => {
+  const { error } = await mockRpc('update_my_preferences', { p_preferences: changes });
+  if (error) throw new Error('The house refused the settings.');
+  return 'saved';
+});
 let mockStorePrefs: Record<string, unknown>;
 
 jest.mock('@/src/lib/supabase', () => ({ supabase: { rpc: (...a: unknown[]) => mockRpc(...(a as [])) } }));
 jest.mock('@/src/stores/auth', () => {
   const useAuthStore = (sel?: (s: unknown) => unknown) => {
-    const state = { user: { id: 'u1', preferences: mockStorePrefs }, updateUser: mockUpdateUser };
+    const state = { user: { id: 'u1', preferences: mockStorePrefs }, updateUser: mockUpdateUser, savePreferences: mockSavePreferences };
     return sel ? sel(state) : state;
   };
   (useAuthStore as unknown as { getState: () => unknown }).getState =
-    () => ({ user: { id: 'u1', preferences: mockStorePrefs }, updateUser: mockUpdateUser });
+    () => ({ user: { id: 'u1', preferences: mockStorePrefs }, updateUser: mockUpdateUser, savePreferences: mockSavePreferences });
   return { useAuthStore };
 });
 jest.mock('expo-router', () => ({ ...require('@/test-utils/expoRouterMock').expoRouterMock(), useRouter: () => ({ push: jest.fn() }) }));
@@ -583,7 +593,7 @@ describe('the backdrop guards itself, not just where it is called from', () => {
 });
 
 describe('the altarpiece, driven', () => {
-  beforeEach(() => { mockRpc.mockClear(); mockUpdateUser.mockClear(); });
+  beforeEach(() => { mockRpc.mockClear(); mockUpdateUser.mockClear(); mockSavePreferences.mockClear(); });
 
   it('names each mount so a screen reader can tell them apart', async () => {
     const r = mount(FILMS);
@@ -628,8 +638,8 @@ describe('the altarpiece, driven', () => {
     await act(async () => { await fireEvent.press(r.getByLabelText('Remove from the altarpiece')); });
 
     await waitFor(() => expect(reelToast.error).toHaveBeenCalledWith('Your favourites could not be changed. They are as they were.'));
-    // Applied at once, then put back exactly as it was.
-    expect(mockUpdateUser).toHaveBeenLastCalledWith({ preferences: { favorites: FILMS } });
+    // Asked of the store as the one key changed; the store applies it at once and takes it back.
+    expect(mockSavePreferences).toHaveBeenCalledWith({ favorites: [null, FILMS[1], FILMS[2]] });
   });
 
   it('a wing reaches the centre only when the member asks', async () => {

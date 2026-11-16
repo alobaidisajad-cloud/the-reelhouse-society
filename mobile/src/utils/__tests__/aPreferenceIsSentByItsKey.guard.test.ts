@@ -30,7 +30,10 @@ const PASSED_ON: Record<string, string> = {
 };
 
 it('reads the app’s preferences writes', () => {
-  expect(writes.length).toBeGreaterThanOrEqual(6);
+  // Two: the pending keys sent (auth.ts) and the queued write replayed (mutationExecutor). The
+  // altarpiece and the backdrop write none of their own since review round 7: they go the
+  // preferences' own way (savePreferences), kept pending offline, never queued apart.
+  expect(writes.length).toBeGreaterThanOrEqual(2);
 });
 
 it('each names the keys it changed, never a whole copy', () => {
