@@ -3012,8 +3012,8 @@
   {
     "class": "WRITE-a-preference-sent-whole",
     "mutant": "shape-favourites-queued-whole",
-    "proof": "m11",
-    "commit": "92e5558d503debebf0e61e705e4d3781b16a28cb",
+    "proof": "m12",
+    "commit": "3822a65140443e5b1e98ddfdb4fd1a738e18c0eb",
     "verdict": "caught"
   },
   {
@@ -3874,14 +3874,14 @@
     "class": "STATE-one-screen-changed-another-printing-the-old",
     "mutant": "shape-queued-delete-card-stays",
     "proof": "m9",
-    "commit": "bd1396a5a5a594385db930585d2854053a74d144",
+    "commit": "3822a65140443e5b1e98ddfdb4fd1a738e18c0eb",
     "verdict": "caught"
   },
   {
     "class": "STATE-one-screen-changed-another-printing-the-old",
     "mutant": "shape-amended-log-card-old",
     "proof": "m10",
-    "commit": "bd1396a5a5a594385db930585d2854053a74d144",
+    "commit": "3822a65140443e5b1e98ddfdb4fd1a738e18c0eb",
     "verdict": "caught"
   },
   {
@@ -4153,22 +4153,22 @@
   {
     "class": "WRITE-a-second-tap-that-acts-again",
     "mutant": "shape-removal-pressed-twice",
-    "proof": "m5",
-    "commit": "71724b8570df84a718fe7164b1840e2193afa6ae",
+    "proof": "m4",
+    "commit": "3822a65140443e5b1e98ddfdb4fd1a738e18c0eb",
     "verdict": "caught"
   },
   {
     "class": "WRITE-a-second-tap-that-acts-again",
     "mutant": "shape-removal-press-not-busy",
-    "proof": "m2",
-    "commit": "61275ecf092c62bb4a2788cb082b1ff6b39140e6",
+    "proof": "m1",
+    "commit": "3822a65140443e5b1e98ddfdb4fd1a738e18c0eb",
     "verdict": "caught"
   },
   {
     "class": "WRITE-a-second-tap-that-acts-again",
     "mutant": "shape-failed-removal-keeps-the-press",
-    "proof": "m4",
-    "commit": "61275ecf092c62bb4a2788cb082b1ff6b39140e6",
+    "proof": "m3",
+    "commit": "3822a65140443e5b1e98ddfdb4fd1a738e18c0eb",
     "verdict": "caught"
   },
   {
