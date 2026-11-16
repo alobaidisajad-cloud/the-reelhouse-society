@@ -63,6 +63,20 @@ it('a save of a link with a space after it leaves no draft behind it', async () 
   expect(held()).toBeUndefined();
 });
 
+// The house writes a new handle in its own letters (validateUsername: lower case), so the form,
+// which keeps what was typed, differs from the profile it saved however the two are measured:
+// once saved, nothing it holds is kept as a draft.
+it('a new handle the house writes in its own letters leaves no draft behind it', async () => {
+  const { result } = await renderHook(() => useEditProfile());
+  await act(async () => { result.current.form.setValue('username', 'Tomas_Noir', { shouldDirty: true }); });
+  await rest();
+  await act(async () => { await result.current.handleSave(); });
+  await rest();
+  expect(result.current.sealed).toBe(true);
+  expect(mockState.user.username).toBe('tomas_noir');
+  expect(held()).toBeUndefined();
+});
+
 it('an empty link row added and left is no draft; the link typed into it is kept', async () => {
   const { result } = await renderHook(() => useEditProfile());
   await act(async () => { result.current.form.setValue('links', [{ title: '', url: '' }], { shouldDirty: true }); });

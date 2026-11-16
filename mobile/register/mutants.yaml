@@ -5175,7 +5175,7 @@ mutants:
       - file: src/stores/domain/logSlice/helpers/logOperations.ts
         find: "        throw new Error(VIEWING_NEEDS_CONNECTION);"
         replace: "        return;"
-    proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a viewing that cannot be named without a connection is said, and the sheet stays on its question" }
+    proof: { file: src/stores/__tests__/theLogSaysWhatHappened.test.ts, test: "a rewatch with no name for its viewing, and no signal to ask, is refused: thrown, so the sheet stays and says it" }
 
   - id: shape-one-critique-taken-for-the-list
     class: UI-read-drawn-as-empty
@@ -5373,7 +5373,7 @@ mutants:
       - file: src/hooks/useEditProfile.ts
         find: "      if (savedRef.current) { clearDraft(memberId, 'profile'); return; }"
         replace: ""
-    proof: { file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "a save with an empty link row leaves no draft behind it" }
+    proof: { file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "a new handle the house writes in its own letters leaves no draft behind it" }
 
   - id: shape-empty-link-row-kept-as-a-draft
     class: STATE-a-draft-of-nothing-kept

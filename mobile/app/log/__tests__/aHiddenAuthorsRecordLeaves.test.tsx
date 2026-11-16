@@ -85,6 +85,10 @@ jest.mock('@/src/components/moderation/ReportSheet', () => ({
 }));
 
 const LogPage = () => { const C = require('@/app/log/[id]').default; return <C />; };
+
+// The whole record page, drawn: its first drawing in a file loads the app's modules, seconds on a
+// busy machine (and a planted fault runs one test alone, which is then that first drawing).
+jest.setTimeout(30_000);
 const nobodyHidden = () => useBlockStore.setState({ blocked: [], muted: [], _blockedIndex: new Set(), _mutedIndex: new Set() });
 /**
  * The store's acts as the page meets them: the member hidden at once (the store's optimistic

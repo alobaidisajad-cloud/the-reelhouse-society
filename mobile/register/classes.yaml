@@ -3019,6 +3019,7 @@ classes:
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a record watched again: DELETE THIS ENTIRE LOG says every viewing goes, and takes the whole record" }
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a record watched again offers REMOVE THIS VIEWING, asked on its own, which takes the latest viewing alone" }
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a viewing that cannot be named without a connection is said, and the sheet stays on its question" }
+      - { kind: running, file: src/stores/__tests__/theLogSaysWhatHappened.test.ts, test: "a rewatch with no name for its viewing, and no signal to ask, is refused: thrown, so the sheet stays and says it" }
     fix: "the whole record goes as DELETE THIS ENTIRE LOG says (removeLog(id, true)), its confirmation naming every viewing; a record watched again also offers REMOVE THIS VIEWING, asked on its own; a viewing that cannot be named is said, and the sheet stays (mutants shape-whole-delete-takes-a-viewing, shape-log-confirm-takes-a-viewing, shape-no-viewing-offered-alone, shape-unnamed-viewing-closes-the-sheet)"
     places: [none]
 
@@ -3106,6 +3107,7 @@ classes:
     source: { kind: reviewer, ref: "review round 6, every feature, 2026-11-16" }
     methods:
       - { kind: running, file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "a save with an empty link row leaves no draft behind it" }
+      - { kind: running, file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "a new handle the house writes in its own letters leaves no draft behind it" }
       - { kind: running, file: src/features/profile/__tests__/aSavedProfileLeavesNoDraft.test.tsx, test: "an empty link row added and left is no draft; the link typed into it is kept" }
     fix: "a form is measured as it would be saved (sanitizeLinks), and nothing is kept as a draft once the save has landed (mutants shape-saved-profile-leaves-a-draft, shape-empty-link-row-kept-as-a-draft)"
     places: [none]

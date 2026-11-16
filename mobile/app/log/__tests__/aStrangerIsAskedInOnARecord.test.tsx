@@ -87,6 +87,10 @@ jest.mock('@/src/components/moderation/ContentActionSheet', () => ({ ContentActi
 jest.mock('@/src/components/moderation/ReportSheet', () => () => null);
 
 const LogPage = () => { const C = require('@/app/log/[id]').default; return <C />; };
+
+// The whole record page, drawn: its first drawing in a file loads the app's modules, seconds on a
+// busy machine (and a planted fault runs one test alone, which is then that first drawing).
+jest.setTimeout(30_000);
 const toast = reelToast as unknown as jest.Mock & { error: jest.Mock; success: jest.Mock; info: jest.Mock };
 const said = () => [...toast.mock.calls, ...toast.error.mock.calls, ...toast.success.mock.calls, ...toast.info.mock.calls];
 
