@@ -3552,7 +3552,21 @@
     "class": "NAV-a-sheet-asked-for-over-one-still-there",
     "mutant": "shape-cover-asked-while-leaving",
     "proof": "m1",
-    "commit": "65b753f63fb99a4cc27ef2f7504203c179bcd0df",
+    "commit": "6a9435ebcca014cd7dfe5fae64a08222619474ae",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-sheet-asked-for-over-one-still-there",
+    "mutant": "shape-cover-frame-booked-unasked",
+    "proof": "m3",
+    "commit": "6a9435ebcca014cd7dfe5fae64a08222619474ae",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-sheet-asked-for-over-one-still-there",
+    "mutant": "shape-cover-taken-by-a-salon-gone",
+    "proof": "m4",
+    "commit": "6a9435ebcca014cd7dfe5fae64a08222619474ae",
     "verdict": "caught"
   },
   {
