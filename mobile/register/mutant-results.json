@@ -3734,14 +3734,14 @@
     "class": "DATA-a-hidden-member-drawn-on",
     "mutant": "shape-archive-keeps-the-hidden",
     "proof": "m11",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "commit": "0b11d869017d08be24d91c167f7eff46cea95c0e",
     "verdict": "caught"
   },
   {
     "class": "DATA-a-hidden-member-drawn-on",
     "mutant": "shape-series-stays-for-the-hidden",
     "proof": "m12",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "commit": "0b11d869017d08be24d91c167f7eff46cea95c0e",
     "verdict": "caught"
   },
   {
@@ -4090,15 +4090,15 @@
   {
     "class": "STATE-a-draft-of-nothing-kept",
     "mutant": "shape-saved-profile-leaves-a-draft",
-    "proof": "m2",
-    "commit": "d34104de806e886b52ea19a36f68df4343126ebe",
+    "proof": "m3",
+    "commit": "0b11d869017d08be24d91c167f7eff46cea95c0e",
     "verdict": "caught"
   },
   {
     "class": "STATE-a-draft-of-nothing-kept",
     "mutant": "shape-empty-link-row-kept-as-a-draft",
     "proof": "m2",
-    "commit": "bd1396a5a5a594385db930585d2854053a74d144",
+    "commit": "0b11d869017d08be24d91c167f7eff46cea95c0e",
     "verdict": "caught"
   },
   {
