@@ -3846,21 +3846,21 @@
     "class": "STATE-one-screen-changed-another-printing-the-old",
     "mutant": "shape-a-page-loses-its-word",
     "proof": "m6",
-    "commit": "bd1396a5a5a594385db930585d2854053a74d144",
+    "commit": "e342f36167aef6b10887e515713e94c091e57a06",
     "verdict": "caught"
   },
   {
     "class": "STATE-one-screen-changed-another-printing-the-old",
     "mutant": "shape-feeds-share-without-their-word",
     "proof": "m6",
-    "commit": "bd1396a5a5a594385db930585d2854053a74d144",
+    "commit": "e342f36167aef6b10887e515713e94c091e57a06",
     "verdict": "caught"
   },
   {
     "class": "STATE-one-screen-changed-another-printing-the-old",
     "mutant": "shape-restored-page-taken-as-last",
     "proof": "m7",
-    "commit": "bd1396a5a5a594385db930585d2854053a74d144",
+    "commit": "e342f36167aef6b10887e515713e94c091e57a06",
     "verdict": "caught"
   },
   {
@@ -3923,7 +3923,7 @@
     "class": "WRITE-an-act-that-takes-other-than-it-says",
     "mutant": "shape-log-confirm-takes-a-viewing",
     "proof": "m2",
-    "commit": "bd1396a5a5a594385db930585d2854053a74d144",
+    "commit": "e342f36167aef6b10887e515713e94c091e57a06",
     "verdict": "caught"
   },
   {
