@@ -184,16 +184,15 @@ export default function ReelScreen() {
   });
   useScrollToTop(proxyScrollRef);
 
-  // The member's choice of reel, kept while they are signed in. Signed out there is no one to
-  // follow, and no follow list is read: FOLLOWING, kept from before, waited for one forever, so a
-  // visitor is shown the main reel and the stacks of all.
-  const [feedChoice, setFeedFilter] = useState<FeedFilter>('all');
-  const [stackChoice, setStackFilter] = useState<FeedFilter>('all');
-  const feedFilter: FeedFilter = isAuthenticated ? feedChoice : 'all';
-  const stackFilter: FeedFilter = isAuthenticated ? stackChoice : 'all';
+  // The member's choice of reel, kept while they are signed in, and their stack search: each the
+  // member's own. The tab stays mounted through a sign-out, so the next person on the phone was
+  // shown the last one's stack search and FOLLOWING choices; and signed out there is no one to
+  // follow and no follow list is read, so FOLLOWING, kept from before, waited for one forever.
+  // When the member on the phone changes (signed out, too), each starts afresh: a visitor is shown
+  // the main reel and the stacks of all.
+  const [feedFilter, setFeedFilter] = useState<FeedFilter>('all');
+  const [stackFilter, setStackFilter] = useState<FeedFilter>('all');
   const [stackSearch, setStackSearch] = useState('');
-  // Each member's own: the tab stays mounted through a sign-out, so the next person on the phone
-  // (a visitor, or another member) was shown the last one's stack search and FOLLOWING choices.
   const memberKey = user?.id ?? null;
   const [choicesOf, setChoicesOf] = useState(memberKey);
   if (choicesOf !== memberKey) {

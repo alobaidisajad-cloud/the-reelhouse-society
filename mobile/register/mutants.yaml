@@ -3649,8 +3649,8 @@ mutants:
     source: shape
     edits:
       - file: app/(tabs)/reels.tsx
-        find: "  const feedFilter: FeedFilter = isAuthenticated ? feedChoice : 'all';"
-        replace: "  const feedFilter: FeedFilter = feedChoice;"
+        find: "    setChoicesOf(memberKey);\n    setFeedFilter('all');"
+        replace: "    setChoicesOf(memberKey);"
     proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "signed out, the reel and the stacks go back to everyone's, never waiting on a list no one reads" }
 
   - id: shape-throttle-eats-other-words
@@ -4805,7 +4805,7 @@ mutants:
     edits:
       - file: src/utils/typedRouter.ts
         find: "    if (path.startsWith('/(tabs)')) {"
-        replace: "    if (false) {"
+        replace: "    if (path.startsWith('/(never)')) {"
     proof: { file: src/utils/__tests__/theTabsAreReturnedToNeverRebuilt.guard.test.ts, test: "goes back to the tab app already there, never building another" }
 
   - id: shape-block-keeps-the-follow
@@ -4867,8 +4867,8 @@ mutants:
     source: shape
     edits:
       - file: app/(tabs)/reels.tsx
-        find: "  if (choicesOf !== memberKey) {"
-        replace: "  if (false) {"
+        find: "    setStackFilter('all');\n    setStackSearch('');"
+        replace: "    setStackFilter('all');"
     proof: { file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "the next person on the phone is never handed the last member’s stack search or reels" }
 
   - id: shape-unsent-left-off-the-page
