@@ -4259,7 +4259,7 @@
     "class": "READ-a-reread-that-drops-waiting-writes",
     "mutant": "shape-read-mark-under-the-board",
     "proof": "m6",
-    "commit": "61275ecf092c62bb4a2788cb082b1ff6b39140e6",
+    "commit": "12719bd981ecd457c41d361ac8bed9aa08c510ab",
     "verdict": "caught"
   },
   {
