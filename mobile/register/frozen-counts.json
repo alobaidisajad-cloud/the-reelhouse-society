@@ -1,6 +1,6 @@
 {
   "floating-promise": {
-    "mobile/app/(admin)/tribunal.tsx": 5,
+    "mobile/app/(admin)/tribunal.tsx": 4,
     "mobile/app/(modals)/cover-picker.tsx": 1,
     "mobile/app/(modals)/list-modal.tsx": 1,
     "mobile/app/(modals)/membership.tsx": 2,
@@ -18,7 +18,6 @@
     "mobile/src/components/dispatch/SeriesPicker.tsx": 1,
     "mobile/src/components/feed/ActionDeck.tsx": 2,
     "mobile/src/components/film/FilmDetailLayout.tsx": 2,
-    "mobile/src/components/log/LogForm.tsx": 1,
     "mobile/src/components/lounge/ActionSheet.tsx": 1,
     "mobile/src/components/lounge/LoungeSettingsPanel.tsx": 1,
     "mobile/src/components/profile/ProfileTriptych.tsx": 2,

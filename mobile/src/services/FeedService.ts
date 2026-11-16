@@ -9,6 +9,7 @@ import {
 } from '@/src/schemas/feed.schema';
 
 import { tellMarks } from '@/src/stores/tellMarks';
+import { FEED_PAGE } from '@/src/lib/feedPages';
 import { logger } from '@/src/utils/logger';
 import { reportValidationTelemetry } from '@/src/utils/validateWithTelemetry';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
@@ -73,8 +74,8 @@ function parseRowsSafely<T>(data: unknown[], schema: z.ZodType<T>, context: stri
 /** Posters asked per stack card: it draws three, and a fourth stands in for an unusable one. */
 const STACK_CARD_POSTERS = 4;
 
-/** Rows a page asks for; a shorter page is the last (useFeeds). */
-export const FEED_PAGE = 40;
+/** Rows a page asks for; a shorter page is the last (useFeeds). Its home is feedPages. */
+export { FEED_PAGE };
 export const STACKS_PAGE = 60;
 
 /**

@@ -5155,8 +5155,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/log/LogForm.tsx
-        find: "handleDelete(true); }} hitSlop={null}"
-        replace: "handleDelete(false); }} hitSlop={null}"
+        find: "void handleDelete(true); }} hitSlop={null}"
+        replace: "void handleDelete(false); }} hitSlop={null}"
     proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a record watched again: DELETE THIS ENTIRE LOG says every viewing goes, and takes the whole record" }
 
   - id: shape-no-viewing-offered-alone

@@ -13,7 +13,8 @@
 import type { InfiniteData } from '@tanstack/react-query';
 import { queryClient } from '@/src/lib/queryClient';
 import type { FeedItem } from '@/src/schemas/feed.schema';
-import { FEED_PAGE, type FeedPage } from '@/src/services/FeedService';
+import { FEED_PAGE } from '@/src/lib/feedPages';
+import type { FeedPage } from '@/src/services/FeedService';
 
 const REEL_KEYS = [['feed', 'community'], ['feed', 'following']] as const;
 

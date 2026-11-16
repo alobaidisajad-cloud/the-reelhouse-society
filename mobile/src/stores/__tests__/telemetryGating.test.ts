@@ -80,7 +80,7 @@ jest.mock('@/src/lib/supabase', () => {
 });
 jest.mock('@/src/lib/queryClient', () => ({
     queryClient: {
-        invalidateQueries: jest.fn(), setQueryData: jest.fn(),
+        invalidateQueries: jest.fn(), setQueryData: jest.fn(), setQueriesData: jest.fn(),
         getQueryData: jest.fn(() => undefined), cancelQueries: jest.fn(() => Promise.resolve()),
     },
 }));

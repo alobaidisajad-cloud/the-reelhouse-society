@@ -11,6 +11,14 @@
 import { replaceEqualDeep, type InfiniteData } from '@tanstack/react-query';
 import type { FeedPage } from '@/src/services/FeedService';
 
+/**
+ * Rows a feed page asks for; a shorter page is the last (useFeeds). Kept here, where nothing of
+ * the stores is reached: the log store tells the Reel of a record changed (reelRead), and reading
+ * this from FeedService, which reaches the film store through its counts, made the film store
+ * load itself half-made (review round 6).
+ */
+export const FEED_PAGE = 40;
+
 export function keepsEachPagesWord(prev: unknown, data: unknown): unknown {
   const shared = replaceEqualDeep(prev, data) as InfiniteData<FeedPage<unknown>> | undefined;
   const given = data as InfiniteData<FeedPage<unknown>> | undefined;
