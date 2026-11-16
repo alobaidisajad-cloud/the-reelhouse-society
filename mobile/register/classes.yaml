@@ -3168,6 +3168,7 @@ classes:
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while a viewing is being removed, its press reads REMOVING…, busy, and neither it nor CANCEL can be pressed" }
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while the whole log is being deleted, CONFIRM DELETE reads DELETING…, busy, and a second press deletes nothing more" }
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a removal that fails gives the press back: it reads REMOVE IT again, and a second press asks again" }
+      - { kind: running, file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "REMOVE THIS VIEWING asked twice at once is asked of the store once" }
     fix: "a removal on its way turns a second press away and says it is busy (REMOVING…, DELETING…), and a failed one gives the press back (mutants shape-removal-pressed-twice, shape-removal-press-not-busy, shape-failed-removal-keeps-the-press)"
     places: [none]
 

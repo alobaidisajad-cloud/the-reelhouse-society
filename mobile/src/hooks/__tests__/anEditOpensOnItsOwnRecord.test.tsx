@@ -200,6 +200,30 @@ describe('a record watched again (review round 6)', () => {
     expect(said).not.toHaveBeenCalled();
   });
 
+  // Review round 7: the first removal steps the record back on the phone before it is answered, so
+  // a second asked meanwhile found no earlier viewing and deleted the whole record. The hook turns
+  // it away itself, whoever asks: the press's own debounce and busy state are only its first door.
+  it('REMOVE THIS VIEWING asked twice at once is asked of the store once', async () => {
+    // The store's removal, held on the wire: the second ask comes while the first is out.
+    let land: () => void = () => {};
+    const removeLog = jest.fn(() => new Promise<void>((res) => { land = res; }));
+    const real = useFilmStore.getState().removeLog;
+    useFilmStore.setState({ removeLog } as never);
+    try {
+      const flow = await openEditor({ rows: { logs: [watchedTwice()], log_private_notes: [] } });
+      await waitFor(() => expect(flow.current.editReady).toBe(true));
+      const { handleDelete } = flow.current;
+      let both: Promise<unknown> = Promise.resolve();
+      await act(async () => { both = Promise.all([handleDelete(false), handleDelete(false)]); });
+      expect(removeLog).toHaveBeenCalledTimes(1);
+      expect(removeLog).toHaveBeenCalledWith(OLD, false, expect.anything());
+      await act(async () => { land(); await both; });
+      expect(removeLog).toHaveBeenCalledTimes(1);
+    } finally {
+      useFilmStore.setState({ removeLog: real } as never);
+    }
+  });
+
   it('a viewing that cannot be named without a connection is said, nothing is removed, and the sheet stays', async () => {
     const flow = await openEditor({ rows: { logs: [watchedTwice({ viewing_id: null })], log_private_notes: [] } });
     await waitFor(() => expect(flow.current.editReady).toBe(true));

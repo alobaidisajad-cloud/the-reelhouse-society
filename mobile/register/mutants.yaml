@@ -5453,7 +5453,7 @@ mutants:
       - file: src/hooks/useLogFlow.ts
         find: "        if (!editLogId || !editReady || deletingRef.current) return;"
         replace: "        if (!editLogId || !editReady) return;"
-    proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "REMOVE IT tapped twice in one breath removes the latest viewing once, never the whole record after it" }
+    proof: { file: src/hooks/__tests__/anEditOpensOnItsOwnRecord.test.tsx, test: "REMOVE THIS VIEWING asked twice at once is asked of the store once" }
 
   - id: shape-removal-press-not-busy
     class: WRITE-a-second-tap-that-acts-again
