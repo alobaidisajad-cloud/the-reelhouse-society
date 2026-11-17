@@ -3096,8 +3096,8 @@
   {
     "class": "WRITE-a-sent-message-taken-off-the-screen",
     "mutant": "shape-sent-in-a-room-left-lost",
-    "proof": "m3",
-    "commit": "92e5558d503debebf0e61e705e4d3781b16a28cb",
+    "proof": "m5",
+    "commit": "15a8df6bfc070c14533c06bc2fea4a341b575187",
     "verdict": "caught"
   },
   {
