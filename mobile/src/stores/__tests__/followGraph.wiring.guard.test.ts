@@ -31,7 +31,8 @@ describe('GAP D · every hydrator goes through one reconciler', () => {
   });
 
   it('the loader commits through it', () => {
-    const calls = sliceCode.match(/commitHydratedGraph\(userId, allUsernames, allRequested\);/g) ?? [];
+    // With the moment its read was asked (review round 8: acts made since are laid over it).
+    const calls = sliceCode.match(/commitHydratedGraph\(userId, allUsernames, allRequested, askedAt\);/g) ?? [];
     expect(calls).toHaveLength(1);
   });
 

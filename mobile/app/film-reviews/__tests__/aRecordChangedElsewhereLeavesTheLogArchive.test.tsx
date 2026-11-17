@@ -132,6 +132,8 @@ it('a record filed elsewhere is on the archive when the member is back', async (
   const r = await open();
   mockLogs = [log('00000000-0000-4000-8000-000000000003', ANA, 'Ana filed a new one.'), ...mockLogs];
   await act(async () => { reelMayHaveChanged(); });
+  // The archive is drawn, its record there: the new one is not, before the member is back.
+  expect(r.getByText('Ana wrote.')).toBeTruthy();
   expect(r.queryByText('Ana filed a new one.')).toBeNull();
   await focusAgain();
   await waitFor(() => expect(r.queryByText('Ana filed a new one.')).not.toBeNull());

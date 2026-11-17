@@ -106,7 +106,9 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.select = () => self();
       chain.eq = () => self(); chain.is = () => self(); chain.order = () => self();
       chain.maybeSingle = () => Promise.resolve({ data: mockMember, error: null });
-      chain.range = () => Promise.resolve({ data: mockRows, error: null });
+      chain.or = () => self();
+      // The room's page is asked by the keyset (round 9): `.limit`, never `.range`.
+      chain.limit = () => Promise.resolve({ data: mockRows, error: null });
       chain.in = () => Promise.resolve({ data: [], error: null });
       chain.then = (res: (v: unknown) => unknown) =>
         Promise.resolve({ data: [], error: null }).then(res);

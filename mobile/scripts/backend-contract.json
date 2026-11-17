@@ -42,6 +42,10 @@
       "signature": "dispatch_door()"
     },
     {
+      "name": "dispatch_archive_films",
+      "signature": "dispatch_archive_films(p_pattern text)"
+    },
+    {
       "name": "dispatch_room_totals",
       "signature": "dispatch_room_totals(p_user_id uuid)"
     },

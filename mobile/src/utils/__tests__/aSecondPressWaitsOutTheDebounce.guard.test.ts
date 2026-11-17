@@ -17,7 +17,10 @@ const finder = require('../../../scripts/press-again.cjs') as {
 const MOBILE = join(__dirname, '..', '..', '..');
 
 /** A second press with no time passed that reaches its control all the same, and why. */
-const JUDGED: Record<string, string> = {};
+const JUDGED: Record<string, string> = {
+  'app/stacks/__tests__/stack-detail.redesign.test.tsx :: r.getByLabelText(\'View curator @morpho\')':
+    'a Text, not a PressableScale: no debounce stands before it, so the second press reaches onPress, and it is onePress that turns it away; the press after 500 ms shows it acts again (review round 8)',
+};
 
 describe('a second press of a control waits out its debounce', () => {
   const found = finder.testFiles().flatMap((f) => finder.sitesIn(f, readFileSync(f, 'utf8'))

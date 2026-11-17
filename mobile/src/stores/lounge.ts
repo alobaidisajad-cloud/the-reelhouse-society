@@ -191,7 +191,7 @@ const _lastSendAt = new Map<string, { at: number; words: string }>();
 /**
  * A seat or a request the house refused for a host's ban: join_public_lounge and
  * request_lounge_membership raise these words (SQLSTATE P0001), and a rehearsal holds them
- * (the_house_keeps_its_own_record). Toasted as "check your connection", the refusal sent a banned
+ * (supabase/diagnostics/the_house_keeps_its_own_record_rehearsal.sql). Toasted as "check your connection", the refusal sent a banned
  * member to their signal (review round 9); BANNED_FROM_SALON is said instead.
  */
 const BAN_REFUSALS: readonly string[] = ['You cannot join this lounge', 'You cannot request this lounge'];
