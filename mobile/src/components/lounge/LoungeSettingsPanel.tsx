@@ -54,7 +54,13 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
   // The reader the host has banned holds no seat to step out of: stepping out took their row, and the
   // host's UNBAN with it, while the ban stood (review round 9).
   const myId = useAuthStore((st) => st.user?.id ?? null);
-  const iAmBanned = members.some((m) => m.user_id === myId && m.status === 'banned');
+  const myRow = members.find((m) => m.user_id === myId);
+  const iAmBanned = myRow?.status === 'banned';
+  // The roster the house gives: the host's and the seated's (a muted member keeps their seat). Anyone
+  // else is given their own row at most, and the sheet said "MEMBERS (1)" over a full salon, and
+  // offered a guest STEP OUT of a seat they never held (review round 10). They are told the salon's
+  // own count, and step out only of a row they hold.
+  const readsRoster = isCreator || myRow?.status === 'approved' || myRow?.status === 'muted';
 
   const handleLeave = () => {
     Alert.alert('Step out of this salon?', 'You can rejoin a public salon any time; a private one needs the host to re-admit you.', [
@@ -214,7 +220,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         </View>
 
         <FlashList
-          data={roster}
+          data={readsRoster ? roster : []}
           maintainVisibleContentPosition={NOT_ANCHORED}
           keyExtractor={item => item.user_id}
           showsVerticalScrollIndicator={false}
@@ -240,7 +246,8 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
                   )}
                 </View>
               )}
-              <Text style={s.label}>MEMBERS ({roster.length})</Text>
+              <Text style={s.label}>MEMBERS ({readsRoster ? roster.length : (lounge.member_count ?? 0)})</Text>
+              {readsRoster ? null : <Text style={s.subtitle}>The roster is kept for those seated.</Text>}
             </View>
           }
           renderItem={renderMember}
@@ -251,7 +258,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
                   <Trash2 size={14} color={colors.sepia} strokeWidth={1.5} />
                   <Text style={s.leaveText}>INCINERATE SALON</Text>
                 </PressableScale>
-              ) : iAmBanned ? null : (
+              ) : !myRow || iAmBanned ? null : (
                 <PressableScale style={s.leaveBtn} onPress={handleLeave} accessibilityRole="button">
                   <LogOut size={14} color={colors.sepia} strokeWidth={1.5} />
                   <Text style={s.leaveText}>STEP OUT OF SALON</Text>

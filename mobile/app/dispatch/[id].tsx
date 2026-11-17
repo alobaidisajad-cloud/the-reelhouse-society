@@ -46,6 +46,7 @@ import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { hourLabel } from '@/src/components/dispatch/dayLabel';
 import { useAuthStore } from '@/src/stores/auth';
+import { askIn } from '@/src/utils/askIn';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { useDispatch } from '@/src/stores/dispatch';
@@ -595,13 +596,14 @@ function FilingReader({ id }: { id: string }) {
                 certified={certified}
                 saved={saved}
                 pending={pending}
-                // Acts need a member; without one each would do nothing on a press.
+                // Acts need a member: a visitor's press asks them in, as on a log and a stack (each did
+                // nothing on a press, review round 10).
                 // Share, the byline and the film need no account.
-                onVote={me ? (i) => useDispatch.getState().vote(live.id, i) : undefined}
-                onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
-                onCritique={me ? openComposer : undefined}
+                onVote={me ? (i) => useDispatch.getState().vote(live.id, i) : () => askIn()}
+                onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : () => askIn()}
+                onCritique={me ? openComposer : () => askIn()}
                 onShare={() => setSharing(true)}
-                onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
+                onSave={me ? (next) => useDispatch.getState().save(live.id, next) : () => askIn()}
                 onAuthor={() => openAuthor(author?.name)}
               />
             ) : (
@@ -630,14 +632,14 @@ function FilingReader({ id }: { id: string }) {
                 // The dock below holds the marks wherever it is drawn: one row of them, never two.
                 docked={!!me && open}
                 // Gated on a member, for the reason given on the ballot above.
-                onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : undefined}
+                onCertify={me ? (next) => useDispatch.getState().certify(live.id, next) : () => askIn()}
                 // The tombstone's one mark leads to the critiques that survive it,
                 // just below; the house takes no new one under words that are gone.
                 onCritique={ended
                   ? () => scroller.current?.scrollTo({ y: critiquesAt.current, animated: true })
-                  : me ? openComposer : undefined}
+                  : me ? openComposer : () => askIn()}
                 onShare={() => setSharing(true)}
-                onSave={me ? (next) => useDispatch.getState().save(live.id, next) : undefined}
+                onSave={me ? (next) => useDispatch.getState().save(live.id, next) : () => askIn()}
                 onAuthor={() => openAuthor(author?.name)}
                 onFilm={live.subjectId ? openFilm : undefined}
               />
@@ -702,6 +704,9 @@ function FilingReader({ id }: { id: string }) {
             ))}
 
             <CritiqueFooter
+              // The house gives a visitor no critiques (critiques_read is a member's): said, never an end
+              // mark under a count of critiques it does not show (review round 10).
+              visitor={!me}
               // Counted against every critique read, the hidden too: the count is the house's.
               shown={read?.length ?? 0}
               total={live.commentCount}

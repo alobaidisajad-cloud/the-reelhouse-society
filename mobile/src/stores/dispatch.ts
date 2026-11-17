@@ -673,7 +673,8 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         if (enqueueMutation({ type: 'add_filing', payload: { _tempId: id, ...row } })) {
           set((st) => ({ unsent: [optimistic, ...st.unsent.filter((f) => f.id !== id)] }));
           flushOfflineQueue();
-          reelToast.success('Filed. It goes out when the wire is back.');
+          // Said by the desk that filed it (`offline`): said here too, the toast bus queued the copy
+          // and the member heard it twice (review round 10).
           return { id, offline: true };
         }
       }

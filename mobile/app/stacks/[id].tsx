@@ -1157,6 +1157,8 @@ function StackDetailScreen({ id }: { id: string }) {
                   placeholderTextColor={colors.fog}
                   value={commentText}
                   onChangeText={handleCommentTextChange}
+                  // Held while a critique files, as on a log (review round 10).
+                  editable={!submittingComment}
                   returnKeyType="send"
                   onSubmitEditing={handleSubmitComment}
                   maxLength={MAX_LENGTHS.listComment}

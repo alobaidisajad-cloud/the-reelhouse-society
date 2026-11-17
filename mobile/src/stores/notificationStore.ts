@@ -13,6 +13,7 @@ import { useBlockStore } from './blockStore';
 import { zustandMMKVStorage, zustandMMKVStorageSensitive } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 import { stillSignedIn } from './domain/helpers/sessionGuard';
+import reelToast from '../utils/reelToast';
 import { hydrateFollowing } from './domain/socialSlice';
 
 /** The most held at once, in memory and MMKV, by EVERY path (~186KB at 500). */
@@ -406,6 +407,14 @@ export const useNotificationStore = create<NotificationState>()(
                 .eq('user_id', user.id);
             if (error) throw error;
             markTaken([id]);
+            // Unread on the board again, a READ ALL refused meanwhile having taken it back with the
+            // rest: the house has it read, and the board says so (review round 10).
+            if (stillSignedIn(startedAs) && get().notifications.some((n) => n.id === id && !n.read)) {
+                set((state) => ({
+                    notifications: state.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+                    _unreadCount: Math.max(0, state._unreadCount - 1),
+                }));
+            }
         } catch (e) {
             markRefused([id]);
             logger.warn('[markRead] failed', id, e);
@@ -461,8 +470,16 @@ export const useNotificationStore = create<NotificationState>()(
         } catch (e) {
             if (stillSignedIn(startedAs)) allReadAt = allReadBefore;
             logger.warn(`[markAllRead] Failed:`, e);
-            // Rolled back only while still signed in, as in markRead: the ones it marked, alone.
-            if (stillSignedIn(startedAs)) set((state) => unreadAgain(state, new Set(previousState.filter((n) => !n.read).map((n) => n.id))));
+            // Rolled back only while still signed in, as in markRead: the ones it marked, alone, and not
+            // one the member opened meanwhile that the house took (readHere holds when), which the rollback
+            // marked unread again. One opened and still on its way is taken back with the rest: refused
+            // too, it is unread, as at the house; taken, its own landing marks it read again.
+            // Said: undone in silence, the board flipped back as though READ ALL had never been pressed
+            // (review round 10).
+            if (stillSignedIn(startedAs)) {
+                set((state) => unreadAgain(state, new Set(previousState.filter((n) => !n.read && !((readHere.get(n.id) ?? Infinity) < Infinity)).map((n) => n.id))));
+                reelToast.error('The notices could not be marked read. Try again.');
+            }
         }
     },
 
@@ -492,8 +509,11 @@ export const useNotificationStore = create<NotificationState>()(
         } catch (e) {
             goneHere.delete(id);
             logger.warn('[dismiss] failed', id, e);
-            // Rolled back only while still signed in, as in markRead: this notice, put back.
-            if (stillSignedIn(startedAs)) set((state) => putBack(state, previousState.filter((n) => n.id === id)));
+            // Rolled back only while still signed in, as in markRead: this notice, put back, and said.
+            if (stillSignedIn(startedAs)) {
+                set((state) => putBack(state, previousState.filter((n) => n.id === id)));
+                reelToast.error('The notice could not be dismissed. Try again.');
+            }
         }
     },
 
@@ -570,7 +590,10 @@ export const useNotificationStore = create<NotificationState>()(
             for (const id of ids) goneHere.delete(id);
             logger.warn('[dismissGroup] failed', ids.length, e);
             // See markRead: the group, put back.
-            if (stillSignedIn(startedAs)) set((state) => putBack(state, previousState.filter((n) => ids.includes(n.id))));
+            if (stillSignedIn(startedAs)) {
+                set((state) => putBack(state, previousState.filter((n) => ids.includes(n.id))));
+                reelToast.error('The notices could not be dismissed. Try again.');
+            }
         }
     },
 

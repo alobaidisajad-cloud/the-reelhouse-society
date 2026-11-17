@@ -11,7 +11,8 @@
 -- word is the last one its reader can read, never one from a member they muted; a film's archive
 -- search is counted by the house without the member the reader muted; a banned member's row stays
 -- through a removal and a stepping out, and one taken before is put back; a muted follower leaves
--- the follow counts. Every row here
+-- the follow counts; a muted seat reads its private salon, and a member blocked by an author reads
+-- none of their records or stacks. Every row here
 -- is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line is the
 -- verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
@@ -114,6 +115,29 @@ SELECT 'take', m.id, p.username, 'rehearsal: on the picture', 'film', 990000101,
 INSERT INTO public.lounge_messages (lounge_id, user_id, content, created_at)
 VALUES ((SELECT id FROM rh_corner), (SELECT id FROM rehearsal_members WHERE n = 3), 'rehearsal: a word', now() - interval '2 minutes'),
        ((SELECT id FROM rh_corner), (SELECT id FROM rehearsal_members WHERE n = 2), 'rehearsal: a muted word', now() - interval '1 minute');
+
+-- Member 1 keeps a private parlour where 3 sits muted, and says a word there; and files a record and a
+-- stack, for 4 (whom 1 blocked) to look for.
+CREATE TEMP TABLE rh_parlour ON COMMIT DROP AS
+WITH made AS (
+  INSERT INTO public.lounges (name, creator_id, is_private)
+  VALUES ('The Rehearsal Parlour', (SELECT id FROM rehearsal_members WHERE n = 1), true)
+  RETURNING id)
+SELECT id FROM made;
+GRANT SELECT ON rh_parlour TO authenticated;
+INSERT INTO public.lounge_members (lounge_id, user_id, status)
+SELECT (SELECT id FROM rh_parlour), id, 'muted' FROM rehearsal_members WHERE n = 3;
+INSERT INTO public.lounge_messages (lounge_id, user_id, content)
+VALUES ((SELECT id FROM rh_parlour), (SELECT id FROM rehearsal_members WHERE n = 1), 'rehearsal: a parlour word');
+CREATE TEMP TABLE rh_own (what text, id uuid) ON COMMIT DROP;
+GRANT SELECT ON rh_own TO authenticated;
+WITH r AS (INSERT INTO public.logs (user_id, film_id, film_title, watched_date)
+           VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 990000102, 'rh film', current_date) RETURNING id)
+INSERT INTO rh_own SELECT 'log', id FROM r;
+WITH r AS (INSERT INTO public.lists (user_id, title) VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 'rh stack') RETURNING id)
+INSERT INTO rh_own SELECT 'stack', id FROM r;
+CREATE TEMP TABLE rh_seen (who int, what text, got text) ON COMMIT DROP;
+GRANT ALL ON rh_seen TO authenticated;
 
 -- The host reads their corridor, as themselves.
 CREATE TEMP TABLE rh_corridor (got jsonb) ON COMMIT DROP;
@@ -230,6 +254,28 @@ SELECT pg_temp.rh_case('a follower the member muted is not in their FOLLOWERS', 
 SELECT pg_temp.rh_case('nor one they follow and muted in their FOLLOWING', '1',
   ((SELECT (got ->> 'following_count')::int FROM rh_counts WHERE NOT muted)
     - (SELECT (got ->> 'following_count')::int FROM rh_counts WHERE muted))::text) AS done \gset rh_
+
+-- 3, muted in the parlour, reads it as themselves; 4 looks for 1's record and stack; 1 reads their own.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
+INSERT INTO rh_seen SELECT 3, 'words', count(*)::text FROM public.lounge_messages WHERE lounge_id = (SELECT id FROM rh_parlour);
+INSERT INTO rh_seen SELECT 3, 'channel', public.salon_channel_readable('lounge-' || (SELECT id FROM rh_parlour))::text;
+INSERT INTO rh_seen SELECT 3, 'roster', public.is_lounge_member_or_host((SELECT id FROM rh_parlour))::text;
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 4), 'role', 'authenticated')::text, true) AS done \gset rh_
+INSERT INTO rh_seen SELECT 4, 'log', count(*)::text FROM public.logs WHERE id = (SELECT id FROM rh_own WHERE what = 'log');
+INSERT INTO rh_seen SELECT 4, 'stack', count(*)::text FROM public.lists WHERE id = (SELECT id FROM rh_own WHERE what = 'stack');
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+INSERT INTO rh_seen SELECT 1, 'log', count(*)::text FROM public.logs WHERE id = (SELECT id FROM rh_own WHERE what = 'log');
+INSERT INTO rh_seen SELECT 1, 'stack', count(*)::text FROM public.lists WHERE id = (SELECT id FROM rh_own WHERE what = 'stack');
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+SELECT pg_temp.rh_case('a muted seat reads its private salon''s words', '1', (SELECT got FROM rh_seen WHERE who = 3 AND what = 'words')) AS done \gset rh_
+SELECT pg_temp.rh_case('and receives its channel', 'true', (SELECT got FROM rh_seen WHERE who = 3 AND what = 'channel')) AS done \gset rh_
+SELECT pg_temp.rh_case('and reads its roster', 'true', (SELECT got FROM rh_seen WHERE who = 3 AND what = 'roster')) AS done \gset rh_
+SELECT pg_temp.rh_case('a member blocked by an author reads none of their records', '0', (SELECT got FROM rh_seen WHERE who = 4 AND what = 'log')) AS done \gset rh_
+SELECT pg_temp.rh_case('nor their stacks', '0', (SELECT got FROM rh_seen WHERE who = 4 AND what = 'stack')) AS done \gset rh_
+SELECT pg_temp.rh_case('the author reads their own record as before', '1', (SELECT got FROM rh_seen WHERE who = 1 AND what = 'log')) AS done \gset rh_
+SELECT pg_temp.rh_case('and their own stack', '1', (SELECT got FROM rh_seen WHERE who = 1 AND what = 'stack')) AS done \gset rh_
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

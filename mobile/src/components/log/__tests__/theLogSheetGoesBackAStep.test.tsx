@@ -6,7 +6,7 @@
  * open. On the search there is no step behind, and back closes the sheet as before.
  */
 import React from 'react';
-import { AppState, BackHandler } from 'react-native';
+import { AppState, BackHandler, Alert } from 'react-native';
 import { act, render } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/src/stores/auth';
@@ -108,9 +108,19 @@ it('the search alone is no room at all', async () => {
 
 describe('an edit asks before its amendments go (review round 5)', () => {
   const LOG_ID = '66666666-6666-4666-8666-666666666666';
+  // The amendments' ask, read by what it says: the sheet holds another way out of its own while
+  // they seal (review round 10), and the last asked of a render is that one.
   const preventing = () => {
     const calls = (jest.requireMock('expo-router/react-navigation').usePreventRemove as jest.Mock).mock.calls;
-    return calls.at(-1)?.[0];
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    try {
+      for (let i = calls.length - 1; i >= 0; i--) {
+        alert.mockClear();
+        (calls[i]?.[1] as (e: { data: { action: unknown } }) => void)({ data: { action: {} } });
+        if (alert.mock.calls[0]?.[0] === 'Discard these amendments?') return calls[i]?.[0];
+      }
+      return undefined;
+    } finally { alert.mockRestore(); }
   };
   beforeEach(() => {
     (jest.requireMock('expo-router/react-navigation').usePreventRemove as jest.Mock).mockClear();

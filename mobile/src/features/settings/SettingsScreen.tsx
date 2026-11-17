@@ -304,6 +304,7 @@ export function SettingsScreen() {
    * the notices kept coming, others could still endorse and annotate, and the lock was off again
    * at the next launch. 'kept' while the house cannot be reached; a refusal is said, and thrown.
    */
+  const [filing, setFiling] = useState(false);
   const fileAmendments = async (data: SettingsFormData): Promise<'saved' | 'kept'> => {
     const { is_social_private, preferences } = amendments(data);
     // Changed from what the form opened with, not from the profile's copy: a key the profile never
@@ -414,6 +415,7 @@ export function SettingsScreen() {
       }
     }
 
+    setFiling(true);
     try {
       const filed = await fileAmendments(data);
       if (isMountedRef.current) {
@@ -422,11 +424,14 @@ export function SettingsScreen() {
         reelToast.success(filedSaid(filed, biometricCanceled ? 'Settings saved (Biometric update canceled)' : 'Your dossier has been amended.'));
       }
     } catch { /* said where it failed: fileAmendments, useUpdateUser's onError */ }
+    finally { if (isMountedRef.current) setFiling(false); }
   };
   // The form's check is made at the press, not as the screen draws.
   const handleSave = () => handleSubmit(save)();
 
-  const saving = isUpdatingUser;
+  // The whole filing, preferences included: the profile's write alone left SAVE lit and BACK asking
+  // "Discard changes?" over a preferences save already on its way, which landed anyway (review round 10).
+  const saving = isUpdatingUser || filing;
 
   /** Every exit asks first: the arrow, the iOS swipe and Android's back alike. */
   usePreventRemove(isDirty && !saving && !leavingTo, ({ data }) => {

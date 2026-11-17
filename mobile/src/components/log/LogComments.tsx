@@ -152,6 +152,9 @@ export default function LogComments({
             placeholderTextColor={colors.fog}
             value={newComment}
             onChangeText={onNewCommentChange}
+            // Held while a critique files: the next one typed meanwhile was wiped by the first one's
+            // landing, its draft with it (review round 10).
+            editable={!posting}
             multiline
             maxLength={MAX_LENGTHS.logComment}
             // Its lines are a set 19pt. Uncapped, a member writing at the

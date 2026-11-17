@@ -160,8 +160,15 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         const serverIds = new Set(reconciledLists.map(l => l.id));
         const uniqueCreates = pendingCreates.filter(l => !serverIds.has(l.id));
 
+        // A next page under the stacks as they stand NOW, never as they stood when it was asked: a stack
+        // made meanwhile left the list, and one deleted came back (review round 10). One the list holds is
+        // not laid twice.
+        const standing = get().lists;
+        const held = new Set(standing.map((l) => l.id));
+        // Held when the page was asked and gone since: deleted here meanwhile, never laid back.
+        const goneSince = new Set(state.lists.filter((l) => !held.has(l.id)).map((l) => l.id));
         const nextLists = loadMore
-            ? [...state.lists, ...reconciledLists]
+            ? [...standing, ...reconciledLists.filter((l) => !held.has(l.id) && !goneSince.has(l.id))]
             : [...uniqueCreates, ...reconciledLists];
         // ── end ──
         set({

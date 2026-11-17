@@ -46,7 +46,9 @@ const mockIsNetworkError = jest.fn(mockSaysNetwork);
 const mockProfilesRead = (answer: { data: unknown; error: unknown }) => ({
     select: jest.fn(() => ({ eq: jest.fn(() => ({ maybeSingle: jest.fn().mockResolvedValue(answer) })) })),
 });
+// The rest as it is: a refusal is read through isForbiddenError (review round 10).
 jest.mock('../../src/utils/networkError', () => ({
+    ...jest.requireActual('../../src/utils/networkError'),
     isNetworkError: (e: unknown) => mockIsNetworkError(e),
 }));
 

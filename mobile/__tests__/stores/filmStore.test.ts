@@ -16,6 +16,8 @@
 // ── Import after mocks ──
 import { useFilmStore } from '../../src/stores/films';
 
+// The tier door is drawn (its words' scale reads the window): this react-native stands up no window.
+jest.mock('../../src/utils/tierDoor', () => ({ showTierDoor: jest.fn() }));
 jest.mock('react-native', () => ({
     InteractionManager: { runAfterInteractions: jest.fn((cb) => cb()) },
     AppState: { addEventListener: jest.fn(() => ({ remove: jest.fn() })), currentState: 'active' },

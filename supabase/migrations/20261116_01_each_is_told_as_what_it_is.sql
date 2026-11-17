@@ -24,6 +24,11 @@
 --      refused (review round 9). A banned row now stays; those taken are put back, banned.
 --   6. A member's FOLLOWERS and FOLLOWING counted members the reader has hidden, whom the lists
 --      leave out (review round 9): the counts leave them out too.
+--   7. A muted member of a private salon was told they can read, and the house gave its words,
+--      reactions, channel and roster to approved seats alone: they read an empty room (review round
+--      10). A muted seat reads them now, and its unread count is counted.
+--   8. A member an author has blocked still read that author's records and stacks wherever a log or a
+--      stack is read directly (review round 10): logs and lists take the house's rule for the hidden.
 --   The rehearsal holds each, the members acting as themselves.
 -- Undo: mobile/supabase/migrations-down/20261116_01_each_is_told_as_what_it_is.sql
 -- ════════════════════════════════════════════════════════════════════════════
@@ -113,7 +118,7 @@ CREATE OR REPLACE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(loung
     AS $$
   WITH me AS (SELECT auth.uid() AS id, public.hidden_authors() AS hidden),
   rooms AS (
-    SELECT lm.lounge_id, lm.last_read_at, (NOT l.is_private OR lm.status = 'approved') AS readable
+    SELECT lm.lounge_id, lm.last_read_at, (NOT l.is_private OR lm.status IN ('approved', 'muted')) AS readable
       FROM me
       JOIN public.lounge_members lm ON lm.user_id = me.id
       JOIN public.lounges l ON l.id = lm.lounge_id
@@ -246,3 +251,53 @@ CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS jso
   )
   FROM (SELECT public.hidden_authors() AS hidden) me;
 $$;
+
+-- A muted member keeps their seat: the host's MUTE tells them they "can read, but not post or react",
+-- and the house gave a private salon's words, reactions, channel and roster to approved seats alone:
+-- the muted member read an empty room, "Be the first to break the silence" (review round 10). A muted
+-- seat reads them now; posting and reacting stay the approved seat's.
+CREATE POLICY "Muted members read their private salon" ON public.lounge_messages FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.lounge_members m
+  WHERE ((m.lounge_id = lounge_messages.lounge_id) AND (m.user_id = auth.uid()) AND (m.status = 'muted'::text)))));
+CREATE POLICY "Muted members read their private salon's reactions" ON public.lounge_message_reactions FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.lounge_members m
+  WHERE ((m.lounge_id = lounge_message_reactions.lounge_id) AND (m.user_id = auth.uid()) AND (m.status = 'muted'::text)))));
+
+-- add-only (3): it only widens: a private salon's channel to its muted seats as well, every other reader as before (each_is_told_as_what_it_is_rehearsal.sql)
+CREATE OR REPLACE FUNCTION public.salon_channel_readable(p_topic text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+  SELECT CASE
+    WHEN p_topic ~ '^lounge-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN EXISTS (
+      SELECT 1 FROM public.lounges l
+       WHERE l.id = substr(p_topic, 8)::uuid
+         AND (l.is_private = false OR EXISTS (
+           SELECT 1 FROM public.lounge_members m
+            WHERE m.lounge_id = l.id AND m.user_id = auth.uid() AND m.status IN ('approved', 'muted'))))
+    ELSE false
+  END
+$_$;
+
+-- add-only (3): it only widens: a salon's roster to its muted seats as well, the host and the approved as before (each_is_told_as_what_it_is_rehearsal.sql)
+CREATE OR REPLACE FUNCTION public.is_lounge_member_or_host(_lounge_id uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.lounges
+    WHERE id = _lounge_id AND creator_id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM public.lounge_members
+    WHERE lounge_id = _lounge_id AND user_id = auth.uid() AND status IN ('approved', 'muted')
+  );
+$$;
+
+-- A member an author has blocked still read that author's records and stacks: on a film's Log Archive,
+-- on the author's own pages, everywhere a log or a stack is read directly, though the feeds, the
+-- filings, the critiques and the salons all leave the author out for them (review round 10). Logs
+-- and stacks now take the house's one rule for the hidden, as those do.
+-- add-only (3): it only fixes: the calls replayed as the members themselves, a member's own records and stacks and another's as before, none of an author who blocked the reader (each_is_told_as_what_it_is_rehearsal.sql)
+CREATE POLICY logs_hide_blocked ON public.logs AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
+-- add-only (3): it only fixes: as logs_hide_blocked, for stacks (each_is_told_as_what_it_is_rehearsal.sql)
+CREATE POLICY lists_hide_blocked ON public.lists AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));

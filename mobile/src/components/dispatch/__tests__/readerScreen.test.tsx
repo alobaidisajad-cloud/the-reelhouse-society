@@ -157,6 +157,9 @@ jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: () => [],
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
+/** A visitor asked in, to the sign-in and back (review round 10): counted, never followed here. */
+const mockAskIn = jest.fn();
+jest.mock('@/src/utils/askIn', () => ({ askIn: (...a: unknown[]) => mockAskIn(...a) }));
 // A block that lands reads the follow list again (blockStore): its read is the follow store's
 // own tests' to answer, and here only that it was asked.
 jest.mock('@/src/stores/domain/socialSlice', () => ({
@@ -1464,5 +1467,78 @@ describe('a filing whose author is hidden leaves the reader (review round 6)', (
     expect(getByText('The Empty Room')).toBeTruthy();
     await act(async () => { useBlockStore.setState({ muted: [AUTHOR], _mutedIndex: new Set([AUTHOR]) }); });
     expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * Review round 10: a visitor on a filing pressed CERTIFY, CRITIQUE, SAVE and a ballot's option, and
+ * nothing happened (each handler was left out for a visitor); and the critiques' foot drew an end, or
+ * a MORE, under a count of critiques the house never sends a visitor (critiques_read is a member's).
+ * Each press now asks them in (askIn), and the foot says the critiques are read by members.
+ */
+describe('a visitor on a filing is asked in (review round 10)', () => {
+  const TAKE = { kind: 'take', title: null, full_content: null, body: 'A take, held.' };
+  const BALLOT = {
+    kind: 'ballot', title: 'What tonight?', body: 'What tonight?',
+    options: [
+      { film_id: 1, title: 'Tokyo Story', poster_path: null },
+      { film_id: 2, title: 'Late Spring', poster_path: null },
+    ],
+    // Open: far ahead of any clock this suite runs under.
+    closes_at: '2099-01-01T00:00:00Z',
+  };
+  beforeEach(() => {
+    mockUser = null;
+    mockAskIn.mockClear();
+  });
+
+  it.each([
+    ['CERTIFY on a take', TAKE, /^Certify this/],
+    ['CRITIQUE on a take', TAKE, /^Critique$/],
+    ['SAVE on a take', TAKE, /^Save this/],
+    ['CERTIFY on a ballot', BALLOT, /^Certify this/],
+    ['CRITIQUE on a ballot', BALLOT, /^Critique$/],
+    ['SAVE on a ballot', BALLOT, /^Save this/],
+  ])('their %s asks them in, and marks nothing', async (_what, over, label) => {
+    mockRow = row(over);
+    const { getByLabelText } = await mount();
+    await act(async () => { await fireEvent.press(getByLabelText(label)); });
+    expect(mockAskIn).toHaveBeenCalledTimes(1);
+    // Nothing marked, kept or opened for them: the sign-in is the one way on.
+    expect(useDispatch.getState().certifiedIds.size).toBe(0);
+    expect(useDispatch.getState().savedIds.size).toBe(0);
+    // The mark pressed is drawn as it was: neither certified nor saved (CERTIFIED is also the
+    // critiques' order, so the control is read, not the page's words).
+    expect(getByLabelText(label).props.accessibilityState?.selected).toBeFalsy();
+    expect(mockPushed).toEqual([]);
+  });
+
+  it('their mark on a ballot asks them in, and casts nothing', async () => {
+    mockRow = row(BALLOT);
+    const { getByLabelText } = await mount();
+    await act(async () => { await fireEvent.press(getByLabelText(/^Option 2 of 2/)); });
+    expect(mockAskIn).toHaveBeenCalledTimes(1);
+    expect(useDispatch.getState().myVotes['00000017-0000-4000-8000-000000000017']).toBeUndefined();
+    expect(getByLabelText(/^Option 2 of 2/).props.accessibilityState).toEqual(expect.objectContaining({ checked: false }));
+  });
+
+  it('are told the critiques are read by members, and SIGN IN TO READ THEM asks them in; a member reads them as before', async () => {
+    mockRow = row({ ...TAKE, comment_count: 3 });
+    const visitor = await mount();
+    expect(visitor.getByText('THE CRITIQUES ARE READ BY MEMBERS')).toBeTruthy();
+    // No end and no next page under critiques the house does not send them.
+    expect(visitor.queryByText(/MORE · /)).toBeNull();
+    expect(visitor.queryByText('✦', { includeHiddenElements: true })).toBeNull();
+    await act(async () => { await fireEvent.press(visitor.getByLabelText('Sign in to read the critiques')); });
+    expect(mockAskIn).toHaveBeenCalledTimes(1);
+    visitor.unmount();
+
+    mockUser = { id: 'u1', username: 'me' };
+    mockRow = row(TAKE);
+    const member = await mount();
+    expect(member.queryByText('THE CRITIQUES ARE READ BY MEMBERS')).toBeNull();
+    expect(member.queryByLabelText('Sign in to read the critiques')).toBeNull();
+    // The thread's end, as it was.
+    expect(member.getByText('✦', { includeHiddenElements: true })).toBeTruthy();
   });
 });

@@ -18,6 +18,8 @@ const HOSTILE_BIO = 'critic\u200B‌‍ and \u202Earchivist';
 const HOSTILE_DETAILS = 'they wrote \u202Esomething\u2069 vile';
 
 // ── module mocks ──────────────────────────────────────────────────────────────
+// The tier door is drawn (its words' scale reads the window): this react-native stands up no window.
+jest.mock('../tierDoor', () => ({ showTierDoor: jest.fn() }));
 jest.mock('react-native', () => ({
   InteractionManager: { runAfterInteractions: jest.fn((cb: () => void) => cb()) },
   AppState: { addEventListener: jest.fn(() => ({ remove: jest.fn() })), currentState: 'active' },

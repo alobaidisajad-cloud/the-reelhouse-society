@@ -1481,3 +1481,32 @@ describe("the curator's name, tapped twice", () => {
     expect(mockRouterPush).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('a critique on its way (review round 10)', () => {
+  const open = async () => {
+    const r = mount({ critiqueCount: 3 });
+    await waitFor(() => expect(r.getByText('CRITIQUE')).toBeTruthy());
+    await act(async () => { await fireEvent.press(r.getByLabelText(/critiques?/i)); });
+    await waitFor(() => expect(r.getByText('THE CRITIQUES')).toBeTruthy());
+    return r;
+  };
+
+  it('holds the box while it files, so a second one typed meanwhile is never wiped by the first one landing', async () => {
+    let land!: (v: unknown) => void;
+    mockAddComment.mockImplementation(() => new Promise((res) => { land = res; }));
+    const r = await open();
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'The Others belongs here.'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
+    expect(mockAddComment).toHaveBeenCalledTimes(1);
+    // Filing: the box takes nothing, and what is typed is not shown as if it would be kept.
+    expect(r.getByLabelText('Stack critique').props.editable).toBe(false);
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'And so does Rebecca.'); });
+    expect(r.getByLabelText('Stack critique').props.value).toBe('');
+
+    // Filed: the box is the member's again.
+    await act(async () => { land({ id: 'real', user_id: 'u1', username: 'morpho', content: 'The Others belongs here.', created_at: '2026-01-01' }); });
+    expect(r.getByLabelText('Stack critique').props.editable).toBe(true);
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'And so does Rebecca.'); });
+    expect(r.getByLabelText('Stack critique').props.value).toBe('And so does Rebecca.');
+  });
+});

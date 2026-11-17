@@ -24,6 +24,8 @@ import { VaultService } from '@/src/services/VaultService';
 import type { DomainLog } from '@/src/types';
 
 const mockAnnounce = jest.fn();
+// The tier door is drawn (its words' scale reads the window): this react-native stands up no window.
+jest.mock('../../utils/tierDoor', () => ({ showTierDoor: jest.fn() }));
 jest.mock('react-native', () => ({
   InteractionManager: { runAfterInteractions: jest.fn((cb: () => void) => cb()) },
   AppState: { addEventListener: jest.fn(() => ({ remove: jest.fn() })), currentState: 'active' },

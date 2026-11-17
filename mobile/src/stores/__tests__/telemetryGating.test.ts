@@ -30,6 +30,8 @@ let mockDbQueue: { data: unknown; error: unknown }[] = [];
 /** Flipped per-test; InteractionService rejects with whatever this holds. */
 let mockEndorseError: unknown = null;
 
+// The tier door is drawn (its words' scale reads the window): this react-native stands up no window.
+jest.mock('../../utils/tierDoor', () => ({ showTierDoor: jest.fn() }));
 jest.mock('react-native', () => ({
     InteractionManager: { runAfterInteractions: jest.fn((cb: () => void) => cb()) },
     AppState: { addEventListener: jest.fn(() => ({ remove: jest.fn() })), currentState: 'active' },
@@ -499,7 +501,9 @@ describe('follows — the last uncovered store paths', () => {
     const empty = { data: null, error: null };
 
     it('followUser reports a genuine defect', async () => {
-        mockDbQueue = [profileRow, empty, { data: null, error: GENUINE_DEFECT }];
+        // A refusal (42501) is the member's standing or the owner's rule, said and not reported
+        // (review round 10): a follow's defect is a fault at the house.
+        mockDbQueue = [profileRow, empty, { data: null, error: { message: 'internal error', code: 'XX000' } }];
         await followUser('alpha');
         expect(captureError).toHaveBeenCalledWith(
             expect.anything(), { scope: 'socialSlice' },

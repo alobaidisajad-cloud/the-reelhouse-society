@@ -215,3 +215,23 @@ describe('a critic hidden since the page was read (review round 5)', () => {
     expect(r.getByText('A second look.')).toBeTruthy();
   });
 });
+
+describe('a critique on its way (review round 10)', () => {
+  it('holds the box while it files, so a second one typed meanwhile is never wiped by the first one landing', async () => {
+    let land!: (v: unknown) => void;
+    mockLogService.addLogComment.mockImplementation(() => new Promise((res) => { land = res; }));
+    const r = await mount();
+    await file(r);
+    expect(mockLogService.addLogComment).toHaveBeenCalledTimes(1);
+    // Filing: the box takes nothing, and what is typed is not shown as if it would be kept.
+    expect(r.getByLabelText('Write a critique on this log').props.editable).toBe(false);
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Write a critique on this log'), 'A fourth look.'); });
+    expect(r.getByLabelText('Write a critique on this log').props.value).toBe('');
+
+    // Filed: the box is the member's again.
+    await act(async () => { land({ id: 'c-new', user_id: ME, username: 'visitor', avatar_url: null, body: 'A third look.', created_at: '2026-09-27T10:00:00Z' }); });
+    expect(r.getByLabelText('Write a critique on this log').props.editable).toBe(true);
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Write a critique on this log'), 'A fourth look.'); });
+    expect(r.getByLabelText('Write a critique on this log').props.value).toBe('A fourth look.');
+  });
+});

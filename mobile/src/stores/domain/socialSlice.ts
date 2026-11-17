@@ -19,6 +19,7 @@ import TactileEngine from '../../utils/TactileEngine';
 import reelToast from '../../utils/reelToast';
 import { logger } from '../../utils/logger';
 import { isNetworkError } from '../../utils/networkError';
+import { isRefusedOnPurpose, saidOfARefusal } from '../../utils/saidOfARefusal';
 import { enqueueMutation, getOfflineQueue } from '../../utils/offlineQueue';
 import { isLookupSafeHandle } from '../../utils/handleGuard';
 import { queryClient } from '../../lib/queryClient';
@@ -281,8 +282,9 @@ export async function followUser(targetUsername: string, known?: { id: string; i
     if (stillSignedIn(userId)) _actedHere.delete(targetUsername);
     const msg = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as any).message) : String(err);
     // Mirrors the network check below exactly (both msg and err) so an offline
-    // failure — which is queued, not lost — is never reported as a defect.
-    if (!isNetworkError(msg) && !isNetworkError(err)) {
+    // failure — which is queued, not lost — is never reported as a defect; nor is the house's
+    // refusal for the member's standing.
+    if (!isNetworkError(msg) && !isNetworkError(err) && !isRefusedOnPurpose(err)) {
       captureError(err, { scope: 'socialSlice' });
     }
     // Neither queued nor undone for a member who has left: both would land on the next.
@@ -312,7 +314,9 @@ export async function followUser(targetUsername: string, known?: { id: string; i
     useSocialStore.getState().removeFollowing(targetUsername);
     useSocialStore.getState().removeRequested(targetUsername);
     persistFollowingToCache(userId);
-    reelToast.error(`Could not follow @${targetUsername}. Please try again.`);
+    // A silenced or suspended member is told so in the house's words, never "try again" over a
+    // refusal no try can change (review round 10).
+    reelToast.error(saidOfARefusal(err, `Could not follow @${targetUsername}. Please try again.`, `Could not follow @${targetUsername}. Please try again.`));
     return false;
   } finally {
     _inflightOps.delete(opKey);

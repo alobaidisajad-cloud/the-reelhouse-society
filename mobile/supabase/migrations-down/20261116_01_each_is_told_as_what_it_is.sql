@@ -1,7 +1,8 @@
 -- Undo of 20261116_01: the corridor counts every request at a host's door again, unnamed, a
 -- critique's certification is written under its filing's key, a salon's last word is the room's
 -- newest, whoever said it, the archive's search is counted on the phone, a banned row may be taken,
--- and the follow counts count the hidden. The notices written meanwhile keep
+-- the follow counts count the hidden, a muted seat reads no private salon, and records and stacks are
+-- read past the rule for the hidden. The notices written meanwhile keep
 -- the key they were written with: a phone that knows it groups them as a critique's, one that
 -- does not leaves them single.
 SET LOCAL lock_timeout = '2s';
@@ -155,3 +156,37 @@ CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS jso
     'following_count', (SELECT COUNT(*) FROM interactions WHERE user_id = p_user_id AND type = 'follow')
   );
 $$;
+
+-- A private salon's words, reactions, channel and roster to approved seats alone again.
+DROP POLICY IF EXISTS "Muted members read their private salon" ON public.lounge_messages;
+DROP POLICY IF EXISTS "Muted members read their private salon's reactions" ON public.lounge_message_reactions;
+CREATE OR REPLACE FUNCTION public.salon_channel_readable(p_topic text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $_$
+  SELECT CASE
+    WHEN p_topic ~ '^lounge-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN EXISTS (
+      SELECT 1 FROM public.lounges l
+       WHERE l.id = substr(p_topic, 8)::uuid
+         AND (l.is_private = false OR EXISTS (
+           SELECT 1 FROM public.lounge_members m
+            WHERE m.lounge_id = l.id AND m.user_id = auth.uid() AND m.status = 'approved')))
+    ELSE false
+  END
+$_$;
+CREATE OR REPLACE FUNCTION public.is_lounge_member_or_host(_lounge_id uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.lounges
+    WHERE id = _lounge_id AND creator_id = auth.uid()
+  ) OR EXISTS (
+    SELECT 1 FROM public.lounge_members
+    WHERE lounge_id = _lounge_id AND user_id = auth.uid() AND status = 'approved'
+  );
+$$;
+
+-- Records and stacks read past the house's rule for the hidden again.
+DROP POLICY IF EXISTS logs_hide_blocked ON public.logs;
+DROP POLICY IF EXISTS lists_hide_blocked ON public.lists;

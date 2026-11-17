@@ -1212,4 +1212,34 @@ describe('SAVE', () => {
     expect(toast().success).not.toHaveBeenCalled();
     r.unmount();
   });
+
+  // Review round 10: only the profile's own write counted as saving, so over a preferences save on
+  // its way SAVE stayed lit and BACK asked "Discard changes?" of changes already sent, which landed.
+  it('while the preferences are on their way SAVE is not lit and a way out does not ask to discard them', async () => {
+    let answer: (v: 'saved') => void = () => {};
+    mockSavePrefs.mockImplementation(() => new Promise<'saved'>((res) => { answer = res; }));
+    const r = await changeAndSave();
+    expect(mockSavePrefs).toHaveBeenCalledTimes(1);
+    const save = r.getByLabelText('Filing your amendments');
+    expect(save.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+    expect(mockPrevent.enabled).toBe(false);
+
+    // The house has them: amended, nothing left to save or to ask about.
+    await act(async () => { answer('saved'); });
+    expect(toast().success).toHaveBeenCalledWith('Your dossier has been amended.');
+    expect(r.getByLabelText('Save settings. Nothing has changed yet.')).toBeTruthy();
+    expect(mockPrevent.enabled).toBe(false);
+    r.unmount();
+  });
+
+  it('a preferences save refused lights SAVE again, and a way out asks before the changes go', async () => {
+    let refuse: (e: Error) => void = () => {};
+    mockSavePrefs.mockImplementation(() => new Promise<'saved'>((_res, rej) => { refuse = rej; }));
+    const r = await changeAndSave();
+    expect(mockPrevent.enabled).toBe(false);
+    await act(async () => { refuse(new Error('refused')); });
+    expect(r.getByLabelText('Save settings').props.accessibilityState).toEqual(expect.objectContaining({ disabled: false }));
+    expect(mockPrevent.enabled).toBe(true);
+    r.unmount();
+  });
 });

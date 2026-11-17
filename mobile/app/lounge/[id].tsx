@@ -677,7 +677,8 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   // salon, or a seat in a private one), with presence and typing from a seat
   // alone; joined again whenever either changes, without leaving the room. A
   // seat lost in a private salon leaves the channel at once.
-  const listening = !!activeLounge && (!activeLounge.is_private || myStatus === 'approved');
+  // A muted seat reads its private salon, as its MUTE says (review round 10): it listens as it reads.
+  const listening = !!activeLounge && (!activeLounge.is_private || myStatus === 'approved' || myStatus === 'muted');
   const seatedHere = myStatus === 'approved';
   // Heard only while in front: under another room, this room's channel wrote its presence and its
   // typists into that room's header, and that room's leaving took the channel from this one.

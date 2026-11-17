@@ -144,7 +144,8 @@ export interface LoungeState {
   /** What the open room missed, read and merged into what is held: never a replacement. */
   catchUpMessages: (loungeId: string) => Promise<void>;
   loadMoreMessages: (loungeId: string) => Promise<void>;
-  sendMessage: (loungeId: string, content: string, type?: string, meta?: LoungeMessageMeta) => Promise<boolean>;
+  /** True once the house has it; 'queued' when it waits for the connection (said by the store). */
+  sendMessage: (loungeId: string, content: string, type?: string, meta?: LoungeMessageMeta) => Promise<boolean | 'queued'>;
   /** `id` is the room's, made by the form once: a tap again after a lost answer finds the room it made. */
   createLounge: (name: string, description: string, isPrivate: boolean, id: string) => Promise<string | null>;
   /** Host-only: set (or clear with null) the salon cover — a TMDB backdrop path. */
@@ -1114,7 +1115,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         })) {
           flushOfflineQueue();
           reelToast('Message saved offline. Will send when connected.');
-          return true;
+          return 'queued';
         }
       }
       // Keep the dispatch and mark it failed so the transcript shows a discreet

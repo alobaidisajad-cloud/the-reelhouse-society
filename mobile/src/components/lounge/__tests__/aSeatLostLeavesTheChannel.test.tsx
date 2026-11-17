@@ -108,3 +108,40 @@ it('a member waiting at a private door joins nothing, then joins seated when the
   expect(mockSubscribe.mock.calls.map(([id, o]) => [id, o.seated])).toEqual([['00000011-0000-4000-8000-000000000011', true]]);
   r.unmount();
 });
+
+/**
+ * Review round 10: a muted seat in a private salon reads its words (the house lets it, as its MUTE
+ * says), and the room never joined the channel for it, so nothing new reached it while it read.
+ * It listens now as it reads, sharing no presence; a door asked at, or no seat, still hears nothing.
+ */
+describe('a muted seat in a private salon (review round 10)', () => {
+  it('hears the salon as it reads it, joining its channel without a presence; with no seat, nothing is heard', async () => {
+    mockRoster = [{ user_id: 'u1', status: 'muted' }];
+    const muted = await openRoom();
+    expect(mockSubscribe.mock.calls.map(([id, o]) => [id, o.seated])).toEqual([['00000011-0000-4000-8000-000000000011', false]]);
+    muted.unmount();
+    // The same salon for one with no seat and no request: its channel is the seated's.
+    mockSubscribe.mockClear();
+    mockRoster = [];
+    const none = await openRoom();
+    expect(mockSubscribe).not.toHaveBeenCalled();
+    none.unmount();
+  });
+
+  it('keeps hearing it when the mute is lifted, now seated, and leaves it when the seat is lost', async () => {
+    mockRoster = [{ user_id: 'u1', status: 'muted' }];
+    const r = await openRoom();
+    const first = mockSubscribe.mock.calls[0];
+    expect(first).toBeDefined();
+    mockRoster = [{ user_id: 'u1', status: 'approved' }];
+    await act(async () => { first![1].onMembership?.(); await new Promise((res) => setTimeout(res, 0)); });
+    expect(mockSubscribe.mock.calls.map(([, o]) => o.seated)).toEqual([false, true]);
+    const second = mockSubscribe.mock.calls[1];
+    expect(second).toBeDefined();
+    mockRoster = [];
+    await act(async () => { second![1].onMembership?.(); await new Promise((res) => setTimeout(res, 0)); });
+    expect(mockLeave).toHaveBeenCalledTimes(2);
+    expect(mockSubscribe).toHaveBeenCalledTimes(2);
+    r.unmount();
+  });
+});

@@ -579,6 +579,27 @@ export function useLogFlow() {
     /** The note field opens for a new log or rewatch, or once an edit's note has arrived. */
     const noteReady = !editLogId || noteHydratedFor === editLogId;
 
+    /**
+     * The rest of the form, taken up from a draft as it was left: kept as words, stars and a note alone,
+     * a review marked CONTAINS SPOILERS came back unmarked, and sealed, went out unveiled; a film left
+     * part-watched came back WATCHED, dated today, without its company (review round 10). WATCHED and
+     * REWATCHED are the film's own standing, read as the sheet opens; ABANDONED is the member's.
+     */
+    const takeUpForm = (d: LogDraft | null | undefined) => {
+        if (!d) return;
+        if (typeof d.isSpoiler === 'boolean') setIsSpoiler(d.isSpoiler);
+        if (d.status === 'abandoned') setStatus('abandoned');
+        if (typeof d.abandonedReason === 'string') setAbandonedReason(d.abandonedReason);
+        if (typeof d.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.date)) setDate(d.date);
+        if (typeof d.watchedWith === 'string') setWatchedWith(d.watchedWith);
+        if (typeof d.physicalMedia === 'string') setPhysicalMedia(d.physicalMedia);
+        if (d.autopsy && typeof d.autopsy === 'object') setAutopsy({ ...AUTOPSY_INIT, ...(d.autopsy as Record<string, number | null>) });
+        if (typeof d.altPoster === 'string' || d.altPoster === null) setAltPoster(d.altPoster as string | null);
+        if (typeof d.editorialHeader === 'string' || d.editorialHeader === null) setEditorialHeader(d.editorialHeader as string | null);
+        if (typeof d.dropCap === 'boolean') setDropCap(d.dropCap);
+        if (typeof d.pullQuote === 'string') setPullQuote(d.pullQuote);
+    };
+
     // Restore this member's draft (it holds PRIVATE notes, so it is keyed by
     // member in `memberDrafts`, never shared by whoever holds the phone).
     // Taken up as the form renders, once per member: its first frame is the draft.
@@ -609,20 +630,22 @@ export function useLogFlow() {
                         setPrivateNotes(parsed.privateNotes);
                         setNoteTouched(true);
                     }
+                    takeUpForm(parsed);
                 }
             } catch (err: unknown) { if (__DEV__) console.warn('[LogModal] draft restore failed:', err); }
         }
         // Opened on a film: that film's own draft, never another's.
         if (film?.id) {
-            const own = logDraftFor(user?.id, film.id) as { review?: string; rating?: number; privateNotes?: string } | null;
+            const own = logDraftFor(user?.id, film.id);
             if (own) {
-                if (own.review) setReview(own.review);
-                if (own.rating) setRating(own.rating);
-                if (own.privateNotes) {
+                if (typeof own.review === 'string' && own.review) setReview(own.review);
+                if (typeof own.rating === 'number' && own.rating) setRating(own.rating);
+                if (typeof own.privateNotes === 'string' && own.privateNotes) {
                     setDraftNoteFor(film.id);
                     setPrivateNotes(own.privateNotes);
                     setNoteTouched(true);
                 }
+                takeUpForm(own);
             }
         }
     }
@@ -675,6 +698,9 @@ export function useLogFlow() {
                     filmId, review, rating, privateNotes,
                     filmTitle, filmName,
                     filmPoster, filmYear,
+                    // The whole form (takeUpForm): its spoiler mark above all.
+                    isSpoiler, status, abandonedReason, date, watchedWith, physicalMedia, autopsy,
+                    altPoster, editorialHeader, dropCap, pullQuote,
                 });
             } else {
                 // This film's empty form clears this film's draft, never another film's.
@@ -685,7 +711,8 @@ export function useLogFlow() {
         if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
         draftTimerRef.current = setTimeout(() => { unsavedLog.current = null; save(); }, 1000);
         return () => { if (draftTimerRef.current) clearTimeout(draftTimerRef.current); };
-    }, [review, rating, privateNotes, filmId, filmTitle, filmName, filmPoster, filmYear, editLogId, user?.id]);
+    }, [review, rating, privateNotes, filmId, filmTitle, filmName, filmPoster, filmYear, editLogId, user?.id,
+        isSpoiler, status, abandonedReason, date, watchedWith, physicalMedia, autopsy, altPoster, editorialHeader, dropCap, pullQuote]);
     useEffect(() => () => {
         const save = unsavedLog.current;
         unsavedLog.current = null;
@@ -725,6 +752,7 @@ export function useLogFlow() {
             setDraftNoteFor(own?.privateNotes ? f.id : null);
             setPrivateNotes(own?.privateNotes ?? '');
             setNoteTouched(!!own?.privateNotes);
+            takeUpForm(own);
         }
         setFilm({ id: f.id, title: f.title, name: f.name, poster_path: f.poster_path, release_date: f.release_date });
         setStep(1);
@@ -778,7 +806,14 @@ export function useLogFlow() {
                     dropLogDraft(user?.id, filmId);
                 } });
             }
-            if (!isEditing) { unsavedLog.current = null; dropLogDraft(user?.id, filmId); }
+            // The draft's timer stopped too: a rewatch keeps no queue copy (onKeptAhead never runs), and
+            // a timer from the last tap, still out, wrote the sealed record back as YOUR UNSENT RECORD
+            // (review round 10).
+            if (!isEditing) {
+                if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+                unsavedLog.current = null;
+                dropLogDraft(user?.id, filmId);
+            }
             e2eTrace('log.seal.saved');
             // Sealed after the sheet went: the record is kept, and nothing walks back for it.
             if (!mountedRef.current) return;
@@ -807,7 +842,12 @@ export function useLogFlow() {
             e2eTrace('log.seal.failed', { code: (err as { code?: string })?.code ?? null, network: isNetworkError(err) });
             // Not sealed: the words are on the phone again, as the form still holds them.
             if (!editLogId && filmId && (review.trim() || rating > 0 || privateNotes.trim())) {
-                keepLogDraft(user?.id, { filmId, review, rating, privateNotes, filmTitle, filmName, filmPoster, filmYear });
+                // The whole form, as the draft above keeps it (takeUpForm): its spoiler mark above all.
+                keepLogDraft(user?.id, {
+                    filmId, review, rating, privateNotes, filmTitle, filmName, filmPoster, filmYear,
+                    isSpoiler, status, abandonedReason, date, watchedWith, physicalMedia, autopsy,
+                    altPoster, editorialHeader, dropCap, pullQuote,
+                });
             }
             // The core write's failures surface here; a network one is queued, not a defect.
             // Changed elsewhere since it was opened is an answer, not a fault.

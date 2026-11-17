@@ -305,7 +305,7 @@ export default function SocialModal() {
         setSharingTo(loungeId);
 
         try {
-            let success = false;
+            let success: boolean | 'queued' = false;
             const { sendMessage } = useLoungeStore.getState();
 
             if (mode === 'share-film' && params.shareFilmId) {
@@ -334,8 +334,11 @@ export default function SocialModal() {
             }
 
             if (isMounted.current && success) {
+                // Marked once it is the house's or the queue's, so it is not shared twice; said shared
+                // only once the house has it (a queued one was told "saved offline", then "Shared",
+                // review round 10).
                 setSharedTo(prev => new Set(prev).add(loungeId));
-                reelToast.success('Shared to lounge');
+                if (success === true) reelToast.success('Shared to lounge');
             }
             // No `else` toast, on purpose. `sendMessage` already speaks for every
             // failure a member can reach from here — the house's own sentence for

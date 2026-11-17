@@ -52,7 +52,7 @@ import { useClock } from '@/src/hooks/useClock';
 import Animated from 'react-native-reanimated';
 import { UnderSheet } from '@/src/components/layout/UnderSheet';
 import { nav } from '@/src/utils/typedRouter';
-import { useAskBeforeLeaving } from '@/src/hooks/useAskBeforeLeaving';
+import { useAskBeforeLeaving, useHoldWhileSending } from '@/src/hooks/useAskBeforeLeaving';
 import { TakenUpLine } from '@/src/components/TakenUpLine';
 
 /** The hour the filing will carry: from the shared clock, the desk is drawn again only when the hour turns. */
@@ -126,6 +126,9 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
     ? 'It stays as it was filed. The changes made here will be lost.'
     : 'This desk keeps no draft. Leave now and these words are gone.';
   useAskBeforeLeaving(unsaved, { title: LEAVE_TITLE, message: LEAVE_WORDS });
+  // Held while FILE IT is on its way: this desk keeps no draft, so a leave mid-send left the words to a
+  // refusal, said to a desk already gone.
+  useHoldWhileSending(sending);
 
   // The way out once the house has it: an amend back to the filing it amended; a filing to the
   // Dispatch the member came from (dismissed to, never replaced: a replace built a second tab

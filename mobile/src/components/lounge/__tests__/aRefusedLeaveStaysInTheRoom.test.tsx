@@ -12,6 +12,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 
 import { LoungeSettingsPanel } from '../LoungeSettingsPanel';
 import { useLoungeStore } from '@/src/stores/lounge';
+import { useAuthStore } from '@/src/stores/auth';
 
 /** The way home: to the Lounge tab already beneath the room (dismissed to, never replaced). */
 const mockHome = jest.fn();
@@ -35,10 +36,14 @@ beforeEach(() => {
 });
 afterEach(() => { jest.restoreAllMocks(); });
 
-const panel = (isCreator: boolean, onClose = jest.fn()) => ({
-  onClose,
-  r: render(<LoungeSettingsPanel lounge={room} members={[]} visible isCreator={isCreator} onClose={onClose} />),
-});
+// The member at the panel holds a seat: STEP OUT is offered only of a row held (review round 10),
+// and this panel was drawn over no rows at all.
+const ME = { id: 'ada', username: 'ada' };
+const panel = (isCreator: boolean, onClose = jest.fn()) => {
+  useAuthStore.setState({ user: isCreator ? { id: 'host', username: 'host' } : ME } as never);
+  const members = [{ user_id: 'host', status: 'approved', username: 'host' }, { user_id: 'ada', status: 'approved', username: 'ada' }] as never;
+  return { onClose, r: render(<LoungeSettingsPanel lounge={room} members={members} visible isCreator={isCreator} onClose={onClose} />) };
+};
 
 describe('the salon panel', () => {
   it('stays in the room when the house would not destroy it', async () => {

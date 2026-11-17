@@ -23,3 +23,15 @@ export function useAskBeforeLeaving(unsaved: boolean, {
     ]);
   });
 }
+
+/**
+ * A screen whose words are on their way to the house, and kept nowhere else, holds every way out
+ * until the house answers. Left mid-send, a refusal (a rule, a 500) lost them, and its "your words are
+ * still here" spoke to a screen already gone (review round 10). The answer comes in seconds: every
+ * request has its time limit, and a lost connection is kept for the queue at once.
+ */
+export function useHoldWhileSending(sending: boolean, message = 'The house has not answered yet. One moment.'): void {
+  usePreventRemove(sending, () => {
+    Alert.alert('Still on its way', message, [{ text: 'Wait' }]);
+  });
+}

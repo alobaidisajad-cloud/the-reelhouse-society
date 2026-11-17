@@ -19,6 +19,7 @@ import { softBreak, counted } from './paperText';
 import { DEPARTED_NAME } from '@/src/constants/departed';
 import { initialOf, isRTLText } from '@/src/utils/text';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
+import { askIn } from '@/src/utils/askIn';
 import { Credit, UNINKED, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { saidStruck, useStruck } from '@/src/components/StruckWords';
@@ -300,7 +301,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
  * reading, and replacing those with a spinner would throw away their position.
  */
 export const CritiqueFooter = memo(function CritiqueFooter({
-  shown, total, more = true, loading, loadingMore, onMore, failed, onRetry,
+  shown, total, more = true, loading, loadingMore, onMore, failed, onRetry, visitor = false,
 }: {
   shown: number; total: number;
   /** Whether the house may hold a next page (false once a short page has come). */
@@ -310,8 +311,20 @@ export const CritiqueFooter = memo(function CritiqueFooter({
   /** The last page asked for could not be read: said, and asked again (onRetry). */
   failed?: boolean;
   onRetry?: () => void;
+  /** No member signed in: the house gives a visitor no critiques, and the foot asks them in. */
+  visitor?: boolean;
 }) {
   const left = Math.max(0, total - shown);
+  if (visitor) {
+    return (
+      <View style={{ paddingVertical: 16, alignItems: 'center', gap: 6 }}>
+        <Text style={p.ballotFoot} {...scaledTextProps}>THE CRITIQUES ARE READ BY MEMBERS</Text>
+        <PressableScale onPress={() => askIn()} haptic="selection" accessibilityRole="button" accessibilityLabel="Sign in to read the critiques">
+          <Text style={[p.ballotFoot, { color: colors.sepia }]} {...scaledTextProps}>SIGN IN TO READ THEM</Text>
+        </PressableScale>
+      </View>
+    );
+  }
   if (loading) {
     return (
       <View style={{ paddingVertical: 16, alignItems: 'center' }}>

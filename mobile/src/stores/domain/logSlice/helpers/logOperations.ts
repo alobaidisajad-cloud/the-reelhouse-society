@@ -12,6 +12,8 @@ import { captureError } from '../../../../lib/sentry';
 import { isNetworkError } from '../../../../utils/networkError';
 import { enqueueMutation, getOfflineQueue, letSentGo } from '../../../../utils/offlineQueue';
 import reelToast from '../../../../utils/reelToast';
+import { showTierDoor } from '../../../../utils/tierDoor';
+import { isRefusedOnPurpose, saidOfARefusal } from '../../../../utils/saidOfARefusal';
 import { sanitizeInput } from '../../../../utils/sanitizeInput';
 import { pgLiteral } from '../../../../utils/keysetCursor';
 import { resolveTier } from '../../../../utils/tier';
@@ -57,6 +59,20 @@ export function cleanLogWords(l: { review?: string | null; pullQuote?: string | 
 }
 
 export const LOG_BUSY = 'LOG_BUSY' as const;
+
+/**
+ * A private note the house refused, its record filed: said, never only reported. A rank lapsed at
+ * the house, the phone still showing it, refused the note; the Vault took it back off the phone, the
+ * sheet said RECORD SEALED, and nothing told the member the note was gone (review round 10). A lost
+ * connection never reaches here: the Vault keeps the note for the queue.
+ */
+const NOTE_NOT_KEPT = 'The record is sealed, but its private note could not be kept.';
+function noteNotKept(e: unknown, scope: string, logId: string): void {
+    if (isNetworkError(e)) return;
+    if (showTierDoor(e, { also: 'The record is sealed; its private note was not kept.' })) return;
+    if (!isRefusedOnPurpose(e)) captureError(e, { scope, logId });
+    reelToast.error(saidOfARefusal(e, NOTE_NOT_KEPT, NOTE_NOT_KEPT));
+}
 /** An amendment found its record deleted elsewhere since the sheet was opened: nothing written. */
 export const LOG_GONE = 'LOG_GONE' as const;
 /** An amendment the house matched no row for, its record unmoved (a rule refused it): nothing written. */
@@ -311,8 +327,8 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
         try {
             await useVaultStore.getState().saveNote(existingLog.id, newViewingId, log.privateNotes);
         } catch (e) {
-            // The rewatch is filed; a refused note is reported where notes are written.
-            if (!isNetworkError(e)) captureError(e, { scope: 'applyRewatchMerge.saveNote', logId: existingLog.id });
+            // The rewatch is filed; the note's refusal is said.
+            noteNotKept(e, 'applyRewatchMerge.saveNote', existingLog.id);
         }
     }
 
@@ -463,7 +479,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 try {
                     await useVaultStore.getState().saveNote(newId, newViewingId, log.privateNotes);
                 } catch (e) {
-                    if (!isNetworkError(e)) captureError(e, { scope: 'addLogOp.saveNote', logId: newId });
+                    noteNotKept(e, 'addLogOp.saveNote', newId);
                 }
             }
             // Asked again: the note's save, when there is one, is a second wait.
@@ -771,8 +787,8 @@ export const updateLogOp = async (
                     try {
                         await useVaultStore.getState().saveNote(id, viewingId, updates.privateNotes ?? '');
                     } catch (e) {
-                        // The record is saved; the screen that asked reports the note.
-                        if (!isNetworkError(e)) captureError(e, { scope: 'updateLogOp.saveNote', logId: id });
+                        // The record is saved; the note's refusal is said.
+                        noteNotKept(e, 'updateLogOp.saveNote', id);
                     }
                 }
             }
