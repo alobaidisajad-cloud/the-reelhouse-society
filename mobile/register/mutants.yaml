@@ -6243,8 +6243,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/domain/socialSlice.ts
-        find: "      if ((filedAs === 'requested') !== isPrivate) {"
-        replace: "      if (false) {"
+        find: "      const filedAs: 'following' | 'requested' = filed?.type === 'follow_request' ? 'requested'\n        : filed?.type === 'follow' ? 'following'\n          : isPrivate ? 'requested' : 'following';"
+        replace: "      const filedAs: 'following' | 'requested' = filed === undefined ? 'requested' : isPrivate ? 'requested' : 'following';"
     proof: { file: src/stores/__tests__/aFollowTheHouseFiledAsARequestReadsRequested.test.ts, test: "FOLLOW on a member who turned private while their file was open reads REQUESTED, as the house filed it" }
 
   - id: shape-follow-filed-as-request-counted
@@ -6253,7 +6253,7 @@ mutants:
     edits:
       - file: src/hooks/useProfileController.ts
         find: "    if (success && !leaving && prevUser && !prevUser.is_social_private && useSocialStore.getState().isRequested(handle)) {"
-        replace: "    if (false) {"
+        replace: "    if (success && !leaving && prevUser && prevUser.is_social_private && useSocialStore.getState().isRequested(handle)) {"
     proof: { file: src/hooks/__tests__/aFollowFiledAsARequestCountsNoOne.test.tsx, test: "a follow the house filed as a request counts no one, and the file knows the member is private now" }
 
   - id: shape-gone-record-blamed-on-its-author
@@ -6280,7 +6280,7 @@ mutants:
     edits:
       - file: app/dispatch/[id].tsx
         find: "      if (!isNetworkError(e) && useAuthStore.getState().user?.id === memberId) {"
-        replace: "      if (false) {"
+        replace: "      if (isNetworkError(e) && useAuthStore.getState().user?.id === memberId) {"
     proof: { file: src/components/dispatch/__tests__/theReaderMeetsTheMemberAsTheyAreNow.test.tsx, test: "withdrawn by its author while it was written: the composer closes, and the page says it takes none" }
 
   - id: shape-gone-stack-kept-and-said-unsaved
@@ -6496,7 +6496,7 @@ mutants:
     edits:
       - file: src/hooks/useEditProfile.ts
         find: "        if (!(e instanceof HandleNotChanged) || !e.othersSaved) throw e;\n"
-        replace: "        throw e;\n"
+        replace: "        if (!(e instanceof HandleNotChanged) || e.othersSaved) throw e;\n"
     proof: { file: src/features/profile/__tests__/aRefusedRenameSaysTheRestIsSaved.test.tsx, test: "a handle taken meanwhile, with a bio amended: the bio is kept and said saved, the handle is the house's, and why" }
 
   - id: shape-handle-check-by-exact-case
