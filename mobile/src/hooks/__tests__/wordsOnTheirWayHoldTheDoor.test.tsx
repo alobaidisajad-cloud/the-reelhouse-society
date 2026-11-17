@@ -26,7 +26,8 @@ function Desk() {
 const house = () => ({
   _layout: () => <Stack />,
   index: () => <Text>the lobby</Text>,
-  desk: Desk,
+  // At a route the typed routes know (as unsavedWorkAsksBeforeLeaving draws its screen).
+  settings: Desk,
 });
 
 type Button = { text: string; onPress?: () => void };
@@ -39,14 +40,14 @@ it('a way out while the words are on their way stays, and says "Still on its way
   const asked = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   const app = renderRouter(house(), { initialUrl: '/' });
   await settle();
-  await act(() => router.push('/desk'));
+  await act(() => router.push('/settings'));
   await settle();
-  expect(app.getPathname()).toBe('/desk');
+  expect(app.getPathname()).toBe('/settings');
 
   // On their way: the pop is held, and the one thing said is to wait.
   await act(() => router.back());
   await settle();
-  expect(app.getPathname()).toBe('/desk');
+  expect(app.getPathname()).toBe('/settings');
   expect(asked).toHaveBeenCalledTimes(1);
   const call = asked.mock.calls[0];
   expect(call).toBeDefined();
@@ -56,7 +57,7 @@ it('a way out while the words are on their way stays, and says "Still on its way
   // WAIT keeps the member where their words are.
   await act(() => { buttons.find((b) => b.text === 'Wait')?.onPress?.(); });
   await settle();
-  expect(app.getPathname()).toBe('/desk');
+  expect(app.getPathname()).toBe('/settings');
 
   // Answered: nothing is held, and nothing asked.
   asked.mockClear();
