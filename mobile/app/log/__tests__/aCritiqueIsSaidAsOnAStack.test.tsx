@@ -219,7 +219,8 @@ describe('a critic hidden since the page was read (review round 5)', () => {
 describe('a critique on its way (review round 10)', () => {
   it('holds the box while it files, so a second one typed meanwhile is never wiped by the first one landing', async () => {
     let land!: (v: unknown) => void;
-    mockLogService.addLogComment.mockImplementation(() => new Promise((res) => { land = res; }));
+    // Held unanswered: called once below, so the mock is there.
+    mockLogService.addLogComment?.mockImplementation(() => new Promise((res) => { land = res; }));
     const r = await mount();
     await file(r);
     expect(mockLogService.addLogComment).toHaveBeenCalledTimes(1);
