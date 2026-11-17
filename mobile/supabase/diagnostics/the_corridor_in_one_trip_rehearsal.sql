@@ -10,8 +10,9 @@
 -- a seated member, a member at its door, a banned one and a muted one; the host
 -- has spoken there. Each reads the corridor: the host sees the request at the
 -- door and the room's faces; the seated member sees its faces and the word they
--- have not read; the one at the door, the banned and the muted see no face and
--- no unread word, and the room stays listed for all. A visitor may not ask.
+-- have not read; the one at the door and the banned see no face and no unread
+-- word, the muted no face but the word they have not read (a muted seat reads
+-- its salon), and the room stays listed for all. A visitor may not ask.
 -- Read each NOTICE as  case|expected|got ; the last line is the verdict, and
 -- any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
@@ -97,8 +98,9 @@ BEGIN
     'door:0,faces:0,unread:0,last word:0,listed:1', (SELECT got FROM rh_rows WHERE what = 'the one at the door'));
   PERFORM pg_temp.rh_case('a banned member sees no face and no word; the room is in the directory, with when it last spoke',
     'door:0,faces:0,unread:0,last word:1,listed:1', (SELECT got FROM rh_rows WHERE what = 'the banned'));
-  PERFORM pg_temp.rh_case('a muted member sees no face and no word; the room is in the directory, with when it last spoke',
-    'door:0,faces:0,unread:0,last word:1,listed:1', (SELECT got FROM rh_rows WHERE what = 'the muted'));
+  -- A muted seat reads its salon (20261116_01, review round 10): the word it has not read is counted.
+  PERFORM pg_temp.rh_case('a muted member sees no face, and the word they have not read; the room is in the directory, with when it last spoke',
+    'door:0,faces:0,unread:1,last word:1,listed:1', (SELECT got FROM rh_rows WHERE what = 'the muted'));
   PERFORM pg_temp.rh_case('a visitor may not ask', 'refused', (SELECT got FROM rh_rows WHERE what = 'a visitor'));
 END $$;
 
