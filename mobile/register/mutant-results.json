@@ -3748,7 +3748,7 @@
     "class": "WRITE-a-rollback-that-undoes-another-write",
     "mutant": "shape-rollback-undoes-another",
     "proof": "m1",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
     "verdict": "caught"
   },
   {
@@ -4568,6 +4568,160 @@
     "mutant": "shape-older-page-unread",
     "proof": "m19",
     "commit": "0ce58b7a1c288d1cca32150f506e72f8302b1eb5",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-draft-kept-in-part",
+    "mutant": "shape-draft-taken-up-without-its-spoiler",
+    "proof": "m1",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-draft-kept-in-part",
+    "mutant": "shape-refused-seal-keeps-a-part",
+    "proof": "m7",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "READ-a-muted-seat-shut-out-of-its-room",
+    "mutant": "shape-muted-seat-not-listening",
+    "proof": "m1",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-refusal-undone-unsaid",
+    "mutant": "shape-note-refusal-unsaid",
+    "proof": "m1",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-refusal-undone-unsaid",
+    "mutant": "shape-read-all-refusal-unsaid",
+    "proof": "m8",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-log-critique-box-open-while-filing",
+    "proof": "m11",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-let-go-unsent",
+    "mutant": "shape-stack-critique-box-open-while-filing",
+    "proof": "m12",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-way-out-that-keeps-what-was-let-go",
+    "mutant": "shape-rewatch-draft-timer-left-running",
+    "proof": "m3",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-one-failure-said-twice",
+    "mutant": "shape-offline-filing-said-by-the-store",
+    "proof": "m2",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-said-before-it-was-true",
+    "mutant": "shape-queued-share-said-shared",
+    "proof": "m15",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-said-before-it-was-true",
+    "mutant": "shape-queued-message-answered-sent",
+    "proof": "m16",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-stranger-at-a-members-door",
+    "mutant": "shape-visitor-ballot-does-nothing",
+    "proof": "m15",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "READ-a-foot-counting-what-it-cannot-read",
+    "mutant": "shape-visitor-foot-drawn-as-a-members",
+    "proof": "m4",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-an-unknown-said-as-a-count",
+    "mutant": "shape-guest-told-their-rows-as-the-count",
+    "proof": "m9",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-an-unknown-said-as-a-count",
+    "mutant": "shape-guest-offered-step-out",
+    "proof": "m9",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-refusal-told-as-anothers",
+    "mutant": "shape-follow-standing-said-try-again",
+    "proof": "m4",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-lost-on-the-way-out",
+    "mutant": "shape-desk-let-go-mid-send",
+    "proof": "m16",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-words-lost-on-the-way-out",
+    "mutant": "shape-amendment-let-go-mid-seal",
+    "proof": "m18",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "NAV-a-leave-asked-after-it-was-decided",
+    "mutant": "shape-settings-save-lit-over-preferences",
+    "proof": "m3",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-rollback-that-undoes-another-write",
+    "mutant": "shape-read-all-rollback-takes-the-opened",
+    "proof": "m4",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-rollback-that-undoes-another-write",
+    "mutant": "shape-opened-notice-unread-after-rollback",
+    "proof": "m6",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "verdict": "caught"
+  },
+  {
+    "class": "READ-an-answer-drawn-under-an-order-left",
+    "mutant": "shape-stacks-page-onto-the-old-list",
+    "proof": "m9",
+    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
     "verdict": "caught"
   }
 ]
