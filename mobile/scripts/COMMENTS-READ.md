@@ -1908,3 +1908,4 @@ without one). "Read" is the day its comments were last read against its code.
 | src/utils/goneFromTheHouse.ts | 2026-11-17 | new: isGoneFromTheHouse |
 | src/utils/recordsFilm.ts | 2026-11-17 | new: a record's film, for an older queued change |
 | test-utils/__tests__/theFakeAnswersAComputedField.test.ts | 2026-11-17 | new: the fake answers a computed field |
+| src/utils/__tests__/aGoneThingIsToldByItsWord.test.ts | 2026-11-17 | new: a thing gone is told by its word, never the owner's rule |

@@ -1416,22 +1416,22 @@ GRANT EXECUTE ON FUNCTION pg_temp.rh_d2_row(text) TO authenticated;
 
 -- S's pieces: a record, a stack, a seeking filing, a salon, an old essay.
 WITH r AS (INSERT INTO public.logs (user_id, film_id, film_title, watched_date)
-           VALUES (pg_temp.rh_d2('S'), 990001501, 'rh-d2 a record', current_date) RETURNING id)
+           VALUES ((SELECT pg_temp.rh_d2('S')), 990001501, 'rh-d2 a record', current_date) RETURNING id)
 INSERT INTO rh_d2_rows SELECT 'record', id FROM r;
 WITH r AS (INSERT INTO public.lists (user_id, title, is_private)
-           VALUES (pg_temp.rh_d2('S'), 'rh-d2 a stack', false) RETURNING id)
+           VALUES ((SELECT pg_temp.rh_d2('S')), 'rh-d2 a stack', false) RETURNING id)
 INSERT INTO rh_d2_rows SELECT 'stack', id FROM r;
 WITH r AS (INSERT INTO public.dispatch_posts (kind, user_id, author_username, body)
-           VALUES ('seeking', pg_temp.rh_d2('S'), (SELECT handle FROM rh_d2_who WHERE what = 'S'), 'rh-d2 S seeks a film') RETURNING id)
+           VALUES ('seeking', (SELECT pg_temp.rh_d2('S')), (SELECT handle FROM rh_d2_who WHERE what = 'S'), 'rh-d2 S seeks a film') RETURNING id)
 INSERT INTO rh_d2_rows SELECT 'seeking', id FROM r;
 WITH r AS (INSERT INTO public.lounges (name, creator_id, is_private)
-           VALUES ('rh-d2 a salon', pg_temp.rh_d2('S'), false) RETURNING id)
+           VALUES ('rh-d2 a salon', (SELECT pg_temp.rh_d2('S')), false) RETURNING id)
 INSERT INTO rh_d2_rows SELECT 'salon', id FROM r;
 INSERT INTO public.lounge_members (lounge_id, user_id, status)
 SELECT pg_temp.rh_d2_row('salon'), id, 'approved' FROM rh_d2_who
 ON CONFLICT DO NOTHING;
 WITH r AS (INSERT INTO public.dispatch_dossiers_legacy (user_id, author_username, title, excerpt, full_content)
-           VALUES (pg_temp.rh_d2('S'), (SELECT handle FROM rh_d2_who WHERE what = 'S'), 'rh-d2 S old essay', 'rh-d2 S', 'rh-d2 S') RETURNING id)
+           VALUES ((SELECT pg_temp.rh_d2('S')), (SELECT handle FROM rh_d2_who WHERE what = 'S'), 'rh-d2 S old essay', 'rh-d2 S', 'rh-d2 S') RETURNING id)
 INSERT INTO rh_d2_rows SELECT 'S old essay', id FROM r;
 
 -- What K and E each write for others; every word carries its writer's mark (rh-d2-K, rh-d2-E).
@@ -1441,29 +1441,29 @@ BEGIN
   FOR w IN SELECT what, id, handle FROM rh_d2_who WHERE what IN ('K', 'E') LOOP
     v_mark := 'rh-d2-' || w.what;
     INSERT INTO public.log_comments (log_id, user_id, username, body)
-    VALUES (pg_temp.rh_d2_row('record'), w.id, w.handle, v_mark || ' critique');
+    VALUES ((SELECT pg_temp.rh_d2_row('record')), w.id, w.handle, v_mark || ' critique');
     INSERT INTO public.list_comments (list_id, user_id, content)
-    VALUES (pg_temp.rh_d2_row('stack'), w.id, v_mark || ' note');
+    VALUES ((SELECT pg_temp.rh_d2_row('stack')), w.id, v_mark || ' note');
     INSERT INTO public.dispatch_comments (post_id, user_id, author_username, body)
-    VALUES (pg_temp.rh_d2_row('seeking'), w.id, w.handle, v_mark || ' answer') RETURNING id INTO v_id;
+    VALUES ((SELECT pg_temp.rh_d2_row('seeking')), w.id, w.handle, v_mark || ' answer') RETURNING id INTO v_id;
     INSERT INTO rh_d2_rows VALUES (w.what || ' answer', v_id);
     INSERT INTO public.dispatch_posts (kind, user_id, author_username, body)
     VALUES ('take', w.id, w.handle, v_mark || ' take') RETURNING id INTO v_id;
     INSERT INTO rh_d2_rows VALUES (w.what || ' take', v_id);
     INSERT INTO public.dispatch_comments (post_id, user_id, author_username, body)
-    VALUES (v_id, pg_temp.rh_d2('S'), (SELECT handle FROM rh_d2_who WHERE what = 'S'), 'rh-d2 S critiques a take');
+    VALUES (v_id, (SELECT pg_temp.rh_d2('S')), (SELECT handle FROM rh_d2_who WHERE what = 'S'), 'rh-d2 S critiques a take');
     INSERT INTO public.lounge_messages (lounge_id, user_id, content)
-    VALUES (pg_temp.rh_d2_row('salon'), w.id, v_mark || ' message') RETURNING id INTO v_id;
+    VALUES ((SELECT pg_temp.rh_d2_row('salon')), w.id, v_mark || ' message') RETURNING id INTO v_id;
     INSERT INTO rh_d2_rows VALUES (w.what || ' message', v_id);
     INSERT INTO public.lounge_messages (lounge_id, user_id, content, reply_to_id)
-    VALUES (pg_temp.rh_d2_row('salon'), pg_temp.rh_d2('S'), 'rh-d2 S replies', v_id) RETURNING id INTO v_id;
+    VALUES ((SELECT pg_temp.rh_d2_row('salon')), (SELECT pg_temp.rh_d2('S')), 'rh-d2 S replies', v_id) RETURNING id INTO v_id;
     INSERT INTO rh_d2_rows VALUES ('reply to ' || w.what, v_id);
     INSERT INTO public.lounge_messages (lounge_id, user_id, content, type, metadata)
-    VALUES (pg_temp.rh_d2_row('salon'), pg_temp.rh_d2('S'), 'rh-d2 S shares a stack', 'list_share',
+    VALUES ((SELECT pg_temp.rh_d2_row('salon')), (SELECT pg_temp.rh_d2('S')), 'rh-d2 S shares a stack', 'list_share',
             jsonb_build_object('listId', gen_random_uuid(), 'title', 'rh-d2 a stack', 'curator', w.handle)) RETURNING id INTO v_id;
     INSERT INTO rh_d2_rows VALUES ('card of ' || w.what, v_id);
     INSERT INTO public.dossier_comments_legacy (dossier_id, user_id, username, body)
-    VALUES (pg_temp.rh_d2_row('S old essay'), w.id, w.handle, v_mark || ' old critique');
+    VALUES ((SELECT pg_temp.rh_d2_row('S old essay')), w.id, w.handle, v_mark || ' old critique');
     INSERT INTO public.dispatch_dossiers_legacy (user_id, author_username, title, excerpt, full_content)
     VALUES (w.id, w.handle, v_mark || ' old essay', v_mark || ' old excerpt', v_mark || ' old words') RETURNING id INTO v_id;
     INSERT INTO rh_d2_rows VALUES (w.what || ' old essay', v_id);
@@ -1472,19 +1472,19 @@ END $$;
 
 -- E's ballot, voted in by S and closed (S is sent its notice), and E's critique the answer S took.
 WITH r AS (INSERT INTO public.dispatch_posts (kind, user_id, author_username, title, body, options, closes_at)
-           VALUES ('ballot', pg_temp.rh_d2('E'), (SELECT handle FROM rh_d2_who WHERE what = 'E'), 'rh-d2-E ballot',
+           VALUES ('ballot', (SELECT pg_temp.rh_d2('E')), (SELECT handle FROM rh_d2_who WHERE what = 'E'), 'rh-d2-E ballot',
                    'rh-d2-E ballot words',
                    '[{"film_id": 990001502, "title": "rh film one"}, {"film_id": 990001503, "title": "rh film two"}]'::jsonb,
                    now() + interval '1 day') RETURNING id)
 INSERT INTO rh_d2_rows SELECT 'E ballot', id FROM r;
-INSERT INTO public.dispatch_votes (post_id, user_id, option_index) VALUES (pg_temp.rh_d2_row('E ballot'), pg_temp.rh_d2('S'), 0);
-UPDATE public.dispatch_posts SET frozen_totals = '{"total": 1, "counts": {"0": 1}}'::jsonb WHERE id = pg_temp.rh_d2_row('E ballot');
-UPDATE public.dispatch_posts SET answer_id = pg_temp.rh_d2_row('E answer') WHERE id = pg_temp.rh_d2_row('seeking');
+INSERT INTO public.dispatch_votes (post_id, user_id, option_index) VALUES ((SELECT pg_temp.rh_d2_row('E ballot')), (SELECT pg_temp.rh_d2('S')), 0);
+UPDATE public.dispatch_posts SET frozen_totals = '{"total": 1, "counts": {"0": 1}}'::jsonb WHERE id = (SELECT pg_temp.rh_d2_row('E ballot'));
+UPDATE public.dispatch_posts SET answer_id = (SELECT pg_temp.rh_d2_row('E answer')) WHERE id = (SELECT pg_temp.rh_d2_row('seeking'));
 
 SELECT pg_temp.rh_need('the ballot''s notice to S, quoting its question',
-  (SELECT count(*) FROM public.notifications WHERE user_id = pg_temp.rh_d2('S') AND message LIKE '%rh-d2-E ballot%'), 1) AS done \gset rh_
+  (SELECT count(*) FROM public.notifications WHERE user_id = (SELECT pg_temp.rh_d2('S')) AND message LIKE '%rh-d2-E ballot%'), 1) AS done \gset rh_
 SELECT pg_temp.rh_need('S''s reply quoting E''s message',
-  (SELECT count(*) FROM public.lounge_messages WHERE id = pg_temp.rh_d2_row('reply to E') AND reply_to_content LIKE 'rh-d2-E%'), 1) AS done \gset rh_
+  (SELECT count(*) FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('reply to E')) AND reply_to_content LIKE 'rh-d2-E%'), 1) AS done \gset rh_
 
 -- ── K and E each close their account, signed in as the app signs in ─────────────────────────────
 CREATE FUNCTION pg_temp.rh_d2_try(stmt text) RETURNS text LANGUAGE plpgsql AS $$
@@ -1518,13 +1518,13 @@ $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_d2_words(text) TO authenticated;
 
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', pg_temp.rh_d2('K'), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT pg_temp.rh_d2('K')), 'role', 'authenticated')::text, true) AS done \gset rh_
 INSERT INTO rh_d2_got VALUES ('K leaves', pg_temp.rh_d2_try('SELECT public.request_account_deletion()'));
-SELECT set_config('request.jwt.claims', json_build_object('sub', pg_temp.rh_d2('E'), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT pg_temp.rh_d2('E')), 'role', 'authenticated')::text, true) AS done \gset rh_
 INSERT INTO rh_d2_got VALUES ('E leaves', pg_temp.rh_d2_try('SELECT public.request_account_deletion(p_erase_writing => true)'));
 
 -- ── What S reads afterwards, as S ──────────────────────────────────────────────────────────────
-SELECT set_config('request.jwt.claims', json_build_object('sub', pg_temp.rh_d2('S'), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT pg_temp.rh_d2('S')), 'role', 'authenticated')::text, true) AS done \gset rh_
 
 INSERT INTO rh_d2_read VALUES ('K words', pg_temp.rh_d2_words('rh-d2-K'));
 INSERT INTO rh_d2_read VALUES ('E words', pg_temp.rh_d2_words('rh-d2-E'));
@@ -1532,38 +1532,38 @@ INSERT INTO rh_d2_read VALUES ('K signed', concat_ws('|',
   (SELECT string_agg(DISTINCT username, ',') FROM public.log_comments WHERE body LIKE 'rh-d2-K%'),
   (SELECT bool_and(user_id IS NULL)::text FROM public.list_comments WHERE content LIKE 'rh-d2-K%'),
   (SELECT string_agg(DISTINCT author_username, ',') FROM public.dispatch_comments WHERE body LIKE 'rh-d2-K%'),
-  (SELECT author_username || ',' || (ended_at IS NULL)::text FROM public.dispatch_posts WHERE id = pg_temp.rh_d2_row('K take')),
-  (SELECT (user_id IS NULL)::text || ',' || (deleted_at IS NULL)::text FROM public.lounge_messages WHERE id = pg_temp.rh_d2_row('K message')),
-  (SELECT reply_to_username || ',' || (reply_to_content LIKE 'rh-d2-K%')::text FROM public.lounge_messages WHERE id = pg_temp.rh_d2_row('reply to K')),
+  (SELECT author_username || ',' || (ended_at IS NULL)::text FROM public.dispatch_posts WHERE id = (SELECT pg_temp.rh_d2_row('K take'))),
+  (SELECT (user_id IS NULL)::text || ',' || (deleted_at IS NULL)::text FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('K message'))),
+  (SELECT reply_to_username || ',' || (reply_to_content LIKE 'rh-d2-K%')::text FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('reply to K'))),
   (SELECT string_agg(DISTINCT username, ',') FROM public.dossier_comments_legacy WHERE body LIKE 'rh-d2-K%'),
-  (SELECT author_username FROM public.dispatch_dossiers_legacy WHERE id = pg_temp.rh_d2_row('K old essay')),
-  (SELECT (metadata ? 'curator')::text FROM public.lounge_messages WHERE id = pg_temp.rh_d2_row('card of K'))));
+  (SELECT author_username FROM public.dispatch_dossiers_legacy WHERE id = (SELECT pg_temp.rh_d2_row('K old essay'))),
+  (SELECT (metadata ? 'curator')::text FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('card of K')))));
 INSERT INTO rh_d2_read VALUES ('E take', (SELECT concat_ws('|', ended_by, (ended_at IS NOT NULL)::text, body, author_username)
-  FROM public.dispatch_posts WHERE id = pg_temp.rh_d2_row('E take')));
+  FROM public.dispatch_posts WHERE id = (SELECT pg_temp.rh_d2_row('E take'))));
 INSERT INTO rh_d2_read VALUES ('E take thread', (SELECT count(*)::text FROM public.dispatch_comments
-  WHERE post_id = pg_temp.rh_d2_row('E take') AND body = 'rh-d2 S critiques a take'));
+  WHERE post_id = (SELECT pg_temp.rh_d2_row('E take')) AND body = 'rh-d2 S critiques a take'));
 INSERT INTO rh_d2_read VALUES ('E message', (SELECT concat_ws('|', (deleted_at IS NOT NULL)::text, content, (user_id IS NULL)::text)
-  FROM public.lounge_messages WHERE id = pg_temp.rh_d2_row('E message')));
+  FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('E message'))));
 INSERT INTO rh_d2_read VALUES ('reply to E', (SELECT concat_ws('|', content, coalesce(reply_to_content, 'no quote'), reply_to_username)
-  FROM public.lounge_messages WHERE id = pg_temp.rh_d2_row('reply to E')));
+  FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('reply to E'))));
 INSERT INTO rh_d2_read VALUES ('E ballot notice', (SELECT string_agg(message || '|' || (metadata ? 'title')::text, ',')
-  FROM public.notifications WHERE user_id = pg_temp.rh_d2('S') AND metadata @> jsonb_build_object('dispatch_post_id', pg_temp.rh_d2_row('E ballot'))));
+  FROM public.notifications WHERE user_id = (SELECT pg_temp.rh_d2('S')) AND metadata @> jsonb_build_object('dispatch_post_id', (SELECT pg_temp.rh_d2_row('E ballot')))));
 INSERT INTO rh_d2_read VALUES ('S pages', concat_ws('|',
-  (SELECT count(*) FROM public.logs WHERE id = pg_temp.rh_d2_row('record')),
-  (SELECT count(*) FROM public.lists WHERE id = pg_temp.rh_d2_row('stack')),
-  (SELECT count(*) FROM public.dispatch_posts WHERE id = pg_temp.rh_d2_row('seeking') AND body = 'rh-d2 S seeks a film'),
-  (SELECT count(*) FROM public.lounge_messages WHERE lounge_id = pg_temp.rh_d2_row('salon') AND user_id = pg_temp.rh_d2('S'))));
+  (SELECT count(*) FROM public.logs WHERE id = (SELECT pg_temp.rh_d2_row('record'))),
+  (SELECT count(*) FROM public.lists WHERE id = (SELECT pg_temp.rh_d2_row('stack'))),
+  (SELECT count(*) FROM public.dispatch_posts WHERE id = (SELECT pg_temp.rh_d2_row('seeking')) AND body = 'rh-d2 S seeks a film'),
+  (SELECT count(*) FROM public.lounge_messages WHERE lounge_id = (SELECT pg_temp.rh_d2_row('salon')) AND user_id = (SELECT pg_temp.rh_d2('S')))));
 INSERT INTO rh_d2_read VALUES ('counts', concat_ws('|',
-  (SELECT critique_count FROM public.log_counts WHERE log_id = pg_temp.rh_d2_row('record')),
-  (SELECT comment_count FROM public.dispatch_posts WHERE id = pg_temp.rh_d2_row('seeking')),
-  (SELECT coalesce(answer_id::text, 'no answer') FROM public.dispatch_posts WHERE id = pg_temp.rh_d2_row('seeking')),
-  (SELECT comment_count FROM public.dispatch_posts WHERE id = pg_temp.rh_d2_row('E take'))));
+  (SELECT critique_count FROM public.log_counts WHERE log_id = (SELECT pg_temp.rh_d2_row('record'))),
+  (SELECT comment_count FROM public.dispatch_posts WHERE id = (SELECT pg_temp.rh_d2_row('seeking'))),
+  (SELECT coalesce(answer_id::text, 'no answer') FROM public.dispatch_posts WHERE id = (SELECT pg_temp.rh_d2_row('seeking'))),
+  (SELECT comment_count FROM public.dispatch_posts WHERE id = (SELECT pg_temp.rh_d2_row('E take')))));
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
 SELECT pg_temp.rh_case('a member closing their account with no choice (every client today) is gone', 'ok|true',
   (SELECT got FROM rh_d2_got WHERE what = 'K leaves') || '|'
-  || (NOT EXISTS (SELECT 1 FROM auth.users WHERE id = pg_temp.rh_d2('K')))::text) AS done \gset rh_
+  || (NOT EXISTS (SELECT 1 FROM auth.users WHERE id = (SELECT pg_temp.rh_d2('K'))))::text) AS done \gset rh_
 SELECT pg_temp.rh_case('and every word they wrote for others stays where it was: record, stack, filing, take, salon, quote, notice, old critique, old essay',
   '1|1|1|1|2|0|1|1', (SELECT got FROM rh_d2_read WHERE what = 'K words')) AS done \gset rh_
 SELECT pg_temp.rh_case('signed [deleted] everywhere, the old tables and a shared stack''s card included',
@@ -1571,7 +1571,7 @@ SELECT pg_temp.rh_case('signed [deleted] everywhere, the old tables and a shared
   (SELECT got FROM rh_d2_read WHERE what = 'K signed')) AS done \gset rh_
 SELECT pg_temp.rh_case('a member who chooses to erase their words is gone', 'ok|true',
   (SELECT got FROM rh_d2_got WHERE what = 'E leaves') || '|'
-  || (NOT EXISTS (SELECT 1 FROM auth.users WHERE id = pg_temp.rh_d2('E')))::text) AS done \gset rh_
+  || (NOT EXISTS (SELECT 1 FROM auth.users WHERE id = (SELECT pg_temp.rh_d2('E'))))::text) AS done \gset rh_
 SELECT pg_temp.rh_case('and no word of theirs is left for another member to read, anywhere',
   '0|0|0|0|0|0|0|0', (SELECT got FROM rh_d2_read WHERE what = 'E words')) AS done \gset rh_
 SELECT pg_temp.rh_case('their take reads as withdrawn by its author, emptied and unsigned',

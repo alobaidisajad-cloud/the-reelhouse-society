@@ -417,7 +417,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION public.a_critique_has_its_page() RETURNS trigger
     LANGUAGE plpgsql
-    SET search_path TO ''
+    SET search_path TO 'public', 'pg_temp'
     AS $$
 BEGIN
   IF TG_TABLE_NAME = 'log_comments' THEN
@@ -495,6 +495,7 @@ BEGIN
 END;
 $$;
 
+-- add-only (3): it only fixes: the grants the old call had (members and the service; never PUBLIC or a visitor), restated for the call it became; ADMIT replayed as the members themselves (A7 rehearsal), TestFlight build 41 reading no answer as before
 REVOKE ALL ON FUNCTION public.accept_follow_request(requester_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO service_role;
@@ -511,6 +512,7 @@ GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO service
 --   filing's own rules give it. New: no client before it asks for it.
 
 -- New, as the train's new functions are written (CREATE FUNCTION), and run again safely: dropped first.
+-- add-only (1): no shipped client uses it: a function this migration makes, named by no client before it (TestFlight build 41 and the website checked)
 DROP FUNCTION IF EXISTS public.ballot_tally(uuid);
 CREATE FUNCTION public.ballot_tally(p_post uuid) RETURNS jsonb
     LANGUAGE sql STABLE SECURITY DEFINER
@@ -537,6 +539,7 @@ CREATE FUNCTION public.ballot_tally(p_post uuid) RETURNS jsonb
   END
 $$;
 
+-- add-only (1): no shipped client uses it: a function this migration makes, named by no client before it (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION public.ballot_tally(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.ballot_tally(uuid) TO authenticated;
 
@@ -772,7 +775,7 @@ GRANT ALL ON FUNCTION public.year_viewings(uuid, integer, date, uuid) TO service
 -- caller cannot read counts nothing, whatever row is handed in.
 CREATE OR REPLACE FUNCTION public.critiques_seen(l public.logs) RETURNS integer
     LANGUAGE sql STABLE
-    SET search_path TO ''
+    SET search_path TO 'public', 'pg_temp'
     AS $$
   WITH me AS (SELECT public.hidden_authors() AS hidden)
   SELECT CASE
@@ -922,9 +925,12 @@ BEGIN
   RETURN NULL;
 END $$;
 
+-- add-only (1): no shipped client uses it: a trigger's function this migration makes, called by no client (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION public.a_certification_takes_its_notice() FROM PUBLIC, anon, authenticated;
 
+-- add-only (1): no shipped client uses it: a trigger this migration makes, dropped first only so the piece runs again (TestFlight build 41 and the website checked)
 DROP TRIGGER IF EXISTS a_certification_takes_its_notice ON public.interactions;
+-- add-only (3): it only fixes: a certification taken back takes its notice, every other write to interactions as before; replayed as the members themselves (B6 rehearsal)
 CREATE TRIGGER a_certification_takes_its_notice
   AFTER DELETE ON public.interactions
   FOR EACH ROW
@@ -953,9 +959,12 @@ BEGIN
   RETURN NULL;
 END $$;
 
+-- add-only (1): no shipped client uses it: a trigger's function this migration makes, called by no client (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION public.a_dispatch_certification_takes_its_notice() FROM PUBLIC, anon, authenticated;
 
+-- add-only (1): no shipped client uses it: a trigger this migration makes, dropped first only so the piece runs again (TestFlight build 41 and the website checked)
 DROP TRIGGER IF EXISTS a_certification_takes_its_notice ON public.dispatch_certifications;
+-- add-only (3): it only fixes: a Dispatch certification taken back takes its notice, every other write to dispatch_certifications as before; replayed as the members themselves (B6 rehearsal)
 CREATE TRIGGER a_certification_takes_its_notice
   AFTER DELETE ON public.dispatch_certifications
   FOR EACH ROW
@@ -1234,7 +1243,7 @@ $$;
 -- taken off again at once, so nothing else written in the same transaction carries it.
 CREATE FUNCTION public.rename_my_handle(p_new text) RETURNS text
     LANGUAGE plpgsql
-    SET search_path TO ''
+    SET search_path TO 'public', 'pg_temp'
     AS $$
 DECLARE
   v_me    uuid := auth.uid();
@@ -1257,6 +1266,7 @@ $$;
 
 -- add-only (1): no shipped client uses it: a function this migration makes, named by no client before it (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION public.rename_my_handle(text) FROM PUBLIC;
+-- add-only (1): no shipped client uses it: a function this migration makes, named by no client before it (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION public.rename_my_handle(text) FROM anon;
 GRANT EXECUTE ON FUNCTION public.rename_my_handle(text) TO authenticated, service_role;
 
@@ -1315,7 +1325,7 @@ DROP FUNCTION IF EXISTS public.a_deleted_stack_leaves_its_cards();
 
 CREATE FUNCTION public.a_deleted_stack_leaves_its_cards() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO ''
+    SET search_path TO 'public', 'pg_temp'
     AS $$
 BEGIN
   -- The house's own write, so a_keeps_what_it_is lets it (the sharer's message is not the deleter's).
