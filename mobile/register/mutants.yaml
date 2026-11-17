@@ -5902,7 +5902,7 @@ mutants:
     edits:
       - file: src/stores/lounge.ts
         find: "          const got = m.status === 'sending' || m.status === 'failed' ? answered.get(m.id) : undefined;"
-        replace: "          const got = undefined;"
+        replace: "          const got = undefined as LoungeMessage | undefined;"
     proof: { file: src/stores/__tests__/aMessageTheQueueDeliveredReadsAsSent.test.ts, test: "a message the house does not hold yet stays sending, and reads sent once the house holds it" }
 
   - id: shape-read-back-words-cut
@@ -5937,8 +5937,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/domain/logSlice/helpers/logOperations.ts
-        find: "                    if (kept === 'gone') error = Object.assign(new Error('updateLog: the record is gone'), { code: LOG_GONE });\n"
-        replace: ""
+        find: "                    if (kept === 'gone') error = Object.assign(new Error('updateLog: the record is gone'), { code: LOG_GONE });"
+        replace: "                    if (kept === 'gone') void LOG_GONE;"
     proof: { file: src/stores/__tests__/anAmendmentOfARecordGoneSaysItIsGone.test.ts, test: "a record deleted elsewhere: the amendment is refused as gone, the record leaves the phone, and nothing says \"Record amended\"" }
 
   - id: shape-ban-removed-past-unban
