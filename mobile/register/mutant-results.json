@@ -1884,13 +1884,6 @@
   },
   {
     "class": "SPEED-a-page-waits-for-what-it-knows",
-    "mutant": "shape-year-read-every-column",
-    "proof": "m20",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
-    "verdict": "caught"
-  },
-  {
-    "class": "SPEED-a-page-waits-for-what-it-knows",
     "mutant": "shape-year-forgotten-when-closed",
     "proof": "m18",
     "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",

@@ -1026,8 +1026,8 @@ mutants:
     source: shape
     edits:
       - file: app/lounge/[id].tsx
-        find: "  }, [id, requestMembership, refreshMembership, userId]);\n"
-        replace: "  }, [id, requestMembership, refreshMembership, user]);\n"
+        find: "  }, [id, requestMembership, refreshMembership, rereadRoom, userId]);\n"
+        replace: "  }, [id, requestMembership, refreshMembership, rereadRoom, user]);\n"
     proof: { file: src/utils/__tests__/aReadIsKeyedOnWhoNotTheObject.guard.test.ts, test: "keys every other hook on who reads, not on the object a session restore replaces" }
 
   - id: shape-lab-shows-error-dialogs
@@ -1205,7 +1205,7 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: ", lounge_message_reactions!lounge_message_reactions_message_id_fkey(message_id, reaction, user_id)';\n"
+        find: ", lounge_message_reactions!lounge_message_reactions_message_id_fkey(id, message_id, reaction, user_id)';\n"
         replace: "';\n"
     proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page: each word with its reactions, counted and marked mine, and nothing else asked" }
 
@@ -1313,8 +1313,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "      void loadViewerState([one], set, startedAs);\n"
-        replace: "      await loadViewerState([one], set, startedAs);\n"
+        find: "      void loadViewerState([one], set, startedAs).then(() => {"
+        replace: "      await loadViewerState([one], set, startedAs).then(() => {"
     proof: { file: src/stores/__tests__/dispatchGuards.test.ts, test: "is not waited for: the filing comes at once, its marks unknown until their read answers" }
 
   - id: shape-stamp-unknown-pressable
@@ -2504,18 +2504,9 @@ mutants:
     source: shape
     edits:
       - file: app/lounge/[id].tsx
-        find: "await supabase.from('lounges').select(ROOM_COLUMNS).eq('id', id).maybeSingle();"
-        replace: "await supabase.from('lounges').select('*').eq('id', id).maybeSingle();"
+        find: "const { data: loungeData, error } = await supabase.from('lounges').select(ROOM_COLUMNS).eq('id', id).maybeSingle();"
+        replace: "const { data: loungeData, error } = await supabase.from('lounges').select('*').eq('id', id).maybeSingle();"
     proof: { file: src/utils/__tests__/everyReadNamesItsColumns.guard.test.ts, test: "names its columns in every read of the app" }
-
-  - id: shape-year-read-every-column
-    class: SPEED-a-page-waits-for-what-it-knows
-    source: shape
-    edits:
-      - file: src/services/YearInCinemaService.ts
-        find: "export const YEAR_COLUMNS = 'id, film_id, film_title, poster_path, rating, watched_date, created_at';"
-        replace: "export const YEAR_COLUMNS = 'id, user_id, film_id, film_title, poster_path, rating, review, watched_date, viewing_history, created_at';"
-    proof: { file: src/services/__tests__/aYearIsReadToTheLast.test.ts, test: "reads the member's own year alone, by the seven columns it draws, each where the story looks" }
 
   - id: shape-year-forgotten-when-closed
     class: SPEED-a-page-waits-for-what-it-knows
@@ -4750,7 +4741,7 @@ mutants:
     source: shape
     edits:
       - file: app/log/[id].tsx
-        find: "  useFocusEffect(useCallback(() => { if (withdrawnHere) nav.back(); }, [withdrawnHere]));\n"
+        find: "  useFocusEffect(useCallback(() => { if (leavingHere) nav.back(); }, [leavingHere]));\n"
         replace: ""
     proof: { file: app/__tests__/aRecordWithdrawnLeavesItsPage.test.tsx, test: "the member's own record, withdrawn from its editor, takes its page with it, saying nothing" }
 
@@ -5245,7 +5236,7 @@ mutants:
     source: shape
     edits:
       - file: src/utils/endorsementGroupKey.ts
-        find: "      return `${people} certified your critique`;"
+        find: "      return several ? `${people} certified your critiques` : `${people} certified your critique`;"
         replace: "      return `${people} certified your filing`;"
     proof: { file: src/utils/__tests__/aCertifiedCritiqueIsCalledACritique.test.ts, test: "three certifications of a critique read \"3 members certified your critique\"" }
 
@@ -5577,8 +5568,8 @@ mutants:
     source: shape
     edits:
       - file: app/(admin)/tribunal.tsx
-        find: "      leaveTheDocket([reportId]);\n"
-        replace: ""
+        find: "    onSuccess: (_answer, { reportId }) => {\n      leaveTheDocket([reportId]);\n"
+        replace: "    onSuccess: (_answer, { reportId }) => {\n"
     proof: { file: app/(admin)/__tests__/tribunal.test.tsx, test: "a case judged on a page LOAD MORE CASES brought leaves the docket, though page one reads back unchanged" }
 
   - id: shape-read-mark-under-the-board
@@ -5892,8 +5883,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "      if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);\n      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error('Could not take a seat."
-        replace: "      if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error('Could not take a seat."
+        find: "      } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);\n      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error('Could not take a seat."
+        replace: "      } else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error('Could not take a seat."
     proof: { file: src/stores/__tests__/aBannedMemberIsToldTheDoorIsClosed.test.ts, test: "a banned member taking a seat is told the host has closed the salon to them, not to check their connection" }
 
   - id: shape-delivered-message-still-sending
@@ -6183,3 +6174,408 @@ mutants:
         find: "        const standing = get().lists;"
         replace: "        const standing = state.lists;"
     proof: { file: src/stores/domain/__tests__/aStacksNextPageLaysOntoTheListAsItStands.test.ts, test: "a stack made while the next page was on its way stays at the top, the page laid under the rest" }
+
+  - id: shape-gone-piece-offered-for-removal
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: " && !(ev?.data && !ev.data.found) && ("
+        replace: " && ("
+    proof: { file: app/(admin)/__tests__/aVerdictOnACaseThatMovedOnIsTold.test.tsx, test: "is not offered for removal once its evidence reads destroyed; the case can still be dismissed or judged" }
+
+  - id: shape-judged-case-kept-on-the-docket
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "      if (refused === 'ALREADY_JUDGED') {"
+        replace: "      if (false) {"
+    proof: { file: app/(admin)/__tests__/aVerdictOnACaseThatMovedOnIsTold.test.tsx, test: "leaves the docket when its dismissal is refused as already judged, and says so in plain words" }
+
+  - id: shape-bulk-dismissal-counts-the-selected
+    class: COPY-an-unknown-said-as-a-count
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "      reelToast(bulkDismissedWords(reportIds.length, closed));"
+        replace: "      reelToast(`${selectedReports.size} report(s) dismissed.`);"
+    proof: { file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "counts one, and says the other was judged by another moderator, when the house closed only one; both leave the docket" }
+
+  - id: shape-dissolved-salon-unread-on-return
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "      if (state === 'active' && id) { fetchMessages(id); markRead(id); rereadRoom(); }"
+        replace: "      if (state === 'active' && id) { fetchMessages(id); markRead(id); refreshMembership(); }"
+    proof: { file: src/components/lounge/__tests__/aDissolvedSalonSaysSoInTheRoom.test.tsx, test: "dissolved while the member was away, the room says so on their return, with its way out" }
+
+  - id: shape-salon-refusal-said-as-a-failure
+    class: COPY-a-refusal-told-as-anothers
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      if (!isNetworkError(error) && await saidWhyTheSalonRefused(loungeId, user.id)) return false;\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aDissolvedSalonIsSaidAsGone.test.ts, test: "in a salon its host dissolved is said as gone, and the salon leaves the corridor" }
+
+  - id: shape-gone-card-keeps-its-headline
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "  const gone = meta.gone === true;"
+        replace: "  const gone = false;"
+    proof: { file: src/components/lounge/__tests__/aCardWhosePieceIsGoneSaysSo.test.tsx, test: "a deleted stack's card is heard as withdrawn, and still offers to open it" }
+
+  - id: shape-reaction-withdrawal-dropped
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "            const kept = old?.id ? _reactionRows.get(old.id) : undefined;"
+        replace: "            const kept = undefined;"
+    proof: { file: src/stores/__tests__/aReactionTakenBackLeavesTheCount.test.ts, test: "a reaction read with the room, taken back by its member, leaves the count at once" }
+
+  - id: shape-follow-filed-as-request-shown-following
+    class: UI-a-guess-drawn-as-the-answer
+    source: shape
+    edits:
+      - file: src/stores/domain/socialSlice.ts
+        find: "      if ((filedAs === 'requested') !== isPrivate) {"
+        replace: "      if (false) {"
+    proof: { file: src/stores/__tests__/aFollowTheHouseFiledAsARequestReadsRequested.test.ts, test: "FOLLOW on a member who turned private while their file was open reads REQUESTED, as the house filed it" }
+
+  - id: shape-follow-filed-as-request-counted
+    class: UI-a-guess-drawn-as-the-answer
+    source: shape
+    edits:
+      - file: src/hooks/useProfileController.ts
+        find: "    if (success && !leaving && prevUser && !prevUser.is_social_private && useSocialStore.getState().isRequested(handle)) {"
+        replace: "    if (false) {"
+    proof: { file: src/hooks/__tests__/aFollowFiledAsARequestCountsNoOne.test.tsx, test: "a follow the house filed as a request counts no one, and the file knows the member is private now" }
+
+  - id: shape-gone-record-blamed-on-its-author
+    class: COPY-a-refusal-told-as-anothers
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "        if (isGoneFromTheHouse(error, 'LOG_GONE')) {"
+        replace: "        if (false) {"
+    proof: { file: app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx, test: "says the record is gone, never the author’s rule, lets it go, and the page leaves with the words kept" }
+
+  - id: shape-gone-stack-blamed-on-its-curator
+    class: COPY-a-refusal-told-as-anothers
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "        if (isGoneFromTheHouse(err, 'STACK_GONE')) {"
+        replace: "        if (false) {"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a stack deleted while the critique was written says it is gone, never the curator’s rule, and the page leaves (round 11)" }
+
+  - id: shape-ended-filing-critique-said-failed
+    class: COPY-a-refusal-told-as-anothers
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "      if (!isNetworkError(e) && useAuthStore.getState().user?.id === memberId) {"
+        replace: "      if (false) {"
+    proof: { file: src/components/dispatch/__tests__/theReaderMeetsTheMemberAsTheyAreNow.test.tsx, test: "withdrawn by its author while it was written: the composer closes, and the page says it takes none" }
+
+  - id: shape-gone-stack-kept-and-said-unsaved
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/domain/listSlice.ts
+        find: "            if (gone) {\n"
+        replace: "            if (false) {\n"
+    proof: { file: src/stores/__tests__/aStackDeletedElsewhereIsLetGo.test.ts, test: "an amendment of a stack deleted elsewhere is told it is gone, and the stack leaves the phone, never put back" }
+
+  - id: shape-queued-amendment-of-gone-stack-held
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "        if (isGoneFromTheHouse(saved.error)) {"
+        replace: "        if (false) {"
+    proof: { file: src/stores/__tests__/aStackDeletedElsewhereIsLetGo.test.ts, test: "an amendment queued offline that finds its stack deleted is let go of, here and on the phone, and said" }
+
+  - id: shape-withdrawn-request-felt-as-admitted
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: src/services/FollowRequestService.ts
+        find: "    return data === false ? 'gone' : 'admitted';"
+        replace: "    return 'admitted';"
+    proof: { file: src/hooks/__tests__/anAdmissionSaysWhetherAnyoneCameIn.test.tsx, test: "a request withdrawn meanwhile admits no one: no success is felt, and the member is told it is no longer at the door" }
+
+  - id: shape-member-link-read-by-handle
+    class: NAV-a-door-to-the-wrong-room
+    source: shape
+    edits:
+      - file: src/services/ProfileDataService.ts
+        find: "        ? supabase.from('profiles').select(columns).eq('id', id).maybeSingle()"
+        replace: "        ? supabase.from('profiles').select(columns).eq('username', username).maybeSingle()"
+    proof: { file: src/services/__tests__/aMemberIsFoundByTheIdTheLinkCarries.test.ts, test: "a link that names a member by their id opens that member after their rename, never the new holder of the handle" }
+
+  - id: shape-member-file-asked-by-handle
+    class: NAV-a-door-to-the-wrong-room
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "ProfileDataService.fetchProfile(username, isSelf, signal, isSelf ? undefined : knownId)"
+        replace: "ProfileDataService.fetchProfile(username, isSelf, signal)"
+    proof: { file: src/hooks/__tests__/aMemberFileIsFoundByItsId.test.tsx, test: "asks for another member's file by the id the link carried" }
+
+  - id: shape-renamed-member-route-left-on-old-handle
+    class: NAV-a-door-to-the-wrong-room
+    source: shape
+    edits:
+      - file: src/hooks/useProfileController.ts
+        find: "    if (renamedTo) navigation.setParams({ username: renamedTo } as never);\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/aMemberFileFollowsTheirRename.test.tsx, test: "a link to a member who renamed since moves the route to the handle they hold now" }
+
+  - id: shape-open-ballot-counted-as-none
+    class: COPY-an-unknown-said-as-a-count
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/PaperBallot.tsx
+        find: "  const revealed = closed || (cast && tallied);"
+        replace: "  const revealed = closed || cast;"
+    proof: { file: src/components/dispatch/__tests__/anOpenBallotPrintsNoCountItDoesNotKnow.test.tsx, test: "marked, with its count not yet known, says the ballot is cast and prints no number" }
+
+  - id: shape-cast-ballot-count-unread
+    class: COPY-an-unknown-said-as-a-count
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "          if (memberUnchanged(user.id)) void get().readTally(id);\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts, test: "a vote that lands reads the running count, with the member’s own ballot in it" }
+
+  - id: shape-rewatch-takes-the-night-before
+    class: DATA-a-viewing-counted-as-its-record
+    source: shape
+    edits:
+      - file: src/components/profile/profileComputed.ts
+        find: "    for (const earlier of Array.isArray(log?.viewingHistory) ? log.viewingHistory : []) {"
+        replace: "    for (const earlier of [] as { date?: string | null }[]) {"
+    proof: { file: src/components/profile/__tests__/aRewatchKeepsTheNightBeforeIt.test.tsx, test: "four films on four nights, then the second seen again tonight: five nights running" }
+
+  - id: shape-year-counts-viewings-as-films
+    class: DATA-a-viewing-counted-as-its-record
+    source: shape
+    edits:
+      - file: src/services/YearInCinemaService.ts
+        find: "  const total = films.size;"
+        replace: "  const total = seen.length;"
+    proof: { file: src/services/__tests__/aYearCountsEveryViewing.test.ts, test: "a film seen twice in one year is one film, counted in each month it was seen in" }
+
+  - id: shape-logged-film-verdict-left-unread
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "                if (!queuedOffline) void queryClient.invalidateQueries({ queryKey: ['film', Number(log.filmId)] });\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/theFilmsVerdictIsReadAfterLogging.test.ts, test: "a record the house files has its film read again, the verdict with it" }
+
+  - id: shape-queued-change-film-unread
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "    'add_log', 'mark_watched', 'update_log', 'remove_log', 'add_viewing', 'remove_viewing',"
+        replace: "    'add_log', 'mark_watched',"
+    proof: { file: src/stores/__tests__/theFilmsVerdictIsReadAfterEveryQueuedChange.test.ts, test: "a removal made offline names its film, and the film is read again once the queue delivers it" }
+
+  - id: shape-file-deaf-to-record-changes
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "  useEffect(() => (isSelf ? hearRecordsChanged(() => recordChanged()) : undefined), [isSelf]);"
+        replace: "  useEffect(() => undefined, [isSelf]);"
+    proof: { file: src/hooks/__tests__/theFileFollowsEveryRecordChange.test.tsx, test: "a seal on the member's own file reads the calendar in front again, and the summary with its run" }
+
+  - id: shape-old-handle-not-handed-over
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/hooks/useEditProfile.ts
+        find: "        saved = await ProfileService.updateProfile(user.id, updates, storedUsername);"
+        replace: "        saved = await ProfileService.updateProfile(user.id, updates);"
+    proof: { file: src/features/profile/__tests__/aRenameIsWhatTheHouseKept.test.tsx, test: "a rename the house kept is the handle the phone holds, and the handle given up is handed over" }
+
+  - id: shape-archive-critiques-counted-for-every-reader
+    class: READ-a-foot-counting-what-it-cannot-read
+    source: shape
+    edits:
+      - file: src/services/logCounts.ts
+        find: "export function logCountsSelect(viewerId: string | null | undefined): string {\n  return [viewerId ? LOG_SEEN_COUNTS_SELECT : LOG_COUNTS_SELECT,"
+        replace: "export function logCountsSelect(viewerId: string | null | undefined): string {\n  return [LOG_COUNTS_SELECT,"
+    proof: { file: src/services/__tests__/aRecordsCritiquesAreTheReaders.test.ts, test: "a member's archive card counts the critiques they may read, as the record's page does" }
+
+  - id: shape-visitor-asked-a-members-count
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: src/services/logCounts.ts
+        find: "export function logCertifySelect(viewerId: string | null | undefined): string {\n  return [viewerId ? LOG_SEEN_COUNTS_SELECT : LOG_COUNTS_SELECT,"
+        replace: "export function logCertifySelect(viewerId: string | null | undefined): string {\n  return [LOG_SEEN_COUNTS_SELECT,"
+    proof: { file: src/services/__tests__/aRecordsCritiquesAreTheReaders.test.ts, test: "a visitor asks for no count of their own: log_counts' count, as before" }
+
+  - id: shape-run-judged-on-the-houses-day
+    class: TIME-a-day-judged-on-the-houses-clock
+    source: shape
+    edits:
+      - file: src/components/profile/profileComputed.ts
+        find: "    if (houseRun) return runStillStanding(houseRun, yesterday);\n"
+        replace: ""
+    proof: { file: src/components/profile/__tests__/aRunIsJudgedOnTheMembersOwnDay.test.ts, test: "still stands at 8pm on the member's day after its last night, whatever the house's day" }
+
+  - id: shape-group-counts-notices-as-members
+    class: COPY-one-act-told-as-another
+    source: shape
+    edits:
+      - file: src/utils/groupNotifications.ts
+        find: "        message: describeGroup(members, parseGroupKey(key)?.kind ?? 'log', groupTitle(mostRecent), critiques > 1),"
+        replace: "        message: describeGroup(items.length, parseGroupKey(key)?.kind ?? 'log', groupTitle(mostRecent)),"
+    proof: { file: src/utils/__tests__/aGroupCountsMembersNotNotices.test.ts, test: "one member who certified, took it back and certified again, and another, are two members" }
+
+  - id: shape-door-days-past-their-measure
+    class: COPY-a-count-past-its-measure
+    source: shape
+    edits:
+      - file: src/hooks/useDoor.ts
+        find: "      days: Math.min(row.days ?? 0, daysNeed),"
+        replace: "      days: row.days ?? 0,"
+    proof: { file: src/components/dispatch/__tests__/theDoorIsShown.test.tsx, test: "caps the days a member at what is needed: a year in the house reads 2 OF 2" }
+
+  - id: shape-fresh-confirmation-said-sent
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: src/components/auth/PasswordRecoveryModal.tsx
+        find: "    sent: 'Your address may already be confirmed: if so, simply sign in with your password. If it is still waiting, a fresh link is on its way to',"
+        replace: "    sent: 'We sent a fresh confirmation link to',"
+    proof: { file: src/hooks/__tests__/aFreshConfirmationCarriesItsChallenge.test.tsx, test: "a fresh confirmation \"sent\" says the address may already be confirmed, and offers signing in" }
+
+  - id: shape-visitor-signed-in-marks-unread
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    void loadViewerState([...held.values()], set, memberId);\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aVisitorSignedInHasTheirMarksRead.test.ts, test: "a visitor who signs in has their marks read for every filing the store holds, the paper and the one opened" }
+
+  - id: shape-welcome-spent-before-shown
+    class: UI-a-modal-over-a-falling-modal
+    source: shape
+    edits:
+      - file: src/hooks/useInitiation.ts
+        find: "    if (!shouldInitiate({ userId: user.id, createdAt: user.created_at, alreadySeen: seen })) return;\n"
+        replace: "    if (!shouldInitiate({ userId: user.id, createdAt: user.created_at, alreadySeen: seen })) return;\n    storage.set(flagKey(user.id), true);\n"
+    proof: { file: src/hooks/__tests__/theWelcomeWaitsForTheLobby.test.tsx, test: "signed in under the sign-in sheet: nothing is shown or spent until the sheet has gone" }
+
+  - id: shape-rename-held-as-asked
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: src/hooks/useEditProfile.ts
+        find: "          username: heldHandle,\n"
+        replace: ""
+    proof: { file: src/features/profile/__tests__/aRenameIsWhatTheHouseKept.test.tsx, test: "a rename the house did not take: the phone holds the house's handle, says so, and plays no seal" }
+
+  - id: shape-half-saved-profile-said-failed
+    class: COPY-a-refusal-undone-unsaid
+    source: shape
+    edits:
+      - file: src/hooks/useEditProfile.ts
+        find: "        if (!(e instanceof HandleNotChanged) || !e.othersSaved) throw e;\n"
+        replace: "        throw e;\n"
+    proof: { file: src/features/profile/__tests__/aRefusedRenameSaysTheRestIsSaved.test.tsx, test: "a handle taken meanwhile, with a bio amended: the bio is kept and said saved, the handle is the house's, and why" }
+
+  - id: shape-handle-check-by-exact-case
+    class: DB-rule-kept-on-one-path
+    source: shape
+    edits:
+      - file: src/services/ProfileWriteService.ts
+        find: "      .ilike('username', pattern);"
+        replace: "      .eq('username', username);"
+    proof: { file: src/services/__tests__/aRefusedRenameKeepsWhatWasSaved.test.ts, test: "a handle held by another in other capitals is taken at the press, as the house judges it; an underscore is a letter" }
+
+  - id: shape-deletion-says-critiques-destroyed
+    class: COPY-one-act-told-as-another
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "      deleteAccountMessage({ eraseWriting: erase, paying }),"
+        replace: "      `This will permanently destroy your dossier, all logs, stacks, and critiques. This action is irreversible.${paying}`,"
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "left alone, the member is told their critiques, filings and salon messages stay, unsigned, and they stay" }
+
+  - id: shape-erase-choice-not-carried
+    class: COPY-one-act-told-as-another
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "      await AuthService.requestAccountDeletion(eraseWritingRef.current);"
+        replace: "      await AuthService.requestAccountDeletion();"
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "with the choice taken, the member is told their words go too, and the house is asked to erase them" }
+
+  - id: shape-failed-save-restores-the-departed
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/hooks/useUpdateUser.ts
+        find: "      if (!memberUnchanged(prevUser.id)) return;\n"
+        replace: "      if (!memberUnchanged(prevUser.id)) { useAuthStore.setState({ user: prevUser }); setSensitive(CACHE_KEYS.USER(prevUser.id), JSON.stringify(prevUser)); }\n"
+    proof: { file: src/hooks/__tests__/aFailedSaveLeavesNoOneBehind.test.tsx, test: "a save refused after the member signed out puts no one back, and writes nothing to the phone" }
+
+  - id: shape-failed-save-restores-the-whole-copy
+    class: WRITE-a-rollback-that-undoes-another-write
+    source: shape
+    edits:
+      - file: src/hooks/useUpdateUser.ts
+        find: "        const reverted = { ...now, ...undone } as User;"
+        replace: "        const reverted = { ...prevUser } as User;"
+    proof: { file: src/hooks/__tests__/aFailedSaveLeavesNoOneBehind.test.tsx, test: "a save refused undoes only what it set: a change made since stands" }
+
+  - id: shape-unchecked-code-called-invalid
+    class: COPY-a-refusal-told-as-anothers
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "      if (isMountedRef.current) setOtpError(unreached ? OTP_UNREACHED : 'That code is invalid or has expired.');"
+        replace: "      if (isMountedRef.current) setOtpError('That code is invalid or has expired.');"
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "is said as the house unreached, and the code typed is kept to try again" }
+
+  - id: shape-closed-account-kept-signed-in
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "        if (noProfileRow(profileError) && await accountIsClosed() && memberUnchanged(restoringFor)) {"
+        replace: "        if (false) {"
+    proof: { file: src/stores/__tests__/aClosedAccountIsSignedOutHere.test.ts, test: "a launch that finds no row for a valid session, the account gone at the house: signed out here, and told why" }
+
+  - id: shape-query-guard-refuses-computed-fields
+    class: TEST-mock-accepts-anything
+    source: shape
+    edits:
+      - file: src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts
+        find: "      if (computed.get(table)?.has(item)) continue;\n"
+        replace: ""
+    proof: { file: src/services/__tests__/aQueryAsksOnlyForWhatExists.test.ts, test: "passes a computed field the house has, as a function of that table's row, and nothing else by that name" }
+
+  - id: shape-fake-takes-another-tables-computed-field
+    class: TEST-mock-accepts-anything
+    source: shape
+    edits:
+      - file: test-utils/supabaseFake.ts
+        find: "const isComputed = (table: string, name: string): boolean => !!house().computed.get(table)?.has(name);"
+        replace: "const isComputed = (_table: string, name: string): boolean => [...house().computed.values()].some((fns) => fns.has(name));"
+    proof: { file: test-utils/__tests__/theFakeAnswersAComputedField.test.ts, test: "refuses a name no function of that table's row has, and a computed field it was told of that no table has" }
