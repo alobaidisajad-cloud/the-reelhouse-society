@@ -263,7 +263,7 @@ CREATE POLICY "Muted members read their private salon's reactions" ON public.lou
    FROM public.lounge_members m
   WHERE ((m.lounge_id = lounge_message_reactions.lounge_id) AND (m.user_id = auth.uid()) AND (m.status = 'muted'::text)))));
 
--- add-only (3): it only widens: a private salon's channel to its muted seats as well, every other reader as before (each_is_told_as_what_it_is_rehearsal.sql)
+-- add-only (3): it only widens: the calls replayed as the members themselves, a private salon's channel to its muted seats as well, every other reader as before (each_is_told_as_what_it_is_rehearsal.sql)
 CREATE OR REPLACE FUNCTION public.salon_channel_readable(p_topic text) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -279,7 +279,7 @@ CREATE OR REPLACE FUNCTION public.salon_channel_readable(p_topic text) RETURNS b
   END
 $_$;
 
--- add-only (3): it only widens: a salon's roster to its muted seats as well, the host and the approved as before (each_is_told_as_what_it_is_rehearsal.sql)
+-- add-only (3): it only widens: the calls replayed as the members themselves, a salon's roster to its muted seats as well, the host and the approved as before (each_is_told_as_what_it_is_rehearsal.sql)
 CREATE OR REPLACE FUNCTION public.is_lounge_member_or_host(_lounge_id uuid) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -299,5 +299,5 @@ $$;
 -- and stacks now take the house's one rule for the hidden, as those do.
 -- add-only (3): it only fixes: the calls replayed as the members themselves, a member's own records and stacks and another's as before, none of an author who blocked the reader (each_is_told_as_what_it_is_rehearsal.sql)
 CREATE POLICY logs_hide_blocked ON public.logs AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
--- add-only (3): it only fixes: as logs_hide_blocked, for stacks (each_is_told_as_what_it_is_rehearsal.sql)
+-- add-only (3): it only fixes: the reads replayed as the members themselves, as logs_hide_blocked, for stacks (each_is_told_as_what_it_is_rehearsal.sql)
 CREATE POLICY lists_hide_blocked ON public.lists AS RESTRICTIVE FOR SELECT TO authenticated, anon USING ((NOT COALESCE((user_id = ANY (( SELECT public.hidden_authors() AS hidden_authors)::uuid[])), false)));
