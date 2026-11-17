@@ -224,15 +224,12 @@ SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM
 INSERT INTO rh_counts SELECT false, public.get_profile_counts((SELECT id FROM rehearsal_members WHERE n = 1));
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-DO $
-BEGIN
-  PERFORM pg_temp.rh_case('a follower the member muted is not in their FOLLOWERS', '1',
-    ((SELECT (got ->> 'followers_count')::int FROM rh_counts WHERE NOT muted)
-      - (SELECT (got ->> 'followers_count')::int FROM rh_counts WHERE muted))::text);
-  PERFORM pg_temp.rh_case('nor one they follow and muted in their FOLLOWING', '1',
-    ((SELECT (got ->> 'following_count')::int FROM rh_counts WHERE NOT muted)
-      - (SELECT (got ->> 'following_count')::int FROM rh_counts WHERE muted))::text);
-END $;
+SELECT pg_temp.rh_case('a follower the member muted is not in their FOLLOWERS', '1',
+  ((SELECT (got ->> 'followers_count')::int FROM rh_counts WHERE NOT muted)
+    - (SELECT (got ->> 'followers_count')::int FROM rh_counts WHERE muted))::text) AS done \gset rh_
+SELECT pg_temp.rh_case('nor one they follow and muted in their FOLLOWING', '1',
+  ((SELECT (got ->> 'following_count')::int FROM rh_counts WHERE NOT muted)
+    - (SELECT (got ->> 'following_count')::int FROM rh_counts WHERE muted))::text) AS done \gset rh_
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;
