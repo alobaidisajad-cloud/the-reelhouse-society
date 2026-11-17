@@ -13,7 +13,7 @@ beforeEach(() => {
   // Far from any press another case heard: the span is kept by name, for the app's whole life.
   clock += 1_000_000;
   // The forward clock monotonicNow reads: performance's, or Date's where there is none (bare Hermes).
-  jest.spyOn(globalThis.performance?.now ? globalThis.performance : Date, 'now').mockImplementation(() => clock);
+  jest.spyOn('performance' in globalThis ? performance : Date, 'now').mockImplementation(() => clock);
 });
 afterEach(() => jest.restoreAllMocks());
 

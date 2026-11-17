@@ -78,8 +78,11 @@ function MemberRow({ member }: { member: NotableMember }) {
 
   return (
     <View style={s.row}>
+      {/* No halo: the rows stand a hairline apart, and a halo reached into the next row's profile and
+          FOLLOW. The row is 58pt tall on its own. */}
       <PressableScale
         style={s.rowMain}
+        hitSlop={null}
         onPress={goToProfile}
         haptic="light"
         pressedScale={0.98}
@@ -100,13 +103,15 @@ function MemberRow({ member }: { member: NotableMember }) {
         </View>
       </PressableScale>
 
-      <PressableScale
+      {/* Grown to 48 up and down inside its row, the stamp drawn as it was; across, it reaches the
+          8pt gap to the profile, which claims none of it. */}
+      <PressableScale room="vertical"
         style={[s.stamp, followed && s.stampDone]}
         onPress={onFollow}
         disabled={followed}
         haptic="selection"
         pressedScale={0.94}
-        hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+        hitSlop={{ top: 0, bottom: 0, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityLabel={isFollowing ? `Followed @${member.username}` : isRequested ? `Requested @${member.username}: waiting on their answer` : `Follow @${member.username}`}
       >

@@ -144,7 +144,9 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
               <Text style={s.founderText}>PROPRIETOR</Text>
             </View>
           ) : isCreator ? (
-            <PressableScale onPress={() => setExpanded(isOpen ? null : item.user_id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Member actions">
+            // A 48pt box with the mark where it was drawn, at its right edge: it takes the gap before
+            // it, and reaches into the row's padding without moving the row.
+            <PressableScale style={s.memberMore} hitSlop={null} onPress={() => setExpanded(isOpen ? null : item.user_id)} haptic="selection" accessibilityRole="button" accessibilityLabel="Member actions">
               <MoreHorizontal size={18} color={colors.fog} strokeWidth={1.5} />
             </PressableScale>
           ) : null}
@@ -152,7 +154,9 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
 
         {isCreator && !isFounder && isOpen && (
           <Arrive name="lounge.member-acts" duration={160} rise={8} style={s.actionRow}>
-            <PressableScale hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
+            {/* Each act grown to 48 up and down, drawn as it was: its halo there stopped at the 39pt row.
+                Across, half the 8pt gap to its neighbour. */}
+            <PressableScale room="vertical" hitSlop={{ top: 0, bottom: 0, left: 4, right: 4 }}
               style={s.memberAction}
               haptic="selection"
               onPress={() => muted
@@ -166,7 +170,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
             {/* Not over a ban: the banned hold no seat to be removed from, and the removal took their row,
                 and UNBAN with it, while the ban stood (review round 9). */}
             {banned ? null : (
-            <PressableScale hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
+            <PressableScale room="vertical" hitSlop={{ top: 0, bottom: 0, left: 4, right: 4 }}
               style={s.memberAction}
               haptic="selection"
               onPress={() => confirmAction('Remove member?', `@${uname} will leave the salon. They can return later.`, 'Remove', () => removeMember(lounge.id, item.user_id))}
@@ -176,7 +180,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
             </PressableScale>
             )}
 
-            <PressableScale hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
+            <PressableScale room="vertical" hitSlop={{ top: 0, bottom: 0, left: 4, right: 4 }}
               style={[s.memberAction, s.memberActionBan]}
               haptic="selection"
               onPress={() => banned
@@ -322,9 +326,14 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 2,
     backgroundColor: 'rgba(184,137,26,0.08)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)',
   },
+  // The member's acts: 48pt from the row's top edge, its mark centred on the row as it was drawn
+  // (the 8 at its top). Kept off the row's foot, where the open acts' own 48 begins.
+  memberMore: { width: 48, height: 48, marginTop: -12, marginBottom: -4, marginLeft: -10, paddingTop: 8, alignItems: 'flex-end', justifyContent: 'center' },
   founderText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
 
-  actionRow: { flexDirection: 'row', gap: 8, paddingBottom: 12, paddingLeft: 42 },
+  // 16 above the acts (the row's 12 and these 4) and 16 below: room for each act's 48 between the
+  // member's acts above and the next row's below, where a large text size slides BAN under them.
+  actionRow: { flexDirection: 'row', gap: 8, paddingTop: 4, paddingBottom: 16, paddingLeft: 42 },
   memberAction: {
     flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
     borderRadius: 7, paddingVertical: 7, paddingHorizontal: 11,
