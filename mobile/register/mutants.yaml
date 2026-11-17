@@ -4930,8 +4930,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/notificationStore.ts
-        find: "            if (stillSignedIn(startedAs)) set((state) => putBack(state, previousState.filter((n) => n.id === id)));"
-        replace: "            if (stillSignedIn(startedAs)) set({ notifications: previousState, _unreadCount: previousState.filter((n) => !n.read).length });"
+        find: "                set((state) => putBack(state, previousState.filter((n) => n.id === id)));"
+        replace: "                set({ notifications: previousState, _unreadCount: previousState.filter((n) => !n.read).length });"
     proof: { file: src/stores/__tests__/aFailedWriteUndoesOnlyItsOwnNotice.test.ts, test: "two notices dismissed, both refused: both come back, in their places, and both are counted" }
 
   - id: shape-stack-refresh-blames-the-critiques
@@ -5985,3 +5985,201 @@ mutants:
         find: "                    .map(n => (!n.read && (allReadSince || since(readHere, n.id)) ? { ...n, read: true } : n));"
         replace: "                    .map(n => n);"
     proof: { file: src/stores/__tests__/anOlderPageCarriesTheActsMadeMeanwhile.test.ts, test: "READ ALL tapped while an older page is on its way: that page comes in read, and one asked after is the house’s word" }
+
+  - id: shape-draft-taken-up-without-its-spoiler
+    class: WRITE-a-draft-kept-in-part
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "        if (typeof d.isSpoiler === 'boolean') setIsSpoiler(d.isSpoiler);\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "a review marked CONTAINS SPOILERS, left unsent, comes back marked when the phone reopens the sheet, and is sealed veiled" }
+
+  - id: shape-refused-seal-keeps-a-part
+    class: WRITE-a-draft-kept-in-part
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "                keepLogDraft(user?.id, {\n                    filmId, review, rating, privateNotes, filmTitle, filmName, filmPoster, filmYear,\n                    isSpoiler, status, abandonedReason, date, watchedWith, physicalMedia, autopsy,\n                    altPoster, editorialHeader, dropCap, pullQuote,\n                });"
+        replace: "                keepLogDraft(user?.id, { filmId, review, rating, privateNotes, filmTitle, filmName, filmPoster, filmYear });"
+    proof: { file: src/hooks/__tests__/aRefusedSealKeepsTheWholeForm.test.tsx, test: "a seal refused puts the draft back with its spoiler mark, and the sheet reopened shows it marked" }
+
+  - id: shape-muted-seat-not-listening
+    class: READ-a-muted-seat-shut-out-of-its-room
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "(!activeLounge.is_private || myStatus === 'approved' || myStatus === 'muted');"
+        replace: "(!activeLounge.is_private || myStatus === 'approved');"
+    proof: { file: src/components/lounge/__tests__/aSeatLostLeavesTheChannel.test.tsx, test: "hears the salon as it reads it, joining its channel without a presence; with no seat, nothing is heard" }
+
+  - id: shape-note-refusal-unsaid
+    class: COPY-a-refusal-undone-unsaid
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "                    noteNotKept(e, 'addLogOp.saveNote', newId);"
+        replace: "                    if (!isNetworkError(e)) captureError(e, { scope: 'addLogOp.saveNote', logId: newId });"
+    proof: { file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "on a new record: the record is filed, and the member is told its note was not kept" }
+
+  - id: shape-read-all-refusal-unsaid
+    class: COPY-a-refusal-undone-unsaid
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "                reelToast.error('The notices could not be marked read. Try again.');\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aNoticeUndoneIsSaid.test.ts, test: "READ ALL refused: the notices are unread again, and the member is told it did not take; one taken says nothing" }
+
+  - id: shape-log-critique-box-open-while-filing
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: src/components/log/LogComments.tsx
+        find: "            editable={!posting}\n"
+        replace: ""
+    proof: { file: app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx, test: "holds the box while it files, so a second one typed meanwhile is never wiped by the first one landing" }
+
+  - id: shape-stack-critique-box-open-while-filing
+    class: WRITE-words-let-go-unsent
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "                  editable={!submittingComment}\n"
+        replace: ""
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "holds the box while it files, so a second one typed meanwhile is never wiped by the first one landing" }
+
+  - id: shape-rewatch-draft-timer-left-running
+    class: WRITE-a-way-out-that-keeps-what-was-let-go
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "            if (!isEditing) {\n                if (draftTimerRef.current) clearTimeout(draftTimerRef.current);\n"
+        replace: "            if (!isEditing) {\n"
+    proof: { file: src/hooks/__tests__/aRewatchSealedLeavesNoDraft.test.tsx, test: "a rewatch sealed within a second of the last word leaves no unsent record behind, and the next opening offers none" }
+
+  - id: shape-offline-filing-said-by-the-store
+    class: COPY-one-failure-said-twice
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "          // Said by the desk that filed it (`offline`): said here too, the toast bus queued the copy\n          // and the member heard it twice (review round 10).\n"
+        replace: "          reelToast.success('Filed. It goes out when the wire is back.');\n"
+    proof: { file: src/components/dispatch/__tests__/aFilingKeptOfflineIsSaidOnce.test.tsx, test: "a take filed with no connection is said kept once, by the desk, never twice" }
+
+  - id: shape-queued-share-said-shared
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: app/(modals)/social-modal.tsx
+        find: "                if (success === true) reelToast.success('Shared to lounge');"
+        replace: "                reelToast.success('Shared to lounge');"
+    proof: { file: app/(modals)/__tests__/aShareKeptOfflineIsNotSaidShared.test.tsx, test: "a share kept for the wire marks the salon and never says \"Shared to lounge\"; one the house took says it" }
+
+  - id: shape-queued-message-answered-sent
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "          return 'queued';"
+        replace: "          return true;"
+    proof: { file: src/stores/__tests__/aMessageKeptOfflineIsSaidKept.test.ts, test: "a message sent with no connection answers that it is kept for the wire, never that the house has it; one the house took answers true" }
+
+  - id: shape-visitor-ballot-does-nothing
+    class: NAV-a-stranger-at-a-members-door
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "onVote={me ? (i) => useDispatch.getState().vote(live.id, i) : () => askIn()}"
+        replace: "onVote={me ? (i) => useDispatch.getState().vote(live.id, i) : undefined}"
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "their mark on a ballot asks them in, and casts nothing" }
+
+  - id: shape-visitor-foot-drawn-as-a-members
+    class: READ-a-foot-counting-what-it-cannot-read
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "              visitor={!me}\n"
+        replace: ""
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "are told the critiques are read by members, and SIGN IN TO READ THEM asks them in; a member reads them as before" }
+
+  - id: shape-guest-told-their-rows-as-the-count
+    class: COPY-an-unknown-said-as-a-count
+    source: shape
+    edits:
+      - file: src/components/lounge/LoungeSettingsPanel.tsx
+        find: "MEMBERS ({readsRoster ? roster.length : (lounge.member_count ?? 0)})"
+        replace: "MEMBERS ({roster.length})"
+    proof: { file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a guest with no seat is told the salon’s count and that the roster is kept for those seated, and is offered no STEP OUT" }
+
+  - id: shape-guest-offered-step-out
+    class: COPY-an-unknown-said-as-a-count
+    source: shape
+    edits:
+      - file: src/components/lounge/LoungeSettingsPanel.tsx
+        find: "              ) : !myRow || iAmBanned ? null : ("
+        replace: "              ) : iAmBanned ? null : ("
+    proof: { file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a guest with no seat is told the salon’s count and that the roster is kept for those seated, and is offered no STEP OUT" }
+
+  - id: shape-follow-standing-said-try-again
+    class: COPY-a-refusal-told-as-anothers
+    source: shape
+    edits:
+      - file: src/stores/domain/socialSlice.ts
+        find: "    reelToast.error(saidOfARefusal(err, `Could not follow @${targetUsername}. Please try again.`, `Could not follow @${targetUsername}. Please try again.`));"
+        replace: "    reelToast.error(`Could not follow @${targetUsername}. Please try again.`);"
+    proof: { file: src/stores/__tests__/aFollowRefusedForYourStandingIsSaid.test.ts, test: "a silenced member’s follow is refused in the house’s words, taken back, and never reported as a defect" }
+
+  - id: shape-desk-let-go-mid-send
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "  useHoldWhileSending(sending);"
+        replace: "  useHoldWhileSending(false);"
+    proof: { file: src/components/dispatch/__tests__/aDeskHoldsItsWordsWhileTheyGo.test.tsx, test: "a way out while FILE IT is on its way is held: \"Still on its way\", and only Wait; once filed, nothing holds" }
+
+  - id: shape-amendment-let-go-mid-seal
+    class: WRITE-words-lost-on-the-way-out
+    source: shape
+    edits:
+      - file: app/(modals)/log-modal.tsx
+        find: "    useHoldWhileSending(isEditing && submitting && !flow.sealed);"
+        replace: "    useHoldWhileSending(false);"
+    proof: { file: app/(modals)/__tests__/anAmendmentSealingHoldsTheSheet.test.tsx, test: "while it seals, every way out of the sheet stays and says \"Still on its way\"; a refusal lets it go, the words still there" }
+
+  - id: shape-settings-save-lit-over-preferences
+    class: NAV-a-leave-asked-after-it-was-decided
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "    setFiling(true);\n"
+        replace: ""
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "while the preferences are on their way SAVE is not lit and a way out does not ask to discard them" }
+
+  - id: shape-read-all-rollback-takes-the-opened
+    class: WRITE-a-rollback-that-undoes-another-write
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "previousState.filter((n) => !n.read && !((readHere.get(n.id) ?? Infinity) < Infinity))"
+        replace: "previousState.filter((n) => !n.read)"
+    proof: { file: src/stores/__tests__/aNoticeUndoneIsSaid.test.ts, test: "a notice opened while READ ALL was on its way stays read when READ ALL is refused; the rest are unread again" }
+
+  - id: shape-opened-notice-unread-after-rollback
+    class: WRITE-a-rollback-that-undoes-another-write
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "            if (stillSignedIn(startedAs) && get().notifications.some((n) => n.id === id && !n.read)) {"
+        replace: "            if (false) {"
+    proof: { file: src/stores/__tests__/aReadAllRefusedTakesBackWhatTheHouseHasNot.test.ts, test: "READ ALL unreached, the notice opened meanwhile taken: it alone is read, the bell at 1" }
+
+  - id: shape-stacks-page-onto-the-old-list
+    class: READ-an-answer-drawn-under-an-order-left
+    source: shape
+    edits:
+      - file: src/stores/domain/listSlice.ts
+        find: "        const standing = get().lists;"
+        replace: "        const standing = state.lists;"
+    proof: { file: src/stores/domain/__tests__/aStacksNextPageLaysOntoTheListAsItStands.test.ts, test: "a stack made while the next page was on its way stays at the top, the page laid under the rest" }

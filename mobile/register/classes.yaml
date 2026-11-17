@@ -1604,7 +1604,7 @@ classes:
     seriousness: behaviour
     area: copy
     status: OPEN
-    count: 6
+    count: 7
     source: { kind: reviewer, ref: "the first minute, read as a new member (2026-10-24): lobby-empty drawn and read" }
     methods:
       - { kind: running, file: src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx, test: "to a member with nothing logged, or whose ledger is still read: never that the house has seen their taste" }
@@ -1621,7 +1621,9 @@ classes:
       - { kind: running, file: src/components/lounge/__tests__/theCorridorWaitsForTheHousesAnswer.test.tsx, test: "under \"The house could not be searched\", \"No salon matches that.\" is not said" }
       - { kind: running, file: src/stores/__tests__/anAmendmentOfARecordGoneSaysItIsGone.test.ts, test: "a record deleted elsewhere: the amendment is refused as gone, the record leaves the phone, and nothing says \"Record amended\"" }
       - { kind: running, file: src/stores/__tests__/anAmendmentOfARecordGoneSaysItIsGone.test.ts, test: "a record a rule keeps: the amendment is refused, the record stays as it was, and nothing says \"Record amended\"" }
-    fix: "the line is said only once the member's ledger is read whole and holds a film (marksLedger); before, the bill says what is true of anyone: The house keeps its best seats / for those who keep the record. The Lobby's other words about a member are true by their rank (mutant shape-taste-claimed-unseen); SAVE files the changed preferences through the house's key-by-key merge (savePreferences), keys changed from what the form opened with, and says amended, kept on this phone, or refused (mutants shape-save-files-nothing, shape-save-kept-said-amended, shape-save-sends-untouched-keys); the Reel's SAVE leaves the saying to the store, once (mutant shape-deck-says-saved-at-the-tap); SAVE files the visibility (no offline path) before the preferences, so its \"changes reverted\" never stands over preferences kept to send, and a refusal after it says which went (mutant shape-visibility-filed-after-kept-preferences); round 6: a log page’s SAVE says nothing at the tap; the store says how it went, once (mutants shape-removal-said-at-the-tap, shape-save-said-at-the-tap); \"No salon matches that.\" waits for the house's answer, and an amendment the house wrote nowhere is never sealed or announced (mutants shape-no-match-before-the-answer, shape-amend-sealed-over-nothing)"
+      - { kind: running, file: app/(modals)/__tests__/aShareKeptOfflineIsNotSaidShared.test.tsx, test: "a share kept for the wire marks the salon and never says \"Shared to lounge\"; one the house took says it" }
+      - { kind: running, file: src/stores/__tests__/aMessageKeptOfflineIsSaidKept.test.ts, test: "a message sent with no connection answers that it is kept for the wire, never that the house has it; one the house took answers true" }
+    fix: "the line is said only once the member's ledger is read whole and holds a film (marksLedger); before, the bill says what is true of anyone: The house keeps its best seats / for those who keep the record. The Lobby's other words about a member are true by their rank (mutant shape-taste-claimed-unseen); SAVE files the changed preferences through the house's key-by-key merge (savePreferences), keys changed from what the form opened with, and says amended, kept on this phone, or refused (mutants shape-save-files-nothing, shape-save-kept-said-amended, shape-save-sends-untouched-keys); the Reel's SAVE leaves the saying to the store, once (mutant shape-deck-says-saved-at-the-tap); SAVE files the visibility (no offline path) before the preferences, so its \"changes reverted\" never stands over preferences kept to send, and a refusal after it says which went (mutant shape-visibility-filed-after-kept-preferences); round 6: a log page’s SAVE says nothing at the tap; the store says how it went, once (mutants shape-removal-said-at-the-tap, shape-save-said-at-the-tap); \"No salon matches that.\" waits for the house's answer, and an amendment the house wrote nowhere is never sealed or announced (mutants shape-no-match-before-the-answer, shape-amend-sealed-over-nothing); a salon message kept offline answers 'queued', never true, and a share kept for the wire is marked but never said \"Shared to lounge\" (mutants shape-queued-share-said-shared, shape-queued-message-answered-sent)"
     places: [none]
 
   - id: LOOK-stand-in-eye
@@ -2109,7 +2111,7 @@ classes:
     seriousness: serious
     area: navigation
     status: OPEN
-    count: 2
+    count: 3
     source: { kind: reviewer, ref: "WORKLIST P4.21" }
     methods:
       - { kind: running, file: src/hooks/__tests__/useClearance.test.ts, test: "a guest's rope opens the sign-in, carrying where they stood, and never the Society page" }
@@ -2126,7 +2128,9 @@ classes:
       - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a visitor’s critiques sheet asks them in where the field would be" }
       - { kind: running, file: app/log/__tests__/aStrangerIsAskedInOnARecord.test.tsx, test: "their SAVE asks them in, saves nothing, and says nothing of a save" }
       - { kind: running, file: app/log/__tests__/aStrangerIsAskedInOnARecord.test.tsx, test: "their CERTIFY is plain, never \"Reading your mark\", and asks them in" }
-    fix: "a guest has a standing of their own (useClearance 'guest'): every rope says the room is for members and opens the sign-in, carrying where they stood (PathTracker notes the path and its query; askIn for every member's act); the sign-in returns to any screen of the app by its shape (src/utils/signInReturn.ts, held to app/'s routes), closing back to it (dismissTo); Settings, the editor, the year, the desk and a salon draw MembersOnly signed out; the cover picker and the stack editor read their row from the house on a cold link; a film's reviews ask after the film when none is on file; a stack's CERTIFY asks a visitor in, their heart is drawn plain, and the critiques sheet offers SIGN IN (mutant shape-visitor-certify-silent); round 6: a visitor’s SAVE and CERTIFY on a log page ask them in, as the card and the stack page do; their CERTIFY is plain, never \"Reading your mark\" (mutants shape-visitor-save-says-saved, shape-visitor-certify-reading-forever)"
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "their mark on a ballot asks them in, and casts nothing" }
+      - { kind: running, file: src/components/dispatch/paper/__tests__/theCritiquesAreReadByMembers.test.tsx, test: "SIGN IN TO READ THEM asks them in, once" }
+    fix: "a guest has a standing of their own (useClearance 'guest'): every rope says the room is for members and opens the sign-in, carrying where they stood (PathTracker notes the path and its query; askIn for every member's act); the sign-in returns to any screen of the app by its shape (src/utils/signInReturn.ts, held to app/'s routes), closing back to it (dismissTo); Settings, the editor, the year, the desk and a salon draw MembersOnly signed out; the cover picker and the stack editor read their row from the house on a cold link; a film's reviews ask after the film when none is on file; a stack's CERTIFY asks a visitor in, their heart is drawn plain, and the critiques sheet offers SIGN IN (mutant shape-visitor-certify-silent); round 6: a visitor’s SAVE and CERTIFY on a log page ask them in, as the card and the stack page do; their CERTIFY is plain, never \"Reading your mark\" (mutants shape-visitor-save-says-saved, shape-visitor-certify-reading-forever); a visitor's CERTIFY, CRITIQUE, SAVE and ballot mark on a filing ask them in (askIn), as on a log and a stack (mutant shape-visitor-ballot-does-nothing)"
     places: [emulator, simulator]
 
   - id: UI-a-rescue-undone-by-the-last-animated-props
@@ -2202,7 +2206,7 @@ classes:
     seriousness: serious
     area: lounge
     status: OPEN
-    count: 6
+    count: 7
     source: { kind: reviewer, ref: "review round 1, the Dispatch, Lounge and log, 2026-11-14" }
     methods:
       - { kind: running, file: src/stores/__tests__/loungeActs.test.ts, test: "sends other words at once, however soon after the last" }
@@ -2215,7 +2219,9 @@ classes:
       - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "keeps the words at once when the page goes before they rest" }
       - { kind: running, file: src/hooks/__tests__/eachFilmKeepsItsOwnDraft.test.tsx, test: "picking another film keeps the first film's words for it, and opens the second on its own draft" }
       - { kind: running, file: src/components/dispatch/paper/__tests__/aCritiqueIsHeldWhileItGoes.test.tsx, test: "the critique cannot be written in while it is being sent, and can again once it has gone" }
-    fix: "only the same words sent again to a room inside 800ms are a double-tap; other words are another message, sent (mutant shape-throttle-eats-other-words); each film keeps its own log draft, so another film's sheet takes none away (keepLogDraft, logDraftFor, dropLogDraft), and a critique, a log or kept words are kept at once when their page goes or moves before they rest, for the member who wrote them alone (mutants shape-a-films-draft-taken-by-another, shape-log-let-go-on-leaving, shape-kept-words-let-go-on-leaving, shape-critique-let-go-on-leaving); a film picked from the sheet keeps the last film's words for it at once and opens on its own draft, or on none (mutant shape-picked-film-takes-the-last-words); round 6: a filing’s critique field is held while it goes, so no word written during the send is wiped as it lands (mutants shape-critique-written-while-sent)"
+      - { kind: running, file: app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx, test: "holds the box while it files, so a second one typed meanwhile is never wiped by the first one landing" }
+      - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "holds the box while it files, so a second one typed meanwhile is never wiped by the first one landing" }
+    fix: "only the same words sent again to a room inside 800ms are a double-tap; other words are another message, sent (mutant shape-throttle-eats-other-words); each film keeps its own log draft, so another film's sheet takes none away (keepLogDraft, logDraftFor, dropLogDraft), and a critique, a log or kept words are kept at once when their page goes or moves before they rest, for the member who wrote them alone (mutants shape-a-films-draft-taken-by-another, shape-log-let-go-on-leaving, shape-kept-words-let-go-on-leaving, shape-critique-let-go-on-leaving); a film picked from the sheet keeps the last film's words for it at once and opens on its own draft, or on none (mutant shape-picked-film-takes-the-last-words); round 6: a filing’s critique field is held while it goes, so no word written during the send is wiped as it lands (mutants shape-critique-written-while-sent); a log's and a stack's critique box is held while a critique files, so a second one typed meanwhile is never wiped by the first one landing (mutants shape-log-critique-box-open-while-filing, shape-stack-critique-box-open-while-filing)"
     places: [none]
 
   - id: UI-a-sheet-with-no-way-out
@@ -2239,7 +2245,7 @@ classes:
     seriousness: behaviour
     area: dispatch
     status: OPEN
-    count: 4
+    count: 5
     source: { kind: reviewer, ref: "review round 1, the Dispatch, Lounge and log, 2026-11-14" }
     methods:
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "never draws an answer in an order the member has already left" }
@@ -2250,7 +2256,10 @@ classes:
       - { kind: running, file: src/hooks/__tests__/signingInTellsTheTruth.test.tsx, test: "a check on its way when the form is switched answers nothing to the empty field" }
       - { kind: running, file: src/stores/__tests__/dispatchReads.test.ts, test: "a count asked for ALL is not said as \"N NEW\" over TAKES, chosen while it was on its way" }
       - { kind: running, file: src/stores/__tests__/dispatchReads.test.ts, test: "a count that lands after the page was read again says nothing over it; one landing on the page it counted is said" }
-    fix: "an answer whose order is no longer the filing's chosen one is dropped, its rows and its failure alike (mutant shape-answer-of-an-order-left); an older page of notices joins only the list whose cursor it followed, and each read lowers the list's reading for itself (mutants shape-older-page-under-a-new-list, shape-refresh-ends-the-older-reading); switching between sign-up and sign-in drops the handle check still waiting and the one on its way (mutants shape-handle-check-asked-after-the-switch, shape-handle-answer-after-the-switch); the paper's new-filings count is said only on the page it counted (mutant shape-pill-on-another-page)"
+      - { kind: running, file: src/stores/domain/__tests__/aStacksNextPageLaysOntoTheListAsItStands.test.ts, test: "a stack made while the next page was on its way stays at the top, the page laid under the rest" }
+      - { kind: running, file: src/stores/domain/__tests__/aStacksNextPageLaysOntoTheListAsItStands.test.ts, test: "a stack deleted while the next page was on its way does not come back with it" }
+      - { kind: running, file: src/stores/domain/__tests__/aStacksNextPageLaysOntoTheListAsItStands.test.ts, test: "a page that carries a stack the list already holds lays it once" }
+    fix: "an answer whose order is no longer the filing's chosen one is dropped, its rows and its failure alike (mutant shape-answer-of-an-order-left); an older page of notices joins only the list whose cursor it followed, and each read lowers the list's reading for itself (mutants shape-older-page-under-a-new-list, shape-refresh-ends-the-older-reading); switching between sign-up and sign-in drops the handle check still waiting and the one on its way (mutants shape-handle-check-asked-after-the-switch, shape-handle-answer-after-the-switch); the paper's new-filings count is said only on the page it counted (mutant shape-pill-on-another-page); the stacks' next page is laid onto the list as it stands when it lands: a stack made meanwhile kept, one deleted meanwhile not laid back, none held twice (mutant shape-stacks-page-onto-the-old-list)"
     places: [none]
 
   - id: READ-the-next-page-asks-an-old-one
@@ -2341,12 +2350,14 @@ classes:
     seriousness: behaviour
     area: settings
     status: OPEN
-    count: 2
+    count: 3
     source: { kind: reviewer, ref: "review round 1, the profile and settings, 2026-11-14" }
     methods:
       - { kind: running, file: src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx, test: "signed out with an edit unsaved, leaves for the door without asking to keep it" }
       - { kind: static, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "the erasure removes the rows, the session AND the device" }
-    fix: "signing out and the erasure set where they leave for first, and the leave is taken once the unsaved-edit guard has let go (leavingTo) (mutant shape-leave-asked-after-sign-out)"
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "while the preferences are on their way SAVE is not lit and a way out does not ask to discard them" }
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "a preferences save refused lights SAVE again, and a way out asks before the changes go" }
+    fix: "signing out and the erasure set where they leave for first, and the leave is taken once the unsaved-edit guard has let go (leavingTo) (mutant shape-leave-asked-after-sign-out); Settings counts the whole filing, preferences included, as saving: SAVE is not lit and no way out asks \"Discard changes?\" of changes already on their way (mutant shape-settings-save-lit-over-preferences)"
     places: [none]
 
   - id: AUTH-a-recovery-left-open
@@ -2525,7 +2536,7 @@ classes:
     seriousness: behaviour
     area: moderation
     status: OPEN
-    count: 21
+    count: 22
     source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
     methods:
       - { kind: running, file: src/hooks/__tests__/aMemberHiddenLeavesTheFilmsPages.test.tsx, test: "the film page: a reviewer blocked since its read leaves it at once" }
@@ -2554,7 +2565,7 @@ classes:
       - { kind: running, file: src/stores/__tests__/aHiddenMembersNoticesLeaveTheBoard.test.ts, test: "a member muted takes their notices off the board and the bell, and leaves everyone else’s" }
       - { kind: running, file: src/components/lounge/__tests__/aHiddenHostsSalonLeavesTheDirectory.test.tsx, test: "a salon whose host is blocked or muted is not among the salons; the member's own stays" }
       - { kind: running, file: src/components/lounge/__tests__/aHiddenHostsSalonLeavesTheDirectory.test.tsx, test: "a salon leaves at once when its host is blocked while the tab is shown, and comes back when let back" }
-    fix: "what is drawn is drawn through who is hidden now (useWhoIsHidden, a value that changes with every block, mute or unblock): the film page's critiques in its select, the archive's rows, and the salon purges whenever it changes (mutants shape-film-page-keeps-the-hidden, shape-archive-filtered-once, shape-room-purges-for-its-sheet-alone); the Dispatch's paper and a filing's critiques, a stack's critiques (stackCritiques), the Registry by isHidden, a member's circles and the request door the same way (mutants shape-paper-keeps-the-hidden, shape-critiques-keep-the-hidden, shape-stack-critiques-keep-the-hidden, shape-registry-offers-the-muted, shape-door-offers-the-hidden, shape-circle-keeps-the-hidden); the log page, the archive and the series draw through who is hidden now (mutants shape-log-page-keeps-the-hidden, shape-archive-keeps-the-hidden, shape-series-stays-for-the-hidden); round 6: a log, a stack, a filing and a series leave once their author is hidden (useLeavesWhenHidden), from anywhere, waiting for the page’s own sheet to close; a host’s salon door and the corridor’s count leave out whoever the host has hidden (20261116_01 too) (mutants shape-hidden-author-leaves-from-under-a-sheet, shape-log-stands-for-a-hidden-author, shape-stack-stands-for-a-hidden-curator, shape-reader-stands-on-a-mute, shape-series-stands-for-a-hidden-author, shape-host-shown-who-they-hid, shape-corridor-counts-the-hidden); a member's Dispatch room leaves once they are hidden (mutant shape-room-stays-for-the-hidden); a member hidden takes their notices off the board and the bell (mutant shape-hidden-notices-kept); a salon whose host is hidden leaves the Lounge directory (mutant shape-hidden-hosts-salon-listed)"
+    fix: "what is drawn is drawn through who is hidden now (useWhoIsHidden, a value that changes with every block, mute or unblock): the film page's critiques in its select, the archive's rows, and the salon purges whenever it changes (mutants shape-film-page-keeps-the-hidden, shape-archive-filtered-once, shape-room-purges-for-its-sheet-alone); the Dispatch's paper and a filing's critiques, a stack's critiques (stackCritiques), the Registry by isHidden, a member's circles and the request door the same way (mutants shape-paper-keeps-the-hidden, shape-critiques-keep-the-hidden, shape-stack-critiques-keep-the-hidden, shape-registry-offers-the-muted, shape-door-offers-the-hidden, shape-circle-keeps-the-hidden); the log page, the archive and the series draw through who is hidden now (mutants shape-log-page-keeps-the-hidden, shape-archive-keeps-the-hidden, shape-series-stays-for-the-hidden); round 6: a log, a stack, a filing and a series leave once their author is hidden (useLeavesWhenHidden), from anywhere, waiting for the page’s own sheet to close; a host’s salon door and the corridor’s count leave out whoever the host has hidden (20261116_01 too) (mutants shape-hidden-author-leaves-from-under-a-sheet, shape-log-stands-for-a-hidden-author, shape-stack-stands-for-a-hidden-curator, shape-reader-stands-on-a-mute, shape-series-stands-for-a-hidden-author, shape-host-shown-who-they-hid, shape-corridor-counts-the-hidden); a member's Dispatch room leaves once they are hidden (mutant shape-room-stays-for-the-hidden); a member hidden takes their notices off the board and the bell (mutant shape-hidden-notices-kept); a salon whose host is hidden leaves the Lounge directory (mutant shape-hidden-hosts-salon-listed); a member an author blocked no longer reads the author's records and stacks, by the house's one rule (logs_hide_blocked, lists_hide_blocked, 20261116_01 piece 8, rehearsal-tested; no phone change)"
     places: [none]
 
   - id: UI-a-sheet-opened-by-a-screen-beneath
@@ -2622,13 +2633,16 @@ classes:
     seriousness: behaviour
     area: dispatch
     status: OPEN
-    count: 2
+    count: 3
     source: { kind: reviewer, ref: "review round 3, every feature, 2026-11-15" }
     methods:
       - { kind: running, file: src/components/dispatch/__tests__/aFailedCritiqueReadIsSaid.test.tsx, test: "ends when the house has sent its last page, though its count holds critiques this member may not read" }
       - { kind: running, file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "counts no request from a member blocked or muted, as the door offers none" }
       - { kind: running, file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "with nobody hidden, the count asks for every request" }
-    fix: "the foot ends on the house's own word that no page follows (critiquesHasMore), counting against every critique read (mutant shape-foot-counts-past-the-house); the door's count leaves out the members the door leaves out (mutant shape-door-counts-the-hidden)"
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "are told the critiques are read by members, and SIGN IN TO READ THEM asks them in; a member reads them as before" }
+      - { kind: running, file: src/components/dispatch/paper/__tests__/theCritiquesAreReadByMembers.test.tsx, test: "says THE CRITIQUES ARE READ BY MEMBERS, and offers no page of critiques they cannot read" }
+      - { kind: running, file: src/components/dispatch/paper/__tests__/theCritiquesAreReadByMembers.test.tsx, test: "is said even while a read is out or one failed: a visitor is given none to wait for or ask again" }
+    fix: "the foot ends on the house's own word that no page follows (critiquesHasMore), counting against every critique read (mutant shape-foot-counts-past-the-house); the door's count leaves out the members the door leaves out (mutant shape-door-counts-the-hidden); a filing's critiques foot tells a visitor THE CRITIQUES ARE READ BY MEMBERS / SIGN IN TO READ THEM, never an end or a MORE under critiques the house does not send them (mutant shape-visitor-foot-drawn-as-a-members)"
     places: [none]
 
   - id: READ-a-page-begun-past-its-row
@@ -2794,12 +2808,13 @@ classes:
     seriousness: behaviour
     area: dispatch
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
     methods:
       - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "a filed essay is not backed up again as the room closes, so it never returns as a draft" }
       - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "DISCARD leaves with nothing kept, on the phone or in the house" }
-    fix: "a room filed or discarded is finished: its way out backs nothing up and keeps nothing on the phone (mutant shape-finished-room-backs-up)"
+      - { kind: running, file: src/hooks/__tests__/aRewatchSealedLeavesNoDraft.test.tsx, test: "a rewatch sealed within a second of the last word leaves no unsent record behind, and the next opening offers none" }
+    fix: "a room filed or discarded is finished: its way out backs nothing up and keeps nothing on the phone (mutant shape-finished-room-backs-up); a rewatch sealed stops the draft's timer with its draft, so the record sealed never comes back as YOUR UNSENT RECORD (mutant shape-rewatch-draft-timer-left-running)"
     places: [none]
 
   - id: NAV-a-back-that-skips-or-strays
@@ -2826,7 +2841,7 @@ classes:
     seriousness: behaviour
     area: states
     status: OPEN
-    count: 7
+    count: 8
     source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
     methods:
       - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "BACK with words asks first, and only a discard goes to the forms" }
@@ -2843,7 +2858,13 @@ classes:
       - { kind: running, file: app/(modals)/__tests__/anAmendedStackAsksBeforeLeaving.test.tsx, test: "an amended stack asks \"Discard these amendments?\" on its way out, and an untouched one does not" }
       - { kind: running, file: app/(modals)/__tests__/anAmendedStackAsksBeforeLeaving.test.tsx, test: "the rest of a long stack, read after the sheet opened, is not counted as an amendment" }
       - { kind: running, file: app/(modals)/__tests__/anAmendedStackAsksBeforeLeaving.test.tsx, test: "a saved amendment leaves without a word" }
-    fix: "every way out of a short desk with words in it asks first (useAskBeforeLeaving, and BACK's own question); the essay, ballot and stack keep the save not yet written as the sheet closes (the log's pattern), the essay's after its backup so the phone's copy is the later; CANCEL offers KEEP FOR LATER beside DISCARD (mutants shape-take-left-without-asking, shape-essay-last-second-dropped, shape-ballot-last-second-dropped, shape-stack-last-second-dropped, shape-cancel-only-discards); an edit with amendments asks before every way out (amendmentsUnsealed; mutants shape-edit-closes-unasked, shape-amendment-unseen); round 6: a stack amended in its sheet asks \"Discard these amendments?\" before any way out, as the Log sheet’s edit does, the rest of a long stack read after it opened never counted as an amendment, a saved one never asked (mutants shape-stack-amend-leaves-unasked, shape-stack-rest-read-as-amendment, shape-saved-stack-asks)"
+      - { kind: running, file: src/hooks/__tests__/wordsOnTheirWayHoldTheDoor.test.tsx, test: "a way out while the words are on their way stays, and says \"Still on its way\"; once answered, it leaves at once" }
+      - { kind: running, file: src/components/dispatch/__tests__/aDeskHoldsItsWordsWhileTheyGo.test.tsx, test: "a way out while FILE IT is on its way is held: \"Still on its way\", and only Wait; once filed, nothing holds" }
+      - { kind: running, file: src/components/dispatch/__tests__/aDeskHoldsItsWordsWhileTheyGo.test.tsx, test: "a filing refused while it was held keeps the words on the desk, and a way out then asks before they go, as before the send" }
+      - { kind: running, file: app/(modals)/__tests__/anAmendmentSealingHoldsTheSheet.test.tsx, test: "while it seals, every way out of the sheet stays and says \"Still on its way\"; a refusal lets it go, the words still there" }
+      - { kind: running, file: app/(modals)/__tests__/anAmendmentSealingHoldsTheSheet.test.tsx, test: "taken by the house, lets the sheet go: the seal's beat walks back" }
+      - { kind: running, file: app/(modals)/__tests__/anAmendmentSealingHoldsTheSheet.test.tsx, test: "sealing, is never held: its draft is kept" }
+    fix: "every way out of a short desk with words in it asks first (useAskBeforeLeaving, and BACK's own question); the essay, ballot and stack keep the save not yet written as the sheet closes (the log's pattern), the essay's after its backup so the phone's copy is the later; CANCEL offers KEEP FOR LATER beside DISCARD (mutants shape-take-left-without-asking, shape-essay-last-second-dropped, shape-ballot-last-second-dropped, shape-stack-last-second-dropped, shape-cancel-only-discards); an edit with amendments asks before every way out (amendmentsUnsealed; mutants shape-edit-closes-unasked, shape-amendment-unseen); round 6: a stack amended in its sheet asks \"Discard these amendments?\" before any way out, as the Log sheet’s edit does, the rest of a long stack read after it opened never counted as an amendment, a saved one never asked (mutants shape-stack-amend-leaves-unasked, shape-stack-rest-read-as-amendment, shape-saved-stack-asks); words on their way and kept nowhere else hold every way out (\"Still on its way\") until the house answers: the short desk while FILE IT is out, and an amendment while it seals (useHoldWhileSending) (mutants shape-desk-let-go-mid-send, shape-amendment-let-go-mid-seal)"
     places: [none]
 
   - id: UI-a-room-drawn-before-its-door
@@ -3019,13 +3040,16 @@ classes:
     seriousness: behaviour
     area: states
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: reviewer, ref: "review round 5, every feature, 2026-11-16" }
     methods:
       - { kind: running, file: src/stores/__tests__/aFailedWriteUndoesOnlyItsOwnNotice.test.ts, test: "two notices dismissed, both refused: both come back, in their places, and both are counted" }
       - { kind: running, file: src/stores/__tests__/aFailedWriteUndoesOnlyItsOwnNotice.test.ts, test: "one notice read and another dismissed, both refused: each undone alone" }
       - { kind: running, file: src/stores/__tests__/aFailedWriteUndoesOnlyItsOwnNotice.test.ts, test: "a refused group leaves another notice read meanwhile as it is" }
-    fix: "each refused write undoes its own notices alone: read again, or put back in their places, and counted back (mutant shape-rollback-undoes-another)"
+      - { kind: running, file: src/stores/__tests__/aNoticeUndoneIsSaid.test.ts, test: "a notice opened while READ ALL was on its way stays read when READ ALL is refused; the rest are unread again" }
+      - { kind: running, file: src/stores/__tests__/aReadAllRefusedTakesBackWhatTheHouseHasNot.test.ts, test: "READ ALL and a notice opened meanwhile, both unreached: both are unread again, the bell at 2" }
+      - { kind: running, file: src/stores/__tests__/aReadAllRefusedTakesBackWhatTheHouseHasNot.test.ts, test: "READ ALL unreached, the notice opened meanwhile taken: it alone is read, the bell at 1" }
+    fix: "each refused write undoes its own notices alone: read again, or put back in their places, and counted back (mutant shape-rollback-undoes-another); a READ ALL refused takes back only what the house has not marked: a notice opened meanwhile and taken stays read, whichever lands first (mutants shape-read-all-rollback-takes-the-opened, shape-opened-notice-unread-after-rollback)"
     places: [none]
 
   - id: COPY-a-failure-said-of-a-read-not-asked
@@ -3045,11 +3069,13 @@ classes:
     seriousness: behaviour
     area: states
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: reviewer, ref: "review round 5, every feature, 2026-11-16" }
     methods:
       - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a refused certification is said once: the store has said why" }
-    fix: "the store says why and the page says nothing more (mutant shape-stack-failure-said-twice)"
+      - { kind: running, file: src/components/dispatch/__tests__/aFilingKeptOfflineIsSaidOnce.test.tsx, test: "a take filed with no connection is said kept once, by the desk, never twice" }
+      - { kind: running, file: src/components/dispatch/__tests__/aFilingKeptOfflineIsSaidOnce.test.tsx, test: "the store keeps a filing made offline without a word of its own: the desk that filed it speaks" }
+    fix: "the store says why and the page says nothing more (mutant shape-stack-failure-said-twice); a filing kept offline is said once, by the desk that filed it, the store saying nothing (mutant shape-offline-filing-said-by-the-store)"
     places: [none]
 
   - id: STATE-pages-read-past-the-first-dropped
@@ -3223,7 +3249,7 @@ classes:
     seriousness: behaviour
     area: search
     status: OPEN
-    count: 2
+    count: 3
     source: { kind: reviewer, ref: "review round 7, every feature, 2026-11-16" }
     methods:
       - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a source that could not be asked: the count line says NOT REACHED, never 0 RESULTS, and its tab says so" }
@@ -3234,7 +3260,11 @@ classes:
       - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a muted member, whose roster holds their own row alone, is told the house’s count, never \"1 MEMBER\"" }
       - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a banned member reading the public room is told the house’s count, never \"1 MEMBER\"" }
       - { kind: running, file: src/hooks/__tests__/theArchiveSearchIsCountedByTheHouse.test.tsx, test: "each film found carries the house’s count of its filings, the most-filed first, and a film past the newest rows is found" }
-    fix: "a count is said only once it is known (NOT REACHED, a tab named without one while asked), and the salon counts the seated as the house does, from the roster only for one who reads it whole (mutants shape-unknown-count-said-zero, shape-unreached-tab-counted, shape-salon-counts-its-roster); the archive's film search is counted by the house, the hidden left out (mutant shape-archive-counted-from-its-rows)"
+      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a guest with no seat is told the salon’s count and that the roster is kept for those seated, and is offered no STEP OUT" }
+      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a reader at the door (pending) is told the salon’s count, drawn no rows, and may step out of the row they hold" }
+      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a banned reader is told the salon’s count, drawn not even their own row, and offered no STEP OUT" }
+      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "the host and the seated, muted too, see the roster whole, never told it is kept; a guest beside them is" }
+    fix: "a count is said only once it is known (NOT REACHED, a tab named without one while asked), and the salon counts the seated as the house does, from the roster only for one who reads it whole (mutants shape-unknown-count-said-zero, shape-unreached-tab-counted, shape-salon-counts-its-roster); the archive's film search is counted by the house, the hidden left out (mutant shape-archive-counted-from-its-rows); the salon sheet draws the roster only for the host and the seated, muted too; anyone else is told the salon's own count and \"The roster is kept for those seated.\", and offered STEP OUT only of a row they hold (mutants shape-guest-told-their-rows-as-the-count, shape-guest-offered-step-out)"
     places: [none]
 
   - id: COPY-a-refusal-unsaid-once-the-screen-closed
@@ -3272,11 +3302,65 @@ classes:
     seriousness: behaviour
     area: social
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: reviewer, ref: "review round 9, every feature, 2026-11-17" }
     methods:
       - { kind: running, file: src/utils/__tests__/aRefusalIsSaidByWhoRefusedIt.test.ts, test: "a silenced member is told the house silenced them, never that the author limits them" }
       - { kind: running, file: src/stores/__tests__/aCertificationRefusedSaysWhoRefusedIt.test.ts, test: "by the author’s rule: says the author limits who may certify, is taken back, and is no defect; another failure keeps the old words and is reported" }
       - { kind: running, file: src/stores/__tests__/aBannedMemberIsToldTheDoorIsClosed.test.ts, test: "a banned member taking a seat is told the host has closed the salon to them, not to check their connection" }
-    fix: "a 42501 is said by who refused it, the member's standing in the house's own words (saidOfARefusal), and a ban's refusal as the host closing the salon (mutants shape-standing-blamed-on-the-author, shape-certify-refusal-unsaid, shape-ban-said-as-a-connection)"
+      - { kind: running, file: src/stores/__tests__/aFollowRefusedForYourStandingIsSaid.test.ts, test: "a silenced member’s follow is refused in the house’s words, taken back, and never reported as a defect" }
+      - { kind: running, file: src/stores/__tests__/aFollowRefusedForYourStandingIsSaid.test.ts, test: "a suspended member is told until when, and not reported; a follow that failed for another reason still says try again, and is" }
+    fix: "a 42501 is said by who refused it, the member's standing in the house's own words (saidOfARefusal), and a ban's refusal as the host closing the salon (mutants shape-standing-blamed-on-the-author, shape-certify-refusal-unsaid, shape-ban-said-as-a-connection); a follow refused for the member's standing is said in the house's words, never \"try again\", and is no defect (mutant shape-follow-standing-said-try-again)"
+    places: [none]
+
+  - id: WRITE-a-draft-kept-in-part
+    title: "A new record's draft kept its words, stars and private note alone: taken up again (at the next launch, on the sheet opened on its film, on the film found again in the search, or after a seal was refused), a review marked CONTAINS SPOILERS came back unmarked and, sealed, went out unveiled; a film walked out on came back WATCHED, dated today, without its company, format, autopsy or page"
+    seriousness: behaviour
+    area: log
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 10, every feature, 2026-11-17" }
+    methods:
+      - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "a review marked CONTAINS SPOILERS, left unsent, comes back marked when the phone reopens the sheet, and is sealed veiled" }
+      - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "the launch that reopens the sheet brings back the whole form: the walk-out and its reason, the day, the company, the format, the autopsy and the page" }
+      - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "the sheet opened on the film brings back its whole form" }
+      - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "the record offered on the search, taken up, brings back its whole form" }
+      - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "a film logged since its draft was kept opens as a rewatch, its spoiler mark still on" }
+      - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "a film whose record was withdrawn since its draft was kept opens as a first viewing, its spoiler mark still on" }
+      - { kind: running, file: src/hooks/__tests__/aRefusedSealKeepsTheWholeForm.test.tsx, test: "a seal refused puts the draft back with its spoiler mark, and the sheet reopened shows it marked" }
+    fix: "the draft keeps the whole form, its spoiler mark above all, and takes it all up at every restore (takeUpForm), and a seal refused puts the whole form back; WATCHED and REWATCHED stay the film's own (mutants shape-draft-taken-up-without-its-spoiler, shape-refused-seal-keeps-a-part)"
+    places: [none]
+
+  - id: READ-a-muted-seat-shut-out-of-its-room
+    title: "A muted member of a private salon, whose MUTE says they still read, read an empty room: the house gave the salon's words, reactions, live channel and roster to approved seats alone, and the room never listened for them"
+    seriousness: behaviour
+    area: lounge
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 10, every feature, 2026-11-17" }
+    methods:
+      - { kind: running, file: src/components/lounge/__tests__/aSeatLostLeavesTheChannel.test.tsx, test: "hears the salon as it reads it, joining its channel without a presence; with no seat, nothing is heard" }
+      - { kind: running, file: src/components/lounge/__tests__/aSeatLostLeavesTheChannel.test.tsx, test: "keeps hearing it when the mute is lifted, now seated, and leaves it when the seat is lost" }
+    fix: "the house reads a muted seat its salon's words and reactions, its channel (salon_channel_readable) and its roster, and counts its unread (20261116_01 pieces 3 and 7, rehearsal-tested); the room listens for a muted seat, sharing no presence (mutant shape-muted-seat-not-listening)"
+    places: [none]
+
+  - id: COPY-a-refusal-undone-unsaid
+    title: "A write the house refused was taken back without a word: a private note refused (a rank lapsed at the house) left the record while the sheet said RECORD SEALED; READ ALL, a notice's X and a group's X flipped back as though never pressed"
+    seriousness: behaviour
+    area: states
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 10, every feature, 2026-11-17" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "on a new record: the record is filed, and the member is told its note was not kept" }
+      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "on a rewatch: the viewing is filed, and the member is told its note was not kept" }
+      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "on an amendment: the record is amended, and the member is told its note was not kept" }
+      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "for the member's own standing, the house's own words, and no defect reported" }
+      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "by a fault at the house, \"its private note could not be kept\", and the fault reported" }
+      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "on a rewatch and on an amendment, the same sentence" }
+      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "a note kept for the queue when the connection is lost says nothing of the note, and is kept" }
+      - { kind: running, file: src/stores/__tests__/aNoticeUndoneIsSaid.test.ts, test: "READ ALL refused: the notices are unread again, and the member is told it did not take; one taken says nothing" }
+      - { kind: running, file: src/stores/__tests__/aNoticeUndoneIsSaid.test.ts, test: "a notice's X refused: the notice comes back, and the member is told it was not dismissed; one taken says nothing" }
+      - { kind: running, file: src/stores/__tests__/aNoticeUndoneIsSaid.test.ts, test: "a group's X refused: the group comes back, and the member is told they were not dismissed" }
+    fix: "a private note refused is said at each of its three writes (noteNotKept: the rank's door, the house's words, or \"its private note could not be kept\"), and READ ALL, a notice's X and a group's X each say when they did not take (mutants shape-note-refusal-unsaid, shape-read-all-refusal-unsaid)"
     places: [none]
