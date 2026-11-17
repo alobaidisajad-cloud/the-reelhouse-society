@@ -4092,7 +4092,7 @@ mutants:
       - file: src/stores/lounge.ts
         find: "  if (kept) _keptRooms.set(loungeId, change(kept));"
         replace: "  if (kept && kept.length < 0) _keptRooms.set(loungeId, change(kept));"
-    proof: { file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "answered after another room was opened, is sent in the room’s kept words" }
+    proof: { file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "answered after another room was opened, is sent in the room’s kept words: the house unreachable on the way back" }
 
   - id: shape-a-reported-thing-not-blocked
     class: WRITE-a-block-asked-not-carried-out

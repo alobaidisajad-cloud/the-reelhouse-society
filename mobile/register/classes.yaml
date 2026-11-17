@@ -2482,6 +2482,7 @@ classes:
       - { kind: running, file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "stays when the channel’s echo was heard first and had marked it sent" }
       - { kind: running, file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "answered after another room was opened, is sent in the room’s kept words" }
       - { kind: running, file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "refused after another room was opened, is failed in the room’s kept words: offered again" }
+      - { kind: running, file: src/stores/__tests__/aSentMessageStaysWhereItWasSent.test.ts, test: "answered after another room was opened, is sent in the room’s kept words: the house unreachable on the way back" }
     fix: "the answer marks the message sent where it stands, on screen or in the words kept for a room left (inRoomWords), and a failure marks it failed the same way (mutants shape-sent-taken-for-a-copy, shape-sent-in-a-room-left-lost)"
     places: [none]
 

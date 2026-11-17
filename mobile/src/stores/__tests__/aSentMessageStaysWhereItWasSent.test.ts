@@ -22,6 +22,8 @@ const mockHouseHolds = new Set<string>();
 let mockRefused = false;
 /** While set, the send's answer waits for it: the write is on its way. */
 let mockHold: Promise<void> | null = null;
+/** While set, the room's reads find the house unreachable (the send was answered before). */
+let mockUnreachable = false;
 
 const mockHouse = supabaseFake({
   rows: { lounge_message_reactions: [] },
@@ -33,6 +35,7 @@ const mockHouse = supabaseFake({
         mockHouseHolds.add(String(written?.id));
         return [{ ...written, created_at: SENT_AT }];
       }
+      if (mockUnreachable) return { code: '', message: 'TypeError: Network request failed' };
       // The check read (withdrawn or gone since?) names what the house holds; the room's other
       // reads (its words, what it missed) find nothing new.
       return ask.columns.includes('deleted_at') ? [...mockHouseHolds].map((id) => ({ id, deleted_at: null })) : [];
@@ -88,6 +91,7 @@ beforeEach(() => {
   for (const forget of RESETS) forget(null);
   mockHold = null;
   mockRefused = false;
+  mockUnreachable = false;
   mockHouseHolds.clear();
   mockHouseHolds.add(HEARD.id);
   useLoungeStore.setState({
@@ -128,6 +132,22 @@ describe('a message the house took', () => {
     expect(mine()).toEqual([]);                   // never drawn into the room on screen
 
     await useLoungeStore.getState().fetchMessages(L1);
+    expect(mine().map((m) => [m.content, m.status])).toEqual([['Hello.', 'sent']]);
+  });
+
+  // The way back reads nothing: the catch-up, which would hear the house holds it (review round 9),
+  // cannot. What is drawn is the room's kept words alone, and the answer marked it sent there.
+  it('answered after another room was opened, is sent in the room’s kept words: the house unreachable on the way back', async () => {
+    const answer = holdTheSend();
+    const sent = useLoungeStore.getState().sendMessage(L1, 'Hello.');
+    await settle();
+    await useLoungeStore.getState().fetchMessages(L2);
+    answer();
+    await expect(sent).resolves.toBe(true);
+
+    mockUnreachable = true;
+    await useLoungeStore.getState().fetchMessages(L1);
+    expect(useLoungeStore.getState().currentLoungeId).toBe(L1);
     expect(mine().map((m) => [m.content, m.status])).toEqual([['Hello.', 'sent']]);
   });
 
