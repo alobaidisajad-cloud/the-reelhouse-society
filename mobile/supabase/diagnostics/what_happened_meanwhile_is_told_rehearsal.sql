@@ -37,6 +37,9 @@ GRANT SELECT ON rehearsal_members TO authenticated;
 \endif
 
 -- ── A1A5 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── Rehearsal piece: a verdict is given once, and a removal removes something (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Three members in good standing: 1 sits as a moderator for the run, 2 is
@@ -210,6 +213,9 @@ END $$;
 UPDATE public.profiles p SET role = m.was_role FROM rh_a15_members m WHERE m.n = 1 AND p.id = m.id;
 
 -- ── F1 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── Rehearsal piece F1: a withdrawn salon message is evidence destroyed (review round 11) ────────
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Three members in good standing: 1 sits as a moderator for the run, 2
@@ -307,6 +313,9 @@ BEGIN
 END $$;
 
 -- ── A2 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── A2 rehearsal · a dissolved salon's doors say it is gone ─────────────────────────────────────
 --   Run inside the round's rehearsal, after rehearsal_kit.sql and its rehearsal_members (four
 --   members in good standing, n = 1..4), the round's migration applied. Member 1 hosts an open
@@ -390,6 +399,9 @@ SELECT pg_temp.rh_case('and a request at its door', 'P0002 SALON_GONE',
   (SELECT got FROM a2_seen WHERE what = 'request, dissolved')) AS done \gset rh_
 
 -- ── A4 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── Rehearsal piece: a critique on a page gone is told as such (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Two members in good standing: 1 keeps a record and a stack, 2 critiques
@@ -495,6 +507,9 @@ SELECT pg_temp.rh_case('a record whose owner lets nobody annotate still refuses 
   split_part((SELECT got FROM rh_a4_got WHERE what = 'owner limits'), ':', 1)) AS done \gset rh_
 
 -- ── A7 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── Rehearsal piece: an admission says whether anyone was admitted (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Four members in good standing; 2, 3 and 4 each ask at 1's door. 2
@@ -586,6 +601,9 @@ BEGIN
 END $$;
 
 -- ── B1 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── B1 rehearsal · an open ballot is counted for its voters alone ───────────────────────────────
 --   Run inside the round's rehearsal, after rehearsal_kit.sql and its rehearsal_members (four
 --   members in good standing, n = 1..4), the round's migration applied. Member 1 files an open
@@ -666,6 +684,9 @@ SELECT pg_temp.rh_case('no one reads a withdrawn ballot''s count', 'null',
   coalesce((SELECT got::text FROM b1_seen WHERE what = '2 withdrawn'), 'null')) AS done \gset rh_
 
 -- ── B2B5 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── Rehearsal piece: every viewing keeps its own day, and a run is judged by the member's own day (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Three members in good standing, each acting as themselves:
@@ -819,6 +840,9 @@ BEGIN
 END $$;
 
 -- ── B4 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── Rehearsal piece: a log's critiques are the reader's (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Four members in good standing: 1 files a reviewed record, 2 and 4
@@ -926,6 +950,9 @@ SELECT pg_temp.rh_case('a visitor is not given critiques_seen, and reads log_cou
   (SELECT got FROM rh_b4_got WHERE what = 'critiques_seen, a visitor')) AS done \gset rh_
 
 -- ── B6 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── B6 rehearsal · a certification taken back takes its notice ──────────────────────────────────
 --   Run inside the round's rehearsal, after rehearsal_kit.sql and its rehearsal_members (four
 --   members in good standing, n = 1..4), the round's migration applied. Member 1 keeps a record and
@@ -1035,6 +1062,9 @@ SELECT pg_temp.rh_case('while the certification of the filing stands, told to it
       AND NOT (metadata ? 'comment_id'))) AS done \gset rh_
 
 -- ── F11 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── Rehearsal piece F11: a certification buzzes the phone once (review round 11) ─────────────────
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest, so no push queued here is ever sent). Three members in good standing:
@@ -1201,6 +1231,9 @@ BEGIN
 END $$;
 
 -- ── D1 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── Rehearsal piece: a rename the member chooses is kept (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Four members in good standing. 1 and 2 are given handles that predate
@@ -1295,6 +1328,9 @@ BEGIN
 END $$;
 
 -- ── F4 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── Rehearsal piece: a shared card whose piece is gone reads as gone (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql, its rehearsal_members (four
 -- members in good standing, n = 1..4) and the train. Member 1 writes a take and two stacks; member 2
@@ -1374,6 +1410,9 @@ SELECT pg_temp.rh_case('the sharer''s own words under each card stay', 'rh-f4 an
     WHERE id IN (SELECT id FROM rh_f4_rows WHERE what LIKE '%card'))) AS done \gset rh_
 
 -- ── D2 ──
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
 -- ── Rehearsal piece: a member who leaves may take their words with them (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Three members in good standing: S stays; K and E leave. S keeps a record,

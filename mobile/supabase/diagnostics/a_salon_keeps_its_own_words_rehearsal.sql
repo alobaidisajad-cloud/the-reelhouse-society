@@ -289,19 +289,21 @@ BEGIN
   PERFORM pg_temp.rh_case('and by a visitor', '0|1', (SELECT got FROM rh_got WHERE what = 'read by a visitor'));
   PERFORM pg_temp.rh_case('the member asked sees it', '1|1',(SELECT got FROM rh_got WHERE what = 'read by p, the member asked'));
   PERFORM pg_temp.rh_case('the member who asked sees it', '1|1', (SELECT got FROM rh_got WHERE what = 'read by c, the member who asked'));
+  -- A comment on a page the member cannot read is refused as the page gone for them
+  -- (a_critique_has_its_page, 20261117_01: it tells nothing of why); a certification by its gate.
   PERFORM pg_temp.rh_case('a member answers an open file''s log, never its private stack: comment, certify, comment, certify',
-    'ok|ok|rule|rule',
+    'ok|ok|P0002: STACK_GONE|rule',
     (SELECT got FROM rh_got WHERE what = 'c follows a, asks p: c comments on a''s log') || '|'
     || (SELECT got FROM rh_got WHERE what = 'c follows a, asks p: c certifies a''s log') || '|'
     || (SELECT got FROM rh_got WHERE what = 'c follows a, asks p: c comments on a''s private stack') || '|'
     || (SELECT got FROM rh_got WHERE what = 'c follows a, asks p: c certifies a''s private stack'));
-  PERFORM pg_temp.rh_case('nor a private member''s log while only asking to follow: comment, certify', 'rule|rule',
+  PERFORM pg_temp.rh_case('nor a private member''s log while only asking to follow: comment, certify', 'P0002: LOG_GONE|rule',
     (SELECT got FROM rh_got WHERE what = 'c follows a, asks p: c comments on p''s log') || '|'
     || (SELECT got FROM rh_got WHERE what = 'c follows a, asks p: c certifies p''s log'));
   PERFORM pg_temp.rh_case('once let in, a member answers a private member''s log: comment, certify', 'ok|ok',
     (SELECT got FROM rh_got WHERE what = 'p let c in: c comments on p''s log') || '|'
     || (SELECT got FROM rh_got WHERE what = 'p let c in: c certifies p''s log'));
-  PERFORM pg_temp.rh_case('and still never another''s private stack: comment, certify', 'rule|rule',
+  PERFORM pg_temp.rh_case('and still never another''s private stack: comment, certify', 'P0002: STACK_GONE|rule',
     (SELECT got FROM rh_got WHERE what = 'p let c in: c comments on a''s private stack') || '|'
     || (SELECT got FROM rh_got WHERE what = 'p let c in: c certifies a''s private stack'));
   PERFORM pg_temp.rh_case('the old Dispatch''s tables take no member''s write: comments, certifications, essays',

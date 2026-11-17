@@ -106,13 +106,17 @@ DO $$ BEGIN
      AND a.member IS NOT DISTINCT FROM b.member AND a.fn = b.fn AND a.pos = b.pos
    WHERE b.fn LIKE 'stacks%' AND (a.certify, a.critique) IS DISTINCT FROM (b.certify, b.critique)));
 
-  -- A log's counts after: the true totals, for every reader.
+  -- A log's counts after: the true totals, for every reader; its critiques the ones that reader can read
+  -- (critiques_seen, 20261117_01): none by a member the reader hid, or who blocked the reader.
   PERFORM pg_temp.rh_case('log counts not the true total', '0', (SELECT count(*)::text
     FROM r_feed a
    WHERE a.phase = 'after' AND a.fn IN ('following', 'house')
      AND (a.certify, a.critique) IS DISTINCT FROM (
        (SELECT count(*)::int FROM public.interactions i WHERE i.target_log_id = a.id AND i.type = 'endorse_log'),
-       (SELECT count(*)::int FROM public.log_comments c WHERE c.log_id = a.id))));
+       (SELECT count(*)::int FROM public.log_comments c WHERE c.log_id = a.id
+          AND NOT EXISTS (SELECT 1 FROM public.user_blocks ub
+                           WHERE (ub.blocker_id = a.member AND ub.blocked_id = c.user_id)
+                              OR (ub.blocker_id = c.user_id AND ub.blocked_id = a.member AND ub.type = 'block'))))));
 
   -- …and where they moved, it is only because a reader could not see a mark before.
   RAISE NOTICE 'log counts that moved (each a mark the reader could not see): %', (SELECT count(*)

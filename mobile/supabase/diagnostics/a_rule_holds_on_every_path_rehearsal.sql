@@ -168,10 +168,13 @@ BEGIN
     PERFORM pg_temp.rh_case('no block: ' || w, 'ok', (SELECT got FROM rh_got WHERE what = 'no block: ' || w));
     PERFORM pg_temp.rh_case('muted: ' || w, 'ok', (SELECT got FROM rh_got WHERE what = 'muted: ' || w));
   END LOOP;
-  -- A comment or certification of a log or list is refused by its gate; the rest by the block's own words.
-  FOREACH w IN ARRAY ARRAY['a comments on b''s log', 'a comments on b''s list', 'a certifies b''s log', 'b comments on a''s log'] LOOP
-    PERFORM pg_temp.rh_case('blocked: ' || w, 'rule', (SELECT got FROM rh_got WHERE what = 'blocked: ' || w));
-  END LOOP;
+  -- A comment on a log or list hidden from its writer by the block is refused as the page gone for them
+  -- (a_critique_has_its_page, 20261117_01: it tells nothing of the block); a certification by its gate;
+  -- the rest by the block's own words.
+  PERFORM pg_temp.rh_case('blocked: a comments on b''s log', 'P0002: LOG_GONE', (SELECT got FROM rh_got WHERE what = 'blocked: a comments on b''s log'));
+  PERFORM pg_temp.rh_case('blocked: a comments on b''s list', 'P0002: STACK_GONE', (SELECT got FROM rh_got WHERE what = 'blocked: a comments on b''s list'));
+  PERFORM pg_temp.rh_case('blocked: b comments on a''s log', 'P0002: LOG_GONE', (SELECT got FROM rh_got WHERE what = 'blocked: b comments on a''s log'));
+  PERFORM pg_temp.rh_case('blocked: a certifies b''s log', 'rule', (SELECT got FROM rh_got WHERE what = 'blocked: a certifies b''s log'));
   FOREACH w IN ARRAY ARRAY['a critiques b''s post', 'a certifies b''s post', 'a certifies b''s critique',
                            'a certifies b''s post by the old function', 'a follows b', 'b follows a'] LOOP
     PERFORM pg_temp.rh_case('blocked: ' || w, 'block', (SELECT got FROM rh_got WHERE what = 'blocked: ' || w));
