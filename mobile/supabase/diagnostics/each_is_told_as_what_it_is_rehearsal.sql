@@ -7,7 +7,8 @@
 -- members in good standing, acting as themselves, find: a host's corridor counts at a salon's
 -- door the one member who may come in and names them, never one the host has muted or blocked,
 -- and every other piece of the corridor still answers; a certification of a filing is told under
--- the filing's key as before, and a certification of a critique under its own. Every row here
+-- the filing's key as before, and a certification of a critique under its own; a salon's last
+-- word is the last one its reader can read, never one from a member they muted. Every row here
 -- is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line is the
 -- verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
@@ -73,12 +74,31 @@ WITH made AS (
 SELECT id FROM made;
 GRANT SELECT ON rh_critique TO authenticated;
 
+-- Member 1 also keeps an open salon where 3 sits, last read three minutes ago: 3 says a word, and
+-- 2, whom the host muted, says one after it.
+CREATE TEMP TABLE rh_corner ON COMMIT DROP AS
+WITH made AS (
+  INSERT INTO public.lounges (name, creator_id, is_private)
+  VALUES ('The Rehearsal Corner', (SELECT id FROM rehearsal_members WHERE n = 1), false)
+  RETURNING id)
+SELECT id FROM made;
+GRANT SELECT ON rh_corner TO authenticated;
+INSERT INTO public.lounge_members (lounge_id, user_id, status, last_read_at)
+SELECT (SELECT id FROM rh_corner), id, 'approved', now() - interval '3 minutes' FROM rehearsal_members WHERE n IN (1, 3);
+INSERT INTO public.lounge_messages (lounge_id, user_id, content, created_at)
+VALUES ((SELECT id FROM rh_corner), (SELECT id FROM rehearsal_members WHERE n = 3), 'rehearsal: a word', now() - interval '2 minutes'),
+       ((SELECT id FROM rh_corner), (SELECT id FROM rehearsal_members WHERE n = 2), 'rehearsal: a muted word', now() - interval '1 minute');
+
 -- The host reads their corridor, as themselves.
 CREATE TEMP TABLE rh_corridor (got jsonb) ON COMMIT DROP;
 GRANT ALL ON rh_corridor TO authenticated;
+CREATE TEMP TABLE rh_unread (unread bigint, last_at timestamptz) ON COMMIT DROP;
+GRANT ALL ON rh_unread TO authenticated;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
 INSERT INTO rh_corridor SELECT public.get_lounge_list();
+INSERT INTO rh_unread SELECT u.unread_count, u.last_message_at FROM public.get_lounge_unread_counts() u
+ WHERE u.lounge_id = (SELECT id FROM rh_corner);
 RESET ROLE;
 
 -- Member 3 certifies the take and the critique, as themselves.
@@ -107,6 +127,10 @@ BEGIN
   PERFORM pg_temp.rh_case('the salon the host keeps is in their corridor', '1',
     (SELECT count(*)::text FROM rh_corridor, jsonb_array_elements(got -> 'hosted') h
       WHERE h ->> 'id' = (SELECT id::text FROM rh_salon)));
+  PERFORM pg_temp.rh_case('a salon''s unread count leaves out the member the reader muted, as before', '1',
+    (SELECT unread::text FROM rh_unread));
+  PERFORM pg_temp.rh_case('its last word is the last one the reader can read, never the muted member''s after it',
+    (now() - interval '2 minutes')::text, (SELECT last_at::text FROM rh_unread));
 
   PERFORM pg_temp.rh_case('a certification of the filing is told to its author under the filing''s key',
     'endorse:post:' || (SELECT id FROM rh_filing),

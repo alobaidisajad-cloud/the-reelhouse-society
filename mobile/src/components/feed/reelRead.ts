@@ -29,7 +29,24 @@ function without(page: FeedPage<FeedItem>, id: string): FeedPage<FeedItem> {
   return Object.defineProperty(page.filter((row) => row.id !== id), 'next', { value: next, enumerable: false }) as FeedPage<FeedItem>;
 }
 
+/** A list holding its own copy of records, told of each change the Reel is told of: `withdrawnId`
+ *  for a record withdrawn, nothing for one filed or amended. */
+type RecordsHeard = (withdrawnId?: string) => void;
+const hearers = new Set<RecordsHeard>();
+
+/**
+ * A film's Log Archive holds its records in its own state, read as it opened: a record deleted from
+ * it stood on it still (opening "No Such Record"), and one amended kept its old rating and words,
+ * beside the film's page that had them (review round 8). It hears here what the Reel hears.
+ * Answers the way to stop hearing.
+ */
+export function hearRecordsChanged(hear: RecordsHeard): () => void {
+  hearers.add(hear);
+  return () => { hearers.delete(hear); };
+}
+
 export function reelMayHaveChanged(withdrawnId?: string): void {
+  for (const hear of hearers) hear(withdrawnId);
   for (const queryKey of REEL_KEYS) {
     if (withdrawnId) {
       queryClient.setQueriesData<InfiniteData<FeedPage<FeedItem>>>({ queryKey }, (data) =>

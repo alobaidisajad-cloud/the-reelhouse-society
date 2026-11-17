@@ -29,11 +29,13 @@ const baseStack = {
   isPrivate: false, isRanked: false, critiqueCount: 0,
 };
 
+/** Every page the screen's own router was asked to push. */
+const mockRouterPush = jest.fn();
 jest.mock('expo-router', () => ({
   ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() },
   useLocalSearchParams: () => ({ id: STACK_ID }),
-  useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
+  useRouter: () => ({ back: jest.fn(), push: (...a: unknown[]) => mockRouterPush(...a), replace: jest.fn() }),
 }));
 // Buster (in the failed state) pauses when its screen is not focused.
 jest.mock('expo-router/react-navigation', () => ({ ...jest.requireActual('expo-router/react-navigation'), useIsFocused: () => true }));
@@ -1444,5 +1446,29 @@ describe('review round 6', () => {
       expect(heldAfter()).toBeUndefined();
       expect(r.getByText('The critiques could not be reached.')).toBeTruthy();
     });
+  });
+});
+
+/**
+ * Review round 8: the curator's name is words with a press of their own, which had no wait after
+ * a press as a PressableScale has, so a quick double tap opened the curator's file twice, one over
+ * the other (onePress).
+ */
+describe("the curator's name, tapped twice", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it("opens the curator's file once for a double tap, and again for a tap a moment later", async () => {
+    let clock = performance.now() + 10_000_000;
+    jest.spyOn(performance, 'now').mockImplementation(() => clock);
+    const r = mount();
+    const curator = await waitFor(() => r.getByLabelText('View curator @morpho'));
+    await act(async () => { await fireEvent.press(curator); });
+    clock += 150;
+    await act(async () => { await fireEvent.press(r.getByLabelText('View curator @morpho')); });
+    expect(mockRouterPush.mock.calls).toEqual([['/user/morpho']]);
+
+    clock += 500;
+    await act(async () => { await fireEvent.press(r.getByLabelText('View curator @morpho')); });
+    expect(mockRouterPush).toHaveBeenCalledTimes(2);
   });
 });

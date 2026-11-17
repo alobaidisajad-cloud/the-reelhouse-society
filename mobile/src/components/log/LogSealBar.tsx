@@ -45,6 +45,8 @@ interface Props {
     watchedWith: string;
     physicalMedia: string;
     submitting: boolean;
+    /** Another act on the record is on its way (it is being removed): the seal waits it out. */
+    held?: boolean;
     sealed: boolean;
     isEditing: boolean;
     onSeal: () => void;
@@ -88,7 +90,7 @@ const sentence = (words: string) => (/[.?!]$/.test(words) ? words : `${words}.`)
 
 export default React.memo(function LogSealBar({
     status, rating, review, abandonedReason, date, watchedWith, physicalMedia,
-    submitting, sealed, isEditing, onSeal,
+    submitting, held = false, sealed, isEditing, onSeal,
 }: Props) {
     const edge = useBottomEdge();
     const keyboard = useAnimatedKeyboard();
@@ -140,7 +142,7 @@ export default React.memo(function LogSealBar({
                 onPress={() => { TactileEngine.mutate(); onSeal(); }}
                 // Unready, not disabled: the line above says what is wanted, and the
                 // press still answers, so nobody taps a control that ignores them.
-                disabled={submitting}
+                disabled={submitting || held}
                 hitSlop={null}
                 pressedScale={0.97}
                 accessibilityRole="button"
@@ -151,7 +153,7 @@ export default React.memo(function LogSealBar({
                 // While the press shows what is wanted, it is said too: what is read on a control is
                 // in its name, after the act it does.
                 accessibilityLabel={ready ? label : words === label ? `${label}. ${blockReason}` : `${label}. ${sentence(words)} ${blockReason}`}
-                accessibilityState={{ disabled: submitting }}
+                accessibilityState={{ disabled: submitting || held }}
             >
                 <Image source={MARK} style={s.mark} resizeMode="contain" />
                 <Text style={[s.pressText, !ready && UNREADY.words]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{words}</Text>

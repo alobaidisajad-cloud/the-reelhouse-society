@@ -68,6 +68,8 @@ export interface DispatchArchive {
    * so it moves by the member's mark only when the mark has moved since.
    */
   certifiedAtFetch: Set<string>;
+  /** The member's critiques on each filing (the store's `critiqued`) when this page read it. */
+  critiquedAtFetch: ReadonlyMap<string, number>;
   count: number;
   span: string;
   loading: boolean;
@@ -118,6 +120,7 @@ export function useDispatchArchive(): DispatchArchive {
   const [film, setFilm] = useState<PaperFilm | null>(null);
   const [filings, setFilings] = useState<Filing[]>([]);
   const [certifiedAtFetch, setCertifiedAtFetch] = useState<Set<string>>(() => new Set());
+  const [critiquedAtFetch, setCritiquedAtFetch] = useState<ReadonlyMap<string, number>>(() => new Map());
   const [count, setCount] = useState(0);
   const [span, setSpan] = useState('');
   const [loading, setLoading] = useState(false);
@@ -277,6 +280,12 @@ export function useDispatchArchive(): DispatchArchive {
         for (const f of got) if (live.has(f.id)) next.add(f.id);
         return next;
       });
+      const critiqued = useDispatch.getState().critiqued;
+      setCritiquedAtFetch((prev) => {
+        const next = new Map(from === 0 ? [] : prev);
+        for (const f of got) next.set(f.id, critiqued[f.id] ?? 0);
+        return next;
+      });
     } catch (e) {
       if (mine === filmSeq.current) { logger.warn('[archive] read failed', e); if (from === 0) setFilmFailed(true); else setMoreFailed(true); }
     } finally {
@@ -293,7 +302,7 @@ export function useDispatchArchive(): DispatchArchive {
     // film's offset and skip this one's opening filings.
     fetched.current = 0;
     setFilm(m.film);
-    setFilings([]); setCertifiedAtFetch(new Set()); setCount(0); setSpan(''); setMore(false); setFilmFailed(false); setMoreFailed(false);
+    setFilings([]); setCertifiedAtFetch(new Set()); setCritiquedAtFetch(new Map()); setCount(0); setSpan(''); setMore(false); setFilmFailed(false); setMoreFailed(false);
     void page(0);
   }, [page]);
 
@@ -301,7 +310,7 @@ export function useDispatchArchive(): DispatchArchive {
     filmSeq.current += 1;
     subjectId.current = null;
     fetched.current = 0;
-    setFilm(null); setFilings([]); setCertifiedAtFetch(new Set()); setCount(0); setSpan(''); setMore(false);
+    setFilm(null); setFilings([]); setCertifiedAtFetch(new Set()); setCritiquedAtFetch(new Map()); setCount(0); setSpan(''); setMore(false);
     setFilmFailed(false); setMoreFailed(false); setLoading(false);
   }, []);
 
@@ -329,7 +338,7 @@ export function useDispatchArchive(): DispatchArchive {
   return {
     query, setQuery,
     matches, searching, settled: answered === query.trim(), searchFailed,
-    film, filings: shown, certifiedAtFetch, count: shownCount, span, loading, filmFailed, moreFailed, more,
+    film, filings: shown, certifiedAtFetch, critiquedAtFetch, count: shownCount, span, loading, filmFailed, moreFailed, more,
     choose, clear, loadMore, retry, askForTheRest,
   };
 }

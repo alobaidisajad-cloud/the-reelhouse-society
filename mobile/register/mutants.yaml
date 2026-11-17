@@ -5643,3 +5643,210 @@ mutants:
         find: "      await useAuthStore.getState().savePreferences({ backdrop: next });"
         replace: "      useAuthStore.getState().updateUser({ preferences: { ...(useAuthStore.getState().user?.preferences ?? {}), backdrop: next } });"
     proof: { file: src/components/profile/__tests__/aFilmMountedOfflineStaysMounted.test.tsx, test: "the backdrop switched offline stays switched, kept to be sent, and the next read of the profile keeps it so" }
+
+  - id: shape-read-all-under-the-board
+    class: READ-a-reread-that-drops-waiting-writes
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "            const allReadSince = allReadAt !== null && allReadAt >= askedAt;"
+        replace: "            const allReadSince = false;"
+    proof: { file: src/stores/__tests__/readAllOrADismissalWhileTheBoardIsReadStays.test.ts, test: "READ ALL tapped while the board was being read leaves every notice read and the bell at 0 when that read lands" }
+
+  - id: shape-dismissed-back-on-the-board
+    class: READ-a-reread-that-drops-waiting-writes
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "            const kept = goneSince.size ? validated.filter((n) => !goneSince.has(n.id)) : validated;"
+        replace: "            const kept = validated;"
+    proof: { file: src/stores/__tests__/readAllOrADismissalWhileTheBoardIsReadStays.test.ts, test: "a notice dismissed while the board was being read does not come back, and the bell does not count it" }
+
+  - id: shape-late-read-all-for-the-next
+    class: READ-a-reread-that-drops-waiting-writes
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "            if (stillSignedIn(startedAs)) allReadAt = monotonicNow();"
+        replace: "            allReadAt = monotonicNow();"
+    proof: { file: src/stores/__tests__/readAllOrADismissalWhileTheBoardIsReadStays.test.ts, test: "READ ALL landing after a sign-out leaves the next member's board as the house holds it" }
+
+  - id: shape-salon-read-under-the-corridor
+    class: READ-a-reread-that-drops-waiting-writes
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      const readSince = new Set([..._readRoomsHere].filter(([, at]) => at >= askedAt).map(([id]) => id));"
+        replace: "      const readSince = new Set<string>();"
+    proof: { file: src/stores/__tests__/aSalonReadWhileTheCorridorIsReadStaysRead.test.ts, test: "a salon read while the corridor was being read says nothing unread when that read lands" }
+
+  - id: shape-withdrawal-under-the-list
+    class: READ-a-reread-that-drops-waiting-writes
+    source: shape
+    edits:
+      - file: src/stores/domain/socialSlice.ts
+        find: "  const actedSince = [..._actedHere].filter(([, act]) => act.at >= askedAt);"
+        replace: "  const actedSince = [..._actedHere].filter(() => false);"
+    proof: { file: src/stores/__tests__/aFollowActedWhileTheListIsReadStays.test.ts, test: "a request withdrawn while the follow list was being read stays withdrawn when that read lands" }
+
+  - id: shape-row-critique-count-kept
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/components/dispatch/FilingRow.tsx
+        find: "      commentCount={Math.max(0, f.commentCount + critiqueShift)}"
+        replace: "      commentCount={f.commentCount}"
+    proof: { file: src/components/dispatch/__tests__/aCritiqueMovesTheRowsOwnCount.test.tsx, test: "a critique written from a room moves that row by one, and the paper's row is never moved twice" }
+
+  - id: shape-withdrawn-record-on-the-archive
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: app/film-reviews/[id].tsx
+        find: "    if (withdrawnId) setLogs((prev) => prev.filter((l) => l.id !== withdrawnId));"
+        replace: "    if (withdrawnId) return;"
+    proof: { file: app/film-reviews/__tests__/aRecordChangedElsewhereLeavesTheLogArchive.test.tsx, test: "a record withdrawn leaves the archive at once, before any read" }
+
+  - id: shape-amended-record-not-read-again
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: app/film-reviews/[id].tsx
+        find: "    if (!changedSinceRead.current || !filmId) return;"
+        replace: "    if (changedSinceRead.current || !filmId) return;"
+    proof: { file: app/film-reviews/__tests__/aRecordChangedElsewhereLeavesTheLogArchive.test.tsx, test: "a record amended is read again when the member is back on the archive, never before, and once" }
+
+  - id: shape-queued-record-off-the-reel
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "    if (CHANGES_THE_REEL.has(mutation.type)) reelMayHaveChanged();"
+        replace: ""
+    proof: { file: src/utils/__tests__/theReelHearsEachQueuedRecord.test.ts, test: "filed offline, tells the wall as well as the Reel, as one filed online does" }
+
+  - id: shape-hidden-hosts-salon-listed
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: app/(tabs)/lounge.tsx
+        find: "      browsableLounges: filterContentByBlocks([...here.filter((l) => !isMine(l)), ...found.filter((l) => !isMine(l))], (l) => l.creator_id),"
+        replace: "      browsableLounges: [...here.filter((l) => !isMine(l)), ...found.filter((l) => !isMine(l))],"
+    proof: { file: src/components/lounge/__tests__/aHiddenHostsSalonLeavesTheDirectory.test.tsx, test: "a salon whose host is blocked or muted is not among the salons; the member's own stays" }
+
+  - id: shape-door-answer-frees-the-row
+    class: WRITE-a-second-tap-that-acts-again
+    source: shape
+    edits:
+      - file: src/components/lounge/AtTheDoorPanel.tsx
+        find: "    if (ok) { onResolved(); return; }"
+        replace: "    if (ok) { onResolved(); }"
+    proof: { file: src/components/lounge/__tests__/theDoorAnswersEachRequestOnItsOwn.test.tsx, test: "a request the house answered stays held until it leaves the door; a later request of theirs is free" }
+
+  - id: shape-reseal-over-a-removal
+    class: WRITE-a-second-tap-that-acts-again
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "        // Nor over one being removed (the bar is held meanwhile).\n        if (deletingRef.current) return;\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx, test: "RESEAL while the record is being removed seals nothing" }
+
+  - id: shape-removal-over-a-reseal
+    class: WRITE-a-second-tap-that-acts-again
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "        if (!editLogId || !editReady || deletingRef.current || submitting) return;"
+        replace: "        if (!editLogId || !editReady || deletingRef.current) return;"
+    proof: { file: src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx, test: "a removal asked while the reseal is on its way removes nothing" }
+
+  - id: shape-curator-opened-twice
+    class: WRITE-a-second-tap-that-acts-again
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "onPress={() => onePress(`curator:${list.user}`, () => handlePressProfile(list.user))}"
+        replace: "onPress={() => handlePressProfile(list.user)}"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "opens the curator's file once for a double tap, and again for a tap a moment later" }
+
+  - id: shape-covered-overlay-takes-back
+    class: NAV-a-back-that-skips-or-strays
+    source: shape
+    edits:
+      - file: src/hooks/useBackCloses.ts
+        find: "    if (!open || !inFront) return undefined;"
+        replace: "    if (!open) return undefined;"
+    proof: { file: src/hooks/__tests__/backClosesTheOverlay.test.tsx, test: "back on the page above does not close the overlay hidden beneath it" }
+
+  - id: shape-seal-walks-after-leaving
+    class: NAV-a-walk-onward-after-the-member-left
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "            // Sealed after the sheet went: the record is kept, and nothing walks back for it.\n            if (!mountedRef.current) return;\n"
+        replace: "            // Sealed after the sheet went: the record is kept, and nothing walks back for it.\n"
+    proof: { file: src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx, test: "a seal that lands after the member left walks nobody back, and leaves no beat behind it" }
+
+  - id: shape-removal-walks-after-leaving
+    class: NAV-a-walk-onward-after-the-member-left
+    source: shape
+    edits:
+      - file: src/hooks/useLogFlow.ts
+        find: "            // Removed after the sheet went: nothing walks back for it.\n            if (!mountedRef.current) return;\n"
+        replace: "            // Removed after the sheet went: nothing walks back for it.\n"
+    proof: { file: src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx, test: "a removal walks back while the sheet is there, and walks nobody back once the member has left" }
+
+  - id: shape-profile-walks-after-leaving
+    class: NAV-a-walk-onward-after-the-member-left
+    source: shape
+    edits:
+      - file: src/hooks/useEditProfile.ts
+        find: "      if (!mountedRef.current) return;\n"
+        replace: ""
+    proof: { file: src/features/profile/__tests__/aSaveOnItsWayIsNotLost.test.tsx, test: "a save that lands after the member left walks nobody back" }
+
+  - id: shape-reset-walks-after-leaving
+    class: NAV-a-walk-onward-after-the-member-left
+    source: shape
+    edits:
+      - file: app/reset-password.tsx
+        find: "      if (!mountedRef.current) return;\n"
+        replace: ""
+    proof: { file: app/__tests__/aRecoveryLeftEndsItsSession.test.tsx, test: "walks the member home while they are on the screen, and nobody once they have left it" }
+
+  - id: shape-discard-over-a-save
+    class: WRITE-an-act-that-takes-other-than-it-says
+    source: shape
+    edits:
+      - file: src/hooks/useEditProfile.ts
+        find: "  useAskBeforeLeaving(isDirty && !sealed && !saving,"
+        replace: "  useAskBeforeLeaving(isDirty && !sealed,"
+    proof: { file: src/features/profile/__tests__/aSaveOnItsWayIsNotLost.test.tsx, test: "a save on its way is not asked about on the way out: there is nothing left to discard" }
+
+  - id: shape-follow-busy-unsaid
+    class: UI-shown-but-not-said
+    source: shape
+    edits:
+      - file: app/user/[username].tsx
+        find: "                  accessibilityState={{ busy: followLoading || (!followKnown && followingKnown !== 'failed'), disabled: followLoading }}"
+        replace: "                  accessibilityState={{ busy: !followKnown && followingKnown !== 'failed' }}"
+    proof: { file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "a follow on its way is said busy and disabled, and a press asks nothing more" }
+
+  - id: shape-request-said-as-a-follow
+    class: UI-shown-but-not-said
+    source: shape
+    edits:
+      - file: src/components/reels/MemberRegistry.tsx
+        find: "isRequested ? `Requested @${member.username}: waiting on their answer` : "
+        replace: "isRequested ? `Following @${member.username}` : "
+    proof: { file: src/components/reels/__tests__/theRegistryStampSaysWhereTheFollowStands.test.tsx, test: "a request waiting on its answer is said as one, never as a follow; a member not followed says FOLLOW" }
+
+  - id: shape-held-seal-said-live
+    class: UI-shown-but-not-said
+    source: shape
+    edits:
+      - file: app/(modals)/log-modal.tsx
+        find: "                    held={flow.deleting}\n"
+        replace: ""
+    proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while a viewing is being removed, RESEAL is held: said disabled, and a press seals nothing" }

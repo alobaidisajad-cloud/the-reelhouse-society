@@ -1,5 +1,6 @@
--- Undo of 20261116_01: the corridor counts every request at a host's door again, unnamed, and a
--- critique's certification is written under its filing's key. The notices written meanwhile keep
+-- Undo of 20261116_01: the corridor counts every request at a host's door again, unnamed, a
+-- critique's certification is written under its filing's key, and a salon's last word is the room's
+-- newest, whoever said it. The notices written meanwhile keep
 -- the key they were written with: a phone that knows it groups them as a critique's, one that
 -- does not leaves them single.
 SET LOCAL lock_timeout = '2s';
@@ -76,3 +77,33 @@ BEGIN
   END IF;
   RETURN NEW;
 END $$;
+
+-- add-only (3): it only fixes: the function as it was before 20261116_01
+CREATE OR REPLACE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(lounge_id uuid, unread_count bigint, last_message_at timestamp with time zone)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  WITH me AS (SELECT auth.uid() AS id, public.hidden_authors() AS hidden),
+  rooms AS (
+    SELECT lm.lounge_id, lm.last_read_at, (NOT l.is_private OR lm.status = 'approved') AS readable
+      FROM me
+      JOIN public.lounge_members lm ON lm.user_id = me.id
+      JOIN public.lounges l ON l.id = lm.lounge_id
+  )
+  SELECT
+    r.lounge_id,
+    CASE WHEN r.readable THEN (
+      SELECT count(*) FROM (
+        SELECT 1 FROM public.lounge_messages m
+         WHERE m.lounge_id = r.lounge_id
+           AND m.user_id <> me.id
+           AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)
+           AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+         LIMIT 100
+      ) unread
+    ) ELSE 0 END AS unread_count,
+    CASE WHEN r.readable THEN (
+      SELECT max(m.created_at) FROM public.lounge_messages m WHERE m.lounge_id = r.lounge_id
+    ) END AS last_message_at
+  FROM rooms r CROSS JOIN me;
+$$;

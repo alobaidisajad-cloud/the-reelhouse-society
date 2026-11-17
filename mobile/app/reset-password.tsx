@@ -41,7 +41,13 @@ export default function ResetPasswordScreen() {
   // A refused press says why under its field, with it, and goes there.
   const { refuse, wrongWith } = useFieldRefusal([password, confirm], { password: passwordRef, confirm: confirmRef });
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => { return () => { if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current); }; }, []);
+  // Gone before the session was read: the timer was set after this cleanup ran, and walked the
+  // member home from wherever they had gone three seconds later (review round 8).
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current); };
+  }, []);
 
   // The sign-up form's rules and meter: one password rule, drawn one way.
   const strong = passwordIsAccepted(password);
@@ -102,6 +108,7 @@ export default function ResetPasswordScreen() {
       }
 
       // The "3 SECONDS" the screen promises; cleared if the screen goes first.
+      if (!mountedRef.current) return;
       redirectTimerRef.current = setTimeout(() => {
         nav.dismissTo('/(tabs)');
       }, 3000);

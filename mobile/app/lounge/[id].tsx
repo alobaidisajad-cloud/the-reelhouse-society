@@ -25,6 +25,7 @@ import { knownStanding, roomGate, type RoomGate, type RoomStanding } from '@/src
 import { offerWord } from '@/src/lib/pushPrimer';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { safeOpenURL } from '@/src/utils/linking';
+import { onePress } from '@/src/utils/onePress';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -89,7 +90,7 @@ function renderBody(content: string) {
       const tail = part.slice(trimmed.length);
       return (
         <Text key={i}>
-          <Text style={s.link} onPress={() => safeOpenURL(trimmed)}>{trimmed}</Text>
+          <Text style={s.link} onPress={() => onePress(`link:${trimmed}`, () => safeOpenURL(trimmed))}>{trimmed}</Text>
           {tail}
         </Text>
       );

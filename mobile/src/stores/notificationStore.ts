@@ -204,6 +204,13 @@ const readHere = new Map<string, number>();
 const markingRead = (ids: readonly string[]) => { for (const id of ids) readHere.set(id, Infinity); };
 const markTaken = (ids: readonly string[]) => { const at = monotonicNow(); for (const id of ids) readHere.set(id, at); };
 const markRefused = (ids: readonly string[]) => { for (const id of ids) readHere.delete(id); };
+/**
+ * READ ALL and the notices dismissed here, kept the same way: a read asked before READ ALL landed
+ * wrote every notice back unread, the bell's count with them and READ ALL lit again, and one asked
+ * before a dismissal put the notice back on the board (review round 8).
+ */
+let allReadAt: number | null = null;
+const goneHere = new Map<string, number>();
 
 export const useNotificationStore = create<NotificationState>()(
     persist(
@@ -261,14 +268,21 @@ export const useNotificationStore = create<NotificationState>()(
             // Marks this read was asked before the house took: laid over its answer (readHere).
             const markedSince = new Set([...readHere].filter(([, at]) => at >= askedAt).map(([id]) => id));
             for (const [id, at] of readHere) if (at < askedAt) readHere.delete(id);
-            const answeredUnread = validated.filter((n) => markedSince.has(n.id) && !n.read).length;
-            const shown = answeredUnread ? validated.map((n) => (markedSince.has(n.id) ? { ...n, read: true } : n)) : validated;
+            // READ ALL since it was asked: every notice in its answer is read. Dismissed since: gone.
+            const allReadSince = allReadAt !== null && allReadAt >= askedAt;
+            if (allReadAt !== null && allReadAt < askedAt) allReadAt = null;
+            const goneSince = new Set([...goneHere].filter(([, at]) => at >= askedAt).map(([id]) => id));
+            for (const [id, at] of goneHere) if (at < askedAt) goneHere.delete(id);
+            const readSince = (n: AppNotification) => allReadSince || markedSince.has(n.id);
+            const answeredUnread = validated.filter((n) => (readSince(n) || goneSince.has(n.id)) && !n.read).length;
+            const kept = goneSince.size ? validated.filter((n) => !goneSince.has(n.id)) : validated;
+            const shown = answeredUnread ? kept.map((n) => (readSince(n) ? { ...n, read: true } : n)) : kept;
             set({
                 fetchFailed: false,
                 moreFailed: false,
                 notifications: shown,
                 // The server's count; the page's only as a fallback.
-                _unreadCount: unreadRes.error ? shown.filter(n => !n.read).length : Math.max(0, (unreadRes.count ?? 0) - answeredUnread),
+                _unreadCount: unreadRes.error || allReadSince ? shown.filter(n => !n.read).length : Math.max(0, (unreadRes.count ?? 0) - answeredUnread),
                 // Did the SERVER send a full page (not: how many rows survived)?
                 _hasMore: !!cursor && data.length >= PAGE_SIZE,
                 _cursor: cursor,
@@ -426,11 +440,17 @@ export const useNotificationStore = create<NotificationState>()(
             notifications: state.notifications.map((n) => ({ ...n, read: true })),
             _unreadCount: 0,
         }));
+        const allReadBefore = allReadAt;
+        allReadAt = Infinity;
 
         try {
             const { error } = await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false);
             if (error) throw error;
+            // Landed after a sign-out, it is the last member's: the next member's board is not read
+            // all-read by it, nor handed the last member's mark back.
+            if (stillSignedIn(startedAs)) allReadAt = monotonicNow();
         } catch (e) {
+            if (stillSignedIn(startedAs)) allReadAt = allReadBefore;
             logger.warn(`[markAllRead] Failed:`, e);
             // Rolled back only while still signed in, as in markRead: the ones it marked, alone.
             if (stillSignedIn(startedAs)) set((state) => unreadAgain(state, new Set(previousState.filter((n) => !n.read).map((n) => n.id))));
@@ -456,9 +476,12 @@ export const useNotificationStore = create<NotificationState>()(
             const user = useAuthStore.getState().user;
             if (!user) throw new Error('Authentication required');
             // user_id: depth beside RLS, as in markRead.
+            goneHere.set(id, Infinity);
             const { error } = await supabase.from('notifications').delete().eq('id', id).eq('user_id', user.id);
             if (error) throw error;
+            goneHere.set(id, monotonicNow());
         } catch (e) {
+            goneHere.delete(id);
             logger.warn('[dismiss] failed', id, e);
             // Rolled back only while still signed in, as in markRead: this notice, put back.
             if (stillSignedIn(startedAs)) set((state) => putBack(state, previousState.filter((n) => n.id === id)));
@@ -525,13 +548,17 @@ export const useNotificationStore = create<NotificationState>()(
             const user = useAuthStore.getState().user;
             if (!user) throw new Error('Authentication required');
             // user_id: depth beside RLS, as in markRead.
+            for (const id of ids) goneHere.set(id, Infinity);
             const { error } = await supabase
                 .from('notifications')
                 .delete()
                 .in('id', ids)
                 .eq('user_id', user.id);
             if (error) throw error;
+            const at = monotonicNow();
+            for (const id of ids) goneHere.set(id, at);
         } catch (e) {
+            for (const id of ids) goneHere.delete(id);
             logger.warn('[dismissGroup] failed', ids.length, e);
             // See markRead: the group, put back.
             if (stillSignedIn(startedAs)) set((state) => putBack(state, previousState.filter((n) => ids.includes(n.id))));
@@ -653,6 +680,8 @@ registerStoreReset(() => {
     // All of it, from the one list: a flag left raised holds every read after it.
     useNotificationStore.setState(noticesAtStart());
     readHere.clear();
+    goneHere.clear();
+    allReadAt = null;
     try { zustandMMKVStorage.removeItem('reelhouse-notifications'); } catch { /* noop */ }
 });
 

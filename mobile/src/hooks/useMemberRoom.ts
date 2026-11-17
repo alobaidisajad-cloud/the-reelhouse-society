@@ -86,6 +86,8 @@ export interface MemberRoom {
    * print one too many.
    */
   certifiedAtFetch: Set<string>;
+  /** The member's critiques on each filing (the store's `critiqued`) when this room read it. */
+  critiquedAtFetch: ReadonlyMap<string, number>;
   loading: boolean;
   /** The house answered: no member by this handle. */
   missing: boolean;
@@ -114,6 +116,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
   const [certified, setCertified] = useState(0);
   const [totalsKnown, setTotalsKnown] = useState(false);
   const [certifiedAtFetch, setCertifiedAtFetch] = useState<Set<string>>(() => new Set());
+  const [critiquedAtFetch, setCritiquedAtFetch] = useState<ReadonlyMap<string, number>>(() => new Map());
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [missing, setMissing] = useState(false);
@@ -144,7 +147,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
   if (readFor !== readKey) {
     setReadFor(readKey);
     setAuthor(null); setMemberId(null); setFilings([]); setFiled(0); setCertified(0); setTotalsKnown(false);
-    setCertifiedAtFetch(new Set());
+    setCertifiedAtFetch(new Set()); setCritiquedAtFetch(new Map());
     setMissing(!username); setFailed(false); setMore(false); setMoreFailed(false); setLoading(!!username);
   }
   /**
@@ -235,6 +238,12 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
       for (const f of got) if (live.has(f.id)) next.add(f.id);
       return next;
     });
+    const critiqued = useDispatch.getState().critiqued;
+    setCritiquedAtFetch((prev) => {
+      const next = new Map(from === 0 ? [] : prev);
+      for (const f of got) next.set(f.id, critiqued[f.id] ?? 0);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -295,7 +304,7 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
   }, [loading, loadingMore, more, page]);
 
   return {
-    author, memberId, filings, filed, certified, totalsKnown, certifiedAtFetch,
+    author, memberId, filings, filed, certified, totalsKnown, certifiedAtFetch, critiquedAtFetch,
     loading, loadingMore, missing, failed, reload, more, moreFailed, loadMore,
   };
 }

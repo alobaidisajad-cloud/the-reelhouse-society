@@ -26,6 +26,15 @@ import { queryClient } from '../../lib/queryClient';
 // One act at a time per member: a second tap while the first is in flight is dropped.
 const _inflightOps = new Set<string>();
 
+/**
+ * Follows, requests and withdrawals made on this phone, by when the house took them (Infinity
+ * while on their way). A list read asked before one landed answered without it, and set the lists
+ * whole: a request withdrawn read REQUESTED again, a follow read FOLLOW, and a second FOLLOW
+ * found the row there and counted the member's file one follower more (review round 8). A read
+ * asked before an act landed has it laid over its answer; one asked after holds it already.
+ */
+const _actedHere = new Map<string, { as: 'following' | 'requested' | 'none'; at: number }>();
+
 // ── Per-action throttle ──
 const _socialThrottles = new Map<string, number>();
 const _THROTTLE_COOLDOWN = 2000;
@@ -161,12 +170,24 @@ export function reconcileGraphWithPendingMutations(
  * The one place a list read from the server reaches the store, corrected by the
  * queue. followGraph.wiring.guard.test.ts fails if anything else sets the lists.
  */
-function commitHydratedGraph(userId: string, serverFollowing: string[], serverRequested: string[]): void {
-  const { following, requested } = reconcileGraphWithPendingMutations(
+function commitHydratedGraph(userId: string, serverFollowing: string[], serverRequested: string[], askedAt: number): void {
+  const reconciled = reconcileGraphWithPendingMutations(
     userId, serverFollowing, serverRequested, getOfflineQueue(),
   );
-  useSocialStore.getState().setFollowing(following);
-  useSocialStore.getState().setRequested(requested);
+  const actedSince = [..._actedHere].filter(([, act]) => act.at >= askedAt);
+  for (const [name, act] of _actedHere) if (act.at < askedAt) _actedHere.delete(name);
+  // Case-insensitive, as the store's own index and the queue's reconciling are.
+  const following = new Map(reconciled.following.map((name) => [name.toLowerCase(), name]));
+  const requested = new Map(reconciled.requested.map((name) => [name.toLowerCase(), name]));
+  for (const [name, { as }] of actedSince) {
+    const key = name.toLowerCase();
+    following.delete(key);
+    requested.delete(key);
+    if (as === 'following') following.set(key, name);
+    if (as === 'requested') requested.set(key, name);
+  }
+  useSocialStore.getState().setFollowing([...following.values()]);
+  useSocialStore.getState().setRequested([...requested.values()]);
   // Read whole: the list is the member's, however short.
   useSocialStore.setState({ followingKnown: 'held' });
   persistFollowingToCache(userId);
@@ -206,6 +227,7 @@ export async function followUser(targetUsername: string, known?: { id: string; i
     if (shownPrivate) store.addRequested(targetUsername);
     else store.addFollowing(targetUsername);
     persistFollowingToCache(userId);
+    _actedHere.set(targetUsername, { as: shownPrivate ? 'requested' : 'following', at: Infinity });
   }
 
   try {
@@ -216,6 +238,7 @@ export async function followUser(targetUsername: string, known?: { id: string; i
 
     const { id: targetId, isPrivate } = targetProfile;
     const interactionType = isPrivate ? 'follow_request' : 'follow';
+    _actedHere.set(targetUsername, { as: isPrivate ? 'requested' : 'following', at: Infinity });
 
     // Shown now if it was not known before, or the profile says otherwise: the screen follows the profile.
     if (isPrivate !== shownPrivate) {
@@ -237,7 +260,9 @@ export async function followUser(targetUsername: string, known?: { id: string; i
       .in('type', ['follow', 'follow_request'])
       .maybeSingle();
 
+    // Each landing written only for the member still here: two members may follow one handle.
     if (existing) {
+      if (stillSignedIn(userId)) _actedHere.set(targetUsername, { as: existing.type === 'follow_request' ? 'requested' : 'following', at: monotonicNow() });
       logger.warn('[socialSlice.followUser] Already interacted in the database: syncing state');
       refreshFollowGraphFeeds();
       return true;
@@ -247,10 +272,13 @@ export async function followUser(targetUsername: string, known?: { id: string; i
       user_id: userId, target_user_id: targetId, type: interactionType,
     }]);
     if (error && !error.message?.includes('duplicate')) throw error;
+    if (stillSignedIn(userId)) _actedHere.set(targetUsername, { as: isPrivate ? 'requested' : 'following', at: monotonicNow() });
     
     refreshFollowGraphFeeds();
     return true;
   } catch (err: unknown) {
+    // Queued, the queue's own entry is laid over every read (reconcile); refused, nothing was done.
+    if (stillSignedIn(userId)) _actedHere.delete(targetUsername);
     const msg = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as any).message) : String(err);
     // Mirrors the network check below exactly (both msg and err) so an offline
     // failure — which is queued, not lost — is never reported as a defect.
@@ -312,6 +340,7 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
   useSocialStore.getState().removeFollowing(targetUsername);
   useSocialStore.getState().removeRequested(targetUsername);
   persistFollowingToCache(userId);
+  _actedHere.set(targetUsername, { as: 'none', at: Infinity });
 
   try {
     const targetProfile = await resolveUsernameToProfile(targetUsername);
@@ -320,6 +349,7 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
     if (!targetProfile) {
       // The handle did not resolve: queued, so the unfollow the member saw still happens.
       logger.warn('[socialSlice.unfollowUser] Could not resolve the member: queued for retry');
+      _actedHere.delete(targetUsername);
       enqueueMutation({
         type: 'unfollow_user',
         payload: { user_id: userId, target_username: targetUsername },
@@ -328,6 +358,7 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
       const { error } = await supabase.from('interactions').delete()
         .eq('user_id', userId).eq('target_user_id', targetProfile.id).in('type', ['follow', 'follow_request']);
       if (error) throw error;
+      if (stillSignedIn(userId)) _actedHere.set(targetUsername, { as: 'none', at: monotonicNow() });
     }
     refreshFollowGraphFeeds();
     return true;
@@ -338,6 +369,8 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
     if (!isNetworkError(msg) && !isNetworkError(err)) {
       captureError(err, { scope: 'socialSlice' });
     }
+    // Queued, the queue's own entry is laid over every read (reconcile); refused, nothing was done.
+    if (stillSignedIn(userId)) _actedHere.delete(targetUsername);
     // Neither their lists put back nor their unfollow queued, once they have left.
     if (!stillSignedIn(userId)) return false;
     // No signal: the screen keeps the unfollow and the queue sends it, with the id if known.
@@ -416,6 +449,7 @@ async function readFollowing(userId: string, current: () => boolean): Promise<vo
   const unread = () => {
     if (current()) useSocialStore.setState((s) => (s.followingKnown === 'held' ? s : { followingKnown: 'failed' }));
   };
+  const askedAt = monotonicNow();
   try {
     const allUsernames: string[] = [];
     const allRequested: string[] = [];
@@ -490,7 +524,7 @@ async function readFollowing(userId: string, current: () => boolean): Promise<vo
 
     // Read for a member who has since gone, or by a read since replaced: not theirs to write.
     if (!current()) return;
-    commitHydratedGraph(userId, allUsernames, allRequested);
+    commitHydratedGraph(userId, allUsernames, allRequested, askedAt);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.warn('[socialSlice.hydrateFollowing] Unexpected error:', msg);
@@ -507,6 +541,7 @@ function clearSocialCaches(): void {
   _socialThrottles.clear();
   _usernameProfileCache.clear();
   _inflightOps.clear();
+  _actedHere.clear();
   // A read in flight now lands nowhere; the next member's sign-in starts its own.
   _hydrating.clear();
 }

@@ -6,9 +6,10 @@
  * signed in with since (review round 1, 2026-11-14). Every leave ends it now; a reset made, none.
  */
 import React from 'react';
-import { render, act } from '@testing-library/react-native';
+import { render, act, fireEvent } from '@testing-library/react-native';
 import { supabase } from '@/src/lib/supabase';
 import { storage } from '@/src/stores/mmkv-storage';
+import { nav } from '@/src/utils/typedRouter';
 import ResetPasswordScreen from '../reset-password';
 
 let mockLeave: (() => void) | null = null;
@@ -49,4 +50,54 @@ it('left once the recovery is over, ends no session', async () => {
   expect(mockLeave).not.toBeNull();
   await act(async () => { mockLeave?.(); });
   expect(endSessionHere).not.toHaveBeenCalled();
+});
+
+/**
+ * Review round 8: a new password set, its session read answering after the member had left the
+ * screen, set the promised three-second walk home after the screen's own cleanup had run. Nothing
+ * cleared it, and three seconds later it took the member home from wherever they had gone.
+ */
+describe('the walk home three seconds after a new password', () => {
+  /** The session read after the password is set, held until the test lets it answer. */
+  const holdTheSessionRead = () => {
+    let answer: () => void = () => {};
+    (supabase.auth.getSession as jest.Mock).mockImplementationOnce(() => new Promise((res) => {
+      answer = () => res({ data: { session: null }, error: null });
+    }));
+    return async () => { await act(async () => { answer(); }); };
+  };
+  const setThePassword = async (r: Awaited<ReturnType<typeof mount>>) => {
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('New password'), 'New#Pass123'); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Confirm new password'), 'New#Pass123'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Reset password: submit the new one')); });
+  };
+  const threeSeconds = () => act(async () => { jest.advanceTimersByTime(3100); });
+
+  let home: jest.SpyInstance;
+  beforeEach(() => { home = jest.spyOn(nav, 'dismissTo').mockImplementation(() => {}); });
+  afterEach(() => { home.mockRestore(); jest.useRealTimers(); });
+
+  it('walks the member home while they are on the screen, and nobody once they have left it', async () => {
+    const stays = await mount();
+    jest.useFakeTimers();
+    const answerHere = holdTheSessionRead();
+    await setThePassword(stays);
+    expect(supabase.auth.updateUser).toHaveBeenCalledWith({ password: 'New#Pass123' });
+    await answerHere();
+    await threeSeconds();
+    expect(home).toHaveBeenCalledTimes(1);
+    expect(home).toHaveBeenCalledWith('/(tabs)');
+    stays.unmount();
+    jest.useRealTimers();
+
+    home.mockClear();
+    const leaves = await mount();
+    jest.useFakeTimers();
+    const answerGone = holdTheSessionRead();
+    await setThePassword(leaves);
+    leaves.unmount();
+    await answerGone();
+    await threeSeconds();
+    expect(home).not.toHaveBeenCalled();
+  });
 });

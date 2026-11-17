@@ -647,10 +647,18 @@ export function useLogFlow() {
         return task;
     }, []);
 
-    useEffect(() => () => {
-        if (sealTimerRef.current) clearTimeout(sealTimerRef.current);
-        pendingTasks.current.forEach(t => t.cancel());
-        pendingTasks.current = [];
+    // A seal or a delete answered after the sheet was swiped away (or Android's back) set its beat
+    // and its walk back after the cleanup below had run: nothing cleared them, and the walk back
+    // took the member off the page they had gone back to (review round 8).
+    const mountedRef = useRef(true);
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+            if (sealTimerRef.current) clearTimeout(sealTimerRef.current);
+            pendingTasks.current.forEach(t => t.cancel());
+            pendingTasks.current = [];
+        };
     }, []);
 
     // Kept once the form rests, and at once if the sheet goes before it has (the last second's
@@ -747,6 +755,8 @@ export function useLogFlow() {
         if (!film) { reelToast.error('No film selected.'); return; }
         // An edit seals only over the record it was filled from (the form is shut until then).
         if (!editReady) return;
+        // Nor over one being removed (the bar is held meanwhile).
+        if (deletingRef.current) return;
         const blockReason = validateLogSubmission(status, rating, review, abandonedReason);
         if (blockReason) { reelToast.error(blockReason); return; }
         setSubmitting(true);
@@ -769,8 +779,10 @@ export function useLogFlow() {
                 } });
             }
             if (!isEditing) { unsavedLog.current = null; dropLogDraft(user?.id, filmId); }
-            TactileEngine.success();
             e2eTrace('log.seal.saved');
+            // Sealed after the sheet went: the record is kept, and nothing walks back for it.
+            if (!mountedRef.current) return;
+            TactileEngine.success();
             // One brass beat, "RECORD SEALED", then dismiss (never after unmount).
             setSealed(true);
             if (sealTimerRef.current) clearTimeout(sealTimerRef.current);
@@ -821,11 +833,14 @@ export function useLogFlow() {
      * VIEWING: the record steps back to the one before.
      */
     const handleDelete = async (whole: boolean = true) => {
-        if (!editLogId || !editReady || deletingRef.current) return;
+        // Nor while a seal is on its way: the removal would race the reseal over one record.
+        if (!editLogId || !editReady || deletingRef.current || submitting) return;
         deletingRef.current = true;
         setDeleting(true);
         try {
             await removeLog(editLogId, whole, edited ?? undefined);
+            // Removed after the sheet went: nothing walks back for it.
+            if (!mountedRef.current) return;
             TactileEngine.warn();
             setLettingGo(true);
             deferUntilIdle(() => {

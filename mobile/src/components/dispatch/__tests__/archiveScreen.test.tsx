@@ -532,6 +532,48 @@ describe('a mark made in the archive', () => {
   });
 });
 
+describe('a critique written from the archive (review round 8)', () => {
+  // The archive read each filing's critique count once: a critique written from it moved the
+  // paper's count and left the archive's, back on it, as it was read.
+  // In act: the screen may still be drawn, and hears the change.
+  const fresh = async () => { await act(async () => { useDispatch.setState({ critiqued: {} } as never); }); };
+  beforeEach(fresh);
+  afterEach(fresh);
+
+  const open = async (first: Record<string, unknown> = {}) => {
+    mockSearchRows = [hit()];
+    mockFilingRows = [filing({ id: 'f1', ...first }), filing({ id: 'f2', body: 'A second take.' })];
+    const r = render(<ArchiveScreen />);
+    await act(async () => { await Promise.resolve(); });
+    await type(r, 'stalker');
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
+      for (let i = 0; i < 6; i++) await Promise.resolve();
+    });
+    return r;
+  };
+  /** Each filing's critique control, as it is read aloud, in the archive's order. */
+  const counts = (r: ReturnType<typeof render>) =>
+    r.getAllByLabelText(/^Critique/).map((n) => n.props.accessibilityLabel as string);
+
+  it('moves that filing\'s count by one, and that filing\'s alone', async () => {
+    const r = await open();
+    expect(counts(r)).toEqual(['Critique. 1 critique', 'Critique. 1 critique']);
+
+    await act(async () => { await useDispatch.getState().addCritique('f1', 'Patient, not slow.'); });
+    expect(counts(r)).toEqual(['Critique. 2 critiques', 'Critique. 1 critique']);
+  });
+
+  it('counts a critique written before the film was opened once, as the house did, and one written since on top', async () => {
+    useDispatch.setState({ critiqued: { f1: 1 } } as never);
+    const r = await open({ comment_count: 2 });
+    expect(counts(r)).toEqual(['Critique. 2 critiques', 'Critique. 1 critique']);
+
+    await act(async () => { await useDispatch.getState().addCritique('f1', 'Once more.'); });
+    expect(counts(r)).toEqual(['Critique. 3 critiques', 'Critique. 1 critique']);
+  });
+});
+
 describe('a later page that could not be read (review round 6)', () => {
   // A later page's failure was only logged: the list ended as if it were the whole archive, and
   // every scroll event asked again.

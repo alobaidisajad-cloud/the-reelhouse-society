@@ -25,6 +25,7 @@ import { LOG_BUSY } from '@/src/stores/domain/logSlice/helpers/logOperations';
 const mockBack = jest.fn();
 let mockAddLog: jest.Mock;
 let mockUpdateLog: jest.Mock;
+let mockRemoveLog: jest.Mock;
 let mockParams: Record<string, string> = {};
 
 jest.mock('expo-router', () => ({
@@ -46,7 +47,7 @@ jest.mock('@/src/stores/films', () => {
     lists: [], _loggedIndex: {},
     addLog: (...a: unknown[]) => mockAddLog(...a),
     updateLog: (...a: unknown[]) => mockUpdateLog(...a),
-    removeLog: jest.fn(), addFilmToList: jest.fn(), removeFilmFromList: jest.fn(),
+    removeLog: (...a: unknown[]) => mockRemoveLog(...a), addFilmToList: jest.fn(), removeFilmFromList: jest.fn(),
   };
   // A selector is applied, as Zustand applies it: the editor selects its record.
   return { useFilmStore: (pick?: (s: typeof state) => unknown) => (pick ? pick(state) : state) };
@@ -92,6 +93,7 @@ beforeEach(() => {
   mockParams = { filmId: '550', filmTitle: 'Fight Club', filmPoster: '/p.jpg', filmYear: '1999' };
   mockAddLog = jest.fn().mockResolvedValue(undefined);
   mockUpdateLog = jest.fn().mockResolvedValue(undefined);
+  mockRemoveLog = jest.fn().mockResolvedValue(undefined);
   jest.spyOn(InteractionManager, 'runAfterInteractions').mockImplementation(((fn: () => void) => {
     const task = { fn, cancelled: false };
     queue.push(task);
@@ -169,5 +171,98 @@ describe('a record that did not file says one true thing', () => {
     await beat();
     await idle();
     expect(mockBack).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Review round 8: a seal or a removal answered after the sheet was swiped away (or Android's back)
+ * set its beat and its walk back after the unmount had cleared everything: nothing cleared them,
+ * and the walk back took the member off the page they had gone back to. And a seal and a removal
+ * of one record could both be on their way at once, the reseal reaching a record being removed.
+ */
+const EDITED = '00000016-0000-4000-8000-000000000016';
+/** The store's write, held on the wire until the test lets it land. */
+const holdOn = (write: jest.Mock) => {
+  let land: () => void = () => {};
+  write.mockImplementation(() => new Promise<void>((res) => { land = res; }));
+  return async () => { await act(async () => { land(); }); };
+};
+
+describe('an answer that comes after the sheet has gone', () => {
+  it('a seal that lands after the member left walks nobody back, and leaves no beat behind it', async () => {
+    // The beat is the seal's one 650 ms timer: set for a sheet that is there, none once it has gone.
+    const timers = jest.spyOn(globalThis, 'setTimeout');
+    const beatsSet = () => timers.mock.calls.filter(([, ms]) => ms === 650).length;
+    const stays = await file();
+    expect(beatsSet()).toBe(1);
+    stays.unmount();
+
+    const land = holdOn(mockAddLog);
+    const r = render(<Probe />);
+    await act(async () => { api!.setRating(8); });
+    let sealing: Promise<void> | undefined;
+    await act(async () => { sealing = api!.handleLog(); });
+    r.unmount();
+    await land();
+    await act(async () => { await sealing; });
+    expect(mockAddLog).toHaveBeenCalledTimes(2);
+    expect(beatsSet()).toBe(1);
+    timers.mockRestore();
+    await beat();
+    await idle();
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it('a removal walks back while the sheet is there, and walks nobody back once the member has left', async () => {
+    mockParams = { editLogId: EDITED, filmId: '550', filmTitle: 'Fight Club' };
+    // Here: removed, and the sheet goes once the phone is idle.
+    const stays = render(<Probe />);
+    await act(async () => { await api!.handleDelete(true); });
+    await idle();
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    stays.unmount();
+
+    mockBack.mockClear();
+    const land = holdOn(mockRemoveLog);
+    const leaves = render(<Probe />);
+    let removing: Promise<void> | undefined;
+    await act(async () => { removing = api!.handleDelete(true); });
+    leaves.unmount();
+    await land();
+    await act(async () => { await removing; });
+    expect(mockRemoveLog).toHaveBeenCalledTimes(2);
+    await idle();
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+});
+
+describe('a seal and a removal of one record are never on their way together', () => {
+  beforeEach(() => { mockParams = { editLogId: EDITED, filmId: '550', filmTitle: 'Fight Club' }; });
+
+  it('RESEAL while the record is being removed seals nothing', async () => {
+    const land = holdOn(mockRemoveLog);
+    render(<Probe />);
+    let removing: Promise<void> | undefined;
+    await act(async () => { removing = api!.handleDelete(true); });
+    expect(api!.deleting).toBe(true);
+    await act(async () => { await api!.handleLog(); });
+    expect(mockUpdateLog).not.toHaveBeenCalled();
+    expect(api!.submitting).toBe(false);
+    await land();
+    await act(async () => { await removing; });
+  });
+
+  it('a removal asked while the reseal is on its way removes nothing', async () => {
+    const land = holdOn(mockUpdateLog);
+    render(<Probe />);
+    let sealing: Promise<void> | undefined;
+    await act(async () => { sealing = api!.handleLog(); });
+    expect(api!.submitting).toBe(true);
+    await act(async () => { await api!.handleDelete(true); });
+    expect(mockRemoveLog).not.toHaveBeenCalled();
+    expect(api!.deleting).toBe(false);
+    await land();
+    await act(async () => { await sealing; });
+    expect(mockUpdateLog).toHaveBeenCalledTimes(1);
   });
 });

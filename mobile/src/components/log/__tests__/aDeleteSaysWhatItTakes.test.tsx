@@ -205,3 +205,76 @@ describe('a removal on its way is not asked for twice', () => {
     expect(removeLog).toHaveBeenCalledTimes(2);
   });
 });
+
+/**
+ * Review round 8: a reseal and a removal of one record could both be on their way at once, the
+ * reseal reaching a record on its way out. Each now waits the other out, held, and says so.
+ */
+describe('a reseal and a removal are never on their way together', () => {
+  const REMOVE_IT = 'Remove it: this viewing goes, and the record steps back to the one before';
+  const CONFIRM_DELETE = 'Confirm delete: this log is gone for good';
+  const updateLog = jest.fn((..._a: unknown[]) => Promise.resolve());
+  /** One of the store's writes, held on the wire until the test lets it land. */
+  const hold = (write: jest.Mock) => {
+    let land: () => void = () => {};
+    write.mockImplementation(() => new Promise<void>((res) => { land = res; }));
+    return async () => { await act(async () => { land(); }); };
+  };
+  /** The sheet open on the record, its store's reseal the test's. */
+  const openToReseal = async (record: typeof ONCE | typeof TWICE) => {
+    const r = await open(record);
+    await act(async () => { useFilmStore.setState({ updateLog } as never); });
+    return r;
+  };
+  const seal = (r: R) => r.getByTestId('submit-log-button');
+
+  beforeEach(() => {
+    updateLog.mockReset();
+    updateLog.mockImplementation(() => Promise.resolve());
+  });
+  // The sheet is still drawn here (its own cleanup comes after this one): the store's change is
+  // drawn in act.
+  afterEach(async () => { await act(async () => { useFilmStore.setState({ updateLog: AS_BUILT.updateLog } as never); }); });
+
+  it('while a viewing is being removed, RESEAL is held: said disabled, and a press seals nothing', async () => {
+    const land = hold(removeLog);
+    const r = await openToReseal(TWICE);
+    expect(seal(r).props.accessibilityState).toMatchObject({ disabled: false });
+    await press(r.getByLabelText('Remove this viewing'));
+    await press(r.getByLabelText(REMOVE_IT));
+    expect(removeLog).toHaveBeenCalledTimes(1);
+
+    expect(seal(r).props.accessibilityState).toMatchObject({ disabled: true });
+    await press(seal(r));
+    expect(updateLog).not.toHaveBeenCalled();
+    await land();
+  });
+
+  it('while the reseal is on its way, REMOVE IT is said disabled, and a press removes nothing', async () => {
+    const land = hold(updateLog);
+    const r = await openToReseal(TWICE);
+    await press(r.getByLabelText('Remove this viewing'));
+    expect(r.getByLabelText(REMOVE_IT).props.accessibilityState).toMatchObject({ disabled: false });
+    await press(seal(r));
+    expect(updateLog).toHaveBeenCalledTimes(1);
+
+    expect(r.getByLabelText(REMOVE_IT).props.accessibilityState).toMatchObject({ disabled: true });
+    await press(r.getByLabelText(REMOVE_IT));
+    expect(removeLog).not.toHaveBeenCalled();
+    await land();
+  });
+
+  it('while the reseal is on its way, CONFIRM DELETE is said disabled, and a press deletes nothing', async () => {
+    const land = hold(updateLog);
+    const r = await openToReseal(ONCE);
+    await press(r.getByLabelText('Delete this entire log'));
+    expect(r.getByLabelText(CONFIRM_DELETE).props.accessibilityState).toMatchObject({ disabled: false });
+    await press(seal(r));
+    expect(updateLog).toHaveBeenCalledTimes(1);
+
+    expect(r.getByLabelText(CONFIRM_DELETE).props.accessibilityState).toMatchObject({ disabled: true });
+    await press(r.getByLabelText(CONFIRM_DELETE));
+    expect(removeLog).not.toHaveBeenCalled();
+    await land();
+  });
+});

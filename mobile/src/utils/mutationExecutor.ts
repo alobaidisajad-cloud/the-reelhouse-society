@@ -13,6 +13,7 @@
 import { houseIso } from '@/src/lib/houseClock';
 import { fetchWithinLimit, supabase } from '../lib/supabase';
 import { wallMayHaveChanged } from '../components/lobby/wallRead';
+import { reelMayHaveChanged } from '../components/feed/reelRead';
 import { useAuthStore } from '../stores/auth';
 import { InteractionService } from '../services/InteractionService';
 import { VaultService } from '../services/VaultService';
@@ -997,11 +998,19 @@ export function applyIdMapToPayload(payload: Record<string, unknown>, idMap: Rec
     return mapped;
 }
 
-/** The replays that can change or take down a piece the Lobby hangs. */
+/** The replays that can hang, change or take down a piece the Lobby hangs: a record filed offline
+ *  among them, as one filed online is (review round 8). */
 const CHANGES_THE_WALL: ReadonlySet<QueuedMutation['type']> = new Set<QueuedMutation['type']>([
-    'update_log', 'remove_log', 'add_viewing', 'remove_viewing',
+    'add_log', 'update_log', 'remove_log', 'add_viewing', 'remove_viewing',
     'update_list', 'delete_list', 'remove_film_from_list',
     'update_filing', 'end_filing',
+]);
+
+/** The replays that file, amend or withdraw a record the Reel draws a card for: one written online
+ *  tells the Reel itself (reelMayHaveChanged); one sent later by the queue told nothing, and the card
+ *  stayed as it was, or was never drawn, until a pull (review round 8). */
+const CHANGES_THE_REEL: ReadonlySet<QueuedMutation['type']> = new Set<QueuedMutation['type']>([
+    'add_log', 'update_log', 'remove_log', 'add_viewing', 'remove_viewing',
 ]);
 
 /**
@@ -1026,5 +1035,6 @@ export async function executeMutation(
     const result = await handler(mapped, idMap);
     // The house has it only now: the wall asked earlier still hung the piece as it was.
     if (CHANGES_THE_WALL.has(mutation.type)) wallMayHaveChanged();
+    if (CHANGES_THE_REEL.has(mutation.type)) reelMayHaveChanged();
     return result;
 }

@@ -39,6 +39,7 @@ import { Text } from '@/src/components/text';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import reelToast from '@/src/utils/reelToast';
 import { matchesSearch } from '@/src/utils/searchPattern';
+import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 
 /** A search the house is asked: two letters at least, a moment after the last keystroke. */
 const SEARCH = { least: 2, wait: 300 } as const;
@@ -161,6 +162,10 @@ export default function LoungeScreen() {
   }, [words, searchLounges, askAgain]);
   const searchFailed = characterCount(words) >= SEARCH.least && asked?.words === words && asked.hits === null;
 
+  // A salon whose host the member has blocked or muted leaves the directory, as their filings,
+  // stacks and records leave every list: reported with "Also block this member", it stood there
+  // still, its plaque the host's own words (review round 8). A salon of the member's own stays.
+  const whoIsHidden = useWhoIsHidden();
   const { myLounges, browsableLounges } = useMemo(() => {
     // As the house's search matches (matchesSearch), so a salon it found is never dropped here.
     const matches = (l: LoungeRoom) => !words || matchesSearch(words, l.name, l.description);
@@ -171,9 +176,10 @@ export default function LoungeScreen() {
       ? asked.hits.filter((l) => !held.has(l.id) && matches(l)) : [];
     return {
       myLounges: here.filter(isMine),
-      browsableLounges: [...here.filter((l) => !isMine(l)), ...found.filter((l) => !isMine(l))],
+      browsableLounges: filterContentByBlocks([...here.filter((l) => !isMine(l)), ...found.filter((l) => !isMine(l))], (l) => l.creator_id),
     };
-  }, [lounges, words, asked]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lounges, words, asked, whoIsHidden]);
 
   const scrollY = useSharedValue(0);
   const isScrolling = useSharedValue(false);

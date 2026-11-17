@@ -160,6 +160,9 @@ export default function LogModalScreen() {
                     watchedWith={flow.watchedWith}
                     physicalMedia={flow.physicalMedia}
                     submitting={flow.submitting}
+                    // A record being removed is not sealed over: the reseal reached a record on its
+                    // way out (review round 8).
+                    held={flow.deleting}
                     sealed={flow.sealed}
                     isEditing={isEditing}
                     onSeal={flow.handleLog}

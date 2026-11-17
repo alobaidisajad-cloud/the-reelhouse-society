@@ -23,7 +23,7 @@ import { nav } from '@/src/utils/typedRouter';
 
 export const FilingRow = memo(function FilingRow({
   f: given, width, order, orderIs, certified, saved, member,
-  pending = false, shift = 0, noByline = false, withFilm = true, toAuthor = true,
+  pending = false, shift = 0, critiquedAtRead, noByline = false, withFilm = true, toAuthor = true,
 }: {
   f: Filing;
   width: number;
@@ -41,6 +41,12 @@ export const FilingRow = memo(function FilingRow({
    * filings (a room, an archive): +1 or −1 against the count it was read with.
    */
   shift?: number;
+  /**
+   * For a list holding its own copy: the member's critiques on this filing (the store's `critiqued`)
+   * when the list read it. Its critique count moves by what they have moved since. The paper's own
+   * copy is moved in place, and passes nothing.
+   */
+  critiquedAtRead?: number;
   /** The page is this member's: no byline on each entry. */
   noByline?: boolean;
   /** The page is this film's: no poster on each entry. */
@@ -52,6 +58,8 @@ export const FilingRow = memo(function FilingRow({
   // the act left, wherever it is drawn (a room, an archive or a series held its own copy and kept
   // printing the old words). Its counts stay the list's own.
   const acted = useDispatch((s) => s.acted[given.id]);
+  const critiquedNow = useDispatch((s) => s.critiqued[given.id] ?? 0);
+  const critiqueShift = critiquedAtRead === undefined ? 0 : critiquedNow - critiquedAtRead;
   const f: Filing = acted ? { ...given, ...acted } : given;
   // Whether this member's marks on this filing have been read: a signed-out reader has none to read.
   const certifyKnown = useDispatch((s) => !member || s.marksKnown.certified.has(f.id));
@@ -77,7 +85,7 @@ export const FilingRow = memo(function FilingRow({
       orderIs={orderIs}
       measureWidth={width}
       certifyCount={Math.max(0, f.certifyCount + shift)}
-      commentCount={f.commentCount}
+      commentCount={Math.max(0, f.commentCount + critiqueShift)}
       certified={certified}
       saved={saved}
       certifyKnown={certifyKnown}

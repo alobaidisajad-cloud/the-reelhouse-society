@@ -67,6 +67,7 @@ import type { StackData } from '@/src/schemas/feed.schema';
 import { useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
 import { stackCritiques } from '@/src/components/critique/stackCritiques';
+import { onePress } from '@/src/utils/onePress';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
@@ -958,7 +959,7 @@ function StackDetailScreen({ id }: { id: string }) {
                     are objects, so they wrap below as their own elements. */}
                 <Arrive name="stacks-1" duration={600} delay={200} style={s.metaRow}>
                   <Text style={s.metaText} numberOfLines={2}>
-                    <Text style={s.metaCurator} onPress={() => handlePressProfile(list.user)} suppressHighlighting accessibilityRole="link" accessibilityLabel={`View curator @${list.user}`}>@{list.user.toUpperCase()}</Text>
+                    <Text style={s.metaCurator} onPress={() => onePress(`curator:${list.user}`, () => handlePressProfile(list.user))} suppressHighlighting accessibilityRole="link" accessibilityLabel={`View curator @${list.user}`}>@{list.user.toUpperCase()}</Text>
                     <Text style={s.metaSep}>{'  ·  '}</Text>
                     {(list.filmCount ?? list.films.length)} {(list.filmCount ?? list.films.length) === 1 ? 'REEL' : 'REELS'}
                     {estDate ? <><Text style={s.metaSep}>{'  ·  '}</Text>EST. {estDate.toUpperCase()}</> : null}

@@ -46,7 +46,7 @@ export default function ArchiveScreen() {
 
   const {
     query, setQuery, matches, searching, settled, searchFailed,
-    film, filings, certifiedAtFetch, count, span, loading, filmFailed, moreFailed, choose, clear, loadMore, retry, askForTheRest,
+    film, filings, certifiedAtFetch, critiquedAtFetch, count, span, loading, filmFailed, moreFailed, choose, clear, loadMore, retry, askForTheRest,
   } = useDispatchArchive();
   const typed = characterCount(query.trim()) >= 2;
   // Typed, and not yet answered (the search waits 300ms for the last key).
@@ -108,6 +108,7 @@ export default function ArchiveScreen() {
                   // The house's number when read, moved by the member's own mark
                   // since — as the room does. It stood still when the heart moved.
                   shift={(certifiedIds.has(row.entry.id) ? 1 : 0) - (certifiedAtFetch.has(row.entry.id) ? 1 : 0)}
+                  critiquedAtRead={critiquedAtFetch.get(row.entry.id) ?? 0}
                   certified={certifiedIds.has(row.entry.id)}
                   saved={savedIds.has(row.entry.id)}
                   member={!!me}

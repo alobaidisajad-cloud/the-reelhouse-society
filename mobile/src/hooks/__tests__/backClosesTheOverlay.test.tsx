@@ -12,12 +12,19 @@ import AvatarCropSheet from '@/src/components/profile/AvatarCropSheet';
 import { CinemaDNACard } from '@/src/components/profile/CinemaDNACard';
 
 jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: 'me' } }) }));
+/** Whether the overlay's screen is the one in front (false: a page has been pushed over it). */
+let mockFocused = true;
+jest.mock('expo-router/react-navigation', () => ({
+  ...require('@/test-utils/navigationMock').navigationMock(),
+  useIsFocused: () => mockFocused,
+}));
 
 type Heard = () => boolean | null | undefined;
 let mockHeard: Heard[] = [];
 
 beforeEach(() => {
   mockHeard = [];
+  mockFocused = true;
   jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_event, handler) => {
     mockHeard.unshift(handler as Heard);
     return { remove: () => { mockHeard = mockHeard.filter((h) => h !== handler); } };
@@ -59,4 +66,38 @@ it('the crop sheet and the Cinema DNA card each close on back', async () => {
   await render(<CinemaDNACard user={{ username: 'kane' }} onClose={cardClosed} />);
   await pressBack();
   expect(cardClosed).toHaveBeenCalledTimes(1);
+});
+
+/**
+ * Review round 8: a page pushed over the screen (a filing opened from the Archive's film, a
+ * critic's file from a stack's critiques) left the overlay's subscription standing, newer than the
+ * navigator's, so the first back on that page closed the overlay hidden beneath it and the page
+ * stayed. Only the screen in front hears the press.
+ */
+describe('a page pushed over the overlay', () => {
+  it('back on the page above does not close the overlay hidden beneath it', async () => {
+    mockFocused = false;
+    const close = jest.fn();
+    await renderHook(() => useBackCloses(true, close));
+    expect(mockHeard).toEqual([]);
+    await pressBack();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('an overlay open when a page is pushed over it lets the press go, and takes it again once its screen is in front', async () => {
+    const close = jest.fn();
+    const hook = await renderHook(() => useBackCloses(true, close));
+    expect(mockHeard).toHaveLength(1);
+
+    mockFocused = false;
+    await hook.rerender({});
+    expect(mockHeard).toEqual([]);
+    await pressBack();
+    expect(close).not.toHaveBeenCalled();
+
+    mockFocused = true;
+    await hook.rerender({});
+    await pressBack();
+    expect(close).toHaveBeenCalledTimes(1);
+  });
 });

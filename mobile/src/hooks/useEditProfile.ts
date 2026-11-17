@@ -16,6 +16,7 @@ import { isStandingRefusal } from '@/src/utils/standing';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { WALL_KEY } from '@/src/components/lobby/wallRead';
 import { nav } from '@/src/utils/typedRouter';
+import reelToast from '@/src/utils/reelToast';
 import { useAskBeforeLeaving } from '@/src/hooks/useAskBeforeLeaving';
 import { normalizeSocialUrl } from '@/src/utils/linking';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
@@ -193,7 +194,13 @@ export function useEditProfile() {
   const sealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Saved: the form is the profile now, and nothing it holds is kept as a draft on its way out. */
   const savedRef = useRef(false);
-  useEffect(() => () => { if (sealTimerRef.current) clearTimeout(sealTimerRef.current); }, []);
+  // The screen is gone (left while the save was on its way): its beat and walk back are not set,
+  // and what the save answers is said by a toast, the form no longer being there to say it.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; if (sealTimerRef.current) clearTimeout(sealTimerRef.current); };
+  }, []);
 
   // The member's amendments, kept on this phone as they type (memberDrafts, kind 'profile'): the
   // phone may end the app in the background, or rebuild its screen, and they are taken up again
@@ -287,6 +294,7 @@ export function useEditProfile() {
 
         const isAvailable = await ProfileService.checkUsernameAvailable(sanitizedUsername, user.id);
         if (!isAvailable) {
+          if (!mountedRef.current) reelToast.error('Your profile was not saved: that username is already taken.');
           form.setError('username', { type: 'manual', message: 'This username is already taken.' });
           setSaving(false);
           return;
@@ -382,6 +390,7 @@ export function useEditProfile() {
       clearDraft(user.id, 'profile');
       TactileEngine.success();
       setSaving(false);
+      if (!mountedRef.current) return;
       setSealed(true);
       sealTimerRef.current = setTimeout(() => { nav.back(); }, 750);
       return;
@@ -389,6 +398,7 @@ export function useEditProfile() {
       console.error('Failed to update profile:', err);
       // A refusal for the member's standing is the house's answer, not a fault: the notice says it.
       if (!__DEV__ && !isStandingRefusal((err as { message?: unknown } | null)?.message)) captureError(err instanceof Error ? err : new Error(String(err)), { context: 'update_profile' });
+      if (!mountedRef.current) reelToast.error('Your profile could not be saved. Try again.');
       setSubmitError(err instanceof Error ? err : new Error('Failed to update profile. Please try again.'));
     } finally {
       setSaving(false);
@@ -400,8 +410,10 @@ export function useEditProfile() {
   const handleSave = () => form.handleSubmit(save, refused)();
 
   // Every way out asks while something is unsaved, the back button, an edge swipe and Android's
-  // back alike; a save that landed leaves freely (sealed).
-  useAskBeforeLeaving(isDirty && !sealed, { onDiscard: () => { if (memberId) clearDraft(memberId, 'profile'); } });
+  // back alike; a save that landed leaves freely (sealed). One on its way leaves freely too: "Discard"
+  // over it discarded nothing, the save landing after the member had chosen to throw it away
+  // (review round 8).
+  useAskBeforeLeaving(isDirty && !sealed && !saving, { onDiscard: () => { if (memberId) clearDraft(memberId, 'profile'); } });
   const handleBack = () => nav.back();
 
   return {

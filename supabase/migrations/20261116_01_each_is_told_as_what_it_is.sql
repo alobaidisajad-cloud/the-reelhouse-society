@@ -12,6 +12,10 @@
 --      now endorse:critique:<the filing's id>: the phone says "your critique" and opens the filing;
 --      a phone that does not know the word leaves those notices single, as it does any key it
 --      does not know.
+--   3. A salon's card in YOUR SALONS took its "LAST WORD" time, and its place in the rail, from the
+--      newest message in the room, one from a member the reader has blocked or muted among them
+--      (review round 8): "LAST WORD 1M AGO" over a room with nothing new to read. The time is now
+--      the last word the reader can read, as the directory's rooms already are (get_salon_last_words).
 --   The rehearsal holds each, the members acting as themselves.
 -- Undo: mobile/supabase/migrations-down/20261116_01_each_is_told_as_what_it_is.sql
 -- ════════════════════════════════════════════════════════════════════════════
@@ -93,3 +97,39 @@ BEGIN
   END IF;
   RETURN NEW;
 END $$;
+
+-- add-only (3): it only fixes: the calls replayed as the members themselves, a salon's unread count as before and its last word without a member the reader has hidden (each_is_told_as_what_it_is_rehearsal.sql)
+CREATE OR REPLACE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(lounge_id uuid, unread_count bigint, last_message_at timestamp with time zone)
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  WITH me AS (SELECT auth.uid() AS id, public.hidden_authors() AS hidden),
+  rooms AS (
+    SELECT lm.lounge_id, lm.last_read_at, (NOT l.is_private OR lm.status = 'approved') AS readable
+      FROM me
+      JOIN public.lounge_members lm ON lm.user_id = me.id
+      JOIN public.lounges l ON l.id = lm.lounge_id
+  )
+  SELECT
+    r.lounge_id,
+    CASE WHEN r.readable THEN (
+      SELECT count(*) FROM (
+        SELECT 1 FROM public.lounge_messages m
+         WHERE m.lounge_id = r.lounge_id
+           AND m.user_id <> me.id
+           AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)
+           AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+         LIMIT 100
+      ) unread
+    ) ELSE 0 END AS unread_count,
+    -- The last word the member can read: one from a member they hid moved the card to the front
+    -- and said "LAST WORD 1M AGO" over a room with nothing new in it (review round 8).
+    CASE WHEN r.readable THEN (
+      SELECT m.created_at FROM public.lounge_messages m
+       WHERE m.lounge_id = r.lounge_id
+         AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+       ORDER BY m.created_at DESC, m.id DESC
+       LIMIT 1
+    ) END AS last_message_at
+  FROM rooms r CROSS JOIN me;
+$$;

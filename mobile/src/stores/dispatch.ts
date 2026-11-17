@@ -105,6 +105,13 @@ export interface DispatchState {
    */
   acted: Record<string, Acted>;
   /**
+   * The critiques this member wrote (+1) or took back (-1) on this phone, by filing. A list holding
+   * its own copy of a filing (a room, an archive) read its critique count once, and printed it still
+   * after the member critiqued the filing from it, beside the paper's new count (review round 8): it
+   * moves its count by what this has moved since it read it (FilingRow's critiquedAtRead).
+   */
+  critiqued: Record<string, number>;
+  /**
    * The member's filings queued while the wire was down. The page is emptied by every change of
    * department, sort or WHAT YOU KEPT, and redrawn from reads that do not hold them: they are laid
    * over each page they belong on while the queue still holds them (unsentOnPage).
@@ -343,6 +350,10 @@ export function unsentOnPage(
   return waiting.length ? [...waiting, ...st.filings] : st.filings;
 }
 
+/** The member's critiques on a filing moved by one, kept in `critiqued`. */
+const critiquedBy = (st: Pick<DispatchState, 'critiqued'>, postId: string, by: 1 | -1): Pick<DispatchState, 'critiqued'> =>
+  ({ critiqued: { ...st.critiqued, [postId]: (st.critiqued[postId] ?? 0) + by } });
+
 const patchFiling = (
   st: DispatchState,
   id: string,
@@ -359,6 +370,7 @@ const emptyState = () => ({
   filings: [] as Filing[],
   opened: {} as Record<string, Filing>,
   acted: {} as Record<string, Acted>,
+  critiqued: {} as Record<string, number>,
   unsent: [] as Filing[],
   section: 'ALL' as Section,
   sort: 'LATEST' as Sort,
@@ -1002,6 +1014,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       // Filed this moment: nobody has certified it, this member least of all.
       critiqueMarksKnown: new Set(st.critiqueMarksKnown).add(id),
       ...patchFiling(st, postId, (f) => ({ ...f, commentCount: f.commentCount + 1 })),
+      ...critiquedBy(st, postId, 1),
     }));
 
     const row = { id, post_id: postId, user_id: user.id, author_username: user.username ?? '', body: clean };
@@ -1022,6 +1035,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         ...patchFiling(st, postId, (f) => ({
           ...f, commentCount: Math.max(0, f.commentCount - 1),
         })),
+        ...critiquedBy(st, postId, -1),
       }));
       throw e;
     }
@@ -1042,6 +1056,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       ...patchFiling(st, postId, (f) => ({
         ...f, commentCount: Math.max(0, f.commentCount - 1),
       })),
+      ...critiquedBy(st, postId, -1),
     }));
 
     try {
@@ -1071,6 +1086,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
           critiques: { ...st.critiques, [postId]: next },
           critiquesRead: { ...st.critiquesRead, [postId]: (st.critiquesRead[postId] ?? 0) + 1 },
           ...patchFiling(st, postId, (f) => ({ ...f, commentCount: f.commentCount + 1 })),
+          ...critiquedBy(st, postId, 1),
         };
       });
       throw e;

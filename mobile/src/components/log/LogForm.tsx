@@ -641,7 +641,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     <View style={st.deleteConfirm}>
                         <Text style={st.deleteConfirmText}>REMOVE THIS VIEWING? THE RECORD STEPS BACK TO THE ONE BEFORE.</Text>
                         <View style={st.deleteConfirmRow}>
-                            <PressableScale touch="destructive" style={st.deleteYes} disabled={deleting} onPress={() => { TactileEngine.destroy(); void handleDelete(false); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ disabled: deleting, busy: deleting }} accessibilityLabel={deleting ? 'Removing this viewing' : 'Remove it: this viewing goes, and the record steps back to the one before'}><Text style={st.deleteBtnLabel}>{deleting ? 'REMOVING…' : 'REMOVE IT'}</Text></PressableScale>
+                            <PressableScale touch="destructive" style={st.deleteYes} disabled={deleting || submitting} onPress={() => { TactileEngine.destroy(); void handleDelete(false); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ disabled: deleting || submitting, busy: deleting }} accessibilityLabel={deleting ? 'Removing this viewing' : 'Remove it: this viewing goes, and the record steps back to the one before'}><Text style={st.deleteBtnLabel}>{deleting ? 'REMOVING…' : 'REMOVE IT'}</Text></PressableScale>
                             <PressableScale touch="wayOut" style={st.deleteNo} disabled={deleting} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Cancel: keep this viewing"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
                         </View>
                     </View>
@@ -650,7 +650,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     <View style={st.deleteConfirm}>
                         <Text style={st.deleteConfirmText}>{hasEarlierViewings ? 'DELETE THIS LOG AND EVERY VIEWING IN IT? THIS CANNOT BE UNDONE.' : 'DELETE THIS LOG? THIS CANNOT BE UNDONE.'}</Text>
                         <View style={st.deleteConfirmRow}>
-                            <PressableScale touch="destructive" style={st.deleteYes} disabled={deleting} onPress={() => { TactileEngine.destroy(); void handleDelete(true); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ disabled: deleting, busy: deleting }} accessibilityLabel={deleting ? 'Deleting this log' : 'Confirm delete: this log is gone for good'}><Text style={st.deleteBtnLabel}>{deleting ? 'DELETING…' : 'CONFIRM DELETE'}</Text></PressableScale>
+                            <PressableScale touch="destructive" style={st.deleteYes} disabled={deleting || submitting} onPress={() => { TactileEngine.destroy(); void handleDelete(true); }} hitSlop={null} accessibilityRole="button" accessibilityState={{ disabled: deleting || submitting, busy: deleting }} accessibilityLabel={deleting ? 'Deleting this log' : 'Confirm delete: this log is gone for good'}><Text style={st.deleteBtnLabel}>{deleting ? 'DELETING…' : 'CONFIRM DELETE'}</Text></PressableScale>
                             <PressableScale touch="wayOut" style={st.deleteNo} disabled={deleting} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={null} haptic="selection" accessibilityRole="button" accessibilityLabel="Cancel: keep this log"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
                         </View>
                     </View>

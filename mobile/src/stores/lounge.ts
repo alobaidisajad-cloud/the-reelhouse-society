@@ -546,6 +546,15 @@ export const loungesAtStart = () => ({
   typingUsers: [] as string[],
 });
 
+/**
+ * Salons marked read on this phone, by when the house took the mark (Infinity while it is on its
+ * way). The corridor reads itself again as the member comes back to it, no later than the room's
+ * mark on leaving: that read, asked first and landing after, wrote the room's old count back, and
+ * the salon just read said "N unread" until the next poll (review round 8). A read asked before a
+ * mark landed has it laid over its answer; one asked after holds it already.
+ */
+const _readRoomsHere = new Map<string, number>();
+
 export const useLoungeStore = create<LoungeState>()((set, get) => ({
   ...loungesAtStart(),
 
@@ -559,6 +568,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (kept.length > 0) set({ lounges: kept });
     }
     set({ loungesLoading: true });
+    const askedAt = monotonicNow();
     try {
       // The corridor in one trip (get_lounge_list, 20261109_02): the member's seats, the newest
       // rooms (private ones too; they need admission), the rooms joined and hosted, the unread
@@ -624,6 +634,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         return dateOf(bTime).getTime() - dateOf(aTime).getTime();
       });
 
+      // Rooms marked read since this read was asked: read, whatever its answer counted.
+      const readSince = new Set([..._readRoomsHere].filter(([, at]) => at >= askedAt).map(([id]) => id));
+      for (const [id, at] of _readRoomsHere) if (at < askedAt) _readRoomsHere.delete(id);
+
       // Enrich — rooms the user owns or joined get unread_count and last_message_at
       const enriched: LoungeRoom[] = loungesList.map((l) => ({
         id: l.id,
@@ -635,7 +649,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         member_count: l.member_count ?? 0,
         cover_image: l.cover_image ?? null,
         mine: ownedOrJoinedIds.has(l.id),
-        unread_count: ownedOrJoinedIds.has(l.id) ? (unreadCounts[l.id] || 0) : undefined,
+        unread_count: ownedOrJoinedIds.has(l.id) ? (readSince.has(l.id) ? 0 : unreadCounts[l.id] || 0) : undefined,
         last_message_at: lastMessageTimestamps[l.id],
         membership_status: statusMap.get(l.id) as LoungeRoom['membership_status'],
         pending_count: pendingCounts[l.id] || 0,
@@ -1725,6 +1739,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     set(s => ({
       lounges: s.lounges.map(l => l.id === loungeId ? { ...l, unread_count: 0 } : l),
     }));
+    _readRoomsHere.set(loungeId, Infinity);
 
     try {
       const { error } = await supabase
@@ -1734,7 +1749,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .eq('user_id', user.id);
       
       if (error) throw error;
+      // Landed after a sign-out, it is the last member's: two members may sit in one salon.
+      if (memberUnchanged(user.id)) _readRoomsHere.set(loungeId, monotonicNow());
     } catch (e) {
+      if (memberUnchanged(user.id)) _readRoomsHere.delete(loungeId);
       logger.warn('[Lounge] markRead failed:', e);
     }
   },
@@ -1748,6 +1766,7 @@ registerStoreReset(() => {
     // Every module-level memory, or the next member on this phone inherits it.
     _lastSendAt.clear();
     _keptRooms.clear();
+    _readRoomsHere.clear();
     for (const t of _typingTimers.values()) clearTimeout(t);
     _typingTimers.clear();
     // Unsubscribe, not just forget: a live channel would write the next message into

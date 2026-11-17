@@ -52,7 +52,7 @@ export default function MemberRoomScreen() {
   const me = useAuthStore((s) => s.user);
 
   const {
-    author, memberId, filings, filed, certified, totalsKnown, certifiedAtFetch,
+    author, memberId, filings, filed, certified, totalsKnown, certifiedAtFetch, critiquedAtFetch,
     loading, loadingMore, missing, failed, reload, more, moreFailed, loadMore,
   } = useMemberRoom(username);
   // A room is its member's: one blocked or muted (from a filing's reader above it, say) is left,
@@ -105,12 +105,13 @@ export default function MemberRoomScreen() {
         // The house's total when fetched, corrected by the reader's live mark: it
         // moves on a tap and moves back on its own if the store rolls a refusal back.
         shift={(certifiedIds.has(f.id) ? 1 : 0) - (certifiedAtFetch.has(f.id) ? 1 : 0)}
+        critiquedAtRead={critiquedAtFetch.get(f.id) ?? 0}
         certified={certifiedIds.has(f.id)}
         saved={savedIds.has(f.id)}
         member={!!me}
       />
     );
-  }, [width, certifiedIds, savedIds, certifiedAtFetch, me]);
+  }, [width, certifiedIds, savedIds, certifiedAtFetch, critiquedAtFetch, me]);
 
   // While it leaves, the room is drawn empty, never as theirs.
   if (memberHidden) {

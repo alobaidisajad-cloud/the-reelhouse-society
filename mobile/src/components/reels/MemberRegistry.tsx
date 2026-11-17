@@ -108,7 +108,7 @@ function MemberRow({ member }: { member: NotableMember }) {
         pressedScale={0.94}
         hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
         accessibilityRole="button"
-        accessibilityLabel={followed ? `Following @${member.username}` : `Follow @${member.username}`}
+        accessibilityLabel={isFollowing ? `Followed @${member.username}` : isRequested ? `Requested @${member.username}: waiting on their answer` : `Follow @${member.username}`}
       >
         <Text style={[s.stampText, followed && s.stampTextDone]} numberOfLines={1}>
           {isFollowing ? '✦ FOLLOWED' : isRequested ? 'REQUESTED' : 'FOLLOW'}

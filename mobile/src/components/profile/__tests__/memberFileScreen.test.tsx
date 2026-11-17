@@ -186,6 +186,23 @@ describe('the four states the page can be in', () => {
     expect(toggleFollow).toHaveBeenCalledTimes(1);
   });
 
+  // Review round 8: the button's own state replaced the press's, and said only "busy" while the
+  // follow list was read, so with a follow on its way ("...") the reader heard "Follow this member"
+  // over a button that did nothing.
+  it('a follow on its way is said busy and disabled, and a press asks nothing more', async () => {
+    const toggleFollow = jest.fn();
+    const r = await mount({ isFollowing: false, isRequested: false, followKnown: true, isSelf: false, followLoading: true, toggleFollow });
+    const follow = r.getByLabelText('Follow this member');
+    expect(follow.props.accessibilityState).toMatchObject({ busy: true, disabled: true });
+    await act(async () => { await fireEvent.press(follow); });
+    expect(toggleFollow).not.toHaveBeenCalled();
+  });
+
+  it('the follow at rest is neither busy nor disabled', async () => {
+    const r = await mount({ isFollowing: false, isRequested: false, followKnown: true, isSelf: false, followLoading: false });
+    expect(r.getByLabelText('Follow this member').props.accessibilityState).toMatchObject({ busy: false, disabled: false });
+  });
+
   it('an open dossier shows every section in order', async () => {
     const r = await mount();
     for (const section of ['THE HOLDINGS']) expect(r.getByText(section)).toBeTruthy();

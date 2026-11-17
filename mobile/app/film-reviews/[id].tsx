@@ -10,11 +10,11 @@
  * The poster press is overridden to go BACK: the member came from this
  * film's page, so the card must never stack a duplicate on top of it.
  */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
-import { Stack } from 'expo-router';
+import { Stack, useFocusEffect } from 'expo-router';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { NotInTheArchive } from '@/src/components/NotInTheArchive';
 import { useQuery } from '@tanstack/react-query';
@@ -29,6 +29,7 @@ import { colors, fonts } from '../../src/theme/theme';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import PressableScale from '@/src/components/PressableScale';
 import { ActivityCard } from '@/src/components/feed/ActivityCard';
+import { hearRecordsChanged } from '@/src/components/feed/reelRead';
 import { FeedItemSchema, type FeedItem } from '@/src/schemas/feed.schema';
 import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { logCountsSelect, withLogCountFilters, liftLogCounts } from '@/src/services/logCounts';
@@ -165,6 +166,19 @@ function FilmReviewsScreen({ filmId, title }: { filmId: string; title?: string }
     void readPage(filmId, null).then((page) => showPage(false, page));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A record withdrawn leaves at once; one filed or amended is read again when the member is back
+  // here (hearRecordsChanged), as the film's page beside it already shows it.
+  const changedSinceRead = useRef(false);
+  useEffect(() => hearRecordsChanged((withdrawnId) => {
+    if (withdrawnId) setLogs((prev) => prev.filter((l) => l.id !== withdrawnId));
+    else changedSinceRead.current = true;
+  }), []);
+  useFocusEffect(useCallback(() => {
+    if (!changedSinceRead.current || !filmId) return;
+    changedSinceRead.current = false;
+    void readPage(filmId, null).then((page) => showPage(false, page));
+  }, [filmId, showPage]));
 
   const handleFilmPress = useCallback(() => {
     // The member came from this film: walk them back to it. Opened cold, open it.

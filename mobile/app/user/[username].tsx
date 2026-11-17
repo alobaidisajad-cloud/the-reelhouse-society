@@ -1168,7 +1168,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   hitSlop={{ top: 0, bottom: 0, left: 5, right: 5 }}
                   haptic="medium"
                   accessibilityRole="button"
-                  accessibilityState={{ busy: !followKnown && followingKnown !== 'failed' }}
+                  // Its own state replaces the press's: the follow on its way ("...") is said busy and
+                  // disabled here, or the reader heard "Follow this member" over a button that did nothing.
+                  accessibilityState={{ busy: followLoading || (!followKnown && followingKnown !== 'failed'), disabled: followLoading }}
                   accessibilityLabel={!followKnown
                     ? (followingKnown === 'failed' ? 'Ask again: your follows could not be read' : 'Reading whether you follow this member')
                     : isFollowing ? 'Following: unfollow this member' : isRequested ? 'Requested: withdraw the follow request' : targetUser.is_social_private ? 'Request to follow this member' : 'Follow this member'}

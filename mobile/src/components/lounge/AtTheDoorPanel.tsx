@@ -34,14 +34,22 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
   // column dims with the page.
   const fill = useWindowFill();
   const { approveMember, declineMember } = useLoungeStore(useShallow((s) => ({ approveMember: s.approveMember, declineMember: s.declineMember })));
-  const [busy, setBusy] = useState<string | null>(null);
+  // Every request whose answer is on its way: one id alone let a second press on another row free
+  // the first while its answer was out, and a press on it again sent a second, contrary answer
+  // (review round 8).
+  const [busy, setBusy] = useState<ReadonlySet<string>>(() => new Set());
+  // One answered and gone from the door leaves the set, so a later request of theirs can be answered.
+  const waiting = [...busy].filter((id) => pending.some((m) => m.user_id === id));
+  if (waiting.length !== busy.size) setBusy(new Set(waiting));
 
   const act = async (userId: string, admit: boolean) => {
-    setBusy(userId);
+    if (busy.has(userId)) return;
+    setBusy((was) => new Set(was).add(userId));
     if (admit) TactileEngine.success(); else TactileEngine.selection();
     const ok = admit ? await approveMember(loungeId, userId) : await declineMember(loungeId, userId);
-    setBusy(null);
-    if (ok) onResolved();
+    // Answered, the row stays still until the door is read again (onResolved): never pressed twice.
+    if (ok) { onResolved(); return; }
+    setBusy((was) => { const next = new Set(was); next.delete(userId); return next; });
   };
 
   // Kept open while the sheet slides away.
@@ -88,7 +96,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
                   <PressableScale touch="destructive" hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
                     style={[s.btn, s.declineBtn]}
                     onPress={() => act(m.user_id, false)}
-                    disabled={busy === m.user_id}
+                    disabled={busy.has(m.user_id)}
                     haptic="selection"
                     accessibilityRole="button"
                     accessibilityLabel={`Decline ${m.username}`}
@@ -98,7 +106,7 @@ export function AtTheDoorPanel({ visible, loungeId, pending, onClose, onResolved
                   <PressableScale touch="commit" hitSlop={{ top: 8, bottom: 8, left: 5, right: 5 }}
                     style={[s.btn, s.admitBtn]}
                     onPress={() => act(m.user_id, true)}
-                    disabled={busy === m.user_id}
+                    disabled={busy.has(m.user_id)}
                     haptic="medium"
                     accessibilityRole="button"
                     accessibilityLabel={`Admit ${m.username}`}

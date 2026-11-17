@@ -459,3 +459,40 @@ describe('a mark made in a room', () => {
     expect(r.getByLabelText('Certified. 6 members have certified this')).toBeTruthy();
   });
 });
+
+describe('a critique written from a room (review round 8)', () => {
+  // The room read each filing's critique count once: a critique written from it moved the
+  // paper's count and left the room's, back on it, as it was read.
+  // In act: the screen may still be drawn, and hears the change.
+  const fresh = async () => { await act(async () => { useDispatch.setState({ critiqued: {} } as never); }); };
+  beforeEach(fresh);
+  afterEach(fresh);
+
+  it('moves the filing\'s count by one at once, and a removal the house refused leaves it counted', async () => {
+    mockRows = [filing({ comment_count: 1 })];
+    const r = await mount();
+    expect(r.getByLabelText('Critique. 1 critique')).toBeTruthy();
+
+    await act(async () => { await useDispatch.getState().addCritique('f1', 'Seen it twice now.'); });
+    expect(r.getByLabelText('Critique. 2 critiques')).toBeTruthy();
+
+    // Taken back, and refused (the house removed no row): down and up again, never one short.
+    const written = useDispatch.getState().critiques.f1?.[0];
+    expect(written).toBeDefined();
+    let refused: unknown = null;
+    await act(async () => { await useDispatch.getState().removeCritique(written!.id, 'f1').catch((e: unknown) => { refused = e; }); });
+    expect(refused).toBeInstanceOf(Error);
+    expect(r.getByLabelText('Critique. 2 critiques')).toBeTruthy();
+  });
+
+  it('counts a critique written before the room read it once, as the house did, and one written since on top', async () => {
+    // The house's two already hold the member's own critique.
+    store({ critiqued: { f1: 1 } });
+    mockRows = [filing({ comment_count: 2 })];
+    const r = await mount();
+    expect(r.getByLabelText('Critique. 2 critiques')).toBeTruthy();
+
+    await act(async () => { await useDispatch.getState().addCritique('f1', 'And once more.'); });
+    expect(r.getByLabelText('Critique. 3 critiques')).toBeTruthy();
+  });
+});
