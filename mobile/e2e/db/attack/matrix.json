@@ -511,6 +511,12 @@
       { "name": "one's own", "as": "all", "expect": { "ok": "all" }, "call": "public.delete_list_cascade('{ref:lists}')",
         "then": "NOT EXISTS (SELECT 1 FROM public.lists WHERE id = '{ref:lists}')" }
     ] },
+    "dispatch_archive_films": { "why": "A film's published filings in the Dispatch archive, counted by the house: never a hidden author's.", "cases": [
+      { "name": "a film filed by a member one has hidden", "as": "all", "expect": "ok",
+        "lay": { "dispatch_posts": { "id": "{new}", "kind": "take", "user_id": "{uid@BK}", "author_username": "", "body": "rh archive", "is_published": true, "subject_kind": "film", "subject_id": 424242, "subject_title": "rh archive film" } },
+        "call": "public.dispatch_archive_films('rh archive film')",
+        "result": "(position('rh archive film' in $1::text) > 0) = ('{owner}' = '{uid@X2}')" }
+    ] },
     "dispatch_door": { "why": "The caller's own way to the Dispatch's door.", "cases": [
       { "name": "asked", "as": "all", "expect": "ok", "call": "public.dispatch_door()" }
     ] },
