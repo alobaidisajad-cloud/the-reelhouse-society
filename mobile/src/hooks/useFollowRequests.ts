@@ -140,19 +140,26 @@ export function useFollowRequests(enabled: boolean) {
     if (busy.current.has(req.requesterId)) return;
     busy.current.add(req.requesterId);
     setBusyIds(new Set(busy.current));
-    if (admit) TactileEngine.success(); else TactileEngine.selection();
+    // The press is a selection; an admission's success is felt only when the house admitted someone.
+    TactileEngine.selection();
     const me = useAuthStore.getState().user?.id;
     // Optimistic: drop the row + decrement the badge immediately.
     setItems(prev => prev.filter(r => r.requesterId !== req.requesterId));
     const cur = useSocialStore.getState().pendingRequestCount;
     setCount(Math.max(0, cur - 1));
-    const ok = admit
+    const answer = admit
       ? await FollowRequestService.accept(req.requesterId)
-      : await FollowRequestService.decline(req.requesterId);
+      : (await FollowRequestService.decline(req.requesterId)) ? 'declined' : 'failed';
+    const ok = answer !== 'failed';
     busy.current.delete(req.requesterId);
     // Answered: the house took its notice, and the bell lets it go too, whether or not the door
     // is still open.
     if (ok) useNotificationStore.getState().forgetRequestNotices(req.requesterId);
+    if (answer === 'admitted' && stillSignedIn(me)) TactileEngine.success();
+    // The request was no longer there (withdrawn meanwhile, or taken by a block): no one was
+    // admitted, and the member is told so rather than left believing they were (review round 11).
+    // The row and the badge stay as they are: the request is truly gone.
+    if (answer === 'gone' && stillSignedIn(me)) reelToast(`@${req.username}'s request is no longer at the door.`);
     // A refusal is said, and the badge given back, though the door was closed meanwhile: the
     // member was told nothing, and the petitioner was silently back at the next opening (review
     // round 7). Never to the next member on the phone.

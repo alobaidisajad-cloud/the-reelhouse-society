@@ -26,7 +26,7 @@ const PAGE_SIZE = 30;
 let _realtimeCleanup: (() => void) | null = null;
 
 /** Every read's columns; each ALSO in the schema below, or Zod drops it silently. */
-const NOTIFICATION_COLUMNS = 'id, user_id, type, from_username, from_user_id, message, is_read, created_at, film_id, poster_path, group_key, title, related_lounge_id';
+const NOTIFICATION_COLUMNS = 'id, user_id, type, from_username, from_user_id, message, is_read, created_at, film_id, poster_path, group_key, title, related_lounge_id, metadata';
 const RealtimeNotifSchema = z.object({
   id: z.string(),
   user_id: z.string(),
@@ -47,7 +47,12 @@ const RealtimeNotifSchema = z.object({
   // DB column is `is_read` — transform to `read` for JS interface compat
   is_read: z.boolean().default(false),
   created_at: z.string().default(() => houseIso()),
-}).transform(({ is_read, ...rest }) => ({ ...rest, read: is_read }));
+  // Read for one key alone: the critique a certification is of (comment_id), kept as its own field.
+  metadata: z.record(z.string(), z.unknown()).nullish(),
+}).transform(({ is_read, metadata, ...rest }) => {
+  const critique = metadata?.comment_id;
+  return { ...rest, read: is_read, ...(typeof critique === 'string' ? { comment_id: critique } : {}) };
+});
 
 export interface AppNotification {
     id: string;
@@ -64,6 +69,11 @@ export interface AppNotification {
     title?: string;
     /** The salon a Lounge notice is about. */
     related_lounge_id?: string;
+    /**
+     * The critique a certification is of: its group is keyed by the filing (endorse:critique:<filing>),
+     * so the group tells one critique from several by this (review round 11).
+     */
+    comment_id?: string;
     read: boolean;
     created_at: string;
 }

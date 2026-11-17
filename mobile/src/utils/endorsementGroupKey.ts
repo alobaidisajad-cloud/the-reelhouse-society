@@ -80,7 +80,7 @@ export function parseGroupKey(key: string | null | undefined): EndorseTarget | n
  * and would have read "endorsed your review of your review" once grouping worked,
  * because the film name came from the same broken regex.
  */
-export function describeGroup(count: number, kind: EndorseKind, title?: string): string {
+export function describeGroup(count: number, kind: EndorseKind, title?: string, several = false): string {
   const people = count === 1 ? '1 member' : `${count} members`;
   const named = (title ?? '').trim();
 
@@ -93,8 +93,9 @@ export function describeGroup(count: number, kind: EndorseKind, title?: string):
       // a ballot it does.
       return named ? `${people} certified your filing “${named}”` : `${people} certified your filing`;
     case 'critique':
-      // Its filing is named by no column of the notice: the critique is the member's own.
-      return `${people} certified your critique`;
+      // Its filing is named by no column of the notice: the critique is the member's own. The group
+      // is keyed by the filing, so it may hold several of their critiques: then it says so.
+      return several ? `${people} certified your critiques` : `${people} certified your critique`;
     case 'dossier':
       // `dossier` is the group KEY — a column value — and `essay` is the word.
       // The server's `dispatch_names()` says the same thing for the ungrouped

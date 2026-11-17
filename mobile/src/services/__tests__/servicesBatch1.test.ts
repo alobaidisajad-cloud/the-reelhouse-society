@@ -290,6 +290,16 @@ describe('AuthService', () => {
             await AuthService.requestAccountDeletion();
             expect(supabase.rpc).toHaveBeenCalledWith('request_account_deletion');
         });
+
+        it('asks the house to erase what the member wrote only when they chose it', async () => {
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ error: null });
+            await AuthService.requestAccountDeletion(true);
+            expect((supabase.rpc as jest.Mock).mock.calls).toEqual([['request_account_deletion', { p_erase_writing: true }]]);
+            (supabase.rpc as jest.Mock).mockClear();
+            // Left off, the call is the plain one every client has always made.
+            await AuthService.requestAccountDeletion(false);
+            expect((supabase.rpc as jest.Mock).mock.calls).toEqual([['request_account_deletion']]);
+        });
     });
 
 });

@@ -25,13 +25,16 @@
  *   jest.mock('@/src/lib/supabase', () => ({ supabase: mockHouse.client }));
  *   mockHouse.asked   // every query made, in order
  *
+ * A computed field a select names (a function of the table's row, as
+ * critiques_seen is of logs) is answered from `computed: { fn: (row) => value }`.
+ *
  * What it cannot read (an `or()` filter, a `contains`) it refuses too, unless
  * the test answers that table itself with `answer: { table: (ask) => rows }`.
  *
  * Its `auth.mfa` is the account's second factors (`mfa: { code, factors, level }`),
  * refusing what the auth server refuses (mfaFake, below).
  */
-import { fitsAnOverload, PENDING_SQL, readColumns, readForeignKeys, readFunctions, SNAPSHOT_SQL, topLevel, type Column, type ForeignKey } from './schema';
+import { fitsAnOverload, PENDING_SQL, readColumns, readComputedFields, readForeignKeys, readFunctions, SNAPSHOT_SQL, topLevel, type Column, type ForeignKey } from './schema';
 
 type Row = Record<string, unknown>;
 type Failure = { code: string; message: string };
@@ -89,6 +92,12 @@ type Options = {
   answer?: Record<string, (ask: Ask) => Row[] | Failure>;
   /** Each rpc's answer: a value, or a function of its arguments; `{ error }` fails it. */
   rpc?: Record<string, unknown>;
+  /**
+   * Each computed field's value, by its function's name, from the row it is asked of. A select
+   * that names a computed field the test never gave leaves it out of the row, as an embed of a
+   * table the test holds nothing of is left out.
+   */
+  computed?: Record<string, (row: Row) => unknown>;
   /** The account's second factors (supabase.auth.mfa). A test that never says cannot ask. */
   mfa?: MfaWorld;
   /** Whose session the phone holds (supabase.auth.getSession), or none. A test that never says cannot ask. */
@@ -180,12 +189,16 @@ export const MAX_ROWS = 1000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NOT_ONE: Failure = { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' };
 
-let schema: { tables: Map<string, Map<string, Column>>; functions: ReturnType<typeof readFunctions>; keys: ForeignKey[] } | null = null;
+let schema: { tables: Map<string, Map<string, Column>>; functions: ReturnType<typeof readFunctions>; keys: ForeignKey[]; computed: Map<string, Set<string>> } | null = null;
 const house = () => {
   // Production, and the tables a migration not yet applied makes: the app ships beside them.
-  if (!schema) { const sql = `${SNAPSHOT_SQL()}\n${PENDING_SQL()}`; schema = { tables: readColumns(sql), functions: readFunctions(sql), keys: readForeignKeys(sql) }; }
+  if (!schema) { const sql = `${SNAPSHOT_SQL()}\n${PENDING_SQL()}`; schema = { tables: readColumns(sql), functions: readFunctions(sql), keys: readForeignKeys(sql), computed: readComputedFields(sql) }; }
   return schema;
 };
+/** Whether a select may name this as a field of the table: a function taking the table's row. */
+const isComputed = (table: string, name: string): boolean => !!house().computed.get(table)?.has(name);
+/** A computed field's value for one row, or `undefined` when the test never gave it (left out). */
+type Compute = (fn: string, row: Row) => unknown;
 
 const columnsOf = (table: string): Map<string, Column> => {
   const cols = house().tables.get(table);
@@ -213,7 +226,7 @@ const selected = (table: string, text: string): string[] => topLevel(text.replac
   if (item === '*' || item.includes('(')) return [];
   const name = (/^(?:\w+:)?(\w+)(?:::\w+)?$/.exec(item) ?? [])[1];
   if (!name) throw new Error(`supabaseFake: cannot read "${item}" in a select of ${table}`);
-  mustHave(table, name, 'select');
+  if (!isComputed(table, name)) mustHave(table, name, 'select');
   return [name];
 });
 
@@ -243,17 +256,34 @@ const embedsOf = (table: string, text: string): Embed[] => topLevel(text.replace
  * A row as the select shapes it: its columns, and each embed's rows from what the test holds of
  * that table. A table it holds nothing of leaves its embed out, as before embeds were read.
  */
-const shapeRow = (row: Row, columns: string[], embeds: Embed[], tables: Map<string, Row[]>): Row => {
-  const out: Row = columns.length ? Object.fromEntries(columns.map((c) => [c, row[c] ?? null])) : { ...row };
+const shapeRow = (row: Row, columns: string[], embeds: Embed[], tables: Map<string, Row[]>, table: string, compute: Compute): Row => {
+  const out: Row = columns.length ? Object.fromEntries(columns.flatMap((c) => {
+    if (!isComputed(table, c)) return [[c, row[c] ?? null]];
+    // A computed field is the function's value for this row; one the test never gave is left out.
+    const value = compute(c, row);
+    return value === undefined ? [] : [[c, value]];
+  })) : { ...row };
   for (const e of embeds) {
     const held = tables.get(e.table);
     if (!held) continue;
-    const shape = (r: Row) => shapeRow(r, e.columns, e.embeds, tables);
+    const shape = (r: Row) => shapeRow(r, e.columns, e.embeds, tables, e.table, compute);
     out[e.key] = e.one
       ? (() => { const hit = held.find((r) => r[e.via.toColumn] === row[e.via.column]); return hit ? shape(hit) : null; })()
       : held.filter((r) => r[e.via.column] === row[e.via.toColumn]).map(shape);
   }
   return out;
+};
+
+/** A LIKE pattern as PostgreSQL reads it: `%` any run, `_` any one character, `\` the next one as itself. */
+const likePattern = (pattern: string, anyCase: boolean): RegExp => {
+  const literal = (c: string) => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let re = '';
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern.charAt(i);
+    if (c === '\\' && i + 1 < pattern.length) re += literal(pattern.charAt(++i));
+    else re += c === '%' ? '.*' : c === '_' ? '.' : literal(c);
+  }
+  return new RegExp(`^${re}$`, anyCase ? 'is' : 's');
 };
 
 const matches = (row: Row, [op, col, val]: [string, string, unknown]): boolean => {
@@ -268,10 +298,7 @@ const matches = (row: Row, [op, col, val]: [string, string, unknown]): boolean =
     case 'lte': return (v as number) <= (val as number);
     case 'is': return v === val || (val === null && v === undefined);
     case 'in': return (val as unknown[]).includes(v);
-    case 'like': case 'ilike': {
-      const re = new RegExp(`^${String(val).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/g, '.*')}$`, op === 'ilike' ? 'i' : '');
-      return re.test(String(v ?? ''));
-    }
+    case 'like': case 'ilike': return likePattern(String(val), op === 'ilike').test(String(v ?? ''));
     default: throw new Error(`supabaseFake: the filter ${op} is not read here; answer this table with \`answer\``);
   }
 };
@@ -288,6 +315,10 @@ export function supabaseFake(options: Options = {}) {
   for (const fn of Object.keys(options.rpc ?? {})) {
     if (!house().functions.has(fn)) throw new Error(`supabaseFake: production has no function "${fn}"`);
   }
+  for (const fn of Object.keys(options.computed ?? {})) {
+    if (![...house().computed.values()].some((fns) => fns.has(fn))) throw new Error(`supabaseFake: no table has a computed field "${fn}"`);
+  }
+  const compute: Compute = (fn, row) => options.computed?.[fn]?.(row);
   const asked: Ask[] = [];
 
   const settle = (ask: Ask) => {
@@ -328,7 +359,7 @@ export function supabaseFake(options: Options = {}) {
     if (ask.limit !== null) rows = rows.slice(0, ask.limit);
     rows = rows.slice(0, MAX_ROWS);
     const embeds = ask.embeds ?? [];
-    const shaped = ask.columns.length || embeds.length ? rows.map((r) => shapeRow(r, ask.columns, embeds, tables)) : rows;
+    const shaped = ask.columns.length || embeds.length ? rows.map((r) => shapeRow(r, ask.columns, embeds, tables, ask.table, compute)) : rows;
     if (ask.head) return { data: null, error: null, count };
     if (ask.one === 'single') return shaped.length === 1 ? { data: shaped[0], error: null, count } : { data: null, error: NOT_ONE, count };
     if (ask.one === 'maybeSingle') return shaped.length > 1 ? { data: null, error: NOT_ONE, count } : { data: shaped[0] ?? null, error: null, count };

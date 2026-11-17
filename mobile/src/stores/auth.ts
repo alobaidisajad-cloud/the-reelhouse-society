@@ -195,6 +195,37 @@ function memberUnchanged(capturedUserId: string | null): boolean {
   return (useAuthStore.getState().user?.id ?? null) === capturedUserId;
 }
 
+/** What a member is told when the account signed in here was closed (on another phone). */
+export const ACCOUNT_CLOSED_SAID = 'This account has been closed. You are signed out on this phone.';
+
+/** The profile read answered that there is no row (PostgREST's PGRST116 for .single()), not that it failed. */
+function noProfileRow(error: unknown): boolean {
+  return (error as { code?: unknown } | null)?.code === 'PGRST116';
+}
+
+/**
+ * A valid session that finds no profile row: the account may have been closed on another phone. The
+ * deletion takes the row, and this phone's session stands until its token is next refreshed (up to
+ * an hour), drawing the member as signed in to a file that does not exist (review round 11). Asked
+ * of the house once (getUser checks the session with the auth server): only its answer that the
+ * account is gone counts. A read that failed, the house unreached, or any other answer keeps the
+ * member as before.
+ */
+async function accountIsClosed(): Promise<boolean> {
+  try {
+    const { error } = await supabase.auth.getUser();
+    const e = error as { code?: unknown; name?: unknown } | null;
+    return e?.code === 'user_not_found' || e?.name === 'AuthSessionMissingError';
+  } catch { return false; }
+}
+
+/** The closed account's session ended here, everything of theirs with it, and the member told why. */
+async function signOutClosedAccount(): Promise<void> {
+  // By the member's own sign-out, not "ended elsewhere": nothing is kept for a return that cannot come.
+  await useAuthStore.getState().logout();
+  reelToast.error(ACCOUNT_CLOSED_SAID);
+}
+
 /**
  * Whether this member once held a rank: the source that last granted one. Not
  * a column anyone may read (it would tell every member how every other pays),
@@ -372,7 +403,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         // Kept on disk when unreached, and laid below over the server's older copy.
         await sendPendingPrefs(session.user.id);
 
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', session.user.id).single();
         if (!memberUnchanged(restoringFor)) { set({ loading: false }); return; }
         if (profile) {
@@ -400,6 +431,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           // Every film they have logged and saved, whole (marksLedger).
           void readMarks();
           void readRankHistory(session.user.id);
+          return;
+        }
+        // No row for a valid session: the account closed on another phone is signed out here, and
+        // the member told (accountIsClosed asks the house). Not if someone else came in meanwhile.
+        if (noProfileRow(profileError) && await accountIsClosed() && memberUnchanged(restoringFor)) {
+          await signOutClosedAccount();
+          set({ loading: false });
           return;
         }
         // session valid but profile fetch returned nothing — keep the cached
@@ -540,6 +578,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // What waited for the house goes first, then the read; still unreached, it is laid over the read.
     await sendPendingPrefs(id);
     const { data, error } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', id).single();
+    // No row for this member: the account closed on another phone is signed out here (restoreSession's).
+    if (noProfileRow(error) && memberUnchanged(id) && await accountIsClosed() && memberUnchanged(id)) {
+      await signOutClosedAccount();
+      return false;
+    }
     // Only onto the member it was read for, as the login's read lands.
     if (error || !data || !memberUnchanged(id)) return profileRead(get().user);
     rankWasRead(id);

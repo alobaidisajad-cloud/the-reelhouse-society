@@ -48,7 +48,8 @@ jest.mock('../../lib/supabase', () => ({
         delete: () => { deleting = true; return chain; },
         in: () => (deleting ? mockHeld(table) : chain),
         maybeSingle: () => mockHeld(table),
-        insert: () => mockHeld(table),
+        // The follow asks its row back (.select('type').maybeSingle()): its answer is held there.
+        insert: () => chain,
       };
       return chain;
     },

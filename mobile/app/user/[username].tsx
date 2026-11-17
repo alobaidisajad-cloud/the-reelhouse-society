@@ -403,6 +403,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     lists,
     counts,
     serverStreak,
+    analyticsShape,
     username: typeof username === 'string' ? username : '',
     analyticsLogs,
     archiveSieve,

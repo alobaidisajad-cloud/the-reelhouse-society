@@ -31,7 +31,7 @@ import { displayTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { useBanCheck } from '@/src/hooks/useBanCheck';
 import { tmdb } from '@/src/lib/tmdb';
 import { useListStore } from '@/src/stores/films';
-import { STACK_CHANGED_SINCE } from '@/src/stores/domain/listSlice';
+import { STACK_CHANGED_SINCE, STACK_GONE, STACK_GONE_SAID } from '@/src/stores/domain/listSlice';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
 import reelToast from '@/src/utils/reelToast';
@@ -552,6 +552,17 @@ export default function ListModal() {
             // words, beside a second toast from the store. A stack changed elsewhere
             // since the sheet opened says so (STACK_CHANGED_SINCE).
             TactileEngine.error();
+            if ((e as { code?: unknown } | null)?.code === STACK_GONE) {
+                // Deleted elsewhere since the sheet opened (round 11): said, and the sheet lets the
+                // amendment go and closes, never asking to discard what can no longer be saved
+                // (saving stays set, so the ask stands down). An amendment keeps no draft. The
+                // stack's page beneath reads it again and says it is gone.
+                reelToast.error(STACK_GONE_SAID);
+                InteractionManager.runAfterInteractions(() => {
+                    if (isMounted.current) nav.back();
+                });
+                return;
+            }
             reelToast.error(e instanceof Error && e.message === STACK_CHANGED_SINCE ? STACK_CHANGED_SINCE : 'The stack could not be saved — nothing was changed.');
             if (isMounted.current) setSaving(false);
         }

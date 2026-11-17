@@ -51,6 +51,8 @@ import { SettingsSchema, type SettingsFormData } from '@/src/schemas/settings';
 
 import { PatronageSection, AccountSection, PrivacySection, NotificationsSection, ReadingSection, ExperienceSection, FrontDeskSection, SectionCard, SectionHead, ActionBtn } from '@/src/features/settings/SettingsSections';
 import { HiddenMembersSection } from '@/src/features/settings/HiddenMembersSection';
+import { EraseWritingChoice } from '@/src/features/settings/EraseWritingChoice';
+import { DELETE_TITLE, deleteAccountMessage } from '@/src/features/settings/deleteAccountWords';
 import { openHousePage, writeToFrontDesk, copySupportAddress } from '@/src/utils/housePages';
 import { SUPPORT_EMAIL, SUPPORT_URL, TERMS_URL, PRIVACY_URL } from '@/src/constants/support';
 import { st } from '@/src/features/settings/settings.styles';
@@ -82,6 +84,8 @@ const SEND_BEFORE_LEAVING_MS = 8000;
 
 /** Supabase's own floor for repeat OTP sends. Asking sooner only earns an error. */
 const OTP_RESEND_SECONDS = 60;
+/** A code the house could not be reached to check: kept in the box, to try again. */
+const OTP_UNREACHED = 'The house could not be reached, so your code was not checked. It is kept: try VERIFY again.';
 
 /** Where the letterhead has left the screen and the bar should carry the name. */
 const TITLE_FADE_FROM = 130;
@@ -204,9 +208,14 @@ export function SettingsScreen() {
   const [leavingTo, setLeavingTo] = useState<'/login' | null>(null);
   useEffect(() => { if (leavingTo === '/login') nav.replace('/login'); }, [leavingTo]);
 
+  // Whether what the member wrote for others goes with the account: off each time Settings opens.
+  // The choice shown when DELETE was pressed is the one carried out, whichever check follows.
+  const [eraseWriting, setEraseWriting] = useState(false);
+  const eraseWritingRef = useRef(false);
+
   const completeAccountDeletion = useCallback(async (): Promise<void> => {
     try {
-      await AuthService.requestAccountDeletion();
+      await AuthService.requestAccountDeletion(eraseWritingRef.current);
     } catch {
       reelToast.error(`Account deletion failed. Try again, or write to ${SUPPORT_EMAIL} and we will do it for you.`);
       return;
@@ -253,8 +262,12 @@ export function SettingsScreen() {
       setOtpModalVisible(false);
       setOtpCode('');
       await executePendingOtpAction();
-    } catch {
-      if (isMountedRef.current) setOtpError('That code is invalid or has expired.');
+    } catch (e: unknown) {
+      // A code the house never checked is not a wrong one: the line dropped, and the code typed is
+      // kept to try again. Told it was invalid, the member asked for a new one, which made the code
+      // they held truly invalid (review round 11). Only verifyOtp's own failures reach here.
+      const unreached = isNetworkError(e) || (e as { name?: unknown } | null)?.name === 'AuthRetryableFetchError';
+      if (isMountedRef.current) setOtpError(unreached ? OTP_UNREACHED : 'That code is invalid or has expired.');
     } finally {
       if (isMountedRef.current) setOtpVerifying(false);
     }
@@ -467,12 +480,15 @@ export function SettingsScreen() {
     const paying = isArchivistPlusTier(userRole)
       ? ` If you pay through ${STORE.name}, cancel there too (in ${STORE.settings}): deleting your account does not stop the subscription.`
       : '';
+    // What goes and what stays, for the choice made beside the button; that choice is the one done.
+    const erase = eraseWriting;
     Alert.alert(
-      'Expunge All Records',
-      `This will permanently destroy your dossier, all logs, stacks, and critiques. This action is irreversible.${paying}`,
+      DELETE_TITLE,
+      deleteAccountMessage({ eraseWriting: erase, paying }),
       [
         { text: 'CANCEL', style: 'cancel' },
         { text: 'DELETE', style: 'destructive', onPress: async () => {
+          eraseWritingRef.current = erase;
           const biometricEnabled = user?.preferences?.biometric_lock === true;
           if (biometricEnabled) {
             const hasHardware = await lockAnswer(LocalAuthentication.hasHardwareAsync());
@@ -716,6 +732,7 @@ export function SettingsScreen() {
             <View style={st.legalActions}>
               <ActionBtn icon={LogOut} label="SIGN OUT" onPress={handleSignOut} touch="destructive" />
               <View style={st.divider} />
+              <EraseWritingChoice checked={eraseWriting} onToggle={() => setEraseWriting((on) => !on)} />
               <ActionBtn icon={Trash2} label="DELETE ACCOUNT" onPress={handleDeleteAccount} danger touch="destructive" />
             </View>
           </SectionCard>

@@ -30,7 +30,7 @@ export interface GroupedDisplayItem {
   created_at: string;
   /** True if ANY notification in the group is unread */
   hasUnread: boolean;
-  /** Total count of notifications in group */
+  /** How many members the group's notices are from (never the notices' own count) */
   count: number;
 }
 
@@ -113,6 +113,13 @@ export function groupNotifications(
         }
       }
 
+      // Members, not notices: one who certified, took it back and certified again was told as
+      // three, and two critiques certified under one filing as two members (review round 11).
+      // One whose notice names no member (departed) is counted as its own.
+      const members = new Set(items.map(n => n.from_user_id ?? `notice:${n.id}`)).size;
+      // A critique's group is keyed by its filing: it may hold several of the member's critiques.
+      const critiques = new Set(items.map(n => n.comment_id ?? '')).size;
+
       groups.push({
         kind: 'group',
         groupKey: key,
@@ -120,10 +127,10 @@ export function groupNotifications(
         type: 'endorse',
         film_id: mostRecent.film_id,
         poster_path: mostRecent.poster_path,
-        message: describeGroup(items.length, parseGroupKey(key)?.kind ?? 'log', groupTitle(mostRecent)),
+        message: describeGroup(members, parseGroupKey(key)?.kind ?? 'log', groupTitle(mostRecent), critiques > 1),
         created_at: mostRecent.created_at,
         hasUnread: items.some(n => !n.read),
-        count: items.length,
+        count: members,
       });
     } else {
       // Dissolve: push back as individual items

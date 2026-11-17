@@ -1,64 +1,85 @@
 /**
- * aYearIsReadToTheLast.test.ts — Year in Cinema reads every log of the year, and only what it draws,
- * against the house as strict as it is (test-utils/supabaseFake: production's columns, its 1,000-row
- * cap, its ranges).
+ * aYearIsReadToTheLast.test.ts — Year in Cinema reads every viewing of the year, and only what it
+ * draws, against the house as strict as it is (test-utils/supabaseFake: production's functions and
+ * their arguments).
  *
  * The read stopped at 1,000 rows and said nothing, under a screen that
  * promises real numbers: an import that filed two thousand films into one
- * year would have been counted as a thousand. And it read every column of
- * every log, each one's words, autopsy and past viewings among them, for a
- * story that draws a film, a mark and a day.
+ * year would have been counted as a thousand. And it read the year by each
+ * record's day, so a film seen in March and again the next January was gone
+ * from March's year (review round 11): the year is the house's year of
+ * viewings now (year_viewings), each on the day it was made, a page at a
+ * time from the last row of the one before.
  */
-import { fetchYearLogs, YEAR_COLUMNS, YEAR_PAGE } from '../YearInCinemaService';
+import { fetchYearLogs, YEAR_PAGE } from '../YearInCinemaService';
 import { supabaseFake } from '@/test-utils/supabaseFake';
 
 const ME = '33333333-3333-4333-8333-333333333333';
-const OTHER = '77777777-7777-4777-8777-777777777777';
 
-/** Log number `n`'s id: a uuid, as the house's are. */
+/** Number `n` as a uuid, as the house's ids are. */
 const idOf = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-/** Log `n` of `user_id`, watched on `day`, with words and a past viewing the year never draws. */
-const log = (id: number, day: string, user_id = ME) => ({
-  id: idOf(id), user_id, film_id: 100 + id, film_title: `Film ${id}`, poster_path: `/p${id}.jpg`, rating: 4,
-  watched_date: day, created_at: `${day}T20:00:00Z`, review: 'A long review.', viewing_history: [],
+
+type Row = { log_id: string; viewing_id: string; film_id: number; film_title: string; poster_path: string; rating: number; day: string };
+/** Viewing `n` of the member's record `log`, on `day`. */
+const viewing = (n: number, day: string, log = n, rating = 4): Row => ({
+  log_id: idOf(log), viewing_id: idOf(100000 + n), film_id: 100 + log, film_title: `Film ${log}`, poster_path: `/p${log}.jpg`, rating, day,
 });
 
-let mockHouse = supabaseFake();
+/** The house's year_viewings over what it holds: the year's viewings newest first, after a row, a page at most. */
+const house = (held: Row[]) => {
+  const calls: Record<string, unknown>[] = [];
+  const fake = supabaseFake({
+    rpc: {
+      year_viewings: (args: Record<string, unknown>) => {
+        calls.push(args);
+        const year = String(args.p_year);
+        const before = args.p_before_day ? `${String(args.p_before_day)}/${String(args.p_before_viewing)}` : null;
+        return held
+          .filter((r) => r.day.startsWith(`${year}-`))
+          .sort((a, b) => (`${b.day}/${b.viewing_id}` < `${a.day}/${a.viewing_id}` ? -1 : 1))
+          .filter((r) => before === null || `${r.day}/${r.viewing_id}` < before)
+          .slice(0, YEAR_PAGE);
+      },
+    },
+  });
+  return { fake, calls };
+};
+
+let mockHouse = house([]).fake;
 jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));
 
-/** The house holding `n` of this member's logs in 2026, one of theirs in 2025, and another member's. */
-const holding = (n: number) => {
-  mockHouse = supabaseFake({ rows: { logs: [
-    ...Array.from({ length: n }, (_, i) => log(i + 1, '2026-03-01')),
-    log(n + 1, '2025-12-31'), log(n + 2, '2026-03-01', OTHER),
-  ] } });
-};
-const ranges = () => mockHouse.asked.filter((a) => a.table === 'logs').length;
-
-it('reads past the first page, to the last row', async () => {
-  holding(2 * YEAR_PAGE + 3);
+it('reads past the first page, to the last row, each page from the last row of the one before', async () => {
+  const many = Array.from({ length: 2 * YEAR_PAGE + 3 }, (_, i) => viewing(i + 1, `2026-03-${String((i % 28) + 1).padStart(2, '0')}`));
+  const h = house([...many, viewing(9999, '2025-12-31')]);
+  mockHouse = h.fake;
   const logs = await fetchYearLogs(ME, 2026);
   expect(logs).toHaveLength(2 * YEAR_PAGE + 3);
-  expect(new Set(logs.map((l) => l.id)).size).toBe(2 * YEAR_PAGE + 3);
-  expect(ranges()).toBe(3);
+  expect(new Set(logs.map((l) => l.viewingId)).size).toBe(2 * YEAR_PAGE + 3);
+  expect(h.calls).toHaveLength(3);
+  const [first, second] = h.calls;
+  expect(first).toEqual({ p_user_id: ME, p_year: 2026, p_before_day: null, p_before_viewing: null });
+  const lastOfFirst = logs[YEAR_PAGE - 1];
+  expect(lastOfFirst).toBeDefined();
+  expect(second).toEqual({ p_user_id: ME, p_year: 2026, p_before_day: lastOfFirst!.watchedDate, p_before_viewing: lastOfFirst!.viewingId });
 });
 
 it('a year of exactly one page asks once more, and stops on the empty answer', async () => {
-  holding(YEAR_PAGE);
+  const h = house(Array.from({ length: YEAR_PAGE }, (_, i) => viewing(i + 1, '2026-03-01')));
+  mockHouse = h.fake;
   expect(await fetchYearLogs(ME, 2026)).toHaveLength(YEAR_PAGE);
-  expect(ranges()).toBe(2);
+  expect(h.calls).toHaveLength(2);
 });
 
-it("reads the member's own year alone, by the seven columns it draws, each where the story looks", async () => {
-  holding(1);
+it("a film seen in March and again the next January is in March's year, on its own day, with the mark it had then", async () => {
+  // Record 7 was moved to its rewatch in January 2027; its March viewing is kept in its history.
+  const h = house([viewing(1, '2026-03-10', 7, 5), viewing(2, '2027-01-05', 7, 2)]);
+  mockHouse = h.fake;
   expect(await fetchYearLogs(ME, 2026)).toEqual([
-    { id: idOf(1), filmId: 101, title: 'Film 1', poster: '/p1.jpg', rating: 4, watchedDate: '2026-03-01', createdAt: '2026-03-01T20:00:00Z' },
+    { id: idOf(7), viewingId: idOf(100001), filmId: 107, title: 'Film 7', poster: '/p7.jpg', rating: 5, watchedDate: '2026-03-10', createdAt: null },
   ]);
-  expect(YEAR_COLUMNS.split(', ')).toEqual(['id', 'film_id', 'film_title', 'poster_path', 'rating', 'watched_date', 'created_at']);
-  expect(mockHouse.asked.find((a) => a.table === 'logs')?.columns).toEqual(YEAR_COLUMNS.split(', '));
 });
 
 it('a page that fails throws, so the screen says so rather than counting part of a year', async () => {
-  mockHouse = supabaseFake({ rows: { logs: [] }, fail: { logs: { message: 'Failed to fetch', code: '' } } });
+  mockHouse = supabaseFake({ rpc: { year_viewings: { error: { message: 'Failed to fetch', code: '' } } } });
   await expect(fetchYearLogs(ME, 2026)).rejects.toBeTruthy();
 });

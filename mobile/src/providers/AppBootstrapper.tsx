@@ -25,6 +25,7 @@ import MemoryManager from '../utils/memoryManager';
 import { flushOfflineQueue } from '../utils/offlineQueue';
 import { resolveTier } from '../utils/tier';
 import { followTheAccountsTactileChoice } from '../utils/tactileFollowsTheAccount';
+import { readMarksWhenAVisitorSignsIn } from '../stores/dispatch';
 
 /**
  * What a developer reads when a build is missing its server settings: one line
@@ -58,6 +59,8 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
 
   // The member's Tactile Feedback choice comes back with their account, after any sign-out.
   useEffect(() => followTheAccountsTactileChoice(), []);
+  // A visitor signed in has their Dispatch marks read for what the paper and the reader hold.
+  useEffect(() => readMarksWhenAVisitorSignsIn(), []);
 
   useEffect(() => {
     async function boot(currentUser: { id: string; username?: string | null; role?: string | null; is_founding?: boolean | null }) {
@@ -246,14 +249,15 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
     );
 
     // ── Global Auth State Listener ──
-    // DEADLOCK GUARD: auth-js emits events while holding its internal client
-    // lock and awaits every subscriber callback before releasing it. Awaiting
-    // any other supabase.auth.* call inside the callback re-enters that lock
-    // and hangs the client forever (signOut froze mid-logout; recovery links
-    // froze on "Decrypting"). The callback must stay synchronous: each event
-    // is deferred to a macrotask and appended to a serial chain, so handlers
-    // run one at a time, in emission order, after the lock is released, and
-    // re-read store state at execution time (not capture time).
+    // DEADLOCK GUARD: auth-js awaits every subscriber callback before the act
+    // that emitted the event goes on. Up to 2.106 it emitted while holding its
+    // client lock, and an auth call awaited inside the callback hung the client
+    // for ever (signOut froze mid-logout; recovery links froze on "Decrypting").
+    // 2.118 (since 2.107) holds no lock by default, but a refresh awaited inside
+    // TOKEN_REFRESHED still waits on itself. So the callback stays synchronous:
+    // each event is deferred to a macrotask and appended to a serial chain, so
+    // handlers run one at a time, in emission order, after auth-js has moved
+    // on, and re-read store state at execution time (not capture time).
     let authEventChain: Promise<void> = Promise.resolve();
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {

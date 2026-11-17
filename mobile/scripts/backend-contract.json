@@ -10,6 +10,10 @@
       "signature": "approve_lounge_member(p_lounge_id uuid, p_user_id uuid)"
     },
     {
+      "name": "ballot_tally",
+      "signature": "ballot_tally(p_post uuid)"
+    },
+    {
       "name": "bulk_dismiss_reports",
       "signature": "bulk_dismiss_reports(p_report_ids uuid[], p_admin_id uuid, p_reason text)"
     },
@@ -150,8 +154,12 @@
       "signature": "remove_lounge_member(p_lounge_id uuid, p_user_id uuid)"
     },
     {
+      "name": "rename_my_handle",
+      "signature": "rename_my_handle(p_new text)"
+    },
+    {
       "name": "request_account_deletion",
-      "signature": "request_account_deletion()"
+      "signature": "request_account_deletion(p_erase_writing boolean)"
     },
     {
       "name": "request_lounge_membership",
@@ -204,6 +212,10 @@
     {
       "name": "withdraw_lounge_message",
       "signature": "withdraw_lounge_message(p_message_id uuid)"
+    },
+    {
+      "name": "year_viewings",
+      "signature": "year_viewings(p_user_id uuid, p_year integer, p_before_day date, p_before_viewing uuid)"
     }
   ],
   "_removedNote": "This file describes what the CURRENT mobile source calls; it is not an inventory of what production must keep. fetch-rss left it on 2026-09-03 with the Global Wire. get_dispatch_feed (2026-09-03) and get_featured_critique (2026-09-30) left it when the Dispatch and the Lobby stopped calling them; on 2026-10-03, with no caller left in either app or any function, 20261003_03 dropped both from production, with get_following_feed_cursor and get_filtered_stacks_auth_cursor.",
@@ -385,6 +397,10 @@
     "noWipePrivileges": true,
     "indexHygiene": true,
     "columnsInvisibleToEveryClient": [
+      "certifications_pushed.from_user_id",
+      "certifications_pushed.pushed_at",
+      "certifications_pushed.thing",
+      "certifications_pushed.user_id",
       "founding_seat_counter.id",
       "founding_seat_counter.seats_claimed",
       "gate_metrics.count",

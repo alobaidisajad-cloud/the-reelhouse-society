@@ -532,6 +532,12 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                         reviews: hasText ? [newReview, ...filtered] : filtered,
                     };
                 });
+                // The hand patch above is the instant paint of the critique; the house's verdict
+                // (its average and VOICES) moved with the record and rides the same query, which
+                // kept "THE HOUSE HAS NOT SPOKEN" for its 30 minutes (round 11). Read again, as an
+                // amendment, a rewatch or a deletion already is. One still queued is read again
+                // once the queue delivers it (mutationExecutor).
+                if (!queuedOffline) void queryClient.invalidateQueries({ queryKey: ['film', Number(log.filmId)] });
             }
 
             if (log.physicalMedia && FORMAT_MAP[log.physicalMedia] && log.filmId !== undefined) {
@@ -763,11 +769,14 @@ export const updateLogOp = async (
             // A queued edit is not a saved one (it falls through to the announcement).
             let queuedOffline = false;
             if (error) {
+                // The film named with it, so the film's verdict is read again once the queue delivers
+                // it, as it is here online (round 11).
+                const ofFilm = filmIdToUpdate != null ? { film_id: Number(filmIdToUpdate) } : {};
                 if (isNetworkError(error) && enqueueMutation(opts?.viewingOp
                         ? (opts.viewingOp.kind === 'add'
-                            ? { type: 'add_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, fields: viewingFieldsOf(dbUpdates) } }
-                            : { type: 'remove_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId } })
-                        : { type: 'update_log', payload: { id, user_id: user.id, updates: dbUpdates, ...(was ? { was } : {}) } })) {
+                            ? { type: 'add_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, fields: viewingFieldsOf(dbUpdates), ...ofFilm } }
+                            : { type: 'remove_viewing', payload: { log_id: id, viewing_id: opts.viewingOp.viewingId, ...ofFilm } })
+                        : { type: 'update_log', payload: { id, user_id: user.id, updates: dbUpdates, ...(was ? { was } : {}), ...ofFilm } })) {
                     // A STEP shows no toast either: its caller is told it queued, and
                     // says one true thing in its own verb.
                     if (!opts?.silentAnnounce) reelToast('Saved offline. Will sync when connected.');
@@ -972,7 +981,8 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             if (!stillSignedIn(startedAs)) return;
             if (error) {
                 // Use shared network error detection
-                if (isNetworkError(error) && enqueueMutation({ type: 'remove_log', payload: { log_id: id, user_id: user.id } })) {
+                // The film named with it: once delivered, the film's verdict is read again (round 11).
+                if (isNetworkError(error) && enqueueMutation({ type: 'remove_log', payload: { log_id: id, user_id: user.id, ...(logToRemove.filmId != null ? { film_id: Number(logToRemove.filmId) } : {}) } })) {
                     // Its card leaves the Reel now, as the record left the member's pages.
                     reelMayHaveChanged(id);
                     // And its own page leaves with it, as it does online: its copy says it is gone.

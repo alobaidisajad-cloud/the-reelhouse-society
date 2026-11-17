@@ -1,5 +1,6 @@
 import { agedSince } from '@/src/lib/waits';
-import { useReducer, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useReducer, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
+import { hearRecordsChanged } from '@/src/components/feed/reelRead';
 import { focusManager } from '@tanstack/react-query';
 import { QUERY_POLICY } from '@/src/lib/queryPolicy';
 import { logger } from '@/src/utils/logger';
@@ -29,9 +30,17 @@ export interface AnalyticsShape {
   total_logs?: number;
   avg_rating?: number | string | null;
   rating_distribution?: { rating: number; count: number }[] | null;
-  /** The member's WHOLE history by month, `YYYY-MM`. */
+  /** The member's WHOLE history by month, `YYYY-MM`: the records filed under each, as the Archive shows them. */
   monthly_activity?: { month: string; count: number }[] | null;
+  /** Every viewing by month, `YYYY-MM`: a rewatch counted in the month it was made, as is the viewing before it. */
+  monthly_viewings?: { month: string; count: number }[] | null;
+  /** The run reaching the HOUSE's today or yesterday (its day is UTC's, not the member's). Kept for older builds. */
   current_streak?: number | null;
+  /**
+   * The newest run whole: its nights and its last night. Whether it still stands is said on the
+   * phone's own calendar (houseRunOf, runStillStanding). Null when the member has no viewing.
+   */
+  current_run?: { length?: number | null; ends_on?: string | null } | null;
   longest_streak?: number | null;
   /** `logs.format` — how a film was WATCHED. NOT the Vault. */
   format_breakdown?: { format: string; count: number }[] | null;
@@ -397,8 +406,10 @@ export function useProfileData({
         logs: isSelf ? null : quiet(ProfileDataService.fetchOtherUserLogs(knownId, 50, undefined, signal, undefined)),
         selfLogs: isSelf && useLogStore.getState().logs.length === 0 ? quiet(fetchLogs()) : null,
       } : null;
-      // Validated at the service; another member's row is read without their preferences.
-      const profile = await ProfileDataService.fetchProfile(username, isSelf, signal);
+      // Validated at the service; another member's row is read without their preferences. Another
+      // member's file found by the id the link carried, so a rename since it was drawn opens the
+      // member it names (review round 11); your own by its handle, always the live one.
+      const profile = await ProfileDataService.fetchProfile(username, isSelf, signal, isSelf ? undefined : knownId);
       if (signal.aborted) return;
       if (!profile) { if (isMounted.current) dispatch({ type: 'SET_USER', payload: null }); return; }
       if (!isMounted.current) return;
@@ -406,7 +417,8 @@ export function useProfileData({
       // A name now held by another member (a rename) is read again by its own id, as without one.
       const asked = early && early.id === typedProfile.id ? early : null;
 
-      const currentIsFollowing = useSocialStore.getState().isFollowing(username);
+      // By the handle the member holds now: the follow list knows a renamed member by their new one.
+      const currentIsFollowing = useSocialStore.getState().isFollowing(typedProfile.username);
       if (typedProfile.is_social_private && !isSelf && !currentIsFollowing) {
         // Sealed profile: show the member and their REAL stats (the counts RPC is
         // SECURITY DEFINER, so it's privacy-safe), but never fetch the content
@@ -592,6 +604,28 @@ export function useProfileData({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.targetUser, state.tabDataLoaded, isSelf, fetchWatchlist, fetchPhysicalArchive, fetchLists]);
 
+  // ── The member's own record changed ── a seal, an amendment, a rewatch or a removal, from any
+  // screen, or the queue delivering one (hearRecordsChanged, which the Reel's cards hear too). What
+  // the house counts from the record is read again: the summary (the run, the months, the counts),
+  // and the calendar and the Projector (with the passport) once each has been read, the one in front
+  // now and another when it is next opened. They were read only as the file opened: a rewatch left
+  // its night off the calendar and the run until the member pulled (round 11).
+  const recordChanged = useEffectEvent(() => {
+    if (!isSelf || !state.targetUser) return;
+    void fetchUserData();
+    const stale: Record<string, boolean> = {};
+    if (state.tabDataLoaded.calendar) stale.calendar = false;
+    if (state.tabDataLoaded.analytics) stale.analytics = false;
+    if (Object.keys(stale).length === 0) return;
+    // A read still out was asked before the change: its answer would be the old record.
+    if ('calendar' in stale) restartRoom(_roomAbortRef, 'calendar');
+    if ('analytics' in stale) restartRoom(_roomAbortRef, 'analytics');
+    dispatch({ type: 'SET_TAB_LOADED', tabs: stale });
+    if (activeTab === 'calendar' && 'calendar' in stale) void loadTabData('calendar', true);
+    if ((activeTab === 'projector' || activeTab === 'passport') && 'analytics' in stale) void loadTabData(activeTab, true);
+  });
+  useEffect(() => (isSelf ? hearRecordsChanged(() => recordChanged()) : undefined), [isSelf]);
+
   const loadMoreLogs = useCallback(async () => {
     if (isSelf && (!activeTab || activeTab === 'archive' || activeTab === 'ledger')) {
       const hasSearch = (activeTab === 'archive' && isNarrowed('archive', state.activeFilters.archive))
@@ -692,7 +726,9 @@ export function useProfileData({
 
   // A new member starts from nothing: no row, room or failure of the last one.
   // Made as it renders, so no frame shows the last member under the new name.
-  const memberKey = `${isSelf ? 'self' : 'other'}:${username}`;
+  // Another member named by their id is the same member under a new handle: the route following
+  // their rename (useProfileController) reads them again behind the file drawn, never from nothing.
+  const memberKey = `${isSelf ? 'self' : 'other'}:${!isSelf && knownId ? `id:${knownId}` : username}`;
   const [memberFor, setMemberFor] = useState<string | null>(null);
   /** Your own file was drawn from what the phone holds: its read runs behind, silent. */
   const [seededSelf, setSeededSelf] = useState(false);

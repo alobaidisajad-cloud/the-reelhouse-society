@@ -33,8 +33,10 @@ export interface ProjectorRecord {
     longest_streak?: number | null;
     current_streak?: number | null;
     avg_rating?: number | string | null;
-    /** [{ month: 'YYYY-MM', count }] over the member's WHOLE history. */
+    /** [{ month: 'YYYY-MM', count }] over the member's WHOLE history: the records filed under each month. */
     monthly_activity?: { month: string; count: number }[] | null;
+    /** The same, counting every viewing in the month it was made: a rewatch is a night seen, as is the viewing before it. */
+    monthly_viewings?: { month: string; count: number }[] | null;
 }
 
 interface ProjectorUser {
@@ -128,7 +130,9 @@ export function ProjectorRoom({ stats, user, isSelf = false, record, streak }: {
     if (!stats) return null;
 
     const standing = standingFor(stats.count);
-    const heaviest = heaviestMonth(record?.monthly_activity);
+    // The month most films were SEEN in, each viewing in its own month; an older house's
+    // summary has only the records by month.
+    const heaviest = heaviestMonth(record?.monthly_viewings ?? record?.monthly_activity);
     const longest = typeof record?.longest_streak === 'number' ? record.longest_streak : null;
     const avg = record?.avg_rating != null && Number(record.avg_rating) > 0
         ? Number(record.avg_rating).toFixed(1)

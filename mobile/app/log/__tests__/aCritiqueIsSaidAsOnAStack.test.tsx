@@ -16,6 +16,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 import { resetMarkCounts } from '@/src/stores/markCounts';
 import { useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
 import { useBlockStore } from '@/src/stores/blockStore';
+import { clearDraft, readDraft } from '@/src/utils/memberDrafts';
 
 import LogDetailScreen from '../[id]';
 
@@ -138,6 +139,25 @@ describe('filing', () => {
     add!.mockRejectedValue(Object.assign(new Error('Your account is suspended until 30 Nov 2026 12:00 UTC.'), { code: '42501' }));
     await file(await mount());
     expect(mockToastError.mock.calls).toEqual([['Your account is suspended until 30 Nov 2026 12:00 UTC.']]);
+  });
+});
+
+describe('a record deleted while the critique was written (round 11)', () => {
+  afterEach(() => { clearDraft(ME, 'critique', `log:${LOG_ID}`); });
+
+  it('says the record is gone, never the author’s rule, lets it go, and the page leaves with the words kept', async () => {
+    const add = mockLogService.addLogComment;
+    expect(add).toBeDefined();
+    add!.mockRejectedValue({ code: 'P0002', message: 'LOG_GONE' });
+    const r = await mount();
+    await file(r);
+    expect(mockToastError.mock.calls).toEqual([['This record is no longer in the house.']]);
+    // Read as gone, and its page leaving: drawn as nothing, its composer gone with it.
+    expect(mockCache?.log).toBeNull();
+    expect(r.queryByLabelText('Write a critique on this log')).toBeNull();
+    // The words are not lost: kept in the box's draft as the page goes.
+    r.unmount();
+    expect(readDraft<{ body?: string }>(ME, 'critique', `log:${LOG_ID}`)?.data.body).toBe('A third look.');
   });
 });
 

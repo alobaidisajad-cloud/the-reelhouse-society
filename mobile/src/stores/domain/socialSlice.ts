@@ -263,18 +263,43 @@ export async function followUser(targetUsername: string, known?: { id: string; i
 
     // Each landing written only for the member still here: two members may follow one handle.
     if (existing) {
-      if (stillSignedIn(userId)) _actedHere.set(targetUsername, { as: existing.type === 'follow_request' ? 'requested' : 'following', at: monotonicNow() });
+      if (stillSignedIn(userId)) {
+        const held: 'following' | 'requested' = existing.type === 'follow_request' ? 'requested' : 'following';
+        _actedHere.set(targetUsername, { as: held, at: monotonicNow() });
+        // What the house holds is what is shown: a request already standing reads REQUESTED.
+        if ((held === 'requested') !== isPrivate) {
+          if (held === 'requested') { store.removeFollowing(targetUsername); store.addRequested(targetUsername); }
+          else { store.removeRequested(targetUsername); store.addFollowing(targetUsername); }
+          persistFollowingToCache(userId);
+        }
+      }
       logger.warn('[socialSlice.followUser] Already interacted in the database: syncing state');
       refreshFollowGraphFeeds();
       return true;
     }
 
-    const { error } = await supabase.from('interactions').insert([{
+    // The row is asked back: the house files a follow of a member who is private now as a request
+    // (enforce_privacy_on_follow), though the screen read them open (review round 11).
+    const { data: filed, error } = await supabase.from('interactions').insert([{
       user_id: userId, target_user_id: targetId, type: interactionType,
-    }]);
+    }]).select('type').maybeSingle();
     if (error && !error.message?.includes('duplicate')) throw error;
-    if (stillSignedIn(userId)) _actedHere.set(targetUsername, { as: isPrivate ? 'requested' : 'following', at: monotonicNow() });
-    
+    if (stillSignedIn(userId)) {
+      const filedAs: 'following' | 'requested' = filed?.type === 'follow_request' ? 'requested'
+        : filed?.type === 'follow' ? 'following'
+          : isPrivate ? 'requested' : 'following';
+      _actedHere.set(targetUsername, { as: filedAs, at: monotonicNow() });
+      // Filed otherwise than shown: the screen follows the house, and the handle is known private.
+      if ((filedAs === 'requested') !== isPrivate) {
+        // Kept with the age it had: the house's answer corrects the privacy, not when it was looked up.
+        const held = _usernameProfileCache.get(targetUsername);
+        if (held) _usernameProfileCache.set(targetUsername, { ...held, isPrivate: filedAs === 'requested' });
+        if (filedAs === 'requested') { store.removeFollowing(targetUsername); store.addRequested(targetUsername); }
+        else { store.removeRequested(targetUsername); store.addFollowing(targetUsername); }
+        persistFollowingToCache(userId);
+      }
+    }
+
     refreshFollowGraphFeeds();
     return true;
   } catch (err: unknown) {

@@ -156,6 +156,21 @@ it('a saved amendment leaves without a word', async () => {
   expect(holding()).toBe(false);
 });
 
+it('an amendment of a stack deleted elsewhere since the sheet opened says it is gone, and the sheet closes without asking (round 11)', async () => {
+  const { STACK_GONE, STACK_GONE_SAID } = jest.requireActual('@/src/stores/domain/listSlice') as typeof import('@/src/stores/domain/listSlice');
+  mockUpdateList.mockRejectedValue(Object.assign(new Error(STACK_GONE_SAID), { code: STACK_GONE }));
+  const toast = (jest.requireMock('@/src/utils/reelToast').default as { error: jest.Mock }).error;
+  const back = jest.requireMock('@/src/utils/typedRouter').nav.back as jest.Mock;
+  const r = await amend();
+  await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack title'), 'Neon Noir, Revised'); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+  expect(toast.mock.calls).toEqual([[STACK_GONE_SAID]]);
+  // Nothing left to keep or to ask about: what can no longer be saved is let go, and the sheet closes.
+  expect(holding()).toBe(false);
+  await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
+  expect(ask).not.toHaveBeenCalled();
+});
+
 it('the rest of a long stack, read after the sheet opened, is not counted as an amendment', async () => {
   const { StackService } = require('@/src/services/StackService') as typeof import('@/src/services/StackService');
   const rest = jest.spyOn(StackService, 'getStackItemsPage').mockResolvedValueOnce([{ id: 999, title: 'The Third Man', poster_path: null }]);

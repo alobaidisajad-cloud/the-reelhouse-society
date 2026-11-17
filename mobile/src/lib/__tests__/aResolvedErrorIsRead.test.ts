@@ -33,9 +33,6 @@ const JUDGED: Record<string, { n: number; why: string }> = {
   'src/services/ProfileWriteService.ts · [storage] result discarded': {
     n: 1, why: 'avatar clean-up: a failed purge leaves old files, never the live one',
   },
-  'src/stores/auth.ts · [from] destructured without error (data)': {
-    n: 1, why: 'restore without a profile keeps the cached member: an error never signs anyone out',
-  },
   'src/stores/domain/logSlice/helpers/logOperations.ts · [from] destructured without error (data)': {
     n: 3, why: 'the two lookups are backstopped by the unique key, whose refusal reaches the toast; '
       + 'the viewing read refuses honestly ("needs a connection")',

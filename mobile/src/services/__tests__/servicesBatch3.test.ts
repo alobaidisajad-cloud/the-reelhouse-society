@@ -44,6 +44,7 @@ function chain(resolveValue: { data?: unknown; error: unknown; count?: number } 
     c.delete = jest.fn().mockImplementation(self);
     c.select = jest.fn().mockImplementation(self);
     c.eq = jest.fn().mockImplementation(self);
+    c.ilike = jest.fn().mockImplementation(self);
     c.not = jest.fn().mockImplementation(self);
     c.order = jest.fn().mockImplementation(self);
     c.limit = jest.fn().mockImplementation(self);
@@ -81,9 +82,12 @@ describe('ProfileWriteService (ProfileService)', () => {
         it('updates profile fields after session auth check', async () => {
             const c = chain({ error: null });
             (supabase.from as jest.Mock).mockReturnValue(c);
+            // The handle goes through the house's own rename (round 11), answered with the handle kept.
+            (supabase.rpc as jest.Mock).mockResolvedValue({ data: 'cinephile', error: null });
             await ProfileService.updateProfile('u1', { bio: 'Film lover', username: 'cinephile' });
             expect(supabase.from).toHaveBeenCalledWith('profiles');
             expect(c.update).toHaveBeenCalledWith(expect.objectContaining({ bio: 'Film lover' }));
+            expect(supabase.rpc).toHaveBeenCalledWith('rename_my_handle', { p_new: 'cinephile' });
         });
 
         it('throws on session mismatch (privilege escalation prevention)', async () => {
@@ -114,13 +118,14 @@ describe('ProfileWriteService (ProfileService)', () => {
 
     describe('checkUsernameAvailable', () => {
         it('returns true when username not taken', async () => {
-            (supabase.from as jest.Mock).mockReturnValue(chain({ data: null, error: null }));
+            (supabase.from as jest.Mock).mockReturnValue(chain({ data: [], error: null }));
             const result = await ProfileService.checkUsernameAvailable('newuser');
             expect(result).toBe(true);
         });
 
         it('returns false when username taken', async () => {
-            (supabase.from as jest.Mock).mockReturnValue(chain({ data: { id: 'existing' }, error: null }));
+            // Any one row, in any case of the handle, is the handle taken (limit 1).
+            (supabase.from as jest.Mock).mockReturnValue(chain({ data: [{ id: 'existing' }], error: null }));
             const result = await ProfileService.checkUsernameAvailable('taken');
             expect(result).toBe(false);
         });

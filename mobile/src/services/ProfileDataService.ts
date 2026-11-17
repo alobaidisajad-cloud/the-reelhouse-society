@@ -130,13 +130,17 @@ const UNREAD_COUNTS = {
 
 export const ProfileDataService = {
   /**
-   * Fetches a user profile by username.
+   * Fetches a user profile by username, or by the member's id when the link carried it: a member
+   * renamed since the link was drawn is still the one it names, never "Member Not Found" nor
+   * whoever took the freed handle (review round 11).
    * Uses restricted column set for non-self queries to protect privacy.
    */
-  async fetchProfile(username: string, isSelf: boolean, signal?: AbortSignal): Promise<ValidatedProfileUser | null> {
+  async fetchProfile(username: string, isSelf: boolean, signal?: AbortSignal, id?: string): Promise<ValidatedProfileUser | null> {
     const columns = isSelf ? SELF_PROFILE_COLUMNS : PUBLIC_PROFILE_COLUMNS;
     const { data, error } = await withAbortSignal(
-      supabase.from('profiles').select(columns).eq('username', username).maybeSingle(),
+      id
+        ? supabase.from('profiles').select(columns).eq('id', id).maybeSingle()
+        : supabase.from('profiles').select(columns).eq('username', username).maybeSingle(),
       signal
     );
     if (error) {

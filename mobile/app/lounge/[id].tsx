@@ -117,15 +117,19 @@ const SHARE_LABELS: Record<string, string> = {
  * and metadata key stay, for the messages already in rooms), so the kind comes
  * from the metadata when it is there.
  */
-export function shareOf(msg: LoungeMessage): { typeLabel: string; title: string | null } | null {
+export function shareOf(msg: LoungeMessage): { typeLabel: string; title: string | null; gone: boolean } | null {
   if (msg.type === 'text') return null;
   const meta = (msg.metadata ?? {}) as Record<string, unknown>;
+  // The piece is gone (its writer withdrew or deleted it, the house took it down, or its writer
+  // left and took it with them): the house took the headline it had copied off the card, and
+  // marked the card (round 11). The card says so, never a headline its writer took back.
+  const gone = meta.gone === true;
   // Stack shares carry their title in metadata, not the film_title column.
-  const title = msg.film_title || (typeof meta.title === 'string' ? meta.title : null);
-  if (!title && !msg.film_id) return null;
+  const title = gone ? null : msg.film_title || (typeof meta.title === 'string' ? meta.title : null);
+  if (!gone && !title && !msg.film_id) return null;
   const sharedKind = typeof meta.kind === 'string' ? nameOf(meta.kind) : null;
   const typeLabel = sharedKind ?? SHARE_LABELS[msg.type] ?? msg.type.toUpperCase().replace('_SHARE', '');
-  return { typeLabel, title };
+  return { typeLabel, title, gone };
 }
 
 export const firstLink = (content: string | null | undefined) =>
@@ -151,7 +155,7 @@ export function spokenDispatch(msg: LoungeMessage): string {
   if (msg.reply_to_content) parts.push(`In reply to ${quotedName(msg.reply_to_username)}: ${msg.reply_to_content}`);
   if (msg.content) parts.push(msg.content);
   const share = shareOf(msg);
-  if (share) parts.push(`Shared ${share.typeLabel.toLowerCase()}${share.title ? `: ${share.title}` : ''}`);
+  if (share) parts.push(`Shared ${share.typeLabel.toLowerCase()}${share.gone ? ', withdrawn' : share.title ? `: ${share.title}` : ''}`);
   // Each part one sentence: a stop added only where the words did not end on one.
   return parts.map((p) => p.trim()).filter(Boolean)
     .map((p) => (/[.!?…]$/.test(p) ? p : `${p}.`)).join(' ');
@@ -175,13 +179,13 @@ const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
 }) => {
   const share = shareOf(msg);
   if (!share) return null;
-  const { typeLabel, title } = share;
+  const { typeLabel, title, gone } = share;
   const meta = (msg.metadata ?? {}) as Record<string, unknown>;
   const posterUrl = msg.film_poster ? tmdb.poster(msg.film_poster, 'w342') : null;
 
-  // One quiet attribution line, when the payload carries one.
-  const byline =
-    msg.type === 'dossier_share' && typeof meta.author_username === 'string'
+  // One quiet attribution line, when the payload carries one; none for a piece that is gone.
+  const byline = gone ? null
+    : msg.type === 'dossier_share' && typeof meta.author_username === 'string'
       ? `BY @${meta.author_username.toUpperCase()}`
       : msg.type === 'log_share' && typeof meta.owner_username === 'string'
       ? `FILED BY @${meta.owner_username.toUpperCase()}`
@@ -210,7 +214,7 @@ const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
           <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
           <Text style={s.sharedTypeText} numberOfLines={1}>{typeLabel}</Text>
         </View>
-        <Text style={s.sharedTitle} numberOfLines={2}>{title}</Text>
+        <Text style={[s.sharedTitle, gone && s.sharedTitleGone]} numberOfLines={2}>{gone ? 'withdrawn' : title}</Text>
         {byline ? <Text style={s.sharedByline} numberOfLines={1}>{byline}</Text> : null}
       </View>
     </PressableScale>
@@ -502,6 +506,27 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
     });
   }, [id, userId, fetchMembers]);
 
+  // The room asked again, with its roster: a salon its host dissolved while the member sat in it,
+  // or was away, is never heard (lounges has no channel), and the room stood with its words,
+  // refusing every send and offering a seat the house refused (review round 11). Asked on a
+  // return to the app and after a word, a seat or a request refused: gone, it draws its own
+  // "Signal Lost" page; standing, the roster says what the member holds now.
+  const rereadRoom = useCallback(() => {
+    if (!id) return;
+    void (async () => {
+      try {
+        const { data, error } = await supabase.from('lounges').select(ROOM_COLUMNS).eq('id', id).maybeSingle();
+        // An answer for a room left behind, or one that could not come, changes nothing here.
+        if (shownRoomRef.current !== id || error) return;
+        if (data) setLocalLounge(data);
+        else setNotFound(true);
+      } catch {
+        // Not reached: the room stands as it was drawn, and the next return asks again.
+      }
+    })();
+    refreshMembership();
+  }, [id, refreshMembership]);
+
   const retryRoster = useCallback(() => {
     setRosterFailed(false);
     refreshMembership();
@@ -646,7 +671,8 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   useEffect(() => {
     if (!onScreen) return undefined;
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active' && id) { fetchMessages(id); markRead(id); refreshMembership(); }
+      // The room itself too, with its roster (rereadRoom): dissolved while the app was away, it said nothing.
+      if (state === 'active' && id) { fetchMessages(id); markRead(id); rereadRoom(); }
     });
     return () => sub.remove();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -678,7 +704,7 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   // alone; joined again whenever either changes, without leaving the room. A
   // seat lost in a private salon leaves the channel at once.
   // A muted seat reads its private salon, as its MUTE says (review round 10): it listens as it reads.
-  const listening = !!activeLounge && (!activeLounge.is_private || myStatus === 'approved' || myStatus === 'muted');
+  const listening = !notFound && !!activeLounge && (!activeLounge.is_private || myStatus === 'approved' || myStatus === 'muted');
   const seatedHere = myStatus === 'approved';
   // Heard only while in front: under another room, this room's channel wrote its presence and its
   // typists into that room's header, and that room's leaving took the channel from this one.
@@ -687,6 +713,11 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
     return subscribeToLounge(id, { seated: seatedHere, onMembership: () => { refreshMembership(); } });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, listening, seatedHere, onScreen]);
+  // A word refused again: the room and its seat are asked again (rereadRoom), never "tap to retry"
+  // over a salon that is gone or a seat that was taken.
+  const retryHere = useCallback(async (messageId: string) => {
+    if (!(await retryMessage(messageId))) rereadRoom();
+  }, [retryMessage, rereadRoom]);
 
   // A member waiting at a private door has no channel to hear the door open on;
   // their admission arrives as a notice, so each new notice asks again.
@@ -698,27 +729,29 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
 
   const handleSend = useCallback(() => {
     if (!input.trim() || sending || !id) return;
-    sendMessage(id, input.trim(), 'text', {
+    const asked = sendMessage(id, input.trim(), 'text', {
       reply_to_id: replyTo?.id,
       // Kept with the reply: only a real handle (or the database's own mark), never a stand-in.
       reply_to_username: replyTo?.username || undefined,
       reply_to_content: replyTo?.content,
     });
+    // Refused: the room and its seat are asked again (rereadRoom); the store has said why.
+    void Promise.resolve(asked).then((sent) => { if (sent === false) rereadRoom(); });
     letGoOfInput();
     setReplyTo(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [input, sending, id, replyTo]);
+  }, [input, sending, id, replyTo, rereadRoom]);
 
   const handleRequest = useCallback(async () => {
     if (!id) return;
     setPending(true);
     TactileEngine.mutate();
     const result = await requestMembership(id);
-    if (result === 'error') setPending(false);
-    else refreshMembership();
+    // Refused, the room is asked again: a salon dissolved meanwhile draws "Signal Lost".
+    if (result === 'error') { setPending(false); rereadRoom(); } else refreshMembership();
     // The door promises to let them in the moment they're admitted: the moment to ask to send word.
     if (result === 'requested' && userId) void offerWord('seat', userId);
-  }, [id, requestMembership, refreshMembership, userId]);
+  }, [id, requestMembership, refreshMembership, rereadRoom, userId]);
 
   // From the registry the Society page sells from; enforced by tr_tier_gate_lounge_*.
   const seat = useClearance('the-lounge', id ? `/lounge/${id}` : '/lounge');
@@ -727,8 +760,9 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
     if (!id) return;
     TactileEngine.mutate();
     const ok = await joinPublicLounge(id);
-    if (ok) { setMyStatus('approved'); refreshMembership(); }
-  }, [id, joinPublicLounge, refreshMembership]);
+    // Refused, the room is asked again: a salon dissolved meanwhile draws "Signal Lost".
+    if (ok) { setMyStatus('approved'); refreshMembership(); } else rereadRoom();
+  }, [id, joinPublicLounge, refreshMembership, rereadRoom]);
 
   // ── Edge: not found ──
   // The way out says where it goes: back where there is a back, else the Lobby
@@ -852,7 +886,7 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
                 onLongPress={handleLongPress}
                 onOpenShare={handleOpenShare}
                 onReactToggle={toggleReaction}
-                onRetry={retryMessage}
+                onRetry={retryHere}
               />
             );
           }}
@@ -1260,6 +1294,8 @@ const s = StyleSheet.create({
   sharedTypeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
   sharedTypeText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.sepia, includeFontPadding: false },
   sharedTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, lineHeight: 17 },
+  // A card whose piece is gone, said as a withdrawn dispatch is.
+  sharedTitleGone: { fontFamily: fonts.serifItalic, color: colors.fog },
   sharedByline: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.8, color: colors.fog, marginTop: 4 },
 
   emptyChat: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 10 },

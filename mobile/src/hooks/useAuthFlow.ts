@@ -112,6 +112,9 @@ export function initialIsLogin(action?: string): boolean {
   return action !== 'signup';
 }
 
+/** Said when a fresh confirmation was asked for: a link goes only to an address still waiting. */
+export const RESENT_SAID = 'If your address still waits, a new cipher is on its way: open the newest link.';
+
 /** What the email-link sheet sends: a password reset, or a fresh confirmation. */
 export type EmailLinkPurpose = 'reset' | 'confirm';
 
@@ -272,7 +275,9 @@ export function useAuthFlow() {
         },
       });
       if (error) throw error;
-      reelToast.success('A new cipher has been wired to your inbox.');
+      // The house answers alike for an address already confirmed (on another phone, say) and sends
+      // it nothing, so the toast promises a link only to one still waiting (round 11).
+      reelToast.success(RESENT_SAID);
       setResendCooldown(60);
       cooldownRef.current = setInterval(() => {
         setResendCooldown(prev => {

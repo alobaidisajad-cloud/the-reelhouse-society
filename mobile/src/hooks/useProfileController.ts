@@ -159,6 +159,17 @@ export function useProfileController(usernameOverride?: string) {
     navigation.setParams({ username: user.username } as never);
   }, [repairRoute, user?.username, navigation]);
 
+  // ── Another member's rename: a link that carried their id found them under their new handle ──
+  // The route takes the handle they hold now, in place, so their follow state, their FOLLOW and
+  // every link from the file read the member they are (review round 11). Only the member the link
+  // named: never a row that answered for someone else.
+  const renamedTo = !usernameOverride && !isSelf && params.id && data.targetUser?.id === params.id
+    && typeof data.targetUser.username === 'string' && data.targetUser.username.toLowerCase() !== (username ?? '').toLowerCase()
+    ? data.targetUser.username : null;
+  useEffect(() => {
+    if (renamedTo) navigation.setParams({ username: renamedTo } as never);
+  }, [renamedTo, navigation]);
+
   // Rewriting the route is not enough on its own: the repair is decided in the render
   // where the failed read has already produced the not-found state, and the read under
   // the corrected handle starts a commit later — so "Member Not Found" would paint for
@@ -354,6 +365,16 @@ export function useProfileController(usernameOverride?: string) {
       reelToast.error(isRequested
         ? `The request to @${handle} could not be withdrawn. Please try again.`
         : `Could not ${leaving ? 'unfollow' : 'follow'} @${handle}. Please try again.`);
+    }
+    // A follow the house filed as a request (the member turned private while their file was open):
+    // the count follows the house, not the screen's guess, and the file is known private now
+    // (review round 11). The store already reads REQUESTED (socialSlice.followUser).
+    if (success && !leaving && prevUser && !prevUser.is_social_private && useSocialStore.getState().isRequested(handle)) {
+      data.setTargetUser(curr => {
+        if (!curr || curr.id !== prevUser.id) return curr;
+        const delta = computeFollowCountDelta(false, false, false);
+        return { ...curr, is_social_private: true, followers_count: Math.max(0, (curr.followers_count || 0) - delta) };
+      });
     }
     // Rolled back by the same delta, and only on the member it was applied to
     // (the screen may have moved to another member meanwhile).

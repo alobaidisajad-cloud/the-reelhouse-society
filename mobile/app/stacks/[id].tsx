@@ -40,6 +40,8 @@ import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
 import { isNetworkError } from '@/src/utils/networkError';
 import { saidOfARefusal } from '@/src/utils/saidOfARefusal';
+import { isGoneFromTheHouse } from '@/src/utils/goneFromTheHouse';
+import { wallMayHaveChanged } from '@/src/components/lobby/wallRead';
 import { instantOf, dateOf } from '@/src/utils/instant';
 import { useStruck } from '@/src/components/StruckWords';
 import { stillQueued, useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
@@ -437,6 +439,8 @@ function StackDetailScreen({ id }: { id: string }) {
   // leaves, once the sheet that did it has closed, and is never left standing as their stack.
   const sheetOpen = actionSheetVisible || reportSheetVisible || commentReportSheetVisible;
   const curatorHidden = useLeavesWhenHidden(list?.userId, sheetOpen);
+  // A critique filed here found the stack gone (deleted meanwhile): the page is leaving (round 11).
+  const [goneHere, setGoneHere] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   // The epigraph's line count, and WHICH text it was measured for: a refresh can
   // bring new words without a remount, and an old answer must not decide the fold.
@@ -705,6 +709,22 @@ function StackDetailScreen({ id }: { id: string }) {
         });
         bumpCritiqueCount(-1);
         setCommentText(content);
+        if (isGoneFromTheHouse(err, 'STACK_GONE')) {
+          // Deleted while the critique was written (by its curator, or by the member from their
+          // other phone): said as that, never as the curator's rule (round 11). It leaves the
+          // member's stacks, the Reel's STACKS and the wall, and the page leaves; the words stay
+          // in the box.
+          setGoneHere(true);
+          if (useListStore.getState().lists.some((l) => l.id === id)) {
+            useListStore.setState((state) => ({ lists: state.lists.filter((l) => l.id !== id) }));
+          }
+          void queryClient.invalidateQueries({ queryKey: ['stack', id] });
+          void queryClient.invalidateQueries({ queryKey: ['feed', 'stacks'] });
+          wallMayHaveChanged();
+          reelToast.error('This stack is no longer in the house.');
+          nav.back();
+          return;
+        }
         // As on a log: a stack whose maker limits who may annotate it says so.
         // The member's own standing said as the house says it, never blamed on the maker (review round 9).
         reelToast.error(saidOfARefusal(err, 'This member limits who may annotate their critiques.', 'Your critique could not be filed.'));
@@ -822,8 +842,9 @@ function StackDetailScreen({ id }: { id: string }) {
     );
   }, [loggedIds, list?.isRanked, handlePressFilm, ITEM_WIDTH, ITEM_HEIGHT]);
 
-  // Its curator hidden: the page is leaving, and is drawn as waiting, never as their stack.
-  if (loading || (curatorHidden && !sheetOpen)) {
+  // Its curator hidden, or the stack found gone: the page is leaving, and is drawn as waiting,
+  // never as their stack.
+  if (loading || goneHere || (curatorHidden && !sheetOpen)) {
     return (
       <View style={s.container}>
         <RoomLight room="default" />

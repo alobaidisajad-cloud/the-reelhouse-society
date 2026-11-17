@@ -9,6 +9,7 @@ import { CustomList } from '../../types';
 import { ListRow, mapListRow } from '../../utils/mappers';
 import { captureError } from '../../lib/sentry';
 import { isNetworkError } from '../../utils/networkError';
+import { isGoneFromTheHouse } from '../../utils/goneFromTheHouse';
 import { prefetchPictures } from '../../utils/prefetchPictures';
 import { enqueueMutation } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
@@ -26,6 +27,21 @@ import { dateOf } from '@/src/utils/instant';
  */
 /** What the member is told when their edit met a stack changed elsewhere since they opened it. */
 export const STACK_CHANGED_SINCE = 'This stack was changed elsewhere after you opened it. Nothing was changed here: open it again to see it as it is.';
+/** An edit that found its stack deleted since it was opened (save_stack's P0002): the code it is thrown with. */
+export const STACK_GONE = 'STACK_GONE' as const;
+/** What the member is told of it. */
+export const STACK_GONE_SAID = 'This stack is no longer in the house: it was deleted elsewhere.';
+
+/**
+ * A stack the house no longer holds, let go of on this phone: out of the member's stacks, its page
+ * read again (it finds none, and says so), the Reel's STACKS and the Lobby's wall asked again.
+ */
+export function forgetGoneStack(listId: string, set: (fn: (state: ListSliceData) => Partial<ListSliceData>) => void): void {
+    set((state) => ({ lists: state.lists.filter((l) => l.id !== listId) }));
+    void queryClient.invalidateQueries({ queryKey: ['stack', listId] });
+    void queryClient.invalidateQueries({ queryKey: ['feed', 'stacks'] });
+    wallMayHaveChanged();
+}
 
 export interface ListSliceData {
     lists: CustomList[];
@@ -314,12 +330,22 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             wallMayHaveChanged();
         } catch (e: unknown) {
             const changedSince = (e as { code?: unknown })?.code === 'PT412';
+            // Gone: save_stack found no stack of theirs by this id (P0002), deleted from their other
+            // phone or removed by the house since the sheet opened. An answer, not a fault.
+            const gone = isGoneFromTheHouse(e);
             // Changed elsewhere since it was read: an answer, not a fault. The stack is read again,
             // not waited for: the member is told now, and its page shows it as it is when it arrives.
             if (changedSince) void queryClient.invalidateQueries({ queryKey: ['stack', listId] });
-            if (!isNetworkError(e) && !changedSince) captureError(e, { scope: 'listSlice.updateList' });
+            if (!isNetworkError(e) && !changedSince && !gone) captureError(e, { scope: 'listSlice.updateList' });
             // A throw skips the check in the try: neither queued nor undone once they have left.
             if (!stillSignedIn(user.id)) return;
+            if (gone) {
+                // It leaves the phone, as one deleted here does, never put back as it was: the
+                // member's stacks, its page (read again, it finds none), the Reel's STACKS and the
+                // wall. Was: "could not be saved" on every SAVE, the stack still in the list (round 11).
+                forgetGoneStack(listId, set);
+                throw Object.assign(new Error(STACK_GONE_SAID), { code: STACK_GONE });
+            }
             if (isNetworkError(e)) {
                 // Queue for offline sync
                 let removedIds: number[] = [];

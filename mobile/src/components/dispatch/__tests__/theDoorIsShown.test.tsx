@@ -151,6 +151,16 @@ describe('the door', () => {
     expect(queryByText('12 OF 5')).toBeNull();
   });
 
+  it('caps the days a member at what is needed: a year in the house reads 2 OF 2', async () => {
+    // A member who joined a year ago and has logged three films is waiting on
+    // films alone. The days line is met, and says so, as the films line does.
+    mockStanding = { films: 3, films_needed: 5, days: 412, days_needed: 2, may_file: false };
+    const { getByText, queryByText } = await mount();
+    expect(getByText('3 OF 5')).toBeTruthy();
+    expect(getByText('2 OF 2')).toBeTruthy();
+    expect(queryByText('412 OF 2')).toBeNull();
+  });
+
   it('stands above every desk, not inside one', async () => {
     // Reached straight at a desk by a link or a stale param. The door still
     // answers first: a member who cannot file must never reach a desk to find

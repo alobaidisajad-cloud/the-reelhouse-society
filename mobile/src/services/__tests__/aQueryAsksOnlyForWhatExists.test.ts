@@ -28,7 +28,7 @@
 import { readFileSync } from 'fs';
 import { join, relative } from 'path';
 import { readCode, stripComments } from '@/test-utils/readCode';
-import { closingOf, PENDING_SQL, readFunctions, readSchema, topLevel, type Param } from '@/test-utils/schema';
+import { closingOf, PENDING_SQL, readComputedFields, readFunctions, readSchema, topLevel, type Param } from '@/test-utils/schema';
 import { files as universe } from '@/test-utils/universe';
 
 const MOBILE = join(__dirname, '..', '..', '..');
@@ -290,8 +290,11 @@ function argsOf(chain: string, name: string): string[][] {
 
 export type Finding = string;
 
-/** Every way the queries in one file (its code, comments blanked) name something the schema does not hold. */
-export function readQueries(src: string, where: string, tables: Map<string, Set<string>>, unread: string[]): Finding[] {
+/**
+ * Every way the queries in one file (its code, comments blanked) name something the schema does not hold.
+ * `computed` holds each table's computed fields (readComputedFields): a select may name one as a column.
+ */
+export function readQueries(src: string, where: string, tables: Map<string, Set<string>>, unread: string[], computed: Map<string, Set<string>> = new Map()): Finding[] {
   const found: Finding[] = [];
   let at = where;
   const cannotRead = () => { if (!unread.includes(at)) unread.push(at); };
@@ -323,6 +326,8 @@ export function readQueries(src: string, where: string, tables: Map<string, Set<
       }
       item = item.replace(/^\w+:/, '').replace(/::\w+$/, '').replace(/\.\w+\(\)$/, '');
       if (item === 'count' || item === 'count()') continue;
+      // A computed field: a function public.<item>(<row> public.<table>) the house has.
+      if (computed.get(table)?.has(item)) continue;
       columnOf(table, item, 'selects');
     }
   };
@@ -440,8 +445,19 @@ export function readCalls(src: string, where: string, functions: Map<string, Par
 // refuses while one is pending), and a function that reads one is deployed with its train.
 const tables = readSchema(`${SCHEMA}\n${PENDING_SQL()}`);
 const functions = readFunctions(SCHEMA);
+// The app ships only beside every pending migration (a build's pre-flight refuses while one is
+// pending), so its calls are judged by the functions as the train leaves them: a function a pending
+// migration makes (DROP and CREATE, its form for a new or changed call) is taken as made there. The
+// website and the edge functions go live on their own push, before any train: theirs are judged by
+// production as it is, so a call they make that only a pending migration takes is refused.
+const functionsShipped = new Map([...functions, ...readFunctions(PENDING_SQL())]);
+// A computed field is a function too, judged as the calls are: the app's by the train's functions,
+// the website's and the edge functions' by production's.
+const computedLive = readComputedFields(SCHEMA);
+const computedShipped = readComputedFields(`${SCHEMA}\n${PENDING_SQL()}`);
 /** Every caller of the server: the app, the edge functions in both trees, and the website. */
 const files = universe(['appCode', 'functions', 'website']);
+const appFiles = new Set(universe(['appCode']));
 
 describe('the schema snapshot is read whole', () => {
   it('knows the tables and the views, with their columns', () => {
@@ -499,6 +515,17 @@ describe('the reader can say no', () => {
     expect(call(`supabase.rpc('accept_follow_request', args)`)).toEqual([]);
     expect(unread).toEqual(['x.ts:1']);
   });
+  it('passes a computed field the house has, as a function of that table\'s row, and nothing else by that name', () => {
+    const house = readComputedFields('CREATE FUNCTION public.critiques_seen(l public.logs) RETURNS integer\n');
+    const ask = (src: string) => readQueries(src, 'x.ts', tables, [], house);
+    expect(ask(`supabase.from('logs').select('id, critiques_seen')`)).toEqual([]);
+    expect(ask(`supabase.from('logs').select('id, counted:critiques_seen, counts:log_counts(certify_count)')`)).toEqual([]);
+    // Not a function of this table's row, or no function at all: a column that does not exist.
+    expect(ask(`supabase.from('lists').select('id, critiques_seen')`)).toEqual(['x.ts:1: selects lists.critiques_seen does not exist']);
+    expect(ask(`supabase.from('logs').select('id, critiques_heard')`)).toEqual(['x.ts:1: selects logs.critiques_heard does not exist']);
+    // Read against a house without that function, it is a column that does not exist.
+    expect(read(`supabase.from('logs').select('id, critiques_seen')`)).toEqual(['x.ts:1: selects logs.critiques_seen does not exist']);
+  });
   it('and passes what is there', () => {
     expect(read(`supabase.from('lounge_members').select('user_id, status, joined_at, profiles!lounge_members_user_id_fkey(username, avatar_url)').eq('lounge_id', id).order('joined_at', { ascending: true })`)).toEqual([]);
     expect(read(`supabase.storage.from('avatars').upload(path, file)`)).toEqual([]);
@@ -511,8 +538,8 @@ describe('every query in the house', () => {
   const texts = files.map((f) => readCode(f));
   texts.forEach(learnDefinitions);
   const where = (f: string) => relative(REPO, f).split('\\').join('/');
-  const found = files.flatMap((f, i) => readQueries(texts[i], where(f), tables, unread));
-  const calledWrong = files.flatMap((f, i) => readCalls(texts[i], where(f), functions, unread));
+  const found = files.flatMap((f, i) => readQueries(texts[i], where(f), tables, unread, appFiles.has(f) ? computedShipped : computedLive));
+  const calledWrong = files.flatMap((f, i) => readCalls(texts[i], where(f), appFiles.has(f) ? functionsShipped : functions, unread));
 
   it('reads the app, the website and the functions', () => {
     expect(files.length).toBeGreaterThan(600);
@@ -527,6 +554,9 @@ describe('every query in the house', () => {
 
   it('calls every function with the arguments it takes', () => {
     expect(functions.get('accept_follow_request')).toEqual([[{ name: 'requester_id', optional: false }]]);
+    // The app's own files are judged by the functions as the train leaves them; the rest by now.
+    expect(appFiles.size).toBeGreaterThan(300);
+    expect(appFiles.size).toBeLessThan(files.length);
     expect(calledWrong).toEqual([]);
   });
 

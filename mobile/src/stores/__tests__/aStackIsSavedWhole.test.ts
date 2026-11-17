@@ -108,7 +108,8 @@ describe('editing a stack', () => {
 
   it('a refused edit puts the page back as it was', async () => {
     useFilmStore.setState({ lists: [STACK] } as never);
-    mockRpc.mockResolvedValue({ data: null, error: { code: 'P0002', message: 'No such stack of yours' } });
+    // A rule's refusal (a stack deleted elsewhere, P0002, is let go instead: aStackDeletedElsewhereIsLetGo).
+    mockRpc.mockResolvedValue({ data: null, error: { code: '23514', message: 'new row violates check constraint' } });
     await expect(useFilmStore.getState().updateList('stack-1', { title: 'X', films: [] } as never)).rejects.toBeTruthy();
     const back = useFilmStore.getState().lists[0];
     expect(back.title).toBe('Silents');

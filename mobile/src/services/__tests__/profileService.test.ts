@@ -90,8 +90,9 @@ describe('ProfileService', () => {
     it('returns true when username is not taken', async () => {
       mockFrom.mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+          // Any case, as the house judges a handle taken; any one row is enough.
+          ilike: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue({ data: [], error: null }),
           }),
         }),
       });
@@ -102,8 +103,9 @@ describe('ProfileService', () => {
     it('returns false when username is taken', async () => {
       mockFrom.mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'existing' }, error: null }),
+          // Any case, as the house judges a handle taken; any one row is enough.
+          ilike: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue({ data: [{ id: 'existing' }], error: null }),
           }),
         }),
       });
@@ -114,8 +116,9 @@ describe('ProfileService', () => {
     it('throws on database error', async () => {
       mockFrom.mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            maybeSingle: jest.fn().mockResolvedValue({ data: null, error: new Error('DB error') }),
+          // Any case, as the house judges a handle taken; any one row is enough.
+          ilike: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue({ data: null, error: new Error('DB error') }),
           }),
         }),
       });

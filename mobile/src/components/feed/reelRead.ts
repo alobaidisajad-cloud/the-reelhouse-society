@@ -55,3 +55,12 @@ export function reelMayHaveChanged(withdrawnId?: string): void {
     void queryClient.invalidateQueries({ queryKey });
   }
 }
+
+/**
+ * A record changed that the Reel draws no card for (a film an older build marked watched, sent
+ * later by the queue): only what holds the member's records hears it (a night on the calendar is
+ * one all the same); the Reel's pages are not read again.
+ */
+export function recordsMayHaveChanged(): void {
+  for (const hear of hearers) hear();
+}

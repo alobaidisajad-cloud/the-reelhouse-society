@@ -103,8 +103,10 @@ describe('a link that fails says why, in the house\'s words', () => {
   const params = () => (jest.requireMock('expo-router') as { useLocalSearchParams: jest.Mock }).useLocalSearchParams;
   const settle = async () => { await act(async () => { await new Promise((r) => setTimeout(r, 0)); }); };
 
+  // A reset link (round 11): a sign-up link that fails leads with signing in instead, its address
+  // perhaps already confirmed (aFreshConfirmationCarriesItsChallenge.test.tsx).
   it('an expired link, by the reason Supabase sends back with it', async () => {
-    params().mockReturnValue({ type: 'signup', error: 'access_denied', error_code: 'otp_expired', error_description: 'Email link is invalid or has expired' });
+    params().mockReturnValue({ type: 'recovery', error: 'access_denied', error_code: 'otp_expired', error_description: 'Email link is invalid or has expired' });
     const r = render(<AuthCallbackScreen />);
     await settle();
     expect(r.getByText(/expired or was already used/)).toBeTruthy();
@@ -112,7 +114,7 @@ describe('a link that fails says why, in the house\'s words', () => {
   });
 
   it('a link opened on another phone: never the library\'s own words', async () => {
-    params().mockReturnValue({ code: 'abc', type: 'signup' });
+    params().mockReturnValue({ code: 'abc', type: 'recovery' });
     auth.exchangeCodeForSession = jest.fn().mockResolvedValue({
       data: { session: null },
       error: new Error('PKCE code verifier not found in storage. This can happen if the auth flow was initiated in a different browser or device'),

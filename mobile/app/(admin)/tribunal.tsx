@@ -72,6 +72,31 @@ function chargeLabel(reason: string): string {
   return REPORT_REASON_LABELS[reason as ReportReason]?.label ?? reason.toUpperCase();
 }
 
+/**
+ * A verdict the house refused because the case moved on (P0002, told apart by its word): judged
+ * by another moderator meanwhile, or a REMOVE CONTENT on a piece already deleted. Null for any
+ * other failure.
+ */
+function verdictRefusal(err: unknown): 'ALREADY_JUDGED' | 'PIECE_GONE' | null {
+  if (!err || typeof err !== 'object') return null;
+  const { code, message } = err as { code?: unknown; message?: unknown };
+  if (code !== 'P0002') return null;
+  return message === 'ALREADY_JUDGED' || message === 'PIECE_GONE' ? message : null;
+}
+
+/**
+ * What a bulk dismissal says: the cases the house closed, never the number selected. A case
+ * another moderator judged meanwhile is not closed again (the house closes only pending cases),
+ * and is told apart. With no count in the answer, no number is said.
+ */
+function bulkDismissedWords(asked: number, closed: number | null): string {
+  if (closed === null) return 'Cases dismissed.';
+  if (closed === 0) return 'Already judged by another moderator.';
+  const judged = asked - closed;
+  if (judged <= 0) return `${closed} report(s) dismissed.`;
+  return `${closed} report(s) dismissed. ${judged} already judged by another moderator.`;
+}
+
 type EnforcementAction = 'warn' | 'suspend' | 'ban' | 'permanent_exile' | 'delete_content';
 type TribunalView = 'pending' | 'priority';
 
@@ -542,7 +567,25 @@ function TribunalScreen() {
       TactileEngine.success();
       reelToast('Directive executed. Action recorded in the archives.');
     },
-    onError: (err: unknown) => {
+    onError: (err: unknown, { reportId }) => {
+      const refused = verdictRefusal(err);
+      // Judged by another moderator meanwhile (or a bulk dismissal): the case is settled, so it
+      // leaves the docket, and both dockets are read again for whatever else changed (review round 11).
+      if (refused === 'ALREADY_JUDGED') {
+        leaveTheDocket([reportId]);
+        // Read again behind the toast: a docket that fails to read says so itself.
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] });
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'priority'] });
+        reelToast('Already judged by another moderator.');
+        return;
+      }
+      // The piece was deleted before the verdict: nothing was removed, recorded or told, and the
+      // case stays. Its evidence now reads as destroyed, so REMOVE CONTENT is no longer offered.
+      if (refused === 'PIECE_GONE') {
+        setEvidence(prev => ({ ...prev, [reportId]: { loading: false, data: { found: false } } }));
+        reelToast.error('The piece is already gone. Dismiss the case, or judge the member.');
+        return;
+      }
       const msg = err instanceof Error ? err.message : 'The Tribunal directive could not be executed.';
       reelToast.error(msg);
     },
@@ -553,12 +596,15 @@ function TribunalScreen() {
   const bulkDismissMutation = useMutation({
     mutationFn: (reportIds: string[]) =>
       ModerationService.bulkDismiss(reportIds, user!.id, 'Bulk dismissed by Tribunal admin'),
-    onSuccess: (_answer, reportIds) => {
+    onSuccess: (closed, reportIds) => {
+      // Every case named is settled now: closed by this call, or judged by another moderator
+      // before it (the house closes only pending ones). All leave the docket; the toast counts
+      // only what this call closed (review round 11).
       leaveTheDocket(reportIds);
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'priority'] });
       TactileEngine.success();
-      reelToast(`${selectedReports.size} report(s) dismissed.`);
+      reelToast(bulkDismissedWords(reportIds.length, closed));
       setSelectedReports(new Set());
       setMultiSelectMode(false);
     },
@@ -1058,7 +1104,10 @@ function TribunalScreen() {
                             in it, which is not what "remove the reported
                             content" means, and the server refuses the type
                             anyway. The act on a bad room is on its owner. */}
-                        {item.content_type !== 'profile' && item.content_type !== 'lounge' && (
+                        {/* Nor when the evidence is known destroyed: the piece is already gone, and
+                            a removal would remove nothing (the house refuses it, round 11). The
+                            case is then dismissed, or judged on its member. */}
+                        {item.content_type !== 'profile' && item.content_type !== 'lounge' && !(ev?.data && !ev.data.found) && (
                           <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
                             onPress={() => openActionModal('delete_content', item)}

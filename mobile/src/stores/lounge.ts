@@ -176,7 +176,8 @@ export interface LoungeState {
   // ── Reactions · lifecycle (Editorial Salon overhaul) ──
   toggleReaction: (messageId: string, reaction: string) => Promise<void>;
   withdrawMessage: (messageId: string) => Promise<void>;
-  retryMessage: (messageId: string) => Promise<void>;
+  /** True once the house or the queue has it; false when it was refused again (said by the store), or not tried. */
+  retryMessage: (messageId: string) => Promise<boolean>;
   clearMessages: (loungeId?: string) => void;
   /** Drops, from the transcript already on screen, messages by anyone the viewer now hides. */
   purgeHiddenMessages: () => void;
@@ -201,6 +202,66 @@ const bannedHere = (e: unknown) => {
   const refusal = e as { code?: unknown; message?: unknown } | null;
   return refusal?.code === 'P0001' && BAN_REFUSALS.includes(String(refusal.message ?? '').trim());
 };
+/**
+ * A salon its host dissolved while a member sat in it or stood at its door. join_public_lounge and
+ * request_lounge_membership raise SALON_GONE (SQLSTATE P0002); the house before round 11 raised
+ * 'Lounge not found'. Toasted as "check your connection", it sent the member to their signal over a
+ * room that is not there (review round 11): it is said, and the room draws its "Signal Lost" page.
+ */
+export const SALON_GONE_SAID = 'This salon is no longer open.';
+const salonGoneHere = (e: unknown) => {
+  const refusal = e as { code?: unknown; message?: unknown } | null;
+  const said = String(refusal?.message ?? '').trim();
+  return (refusal?.code === 'P0002' && said === 'SALON_GONE') || said === 'Lounge not found';
+};
+
+type SalonRefusal = 'gone' | 'unseated' | 'muted' | 'banned';
+const SAID_OF_A_SALON_REFUSAL: Record<SalonRefusal, string> = {
+  gone: SALON_GONE_SAID,
+  unseated: 'You no longer have a seat in this salon.',
+  muted: 'You have been muted in this salon.',
+  banned: BANNED_FROM_SALON,
+};
+
+/**
+ * Why the house refused a word in a salon, asked of the house after the refusal. The row security
+ * that refuses it ("Approved members can send") answers 42501 alike for a salon its host dissolved,
+ * a seat the host took or turned to a mute or a ban, and a seat left from another phone: each was
+ * "Failed to send message." over a retry that could not work (review round 11). Null: the salon
+ * stands and the seat is held (the refusal was something else), or the house could not be asked.
+ */
+async function whyTheSalonRefused(loungeId: string, userId: string): Promise<SalonRefusal | null> {
+  try {
+    const [room, seat] = await Promise.all([
+      supabase.from('lounges').select('id, creator_id').eq('id', loungeId).maybeSingle(),
+      supabase.from('lounge_members').select('status').eq('lounge_id', loungeId).eq('user_id', userId).maybeSingle(),
+    ]);
+    if (room.error) return null;
+    if (!room.data) return 'gone';
+    if ((room.data as { creator_id?: string | null }).creator_id === userId || seat.error) return null;
+    const status = (seat.data as { status?: string } | null)?.status;
+    if (status === 'approved') return null;
+    if (status === 'muted' || status === 'banned') return status;
+    return 'unseated';
+  } catch {
+    return null;
+  }
+}
+
+/** The house said this salon is gone: the corridor lets it go (its room, asking again, draws "Signal Lost"). */
+function hearRoomGone(loungeId: string): void {
+  useLoungeStore.setState((s) => ({ lounges: s.lounges.filter((l) => l.id !== loungeId) }));
+}
+
+/** After a word refused in a salon: why, said; false when nothing more was known than the refusal. */
+async function saidWhyTheSalonRefused(loungeId: string, userId: string): Promise<boolean> {
+  const why = await whyTheSalonRefused(loungeId, userId);
+  if (!why || !memberUnchanged(userId)) return !!why;
+  if (why === 'gone') hearRoomGone(loungeId);
+  reelToast.error(SAID_OF_A_SALON_REFUSAL[why]);
+  return true;
+}
+
 const SEND_THROTTLE = 800;
 
 /** Messages held for an open room: four of loadMoreMessages' pages of 100. */
@@ -349,7 +410,30 @@ async function resolveProfile(userId: string): Promise<{ username: string; avata
 }
 
 // ── Reaction aggregation ──
-interface ReactionRow { message_id: string; reaction: string; user_id: string }
+interface ReactionRow { id?: string; message_id: string; reaction: string; user_id: string }
+
+/**
+ * The open room's reaction rows, by their own id. The table keeps row security, so the house's
+ * channel sends a deleted reaction with its key alone ({ id }): a withdrawal heard that way was
+ * dropped, and a reaction another member took back stayed counted until the room was opened
+ * again (review round 11). Every read and every reaction heard keeps its rows here, and a
+ * withdrawal finds its message and its reaction by the id.
+ */
+const _reactionRows = new Map<string, ReactionRow>();
+let _reactionRowsOf: string | null = null;
+
+/** Keeps the reaction rows of the room open now (another room's are let go); one read for a room left is not kept. */
+function keepReactionRows(loungeId: string, rows: readonly ReactionRow[]): void {
+  if (useLoungeStore.getState().currentLoungeId !== loungeId) return;
+  if (_reactionRowsOf !== loungeId) {
+    _reactionRows.clear();
+    _reactionRowsOf = loungeId;
+  }
+  for (const r of rows) if (r.id) _reactionRows.set(r.id, r);
+}
+
+/** A page's reaction rows, as its embed read them. */
+const reactionRowsOf = (rows: readonly LoungeMessageRow[]): ReactionRow[] => rows.flatMap((m) => m.lounge_message_reactions ?? []);
 
 /**
  * A reaction's place in the row. indexOf's -1 would put an unknown FIRST; the database
@@ -444,7 +528,7 @@ interface LoungeMessageRow {
  * reactions asked for after the words cost the opening a second round trip, and a page read on
  * scrolling up never asked for them at all.
  */
-export const MESSAGE_COLUMNS = 'id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, metadata, created_at, deleted_at, profiles!lounge_messages_user_id_fkey(username, avatar_url), lounge_message_reactions!lounge_message_reactions_message_id_fkey(message_id, reaction, user_id)';
+export const MESSAGE_COLUMNS = 'id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, metadata, created_at, deleted_at, profiles!lounge_messages_user_id_fkey(username, avatar_url), lounge_message_reactions!lounge_message_reactions_message_id_fkey(id, message_id, reaction, user_id)';
 
 /** A page's rows, oldest first, as messages with their reactions summed for `myId`. */
 function messagesOf(rows: LoungeMessageRow[], myId: string | undefined): LoungeMessage[] {
@@ -800,6 +884,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         }
         // Only for the member who asked: the queued messages stitched in are theirs.
         if (!memberUnchanged(startedAs)) return;
+        keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // Only if this room is still the open one: a slower fetch for a room left
         // behind would put its words under the new room's name.
         set(s => (s.currentLoungeId !== loungeId ? s : {
@@ -851,6 +936,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         // Prepend older messages (filter blocked/muted)
         const filteredOlder = olderMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id));
         if (!memberUnchanged(startedAs)) return;
+        keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // Into the LIVE list, not `current` (read before the await), which would erase what
         // arrived over realtime during the scroll; and only into this room.
         set(s => {
@@ -879,6 +965,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const oldestHeld = held.reduce((a, b) => (before(a, b) <= 0 ? a : b));
 
     const fresh: LoungeMessage[] = [];
+    // The reaction rows each page carries, kept once the answer is this member's.
+    const heard: ReactionRow[] = [];
     let cursor = { created_at: newestHeld.created_at, id: newestHeld.id };
     let whole = true;
     try {
@@ -897,6 +985,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         const rows = (data ?? []) as unknown as LoungeMessageRow[];
         // messagesOf takes a page newest first, as every other read has it.
         fresh.push(...messagesOf([...rows].reverse(), myId));
+        heard.push(...reactionRowsOf(rows));
         if (rows.length < MESSAGE_PAGE) { whole = true; break; }
         whole = false;
         const last = rows.at(-1);
@@ -916,6 +1005,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         if (error || !data) return;
         const newest = messagesOf(data as unknown as LoungeMessageRow[], myId);
         if (!memberUnchanged(startedAs)) return;
+        keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         set((s) => {
           if (s.currentLoungeId !== loungeId) return s;
           const fromHouse = new Set(serverHeld(s.currentMessages).map((m) => m.id));
@@ -930,7 +1020,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // What is held, read again light: withdrawn or gone since, and its reactions now.
       const { data: marks, error: marksError } = await supabase
         .from('lounge_messages')
-        .select('id, deleted_at, lounge_message_reactions!lounge_message_reactions_message_id_fkey(message_id, reaction, user_id)')
+        .select('id, deleted_at, lounge_message_reactions!lounge_message_reactions_message_id_fkey(id, message_id, reaction, user_id)')
         .eq('lounge_id', loungeId)
         .gte('created_at', oldestHeld.created_at)
         .lte('created_at', newestHeld.created_at)
@@ -940,6 +1030,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const read = !marksError && marks ? (marks as unknown as Mark[]) : null;
       const byId = new Map((read ?? []).map((r) => [r.id, r]));
       const reactions = summarizeReactions((read ?? []).flatMap((r) => r.lounge_message_reactions ?? []), myId);
+      keepReactionRows(loungeId, [...heard, ...(read ?? []).flatMap((r) => r.lounge_message_reactions ?? [])]);
       // Absent from a whole answer, a held message was taken down; a cut answer proves nothing.
       const answeredWhole = !!read && read.length < 1000;
       const heldIds = new Set(held.map((m) => m.id));
@@ -1133,6 +1224,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // The server said why, in a sentence written for this member. Say it,
       // instead of "Failed to send message." over a retry that cannot succeed.
       if (showTierDoor(error, { returnTo: `/lounge/${loungeId}` })) return false;
+      // A refusal that says no more than 42501: the house is asked whether the salon still stands
+      // and the seat is still this member's, and that is said (review round 11).
+      if (!isNetworkError(error) && await saidWhyTheSalonRefused(loungeId, user.id)) return false;
       reelToast.error('Failed to send message.');
       return false;
     }
@@ -1258,8 +1352,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return true;
     } catch (e) {
       logger.error('[LoungeStore.joinPublicLounge] failed:', e);
-      // A seat refused for the rank is its door, never "check your connection"; one refused for a ban says so.
-      if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);
+      // A seat refused for the rank is its door, never "check your connection"; one refused for a ban
+      // says so; and one in a salon dissolved meanwhile says that, and the room lets it go.
+      if (salonGoneHere(e)) {
+        if (memberUnchanged(startedAs)) hearRoomGone(loungeId);
+        reelToast.error(SALON_GONE_SAID);
+      } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);
       else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
         reelToast.error('Could not take a seat. Check your connection and try again.');
       }
@@ -1281,7 +1379,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return 'requested';
     } catch (e) {
       logger.error('[LoungeStore.requestMembership] failed:', e);
-      if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);
+      if (salonGoneHere(e)) {
+        if (memberUnchanged(startedAs)) hearRoomGone(loungeId);
+        reelToast.error(SALON_GONE_SAID);
+      } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);
       else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
         reelToast.error('Could not send your request. Check your connection and try again.');
       }
@@ -1461,7 +1562,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const msg = get().currentMessages.find(m => m.id === messageId);
     // Held in the queue, refused for the rank while offline: drawn failed in its room, sent again here.
     const held = stillHeld('send_lounge_message', messageId);
-    if (!user || !msg || (msg.status !== 'failed' && !held)) return;
+    if (!user || !msg || (msg.status !== 'failed' && !held)) return false;
     set(s => ({
       currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m),
     }));
@@ -1487,28 +1588,32 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (error) throw error;
       // Sent: the queue holds it no longer, for this member or the next.
       if (held) letHeldGo(messageId);
-      if (!memberUnchanged(startedAs)) return;
+      if (!memberUnchanged(startedAs)) return true;
       set(s => ({
         currentMessages: s.currentMessages.map(m =>
           m.id === messageId ? { ...m, id: data.id, created_at: data.created_at, status: 'sent' as const } : m
         ),
       }));
+      return true;
     } catch (e) {
       // Neither queued as the next member nor marked in their transcript.
-      if (!memberUnchanged(startedAs)) return;
+      if (!memberUnchanged(startedAs)) return false;
       if (isNetworkError(e)) {
         // Already in the queue when held: it waits to be sent, never queued twice.
         if (held) sendHeldAgain(messageId);
         else enqueueMutation({ type: 'send_lounge_message', payload: { ...payload, _tempId: payload.id } });
         flushOfflineQueue();
         set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m) }));
-        return;
+        return true;
       }
       set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'failed' as const } : m) }));
       // "Try again" is the one thing that cannot help a member without the
       // rank — so a refusal gets the door, and only a real failure gets that.
-      if (showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` })) return;
+      if (showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` })) return false;
+      // The salon gone, or the seat: said, never "try again" (review round 11).
+      if (await saidWhyTheSalonRefused(msg.lounge_id, user.id)) return false;
       reelToast.error('Still could not send. Try again.');
+      return false;
     }
   },
 
@@ -1677,10 +1782,15 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           (payload) => {
             const row = payload.new as RawLoungePayload;
             if (!row?.id) return;
+            // A card whose piece went (withdrawn, deleted, its writer left) is taken down by the house
+            // in the sharer's message, its headline gone: taken as it comes, so it reads as gone live.
+            const card = row.metadata && typeof row.metadata === 'object' && row.metadata.gone === true
+              ? { metadata: row.metadata, film_title: row.film_title ?? undefined, film_poster: row.film_poster ?? undefined }
+              : {};
             set(s => ({
               currentMessages: s.currentMessages.map(m =>
                 m.id === row.id
-                  ? { ...m, content: row.deleted_at ? '' : (row.content?.replace(/<[^>]*>/g, '') ?? m.content), deleted_at: row.deleted_at ?? m.deleted_at }
+                  ? { ...m, ...card, content: row.deleted_at ? '' : (row.content?.replace(/<[^>]*>/g, '') ?? m.content), deleted_at: row.deleted_at ?? m.deleted_at }
                   : m
               ),
             }));
@@ -1693,6 +1803,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           (payload) => {
             const r = payload.new as ReactionRow;
             if (!r?.message_id) return;
+            // Kept by its id, own or another's: its withdrawal will arrive as the id alone.
+            keepReactionRows(loungeId, [r]);
             const myId = useAuthStore.getState().user?.id;
             // Own reaction is already applied optimistically in toggleReaction —
             // ignore the realtime echo of it so the count can't double.
@@ -1708,8 +1820,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           'postgres_changes',
           { event: 'DELETE', schema: 'public', table: 'lounge_message_reactions', filter: `lounge_id=eq.${loungeId}` },
           (payload) => {
-            const r = payload.old as ReactionRow;
-            if (!r?.message_id) return;
+            // The house sends the row's key alone (row security): its message, reaction and
+            // member are the ones kept under that id. A whole old row, were one sent, serves too.
+            const old = payload.old as Partial<ReactionRow> | undefined;
+            const kept = old?.id ? _reactionRows.get(old.id) : undefined;
+            if (old?.id) _reactionRows.delete(old.id);
+            const r = kept ?? (old?.message_id && old.reaction ? (old as ReactionRow) : undefined);
+            if (!r) return;
             const myId = useAuthStore.getState().user?.id;
             // Own un-react is already applied optimistically — ignore the echo so
             // it can't double-decrement.
@@ -1826,6 +1943,8 @@ registerStoreReset(() => {
     _keptRooms.clear();
     _readRoomsHere.clear();
     _readBackIn = null;
+    _reactionRows.clear();
+    _reactionRowsOf = null;
     for (const t of _typingTimers.values()) clearTimeout(t);
     _typingTimers.clear();
     // Unsubscribe, not just forget: a live channel would write the next message into

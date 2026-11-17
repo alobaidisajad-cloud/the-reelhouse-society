@@ -14,6 +14,7 @@ import { ledgerFromDisk, ledgerToDisk } from './domain/marksDisk';
 
 import type { DomainLog, Interaction, WatchlistItem } from '../types';
 import { createSelectors } from './createSelectors';
+import { findRecordsFilmBy } from '../utils/recordsFilm';
 
 export type FilmState = LogSlice & WatchlistSlice & ListSlice & InteractionSlice & ArchiveSlice;
 
@@ -158,4 +159,11 @@ registerStoreReset(() => {
     // window instead of racing it. It also uses the store's own name, so
     // renaming the store cannot orphan this line.
     try { useFilmStoreBase.persist.clearStorage(); } catch { /* noop */ }
+});
+
+// A queued replay from an older build names only its record: its film is the one held here
+// (mutationExecutor reads the film's verdict again once it is delivered).
+findRecordsFilmBy((logId) => {
+    const held = useFilmStore.getState().logs.find((l) => l.id === logId);
+    return held?.filmId != null ? Number(held.filmId) : null;
 });

@@ -101,7 +101,12 @@ describe('socialSlice', () => {
                             })),
                         })),
                     })),
-                    insert: jest.fn().mockResolvedValue({ error: null }),
+                    // The follow asks back the row the house filed.
+                    insert: jest.fn(() => ({
+                        select: jest.fn(() => ({
+                            maybeSingle: jest.fn().mockResolvedValue({ data: { type: 'follow' }, error: null }),
+                        })),
+                    })),
                 };
                 return {};
             });

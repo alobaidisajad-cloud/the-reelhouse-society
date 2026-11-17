@@ -9,6 +9,8 @@ import { CACHE_KEYS } from '../constants/cacheKeys';
 import { rememberPreviousHandle } from '../utils/handleHistory';
 import { pgLiteral } from '../utils/keysetCursor';
 import { dateOf } from '@/src/utils/instant';
+import { HandleNotChanged } from './handleNotChanged';
+import { buildSearchPattern } from '../utils/searchPattern';
 
 /**
  * Canonical column list for auth-bootstrap profile SELECT queries.
@@ -44,8 +46,10 @@ export const ProfileService = {
    *   so on a device whose keystore has failed it does not exist — and the
    *   handle-history record below would have stopped being written, silently,
    *   with no other symptom. The caller has this value already.
+   * @returns the handle the house holds after the write (read back, never assumed from
+   *   `updates`), or undefined when nothing was written.
    */
-  async updateProfile(userId: string, updates: Partial<User>, previousUsername?: string) {
+  async updateProfile(userId: string, updates: Partial<User>, previousUsername?: string): Promise<{ username: string } | undefined> {
     // 1. Explicit Session Authorization
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !session?.user) {
@@ -90,14 +94,42 @@ export const ProfileService = {
       dbUpdates.is_social_private = updates.is_social_private;
     }
 
-    if (Object.keys(dbUpdates).length === 0) return;
+    if (Object.keys(dbUpdates).length === 0) return undefined;
 
     // 2. Strict Zod Schema Validation
     const validatedData = ProfileUpdateSchema.parse(dbUpdates);
 
-    // 3. Database Sync
-    const { error } = await supabase.from('profiles').update(validatedData).eq('id', userId);
-    if (error) throw error;
+    // 3. Database Sync. Every field but the handle, in one write, read back: the phone is told the
+    // handle the house holds, never the one it asked for.
+    const { username: newHandle, ...fields } = validatedData as Record<string, unknown>;
+    let kept: string | undefined;
+    if (Object.keys(fields).length > 0) {
+      const { data, error } = await supabase.from('profiles').update(fields).eq('id', userId).select('username').single();
+      if (error) throw error;
+      const held = (data as { username?: unknown } | null)?.username;
+      if (typeof held === 'string') kept = held;
+    }
+    // The handle through the house's own rename (round 11). A plain write of a handle's cleaned
+    // form is how an old build saved every edit ("john.doe" sent as "johndoe"), and the house puts
+    // the old handle back for it without a word: a member who chose that rename was told AMENDED,
+    // while the house kept the old one. rename_my_handle marks the write as chosen and answers with
+    // the handle kept. Last, after the other fields: a rename refused leaves the phone's handle
+    // where the house's is (a member whose handle moved without the phone knowing found their own
+    // file "not found").
+    if (typeof newHandle === 'string') {
+      // Refused, or never reached: the fields above are saved already, and the caller is told so,
+      // with the handle the house still holds when the write above read it (HandleNotChanged).
+      const othersSaved = Object.keys(fields).length > 0;
+      let renamed: unknown;
+      try {
+        const answer = await supabase.rpc('rename_my_handle', { p_new: newHandle });
+        if (answer.error) throw new HandleNotChanged(answer.error, othersSaved, kept);
+        renamed = answer.data;
+      } catch (e) {
+        throw e instanceof HandleNotChanged ? e : new HandleNotChanged(e, othersSaved, kept);
+      }
+      if (typeof renamed === 'string') kept = renamed;
+    }
 
     // ── #87 · record the handle we just stopped being ──────────────────────────
     // This lives HERE, and not at the call site, because there are three doors into
@@ -129,6 +161,7 @@ export const ProfileService = {
         }
       } catch { /* a rename that already succeeded must not fail over a convenience */ }
     }
+    return kept === undefined ? undefined : { username: kept };
   },
 
   /**
@@ -141,22 +174,30 @@ export const ProfileService = {
    * own name is taken. Signup passes nothing, because there is no row yet.
    */
   async checkUsernameAvailable(username: string, excludeUserId?: string): Promise<boolean> {
+    // Any case, as the house judges a handle taken (lower(username), rename_my_handle): an older
+    // handle with capitals ("JohnDoe") takes "johndoe". Matched exactly, it passed here and was
+    // refused at the rename, after the rest of the save (round 11). Its letters taken as letters
+    // (buildSearchPattern escapes LIKE's marks, `_` among them), and the whole of it: no wildcard
+    // around it, so "noir" never finds "noir_fan".
+    const pattern = buildSearchPattern(username);
+    if (pattern === null) throw new Error('A handle has letters to check.');
     let query = supabase
       .from('profiles')
       .select('id')
-      .eq('username', username);
+      .ilike('username', pattern);
 
     if (excludeUserId) {
       query = query.neq('id', excludeUserId);
     }
 
-    const { data, error } = await query.maybeSingle();
+    // Two may hold it in different capitals: any one is enough.
+    const { data, error } = await query.limit(1);
 
     if (error) {
       throw error;
     }
 
-    return !data;
+    return !data?.length;
   },
 
   async uploadAvatar(userId: string, base64Str: string): Promise<string> {

@@ -70,7 +70,7 @@ const ROMAN = ['I.', 'II.', 'III.', 'IV.', 'V.', 'VI.'];
  * and a closed ballot must not print the first while the second is true.
  */
 export const PaperBallot = memo(function PaperBallot({
-  question: asked, author, options, myVote, closed, closesLabel, sealed = true,
+  question: asked, author, options, myVote, closed, closesLabel, sealed = true, tallied = true,
   certifyCount, commentCount, certified, saved, showKind = true, pending, docked,
   certifyKnown, saveKnown, voteKnown = true,
   onVote, onCertify, onCritique, onShare, onSave, onAuthor,
@@ -95,6 +95,13 @@ export const PaperBallot = memo(function PaperBallot({
    * numbers, is unchanged; the app passes the real thing.
    */
   sealed?: boolean;
+  /**
+   * Whether an OPEN ballot's running count is known: the house gives it to a member who has voted
+   * (ballot_tally), and the options' votes are it. Not known (not read yet, or not given), a
+   * member's own mark is not followed by a count: the rows printed "0 BALLOTS CAST" under it
+   * (review round 11). Defaults TRUE so the render harness draws its counted ballots unchanged.
+   */
+  tallied?: boolean;
   /** The reader docks its marks at the screen's foot (PostDock): the ballot draws no second row of them. */
   docked?: boolean;
   /**
@@ -130,7 +137,9 @@ export const PaperBallot = memo(function PaperBallot({
   const voteReading = !voteKnown && !closed && !!vote;
   const votes = options.map((o) => o.votes);
   const total = votes.reduce((a, b) => a + b, 0);
-  const revealed = closed || (!voteReading && myVote != null);
+  // The member's own mark, read: the result shows under it once its count is known.
+  const cast = !voteReading && myVote != null;
+  const revealed = closed || (cast && tallied);
   // One number, one source: the total is the sum of the options, never a second
   // stored column that can disagree with them.
   const showPercent = revealed && total >= BALLOT_PERCENT_FLOOR;
@@ -343,7 +352,9 @@ export const PaperBallot = memo(function PaperBallot({
           ? ''
           : revealed
             ? counted(total, 'BALLOT CAST', 'BALLOTS CAST')
-            : 'MARK YOUR BALLOT'}
+            : cast
+              ? 'YOUR BALLOT IS CAST'
+              : 'MARK YOUR BALLOT'}
       </Text>
 
       {closed && <View style={{ alignItems: 'center', marginTop: 8 }}><Byline author={author} onPress={onAuthor} /></View>}

@@ -13,7 +13,7 @@
 import { houseIso } from '@/src/lib/houseClock';
 import { fetchWithinLimit, supabase } from '../lib/supabase';
 import { wallMayHaveChanged } from '../components/lobby/wallRead';
-import { reelMayHaveChanged } from '../components/feed/reelRead';
+import { reelMayHaveChanged, recordsMayHaveChanged } from '../components/feed/reelRead';
 import { useAuthStore } from '../stores/auth';
 import { InteractionService } from '../services/InteractionService';
 import { VaultService } from '../services/VaultService';
@@ -23,6 +23,9 @@ import type { QueuedMutation } from './offlineQueue';
 import { sanitizeInput, type FieldType } from './sanitizeInput';
 import { keepFilingEdit, keepLogEdit, mergeHistory } from '../services/KeptEdits';
 import { FILING_EDITABLE_COLUMNS } from '../stores/dispatchTypes';
+import { queryClient } from '../lib/queryClient';
+import { isGoneFromTheHouse } from './goneFromTheHouse';
+import { filmOfRecord } from './recordsFilm';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -233,6 +236,20 @@ const insertLog = async (p: any): Promise<MutationResult> => {
         throw error;
     }
 };
+
+/** A stack the queue found deleted, let go of on the phone (forgetGoneStack), and said. */
+function letGoOfGoneStack(listId: string): void {
+    // Required here, not imported: the stores import the queue, which imports this file (and the
+    // toast reaches the stores too: imported, it closed that circle while the films store loaded).
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useListStore } = require('../stores/films') as typeof import('../stores/films');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const reelToast = (require('./reelToast') as typeof import('./reelToast')).default;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { forgetGoneStack } = require('../stores/domain/listSlice') as typeof import('../stores/domain/listSlice');
+    forgetGoneStack(listId, useListStore.setState);
+    reelToast.error('A stack amended offline is no longer in the house: the amendment was let go.');
+}
 
 const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // ── Endorsements ──
@@ -473,7 +490,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         // removed_film_ids (an older build's) is implied by the films it lists.
         const { list_id, updates, films, read_at } = p;
         const u = (updates ?? {}) as Record<string, unknown>;
-        const { data } = throwIfError(await supabase.rpc('save_stack', {
+        const saved = await supabase.rpc('save_stack', {
             p_id: list_id,
             // Same last gate as create_list above — a queued EDIT from an older build.
             p_title: typeof u.title === 'string' ? sanitizeInput(u.title, 'listTitle') : null,
@@ -484,7 +501,16 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             // Refused (PT412) if the stack changed after the phone read it. Without a time (an edit
             // queued by a build before stacks kept theirs) nothing is compared: saved as before.
             p_read_at: typeof read_at === 'string' ? read_at : null,
-        }));
+        });
+        // Deleted since it was amended offline (from the member's other phone, or by the house):
+        // save_stack finds no stack of theirs (P0002). Sending it again could never land, and held
+        // as an unsent change it would be offered back for ever: it is let go of, here and on the
+        // phone, and said (round 11), as a queued edit of a record deleted meanwhile is let go.
+        if (isGoneFromTheHouse(saved.error)) {
+            letGoOfGoneStack(String(list_id));
+            return {};
+        }
+        const { data } = throwIfError(saved);
         const at = (data as { updated_at?: unknown } | null)?.updated_at;
         return typeof at === 'string' ? { readAt: { key: `list:${String(list_id)}`, at } } : {};
     },
@@ -1013,6 +1039,20 @@ const CHANGES_THE_REEL: ReadonlySet<QueuedMutation['type']> = new Set<QueuedMuta
     'add_log', 'update_log', 'remove_log', 'add_viewing', 'remove_viewing',
 ]);
 
+/** The replays that file, amend, rewatch or withdraw a record of a film: each moves the film's
+ *  verdict at the house (refresh_film_verdict). Each names its film (film_id) since round 11; one
+ *  an older build queued names only its record (filmOfReplay). */
+const MOVES_A_VERDICT: ReadonlySet<QueuedMutation['type']> = new Set<QueuedMutation['type']>([
+    'add_log', 'mark_watched', 'update_log', 'remove_log', 'add_viewing', 'remove_viewing',
+]);
+
+/** The film a replay is about: the one it names, else the film of the record the phone holds by its id. */
+function filmOfReplay(type: QueuedMutation['type'], p: Record<string, unknown>): number | null {
+    if (p.film_id != null && Number.isFinite(Number(p.film_id))) return Number(p.film_id);
+    const logId = type === 'update_log' ? p.id : p.log_id;
+    return typeof logId === 'string' ? filmOfRecord(logId) : null;
+}
+
 /**
  * Executes a single queued mutation with ID remapping for dependent mutations.
  * Throws UnknownMutationError for types not in the registry (routed to dead-letter).
@@ -1036,5 +1076,13 @@ export async function executeMutation(
     // The house has it only now: the wall asked earlier still hung the piece as it was.
     if (CHANGES_THE_WALL.has(mutation.type)) wallMayHaveChanged();
     if (CHANGES_THE_REEL.has(mutation.type)) reelMayHaveChanged();
+    // A record marked watched by an older build is no card on the Reel, but it is a night on the
+    // member's calendar and run: what holds the member's records hears it (round 11).
+    else if (mutation.type === 'mark_watched') recordsMayHaveChanged();
+    // A record filed, amended, rewatched or withdrawn moves its film's verdict at the house
+    // (refresh_film_verdict), which the film's page reads with its reviews: read again now the house
+    // has it, as one written online is (round 11).
+    const film = MOVES_A_VERDICT.has(mutation.type) ? filmOfReplay(mutation.type, mapped) : null;
+    if (film != null) void queryClient.invalidateQueries({ queryKey: ['film', film] });
     return result;
 }

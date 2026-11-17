@@ -21,6 +21,7 @@ import { colors, effects } from '@/src/theme/theme';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
 import InitiationModal from '@/src/components/InitiationModal';
 import { useInitiation } from '@/src/hooks/useInitiation';
+import { useIsFocused } from 'expo-router/react-navigation';
 import { useLater } from '@/src/hooks/useLater';
 import { nav } from '@/src/utils/typedRouter';
 import { EDGE_LIT } from '@/src/theme/light';
@@ -136,7 +137,9 @@ export default function TabLayout() {
   // Triple-locked against ever repeating (see useInitiation). Beat IV's
   // "LOG YOUR FIRST FILM" opens the log modal directly — the ceremony ends in
   // the action, not a Done button.
-  const initiation = useInitiation();
+  // Only with the Lobby in front: a confirmation link opened over the sign-in sheet signs the
+  // member in while that sheet is still presented, and the ceremony waits until it has gone.
+  const initiation = useInitiation(useIsFocused());
   // After the curtain closes; never once the tabs have gone (a sign-out within it).
   const openLog = useLater();
   // LOG YOUR FIRST FILM opens the log once the Initiation's Modal is gone (onGone), never on a
@@ -270,6 +273,7 @@ export default function TabLayout() {
       memberNo={initiation.memberNo}
       onComplete={handleInitiationComplete}
       onGone={handleInitiationGone}
+      onShown={initiation.shown}
     />
     </>
   );

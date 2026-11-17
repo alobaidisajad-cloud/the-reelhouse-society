@@ -57,6 +57,7 @@ import { FILING_FULL_COLUMNS, parseFilingRows, paperTierOf } from '@/src/stores/
 import type { CritiqueOrder, Filing } from '@/src/stores/dispatchTypes';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
+import { isNetworkError } from '@/src/utils/networkError';
 import { formatDateMonthDay } from '@/src/utils/timeAgo';
 import { useHasPassed, useTimesAgo, useTimeUntil } from '@/src/hooks/useClock';
 import { scaledTextProps } from '@/src/constants/textScaling';
@@ -118,6 +119,7 @@ function FilingReader({ id }: { id: string }) {
   const critiqueMarksKnown = useDispatch((s) => s.critiqueMarksKnown);
   const savedIds = useDispatch((s) => s.savedIds);
   const myVotes = useDispatch((s) => s.myVotes);
+  const tallies = useDispatch((s) => s.tallies);
   // Which of this member's marks have been read: until then each is drawn unknown, not off.
   const marksKnown = useDispatch((s) => s.marksKnown);
 
@@ -219,7 +221,9 @@ function FilingReader({ id }: { id: string }) {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [id, attempt]);
+    // The member too: a visitor asked in from this page comes back to it signed in, and its
+    // critiques and their own marks on it are read for them, as a member (review round 11).
+  }, [id, attempt, me?.id]);
 
   // The next part: the lowest part number above this one that a reader could
   // open, behind the series page's three gates, so a withheld part is never next.
@@ -326,8 +330,19 @@ function FilingReader({ id }: { id: string }) {
       if (res?.offline) reelToast.success('Filed. It goes out when the wire is back.');
       // Filed, where members may certify or answer it: the moment to ask to send word.
       if (memberId) void offerWord('critique', memberId);
-    } catch {
-      // The store rolls the row back and keeps the text for another try.
+    } catch (e) {
+      // The store rolls the row back and keeps the text for another try. Refused, the filing is
+      // read again: withdrawn or withheld while the critique was written, it takes none, and
+      // the page draws it as it now stands, without the composer (review round 11).
+      if (!isNetworkError(e) && useAuthStore.getState().user?.id === memberId) {
+        const now = await useDispatch.getState().hydrate(live.id);
+        if (now === null || (now !== 'unreachable' && (now.endedAt || now.withheldAt))) {
+          if (now === null) setFiling(null);
+          setComposing(false);
+          reelToast.error('This filing no longer takes critiques.');
+          return;
+        }
+      }
       reelToast.error('That critique did not go.');
     } finally {
       setSending(false);
@@ -456,6 +471,10 @@ function FilingReader({ id }: { id: string }) {
   const certifyKnown = !me || marksKnown.certified.has(live.id);
   const saveKnown = !me || marksKnown.saved.has(live.id);
   const voteKnown = !me || marksKnown.voted.has(live.id);
+  // A ballot's count: the frozen one once sealed, else the running one read for a member who has
+  // voted. A running count of none cannot hold their own ballot, so it is not taken as known.
+  const running = tallies[live.id];
+  const counts = live.frozenTotals ?? (running && running.total > 0 ? running : null);
   const width = measure(screenWidth);
 
   // A filing takes acts only while it stands and the house has it: not once
@@ -576,9 +595,11 @@ function FilingReader({ id }: { id: string }) {
                 options={(live.options ?? []).map((o, i) => ({
                   title: o.title,
                   posterPath: o.poster_path ?? null,
-                  // From the frozen count only: an open ballot shows no numbers.
-                  votes: live.frozenTotals?.counts?.[String(i)] ?? 0,
+                  // The frozen count once sealed; while open, the running count the house gives a
+                  // member who has voted (ballot_tally). Neither known: no number is drawn.
+                  votes: counts?.counts?.[String(i)] ?? 0,
                 }))}
+                tallied={!!counts}
                 myVote={myVotes[live.id] ?? null}
                 voteKnown={voteKnown}
                 certifyKnown={certifyKnown}

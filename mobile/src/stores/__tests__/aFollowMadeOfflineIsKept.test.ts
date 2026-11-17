@@ -47,7 +47,8 @@ jest.mock('../../lib/supabase', () => ({
         in: () => chain,
         single: async () => (table === 'profiles' ? mockLookup : { data: null, error: null }),
         maybeSingle: async () => (table === 'profiles' ? mockLookup : { data: null, error: null }),
-        insert: async () => { mockInserted++; return { error: null }; },
+        // The follow asks its row back (.select('type').maybeSingle()), answered as the reads are.
+        insert: () => { mockInserted++; return chain; },
       };
       return chain;
     },

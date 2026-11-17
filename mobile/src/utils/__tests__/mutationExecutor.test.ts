@@ -463,7 +463,8 @@ describe('Lists', () => {
         });
 
         it('a refusal is thrown, so the queue keeps it', async () => {
-            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: null, error: { code: 'P0002', message: 'No such stack of yours' } });
+            // A rule's refusal (a stack deleted meanwhile, P0002, is let go instead: aStackDeletedElsewhereIsLetGo).
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: null, error: { code: '23514', message: 'new row violates check constraint' } });
             await expect(runMutation('update_list', { list_id: 'l1', user_id: 'u1', updates: { title: 'X' } })).rejects.toBeTruthy();
         });
     });

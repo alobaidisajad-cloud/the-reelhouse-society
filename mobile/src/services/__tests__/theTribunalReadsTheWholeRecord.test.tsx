@@ -90,10 +90,17 @@ describe('verdicts', () => {
     }] });
   });
 
-  it('dismisses many, and says what the server did', async () => {
-    rpc({ data: { dismissed: 3 }, error: null });
-    expect(await ModerationService.bulkDismiss(['a', 'b', 'c'], 'adm')).toEqual({ dismissed: 3 });
+  it('dismisses many, and says how many the house closed', async () => {
+    // The house answers a count (bulk_dismiss_reports RETURNS integer): the cases still pending
+    // that it closed, which may be fewer than the ids sent.
+    rpc({ data: 2, error: null });
+    expect(await ModerationService.bulkDismiss(['a', 'b', 'c'], 'adm')).toBe(2);
     expect(calls[0].args[1]).toMatchObject({ p_reason: 'Bulk dismissed' });
+  });
+
+  it('gives no count when the answer is not one, so no number is said that the house did not give', async () => {
+    rpc({ data: { dismissed: 3 }, error: null });
+    expect(await ModerationService.bulkDismiss(['a', 'b', 'c'], 'adm')).toBeNull();
   });
 
   it('throws a refused verdict or dismissal', async () => {

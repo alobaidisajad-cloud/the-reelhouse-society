@@ -77,16 +77,20 @@ async function readDoor(): Promise<DoorRead> {
      * about. `12 OF 5` reads as an error. The cap is the display's business,
      * and doing it here leaves the server function saying the true count for
      * anything else that ever reads it.
+     *
+     * The days are capped the same way: a member of a year's standing who still
+     * needs films reads `2 OF 2`, never `412 OF 2`.
      */
     const need = row.films_needed ?? FILMS_NEEDED;
+    const daysNeed = row.days_needed ?? DAYS_NEEDED;
     return {
       open: !!row.may_file,
       films: Math.min(row.films ?? 0, need),
       // The NEEDED numbers come from the server too, so raising the bar one day
       // does not leave the app printing the old one under a new rule.
       filmsNeeded: need,
-      days: row.days ?? 0,
-      daysNeeded: row.days_needed ?? DAYS_NEEDED,
+      days: Math.min(row.days ?? 0, daysNeed),
+      daysNeeded: daysNeed,
     };
   } catch (e) {
     logger.warn('[door] read failed', e);

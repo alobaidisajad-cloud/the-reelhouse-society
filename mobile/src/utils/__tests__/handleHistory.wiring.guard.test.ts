@@ -69,7 +69,8 @@ describe('the handle being given up is recorded at the FUNNEL, not at one door',
   });
 
   it('records AFTER the write succeeds — a handle we failed to give up is not a past one', () => {
-    const write = service.indexOf("supabase.from('profiles').update(validatedData)");
+    // The handle is written by the house's own rename (round 11), after the other fields.
+    const write = service.indexOf("supabase.rpc('rename_my_handle'");
     const record = service.indexOf('rememberPreviousHandle(userId');
     expect(write).toBeGreaterThan(-1);
     expect(record).toBeGreaterThan(write);

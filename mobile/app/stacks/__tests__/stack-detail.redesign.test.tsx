@@ -33,7 +33,7 @@ const baseStack = {
 const mockRouterPush = jest.fn();
 jest.mock('expo-router', () => ({
   ...require('@/test-utils/expoRouterMock').expoRouterMock(),
-  router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() },
+  router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn(), canGoBack: jest.fn(() => true) },
   useLocalSearchParams: () => ({ id: STACK_ID }),
   useRouter: () => ({ back: jest.fn(), push: (...a: unknown[]) => mockRouterPush(...a), replace: jest.fn() }),
 }));
@@ -69,7 +69,10 @@ jest.mock('@/src/utils/reelToast', () => {
 /** The stack query's options, so a test can run its real queryFn. */
 let mockStackOpts: { queryFn: () => Promise<{ list: Record<string, unknown> }> } | null = null;
 jest.mock('@tanstack/react-query', () => ({
-  QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); setQueryDefaults = () => {}; },
+  QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); setQueryDefaults = () => {}; invalidateQueries = () => Promise.resolve(); },
+  // The house's own client (the wall's, asked again when a stack is found gone) sets these up.
+  onlineManager: { setEventListener: () => {} },
+  focusManager: { setEventListener: () => {} },
   useQueryClient: () => ({
     setQueryData: mockSetQueryData, removeQueries: jest.fn(),
     getQueryData: jest.fn((key: unknown[]) => (key[0] === 'stackComments' ? mockComments : undefined)),
@@ -1216,6 +1219,23 @@ describe('the critiques as they stand, sent or waiting', () => {
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'Not mine to say.'); });
     await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
     expect(mockToastError).toHaveBeenCalledWith('This member limits who may annotate their critiques.');
+  });
+
+  it('a stack deleted while the critique was written says it is gone, never the curator’s rule, and the page leaves (round 11)', async () => {
+    mockToastError.mockClear();
+    mockInvalidate.mockClear();
+    const back = jest.requireMock('expo-router').router.back as jest.Mock;
+    back.mockClear();
+    mockAddComment.mockRejectedValue({ code: 'P0002', message: 'STACK_GONE' });
+    const r = await open();
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'Too late to say.'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
+    expect(mockToastError.mock.calls).toEqual([['This stack is no longer in the house.']]);
+    // Its page is read again (it finds none), the Reel's STACKS too, and the page leaves.
+    expect(mockInvalidate).toHaveBeenCalledWith({ queryKey: ['stack', STACK_ID] });
+    expect(mockInvalidate).toHaveBeenCalledWith({ queryKey: ['feed', 'stacks'] });
+    expect(back).toHaveBeenCalledTimes(1);
+    expect(r.queryByLabelText('Stack critique')).toBeNull();
   });
 
   it('refused for the member’s own standing, it says the house’s words, never the maker’s setting (review round 9)', async () => {

@@ -52,6 +52,9 @@ import { COMMENT_PAGE_SIZE, LogService } from '@/src/services/LogService';
 import { colors } from '@/src/theme/theme';
 import { isNetworkError } from '@/src/utils/networkError';
 import { saidOfARefusal } from '@/src/utils/saidOfARefusal';
+import { isGoneFromTheHouse } from '@/src/utils/goneFromTheHouse';
+import { reelMayHaveChanged } from '@/src/components/feed/reelRead';
+import { wallMayHaveChanged } from '@/src/components/lobby/wallRead';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import { stillQueued } from '@/src/stores/offlineQueueStore';
 import reelToast from '@/src/utils/reelToast';
@@ -187,6 +190,27 @@ function seedFromCards(queryClient: QueryClient, id: string): LogRead | undefine
     }
   }
   return undefined;
+}
+
+/**
+ * A record the house says is gone (a critique filed on it found it deleted meanwhile): its page
+ * is read as gone, it leaves the Reel, the wall and every list told of records withdrawn, and,
+ * were it the member's own (deleted from their other phone), their archive on this phone, as an
+ * amendment that finds its record gone lets it go (round 11).
+ */
+function letTheRecordGo(queryClient: QueryClient, id: string): void {
+  queryClient.setQueryData<LogRead>(['log', id], (old) => (old ? { ...old, log: null } : old));
+  const { logs, _loggedIndex } = useFilmStore.getState();
+  const held = logs.find((l) => l.id === id) ?? Object.values(_loggedIndex).find((l) => l?.id === id);
+  if (held) {
+    useFilmStore.setState((state) => {
+      const nextIdx = { ...state._loggedIndex };
+      if (held.filmId !== undefined && nextIdx[held.filmId]?.id === id) delete nextIdx[held.filmId];
+      return { logs: state.logs.filter((l) => l.id !== id), _loggedIndex: nextIdx };
+    });
+  }
+  wallMayHaveChanged();
+  reelMayHaveChanged(id);
 }
 
 const PARAMS = { id: P.uuid };
@@ -380,7 +404,11 @@ function LogDetailScreen({ id }: { id: string }) {
   const [ownRead, setOwnRead] = useState<string | null>(null);
   if (log && user?.id && log.user_id === user.id && ownRead !== log.id) setOwnRead(log.id);
   const withdrawnHere = !log && !logQueryFailed && !!id && ownRead === id;
-  useFocusEffect(useCallback(() => { if (withdrawnHere) nav.back(); }, [withdrawnHere]));
+  // A critique filed here found the record gone (deleted by its member meanwhile): the page leaves
+  // with it, as it does for one withdrawn here, its words kept in the box (round 11).
+  const [goneHere, setGoneHere] = useState(false);
+  const leavingHere = withdrawnHere || goneHere;
+  useFocusEffect(useCallback(() => { if (leavingHere) nav.back(); }, [leavingHere]));
   const filedAgo = useTimeAgo(log?.created_at);
   const profile = logQueryData?.profile ?? null;
   // A member blocked or muted since the page was read leaves it at once (a REPORT's "also block"
@@ -640,6 +668,15 @@ function LogDetailScreen({ id }: { id: string }) {
         // Refused: the words go back in the box, never to be typed twice.
         setNewComment((now) => (now.trim() ? now : commentBody));
         withdrawTap('critique', id, tap);
+        if (isGoneFromTheHouse(error, 'LOG_GONE')) {
+          // The record was deleted while the critique was written: said as that, never as the
+          // author's rule (round 11). It leaves the phone as a record withdrawn does, and the page
+          // leaves with it; the words stay in the box.
+          letTheRecordGo(queryClient, id);
+          setGoneHere(true);
+          reelToast.error('This record is no longer in the house.');
+          return;
+        }
         // The member's own standing said as the house says it, never blamed on the author (review round 9).
         reelToast.error(saidOfARefusal(error, 'This member limits who may annotate their critiques.', 'Your critique could not be filed.'));
       }
@@ -792,7 +829,7 @@ function LogDetailScreen({ id }: { id: string }) {
   }
 
   // Withdrawn by the member here, or its author hidden: the page is leaving, and says nothing of it.
-  if (withdrawnHere || (authorHidden && !sheetOpen)) {
+  if (leavingHere || (authorHidden && !sheetOpen)) {
     return (
       <View style={[s.container, s.centerFull]}>
         <RoomLight room="film" />

@@ -27,6 +27,20 @@ const PARAMS = {
   error: P.words(300), error_code: P.words(300), error_description: P.words(300),
 };
 
+/**
+ * A sign-up link that did not open. The house confirms the address as the link is opened, before
+ * the phone trades its code for a session, so a link that fails here (opened on another phone, an
+ * older mail after a newer one, the line dropped during the trade) has often confirmed the address
+ * already. The house never says whether an address is confirmed (a fresh confirmation is answered
+ * alike either way, and sends nothing to one confirmed), so the page leads with signing in and
+ * offers a new link second, never claiming the address is unconfirmed (round 11).
+ */
+const SIGNUP_LINK_FAILED = {
+  eyebrow: 'THE LINK DID NOT OPEN',
+  title: 'Try Signing In',
+  body: 'Your address may already be confirmed: sign in with your password. If the house says it is not, ask for a new link here and open the newest one on this phone.',
+} as const;
+
 // Where an email's link lands (authLink): a sign-up confirmed, or a password reset begun.
 export default function AuthCallbackScreen() {
   const router = useRouter();
@@ -166,7 +180,52 @@ export default function AuthCallbackScreen() {
           )}
 
           {/* ── Error ── */}
-          {status === 'error' && (
+          {status === 'error' && params.type === 'signup' && (
+            <Arrive name="auth-callback-3" duration={600} style={s.stateWrap}>
+              <View style={s.errorIconWrap}>
+                <Text style={s.errorIcon} {...UNSPOKEN}>✕</Text>
+              </View>
+              <Text style={[s.eyebrow, { color: colors.crimsonInk }]}>{SIGNUP_LINK_FAILED.eyebrow}</Text>
+              <Text style={s.title}>{SIGNUP_LINK_FAILED.title}</Text>
+              <Text style={s.body}>{SIGNUP_LINK_FAILED.body}</Text>
+
+              {/* Signing in first: the address is often confirmed already. */}
+              <View style={{ marginTop: 28, width: '100%', gap: 12 }}>
+                <PressableScale
+                  style={s.retryBtn}
+                  onPress={() => nav.replace('/login')}
+                  pressedScale={0.97}
+                  haptic="medium"
+                  accessibilityRole="button"
+                  accessibilityLabel="Go to sign in"
+                >
+                  <Text style={s.retryText}>SIGN IN</Text>
+                </PressableScale>
+
+                <PressableScale
+                  style={s.retryBtnSecondary}
+                  onPress={() => nav.replace('/login', { action: 'resend_signup' })}
+                  pressedScale={0.97}
+                  haptic="light"
+                  accessibilityRole="button"
+                >
+                  <Text style={s.retryTextSecondary}>REQUEST NEW VERIFICATION</Text>
+                </PressableScale>
+
+                <PressableScale
+                  style={s.retryBtnTertiary}
+                  onPress={() => nav.dismissTo('/(tabs)')}
+                  pressedScale={0.97}
+                  haptic="light"
+                  accessibilityRole="button"
+                >
+                  <Text style={s.retryTextTertiary}>RETURN TO THE LOBBY</Text>
+                </PressableScale>
+              </View>
+            </Arrive>
+          )}
+
+          {status === 'error' && params.type !== 'signup' && (
             <Arrive name="auth-callback-3" duration={600} style={s.stateWrap}>
               <View style={s.errorIconWrap}>
                 <Text style={s.errorIcon} {...UNSPOKEN}>✕</Text>
@@ -174,7 +233,7 @@ export default function AuthCallbackScreen() {
               <Text style={[s.eyebrow, { color: colors.crimsonInk }]}>VERIFICATION FAILED</Text>
               <Text style={s.title}>Link Expired{'\n'}or Invalid</Text>
               <Text style={s.body}>{errorMsg}</Text>
-              
+
               {/* Dynamic Rescue Options based on type */}
               <View style={{ marginTop: 28, width: '100%', gap: 12 }}>
                 {params.type === 'recovery' ? (
@@ -185,15 +244,6 @@ export default function AuthCallbackScreen() {
                     haptic="medium"
                   >
                     <Text style={s.retryText}>REQUEST NEW RESET LINK</Text>
-                  </PressableScale>
-                ) : params.type === 'signup' ? (
-                  <PressableScale
-                    style={s.retryBtn}
-                    onPress={() => nav.replace('/login', { action: 'resend_signup' })}
-                    pressedScale={0.97}
-                    haptic="medium"
-                  >
-                    <Text style={s.retryText}>REQUEST NEW VERIFICATION</Text>
                   </PressableScale>
                 ) : (
                   // What this opens is the sign-in form, and it says so.
@@ -219,7 +269,7 @@ export default function AuthCallbackScreen() {
                 </PressableScale>
 
                 {/* Beside a SIGN IN above, this would be the same door twice. */}
-                {(params.type === 'recovery' || params.type === 'signup') && (
+                {params.type === 'recovery' && (
                   <PressableScale
                     style={s.retryBtnTertiary}
                     onPress={() => nav.replace('/login')}

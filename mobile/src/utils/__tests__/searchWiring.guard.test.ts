@@ -65,6 +65,9 @@ describe('every ilike carrying member input goes through the funnel', () => {
     // The Lounge's search: the salons past the newest fifty, by name and what each is, asked of
     // the house as the member types (searchLounges), through buildSearchPattern.
     'src/stores/lounge.ts',
+    // Edit Profile's check that a handle is free: in any case, as the house judges a handle taken
+    // (round 11), so the member's handle is matched by ilike, whole, through buildSearchPattern.
+    'src/services/ProfileWriteService.ts',
   ];
 
   const filesUsingIlike = FILES

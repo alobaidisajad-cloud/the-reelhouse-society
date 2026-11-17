@@ -21,6 +21,9 @@ export interface FollowRequest {
   createdAt: string;
 }
 
+/** What an ADMIT came to: the member admitted, the request no longer at the door, or no answer. */
+export type AdmitAnswer = 'admitted' | 'gone' | 'failed';
+
 export interface FollowRequestPage {
   items: FollowRequest[];
   nextCursor: string | null;
@@ -114,11 +117,16 @@ export const FollowRequestService = {
     return { items, nextCursor };
   },
 
-  /** Approve a requester → converts follow_request to follow (RPC). */
-  async accept(requesterId: string): Promise<boolean> {
-    const { error } = await supabase.rpc('accept_follow_request', { requester_id: requesterId });
-    if (error) { logger.warn('[FollowRequestService.accept] failed:', error.message); return false; }
-    return true;
+  /**
+   * Approve a requester → converts follow_request to follow (RPC). The house answers whether
+   * anyone was admitted: false when the request was no longer at the door (withdrawn meanwhile,
+   * or taken by a block), so no one now follows. An older house answered nothing for both; its
+   * silence is read as it always was, an admission.
+   */
+  async accept(requesterId: string): Promise<AdmitAnswer> {
+    const { data, error } = await supabase.rpc('accept_follow_request', { requester_id: requesterId });
+    if (error) { logger.warn('[FollowRequestService.accept] failed:', error.message); return 'failed'; }
+    return data === false ? 'gone' : 'admitted';
   },
 
   /** Turn a requester away → deletes the follow_request (RPC). */

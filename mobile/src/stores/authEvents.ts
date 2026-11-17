@@ -1,7 +1,7 @@
 /**
  * authEvents.ts — what the app does with each Supabase auth event. Run only
- * after the listener has let go of auth-js's lock: AppBootstrapper defers every
- * event and chains them, so a `supabase.auth.*` call made here cannot deadlock.
+ * after auth-js has finished emitting it: AppBootstrapper defers every event
+ * and chains them, so a `supabase.auth.*` call made here cannot deadlock.
  */
 import type { AuthChangeEvent } from '@supabase/supabase-js';
 import { storage, useAuthStore } from './auth';

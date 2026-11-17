@@ -135,6 +135,11 @@ interface InitiationModalProps {
    * dismisses it then), whichever is first; on Android at once. It may be said twice.
    */
   onGone?: () => void;
+  /**
+   * The door is truly on screen (the Modal's onShow): the once-only flag burns here, never before,
+   * so a showing the phone refused does not spend it (useInitiation's LOCK 2).
+   */
+  onShown?: () => void;
 }
 
 /** The iOS Modal's own dismissal after it leaves the tree, and a margin: the backstop for onDismiss. */
@@ -153,7 +158,7 @@ function DoorWatch({ onGone }: { onGone?: () => void }) {
   return null;
 }
 
-export default function InitiationModal({ visible, username, memberNo, onComplete, onGone }: InitiationModalProps) {
+export default function InitiationModal({ visible, username, memberNo, onComplete, onGone, onShown }: InitiationModalProps) {
   const [beat, setBeat] = useState(0);
   // Each opening starts at the first beat. The tabs keep this mounted from one member to the next
   // on the phone (only the Modal goes), and a second new member opened on the last one's beat IV,
@@ -187,7 +192,7 @@ export default function InitiationModal({ visible, username, memberNo, onComplet
   return (
     <Presence>
     {visible ? (
-    <Modal key="initiation" statusBarTranslucent visible transparent animationType="fade" onRequestClose={handleQuiet} onDismiss={onGone}>
+    <Modal key="initiation" statusBarTranslucent visible transparent animationType="fade" onRequestClose={handleQuiet} onDismiss={onGone} onShow={onShown}>
       <DoorWatch onGone={onGone} />
       <InColumn>
       <PresenceView name="initiation" style={s.overlay} accessibilityViewIsModal={true} onAccessibilityEscape={handleQuiet}>

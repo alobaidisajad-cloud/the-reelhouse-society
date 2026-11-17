@@ -90,14 +90,19 @@ export const ModerationService = {
     if (error) throw error;
   },
 
-  async bulkDismiss(reportIds: string[], adminId: string, reason?: string) {
+  /**
+   * Dismisses the cases named, and answers how many the house closed: only those still pending
+   * are, so a case another moderator judged meanwhile is not counted. Null when the answer is not
+   * a count, so the screen never states a number the house did not give.
+   */
+  async bulkDismiss(reportIds: string[], adminId: string, reason?: string): Promise<number | null> {
     const { data, error } = await supabase.rpc('bulk_dismiss_reports', {
       p_report_ids: reportIds,
       p_admin_id: adminId,
       p_reason: reason ?? 'Bulk dismissed',
     });
     if (error) throw error;
-    return data;
+    return typeof data === 'number' && Number.isInteger(data) && data >= 0 ? data : null;
   },
 
   /**

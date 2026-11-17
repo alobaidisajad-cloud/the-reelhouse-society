@@ -7,6 +7,7 @@ import * as z from 'zod';
 import { useAuthStore } from '@/src/stores/auth';
 import { setSensitive } from '@/src/stores/mmkv-storage';
 import { ProfileService } from '@/src/services/ProfileWriteService';
+import { HandleNotChanged, saidOfHandleNotChanged } from '@/src/services/handleNotChanged';
 import { validateUsername } from '@/src/utils/validateUsername';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { queryClient } from '@/src/lib/queryClient';
@@ -317,7 +318,24 @@ export function useEditProfile() {
         finalAvatarUrl,
       });
 
-      await ProfileService.updateProfile(user.id, updates);
+      // The handle held before, handed over (the profile cache it was read from otherwise is not
+      // written on a phone whose keystore failed, and the open file's repair after a rename then
+      // never knew the old handle). The answer is the handle the house holds now.
+      // A rename refused (or never reached) after the other amendments were written: those are
+      // saved, and the save goes on as one, the handle left where the house holds it (round 11).
+      let saved: { username: string } | undefined;
+      let handleRefused: HandleNotChanged | null = null;
+      try {
+        saved = await ProfileService.updateProfile(user.id, updates, storedUsername);
+      } catch (e) {
+        if (!(e instanceof HandleNotChanged) || !e.othersSaved) throw e;
+        handleRefused = e;
+        saved = { username: e.kept ?? storedUsername };
+      }
+      // The handle as the house answered it; with no answer (nothing written), as the form had it.
+      const heldHandle = saved?.username ?? sanitizedUsername;
+      // A rename the house did not take as typed: the phone holds what the house holds, and says so.
+      const handleNotTaken = usernameChanged && heldHandle !== sanitizedUsername;
 
       // Optimistically propagate the new avatar instantly across all feeds and lounge messages
       if (finalAvatarUrl !== undefined) {
@@ -371,10 +389,14 @@ export function useEditProfile() {
       // answer to it is no draft.
       savedRef.current = true;
       // Update local auth store
+      // The handle from the house's answer, never from what was asked: a handle the house did not
+      // take, written here, was a handle no row had, and the member's own file said "Member Not
+      // Found" (review round 11).
       useAuthStore.setState((state) => {
         const updatedUser = state.user ? {
           ...state.user,
           ...updates,
+          username: heldHandle,
           display_name: updates.display_name ?? state.user.display_name
         } as any : null;
         if (updatedUser) {
@@ -382,6 +404,23 @@ export function useEditProfile() {
         }
         return { user: updatedUser };
       });
+
+      if (handleNotTaken) {
+        // Everything else is saved; the handle is not what was typed. No seal, and the field shows
+        // the handle the house holds.
+        clearDraft(user.id, 'profile');
+        // The form is the profile as saved: the amendments saved are no longer unsaved (nothing for
+        // a Discard to undo), the portrait sent is the stored one, and the handle field is the
+        // house's handle.
+        form.reset(storedOf(useAuthStore.getState().user));
+        setAvatarBase64(null);
+        const said = handleRefused
+          ? saidOfHandleNotChanged(handleRefused, sanitizedUsername, heldHandle)
+          : `Your other amendments are saved, but the house kept your handle as @${heldHandle}.`;
+        if (!mountedRef.current) { reelToast.error(said); return; }
+        setSubmitError(said);
+        return;
+      }
 
       // Seal the dossier: a one-beat "AMENDED" stamp + success haptic, then
       // return. This is the confirmation the old silent back lacked —
@@ -397,7 +436,18 @@ export function useEditProfile() {
     } catch (err: unknown) {
       console.error('Failed to update profile:', err);
       // A refusal for the member's standing is the house's answer, not a fault: the notice says it.
-      if (!__DEV__ && !isStandingRefusal((err as { message?: unknown } | null)?.message)) captureError(err instanceof Error ? err : new Error(String(err)), { context: 'update_profile' });
+      // So is a handle the house refused by its rules (it gave its code).
+      const answered = err instanceof HandleNotChanged && err.code !== undefined;
+      if (!__DEV__ && !answered && !isStandingRefusal((err as { message?: unknown } | null)?.message)) captureError(err instanceof Error ? err : new Error(String(err)), { context: 'update_profile' });
+      // A rename alone, refused: said as the handle's, with why, never as a profile that failed.
+      // The field keeps what they typed, to choose again, as a handle found taken before the save is.
+      if (err instanceof HandleNotChanged) {
+        const typed = validateUsername((data.username ?? '').trim()).sanitized || (data.username ?? '').trim();
+        const said = saidOfHandleNotChanged(err, typed, err.kept ?? user.username ?? '');
+        if (!mountedRef.current) reelToast.error(said);
+        form.setError('username', { type: 'manual', message: said });
+        return;
+      }
       if (!mountedRef.current) reelToast.error('Your profile could not be saved. Try again.');
       setSubmitError(err instanceof Error ? err : new Error('Failed to update profile. Please try again.'));
     } finally {

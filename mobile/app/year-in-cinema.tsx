@@ -2,7 +2,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { RemoteImage } from '@/src/components/Picture';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Film, X } from 'lucide-react-native';
-import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFocusEffect } from 'expo-router';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -25,6 +25,7 @@ import TryAgain from '@/src/components/TryAgain';
 import { nav } from '@/src/utils/typedRouter';
 import { Arrive } from '@/src/components/Arrive';
 import { MembersOnly } from '@/src/components/MembersOnly';
+import { hearRecordsChanged } from '@/src/components/feed/reelRead';
 
 type SlideType = 'intro' | 'total' | 'verdict' | 'rhythm' | 'top' | 'outro';
 
@@ -108,6 +109,9 @@ export default function YearInCinemaScreen() {
     if (focusedBefore.current && memberId) void refetch();
     focusedBefore.current = true;
   }, [refetch, memberId]));
+  // And whenever a record changes while the year is open (a viewing the queue delivers, a seal from
+  // a sheet that never took the focus): the year is the member's records, read again (round 11).
+  useEffect(() => (memberId ? hearRecordsChanged(() => { void refetch(); }) : undefined), [refetch, memberId]);
 
   // The story adapts to the data — no hollow slides for stats you don't have.
   const slides = useMemo<SlideType[]>(() => {

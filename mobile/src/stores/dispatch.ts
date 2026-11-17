@@ -62,6 +62,7 @@ import {
   type CritiqueOrder,
   type Filing,
   type FilingKind,
+  type FrozenTotals,
 } from './dispatchTypes';
 
 // ── THE DEPARTMENTS ─────────────────────────────────────────────────────────
@@ -176,6 +177,11 @@ export interface DispatchState {
    * is unknown, never "not certified": its read comes after the critiques, and may fail.
    */
   critiqueMarksKnown: Set<string>;
+  /**
+   * An open ballot's running count, by filing: the house gives it to a member who has voted in
+   * it (ballot_tally), in frozen_totals' shape. Absent, the count is not known: never a 0.
+   */
+  tallies: Record<string, FrozenTotals>;
 
   setSection: (s: Section) => void;
   setSort: (s: Sort) => void;
@@ -215,6 +221,8 @@ export interface DispatchState {
   certify: (id: string, next: boolean) => void;
   save: (id: string, next: boolean) => void;
   vote: (id: string, optionIndex: number) => void;
+  /** Reads an open ballot's running count for a member who has voted in it (tallies). */
+  readTally: (id: string) => Promise<void>;
   takeAnswer: (postId: string, critiqueId: string | null) => void;
 
   /** `order` is required: the screen knows it, and a default here would be a second opinion. */
@@ -395,6 +403,7 @@ const emptyState = () => ({
   critiquesOrder: {} as Record<string, CritiqueOrder>,
   certifiedCritiqueIds: new Set<string>(),
   critiqueMarksKnown: new Set<string>(),
+  tallies: {} as Record<string, FrozenTotals>,
 });
 
 export const useDispatch = create<DispatchState>((set, get) => ({
@@ -587,8 +596,13 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         // Recorded (bounded) whether or not the page holds it, so acts find it after a cold open.
         opened: capOpened(st.opened, id, one),
       }));
-      // Not waited for: the reader shows the filing, its marks unknown until read.
-      void loadViewerState([one], set, startedAs);
+      // Not waited for: the reader shows the filing, its marks unknown until read. A ballot this
+      // member has voted in, still open, has its running count read once the vote is known.
+      void loadViewerState([one], set, startedAs).then(() => {
+        if (one.kind === 'ballot' && !one.frozenTotals && !one.endedAt && get().myVotes[id] !== undefined) {
+          void get().readTally(id);
+        }
+      });
       return one;
     } catch (e) {
       if (!isNetworkError(e)) captureError(e, { where: 'dispatch.hydrate' });
@@ -897,7 +911,11 @@ export const useDispatch = create<DispatchState>((set, get) => ({
         const { error } = await supabase
           .from('dispatch_votes')
           .insert([{ post_id: id, user_id: user.id, option_index: optionIndex }]);
-        if (!error) return;
+        // Cast: the count the member may now read, with their own ballot in it.
+        if (!error) {
+          if (memberUnchanged(user.id)) void get().readTally(id);
+          return;
+        }
         // A vote the house already holds (another device, or a mark this phone could not
         // read) stands: the ballot shows the one it holds, not a refusal.
         if (error.code === '23505') {
@@ -909,6 +927,7 @@ export const useDispatch = create<DispatchState>((set, get) => ({
             .maybeSingle();
           if (!unread && held && memberUnchanged(user.id)) {
             set((st) => ({ myVotes: { ...st.myVotes, [id]: held.option_index as number } }));
+            void get().readTally(id);
             return;
           }
         }
@@ -926,6 +945,22 @@ export const useDispatch = create<DispatchState>((set, get) => ({
       'dispatch.vote',
       user.id,
     );
+  },
+
+  readTally: async (id) => {
+    const startedAs = useAuthStore.getState().user?.id ?? null;
+    if (!startedAs) return;
+    try {
+      const { data, error } = await supabase.rpc('ballot_tally', { p_post: id });
+      if (error) throw error;
+      if (!memberUnchanged(startedAs)) return;
+      const tally = tallyOf(data);
+      // Not given (no vote of theirs the house holds yet): the count stays unknown, never 0.
+      if (tally) set((st) => ({ tallies: { ...st.tallies, [id]: tally } }));
+    } catch (e) {
+      // An unread count leaves the ballot saying the member's ballot is cast, and nothing more.
+      if (!isNetworkError(e)) captureError(e, { where: 'dispatch.readTally' });
+    }
   },
 
   takeAnswer: (postId, critiqueId) => {
@@ -1141,6 +1176,41 @@ registerStoreReset(() => {
   // The module's own request too: the next member must not be handed the last one's fetch.
   invalidateInflight();
 });
+
+/**
+ * A visitor who signs in with filings held (asked in from a filing's CERTIFY, SAVE or vote, or
+ * reading the paper first) had every mark read as nobody, which reads nothing: the reader, the
+ * paper, a member's room and the archive then drew each mark "Reading your mark", disabled, for
+ * good (review round 11). Signed in from nobody, this member's marks and critique certifications
+ * are read for everything the store holds. A sign-in over another member resets the store first
+ * (leaveBehind), so only a sign-in from nobody is heard here. Heard from the app's start
+ * (AppBootstrapper) until the returned unsubscribe.
+ */
+export function readMarksWhenAVisitorSignsIn(): () => void {
+  return useAuthStore.subscribe((now, before) => {
+    const memberId = now.user?.id ?? null;
+    if (!memberId || before.user?.id) return;
+    const st = useDispatch.getState();
+    const held = new Map<string, Filing>();
+    for (const f of [...st.filings, ...Object.values(st.opened)]) held.set(f.id, f);
+    const set = useDispatch.setState as (fn: (s: DispatchState) => Partial<DispatchState>) => void;
+    void loadViewerState([...held.values()], set, memberId);
+    void loadCritiqueCertifications(Object.values(st.critiques).flat(), set, memberId);
+  });
+}
+
+/** A ballot's count as the house sent it (frozen_totals' shape), or null for anything else. */
+function tallyOf(data: unknown): FrozenTotals | null {
+  if (!data || typeof data !== 'object') return null;
+  const { total, counts } = data as { total?: unknown; counts?: unknown };
+  if (typeof total !== 'number' || !counts || typeof counts !== 'object') return null;
+  const tally: Record<string, number> = {};
+  for (const [k, v] of Object.entries(counts as Record<string, unknown>)) {
+    if (typeof v !== 'number') return null;
+    tally[k] = v;
+  }
+  return { total, counts: tally };
+}
 
 /**
  * The filing an act needs when the page no longer holds it (`opened` keeps twelve): read

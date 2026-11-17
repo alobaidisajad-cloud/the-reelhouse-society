@@ -42,7 +42,7 @@ SELECT 'the old Dispatch tables a member may write', count(*)::text
  WHERE has_table_privilege(r, t, w);
 
 -- 20261016_02
-SELECT 'a member may always leave: the claims set aside', (pg_get_functiondef('public.request_account_deletion()'::regprocedure) LIKE '%request.jwt.claims%')::text;
+SELECT 'a member may always leave: the claims set aside', (pg_get_functiondef('public.request_account_deletion(boolean)'::regprocedure) LIKE '%request.jwt.claims%')::text;
 SELECT 'the three functions nothing called, still there', count(*)::text
   FROM unnest(ARRAY['public.get_profile_metrics(uuid)', 'public.get_user_lounges(uuid)', 'public.replace_list_items(uuid,jsonb)']) AS f
  WHERE to_regprocedure(f) IS NOT NULL;

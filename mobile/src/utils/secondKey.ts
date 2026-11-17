@@ -11,8 +11,11 @@
  *                never confirmed) is removed first, so a new one can take its place.
  */
 
-/** The assurance level supabase-js reads from the session (getAuthenticatorAssuranceLevel). */
-export type Level = 'aal1' | 'aal2' | null;
+/**
+ * The assurance level supabase-js reads from the session (getAuthenticatorAssuranceLevel). Since
+ * 2.118 its type may name a level beyond the two it knows; only aal2 opens the door, any other asks the key.
+ */
+export type Level = 'aal1' | 'aal2' | (string & {}) | null;
 /** One factor as supabase-js lists it (mfa.listFactors's `all`). */
 export interface Factor { id: string; factor_type: string; status: 'verified' | 'unverified' }
 

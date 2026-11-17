@@ -6,9 +6,11 @@ import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, H
 import { LEDGER_HIGH_FLOOR, decadeOf, ledgerRung } from '@/src/types';
 import { standingFor } from '@/src/constants/standing';
 import { ProfileTab } from '@/src/hooks/useProfileData';
+import type { AnalyticsShape } from '@/src/hooks/useProfileData';
+import { useClock } from '@/src/hooks/useClock';
 
 import { colors } from '@/src/theme/theme';
-import { calendarDateString } from '@/src/utils/timeAgo';
+import { calendarDateString, localCalendarDate } from '@/src/utils/timeAgo';
 import { instantOf } from '@/src/utils/instant';
 import { byTitle } from '@/src/utils/order';
 import { FORMAT_META } from '@/src/constants/formats';
@@ -45,6 +47,8 @@ interface UseProfileComputedParams {
   targetUser: any;
   username: string;
   serverStreak: number | null;
+  /** The house's summary of the file: its newest run is judged here, on the phone's own calendar. */
+  analyticsShape?: AnalyticsShape | null;
   // Filter state
   archiveSieve: string;
   archiveSearch?: string;
@@ -106,18 +110,26 @@ export function tally(n: number): string {
 }
 
 /**
- * Consecutive days, ending today or yesterday, with a film logged. A calendar
+ * Consecutive days, ending today or yesterday, with a film seen. A calendar
  * date keeps its own day and a timestamp becomes the member's LOCAL day
  * (calendarDateString): a timestamp's first ten characters are its UTC day.
+ *
+ * Every viewing counts on its own day: a rewatch moves its record to the
+ * rewatch's day, and the viewing before it is kept in the record's history
+ * with the day it was made, so that night stays seen.
  */
 export function computeDailyStreak(
-  logs: { watchedDate?: string | null; createdAt?: string | null }[],
+  logs: { watchedDate?: string | null; createdAt?: string | null; viewingHistory?: readonly { date?: string | null }[] | null }[],
   now: Date = new Date(houseNow()),
 ): number {
   const dates = new Set<string>();
   for (const log of logs) {
     const key = calendarDateString(log?.watchedDate ?? log?.createdAt);
     if (key) dates.add(key);
+    for (const earlier of Array.isArray(log?.viewingHistory) ? log.viewingHistory : []) {
+      const day = calendarDateString(earlier?.date);
+      if (day) dates.add(day);
+    }
   }
 
   let count = 0;
@@ -132,6 +144,35 @@ export function computeDailyStreak(
     else break;
   }
   return count;
+}
+
+/** The newest run of a file as the house gives it: its nights, and the last night of it. */
+export interface HouseRun { length: number; endsOn: string | null }
+
+/**
+ * The house's newest run, read from its summary. Null when the house did not say (an older
+ * house, or no summary): the screen then counts as it did before. A file with no viewing at
+ * all is a run of none.
+ */
+export function houseRunOf(shape: AnalyticsShape | null | undefined): HouseRun | null {
+  if (!shape || !('current_run' in shape)) return null;
+  const run = shape.current_run;
+  if (run == null) return { length: 0, endsOn: null };
+  const length = Number(run.length);
+  const endsOn = calendarDateString(run.ends_on ?? null);
+  if (!Number.isInteger(length) || length < 0 || !endsOn) return null;
+  return { length, endsOn };
+}
+
+/**
+ * How many nights the run stands at, judged on the phone's own calendar: a run whose last night
+ * is yesterday or later still stands (tonight may yet be added to it), an older one has ended.
+ * The house cannot judge this: its day is UTC's, and west of UTC its midnight comes in the
+ * member's evening. On another member's file it is the reader's day, the best known without
+ * their zone.
+ */
+export function runStillStanding(run: HouseRun, yesterday: string): number {
+  return run.endsOn !== null && run.endsOn >= yesterday ? run.length : 0;
 }
 
 /**
@@ -168,7 +209,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   const {
     isSelf, myLogs, myWatchlist, myVault, myLists,
     mainLogs, archiveLogs, ledgerLogs, analyticsLogs, watchlist, vault, lists,
-    counts, isArchivistPlus, targetUser, serverStreak,
+    counts, isArchivistPlus, targetUser, serverStreak, analyticsShape,
     archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter,
     watchlistSearch, watchlistSort, watchlistDecade,
     physicalFilter, physicalSort, listsSort, serverDecades,
@@ -215,12 +256,18 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   const statsColor = standing.color;
   const statsProgress = standing.progress;
 
-  // Daily streak
+  // Daily streak. The house's newest run, judged against the member's own yesterday, which
+  // turns at their midnight (useClock). Without it (an older house, or no summary), the
+  // house's own count, then a count over the records held here, the analytics' and the
+  // loaded ones together (only the loaded ones carry their earlier viewings' days); that
+  // count reads the clock itself, and `yesterday` has it counted again at midnight.
+  const yesterday = useClock((t) => localCalendarDate(-1, t));
+  const houseRun = useMemo(() => houseRunOf(analyticsShape), [analyticsShape]);
   const streak = useMemo(() => {
+    if (houseRun) return runStillStanding(houseRun, yesterday);
     if (serverStreak !== null) return serverStreak;
-    const sourceLogs = analyticsLogs.length > 0 ? analyticsLogs : displayLogs;
-    return computeDailyStreak(sourceLogs);
-  }, [serverStreak, displayLogs, analyticsLogs]);
+    return computeDailyStreak([...analyticsLogs, ...displayLogs]);
+  }, [houseRun, yesterday, serverStreak, displayLogs, analyticsLogs]);
 
   // Archive filtering
   const archiveFiltered = useMemo(() => {

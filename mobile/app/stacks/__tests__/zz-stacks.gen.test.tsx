@@ -29,7 +29,10 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), push: jest.fn(), replace: jest.fn() }),
 }));
 jest.mock('@tanstack/react-query', () => ({
-  QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); setQueryDefaults = () => {}; },
+  QueryClient: class { defaultOptions = {}; getQueryCache = () => ({ subscribe: () => () => {} }); setQueryDefaults = () => {}; invalidateQueries = () => Promise.resolve(); },
+  // The house's own client (the wall's, asked again when a stack is found gone) sets these up.
+  onlineManager: { setEventListener: () => {} },
+  focusManager: { setEventListener: () => {} },
   useQueryClient: () => ({
     setQueryData: jest.fn(), getQueryData: jest.fn(), removeQueries: jest.fn(),
     invalidateQueries: jest.fn(), cancelQueries: jest.fn(() => Promise.resolve()),

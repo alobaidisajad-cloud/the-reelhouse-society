@@ -37,7 +37,7 @@ const mockLogout = jest.fn(() => Promise.resolve());
 /** The member's profile read again: its answer, true once held. */
 const mockReread = jest.fn((): Promise<boolean> => Promise.resolve(false));
 const mockClearAll = jest.fn();
-const mockRequestDeletion = jest.fn(() => Promise.resolve());
+const mockRequestDeletion = jest.fn((_eraseWriting?: boolean) => Promise.resolve());
 const mockNavReplace = jest.fn();
 const mockRequestPermission = jest.fn(() => Promise.resolve('granted'));
 const mockAlert = jest.fn();
@@ -74,7 +74,7 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
   withinKeystoreDeadline: <T,>(ask: Promise<T>) => ask,
   storage: { clearAll: () => mockClearAll(), set: jest.fn(), getString: jest.fn(), delete: jest.fn(), getAllKeys: () => [] },
 }));
-jest.mock('@/src/services/AuthService', () => ({ AuthService: { requestAccountDeletion: () => mockRequestDeletion(), updatePassword: jest.fn() } }));
+jest.mock('@/src/services/AuthService', () => ({ AuthService: { requestAccountDeletion: (erase?: boolean) => mockRequestDeletion(erase), updatePassword: jest.fn() } }));
 /** The profile's own write (visibility): it has no offline path, and is filed before preferences. */
 const mockUpdateUser = jest.fn((_u: Record<string, unknown>) => Promise.resolve());
 jest.mock('@/src/hooks/useUpdateUser', () => ({ useUpdateUser: () => ({ mutateAsync: (u: Record<string, unknown>) => mockUpdateUser(u), isPending: false }) }));
@@ -1240,6 +1240,116 @@ describe('SAVE', () => {
     await act(async () => { refuse(new Error('refused')); });
     expect(r.getByLabelText('Save settings').props.accessibilityState).toEqual(expect.objectContaining({ disabled: false }));
     expect(mockPrevent.enabled).toBe(true);
+    r.unmount();
+  });
+});
+
+// Review round 11: a right code checked while the line was down was called "invalid or has expired",
+// and the member was sent for a new one, which made the code they held truly invalid.
+describe('a security code the house could not check', () => {
+  it('is said as the house unreached, and the code typed is kept to try again', async () => {
+    mockUser = { ...BASE, preferences: { biometric_lock: true } };
+    const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
+    local.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
+    const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
+    const auth = supabase.auth as unknown as { signInWithOtp: jest.Mock; verifyOtp: jest.Mock };
+    auth.signInWithOtp = jest.fn().mockResolvedValue({ data: null, error: null });
+    // supabase-js answers a dropped line with its retryable error, never a refusal of the code.
+    const dropped = Object.assign(new Error('Network request failed'), { name: 'AuthRetryableFetchError', status: 0 });
+    auth.verifyOtp = jest.fn().mockResolvedValue({ data: null, error: dropped });
+    mockRequestDeletion.mockClear();
+    const r = await settle(mount());
+    await act(async () => { await fireEvent.press(r.getByLabelText('DELETE ACCOUNT')); });
+    const [, , buttons] = mockAlert.mock.calls[mockAlert.mock.calls.length - 1] as [string, string, { text: string; onPress?: () => Promise<void> }[]];
+    await act(async () => { await buttons.find((b) => b.text === 'DELETE')!.onPress!(); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Six digit security code'), '123456'); });
+    await act(async () => { await fireEvent(r.getByLabelText('Six digit security code'), 'submitEditing'); });
+    expect(auth.verifyOtp).toHaveBeenCalledWith(expect.objectContaining({ token: '123456' }));
+    expect(r.getByText(/could not be reached, so your code was not checked/)).toBeTruthy();
+    expect(r.queryByText('That code is invalid or has expired.')).toBeNull();
+    expect(r.getByLabelText('Six digit security code').props.value).toBe('123456');
+    expect(mockRequestDeletion).not.toHaveBeenCalled();
+    r.unmount();
+  });
+
+  it('a code the house refused is still called invalid', async () => {
+    mockUser = { ...BASE, preferences: { biometric_lock: true } };
+    const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
+    local.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
+    const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
+    const auth = supabase.auth as unknown as { signInWithOtp: jest.Mock; verifyOtp: jest.Mock };
+    auth.signInWithOtp = jest.fn().mockResolvedValue({ data: null, error: null });
+    auth.verifyOtp = jest.fn().mockResolvedValue({ data: null, error: Object.assign(new Error('Token has expired or is invalid'), { status: 403 }) });
+    const r = await settle(mount());
+    await act(async () => { await fireEvent.press(r.getByLabelText('DELETE ACCOUNT')); });
+    const [, , buttons] = mockAlert.mock.calls[mockAlert.mock.calls.length - 1] as [string, string, { text: string; onPress?: () => Promise<void> }[]];
+    await act(async () => { await buttons.find((b) => b.text === 'DELETE')!.onPress!(); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Six digit security code'), '123456'); });
+    await act(async () => { await fireEvent(r.getByLabelText('Six digit security code'), 'submitEditing'); });
+    expect(r.getByText('That code is invalid or has expired.')).toBeTruthy();
+    r.unmount();
+  });
+});
+
+/**
+ * DELETE ACCOUNT says what stays (review round 11). It said the member's critiques were "permanently
+ * destroyed", while the house kept every critique, filing and salon message, unsigned. Now the
+ * warning says so, and the member may choose, beside the button, to erase what they wrote as well.
+ */
+describe('deleting the account says what goes and what stays', () => {
+  type Button = { text: string; onPress?: () => Promise<void> };
+  const deleteWith = async (r: ReturnType<typeof mount>) => {
+    await act(async () => { await fireEvent.press(r.getByLabelText('DELETE ACCOUNT')); });
+    const call = mockAlert.mock.calls[mockAlert.mock.calls.length - 1] as [string, string, Button[]];
+    expect(call).toBeDefined();
+    return call;
+  };
+  beforeEach(() => {
+    // The phone's lock passes, so DELETE goes straight to the house.
+    mockUser = { ...BASE, preferences: { biometric_lock: true } };
+    mockRequestDeletion.mockClear();
+  });
+
+  it('left alone, the member is told their critiques, filings and salon messages stay, unsigned, and they stay', async () => {
+    const r = await settle(mount());
+    expect(r.getByLabelText('Also erase what I wrote').props.accessibilityState).toEqual(expect.objectContaining({ checked: false }));
+    const [title, words, buttons] = await deleteWith(r);
+    expect(title).toBe('Expunge All Records');
+    expect(words).toMatch(/What you wrote for other members stays where you wrote it, signed “a member, departed”/);
+    expect(words).toMatch(/critiques, your Dispatch filings and your salon messages/);
+    expect(words).toMatch(/support@thereelhousesociety\.com/);
+    expect(words).not.toMatch(/destroy[^.]*critiques/i);
+    const del = buttons.find((b) => b.text === 'DELETE');
+    expect(del).toBeDefined();
+    await act(async () => { await del!.onPress!(); });
+    expect(mockRequestDeletion).toHaveBeenCalledWith(false);
+    r.unmount();
+  });
+
+  it('with the choice taken, the member is told their words go too, and the house is asked to erase them', async () => {
+    const r = await settle(mount());
+    await act(async () => { await fireEvent.press(r.getByLabelText('Also erase what I wrote')); });
+    expect(r.getByLabelText('Also erase what I wrote').props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
+    const [, words, buttons] = await deleteWith(r);
+    expect(words).toMatch(/What you wrote for other members goes too/);
+    expect(words).toMatch(/withdrawn by its author/);
+    expect(words).not.toMatch(/stays where you wrote it/);
+    const del = buttons.find((b) => b.text === 'DELETE');
+    expect(del).toBeDefined();
+    await act(async () => { await del!.onPress!(); });
+    expect(mockRequestDeletion).toHaveBeenCalledWith(true);
+    r.unmount();
+  });
+
+  it('the choice shown in the warning is the one carried out, though it is changed while the warning stands', async () => {
+    const r = await settle(mount());
+    const [, words, buttons] = await deleteWith(r);
+    expect(words).toMatch(/stays where you wrote it/);
+    await act(async () => { await fireEvent.press(r.getByLabelText('Also erase what I wrote')); });
+    const del = buttons.find((b) => b.text === 'DELETE');
+    expect(del).toBeDefined();
+    await act(async () => { await del!.onPress!(); });
+    expect(mockRequestDeletion).toHaveBeenCalledWith(false);
     r.unmount();
   });
 });

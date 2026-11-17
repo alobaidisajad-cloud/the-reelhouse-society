@@ -22,7 +22,7 @@
  */
 import { SUPABASE_URL, canRun, houseFetch, visitor } from '@/test-utils/contractEnv';
 import { PUBLIC_LOG_COLUMNS } from '@/src/utils/mappers';
-import { logCertifySelect, logCountsSelect, withLogCountFilters } from '@/src/services/logCounts';
+import { LOG_COUNTS_SELECT, LOG_SEEN_COUNTS_SELECT, logCertifySelect, logCountsSelect, withLogCountFilters } from '@/src/services/logCounts';
 
 const describeMaybe = canRun ? describe : describe.skip;
 
@@ -35,6 +35,11 @@ function filtersFor(viewerId: string | null): string {
   const recorder = { eq: (c: string, v: string) => { parts.push(`${c}=eq.${v}`); return recorder; } };
   withLogCountFilters(recorder, viewerId);
   return parts.join('&');
+}
+/** A member's select with the visitor's counts in place of the member's own, all else as the app asks it. */
+function asAVisitorCounts(select: string): string {
+  expect(select).toContain(LOG_SEEN_COUNTS_SELECT);
+  return select.split(LOG_SEEN_COUNTS_SELECT).join(LOG_COUNTS_SELECT);
 }
 /** A member id in the right shape: a visitor may ask about anyone's public marks. */
 const SOMEONE = '00000000-0000-4000-8000-000000000000';
@@ -60,14 +65,16 @@ const READS: { what: string; path: string }[] = [
   },
   // The member's shape of the same two requests — the table embedded twice,
   // each embed narrowed by its own alias. The API must accept it; a signed-in
-  // member's own row security then decides what it counts.
+  // member's own row security then decides what it counts. Asked with a
+  // visitor's counts: a member's critique count (critiques_seen) is a member's
+  // alone, refused to a visitor, which the attack matrix holds both ways.
   {
     what: 'the log page, as a member asks it (with the viewer’s own mark)',
-    path: `logs?select=${encodeURIComponent(`${PUBLIC_LOG_COLUMNS}, ${logCertifySelect(SOMEONE)}`)}&${filtersFor(SOMEONE)}&limit=1`,
+    path: `logs?select=${encodeURIComponent(`${PUBLIC_LOG_COLUMNS}, ${asAVisitorCounts(logCertifySelect(SOMEONE))}`)}&${filtersFor(SOMEONE)}&limit=1`,
   },
   {
     what: 'a card, as a member asks it (with the viewer’s own mark)',
-    path: `logs?select=${encodeURIComponent(`id, ${logCountsSelect(SOMEONE)}`)}&${filtersFor(SOMEONE)}&limit=1`,
+    path: `logs?select=${encodeURIComponent(`id, ${asAVisitorCounts(logCountsSelect(SOMEONE))}`)}&${filtersFor(SOMEONE)}&limit=1`,
   },
 ];
 

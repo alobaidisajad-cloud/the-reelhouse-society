@@ -54,7 +54,8 @@ it('a seat or a request refused for another reason still says to check the conne
   // The same words under another code are not the ban's refusal; nor are other words under P0001.
   mockHouse = refusing('XX000', 'You cannot join this lounge', 'You cannot request this lounge');
   await useLoungeStore.getState().joinPublicLounge(SALON);
-  mockHouse = refusing('P0001', 'Lounge not found', 'Lounge not found');
+  // (A salon not found is gone, and says so: aDissolvedSalonIsSaidAsGone, round 11.)
+  mockHouse = refusing('P0001', 'Not authenticated', 'Not authenticated');
   await useLoungeStore.getState().requestMembership(SALON);
   expect(said()).toEqual([
     'The host has closed this salon to you.',

@@ -133,3 +133,17 @@ export const PENDING_SQL = (): string => {
     .sort((a, b) => byKey(basename(a), basename(b)))
     .map((f) => readFileSync(f, 'utf8').replace(/\r/g, '')).join('\n');
 };
+
+/**
+ * The computed fields of each table: a public function whose one parameter is that table's row,
+ * which PostgREST lets a select name as if it were a column (`critiques_seen` of logs, from
+ * critiques_seen(l public.logs)). By table, the functions' names. Read in both forms a migration
+ * writes a function in (CREATE FUNCTION, CREATE OR REPLACE FUNCTION), as the snapshot writes it.
+ */
+export function readComputedFields(sql: string): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  for (const [, fn = '', table = ''] of sql.matchAll(/CREATE (?:OR REPLACE )?FUNCTION public\.(\w+)\(\s*"?\w+"?\s+public\.(\w+)\s*\)/g)) {
+    out.set(table, new Set([...(out.get(table) ?? []), fn]));
+  }
+  return out;
+}

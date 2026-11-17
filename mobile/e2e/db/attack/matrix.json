@@ -65,6 +65,12 @@
       "touch": { "sent_at": "2026-01-02" }, "read": "none",
       "why": "Written by send_salon_typing alone."
     },
+    "certifications_pushed": {
+      "owner": "from_user_id", "key": ["from_user_id", "thing"],
+      "specimen": { "from_user_id": "{owner}", "user_id": "{uid@V}", "thing": "endorse:log:{ref:logs@V}", "pushed_at": "2026-01-01" }, "variant": "none",
+      "touch": { "pushed_at": "2026-01-02" }, "read": "none",
+      "why": "Written by tg_notify_push alone: that a member's certification of a thing has pushed once."
+    },
     "viewings": {
       "owner": { "via": "logs", "on": "log_id" }, "key": ["viewing_id"],
       "specimen": { "viewing_id": "{id}", "log_id": "{ref:logs}" }, "variant": { "viewing_id": "{id}" },
@@ -425,11 +431,11 @@
     "accept_follow_request": { "why": "A member accepts only a request made to them.", "cases": [
       { "name": "a request to another stays theirs", "as": "all", "expect": { "ok": "all" },
         "lay": { "interactions": { "id": "{new}", "user_id": "{uid@X1}", "target_user_id": "{uid@V}", "type": "follow_request" } },
-        "call": "public.accept_follow_request('{uid@X1}')",
+        "call": "public.accept_follow_request('{uid@X1}')", "result": "$1 = '[false]'",
         "then": "EXISTS (SELECT 1 FROM public.interactions WHERE id = '{new}' AND type = 'follow_request')" },
       { "name": "a request to oneself is accepted", "as": "members", "expect": "ok",
         "lay": { "interactions": { "id": "{new}", "user_id": "{uid@X1}", "target_user_id": "{owner}", "type": "follow_request" } },
-        "call": "public.accept_follow_request('{uid@X1}')",
+        "call": "public.accept_follow_request('{uid@X1}')", "result": "$1 = '[true]'",
         "then": "EXISTS (SELECT 1 FROM public.interactions WHERE id = '{new}' AND type = 'follow')" }
     ] },
     "approve_lounge_member": { "why": "Only a salon's host admits.", "cases": [
@@ -446,6 +452,13 @@
         "call": "public.audience_allows('{owner}', '{uid@P}', 'everyone')", "result": "$1 = '[false]'" },
       { "name": "an open member's work", "as": "members", "expect": "ok",
         "call": "public.audience_allows('{owner}', '{uid@V}', 'everyone')", "result": "$1 = '[true]'" }
+    ] },
+    "ballot_tally": { "why": "An open ballot's count is a voter's alone: a member who has not voted in it reads nothing, one who has reads the count with their own ballot in it; a visitor never asks.", "cases": [
+      { "name": "an open ballot one has not voted in", "as": "all", "expect": { "ok": "all" },
+        "call": "public.ballot_tally('{ref:dispatch_posts@V}')", "result": "$1 = '[null]'" },
+      { "name": "an open ballot one has voted in", "as": "members", "expect": "ok",
+        "lay": { "dispatch_votes": { "id": "{new}", "post_id": "{ref:dispatch_posts@V}", "user_id": "{owner}", "option_index": 1 } },
+        "call": "public.ballot_tally('{ref:dispatch_posts@V}')", "result": "($1->0->>'total')::int >= 1 AND ($1->0->'counts'->>'1')::int >= 1" }
     ] },
     "bulk_dismiss_reports": { "why": "The house's: an admin alone dismisses reports.", "cases": [
       { "name": "dismissing another's report", "as": "all", "expect": { "ok": "admin" },
@@ -488,6 +501,11 @@
       { "name": "another member's salon, asked for by its id", "as": "all", "expect": "error",
         "call": "public.create_lounge('rh salon', 'rh', false, '{ref:lounges@V}')",
         "then": "EXISTS (SELECT 1 FROM public.lounges WHERE id = '{ref:lounges@V}' AND creator_id = '{uid@V}' AND name <> 'rh salon') AND NOT EXISTS (SELECT 1 FROM public.lounge_members WHERE lounge_id = '{ref:lounges@V}' AND user_id = '{owner}' AND status = 'approved')" }
+    ] },
+    "critiques_seen": { "why": "A log's critiques as its reader may read them, counted under the caller's own rules: a log the caller cannot read counts none, whatever row is handed in. A member's alone: a visitor hides no one, and reads log_counts' count.", "cases": [
+      { "name": "an open member's log", "as": "members", "expect": "ok", "call": "public.critiques_seen((SELECT l FROM public.logs l WHERE l.id = '{ref:logs@V}'))", "result": "($1->>0)::int >= 0" },
+      { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.critiques_seen(jsonb_populate_record(NULL::public.logs, jsonb_build_object('id', '{ref:logs@V}')))" },
+      { "name": "the log of one who blocked the caller, named by its id alone", "as": "members", "expect": "ok", "call": "public.critiques_seen(jsonb_populate_record(NULL::public.logs, jsonb_build_object('id', '{ref:logs@BY}')))", "result": "$1 = '[0]'" }
     ] },
     "decline_all_follow_requests": { "why": "A member declines only the requests made to them.", "cases": [
       { "name": "another's requests stay", "as": "all", "expect": { "ok": "all" },
@@ -675,6 +693,11 @@
     "may_file": { "why": "The caller's own way to the Dispatch.", "cases": [
       { "name": "asked", "as": "all", "expect": "ok", "call": "public.may_file()" }
     ] },
+    "member_viewings": { "why": "A file's viewings, each on its day, read as its logs are: a private member's only by its readers.", "cases": [
+      { "name": "a private member's", "as": "all", "expect": "ok", "call": "public.member_viewings('{uid@P}')",
+        "result": "jsonb_array_length($1) = 0" },
+      { "name": "an open member's", "as": "all", "expect": "ok", "call": "public.member_viewings('{uid@V}')" }
+    ] },
     "my_entitlement_source": { "why": "The caller's own rank's source.", "cases": [
       { "name": "a lapsed member's", "as": ["lapsed"], "expect": "ok", "call": "public.my_entitlement_source()", "result": "$1 = '[\"revenuecat\"]'" },
       { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.my_entitlement_source()" }
@@ -705,8 +728,14 @@
     "remove_lounge_member": { "why": "Only a salon's host removes a seat.", "cases": [
       { "name": "a stranger removes no one", "as": "all", "expect": "error", "call": "public.remove_lounge_member('{ref:lounges@V}', '{uid@V}')" }
     ] },
+    "rename_my_handle": { "why": "A member in good standing renames themselves, and no one else.", "cases": [
+      { "name": "one's own handle", "as": "all", "expect": { "ok": "unbanned" }, "call": "public.rename_my_handle('{username}_r')",
+        "then": "(SELECT username FROM public.profiles WHERE id = '{owner}') = '{username}_r' AND (SELECT username FROM public.profiles WHERE id = '{uid@V}') = '{username@V}'" }
+    ] },
     "request_account_deletion": { "why": "A member closes their own account, and no other.", "cases": [
       { "name": "closed", "as": "all", "expect": { "ok": "all" }, "call": "public.request_account_deletion()",
+        "then": "NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '{owner}') AND EXISTS (SELECT 1 FROM auth.users WHERE id = '{uid@V}')" },
+      { "name": "closed, their words erased with it", "as": "all", "expect": { "ok": "all" }, "call": "public.request_account_deletion(true)",
         "then": "NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '{owner}') AND EXISTS (SELECT 1 FROM auth.users WHERE id = '{uid@V}')" }
     ] },
     "request_lounge_membership": { "why": "A member of the Lounge (an Archivist feature) in good standing asks to enter a salon for themselves.", "cases": [
@@ -778,6 +807,12 @@
     ] },
     "withdraw_lounge_message": { "why": "A message is withdrawn by its writer or its salon's host.", "cases": [
       { "name": "another's message in another's salon", "as": "all", "expect": "error", "call": "public.withdraw_lounge_message('{ref:lounge_messages@V}')" }
+    ] },
+    "year_viewings": { "why": "A member's year of viewings, read as their logs are: a private member's only by its readers, and by members alone.", "cases": [
+      { "name": "a private member's", "as": "members", "expect": "ok", "call": "public.year_viewings('{uid@P}', 2026)",
+        "result": "jsonb_array_length($1) = 0" },
+      { "name": "an open member's", "as": "members", "expect": "ok", "call": "public.year_viewings('{uid@V}', 2026)" },
+      { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.year_viewings('{uid@V}', 2026)" }
     ] }
   },
   "channels": [

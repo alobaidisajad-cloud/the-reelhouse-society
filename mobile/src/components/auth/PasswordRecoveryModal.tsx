@@ -12,17 +12,29 @@ import { e2eTrace } from '@/src/utils/e2eTrace';
 import type { EmailLinkPurpose } from '@/src/hooks/useAuthFlow';
 import { EMAIL_MAX } from '@/src/constants/inputLimits';
 
-/** The sheet's words for each email it sends; the sheet itself is the same. */
+/**
+ * The sheet's words for each email it sends; the sheet itself is the same. The house answers a fresh
+ * confirmation the same way whether the address is waiting, already confirmed, or unknown (it never
+ * says which), and sends nothing for one already confirmed. So the confirmation's "sent" words lead
+ * with signing in, and promise a link only to an address still waiting (round 11).
+ */
 const WORDS = {
   reset: {
     eyebrow: 'CREDENTIAL RECOVERY', title: 'Reset Password', close: 'Close recovery',
     ask: "Enter the email associated with your account and we'll send you a classified reset link.",
-    sent: 'We sent a password reset link to', send: '✦  SEND RESET LINK',
+    sentTitle: 'Check Your Inbox',
+    sent: 'We sent a password reset link to', sentEnd: '.',
+    note: "Check your spam folder if it doesn't arrive within 2 minutes.",
+    send: '✦  SEND RESET LINK', back: '✦  BACK TO SIGN IN',
   },
   confirm: {
     eyebrow: 'ADDRESS CONFIRMATION', title: 'Confirm Your Address', close: 'Close confirmation',
     ask: "Enter the email you joined with and we'll wire a fresh confirmation link.",
-    sent: 'We sent a fresh confirmation link to', send: '✦  SEND CONFIRMATION LINK',
+    sentTitle: 'Try Signing In',
+    sent: 'Your address may already be confirmed: if so, simply sign in with your password. If it is still waiting, a fresh link is on its way to',
+    sentEnd: '.',
+    note: 'Open the newest link: an earlier one no longer works. Check your spam folder if none arrives within 2 minutes.',
+    send: '✦  SEND CONFIRMATION LINK', back: '✦  SIGN IN',
   },
 } as const;
 
@@ -76,7 +88,7 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
               <HaloIcon icon={KeyRound} iconSize={24} haloSize={104} style={s.iconWrap} />
               <SocietyEyebrow label={w.eyebrow} style={s.eyebrowWrap} />
               <Text style={s.modalTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-                {forgotSent ? 'Check Your Inbox' : w.title}
+                {forgotSent ? w.sentTitle : w.title}
               </Text>
             </View>
 
@@ -87,19 +99,16 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
                   <Text style={s.forgotEmailHighlight}>
                     {forgotEmail}
                   </Text>
-                  .
+                  {w.sentEnd}
                 </Text>
-                <Text style={s.modalSubText}>
-                  {/* eslint-disable-next-line react/no-unescaped-entities */}
-                  Check your spam folder if it doesn't arrive within 2 minutes.
-                </Text>
+                <Text style={s.modalSubText}>{w.note}</Text>
                 <PressableScale
                   style={s.modalSubmitBtn}
                   onPress={onBackToSignIn}
                   hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                   pressedScale={0.97}
                 >
-                  <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦  BACK TO SIGN IN</Text>
+                  <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{w.back}</Text>
                 </PressableScale>
               </View>
             ) : (

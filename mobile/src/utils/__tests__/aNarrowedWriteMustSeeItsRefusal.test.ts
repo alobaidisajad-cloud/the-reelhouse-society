@@ -106,10 +106,6 @@ const EXEMPT: Record<string, string> = {
     'network error and announces only on success; an absent row is a log ' +
     'already gone.',
 
-  'src/services/ProfileWriteService.ts':
-    'The profile UPDATE is addressed by the signed-in member own id and is ' +
-    'followed by a read that would surface any divergence.',
-
   'src/stores/auth.ts':
     'The signup-time profile write, against a row the trigger has just created ' +
     'for this member.',
