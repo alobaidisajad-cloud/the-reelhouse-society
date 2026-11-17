@@ -79,6 +79,7 @@
       "why": "A log's viewings are kept by the house's triggers."
     },
     "logs": {
+      "hidesBlocked": true,
       "owner": "user_id", "key": ["id"],
       "specimen": { "id": "{id}", "user_id": "{owner}", "film_id": 990680, "film_title": "rh film", "watched_date": "2026-01-01", "review": "rh review" },
       "variant": { "film_id": 990681 },
@@ -88,6 +89,7 @@
       "why": "A log is seen as its member's file is; a silenced member may still take theirs down."
     },
     "lists": {
+      "hidesBlocked": true,
       "owner": "user_id", "key": ["id"],
       "specimen": { "id": "{id}", "user_id": "{owner}", "title": "rh list", "is_private": false },
       "extra": [{ "id": "{id#2}", "user_id": "{owner}", "title": "rh private list", "is_private": true }],
@@ -97,6 +99,7 @@
       "why": "A stack is seen as its member's file is."
     },
     "list_items": {
+      "hidesBlocked": true,
       "owner": { "via": "lists", "on": "list_id" }, "key": ["id"],
       "specimen": { "id": "{id}", "list_id": "{ref:lists}", "film_id": 990680, "film_title": "rh film" },
       "variant": { "film_id": 990681 },
@@ -135,6 +138,7 @@
       "why": "The Vault's notes are their member's alone, and an Archivist feature; seen by no one else, so a ban that silences a member leaves them be."
     },
     "log_counts": {
+      "hidesBlocked": true,
       "owner": { "via": "logs", "on": "log_id" }, "key": ["log_id"],
       "specimen": { "log_id": "{ref:logs}", "certify_count": 0, "critique_count": 0 }, "variant": "none",
       "touch": { "certify_count": 99 }, "read": "viewable",
