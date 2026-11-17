@@ -255,13 +255,23 @@ $$;
 -- A muted member keeps their seat: the host's MUTE tells them they "can read, but not post or react",
 -- and the house gave a private salon's words, reactions, channel and roster to approved seats alone:
 -- the muted member read an empty room, "Be the first to break the silence" (review round 10). A muted
--- seat reads them now; posting and reacting stay the approved seat's.
-CREATE POLICY "Muted members read their private salon" ON public.lounge_messages FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+-- seat reads them now; posting and reacting stay the approved seat's. The one rule that reads a room
+-- widens (a second rule beside it would be weighed for every row too), and asks who is reading once
+-- for the whole read, not once a row.
+-- add-only (3): it only widens: the calls replayed as the members themselves, a private salon's words to its muted seats as well, every other reader as before (each_is_told_as_what_it_is_rehearsal.sql)
+DROP POLICY "Lounge messages readable" ON public.lounge_messages;
+CREATE POLICY "Lounge messages readable" ON public.lounge_messages FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
+   FROM public.lounges l
+  WHERE ((l.id = lounge_messages.lounge_id) AND (l.is_private = false)))) OR (EXISTS ( SELECT 1
    FROM public.lounge_members m
-  WHERE ((m.lounge_id = lounge_messages.lounge_id) AND (m.user_id = auth.uid()) AND (m.status = 'muted'::text)))));
-CREATE POLICY "Muted members read their private salon's reactions" ON public.lounge_message_reactions FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+  WHERE ((m.lounge_id = lounge_messages.lounge_id) AND (m.user_id = ( SELECT auth.uid() AS uid)) AND (m.status = ANY (ARRAY['approved'::text, 'muted'::text])))))));
+-- add-only (3): it only widens: the calls replayed as the members themselves, a private salon's reactions to its muted seats as well, every other reader as before (each_is_told_as_what_it_is_rehearsal.sql)
+DROP POLICY "Reactions readable" ON public.lounge_message_reactions;
+CREATE POLICY "Reactions readable" ON public.lounge_message_reactions FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
+   FROM public.lounges l
+  WHERE ((l.id = lounge_message_reactions.lounge_id) AND (l.is_private = false)))) OR (EXISTS ( SELECT 1
    FROM public.lounge_members m
-  WHERE ((m.lounge_id = lounge_message_reactions.lounge_id) AND (m.user_id = auth.uid()) AND (m.status = 'muted'::text)))));
+  WHERE ((m.lounge_id = lounge_message_reactions.lounge_id) AND (m.user_id = ( SELECT auth.uid() AS uid)) AND (m.status = ANY (ARRAY['approved'::text, 'muted'::text])))))));
 
 -- add-only (3): it only widens: the calls replayed as the members themselves, a private salon's channel to its muted seats as well, every other reader as before (each_is_told_as_what_it_is_rehearsal.sql)
 CREATE OR REPLACE FUNCTION public.salon_channel_readable(p_topic text) RETURNS boolean

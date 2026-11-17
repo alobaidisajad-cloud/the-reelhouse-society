@@ -158,8 +158,18 @@ CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS jso
 $$;
 
 -- A private salon's words, reactions, channel and roster to approved seats alone again.
-DROP POLICY IF EXISTS "Muted members read their private salon" ON public.lounge_messages;
-DROP POLICY IF EXISTS "Muted members read their private salon's reactions" ON public.lounge_message_reactions;
+DROP POLICY IF EXISTS "Lounge messages readable" ON public.lounge_messages;
+CREATE POLICY "Lounge messages readable" ON public.lounge_messages FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
+   FROM public.lounges l
+  WHERE ((l.id = lounge_messages.lounge_id) AND (l.is_private = false)))) OR (EXISTS ( SELECT 1
+   FROM public.lounge_members m
+  WHERE ((m.lounge_id = lounge_messages.lounge_id) AND (m.user_id = auth.uid()) AND (m.status = 'approved'::text))))));
+DROP POLICY IF EXISTS "Reactions readable" ON public.lounge_message_reactions;
+CREATE POLICY "Reactions readable" ON public.lounge_message_reactions FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
+   FROM public.lounges l
+  WHERE ((l.id = lounge_message_reactions.lounge_id) AND (l.is_private = false)))) OR (EXISTS ( SELECT 1
+   FROM public.lounge_members m
+  WHERE ((m.lounge_id = lounge_message_reactions.lounge_id) AND (m.user_id = auth.uid()) AND (m.status = 'approved'::text))))));
 CREATE OR REPLACE FUNCTION public.salon_channel_readable(p_topic text) RETURNS boolean
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
