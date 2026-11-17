@@ -155,7 +155,7 @@ BEGIN
       -- row), and a legacy essay or critique is removed through a view, so a removal's own row
       -- count cannot say. A piece already gone took nothing: nothing is recorded or told, and the
       -- case stays pending (the raise undoes the close above).
-      IF NOT CASE v_content_type
+      IF NOT (CASE v_content_type
         WHEN 'log'              THEN EXISTS (SELECT 1 FROM logs WHERE id = v_content_id)
         WHEN 'list'             THEN EXISTS (SELECT 1 FROM lists WHERE id = v_content_id)
         WHEN 'log_comment'      THEN EXISTS (SELECT 1 FROM log_comments WHERE id = v_content_id)
@@ -166,7 +166,7 @@ BEGIN
         WHEN 'dispatch_comment' THEN EXISTS (SELECT 1 FROM dispatch_comments WHERE id = v_content_id)
         WHEN 'lounge_message'   THEN EXISTS (SELECT 1 FROM lounge_messages WHERE id = v_content_id AND deleted_at IS NULL)
         ELSE true
-      END THEN
+      END) THEN
         RAISE EXCEPTION 'PIECE_GONE' USING ERRCODE = 'P0002';
       END IF;
       CASE v_content_type
@@ -523,7 +523,7 @@ CREATE FUNCTION public.ballot_tally(p_post uuid) RETURNS jsonb
        WHERE p.id = p_post
          AND p.kind = 'ballot'
          AND p.is_published AND p.withheld_at IS NULL AND p.ended_at IS NULL
-         AND NOT COALESCE(p.user_id = ANY ((SELECT public.hidden_authors())), false)
+         AND NOT COALESCE(p.user_id = ANY ((SELECT public.hidden_authors())::uuid[]), false)
          -- Voted in, or closed: until then the result is not the reader's to see.
          AND (p.closes_at <= now()
               OR EXISTS (SELECT 1 FROM public.dispatch_votes v
