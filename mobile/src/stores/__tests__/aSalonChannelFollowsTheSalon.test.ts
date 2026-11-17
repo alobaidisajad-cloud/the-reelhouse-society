@@ -52,6 +52,11 @@ beforeEach(() => {
   useLoungeStore.setState({ currentLoungeId: SALON, typingUsers: [], presentCount: 0 } as never);
 });
 afterEach(() => jest.restoreAllMocks());
+/**
+ * The salon left is joined again only once its leave is answered (openChannel, review round 9):
+ * joined again in the same moment, realtime-js handed back the channel on its way out.
+ */
+const leaveAnswered = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
 
 it('joins the salon\'s channel privately', () => {
   const leave = useLoungeStore.getState().subscribeToLounge(SALON, { seated: true });
@@ -59,12 +64,13 @@ it('joins the salon\'s channel privately', () => {
   leave();
 });
 
-it('a seated member shares presence once the channel is live; a reader without a seat never does', () => {
+it('a seated member shares presence once the channel is live; a reader without a seat never does', async () => {
   const leaveSeated = useLoungeStore.getState().subscribeToLounge(SALON, { seated: true });
   joined[0].live('SUBSCRIBED');
   expect(joined[0].track).toHaveBeenCalledWith({ username: 'me' });
   leaveSeated();
   const leaveReader = useLoungeStore.getState().subscribeToLounge(SALON, { seated: false });
+  await leaveAnswered();
   joined[1].live('SUBSCRIBED');
   expect(joined[1].track).not.toHaveBeenCalled();
   leaveReader();
@@ -87,11 +93,12 @@ it('typing goes through send_salon_typing, at most once in 2 s, and never down t
   leave();
 });
 
-it('a reader without a seat sends no typing, and none is sent once the channel is left', () => {
+it('a reader without a seat sends no typing, and none is sent once the channel is left', async () => {
   const leaveReader = useLoungeStore.getState().subscribeToLounge(SALON, { seated: false });
   useLoungeStore.getState().broadcastTyping(SALON);
   leaveReader();
   const leaveSeated = useLoungeStore.getState().subscribeToLounge(SALON, { seated: true });
+  await leaveAnswered();
   leaveSeated();
   now += 5_000;
   useLoungeStore.getState().broadcastTyping(SALON);

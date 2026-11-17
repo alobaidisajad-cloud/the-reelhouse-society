@@ -31,12 +31,22 @@ import { useDispatch } from '@/src/stores/dispatch';
 import { logger } from '@/src/utils/logger';
 import { buildSearchPattern } from '@/src/utils/searchPattern';
 import { dateOf } from '@/src/utils/instant';
+import { keysetFilter, type CursorParts } from '@/src/utils/keysetCursor';
 
 /** One page of a film's filings. */
 export const ARCHIVE_PAGE = 20;
 
 /** How many rows the title search reads before grouping them into films. */
 const SEARCH_ROWS = 120;
+
+/** A film as the house counts it for a search (dispatch_archive_films). */
+interface ArchiveFilmRow {
+  subject_id: number;
+  subject_title: string;
+  subject_sub: string | null;
+  subject_image: string | null;
+  filings: number | string;
+}
 
 /** A film the house has written about, and how often. */
 export interface ArchiveMatch {
@@ -147,6 +157,8 @@ export function useDispatchArchive(): DispatchArchive {
    * this is the offset-shaped version of it.
    */
   const fetched = useRef(0);
+  /** The last row the server handed over for this film: where the next page starts. */
+  const after = useRef<CursorParts | null>(null);
 
   // ── THE SEARCH ────────────────────────────────────────────────────────────
   const search = useCallback(async (q: string) => {
@@ -160,6 +172,22 @@ export function useDispatchArchive(): DispatchArchive {
     setSearching(true);
     setSearchFailed(false);
     try {
+      // Counted by the house, film by film, leaving out the members the reader has hidden: counted here
+      // from the newest 120 rows, a film's count fell short of its plate's and held a hidden author's
+      // filings, and a film past those rows was not found at all (review round 9).
+      const counted = await supabase.rpc('dispatch_archive_films', { p_pattern: pattern });
+      if (mine !== searchSeq.current) return;
+      if (!counted.error) {
+        setMatches(((counted.data ?? []) as ArchiveFilmRow[]).map((r) => ({
+          subjectId: r.subject_id,
+          film: { title: r.subject_title, director: r.subject_sub ?? null, posterPath: r.subject_image ?? null },
+          filings: Number(r.filings),
+        })).sort((a, b) => b.filings - a.filings));
+        setAnswered(term);
+        return;
+      }
+      // A house without the function yet (20261116_01 not applied: PGRST202) is read as before, below.
+      if (counted.error.code !== 'PGRST202') { logger.warn('[archive] search failed', counted.error); setMatches([]); setSearchFailed(true); return; }
       const { data, error } = await supabase
         .from('dispatch_posts')
         // Only what a film row needs. The whole card would be twenty times the
@@ -222,7 +250,13 @@ export function useDispatchArchive(): DispatchArchive {
     setLoading(true);
     if (from === 0) setFilmFailed(false); else setMoreFailed(false);
     try {
-      const rows = await supabase
+      // The next page starts after the last row read (its time, then its id), never at an offset: a
+      // filing withdrawn, ended or hidden since moved every row after it up, and the page skipped one;
+      // one filed since moved them down, and the page drew one twice (review round 9).
+      // A first page starts from nothing: another film's cursor is never carried into it.
+      if (from === 0) after.current = null;
+      const past = from === 0 ? null : keysetFilter('created_at', after.current, 'desc');
+      let read = supabase
         .from('dispatch_posts')
         .select(FILING_CARD_COLUMNS, from === 0 ? { count: 'exact' } : undefined)
         .eq('subject_kind', 'film')
@@ -235,8 +269,9 @@ export function useDispatchArchive(): DispatchArchive {
         // keep one order across pages instead of swapping between requests and
         // handing the reader a duplicate at the seam. Every other paginated
         // read in the app carries this second key.
-        .order('id', { ascending: false })
-        .range(from, from + ARCHIVE_PAGE - 1);
+        .order('id', { ascending: false });
+      if (past) read = read.or(past);
+      const rows = await read.limit(ARCHIVE_PAGE);
       if (mine !== filmSeq.current) return;
       // A later page: the rows drawn stay, and the foot says the rest could not be reached.
       if (rows.error) { logger.warn('[archive] filings read failed', rows.error); if (from === 0) setFilmFailed(true); else setMoreFailed(true); return; }
@@ -246,7 +281,13 @@ export function useDispatchArchive(): DispatchArchive {
       if (dropped > 0) logger.warn('[archive] filings failed to parse', dropped);
       // Count what the SERVER gave, not what survived parsing — see `fetched`.
       fetched.current = from === 0 ? raw : fetched.current + raw;
-      setFilings((prev) => (from === 0 ? got : [...prev, ...got]));
+      const last = (rows.data ?? [])[raw - 1] as { created_at?: string; id?: string } | undefined;
+      if (last?.created_at && last.id) after.current = { primary: last.created_at, id: last.id };
+      setFilings((prev) => {
+        if (from === 0) return got;
+        const have = new Set(prev.map((f) => f.id));
+        return [...prev, ...got.filter((f) => !have.has(f.id))];
+      });
       setMore(raw === ARCHIVE_PAGE);
 
       if (from === 0) {

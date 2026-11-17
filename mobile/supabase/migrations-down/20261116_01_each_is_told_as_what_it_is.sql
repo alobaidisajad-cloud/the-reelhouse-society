@@ -1,6 +1,7 @@
 -- Undo of 20261116_01: the corridor counts every request at a host's door again, unnamed, a
--- critique's certification is written under its filing's key, and a salon's last word is the room's
--- newest, whoever said it. The notices written meanwhile keep
+-- critique's certification is written under its filing's key, a salon's last word is the room's
+-- newest, whoever said it, the archive's search is counted on the phone, a banned row may be taken,
+-- and the follow counts count the hidden. The notices written meanwhile keep
 -- the key they were written with: a phone that knows it groups them as a critique's, one that
 -- does not leaves them single.
 SET LOCAL lock_timeout = '2s';
@@ -106,4 +107,51 @@ CREATE OR REPLACE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(loung
       SELECT max(m.created_at) FROM public.lounge_messages m WHERE m.lounge_id = r.lounge_id
     ) END AS last_message_at
   FROM rooms r CROSS JOIN me;
+$$;
+
+-- The archive's search counted on the phone again.
+DROP FUNCTION IF EXISTS public.dispatch_archive_films(text);
+
+-- A removal takes a banned row with it again, and a member may step out of one.
+CREATE OR REPLACE FUNCTION public.remove_lounge_member(p_lounge_id uuid, p_user_id uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE v_creator uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  SELECT creator_id INTO v_creator FROM public.lounges WHERE id = p_lounge_id;
+  IF v_creator IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
+  IF auth.uid() IS DISTINCT FROM v_creator THEN RAISE EXCEPTION 'Only the host can remove members'; END IF;
+  IF p_user_id IS NOT DISTINCT FROM v_creator THEN RAISE EXCEPTION 'The host cannot be removed'; END IF;
+  DELETE FROM public.lounge_members WHERE lounge_id = p_lounge_id AND user_id = p_user_id;
+END $$;
+
+DROP POLICY "Creators can remove members" ON public.lounge_members;
+CREATE POLICY "Creators can remove members" ON public.lounge_members FOR DELETE USING (((auth.uid() IN ( SELECT lounges.creator_id
+   FROM public.lounges
+  WHERE (lounges.id = lounge_members.lounge_id))) OR (auth.uid() = user_id)));
+-- The banned rows put back on their hosts' rosters stay: each is a ban that stands.
+
+-- The follow counts count every follower and every followed again.
+CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS json
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT json_build_object(
+    'logs_count',      CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id) ELSE 0 END,
+    'ledger_count',    CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id
+                                    AND (rating > 0 OR COALESCE(review, '') <> '')) ELSE 0 END,
+    'watchlist_count', CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM watchlists WHERE user_id = p_user_id) ELSE 0 END,
+    'vault_count',     CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM physical_archive WHERE user_id = p_user_id) ELSE 0 END,
+    'lists_count',     CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM lists WHERE user_id = p_user_id
+                                    AND (is_private = false OR user_id = auth.uid())) ELSE 0 END,
+    'followers_count', (SELECT COUNT(*) FROM interactions WHERE target_user_id = p_user_id AND type = 'follow'),
+    'following_count', (SELECT COUNT(*) FROM interactions WHERE user_id = p_user_id AND type = 'follow')
+  );
 $$;

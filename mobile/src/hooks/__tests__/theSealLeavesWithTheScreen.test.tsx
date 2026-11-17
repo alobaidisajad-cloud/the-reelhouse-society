@@ -20,7 +20,7 @@ import { render, act } from '@testing-library/react-native';
 import { useLogFlow } from '../useLogFlow';
 import reelToast from '@/src/utils/reelToast';
 import { maybeRequestReview } from '@/src/utils/requestReview';
-import { LOG_BUSY } from '@/src/stores/domain/logSlice/helpers/logOperations';
+import { LOG_BUSY, LOG_GONE, LOG_REFUSED } from '@/src/stores/domain/logSlice/helpers/logOperations';
 
 const mockBack = jest.fn();
 let mockAddLog: jest.Mock;
@@ -171,6 +171,24 @@ describe('a record that did not file says one true thing', () => {
     await beat();
     await idle();
     expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it('an amendment of a record deleted elsewhere says it is no longer in the archive, and is not sealed (review round 9)', async () => {
+    mockParams = { editLogId: '00000016-0000-4000-8000-000000000016', filmId: '550', filmTitle: 'Fight Club' };
+    mockUpdateLog.mockRejectedValue(Object.assign(new Error('updateLog: the record is gone'), { code: LOG_GONE }));
+    await file();
+    expect(mockUpdateLog).toHaveBeenCalled();
+    expect(errors()).toEqual(['This record is no longer in the archive: it was removed elsewhere.']);
+    expect(api!.sealed).toBe(false);
+  });
+
+  it('an amendment a rule kept says the record can no longer be amended (review round 9)', async () => {
+    mockParams = { editLogId: '00000016-0000-4000-8000-000000000016', filmId: '550', filmTitle: 'Fight Club' };
+    mockUpdateLog.mockRejectedValue(Object.assign(new Error('updateLog: refused'), { code: LOG_REFUSED }));
+    await file();
+    expect(mockUpdateLog).toHaveBeenCalled();
+    expect(errors()).toEqual(['This record can no longer be amended.']);
+    expect(api!.sealed).toBe(false);
   });
 });
 

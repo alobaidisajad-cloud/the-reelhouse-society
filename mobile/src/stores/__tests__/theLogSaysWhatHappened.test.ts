@@ -179,7 +179,9 @@ describe('amending a record', () => {
   beforeEach(() => hold(held()));
 
   it('is confirmed aloud, as filing is — the same flow, the same seal', async () => {
-    mockDb = [{ error: null }];
+    // The house reads the record as the sheet held it, and the amendment is written over it (an empty read
+    // is a record deleted elsewhere: LOG_GONE, review round 9).
+    mockDb = [{ data: row() }, { data: [{ id: 'log-1' }] }];
     await store().updateLog('log-1', { rating: 5 });
     expect(heard()).toEqual(['Record amended']);
     expect(shown()).toEqual([]);
@@ -202,7 +204,8 @@ describe('amending a record', () => {
   });
 
   it('the store action keeps its void contract — the queued flag is for its own steps', async () => {
-    mockDb = [{ error: null }];
+    // Read as the sheet held it, then written (review round 9: an empty read is a record gone).
+    mockDb = [{ data: row() }, { data: [{ id: 'log-1' }] }];
     await expect(store().updateLog('log-1', { rating: 5 })).resolves.toBeUndefined();
   });
 

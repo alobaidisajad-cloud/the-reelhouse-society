@@ -43,6 +43,8 @@ import Buster from '@/src/components/Buster';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 
 const PAGE_SIZE = 20;
+/** The most a read of what is already held asks for at once (twenty-five pages). */
+const HELD_MOST = 500;
 
 // The Reel's columns, the Reel's two counts and the viewer's own mark: this
 // page draws the Reel's own card, and a card is not whole without the numbers
@@ -64,8 +66,8 @@ interface RawLogRow {
   profiles: { username?: string; avatar_url?: string | null; role?: string } | { username?: string; avatar_url?: string | null; role?: string }[] | null;
 }
 
-/** One page of the film's critiques, newest first, from `from` (null: the first page). */
-async function readPage(filmId: string, from: Cursor) {
+/** One page of the film's critiques, newest first, from `from` (null: the first page), `size` long. */
+async function readPage(filmId: string, from: Cursor, size = PAGE_SIZE) {
   const askedAt = Date.now();
   const viewer = useAuthStore.getState().user?.id ?? null;
   let query = withLogCountFilters(supabase
@@ -77,8 +79,8 @@ async function readPage(filmId: string, from: Cursor) {
     .order('created_at', { ascending: false })
     .order('id', { ascending: false });
   if (from) query = query.or(afterCursor(from));
-  const { data, error } = await query.limit(PAGE_SIZE);
-  return { data, error, askedAt };
+  const { data, error } = await query.limit(size);
+  return { data, error, askedAt, size };
 }
 
 const PARAMS = { id: P.tmdbId, title: P.words(200) };
@@ -109,8 +111,12 @@ function FilmReviewsScreen({ filmId, title }: { filmId: string; title?: string }
   const [failed, setFailed] = useState(false);
   // A later page could not be read: the critiques drawn stay, and the foot says so.
   const [moreFailed, setMoreFailed] = useState(false);
+  // The rows the server has handed over (raw), and which read of the top is the latest: a next page
+  // asked before the top was read again belongs to the list that read replaced (review round 9).
+  const heldRaw = useRef(0);
+  const readOfTop = useRef(0);
 
-  const showPage = useCallback((isLoadMore: boolean, { data, error, askedAt }: Awaited<ReturnType<typeof readPage>>) => {
+  const showPage = useCallback((isLoadMore: boolean, { data, error, askedAt, size }: Awaited<ReturnType<typeof readPage>>) => {
     if (isLoadMore) setMoreFailed(!!error);
     else setFailed(!!error);
 
@@ -143,7 +149,8 @@ function FilmReviewsScreen({ filmId, title }: { filmId: string; title?: string }
         setLogs(visible);
       }
       // From the RAW page: a row dropped as malformed or blocked never ends the archive early.
-      setHasMore(data.length === PAGE_SIZE);
+      heldRaw.current = (isLoadMore ? heldRaw.current : 0) + data.length;
+      setHasMore(data.length === size);
       const last = (data as unknown as { created_at?: string; id?: string }[])[data.length - 1];
       setCursor(last?.created_at && last?.id ? { at: last.created_at, id: last.id } : null);
     }
@@ -157,13 +164,18 @@ function FilmReviewsScreen({ filmId, title }: { filmId: string; title?: string }
     if (isLoadMore && (!hasMore || fetchingMore)) return;
     if (isLoadMore) setFetchingMore(true);
     else setLoading(true);
-    void readPage(filmId, isLoadMore ? cursor : null).then((page) => showPage(isLoadMore, page));
+    const top = isLoadMore ? readOfTop.current : ++readOfTop.current;
+    void readPage(filmId, isLoadMore ? cursor : null).then((page) => {
+      if (top !== readOfTop.current) { if (isLoadMore) setFetchingMore(false); return; }
+      showPage(isLoadMore, page);
+    });
   }, [filmId, cursor, hasMore, fetchingMore, showPage]);
 
   // The first page, read once: the screen opens loading.
   useEffect(() => {
     if (!filmId) return;
-    void readPage(filmId, null).then((page) => showPage(false, page));
+    const top = ++readOfTop.current;
+    void readPage(filmId, null).then((page) => { if (top === readOfTop.current) showPage(false, page); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -177,7 +189,13 @@ function FilmReviewsScreen({ filmId, title }: { filmId: string; title?: string }
   useFocusEffect(useCallback(() => {
     if (!changedSinceRead.current || !filmId) return;
     changedSinceRead.current = false;
-    void readPage(filmId, null).then((page) => showPage(false, page));
+    // Read again as far as the member had read, not page one alone: replaced by its first twenty, the
+    // list lost the member's place, and a next page still on its way laid the deep rows under it
+    // (review round 9). That page is of the list this read replaces, and is dropped when it lands.
+    const top = ++readOfTop.current;
+    void readPage(filmId, null, Math.min(HELD_MOST, Math.max(PAGE_SIZE, heldRaw.current))).then((page) => {
+      if (top === readOfTop.current) showPage(false, page);
+    });
   }, [filmId, showPage]));
 
   const handleFilmPress = useCallback(() => {

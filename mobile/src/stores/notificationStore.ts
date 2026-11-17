@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { watchChannel } from '../lib/watchChannel';
+import { openChannel } from '../lib/openChannel';
 import { useAuthStore } from './auth';
 import { useBlockStore } from './blockStore';
 import { zustandMMKVStorage, zustandMMKVStorageSensitive } from './mmkv-storage';
@@ -306,6 +307,7 @@ export const useNotificationStore = create<NotificationState>()(
         if (!user) return;
 
         set({ loading: true, _fetchingMore: true });
+        const askedAt = monotonicNow();
         try {
             const [cursorDate, cursorId] = _cursor.split('|');
             let query = supabase
@@ -344,7 +346,14 @@ export const useNotificationStore = create<NotificationState>()(
                 if (state._cursor !== _cursor) return {};
                 // De-duplicated by id, as an arrival over the socket may already be here.
                 const existingIds = new Set(state.notifications.map(n => n.id));
-                const deduped = validated.filter(n => !existingIds.has(n.id));
+                // The acts made here since this page was asked laid over it, as over the first page's: an
+                // older page on its way as READ ALL was tapped came in unread, and a dismissed notice
+                // on it came back (review round 9). Kept, not forgotten: the first page's read does that.
+                const allReadSince = allReadAt !== null && allReadAt >= askedAt;
+                const since = (acts: Map<string, number>, id: string) => (acts.get(id) ?? -Infinity) >= askedAt;
+                const deduped = validated
+                    .filter(n => !existingIds.has(n.id) && !since(goneHere, n.id))
+                    .map(n => (!n.read && (allReadSince || since(readHere, n.id)) ? { ...n, read: true } : n));
                 const allNotifs = [...state.notifications, ...deduped].slice(0, LOCAL_NOTIFICATION_CAP);
 
                 // From the RAW response, as in the first fetch.
@@ -610,8 +619,10 @@ export const useNotificationStore = create<NotificationState>()(
 
         // Private: realtime.messages admits a signed-in member; each row still
         // reaches only its own member, by the notifications table's rules.
-        const channel = supabase
-            .channel('global_notifications', { config: { private: true } })
+        // Opened once its last leave is answered: a member switch opened it again in the same moment, and
+        // was handed the last member's channel on its way out (openChannel, review round 9).
+        const close = openChannel('global_notifications', (topic) => supabase
+            .channel(topic, { config: { private: true } })
             .on(
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
@@ -637,12 +648,12 @@ export const useNotificationStore = create<NotificationState>()(
                     if (newNotif.type === 'follow_accept') void hydrateFollowing();
                 }
             )
-            .subscribe((status) => { watch.status(status); });
+            .subscribe((status) => { watch.status(status); }));
 
         const cleanup = () => {
             // Left on purpose: its CLOSED is not a drop.
             watch.end();
-            supabase.removeChannel(channel);
+            close();
             _realtimeCleanup = null;
             set({ noticesLive: true });
         };

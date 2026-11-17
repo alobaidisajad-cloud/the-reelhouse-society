@@ -161,6 +161,9 @@ export default function LoungeScreen() {
     return () => { live = false; clearTimeout(t); };
   }, [words, searchLounges, askAgain]);
   const searchFailed = characterCount(words) >= SEARCH.least && asked?.words === words && asked.hits === null;
+  // The house not yet answered for these words: "No salon matches that." waits for it, as it said so
+  // over a search still on its way, and under the search's own failure line (review round 9).
+  const searchOut = characterCount(words) >= SEARCH.least && asked?.words !== words;
 
   // A salon whose host the member has blocked or muted leaves the directory, as their filings,
   // stacks and records leave every list: reported with "Also block this member", it stood there
@@ -289,7 +292,7 @@ export default function LoungeScreen() {
                 </View>
               ) : null}
               {/* Said only once the salons are read, and of the search when there is one. */}
-              {reading || browsableLounges.length > 0 ? null : words ? (
+              {reading || browsableLounges.length > 0 || searchOut || searchFailed ? null : words ? (
                 <CorridorState
                   title={myLounges.length > 0 ? 'No other salon matches that.' : 'No salon matches that.'}
                   words={myLounges.length > 0 ? 'Your own salon above does. Try another word to find more.' : 'Try another word to find more.'}

@@ -106,9 +106,11 @@ it('a pull that reaches nothing keeps the salons and says so', async () => {
 
 describe('what the corridor says when it is empty', () => {
   it('a search that matches nothing says so, not that no salon is open', async () => {
-    useLoungeStore.setState({ lounges: [{ ...ROOM, unread_count: undefined, mine: false, membership_status: undefined }], loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges } as never);
+    useLoungeStore.setState({ lounges: [{ ...ROOM, unread_count: undefined, mine: false, membership_status: undefined }], loungesFailed: false, loungesLoading: false, loungesRead: true, fetchLounges, searchLounges: async () => [] } as never);
     const r = await mount();
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Search salons'), 'zzzz'); });
+    // The house's search for these words answered with nothing (it is asked a moment after the last keystroke).
+    await act(async () => { await new Promise((done) => setTimeout(done, 350)); });
     expect(r.getByText('No salon matches that.')).toBeTruthy();
     expect(r.queryByText('No open salons at this time.')).toBeNull();
   });

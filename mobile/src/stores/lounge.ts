@@ -5,6 +5,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { houseIso } from '@/src/lib/houseClock';
 import { supabase } from '../lib/supabase';
 import { watchChannel } from '../lib/watchChannel';
+import { openChannel } from '../lib/openChannel';
 import { instantOf, dateOf } from '../utils/instant';
 import { byKey } from '../utils/order';
 import { characterCount } from '../utils/text';
@@ -186,14 +187,37 @@ export interface LoungeState {
 // eating a share sent to two rooms in a row. Other words are another message: refused, the room's
 // composer had already let go of them, and they were lost unsent.
 const _lastSendAt = new Map<string, { at: number; words: string }>();
+
+/**
+ * A seat or a request the house refused for a host's ban: join_public_lounge and
+ * request_lounge_membership raise these words (SQLSTATE P0001), and a rehearsal holds them
+ * (the_house_keeps_its_own_record). Toasted as "check your connection", the refusal sent a banned
+ * member to their signal (review round 9); BANNED_FROM_SALON is said instead.
+ */
+const BAN_REFUSALS: readonly string[] = ['You cannot join this lounge', 'You cannot request this lounge'];
+export const BANNED_FROM_SALON = 'The host has closed this salon to you.';
+const bannedHere = (e: unknown) => {
+  const refusal = e as { code?: unknown; message?: unknown } | null;
+  return refusal?.code === 'P0001' && BAN_REFUSALS.includes(String(refusal.message ?? '').trim());
+};
 const SEND_THROTTLE = 800;
 
 /** Messages held for an open room: four of loadMoreMessages' pages of 100. */
 export const MESSAGE_WINDOW = 400;
+/**
+ * The room the member has read back in (loadMoreMessages laid older words above): its window is
+ * theirs. Capped there, every new word cut the oldest, the very ones being read at the top, and
+ * scrolling asked for them again (review round 9). Forgotten when another room is opened.
+ */
+let _readBackIn: string | null = null;
 // Drops the OLDEST, which loadMoreMessages fetches again on scroll-up. Used only when
-// appending: a cap on the prepend would fight the scroll back.
-export const capMessages = (msgs: LoungeMessage[]): LoungeMessage[] =>
-  msgs.length > MESSAGE_WINDOW ? msgs.slice(msgs.length - MESSAGE_WINDOW) : msgs;
+// appending: a cap on the prepend would fight the scroll back. Not in a room read back in.
+export const capMessages = (msgs: LoungeMessage[]): LoungeMessage[] => {
+  if (msgs.length <= MESSAGE_WINDOW) return msgs;
+  const newest = msgs[msgs.length - 1];
+  if (_readBackIn !== null && newest !== undefined && newest.lounge_id === _readBackIn) return msgs;
+  return msgs.slice(msgs.length - MESSAGE_WINDOW);
+};
 
 /** One read of a room's words. */
 const MESSAGE_PAGE = 100;
@@ -273,6 +297,12 @@ const _typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 let _activeChannel: RealtimeChannel | null = null;
 /** Whether the member holds a seat in the active salon: only a seated member types. */
 let _seatedInActive = false;
+/**
+ * The open salon's way out, as its screen leaves: the reset leaves through it too, one still waiting
+ * to open included. Closed by its channel alone, its watch heard the CLOSED as a drop: five seconds
+ * after a sign-out the next member's room said it was not live, and its re-read ran on (review round 9).
+ */
+let _closeActive: (() => void) | null = null;
 
 function clearTypingState(set: (partial: Partial<LoungeState>) => void) {
   for (const t of _typingTimers.values()) clearTimeout(t);
@@ -704,6 +734,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       _keptRooms.set(leaving.currentLoungeId, leaving.currentMessages);
       for (const oldest of _keptRooms.keys()) { if (_keptRooms.size <= KEPT_ROOMS) break; _keptRooms.delete(oldest); }
     }
+    if (_readBackIn !== loungeId) _readBackIn = null;
     const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !useBlockStore.getState().isHidden(m.user_id));
     _keptRooms.delete(loungeId);
     if (serverHeld(kept).length > 0) {
@@ -825,7 +856,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           if (s.currentLoungeId !== loungeId) return s;
           const have = new Set(s.currentMessages.map(m => m.id));
           const older = filteredOlder.filter(m => !have.has(m.id));
-          return older.length === 0 ? s : { currentMessages: [...older, ...s.currentMessages] };
+          if (older.length === 0) return s;
+          _readBackIn = loungeId;
+          return { currentMessages: [...older, ...s.currentMessages] };
         });
       }
     } catch {
@@ -885,7 +918,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         set((s) => {
           if (s.currentLoungeId !== loungeId) return s;
           const fromHouse = new Set(serverHeld(s.currentMessages).map((m) => m.id));
-          const own = s.currentMessages.filter((m) => !fromHouse.has(m.id));
+          // One of this phone's own the house now holds is the house's: kept as well, it was drawn twice.
+          const answered = new Set(newest.map((m) => m.id));
+          const own = s.currentMessages.filter((m) => !fromHouse.has(m.id) && !answered.has(m.id));
           return { currentMessages: [...newest.filter((m) => !useBlockStore.getState().isHidden(m.user_id)), ...own].sort(before) };
         });
         return;
@@ -926,10 +961,21 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           changed = true;
           return [{ ...m, ...(withdrawn ? { content: '', deleted_at: mark.deleted_at } : {}), reactions: r }];
         });
-        const have = new Set(kept.map((m) => m.id));
+        // One of this phone's still drawn sending (or failed) that the read holds was delivered by the
+        // queue while the channel was down, and its echo never came: it stood dimmed, with no reply or
+        // reaction, for as long as the app ran (review round 9). The house's word settles it.
+        const answered = new Map(fresh.map((m) => [m.id, m]));
+        let settled = false;
+        const mine = kept.map((m) => {
+          const got = m.status === 'sending' || m.status === 'failed' ? answered.get(m.id) : undefined;
+          if (!got) return m;
+          settled = true;
+          return { ...m, created_at: got.created_at, status: 'sent' as const };
+        });
+        const have = new Set(mine.map((m) => m.id));
         const add = fresh.filter((m) => !have.has(m.id) && !useBlockStore.getState().isHidden(m.user_id));
-        if (add.length === 0 && !changed) return s;
-        return { currentMessages: add.length === 0 ? kept : [...kept, ...add].sort(before) };
+        if (add.length === 0 && !changed && !settled) return s;
+        return { currentMessages: add.length === 0 && !settled ? mine : [...mine, ...add].sort(before) };
       });
     } catch {
       // Not reached: what is held stays, and the room's line says so.
@@ -1211,8 +1257,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return true;
     } catch (e) {
       logger.error('[LoungeStore.joinPublicLounge] failed:', e);
-      // A seat refused for the rank is its door, never "check your connection".
-      if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
+      // A seat refused for the rank is its door, never "check your connection"; one refused for a ban says so.
+      if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);
+      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
         reelToast.error('Could not take a seat. Check your connection and try again.');
       }
       return false;
@@ -1233,7 +1280,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return 'requested';
     } catch (e) {
       logger.error('[LoungeStore.requestMembership] failed:', e);
-      if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
+      if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);
+      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
         reelToast.error('Could not send your request. Check your connection and try again.');
       }
       return 'error';
@@ -1538,185 +1586,194 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // Back after a drop, what was said in the gap is read; down past a beat, the room says it is
     // not live and is read again on a fixed interval until the channel answers.
     const watch = watchChannel({ reread: () => { void get().catchUpMessages(loungeId); }, onLive: (live) => set((s) => (s.roomLive === live ? s : { roomLive: live })) });
-    const channel = supabase
-      .channel(`lounge-${loungeId}`, {
-        // Private: the salon's rules decide who receives it (realtime.messages); own echoes muted.
-        config: { private: true, presence: { key: me?.id ?? 'anon' }, broadcast: { self: false } },
-      })
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'lounge_messages',
-          filter: `lounge_id=eq.${loungeId}`,
-        },
-        async (payload) => {
-          if (!payload.new) return;
-          const msg = payload.new as RawLoungePayload;
-          // Our own message is already drawn. If it was still waiting — sent from
-          // the offline queue once the connection returned — this echo is the house
-          // saying it arrived: it stops reading as sending (dimmed, no reply, no
-          // reaction), which it otherwise did until the room was opened again.
-          const existing = get().currentMessages.find(m => m.id === msg.id);
-          if (existing) {
-            if (existing.status === 'sending' || existing.status === 'failed') {
-              set(s => ({
-                currentMessages: s.currentMessages.map(m =>
-                  m.id === msg.id ? { ...m, created_at: msg.created_at ?? m.created_at, status: 'sent' as const } : m),
-              }));
+    // Opened once the salon's last leave is answered: joined again at once, it was handed the channel
+    // on its way out and heard nothing (openChannel, review round 9).
+    let mine: RealtimeChannel | null = null;
+    const close = openChannel(`lounge-${loungeId}`, (topic) => {
+      const channel = supabase
+        .channel(topic, {
+          // Private: the salon's rules decide who receives it (realtime.messages); own echoes muted.
+          config: { private: true, presence: { key: me?.id ?? 'anon' }, broadcast: { self: false } },
+        })
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'lounge_messages',
+            filter: `lounge_id=eq.${loungeId}`,
+          },
+          async (payload) => {
+            if (!payload.new) return;
+            const msg = payload.new as RawLoungePayload;
+            // Our own message is already drawn. If it was still waiting — sent from
+            // the offline queue once the connection returned — this echo is the house
+            // saying it arrived: it stops reading as sending (dimmed, no reply, no
+            // reaction), which it otherwise did until the room was opened again.
+            const existing = get().currentMessages.find(m => m.id === msg.id);
+            if (existing) {
+              if (existing.status === 'sending' || existing.status === 'failed') {
+                set(s => ({
+                  currentMessages: s.currentMessages.map(m =>
+                    m.id === msg.id ? { ...m, created_at: msg.created_at ?? m.created_at, status: 'sent' as const } : m),
+                }));
+              }
+              return;
             }
-            return;
-          }
 
-          // Filter messages from blocked/muted users
-          if (useBlockStore.getState().isHidden(msg.user_id)) return;
+            // Filter messages from blocked/muted users
+            if (useBlockStore.getState().isHidden(msg.user_id)) return;
 
-          // Resolve username via cache — prevents N+1 queries in busy lounges
-          const { username, avatar_url } = await resolveProfile(msg.user_id);
+            // Resolve username via cache — prevents N+1 queries in busy lounges
+            const { username, avatar_url } = await resolveProfile(msg.user_id);
 
-          const newMsg: LoungeMessage = {
-            id: msg.id,
-            lounge_id: msg.lounge_id,
-            user_id: msg.user_id,
-            username,
-            avatar_url,
-            content: msg.content?.replace(/<[^>]*>/g, '') ?? '',
-            type: (msg.type ?? 'text') as LoungeMessage['type'],
-            reply_to_id: msg.reply_to_id,
-            reply_to_username: msg.reply_to_username,
-            reply_to_content: msg.reply_to_content,
-            film_id: msg.film_id,
-            film_title: msg.film_title,
-            film_poster: msg.film_poster,
-            metadata: msg.metadata,
-            created_at: msg.created_at,
-          };
-
-          // Dedup and re-sort. No session guard: a subscription has no caller to capture
-          // a member from; the logout reset unsubscribes it instead.
-          set(s => {
-            // The member may change rooms while resolveProfile queries; this is the one
-            // handler that ADDS a message, so it alone must check the room.
-            if (s.currentLoungeId !== newMsg.lounge_id) return s;
-            const messagesWithoutOpt = s.currentMessages.filter(m => m.id !== newMsg.id);
-
-            return {
-              currentMessages: capMessages([...messagesWithoutOpt, newMsg].sort((a, b) => dateOf(a.created_at).getTime() - dateOf(b.created_at).getTime())),
+            const newMsg: LoungeMessage = {
+              id: msg.id,
+              lounge_id: msg.lounge_id,
+              user_id: msg.user_id,
+              username,
+              avatar_url,
+              content: msg.content?.replace(/<[^>]*>/g, '') ?? '',
+              type: (msg.type ?? 'text') as LoungeMessage['type'],
+              reply_to_id: msg.reply_to_id,
+              reply_to_username: msg.reply_to_username,
+              reply_to_content: msg.reply_to_content,
+              film_id: msg.film_id,
+              film_title: msg.film_title,
+              film_poster: msg.film_poster,
+              metadata: msg.metadata,
+              created_at: msg.created_at,
             };
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'lounge_messages', filter: `lounge_id=eq.${loungeId}` },
-        (payload) => {
-          const deletedId = (payload.old as RawLoungePayload)?.id;
-          if (deletedId) {
-            set(s => ({ currentMessages: s.currentMessages.filter(m => m.id !== deletedId) }));
-          }
-        }
-      )
-      // Withdrawn (soft-deleted) dispatches arrive as UPDATEs — flip to a tombstone live.
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'lounge_messages', filter: `lounge_id=eq.${loungeId}` },
-        (payload) => {
-          const row = payload.new as RawLoungePayload;
-          if (!row?.id) return;
-          set(s => ({
-            currentMessages: s.currentMessages.map(m =>
-              m.id === row.id
-                ? { ...m, content: row.deleted_at ? '' : (row.content?.replace(/<[^>]*>/g, '') ?? m.content), deleted_at: row.deleted_at ?? m.deleted_at }
-                : m
-            ),
-          }));
-        }
-      )
-      // Reactions appear/disappear live.
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'lounge_message_reactions', filter: `lounge_id=eq.${loungeId}` },
-        (payload) => {
-          const r = payload.new as ReactionRow;
-          if (!r?.message_id) return;
-          const myId = useAuthStore.getState().user?.id;
-          // Own reaction is already applied optimistically in toggleReaction —
-          // ignore the realtime echo of it so the count can't double.
-          if (r.user_id === myId) return;
-          set(s => ({
-            currentMessages: s.currentMessages.map(m =>
-              m.id === r.message_id ? { ...m, reactions: applyReactionDelta(m.reactions, r.reaction, 1, false) } : m
-            ),
-          }));
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'lounge_message_reactions', filter: `lounge_id=eq.${loungeId}` },
-        (payload) => {
-          const r = payload.old as ReactionRow;
-          if (!r?.message_id) return;
-          const myId = useAuthStore.getState().user?.id;
-          // Own un-react is already applied optimistically — ignore the echo so
-          // it can't double-decrement.
-          if (r.user_id === myId) return;
-          set(s => ({
-            currentMessages: s.currentMessages.map(m =>
-              m.id === r.message_id ? { ...m, reactions: applyReactionDelta(m.reactions, r.reaction, -1, false) } : m
-            ),
-          }));
-        }
-      )
-      // Membership changes (admit, mute, remove) let the screen refresh its gate and roster.
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'lounge_members', filter: `lounge_id=eq.${loungeId}` },
-        () => { opts?.onMembership?.(); }
-      )
-      // ── THE HOUSE PULSE: who's in the room right now ──
-      .on('presence', { event: 'sync' }, () => {
-        set({ presentCount: Object.keys(channel.presenceState()).length });
-      })
-      // ── THE HOUSE PULSE: who's at the typewriter ──
-      .on('broadcast', { event: 'typing' }, (payload) => {
-        const p = payload?.payload as { user_id?: string; username?: string } | undefined;
-        if (!p?.user_id || !p?.username) return;
-        const self = useAuthStore.getState().user;
-        if (p.user_id === self?.id) return;
-        if (useBlockStore.getState().isHidden(p.user_id)) return;
-        const username = p.username;
-        // Reset this typist's silence timer.
-        const existing = _typingTimers.get(username);
-        if (existing) clearTimeout(existing);
-        _typingTimers.set(username, setTimeout(() => {
-          _typingTimers.delete(username);
-          set(s => ({ typingUsers: s.typingUsers.filter(u => u !== username) }));
-        }, TYPING_TTL));
-        set(s => s.typingUsers.includes(username) ? s : { typingUsers: [...s.typingUsers, username] });
-      })
-      .subscribe((status) => {
-        watch.status(status);
-        // Presence once the channel is live, from a seated member only: a reader
-        // without a seat is in the room unseen.
-        if (status === 'SUBSCRIBED' && me && seated) {
-          channel.track({ username: me.username });
-        }
-      });
 
-    _activeChannel = channel;
-    _seatedInActive = seated;
-    return () => {
+            // Dedup and re-sort. No session guard: a subscription has no caller to capture
+            // a member from; the logout reset unsubscribes it instead.
+            set(s => {
+              // The member may change rooms while resolveProfile queries; this is the one
+              // handler that ADDS a message, so it alone must check the room.
+              if (s.currentLoungeId !== newMsg.lounge_id) return s;
+              const messagesWithoutOpt = s.currentMessages.filter(m => m.id !== newMsg.id);
+
+              return {
+                currentMessages: capMessages([...messagesWithoutOpt, newMsg].sort((a, b) => dateOf(a.created_at).getTime() - dateOf(b.created_at).getTime())),
+              };
+            });
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'lounge_messages', filter: `lounge_id=eq.${loungeId}` },
+          (payload) => {
+            const deletedId = (payload.old as RawLoungePayload)?.id;
+            if (deletedId) {
+              set(s => ({ currentMessages: s.currentMessages.filter(m => m.id !== deletedId) }));
+            }
+          }
+        )
+        // Withdrawn (soft-deleted) dispatches arrive as UPDATEs — flip to a tombstone live.
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'lounge_messages', filter: `lounge_id=eq.${loungeId}` },
+          (payload) => {
+            const row = payload.new as RawLoungePayload;
+            if (!row?.id) return;
+            set(s => ({
+              currentMessages: s.currentMessages.map(m =>
+                m.id === row.id
+                  ? { ...m, content: row.deleted_at ? '' : (row.content?.replace(/<[^>]*>/g, '') ?? m.content), deleted_at: row.deleted_at ?? m.deleted_at }
+                  : m
+              ),
+            }));
+          }
+        )
+        // Reactions appear/disappear live.
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'lounge_message_reactions', filter: `lounge_id=eq.${loungeId}` },
+          (payload) => {
+            const r = payload.new as ReactionRow;
+            if (!r?.message_id) return;
+            const myId = useAuthStore.getState().user?.id;
+            // Own reaction is already applied optimistically in toggleReaction —
+            // ignore the realtime echo of it so the count can't double.
+            if (r.user_id === myId) return;
+            set(s => ({
+              currentMessages: s.currentMessages.map(m =>
+                m.id === r.message_id ? { ...m, reactions: applyReactionDelta(m.reactions, r.reaction, 1, false) } : m
+              ),
+            }));
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'lounge_message_reactions', filter: `lounge_id=eq.${loungeId}` },
+          (payload) => {
+            const r = payload.old as ReactionRow;
+            if (!r?.message_id) return;
+            const myId = useAuthStore.getState().user?.id;
+            // Own un-react is already applied optimistically — ignore the echo so
+            // it can't double-decrement.
+            if (r.user_id === myId) return;
+            set(s => ({
+              currentMessages: s.currentMessages.map(m =>
+                m.id === r.message_id ? { ...m, reactions: applyReactionDelta(m.reactions, r.reaction, -1, false) } : m
+              ),
+            }));
+          }
+        )
+        // Membership changes (admit, mute, remove) let the screen refresh its gate and roster.
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'lounge_members', filter: `lounge_id=eq.${loungeId}` },
+          () => { opts?.onMembership?.(); }
+        )
+        // ── THE HOUSE PULSE: who's in the room right now ──
+        .on('presence', { event: 'sync' }, () => {
+          set({ presentCount: Object.keys(channel.presenceState()).length });
+        })
+        // ── THE HOUSE PULSE: who's at the typewriter ──
+        .on('broadcast', { event: 'typing' }, (payload) => {
+          const p = payload?.payload as { user_id?: string; username?: string } | undefined;
+          if (!p?.user_id || !p?.username) return;
+          const self = useAuthStore.getState().user;
+          if (p.user_id === self?.id) return;
+          if (useBlockStore.getState().isHidden(p.user_id)) return;
+          const username = p.username;
+          // Reset this typist's silence timer.
+          const existing = _typingTimers.get(username);
+          if (existing) clearTimeout(existing);
+          _typingTimers.set(username, setTimeout(() => {
+            _typingTimers.delete(username);
+            set(s => ({ typingUsers: s.typingUsers.filter(u => u !== username) }));
+          }, TYPING_TTL));
+          set(s => s.typingUsers.includes(username) ? s : { typingUsers: [...s.typingUsers, username] });
+        })
+        .subscribe((status) => {
+          watch.status(status);
+          // Presence once the channel is live, from a seated member only: a reader
+          // without a seat is in the room unseen.
+          if (status === 'SUBSCRIBED' && me && seated) {
+            channel.track({ username: me.username });
+          }
+        });
+      mine = channel;
+      _activeChannel = channel;
+      _seatedInActive = seated;
+      return channel;
+    });
+    const leave = () => {
       // Left on purpose: its CLOSED is not a drop.
       watch.end();
-      supabase.removeChannel(channel);
-      if (_activeChannel === channel) {
+      close();
+      if (_closeActive === leave) _closeActive = null;
+      if (mine && _activeChannel === mine) {
         _activeChannel = null;
         _seatedInActive = false;
       }
       set({ roomLive: true });
       clearTypingState(set);
     };
+    _closeActive = leave;
+    return leave;
   },
 
   broadcastTyping: (loungeId: string) => {
@@ -1767,13 +1824,16 @@ registerStoreReset(() => {
     _lastSendAt.clear();
     _keptRooms.clear();
     _readRoomsHere.clear();
+    _readBackIn = null;
     for (const t of _typingTimers.values()) clearTimeout(t);
     _typingTimers.clear();
     // Unsubscribe, not just forget: a live channel would write the next message into
     // the store this reset just cleared.
-    if (_activeChannel) {
-        try { supabase.removeChannel(_activeChannel); } catch { /* already gone */ }
+    // Through its close, so one still waiting on its last leave never opens for the next member.
+    if (_closeActive) {
+        try { _closeActive(); } catch { /* already gone */ }
     }
+    _closeActive = null;
     _activeChannel = null;
     _seatedInActive = false;
     // Purge profile cache to prevent cross-session PII leakage

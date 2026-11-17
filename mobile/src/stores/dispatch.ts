@@ -428,7 +428,10 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     if (inflight) return inflight;
     const gen = ++generation;
     const startedAs = useAuthStore.getState().user?.id ?? null;
-    set({ loading: true });
+    // A next page still on its way is of the page this read replaces: it lowers its own flag only
+    // while its generation stands, so left up here it stood for good, the foot spinning and no page
+    // or N NEW pill asked again (review round 9).
+    set({ loading: true, loadingMore: false });
     // The paper as it opens (every section, latest first), drawn from the phone while it is read
     // again, its rows checked as the house's are and anyone hidden since left out.
     const view = get();

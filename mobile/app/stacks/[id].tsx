@@ -38,7 +38,8 @@ import { colors, fonts } from '@/src/theme/theme';
 import { UNINKED, UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
-import { isForbiddenError, isNetworkError } from '@/src/utils/networkError';
+import { isNetworkError } from '@/src/utils/networkError';
+import { saidOfARefusal } from '@/src/utils/saidOfARefusal';
 import { instantOf, dateOf } from '@/src/utils/instant';
 import { useStruck } from '@/src/components/StruckWords';
 import { stillQueued, useOfflineQueueStore } from '@/src/stores/offlineQueueStore';
@@ -705,7 +706,8 @@ function StackDetailScreen({ id }: { id: string }) {
         bumpCritiqueCount(-1);
         setCommentText(content);
         // As on a log: a stack whose maker limits who may annotate it says so.
-        reelToast.error(isForbiddenError(err) ? 'This member limits who may annotate their critiques.' : 'Your critique could not be filed.');
+        // The member's own standing said as the house says it, never blamed on the maker (review round 9).
+        reelToast.error(saidOfARefusal(err, 'This member limits who may annotate their critiques.', 'Your critique could not be filed.'));
       }
     } finally {
       setSubmittingComment(false);

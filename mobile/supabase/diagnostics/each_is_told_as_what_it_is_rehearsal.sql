@@ -8,7 +8,10 @@
 -- door the one member who may come in and names them, never one the host has muted or blocked,
 -- and every other piece of the corridor still answers; a certification of a filing is told under
 -- the filing's key as before, and a certification of a critique under its own; a salon's last
--- word is the last one its reader can read, never one from a member they muted. Every row here
+-- word is the last one its reader can read, never one from a member they muted; a film's archive
+-- search is counted by the house without the member the reader muted; a banned member's row stays
+-- through a removal and a stepping out, and one taken before is put back; a muted follower leaves
+-- the follow counts. Every row here
 -- is undone with the transaction. Read each NOTICE as  case|expected|got ; the last line is the
 -- verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
@@ -26,6 +29,19 @@ CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
    ORDER BY u.created_at LIMIT 4;
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rehearsal_members), 4) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO authenticated;
+
+-- Before the train, a ban whose row was taken: member 1 keeps a gallery that banned 2, and 2's row is gone.
+\if :{?with_train}
+CREATE TEMP TABLE rh_gallery ON COMMIT DROP AS
+WITH made AS (
+  INSERT INTO public.lounges (name, creator_id, is_private)
+  VALUES ('The Rehearsal Gallery', (SELECT id FROM rehearsal_members WHERE n = 1), false)
+  RETURNING id)
+SELECT id FROM made;
+INSERT INTO public.lounge_sanctions (lounge_id, user_id, status)
+VALUES ((SELECT id FROM rh_gallery), (SELECT id FROM rehearsal_members WHERE n = 2), 'banned');
+DELETE FROM public.lounge_members WHERE lounge_id = (SELECT id FROM rh_gallery) AND user_id = (SELECT id FROM rehearsal_members WHERE n = 2);
+\endif
 
 -- The train applies it here first (with_train); a sealed copy already holds every pending migration.
 \if :{?with_train}
@@ -85,6 +101,16 @@ SELECT id FROM made;
 GRANT SELECT ON rh_corner TO authenticated;
 INSERT INTO public.lounge_members (lounge_id, user_id, status, last_read_at)
 SELECT (SELECT id FROM rh_corner), id, 'approved', now() - interval '3 minutes' FROM rehearsal_members WHERE n IN (1, 3);
+-- 2 and 4 sit there too: the host will remove 2, and 4 will step out.
+INSERT INTO public.lounge_members (lounge_id, user_id, status)
+SELECT (SELECT id FROM rh_corner), id, 'approved' FROM rehearsal_members WHERE n IN (2, 4);
+
+-- Members 1, 2 and 3 each file a take on one film, its title this run's own.
+INSERT INTO public.dispatch_posts (kind, user_id, author_username, body, subject_kind, subject_id, subject_title)
+SELECT 'take', m.id, p.username, 'rehearsal: on the picture', 'film', 990000101,
+       'The Rehearsal Picture ' || (SELECT id FROM rh_salon)
+  FROM rehearsal_members m JOIN public.profiles p ON p.id = m.id WHERE m.n IN (1, 2, 3);
+
 INSERT INTO public.lounge_messages (lounge_id, user_id, content, created_at)
 VALUES ((SELECT id FROM rh_corner), (SELECT id FROM rehearsal_members WHERE n = 3), 'rehearsal: a word', now() - interval '2 minutes'),
        ((SELECT id FROM rh_corner), (SELECT id FROM rehearsal_members WHERE n = 2), 'rehearsal: a muted word', now() - interval '1 minute');
@@ -94,11 +120,26 @@ CREATE TEMP TABLE rh_corridor (got jsonb) ON COMMIT DROP;
 GRANT ALL ON rh_corridor TO authenticated;
 CREATE TEMP TABLE rh_unread (unread bigint, last_at timestamptz) ON COMMIT DROP;
 GRANT ALL ON rh_unread TO authenticated;
+CREATE TEMP TABLE rh_films (subject_id integer, filings bigint) ON COMMIT DROP;
+GRANT ALL ON rh_films TO authenticated;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
 INSERT INTO rh_corridor SELECT public.get_lounge_list();
 INSERT INTO rh_unread SELECT u.unread_count, u.last_message_at FROM public.get_lounge_unread_counts() u
  WHERE u.lounge_id = (SELECT id FROM rh_corner);
+INSERT INTO rh_films SELECT f.subject_id, f.filings FROM public.dispatch_archive_films('The Rehearsal Picture ' || (SELECT id FROM rh_salon)) f;
+-- The host bans 3, then removes 3 and 2.
+SELECT public.set_lounge_member_status((SELECT id FROM rh_corner), (SELECT id FROM rehearsal_members WHERE n = 3), 'banned') AS done \gset rh_
+SELECT public.remove_lounge_member((SELECT id FROM rh_corner), (SELECT id FROM rehearsal_members WHERE n = 3)) AS done \gset rh_
+SELECT public.remove_lounge_member((SELECT id FROM rh_corner), (SELECT id FROM rehearsal_members WHERE n = 2)) AS done \gset rh_
+RESET ROLE;
+
+-- 3, banned, tries to step out; 4 steps out. Each as themselves.
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
+DELETE FROM public.lounge_members WHERE lounge_id = (SELECT id FROM rh_corner) AND user_id = (SELECT id FROM rehearsal_members WHERE n = 3);
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 4), 'role', 'authenticated')::text, true) AS done \gset rh_
+DELETE FROM public.lounge_members WHERE lounge_id = (SELECT id FROM rh_corner) AND user_id = (SELECT id FROM rehearsal_members WHERE n = 4);
 RESET ROLE;
 
 -- Member 3 certifies the take and the critique, as themselves.
@@ -131,6 +172,14 @@ BEGIN
     (SELECT unread::text FROM rh_unread));
   PERFORM pg_temp.rh_case('its last word is the last one the reader can read, never the muted member''s after it',
     (now() - interval '2 minutes')::text, (SELECT last_at::text FROM rh_unread));
+  PERFORM pg_temp.rh_case('a film''s archive search finds it once', '1', (SELECT count(*)::text FROM rh_films));
+  PERFORM pg_temp.rh_case('and counts its filings without the member the reader muted', '2',
+    (SELECT filings::text FROM rh_films WHERE subject_id = 990000101));
+  PERFORM pg_temp.rh_case('a banned member''s row stays through the host''s removal and their own stepping out', 'banned',
+    (SELECT status FROM public.lounge_members WHERE lounge_id = (SELECT id FROM rh_corner) AND user_id = (SELECT id FROM rehearsal_members WHERE n = 3)));
+  PERFORM pg_temp.rh_case('a seated member is removed as before, and one steps out as before', '0',
+    (SELECT count(*)::text FROM public.lounge_members WHERE lounge_id = (SELECT id FROM rh_corner)
+      AND user_id IN (SELECT id FROM rehearsal_members WHERE n IN (2, 4))));
 
   PERFORM pg_temp.rh_case('a certification of the filing is told to its author under the filing''s key',
     'endorse:post:' || (SELECT id FROM rh_filing),
@@ -149,6 +198,41 @@ BEGIN
       WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 2)
         AND metadata ->> 'comment_id' = (SELECT id::text FROM rh_critique)));
 END $$;
+
+\if :{?with_train}
+SELECT pg_temp.rh_case('a ban whose row was taken is on its host''s roster again', 'banned',
+  (SELECT status FROM public.lounge_members WHERE lounge_id = (SELECT id FROM rh_gallery) AND user_id = (SELECT id FROM rehearsal_members WHERE n = 2))) AS done \gset rh_
+\endif
+
+-- 2 follows 1, and 1 follows 2 (whom 1 muted). 1 reads their counts muted, and again unmuted.
+DELETE FROM public.interactions WHERE type = 'follow'
+   AND ((user_id = (SELECT id FROM rehearsal_members WHERE n = 2) AND target_user_id = (SELECT id FROM rehearsal_members WHERE n = 1))
+     OR (user_id = (SELECT id FROM rehearsal_members WHERE n = 1) AND target_user_id = (SELECT id FROM rehearsal_members WHERE n = 2)));
+INSERT INTO public.interactions (user_id, target_user_id, type)
+VALUES ((SELECT id FROM rehearsal_members WHERE n = 2), (SELECT id FROM rehearsal_members WHERE n = 1), 'follow'),
+       ((SELECT id FROM rehearsal_members WHERE n = 1), (SELECT id FROM rehearsal_members WHERE n = 2), 'follow');
+CREATE TEMP TABLE rh_counts (muted boolean, got json) ON COMMIT DROP;
+GRANT ALL ON rh_counts TO authenticated;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+INSERT INTO rh_counts SELECT true, public.get_profile_counts((SELECT id FROM rehearsal_members WHERE n = 1));
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+DELETE FROM public.user_blocks WHERE blocker_id = (SELECT id FROM rehearsal_members WHERE n = 1) AND blocked_id = (SELECT id FROM rehearsal_members WHERE n = 2);
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+INSERT INTO rh_counts SELECT false, public.get_profile_counts((SELECT id FROM rehearsal_members WHERE n = 1));
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+DO $
+BEGIN
+  PERFORM pg_temp.rh_case('a follower the member muted is not in their FOLLOWERS', '1',
+    ((SELECT (got ->> 'followers_count')::int FROM rh_counts WHERE NOT muted)
+      - (SELECT (got ->> 'followers_count')::int FROM rh_counts WHERE muted))::text);
+  PERFORM pg_temp.rh_case('nor one they follow and muted in their FOLLOWING', '1',
+    ((SELECT (got ->> 'following_count')::int FROM rh_counts WHERE NOT muted)
+      - (SELECT (got ->> 'following_count')::int FROM rh_counts WHERE muted))::text);
+END $;
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;

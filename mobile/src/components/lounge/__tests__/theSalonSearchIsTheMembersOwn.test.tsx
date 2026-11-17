@@ -63,6 +63,8 @@ async function searched() {
   let r!: ReturnType<typeof render>;
   await act(async () => { r = render(<LoungeScreen />); });
   await act(async () => { await fireEvent.changeText(r.getByLabelText('Search salons'), 'zzzz'); });
+  // Said once the house answered the search with nothing: it is asked a moment after the last keystroke.
+  await act(async () => { await new Promise((done) => setTimeout(done, 350)); });
   expect(r.getByText('No salon matches that.')).toBeTruthy();
   return r;
 }

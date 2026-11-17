@@ -279,8 +279,16 @@ describe('a write that lands after logout must not repopulate the store', () => 
     // this one did not.
     const lounge = readCode(path.join(ROOT, 'src/stores/lounge.ts'));
     const reset = lounge.slice(lounge.lastIndexOf('registerStoreReset('));
-    expect(reset).toMatch(/supabase\.removeChannel\(_activeChannel\)/);
+    // Since review round 9 the salon opens through openChannel, and the reset leaves it through that
+    // close (_closeActive): the close calls removeChannel, and keeps a channel still waiting on its
+    // last leave from opening for the next member.
+    expect(reset).toMatch(/_closeActive\(\)/);
     expect(reset).toMatch(/_activeChannel = null/);
+    expect(lounge).toMatch(/const close = openChannel\(`lounge-\$\{loungeId\}`/);
+    // The reset leaves as the screen does: the channel closed, and its watch ended with it.
+    expect(lounge).toMatch(/_closeActive = leave;/);
+    expect(lounge).toMatch(/const leave = \(\) => \{\s*watch\.end\(\);\s*close\(\);/);
+    expect(readCode(path.join(ROOT, 'src/lib/openChannel.ts'))).toMatch(/supabase\.removeChannel\(channel\)/);
   });
 
   it('the guard compares against a CAPTURED id, never the current one', () => {

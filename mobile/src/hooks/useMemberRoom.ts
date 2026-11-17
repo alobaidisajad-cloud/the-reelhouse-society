@@ -52,6 +52,7 @@ import {
   FILING_CARD_COLUMNS, paperTierOf, parseFilingRows, type Filing,
 } from '@/src/stores/dispatchTypes';
 import { logger } from '@/src/utils/logger';
+import { keysetFilter, type CursorParts } from '@/src/utils/keysetCursor';
 
 /** One page. Long enough to fill a screen, short enough to arrive at once. */
 export const ROOM_PAGE = 20;
@@ -157,23 +158,33 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
    * carries the same counter for the same reason).
    */
   const fetched = useRef(0);
+  /** The last row the server handed over (raw, as `fetched` counts): where the next page starts. */
+  const after = useRef<CursorParts | null>(null);
 
   const page = useCallback(async (from: number, mine: number) => {
     const id = userId.current;
     if (!id) return;
 
+    // The next page starts after the last row read (its time, then its id), never at an offset: a
+    // filing withdrawn, ended or hidden since moved every row after it up, and the page skipped one;
+    // one filed since moved them down, and the page drew one twice (review round 9).
+    // A first page starts from nothing: another member's cursor is never carried into it.
+    if (from === 0) after.current = null;
+    const past = from === 0 ? null : keysetFilter('created_at', after.current, 'desc');
+    let read = supabase
+      .from('dispatch_posts')
+      .select(FILING_CARD_COLUMNS)
+      .eq('user_id', id)
+      .eq('is_published', true)
+      .is('withheld_at', null)
+      .is('ended_at', null)
+      // The id breaks a tied moment: two filings of one second keep one order from page to page.
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
+    if (past) read = read.or(past);
+
     const [rows, totals] = await Promise.all([
-      supabase
-        .from('dispatch_posts')
-        .select(FILING_CARD_COLUMNS)
-        .eq('user_id', id)
-        .eq('is_published', true)
-        .is('withheld_at', null)
-        .is('ended_at', null)
-        // The id breaks a tied moment: two filings of one second keep one order from page to page.
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
-        .range(from, from + ROOM_PAGE - 1),
+      read.limit(ROOM_PAGE),
       // Once, at the head. The totals do not change as you scroll, and asking
       // again on every page would be one more round trip per page for an answer
       // already on screen.
@@ -199,7 +210,14 @@ export function useMemberRoom(username: string | undefined): MemberRoom {
 
     const raw = rows.data?.length ?? 0;
     fetched.current = from + raw;
-    setFilings((prev) => (from === 0 ? got : [...prev, ...got]));
+    const last = (rows.data ?? [])[raw - 1] as { created_at?: string; id?: string } | undefined;
+    if (last?.created_at && last.id) after.current = { primary: last.created_at, id: last.id };
+    // De-duplicated as well: a filing can still arrive twice, and the list would draw a duplicate key.
+    setFilings((prev) => {
+      if (from === 0) return got;
+      const have = new Set(prev.map((f) => f.id));
+      return [...prev, ...got.filter((f) => !have.has(f.id))];
+    });
     // Measured on what the SERVER sent, not on what parsed: a full page of rows
     // the parser dropped still means there is another page behind it.
     setMore(raw === ROOM_PAGE);

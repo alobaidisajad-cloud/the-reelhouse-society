@@ -16,6 +16,14 @@
 --      newest message in the room, one from a member the reader has blocked or muted among them
 --      (review round 8): "LAST WORD 1M AGO" over a room with nothing new to read. The time is now
 --      the last word the reader can read, as the directory's rooms already are (get_salon_last_words).
+--   4. A film's search in the Dispatch archive was counted on the phone from the newest 120 rows:
+--      short of the film's plate, a hidden author's filings in it, a film past them not found
+--      (review round 9). The house counts it now (dispatch_archive_films), the hidden left out.
+--   5. A banned member's row was taken by the host's REMOVE, or by the member stepping out, while
+--      the ban stood: the host had no UNBAN left, and the member was offered a seat the house
+--      refused (review round 9). A banned row now stays; those taken are put back, banned.
+--   6. A member's FOLLOWERS and FOLLOWING counted members the reader has hidden, whom the lists
+--      leave out (review round 9): the counts leave them out too.
 --   The rehearsal holds each, the members acting as themselves.
 -- Undo: mobile/supabase/migrations-down/20261116_01_each_is_told_as_what_it_is.sql
 -- ════════════════════════════════════════════════════════════════════════════
@@ -132,4 +140,109 @@ CREATE OR REPLACE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(loung
        LIMIT 1
     ) END AS last_message_at
   FROM rooms r CROSS JOIN me;
+$$;
+
+-- A film's search in the Dispatch archive, counted by the house: the phone counted the newest 120
+-- matching rows itself, so a film's count fell short of its plate's and held the filings of authors
+-- the reader has hidden, and a film past those rows was not found (review round 9). The pattern is
+-- the phone's own, built as every search builds it (buildSearchPattern: LIKE's marks escaped).
+-- As the caller (SECURITY INVOKER): the filings' own rules decide what is counted, and the hidden
+-- are left out as everywhere else.
+CREATE FUNCTION public.dispatch_archive_films(p_pattern text)
+    RETURNS TABLE(subject_id integer, subject_title text, subject_sub text, subject_image text, filings bigint)
+    LANGUAGE sql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  WITH me AS (SELECT public.hidden_authors() AS hidden),
+  hits AS (
+    SELECT p.subject_id, p.subject_title, p.subject_sub, p.subject_image, p.created_at, p.id
+      FROM public.dispatch_posts p CROSS JOIN me
+     WHERE p.subject_kind = 'film'
+       AND p.subject_id IS NOT NULL
+       AND p.subject_title IS NOT NULL
+       AND p.is_published
+       AND p.withheld_at IS NULL
+       AND p.ended_at IS NULL
+       AND p.subject_title ILIKE '%' || COALESCE(p_pattern, '') || '%'
+       AND NOT COALESCE(p.user_id = ANY (me.hidden), false)
+  ),
+  -- Each film once, its newest filing's poster and subtitle (an older one may carry a poster since replaced).
+  films AS (
+    SELECT DISTINCT ON (h.subject_id)
+           h.subject_id, h.subject_title, h.subject_sub, h.subject_image,
+           count(*) OVER (PARTITION BY h.subject_id) AS filings
+      FROM hits h
+     ORDER BY h.subject_id, h.created_at DESC, h.id DESC
+  )
+  SELECT f.subject_id, f.subject_title, f.subject_sub, f.subject_image, f.filings
+    FROM films f
+   ORDER BY f.filings DESC, f.subject_id
+   LIMIT 120;
+$$;
+
+-- add-only (1): no shipped client uses it: a function this migration makes, named by no client before it (TestFlight build 41 and the website checked)
+REVOKE ALL ON FUNCTION public.dispatch_archive_films(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.dispatch_archive_films(text) TO anon, authenticated, service_role;
+
+-- A banned member's row is the host's UNBAN. REMOVE on it deleted it, as did the member stepping out
+-- of the salon, while the ban stood in lounge_sanctions: the roster had nothing left to lift, and
+-- the member was offered a seat the house refused (review round 9).
+-- add-only (3): it only fixes: the calls replayed as the members themselves, a host's removal of a seated member as before and of a banned one kept (each_is_told_as_what_it_is_rehearsal.sql)
+CREATE OR REPLACE FUNCTION public.remove_lounge_member(p_lounge_id uuid, p_user_id uuid) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE v_creator uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  SELECT creator_id INTO v_creator FROM public.lounges WHERE id = p_lounge_id;
+  IF v_creator IS NULL THEN RAISE EXCEPTION 'Lounge not found'; END IF;
+  IF auth.uid() IS DISTINCT FROM v_creator THEN RAISE EXCEPTION 'Only the host can remove members'; END IF;
+  IF p_user_id IS NOT DISTINCT FROM v_creator THEN RAISE EXCEPTION 'The host cannot be removed'; END IF;
+  -- A banned member holds no seat to remove; their row stays, for the ban to be lifted.
+  DELETE FROM public.lounge_members
+   WHERE lounge_id = p_lounge_id AND user_id = p_user_id AND status <> 'banned';
+END $$;
+
+-- add-only (3): it only fixes: the calls replayed as the members themselves, a member stepping out and a host removing a seated member as before, a banned row kept (each_is_told_as_what_it_is_rehearsal.sql)
+DROP POLICY "Creators can remove members" ON public.lounge_members;
+CREATE POLICY "Creators can remove members" ON public.lounge_members FOR DELETE USING (
+  status <> 'banned'
+  AND ((auth.uid() IN (SELECT lounges.creator_id FROM public.lounges WHERE lounges.id = lounge_members.lounge_id))
+       OR (auth.uid() = user_id)));
+
+-- The bans whose rows were taken: back on their hosts' rosters, banned, to be lifted there.
+INSERT INTO public.lounge_members (lounge_id, user_id, status)
+SELECT s.lounge_id, s.user_id, 'banned'
+  FROM public.lounge_sanctions s
+ WHERE s.status = 'banned'
+   AND NOT EXISTS (SELECT 1 FROM public.lounge_members m WHERE m.lounge_id = s.lounge_id AND m.user_id = s.user_id)
+ON CONFLICT DO NOTHING;
+
+-- A member's FOLLOWERS and FOLLOWING counted those the reader has hidden, whom the lists they open
+-- leave out: "1 FOLLOWER" over "No one follows you yet." (review round 9). Both now leave them out.
+-- add-only (3): it only fixes: the calls replayed as the members themselves, every count as before and the follow counts without a member the reader has hidden (each_is_told_as_what_it_is_rehearsal.sql)
+CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS json
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT json_build_object(
+    'logs_count',      CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id) ELSE 0 END,
+    'ledger_count',    CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id
+                                    AND (rating > 0 OR COALESCE(review, '') <> '')) ELSE 0 END,
+    'watchlist_count', CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM watchlists WHERE user_id = p_user_id) ELSE 0 END,
+    'vault_count',     CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM physical_archive WHERE user_id = p_user_id) ELSE 0 END,
+    'lists_count',     CASE WHEN public.can_view_user_data(p_user_id)
+                            THEN (SELECT COUNT(*) FROM lists WHERE user_id = p_user_id
+                                    AND (is_private = false OR user_id = auth.uid())) ELSE 0 END,
+    'followers_count', (SELECT COUNT(*) FROM interactions i WHERE i.target_user_id = p_user_id AND i.type = 'follow'
+                          AND NOT COALESCE(i.user_id = ANY (me.hidden), false)),
+    'following_count', (SELECT COUNT(*) FROM interactions i WHERE i.user_id = p_user_id AND i.type = 'follow'
+                          AND NOT COALESCE(i.target_user_id = ANY (me.hidden), false))
+  )
+  FROM (SELECT public.hidden_authors() AS hidden) me;
 $$;

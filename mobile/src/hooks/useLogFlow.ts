@@ -7,7 +7,7 @@ import { useVaultStore } from '@/src/stores/vaultStore';
 import { supabase } from '@/src/lib/supabase';
 import { captureError } from '@/src/lib/sentry';
 import reelToast from '@/src/utils/reelToast';
-import { LOG_BUSY, VIEWING_NEEDS_CONNECTION, heldLog } from '@/src/stores/domain/logSlice/helpers/logOperations';
+import { LOG_BUSY, LOG_GONE, LOG_REFUSED, VIEWING_NEEDS_CONNECTION, heldLog } from '@/src/stores/domain/logSlice/helpers/logOperations';
 import { LOG_SELECT_COLUMNS, mapLogRow, type LogRow } from '@/src/utils/mappers';
 import type { DomainLog } from '@/src/types';
 import { isNetworkError } from '@/src/utils/networkError';
@@ -818,6 +818,10 @@ export function useLogFlow() {
             reelToast.error(
                 (err as { code?: string })?.code === LOG_BUSY
                     ? 'Still sealing the previous record — one moment.'
+                    : (err as { code?: string })?.code === LOG_GONE
+                        ? 'This record is no longer in the archive: it was removed elsewhere.'
+                    : (err as { code?: string })?.code === LOG_REFUSED
+                        ? 'This record can no longer be amended.'
                     : isChangedSince(err)
                         ? LOG_CHANGED_SINCE
                         : 'The record could not be sealed. Try again.'

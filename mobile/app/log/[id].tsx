@@ -50,7 +50,8 @@ import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { tmdb } from '@/src/lib/tmdb';
 import { COMMENT_PAGE_SIZE, LogService } from '@/src/services/LogService';
 import { colors } from '@/src/theme/theme';
-import { isNetworkError, isForbiddenError } from '@/src/utils/networkError';
+import { isNetworkError } from '@/src/utils/networkError';
+import { saidOfARefusal } from '@/src/utils/saidOfARefusal';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import { stillQueued } from '@/src/stores/offlineQueueStore';
 import reelToast from '@/src/utils/reelToast';
@@ -639,7 +640,8 @@ function LogDetailScreen({ id }: { id: string }) {
         // Refused: the words go back in the box, never to be typed twice.
         setNewComment((now) => (now.trim() ? now : commentBody));
         withdrawTap('critique', id, tap);
-        reelToast.error(isForbiddenError(error) ? 'This member limits who may annotate their critiques.' : 'Your critique could not be filed.');
+        // The member's own standing said as the house says it, never blamed on the author (review round 9).
+        reelToast.error(saidOfARefusal(error, 'This member limits who may annotate their critiques.', 'Your critique could not be filed.'));
       }
     } finally {
       setPosting(false);

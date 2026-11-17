@@ -7,6 +7,7 @@ import { Interaction } from '../../types';
 import { isNetworkError } from '../../utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../../utils/offlineQueue';
 import reelToast from '../../utils/reelToast';
+import { isRefusedOnPurpose, saidOfARefusal } from '../../utils/saidOfARefusal';
 import { useAuthStore } from '../auth';
 import { beginTap, queueTap, settleTap, tappedSince, withdrawTap } from '../markCounts';
 
@@ -94,7 +95,7 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 // Two EXPECTED failures are excluded: 23505 is a duplicate row
                 // (idempotent success, handled just below) and a network error is
                 // queued offline. Anything else is a genuine defect.
-                if (e?.code !== '23505' && !isNetworkError(e)) {
+                if (e?.code !== '23505' && !isNetworkError(e) && !isRefusedOnPurpose(e)) {
                     captureError(e, { scope: 'interactionSlice.toggleEndorsement' });
                 }
                 // Telemetry above still fires — a defect is worth knowing about
@@ -136,7 +137,8 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                             return { interactions: next, _endorsedIndex: idx };
                         });
                     }
-                    reelToast.error('Failed to certify entry.');
+                    // Who refused it, said: the owner's rule, or the member's own standing (review round 9).
+                    reelToast.error(saidOfARefusal(e, 'This member limits who may certify their work.', 'Failed to certify entry.'));
                     throw e; // Propagate to trigger caller rollback
                 }
             }
@@ -221,7 +223,7 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 // Two EXPECTED failures are excluded: 23505 is a duplicate row
                 // (idempotent success, handled just below) and a network error is
                 // queued offline. Anything else is a genuine defect.
-                if (e?.code !== '23505' && !isNetworkError(e)) {
+                if (e?.code !== '23505' && !isNetworkError(e) && !isRefusedOnPurpose(e)) {
                     captureError(e, { scope: 'interactionSlice.toggleEndorsement' });
                 }
                 // Telemetry above still fires — a defect is worth knowing about
@@ -261,7 +263,7 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                             return { interactions: next, _listEndorsedIndex: idx };
                         });
                     }
-                    reelToast.error('Failed to certify list.');
+                    reelToast.error(saidOfARefusal(e, 'This member limits who may certify their work.', 'Failed to certify list.'));
                     throw e; // Propagate to trigger caller rollback
                 }
             }

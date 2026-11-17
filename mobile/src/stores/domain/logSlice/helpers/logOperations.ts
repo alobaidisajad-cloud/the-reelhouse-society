@@ -57,6 +57,10 @@ export function cleanLogWords(l: { review?: string | null; pullQuote?: string | 
 }
 
 export const LOG_BUSY = 'LOG_BUSY' as const;
+/** An amendment found its record deleted elsewhere since the sheet was opened: nothing written. */
+export const LOG_GONE = 'LOG_GONE' as const;
+/** An amendment the house matched no row for, its record unmoved (a rule refused it): nothing written. */
+export const LOG_REFUSED = 'LOG_REFUSED' as const;
 /** A viewing's removal must name it, and naming it needs the house: thrown, so the sheet stays. */
 export const VIEWING_NEEDS_CONNECTION = 'Removing a viewing needs a connection.';
 
@@ -722,7 +726,13 @@ export const updateLogOp = async (
                 }
             } else if (was) {
                 try {
-                    await keepLogEdit(id, user.id, dbUpdates, was);
+                    // Its answer read, as the filing's is: a record deleted elsewhere since the sheet opened
+                    // ('gone'), or one a rule kept ('refused'), was written nowhere, and the sheet said
+                    // RECORD SEALED over it, the diary holding the amendment until its next read (review
+                    // round 9).
+                    const kept = await keepLogEdit(id, user.id, dbUpdates, was);
+                    if (kept === 'gone') error = Object.assign(new Error('updateLog: the record is gone'), { code: LOG_GONE });
+                    else if (kept === 'refused') error = Object.assign(new Error('updateLog: refused'), { code: LOG_REFUSED });
                 } catch (e) {
                     error = e;
                 }
@@ -789,11 +799,22 @@ export const updateLogOp = async (
             if (!opts?.silentAnnounce && !queuedOffline) announceToScreenReader('Record amended');
             return { queuedOffline }; // so a caller using this as a step can say the truth
         } catch (e: unknown) {
-            // Changed elsewhere since it was opened is an answer, not a fault.
-            if (!isNetworkError(e) && !isChangedSince(e)) captureError(e, { scope: 'updateLogOp', logId: id });
+            // Changed elsewhere since it was opened is an answer, not a fault; so is a record gone.
+            const gone = (e as { code?: string } | null)?.code === LOG_GONE;
+            if (!isNetworkError(e) && !isChangedSince(e) && !gone) captureError(e, { scope: 'updateLogOp', logId: id });
+            // Gone: it leaves the phone, as a removal here does, never put back as it was.
+            if (gone && stillSignedIn(user.id)) {
+                set((state) => {
+                    const nextIdx = { ...state._loggedIndex };
+                    if (originalFilmId && nextIdx[originalFilmId]?.id === id) delete nextIdx[originalFilmId];
+                    return { logs: state.logs.filter((l) => l.id !== id), _loggedIndex: nextIdx };
+                });
+                wallMayHaveChanged();
+                reelMayHaveChanged(id);
+            }
             // Roll back only while they are still here: after a logout it would hand
             // the next member a record.
-            if (originalLog && stillSignedIn(user.id)) {
+            else if (originalLog && stillSignedIn(user.id)) {
                 set((state) => {
                     const revertedLogs = sortLogs(state.logs.map(l => l.id === id ? originalLog : l));
                     const nextIdx = { ...state._loggedIndex };
@@ -808,7 +829,7 @@ export const updateLogOp = async (
             if (filmIdToUpdate && previousFilmData !== undefined) {
                 queryClient.setQueryData(['film', Number(filmIdToUpdate)], previousFilmData);
             }
-            if (previousLogData !== undefined) {
+            if (previousLogData !== undefined && !gone) {
                 queryClient.setQueryData(['log', id], previousLogData);
             }
             // The caller toasts — one message per failure.

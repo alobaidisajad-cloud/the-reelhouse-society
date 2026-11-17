@@ -3,6 +3,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
+import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { LoungeMember } from '@/src/types/social.types';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -50,6 +51,10 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
 
   // Only approved/muted/banned are "members"; pending live in the At-the-Door panel.
   const roster = members.filter(m => m.status !== 'pending');
+  // The reader the host has banned holds no seat to step out of: stepping out took their row, and the
+  // host's UNBAN with it, while the ban stood (review round 9).
+  const myId = useAuthStore((st) => st.user?.id ?? null);
+  const iAmBanned = members.some((m) => m.user_id === myId && m.status === 'banned');
 
   const handleLeave = () => {
     Alert.alert('Step out of this salon?', 'You can rejoin a public salon any time; a private one needs the host to re-admit you.', [
@@ -152,6 +157,9 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
               <Text style={s.memberActionText}>{muted ? 'UNMUTE' : 'MUTE'}</Text>
             </PressableScale>
 
+            {/* Not over a ban: the banned hold no seat to be removed from, and the removal took their row,
+                and UNBAN with it, while the ban stood (review round 9). */}
+            {banned ? null : (
             <PressableScale hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
               style={s.memberAction}
               haptic="selection"
@@ -160,6 +168,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
               <DoorClosed size={12} color={BLOOD} strokeWidth={1.5} />
               <Text style={[s.memberActionText, { color: BLOOD_INK }]}>REMOVE</Text>
             </PressableScale>
+            )}
 
             <PressableScale hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
               style={[s.memberAction, s.memberActionBan]}
@@ -242,7 +251,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
                   <Trash2 size={14} color={colors.sepia} strokeWidth={1.5} />
                   <Text style={s.leaveText}>INCINERATE SALON</Text>
                 </PressableScale>
-              ) : (
+              ) : iAmBanned ? null : (
                 <PressableScale style={s.leaveBtn} onPress={handleLeave} accessibilityRole="button">
                   <LogOut size={14} color={colors.sepia} strokeWidth={1.5} />
                   <Text style={s.leaveText}>STEP OUT OF SALON</Text>

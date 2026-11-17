@@ -11,14 +11,18 @@
  *
  * Written because the hook was the ONE place tonight where a behavioural test
  * was available and I pinned source text instead.
+ *
+ * Since review round 9 the next page starts after the last row the SERVER sent
+ * (its time, then its id: a keyset `or()`), no longer at an offset, so the
+ * claims about where a page starts are read from the filter it is asked with.
  */
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useDispatchArchive, ARCHIVE_PAGE } from '../useDispatchArchive';
 
 const SUBJECT = 550;
 
-/** What `.range(from, to)` was asked for, in order. */
-const ranges: [number, number][] = [];
+/** The keyset filter each page of filings was asked with, in order (null: from the top). */
+const asks: (string | null)[] = [];
 let pages: Record<string, unknown>[][] = [];
 /** The answer to "which filing is the oldest" (the span's other end). */
 let mockOldest: { data: unknown; error: unknown } = { data: [], error: null };
@@ -26,9 +30,13 @@ let mockOldest: { data: unknown; error: unknown } = { data: [], error: null };
 const chain = () => {
   const c: Record<string, unknown> = {};
   const self = () => c;
-  for (const f of ['select', 'eq', 'is', 'ilike', 'order', 'limit'] as const) c[f] = () => self();
-  c.range = (from: number, to: number) => {
-    ranges.push([from, to]);
+  let past: string | null = null;
+  for (const f of ['select', 'eq', 'is', 'ilike', 'order'] as const) c[f] = () => self();
+  c.or = (filter: string) => { past = filter; return self(); };
+  // A page of filings ends at `.limit(ARCHIVE_PAGE)`; the oldest's read at `.limit(1)`, awaited below.
+  c.limit = (n: number) => {
+    if (n !== ARCHIVE_PAGE) return self();
+    asks.push(past);
     const page = pages.shift() ?? [];
     return Promise.resolve({ data: page, error: null, count: 99 });
   };
@@ -38,7 +46,7 @@ const chain = () => {
 
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: () => chain() } }));
 jest.mock('@/src/stores/dispatch', () => ({
-  useDispatch: { getState: () => ({ loadMarks: jest.fn(), certifiedIds: new Set<string>() }) },
+  useDispatch: { getState: () => ({ loadMarks: jest.fn(), certifiedIds: new Set<string>(), critiqued: {} }) },
 }));
 jest.mock('@/src/utils/logger', () => ({
   logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
@@ -65,20 +73,20 @@ const good = (id: string) => ({
   subject_title: 'Tokyo Story',
 });
 
-/** A row the parser will DROP — the whole point of the test. */
-const malformed = () => ({ id: null, kind: 'nonsense' });
+/** A row the house sent (its id and time) that the parser will DROP — the whole point of the test. */
+const malformed = (id: string) => ({ id, kind: 'nonsense', created_at: '2026-08-01T10:00:00Z' });
 
 const fullPage = (prefix: string, withMalformed: boolean) => {
   const rows: Record<string, unknown>[] = [];
   for (let i = 0; i < ARCHIVE_PAGE - (withMalformed ? 1 : 0); i += 1) {
     rows.push(good(`${prefix}${i}`));
   }
-  if (withMalformed) rows.push(malformed());
+  if (withMalformed) rows.push(malformed(`${prefix}-unreadable`));
   return rows;
 };
 
 beforeEach(() => {
-  ranges.length = 0;
+  asks.length = 0;
   pages = [];
   mockOldest = { data: [], error: null };
 });
@@ -134,13 +142,13 @@ describe('a film archive never shows the same filing twice', () => {
     expect(shown).toBe(ARCHIVE_PAGE - 1);
 
     await act(async () => { result.current.loadMore(); });
-    await waitFor(() => expect(ranges.length).toBeGreaterThan(1));
+    await waitFor(() => expect(asks.length).toBeGreaterThan(1));
 
-    // THE CLAIM: the second page starts at what the server served (ARCHIVE_PAGE),
-    // not at what survived parsing (ARCHIVE_PAGE - 1). Starting a row early is
-    // what made the archive repeat itself.
-    expect(ranges[1][0]).toBe(ARCHIVE_PAGE);
-    expect(ranges[1][0]).not.toBe(shown);
+    // THE CLAIM: the second page starts after the last row the server served
+    // (the unreadable one), not after the last filing that survived parsing.
+    // Starting a row early is what made the archive repeat itself.
+    expect(asks).toEqual([null,
+      'created_at.lt."2026-08-01T10:00:00Z",and(created_at.eq."2026-08-01T10:00:00Z",id.lt."a-unreadable")']);
   });
 
   it('shows no filing twice across the seam', async () => {
@@ -182,15 +190,15 @@ describe('a film archive never shows the same filing twice', () => {
     await act(async () => {
       result.current.choose({ subjectId: SUBJECT, film: { id: SUBJECT, title: 'A', sub: null, image: null }, filings: 40 } as never);
     });
-    await waitFor(() => expect(ranges.length).toBe(1));
+    await waitFor(() => expect(asks.length).toBe(1));
 
     await act(async () => {
       result.current.choose({ subjectId: 999, film: { id: 999, title: 'B', sub: null, image: null }, filings: 40 } as never);
     });
-    await waitFor(() => expect(ranges.length).toBe(2));
+    await waitFor(() => expect(asks.length).toBe(2));
 
-    // The second film opens at 0. Carrying the first film's offset would skip
-    // its opening filings entirely.
-    expect(ranges[1][0]).toBe(0);
+    // The second film opens from the top. Carrying the first film's place would
+    // skip its opening filings entirely.
+    expect(asks[1]).toBeNull();
   });
 });

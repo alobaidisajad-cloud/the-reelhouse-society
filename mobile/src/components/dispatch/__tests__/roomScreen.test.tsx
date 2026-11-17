@@ -68,7 +68,9 @@ interface Asked {
   ilike: Record<string, unknown>;
   is: Record<string, unknown>;
   order?: [string, unknown][];
-  range?: [number, number];
+  /** The page's length, and where it starts (a keyset `or()`; none on the first page). */
+  limit?: number;
+  or?: string;
 }
 let mockAsked: Asked[] = [];
 let mockMember: Record<string, unknown> | null = null;
@@ -91,8 +93,9 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.is = (k: string, v: unknown) => { asked.is[k] = v; return self(); };
       chain.order = (k: string, o: unknown) => { (asked.order ??= []).push([k, o]); return self(); };
       chain.maybeSingle = () => Promise.resolve({ data: mockMember, error: mockMemberError });
-      chain.range = (a: number, b: number) => {
-        asked.range = [a, b];
+      chain.or = (f: string) => { asked.or = f; return self(); };
+      chain.limit = (n: number) => {
+        asked.limit = n;
         return Promise.resolve(mockRowsError ? { data: null, error: mockRowsError } : { data: mockRows, error: null });
       };
       // The store's own three reads for the member's marks.
@@ -302,7 +305,9 @@ describe('a member’s room', () => {
     expect(q?.is.ended_at).toBeNull();
     // Newest first, the id breaking a tied moment, so a page never repeats the last one's filing.
     expect(q?.order).toEqual([['created_at', { ascending: false }], ['id', { ascending: false }]]);
-    expect(q?.range).toEqual([0, 19]);
+    // One page from the top: a next page starts after the last row read (review round 9), never at an offset.
+    expect(q?.limit).toBe(20);
+    expect(q?.or).toBeUndefined();
     // The card's columns. A room of essays asking for `full_content` would be
     // twenty essays' worth of text to draw twenty openings.
     expect(q?.columns).not.toContain('full_content');

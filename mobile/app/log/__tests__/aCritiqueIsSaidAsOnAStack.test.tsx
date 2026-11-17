@@ -131,6 +131,14 @@ describe('filing', () => {
     await file(await mount());
     expect(mockToastError).toHaveBeenCalledWith('This member limits who may annotate their critiques.');
   });
+
+  it('refused for the member’s own standing, it says the house’s words, never the maker’s setting (review round 9)', async () => {
+    const add = mockLogService.addLogComment;
+    expect(add).toBeDefined();
+    add!.mockRejectedValue(Object.assign(new Error('Your account is suspended until 30 Nov 2026 12:00 UTC.'), { code: '42501' }));
+    await file(await mount());
+    expect(mockToastError.mock.calls).toEqual([['Your account is suspended until 30 Nov 2026 12:00 UTC.']]);
+  });
 });
 
 describe('taking one back', () => {

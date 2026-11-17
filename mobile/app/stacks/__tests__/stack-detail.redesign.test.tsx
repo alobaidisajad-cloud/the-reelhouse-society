@@ -1218,6 +1218,15 @@ describe('the critiques as they stand, sent or waiting', () => {
     expect(mockToastError).toHaveBeenCalledWith('This member limits who may annotate their critiques.');
   });
 
+  it('refused for the member’s own standing, it says the house’s words, never the maker’s setting (review round 9)', async () => {
+    mockToastError.mockClear();
+    mockAddComment.mockRejectedValue(Object.assign(new Error('Your account has been silenced by The Society.'), { code: '42501' }));
+    const r = await open();
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'Said from the corner.'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
+    expect(mockToastError.mock.calls).toEqual([['Your account has been silenced by The Society.']]);
+  });
+
   it('a send that timed out is kept for later, not thrown away as refused', async () => {
     // The page's own copy of "is this the network?" knew only fetch/network/offline.
     mockAddComment.mockRejectedValue({ code: '57014', message: 'canceling statement due to statement timeout' });

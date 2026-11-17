@@ -56,7 +56,9 @@ interface Asked {
   is: Record<string, unknown>;
   ilike: Record<string, unknown>;
   order?: [string, unknown];
-  range?: [number, number];
+  /** A page of the film's filings, and where it starts (a keyset `or()`; none on the first page). */
+  page?: boolean;
+  or?: string;
   limit?: number;
 }
 let mockAsked: Asked[] = [];
@@ -68,6 +70,8 @@ let mockSearchError: unknown = null;
 let mockFilingError: unknown = null;
 /** When set, the film's first page waits for this to be called. */
 let mockHoldFilings: Promise<void> | null = null;
+/** The pattern each house count of the search was asked with (dispatch_archive_films). */
+let mockCountAsked: unknown[] = [];
 
 jest.mock('@/src/lib/supabase', () => ({
   supabase: {
@@ -84,19 +88,21 @@ jest.mock('@/src/lib/supabase', () => ({
       chain.in = () => Promise.resolve({ data: [], error: null });
       // A mark's write: accepted (without it the store undid every certify).
       chain.insert = () => Promise.resolve({ data: null, error: null });
-      chain.range = (a: number, b: number) => {
-        asked.range = [a, b];
-        const answer = () => ({
-          data: mockFilingError ? null : mockFilingRows, error: mockFilingError,
-          count: mockCount ?? mockFilingRows.length,
-        });
-        return mockHoldFilings ? mockHoldFilings.then(answer) : Promise.resolve(answer());
-      };
+      chain.or = (f: string) => { asked.or = f; return self(); };
       chain.limit = (n: number) => {
         asked.limit = n;
-        // Two different reads end in `.limit`: the title search, and the single
-        // oldest row the span needs. They are told apart by what was ordered.
+        // Three different reads end in `.limit`: the title search, the single oldest row the
+        // span needs, and a page of the film's filings. The search names its title, and the
+        // oldest is ordered oldest first; a page is neither.
         const ascending = (asked.order?.[1] as { ascending?: boolean })?.ascending === true;
+        if (!ascending && asked.ilike.subject_title === undefined) {
+          asked.page = true;
+          const answer = () => ({
+            data: mockFilingError ? null : mockFilingRows, error: mockFilingError,
+            count: mockCount ?? mockFilingRows.length,
+          });
+          return mockHoldFilings ? mockHoldFilings.then(answer) : Promise.resolve(answer());
+        }
         return Promise.resolve({
           data: ascending ? (mockOldest ? [{ created_at: mockOldest }] : []) : (mockSearchError ? null : mockSearchRows),
           error: ascending ? null : mockSearchError,
@@ -106,7 +112,13 @@ jest.mock('@/src/lib/supabase', () => ({
         Promise.resolve({ data: [], error: null }).then(res);
       return chain;
     },
-    rpc: () => Promise.resolve({ data: null, error: null }),
+    // The search's count by the house (review round 9), answered as a house without the function
+    // yet: the search then reads the rows itself, as these cases were written for.
+    rpc: (name: string, args: { p_pattern?: string }) => {
+      if (name !== 'dispatch_archive_films') return Promise.resolve({ data: null, error: null });
+      mockCountAsked.push(args.p_pattern);
+      return Promise.resolve({ data: null, error: { code: 'PGRST202', message: 'Could not find the function public.dispatch_archive_films(p_pattern) in the schema cache' } });
+    },
   },
 }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
@@ -170,13 +182,15 @@ const type = async (r: ReturnType<typeof render>, text: string) => {
   await fireEvent.changeText(r.getByLabelText('Search the archive for a film'), text);
   await act(async () => {
     jest.advanceTimersByTime(400);
-    await Promise.resolve(); await Promise.resolve();
+    // The house's count is asked first, then the rows: a few more turns for the second read.
+    for (let i = 0; i < 6; i++) await Promise.resolve();
   });
 };
 
 beforeEach(() => {
   jest.useFakeTimers();
   mockAsked = [];
+  mockCountAsked = [];
   mockSearchRows = [];
   mockFilingRows = [];
   mockOldest = null;
@@ -219,6 +233,8 @@ describe('the archive', () => {
     // Unescaped, `_` matches any character and `8_½` would find `8½` variants
     // and anything else three characters long that starts with 8.
     expect(search()!.ilike.subject_title).toBe('%8\\_½%');
+    // The house's count was asked with the same escaped pattern.
+    expect(mockCountAsked).toEqual(['8\\_½']);
   });
 
   it('escapes the wildcard that is NOT a SQL one', async () => {
@@ -233,6 +249,7 @@ describe('the archive', () => {
     await act(async () => { await Promise.resolve(); });
     await type(r, 'sta*ker');
     expect(search()!.ilike.subject_title).toBe('%sta\\*ker%');
+    expect(mockCountAsked).toEqual(['sta\\*ker']);
   });
 
   it('refuses a term that would match everything', async () => {
@@ -286,7 +303,7 @@ describe('the archive', () => {
     expect(r.getByText(/2019–2026/)).toBeTruthy();
     // The margin's `28` is the day it was filed, and is said as one.
     expect(r.getByLabelText('Filed on the 28th')).toBeTruthy();
-    const filings = mockAsked.find((a) => a.range !== undefined);
+    const filings = mockAsked.find((a) => a.page);
     expect(filings?.opts).toEqual({ count: 'exact' });
     expect(filings?.eq.subject_id).toBe(42);
   });
@@ -577,7 +594,9 @@ describe('a critique written from the archive (review round 8)', () => {
 describe('a later page that could not be read (review round 6)', () => {
   // A later page's failure was only logged: the list ended as if it were the whole archive, and
   // every scroll event asked again.
-  const ranges = () => mockAsked.filter((a) => a.range !== undefined).map((a) => a.range);
+  // Where each page of filings started: the top, then after the last row read (review round 9).
+  const pages = () => mockAsked.filter((a) => a.page).map((a) => a.or ?? null);
+  const afterF19 = `created_at.lt."${at(2026, 8, 28)}",and(created_at.eq."${at(2026, 8, 28)}",id.lt."f19")`;
   const scrollToTheFoot = async (r: ReturnType<typeof render>) => {
     const list = r.container.queryAll((n) => typeof n.props.onScroll === 'function' && n.props.scrollEventThrottle === 200)[0];
     expect(list).toBeDefined();
@@ -598,19 +617,19 @@ describe('a later page that could not be read (review round 6)', () => {
       await fireEvent.press(r.getByLabelText(/Stalker\. 1 filing/));
       for (let i = 0; i < 6; i++) await Promise.resolve();
     });
-    expect(ranges()).toEqual([[0, 19]]);
+    expect(pages()).toEqual([null]);
 
     // The next page fails.
     mockFilingError = { message: 'TypeError: Network request failed' };
     await scrollToTheFoot(r);
-    expect(ranges()).toEqual([[0, 19], [20, 39]]);
+    expect(pages()).toEqual([null, afterF19]);
     expect(r.getByText('The rest of this film’s filings could not be reached.')).toBeTruthy();
     // The rows drawn stay.
     expect(r.getByText(/Take 19\./)).toBeTruthy();
 
     // Scrolling on does not ask again by itself.
     await scrollToTheFoot(r);
-    expect(ranges()).toEqual([[0, 19], [20, 39]]);
+    expect(pages()).toEqual([null, afterF19]);
 
     // The member asks: the rest is read, and the line goes.
     mockFilingError = null;
@@ -620,7 +639,7 @@ describe('a later page that could not be read (review round 6)', () => {
       await fireEvent.press(r.getByLabelText('Try again: ask for the rest'));
       for (let i = 0; i < 6; i++) await Promise.resolve();
     });
-    expect(ranges()).toEqual([[0, 19], [20, 39], [20, 39]]);
+    expect(pages()).toEqual([null, afterF19, afterF19]);
     expect(r.getByText(/The last take\./)).toBeTruthy();
     expect(r.queryByText('The rest of this film’s filings could not be reached.')).toBeNull();
   });

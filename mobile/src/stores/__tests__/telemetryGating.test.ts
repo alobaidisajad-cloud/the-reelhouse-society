@@ -277,10 +277,11 @@ describe('endorsements — the 23505 rule batch 2 claimed but never proved', () 
     });
 
     it('a genuine failure IS reported with the endorsement scope', async () => {
-        mockEndorseError = { code: '42501', message: 'permission denied' };
+        // Not a refusal by a rule (42501, said and not reported since review round 9): a broken write.
+        mockEndorseError = { code: '23514', message: 'new row violates check constraint' };
         await expect(useFilmStore.getState().toggleEndorse('log-2')).rejects.toBeDefined();
         expect(captureError).toHaveBeenCalledWith(
-            expect.objectContaining({ code: '42501' }),
+            expect.objectContaining({ code: '23514' }),
             expect.objectContaining({ scope: 'interactionSlice.toggleEndorsement' }),
         );
     });
@@ -538,10 +539,11 @@ describe('the last two store paths', () => {
 
     it('toggleListEndorse reports a genuine failure', async () => {
         useFilmStore.setState({ interactions: [], _listEndorsedIndex: {} } as never);
-        mockEndorseError = { code: '42501', message: 'permission denied' };
+        // A broken write, not a rule's refusal (42501 is said and not reported since review round 9).
+        mockEndorseError = { code: '23514', message: 'new row violates check constraint' };
         await attempt(() => useFilmStore.getState().toggleListEndorse('list-y'));
         expect(captureError).toHaveBeenCalledWith(
-            expect.objectContaining({ code: '42501' }),
+            expect.objectContaining({ code: '23514' }),
             expect.objectContaining({ scope: 'interactionSlice.toggleEndorsement' }),
         );
     });
