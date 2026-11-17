@@ -16,7 +16,11 @@ import { files as universe } from '@/test-utils/universe';
 const MOBILE = join(__dirname, '..', '..', '..');
 
 
-/** Each `supabase.channel(topic, options)`: where, its topic as written, and whether private. */
+/**
+ * Each `supabase.channel(topic, options)`: where, its topic as written, and whether private. A channel
+ * opened through openChannel (src/lib/openChannel.ts, review round 9) is handed its topic as the
+ * opener's parameter: its topic is the one written at `openChannel(T, (topic) => supabase.channel(topic, …))`.
+ */
 const channelsIn = (file: string, text: string) => {
   const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const found: { site: string; topic: string; private: boolean }[] = [];
@@ -24,12 +28,23 @@ const channelsIn = (file: string, text: string) => {
     if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === 'channel'
       && n.expression.expression.getText() === 'supabase') {
       const [topic, opts] = n.arguments;
+      // The opener's parameter, read back to the topic written at its openChannel call.
+      let named = topic?.getText() ?? '';
+      for (let up: ts.Node | undefined = n.parent; up; up = up.parent) {
+        if (!ts.isArrowFunction(up) && !ts.isFunctionExpression(up)) continue;
+        const param = up.parameters[0]?.name.getText();
+        const call = up.parent;
+        if (param && param === named && ts.isCallExpression(call) && call.expression.getText() === 'openChannel' && call.arguments[1] === up) {
+          named = call.arguments[0]?.getText() ?? named;
+        }
+        break;
+      }
       const config = opts && ts.isObjectLiteralExpression(opts)
         ? opts.properties.find((p): p is ts.PropertyAssignment => ts.isPropertyAssignment(p) && p.name.getText() === 'config') : undefined;
       const isPrivate = !!config && ts.isObjectLiteralExpression(config.initializer) && config.initializer.properties.some((p) =>
         ts.isPropertyAssignment(p) && p.name.getText() === 'private' && p.initializer.kind === ts.SyntaxKind.TrueKeyword);
       found.push({ site: `${file.slice(MOBILE.length + 1).replace(/\\/g, '/')}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1}`,
-        topic: topic?.getText() ?? '', private: isPrivate });
+        topic: named, private: isPrivate });
     }
     ts.forEachChild(n, visit);
   };
@@ -63,4 +78,12 @@ it('the reader says NO to a public join, and to one whose private is not plainly
   expect(read('supabase.channel(\'a\', { config: { presence: { key: 1 } } });')).toEqual([false]);
   expect(read('supabase.channel(\'a\', { config: { private: isPrivate } });')).toEqual([false]);
   expect(read('supabase.channel(\'a\', opts);')).toEqual([false]);
+});
+
+it('reads a topic through openChannel: the opener\'s parameter is the topic written at its call', () => {
+  const topics = (code: string) => channelsIn('x.ts', code).map((c) => c.topic);
+  expect(topics('openChannel(\'global_notifications\', (topic) => supabase.channel(topic, { config: { private: true } }));')).toEqual(['\'global_notifications\'']);
+  expect(topics('openChannel(\'a\', (t) => { const c = supabase.channel(t, { config: { private: true } }).subscribe(); return c; });')).toEqual(['\'a\'']);
+  // Not an opener: a parameter of another call stays as written.
+  expect(topics('other(\'a\', (topic) => supabase.channel(topic, { config: { private: true } }));')).toEqual(['topic']);
 });
