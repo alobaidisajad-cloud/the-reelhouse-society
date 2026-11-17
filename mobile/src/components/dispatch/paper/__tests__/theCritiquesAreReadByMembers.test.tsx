@@ -28,7 +28,7 @@ describe("the critiques' foot, for a visitor", () => {
   it('SIGN IN TO READ THEM asks them in, once', async () => {
     const r = render(<CritiqueFooter visitor shown={0} total={12} onMore={jest.fn()} onRetry={jest.fn()} />);
     expect(r.getByText('SIGN IN TO READ THEM')).toBeTruthy();
-    await act(async () => { await fireEvent.press(r.getByLabelText('Sign in to read the critiques')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Sign in to read them')); });
     expect(mockAskIn).toHaveBeenCalledTimes(1);
   });
 

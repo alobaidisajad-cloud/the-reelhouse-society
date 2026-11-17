@@ -1529,7 +1529,7 @@ describe('a visitor on a filing is asked in (review round 10)', () => {
     // No end and no next page under critiques the house does not send them.
     expect(visitor.queryByText(/MORE · /)).toBeNull();
     expect(visitor.queryByText('✦', { includeHiddenElements: true })).toBeNull();
-    await act(async () => { await fireEvent.press(visitor.getByLabelText('Sign in to read the critiques')); });
+    await act(async () => { await fireEvent.press(visitor.getByLabelText('Sign in to read them')); });
     expect(mockAskIn).toHaveBeenCalledTimes(1);
     visitor.unmount();
 
@@ -1537,7 +1537,7 @@ describe('a visitor on a filing is asked in (review round 10)', () => {
     mockRow = row(TAKE);
     const member = await mount();
     expect(member.queryByText('THE CRITIQUES ARE READ BY MEMBERS')).toBeNull();
-    expect(member.queryByLabelText('Sign in to read the critiques')).toBeNull();
+    expect(member.queryByLabelText('Sign in to read them')).toBeNull();
     // The thread's end, as it was.
     expect(member.getByText('✦', { includeHiddenElements: true })).toBeTruthy();
   });

@@ -319,7 +319,9 @@ export const CritiqueFooter = memo(function CritiqueFooter({
     return (
       <View style={{ paddingVertical: 16, alignItems: 'center', gap: 6 }}>
         <Text style={p.ballotFoot} {...scaledTextProps}>THE CRITIQUES ARE READ BY MEMBERS</Text>
-        <PressableScale onPress={() => askIn()} haptic="selection" accessibilityRole="button" accessibilityLabel="Sign in to read the critiques">
+        <PressableScale onPress={() => askIn()} haptic="selection" room="vertical" accessibilityRole="button"
+          accessibilityLabel="Sign in to read them" accessibilityHint="The critiques are read by members.">
+
           <Text style={[p.ballotFoot, { color: colors.sepia }]} {...scaledTextProps}>SIGN IN TO READ THEM</Text>
         </PressableScale>
       </View>
