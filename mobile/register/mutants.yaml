@@ -6831,3 +6831,12 @@ mutants:
         find: "  if (!presses) return '';\n"
         replace: "  if (!presses || p.disabled === true || p.accessibilityState && (p.accessibilityState as { disabled?: boolean }).disabled) return '';\n"
     proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "marks a disabled control as disabled, not as nothing: a screen reader still reads and names it" }
+
+  - id: shape-train-rehearses-all-before-any
+    class: DB-a-car-rehearsed-under-earlier-locks
+    source: shape
+    edits:
+      - file: supabase/diagnostics/train.cjs
+        find: "      ...rest.flatMap((m) => [\n        { kind: 'rehearse', what: `rehearse ${m.name} on production as it now is`, car: m },\n        { kind: 'apply', what: `apply ${m.name}`, car: m },"
+        replace: "      ...rest.map((m) => ({ kind: 'rehearse', what: `rehearse ${m.name} on production as it now is`, car: m })),\n      ...rest.flatMap((m) => [\n        { kind: 'apply', what: `apply ${m.name}`, car: m },"
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "checks the tree, production and a copy first, then goes car by car: each rehearsed, applied and probed before the next" }

@@ -3704,3 +3704,17 @@ classes:
       - { kind: running, file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "a section read to its end counts exactly, and offers nothing more" }
     fix: "each source is its own paged read: records by search_logs (the film, the writing or the handle of its writer, newest first, the hidden left out at the house) and members by search_members (the handle itself, then handles and names that begin with the words, then the rest, paged by closeness and handle), both 20261118_01, stacks by a keyset cursor, films by the catalogue page; each tab reads on at its foot, said while it reads and when it fails (mutants shape-search-records-stop-at-the-first-page, shape-members-paged-without-their-closeness)"
     places: [none]
+
+  - id: DB-a-car-rehearsed-under-earlier-locks
+    title: "The train rehearsed every car before it applied any, each with the cars before it applied in its own transaction, so a later car rehearsed while the earlier cars' blocking locks were held: on production members waited seconds on logs, lists and the salons"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 12, every feature, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "checks the tree, production and a copy first, then goes car by car: each rehearsed, applied and probed before the next" }
+      - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "rehearses each car alone, on production as the cars before it left it, never with their locks held" }
+      - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "says NO to a rehearsal that holds another pending car: it would apply that car out of its turn, or again" }
+    fix: "train.cjs goes car by car: each pending car rehearsed on production as the cars before it left it, applied, probed, before the next; a rehearsal holding another pending car is refused; train-locks.mjs measures run A the same way (review round 12, measured on 100,000 members)"
+    places: [none]
