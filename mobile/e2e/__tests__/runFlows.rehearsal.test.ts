@@ -50,7 +50,12 @@ case "$1" in
     shift
     case "$*" in
       -c) ;;
-      "-v threadtime") [ -f "$T/state/dead-stream" ] && exit 0; exec tail -n +1 -f "$T/device.log" ;;
+      "-v threadtime") [ -f "$T/state/dead-stream" ] && exit 0
+        # A copy behind the phone, as a busy runner's is: what the phone said reaches it seconds later.
+        if [ -f "$T/state/slow-stream" ]; then
+          n=0; while :; do sleep 4; m=$(wc -l < "$T/device.log"); [ "$m" -gt "$n" ] && sed -n "$((n + 1)),$m"p "$T/device.log"; n=$m; done
+        fi
+        exec tail -n +1 -f "$T/device.log" ;;
       *) cat "$T/device.log" ;;
     esac ;;
   exec-out) cat "$T/fixtures/dump.xml" ;;
@@ -78,6 +83,8 @@ case "$1" in
       "settings get secure autofill_service") echo null ;;
       date*) case "$cmd" in *S.%3N*) date +'%m-%d %H:%M:%S.%3N' ;; *S.000*) date +'%m-%d %H:%M:%S.000' ;; *) date +'%m-%d %H:%M:%S' ;; esac ;;
       "dumpsys input_method") echo "mInputShown=true" ;;
+      # A mark the runner writes to the phone's log, as Android's log command writes it.
+      "log -t "*) set -- $cmd; echo "$(date +'%m-%d %H:%M:%S.%3N')  4242  4242 I $3: $4" >> "$T/device.log" ;;
       "dumpsys window windows") cat "$T/fixtures/windows.txt" ;;
       # The app's process, as the phone has it: a launch starts it, a stop or a clear ends it.
       "pidof com.reelhouse.society") cat "$T/state/pid" 2>/dev/null ;;
@@ -397,6 +404,14 @@ describe('a shipped client\'s own crash (E2E_OLD_CLIENT, from the real old-clien
     expect(gate).toContain(`${OWN}: during b_flow (attempt 2):`);
     // verify-writes.mjs's list: a_flow may have saved twice, b_flow is not checked.
     expect(file(r, 'own-crash-flows.txt')).toBe('a_flow\tretried\nb_flow\tretried\nb_flow\tnot-judged\n');
+    always(r);
+  });
+
+  it('is found in its attempt though the runner\'s copy of the log is seconds behind the phone', async () => {
+    // A loaded runner's copy: the crash once reached it after a fixed wait had cut the attempt.
+    const r = await rehearse(['a_flow'], { a_flow: ['own-crash', 'pass'] }, { env: OLD, state: { 'slow-stream': '1' } });
+    expect({ status: r.status, errors: annotations(r, 'error') }).toEqual({ status: 0, errors: [] });
+    expect(file(r, 'maestro-summary.txt')).toMatch(new RegExp(`^\\[Retried\\] a_flow \\(its first attempt, \\d+s: ${OWN}\\)\\n\\[Passed\\] a_flow \\(1s\\)\\n$`));
     always(r);
   });
 

@@ -3718,3 +3718,15 @@ classes:
       - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "says NO to a rehearsal that holds another pending car: it would apply that car out of its turn, or again" }
     fix: "train.cjs goes car by car: each pending car rehearsed on production as the cars before it left it, applied, probed, before the next; a rehearsal holding another pending car is refused; train-locks.mjs measures run A the same way (review round 12, measured on 100,000 members)"
     places: [none]
+
+  - id: E2E-a-log-cut-before-it-arrived
+    title: "Each failed attempt's device log was cut from the runner's copy after a fixed two seconds, but the copy is behind the phone by as long as the runner is busy: on a loaded machine a shipped client's own crash was cut out of its attempt, and the flow was failed as a plain step failure instead of run again"
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "the local push gate, runFlows rehearsal, 2026-11-18: an old client's own crash judged a failed step" }
+    methods:
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "is found in its attempt though the runner's copy of the log is seconds behind the phone" }
+    fix: "run-flows.sh's cut_log writes a mark to the device's log (log -t e2e-cut) and cuts the attempt once the copy holds it, so every line the attempt left is in its cut; a device that takes no mark or a copy that stopped is cut as it is, and a mark not seen in 60 s is warned of (mutant shape-attempt-log-cut-on-a-guess)"
+    places: [emulator]

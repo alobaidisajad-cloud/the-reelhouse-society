@@ -252,9 +252,22 @@ device_clock() {
   esac
 }
 # The device's log for one attempt alone, from its start. Its lines begin
-# "MM-DD HH:MM:SS.mmm", which compare as text within the run.
+# "MM-DD HH:MM:SS.mmm", which compare as text within the run. The copy is
+# behind the device by as long as the runner is busy (a fixed two seconds once
+# cut a crash out of its attempt on a loaded machine), so a mark is written to
+# the device's log and the copy is cut once it holds the mark: every line the
+# attempt left is before it. A device that takes no mark, or a copy that has
+# stopped, has nothing more to give, and is cut as it is.
 cut_log() {
-  sleep 2   # the copy is a moment behind the device
+  local mark waited=0
+  mark="e2e-cut-$(date +%s%N)-$RANDOM"
+  if timeout 20 adb shell log -t e2e-cut "$mark" < /dev/null > /dev/null 2>&1; then
+    until grep -qF "$mark" "$OUT/logcat-stream.txt" 2>/dev/null; do
+      kill -0 "$streamer" 2>/dev/null || break
+      [ $waited -ge 60 ] && { echo "::warning title=E2E::the device log copy did not show its mark in 60 s; ${2##*/} is cut as it is, and may lack the attempt's last lines"; break; }
+      sleep 1; waited=$((waited + 1))
+    done
+  fi
   if [ -n "$1" ]; then awk -v s="$1" '($1 " " $2) >= s' "$OUT/logcat-stream.txt" > "$2"; else : > "$2"; fi
 }
 device_state() { timeout 20 adb get-state > /dev/null 2>&1 && echo alive || echo gone; }

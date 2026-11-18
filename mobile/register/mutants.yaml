@@ -6840,3 +6840,12 @@ mutants:
         find: "      ...rest.flatMap((m) => [\n        { kind: 'rehearse', what: `rehearse ${m.name} on production as it now is`, car: m },\n        { kind: 'apply', what: `apply ${m.name}`, car: m },"
         replace: "      ...rest.map((m) => ({ kind: 'rehearse', what: `rehearse ${m.name} on production as it now is`, car: m })),\n      ...rest.flatMap((m) => [\n        { kind: 'apply', what: `apply ${m.name}`, car: m },"
     proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "checks the tree, production and a copy first, then goes car by car: each rehearsed, applied and probed before the next" }
+
+  - id: shape-attempt-log-cut-on-a-guess
+    class: E2E-a-log-cut-before-it-arrived
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: "    until grep -qF \"$mark\" \"$OUT/logcat-stream.txt\" 2>/dev/null; do"
+        replace: "    sleep 2; until true; do"
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "is found in its attempt though the runner's copy of the log is seconds behind the phone" }
