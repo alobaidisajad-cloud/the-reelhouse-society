@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { WatchlistItem } from '../../types';
 import { isNetworkError } from '../../utils/networkError';
 import { enqueueMutation, getOfflineQueue } from '../../utils/offlineQueue';
+import { keyOf, writeOnline } from '../../utils/oneWritePerThing';
 import reelToast from '../../utils/reelToast';
 import { useAuthStore } from '../auth';
 import { runWithMutex } from './helpers/promiseMutex';
@@ -153,13 +154,15 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
         // log flow follows.
 
         const dbOperation = async () => {
-            const { error } = await supabase.from('watchlists').insert([{
+            // Through the one door of this film on the watchlist (writeOnline): a removal of it still
+            // queued, older than this, is let go once this lands (or is found already there).
+            const { error } = await writeOnline(keyOf({ type: 'add_watchlist', payload: { film_id: film.id } }), async () => await supabase.from('watchlists').insert([{
                 user_id: user.id,
                 film_id: film.id,
                 film_title: film.title ?? film.name ?? 'Untitled',
                 poster_path: film.poster_path ?? null,
                 year: film.release_date ? (parseInt(film.release_date.slice(0, 4)) || null) : null,
-            }]);
+            }]), { landed: (r) => !r.error || r.error.code === '23505' });
 
             // Only the failure branches below write, and each rolls the
             // optimistic entry back. After a logout that entry is already gone
@@ -235,7 +238,10 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
         try { require('react-native').AccessibilityInfo.announceForAccessibility('Removed from watchlist'); } catch { /* test env */ }
 
         const dbOperation = async () => {
-            const { error } = await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId);
+            // The same door: an addition of this film still queued, older than this, is let go.
+            const { error } = await writeOnline(keyOf({ type: 'remove_watchlist', payload: { film_id: filmId } }),
+                async () => await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId),
+                { landed: (r) => !r.error });
 
             // Same as the add path: the only write below restores the film, and
             // restoring it after a logout hands it to whoever is next.

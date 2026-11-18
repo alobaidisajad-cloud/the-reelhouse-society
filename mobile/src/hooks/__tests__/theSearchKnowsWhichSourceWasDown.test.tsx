@@ -16,8 +16,8 @@ import { testQueryClient } from '@/test-utils/testQueryClient';
 import { supabaseFake } from '@/test-utils/supabaseFake';
 
 const mockHouse = supabaseFake({
-  answer: { lists: () => [] },
   rpc: {
+    search_stacks: [],
     search_members: [{ id: '11111111-1111-4111-8111-111111111111', username: 'kane', avatar_url: null, role: 'cinephile', closeness: 0 }],
     search_logs: [],
   },
@@ -40,7 +40,7 @@ afterEach(() => { mockTmdb.search.mockReset().mockResolvedValue({ results: [] })
 it('the catalogue down alone is carried with the answer, and is asked again', async () => {
   mockTmdb.search.mockRejectedValue(Object.assign(new Error('offline'), { name: 'TmdbUnreachable' }));
   const { result } = await renderHook(() => useUniversalSearch('kane'), { wrapper: Wrapper });
-  await waitFor(() => expect(result.current.data).toBeDefined());
+  await waitFor(() => expect([result.current.data !== undefined, result.current.isFetching]).toEqual([true, false]));
   expect(result.current.data?._down).toEqual({ films: true, users: false, logs: false, lists: false });
   expect(result.current.data?._partial).toBe(true);
   expect(result.current.data?.users.length).toBe(1);   // the rest of the search still works
@@ -55,7 +55,7 @@ it('the catalogue down alone is carried with the answer, and is asked again', as
 
 it('a search every source answered is clean', async () => {
   const { result } = await renderHook(() => useUniversalSearch('kane'), { wrapper: Wrapper });
-  await waitFor(() => expect(result.current.data).toBeDefined());
+  await waitFor(() => expect([result.current.data !== undefined, result.current.isFetching]).toEqual([true, false]));
   expect(result.current.data?._down).toEqual({ films: false, users: false, logs: false, lists: false });
   expect(result.current.data?._partial).toBe(false);
 });

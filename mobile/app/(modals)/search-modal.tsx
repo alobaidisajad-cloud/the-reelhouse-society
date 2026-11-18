@@ -101,7 +101,7 @@ export default function SearchModal() {
     return () => clearTimeout(t);
   }, [query]);
 
-  const { data, isFetching, isError, refetch, more, readingMore, moreFailed, loadMore } = useUniversalSearch(debouncedQuery);
+  const { data, isFetching, isError, refetch, answered, more, readingMore, moreFailed, loadMore } = useUniversalSearch(debouncedQuery);
 
   const searched = query.trim().length > 0;
   const searching = searched && (isFetching || debouncedQuery.trim() !== query.trim());
@@ -145,16 +145,19 @@ export default function SearchModal() {
 
   const filtered = useMemo<Row[]>(() => {
     if (tab !== 'all') return rowsOf[tab];
-    // ALL: each section's first few under its head, the head carrying the section's own count.
+    // ALL: each section's first few under its head, the head carrying the section's own count. Drawn
+    // in order, each section once every section above it has answered: a slower source never puts
+    // its rows above rows already drawn, under the member's finger (each tab draws its own at once).
     const all: Row[] = [];
     for (const { tab: key, take } of SAMPLED) {
+      if (!answered[SOURCE_OF[key]]) break;
       const rows = rowsOf[key];
       if (rows.length === 0) continue;
       all.push({ kind: 'head', id: `head-${key}`, tab: key, count: rows.length, more: more[SOURCE_OF[key]] });
       all.push(...rows.slice(0, take));
     }
     return all;
-  }, [tab, rowsOf, more]);
+  }, [tab, rowsOf, more, answered]);
 
   // The foot of a tab: the next page of its source, as it is read.
   const tabSource = tab === 'all' ? null : SOURCE_OF[tab];

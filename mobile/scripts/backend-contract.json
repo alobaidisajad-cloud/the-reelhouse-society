@@ -58,6 +58,14 @@
       "signature": "end_filing(p_post uuid, p_by text)"
     },
     {
+      "name": "forget_other_devices",
+      "signature": "forget_other_devices(p_keep_token text)"
+    },
+    {
+      "name": "forget_push_token",
+      "signature": "forget_push_token(p_token text, p_user uuid)"
+    },
+    {
       "name": "get_community_feed_auth_cursor",
       "signature": "get_community_feed_auth_cursor(p_limit integer, p_cursor_created_at timestamp with time zone, p_cursor_id uuid)"
     },
@@ -76,6 +84,10 @@
     {
       "name": "get_lounge_list",
       "signature": "get_lounge_list()"
+    },
+    {
+      "name": "get_marks_ledger",
+      "signature": "get_marks_ledger()"
     },
     {
       "name": "get_moderation_history_for_users",
@@ -138,6 +150,10 @@
       "signature": "my_entitlement_source()"
     },
     {
+      "name": "notices_page",
+      "signature": "notices_page(p_limit integer)"
+    },
+    {
       "name": "record_gate_event",
       "signature": "record_gate_event(p_event text, p_feature_id text, p_rank text, p_standing text)"
     },
@@ -180,6 +196,10 @@
     {
       "name": "search_members",
       "signature": "search_members(p_pattern text, p_handles_only boolean, p_cursor_closeness integer, p_cursor_username text, p_limit integer)"
+    },
+    {
+      "name": "search_stacks",
+      "signature": "search_stacks(p_pattern text, p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer)"
     },
     {
       "name": "send_salon_typing",
@@ -419,6 +439,17 @@
       "gate_metrics.standing",
       "house_settings.films_synced",
       "house_settings.pushes_sent",
+      "interaction_budget.certs",
+      "interaction_budget.day",
+      "interaction_budget.follows",
+      "interaction_budget.refilled_at",
+      "interaction_budget.swept_at",
+      "interaction_budget.tokens",
+      "interaction_budget.user_id",
+      "interaction_churn.n",
+      "interaction_churn.since",
+      "interaction_churn.target",
+      "interaction_churn.user_id",
       "lobby_editions.author_id",
       "lobby_editions.chosen_at",
       "lobby_editions.score",

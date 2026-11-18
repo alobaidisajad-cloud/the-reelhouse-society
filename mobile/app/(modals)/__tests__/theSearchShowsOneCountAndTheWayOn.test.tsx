@@ -42,6 +42,7 @@ function answer(over: Record<string, unknown> = {}) {
       _partial: false, _down: none,
     },
     isFetching: false, isError: false, refetch: jest.fn(),
+    answered: { films: true, users: true, logs: true, lists: true },
     more: { ...none, logs: true }, readingMore: none, moreFailed: none, loadMore,
     ...over,
   };

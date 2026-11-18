@@ -22,7 +22,7 @@ export function memberFile(over: { activeTab?: string | null; dnaCardOpen?: bool
       targetUser: USER, loading: false,
       counts: { logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0 },
       mainLogs: [], archiveLogs: [], ledgerLogs: [], watchlist: [], vault: [], lists: [],
-      analyticsLogs: [], calendarData: [], serverStreak: 0,
+      calendarData: [], serverStreak: 0,
       serverAnalytics: null, highestRated: [], analyticsShape: null, taste: null,
       setTargetUser: noop, hasMoreLogs: false, hasMoreWatchlist: false, hasMoreVault: false,
       hasMoreLists: false, isLoadingMore: false, loadMoreLogs: noop, loadTabData: noop,

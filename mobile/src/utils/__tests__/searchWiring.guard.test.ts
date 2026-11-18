@@ -52,8 +52,9 @@ describe('every ilike carrying member input goes through the funnel', () => {
    * Files allowed to build an ilike pattern, and the reason. A new search must be
    * added here deliberately — which is the point: it forces someone to look.
    */
+  // The house-wide search builds no ilike of its own since round 13: each of its house sources is
+  // a function (search_members, search_logs, search_stacks) given the funnel's pattern (below).
   const SEARCH_SITES = [
-    'src/hooks/useUniversalSearch.ts',
     'src/services/ProfileDataService.ts',
     'src/services/FollowRequestService.ts',
     // The Dispatch's archive: a member names a film and the house's filings
@@ -108,6 +109,13 @@ describe('#84 · the LOGS tab asks the house for what exists', () => {
   it('reads the logs through search_logs, given the words through the funnel', () => {
     expect(hook.code).toMatch(/rpc\('search_logs', \{\s*p_pattern: pattern,\s*p_handle: handle,/);
     expect(hook.code).not.toMatch(/\.from\('logs'\)/);
+  });
+
+  // Round 13: the stacks were read by PostgREST, the read rule asked of every stack before the words;
+  // search_stacks finds them by the words' indexes first, given the words through the funnel.
+  it('reads the stacks through search_stacks, given the words through the funnel', () => {
+    expect(hook.code).toMatch(/rpc\('search_stacks', \{\s*p_pattern: pattern,/);
+    expect(hook.code).not.toMatch(/\.from\('lists'\)/);
   });
 
   it('a failure is recorded, and only a TOTAL failure is shown as one', () => {

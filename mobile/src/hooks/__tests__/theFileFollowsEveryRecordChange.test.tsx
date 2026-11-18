@@ -26,7 +26,7 @@ const mockService = {
   fetchAnalyticsSummary: jest.fn(async () => null),
   fetchOtherUserLogs: jest.fn(async () => ({ items: [], nextCursor: null })),
   fetchCalendarData: jest.fn(),
-  fetchAnalyticsLogs: jest.fn(async () => []),
+  fetchProfileAnalytics: jest.fn(async () => null),
 };
 jest.mock('@/src/services/ProfileDataService', () => ({
   ProfileDataService: new Proxy({}, { get: (_t, k: string) => (mockService as Record<string, jest.Mock>)[k] ?? jest.fn(async () => null) }),
@@ -65,9 +65,9 @@ it('a seal on the member\'s own file reads the calendar in front again, and the 
   expect(mockService.fetchAnalyticsSummary.mock.calls.length).toBeGreaterThan(summaries);
   // The Projector, not in front, is read again when it is next opened.
   expect(r.result.current.tabDataLoaded.analytics).toBe(false);
-  expect(mockService.fetchAnalyticsLogs).toHaveBeenCalledTimes(1);
+  expect(mockService.fetchProfileAnalytics).toHaveBeenCalledTimes(1);
   await act(async () => { await r.result.current.loadTabData('projector'); });
-  expect(mockService.fetchAnalyticsLogs).toHaveBeenCalledTimes(2);
+  expect(mockService.fetchProfileAnalytics).toHaveBeenCalledTimes(2);
   await act(async () => { await r.unmount(); });
 });
 

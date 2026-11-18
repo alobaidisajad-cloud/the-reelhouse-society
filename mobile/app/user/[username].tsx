@@ -197,7 +197,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ── State controller ──
   const ctrl = useProfileController(usernameOverride);
   const { nav: doors, data } = ctrl;
-  const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, analyticsLogs, calendarData, serverAnalytics, serverStreak, analyticsShape, taste } = data;
+  const { targetUser, loading, counts, mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists, calendarData, serverAnalytics, serverStreak, analyticsShape, taste } = data;
   const { username, isSelf, repairingHandle, isFollowing, isRequested, followKnown, followingKnown, rereadFollows, activeTab, myLogs, myWatchlist, myVault, myLists } = ctrl;
   // Your own Archive, wherever this page shows it, behind one lock (Settings).
   const archiveLock = useArchiveLock(isSelf);
@@ -377,6 +377,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     statsColor,
     statsProgress,
     streak,
+    recordUnread,
     archiveFiltered,
     ledgerFiltered,
     halfLifeMap,
@@ -404,8 +405,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     counts,
     serverStreak,
     analyticsShape,
+    summaryUnread: data.summaryUnread,
+    recordCounted: data.recordCounted,
     username: typeof username === 'string' ? username : '',
-    analyticsLogs,
     archiveSieve,
     archiveSearch,
     listsSearch,
@@ -479,6 +481,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     if (activeTab) void retryRoomOf(activeTab as ProfileTab);
   }, [retryRoomOf, activeTab]);
   const roomFailed = !!activeTab && !!data.tabFailed[activeTab as ProfileTab];
+  // The house's summary (the run and the record), asked again alone; its promise lets the line say it is asking.
+  const retryRecord = data.retrySummary;
   const roomUnreachable = roomFailed ? retryRoom : undefined;
   const roomNarrowed = !!activeTab && (ROOMS as readonly string[]).includes(activeTab) && narrowed[activeTab as Room];
 
@@ -886,7 +890,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   {/* Projector Room, inset like its neighbours; its 140pt dial
                       fits the smallest phone. */}
                   <View style={s.tabContentPad}>
-                    <ProjectorRoom stats={{ count: totalFilms, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} isSelf={isSelf} record={analyticsShape} streak={streak} />
+                    <ProjectorRoom stats={{ count: totalFilms, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} isSelf={isSelf} record={analyticsShape} streak={streak} recordUnread={recordUnread} onRetry={retryRecord} />
                   </View>
 
                   <View style={s.projectorSectionsWrap}>

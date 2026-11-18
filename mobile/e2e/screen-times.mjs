@@ -40,6 +40,11 @@
  * opens is another's. The record says which screens reported, and whether
  * --complete was given.
  *
+ * It also reads every write of the query cache to the phone (`[e2e] cache.persist
+ * {"chars":…,"ms":…}`, queryClient.ts): how many, the largest and the slowest. One that held the JS
+ * thread longer than CACHE_WRITE_MS fails the run, whatever the ceilings: the write is meant to wait
+ * for the thread to be idle, and a long one there is still a frame lost (round 13).
+ *
  * The emulator draws in software and is slower than any phone a member holds.
  * The ceilings are derived from its own measured runs, to catch a screen that
  * got slower, not to describe a phone.
@@ -95,6 +100,26 @@ export function readScreens(log, flowTimes) {
     try { event = JSON.parse(m[2]); } catch { continue; }
     if (typeof event.name !== 'string' || typeof event.ms !== 'number') continue;
     out.push({ kind: m[1], name: event.name, ms: event.ms, flow: flowAt(flowTimes, stamp(line)) });
+  }
+  return out;
+}
+
+/**
+ * The longest a write of the query cache may hold the JS thread on the lab's emulator: RAIL's long
+ * task (50 ms delays the next touch), doubled for a software GPU's slower runner, never more.
+ */
+export const CACHE_WRITE_MS = 100;
+
+/** Every write of the query cache in the log: its size in characters and the ms it held the thread. */
+export function readCacheWrites(log) {
+  const out = [];
+  for (const line of log.split(/\r?\n/)) {
+    const m = /\[e2e\] cache\.persist (\{[^}\n]*\})/.exec(line);
+    if (!m) continue;
+    let event;
+    try { event = JSON.parse(m[1]); } catch { continue; }
+    if (typeof event.ms !== 'number') continue;
+    out.push({ chars: typeof event.chars === 'number' ? event.chars : 0, ms: event.ms });
   }
   return out;
 }
@@ -173,6 +198,13 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const planted = screens.filter((s) => s.kind === 'failed' && !counts(s));
   if (planted.length) console.log(`(${planted.length} failed read${planted.length === 1 ? '' : 's'} in flows that take the network away on purpose: ${[...new Set(planted.map((s) => s.flow))].join(', ')})`);
 
+  const writes = readCacheWrites(log);
+  if (writes.length) {
+    const largest = Math.max(...writes.map((w) => w.chars));
+    const slowest = Math.max(...writes.map((w) => w.ms));
+    console.log(`(the query cache written ${writes.length} time${writes.length === 1 ? '' : 's'}: the largest ${largest} characters, the slowest ${slowest} ms)`);
+    if (slowest > CACHE_WRITE_MS) problems.push(`a write of the query cache held the JS thread ${slowest} ms, over ${CACHE_WRITE_MS} ms`);
+  }
   if (times.size === 0) console.log('(no screen reported a time: the build may not be the E2E build, or no flow ran)');
   else console.log(rows.join('\n'));
   for (const p of problems) console.log(`✗ ${p}`);

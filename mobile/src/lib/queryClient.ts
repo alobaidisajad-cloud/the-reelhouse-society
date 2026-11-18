@@ -4,7 +4,8 @@
  * The cache is written to disk (only when storage is encrypted: it holds
  * member data) and read back at launch, so a screen draws what it last showed
  * at once and refreshes behind it. Kept 24 hours at most, 2 MB at most: past
- * that, its newest reads that fit.
+ * that, its newest reads that fit. Written at most once a second, and at once
+ * when the app leaves the front.
  */
 
 import { agedSince } from './waits';
@@ -97,26 +98,105 @@ function cutToCeiling(client: PersistedClient): PersistedClient | null {
   return { ...client, clientState: { ...client.clientState, queries: kept } };
 }
 
-// Each write and read of the cache, its size and the ms it held the thread, for the speed lab
-// (the E2E build alone): a screen's answer is taken in only once the thread is free.
+/**
+ * Whether a serialised cache passes the ceiling, its bytes counted only when its length leaves
+ * that open: a UTF-16 unit stores as one byte at least and three at most (a pair of them, four),
+ * so a string longer than the ceiling is over it, and one a third of the ceiling or shorter is
+ * under it. Counting is a loop over every character, on the JS thread.
+ */
+export function pastTheCeiling(serialized: string): boolean {
+  if (serialized.length > MAX_CACHE_SIZE_BYTES) return true;
+  if (serialized.length * 3 <= MAX_CACHE_SIZE_BYTES) return false;
+  return utf8Bytes(serialized) > MAX_CACHE_SIZE_BYTES;
+}
+
+/**
+ * The write itself: the cache serialised once, cut to the ceiling only when it passes it, and
+ * stored. Each write's length and the ms it held the thread go to the speed lab (the E2E build
+ * alone): a screen's answer is taken in only once the thread is free.
+ */
+function writeCache(client: PersistedClient): void {
+  try {
+    const started = Date.now();
+    let serialized: string | null = JSON.stringify(client);
+    if (pastTheCeiling(serialized)) {
+      const cut = cutToCeiling(client);
+      serialized = cut ? JSON.stringify(cut) : null;
+    }
+    e2eTrace('cache.persist', { chars: serialized?.length ?? 0, ms: Date.now() - started });
+    // Not one read fits: the cache on disk is never left in its place, and the next start reads afresh.
+    if (serialized === null) { storage.delete(CACHE_KEY); return; }
+    setSensitive(CACHE_KEY, serialized);
+  } catch {
+    // Silently fail — app works without cache, just slower on cold start
+  }
+}
+
+/**
+ * React Query hands the persister the whole cache on EVERY change to it: each read started,
+ * answered or failed, each setQueryData and each invalidation (a film opened is three). Written
+ * each time, the whole cache would be serialised and stored many times a second while a screen
+ * loads. So the newest is held and written once a second at most (the write carries the latest),
+ * and then only when the JS thread is idle (requestIdleCallback; within IDLE_WAIT_MS whatever
+ * comes), so a fling on the Reel is never held up by it; and at once when the app leaves the front,
+ * where the phone may end it unseen.
+ *
+ * A held cache belongs to the member it was taken under: one held as they sign out, or taken for
+ * one member and due after another signed in, is never written (memberNow at the write). And a
+ * sign-out takes the cache away through forgetCache, which takes a held write with it.
+ */
+const WRITE_EVERY_MS = 1000;
+const IDLE_WAIT_MS = 2000;
+let held: { client: PersistedClient; member: string | null } | null = null;
+let writeTimer: ReturnType<typeof setTimeout> | null = null;
+let idleTask: ReturnType<typeof requestIdleCallback> | null = null;
+
+/** The member signed in now. Read lazily: auth.ts imports this file, so this one cannot import it. */
+function memberNow(): string | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded late, past the import loop
+    return (require('../stores/auth') as typeof import('../stores/auth')).useAuthStore.getState().user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** The write waiting its turn, and its idle task, called off. */
+function cancelHeldWrite(): void {
+  if (writeTimer !== null) { clearTimeout(writeTimer); writeTimer = null; }
+  if (idleTask !== null) { cancelIdleCallback(idleTask); idleTask = null; }
+}
+
+/** Writes the cache held for its turn now, if one is held and still belongs to the member signed in. */
+export function writeHeldCache(): void {
+  cancelHeldWrite();
+  const taken = held;
+  held = null;
+  if (taken && taken.member === memberNow()) writeCache(taken.client);
+}
+
+/**
+ * The cache on disk taken away, with any write of it still waiting its turn: the one door a
+ * sign-out (and a member left behind) goes through, so no held write puts it back after.
+ */
+export function forgetCache(): void {
+  cancelHeldWrite();
+  held = null;
+  storage.delete(CACHE_KEY);
+}
+
+AppState.addEventListener('change', (state) => {
+  if (state !== 'active') writeHeldCache();
+});
+
 export const mmkvPersister: Persister = {
   persistClient: async (client: PersistedClient) => {
-    try {
-      const started = Date.now();
-      let serialized: string | null = JSON.stringify(client);
-      let bytes = utf8Bytes(serialized);
-      if (bytes > MAX_CACHE_SIZE_BYTES) {
-        const cut = cutToCeiling(client);
-        serialized = cut ? JSON.stringify(cut) : null;
-        bytes = serialized === null ? 0 : utf8Bytes(serialized);
-      }
-      e2eTrace('cache.persist', { bytes, ms: Date.now() - started });
-      // Not one read fits: the cache on disk is never left in its place, and the next start reads afresh.
-      if (serialized === null) { storage.delete(CACHE_KEY); return; }
-      setSensitive(CACHE_KEY, serialized);
-    } catch {
-      // Silently fail — app works without cache, just slower on cold start
-    }
+    held = { client, member: memberNow() };
+    if (writeTimer !== null || idleTask !== null) return;
+    writeTimer = setTimeout(() => {
+      writeTimer = null;
+      idleTask = requestIdleCallback(() => { idleTask = null; writeHeldCache(); }, { timeout: IDLE_WAIT_MS });
+    }, WRITE_EVERY_MS);
   },
   restoreClient: async () => {
     try {
@@ -138,7 +218,8 @@ export const mmkvPersister: Persister = {
     }
   },
   removeClient: async () => {
-    storage.delete(CACHE_KEY);
+    // A write still waiting its turn would put back what is being taken away.
+    forgetCache();
   },
 };
 

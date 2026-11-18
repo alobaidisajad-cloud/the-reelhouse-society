@@ -149,6 +149,8 @@ it('the word’s channel back after a drop reads the board again, and down past 
     expect(own).toBeDefined();
     expect(own!.status).toBeDefined();
     own!.status!('SUBSCRIBED');
+    // Its first live moment reads the board too (round 13): the reads below are the drop's.
+    read.mockClear();
     own!.status!('CHANNEL_ERROR');
     jest.advanceTimersByTime(6_000);
     expect(useNotificationStore.getState().noticesLive).toBe(false);

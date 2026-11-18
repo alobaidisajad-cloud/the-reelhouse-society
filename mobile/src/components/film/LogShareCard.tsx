@@ -20,6 +20,8 @@ export interface ShareCardData {
     username: string;
     status?: 'watched' | 'rewatched' | 'abandoned';
     pullQuote?: string;
+    /** The review is marked as a spoiler: its words stay off the file (NitrateFileCard). */
+    isSpoiler?: boolean;
     memberNo?: number | null;
     rank?: Rank;
 }
@@ -36,6 +38,7 @@ export default function LogShareCard({ data, onReady }: { data: ShareCardData; o
                 rating: data.rating,
                 review: data.review,
                 pullQuote: data.pullQuote,
+                isSpoiler: data.isSpoiler,
                 status: data.status ?? null,
                 username: data.username,
                 memberNo: data.memberNo,

@@ -188,8 +188,10 @@
     {"id":"ADV-183","lint":"rls_enabled_no_policy","key":"rls_enabled_no_policy_public_salon_typing_sent","reason":"Read and written only by the server's own functions: visitors and members hold no grant on this table, and row security with no rule turns them away as well."},
     {"id":"ADV-184","lint":"rls_enabled_no_policy","key":"rls_enabled_no_policy_public_viewings","reason":"Read and written only by the server's own functions: visitors and members hold no grant on this table, and row security with no rule turns them away as well."},
     {"id":"ADV-185","lint":"unindexed_foreign_keys","key":"unindexed_foreign_keys_public_lounge_sanctions_lounge_sanctions_user_id_fkey","class":"PRF-19"},
-    {"id":"ADV-186","lint":"unindexed_foreign_keys","key":"unindexed_foreign_keys_public_push_tokens_push_tokens_user_id_fkey","class":"PRF-19"},
     {"id":"ADV-187","lint":"unindexed_foreign_keys","key":"unindexed_foreign_keys_public_salon_typing_sent_salon_typing_sent_user_id_fkey","class":"PRF-19"},
-    {"id":"ADV-188","lint":"rls_enabled_no_policy","key":"rls_enabled_no_policy_public_certifications_pushed","reason":"Read and written only by the server's own functions: visitors and members hold no grant on this table, and row security with no rule turns them away as well."}
+    {"id":"ADV-188","lint":"rls_enabled_no_policy","key":"rls_enabled_no_policy_public_certifications_pushed","reason":"Read and written only by the server's own functions: visitors and members hold no grant on this table, and row security with no rule turns them away as well."},
+    {"id":"ADV-189","lint":"rls_enabled_no_policy","key":"rls_enabled_no_policy_public_interaction_budget","reason":"Read and written only by the server's own functions: visitors and members hold no grant on this table, and row security with no rule turns them away as well."},
+    {"id":"ADV-190","lint":"rls_enabled_no_policy","key":"rls_enabled_no_policy_public_interaction_churn","reason":"Read and written only by the server's own functions: visitors and members hold no grant on this table, and row security with no rule turns them away as well."},
+    {"id":"ADV-191","lint":"rls_enabled_no_policy","key":"rls_enabled_no_policy_public_viewing_notes_removed","reason":"Read and written only by the server's own functions: visitors and members hold no grant on this table, and row security with no rule turns them away as well."}
   ]
 }

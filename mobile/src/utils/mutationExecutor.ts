@@ -25,7 +25,9 @@ import { keepFilingEdit, keepLogEdit, mergeHistory } from '../services/KeptEdits
 import { FILING_EDITABLE_COLUMNS } from '../stores/dispatchTypes';
 import { queryClient } from '../lib/queryClient';
 import { isGoneFromTheHouse } from './goneFromTheHouse';
+import { saidOfStackShareRefusal, stackShareRefusal } from './stackShareRefusal';
 import { filmOfRecord } from './recordsFilm';
+import { atTheHousesPace } from './housePace';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -284,6 +286,23 @@ function letGoOfACritiqueOnAGonePage(error: unknown, payload: Record<string, unk
     return { letGo: onRecord ? 'LOG_GONE' : 'STACK_GONE' };
 }
 
+/**
+ * Does the house already hold this member's follow or request of the other (round 13)? An insert of
+ * one already there makes nothing, yet the house's pace counts it (its trigger runs before the
+ * conflict is judged): a resent follow spent the member's room and their hour's follows of that member.
+ * A read that fails is raised, so the queue keeps the write.
+ */
+async function followHeld(userId: string, targetId: string): Promise<boolean> {
+    const { data } = throwIfError(await supabase.from('interactions').select('id')
+        .eq('user_id', userId).eq('target_user_id', targetId).in('type', ['follow', 'follow_request']).maybeSingle());
+    return !!data;
+}
+
+/** The moment a queued note was written, as its payload keeps it; an older build's kept none. */
+function writtenAtOf(p: Record<string, unknown>): string | undefined {
+    return typeof p.written_at === 'string' && p.written_at ? p.written_at : undefined;
+}
+
 const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // ── Endorsements ──
     endorse_log: async (p: any) => { await InteractionService.addEndorsement({ ...p, type: 'endorse_log' }); return {}; },
@@ -327,11 +346,13 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         // prose does: this queue PERSISTS, so an entry written by an older build
         // flushes through this code long after the source was fixed.
         const notes = typeof p.notes === 'string' ? sanitizeInput(p.notes, 'privateNotes') : '';
-        await VaultService.setNote(p.log_id as string, p.viewing_id as string, notes);
+        // With the moment it was written, when the phone kept it: the house writes it only over a
+        // note written no later (round 13), so one written since on another phone stands.
+        await VaultService.setNote(p.log_id as string, p.viewing_id as string, notes, writtenAtOf(p));
         return {};
     },
     remove_viewing_note: async (p: any) => {
-        await VaultService.removeNote(p.viewing_id as string);
+        await VaultService.removeNote(p.viewing_id as string, writtenAtOf(p));
         return {};
     },
 
@@ -606,10 +627,15 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             const { data: targetProfile } = throwIfError(await supabase.from('profiles').select('id').eq('username', target_username as string).maybeSingle());
             resolvedId = targetProfile?.id ?? null;
         }
-        if (resolvedId) {
-            throwIfError(await supabase.from('interactions').upsert([{
-                user_id, target_user_id: resolvedId, type: 'follow',
-            }], { onConflict: 'user_id,target_user_id,type', ignoreDuplicates: true }));
+        // Already held (a follow that landed, its answer lost): done, as followUser reads it, without
+        // spending the house's pace on an insert that would make nothing.
+        if (resolvedId && !(await followHeld(user_id as string, resolvedId))) {
+            // At the house's pace (housePace.ts): a moment's wait is waited, a longer one kept queued.
+            await atTheHousesPace(async () => {
+                throwIfError(await supabase.from('interactions').upsert([{
+                    user_id, target_user_id: resolvedId, type: 'follow',
+                }], { onConflict: 'user_id,target_user_id,type', ignoreDuplicates: true }));
+            });
         } else {
             logger.warn('[MutationExecutor] follow_user: no such member, skipped.');
         }
@@ -625,10 +651,12 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             const { data: targetProfile } = throwIfError(await supabase.from('profiles').select('id').eq('username', target_username as string).maybeSingle());
             resolvedId = targetProfile?.id ?? null;
         }
-        if (resolvedId) {
-            throwIfError(await supabase.from('interactions').upsert([{
-                user_id, target_user_id: resolvedId, type: 'follow_request',
-            }], { onConflict: 'user_id,target_user_id,type', ignoreDuplicates: true }));
+        if (resolvedId && !(await followHeld(user_id as string, resolvedId))) {
+            await atTheHousesPace(async () => {
+                throwIfError(await supabase.from('interactions').upsert([{
+                    user_id, target_user_id: resolvedId, type: 'follow_request',
+                }], { onConflict: 'user_id,target_user_id,type', ignoreDuplicates: true }));
+            });
         } else {
             logger.warn('[MutationExecutor] follow_request_user: no such member, skipped.');
         }
@@ -675,7 +703,21 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             film_id, film_title, film_poster, reply_to_id, reply_to_username, reply_to_content, metadata
         };
         const cleaned = Object.fromEntries(Object.entries(dbPayload).filter(([, v]) => v !== undefined));
-        const result = throwIfError(await supabase.from('lounge_messages').insert([cleaned]).select('id').maybeSingle());
+        const sent = await supabase.from('lounge_messages').insert([cleaned]).select('id').maybeSingle();
+        // A stack's card the house refuses for good (sealed, or no longer in the house): let go, said,
+        // and taken off the room's transcript, never offered again (review round 13).
+        const stackRefused = stackShareRefusal(sent.error);
+        if (stackRefused) {
+            // Required here, not imported: the stores import the queue, which imports this file.
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const reelToast = (require('./reelToast') as typeof import('./reelToast')).default;
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { useLoungeStore } = require('../stores/lounge') as typeof import('../stores/lounge');
+            useLoungeStore.setState((s) => ({ currentMessages: s.currentMessages.filter((m) => m.id !== dbPayload.id) }));
+            reelToast.error(saidOfStackShareRefusal(stackRefused));
+            return { letGo: stackRefused === 'sealed' ? 'STACK_SEALED' : 'STACK_GONE' };
+        }
+        const result = throwIfError(sent);
         if (_tempId && result.data) {
             return { newId: (result.data as { id: string }).id, fakeId: _tempId as string };
         }

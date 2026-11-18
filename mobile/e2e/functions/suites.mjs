@@ -61,6 +61,37 @@ section('tmdb-proxy — the apps\' only road to TMDB, its key never handed back'
   const slow = await fn('tmdb-proxy', { body: { path: '/movie/606' } });
   check(slow.status === 504 && slow.ms < 12_000, 'TMDB slower than its limit is 504, within the limit', `${said(slow)} after ${slow.ms} ms`);
 
+  // TMDB pacing the house: its own 429 reaches the apps with its own word on how long to wait.
+  await scriptStandIns({ tmdb: { '/3/movie/607': { status: 429, headers: { 'Retry-After': '7' }, body: { status_code: 25 } } } });
+  const tmdbBusy = await fn('tmdb-proxy', { body: { path: '/movie/607' } });
+  check(tmdbBusy.status === 429 && tmdbBusy.headers['retry-after'] === '7', 'TMDB\'s own 429 is passed on with its Retry-After', `${said(tmdbBusy)} ${JSON.stringify(tmdbBusy.headers)}`);
+  await drain();
+
+  // One address asking TMDB without end: held at its pail (1,200 at once, then 20 a second), told
+  // when to ask again, the website let read it; what the cache holds is still answered.
+  {
+    const address = { 'x-forwarded-for': '203.0.113.77' };
+    let refused = null;
+    let cachedPath = null;
+    let asked = 0;
+    for (let round = 0; round < 120 && !refused; round++) {
+      const paths = Array.from({ length: 25 }, (_, i) => `/movie/${910000 + round * 25 + i}`);
+      const answers = await Promise.all(paths.map((path) => fn('tmdb-proxy', { body: { path }, headers: address })));
+      asked += answers.length;
+      refused = answers.find((a) => a.status === 429) ?? null;
+      // One answered in this round: kept in the cache, the newest there.
+      const kept = answers.findIndex((a) => a.status === 200);
+      if (kept >= 0) cachedPath = paths[kept];
+      await drain();
+    }
+    check(!!refused && asked > 1200 && asked <= 3000, 'one address asking without end is refused past its pail', `after ${asked} asked: ${refused ? said(refused) : 'none refused'}`);
+    check(!!refused && Number(refused.headers['retry-after']) >= 1 && /retry-after/i.test(refused.headers['access-control-expose-headers'] ?? ''),
+      'and told when to ask again, a header the website may read', JSON.stringify(refused?.headers ?? {}));
+    const hit = await fn('tmdb-proxy', { body: { path: cachedPath ?? '/movie/603' }, headers: address });
+    check(hit.status === 200 && hit.headers['x-cache'] === 'HIT', 'what the cache holds is still answered to that address, never counted', said(hit));
+    await drain();
+  }
+
   await scriptStandIns({ tmdb: { '/3/movie/999999999': { status: 404, body: { status_code: 34, status_message: 'The resource you requested could not be found.', success: false } } } });
   const missing = await fn('tmdb-proxy', { body: { path: '/movie/999999999' } });
   check(missing.status === 404, 'a film TMDB does not have is its 404', said(missing));
@@ -165,15 +196,49 @@ section('sync-films — reads the films nobody has read, and never blames a film
   await drain();
   check(mended.status === 200 && sql('SELECT count(*) FROM public.films WHERE id IN (900004, 900005) AND synced_at IS NOT NULL') === '2',
     'with the key mended, the next call reads them', said(mended));
+
+  // Each read says when the next is due: a film TMDB has not released is looked at again (its
+  // settled reads unspent), a castless one released is read again a few times, a whole one never.
+  sql('INSERT INTO public.films (id) VALUES (900011), (900012);');
+  await scriptStandIns({ tmdb: {
+    '/3/movie/900011': { body: { id: 900011, title: 'Announced', release_date: '', status: 'Planned', genres: [], credits: { cast: [], crew: [] } } },
+    '/3/movie/900012': { body: { id: 900012, title: 'Castless', release_date: '1999-03-31', status: 'Released',
+      genres: [{ id: 99, name: 'Documentary' }], credits: { cast: [], crew: [{ id: 9, name: 'A Director', job: 'Director' }] } } },
+  } });
+  const kept = await fn('sync-films');
+  await drain();
+  const books = sql(`SELECT string_agg(id || ':' || coalesce(release_date::text, 'none') || ':' || coalesce(sync_reads::text, 'none') || ':' || (reread_after IS NOT NULL), ',' ORDER BY id)
+                      FROM public.films WHERE id IN (900001, 900011, 900012)`);
+  check(kept.status === 200 && books === '900001:1999-03-31:1:false,900011:none:0:true,900012:1999-03-31:1:true',
+    'each read writes its release date, its settled reads and when it is read again', `${said(kept)} ${books}`);
   sql('DELETE FROM public.films WHERE id BETWEEN 900001 AND 900099;');
 }
 
 section('notify-push — the database\'s push sender, behind its own secret');
 {
-  sql(`INSERT INTO public.push_tokens (user_id, token, platform) VALUES
-         (${literal(two.id)}, 'ExponentPushToken[fn-live-1]', 'ios'),
-         (${literal(two.id)}, 'ExpoPushToken[fn-Dead-2]', 'android'),
-         (${literal(two.id)}, 'not-an-expo-token', 'web');`);
+  // The member's phones register their tokens as the app does: signed in, under their session
+  // (register_push_token keeps it, round 13); notify-push sends only to a token whose session stands.
+  const register = async (token, p_token, p_platform) => {
+    const r = await fetch(`${API}/rest/v1/rpc/register_push_token`, {
+      method: 'POST', headers: { apikey: ANON, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_token, p_platform }),
+    });
+    check(r.ok, `the member registers ${p_token} as the app does`, `HTTP ${r.status}`);
+  };
+  for (const [tok, platform] of [['ExponentPushToken[fn-live-1]', 'ios'], ['ExpoPushToken[fn-Dead-2]', 'android'], ['not-an-expo-token', 'web']]) {
+    await register(two.token, tok, platform);
+  }
+  // A phone the member signed out of: signed in there, registered, then its session ended (as
+  // "Sign out of every other device" ends it, or a refused refresh) without the phone's own sign-out.
+  const elsewhere = await (await fetch(`${API}/auth/v1/token?grant_type=password`, {
+    method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: two.email, password: two.password }),
+  })).json();
+  await register(elsewhere.access_token, 'ExponentPushToken[fn-signed-out-3]', 'android');
+  const ended = await fetch(`${API}/auth/v1/logout?scope=local`, { method: 'POST', headers: { apikey: ANON, Authorization: `Bearer ${elsewhere.access_token}` } });
+  check(ended.status === 204, 'that phone\'s session ends', `HTTP ${ended.status}`);
+  // A phone registered before round 13 (no session kept), whose every possible session is another
+  // phone's now: it is signed out, and is not pushed (push_tokens_of).
+  sql(`INSERT INTO public.push_tokens (user_id, token, platform) VALUES (${literal(two.id)}, 'ExponentPushToken[fn-before-4]', 'ios');`);
   // A notice as the house writes it (its trigger's own call goes to production's address here, which
   // the seal blocks): notify-push is named its id, and reads the rest from the house.
   const write = (userId, { ago = '0 seconds', message = 'is following you.' } = {}) => {
@@ -211,8 +276,10 @@ section('notify-push — the database\'s push sender, behind its own secret');
   check(tokenless.status === 401, 'and the Expo stand-in refuses a push without it, as Expo does', `HTTP ${tokenless.status}`);
   check(seen.length === 1 && messages.length === 2 && messages.every((m) => m.title === 'A New Follower' && m.body === `@${one.username} is following you.` && m.data?.notificationId === record.id),
     'Expo is sent one message per Expo token (never the other), titled by kind, in the house\'s words, never the caller\'s', JSON.stringify(messages).slice(0, 300));
+  check(!messages.some((m) => m.to === 'ExponentPushToken[fn-signed-out-3]' || m.to === 'ExponentPushToken[fn-before-4]'),
+    'a phone signed out is never pushed: neither the one whose session ended nor the one from before round 13 with no session left to it', JSON.stringify(messages.map((m) => m.to)));
   check(sql(`SELECT string_agg(token, ',' ORDER BY token) FROM public.push_tokens WHERE user_id = ${literal(two.id)}`) === 'ExponentPushToken[fn-live-1],not-an-expo-token',
-    'the token Expo called dead is gone, the others kept');
+    'the token Expo called dead is gone, and the signed-out phones\' with it; the others kept');
 
   const again = await push({ record });
   check(again.status === 200 && again.json?.skipped && (await drain()).length === 0, 'a notice is pushed once: asked again, Expo is not', said(again));

@@ -1,0 +1,4869 @@
+{
+ "path": "/movie/389?append_to_response=credits%2Cvideos%2Crecommendations%2Csimilar%2Cwatch%2Fproviders%2Crelease_dates",
+ "status": 200,
+ "body": {
+  "adult": false,
+  "backdrop_path": "/qqHQsStV6exghCM7zbObuYBiYxw.jpg",
+  "belongs_to_collection": null,
+  "budget": 397751,
+  "genres": [
+   {
+    "id": 18,
+    "name": "Drama"
+   }
+  ],
+  "homepage": "",
+  "id": 389,
+  "imdb_id": "tt0050083",
+  "origin_country": [
+   "US"
+  ],
+  "original_language": "en",
+  "original_title": "12 Angry Men",
+  "overview": "The defense and the prosecution have rested and the jury is filing into the jury room to decide if a young Spanish-American is guilty or innocent of murdering his father. What begins as an open and shut case soon becomes a mini-drama of each of the jurors' prejudices and preconceptions about the trial, the accused, and each other.",
+  "popularity": 22.4548,
+  "poster_path": "/zhG3vKWyDRaZYoaww1UVAi29T9h.jpg",
+  "production_companies": [
+   {
+    "id": 10212,
+    "logo_path": null,
+    "name": "Orion-Nova Productions",
+    "origin_country": "US"
+   }
+  ],
+  "production_countries": [
+   {
+    "iso_3166_1": "US",
+    "name": "United States of America"
+   }
+  ],
+  "release_date": "1957-04-10",
+  "revenue": 4360000,
+  "runtime": 97,
+  "softcore": false,
+  "spoken_languages": [
+   {
+    "english_name": "English",
+    "iso_639_1": "en",
+    "name": "English"
+   }
+  ],
+  "status": "Released",
+  "tagline": "It explodes like 12 sticks of dynamite!",
+  "title": "12 Angry Men",
+  "video": false,
+  "vote_average": 8.577,
+  "vote_count": 10608,
+  "credits": {
+   "cast": [
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1936,
+     "known_for_department": "Acting",
+     "name": "Martin Balsam",
+     "original_name": "Martin Balsam",
+     "popularity": 1.8387,
+     "profile_path": "/2q7xs6j6vGll3pc9Mm6TUEvvwBf.jpg",
+     "cast_id": 57,
+     "character": "Juror 1",
+     "credit_id": "5e93b065cedac40016ebbd44",
+     "order": 0
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5247,
+     "known_for_department": "Acting",
+     "name": "John Fiedler",
+     "original_name": "John Fiedler",
+     "popularity": 1.3532,
+     "profile_path": "/27sXisLWQJQ49PD40j89miNhL73.jpg",
+     "cast_id": 58,
+     "character": "Juror 2",
+     "credit_id": "5e93b09a8e87020013cd34eb",
+     "order": 1
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5248,
+     "known_for_department": "Acting",
+     "name": "Lee J. Cobb",
+     "original_name": "Lee J. Cobb",
+     "popularity": 1.2431,
+     "profile_path": "/yxMxBvM0PZwu7YXQamG0kFwt9DZ.jpg",
+     "cast_id": 59,
+     "character": "Juror 3",
+     "credit_id": "5e93b0a584448e0014910883",
+     "order": 2
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5249,
+     "known_for_department": "Acting",
+     "name": "E.G. Marshall",
+     "original_name": "E.G. Marshall",
+     "popularity": 0.9743,
+     "profile_path": "/psimeVoRk64DV7UNm4cLQylRFy2.jpg",
+     "cast_id": 60,
+     "character": "Juror 4",
+     "credit_id": "5e93b0ae7a97ab00120dd261",
+     "order": 3
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5250,
+     "known_for_department": "Acting",
+     "name": "Jack Klugman",
+     "original_name": "Jack Klugman",
+     "popularity": 1.2856,
+     "profile_path": "/oJxveOxlunD8C9OczqKeryU0k6D.jpg",
+     "cast_id": 61,
+     "character": "Juror 5",
+     "credit_id": "5e93b0bd84448e001291147f",
+     "order": 4
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2651,
+     "known_for_department": "Acting",
+     "name": "Edward Binns",
+     "original_name": "Edward Binns",
+     "popularity": 1.1223,
+     "profile_path": "/s3fk0d0fwuj6bDVP9AcPUXFsGmK.jpg",
+     "cast_id": 62,
+     "character": "Juror 6",
+     "credit_id": "5e93b0c8ccb15f00136fd2a4",
+     "order": 5
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5251,
+     "known_for_department": "Acting",
+     "name": "Jack Warden",
+     "original_name": "Jack Warden",
+     "popularity": 1.5617,
+     "profile_path": "/hSShXiYMfRpMByaB5euZ59qCKN.jpg",
+     "cast_id": 63,
+     "character": "Juror 7",
+     "credit_id": "5e93b0d3875d1a001444ade1",
+     "order": 6
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4958,
+     "known_for_department": "Acting",
+     "name": "Henry Fonda",
+     "original_name": "Henry Fonda",
+     "popularity": 1.9991,
+     "profile_path": "/6wXWsqSXF3wCsGcwVqiszy6RX9X.jpg",
+     "cast_id": 64,
+     "character": "Juror 8",
+     "credit_id": "5e93b0e254508d001a177bde",
+     "order": 7
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5252,
+     "known_for_department": "Acting",
+     "name": "Joseph Sweeney",
+     "original_name": "Joseph Sweeney",
+     "popularity": 0.6099,
+     "profile_path": "/yUDYdj0yk9dvDAR4dKHvK9zRpDv.jpg",
+     "cast_id": 65,
+     "character": "Juror 9",
+     "credit_id": "5e93b0ec54508d0015176f37",
+     "order": 8
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 39816,
+     "known_for_department": "Acting",
+     "name": "Ed Begley",
+     "original_name": "Ed Begley",
+     "popularity": 0.7725,
+     "profile_path": "/AuPwjGgPphtfQOShb8pTtp5W7Ft.jpg",
+     "cast_id": 66,
+     "character": "Juror 10",
+     "credit_id": "5e93b0f7ca4f6700148145ab",
+     "order": 9
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5254,
+     "known_for_department": "Acting",
+     "name": "George Voskovec",
+     "original_name": "Jiří Voskovec",
+     "popularity": 0.6458,
+     "profile_path": "/nxW7pLtG8xLo4J3QHXzLxt8fd8P.jpg",
+     "cast_id": 67,
+     "character": "Juror 11",
+     "credit_id": "5e93b10684448e0012911546",
+     "order": 10
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5255,
+     "known_for_department": "Acting",
+     "name": "Robert Webber",
+     "original_name": "Robert Webber",
+     "popularity": 0.8314,
+     "profile_path": "/1RlhCcfCkaSz0cWRSowsj5FiKXg.jpg",
+     "cast_id": 68,
+     "character": "Juror 12",
+     "credit_id": "5e93b11184448e001a90eb37",
+     "order": 11
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 3143,
+     "known_for_department": "Acting",
+     "name": "Rudy Bond",
+     "original_name": "Rudy Bond",
+     "popularity": 0.5127,
+     "profile_path": "/bd3YONpGsvQrpz6MkhsqsiPSaOD.jpg",
+     "cast_id": 70,
+     "character": "Judge (uncredited)",
+     "credit_id": "5e93b13bccb15f00136fd3b1",
+     "order": 12
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2498394,
+     "known_for_department": "Acting",
+     "name": "Tom Gorman",
+     "original_name": "Tom Gorman",
+     "popularity": 0.1813,
+     "profile_path": null,
+     "cast_id": 71,
+     "character": "Stenographer (uncredited)",
+     "credit_id": "5e93b147cedac40014ebb229",
+     "order": 13
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1437464,
+     "known_for_department": "Acting",
+     "name": "James Kelly",
+     "original_name": "James Kelly",
+     "popularity": 0.114,
+     "profile_path": null,
+     "cast_id": 72,
+     "character": "Guard (uncredited)",
+     "credit_id": "5e93b16584448e001291160b",
+     "order": 14
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5257,
+     "known_for_department": "Acting",
+     "name": "Billy Nelson",
+     "original_name": "Billy Nelson",
+     "popularity": 0.2839,
+     "profile_path": null,
+     "cast_id": 73,
+     "character": "Court Clerk (uncredited)",
+     "credit_id": "5e93b181875d1a001944ed80",
+     "order": 15
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 153394,
+     "known_for_department": "Acting",
+     "name": "Walter Stocker",
+     "original_name": "Walter Stocker",
+     "popularity": 0.2531,
+     "profile_path": null,
+     "cast_id": 69,
+     "character": "Man Waiting for Elevator (uncredited)",
+     "credit_id": "5e93b122d55e4d001a19f805",
+     "order": 16
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 5892050,
+     "known_for_department": "Acting",
+     "name": "John Savoca",
+     "original_name": "John Savoca",
+     "popularity": 0.1825,
+     "profile_path": null,
+     "cast_id": 78,
+     "character": "Defendant (uncredited)",
+     "credit_id": "6948dd2924937a5336155682",
+     "order": 17
+    }
+   ],
+   "crew": [
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4958,
+     "known_for_department": "Acting",
+     "name": "Henry Fonda",
+     "original_name": "Henry Fonda",
+     "popularity": 1.9991,
+     "profile_path": "/6wXWsqSXF3wCsGcwVqiszy6RX9X.jpg",
+     "credit_id": "52fe423dc3a36847f800ec55",
+     "department": "Production",
+     "job": "Producer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5263,
+     "known_for_department": "Art",
+     "name": "Robert Markel",
+     "original_name": "Robert Markel",
+     "popularity": 0.0814,
+     "profile_path": null,
+     "credit_id": "52fe423dc3a36847f800ec79",
+     "department": "Art",
+     "job": "Art Direction"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5260,
+     "known_for_department": "Sound",
+     "name": "Kenyon Hopkins",
+     "original_name": "Kenyon Hopkins",
+     "popularity": 0.1953,
+     "profile_path": null,
+     "credit_id": "52fe423dc3a36847f800ec67",
+     "department": "Sound",
+     "job": "Original Music Composer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5246,
+     "known_for_department": "Writing",
+     "name": "Reginald Rose",
+     "original_name": "Reginald Rose",
+     "popularity": 0.8587,
+     "profile_path": "/ki4Y7g8RY3kGV6BbNiP3ZllVab4.jpg",
+     "credit_id": "52fe423dc3a36847f800ec4f",
+     "department": "Writing",
+     "job": "Screenplay"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5262,
+     "known_for_department": "Editing",
+     "name": "Carl Lerner",
+     "original_name": "Carl Lerner",
+     "popularity": 0.2943,
+     "profile_path": null,
+     "credit_id": "52fe423dc3a36847f800ec73",
+     "department": "Editing",
+     "job": "Editor"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5246,
+     "known_for_department": "Writing",
+     "name": "Reginald Rose",
+     "original_name": "Reginald Rose",
+     "popularity": 0.8587,
+     "profile_path": "/ki4Y7g8RY3kGV6BbNiP3ZllVab4.jpg",
+     "credit_id": "52fe423dc3a36847f800ec61",
+     "department": "Production",
+     "job": "Producer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5264,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Herman Buchman",
+     "original_name": "Herman Buchman",
+     "popularity": 0.1365,
+     "profile_path": null,
+     "credit_id": "52fe423dc3a36847f800ec7f",
+     "department": "Costume & Make-Up",
+     "job": "Makeup Artist"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5261,
+     "known_for_department": "Camera",
+     "name": "Boris Kaufman",
+     "original_name": "Boris Kaufman",
+     "popularity": 0.286,
+     "profile_path": "/zfFmxgyC3eOsKhc7T3pbwQ01AGR.jpg",
+     "credit_id": "52fe423dc3a36847f800ec6d",
+     "department": "Camera",
+     "job": "Director of Photography"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5246,
+     "known_for_department": "Writing",
+     "name": "Reginald Rose",
+     "original_name": "Reginald Rose",
+     "popularity": 0.8587,
+     "profile_path": "/ki4Y7g8RY3kGV6BbNiP3ZllVab4.jpg",
+     "credit_id": "5439c1c90e0a2649a8000ff1",
+     "department": "Writing",
+     "job": "Story"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5259,
+     "known_for_department": "Production",
+     "name": "George Justin",
+     "original_name": "George Justin",
+     "popularity": 0.1727,
+     "profile_path": null,
+     "credit_id": "54fe6df8c3a368150c000859",
+     "department": "Production",
+     "job": "Associate Producer"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 30994,
+     "known_for_department": "Camera",
+     "name": "Saul Midwall",
+     "original_name": "Saul Midwall",
+     "popularity": 0.1177,
+     "profile_path": null,
+     "credit_id": "57463b5bc3a36808af000267",
+     "department": "Camera",
+     "job": "Camera Operator"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1043428,
+     "known_for_department": "Sound",
+     "name": "Al Gramaglia",
+     "original_name": "Al Gramaglia",
+     "popularity": 0.1329,
+     "profile_path": null,
+     "credit_id": "6655b88ad092532206e4bc5a",
+     "department": "Sound",
+     "job": "Sound Re-Recording Mixer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5265,
+     "known_for_department": "Sound",
+     "name": "James A. Gleason",
+     "original_name": "James A. Gleason",
+     "popularity": 0.1399,
+     "profile_path": null,
+     "credit_id": "5e93b014cedac40016ebbcb3",
+     "department": "Sound",
+     "job": "Sound"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1437471,
+     "known_for_department": "Directing",
+     "name": "Don Kranze",
+     "original_name": "Don Kranze",
+     "popularity": 0.1495,
+     "profile_path": null,
+     "credit_id": "5e8e3c9ccadb6b001b7f3a09",
+     "department": "Directing",
+     "job": "Assistant Director"
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 1076666,
+     "known_for_department": "Directing",
+     "name": "Faith Hubley",
+     "original_name": "Faith Hubley",
+     "popularity": 0.3536,
+     "profile_path": "/kexhBysoVPdJFI7cWBs7XD8xbZH.jpg",
+     "credit_id": "5e8e3c78a14e1000124e5482",
+     "department": "Directing",
+     "job": "Script Supervisor"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 39996,
+     "known_for_department": "Directing",
+     "name": "Sidney Lumet",
+     "original_name": "Sidney Lumet",
+     "popularity": 1.0214,
+     "profile_path": "/hjj3V2DkPJ46zo5uz9bsZQzAk6R.jpg",
+     "credit_id": "5e8e3c2f62e86f00159ba2f3",
+     "department": "Directing",
+     "job": "Director"
+    }
+   ]
+  },
+  "videos": {
+   "results": [
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "We ❤️ 12 ANGRY MEN | Criterion Closet Picks Edition",
+     "key": "lW92Gwvod8E",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Featurette",
+     "official": true,
+     "id": "6aabf6d8bac66d0b8401821e",
+     "published_at": "2026-09-13T14:34:01.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Henry Fonda Calls For a Secret Ballot | 12 Angry Men (1957) | TCM",
+     "key": "KhnmAwiHtzo",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Clip",
+     "official": true,
+     "id": "680ff91feb1d4b06de0fb5fa",
+     "published_at": "2025-04-28T11:00:37.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Knife Scene",
+     "key": "4_q_IA6LeUw",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Clip",
+     "official": true,
+     "id": "64433c39ad87f70497cca2ae",
+     "published_at": "2023-04-21T20:00:01.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Knife Scene",
+     "key": "lhUoMSahX58",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Clip",
+     "official": true,
+     "id": "66f1cb04a97880148f3b3fb1",
+     "published_at": "2022-03-28T23:00:15.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Official Trailer",
+     "key": "TEN-2uTi2c0",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Trailer",
+     "official": true,
+     "id": "6335ed1a8c315900827742a6",
+     "published_at": "2022-03-26T23:00:22.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Three Reasons: 12 Angry Men",
+     "key": "OvebOqneLIU",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Featurette",
+     "official": true,
+     "id": "533ec653c3a36854480002f0",
+     "published_at": "2011-11-22T17:21:00.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Sidney Lumet On 12 ANGRY MEN",
+     "key": "OrMXC_X2HU8",
+     "site": "YouTube",
+     "size": 480,
+     "type": "Featurette",
+     "official": true,
+     "id": "66f1cb2f583c56cdb1262bbf",
+     "published_at": "2009-09-29T21:35:36.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Rob Reiner On 12 ANGRY MEN",
+     "key": "hVxl_TnlBVY",
+     "site": "YouTube",
+     "size": 480,
+     "type": "Featurette",
+     "official": true,
+     "id": "66f1cb43de2d52dfbd8d4e6d",
+     "published_at": "2009-07-15T23:33:13.000Z"
+    }
+   ]
+  },
+  "recommendations": {
+   "page": 1,
+   "results": [
+    {
+     "adult": false,
+     "backdrop_path": "/wHXyGLjYPm4bHNKFQPCfYWiTeSH.jpg",
+     "genre_ids": [
+      18,
+      53
+     ],
+     "id": 1106739,
+     "title": "Juror #2",
+     "original_language": "en",
+     "original_title": "Juror #2",
+     "overview": "While serving as a juror in a high profile murder trial, family man Justin Kemp finds himself struggling with a serious moral dilemma…one he could use to sway the jury verdict and potentially convict—or free—the accused killer.",
+     "popularity": 5.2264,
+     "poster_path": "/ugQkpGajKFQ8eyOEhGheR0HfWQ.jpg",
+     "release_date": "2024-10-30",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.893,
+     "vote_count": 2730,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/rTf1rucbSn8IaW4AU11lvBk3JmX.jpg",
+     "genre_ids": [
+      18,
+      10770
+     ],
+     "id": 12219,
+     "title": "12 Angry Men",
+     "original_language": "en",
+     "original_title": "12 Angry Men",
+     "overview": "During the trial of a man accused of his father's murder, a lone juror takes a stand against the guilty verdict handed down by the others as a result of their preconceptions and prejudices.",
+     "popularity": 3.3014,
+     "poster_path": "/whDdYx3lh1LHTN0VlPFt51fX29g.jpg",
+     "release_date": "1997-08-17",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.674,
+     "vote_count": 482,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/wfabrzHzfYTdCj3iSCY7OEQbND0.jpg",
+     "genre_ids": [
+      18,
+      80,
+      36
+     ],
+     "id": 522212,
+     "title": "Just Mercy",
+     "original_language": "en",
+     "original_title": "Just Mercy",
+     "overview": "The powerful true story of Harvard-educated lawyer Bryan Stevenson, who goes to Alabama to defend the disenfranchised and wrongly condemned — including Walter McMillian, a man sentenced to death despite evidence proving his innocence. Bryan fights tirelessly for Walter with the system stacked against them.",
+     "popularity": 4.0553,
+     "poster_path": "/2bDZl3PzFLFWe4gaFUQnnaslqT3.jpg",
+     "release_date": "2019-12-25",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.837,
+     "vote_count": 2576,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/tcyL1OCnkkxotZhRaErfgOT83si.jpg",
+     "genre_ids": [
+      18,
+      36
+     ],
+     "id": 821,
+     "title": "Judgment at Nuremberg",
+     "original_language": "en",
+     "original_title": "Judgment at Nuremberg",
+     "overview": "In 1947, four German judges who served on the bench during the Nazi regime face a military tribunal to answer charges of crimes against humanity. Chief Justice Haywood hears evidence and testimony not only from lead defendant Ernst Janning and his defense attorney Hans Rolfe, but also from the widow of a Nazi general, an idealistic U.S. Army captain and reluctant witness Irene Wallner.",
+     "popularity": 3.4178,
+     "poster_path": "/b6vYatvui1EXeFYfpDX4rcbueuP.jpg",
+     "release_date": "1961-12-18",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.999,
+     "vote_count": 1020,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/tmfKqdXU0CUsZP3QIHkw4YYiiDA.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 64167,
+     "title": "Let Him Have It",
+     "original_language": "en",
+     "original_title": "Let Him Have It",
+     "overview": "In 1950s England, slow-witted Derek Bentley falls in with a group of petty criminals led by Chris Craig, a teenager with a fondness for American gangster films. Chris and Derek's friendship leads to their involvement in the true case which would forever shake England's belief in capital punishment.",
+     "popularity": 1.3496,
+     "poster_path": "/mJAKJWV7JPI0SA8oWHqWDktihqA.jpg",
+     "release_date": "1991-10-04",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.7,
+     "vote_count": 51,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/dMFVSGbgtVTedpewA4PHykQuEEK.jpg",
+     "genre_ids": [
+      53,
+      18
+     ],
+     "id": 9944,
+     "title": "The Pelican Brief",
+     "original_language": "en",
+     "original_title": "The Pelican Brief",
+     "overview": "A law student's theory about the recent deaths of two Supreme Court justices embroils her in a far-reaching web of murder, corruption, and greed.",
+     "popularity": 4.8206,
+     "poster_path": "/7B1HS0SqfJR1jbeHS6V0ZWdzLXP.jpg",
+     "release_date": "1993-09-17",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.6,
+     "vote_count": 1870,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/g3aLgQI4aw7aCucYSqXM4CzNYMu.jpg",
+     "genre_ids": [
+      18,
+      53
+     ],
+     "id": 13825,
+     "title": "The Lazarus Project",
+     "original_language": "en",
+     "original_title": "The Lazarus Project",
+     "overview": "After Ben Garvey foolishly turned back to crime, he thought his life was over when he was sentenced to death by lethal injection. But his death sentence isn't quite what it seems, as Ben regains consciousness near an eerie psychiatric ward, where he's told he's been hired as the groundskeeper. With the state of his soul in question, and the love for his wife and daughter all the more real and powerful, Ben must figure out if he's truly cheated death, or if he's become part of something far more sinister.",
+     "popularity": 2.3222,
+     "poster_path": "/qxf1AkFJskLrBM2WGwf8FpGcbiu.jpg",
+     "release_date": "2008-10-24",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.951,
+     "vote_count": 409,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/v0IeACcCsKLKqT4eCJsZ60nySQL.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 11975,
+     "title": "The Rainmaker",
+     "original_language": "en",
+     "original_title": "The Rainmaker",
+     "overview": "Fresh out of law school and desperate for work, idealistic rookie Rudy Baylor takes on a powerful insurance company accused of denying a dying boy’s claim. Teaming up with a scrappy, unlicensed paralegal, he finds himself in a David-versus-Goliath courtroom battle that tests his ethics, courage, and belief in justice.",
+     "popularity": 4.4577,
+     "poster_path": "/twLGHXPjQtS8UyVGp5GXmhJiTM7.jpg",
+     "release_date": "1997-11-18",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.024,
+     "vote_count": 1577,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/34WzsXWrGjVKVD1C9zyB0bs5e6q.jpg",
+     "genre_ids": [
+      18,
+      53
+     ],
+     "id": 26712,
+     "title": "The Enforcer",
+     "original_language": "en",
+     "original_title": "The Enforcer",
+     "overview": "After years of investigation, Assistant District Attorney Martin Ferguson has managed to build a solid case against an elusive gangster whose top lieutenant is about to testify.",
+     "popularity": 1.6373,
+     "poster_path": "/k7FAq6mmLfsC6htX6f5zKwbw8LF.jpg",
+     "release_date": "1951-02-24",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.123,
+     "vote_count": 118,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/f8O32f2JOnDXwiVOl2IUsXZ5ABt.jpg",
+     "genre_ids": [
+      18,
+      53
+     ],
+     "id": 12633,
+     "title": "The Star Chamber",
+     "original_language": "en",
+     "original_title": "The Star Chamber",
+     "overview": "As violence escalates in Los Angeles and heinous murders are committed, Steven Hardin, a young judge of the California Supreme Court, must struggle with his tortured conscience and growing despair as he watches helplessly as the ruthless criminals brought before his court go free because clever lawyers find obscure loopholes in the law.",
+     "popularity": 1.5803,
+     "poster_path": "/uXtsxFFWQmoUQu4qbBdOprEpv2Y.jpg",
+     "release_date": "1983-08-05",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6,
+     "vote_count": 192,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/7ZbNuSp186oxSjdtz5npRLLjVSb.jpg",
+     "genre_ids": [
+      53,
+      80,
+      18
+     ],
+     "id": 10056,
+     "title": "Killer's Kiss",
+     "original_language": "en",
+     "original_title": "Killer's Kiss",
+     "overview": "Davey Gordon, a New York City boxer at the end of his career, falls for dancer Gloria Price. However, their budding relationship is interrupted by Gloria's violent boss, Vincent Rapallo, who has eyes for Gloria. The two decide to skip town, but before they can, Vincent and his thugs abduct Gloria, and Davey is forced to search for her among the most squalid corners of the city, with his enemy hiding in the shadows.",
+     "popularity": 2.3424,
+     "poster_path": "/rNnhrytP9nVOJZwprO4KuKS0LT9.jpg",
+     "release_date": "1955-10-01",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.339,
+     "vote_count": 631,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/bRk1G4RJ7OqAahpozmx9LnGWOl9.jpg",
+     "genre_ids": [
+      18,
+      80
+     ],
+     "id": 28577,
+     "title": "I Want to Live!",
+     "original_language": "en",
+     "original_title": "I Want to Live!",
+     "overview": "Brazen perpetual offender Barbara Graham tries to go straight but she finds herself implicated in a murder and sent to death row.",
+     "popularity": 1.4573,
+     "poster_path": "/hufXkmILGy34VXEdQC69etY8Rt4.jpg",
+     "release_date": "1958-11-18",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7,
+     "vote_count": 125,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/eW81T3E28s40VFW8AgAJPCZqE2X.jpg",
+     "genre_ids": [
+      80,
+      18
+     ],
+     "id": 16056,
+     "title": "Winged Creatures",
+     "original_language": "en",
+     "original_title": "Winged Creatures",
+     "overview": "A psychotic man opens fire in a diner, murdering numerous people before killing himself. The survivors struggle in different ways following this horrendous event: a doctor doubts his own instincts and elects to use an experimental medical procedure on his wife, while a gambler believes he's on a lucky streak. A waitress begins engaging in promiscuous sex, and a young girl whose father is among the dead gains unexpected fame.",
+     "popularity": 1.7165,
+     "poster_path": "/mkKSPO5CuYogooyUzRlNckoJTkd.jpg",
+     "release_date": "2009-07-08",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.9,
+     "vote_count": 161,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/mJvvEgkus4COSwzyS2tRwjvHrlY.jpg",
+     "genre_ids": [
+      18,
+      36
+     ],
+     "id": 10264,
+     "title": "Hamlet",
+     "original_language": "en",
+     "original_title": "Hamlet",
+     "overview": "Hamlet, Prince of Denmark, finds out that his uncle Claudius killed his father to obtain the throne, and plans revenge.",
+     "popularity": 2.3778,
+     "poster_path": "/cB5HbaiFoQLLmGeN2eeJjBGrp8U.jpg",
+     "release_date": "1990-12-19",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.598,
+     "vote_count": 458,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/kZHzQIz6qoStgXtxjo5lMhrkDla.jpg",
+     "genre_ids": [
+      80,
+      18
+     ],
+     "id": 28023,
+     "title": "Riot in Cell Block 11",
+     "original_language": "en",
+     "original_title": "Riot in Cell Block 11",
+     "overview": "A prisoner leads his counterparts in a protest for better living conditions which turns violent and ugly.",
+     "popularity": 1.5578,
+     "poster_path": "/7Odm3v1TZuH2JogmJhvQYvCD2Gl.jpg",
+     "release_date": "1954-02-18",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.11,
+     "vote_count": 77,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/s4Bcy370GvLHzkwSXZY76arZI97.jpg",
+     "genre_ids": [
+      18,
+      53,
+      80
+     ],
+     "id": 49334,
+     "title": "They Made Me a Fugitive",
+     "original_language": "en",
+     "original_title": "They Made Me a Fugitive",
+     "overview": "After being framed for a policeman's murder, a criminal escapes prison and sets out for revenge.",
+     "popularity": 1.5196,
+     "poster_path": "/dJ8VhdQkFPhmLeBmodgXuzyQ1mC.jpg",
+     "release_date": "1947-06-27",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.611,
+     "vote_count": 63,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/wpcClVxsbVGTmCvDOU0tvuPTvOg.jpg",
+     "genre_ids": [
+      18,
+      36
+     ],
+     "id": 31908,
+     "title": "Ghosts of Mississippi",
+     "original_language": "en",
+     "original_title": "Ghosts of Mississippi",
+     "overview": "A Mississippi district attorney and the widow of Medgar Evers struggle to bring a white supremacist to justice for the 1963 murder of the civil rights leader.",
+     "popularity": 2.0485,
+     "poster_path": "/sN5mSBHR1HurME2gNmRy0sSCh6w.jpg",
+     "release_date": "1996-12-20",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.591,
+     "vote_count": 171,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/9W02KZYKLoINpqpJ2yv8ATxR1AK.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 205587,
+     "title": "The Judge",
+     "original_language": "en",
+     "original_title": "The Judge",
+     "overview": "A successful lawyer returns to his hometown for his mother's funeral only to discover that his estranged father, the town's judge, is suspected of murder.",
+     "popularity": 7.6292,
+     "poster_path": "/3K93GWotLXe4FqpErri0xkpLaD5.jpg",
+     "release_date": "2014-10-08",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.332,
+     "vote_count": 4640,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/iDtiGyfcFx868bZKWqLOfDuXQrz.jpg",
+     "genre_ids": [
+      18,
+      9648,
+      53
+     ],
+     "id": 4174,
+     "title": "Spellbound",
+     "original_language": "en",
+     "original_title": "Spellbound",
+     "overview": "When Dr. Anthony Edwardes arrives at a Vermont mental hospital to replace the outgoing hospital director, Dr. Constance Peterson, a psychoanalyst, discovers Edwardes is actually an impostor. The man confesses that the real Dr. Edwardes is dead and fears he may have killed him, but cannot recall anything. Dr. Peterson, however is convinced his impostor is innocent of the man's murder, and joins him on a quest to unravel his amnesia through psychoanalysis.",
+     "popularity": 3.153,
+     "poster_path": "/dPAox7jGScLBvxKLeRptJIBF7v.jpg",
+     "release_date": "1945-10-31",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.4,
+     "vote_count": 1047,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/yQmfDrOejqxem5DG2CRqo7ex9ig.jpg",
+     "genre_ids": [
+      80,
+      18,
+      53
+     ],
+     "id": 152792,
+     "title": "Devil's Knot",
+     "original_language": "en",
+     "original_title": "Devil's Knot",
+     "overview": "The savage murders of three young children sparks a controversial trial of three teenagers accused of killing the kids as part of a satanic ritual.",
+     "popularity": 1.8306,
+     "poster_path": "/8DMDx7XMylIL7lpBEOMzIjuwhw0.jpg",
+     "release_date": "2013-05-09",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.186,
+     "vote_count": 736,
+     "media_type": "movie"
+    }
+   ],
+   "total_pages": 31,
+   "total_results": 609
+  },
+  "similar": {
+   "page": 1,
+   "results": [
+    {
+     "adult": false,
+     "backdrop_path": "/bJd4hoeLCQIqqZnyQ9W1Bh5dIY7.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 2015,
+     "title": "Secret Sunshine",
+     "original_language": "ko",
+     "original_title": "밀양",
+     "overview": "Shin-ae moves to her recently late husband’s hometown. Despite her efforts to settle in this unfamiliar and too-normal place, she finds that she can’t fit in. After a sudden tragedy, Shin-ae turns to Christianity to relieve her pain, but when even this is not permitted, she wages a war against God.",
+     "popularity": 3.399,
+     "poster_path": "/vee1jyUrqUEmi5ZStWI1JJzLQJH.jpg",
+     "release_date": "2007-05-23",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.234,
+     "vote_count": 254
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/6huSptAsqYg3wbsi1jbMognSgmp.jpg",
+     "genre_ids": [
+      18,
+      36
+     ],
+     "id": 1955,
+     "title": "The Elephant Man",
+     "original_language": "en",
+     "original_title": "The Elephant Man",
+     "overview": "A Victorian surgeon rescues a heavily disfigured man being mistreated by his \"owner\" as a side-show freak. Behind his monstrous façade, there is revealed a person of great intelligence and sensitivity.",
+     "popularity": 5.6226,
+     "poster_path": "/u0wpPYjuSt8DIe1Y3Vapnh8jcKE.jpg",
+     "release_date": "1980-10-09",
+     "softcore": false,
+     "video": false,
+     "vote_average": 8.052,
+     "vote_count": 4135
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/h74qqBEGMvjmWAgYFQAFOn82KYq.jpg",
+     "genre_ids": [
+      18,
+      36,
+      80
+     ],
+     "id": 1962,
+     "title": "Love in Thoughts",
+     "original_language": "de",
+     "original_title": "Was nützt die Liebe in Gedanken",
+     "overview": "A posthumous look at the last days of Guenther's life as he, his best friend, and his sister let loose on a four-day binge of alcohol, drugs, and sex.",
+     "popularity": 1.4937,
+     "poster_path": "/iOiPogpC9IF0MLBSiSrP9WIJ9nD.jpg",
+     "release_date": "2004-02-12",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.382,
+     "vote_count": 68
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/fJWeJL39Pddz30ULiQBn4WIv5hx.jpg",
+     "genre_ids": [
+      18,
+      80,
+      53
+     ],
+     "id": 2001,
+     "title": "We Own the Night",
+     "original_language": "en",
+     "original_title": "We Own the Night",
+     "overview": "A New York nightclub manager tries to save his brother and father from Russian mafia hitmen.",
+     "popularity": 3.3366,
+     "poster_path": "/rsKhSr3UNjG2DhVj2KPj0ARujez.jpg",
+     "release_date": "2007-10-12",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.69,
+     "vote_count": 1601
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/phYwx0HKSdcQyOuK5bMMO8woETT.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 2009,
+     "title": "4 Months, 3 Weeks and 2 Days",
+     "original_language": "ro",
+     "original_title": "4 luni, 3 săptămâni și 2 zile",
+     "overview": "Two college roommates have 24 hours to make the ultimate choice as they finalize arrangements for a black market abortion.",
+     "popularity": 2.9099,
+     "poster_path": "/acEtvzFPeOQwbzRWncjRLenhnKV.jpg",
+     "release_date": "2007-08-24",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.536,
+     "vote_count": 869
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/e86x1nXqfXRlqATuy60MmzFUFQr.jpg",
+     "genre_ids": [
+      80,
+      9648,
+      53,
+      28,
+      18
+     ],
+     "id": 2163,
+     "title": "Breakdown",
+     "original_language": "en",
+     "original_title": "Breakdown",
+     "overview": "On their cross-country drive, a married couple, Jeff and Amy Taylor, experience car trouble after their SUV breaks down. Stranded in the New Mexico desert, the two catch a break when a passing truck driver offers Amy a ride to a nearby café to call for help. Meanwhile, Jeff is able to fix the car and make his way to the café, but Amy isn't there. He tracks down the trucker ― who tells the police he's never seen Jeff or his wife before. Jeff then begins a desperate, frenzied search for Amy.",
+     "popularity": 4.9903,
+     "poster_path": "/m3VB59ppr1RlpxNUYRUfZTgjgU.jpg",
+     "release_date": "1997-05-02",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.957,
+     "vote_count": 1202
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/2deGCpB6Ta27cnndJKWgCd1TW4t.jpg",
+     "genre_ids": [
+      53,
+      28,
+      18
+     ],
+     "id": 2165,
+     "title": "Liberty Stands Still",
+     "original_language": "en",
+     "original_title": "Liberty Stands Still",
+     "overview": "As the heir and current marketing director for one of the nation's biggest gun manufacturers, Liberty Wallace is indifferent to the atrocities made possible through her business and her CEO husband, Victor. On her way to see her actor lover, Liberty ends up chained to a food cart full of explosives -- all at the insistence of \"Joe\", a sniper whose young daughter was a victim of gun violence, and who now has Liberty in his sights.",
+     "popularity": 1.477,
+     "poster_path": "/itFpp5ZvdrhrFB7PwFcaWevwdyb.jpg",
+     "release_date": "2002-01-18",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.358,
+     "vote_count": 173
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/8k9gmX4v3HDgOjwAYaXwkb3kBQD.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 270302,
+     "title": "The Riot Club",
+     "original_language": "en",
+     "original_title": "The Riot Club",
+     "overview": "Two first-year students at Oxford University join a secret society and learn that their reputations can be made or destroyed over the course of one evening.",
+     "popularity": 1.9121,
+     "poster_path": "/9MdX0qhqmfztO2Etv27KkpmpUVk.jpg",
+     "release_date": "2014-09-19",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.893,
+     "vote_count": 1050
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/oM17BzW6Kz5mhdAUmfJUyRn4U9s.jpg",
+     "genre_ids": [
+      53,
+      27,
+      18
+     ],
+     "id": 270362,
+     "title": "Sex of the Devil",
+     "original_language": "it",
+     "original_title": "Il sesso del diavolo",
+     "overview": "After a relaxing anniversary cruise, Andrea and his wife Barbara are dropped off in Istanbul, Turkey. There, they meet Andrea’s reserved assistant Silvia and his Turkish colleague Omar, who hasn’t been back to his home country in fifteen years. Andrea’s secretary has arranged a luxurious seafront villa for them to stay in while they’re in the country. Upon arriving at the villa, Omar experiences an unsettling feeling of déjà vu, as though he has been in the house before, while the married couple can’t stop bickering. However, the vacation soon turns into a nightmare when mysterious and deadly events begin to unfold.",
+     "popularity": 0.541,
+     "poster_path": "/5UPxQ3TV3uAYngQfuwwzSJJBeXe.jpg",
+     "release_date": "1971-01-26",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5,
+     "vote_count": 4
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/s7oDV92ltdecJ7BTfGSOgsDi900.jpg",
+     "genre_ids": [
+      18,
+      10749
+     ],
+     "id": 2288,
+     "title": "Closer",
+     "original_language": "en",
+     "original_title": "Closer",
+     "overview": "The relationships of two couples become complicated and deceitful when the man from one couple meets the woman of the other.",
+     "popularity": 5.0208,
+     "poster_path": "/fGGaokx4k00S0J603VG53Qlr9jz.jpg",
+     "release_date": "2004-12-03",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.832,
+     "vote_count": 3871
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/oubk1SEFtg3Q8eOncFvGQVa6OoP.jpg",
+     "genre_ids": [
+      18,
+      9648,
+      27
+     ],
+     "id": 2291,
+     "title": "Jacob's Ladder",
+     "original_language": "en",
+     "original_title": "Jacob's Ladder",
+     "overview": "After returning home from the Vietnam War, veteran Jacob Singer struggles to maintain his sanity. Plagued by hallucinations and flashbacks, Singer rapidly falls apart as the world and people around him morph and twist into disturbing images. His girlfriend, Jezzie, and ex-wife, Sarah, try to help, but to little avail. Even Singer's chiropractor friend, Louis, fails to reach him as he descends into madness.",
+     "popularity": 4.9153,
+     "poster_path": "/ufLcHIi1aXjjH8MediAMvnwDsVI.jpg",
+     "release_date": "1990-11-02",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.358,
+     "vote_count": 2049
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/sgDRdNtdn9NsBpyxJ4rGFSmU9O3.jpg",
+     "genre_ids": [
+      35,
+      18
+     ],
+     "id": 458195,
+     "title": "Guilty",
+     "original_language": "en",
+     "original_title": "Guilty",
+     "overview": "A man walks up in the bed of a woman.",
+     "popularity": 0.6135,
+     "poster_path": "/ewZFIG05MdNS61N4GfVTay85vki.jpg",
+     "release_date": "2014-01-23",
+     "softcore": false,
+     "video": false,
+     "vote_average": 0,
+     "vote_count": 0
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/ct9dN0QUh5SMAexvyQ9IaA7HpOP.jpg",
+     "genre_ids": [
+      28,
+      12,
+      18,
+      53
+     ],
+     "id": 2320,
+     "title": "Executive Decision",
+     "original_language": "en",
+     "original_title": "Executive Decision",
+     "overview": "Terrorists hijack a 747 inbound to Washington D.C., demanding the release of their imprisoned leader. Intelligence expert David Grant suspects another reason and he is soon the reluctant member of a special assault team that is assigned to intercept the plane and hijackers.",
+     "popularity": 4.0074,
+     "poster_path": "/hLjXkFr9fHlWzRVwu1T31QSVHRq.jpg",
+     "release_date": "1996-03-15",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.349,
+     "vote_count": 1088
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/7YZRtyRfHYMiba68nRONR3D6Ey3.jpg",
+     "genre_ids": [
+      18,
+      10770
+     ],
+     "id": 270078,
+     "title": "The Changeling",
+     "original_language": "en",
+     "original_title": "The Changeling",
+     "overview": "Sexual passion breeds violence in the Thomas Middleton and William Rowley written tale of a beautiful woman who falls in love with a sea-captain.  Filmed with lush production values and at a leisurely, very British pace, Helen Mirren is riveting as Beatrice-Joanna, a young lass already torn by love and commitment.Beatrice-Joanna (Helen Mirren) is betrothed to Lord Alonzo de Piraquo (Malcolm Reynolds) but is in love with Alsemero (Brian Cox).  She hires her father's manservant, De Flores (Stanley Baker), to kill Alonzo but after he has done so, she realises De Flores wants her as a reward.The Changeling was an instalment of the BBC's Play of the Month series and is a production for television of a 1622 Jacobean tragedy of the same name, written by Thomas Middleton and William Rowley.",
+     "popularity": 0.506,
+     "poster_path": "/8vwSoFA42RuYmmzA9rfZaUQ7On8.jpg",
+     "release_date": "1974-01-20",
+     "softcore": false,
+     "video": false,
+     "vote_average": 8.5,
+     "vote_count": 2
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/mmrHqV7jTrtsK7fX4mMKRJDBEKN.jpg",
+     "genre_ids": [
+      18,
+      10402,
+      10749
+     ],
+     "id": 270027,
+     "title": "Dananeir",
+     "original_language": "ar",
+     "original_title": "دنانير",
+     "overview": "A concubine to a ruling family is challenged when the family is overthrown.",
+     "popularity": 0.3169,
+     "poster_path": "/810Xan0ogqHKWl31XTNM9QRLy9i.jpg",
+     "release_date": "1940-09-29",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.5,
+     "vote_count": 2
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/6y5MQBMMPvOMw7e5CLUjbRMrTl8.jpg",
+     "genre_ids": [
+      80,
+      18,
+      53
+     ],
+     "id": 270005,
+     "title": "By the Gun",
+     "original_language": "en",
+     "original_title": "By the Gun",
+     "overview": "A rising Boston gangster endangers those around him when he starts to make moves without the knowledge of his boss.",
+     "popularity": 0.9093,
+     "poster_path": "/k5U1M1frRT1AnP89dYw4eBpoWfE.jpg",
+     "release_date": "2014-09-28",
+     "softcore": false,
+     "video": false,
+     "vote_average": 4.2,
+     "vote_count": 70
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/bIXIG5j5Sb8rWu3ZGgsKCXJSS8w.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 645399,
+     "title": "A Trip to the Desert",
+     "original_language": "he",
+     "original_title": "חיול חברים",
+     "overview": "Three best friends take a trip to the desert, and their friendship is put to the test. Lior, who is openly gay, and religious Jew Elad, suddenly have to face each other's life choices. And Yossi - Where the hell is Yossi?",
+     "popularity": 0.1445,
+     "poster_path": "/zum7g72tRU8GSDy7lgcCFvxeFE1.jpg",
+     "release_date": "2016-11-16",
+     "softcore": false,
+     "video": false,
+     "vote_average": 2.8,
+     "vote_count": 5
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/9ekWqOIkVbhwzheV0gqj5jCNd9d.jpg",
+     "genre_ids": [
+      18,
+      53,
+      9648
+     ],
+     "id": 2263,
+     "title": "Music Box",
+     "original_language": "en",
+     "original_title": "Music Box",
+     "overview": "A lawyer defends her father accused of war crimes, but there is more to the case than she suspects.",
+     "popularity": 1.1871,
+     "poster_path": "/iHumUQOIJWWx6x77fOcB2PVBu53.jpg",
+     "release_date": "1989-12-22",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.156,
+     "vote_count": 195
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/s5HDOmFZaPVQFjk9BxxDrLu1T0g.jpg",
+     "genre_ids": [
+      35,
+      18
+     ],
+     "id": 2108,
+     "title": "The Breakfast Club",
+     "original_language": "en",
+     "original_title": "The Breakfast Club",
+     "overview": "Five high school students from different walks of life endure a Saturday detention under a power-hungry principal. The disparate group includes rebel John, princess Claire, outcast Allison, brainy Brian and Andrew, the jock. Each has a chance to tell his or her story, making the others see them a little differently -- and when the day ends, they question whether school will ever be the same.",
+     "popularity": 7.1752,
+     "poster_path": "/gp4zlj7wgbiofLMNsTPndMuO3PN.jpg",
+     "release_date": "1985-02-15",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.711,
+     "vote_count": 8847
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/fP9QYH8T9LBnsvnQvcqetB4nuwX.jpg",
+     "genre_ids": [
+      28,
+      18,
+      80,
+      53
+     ],
+     "id": 2112,
+     "title": "Payback",
+     "original_language": "en",
+     "original_title": "Payback",
+     "overview": "With friends like these, who needs enemies? That's the question bad guy Porter is left asking after his wife and partner steal his heist money and leave him for dead -- or so they think. Five months and an endless reservoir of bitterness later, Porter's partners and the crooked cops on his tail learn how bad payback can be.",
+     "popularity": 4.8493,
+     "poster_path": "/8Bqlv2kbOyZFqfiPNgzdBscqYPn.jpg",
+     "release_date": "1999-02-05",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.841,
+     "vote_count": 2137
+    }
+   ],
+   "total_pages": 1001,
+   "total_results": 20001
+  },
+  "watch/providers": {
+   "results": {
+    "AE": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=AE",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      }
+     ]
+    },
+    "AR": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=AR",
+     "flatrate": [
+      {
+       "logo_path": "/oeic4RyNDK988h5sZctewo6uRwO.png",
+       "provider_id": 2142,
+       "provider_name": "MGM+ Apple TV Channel",
+       "display_priority": 39
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 61
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ]
+    },
+    "AT": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=AT",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 19
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 19
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 67
+      }
+     ]
+    },
+    "AU": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=AU",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 23
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 58
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 23
+      }
+     ],
+     "ads": [
+      {
+       "logo_path": "/9dEuvA8wg5TSeFBZlPxSVxFdimJ.png",
+       "provider_id": 73,
+       "provider_name": "Tubi TV",
+       "display_priority": 27
+      }
+     ]
+    },
+    "BE": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=BE",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 36
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "BG": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=BG",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 30
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 30
+      }
+     ]
+    },
+    "BO": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=BO",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "BR": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=BR",
+     "flatrate": [
+      {
+       "logo_path": "/oeic4RyNDK988h5sZctewo6uRwO.png",
+       "provider_id": 2142,
+       "provider_name": "MGM+ Apple TV Channel",
+       "display_priority": 53
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 54
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 15
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 15
+      }
+     ]
+    },
+    "BY": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=BY",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ]
+    },
+    "BZ": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=BZ",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "CA": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=CA",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/fyUUKmDdzpJjSwsXPN4Rpi7jTu5.png",
+       "provider_id": 140,
+       "provider_name": "CosmoGo",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 36
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/fyUUKmDdzpJjSwsXPN4Rpi7jTu5.png",
+       "provider_id": 140,
+       "provider_name": "CosmoGo",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 36
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 70
+      }
+     ],
+     "free": [
+      {
+       "logo_path": "/gtjNBzAoGgUtYzt0UKXmwG34WWL.png",
+       "provider_id": 212,
+       "provider_name": "Hoopla",
+       "display_priority": 9
+      }
+     ],
+     "ads": [
+      {
+       "logo_path": "/9dEuvA8wg5TSeFBZlPxSVxFdimJ.png",
+       "provider_id": 73,
+       "provider_name": "Tubi TV",
+       "display_priority": 21
+      }
+     ]
+    },
+    "CH": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=CH",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 71
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 71
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 95
+      }
+     ]
+    },
+    "CL": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=CL",
+     "flatrate": [
+      {
+       "logo_path": "/oeic4RyNDK988h5sZctewo6uRwO.png",
+       "provider_id": 2142,
+       "provider_name": "MGM+ Apple TV Channel",
+       "display_priority": 34
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 35
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 55
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 55
+      }
+     ]
+    },
+    "CO": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=CO",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/oeic4RyNDK988h5sZctewo6uRwO.png",
+       "provider_id": 2142,
+       "provider_name": "MGM+ Apple TV Channel",
+       "display_priority": 36
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 37
+      }
+     ]
+    },
+    "CR": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=CR",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 47
+      }
+     ]
+    },
+    "CV": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=CV",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 11
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 11
+      }
+     ]
+    },
+    "CY": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=CY",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 4
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 4
+      }
+     ]
+    },
+    "CZ": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=CZ",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 48
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 40
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 40
+      }
+     ]
+    },
+    "DE": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=DE",
+     "ads": [
+      {
+       "logo_path": "/gqaJWT5oFiJyVDojVLYRSFPbhQ1.png",
+       "provider_id": 235,
+       "provider_name": "YouTube Free",
+       "display_priority": 208
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 21
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 23
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 25
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 21
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 23
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 25
+      },
+      {
+       "logo_path": "/iUGee0WhY5ZSBZZuCunNt0K7au2.png",
+       "provider_id": 2209,
+       "provider_name": "Freenet meinVOD",
+       "display_priority": 127
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 121
+      }
+     ]
+    },
+    "DK": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=DK",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 68
+      }
+     ]
+    },
+    "DO": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=DO",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 48
+      }
+     ]
+    },
+    "EC": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=EC",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ]
+    },
+    "EE": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=EE",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "EG": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=EG",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ]
+    },
+    "ES": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=ES",
+     "flatrate": [
+      {
+       "logo_path": "/pQ3G3Ts5SWjy3Ds4Y6QZWoZFAKJ.png",
+       "provider_id": 63,
+       "provider_name": "Filmin",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 69
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ]
+    },
+    "FI": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=FI",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 52
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 42
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 52
+      }
+     ]
+    },
+    "FR": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=FR",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/73lu1dtE9uJLWK1laXpeaAFh48j.png",
+       "provider_id": 61,
+       "provider_name": "Orange VOD",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 18
+      },
+      {
+       "logo_path": "/51fX3l4yElitnfui0IkbMUmfmgF.png",
+       "provider_id": 58,
+       "provider_name": "Canal VOD",
+       "display_priority": 19
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      },
+      {
+       "logo_path": "/zbXVTncv6m6ojLjPQJeW7u0SYKp.png",
+       "provider_id": 2601,
+       "provider_name": "Pathé Home",
+       "display_priority": 54
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/k7iSlvgWzZuO4zU5PcBjhABMuia.png",
+       "provider_id": 11,
+       "provider_name": "MUBI",
+       "display_priority": 20
+      },
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 40
+      },
+      {
+       "logo_path": "/w1hl8HszsPf5aAGT0mVY0O6LYP4.png",
+       "provider_id": 201,
+       "provider_name": "MUBI Amazon Channel",
+       "display_priority": 42
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/73lu1dtE9uJLWK1laXpeaAFh48j.png",
+       "provider_id": 61,
+       "provider_name": "Orange VOD",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 18
+      },
+      {
+       "logo_path": "/51fX3l4yElitnfui0IkbMUmfmgF.png",
+       "provider_id": 58,
+       "provider_name": "Canal VOD",
+       "display_priority": 19
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      },
+      {
+       "logo_path": "/zbXVTncv6m6ojLjPQJeW7u0SYKp.png",
+       "provider_id": 2601,
+       "provider_name": "Pathé Home",
+       "display_priority": 54
+      }
+     ]
+    },
+    "GB": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=GB",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 104
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 20
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 25
+      }
+     ],
+     "ads": [
+      {
+       "logo_path": "/gqaJWT5oFiJyVDojVLYRSFPbhQ1.png",
+       "provider_id": 235,
+       "provider_name": "YouTube Free",
+       "display_priority": 163
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 20
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 25
+      }
+     ]
+    },
+    "GF": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=GF",
+     "flatrate": [
+      {
+       "logo_path": "/k7iSlvgWzZuO4zU5PcBjhABMuia.png",
+       "provider_id": 11,
+       "provider_name": "MUBI",
+       "display_priority": 29
+      }
+     ]
+    },
+    "GG": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=GG",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 82
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 82
+      }
+     ]
+    },
+    "GH": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=GH",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ]
+    },
+    "GR": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=GR",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "GT": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=GT",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 47
+      }
+     ]
+    },
+    "HK": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=HK",
+     "ads": [
+      {
+       "logo_path": "/eJ6QYYiZvSjGHibzaeyjY1rceKJ.png",
+       "provider_id": 625,
+       "provider_name": "LINE TV",
+       "display_priority": 30
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ]
+    },
+    "HN": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=HN",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ]
+    },
+    "HR": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=HR",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 49
+      }
+     ]
+    },
+    "HU": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=HU",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 45
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      }
+     ]
+    },
+    "ID": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=ID",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 47
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 47
+      }
+     ]
+    },
+    "IE": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=IE",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 43
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 74
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 43
+      }
+     ]
+    },
+    "IL": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=IL",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 25
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 25
+      }
+     ]
+    },
+    "IN": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=IN",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 73
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 40
+      }
+     ]
+    },
+    "IS": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=IS",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ]
+    },
+    "IT": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=IT",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 35
+      },
+      {
+       "logo_path": "/xfDy4aGaOqbUqKPVQobjoJ9ZsSs.png",
+       "provider_id": 40,
+       "provider_name": "CHILI",
+       "display_priority": 38
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 35
+      },
+      {
+       "logo_path": "/xfDy4aGaOqbUqKPVQobjoJ9ZsSs.png",
+       "provider_id": 40,
+       "provider_name": "CHILI",
+       "display_priority": 38
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/k7iSlvgWzZuO4zU5PcBjhABMuia.png",
+       "provider_id": 11,
+       "provider_name": "MUBI",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/w1hl8HszsPf5aAGT0mVY0O6LYP4.png",
+       "provider_id": 201,
+       "provider_name": "MUBI Amazon Channel",
+       "display_priority": 48
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 72
+      }
+     ]
+    },
+    "JP": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=JP",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/m0tkTiV5TN7NWfazDEYc8NoVXSd.png",
+       "provider_id": 2683,
+       "provider_name": "FOD",
+       "display_priority": 79
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 25
+      }
+     ]
+    },
+    "LT": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=LT",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ]
+    },
+    "LU": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=LU",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 7
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 7
+      }
+     ]
+    },
+    "LV": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=LV",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "MC": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=MC",
+     "flatrate": [
+      {
+       "logo_path": "/k7iSlvgWzZuO4zU5PcBjhABMuia.png",
+       "provider_id": 11,
+       "provider_name": "MUBI",
+       "display_priority": 29
+      }
+     ]
+    },
+    "MU": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=MU",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      }
+     ]
+    },
+    "MX": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=MX",
+     "flatrate": [
+      {
+       "logo_path": "/oeic4RyNDK988h5sZctewo6uRwO.png",
+       "provider_id": 2142,
+       "provider_name": "MGM+ Apple TV Channel",
+       "display_priority": 50
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 51
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      }
+     ]
+    },
+    "MY": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=MY",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 39
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 39
+      }
+     ]
+    },
+    "MZ": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=MZ",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ]
+    },
+    "NI": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=NI",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "NL": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=NL",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 47
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/oB7QrPnusUtIpKr8k0YQ12INLeP.png",
+       "provider_id": 71,
+       "provider_name": "Pathé Thuis",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 36
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/oB7QrPnusUtIpKr8k0YQ12INLeP.png",
+       "provider_id": 71,
+       "provider_name": "Pathé Thuis",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 36
+      }
+     ]
+    },
+    "NO": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=NO",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/m502wSLGwHL9WUK38NeAbwrBk6P.png",
+       "provider_id": 431,
+       "provider_name": "TV 2 Play",
+       "display_priority": 17
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/m502wSLGwHL9WUK38NeAbwrBk6P.png",
+       "provider_id": 431,
+       "provider_name": "TV 2 Play",
+       "display_priority": 17
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 61
+      }
+     ]
+    },
+    "NZ": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=NZ",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 37
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ]
+    },
+    "PE": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=PE",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 50
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ]
+    },
+    "PF": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=PF",
+     "flatrate": [
+      {
+       "logo_path": "/k7iSlvgWzZuO4zU5PcBjhABMuia.png",
+       "provider_id": 11,
+       "provider_name": "MUBI",
+       "display_priority": 14
+      }
+     ]
+    },
+    "PH": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=PH",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 41
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 41
+      }
+     ]
+    },
+    "PL": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=PL",
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 30
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/xfDy4aGaOqbUqKPVQobjoJ9ZsSs.png",
+       "provider_id": 40,
+       "provider_name": "CHILI",
+       "display_priority": 32
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/xfDy4aGaOqbUqKPVQobjoJ9ZsSs.png",
+       "provider_id": 40,
+       "provider_name": "CHILI",
+       "display_priority": 32
+      }
+     ]
+    },
+    "PT": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=PT",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 43
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 43
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 55
+      }
+     ]
+    },
+    "PY": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=PY",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 45
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ]
+    },
+    "RO": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=RO",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 35
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 35
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 42
+      }
+     ]
+    },
+    "SA": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=SA",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      }
+     ]
+    },
+    "SE": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=SE",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 41
+      }
+     ]
+    },
+    "SG": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=SG",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ]
+    },
+    "SI": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=SI",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 25
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 25
+      }
+     ]
+    },
+    "SK": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=SK",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 55
+      }
+     ]
+    },
+    "SM": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=SM",
+     "flatrate": [
+      {
+       "logo_path": "/k7iSlvgWzZuO4zU5PcBjhABMuia.png",
+       "provider_id": 11,
+       "provider_name": "MUBI",
+       "display_priority": 30
+      }
+     ]
+    },
+    "TH": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=TH",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ]
+    },
+    "TR": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=TR",
+     "flatrate": [
+      {
+       "logo_path": "/k7iSlvgWzZuO4zU5PcBjhABMuia.png",
+       "provider_id": 11,
+       "provider_name": "MUBI",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/w1hl8HszsPf5aAGT0mVY0O6LYP4.png",
+       "provider_id": 201,
+       "provider_name": "MUBI Amazon Channel",
+       "display_priority": 39
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 41
+      }
+     ]
+    },
+    "TW": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=TW",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      }
+     ],
+     "ads": [
+      {
+       "logo_path": "/eJ6QYYiZvSjGHibzaeyjY1rceKJ.png",
+       "provider_id": 625,
+       "provider_name": "LINE TV",
+       "display_priority": 30
+      }
+     ]
+    },
+    "UA": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=UA",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ]
+    },
+    "UG": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=UG",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ]
+    },
+    "US": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=US",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/aZRENwYILujqs0RVOZutTh0BVGV.png",
+       "provider_id": 3,
+       "provider_name": "Google Play Movies",
+       "display_priority": 25
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 26
+      },
+      {
+       "logo_path": "/wpOt6x0dRxTrIzuBosto4LGd7E9.png",
+       "provider_id": 7,
+       "provider_name": "Fandango At Home",
+       "display_priority": 42
+      },
+      {
+       "logo_path": "/6qPtM96UZkt3Bu4ZFPsDeHFWUZ2.png",
+       "provider_id": 486,
+       "provider_name": "Spectrum On Demand",
+       "display_priority": 124
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/aZRENwYILujqs0RVOZutTh0BVGV.png",
+       "provider_id": 3,
+       "provider_name": "Google Play Movies",
+       "display_priority": 25
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 26
+      },
+      {
+       "logo_path": "/wpOt6x0dRxTrIzuBosto4LGd7E9.png",
+       "provider_id": 7,
+       "provider_name": "Fandango At Home",
+       "display_priority": 42
+      }
+     ],
+     "ads": [
+      {
+       "logo_path": "/gqaJWT5oFiJyVDojVLYRSFPbhQ1.png",
+       "provider_id": 235,
+       "provider_name": "YouTube Free",
+       "display_priority": 100
+      },
+      {
+       "logo_path": "/9dEuvA8wg5TSeFBZlPxSVxFdimJ.png",
+       "provider_id": 73,
+       "provider_name": "Tubi TV",
+       "display_priority": 347
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/3wF8xISfVlcrc8X3jaa3uMUFGAr.png",
+       "provider_id": 257,
+       "provider_name": "fuboTV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 583,
+       "provider_name": "MGM+ Amazon Channel",
+       "display_priority": 18
+      },
+      {
+       "logo_path": "/mfbhzQwmQKjm7bLZPF5CTeu3Ilc.png",
+       "provider_id": 2383,
+       "provider_name": "Philo",
+       "display_priority": 22
+      },
+      {
+       "logo_path": "/surh9i8VYeeq9186fKHnUg5Q5dg.png",
+       "provider_id": 636,
+       "provider_name": "MGM Plus Roku Premium Channel",
+       "display_priority": 37
+      },
+      {
+       "logo_path": "/q63Uzpu7JAs566vA2G23Lk7LcID.png",
+       "provider_id": 34,
+       "provider_name": "MGM Plus",
+       "display_priority": 54
+      }
+     ],
+     "free": [
+      {
+       "logo_path": "/cltb8XKan9ierp23ItPmCOcVLRa.png",
+       "provider_id": 191,
+       "provider_name": "Kanopy",
+       "display_priority": 40
+      },
+      {
+       "logo_path": "/gtjNBzAoGgUtYzt0UKXmwG34WWL.png",
+       "provider_id": 212,
+       "provider_name": "Hoopla",
+       "display_priority": 41
+      },
+      {
+       "logo_path": "/dNF4vWhF3TduWvOyfVxEyTqSNRl.png",
+       "provider_id": 2409,
+       "provider_name": "Fawesome",
+       "display_priority": 147
+      }
+     ]
+    },
+    "VA": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=VA",
+     "flatrate": [
+      {
+       "logo_path": "/k7iSlvgWzZuO4zU5PcBjhABMuia.png",
+       "provider_id": 11,
+       "provider_name": "MUBI",
+       "display_priority": 11
+      }
+     ]
+    },
+    "VE": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=VE",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "ZA": {
+     "link": "https://www.themoviedb.org/movie/389-12-angry-men/watch?locale=ZA",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ]
+    }
+   }
+  },
+  "release_dates": {
+   "results": [
+    {
+     "iso_3166_1": "AR",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-11-07T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "AT",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-12-20T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "AU",
+     "release_dates": [
+      {
+       "certification": "G",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-10-10T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "BR",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1958-10-10T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "L",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "VHS / DVD",
+       "release_date": "2005-08-12T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "CA",
+     "release_dates": [
+      {
+       "certification": "PG",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-04-13T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "CH",
+     "release_dates": [
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Locarno Film Festival",
+       "release_date": "1957-07-01T00:00:00.000Z",
+       "type": 1
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "CZ",
+     "release_dates": [
+      {
+       "certification": "U",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD / Blu-ray",
+       "release_date": "2016-02-24T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "DE",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Berlin International Film Festival",
+       "release_date": "1957-06-21T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "West Germany",
+       "release_date": "1957-08-14T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "East Germany ",
+       "release_date": "1975-11-05T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "DK",
+     "release_dates": [
+      {
+       "certification": "15",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1959-05-18T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "ES",
+     "release_dates": [
+      {
+       "certification": "A",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1958-02-03T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "FI",
+     "release_dates": [
+      {
+       "certification": "K-12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-10-25T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "FR",
+     "release_dates": [
+      {
+       "certification": "TP",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-09-04T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "TP",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "re-release",
+       "release_date": "2007-07-25T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "GB",
+     "release_dates": [
+      {
+       "certification": "U",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-04-18T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "PG",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Blu-ray",
+       "release_date": "2017-05-15T00:00:00.000Z",
+       "type": 5
+      },
+      {
+       "certification": "U",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD / Blu-ray",
+       "release_date": "2014-01-13T00:00:00.000Z",
+       "type": 5
+      },
+      {
+       "certification": "U",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2001-03-19T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "GR",
+     "release_dates": [
+      {
+       "certification": "Κ",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-09-30T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "re-release",
+       "release_date": "2013-08-22T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "re-release",
+       "release_date": "2025-08-21T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2010-05-18T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "HU",
+     "release_dates": [
+      {
+       "certification": "KN",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1960-01-28T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "IE",
+     "release_dates": [
+      {
+       "certification": "PG",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-04-10T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "IL",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-10-10T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "IN",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Blu-ray",
+       "release_date": "2014-01-15T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "IT",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-09-04T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "JP",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1959-08-01T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "LT",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "2017-08-29T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "MX",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2000-01-01T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "NL",
+     "release_dates": [
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "re-release",
+       "release_date": "2008-01-17T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-10-25T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Blu-ray",
+       "release_date": "2013-12-04T00:00:00.000Z",
+       "type": 5
+      },
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2005-01-01T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "NO",
+     "release_dates": [
+      {
+       "certification": "15",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-11-28T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "PL",
+     "release_dates": [
+      {
+       "certification": "AL",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1959-11-01T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "PT",
+     "release_dates": [
+      {
+       "certification": "M/12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-10-28T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "SE",
+     "release_dates": [
+      {
+       "certification": "15",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-07-29T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "SU",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1961-11-13T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "TR",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1960-04-01T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "US",
+     "release_dates": [
+      {
+       "certification": "NR",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-04-10T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "UY",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-11-21T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "ZA",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1957-08-19T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

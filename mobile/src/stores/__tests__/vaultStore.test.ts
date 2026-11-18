@@ -150,7 +150,8 @@ describe('writing and taking back', () => {
     mockSet.mockResolvedValueOnce(undefined);
     const res = await useVaultStore.getState().saveNote(LOG_A, V1, '  a quiet note  ');
     expect(res.queuedOffline).toBe(false);
-    expect(mockSet).toHaveBeenCalledWith(LOG_A, V1, 'a quiet note');
+    // With the moment it was written, for the house to keep only the newest note (round 13).
+    expect(mockSet).toHaveBeenCalledWith(LOG_A, V1, 'a quiet note', expect.any(String));
     expect(useVaultStore.getState().noteFor(V1)).toBe('a quiet note');
   });
 
@@ -160,7 +161,7 @@ describe('writing and taking back', () => {
     expect(res.queuedOffline).toBe(true);
     expect(mockEnqueue).toHaveBeenCalledWith({
       type: 'set_viewing_note',
-      payload: { log_id: LOG_A, viewing_id: V1, notes: 'written on a train' },
+      payload: { log_id: LOG_A, viewing_id: V1, notes: 'written on a train', written_at: expect.any(String) },
     });
     expect(useVaultStore.getState().noteFor(V1)).toBe('written on a train');
   });
@@ -177,7 +178,7 @@ describe('writing and taking back', () => {
     useVaultStore.getState().rememberNote(V1, 'to go', LOG_A);
     mockSet.mockRejectedValueOnce(networkError());
     await useVaultStore.getState().saveNote(LOG_A, V1, '   ');
-    expect(mockEnqueue).toHaveBeenCalledWith({ type: 'remove_viewing_note', payload: { viewing_id: V1 } });
+    expect(mockEnqueue).toHaveBeenCalledWith({ type: 'remove_viewing_note', payload: { log_id: LOG_A, viewing_id: V1, written_at: expect.any(String) } });
     expect(useVaultStore.getState().noteFor(V1)).toBe('');
   });
 
@@ -186,7 +187,7 @@ describe('writing and taking back', () => {
     mockRemove.mockRejectedValueOnce(networkError());
     const res = await useVaultStore.getState().dropNote(LOG_A, V1);
     expect(res.queuedOffline).toBe(true);
-    expect(mockEnqueue).toHaveBeenCalledWith({ type: 'remove_viewing_note', payload: { viewing_id: V1 } });
+    expect(mockEnqueue).toHaveBeenCalledWith({ type: 'remove_viewing_note', payload: { log_id: LOG_A, viewing_id: V1, written_at: expect.any(String) } });
   });
 
   it('a removal that fails for any other reason puts the note back', async () => {

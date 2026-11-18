@@ -781,13 +781,16 @@ function StackDetailScreen({ id }: { id: string }) {
 
   // Sharing a stack into a salon is speaking there: without the rank, LOUNGE opens the rope.
   const { held: canShare, rank: shareRank, standing: shareStanding, openOr: openShare } = useClearance('lounge-speaking', `/stacks/${id}`);
+  const sealed = !!list?.isPrivate;
   const handleOpenShareLounge = useCallback(async () => {
+    // A sealed stack is shown in no salon (the action is not drawn for one; a press already on its way stops here).
+    if (sealed) return;
     // A rank read again at the rope and found held opens the salon list at once. A stranger's
     // rope is the way in, which brings them back to this stack (useClearance, P4.21).
     if (!canShare) { openShare(() => setShowLoungeShare(true)); return; }
     TactileEngine.selection();
     setShowLoungeShare(true);
-  }, [canShare, openShare]);
+  }, [sealed, canShare, openShare]);
 
   const handleDelete = useCallback(() => {
     TactileEngine.destroy();
@@ -1067,16 +1070,22 @@ function StackDetailScreen({ id }: { id: string }) {
                     </Text>
                   </PressableScale>
 
-                  <View style={s.actionDivider} />
+                  {/* A sealed stack is read by its curator alone, so it is never shown in a salon: no
+                      LOUNGE for it (the house refuses its card too, and sealing takes its cards down). */}
+                  {!list.isPrivate ? (
+                    <>
+                      <View style={s.actionDivider} />
 
-                  {/* Who may not speak in a salon holds the brass key; its label says it opens the Society. */}
-                  <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={null} haptic="selection" accessibilityRole="button"
-                    accessibilityLabel={canShare ? 'Share to lounge' : ropeSpoken('Share to lounge', shareRank, shareStanding)}>
-                    {canShare || !user
-                      ? <MessageCircle size={16} strokeWidth={2} color={colors.fog} />
-                      : <KeyRound size={16} strokeWidth={2} color={colors.sepia} style={s.actionKeyDim} />}
-                    <Text style={[s.actionLabel, !canShare && !!user && s.actionLabelKey]} pointerEvents="none" {...deckLabelProps}>LOUNGE</Text>
-                  </PressableScale>
+                      {/* Who may not speak in a salon holds the brass key; its label says it opens the Society. */}
+                      <PressableScale style={s.actionItem} onPress={handleOpenShareLounge} hitSlop={null} haptic="selection" accessibilityRole="button"
+                        accessibilityLabel={canShare ? 'Share to lounge' : ropeSpoken('Share to lounge', shareRank, shareStanding)}>
+                        {canShare || !user
+                          ? <MessageCircle size={16} strokeWidth={2} color={colors.fog} />
+                          : <KeyRound size={16} strokeWidth={2} color={colors.sepia} style={s.actionKeyDim} />}
+                        <Text style={[s.actionLabel, !canShare && !!user && s.actionLabelKey]} pointerEvents="none" {...deckLabelProps}>LOUNGE</Text>
+                      </PressableScale>
+                    </>
+                  ) : null}
                 </Arrive>
 
                 {/* The critiques open in an overlay, never between here and the films. */}
@@ -1213,7 +1222,8 @@ function StackDetailScreen({ id }: { id: string }) {
 
       {/* ── SHARE TO LOUNGE MODAL ── */}
       <ShareToLoungeModal
-        visible={showLoungeShare}
+        // Sealed while the salons were open: they close, as a sealed stack is shown in none.
+        visible={showLoungeShare && !list.isPrivate}
         onClose={() => setShowLoungeShare(false)}
         listId={list.id}
         listTitle={list.title}

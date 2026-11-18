@@ -747,15 +747,16 @@ describe('the way out, and the way to leave for good', () => {
     expect(codePath.slice(0, 200)).toMatch(/completeAccountDeletion\(\)/);
     const biometricPath = SCREEN.slice(SCREEN.indexOf('const handleDeleteAccount'));
     expect(biometricPath.slice(0, 2200)).toMatch(/completeAccountDeletion\(\)/);
-    // and there is exactly one place that erases
-    expect((CODE_SCREEN.match(/storage\.clearAll\(\)/g) || [])).toHaveLength(1);
+    // and there is exactly one place that erases (what the phone keeps for another member stays: othersKeptHere)
+    expect((CODE_SCREEN.match(/eraseAllButOthers\(/g) || [])).toHaveLength(1);
+    expect(CODE_SCREEN).not.toMatch(/storage\.clearAll\(\)/);
   });
 
   it('the erasure removes the rows, the session AND the device', () => {
     const fn = SCREEN.slice(SCREEN.indexOf('const completeAccountDeletion'), SCREEN.indexOf('const executePendingOtpAction'));
     expect(fn).toMatch(/requestAccountDeletion/);
     expect(fn).toMatch(/logout\(\)/);
-    expect(fn).toMatch(/storage\.clearAll\(\)/);
+    expect(fn).toMatch(/eraseAllButOthers\(closed\)/);
     // The way out is taken once the edit guard has let go: leaving is set, then replaced to.
     expect(fn).toMatch(/setLeavingTo\('\/login'\)/);
     expect(SCREEN).toMatch(/if \(leavingTo === '\/login'\) nav\.replace\('\/login'\)/);

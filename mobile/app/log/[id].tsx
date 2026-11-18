@@ -751,19 +751,23 @@ function LogDetailScreen({ id }: { id: string }) {
         format: 'png',
         quality: 1,
       });
+      // Whose log it is, truly: "my log" only from its author; anyone else sends the author's.
+      const whose = user?.id && user.id === log?.user_id ? 'my log'
+        : profile?.username ? `@${profile.username}'s log` : 'a log';
+      const said = `Check out ${whose} of ${log?.film_title} on ReelHouse.`;
 
       if (Platform.OS === 'android') {
         const isAvailable = await Sharing.isAvailableAsync();
         if (isAvailable) {
           await Sharing.shareAsync(uri, {
             mimeType: 'image/png',
-            dialogTitle: `Check out my log for ${log?.film_title} on ReelHouse.`,
+            dialogTitle: said,
           });
         }
       } else {
         await Share.share({
           url: uri, // Triggers native sheet with image payload
-          message: `Check out my log for ${log?.film_title} on ReelHouse.`, 
+          message: said,
         });
       }
     } catch {
@@ -874,6 +878,8 @@ function LogDetailScreen({ id }: { id: string }) {
                rating: log.rating,
                review: log.review || undefined,
                pullQuote: log.pull_quote || undefined,
+               // Veiled on the page, so never sent in clear: the file says only that there are spoilers.
+               isSpoiler: log.is_spoiler,
                // No handle at all when the author's name could not be read.
                username: profile?.username ?? '',
                status: log.status as "watched" | "rewatched" | "abandoned" | undefined,

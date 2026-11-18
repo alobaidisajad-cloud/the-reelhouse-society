@@ -27,7 +27,7 @@
  *
  * The suites steer it, never the functions:
  *   POST /__script  { revenuecat: {<id>: {status, body}}, tmdb: {<path>: {status,
- *                     body, text, delayMs}}, tmdbKeyRefused: true, expo: {status},
+ *                     body, text, delayMs, headers}}, tmdbKeyRefused: true, expo: {status},
  *                     resend: {status} }
  *   GET  /__seen    every request since the last reset: { method, path, query,
  *                   headers, body }
@@ -45,8 +45,8 @@ const EXPO_TOKEN = process.env.STAND_INS_EXPO_TOKEN ?? '';
 let script = {};
 let seen = [];
 
-const send = (res, status, body, type = 'application/json') => {
-  res.writeHead(status, { 'Content-Type': type });
+const send = (res, status, body, type = 'application/json', headers = {}) => {
+  res.writeHead(status, { 'Content-Type': type, ...headers });
   res.end(typeof body === 'string' ? body : JSON.stringify(body));
 };
 
@@ -127,7 +127,7 @@ async function answer(req, res) {
     if (scripted) {
       if (scripted.delayMs) await new Promise((r) => setTimeout(r, scripted.delayMs));
       if (scripted.text !== undefined) return send(res, scripted.status ?? 200, scripted.text, 'text/html');
-      return send(res, scripted.status ?? 200, scripted.body ?? {});
+      return send(res, scripted.status ?? 200, scripted.body ?? {}, 'application/json', scripted.headers);
     }
     const movie = /^\/3\/movie\/(\d+)$/.exec(path);
     if (movie) return send(res, 200, film(Number(movie[1])));

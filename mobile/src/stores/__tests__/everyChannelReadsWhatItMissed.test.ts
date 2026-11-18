@@ -39,7 +39,11 @@ it('the notices’ channel back after a drop reads the notices again', () => {
   const read = jest.fn(async () => {});
   useNotificationStore.setState({ fetchNotifications: read });
   const leave = useNotificationStore.getState().setupRealtime();
-  dropAndReturn();
+  // Its first live moment reads the board too (round 13), so the count is taken after it.
+  mockStatus?.('SUBSCRIBED');
+  read.mockClear();
+  mockStatus?.('CHANNEL_ERROR');
+  mockStatus?.('SUBSCRIBED');
   expect(read).toHaveBeenCalledTimes(1);
   if (typeof leave === 'function') leave();
 });

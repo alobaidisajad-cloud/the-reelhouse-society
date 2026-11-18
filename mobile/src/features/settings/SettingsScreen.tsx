@@ -39,7 +39,6 @@ import { UNREADY } from '@/src/theme/unready';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { TmdbCredit } from '@/src/components/TmdbCredit';
 import DataVault from '@/src/features/settings/DataVault';
-import { storage } from '@/src/stores/mmkv-storage';
 import PressableScale from '@/src/components/PressableScale';
 import { isArchivistPlusTier, resolveTier } from '@/src/utils/tier';
 import { STORE } from '@/src/components/society/SmallPrint';
@@ -66,6 +65,7 @@ import { raceDeadline } from '@/src/utils/raceDeadline';
 import NetInfo from '@/src/lib/reachability';
 import { flushOfflineQueue, getQueueLength } from '@/src/utils/offlineQueue';
 import { erasedBySigningOut, keptFor } from '@/src/utils/keptOnThisPhone';
+import { eraseAllButOthers } from '@/src/utils/othersKeptHere';
 import { counted } from '@/src/utils/counted';
 import { Arrive } from '@/src/components/Arrive';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
@@ -221,10 +221,13 @@ export function SettingsScreen() {
       reelToast.error(`Account deletion failed. Try again, or write to ${SUPPORT_EMAIL} and we will do it for you.`);
       return;
     }
+    // Whose account closed, read before logout() clears it.
+    const closed = useAuthStore.getState().user?.id ?? null;
     try { await logout(); } catch { /* local teardown continues regardless */ }
     // logout() clears the stores and its own known keys; this removes everything
-    // else this install ever wrote — drafts, receipts, flags, throttles.
-    storage.clearAll();
+    // else this install ever wrote (receipts, flags, throttles), but what it keeps for
+    // another member who signs in on this phone: their set-aside writes and drafts.
+    eraseAllButOthers(closed);
     TactileEngine.destroy();
     setLeavingTo('/login');
   }, [logout]);

@@ -23,7 +23,7 @@
  * the drawn page (zz-log.gen, mockups/tools/layout.cjs).
  */
 import React, { act } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { Share, View, StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { resetMarkCounts } from '@/src/stores/markCounts';
 import { FrameWords } from '@/src/components/feed/ActivityCard';
@@ -96,9 +96,11 @@ jest.mock('@/src/components/moderation/ContentActionSheet', () => ({ ContentActi
 // nothing is captured before it says every picture on it is drawn — which the
 // test says for it, through the onReady it was given.
 let mockCardReady: (() => void) | undefined;
+/** What the page handed the card to draw. */
+let mockCardData: Record<string, unknown> | undefined;
 jest.mock('@/src/components/film/LogShareCard', () => {
   const { View: V } = require('react-native');
-  return ({ onReady }: { onReady?: () => void }) => { mockCardReady = onReady; return <V testID="share-card" />; };
+  return ({ data, onReady }: { data: Record<string, unknown>; onReady?: () => void }) => { mockCardReady = onReady; mockCardData = data; return <V testID="share-card" />; };
 });
 // A test renderer has no native view to draw to a picture, so every capture fails.
 const mockCaptureRef = jest.fn((..._: unknown[]) => Promise.reject(new Error('no native view')));
@@ -411,6 +413,32 @@ describe('the share card exists only while a share is in flight', () => {
     expect(mockCaptureRef).not.toHaveBeenCalled();
     expect(card(r)).toBeNull();
     expect(mockToastError).toHaveBeenCalledWith('The log could not be shared. Try again.');
+  });
+});
+
+describe('a share says nothing the record veils, and whose log it is (round 13)', () => {
+  beforeEach(() => { mockCardReady = undefined; mockCardData = undefined; mockCaptureRef.mockClear(); });
+
+  it('a review marked as a spoiler is handed to the file as one, which then prints none of it', async () => {
+    const r = await page({ is_spoiler: true, pull_quote: 'He never boards the train.' });
+    await act(async () => { await fireEvent.press(r.getByText('SHARE')); });
+    expect(mockCardData).toEqual(expect.objectContaining({ isSpoiler: true }));
+    await act(async () => { mockCardReady!(); await new Promise((res) => setTimeout(res, 50)); });
+  });
+
+  it('a visitor sends the author’s log, never "my log"', async () => {
+    mockCaptureRef.mockResolvedValueOnce('file:///card.png' as never);
+    const shared = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' } as never);
+    try {
+      const r = await page();
+      await act(async () => { await fireEvent.press(r.getByText('SHARE')); });
+      await act(async () => { mockCardReady!(); await new Promise((res) => setTimeout(res, 50)); });
+      const call = shared.mock.calls[0];
+      expect(call).toBeDefined();
+      expect((call![0] as { message?: string }).message).toBe("Check out @morpho's log of In the Mood for Love on ReelHouse.");
+    } finally {
+      shared.mockRestore();
+    }
   });
 });
 

@@ -531,12 +531,16 @@ describe('Social', () => {
             // First call: profiles.select (username lookup)
             const profileChain = createMockChain();
             profileChain.maybeSingle = jest.fn().mockResolvedValue({ data: { id: 'target-id' }, error: null });
-            // Second call: interactions.upsert
+            // Second call: interactions.select, the follow already held? (round 13: a resent follow
+            // spends no pace). None.
+            const heldChain = createMockChain();
+            // Third call: interactions.upsert
             const interactionChain = createMockChain();
             makeChainResolveTo(interactionChain, { error: null });
 
             (supabase.from as jest.Mock)
                 .mockReturnValueOnce(profileChain)
+                .mockReturnValueOnce(heldChain)
                 .mockReturnValueOnce(interactionChain);
 
             await runMutation('follow_user', { user_id: 'u1', target_username: 'cinephile42' });

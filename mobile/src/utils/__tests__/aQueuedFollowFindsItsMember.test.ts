@@ -57,7 +57,7 @@ const replay = (type: string, payload: Row) =>
 const asked = () => mockHouse.asked.map(({ table, op, columns, filters, one, values }) => ({ table, op, columns, filters, one, values }));
 
 /** Kane, by handle. */
-const PROFILES = { profiles: [{ id: KANE, username: 'kane' }] };
+const PROFILES = { profiles: [{ id: KANE, username: 'kane' }], interactions: [] };
 const READ_KANE = { table: 'profiles', op: 'select', columns: ['id'], filters: [['eq', 'username', 'kane']], one: 'maybeSingle', values: null };
 
 beforeEach(() => {
@@ -73,16 +73,18 @@ describe.each([
   ['follow_request_user', 'follow_request'],
 ])('%s', (type, kind) => {
   const written = (target: string) => ({ table: 'interactions', op: 'upsert', columns: [], filters: [], one: null, values: [{ user_id: ME, target_user_id: target, type: kind }] });
+  // Read first: a follow the house already holds is done without an insert, never spending the pace (round 13).
+  const held = (target: string) => ({ table: 'interactions', op: 'select', columns: ['id'], filters: [['eq', 'user_id', ME], ['eq', 'target_user_id', target], ['in', 'type', ['follow', 'follow_request']]], one: 'maybeSingle', values: null });
 
   it(`files a ${kind} to the member the phone already knew, and looks no one up`, async () => {
     await expect(replay(type, { user_id: ME, target_username: 'kane', target_user_id: THEM })).resolves.toStrictEqual({});
-    expect(asked()).toStrictEqual([written(THEM)]);
+    expect(asked()).toStrictEqual([held(THEM), written(THEM)]);
     expect(upserts).toEqual([{ table: 'interactions', options: { onConflict: 'user_id,target_user_id,type', ignoreDuplicates: true } }]);
   });
 
   it(`looks the member up by handle when the phone knew no one, and files the ${kind} to them`, async () => {
     await replay(type, { user_id: ME, target_username: 'kane', target_user_id: null });
-    expect(asked()).toStrictEqual([READ_KANE, written(KANE)]);
+    expect(asked()).toStrictEqual([READ_KANE, held(KANE), written(KANE)]);
   });
 
   it('skips a handle that names no one, writes nothing, and says so', async () => {

@@ -1,0 +1,6458 @@
+{
+ "path": "/movie/429?append_to_response=credits%2Cvideos%2Crecommendations%2Csimilar%2Cwatch%2Fproviders%2Crelease_dates",
+ "status": 200,
+ "body": {
+  "adult": false,
+  "backdrop_path": "/x4biAVdPVCghBlsVIzB6NmbghIz.jpg",
+  "belongs_to_collection": null,
+  "budget": 1200000,
+  "genres": [
+   {
+    "id": 37,
+    "name": "Western"
+   }
+  ],
+  "homepage": "http://www.mgm.com/#/our-titles/766/The-Good,-the-Bad-and-the-Ugly",
+  "id": 429,
+  "imdb_id": "tt0060196",
+  "origin_country": [
+   "IT"
+  ],
+  "original_language": "it",
+  "original_title": "Il buono, il brutto, il cattivo",
+  "overview": "While the Civil War rages on between the Union and the Confederacy, three men – a quiet loner, a ruthless hitman, and a Mexican bandit – comb the American Southwest in search of a strongbox containing $200,000 in stolen gold.",
+  "popularity": 18.6731,
+  "poster_path": "/bX2xnavhMYjWDoZp1VM6VnU1xwe.jpg",
+  "production_companies": [
+   {
+    "id": 60,
+    "logo_path": "/4YldLvCWQL9VIAHQ2Fu3Ffkh9Si.png",
+    "name": "United Artists",
+    "origin_country": "US"
+   },
+   {
+    "id": 7508,
+    "logo_path": "/rAYoY5JGxRdY70YBs4hILLfeM3z.png",
+    "name": "PEA",
+    "origin_country": "IT"
+   },
+   {
+    "id": 42498,
+    "logo_path": null,
+    "name": "Arturo González PC",
+    "origin_country": "ES"
+   },
+   {
+    "id": 47,
+    "logo_path": "/i7Z9ot2o3N5Sa3HrF09kniFs2y8.png",
+    "name": "Constantin Film",
+    "origin_country": "DE"
+   }
+  ],
+  "production_countries": [
+   {
+    "iso_3166_1": "US",
+    "name": "United States of America"
+   },
+   {
+    "iso_3166_1": "IT",
+    "name": "Italy"
+   },
+   {
+    "iso_3166_1": "ES",
+    "name": "Spain"
+   },
+   {
+    "iso_3166_1": "DE",
+    "name": "Germany"
+   }
+  ],
+  "release_date": "1966-12-23",
+  "revenue": 38900000,
+  "runtime": 161,
+  "softcore": false,
+  "spoken_languages": [
+   {
+    "english_name": "Italian",
+    "iso_639_1": "it",
+    "name": "Italiano"
+   }
+  ],
+  "status": "Released",
+  "tagline": "For three men the Civil War wasn't hell. It was practice.",
+  "title": "The Good, the Bad and the Ugly",
+  "video": false,
+  "vote_average": 8.468,
+  "vote_count": 10159,
+  "credits": {
+   "cast": [
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 190,
+     "known_for_department": "Acting",
+     "name": "Clint Eastwood",
+     "original_name": "Clint Eastwood",
+     "popularity": 6.3069,
+     "profile_path": "/8TwdCfeOZH7ucRlfLZ6wObxa7cO.jpg",
+     "cast_id": 169,
+     "character": "Blondie",
+     "credit_id": "631efe050bb076007b79b43e",
+     "order": 0
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 3265,
+     "known_for_department": "Acting",
+     "name": "Eli Wallach",
+     "original_name": "Eli Wallach",
+     "popularity": 1.9223,
+     "profile_path": "/tX1kYpW1K8XjEA3i9FXrgFqNAaw.jpg",
+     "cast_id": 170,
+     "character": "Tuco Ramirez",
+     "credit_id": "631efe6a0bb076009286d011",
+     "order": 1
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4078,
+     "known_for_department": "Acting",
+     "name": "Lee Van Cleef",
+     "original_name": "Lee Van Cleef",
+     "popularity": 1.5101,
+     "profile_path": "/yQc5wjNCdRZzPp5E2wRPRYsEq9a.jpg",
+     "cast_id": 171,
+     "character": "Sentenza / Angel Eyes",
+     "credit_id": "631efe830d2f53007c6c0f9a",
+     "order": 2
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5813,
+     "known_for_department": "Acting",
+     "name": "Aldo Giuffrè",
+     "original_name": "Aldo Giuffrè",
+     "popularity": 0.5021,
+     "profile_path": "/aT6eECl1R3YGYL4KatyIQrq0zG8.jpg",
+     "cast_id": 172,
+     "character": "Alcoholic Union Captain",
+     "credit_id": "631efe99b87aec007f89c129",
+     "order": 3
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5814,
+     "known_for_department": "Acting",
+     "name": "Luigi Pistilli",
+     "original_name": "Luigi Pistilli",
+     "popularity": 0.995,
+     "profile_path": "/bH5vmD2CMBHzJyBe0P0bL6iTUNL.jpg",
+     "cast_id": 173,
+     "character": "Father Pablo Ramirez",
+     "credit_id": "631efeae0bb076008023ed8e",
+     "order": 4
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 5815,
+     "known_for_department": "Acting",
+     "name": "Rada Rassimov",
+     "original_name": "Rada Rassimov",
+     "popularity": 0.4568,
+     "profile_path": "/xJhnSHn2vKp0MJ2KZaihrgqq0Mc.jpg",
+     "cast_id": 174,
+     "character": "Maria",
+     "credit_id": "631efec4b87aec007a7803fd",
+     "order": 5
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1077276,
+     "known_for_department": "Acting",
+     "name": "Enzo Petito",
+     "original_name": "Enzo Petito",
+     "popularity": 0.5181,
+     "profile_path": "/6CYnAdcOg1pns5TKI8Pj6VjefT1.jpg",
+     "cast_id": 175,
+     "character": "Storekeeper",
+     "credit_id": "631efed5b87aec007f89c144",
+     "order": 6
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1077277,
+     "known_for_department": "Acting",
+     "name": "Claudio Scarchilli",
+     "original_name": "Claudio Scarchilli",
+     "popularity": 0.3141,
+     "profile_path": "/bOSIxQUHXkSHevhWsIp9I6j5b8d.jpg",
+     "cast_id": 176,
+     "character": "Tuco Henchman",
+     "credit_id": "631eff050bb076008023eda8",
+     "order": 7
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5818,
+     "known_for_department": "Acting",
+     "name": "Antonio Casale",
+     "original_name": "Antonio Casale",
+     "popularity": 0.3796,
+     "profile_path": "/uAhNOD1ZA9Gh1CmCWkb4RRI1OKd.jpg",
+     "cast_id": 177,
+     "character": "Bill Carson / Jackson",
+     "credit_id": "631eff31e55937007ad9f5d1",
+     "order": 8
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5817,
+     "known_for_department": "Acting",
+     "name": "Livio Lorenzon",
+     "original_name": "Livio Lorenzon",
+     "popularity": 0.5604,
+     "profile_path": "/AkIJIeGG2w0RIWejf6QoReu3ZhB.jpg",
+     "cast_id": 178,
+     "character": "Baker",
+     "credit_id": "631eff3b0102c9007e4022c9",
+     "order": 9
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1077278,
+     "known_for_department": "Acting",
+     "name": "Sandro Scarchilli",
+     "original_name": "Sandro Scarchilli",
+     "popularity": 0.1851,
+     "profile_path": "/9QXMXMqQ3eEY2k5N6U2q4wzCJrS.jpg",
+     "cast_id": 179,
+     "character": "Tuco Henchman",
+     "credit_id": "631eff989c24fc007d779c8b",
+     "order": 10
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4661,
+     "known_for_department": "Acting",
+     "name": "Benito Stefanelli",
+     "original_name": "Benito Stefanelli",
+     "popularity": 0.5989,
+     "profile_path": "/g8wrcKWLuxq3Rmtp3LXItaGVLoQ.jpg",
+     "cast_id": 180,
+     "character": "Member of Angel Eyes' Gang",
+     "credit_id": "631effaf435011007f98223f",
+     "order": 11
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5819,
+     "known_for_department": "Camera",
+     "name": "Angelo Novi",
+     "original_name": "Angelo Novi",
+     "popularity": 0.2721,
+     "profile_path": null,
+     "cast_id": 181,
+     "character": "Monk",
+     "credit_id": "631effbd9c24fc007d779c9a",
+     "order": 12
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 103529,
+     "known_for_department": "Acting",
+     "name": "Antonio Casas",
+     "original_name": "Antonio Casas",
+     "popularity": 0.2811,
+     "profile_path": "/x3CWO3b5ZlJiAXWtMvnF5n3ntwB.jpg",
+     "cast_id": 182,
+     "character": "Stevens",
+     "credit_id": "631f0034435011007ab594cf",
+     "order": 13
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 49895,
+     "known_for_department": "Acting",
+     "name": "Aldo Sambrell",
+     "original_name": "Aldo Sambrell",
+     "popularity": 0.7061,
+     "profile_path": "/lJsoZtOeNaer5jZSydSjONL32xp.jpg",
+     "cast_id": 183,
+     "character": "Member of Angel Eyes' Gang",
+     "credit_id": "631f00435684630083cd21fc",
+     "order": 14
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 129314,
+     "known_for_department": "Acting",
+     "name": "Al Mulock",
+     "original_name": "Al Mulock",
+     "popularity": 0.5477,
+     "profile_path": "/kpKA0KjiyQMdXaT7syWfYg7MDVS.jpg",
+     "cast_id": 184,
+     "character": "One-Armed Bounty Hunter",
+     "credit_id": "631f00519c24fc007a46868a",
+     "order": 15
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 37512,
+     "known_for_department": "Acting",
+     "name": "Sergio Mendizábal",
+     "original_name": "Sergio Mendizábal",
+     "popularity": 0.4674,
+     "profile_path": "/57EwNl2OEj0tTfoDqx5f6Mtm7ti.jpg",
+     "cast_id": 185,
+     "character": "Blonde Bounty Hunter",
+     "credit_id": "631f00679c24fc0091e2c071",
+     "order": 16
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 102096,
+     "known_for_department": "Acting",
+     "name": "Antonio Molino Rojo",
+     "original_name": "Antonio Molino Rojo",
+     "popularity": 0.3621,
+     "profile_path": "/xcihEJspCPThRwNhEA9dg3JNiXW.jpg",
+     "cast_id": 186,
+     "character": "Captain Harper",
+     "credit_id": "631f00759c24fc0091e2c07b",
+     "order": 17
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 100930,
+     "known_for_department": "Acting",
+     "name": "Lorenzo Robledo",
+     "original_name": "Lorenzo Robledo",
+     "popularity": 0.4309,
+     "profile_path": "/p82MoYURVN95wwIJnX7aO1xZc6I.jpg",
+     "cast_id": 187,
+     "character": "Clem",
+     "credit_id": "631f007e0d2f53007c6c102a",
+     "order": 18
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 16318,
+     "known_for_department": "Acting",
+     "name": "Mario Brega",
+     "original_name": "Mario Brega",
+     "popularity": 0.8239,
+     "profile_path": "/qZvFBxipsL1znAmtohKQHsTq9GN.jpg",
+     "cast_id": 188,
+     "character": "Corporal Wallace",
+     "credit_id": "631f008b435011007ab594ef",
+     "order": 19
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 535685,
+     "known_for_department": "Acting",
+     "name": "Chelo Alonso",
+     "original_name": "Chelo Alonso",
+     "popularity": 0.5776,
+     "profile_path": "/3jN80sYYxEd88mYpgQC5OALbECM.jpg",
+     "cast_id": 189,
+     "character": "Stevens' Wife (uncredited)",
+     "credit_id": "631f010e0102c900818dcd00",
+     "order": 20
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 144612,
+     "known_for_department": "Acting",
+     "name": "Fortunato Arena",
+     "original_name": "Fortunato Arena",
+     "popularity": 0.3363,
+     "profile_path": "/3NzdwyHNAW6y3d2UnYjZmt7eYJi.jpg",
+     "cast_id": 190,
+     "character": "1st Sombrero Onlooker at Tuco's 1st Hanging (uncredited)",
+     "credit_id": "631f012c0d2f53007f5d9498",
+     "order": 21
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 589876,
+     "known_for_department": "Acting",
+     "name": "Román Ariznavarreta",
+     "original_name": "Román Ariznavarreta",
+     "popularity": 0.3329,
+     "profile_path": "/djT0FucpJlNvdzXET5Z1mhkY4Wv.jpg",
+     "cast_id": 191,
+     "character": "Bounty Hunter (uncredited)",
+     "credit_id": "631f01450d2f5300842a2196",
+     "order": 22
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 1127109,
+     "known_for_department": "Acting",
+     "name": "Silvana Bacci",
+     "original_name": "Silvana Bacci",
+     "popularity": 0.335,
+     "profile_path": "/cWCliMHwmwpLnTASdQBkAOafMn.jpg",
+     "cast_id": 192,
+     "character": "Mexican Woman with Blondie (uncredited)",
+     "credit_id": "631f01db435011007ab5955c",
+     "order": 23
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505300,
+     "known_for_department": "Acting",
+     "name": "Joseph Bradley",
+     "original_name": "Joseph Bradley",
+     "popularity": 0.1403,
+     "profile_path": null,
+     "cast_id": 193,
+     "character": "Old Soldier (uncredited)",
+     "credit_id": "631f01f99c24fc007d779d42",
+     "order": 24
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 72888,
+     "known_for_department": "Acting",
+     "name": "Frank Braña",
+     "original_name": "Frank Braña",
+     "popularity": 0.6036,
+     "profile_path": "/cVl6735BB319Xm8q2N39upkN177.jpg",
+     "cast_id": 194,
+     "character": "Bounty Hunter #2 (uncredited)",
+     "credit_id": "631f020ae55937007f37711a",
+     "order": 25
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1046525,
+     "known_for_department": "Acting",
+     "name": "Amerigo Castrighella",
+     "original_name": "Amerigo Castrighella",
+     "popularity": 0.4592,
+     "profile_path": "/i5xPp42yiACwMXgbL6DdcVOMaZw.jpg",
+     "cast_id": 195,
+     "character": "2nd Sombrero Onlooker at Tuco's 1st Hanging (uncredited)",
+     "credit_id": "631f022367dcc9007afb219a",
+     "order": 26
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1063555,
+     "known_for_department": "Acting",
+     "name": "Saturno Cerra",
+     "original_name": "Saturno Cerra",
+     "popularity": 0.2814,
+     "profile_path": "/hhZ896B9SL7AsHRkj4h3AkWopoE.jpg",
+     "cast_id": 196,
+     "character": "Bounty Hunter (uncredited)",
+     "credit_id": "631f023db87aec007a7804d6",
+     "order": 27
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1653267,
+     "known_for_department": "Acting",
+     "name": "William Conroy",
+     "original_name": "William Conroy",
+     "popularity": 0.2432,
+     "profile_path": null,
+     "cast_id": 197,
+     "character": "Confederate Soldier (uncredited)",
+     "credit_id": "631f04f3435011007ab59651",
+     "order": 28
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1007574,
+     "known_for_department": "Acting",
+     "name": "Axel Darna",
+     "original_name": "Axel Darna",
+     "popularity": 0.2426,
+     "profile_path": null,
+     "cast_id": 198,
+     "character": "Dying Confederate Soldier (uncredited)",
+     "credit_id": "631f0543bd3209007ad12c0f",
+     "order": 29
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 50784,
+     "known_for_department": "Acting",
+     "name": "Tony Di Mitri",
+     "original_name": "Tony Di Mitri",
+     "popularity": 0.238,
+     "profile_path": "/kEtaOz3d7QQUHSLMOqK9cYrEOrU.jpg",
+     "cast_id": 199,
+     "character": "Deputy (uncredited)",
+     "credit_id": "631f055bb87aec007a7805bd",
+     "order": 30
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 3330610,
+     "known_for_department": "Acting",
+     "name": "Gianni Di Segni",
+     "original_name": "Gianni Di Segni",
+     "popularity": 0.1574,
+     "profile_path": "/qIbub0Dhvxl15ZiTczKQ17jOn93.jpg",
+     "cast_id": 200,
+     "character": "Deputy at 1st Hanging (uncredited)",
+     "credit_id": "631f05c767dcc90082825eaf",
+     "order": 31
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1684757,
+     "known_for_department": "Acting",
+     "name": "Alberigo Donadeo",
+     "original_name": "Alberigo Donadeo",
+     "popularity": 0.2224,
+     "profile_path": "/h7XiYvGkn9SPOGAYyvYORym5NPz.jpg",
+     "cast_id": 201,
+     "character": "Spectator Before Hanging (uncredited)",
+     "credit_id": "631f05fe67dcc90082825ec6",
+     "order": 32
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 43241,
+     "known_for_department": "Acting",
+     "name": "Attilio Dottesio",
+     "original_name": "Attilio Dottesio",
+     "popularity": 0.4145,
+     "profile_path": "/Qe1u3NCklcxRKaua9JRVVRDEjy.jpg",
+     "cast_id": 202,
+     "character": "3rd Sombrero Onlooker at Tuco's 1st Hanging (uncredited)",
+     "credit_id": "631f0610435011008286db02",
+     "order": 33
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1761320,
+     "known_for_department": "Acting",
+     "name": "Luis Fernández de Eribe",
+     "original_name": "Luis Fernández de Eribe",
+     "popularity": 0.2068,
+     "profile_path": "/yMvdmHyFjCG3yJDSpdbJnCC96yU.jpg",
+     "cast_id": 203,
+     "character": "Soldier Coat (uncredited)",
+     "credit_id": "631f08b7ce9e91007f757bce",
+     "order": 34
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1467655,
+     "known_for_department": "Acting",
+     "name": "Veriano Ginesi",
+     "original_name": "Veriano Ginesi",
+     "popularity": 0.3293,
+     "profile_path": "/oJwDUr67iTAHhrp7c7esgU3gKCv.jpg",
+     "cast_id": 204,
+     "character": "Bald Onlooker at Tuco's 1st Hanging (uncredited)",
+     "credit_id": "631f08cf5684630083cd2529",
+     "order": 35
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 222591,
+     "known_for_department": "Acting",
+     "name": "Jesús Guzmán",
+     "original_name": "Jesús Guzmán",
+     "popularity": 0.2978,
+     "profile_path": "/z4C8EYGob58gyE3oTmsX9aBTxDF.jpg",
+     "cast_id": 205,
+     "character": "Pardue the Hotel Owner (uncredited)",
+     "credit_id": "631f08ee0d2f5300842a2431",
+     "order": 36
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 32830,
+     "known_for_department": "Acting",
+     "name": "Víctor Israel",
+     "original_name": "Víctor Israel",
+     "popularity": 0.437,
+     "profile_path": "/5nB8fAvrUPUQP3J6NwPiDrOLZ9n.jpg",
+     "cast_id": 206,
+     "character": "Sergeant at Confederate Fort (uncredited)",
+     "credit_id": "631f0a71568463007e343ded",
+     "order": 37
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 119515,
+     "known_for_department": "Acting",
+     "name": "Nazzareno Natale",
+     "original_name": "Nazzareno Natale",
+     "popularity": 0.3196,
+     "profile_path": "/7pfizuGwnW24yBa8hxILUME3S8B.jpg",
+     "cast_id": 207,
+     "character": "Mexican Bounty Hunter (uncredited)",
+     "credit_id": "631f0a8fbd3209008273355f",
+     "order": 38
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 32130,
+     "known_for_department": "Acting",
+     "name": "Ricardo Palacios",
+     "original_name": "Ricardo Palacios",
+     "popularity": 0.4066,
+     "profile_path": "/CywRvA9nuKxa5cih9VoUD0atfu.jpg",
+     "cast_id": 208,
+     "character": "Barista a Socorro (uncredited)",
+     "credit_id": "631f0ad0568463007e343e17",
+     "order": 39
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1910461,
+     "known_for_department": "Acting",
+     "name": "Antonio Palombi",
+     "original_name": "Antonio Palombi",
+     "popularity": 0.4547,
+     "profile_path": null,
+     "cast_id": 209,
+     "character": "Old Sergeant (uncredited)",
+     "credit_id": "631f0af9b87aec007f89c5c8",
+     "order": 40
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 102121,
+     "known_for_department": "Acting",
+     "name": "Romano Puppo",
+     "original_name": "Romano Puppo",
+     "popularity": 0.7165,
+     "profile_path": "/1yxfzEe86Ziekrt9cGmRlFeIyXq.jpg",
+     "cast_id": 210,
+     "character": "Member of Angel Eyes' Gang (uncredited)",
+     "credit_id": "631f0ba95684630083cd262e",
+     "order": 41
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1082083,
+     "known_for_department": "Acting",
+     "name": "Antoñito Ruiz",
+     "original_name": "Antoñito Ruiz",
+     "popularity": 0.1499,
+     "profile_path": "/dE4cAgNaBfyGuONHtS6Wx585fHt.jpg",
+     "cast_id": 211,
+     "character": "Stevens' Youngest Son (uncredited)",
+     "credit_id": "631f0bc49c24fc0091e2c3f1",
+     "order": 42
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1059887,
+     "known_for_department": "Acting",
+     "name": "Aysanoa Runachagua",
+     "original_name": "Aysanoa Runachagua",
+     "popularity": 0.1992,
+     "profile_path": "/zdpd0iwLSkJWfO0UXcGRh0cCIC4.jpg",
+     "cast_id": 212,
+     "character": "Pistolero Recruited by Tuco in the Cave (uncredited)",
+     "credit_id": "631f0c520d2f53007c6c13da",
+     "order": 43
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2505272,
+     "known_for_department": "Acting",
+     "name": "Enrique Santiago",
+     "original_name": "Enrique Santiago",
+     "popularity": 0.1759,
+     "profile_path": null,
+     "cast_id": 213,
+     "character": "Mexican Bounty Hunter (uncredited)",
+     "credit_id": "631f0c850bb076009286d48f",
+     "order": 44
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5843,
+     "known_for_department": "Acting",
+     "name": "José Terrón",
+     "original_name": "José Terrón",
+     "popularity": 0.3818,
+     "profile_path": "/psl0Nza7FEcJP0qx2UDgCohWYCK.jpg",
+     "cast_id": 214,
+     "character": "Thomas 'Shorty' Larson (uncredited)",
+     "credit_id": "631f0ca0435011007f982623",
+     "order": 45
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1313635,
+     "known_for_department": "Crew",
+     "name": "Franco Tocci",
+     "original_name": "Franco Tocci",
+     "popularity": 0.1344,
+     "profile_path": null,
+     "cast_id": 215,
+     "character": "Union Soldier with Cigar (uncredited)",
+     "credit_id": "631f0cd40d2f5300842a2556",
+     "order": 46
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4098215,
+     "known_for_department": "Acting",
+     "name": "Antonio Montoya",
+     "original_name": "Antonio Montoya",
+     "popularity": 0.2315,
+     "profile_path": "/wQ9bHrY8DCdK3pFsznqrzCT76WO.jpg",
+     "cast_id": 216,
+     "character": "Mexican Bounty Hunter (uncredited)",
+     "credit_id": "647e00e717497301187230ac",
+     "order": 47
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 106678,
+     "known_for_department": "Acting",
+     "name": "Lloyd Battista",
+     "original_name": "Lloyd Battista",
+     "popularity": 0.4024,
+     "profile_path": "/t9uYBNc5c6IkaeAvuBIkF8pHzJC.jpg",
+     "cast_id": 225,
+     "character": "Father Pablo Ramirez (voice) (uncredited)",
+     "credit_id": "6aa2f59488d8e8a84e5457c7",
+     "order": 48
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 136403,
+     "known_for_department": "Acting",
+     "name": "Robert Dryden",
+     "original_name": "Robert Dryden",
+     "popularity": 0.2412,
+     "profile_path": null,
+     "cast_id": 226,
+     "character": "Storekeeper, Monk (voice) (uncredited)",
+     "credit_id": "6aa2f63191f3c22737e10634",
+     "order": 49
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1226621,
+     "known_for_department": "Acting",
+     "name": "Peter Fernandez",
+     "original_name": "Peter Fernandez",
+     "popularity": 0.2159,
+     "profile_path": "/3ixK74olJ4b0O6dzsZy7HJWH3K6.jpg",
+     "cast_id": 227,
+     "character": "Baker (voice) (uncredited)",
+     "credit_id": "6aa2f6e299ab80d7d778c9f1",
+     "order": 50
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5689865,
+     "known_for_department": "Acting",
+     "name": "Bernard Grant",
+     "original_name": "Bernard Grant",
+     "popularity": 0.1257,
+     "profile_path": "/bs7hKH3zuCPMySSg8cSGuncgZkD.jpg",
+     "cast_id": 228,
+     "character": "Alcoholic Union Captain (voice) (uncredited)",
+     "credit_id": "6aa2fc2a7e71f8f9680adf3b",
+     "order": 51
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5816,
+     "known_for_department": "Acting",
+     "name": "John Bartha",
+     "original_name": "John Bartha",
+     "popularity": 0.5561,
+     "profile_path": "/v7RkOKI0Eagm4WL75YL3rhmCUNs.jpg",
+     "cast_id": 234,
+     "character": "Sheriff",
+     "credit_id": "6aa7162857f33f510ba985b8",
+     "order": 52
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1281095,
+     "known_for_department": "Acting",
+     "name": "Luigi Ciavarro",
+     "original_name": "Luigi Ciavarro",
+     "popularity": 0.2069,
+     "profile_path": "/iHQSpDuxAdHeBWR30jFy2xIxWM4.jpg",
+     "cast_id": 235,
+     "character": "Member of Angel Eyes' Gang (uncredited)",
+     "credit_id": "6aa716922ac963ffdb64ad2c",
+     "order": 53
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2498822,
+     "known_for_department": "Acting",
+     "name": "Antonio Decembrino",
+     "original_name": "Antonio Decembrino",
+     "popularity": 0.0575,
+     "profile_path": "/6PV4VubjxxvZ1NrhyV9ZolNxxzg.jpg",
+     "cast_id": 236,
+     "character": "Sombrero (uncredited)",
+     "credit_id": "6aa716c90860e8de6071c034",
+     "order": 54
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2337471,
+     "known_for_department": "Acting",
+     "name": "Luis Rodríguez",
+     "original_name": "Luis Rodríguez",
+     "popularity": 0.1381,
+     "profile_path": "/3dEkALd2W4ZekvcHN5cHuTuufkZ.jpg",
+     "cast_id": 237,
+     "character": "Mexican Bounty Hunter (uncredited)",
+     "credit_id": "6aa7175877ac7180e5ecc3dd",
+     "order": 55
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1602398,
+     "known_for_department": "Acting",
+     "name": "Hans Thorner",
+     "original_name": "Hans Thorner",
+     "popularity": 0.1512,
+     "profile_path": null,
+     "cast_id": 238,
+     "character": "Hanging Padre (uncredited)",
+     "credit_id": "6aa7177412b56095cdc17f5a",
+     "order": 56
+    }
+   ],
+   "crew": [
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2361,
+     "known_for_department": "Camera",
+     "name": "Tonino Delli Colli",
+     "original_name": "Tonino Delli Colli",
+     "popularity": 0.3621,
+     "profile_path": "/asLhiGwOBxEeg1YFqZ1nd3ygm1h.jpg",
+     "credit_id": "52fe4242c3a36847f801060d",
+     "department": "Camera",
+     "job": "Director of Photography"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5821,
+     "known_for_department": "Editing",
+     "name": "Eugenio Alabiso",
+     "original_name": "Eugenio Alabiso",
+     "popularity": 0.2323,
+     "profile_path": "/8NXkXuYueRwoHslgCZqHls7U27l.jpg",
+     "credit_id": "52fe4242c3a36847f8010613",
+     "department": "Editing",
+     "job": "Editor"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4655,
+     "known_for_department": "Art",
+     "name": "Carlo Simi",
+     "original_name": "Carlo Simi",
+     "popularity": 0.2149,
+     "profile_path": null,
+     "credit_id": "52fe4242c3a36847f8010625",
+     "department": "Costume & Make-Up",
+     "job": "Costume Design"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4385,
+     "known_for_department": "Directing",
+     "name": "Sergio Leone",
+     "original_name": "Sergio Leone",
+     "popularity": 1.468,
+     "profile_path": "/2576qoW8l9Z1nKGM10ar60aIwUu.jpg",
+     "credit_id": "52fe4242c3a36847f80105d3",
+     "department": "Directing",
+     "job": "Director"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5810,
+     "known_for_department": "Writing",
+     "name": "Luciano Vincenzoni",
+     "original_name": "Luciano Vincenzoni",
+     "popularity": 0.9913,
+     "profile_path": "/3pglFmfaWCRjJDwTKcQa07kuJc9.jpg",
+     "credit_id": "52fe4242c3a36847f801062f",
+     "department": "Writing",
+     "job": "Screenplay"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1259,
+     "known_for_department": "Sound",
+     "name": "Ennio Morricone",
+     "original_name": "Ennio Morricone",
+     "popularity": 0.9663,
+     "profile_path": "/lMID2Ovs2PUPLfHhA4YgBbiQJEW.jpg",
+     "credit_id": "52fe4242c3a36847f8010607",
+     "department": "Sound",
+     "job": "Original Music Composer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4670,
+     "known_for_department": "Editing",
+     "name": "Nino Baragli",
+     "original_name": "Nino Baragli",
+     "popularity": 0.4621,
+     "profile_path": "/2iWNZkKmuo17q4QCI8TMhGPD7PA.jpg",
+     "credit_id": "52fe4242c3a36847f8010619",
+     "department": "Editing",
+     "job": "Editor"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5820,
+     "known_for_department": "Production",
+     "name": "Alberto Grimaldi",
+     "original_name": "Alberto Grimaldi",
+     "popularity": 0.3707,
+     "profile_path": "/pnASo0rcU50WmOhzY9SceWf0KDO.jpg",
+     "credit_id": "52fe4242c3a36847f8010601",
+     "department": "Production",
+     "job": "Producer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4385,
+     "known_for_department": "Directing",
+     "name": "Sergio Leone",
+     "original_name": "Sergio Leone",
+     "popularity": 1.468,
+     "profile_path": "/2576qoW8l9Z1nKGM10ar60aIwUu.jpg",
+     "credit_id": "52fe4242c3a36847f8010635",
+     "department": "Writing",
+     "job": "Screenplay"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5811,
+     "known_for_department": "Writing",
+     "name": "Agenore Incrocci",
+     "original_name": "Age",
+     "popularity": 0.5728,
+     "profile_path": "/nVIsX7ZvqMwk3I8iGysm2P5SMy6.jpg",
+     "credit_id": "553a34c9925141275e00315f",
+     "department": "Writing",
+     "job": "Screenplay"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1458526,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Rino Carboni",
+     "original_name": "Rino Carboni",
+     "popularity": 0.1729,
+     "profile_path": null,
+     "credit_id": "553a356dc3a3684c5b004be8",
+     "department": "Costume & Make-Up",
+     "job": "Makeup Artist"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5810,
+     "known_for_department": "Writing",
+     "name": "Luciano Vincenzoni",
+     "original_name": "Luciano Vincenzoni",
+     "popularity": 0.9913,
+     "profile_path": "/3pglFmfaWCRjJDwTKcQa07kuJc9.jpg",
+     "credit_id": "553a35069251416788001211",
+     "department": "Writing",
+     "job": "Story"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5812,
+     "known_for_department": "Writing",
+     "name": "Furio Scarpelli",
+     "original_name": "Scarpelli",
+     "popularity": 0.5642,
+     "profile_path": "/f1TCz5Wwff0W3nseJJ15PPm9zGQ.jpg",
+     "credit_id": "553a34df92514138a900448d",
+     "department": "Writing",
+     "job": "Screenplay"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4385,
+     "known_for_department": "Directing",
+     "name": "Sergio Leone",
+     "original_name": "Sergio Leone",
+     "popularity": 1.468,
+     "profile_path": "/2576qoW8l9Z1nKGM10ar60aIwUu.jpg",
+     "credit_id": "553a35299251413f5a003a88",
+     "department": "Writing",
+     "job": "Story"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1035044,
+     "known_for_department": "Art",
+     "name": "Carlo Leva",
+     "original_name": "Carlo Leva",
+     "popularity": 0.282,
+     "profile_path": null,
+     "credit_id": "553a35afc3a3683e550012e4",
+     "department": "Art",
+     "job": "Assistant Art Director"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4985,
+     "known_for_department": "Crew",
+     "name": "Eros Bacciucchi",
+     "original_name": "Eros Bacciucchi",
+     "popularity": 0.2062,
+     "profile_path": null,
+     "credit_id": "55fee5769251410471001028",
+     "department": "Crew",
+     "job": "Special Effects"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4655,
+     "known_for_department": "Art",
+     "name": "Carlo Simi",
+     "original_name": "Carlo Simi",
+     "popularity": 0.2149,
+     "profile_path": null,
+     "credit_id": "55fee4ce925141529f0036a7",
+     "department": "Art",
+     "job": "Production Design"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 589876,
+     "known_for_department": "Acting",
+     "name": "Román Ariznavarreta",
+     "original_name": "Román Ariznavarreta",
+     "popularity": 0.3329,
+     "profile_path": "/djT0FucpJlNvdzXET5Z1mhkY4Wv.jpg",
+     "credit_id": "55fee59592514152ae003560",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4659,
+     "known_for_department": "Crew",
+     "name": "Giovanni Corridori",
+     "original_name": "Giovanni Corridori",
+     "popularity": 0.2401,
+     "profile_path": null,
+     "credit_id": "56fb31349251412885000a00",
+     "department": "Crew",
+     "job": "Special Effects"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2870,
+     "known_for_department": "Production",
+     "name": "Gray Frederickson",
+     "original_name": "Gray Frederickson",
+     "popularity": 0.2871,
+     "profile_path": null,
+     "credit_id": "575aee00c3a3682d10000281",
+     "department": "Production",
+     "job": "Production Manager"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1090587,
+     "known_for_department": "Production",
+     "name": "Aldo Pomilia",
+     "original_name": "Aldo Pomilia",
+     "popularity": 0.2162,
+     "profile_path": null,
+     "credit_id": "575aecf19251410b98000269",
+     "department": "Production",
+     "job": "Production Supervisor"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 97634,
+     "known_for_department": "Production",
+     "name": "José Antonio Pérez Giner",
+     "original_name": "José Antonio Pérez Giner",
+     "popularity": 0.2584,
+     "profile_path": null,
+     "credit_id": "575aedcec3a3682d1e000304",
+     "department": "Production",
+     "job": "Production Manager"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 21181,
+     "known_for_department": "Acting",
+     "name": "Fabio Testi",
+     "original_name": "Fabio Testi",
+     "popularity": 1.0327,
+     "profile_path": "/bHP0NtDCl0L2dnaBmkRKCYEuYkL.jpg",
+     "credit_id": "575aef8c9251410b890002d5",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1542052,
+     "known_for_department": "Directing",
+     "name": "Fabrizio Gianni",
+     "original_name": "Fabrizio Gianni",
+     "popularity": 0.1598,
+     "profile_path": null,
+     "credit_id": "575aee5d9251410b940002a5",
+     "department": "Directing",
+     "job": "Assistant Director"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 45670,
+     "known_for_department": "Sound",
+     "name": "Bruno Nicolai",
+     "original_name": "Bruno Nicolai",
+     "popularity": 0.3536,
+     "profile_path": null,
+     "credit_id": "575af130c3a36853bb000012",
+     "department": "Sound",
+     "job": "Music Director"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4610,
+     "known_for_department": "Directing",
+     "name": "John Landis",
+     "original_name": "John Landis",
+     "popularity": 1.4987,
+     "profile_path": "/nXKdxxELgAaGecCpxAWCoj6TV3f.jpg",
+     "credit_id": "575aeef09251410b920002bb",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 66641,
+     "known_for_department": "Camera",
+     "name": "Franco Di Giacomo",
+     "original_name": "Franco Di Giacomo",
+     "popularity": 0.2471,
+     "profile_path": "/lPGqJP0VV5FT5U4PS4hAo56yQVA.jpg",
+     "credit_id": "575aefec92514126fa000002",
+     "department": "Camera",
+     "job": "Camera Operator"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 53196,
+     "known_for_department": "Camera",
+     "name": "Sergio Salvati",
+     "original_name": "Sergio Salvati",
+     "popularity": 0.189,
+     "profile_path": "/jEvEwsI2pCWvJ6gWQVezWOUS77H.jpg",
+     "credit_id": "575af018925141270700000b",
+     "department": "Camera",
+     "job": "First Assistant Camera"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4661,
+     "known_for_department": "Acting",
+     "name": "Benito Stefanelli",
+     "original_name": "Benito Stefanelli",
+     "popularity": 0.5989,
+     "profile_path": "/g8wrcKWLuxq3Rmtp3LXItaGVLoQ.jpg",
+     "credit_id": "575aef499251410b8b0002eb",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5819,
+     "known_for_department": "Camera",
+     "name": "Angelo Novi",
+     "original_name": "Angelo Novi",
+     "popularity": 0.2721,
+     "profile_path": null,
+     "credit_id": "575af0509251412707000018",
+     "department": "Camera",
+     "job": "Still Photographer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5555,
+     "known_for_department": "Writing",
+     "name": "Sergio Donati",
+     "original_name": "Sergio Donati",
+     "popularity": 0.6365,
+     "profile_path": null,
+     "credit_id": "575af09b92514126fe00001e",
+     "department": "Crew",
+     "job": "Additional Dialogue"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1281095,
+     "known_for_department": "Acting",
+     "name": "Luigi Ciavarro",
+     "original_name": "Luigi Ciavarro",
+     "popularity": 0.2069,
+     "profile_path": "/iHQSpDuxAdHeBWR30jFy2xIxWM4.jpg",
+     "credit_id": "5d0700b292514104c4bcb371",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 102121,
+     "known_for_department": "Acting",
+     "name": "Romano Puppo",
+     "original_name": "Romano Puppo",
+     "popularity": 0.7165,
+     "profile_path": "/1yxfzEe86Ziekrt9cGmRlFeIyXq.jpg",
+     "credit_id": "5d0700c30e0a260b0ad2576d",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505625,
+     "known_for_department": "Production",
+     "name": "Fernando Cinquini",
+     "original_name": "Fernando Cinquini",
+     "popularity": 0.188,
+     "profile_path": null,
+     "credit_id": "5e17e1761ad93b00133ddeec",
+     "department": "Production",
+     "job": "Production Manager"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 233354,
+     "known_for_department": "Directing",
+     "name": "Giancarlo Santi",
+     "original_name": "Giancarlo Santi",
+     "popularity": 0.2596,
+     "profile_path": "/jggEeSOuH6FI8jy5GTERyF9KYi3.jpg",
+     "credit_id": "5e17e1b025cd8500114d711d",
+     "department": "Directing",
+     "job": "Assistant Director"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505632,
+     "known_for_department": "Sound",
+     "name": "Franco Cosacchi",
+     "original_name": "Franco Cosacchi",
+     "popularity": 0.1094,
+     "profile_path": null,
+     "credit_id": "5e17e35925cd8500154d6cb5",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1187077,
+     "known_for_department": "Sound",
+     "name": "Michele Lacerenza",
+     "original_name": "Michele Lacerenza",
+     "popularity": 0.0754,
+     "profile_path": null,
+     "credit_id": "5e17e4d425cd8500114d7d40",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1157710,
+     "known_for_department": "Acting",
+     "name": "John O'Neill",
+     "original_name": "John O'Neill",
+     "popularity": 0.1313,
+     "profile_path": null,
+     "credit_id": "5e17e515c26796001650e6b9",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 30657,
+     "known_for_department": "Sound",
+     "name": "Alessandro Alessandroni",
+     "original_name": "Alessandro Alessandroni",
+     "popularity": 0.2983,
+     "profile_path": null,
+     "credit_id": "5e17e463ffd44d00125ca888",
+     "department": "Sound",
+     "job": "Music Arranger"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 30657,
+     "known_for_department": "Sound",
+     "name": "Alessandro Alessandroni",
+     "original_name": "Alessandro Alessandroni",
+     "popularity": 0.2983,
+     "profile_path": null,
+     "credit_id": "5e17e475ffd44d00125ca89c",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505624,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Rino Todero",
+     "original_name": "Rino Todero",
+     "popularity": 0.08,
+     "profile_path": null,
+     "credit_id": "5e17e159ffd44d00145ca414",
+     "department": "Costume & Make-Up",
+     "job": "Hairdresser"
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 2505636,
+     "known_for_department": "Sound",
+     "name": "Gianna Spagnolo",
+     "original_name": "Gianna Spagnolo",
+     "popularity": 0.1261,
+     "profile_path": null,
+     "credit_id": "5e17e450c26796001650e4aa",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2330414,
+     "known_for_department": "Crew",
+     "name": "Valentino Pelizzi",
+     "original_name": "Valentino Pelizzi",
+     "popularity": 0.0791,
+     "profile_path": null,
+     "credit_id": "5e17e28125cd8500114d73f8",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1633506,
+     "known_for_department": "Editing",
+     "name": "Nazzareno Neri",
+     "original_name": "Nazzareno Neri",
+     "popularity": 0.1766,
+     "profile_path": null,
+     "credit_id": "5e17e306c26796001950e4f9",
+     "department": "Editing",
+     "job": "Colorist"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505633,
+     "known_for_department": "Sound",
+     "name": "Nino Dei",
+     "original_name": "Nino Dei",
+     "popularity": 0.1674,
+     "profile_path": null,
+     "credit_id": "5e17e36725cd8500114d77ec",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505638,
+     "known_for_department": "Sound",
+     "name": "Francesco Catania",
+     "original_name": "Francesco Catania",
+     "popularity": 0.0649,
+     "profile_path": null,
+     "credit_id": "5e17e4a4c26796001650e571",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 105329,
+     "known_for_department": "Sound",
+     "name": "Franco De Gemini",
+     "original_name": "Franco De Gemini",
+     "popularity": 0.1651,
+     "profile_path": "/uu8hnLaO2wIisdUrOouphvV5G7R.jpg",
+     "credit_id": "5e17e4b41ad93b00153df2b6",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2486770,
+     "known_for_department": "Acting",
+     "name": "Vincenzo Restuccia",
+     "original_name": "Vincenzo Restuccia",
+     "popularity": 0.0994,
+     "profile_path": null,
+     "credit_id": "5e17e527c26796001450e9c7",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1661161,
+     "known_for_department": "Sound",
+     "name": "Fausto Ancillai",
+     "original_name": "Fausto Ancillai",
+     "popularity": 0.4065,
+     "profile_path": null,
+     "credit_id": "5e17e20e25cd8500114d7253",
+     "department": "Sound",
+     "job": "Sound Mixer"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505637,
+     "known_for_department": "Sound",
+     "name": "Italo Cammarota",
+     "original_name": "Italo Cammarota",
+     "popularity": 0.0469,
+     "profile_path": null,
+     "credit_id": "5e17e4931ad93b00153df274",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505635,
+     "known_for_department": "Sound",
+     "name": "Enzo Gioieni",
+     "original_name": "Enzo Gioieni",
+     "popularity": 0.058,
+     "profile_path": null,
+     "credit_id": "5e17e3b325cd8500134d66f2",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1537985,
+     "known_for_department": "Sound",
+     "name": "Nicola Samale",
+     "original_name": "Nicola Samale",
+     "popularity": 0.2287,
+     "profile_path": null,
+     "credit_id": "5e17e53625cd8500114d7ec6",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1298866,
+     "known_for_department": "Sound",
+     "name": "Aldo Ciorba",
+     "original_name": "Aldo Ciorba",
+     "popularity": 0.1342,
+     "profile_path": null,
+     "credit_id": "5e17e1d425cd8500114d7187",
+     "department": "Sound",
+     "job": "Foley Artist"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2505023,
+     "known_for_department": "Camera",
+     "name": "Domenico Parrello",
+     "original_name": "Domenico Parrello",
+     "popularity": 0.0727,
+     "profile_path": null,
+     "credit_id": "5e17e2c4c26796001950e454",
+     "department": "Camera",
+     "job": "Grip"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505029,
+     "known_for_department": "Sound",
+     "name": "Cantori Moderni Di Alessandroni",
+     "original_name": "Cantori Moderni Di Alessandroni",
+     "popularity": 0.1567,
+     "profile_path": null,
+     "credit_id": "5e17e3461ad93b00113dea3b",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505640,
+     "known_for_department": "Sound",
+     "name": "E. Wolf Ferrari",
+     "original_name": "E. Wolf Ferrari",
+     "popularity": 0.056,
+     "profile_path": null,
+     "credit_id": "5e17e4c525cd8500114d7d15",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1712460,
+     "known_for_department": "Production",
+     "name": "Carlo Bartolini",
+     "original_name": "Carlo Bartolini",
+     "popularity": 0.2398,
+     "profile_path": null,
+     "credit_id": "5e17e56ec26796001650e851",
+     "department": "Production",
+     "job": "Production Assistant"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 233355,
+     "known_for_department": "Directing",
+     "name": "Vittorio De Sisti",
+     "original_name": "Vittorio De Sisti",
+     "popularity": 0.3065,
+     "profile_path": "/6k4yWaJvXa52LoOnRbuRtkgU3Ls.jpg",
+     "credit_id": "5e17e1e81ad93b00153deb78",
+     "department": "Sound",
+     "job": "Sound Engineer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4661,
+     "known_for_department": "Acting",
+     "name": "Benito Stefanelli",
+     "original_name": "Benito Stefanelli",
+     "popularity": 0.5989,
+     "profile_path": "/g8wrcKWLuxq3Rmtp3LXItaGVLoQ.jpg",
+     "credit_id": "5e17e29dc26796001650e1df",
+     "department": "Crew",
+     "job": "Stunt Coordinator"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2505255,
+     "known_for_department": "Sound",
+     "name": "Bruno Battisti D'Amario",
+     "original_name": "Bruno Battisti D'Amario",
+     "popularity": 0.2582,
+     "profile_path": "/iTq9TV65xgXNaoyOCSAY2iTmSrR.jpg",
+     "credit_id": "5e17e486ffd44d00125ca8c9",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1537175,
+     "known_for_department": "Sound",
+     "name": "Elio Pacella",
+     "original_name": "Elio Pacella",
+     "popularity": 0.1252,
+     "profile_path": null,
+     "credit_id": "5e17e1fb1ad93b00113de736",
+     "department": "Sound",
+     "job": "Sound Engineer"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1581000,
+     "known_for_department": "Directing",
+     "name": "Serena Canevari",
+     "original_name": "Serena Canevari",
+     "popularity": 0.3502,
+     "profile_path": null,
+     "credit_id": "5e17e550ffd44d00145cae4f",
+     "department": "Directing",
+     "job": "Script Supervisor"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505634,
+     "known_for_department": "Sound",
+     "name": "Edda Dell'Orso",
+     "original_name": "Edda Dell'Orso",
+     "popularity": 0.264,
+     "profile_path": null,
+     "credit_id": "5e17e3a425cd8500114d78b2",
+     "department": "Sound",
+     "job": "Musician"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1910461,
+     "known_for_department": "Acting",
+     "name": "Antonio Palombi",
+     "original_name": "Antonio Palombi",
+     "popularity": 0.4547,
+     "profile_path": null,
+     "credit_id": "5e17e5b2c26796001950e9e1",
+     "department": "Production",
+     "job": "Production Secretary"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1151347,
+     "known_for_department": "Writing",
+     "name": "Federico Tofi",
+     "original_name": "Federico Tofi",
+     "popularity": 0.2026,
+     "profile_path": null,
+     "credit_id": "5e17e5c81ad93b00113df088",
+     "department": "Production",
+     "job": "Production Assistant"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 46418,
+     "known_for_department": "Acting",
+     "name": "Mickey Knox",
+     "original_name": "Mickey Knox",
+     "popularity": 0.5306,
+     "profile_path": "/9dJZUsjJZWKLWRW5BvvqqTQYonD.jpg",
+     "credit_id": "5e17e71ac26796001450ecdb",
+     "department": "Writing",
+     "job": "Dialogue"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2505025,
+     "known_for_department": "Art",
+     "name": "Igino Lardani",
+     "original_name": "Igino Lardani",
+     "popularity": 0.1873,
+     "profile_path": null,
+     "credit_id": "5e17e59ac26796001950e9ad",
+     "department": "Art",
+     "job": "Title Designer"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2505642,
+     "known_for_department": "Production",
+     "name": "Luigi Corbo",
+     "original_name": "Luigi Corbo",
+     "popularity": 0.0701,
+     "profile_path": null,
+     "credit_id": "5e17e57effd44d00125cabb7",
+     "department": "Production",
+     "job": "Production Secretary"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4098215,
+     "known_for_department": "Acting",
+     "name": "Antonio Montoya",
+     "original_name": "Antonio Montoya",
+     "popularity": 0.2315,
+     "profile_path": "/wQ9bHrY8DCdK3pFsznqrzCT76WO.jpg",
+     "credit_id": "67b2c94abe1135c1d86dda4d",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1298937,
+     "known_for_department": "Sound",
+     "name": "Sergio Basili",
+     "original_name": "Sergio Basili",
+     "popularity": 0.3571,
+     "profile_path": null,
+     "credit_id": "69933559cd92c228ca2af4be",
+     "department": "Sound",
+     "job": "Foley Artist"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1725850,
+     "known_for_department": "Crew",
+     "name": "Antonio Baquero",
+     "original_name": "Antonio Baquero",
+     "popularity": 0.0433,
+     "profile_path": null,
+     "credit_id": "699335a23510b65e22850801",
+     "department": "Crew",
+     "job": "Special Effects Assistant"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 144612,
+     "known_for_department": "Acting",
+     "name": "Fortunato Arena",
+     "original_name": "Fortunato Arena",
+     "popularity": 0.3363,
+     "profile_path": "/3NzdwyHNAW6y3d2UnYjZmt7eYJi.jpg",
+     "credit_id": "699335bf7f884b8666fa38cc",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1046525,
+     "known_for_department": "Acting",
+     "name": "Amerigo Castrighella",
+     "original_name": "Amerigo Castrighella",
+     "popularity": 0.4592,
+     "profile_path": "/i5xPp42yiACwMXgbL6DdcVOMaZw.jpg",
+     "credit_id": "699335d950a261c65e8508fb",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1981047,
+     "known_for_department": "Acting",
+     "name": "Alfredo Danesi",
+     "original_name": "Alfredo Danesi",
+     "popularity": 0.1576,
+     "profile_path": null,
+     "credit_id": "699335f45cc81f17f68508c1",
+     "department": "Crew",
+     "job": "Stunt Double"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 3330610,
+     "known_for_department": "Acting",
+     "name": "Gianni Di Segni",
+     "original_name": "Gianni Di Segni",
+     "popularity": 0.1574,
+     "profile_path": "/qIbub0Dhvxl15ZiTczKQ17jOn93.jpg",
+     "credit_id": "699336056b5136333a065a20",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4821164,
+     "known_for_department": "Crew",
+     "name": "Tito Tomassini",
+     "original_name": "Tito Tomassini",
+     "popularity": 0.0544,
+     "profile_path": null,
+     "credit_id": "69933657ff0dd43f5ffa390e",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 102121,
+     "known_for_department": "Acting",
+     "name": "Romano Puppo",
+     "original_name": "Romano Puppo",
+     "popularity": 0.7165,
+     "profile_path": "/1yxfzEe86Ziekrt9cGmRlFeIyXq.jpg",
+     "credit_id": "6aa71538e6c20987d753808a",
+     "department": "Crew",
+     "job": "Stunt Double"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1077277,
+     "known_for_department": "Acting",
+     "name": "Claudio Scarchilli",
+     "original_name": "Claudio Scarchilli",
+     "popularity": 0.3141,
+     "profile_path": "/bOSIxQUHXkSHevhWsIp9I6j5b8d.jpg",
+     "credit_id": "6aa7154cfe955e29c3ecb753",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1077278,
+     "known_for_department": "Acting",
+     "name": "Sandro Scarchilli",
+     "original_name": "Sandro Scarchilli",
+     "popularity": 0.1851,
+     "profile_path": "/9QXMXMqQ3eEY2k5N6U2q4wzCJrS.jpg",
+     "credit_id": "6aa7155a3c5f516c15cba44c",
+     "department": "Crew",
+     "job": "Stunts"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2366171,
+     "known_for_department": "Lighting",
+     "name": "Gregorio Marqués",
+     "original_name": "Gregorio Marqués",
+     "popularity": 0.0622,
+     "profile_path": null,
+     "credit_id": "6aa715780754a3150871c12c",
+     "department": "Lighting",
+     "job": "Gaffer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 102121,
+     "known_for_department": "Acting",
+     "name": "Romano Puppo",
+     "original_name": "Romano Puppo",
+     "popularity": 0.7165,
+     "profile_path": "/1yxfzEe86Ziekrt9cGmRlFeIyXq.jpg",
+     "credit_id": "6aa715f20754a3150871c12f",
+     "department": "Crew",
+     "job": "Stand In"
+    }
+   ]
+  },
+  "videos": {
+   "results": [
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Arrow UHD Unboxing",
+     "key": "9aRhYxWC7bM",
+     "site": "YouTube",
+     "size": 2160,
+     "type": "Featurette",
+     "official": true,
+     "id": "6899a970524ec651e6b6ff63",
+     "published_at": "2025-08-11T08:07:22.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Official Sizzle",
+     "key": "WCnRSl24FPA",
+     "site": "YouTube",
+     "size": 2160,
+     "type": "Trailer",
+     "official": true,
+     "id": "686641a4519b363dc3705753",
+     "published_at": "2025-07-03T08:28:57.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Tuco's Ambush",
+     "key": "pyTW_E1st-w",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Clip",
+     "official": true,
+     "id": "62fb72d7175051007c59e5e6",
+     "published_at": "2022-08-08T20:00:11.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "The Bounty Scheme",
+     "key": "00y8Oajzjs0",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Clip",
+     "official": true,
+     "id": "62fb72ce1cac8c00860e7ea8",
+     "published_at": "2022-08-06T20:00:00.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Opening Scene",
+     "key": "9sDUQt4suHk",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Clip",
+     "official": true,
+     "id": "62fb72c0258823007f613ce0",
+     "published_at": "2022-08-05T20:00:02.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Official Trailer",
+     "key": "IFNUGzCOQoI",
+     "site": "YouTube",
+     "size": 480,
+     "type": "Trailer",
+     "official": true,
+     "id": "6294053ba410c8009b0fc163",
+     "published_at": "2021-01-10T15:15:01.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Danny Trejo announces THE GOOD, THE BAD AND THE UGLY for AFI Movie Club",
+     "key": "v0EOrGaQEW8",
+     "site": "YouTube",
+     "size": 720,
+     "type": "Featurette",
+     "official": true,
+     "id": "6866431666a3c045ab743203",
+     "published_at": "2020-10-07T17:22:18.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Official Trailer",
+     "key": "3VQjSSB78es",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Trailer",
+     "official": true,
+     "id": "6294057c76eecf590ca60048",
+     "published_at": "2014-05-17T00:07:02.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Ernest Dickeron on THE GOOD, THE BAD, AND THE UGLY",
+     "key": "OLNktcDs05Y",
+     "site": "YouTube",
+     "size": 1080,
+     "type": "Featurette",
+     "official": false,
+     "id": "533ec654c3a3685448000342",
+     "published_at": "2013-07-01T07:00:24.000Z"
+    },
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "2010 Governors Awards -- Clint Eastwood on Eli Wallach",
+     "key": "a2T_zJFZ3us",
+     "site": "YouTube",
+     "size": 720,
+     "type": "Featurette",
+     "official": true,
+     "id": "686642af0a2a4a7434c116ef",
+     "published_at": "2010-11-15T22:36:27.000Z"
+    }
+   ]
+  },
+  "recommendations": {
+   "page": 1,
+   "results": [
+    {
+     "adult": false,
+     "backdrop_path": "/85B6S6eV5uF0AyaEQ79BcyLirty.jpg",
+     "genre_ids": [
+      37,
+      18
+     ],
+     "id": 9028,
+     "title": "The Great Silence",
+     "original_language": "it",
+     "original_title": "Il grande silenzio",
+     "overview": "A mute gunslinger fights in the defense of a group of outlaws and a vengeful young widow, against a group of ruthless bounty hunters.",
+     "popularity": 2.5927,
+     "poster_path": "/3kpxS7SZMyYSXvhDnmxQXOOxiTM.jpg",
+     "release_date": "1968-11-22",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.5,
+     "vote_count": 493,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/eo6mtsq5KPbzp7taUPpwVC7Mrbv.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 634524,
+     "title": "Badland",
+     "original_language": "en",
+     "original_title": "Badland",
+     "overview": "Detective Matthias Breecher, hired to track down the worst of the Confederate war criminals, roams the Old West seeking justice. His resolve is tested when he meets a determined pioneer woman who is far more than she seems.",
+     "popularity": 1.7082,
+     "poster_path": "/217ddlMrnXll436baw7y5ERmz3x.jpg",
+     "release_date": "2019-11-01",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.3,
+     "vote_count": 138,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/nkgWcfOeQnVnxak5xCKvkRDLt5H.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 576,
+     "title": "The Wild Bunch",
+     "original_language": "en",
+     "original_title": "The Wild Bunch",
+     "overview": "An aging group of outlaws look for one last big score as the \"traditional\" American West is disappearing around them.",
+     "popularity": 3.4752,
+     "poster_path": "/8j9yEC3xjy1PJDSizIbaxcHaSph.jpg",
+     "release_date": "1969-06-19",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.583,
+     "vote_count": 1407,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/orXMq2jZy8wFmePv7zXS2Kor7Ug.jpg",
+     "genre_ids": [
+      18,
+      27,
+      37
+     ],
+     "id": 294963,
+     "title": "Bone Tomahawk",
+     "original_language": "en",
+     "original_title": "Bone Tomahawk",
+     "overview": "During a shootout in a saloon, Sheriff Hunt injures a suspicious stranger. The doctor's assistant, wife of the local foreman, tends to him in prison. That night, the town is attacked and they both disappear—only the arrow of a cannibal tribe is found. Hunt and a few of his men go in search of the prisoner and the foreman's wife.",
+     "popularity": 4.0707,
+     "poster_path": "/4MmTHpn2Y8emqvBgvOjufImUmKZ.jpg",
+     "release_date": "2015-10-23",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.892,
+     "vote_count": 2698,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/xo8Mj2DI9hSivlX4DSNpNubP1Bt.jpg",
+     "genre_ids": [
+      37,
+      18
+     ],
+     "id": 14881,
+     "title": "Joe Kidd",
+     "original_language": "en",
+     "original_title": "Joe Kidd",
+     "overview": "A band of Mexicans find their U. S. land claims denied and all the records destroyed in a courthouse fire. Their leader, Louis Chama, encourages them to use force to regain their land. A wealthy landowner wanting the same decides to hire a gang of killers with Joe Kidd to track Chama.",
+     "popularity": 2.0765,
+     "poster_path": "/gwVL6a6ZPijqM5hB4n2Ztg1akWY.jpg",
+     "release_date": "1972-07-19",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.398,
+     "vote_count": 431,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/lSH1j2uChyuxKmslXRf1AGyi43p.jpg",
+     "genre_ids": [
+      37,
+      18
+     ],
+     "id": 8879,
+     "title": "Pale Rider",
+     "original_language": "en",
+     "original_title": "Pale Rider",
+     "overview": "A mysterious preacher protects a humble prospector village from a greedy mining company trying to encroach on their land.",
+     "popularity": 3.25,
+     "poster_path": "/kpAN5WnDEVWYzMDPkXHTbrDQuak.jpg",
+     "release_date": "1985-06-28",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.179,
+     "vote_count": 1277,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/15BnuDQ8pYRmLqPZKAk5vIhUu9J.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 843380,
+     "title": "Dead for a Dollar",
+     "original_language": "en",
+     "original_title": "Dead for a Dollar",
+     "overview": "In 1897, veteran bounty hunter Max Borlund is deep into Mexico where he encounters professional gambler and outlaw Joe Cribbens — a sworn enemy he sent to prison years before. Max is on a mission to find and return Rachel Kidd, the wife of a wealthy businessman, who as the story is told to Max, has been abducted by Buffalo Soldier Elijah Jones. Max is ultimately faced with a showdown to save honor.",
+     "popularity": 2.9621,
+     "poster_path": "/rJv7YTJWl3CvgMfYRyIO2M4kEzk.jpg",
+     "release_date": "2022-09-30",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.802,
+     "vote_count": 326,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/2cI0rmMgoZOqP78iQDZwQASkKT3.jpg",
+     "genre_ids": [
+      37,
+      18,
+      35
+     ],
+     "id": 440161,
+     "title": "The Sisters Brothers",
+     "original_language": "en",
+     "original_title": "The Sisters Brothers",
+     "overview": "Oregon, 1851. Hermann Kermit Warm, a chemist and aspiring gold prospector, keeps a profitable secret that the Commodore wants to know, so he sends the Sisters brothers, two notorious assassins, to capture him on his way to California.",
+     "popularity": 4.3982,
+     "poster_path": "/wTgomqYRTXT3BXQScnIo8uHDyWC.jpg",
+     "release_date": "2018-09-19",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.831,
+     "vote_count": 2192,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/iNRwFcUFxzRXsy4jYm1JxLI9vps.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 52916,
+     "title": "Sabata",
+     "original_language": "it",
+     "original_title": "Ehi amico... c'è Sabata. Hai chiuso!",
+     "overview": "Several pillars of society have robbed an Army safe containing $100,000 so they can buy the land upon which the coming railroad will be built. But they haven't reckoned on the presence of the master gunslinger, Sabata.",
+     "popularity": 1.876,
+     "poster_path": "/pbM3vxFTYIpz6BZg4OP5S9f5mKo.jpg",
+     "release_date": "1969-09-16",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.4,
+     "vote_count": 133,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/5dwlH8Krm2bsuc2Pubw2cBb03g5.jpg",
+     "genre_ids": [
+      18,
+      12,
+      37
+     ],
+     "id": 44264,
+     "title": "True Grit",
+     "original_language": "en",
+     "original_title": "True Grit",
+     "overview": "Following the murder of her father by a hired hand, a 14-year-old farm girl sets out to capture the killer. To aid her, she hires the toughest U.S. Marshal she can find—a man with 'true grit'—Reuben J. 'Rooster' Cogburn.",
+     "popularity": 6.3257,
+     "poster_path": "/tCrB8pcjadZjsDk7rleGJaIv78k.jpg",
+     "release_date": "2010-12-22",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.305,
+     "vote_count": 6033,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/fvsKY0EjwC3kMmP6tuuLkFqqLty.jpg",
+     "genre_ids": [
+      37,
+      28,
+      18
+     ],
+     "id": 759584,
+     "title": "Surrounded",
+     "original_language": "en",
+     "original_title": "Surrounded",
+     "overview": "After her stagecoach is ambushed, a woman is  tasked with holding a dangerous outlaw captive and must survive the day when the bandit’s gang tries to free him.",
+     "popularity": 1.1799,
+     "poster_path": "/iVVvlosgMU6aePXavihV3L3V3D6.jpg",
+     "release_date": "2023-04-02",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.218,
+     "vote_count": 87,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/hs6OPto38fF589ScpGhl7uSU4MI.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 938,
+     "title": "For a Few Dollars More",
+     "original_language": "it",
+     "original_title": "Per qualche dollaro in più",
+     "overview": "Two bounty hunters both pursue the brutal and sadistic bandit, El Indio, who has a large bounty on his head.",
+     "popularity": 8.284,
+     "poster_path": "/ooqASvA7qxlTVKL3KwOzBwy57Dh.jpg",
+     "release_date": "1965-12-18",
+     "softcore": false,
+     "video": false,
+     "vote_average": 8.028,
+     "vote_count": 4706,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/8LwLf2NxfaxnkoAn43vnpo1TyDu.jpg",
+     "genre_ids": [
+      18,
+      37
+     ],
+     "id": 31283,
+     "title": "Hannie Caulder",
+     "original_language": "en",
+     "original_title": "Hannie Caulder",
+     "overview": "After she's raped by the outlaw trio who murdered her husband, a frontierswoman hires a bounty hunter to instruct her in the ways of a gun in order to exact her revenge.",
+     "popularity": 2.6285,
+     "poster_path": "/jIjlG2lFDzBimhsPzuSnBXywWpE.jpg",
+     "release_date": "1971-11-08",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.167,
+     "vote_count": 144,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/7g1zO5t0bd27Iqn5ZUDJmksOGPJ.jpg",
+     "genre_ids": [
+      18,
+      9648,
+      37
+     ],
+     "id": 273248,
+     "title": "The Hateful Eight",
+     "original_language": "en",
+     "original_title": "The Hateful Eight",
+     "overview": "Bounty hunters seek shelter from a raging blizzard and get caught up in a plot of betrayal and deception.",
+     "popularity": 13.9842,
+     "poster_path": "/jIywvdPjia2t3eKYbjVTcwBQlG8.jpg",
+     "release_date": "2015-12-25",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.757,
+     "vote_count": 15851,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/AoFo9HeJU7jiHAUNawpwhs3zQbd.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 11967,
+     "title": "Young Guns",
+     "original_language": "en",
+     "original_title": "Young Guns",
+     "overview": "A group of young gunmen, led by Billy the Kid, become deputies to avenge the murder of the rancher who became their benefactor. But when Billy takes their authority too far, they become the hunted.",
+     "popularity": 4.0668,
+     "poster_path": "/3AgCq7xY1rHRAAn0iVcnNr2OWL.jpg",
+     "release_date": "1988-08-12",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.69,
+     "vote_count": 1102,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/1BNnnrwOPRAJER3tzAKU659cpYY.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 438457,
+     "title": "The Ballad of Lefty Brown",
+     "original_language": "en",
+     "original_title": "The Ballad of Lefty Brown",
+     "overview": "Aging sidekick Lefty Brown has ridden with Eddie Johnson his entire life. But when a rustler kills Eddie, Lefty is forced from his partner’s shadow and must confront the ugly realities of frontier justice.",
+     "popularity": 1.6963,
+     "poster_path": "/p4L5DM3ZeEuAawFxd2ftgISQMZQ.jpg",
+     "release_date": "2017-12-15",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.3,
+     "vote_count": 192,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/cx7kTGcguQi9UHSYWKgWrIkI70d.jpg",
+     "genre_ids": [
+      37,
+      28,
+      18
+     ],
+     "id": 6609,
+     "title": "Keoma",
+     "original_language": "it",
+     "original_title": "Keoma",
+     "overview": "Half-breed Keoma returns to his border hometown after service in the Civil War and finds it under the control of Caldwell, an ex-Confederate raider, and his vicious gang of thugs. To make matters worse, Keoma's three half-brothers have joined forces with Caldwell, and make it painfully clear that his return is an unwelcome one. Determined to break Caldwell and his brothers' grip on the town, Keoma partners with his father's former ranch hand to exact violent revenge.",
+     "popularity": 1.4964,
+     "poster_path": "/9Dq0J0mNkUM7SatXzZr7QRciZa5.jpg",
+     "release_date": "1976-11-25",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.828,
+     "vote_count": 180,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/HQES024QzKwPBO8YcKPCrgbF3Z.jpg",
+     "genre_ids": [
+      37,
+      18,
+      12,
+      10749,
+      53
+     ],
+     "id": 223485,
+     "title": "Slow West",
+     "original_language": "en",
+     "original_title": "Slow West",
+     "overview": "In the Old West, a 17-year-old Scottish boy teams up with a mysterious gunman to find the woman with whom he is infatuated.",
+     "popularity": 2.6284,
+     "poster_path": "/j3PmbRZvf5KpNbapSjn8b0CpD6a.jpg",
+     "release_date": "2015-05-15",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.691,
+     "vote_count": 1096,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/gDrgpDJHi0ZwH69KfMIiuBMt0Ja.jpg",
+     "genre_ids": [
+      37,
+      18,
+      9648
+     ],
+     "id": 11901,
+     "title": "High Plains Drifter",
+     "original_language": "en",
+     "original_title": "High Plains Drifter",
+     "overview": "A gunfighting stranger comes to the small settlement of Lago. After gunning down three gunmen who tried to kill him, the townsfolk decide to hire the Stranger to hold off three outlaws who are on their way.",
+     "popularity": 3.9825,
+     "poster_path": "/AjkJCFkqanK1OZqiHxc6Kl2wPQO.jpg",
+     "release_date": "1973-04-19",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.326,
+     "vote_count": 1421,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/fVWsmlME9SLzsRK28mFjT0xLJIY.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 83124,
+     "title": "Light the Fuse… Sartana Is Coming",
+     "original_language": "it",
+     "original_title": "Una nuvola di polvere… un grido di morte… arriva Sartana",
+     "overview": "Wily roving gunslinger Sartana arrives in a small town and tries to find a hidden fortune of half a million dollars in gold and two million dollars in counterfeit money. Naturally, a bunch of other treacherous folks who include conniving widow Senora Manassas, shrewd fellow gunslinger Grand Full, and the vicious and unhinged General Monk are also looking to get their greedy hands on said fortune.",
+     "popularity": 1.4698,
+     "poster_path": "/9USuV1t7fouQ8ObLXJ86OnsbIGt.jpg",
+     "release_date": "1970-12-24",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.3,
+     "vote_count": 43,
+     "media_type": "movie"
+    }
+   ],
+   "total_pages": 10,
+   "total_results": 194
+  },
+  "similar": {
+   "page": 1,
+   "results": [
+    {
+     "adult": false,
+     "backdrop_path": "/iok7duKEG8gLWu84K5TUWgG5HaC.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 270015,
+     "title": "Domino Kid",
+     "original_language": "en",
+     "original_title": "Domino Kid",
+     "overview": "A rancher vows revenge on the five men responsible for his father's death.",
+     "popularity": 0.5654,
+     "poster_path": "/uz7aUw5WErMwKJfOPuCpduxIoPv.jpg",
+     "release_date": "1957-10-01",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.8,
+     "vote_count": 9
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/8wy8JugFro4VFAUKqDw5O2ihXrn.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 270197,
+     "title": "The Feud of the Trail",
+     "original_language": "en",
+     "original_title": "The Feud of the Trail",
+     "overview": "A man who's a dead ringer for the leader of an outlaw gang kills the gang leader, then takes his place to try to bring the gang to justice.",
+     "popularity": 0.586,
+     "poster_path": "/14cS1rLfm6qZeYs3fMEO9YeyHJQ.jpg",
+     "release_date": "1937-03-01",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.3,
+     "vote_count": 3
+    },
+    {
+     "adult": false,
+     "backdrop_path": null,
+     "genre_ids": [
+      37,
+      28,
+      18
+     ],
+     "id": 1235658,
+     "title": "Vengeance",
+     "original_language": "en",
+     "original_title": "Vengeance",
+     "overview": "A former bandit goes back to his old ways to hunt his brother's killer after he was killed in cold blood, and after twelve years, he is eventually located.",
+     "popularity": 0.1336,
+     "poster_path": "/kBkAejoftkaivlg5UpWezvL2s2Q.jpg",
+     "release_date": "2023-11-04",
+     "softcore": false,
+     "video": false,
+     "vote_average": 10,
+     "vote_count": 1
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/uwfur8U08n8Y36Y1jN24Zmk0MVZ.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 270509,
+     "title": "The Good Bad-Man",
+     "original_language": "en",
+     "original_title": "The Good Bad-Man",
+     "overview": "Passin' Through, an unconventional Robin Hood-esque figure, robs trains or locals in whimsical ways—such as stealing a ticket punch or charging fines for watches—and gives the proceeds to single mothers and orphans. Initially driven by the belief that he was born out of wedlock, he uncovers a dark past involving a villain, leading to a pursuit of revenge and redemption.",
+     "popularity": 0.802,
+     "poster_path": "/17mj3WppuNYgYRaadHn9a3edgRm.jpg",
+     "release_date": "1916-04-21",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.2,
+     "vote_count": 14
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/pzWkw7Acgn7OyAwMHTlrB6PGnNa.jpg",
+     "genre_ids": [
+      37,
+      12,
+      18,
+      28
+     ],
+     "id": 15573,
+     "title": "The Cowboys",
+     "original_language": "en",
+     "original_title": "The Cowboys",
+     "overview": "When his cattlemen abandon him for the gold fields, rancher Wil Andersen is forced to take on a collection of young boys as his cowboys in order to get his herd to market in time to avoid financial disaster. The boys learn to do a man's job under Andersen's tutelage, however, neither he nor the boys know that a gang of cattle thieves is stalking them.",
+     "popularity": 2.4415,
+     "poster_path": "/wwuKIvXzXnohnNG2DHs6N3CUWbL.jpg",
+     "release_date": "1972-01-13",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.075,
+     "vote_count": 279
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/9N5abF2iajhW5Uo2pEYXZiLb2lG.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 282677,
+     "title": "Last of the Badmen",
+     "original_language": "de",
+     "original_title": "Last of the Badmen",
+     "overview": "Chicago detectives in the 1880s head west to find the killers of their colleague.",
+     "popularity": 0.9027,
+     "poster_path": "/h2Hl7odQdRfrl739C9ipb4g9g4M.jpg",
+     "release_date": "1957-02-17",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.8,
+     "vote_count": 4
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/n4ChV0MskyVOzOMBO8V6xoi6Z94.jpg",
+     "genre_ids": [
+      37,
+      27,
+      53
+     ],
+     "id": 10213,
+     "title": "From Dusk Till Dawn 3: The Hangman's Daughter",
+     "original_language": "en",
+     "original_title": "From Dusk Till Dawn 3: The Hangman's Daughter",
+     "overview": "Set one hundred years ago, outlaw Johnny Madrid, after narrowly escaping death, goes on the run with the hangman's sensuous daughter Esmeralda by his side.",
+     "popularity": 2.939,
+     "poster_path": "/io5lQ7VRJGBCg2kTJ6BRWRclqJE.jpg",
+     "release_date": "2000-01-18",
+     "softcore": false,
+     "video": false,
+     "vote_average": 4.912,
+     "vote_count": 414
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/mBw7GMmRycQHFXRUjn70KrzCJCq.jpg",
+     "genre_ids": [
+      12,
+      37,
+      27,
+      35,
+      18
+     ],
+     "id": 10212,
+     "title": "Ravenous",
+     "original_language": "en",
+     "original_title": "Ravenous",
+     "overview": "After arriving at his new, remote Army outpost, Capt. John Boyd and his regiment aid a wounded frontiersman who recounts a horrifying tale of a wagon train murdered by its supposed guide – a vicious U.S. Army colonel gone rogue. Fearing the worst, the regiment heads out into the wilderness to verify the gruesome claims.",
+     "popularity": 3.1912,
+     "poster_path": "/5f7pY4Uzyt4ZNWhHyd1dJhIF4Gc.jpg",
+     "release_date": "1999-01-01",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.8,
+     "vote_count": 743
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/6QiZXLqp8z7rnVqe2HtrMjTD3Xk.jpg",
+     "genre_ids": [
+      27,
+      37
+     ],
+     "id": 1635161,
+     "title": "Sundown",
+     "original_language": "en",
+     "original_title": "Sundown",
+     "overview": "Three gold miners searching for riches find a forgotten town. To survive the night, they must obey its bizarre rules, where every mistake is fatal.",
+     "popularity": 0.4731,
+     "poster_path": "/vxVFZO50RBKybERWU2dqHHImsMF.jpg",
+     "release_date": "2025-12-15",
+     "softcore": false,
+     "video": false,
+     "vote_average": 0,
+     "vote_count": 0
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/kvhjvX247i0ujDo6mdW0Baxj3Vp.jpg",
+     "genre_ids": [
+      28,
+      18,
+      10749,
+      37
+     ],
+     "id": 10231,
+     "title": "Foxfire",
+     "original_language": "en",
+     "original_title": "Foxfire",
+     "overview": "A part-Indian mining engineer looks for gold in an Arizona ghost town with his socialite bride.",
+     "popularity": 0.9789,
+     "poster_path": "/hcpH4mxZSixw6lCaJED8eq9AQ1T.jpg",
+     "release_date": "1955-07-13",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.7,
+     "vote_count": 10
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/vO0QeA7qcpPEViiBejWuWACuoBQ.jpg",
+     "genre_ids": [
+      37,
+      12
+     ],
+     "id": 279800,
+     "title": "The Tall Texan",
+     "original_language": "en",
+     "original_title": "The Tall Texan",
+     "overview": "Groups of desperate travelers journey together throughout the Southwest and soon find trouble when they all get gold fever. The action and drama are heightened when they discover gold…on an Indian burial ground!",
+     "popularity": 0.6285,
+     "poster_path": "/ZDMS2fYHw3cTltSGmqX0OTMw1I.jpg",
+     "release_date": "1953-02-13",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.6,
+     "vote_count": 7
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/ohvqgOdVvLkjlboCY4nsb7mJLJw.jpg",
+     "genre_ids": [
+      18,
+      37,
+      28
+     ],
+     "id": 279766,
+     "title": "The Return of Jesse James",
+     "original_language": "en",
+     "original_title": "The Return of Jesse James",
+     "overview": "Frank James resents and tries to stop a ruthless drifter who has adopted the name of his dead brother in order to duplicate his crimes.",
+     "popularity": 0.7862,
+     "poster_path": "/x6sG24TPJSVEZhhE99DXXUflnD7.jpg",
+     "release_date": "1950-08-01",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6,
+     "vote_count": 2
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/t5530JQQZZ5qqEKsKIukpdTr9ac.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 12758,
+     "title": "Beyond the Law",
+     "original_language": "it",
+     "original_title": "Al di là della legge",
+     "overview": "A thief takes the job as a town sheriff in order to rob a silver shipment before his ex-partner can grab it.",
+     "popularity": 1.2436,
+     "poster_path": "/pC1R4yNV37dju6cJmyVivroNJnk.jpg",
+     "release_date": "1968-04-10",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.8,
+     "vote_count": 40
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/grBJX0e4bczD1uHjPOIwiP9j9IN.jpg",
+     "genre_ids": [
+      35,
+      37
+     ],
+     "id": 12529,
+     "title": "Boot Hill",
+     "original_language": "it",
+     "original_title": "La collina degli stivali",
+     "overview": "Victims of oppressive town boss Honey are offered help by an unusual alliance of gunmen and circus performers",
+     "popularity": 1.5772,
+     "poster_path": "/9gnmBJi9ioGo1WeQP6Hii02u9Aq.jpg",
+     "release_date": "1969-12-20",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.9,
+     "vote_count": 182
+    },
+    {
+     "adult": false,
+     "backdrop_path": null,
+     "genre_ids": [
+      35,
+      37
+     ],
+     "id": 12534,
+     "title": "Carambola's Philosophy: In the Right Pocket",
+     "original_language": "it",
+     "original_title": "Carambola, filotto... tutti in buca",
+     "overview": "Len and Cody are two friends who can not spend more than two minutes without arguing. These crazy gunmen snatched a Confederate colonel charged an archaic machine gun sidecar soon becomes a coveted prize for all offenders in west Texas.",
+     "popularity": 0.4869,
+     "poster_path": "/q50tNBL3Qf4unuXa0Wh5LPsrFXR.jpg",
+     "release_date": "1975-01-01",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6,
+     "vote_count": 8
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/fhdgjlWESBa9B4G3PDhrXSJo1gK.jpg",
+     "genre_ids": [
+      37,
+      28,
+      18
+     ],
+     "id": 12625,
+     "title": "Guns of the Magnificent Seven",
+     "original_language": "en",
+     "original_title": "Guns of the Magnificent Seven",
+     "overview": "When Mexican revolutionary leader Quintero is left to rot in jail by the forces of President Diaz, it's up to his subordinate, Max, to bust him out. With $600 in hand, he crosses the border into America and hires Chris Adams, a mercenary of considerable skill, who uses the rest of the cash on more hired guns. After the team is rounded out by experts on close-combat fighting, explosives, and knife-throwing, they set off to free Quintero.",
+     "popularity": 2.4747,
+     "poster_path": "/moFQCPRHvMGfvoFbF5lqEQw9ETX.jpg",
+     "release_date": "1969-07-14",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.406,
+     "vote_count": 128
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/ljwZKgpwn4l6z7nxnhe6j2R1nyy.jpg",
+     "genre_ids": [
+      35,
+      37
+     ],
+     "id": 270871,
+     "title": "We Are No Angels",
+     "original_language": "it",
+     "original_title": "Noi non siamo angeli",
+     "overview": "Two wannabes rig a fight with a large prize fighter to buy a car.",
+     "popularity": 0.6387,
+     "poster_path": "/dMgt9tv5MfPQyH0R5udmIickdOZ.jpg",
+     "release_date": "1975-09-25",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.5,
+     "vote_count": 2
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/osytHgkv86CTFKxo46l9P7ACEjm.jpg",
+     "genre_ids": [
+      12,
+      18,
+      37
+     ],
+     "id": 3090,
+     "title": "The Treasure of the Sierra Madre",
+     "original_language": "en",
+     "original_title": "The Treasure of the Sierra Madre",
+     "overview": "Two jobless Americans convince a prospector to travel to the mountains of Mexico with them in search of gold. But the hostile wilderness, local bandits, and greed all get in the way of their journey.",
+     "popularity": 3.7717,
+     "poster_path": "/pWcst7zVbi8Z8W6GFrdNE7HHRxL.jpg",
+     "release_date": "1948-01-15",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.955,
+     "vote_count": 1426
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/hKdf1IDH9cKupBrCTN6E0k9lOxg.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 7507,
+     "title": "The Specialists",
+     "original_language": "it",
+     "original_title": "Gli specialisti",
+     "overview": "Hud Dixon returns to his hometown when his brother is killed by a lynch mob.",
+     "popularity": 1.5359,
+     "poster_path": "/6vfaorXGPVHRFp025Ow2GZOEC5b.jpg",
+     "release_date": "1969-11-25",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.8,
+     "vote_count": 63
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/sXK8PIoMs10OVufKUDz3VoxhQoN.jpg",
+     "genre_ids": [
+      37
+     ],
+     "id": 8144,
+     "title": "Dig Your Grave Friend... Sabata's Coming",
+     "original_language": "it",
+     "original_title": "Abre tu fosa, amigo, llega Sábata...",
+     "overview": "Steve McGowan has proposed to avenge the death of his father, murdered by one of the followers of Chief Miller. This engages the services of a famous gunslinger called Sabata and instructs him to  kill Steve. The fate joins Steve and the Mexican bandit Leon Pompero, and together they decide to defeat the murderous gunman.",
+     "popularity": 0.8009,
+     "poster_path": "/dde9Cl4Zw9VJxlYXMngp1uMqug3.jpg",
+     "release_date": "1971-04-02",
+     "softcore": false,
+     "video": false,
+     "vote_average": 5.8,
+     "vote_count": 10
+    }
+   ],
+   "total_pages": 711,
+   "total_results": 14208
+  },
+  "watch/providers": {
+   "results": {
+    "AE": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=AE",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      }
+     ]
+    },
+    "AR": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=AR",
+     "flatrate": [
+      {
+       "logo_path": "/oeic4RyNDK988h5sZctewo6uRwO.png",
+       "provider_id": 2142,
+       "provider_name": "MGM+ Apple TV Channel",
+       "display_priority": 39
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 61
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ]
+    },
+    "AT": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=AT",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 67
+      },
+      {
+       "logo_path": "/mjkfHoWsOku18fGjmYF5O1VXUrm.png",
+       "provider_id": 421,
+       "provider_name": "Joyn Plus",
+       "display_priority": 69
+      },
+      {
+       "logo_path": "/hrvDaV3Si6T5bCIlvL8GSJTcziw.png",
+       "provider_id": 2258,
+       "provider_name": "Kabel Eins Classics Amazon Channel",
+       "display_priority": 88
+      },
+      {
+       "logo_path": "/iI1WY8inWiaUinlobTBnTKTcShC.png",
+       "provider_id": 2293,
+       "provider_name": "Seven Entertainment Amazon Channel",
+       "display_priority": 124
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 19
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 19
+      }
+     ]
+    },
+    "AU": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=AU",
+     "flatrate": [
+      {
+       "logo_path": "/1Hzele1xJnA7xfQyWKNQnTnWAio.png",
+       "provider_id": 385,
+       "provider_name": "BINGE",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/qRZkZY5kgqXaLr4QFp7ON0wG5rB.png",
+       "provider_id": 134,
+       "provider_name": "Foxtel Now",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/6dOWQKIRIxDmX5FD4g5dPsHxFn3.png",
+       "provider_id": 21,
+       "provider_name": "Stan",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 58
+      },
+      {
+       "logo_path": "/ugQHaBlSt4vnebuw7PVAvlh7mId.png",
+       "provider_id": 2804,
+       "provider_name": "Binge Amazon Channel",
+       "display_priority": 110
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 23
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 23
+      }
+     ]
+    },
+    "BE": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=BE",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 36
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "BG": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=BG",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 30
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 30
+      }
+     ]
+    },
+    "BO": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=BO",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "BR": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=BR",
+     "ads": [
+      {
+       "logo_path": "/l8qT4DDRBVZWQouiT5OUnkw45m7.png",
+       "provider_id": 19,
+       "provider_name": "NetMovies",
+       "display_priority": 16
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 15
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 15
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/jsAseYgBGuHRkl0sJs9AAQHHU8P.png",
+       "provider_id": 47,
+       "provider_name": "Looke",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/86Ja8MBdaS8Fkjsegy3fQsUgNMu.png",
+       "provider_id": 499,
+       "provider_name": "Oldflix",
+       "display_priority": 21
+      },
+      {
+       "logo_path": "/oeic4RyNDK988h5sZctewo6uRwO.png",
+       "provider_id": 2142,
+       "provider_name": "MGM+ Apple TV Channel",
+       "display_priority": 53
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 54
+      }
+     ]
+    },
+    "BY": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=BY",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ]
+    },
+    "BZ": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=BZ",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "CA": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=CA",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/fyUUKmDdzpJjSwsXPN4Rpi7jTu5.png",
+       "provider_id": 140,
+       "provider_name": "CosmoGo",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 36
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 70
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/fyUUKmDdzpJjSwsXPN4Rpi7jTu5.png",
+       "provider_id": 140,
+       "provider_name": "CosmoGo",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 36
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ]
+    },
+    "CH": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=CH",
+     "rent": [
+      {
+       "logo_path": "/omviag2i66PzB1VqDc48pbwTC8Z.png",
+       "provider_id": 150,
+       "provider_name": "blue TV",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/6HNkQXm3969mV7RG1GrQb7ZMtSx.png",
+       "provider_id": 622,
+       "provider_name": "Sunrise TV",
+       "display_priority": 31
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 71
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 95
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/omviag2i66PzB1VqDc48pbwTC8Z.png",
+       "provider_id": 150,
+       "provider_name": "blue TV",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 71
+      }
+     ]
+    },
+    "CL": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=CL",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 55
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 55
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/oeic4RyNDK988h5sZctewo6uRwO.png",
+       "provider_id": 2142,
+       "provider_name": "MGM+ Apple TV Channel",
+       "display_priority": 34
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 35
+      }
+     ]
+    },
+    "CO": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=CO",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/oeic4RyNDK988h5sZctewo6uRwO.png",
+       "provider_id": 2142,
+       "provider_name": "MGM+ Apple TV Channel",
+       "display_priority": 36
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 37
+      }
+     ]
+    },
+    "CR": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=CR",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 47
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ]
+    },
+    "CV": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=CV",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 11
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 11
+      }
+     ]
+    },
+    "CY": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=CY",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 4
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 4
+      }
+     ]
+    },
+    "CZ": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=CZ",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 40
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gzlCSbeTdiLJNxdZuMKNhW8X7cy.png",
+       "provider_id": 1939,
+       "provider_name": "Lepsi TV",
+       "display_priority": 26
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 48
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 40
+      }
+     ]
+    },
+    "DE": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=DE",
+     "flatrate": [
+      {
+       "logo_path": "/mjkfHoWsOku18fGjmYF5O1VXUrm.png",
+       "provider_id": 421,
+       "provider_name": "Joyn Plus",
+       "display_priority": 42
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 121
+      },
+      {
+       "logo_path": "/hrvDaV3Si6T5bCIlvL8GSJTcziw.png",
+       "provider_id": 2258,
+       "provider_name": "Kabel Eins Classics Amazon Channel",
+       "display_priority": 147
+      },
+      {
+       "logo_path": "/iI1WY8inWiaUinlobTBnTKTcShC.png",
+       "provider_id": 2293,
+       "provider_name": "Seven Entertainment Amazon Channel",
+       "display_priority": 182
+      },
+      {
+       "logo_path": "/2HcyGXRwSTh3DkgDwaF59AzACHu.png",
+       "provider_id": 2412,
+       "provider_name": "Magenta TV+",
+       "display_priority": 191
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 21
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 23
+      },
+      {
+       "logo_path": "/iUGee0WhY5ZSBZZuCunNt0K7au2.png",
+       "provider_id": 2209,
+       "provider_name": "Freenet meinVOD",
+       "display_priority": 127
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 21
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 23
+      }
+     ]
+    },
+    "DK": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=DK",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 68
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ]
+    },
+    "DO": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=DO",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 48
+      }
+     ]
+    },
+    "EC": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=EC",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ]
+    },
+    "EE": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=EE",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "EG": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=EG",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ]
+    },
+    "ES": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=ES",
+     "free": [
+      {
+       "logo_path": "/mIzSmIvHEcSmqqB77wjDdUiaN8C.png",
+       "provider_id": 541,
+       "provider_name": "rtve",
+       "display_priority": 24
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ]
+    },
+    "FI": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=FI",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 52
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 52
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 42
+      }
+     ]
+    },
+    "FR": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=FR",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/73lu1dtE9uJLWK1laXpeaAFh48j.png",
+       "provider_id": 61,
+       "provider_name": "Orange VOD",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 18
+      },
+      {
+       "logo_path": "/51fX3l4yElitnfui0IkbMUmfmgF.png",
+       "provider_id": 58,
+       "provider_name": "Canal VOD",
+       "display_priority": 19
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      },
+      {
+       "logo_path": "/zbXVTncv6m6ojLjPQJeW7u0SYKp.png",
+       "provider_id": 2601,
+       "provider_name": "Pathé Home",
+       "display_priority": 54
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 40
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/73lu1dtE9uJLWK1laXpeaAFh48j.png",
+       "provider_id": 61,
+       "provider_name": "Orange VOD",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 18
+      },
+      {
+       "logo_path": "/51fX3l4yElitnfui0IkbMUmfmgF.png",
+       "provider_id": 58,
+       "provider_name": "Canal VOD",
+       "display_priority": 19
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      },
+      {
+       "logo_path": "/zbXVTncv6m6ojLjPQJeW7u0SYKp.png",
+       "provider_id": 2601,
+       "provider_name": "Pathé Home",
+       "display_priority": 54
+      }
+     ]
+    },
+    "GB": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=GB",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 104
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 20
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 20
+      }
+     ]
+    },
+    "GG": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=GG",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 82
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 82
+      }
+     ]
+    },
+    "GH": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=GH",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ]
+    },
+    "GR": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=GR",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "GT": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=GT",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 47
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      }
+     ]
+    },
+    "HK": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=HK",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ]
+    },
+    "HN": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=HN",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ]
+    },
+    "HR": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=HR",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 49
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ]
+    },
+    "HU": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=HU",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 45
+      }
+     ]
+    },
+    "ID": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=ID",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 47
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 47
+      }
+     ]
+    },
+    "IE": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=IE",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 43
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 43
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 74
+      }
+     ]
+    },
+    "IL": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=IL",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 25
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 25
+      }
+     ]
+    },
+    "IN": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=IN",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 73
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 40
+      }
+     ]
+    },
+    "IS": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=IS",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ]
+    },
+    "IT": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=IT",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 35
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/1Yvl9eP3pmktqChitnFhHJHcBtX.png",
+       "provider_id": 29,
+       "provider_name": "Sky Go",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/oFAnvlaEW2KT6J7XM0DXjlWqKu9.png",
+       "provider_id": 39,
+       "provider_name": "Now TV",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/64fLWeSyZ1KQZhIdvTdy4QHeWty.png",
+       "provider_id": 1825,
+       "provider_name": "HBO Max Amazon Channel",
+       "display_priority": 85
+      },
+      {
+       "logo_path": "/skypuy7SXuugIQeYg0IglmzoKaS.png",
+       "provider_id": 1899,
+       "provider_name": "HBO Max",
+       "display_priority": 86
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 35
+      }
+     ]
+    },
+    "JP": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=JP",
+     "flatrate": [
+      {
+       "logo_path": "/3DGpCh83CR9lDzyKbNWlmUBexBF.png",
+       "provider_id": 84,
+       "provider_name": "U-NEXT",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 25
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/m0tkTiV5TN7NWfazDEYc8NoVXSd.png",
+       "provider_id": 2683,
+       "provider_name": "FOD",
+       "display_priority": 79
+      }
+     ]
+    },
+    "KR": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=KR",
+     "flatrate": [
+      {
+       "logo_path": "/ppQIS7UMtBwJSspSoGqDR8wO1Gr.png",
+       "provider_id": 97,
+       "provider_name": "Watcha",
+       "display_priority": 7
+      }
+     ]
+    },
+    "LT": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=LT",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ]
+    },
+    "LU": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=LU",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "LV": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=LV",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "MU": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=MU",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      }
+     ]
+    },
+    "MX": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=MX",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/oeic4RyNDK988h5sZctewo6uRwO.png",
+       "provider_id": 2142,
+       "provider_name": "MGM+ Apple TV Channel",
+       "display_priority": 50
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 51
+      }
+     ]
+    },
+    "MY": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=MY",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 39
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 39
+      }
+     ]
+    },
+    "MZ": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=MZ",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ]
+    },
+    "NI": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=NI",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "NL": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=NL",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 36
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 47
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 36
+      }
+     ]
+    },
+    "NO": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=NO",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/m502wSLGwHL9WUK38NeAbwrBk6P.png",
+       "provider_id": 431,
+       "provider_name": "TV 2 Play",
+       "display_priority": 17
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 61
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/m502wSLGwHL9WUK38NeAbwrBk6P.png",
+       "provider_id": 431,
+       "provider_name": "TV 2 Play",
+       "display_priority": 17
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ]
+    },
+    "NZ": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=NZ",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 37
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ]
+    },
+    "PE": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=PE",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 50
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ]
+    },
+    "PH": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=PH",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 41
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 41
+      }
+     ]
+    },
+    "PL": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=PL",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 27
+      },
+      {
+       "logo_path": "/xfDy4aGaOqbUqKPVQobjoJ9ZsSs.png",
+       "provider_id": 40,
+       "provider_name": "CHILI",
+       "display_priority": 32
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 27
+      },
+      {
+       "logo_path": "/xfDy4aGaOqbUqKPVQobjoJ9ZsSs.png",
+       "provider_id": 40,
+       "provider_name": "CHILI",
+       "display_priority": 32
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 30
+      }
+     ]
+    },
+    "PT": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=PT",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 43
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 43
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 55
+      }
+     ]
+    },
+    "PY": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=PY",
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 45
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      }
+     ]
+    },
+    "RO": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=RO",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 35
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 35
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 42
+      }
+     ]
+    },
+    "SA": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=SA",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 5
+      }
+     ]
+    },
+    "SE": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=SE",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/yAWdNyJunfCeyIR14tSE9fEFF3i.png",
+       "provider_id": 588,
+       "provider_name": "MGM Amazon Channel",
+       "display_priority": 41
+      }
+     ]
+    },
+    "SG": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=SG",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ]
+    },
+    "SI": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=SI",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 25
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 25
+      }
+     ]
+    },
+    "SK": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=SK",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 55
+      }
+     ]
+    },
+    "TH": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=TH",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ]
+    },
+    "TR": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=TR",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 36
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 2141,
+       "provider_name": "MGM Plus Amazon Channel",
+       "display_priority": 41
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 36
+      }
+     ]
+    },
+    "TW": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=TW",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 8
+      }
+     ]
+    },
+    "UA": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=UA",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ]
+    },
+    "UG": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=UG",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 13
+      }
+     ]
+    },
+    "US": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=US",
+     "ads": [
+      {
+       "logo_path": "/b7uhrYJtAe7b1ieJGg705vTbwrX.png",
+       "provider_id": 207,
+       "provider_name": "The Roku Channel",
+       "display_priority": 34
+      },
+      {
+       "logo_path": "/gqaJWT5oFiJyVDojVLYRSFPbhQ1.png",
+       "provider_id": 235,
+       "provider_name": "YouTube Free",
+       "display_priority": 100
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/aZRENwYILujqs0RVOZutTh0BVGV.png",
+       "provider_id": 3,
+       "provider_name": "Google Play Movies",
+       "display_priority": 25
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 26
+      },
+      {
+       "logo_path": "/wpOt6x0dRxTrIzuBosto4LGd7E9.png",
+       "provider_id": 7,
+       "provider_name": "Fandango At Home",
+       "display_priority": 42
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/3wF8xISfVlcrc8X3jaa3uMUFGAr.png",
+       "provider_id": 257,
+       "provider_name": "fuboTV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/gk7O3l9qHttE9F3hgDNnhbhlOs7.png",
+       "provider_id": 583,
+       "provider_name": "MGM+ Amazon Channel",
+       "display_priority": 18
+      },
+      {
+       "logo_path": "/mfbhzQwmQKjm7bLZPF5CTeu3Ilc.png",
+       "provider_id": 2383,
+       "provider_name": "Philo",
+       "display_priority": 22
+      },
+      {
+       "logo_path": "/surh9i8VYeeq9186fKHnUg5Q5dg.png",
+       "provider_id": 636,
+       "provider_name": "MGM Plus Roku Premium Channel",
+       "display_priority": 37
+      },
+      {
+       "logo_path": "/q63Uzpu7JAs566vA2G23Lk7LcID.png",
+       "provider_id": 34,
+       "provider_name": "MGM Plus",
+       "display_priority": 54
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/aZRENwYILujqs0RVOZutTh0BVGV.png",
+       "provider_id": 3,
+       "provider_name": "Google Play Movies",
+       "display_priority": 25
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 26
+      },
+      {
+       "logo_path": "/wpOt6x0dRxTrIzuBosto4LGd7E9.png",
+       "provider_id": 7,
+       "provider_name": "Fandango At Home",
+       "display_priority": 42
+      },
+      {
+       "logo_path": "/6qPtM96UZkt3Bu4ZFPsDeHFWUZ2.png",
+       "provider_id": 486,
+       "provider_name": "Spectrum On Demand",
+       "display_priority": 124
+      },
+      {
+       "logo_path": "/blAEhvx3XX8sV0fFVFk88FFjubs.png",
+       "provider_id": 538,
+       "provider_name": "Plex",
+       "display_priority": 129
+      }
+     ]
+    },
+    "VE": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=VE",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "ZA": {
+     "link": "https://www.themoviedb.org/movie/429-il-buono-il-brutto-il-cattivo/watch?locale=ZA",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ]
+    }
+   }
+  },
+  "release_dates": {
+   "results": [
+    {
+     "iso_3166_1": "AE",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2017-08-14T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "AR",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Mar del Plata Film Festival",
+       "release_date": "2001-03-11T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "+16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "1976-02-12T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "+16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-01-11T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "AU",
+     "release_dates": [
+      {
+       "certification": "R 18+",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Adelaide International Film Festival",
+       "release_date": "2003-03-01T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "R 18+",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Sydney",
+       "release_date": "1969-07-31T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "BE",
+     "release_dates": [
+      {
+       "certification": "AL",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Gent",
+       "release_date": "1972-08-25T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "BR",
+     "release_dates": [
+      {
+       "certification": "14",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-01-11T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "CA",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Cinefest Sudbury International Film Festival",
+       "release_date": "1999-09-22T00:00:00.000Z",
+       "type": 1
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "CN",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Beijing International Film Festival (4K Restored Version)",
+       "release_date": "2018-04-16T00:00:00.000Z",
+       "type": 1
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "DE",
+     "release_dates": [
+      {
+       "certification": "18",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "West Germany",
+       "release_date": "1967-12-15T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "1995-11-01T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "West Germany, ZDF",
+       "release_date": "1983-01-01T00:00:00.000Z",
+       "type": 6
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "DK",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-04-08T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2002-04-12T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "ES",
+     "release_dates": [
+      {
+       "certification": "16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-08-07T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "FI",
+     "release_dates": [
+      {
+       "certification": "K-16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Uncut",
+       "release_date": "1984-08-10T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "K-16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-02-02T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "K-16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2003-08-01T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "FR",
+     "release_dates": [
+      {
+       "certification": "TP",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-03-08T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "TP",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Digitally Restored Version",
+       "release_date": "2014-11-05T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "TP",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2002-10-16T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "TP",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2004-12-22T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "TP",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2015-04-22T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "TP",
+       "descriptors": [],
+       "iso_639_1": "fr",
+       "note": "France 3",
+       "release_date": "2026-08-31T00:00:00.000Z",
+       "type": 6
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "GB",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "London",
+       "release_date": "1968-08-22T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "18",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-09-06T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "18",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "4K Ultra HD (Arrow Video)",
+       "release_date": "2025-09-15T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "GR",
+     "release_dates": [
+      {
+       "certification": "K-16 ",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1967-12-20T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "HK",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-06-13T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "HU",
+     "release_dates": [
+      {
+       "certification": "16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1979-11-29T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2020-07-16T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "IE",
+     "release_dates": [
+      {
+       "certification": "18",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-09-13T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "IL",
+     "release_dates": [
+      {
+       "certification": "16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1972-01-01T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "IN",
+     "release_dates": [
+      {
+       "certification": "A",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1969-04-15T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "IT",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Festival dei Due Mondi",
+       "release_date": "1995-06-01T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Taormina Film Festival",
+       "release_date": "2002-07-09T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Cinema a Mezzogiorno Film Festival",
+       "release_date": "2006-08-03T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "VM14",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1966-12-23T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "T",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "1969-08-13T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "1974-06-12T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "1983-05-06T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2014-07-18T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "2023-07-01T00:00:00.000Z",
+       "type": 4
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "JP",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Grande Retrospettiva del Cinema Italiano",
+       "release_date": "2002-01-26T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1967-12-30T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "KR",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1969-07-05T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "LT",
+     "release_dates": [
+      {
+       "certification": "N-18",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2018-04-25T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "LV",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "2016-09-30T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "MO",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "International Film Festival & Awards Macao",
+       "release_date": "2016-12-11T00:00:00.000Z",
+       "type": 1
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "MX",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Cineteca Nacional",
+       "release_date": "2002-06-09T00:00:00.000Z",
+       "type": 2
+      },
+      {
+       "certification": "C",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1969-04-17T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "MY",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Blu-ray / DVD",
+       "release_date": "2010-04-08T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "NL",
+     "release_dates": [
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2009-01-29T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-02-08T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Blu-ray",
+       "release_date": "2014-05-26T00:00:00.000Z",
+       "type": 5
+      },
+      {
+       "certification": "16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2005-01-01T00:00:00.000Z",
+       "type": 5
+      },
+      {
+       "certification": "16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "SBS 6",
+       "release_date": "2002-01-16T00:00:00.000Z",
+       "type": 6
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "NO",
+     "release_dates": [
+      {
+       "certification": "15",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2004-05-14T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1982-10-08T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "PH",
+     "release_dates": [
+      {
+       "certification": "R-18",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Davao",
+       "release_date": "1977-08-07T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "PK",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1974-07-21T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "PL",
+     "release_dates": [
+      {
+       "certification": "16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Transatlantyk Festival",
+       "release_date": "2016-06-26T00:00:00.000Z",
+       "type": 1
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "PT",
+     "release_dates": [
+      {
+       "certification": "M/12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Cinemateca Portuguesa",
+       "release_date": "2025-06-28T00:00:00.000Z",
+       "type": 2
+      },
+      {
+       "certification": "M/12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1969-01-23T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "RU",
+     "release_dates": [
+      {
+       "certification": "16+",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Blu-ray",
+       "release_date": "2014-06-05T00:00:00.000Z",
+       "type": 5
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2001-12-25T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "SE",
+     "release_dates": [
+      {
+       "certification": "15",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1968-04-10T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "SG",
+     "release_dates": [
+      {
+       "certification": "PG",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2009-08-04T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "TR",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Istanbul Film Festival",
+       "release_date": "2015-04-05T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "15+ ",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1969-01-13T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "US",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "TCM Classic Film Festival",
+       "release_date": "2010-04-25T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Mill Valley Film Festival (Digitally Restored Version)",
+       "release_date": "2014-10-08T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "AFI Fest (Digitally Restored Version)",
+       "release_date": "2017-11-11T00:00:00.000Z",
+       "type": 1
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1967-12-29T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "New York City, New York",
+       "release_date": "1968-01-24T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "R",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-Release",
+       "release_date": "2003-12-03T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "UY",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1969-07-26T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "ZA",
+     "release_dates": [
+      {
+       "certification": "16",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Johannesburg",
+       "release_date": "1968-08-09T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

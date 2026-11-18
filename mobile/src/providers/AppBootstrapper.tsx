@@ -9,12 +9,12 @@ import { useEffect, useRef } from 'react';
 import { Alert, AppState } from 'react-native';
 import { nav } from '@/src/utils/typedRouter';
 import { resolveHandleNotice } from '../utils/handleNotice';
-import { PUSH_TOKEN_KEY, registerForPushNotifications, setupNotificationResponseHandler } from '../lib/pushNotifications';
+import { registerForPushNotifications, registrationIsDue, setupNotificationResponseHandler } from '../lib/pushNotifications';
 import { initRevenueCat, reconcileRank } from '../lib/revenueCat';
 import { addBreadcrumb, markBootComplete, setSentryUser } from '../lib/sentry';
 import { supabase } from '../lib/supabase';
 import { settleOwedSignOut } from '../lib/endSession';
-import { storage, useAuthStore } from '../stores/auth';
+import { useAuthStore } from '../stores/auth';
 import { answerAuthEvent } from '../stores/authEvents';
 import { QUERY_POLICY } from '../lib/queryPolicy';
 import { hydrateFollowing } from '../stores/domain/socialSlice';
@@ -325,8 +325,10 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         // Notices allowed from the phone's own Settings while the app was away:
         // this device is registered now, not at the next launch. (It asks
         // nothing: registration only reads what the member already allowed.)
+        // And at least daily: each registration ties the token to this session,
+        // which is what the house sends by (registrationIsDue, push_tokens_of).
         const member = useAuthStore.getState().user;
-        if (member && !storage.getString(PUSH_TOKEN_KEY)) {
+        if (member && registrationIsDue()) {
           void registerForPushNotifications(member.id);
         }
 

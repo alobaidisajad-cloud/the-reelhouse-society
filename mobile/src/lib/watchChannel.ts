@@ -5,6 +5,7 @@
  * read, and a channel that stayed down left its screen silently stale, the network up all along.
  * Every channel hands its status here:
  *
+ *   - SUBSCRIBED the first time: the screen reads what came between its read and now (`onFirstLive`);
  *   - SUBSCRIBED again after a break: what was missed is read again (`reread`);
  *   - broken (CHANNEL_ERROR, TIMED_OUT, CLOSED) for longer than a beat: the screen is told it is
  *     not live (`onLive(false)`), and it is read again on one fixed interval until the channel is
@@ -19,9 +20,18 @@ export const NOT_LIVE_REREAD_MS = 15_000;
 
 const BROKEN = new Set(['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED']);
 
-export function watchChannel({ reread, onLive }: { reread: () => void; onLive: (live: boolean) => void }) {
+export function watchChannel({ reread, onLive, onFirstLive }: {
+  reread: () => void;
+  onLive: (live: boolean) => void;
+  /**
+   * The channel's FIRST SUBSCRIBED (round 13): what was said between the screen's own read and
+   * this moment is in neither, and only a break was read again. The screen reads what it missed.
+   */
+  onFirstLive?: () => void;
+}) {
   let broken = false;
   let ended = false;
+  let wasLive = false;
   let grace: ReturnType<typeof setTimeout> | undefined;
   let again: ReturnType<typeof setInterval> | undefined;
 
@@ -39,6 +49,7 @@ export function watchChannel({ reread, onLive }: { reread: () => void; onLive: (
     if (s === 'SUBSCRIBED') {
       quiet();
       onLive(true);
+      if (!wasLive) { wasLive = true; if (onFirstLive && onlineManager.isOnline()) onFirstLive(); }
       if (broken) { broken = false; readIfOnline(); }
       return;
     }

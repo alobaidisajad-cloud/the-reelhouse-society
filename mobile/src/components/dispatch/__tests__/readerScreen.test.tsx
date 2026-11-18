@@ -789,6 +789,27 @@ describe('the reader', () => {
     spy.mockRestore();
   });
 
+  // Round 13: a take marked SPOILERS is veiled on its page, and its share sent its words in clear.
+  it('a take marked SPOILERS leaves as what it is, never in its words: the line sent and the one previewed', async () => {
+    const shared: { message?: string }[] = [];
+    const spy = jest.spyOn(Share, 'share').mockImplementation(async (c) => {
+      shared.push(c as { message?: string }); return { action: 'sharedAction' } as never;
+    });
+    mockRow = row({ kind: 'take', title: null, full_content: null, body: 'Rosebud is the sled.', spoiler_label: 'SPOILERS' });
+
+    const { getByLabelText, getAllByText } = await mount();
+    await act(async () => { await fireEvent.press(getByLabelText('Share')); });
+    // The sheet previews what will go: the take named, with its spoilers, not its words.
+    expect(getAllByText(/^TAKE.*· SPOILERS$/).length).toBeGreaterThan(0);
+    await act(async () => { await fireEvent.press(getByLabelText(/ELSEWHERE/)); });
+
+    const sent = shared[0];
+    expect(sent).toBeDefined();
+    expect(sent!.message).not.toContain('Rosebud');
+    expect(sent!.message).toMatch(/^TAKE.*· SPOILERS\n/);
+    spy.mockRestore();
+  });
+
   it('mounts the clipping only while an ESSAY is being shared', async () => {
     // Mounted only while the sheet is open, never on a page merely being read.
     const { getByLabelText, getAllByText } = await mount();

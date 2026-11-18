@@ -17,6 +17,7 @@ import { enqueueMutation, flushOfflineQueue, getOfflineQueue, letHeldGo, sendHel
 import { stillHeld } from './offlineQueueStore';
 import reelToast from '../utils/reelToast';
 import { showTierDoor } from '../utils/tierDoor';
+import { saidOfStackShareRefusal, stackShareRefusal } from '../utils/stackShareRefusal';
 import { sanitizeInput, MAX_LENGTHS } from '../utils/sanitizeInput';
 import type { LoungeMember } from '../types/social.types';
 import { useAuthStore } from './auth';
@@ -336,6 +337,36 @@ let _lastCreateAt = -Infinity;
  */
 const _keptRooms = new Map<string, LoungeMessage[]>();
 const KEPT_ROOMS = 5;
+/**
+ * Words heard live, each with its place in the order they were heard (round 13): a room's first
+ * read, answered after a word was heard, replaced the room with its answer, which was read before
+ * the word was said, and the word was gone from the transcript. A read keeps every word heard since
+ * it was asked that its answer does not hold. The newest HEARD_KEPT alone are remembered.
+ */
+const _heardLive = new Map<string, number>();
+let _heardSeq = 0;
+const HEARD_KEPT = 500;
+function heardLive(id: string): void {
+  _heardLive.delete(id);
+  _heardLive.set(id, ++_heardSeq);
+  for (const oldest of _heardLive.keys()) { if (_heardLive.size <= HEARD_KEPT) break; _heardLive.delete(oldest); }
+}
+/**
+ * A room whose channel went live while its first read was still out: what was said between the read's
+ * moment and the channel's is in neither, so the room is caught up as soon as that read lands.
+ */
+let _catchUpAfterRead: string | null = null;
+/**
+ * A room's channel live for the first time: what was said between the room's read and this moment
+ * is in neither, so it is read now, from the newest word held; with the read still out, as soon as
+ * it lands (round 13: the channel's first moment was never caught up on). A room not open reads nothing.
+ */
+function catchUpOnFirstLive(loungeId: string): void {
+  const s = useLoungeStore.getState();
+  if (s.currentLoungeId !== loungeId) return;
+  if (s.messagesLoading) { _catchUpAfterRead = loungeId; return; }
+  void s.catchUpMessages(loungeId);
+}
 /**
  * A room's words changed where they are held: on screen while it is the room open, else as kept for
  * it, as a send answered after the member opened another room is.
@@ -843,6 +874,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       messagesFailed: false,
       currentMessages: s.currentLoungeId === loungeId ? s.currentMessages : [],
     }));
+    // Words heard after this moment are kept over the answer, which was read before them.
+    const heardFrom = _heardSeq;
     let failed = false;
     try {
       // The cursor's own order (loadMoreMessages): created_at alone leaves a burst's order to
@@ -895,9 +928,25 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // Only if this room is still the open one: a slower fetch for a room left
         // behind would put its words under the new room's name.
-        set(s => (s.currentLoungeId !== loungeId ? s : {
-          currentMessages: finalMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id)),
-        }));
+        set(s => {
+          if (s.currentLoungeId !== loungeId) return s;
+          // Merged, never replaced: a word heard live since this read was asked, which its answer
+          // was read too early to hold, stays in its place, and so does a word of this phone's own
+          // still sending or failed, sent while the read was out (round 13).
+          const answered = new Set(finalMessages.map(m => m.id));
+          const heardSince = s.currentMessages.filter(m => !answered.has(m.id)
+            && ((_heardLive.get(m.id) ?? 0) > heardFrom || m.status === 'sending' || m.status === 'failed'));
+          const words = heardSince.length === 0 ? finalMessages : capMessages([...finalMessages, ...heardSince].sort(before));
+          return { currentMessages: words.filter(m => !useBlockStore.getState().isHidden(m.user_id)) };
+        });
+        // The channel went live while this read was out: what was said between the read's moment
+        // and the channel's is read now, from the newest word held.
+        if (_catchUpAfterRead === loungeId && get().currentLoungeId === loungeId) {
+          _catchUpAfterRead = null;
+          // A room that held no word is read whole once more (a catch-up pages from a word held).
+          if (serverHeld(get().currentMessages).length > 0) void get().catchUpMessages(loungeId);
+          else void get().fetchMessages(loungeId);
+        }
       }
     } catch {
       failed = true;
@@ -1216,6 +1265,15 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           reelToast('Message saved offline. Will send when connected.');
           return 'queued';
         }
+      }
+      // A stack's card the house refuses for good (the stack sealed, or no longer in the house):
+      // no try can change it, so no retry is offered, and the card, which names the stack, leaves
+      // the transcript; the member is told which it was (review round 13).
+      const stackRefused = stackShareRefusal(error);
+      if (stackRefused) {
+        inRoomWords(loungeId, (words) => words.filter((m) => m.id !== optimisticMsg.id));
+        reelToast.error(saidOfStackShareRefusal(stackRefused));
+        return false;
       }
       // Keep the dispatch and mark it failed so the transcript shows a discreet
       // "Failed · tap to retry" line (lifecycle state) instead of it vanishing.
@@ -1620,6 +1678,14 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m) }));
         return true;
       }
+      // The stack sealed or gone since: final, said, and the card (which names it) leaves (round 13).
+      const stackRefused = stackShareRefusal(e);
+      if (stackRefused) {
+        if (held) letHeldGo(messageId);
+        set(s => ({ currentMessages: s.currentMessages.filter(m => m.id !== messageId) }));
+        reelToast.error(saidOfStackShareRefusal(stackRefused));
+        return false;
+      }
       set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'failed' as const } : m) }));
       // "Try again" is the one thing that cannot help a member without the
       // rank — so a refusal gets the door, and only a real failure gets that.
@@ -1705,7 +1771,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const seated = !!opts?.seated;
     // Back after a drop, what was said in the gap is read; down past a beat, the room says it is
     // not live and is read again on a fixed interval until the channel answers.
-    const watch = watchChannel({ reread: () => { void get().catchUpMessages(loungeId); }, onLive: (live) => set((s) => (s.roomLive === live ? s : { roomLive: live })) });
+    // Live for the first time, what came since the room's read is read (catchUpOnFirstLive).
+    const watch = watchChannel({ reread: () => { void get().catchUpMessages(loungeId); }, onLive: (live) => set((s) => (s.roomLive === live ? s : { roomLive: live })), onFirstLive: () => catchUpOnFirstLive(loungeId) });
     const holder: SalonHolder = { watch, onMembership: opts?.onMembership, seated };
     const salon = _salons.get(loungeId) ?? { holders: new Set<SalonHolder>(), channel: null, status: null };
     _salons.set(loungeId, salon);
@@ -1783,6 +1850,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
               // handler that ADDS a message, so it alone must check the room.
               if (s.currentLoungeId !== newMsg.lounge_id) return s;
               const messagesWithoutOpt = s.currentMessages.filter(m => m.id !== newMsg.id);
+              // Heard now: a read already on its way, whose answer misses it, keeps it (_heardLive).
+              heardLive(newMsg.id);
 
               return {
                 currentMessages: capMessages([...messagesWithoutOpt, newMsg].sort((a, b) => dateOf(a.created_at).getTime() - dateOf(b.created_at).getTime())),
@@ -1973,6 +2042,9 @@ registerStoreReset(() => {
     _keptRooms.clear();
     _readRoomsHere.clear();
     _readBackIn = null;
+    _heardSeq = 0;
+    _heardLive.clear();
+    _catchUpAfterRead = null;
     _reactionRows.clear();
     _reactionRowsOf = null;
     for (const t of _typingTimers.values()) clearTimeout(t);

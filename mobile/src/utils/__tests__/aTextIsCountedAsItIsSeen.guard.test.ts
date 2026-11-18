@@ -73,6 +73,7 @@ const ALLOWED: [file: string, line: string, why: string][] = [
   ['src/components/log/LogForm.tsx', 'review.length > REVIEW_WARN_AT', "the counter beside the field counts what the field's limit counts"],
   ['src/components/moderation/ReportSheet.tsx', 'details.length >= COUNTER_WARN_THRESHOLD', "the counter beside the field counts what the field's limit counts"],
   ['src/utils/draftSync.ts', 'payload.length > SYNC_CEILING', "a draft's stored size, a byte budget, not what is drawn"],
+  ['src/lib/queryClient.ts', 'serialized.length > MAX_CACHE_SIZE_BYTES', "the query cache's stored size, a byte budget: a unit stores as a byte at least, so a longer string is past it"],
   ['src/services/ProfileWriteService.ts', 'base64Str.length > MAX_AVATAR_BASE64_LENGTH', "a picture's encoded size"],
   ['src/stores/mmkv-storage.ts', 'stored.slice(0, MMKV_KEY_BYTES)', "an encryption key's characters, hex a machine wrote"],
   ['src/utils/secondKey.ts', '.slice(0, KEY_DIGITS)', 'an authenticator code: digits'],

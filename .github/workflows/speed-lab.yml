@@ -551,6 +551,45 @@ jobs:
           path: ${{ runner.temp }}/lab/scrolls
           if-no-files-found: ignore
 
+      # Round 13: the query cache's writes at a member's size. Thirty films opened in a row as the
+      # member (films.sh), and each write of the cache judged (films.mjs): the size it reached and
+      # the ms it held the JS thread, over its bound failing the run.
+      - name: Thirty films in a row, the cache's writes timed
+        if: ${{ !cancelled() }}
+        timeout-minutes: 30
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          heap-size: 576M
+          disable-animations: true
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: bash mobile/e2e/lab/films.sh
+
+      - name: The cache's writes, judged
+        if: ${{ !cancelled() }}
+        working-directory: mobile
+        run: |
+          set +e
+          F="$RUNNER_TEMP/lab/films"
+          node e2e/scrub.mjs "$F" > /dev/null
+          node e2e/lab/films.mjs judge "$F" > "$F/judged.txt" 2>&1
+          rc=$?
+          cat "$F/device.txt" "$F/judged.txt" "$F/anomalies.txt"
+          { echo "### Thirty films in a row: the query cache's writes"; echo '```'; cat "$F/device.txt" "$F/judged.txt" "$F/anomalies.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+
+      - name: Keep the films' run
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: speed-lab-films
+          path: ${{ runner.temp }}/lab/films
+          if-no-files-found: ignore
+
       - name: The arms' screen, on A and each arm
         if: ${{ !cancelled() && inputs.scroll_arms != '' }}
         timeout-minutes: 150

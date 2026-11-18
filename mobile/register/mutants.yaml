@@ -1682,9 +1682,9 @@ mutants:
     source: shape
     edits:
       - file: src/stores/domain/marksLedger.ts
-        find: "    if (got.length < PAGE) return rows;\n"
-        replace: "    return rows;\n"
-    proof: { file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "reads every log and every save, past a page of a thousand, and then holds them" }
+        find: "  const logRows = ids.map((_, i) => {\n"
+        replace: "  const logRows = ids.slice(0, 1000).map((_, i) => {\n"
+    proof: { file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "reads every log and every save, more than a thousand in one read, and then holds them" }
 
   - id: shape-ledger-replaced-by-pages
     class: DATA-marks-known-from-the-pages
@@ -6693,8 +6693,8 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useUniversalSearch.ts
-        find: "        p_cursor_at: cursor?.primary ?? null,\n        p_cursor_id: cursor?.id ?? null,\n"
-        replace: "        p_cursor_at: null,\n        p_cursor_id: null,\n"
+        find: "        p_handle: handle,\n        p_cursor_at: cursor?.primary ?? null,\n        p_cursor_id: cursor?.id ?? null,\n"
+        replace: "        p_handle: handle,\n        p_cursor_at: null,\n        p_cursor_id: null,\n"
     proof: { file: src/hooks/__tests__/theSearchReadsPastItsFirstPage.test.tsx, test: "the records: twenty shown, more said, and the next twenty asked from the last one shown" }
 
   - id: shape-search-count-said-as-a-total
@@ -6837,8 +6837,8 @@ mutants:
     source: shape
     edits:
       - file: supabase/diagnostics/train.cjs
-        find: "      ...rest.flatMap((m) => [\n        { kind: 'rehearse', what: `rehearse ${m.name} on production as it now is`, car: m },\n        { kind: 'apply', what: `apply ${m.name}`, car: m },"
-        replace: "      ...rest.map((m) => ({ kind: 'rehearse', what: `rehearse ${m.name} on production as it now is`, car: m })),\n      ...rest.flatMap((m) => [\n        { kind: 'apply', what: `apply ${m.name}`, car: m },"
+        find: "      ...cars.flatMap((m) => (m.concurrent ? ["
+        replace: "      ...cars.filter((m) => !m.concurrent).map((m) => ({ kind: 'rehearse', what: `rehearse ${m.name} on production as it now is`, car: m })),\n      ...cars.flatMap((m) => (m.concurrent ? ["
     proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "checks the tree, production and a copy first, then goes car by car: each rehearsed, applied and probed before the next" }
 
   - id: shape-attempt-log-cut-on-a-guess
@@ -6858,3 +6858,891 @@ mutants:
         find: "      ...cars.flatMap((m) => (m.concurrent ? ["
         replace: "      ...[...cars.filter((m) => m.concurrent), ...cars.filter((m) => !m.concurrent)].flatMap((m) => (m.concurrent ? ["
     proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY in its turn by name, alone and outside any transaction: after the cars that make what it indexes, probed before the cars after it" }
+
+  - id: shape-older-queued-write-kept
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/utils/offlineQueue.ts
+        find: "    const older = key ? queue.filter((m) => m.owner === owner && keyOf(m) === key) : [];"
+        replace: "    const older = key ? queue.filter((m) => m.owner === owner && m.id === key) : [];"
+    proof:
+      file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+      test: "a note written again with no signal replaces the one waiting: one note for the viewing is queued, the newer"
+
+  - id: shape-online-landing-keeps-older
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/utils/oneWritePerThing.ts
+        find: "                if (!landed || landed(answer)) letOlderGo(older);"
+        replace: "                if (landed && landed(answer)) letOlderGo(older);"
+    proof:
+      file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+      test: "lets the older go once it lands: the queue never sends the older note over it"
+
+  - id: shape-send-reads-queue-once
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/utils/offlineQueue.ts
+        find: |2
+                  if (!stillQueued(mutation.id)) continue;
+        replace: ""
+    proof:
+      file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+      test: never sends a write let go while the send was out
+
+  - id: shape-queue-sends-beside-the-online-write
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/utils/offlineQueue.ts
+        find: |2
+                  if (isWritingOnline(key)) continue;
+        replace: ""
+    proof:
+      file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+      test: holds the queue's write of the same thing while it is out, and the queue sends the rest
+
+  - id: shape-note-door-unkeyed
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/stores/vaultStore.ts
+        find: "          await writeOnline(keyOf(queued), () => VaultService.setNote(logId, viewingId, text, writtenAt));"
+        replace: "          await writeOnline(null, () => VaultService.setNote(logId, viewingId, text, writtenAt));"
+    proof:
+      file: src/stores/__tests__/aNoteWrittenLaterStands.test.ts
+      test: "a note sealed online lets go the older note still queued: the queue never sends it, and the house keeps the newer"
+
+  - id: shape-unfollow-door-unkeyed
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/stores/domain/socialSlice.ts
+        find: "      await writeOnline(keyOf({ type: 'unfollow_user', payload: { target_username: targetUsername } }), async () => {"
+        replace: "      await writeOnline(null, async () => {"
+    proof:
+      file: src/stores/__tests__/aFollowTheHouseAsksToWaitForIsKept.test.ts
+      test: an unfollow that lands online lets go the follow of that member still queued from before
+
+  - id: shape-filing-mark-door-unkeyed
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    await writeOnline(keyOf(queued), online);"
+        replace: "    await writeOnline(null, online);"
+    proof:
+      file: src/stores/__tests__/aFilingMarkLandedLetsTheQueuedOneGo.test.ts
+      test: a withdrawal that lands online lets go the certification still queued, so it is never made again
+
+  - id: shape-certify-door-unkeyed
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/stores/domain/interactionSlice.ts
+        find: |2-
+                          await writeOnline(keyOf(queued), async () => {
+                              if (exists) {
+                                  await InteractionService.removeEndorsement({
+                                      user_id: user.id,
+                                      type: 'endorse_log',
+        replace: |2-
+                          await writeOnline(null, async () => {
+                              if (exists) {
+                                  await InteractionService.removeEndorsement({
+                                      user_id: user.id,
+                                      type: 'endorse_log',
+    proof:
+      file: src/stores/__tests__/twoHeartsAMomentApartBothLand.test.ts
+      test: lets go a withdrawal of it still queued from before, so the queue never takes it back
+
+  - id: shape-vault-not-read-after-send
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/stores/vaultStore.ts
+        find: "    if (useVaultStore.getState().isLoaded(logId)) void useVaultStore.getState().loadForLog(logId, { force: true });"
+        replace: "    if (useVaultStore.getState().isLoading(logId)) void useVaultStore.getState().loadForLog(logId, { force: true });"
+    proof:
+      file: src/stores/__tests__/aNoteSentLateShowsTheHousesWord.test.ts
+      test: once the queue has sent a note the house did not write, the Vault shows no note
+
+  - id: shape-forced-vault-read-dropped
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/stores/vaultStore.ts
+        find: |2
+                    if (opts?.force) _readAgain.add(logId);
+        replace: ""
+    proof:
+      file: src/stores/__tests__/aNoteSentLateShowsTheHousesWord.test.ts
+      test: a read asked again while one is out is made once that one is answered, never dropped
+
+  - id: shape-late-removal-not-read-again
+    class: WRITE-an-older-write-sent-over-a-newer
+    source: shape
+    edits:
+      - file: src/utils/offlineQueue.ts
+        find: "            if ((mutation.type === 'set_viewing_note' || mutation.type === 'remove_viewing_note') && typeof mutation.payload.log_id === 'string')"
+        replace: "            if (mutation.type === 'set_viewing_note' && typeof mutation.payload.log_id === 'string')"
+    proof:
+      file: src/stores/__tests__/aNoteSentLateShowsTheHousesWord.test.ts
+      test: a removal sent late, done unremoved (a later note stands at the house), shows the later note
+
+  - id: shape-pace-said-as-failure
+    class: WRITE-a-mark-refused-for-coming-quickly
+    source: shape
+    edits:
+      - file: src/stores/domain/interactionSlice.ts
+        find: |2-
+                          if (isNetworkError(e) || isRateLimited(e)) {
+                              // Queue BOTH add and remove for offline sync; one the house asked to wait for
+        replace: |2-
+                          if (isNetworkError(e)) {
+                              // Queue BOTH add and remove for offline sync; one the house asked to wait for
+    proof:
+      file: src/stores/__tests__/twoHeartsAMomentApartBothLand.test.ts
+      test: asked to wait long, keeps the heart and queues the certification to go later, never said as failed
+
+  - id: shape-pace-never-waited
+    class: WRITE-a-mark-refused-for-coming-quickly
+    source: shape
+    edits:
+      - file: src/utils/housePace.ts
+        find: "            const ms = pace.seconds * 1000;"
+        replace: "            const ms = pace.seconds * 1000 + maxWaitMs;"
+    proof:
+      file: src/stores/__tests__/twoHeartsAMomentApartBothLand.test.ts
+      test: waits out the house's short pace and lands, with nothing said and nothing reported
+
+  - id: shape-member-pace-sends-every-mark
+    class: WRITE-a-mark-refused-for-coming-quickly
+    source: shape
+    edits:
+      - file: src/utils/offlineQueue.ts
+        find: |2
+                  if (memberPaced && PACED_TYPES.has(mutation.type)) continue;
+        replace: ""
+    proof:
+      file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+      test: paced for the member's own acts, holds their other marks this send, and still sends their words
+
+  - id: shape-resent-follow-spends-pace
+    class: WRITE-a-mark-refused-for-coming-quickly
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: |2-
+                  // spending the house's pace on an insert that would make nothing.
+                  if (resolvedId && !(await followHeld(user_id as string, resolvedId))) {
+        replace: |2-
+                  // spending the house's pace on an insert that would make nothing.
+                  if (resolvedId) {
+    proof:
+      file: src/utils/__tests__/aResentFollowSpendsNoPace.test.ts
+      test: already held at the house, it is done without an insert
+
+  - id: shape-salon-read-replaces-heard
+    class: READ-an-answer-that-wipes-what-was-heard
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "            && ((_heardLive.get(m.id) ?? 0) > heardFrom ||"
+        replace: "            && ((_heardLive.get(m.id) ?? 0) > _heardSeq ||"
+    proof:
+      file: src/stores/__tests__/aWordHeardWhileTheRoomIsReadStays.test.ts
+      test: a word heard over the channel while the room's first read is out stays after the read answers, in its place
+
+  - id: shape-own-sending-dropped-by-first-read
+    class: READ-an-answer-that-wipes-what-was-heard
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: " || m.status === 'sending' || m.status === 'failed'));"
+        replace: ));
+    proof:
+      file: src/stores/__tests__/aWordHeardWhileTheRoomIsReadStays.test.ts
+      test: the member's own words sent while the room's first read is out stay after it answers, still sending or failed
+
+  - id: shape-first-live-unread
+    class: READ-an-answer-that-wipes-what-was-heard
+    source: shape
+    edits:
+      - file: src/lib/watchChannel.ts
+        find: "      if (!wasLive) { wasLive = true; if (onFirstLive && onlineManager.isOnline()) onFirstLive(); }"
+        replace: "      if (!wasLive) { wasLive = true; }"
+    proof:
+      file: src/lib/__tests__/aChannelsFirstLiveMomentIsReadToo.test.ts
+      test: the first SUBSCRIBED asks the screen to read what came since its read, once
+
+  - id: shape-salon-first-live-lost-while-reading
+    class: READ-an-answer-that-wipes-what-was-heard
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "  if (s.messagesLoading) { _catchUpAfterRead = loungeId; return; }"
+        replace: "  if (s.messagesLoading) return;"
+    proof:
+      file: src/stores/__tests__/aWordHeardWhileTheRoomIsReadStays.test.ts
+      test: "live while the room's read is still out: what came between is read as soon as the read lands"
+
+  - id: shape-notice-read-replaces-heard
+    class: READ-an-answer-that-wipes-what-was-heard
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "                .filter((n) => heardSince.has(n.id) && !inAnswer.has(n.id) && !goneSince.has(n.id))"
+        replace: "                .filter((n) => heardSince.has(n.id) && inAnswer.has(n.id) && !goneSince.has(n.id))"
+    proof:
+      file: src/stores/__tests__/aNoticeHeardWhileTheBoardIsReadStays.test.ts
+      test: a notice heard while the board is read stays on top after the read answers, and in the bell
+
+  - id: shape-board-read-in-two-moments
+    class: READ-an-answer-that-wipes-what-was-heard
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "    if (page && page.error?.code !== 'PGRST202') {"
+        replace: "    if (page && page.error?.code === 'PGRST202') {"
+    proof:
+      file: src/stores/__tests__/theBoardAndItsBellAreOneRead.test.ts
+      test: the board and the bell come from the house's one read, in one trip
+
+  - id: shape-board-read-asked-while-out-dropped
+    class: READ-an-answer-that-wipes-what-was-heard
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "        if (state._fetching) { _fetchAgain = true; return; }"
+        replace: "        if (state._fetching) { return; }"
+    proof:
+      file: src/stores/__tests__/theBoardIsReadAtItsChannelsFirstMoment.test.ts
+      test: a read asked while one is out is made once more when it is answered, never dropped
+
+  - id: shape-board-unread-at-first-live
+    class: READ-an-answer-that-wipes-what-was-heard
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: |2-
+                      onFirstLive: () => { void get().fetchNotifications(); },
+                      onLive: (on) => { live.notices = on; sayLive(); },
+        replace: "            onLive: (on) => { live.notices = on; sayLive(); },"
+    proof:
+      file: src/stores/__tests__/theBoardIsReadAtItsChannelsFirstMoment.test.ts
+      test: each channel's first live moment reads the board again, and the second, asked while the first is out, is made after it
+
+  - id: shape-note-queued-said-sealed
+    class: COPY-said-before-it-was-true
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "    if (kept.queuedOffline && !recordQueued) reelToast(NOTE_HELD);"
+        replace: "    if (kept.queuedOffline && recordQueued) reelToast(NOTE_HELD);"
+    proof:
+      file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts
+      test: an amendment that lands with its note only queued says the note waits, never sealed whole in silence
+
+  - id: shape-token-forgotten-only-with-a-session
+    class: AUTH-a-signed-out-phone-still-pushed
+    source: shape
+    edits:
+      - file: src/lib/pushNotifications.ts
+        find: "    if (mine) {\n"
+        replace: "    if (mine && (await supabase.auth.getSession()).data.session) {\n"
+    proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a phone whose session already ended forgets its token by the token, named with its member" }
+
+  - id: shape-token-owed-only-with-a-session
+    class: AUTH-a-signed-out-phone-still-pushed
+    source: shape
+    edits:
+      - file: src/lib/endSession.ts
+        find: "    if (pushStillHeld) owePushToken(held?.user?.id ?? memberId);\n"
+        replace: "    if (pushStillHeld && held) owePushToken(held?.user?.id ?? memberId);\n"
+    proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a token the house could not be told of is owed, with no session to refresh, and forgotten when the network returns" }
+
+  - id: shape-token-registered-again-still-owed
+    class: AUTH-a-signed-out-phone-still-pushed
+    source: shape
+    edits:
+      - file: src/lib/pushNotifications.ts
+        find: "    tokenRegisteredAgain(token);\n"
+        replace: ""
+    proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a token registered again on this phone is no longer owed: the forget would take the new registration" }
+
+  - id: shape-others-forget-not-owed
+    class: AUTH-a-signed-out-phone-still-pushed
+    source: shape
+    edits:
+      - file: src/lib/endSession.ts
+        find: "      try { setSensitive(OTHERS_OWED_KEY, member); } catch { /* asked again at the next \"sign out every other device\" */ }\n"
+        replace: ""
+    proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a forget of the other phones’ tokens that failed is owed, and asked again, under this phone’s session" }
+
+  - id: shape-registration-only-at-launch
+    class: AUTH-a-signed-out-phone-still-pushed
+    source: shape
+    edits:
+      - file: src/lib/pushNotifications.ts
+        find: "    return !Number.isFinite(at) || at <= 0 || houseNow() - at > REREGISTER_AFTER_MS;\n"
+        replace: "    return !Number.isFinite(at) || at <= 0;\n"
+    proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "is due with no token, or a registration over a day old; not within the day" }
+
+  - id: shape-never-registered-reported
+    class: AUTH-a-signed-out-phone-still-pushed
+    source: shape
+    edits:
+      - file: src/lib/pushNotifications.ts
+        find: "    if (!allowed) return true;\n"
+        replace: "    if (!allowed) return false;\n"
+    proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a phone that never allowed notices has nothing to forget: no request, and no failure to report" }
+
+  - id: shape-notices-left-after-sign-out
+    class: STATE-a-members-notices-left-on-the-lock-screen
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "    try { await clearDeliveredNotices(); } catch { /* best effort: it says its own failure */ }\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aSessionEndedTakesItsTokenAndNotices.test.ts, test: "and takes the notices it was shown off the phone, the badge with them" }
+
+  - id: shape-closed-account-erases-the-others
+    class: DATA-a-closed-account-erases-anothers-work
+    source: shape
+    edits:
+      - file: src/utils/othersKeptHere.ts
+        find: "  return named !== null && named !== memberId;\n"
+        replace: "  return named !== null && named === memberId;\n"
+    proof: { file: src/utils/__tests__/aClosedAccountLeavesOthersWorkOnThePhone.test.ts, test: "Ben's deletion leaves Ana's set-aside writes, drafts, preferences and caches" }
+
+  - id: shape-closed-members-failed-words-kept
+    class: DATA-a-closed-account-erases-anothers-work
+    source: shape
+    edits:
+      - file: src/utils/othersKeptHere.ts
+        find: "    const others = (list: QueuedMutation[]) => list.filter((m) => !!m.owner && m.owner !== memberId);\n"
+        replace: "    const others = (list: QueuedMutation[]) => list.filter((m) => !!m.owner);\n"
+    proof: { file: src/utils/__tests__/aClosedAccountLeavesOthersWorkOnThePhone.test.ts, test: "and, of the two lists every member's writes share, keeps Ana's alone, though logout's own sweep of them failed" }
+
+  - id: shape-gone-handle-thrown-to-sentry
+    class: CODE-a-members-words-in-an-error
+    source: shape
+    edits:
+      - file: src/stores/domain/socialSlice.ts
+        find: "      reelToast.error(noMemberGoesBy(targetUsername));\n      return false;\n"
+        replace: "      throw new Error(`User \"${targetUsername}\" not found in profiles table`);\n"
+    proof: { file: src/stores/__tests__/aFollowOfAGoneHandleIsAnAnswer.test.ts, test: "a follow of a handle no one holds now is said plainly, taken back, and never reported" }
+
+  - id: shape-spoiler-on-the-nitrate-file
+    class: DATA-a-spoiler-quoted-in-the-clear
+    source: shape
+    edits:
+      - file: src/components/film/NitrateFileCard.tsx
+        find: "  const pullQuote = struck(sharedWords(data.pullQuote, data.isSpoiler));\n"
+        replace: "  const pullQuote = struck(sharedWords(data.pullQuote, null));\n"
+    proof: { file: src/utils/__tests__/aSpoilerNeverLeavesTheHouse.test.tsx, test: "a review marked as a spoiler leaves no words on the file, only that there are spoilers" }
+
+  - id: shape-spoiler-film-text-share
+    class: DATA-a-spoiler-quoted-in-the-clear
+    source: shape
+    edits:
+      - file: src/components/film/ShareCardModal.tsx
+        find: "        const words = sharedWords(log?.review, log?.isSpoiler);\n"
+        replace: "        const words = sharedWords(log?.review, null);\n"
+    proof: { file: src/utils/__tests__/aSpoilerNeverLeavesTheHouse.test.tsx, test: "the film page's file sent as text never quotes a spoiler review" }
+
+  - id: shape-log-file-not-told-spoiler
+    class: DATA-a-spoiler-quoted-in-the-clear
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "               isSpoiler: log.is_spoiler,\n"
+        replace: "               isSpoiler: log.is_spoiler && isOwner,\n"
+    proof: { file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "a review marked as a spoiler is handed to the file as one, which then prints none of it" }
+
+  - id: shape-spoiler-take-shared-in-words
+    class: DATA-a-spoiler-quoted-in-the-clear
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/filingShared.ts
+        find: "export function filingShareLine(f: SharedFiling): string {\n  const headline = (f.title ?? '').trim();\n  if (headline) return headline;\n  const words = sharedWords(f.body, f.spoilerLabel);\n"
+        replace: "export function filingShareLine(f: SharedFiling): string {\n  const headline = (f.title ?? '').trim();\n  if (headline) return headline;\n  const words = sharedWords(f.body, null);\n"
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "a take marked SPOILERS leaves as what it is, never in its words: the line sent and the one previewed" }
+
+  - id: shape-spoiler-on-the-spine
+    class: DATA-a-spoiler-quoted-in-the-clear
+    source: shape
+    edits:
+      - file: src/components/dispatch/paper/filingShared.ts
+        find: "export function filingSpineLine(f: SharedFiling): string {\n  const headline = (f.title ?? '').trim();\n  if (headline) return headline;\n  const words = sharedWords(f.body, f.spoilerLabel);\n"
+        replace: "export function filingSpineLine(f: SharedFiling): string {\n  const headline = (f.title ?? '').trim();\n  if (headline) return headline;\n  const words = sharedWords(f.body, null);\n"
+    proof: { file: src/utils/__tests__/aSpoilerNeverLeavesTheHouse.test.tsx, test: "the spine pinned over a take's page names its film and its spoilers, never its words, and not its kind twice" }
+
+  - id: shape-anothers-log-sent-as-mine
+    class: COPY-a-share-said-as-the-senders
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "      const whose = user?.id && user.id === log?.user_id ? 'my log'\n"
+        replace: "      const whose = user?.id ? 'my log'\n"
+    proof: { file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "a visitor sends the author’s log, never \"my log\"" }
+
+  - id: shape-sealed-stack-offered-to-a-salon
+    class: DATA-a-sealed-stack-shown-in-a-salon
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "                  {!list.isPrivate ? (\n"
+        replace: "                  {!list.isPrivate || isOwner ? (\n"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a sealed stack offers its curator no LOUNGE: it is shown in no salon" }
+
+  - id: shape-sealed-card-drawn-as-nothing
+    class: DATA-a-sealed-stack-shown-in-a-salon
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "  const sealed = !gone && meta.sealed === true;\n"
+        replace: "  const sealed = !gone && meta.sealed === true && typeof meta.title === 'string';\n"
+    proof: { file: src/components/lounge/__tests__/aSealedStacksCardSaysSo.test.tsx, test: "is a card still, says it is sealed, and is no door to a member who is not its curator" }
+
+  - id: shape-sealed-card-a-door
+    class: DATA-a-sealed-stack-shown-in-a-salon
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "  if (!share.sealed) return true;\n"
+        replace: "  if (!share.sealed || !share.gone) return true;\n"
+    proof: { file: src/components/lounge/__tests__/aSealedStacksCardSaysSo.test.tsx, test: "a tap on it takes a member who is not its curator nowhere" }
+
+  - id: shape-stack-refusal-offered-again
+    class: DATA-a-sealed-stack-shown-in-a-salon
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      const stackRefused = stackShareRefusal(error);\n"
+        replace: "      const stackRefused = isNetworkError(error) ? stackShareRefusal(error) : null;\n"
+    proof: { file: src/stores/__tests__/aSealedStackShareIsSaidAndLetGo.test.ts, test: "a sealed stack's card is said as sealed, and leaves the transcript: no retry that cannot work" }
+
+  - id: shape-queued-stack-share-retried
+    class: DATA-a-sealed-stack-shown-in-a-salon
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "        const stackRefused = stackShareRefusal(sent.error);\n"
+        replace: "        const stackRefused = sent.data ? stackShareRefusal(sent.error) : null;\n"
+    proof: { file: src/stores/__tests__/aSealedStackShareIsSaidAndLetGo.test.ts, test: "a share made offline and refused on its way is let go, said, and taken off the room" }
+
+  - id: shape-pushed-phone-laid-without-a-session
+    class: E2E-push-tap-unproven
+    source: shape
+    edits:
+      - file: e2e/push-present.mjs
+        find: "  if (held !== '1') throw new Error('the member\\'s phone is not registered under a session that stands');\n"
+        replace: ""
+    proof: { file: e2e/__tests__/thePushedPhoneRegistersAsTheAppDoes.test.ts, test: "stops the run when the token does not stand under a session the house still holds" }
+
+  - id: shape-proxy-pail-of-a-hundred-and-twenty
+    class: NET-a-busy-catalogue-told-as-a-lost-connection
+    source: shape
+    edits:
+      - file: ../supabase/functions/tmdb-proxy/rate.js
+        find: "export const ADDRESS_BURST = 1200;"
+        replace: "export const ADDRESS_BURST = 120;"
+    proof: { file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "a website import of 500 films, every film asked twice, is never told to wait" }
+
+  - id: shape-house-ceiling-under-the-address
+    class: NET-a-busy-catalogue-told-as-a-lost-connection
+    source: shape
+    edits:
+      - file: ../supabase/functions/tmdb-proxy/rate.js
+        find: "  const addresses = pails(ADDRESS_BURST, ADDRESS_PER_SECOND);"
+        replace: "  const addresses = pails(100, 40);"
+    proof: { file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "an address asks 1,200 at once, is then told when to ask again, and is let through as tokens come" }
+
+  - id: shape-busy-told-as-unreachable
+    class: NET-a-busy-catalogue-told-as-a-lost-connection
+    source: shape
+    edits:
+      - file: src/lib/tmdb.ts
+        find: "          throw new TmdbBusy(path, wait);"
+        replace: "          throw new TmdbUnreachable(path, `status ${res.status}`);"
+    proof: { file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "a long wait is said as busy, with how long, at once: never as a lost connection" }
+
+  - id: shape-import-ends-on-busy
+    class: NET-a-busy-catalogue-told-as-a-lost-connection
+    source: shape
+    edits:
+      - file: src/features/archive/archiveImport.ts
+        find: "        if (!busy && !houseAnswered(err)) throw err;"
+        replace: "        if (!houseAnswered(err)) throw err;"
+    proof: { file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "asked to wait, it waits as long as it is asked and goes on: every film matched, nothing blamed on the connection" }
+
+  - id: shape-house-failure-ends-the-import
+    class: NET-a-busy-catalogue-told-as-a-lost-connection
+    source: shape
+    edits:
+      - file: src/features/archive/archiveImport.ts
+        find: "    if (isTmdbBusy(err) || houseAnswered(err)) throw err;"
+        replace: "    if (isTmdbBusy(err)) throw err;"
+    proof: { file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "is waited on, and the same film asked again: nothing blamed on the connection" }
+
+  - id: shape-busy-screen-said-as-lost-signal
+    class: NET-a-busy-catalogue-told-as-a-lost-connection
+    source: shape
+    edits:
+      - file: src/components/EmptyStates.tsx
+        find: "    const title = busy ? 'The Catalogue Is Busy' : 'Transmission Interrupted';"
+        replace: "    const title = 'Transmission Interrupted';"
+    proof: { file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "says the catalogue is busy, never that the connection was lost" }
+
+  - id: shape-busy-retried-on-the-backoff
+    class: NET-a-busy-catalogue-told-as-a-lost-connection
+    source: shape
+    edits:
+      - file: src/lib/queryPolicy.ts
+        find: "  if (isTmdbBusy(error)) {\n    const asked = Number(error.retryAfterMs);\n    return Math.min(10_000, Math.max(1000, Number.isFinite(asked) ? asked : 1000));\n  }\n"
+        replace: ""
+    proof: { file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "asks again after as long as it was asked (at most ten seconds), not on the usual backoff" }
+
+  - id: shape-import-unpaced
+    class: NET-a-busy-catalogue-told-as-a-lost-connection
+    source: shape
+    edits:
+      - file: src/features/archive/archiveImport.ts
+        find: "      await paced();\n      const dated = await tmdb.findFilm(title, String(yearNum));"
+        replace: "      const dated = await tmdb.findFilm(title, String(yearNum));"
+    proof: { file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "asks one read a film, the first 60 at once, then three a second" }
+
+  - id: shape-hung-catalogue-asked-three-times
+    class: NET-a-hung-catalogue-asked-three-times
+    source: shape
+    edits:
+      - file: src/lib/tmdb.ts
+        find: "        if (res.status === 504) throw new TmdbUnreachable(path, 'status 504', true);\n"
+        replace: ""
+    proof: { file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "the proxy's own deadline spent (504) is said at once, not after two more of it" }
+
+  - id: shape-unreached-player-silent
+    class: UI-a-player-that-never-arrived-said-nothing
+    source: shape
+    edits:
+      - file: src/components/film/TrailerModal.tsx
+        find: "  if (m?.event === 'unreached') return { said: 'unreached' };\n"
+        replace: ""
+    proof: { file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "says so, offers TRY AGAIN, which loads the player once more, and YouTube's own" }
+
+  - id: shape-player-not-asked-when-online
+    class: UI-a-player-that-never-arrived-said-nothing
+    source: shape
+    edits:
+      - file: src/components/film/TrailerModal.tsx
+        find: "  window.addEventListener('online', function () { if (!heard) window.askAgain(); });\n"
+        replace: ""
+    proof: { file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "the connection back, a player that never arrived is asked for again by itself" }
+
+  - id: shape-ask-again-loads-nothing
+    class: UI-a-player-that-never-arrived-said-nothing
+    source: shape
+    edits:
+      - file: src/components/film/TrailerModal.tsx
+        find: "    player.src = player.src;\n"
+        replace: ""
+    proof: { file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "asked again, it loads the player once more, says so, and watches for it again" }
+
+  - id: shape-youtube-offered-two-ways
+    class: UI-a-player-that-never-arrived-said-nothing
+    source: shape
+    edits:
+      - file: src/components/film/TrailerModal.tsx
+        find: "import TryAgain, { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT } from '@/src/components/TryAgain';"
+        replace: "import TryAgain, { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT, WayOut } from '@/src/components/TryAgain';"
+      - file: src/components/film/TrailerModal.tsx
+        find: "                                <WatchOnYouTube youtubeId={key} belowAnAct />"
+        replace: "                                <WayOut label=\"Watch on YouTube\" onPress={() => { void safeOpenURL(`https://www.youtube.com/watch?v=${key}`); }} />"
+    proof: { file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "offers YouTube's own one way, whichever word is said" }
+
+  - id: shape-reused-row-keeps-its-picture
+    class: UI-a-reused-row-shows-the-last-picture
+    source: shape
+    edits:
+      - file: src/components/Picture.tsx
+        find: "      recyclingKey={rest.recyclingKey ?? uri}\n"
+        replace: ""
+    proof: { file: src/components/__tests__/aReusedRowShowsItsOwnPicture.test.tsx, test: "a picture is named by its address, so a row given another one clears before it draws" }
+
+  - id: shape-undated-film-counted-settled
+    class: DATA-a-film-read-once-too-early
+    source: shape
+    edits:
+      - file: ../supabase/functions/sync-films/reread.js
+        find: "  const unsettled = !canceled && (out || settlesAt === null || now < settlesAt);"
+        replace: "  const unsettled = !canceled && settlesAt !== null && now < settlesAt;"
+    proof: { file: src/services/__tests__/aFilmReadEarlyIsReadAgain.test.ts, test: "a film TMDB dates nowhere is not settled: looked at every ninety days, its reads never spent, until it has a date" }
+
+  - id: shape-blank-film-read-once
+    class: DATA-a-film-read-once-too-early
+    source: shape
+    edits:
+      - file: ../supabase/functions/sync-films/reread.js
+        find: "  if (hasDetails(film) || sync_reads >= MAX_READS) return { release_date, sync_reads, reread_after: null };"
+        replace: "  if (hasDetails(film) || sync_reads >= 1) return { release_date, sync_reads, reread_after: null };"
+    proof: { file: src/services/__tests__/aFilmReadEarlyIsReadAgain.test.ts, test: "settled and still blank, it is read again in two weeks, and taken as TMDB has it after the third read" }
+
+  - id: shape-same-title-any-year-taken
+    class: DATA-an-import-matched-to-a-same-titled-film
+    source: shape
+    edits:
+      - file: src/features/archive/archiveImport.ts
+        find: "  return titled.length === 1 ? titled[0] ?? null : null;"
+        replace: "  return titled[0] ?? null;"
+    proof: { file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "a title two films bear, decades apart, neither of them of its year, is left unmatched" }
+
+  - id: shape-original-taken-for-its-remake
+    class: DATA-an-import-matched-to-a-same-titled-film
+    source: shape
+    edits:
+      - file: src/features/archive/archiveImport.ts
+        find: "  const ranked = [...inYear.filter(same), ...inYear, ...beside.filter(same), ...beside];"
+        replace: "  const ranked = [...found.filter(same), ...inYear, ...beside];"
+    proof: { file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "a remake is matched to itself, never to the original handed back first for a restoration that year" }
+
+  - id: shape-import-asks-any-release-that-year
+    class: DATA-an-import-matched-to-a-same-titled-film
+    source: shape
+    edits:
+      - file: src/lib/tmdb.ts
+        find: "    const yearParam = year ? `&primary_release_year=${encodeURIComponent(year)}` : '';"
+        replace: "    const yearParam = year ? `&year=${encodeURIComponent(year)}` : '';"
+    proof: { file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "an import asks for one film, by its title and its own first release year, films alone" }
+
+  - id: shape-catalogue-waits-on-the-session
+    class: SPEED-read-waits-on-a-read-it-needs-not
+    source: shape
+    edits:
+      - file: src/lib/tmdb.ts
+        find: "import { DeadlineExceeded, fetchWithinLimit } from './supabase';"
+        replace: "import { DeadlineExceeded, fetchWithinLimit, supabase } from './supabase';"
+      - file: src/lib/tmdb.ts
+        find: "            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,"
+        replace: "            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? SUPABASE_ANON_KEY}`,"
+    proof: { file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "every read asks with the public key, and none waits on the member's session" }
+
+  - id: shape-stacks-asked-from-the-first-again
+    class: READ-a-search-cut-at-a-fixed-count
+    source: shape
+    edits:
+      - file: src/hooks/useUniversalSearch.ts
+        find: "      const { data, error } = await withAbortSignal(supabase.rpc('search_stacks', {\n        p_pattern: pattern,\n        p_cursor_at: cursor?.primary ?? null,\n"
+        replace: "      const { data, error } = await withAbortSignal(supabase.rpc('search_stacks', {\n        p_pattern: pattern,\n        p_cursor_at: null,\n"
+    proof: { file: src/hooks/__tests__/theSearchReadsPastItsFirstPage.test.tsx, test: "the stacks: past the first page, the next asked after the last one shown" }
+
+  - id: shape-cache-written-at-every-change
+    class: SPEED-the-cache-written-whole-at-every-change
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "    held = { client, member: memberNow() };\n"
+        replace: "    held = { client, member: memberNow() };\n    writeHeldCache();\n"
+    proof: { file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "a film opened, its read changing the cache again and again, is written once in that second, as it last stood" }
+
+  - id: shape-cache-written-mid-fling
+    class: SPEED-the-cache-written-whole-at-every-change
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "      idleTask = requestIdleCallback(() => { idleTask = null; writeHeldCache(); }, { timeout: IDLE_WAIT_MS });\n"
+        replace: "      writeHeldCache();\n"
+    proof: { file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "its turn come, the write waits for the JS thread to be idle (a fling is never held up by it), two seconds at most" }
+
+  - id: shape-cache-bytes-counted-every-write
+    class: SPEED-the-cache-written-whole-at-every-change
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "  if (serialized.length * 3 <= MAX_CACHE_SIZE_BYTES) return false;\n"
+        replace: ""
+    proof: { file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "a string a third of the ceiling or shorter is under it, and one longer than the ceiling over it, its characters never counted" }
+
+  - id: shape-film-kept-whole
+    class: SPEED-the-cache-written-whole-at-every-change
+    source: shape
+    edits:
+      - file: src/hooks/filmAsDrawn.ts
+        find: "  const { recommendations: _pool1, similar: _pool2, ...film } = detail as Detail;\n"
+        replace: "  const film = detail as Detail;\n"
+    proof: { file: src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts, test: "keeps the film's own facts whole, and not the two pages of films like it (their pool is built first)" }
+
+  - id: shape-film-pool-kept-whole
+    class: SPEED-the-cache-written-whole-at-every-change
+    source: shape
+    edits:
+      - file: src/hooks/filmAsDrawn.ts
+        find: "  return pool.map(({ id, title, name, poster_path }) => ({ id, title, name, poster_path }));\n"
+        replace: "  return pool.map((film) => ({ ...film }));\n"
+    proof: { file: src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts, test: "keeps of each film like it only what its card draws: its poster, its title, its id" }
+
+  - id: shape-film-every-video-kept
+    class: SPEED-the-cache-written-whole-at-every-change
+    source: shape
+    edits:
+      - file: src/hooks/filmAsDrawn.ts
+        find: "  const listed = playable.slice(0, VIDEOS_DRAWN);\n"
+        replace: "  const listed = playable;\n"
+    proof: { file: src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts, test: "keeps the six videos the page lists and the trailer it opens, as the whole answer gives them" }
+
+  - id: shape-cache-write-ungated
+    class: SPEED-the-cache-written-whole-at-every-change
+    source: shape
+    edits:
+      - file: e2e/screen-times.mjs
+        find: "    if (slowest > CACHE_WRITE_MS) problems.push("
+        replace: "    if (slowest > CACHE_WRITE_MS * 10) problems.push("
+    proof: { file: e2e/__tests__/screenTimes.test.ts, test: "reads the query cache's writes, and fails one that held the JS thread too long" }
+
+  - id: shape-lab-cache-write-unbounded
+    class: SPEED-the-cache-written-whole-at-every-change
+    source: shape
+    edits:
+      - file: e2e/lab/films.mjs
+        find: "  if (slowest > CACHE_WRITE_MS) failed.push("
+        replace: "  if (slowest > CACHE_WRITE_MS * 10) failed.push("
+    proof: { file: e2e/__tests__/theLabFillsTheCache.test.ts, test: "fails a write that held the JS thread over its bound, naming it" }
+
+  - id: shape-lab-cache-never-filled
+    class: SPEED-the-cache-written-whole-at-every-change
+    source: shape
+    edits:
+      - file: e2e/lab/films.mjs
+        find: "  if (largest < MEMBER_SIZE) {\n"
+        replace: "  if (largest < 0) {\n"
+    proof: { file: e2e/__tests__/theLabFillsTheCache.test.ts, test: "fails a run whose cache never reached a member's size: its times say nothing of it" }
+
+  - id: shape-held-cache-outlives-sign-out
+    class: STATE-a-choice-kept-past-sign-out
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "    // Again after the network's steps: a read that answered meanwhile held a write of the cache.\n    forgetCache();\n"
+        replace: "    storage.delete('REELHOUSE_QUERY_CACHE');\n"
+    proof: { file: src/stores/__tests__/aSignOutTakesTheCacheWithIt.test.ts, test: "a read of the member's that answers while they sign out is never written after: the next start opens on nothing of theirs" }
+
+  - id: shape-held-cache-written-for-another-member
+    class: STATE-a-choice-kept-past-sign-out
+    source: shape
+    edits:
+      - file: src/lib/queryClient.ts
+        find: "  if (taken && taken.member === memberNow()) writeCache(taken.client);\n"
+        replace: "  if (taken) writeCache(taken.client);\n"
+    proof: { file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "a cache held for one member is never written once another has signed in" }
+
+  - id: shape-ledger-read-twice-a-launch
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/domain/marksLedger.ts
+        find: "  if (ledgerJustRead(memberId)) return Promise.resolve();\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/theLedgerIsReadOnceALaunch.test.ts, test: "the launch asks twice, the session then the boot: the ledger is read once" }
+
+  - id: shape-ledger-misshapen-taken-as-read
+    class: DATA-marks-known-from-the-pages
+    source: shape
+    edits:
+      - file: src/stores/domain/marksLedger.ts
+        find: "    if (!Array.isArray(values) || values.length !== ids.length) return null;\n"
+        replace: "    if (!Array.isArray(values)) return null;\n"
+    proof: { file: src/stores/__tests__/theLedgerIsReadOnceALaunch.test.ts, test: "refuses an answer whose columns are not all as long as the ids, or are missing" }
+
+  - id: shape-first-seal-checks-first
+    class: SPEED-a-page-waits-for-what-it-knows
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "            if (!existingLog && log.filmId && get().marksKnown !== 'held') {\n"
+        replace: "            if (!existingLog && log.filmId) {\n"
+    proof: { file: src/stores/__tests__/aFirstSealIsOneTrip.test.ts, test: "a film's first record, the ledger held, is one trip to the house: the insert" }
+
+  - id: shape-rewatch-leaves-the-film-unknown
+    class: DATA-marks-known-from-the-pages
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "{ silentAnnounce: true, viewingOp: { kind: 'add', viewingId: newViewingId }, held: existingLog });"
+        replace: "{ silentAnnounce: true, viewingOp: { kind: 'add', viewingId: newViewingId } });"
+    proof: { file: src/stores/__tests__/aFirstSealIsOneTrip.test.ts, test: "a record of the film filed meanwhile on another phone is met by the insert, and the seal is filed as its rewatch" }
+
+  - id: shape-projector-waits-on-a-walk
+    class: SPEED-read-waits-on-a-read-it-needs-not
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "          ProfileDataService.fetchHighestRated(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),\n        ]);\n"
+        replace: "          ProfileDataService.fetchHighestRated(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),\n          ProfileDataService.fetchCalendarData(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),\n        ]);\n"
+    proof: { file: src/hooks/__tests__/theProjectorDrawsOnTheHousesThreeReads.test.tsx, test: "an Auteur's projector draws once the house's three summaries answer" }
+
+  - id: shape-summary-failure-taken-as-none
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "        () => ({ shape: null, unread: true }),\n"
+        replace: "        () => ({ shape: null, unread: false }),\n"
+    proof: { file: src/components/profile/__tests__/aRecordUnreadIsSaid.test.tsx, test: "a summary that could not be read is kept as unread, never as a file with no record" }
+
+  - id: shape-run-counted-from-a-part
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/components/profile/profileComputed.ts
+        find: "  if (recordCount === null || held.length < recordCount) return null;\n"
+        replace: "  if (recordCount === null) return null;\n"
+    proof: { file: src/components/profile/__tests__/aRunIsNeverCountedFromAPart.test.ts, test: "is unknown when only part of the record is held: never a run counted short from the first page" }
+
+  - id: shape-run-counted-with-no-count
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/components/profile/profileComputed.ts
+        find: "  if (recordCount === null || held.length < recordCount) return null;\n"
+        replace: "  if (held.length < (recordCount ?? 0)) return null;\n"
+    proof: { file: src/components/profile/__tests__/aRunIsNeverCountedFromAPart.test.ts, test: "is unknown when no count of the record answered: never a run counted from what is held" }
+
+  - id: shape-retry-reads-the-whole-file
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "      const shape = await ProfileDataService.fetchAnalyticsSummary(member, signal);\n"
+        replace: "      await fetchUserData();\n      const shape = await ProfileDataService.fetchAnalyticsSummary(member, signal);\n"
+    proof: { file: src/components/profile/__tests__/aRecordUnreadIsSaid.test.tsx, test: "TRY AGAIN asks the summary alone: the file is not read again, and the archive's pages stay" }
+
+  - id: shape-retry-unsaid-while-asking
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/components/TryAgain.tsx
+        find: "    setAsking(true);\n"
+        replace: ""
+    proof: { file: src/components/profile/__tests__/aRecordUnreadIsSaid.test.tsx, test: "TRY AGAIN says it is asking until the summary answers" }
+
+  - id: shape-search-held-for-the-slowest
+    class: SPEED-a-search-held-for-its-slowest-source
+    source: shape
+    edits:
+      - file: src/hooks/useUniversalSearch.ts
+        find: "  const noneAnswered = (!asked.films || catalogue.isPending) && (!asked.users || members.isPending)\n    && (!asked.logs || logs.isPending) && (!asked.lists || lists.isPending);\n"
+        replace: "  const noneAnswered = (asked.films && catalogue.isPending) || (asked.users && members.isPending)\n    || (asked.logs && logs.isPending) || (asked.lists && lists.isPending);\n"
+    proof: { file: src/hooks/__tests__/theSearchDrawsEachSourceAsItAnswers.test.tsx, test: "the house's members and stacks are drawn while the catalogue is still out, and its films join when it answers" }
+
+  - id: shape-all-rows-put-above-the-drawn
+    class: SPEED-a-search-held-for-its-slowest-source
+    source: shape
+    edits:
+      - file: app/(modals)/search-modal.tsx
+        find: "      if (!answered[SOURCE_OF[key]]) break;\n"
+        replace: ""
+    proof: { file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "on ALL, the members found wait for the films above them; the PEOPLE tab shows them at once" }

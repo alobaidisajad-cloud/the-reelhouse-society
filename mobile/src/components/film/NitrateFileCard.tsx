@@ -11,7 +11,9 @@
  *     member who sent it reads at
  *   · the poster zone is the ONLY flexible region; it absorbs all variance
  *   · critique zone: pull quote → review → HIDDEN. Hard 3-line clamp.
- *     No filler text, ever — an empty log grows the poster instead.
+ *     No filler text, ever — an empty log grows the poster instead. A
+ *     review marked as a spoiler never leaves on the file: the zone says
+ *     only that there are spoilers (sharedWords), for every sharer.
  *   · the stamp anchors to the slab with ≥10px inset from every clip
  *     edge, so its −8° rotation can never touch the overflow boundary
  *   · title shrinks to fit 2 lines; rating row renders only when > 0;
@@ -28,6 +30,7 @@ import { decorativeTextProps } from '@/src/constants/textScaling';
 import { ReelRating } from '@/src/components/Decorative';
 import { stripHtml } from '@/src/utils/html';
 import { truncateReview, OPEN_QUOTE, CLOSE_QUOTE } from '@/src/utils/text';
+import { SPOILERS_LEADER, sharedWords } from '@/src/utils/sharedWords';
 import { EDGE_LIT } from '@/src/theme/light';
 import { HOUSE_WEB } from '@/src/constants/support';
 import { RankBadge, type Rank } from '@/src/components/RankBadge';
@@ -46,6 +49,8 @@ export interface NitrateFileData {
   rating?: number | null;
   review?: string | null;
   pullQuote?: string | null;
+  /** The review is marked as a spoiler: its words stay in the house, and the file says so. */
+  isSpoiler?: boolean | null;
   /** undefined/null → film-only share: no stamp on the file. */
   status?: string | null;
   username?: string | null;
@@ -83,11 +88,15 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
   const rating = data.rating ?? 0;
   // The member's words as the reader reads them: each slur struck for one who asked (StruckWords).
   const struck = useStruck();
-  const pullQuote = struck(data.pullQuote?.trim() || null);
-  const review = data.review ? truncateReview(struck(stripHtml(data.review)), 260) : null;
+  // Words marked as a spoiler never leave on the file: the receiver cannot uncover a picture.
+  const pullQuote = struck(sharedWords(data.pullQuote, data.isSpoiler));
+  const sharedReview = sharedWords(data.review, data.isSpoiler);
+  const review = sharedReview ? truncateReview(struck(stripHtml(sharedReview)), 260) : null;
   // The critique zone's priority law: the author's own chosen line first.
   const critique = pullQuote ?? review;
   const critiqueIsQuote = !!pullQuote;
+  // Spoilers withheld: the zone says only that, where the words would have stood.
+  const veiled = !critique && !!data.isSpoiler && !!(data.pullQuote?.trim() || data.review?.trim());
 
   const isAbandoned = data.status === 'abandoned';
   const stampText = data.status
@@ -168,6 +177,11 @@ export function NitrateFileCard({ data, onReady }: { data: NitrateFileData; onRe
         </View>
 
         {/* The critique zone — pull quote → review → hidden. Never filler. */}
+        {veiled && (
+          <View style={s.critiqueZone}>
+            <Text {...decorativeTextProps} style={s.critiqueProse} numberOfLines={2}>{SPOILERS_LEADER}</Text>
+          </View>
+        )}
         {critique && (
           <View style={s.critiqueZone}>
             {critiqueIsQuote ? (

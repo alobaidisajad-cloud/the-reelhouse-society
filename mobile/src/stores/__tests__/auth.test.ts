@@ -82,6 +82,7 @@ jest.mock('../../utils/withRetry', () => ({
 
 jest.mock('../../lib/queryClient', () => ({
   queryClient: { clear: jest.fn(), cancelQueries: jest.fn() },
+  forgetCache: jest.fn(),
 }));
 
 jest.mock('../../lib/pushNotifications', () => ({

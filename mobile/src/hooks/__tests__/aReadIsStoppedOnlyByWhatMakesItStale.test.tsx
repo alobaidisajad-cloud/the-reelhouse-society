@@ -47,8 +47,8 @@ beforeEach(() => {
 });
 
 it('a pull does not cancel a room being read: the Projector still arrives', async () => {
-  const analytics = held<unknown[]>();
-  mockService.fetchAnalyticsLogs = analytics.fn;
+  const analytics = held<unknown>();
+  mockService.fetchProfileAnalytics = analytics.fn;
   const result = await openFile();
 
   let room: Promise<void> | undefined;
@@ -56,8 +56,8 @@ it('a pull does not cancel a room being read: the Projector still arrives', asyn
   await act(async () => { await result.current.fetchUserData(); });
   expect(analytics.calls[0].signal?.aborted).toBe(false);
 
-  await act(async () => { analytics.calls[0].answer([{ id: 'l1' }]); await room; });
-  expect(result.current.analyticsLogs).toEqual([{ id: 'l1' }]);
+  await act(async () => { analytics.calls[0].answer({ total_films: 12 }); await room; });
+  expect(result.current.serverAnalytics).toEqual({ total_films: 12 });
   expect(result.current.tabFailed.projector).toBeFalsy();
 });
 
@@ -117,8 +117,8 @@ it('a new search still cancels the more-rows read of the last one, so its rows n
 });
 
 it('and leaving the member cancels every read still out', async () => {
-  const analytics = held<unknown[]>();
-  mockService.fetchAnalyticsLogs = analytics.fn;
+  const analytics = held<unknown>();
+  mockService.fetchProfileAnalytics = analytics.fn;
   const r = await renderHook(() => useProfileData({ username: 'vesper', isSelf: false, isFollowing: false, activeTab: null as never }));
   await waitFor(() => expect(r.result.current.targetUser?.id).toBe('u9'));
   await act(async () => { void r.result.current.loadTabData('projector'); });

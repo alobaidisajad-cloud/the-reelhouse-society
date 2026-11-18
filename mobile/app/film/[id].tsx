@@ -14,6 +14,7 @@ import { isArchivistPlusTier } from '@/src/utils/tier';
 import { rankOf } from '@/src/components/RankBadge';
 
 import { FilmDetailLayout } from '@/src/components/film/FilmDetailLayout';
+import { isTmdbBusy } from '@/src/lib/tmdbErrors';
 import { ShareCardModal } from '@/src/components/film/ShareCardModal';
 import { TrailerModal, footageLabel, type Footage } from '@/src/components/film/TrailerModal';
 import { youtubeKey } from '@/src/utils/outsideValues';
@@ -33,7 +34,9 @@ export default function FilmDetailScreen() {
   const filmId = id ?? 0;
   const validFilmId = id !== undefined;
 
-  const { data, isLoading: loading, isError, refetch, isPlaceholderData } = useFilmDetail(filmId, validFilmId);
+  const { data, isLoading: loading, isError, error, refetch, isPlaceholderData } = useFilmDetail(filmId, validFilmId);
+  // A read refused because the catalogue asked us to wait: said as such, never as a lost signal.
+  const catalogueBusy = isError && isTmdbBusy(error);
   const retry = useCallback(() => { void refetch(); }, [refetch]);
   const readyMark = useScreenReady('film', loading ? 'reading' : isError && !data?.detail ? 'failed' : 'ready');
   const user = useAuthStore((s) => s.user);
@@ -184,6 +187,7 @@ export default function FilmDetailScreen() {
       validFilmId,
       loading,
       isError,
+      catalogueBusy,
       retry,
       isFocused,
       goBack,
@@ -196,7 +200,7 @@ export default function FilmDetailScreen() {
       playVideo,
     };
   }, [
-    derivedData, existingLog, marksUnknown, rereadMarks, isAuthenticated, isArchivist, currentUsername, user, validFilmId, loading, isError, retry,
+    derivedData, existingLog, marksUnknown, rereadMarks, isAuthenticated, isArchivist, currentUsername, user, validFilmId, loading, isError, catalogueBusy, retry,
     isFocused, goBack, handleLog, handleRewatch, handleOpenTrailer, handleOpenShare, handleOpenLounge, handleReadFullLog, trailer,
     playVideo,
   ]);

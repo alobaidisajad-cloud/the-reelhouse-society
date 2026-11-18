@@ -3,7 +3,7 @@
 // Resilient, cached, deduplicated — ported from web
 // ============================================================
 import { agedSince, monotonicNow } from './waits';
-import { isTmdbUnreachable, TmdbUnreachable } from './tmdbErrors';
+import { isTmdbBusy, isTmdbUnreachable, TmdbBusy, TmdbUnreachable } from './tmdbErrors';
 import { boundedSearch } from '../utils/searchPattern';
 import { DeadlineExceeded, fetchWithinLimit } from './supabase';
 
@@ -36,6 +36,8 @@ export interface TMDBWatchProviderResult {
 interface TMDBSearchResult {
     id: number;
     title?: string;
+    /** The title in the film's own language, as TMDB files it. */
+    original_title?: string;
     name?: string;
     media_type?: string;
     poster_path?: string | null;
@@ -178,14 +180,27 @@ const _inflight = new Map<string, Promise<unknown>>();
 const detailPath = (id: number) =>
   `/movie/${id}?append_to_response=credits,videos,recommendations,similar,watch/providers,release_dates`;
 
+/** A wait the proxy asks for that is short enough to sit out inside one read. */
+const BUSY_WAIT_IN_PLACE_MS = 2000;
+
+/** How long the proxy asked us to wait (Retry-After, in seconds), within reason; a second when unsaid. */
+export function busyWaitMs(retryAfter: string | null): number {
+  const seconds = Number(retryAfter);
+  if (!retryAfter || !Number.isFinite(seconds) || seconds <= 0) return 1000;
+  return Math.min(60_000, Math.max(250, Math.round(seconds * 1000)));
+}
+
 /**
  * One catalogue read, through the tmdb-proxy (the only path: it holds the key).
  *
  * `fallback` is the answer for "not there" (a 404, or a request TMDB rejects).
- * A catalogue that cannot be REACHED (no connection, or 5xx/429 through three
- * tries, or the proxy refusing us) throws TmdbUnreachable instead: answered
- * with the fallback, React Query cached an empty success for minutes and a
- * screen said "nothing found" to a member who had no signal.
+ * A catalogue that cannot be REACHED (no connection, 500/502/503 through three
+ * tries, the proxy's own deadline for TMDB spent (504), or the proxy refusing
+ * us) throws TmdbUnreachable instead: answered with the fallback, React Query
+ * cached an empty success for minutes and a screen said "nothing found" to a
+ * member who had no signal. The proxy asking us to wait (429) is no failure of
+ * the connection: a short wait is sat out here, a longer one throws TmdbBusy
+ * with how long, never TmdbUnreachable.
  */
 async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): Promise<T | null> {
   const cached = cacheGet(path);
@@ -196,6 +211,8 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
 
   const promise = (async () => {
     let why = 'no answer';
+    // Whether the last failure was an answer from the house's proxy (a 5xx), not a lost connection.
+    let answered = false;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         // Within the house's deadline (supabase.ts): a request that runs out of it is not tried
@@ -210,9 +227,22 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
           body: JSON.stringify({ path }),
         });
 
+        // Asked to wait: sat out when it is short, said as busy when it is not or keeps coming.
+        if (res.status === 429) {
+          const wait = busyWaitMs(res.headers.get('retry-after'));
+          if (attempt < 2 && wait <= BUSY_WAIT_IN_PLACE_MS) {
+            why = 'status 429';
+            await new Promise(r => setTimeout(r, wait));
+            continue;
+          }
+          throw new TmdbBusy(path, wait);
+        }
+        // The proxy's own deadline for TMDB already spent: said now, not after two more of it.
+        if (res.status === 504) throw new TmdbUnreachable(path, 'status 504', true);
         // A server failing for a moment: tried again, then unreachable.
-        if (res.status === 429 || res.status >= 500) {
+        if (res.status >= 500) {
           why = `status ${res.status}`;
+          answered = true;
           if (attempt < 2) await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
           continue;
         }
@@ -223,13 +253,14 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
         if (!path.includes('/search/')) cacheSet(path, data);
         return data as T;
       } catch (e: unknown) {
-        if (isTmdbUnreachable(e)) throw e;
+        if (isTmdbUnreachable(e) || isTmdbBusy(e)) throw e;
         if (e instanceof DeadlineExceeded) throw new TmdbUnreachable(path, e.message);
         why = e instanceof Error ? e.message : String(e);
+        answered = false;
         if (attempt < 2) await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
       }
     }
-    throw new TmdbUnreachable(path, why);
+    throw new TmdbUnreachable(path, why, answered);
   })();
 
   _inflight.set(path, promise);
@@ -428,6 +459,22 @@ export const tmdb = {
     }
 
     return failedWith(data);
+  },
+
+  /**
+   * One film by its title, and the year it came out when there is one (TMDB's
+   * `primary_release_year`: the film's own first release, never a restoration's or another
+   * country's that year, which would hand back an original for its remake), as an archive import
+   * asks: a single read a film, films alone. No typo or keyword tiers: an import cannot check what
+   * they guess, and each cost the house's pace several reads.
+   */
+  findFilm: async (title: string, year?: string) => {
+    const query = boundedSearch(title);
+    const yearParam = year ? `&primary_release_year=${encodeURIComponent(year)}` : '';
+    return fetchTMDB<TMDBMovieListResponse>(
+      `/search/movie?query=${encodeURIComponent(query)}${yearParam}&page=1&include_adult=false`,
+      { results: [] },
+    );
   },
 
   // ── Film Details ──

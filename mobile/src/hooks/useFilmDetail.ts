@@ -4,12 +4,14 @@ import { tmdb } from '@/src/lib/tmdb';
 import { FilmService } from '@/src/services/FilmService';
 import { buildRecommendationPool } from '@/src/utils/recommendations';
 import { e2eTrace } from '@/src/utils/e2eTrace';
+import { filmAsDrawn, poolAsDrawn } from './filmAsDrawn';
 
 // The recommendation pool rides the appended detail payload (no extra call):
 // recommendations = TMDB's real engine, similar = fallback for obscure titles.
+// Each kept as its card draws it (poolAsDrawn): this read is kept on the phone's disk.
 function poolFromDetail(detail: unknown, filmId: number) {
   const d = detail as { recommendations?: { results?: unknown }; similar?: { results?: unknown } } | null;
-  return buildRecommendationPool(d?.recommendations?.results, d?.similar?.results, filmId);
+  return poolAsDrawn(buildRecommendationPool(d?.recommendations?.results, d?.similar?.results, filmId));
 }
 
 export function useFilmDetail(filmId: number, validFilmId: boolean) {
@@ -50,8 +52,9 @@ export function useFilmDetail(filmId: number, validFilmId: boolean) {
       // baked into this 30-min cache.
       const similar = poolFromDetail(detail, filmId);
 
+      // What the page draws, not TMDB's whole answer: this read is kept on the phone's disk.
       return {
-        detail,
+        detail: filmAsDrawn(detail),
         reviews,
         reviewsError: communityReviews.error,
         similar,

@@ -84,12 +84,6 @@ describe('profileReducer', () => {
     expect(result.tabDataLoaded).toEqual({ archive: true, watchlist: true });
   });
 
-  it('SET_ANALYTICS replaces analyticsLogs', () => {
-    const logs = [{ id: 'a1' } as any];
-    const result = profileReducer(initialState, { type: 'SET_ANALYTICS', payload: logs });
-    expect(result.analyticsLogs).toBe(logs);
-  });
-
   it('SET_CALENDAR_DATA replaces calendarData', () => {
     const data = [{ day: '2026-01-01', films: 1 }];
     const result = profileReducer(initialState, { type: 'SET_CALENDAR_DATA', payload: data });

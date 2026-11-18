@@ -47,22 +47,35 @@ export default function TryAgain({ onPress, label = 'TRY AGAIN', what, hitSlop, 
  * hold the plate (a picker's pictures, a record inside a card).
  */
 export function TryAgainLine({ onPress, what, hitSlop, style }: {
-  onPress: () => void;
+  /** The asking; when it hands back its promise, the line says it is asking until it settles. */
+  onPress: () => void | Promise<unknown>;
   what?: string;
   /** How far it reaches, where a neighbour sits closer than the default. */
   hitSlop?: Insets;
   style?: StyleProp<ViewStyle>;
 }) {
+  const [asking, setAsking] = React.useState(false);
+  const mounted = React.useRef(true);
+  React.useEffect(() => () => { mounted.current = false; }, []);
+  const ask = React.useCallback(() => {
+    const out = onPress();
+    if (!out || typeof (out as Promise<unknown>).then !== 'function') return;
+    setAsking(true);
+    // Settled either way: a failed ask says so where it is drawn, and the line is offered again.
+    void Promise.resolve(out).catch(() => {}).finally(() => { if (mounted.current) setAsking(false); });
+  }, [onPress]);
   return (
     <PressableScale room
-      onPress={onPress}
+      onPress={ask}
+      disabled={asking}
       hitSlop={hitSlop}
       style={style}
       haptic="selection"
       accessibilityRole="button"
-      accessibilityLabel={spokenAs('TRY AGAIN', what)}
+      accessibilityLabel={asking ? spokenAs('ASKING', what) : spokenAs('TRY AGAIN', what)}
+      accessibilityState={{ busy: asking, disabled: asking }}
     >
-      <Text style={s.line}>TRY AGAIN</Text>
+      <Text style={s.line}>{asking ? 'ASKING…' : 'TRY AGAIN'}</Text>
     </PressableScale>
   );
 }

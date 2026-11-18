@@ -18,6 +18,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useNotificationStore } from '@/src/stores/notificationStore';
 import { LoungeMessage, LoungeRoom, ReactionSummary, ROOM_COLUMNS, useLoungeStore } from '@/src/stores/lounge';
+import { useListStore } from '@/src/stores/films';
 import { colors, fonts } from '@/src/theme/theme';
 import { UNREADY, UNREADY_INK } from '@/src/theme/unready';
 import { LoungeMember, LoungeMemberStatus } from '@/src/types/social.types';
@@ -118,19 +119,22 @@ const SHARE_LABELS: Record<string, string> = {
  * and metadata key stay, for the messages already in rooms), so the kind comes
  * from the metadata when it is there.
  */
-export function shareOf(msg: LoungeMessage): { typeLabel: string; title: string | null; gone: boolean } | null {
+export function shareOf(msg: LoungeMessage): { typeLabel: string; title: string | null; gone: boolean; sealed?: true } | null {
   if (msg.type === 'text') return null;
   const meta = (msg.metadata ?? {}) as Record<string, unknown>;
   // The piece is gone (its writer withdrew or deleted it, the house took it down, or its writer
   // left and took it with them): the house took the headline it had copied off the card, and
   // marked the card (round 11). The card says so, never a headline its writer took back.
   const gone = meta.gone === true;
+  // A stack its curator sealed: the house took its title, count and curator off the card (round 13),
+  // and puts them back if it is opened again. The card says it is sealed, and nothing of it.
+  const sealed = !gone && meta.sealed === true;
   // Stack shares carry their title in metadata, not the film_title column.
-  const title = gone ? null : msg.film_title || (typeof meta.title === 'string' ? meta.title : null);
-  if (!gone && !title && !msg.film_id) return null;
+  const title = gone || sealed ? null : msg.film_title || (typeof meta.title === 'string' ? meta.title : null);
+  if (!gone && !sealed && !title && !msg.film_id) return null;
   const sharedKind = typeof meta.kind === 'string' ? nameOf(meta.kind) : null;
   const typeLabel = sharedKind ?? SHARE_LABELS[msg.type] ?? msg.type.toUpperCase().replace('_SHARE', '');
-  return { typeLabel, title, gone };
+  return sealed ? { typeLabel, title, gone, sealed } : { typeLabel, title, gone };
 }
 
 export const firstLink = (content: string | null | undefined) =>
@@ -156,10 +160,23 @@ export function spokenDispatch(msg: LoungeMessage): string {
   if (msg.reply_to_content) parts.push(`In reply to ${quotedName(msg.reply_to_username)}: ${msg.reply_to_content}`);
   if (msg.content) parts.push(msg.content);
   const share = shareOf(msg);
-  if (share) parts.push(`Shared ${share.typeLabel.toLowerCase()}${share.gone ? ', withdrawn' : share.title ? `: ${share.title}` : ''}`);
+  if (share) parts.push(`Shared ${share.typeLabel.toLowerCase()}${share.gone ? ', withdrawn' : share.sealed ? ', sealed' : share.title ? `: ${share.title}` : ''}`);
   // Each part one sentence: a stop added only where the words did not end on one.
   return parts.map((p) => p.trim()).filter(Boolean)
     .map((p) => (/[.!?…]$/.test(p) ? p : `${p}.`)).join(' ');
+}
+
+/**
+ * Whether a message's card opens what it shares. A sealed stack is read by its curator alone: its
+ * card opens only for the curator (a stack of their own shelf), and for every other member it is
+ * inert, never a door to CLASSIFIED (review round 13).
+ */
+export function shareOpens(msg: LoungeMessage): boolean {
+  const share = shareOf(msg);
+  if (!share) return false;
+  if (!share.sealed) return true;
+  const listId = (msg.metadata as Record<string, unknown> | null)?.listId;
+  return typeof listId === 'string' && useListStore.getState().lists.some((l) => l.id === listId);
 }
 
 /** The acts a screen reader is offered on a message. */
@@ -168,7 +185,7 @@ export function dispatchActions(msg: LoungeMessage) {
   return [
     { name: 'activate' as const },
     { name: 'longpress' as const, label: 'Show actions' },
-    ...(share ? [{ name: 'open', label: `Open the ${share.typeLabel.toLowerCase()}` }] : []),
+    ...(share && shareOpens(msg) ? [{ name: 'open', label: `Open the ${share.typeLabel.toLowerCase()}` }] : []),
     ...(firstLink(msg.content) ? [{ name: 'link', label: 'Open the link' }] : []),
   ];
 }
@@ -180,12 +197,12 @@ const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
 }) => {
   const share = shareOf(msg);
   if (!share) return null;
-  const { typeLabel, title, gone } = share;
+  const { typeLabel, title, gone, sealed } = share;
   const meta = (msg.metadata ?? {}) as Record<string, unknown>;
   const posterUrl = msg.film_poster ? tmdb.poster(msg.film_poster, 'w342') : null;
 
   // One quiet attribution line, when the payload carries one; none for a piece that is gone.
-  const byline = gone ? null
+  const byline = gone || sealed ? null
     : msg.type === 'dossier_share' && typeof meta.author_username === 'string'
       ? `BY @${meta.author_username.toUpperCase()}`
       : msg.type === 'log_share' && typeof meta.owner_username === 'string'
@@ -197,7 +214,8 @@ const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
   return (
     <PressableScale
       style={s.sharedCard}
-      onPress={() => onOpen(msg)}
+      // A sealed stack's card opens for its curator alone: for anyone else it is no door (shareOpens).
+      onPress={shareOpens(msg) ? () => onOpen(msg) : undefined}
       onLongPress={() => onLongPress(msg)}
       haptic="selection"
       pressedScale={0.98}
@@ -215,7 +233,7 @@ const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
           <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
           <Text style={s.sharedTypeText} numberOfLines={1}>{typeLabel}</Text>
         </View>
-        <Text style={[s.sharedTitle, gone && s.sharedTitleGone]} numberOfLines={2}>{gone ? 'withdrawn' : title}</Text>
+        <Text style={[s.sharedTitle, (gone || sealed) && s.sharedTitleGone]} numberOfLines={2}>{gone ? 'withdrawn' : sealed ? 'sealed by its curator' : title}</Text>
         {byline ? <Text style={s.sharedByline} numberOfLines={1}>{byline}</Text> : null}
       </View>
     </PressableScale>
@@ -339,7 +357,7 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, canReact, onLo
               accessibilityActions={isSending || isFailed ? undefined : dispatchActions(msg)}
               onAccessibilityAction={(e) => {
                 const act = e.nativeEvent.actionName;
-                if (act === 'open' || (act === 'activate' && shareOf(msg))) onOpenShare(msg);
+                if ((act === 'open' || act === 'activate') && shareOpens(msg)) onOpenShare(msg);
                 else if (act === 'link') { const url = firstLink(msg.content); if (url) safeOpenURL(url); }
                 else if (act === 'activate' || act === 'longpress') onLongPress(msg);
               }}>
@@ -648,6 +666,8 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   const handleLongPress = useCallback((msg: LoungeMessage) => setActionSheetMsg(msg), []);
   // Clippings are doors — every shared card opens the thing it points to.
   const handleOpenShare = useCallback((msg: LoungeMessage) => {
+    // A sealed stack's card is no door but for its curator (shareOpens).
+    if (!shareOpens(msg)) return;
     const meta = (msg.metadata ?? {}) as Record<string, unknown>;
     switch (msg.type) {
       case 'film_share':

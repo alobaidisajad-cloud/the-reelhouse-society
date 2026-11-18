@@ -1,0 +1,4136 @@
+{
+ "path": "/movie/637?append_to_response=credits%2Cvideos%2Crecommendations%2Csimilar%2Cwatch%2Fproviders%2Crelease_dates",
+ "status": 200,
+ "body": {
+  "adult": false,
+  "backdrop_path": "/6aNKD81RHR1DqUUa8kOZ1TBY1Lp.jpg",
+  "belongs_to_collection": null,
+  "budget": 20000000,
+  "genres": [
+   {
+    "id": 35,
+    "name": "Comedy"
+   },
+   {
+    "id": 18,
+    "name": "Drama"
+   }
+  ],
+  "homepage": "",
+  "id": 637,
+  "imdb_id": "tt0118799",
+  "origin_country": [
+   "IT"
+  ],
+  "original_language": "it",
+  "original_title": "La vita è bella",
+  "overview": "A touching story of an Italian book seller of Jewish ancestry who lives in his own little fairy tale. His creative and happy life would come to an abrupt halt when his entire family is deported to a concentration camp during World War II. While locked up he tries to convince his son that the whole thing is just a game.",
+  "popularity": 14.3428,
+  "poster_path": "/74hLDKjD5aGYOotO6esUVaeISa2.jpg",
+  "production_companies": [
+   {
+    "id": 22117,
+    "logo_path": "/dF264wYYLmCwqawuTXor5xsEcCc.png",
+    "name": "Mario e Vittorio Cecchi Gori - C.E.I.A.D.",
+    "origin_country": "IT"
+   },
+   {
+    "id": 370,
+    "logo_path": null,
+    "name": "Melampo Cinematografica",
+    "origin_country": "IT"
+   }
+  ],
+  "production_countries": [
+   {
+    "iso_3166_1": "IT",
+    "name": "Italy"
+   }
+  ],
+  "release_date": "1997-12-20",
+  "revenue": 230098753,
+  "runtime": 116,
+  "softcore": false,
+  "spoken_languages": [],
+  "status": "Released",
+  "tagline": "An unforgettable fable that proves love, family and imagination conquer all.",
+  "title": "Life Is Beautiful",
+  "video": false,
+  "vote_average": 8.435,
+  "vote_count": 14412,
+  "credits": {
+   "cast": [
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4818,
+     "known_for_department": "Acting",
+     "name": "Roberto Benigni",
+     "original_name": "Roberto Benigni",
+     "popularity": 1.7163,
+     "profile_path": "/ba1Sg02XxCphu6E1dWDMAH1GzeE.jpg",
+     "cast_id": 8,
+     "character": "Guido",
+     "credit_id": "52fe4262c3a36847f801a125",
+     "order": 0
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 9235,
+     "known_for_department": "Acting",
+     "name": "Nicoletta Braschi",
+     "original_name": "Nicoletta Braschi",
+     "popularity": 1.1589,
+     "profile_path": "/9IeE3Iz9HXZVTrvhjSCKlR4FLxB.jpg",
+     "cast_id": 7,
+     "character": "Dora",
+     "credit_id": "52fe4262c3a36847f801a121",
+     "order": 1
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9236,
+     "known_for_department": "Acting",
+     "name": "Giorgio Cantarini",
+     "original_name": "Giorgio Cantarini",
+     "popularity": 0.8375,
+     "profile_path": "/1tKZHpVTYcw8EP3naVTZFlrOkhQ.jpg",
+     "cast_id": 9,
+     "character": "Giosué",
+     "credit_id": "52fe4262c3a36847f801a129",
+     "order": 2
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9237,
+     "known_for_department": "Acting",
+     "name": "Giustino Durano",
+     "original_name": "Giustino Durano",
+     "popularity": 0.4139,
+     "profile_path": "/5VbG50qZNUnpx6UW7594RUlX7SZ.jpg",
+     "cast_id": 10,
+     "character": "Zio",
+     "credit_id": "52fe4262c3a36847f801a12d",
+     "order": 3
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9239,
+     "known_for_department": "Acting",
+     "name": "Sergio Bini Bustric",
+     "original_name": "Sergio Bini Bustric",
+     "popularity": 0.3852,
+     "profile_path": "/crnlLn1SxP2LqbsXNr8CQrvaiNc.jpg",
+     "cast_id": 12,
+     "character": "Ferruccio",
+     "credit_id": "52fe4262c3a36847f801a135",
+     "order": 4
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 954,
+     "known_for_department": "Acting",
+     "name": "Marisa Paredes",
+     "original_name": "Marisa Paredes",
+     "popularity": 0.744,
+     "profile_path": "/71esuRUCyeSyib35mTFPkR24zH7.jpg",
+     "cast_id": 16,
+     "character": "Dora's Mother",
+     "credit_id": "52fe4262c3a36847f801a145",
+     "order": 5
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 5789,
+     "known_for_department": "Acting",
+     "name": "Horst Buchholz",
+     "original_name": "Horst Buchholz",
+     "popularity": 1.0077,
+     "profile_path": "/9V38Di9T0qsjKBl2dR7sZMN1N0i.jpg",
+     "cast_id": 14,
+     "character": "Doctor Lessing",
+     "credit_id": "52fe4262c3a36847f801a13d",
+     "order": 6
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 9240,
+     "known_for_department": "Acting",
+     "name": "Lidia Alfonsi",
+     "original_name": "Lidia Alfonsi",
+     "popularity": 0.2835,
+     "profile_path": "/85BrcBOeIcfV9XkV523wN0VGNRR.jpg",
+     "cast_id": 13,
+     "character": "Mrs. Guicciardini",
+     "credit_id": "52fe4262c3a36847f801a139",
+     "order": 7
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 9242,
+     "known_for_department": "Acting",
+     "name": "Giuliana Lojodice",
+     "original_name": "Giuliana Lojodice",
+     "popularity": 0.3721,
+     "profile_path": "/cACsY8JyWaR3WeX7w1D09YssXbq.jpg",
+     "cast_id": 17,
+     "character": "School Principal",
+     "credit_id": "52fe4262c3a36847f801a149",
+     "order": 8
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9238,
+     "known_for_department": "Acting",
+     "name": "Amerigo Fontani",
+     "original_name": "Amerigo Fontani",
+     "popularity": 0.3463,
+     "profile_path": "/uRQn3gGNPGQzG6XNli1b1TiEu6G.jpg",
+     "cast_id": 11,
+     "character": "Rodolfo",
+     "credit_id": "52fe4262c3a36847f801a131",
+     "order": 9
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9241,
+     "known_for_department": "Acting",
+     "name": "Pietro De Silva",
+     "original_name": "Pietro De Silva",
+     "popularity": 0.3956,
+     "profile_path": "/tjP3YLGB3VNtqNgqGmLjZbJENzG.jpg",
+     "cast_id": 15,
+     "character": "Bartolomeo",
+     "credit_id": "52fe4262c3a36847f801a141",
+     "order": 10
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9243,
+     "known_for_department": "Acting",
+     "name": "Francesco Guzzo",
+     "original_name": "Francesco Guzzo",
+     "popularity": 0.3228,
+     "profile_path": "/8HSTZitD85LIqOOhpTepILHyxW2.jpg",
+     "cast_id": 18,
+     "character": "Vittorino",
+     "credit_id": "52fe4262c3a36847f801a14d",
+     "order": 11
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 93726,
+     "known_for_department": "Acting",
+     "name": "Raffaella Lebboroni",
+     "original_name": "Raffaella Lebboroni",
+     "popularity": 0.2374,
+     "profile_path": "/4ExMBh5s6eonU4yyZp3Gq20fgBW.jpg",
+     "cast_id": 56,
+     "character": "Elena",
+     "credit_id": "6310a7620231f2007dbe4ef5",
+     "order": 12
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1884402,
+     "known_for_department": "Acting",
+     "name": "Claudio Alfonsi",
+     "original_name": "Claudio Alfonsi",
+     "popularity": 0.1381,
+     "profile_path": "/wXC4Zbg45JRUnF3ya8rk5lx4Yfj.jpg",
+     "cast_id": 98,
+     "character": "Rodolfo's Friend",
+     "credit_id": "63a2b37cbe6d8800a2c3b185",
+     "order": 13
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1397652,
+     "known_for_department": "Directing",
+     "name": "Gil Baroni",
+     "original_name": "Gil Baroni",
+     "popularity": 0.1314,
+     "profile_path": null,
+     "cast_id": 99,
+     "character": "Prefect",
+     "credit_id": "63a2b3b28ddc34149eefe666",
+     "order": 14
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1898014,
+     "known_for_department": "Acting",
+     "name": "Massimo Bianchi",
+     "original_name": "Massimo Bianchi",
+     "popularity": 0.1334,
+     "profile_path": "/npRKxMEjFs1Sn8GvUbXPiaFnUPr.jpg",
+     "cast_id": 100,
+     "character": "Man with Key",
+     "credit_id": "65a2c66e858678012e5b9f51",
+     "order": 15
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479382,
+     "known_for_department": "Acting",
+     "name": "Jürgen Bohn",
+     "original_name": "Jürgen Bohn",
+     "popularity": 0.0616,
+     "profile_path": null,
+     "cast_id": 101,
+     "character": "German Party Attendant",
+     "credit_id": "65a2c69ba34911012109e0bb",
+     "order": 16
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 6289,
+     "known_for_department": "Acting",
+     "name": "Verena Buratti",
+     "original_name": "Verena Buratti",
+     "popularity": 0.23,
+     "profile_path": "/yuauzvkee0BanUsUkh146mB7jco.jpg",
+     "cast_id": 26,
+     "character": "German Auxilliary",
+     "credit_id": "568c81a4925141133402684a",
+     "order": 17
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479387,
+     "known_for_department": "Acting",
+     "name": "Robert Camero",
+     "original_name": "Robert Camero",
+     "popularity": 0.0333,
+     "profile_path": null,
+     "cast_id": 102,
+     "character": "German Executioner",
+     "credit_id": "65a2c6f985867801285ba5bd",
+     "order": 18
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479388,
+     "known_for_department": "Acting",
+     "name": "Ennio Consalvi",
+     "original_name": "Ennio Consalvi",
+     "popularity": 0.0328,
+     "profile_path": null,
+     "cast_id": 103,
+     "character": "General Graziosi",
+     "credit_id": "65a2c702a6a4c1012ba47633",
+     "order": 19
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1913215,
+     "known_for_department": "Acting",
+     "name": "Giancarlo Cosentino",
+     "original_name": "Giancarlo Cosentino",
+     "popularity": 0.1705,
+     "profile_path": "/xqTHEGEqNyfN51BydtSBpArH5Yk.jpg",
+     "cast_id": 104,
+     "character": "Waiter Ernesto",
+     "credit_id": "65a2c70ee9c0dc0123a43780",
+     "order": 20
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1807066,
+     "known_for_department": "Production",
+     "name": "Aaron Craig",
+     "original_name": "Aaron Craig",
+     "popularity": 0.2102,
+     "profile_path": "/ufGU1bnyLMSZ0eTwrHdYHSav6dS.jpg",
+     "cast_id": 105,
+     "character": "US Tank Driver",
+     "credit_id": "65a2c802a6a4c10131a47534",
+     "order": 21
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479396,
+     "known_for_department": "Acting",
+     "name": "Alfiero Falomi",
+     "original_name": "Alfiero Falomi",
+     "popularity": 0.0893,
+     "profile_path": null,
+     "cast_id": 106,
+     "character": "King",
+     "credit_id": "65a2c825bc2cb300b901e2ec",
+     "order": 22
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479397,
+     "known_for_department": "Acting",
+     "name": "Daniela Fedke",
+     "original_name": "Daniela Fedke",
+     "popularity": 0.0919,
+     "profile_path": null,
+     "cast_id": 107,
+     "character": "German Auxiliary",
+     "credit_id": "65a2c831d35dea012542c1ea",
+     "order": 23
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479398,
+     "known_for_department": "Acting",
+     "name": "Antonio Fommei",
+     "original_name": "Antonio Fommei",
+     "popularity": 0.0522,
+     "profile_path": null,
+     "cast_id": 108,
+     "character": "School Janitor",
+     "credit_id": "65a2c83cfcec2e012dd5889e",
+     "order": 24
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479399,
+     "known_for_department": "Acting",
+     "name": "Stefano Frangipani",
+     "original_name": "Stefano Frangipani",
+     "popularity": 0.1205,
+     "profile_path": null,
+     "cast_id": 109,
+     "character": "Card Player",
+     "credit_id": "65a2c848266778012564192c",
+     "order": 25
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479400,
+     "known_for_department": "Acting",
+     "name": "Ernst Frowein Holger",
+     "original_name": "Ernst Frowein Holger",
+     "popularity": 0.0473,
+     "profile_path": null,
+     "cast_id": 110,
+     "character": "German Sergeant",
+     "credit_id": "65a2c8555690b50126b00df1",
+     "order": 26
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479403,
+     "known_for_department": "Acting",
+     "name": "Alessandra Grassi",
+     "original_name": "Alessandra Grassi",
+     "popularity": 0.0975,
+     "profile_path": null,
+     "cast_id": 112,
+     "character": "Teacher",
+     "credit_id": "65a2c870bc2cb300c001e34b",
+     "order": 27
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 45662,
+     "known_for_department": "Acting",
+     "name": "Hannes Hellmann",
+     "original_name": "Hannes Hellmann",
+     "popularity": 0.3176,
+     "profile_path": "/y9tEzBMQJb8wiP1YAmHoGtCPSib.jpg",
+     "cast_id": 27,
+     "character": "German Corporal",
+     "credit_id": "568c82339251414ecb021ba3",
+     "order": 28
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 991277,
+     "known_for_department": "Acting",
+     "name": "Wolfgang Hillinger",
+     "original_name": "Wolfgang Hillinger",
+     "popularity": 0.1721,
+     "profile_path": "/fIFxKeELoxyj3HXmPDOXW3NmRnw.jpg",
+     "cast_id": 28,
+     "character": "German Major at Party",
+     "credit_id": "568c825cc3a3684bcc03276c",
+     "order": 29
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479404,
+     "known_for_department": "Acting",
+     "name": "Margarita Lucia Krauss",
+     "original_name": "Margarita Lucia Krauss",
+     "popularity": 0.1158,
+     "profile_path": null,
+     "cast_id": 113,
+     "character": "Female Soldier at Children's Dinner",
+     "credit_id": "65a2c90b85867801225ba47a",
+     "order": 30
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479406,
+     "known_for_department": "Acting",
+     "name": "Patrizia Lazzarini",
+     "original_name": "Patrizia Lazzarini",
+     "popularity": 0.0619,
+     "profile_path": null,
+     "cast_id": 114,
+     "character": "1st Lady at the Grand Hotel",
+     "credit_id": "65a2c93a39549a0129107109",
+     "order": 31
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4234606,
+     "known_for_department": "Acting",
+     "name": "Maria Letizia",
+     "original_name": "Maria Letizia",
+     "popularity": 0.0546,
+     "profile_path": null,
+     "cast_id": 115,
+     "character": "2nd Lady at the Grand Hotel",
+     "credit_id": "65a2c94da6a4c1012ba476ed",
+     "order": 32
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479408,
+     "known_for_department": "Acting",
+     "name": "Concetta Lombardo",
+     "original_name": "Concetta Lombardo",
+     "popularity": 0.0865,
+     "profile_path": null,
+     "cast_id": 116,
+     "character": "Gigliola",
+     "credit_id": "65a2c9671f02750124086477",
+     "order": 33
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479411,
+     "known_for_department": "Acting",
+     "name": "Maria Rita Macellari",
+     "original_name": "Maria Rita Macellari",
+     "popularity": 0.0957,
+     "profile_path": null,
+     "cast_id": 117,
+     "character": "Regina",
+     "credit_id": "65a2c986238513012b627ef4",
+     "order": 34
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479413,
+     "known_for_department": "Acting",
+     "name": "Carlotta Mangione",
+     "original_name": "Carlotta Mangione",
+     "popularity": 0.0634,
+     "profile_path": null,
+     "cast_id": 118,
+     "character": "Eleonora",
+     "credit_id": "65a2c992bc2cb300bc01e356",
+     "order": 35
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1724150,
+     "known_for_department": "Acting",
+     "name": "Franco Mescolini",
+     "original_name": "Franco Mescolini",
+     "popularity": 0.2074,
+     "profile_path": "/ltYfyulyKzHC2rbWpfOY4gcgxXX.jpg",
+     "cast_id": 119,
+     "character": "Public Education Inspector",
+     "credit_id": "65a2c9a1fcec2e0121d58620",
+     "order": 36
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479415,
+     "known_for_department": "Acting",
+     "name": "Francesca Messinese",
+     "original_name": "Francesca Messinese",
+     "popularity": 0.0462,
+     "profile_path": null,
+     "cast_id": 120,
+     "character": "Lady at the Opera",
+     "credit_id": "65a2c9f139549a0132106f0f",
+     "order": 37
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479417,
+     "known_for_department": "Acting",
+     "name": "Inger Lise Middelthon",
+     "original_name": "Inger Lise Middelthon",
+     "popularity": 0.0774,
+     "profile_path": null,
+     "cast_id": 121,
+     "character": "German Auxiliary",
+     "credit_id": "65a2ca13e9c0dc0120a437a2",
+     "order": 38
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479419,
+     "known_for_department": "Acting",
+     "name": "Andrea Nardi",
+     "original_name": "Andrea Nardi",
+     "popularity": 0.0345,
+     "profile_path": null,
+     "cast_id": 122,
+     "character": "Upholsterer",
+     "credit_id": "65a2ca327d5f4b00c2b7997c",
+     "order": 39
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479421,
+     "known_for_department": "Acting",
+     "name": "Günther Pfanzelter",
+     "original_name": "Günther Pfanzelter",
+     "popularity": 0.0688,
+     "profile_path": null,
+     "cast_id": 123,
+     "character": "German Soldier",
+     "credit_id": "65a2ca4c2667780131641a2c",
+     "order": 40
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479423,
+     "known_for_department": "Acting",
+     "name": "Cristiana Porchiella",
+     "original_name": "Cristiana Porchiella",
+     "popularity": 0.0645,
+     "profile_path": null,
+     "cast_id": 124,
+     "character": "Spinster Teacher",
+     "credit_id": "65a2ca541f02750127086188",
+     "order": 41
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 51637,
+     "known_for_department": "Acting",
+     "name": "Antonio Prester",
+     "original_name": "Antonio Prester",
+     "popularity": 0.2458,
+     "profile_path": "/z8wGJL9bCiHrXi31zvmcngZP5S5.jpg",
+     "cast_id": 30,
+     "character": "Bruno",
+     "credit_id": "568c838fc3a368362801940c",
+     "order": 42
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 33928,
+     "known_for_department": "Acting",
+     "name": "Gina Rovere",
+     "original_name": "Gina Rovere",
+     "popularity": 0.4382,
+     "profile_path": "/BSLt1QoZ5oYGs8jW0g3UzoPqAx.jpg",
+     "cast_id": 31,
+     "character": "Dora's Maid",
+     "credit_id": "568c83b1c3a368227b0253aa",
+     "order": 43
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1084894,
+     "known_for_department": "Acting",
+     "name": "Laura Susanne Ruedeberg",
+     "original_name": "Laura Susanne Ruedeberg",
+     "popularity": 0.0623,
+     "profile_path": null,
+     "cast_id": 32,
+     "character": "German Auxilliary",
+     "credit_id": "568c83d8c3a36860e9030caf",
+     "order": 44
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1841256,
+     "known_for_department": "Acting",
+     "name": "Massimo Salvianti",
+     "original_name": "Massimo Salvianti",
+     "popularity": 0.1413,
+     "profile_path": "/nNp7nuc9Z1apfC0nKDSB3h00UxE.jpg",
+     "cast_id": 125,
+     "character": "Policeman in Stationery Shop",
+     "credit_id": "65a2cadc1f02754d4b083976",
+     "order": 45
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 49487,
+     "known_for_department": "Acting",
+     "name": "Richard Sammel",
+     "original_name": "Richard Sammel",
+     "popularity": 0.8032,
+     "profile_path": "/91IPxy0IuHhIqcrJdI0hYBpJmOg.jpg",
+     "cast_id": 33,
+     "character": "German Lieutenant at Station",
+     "credit_id": "568c840fc3a3683628019424",
+     "order": 46
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479425,
+     "known_for_department": "Acting",
+     "name": "James Schindler",
+     "original_name": "James Schindler",
+     "popularity": 0.034,
+     "profile_path": null,
+     "cast_id": 126,
+     "character": "Solid German",
+     "credit_id": "65a2cb24a34911012d09e21b",
+     "order": 47
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 147159,
+     "known_for_department": "Acting",
+     "name": "Andrea Tidona",
+     "original_name": "Andrea Tidona",
+     "popularity": 0.3242,
+     "profile_path": "/zAAumPfwVljPd3VHPuRKlEMNo2D.jpg",
+     "cast_id": 34,
+     "character": "Grand Hotel Doorman",
+     "credit_id": "568c843692514131df02d11b",
+     "order": 48
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1369056,
+     "known_for_department": "Directing",
+     "name": "Dirk van den Berg",
+     "original_name": "Dirk K. van den Berg",
+     "popularity": 0.2053,
+     "profile_path": null,
+     "cast_id": 35,
+     "character": "German Soldier",
+     "credit_id": "568c845d92514132db02e6d1",
+     "order": 49
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 4479426,
+     "known_for_department": "Acting",
+     "name": "Giovanna Villa",
+     "original_name": "Giovanna Villa",
+     "popularity": 0.0559,
+     "profile_path": null,
+     "cast_id": 127,
+     "character": "Common Secretary",
+     "credit_id": "65a2cb662667780131641a82",
+     "order": 50
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 27208,
+     "known_for_department": "Acting",
+     "name": "Omero Antonutti",
+     "original_name": "Omero Antonutti",
+     "popularity": 0.3534,
+     "profile_path": "/3JLrGj8i0tmTkvBJV7aEWVstNvW.jpg",
+     "cast_id": 36,
+     "character": "Narrator (voice) (uncredited)",
+     "credit_id": "568c8485c3a3686075030cae",
+     "order": 51
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 1581614,
+     "known_for_department": "Acting",
+     "name": "Adelaide Alaïs",
+     "original_name": "Adelaide Alaïs",
+     "popularity": 0.1984,
+     "profile_path": "/wvlaqClIHLPQQW3KJBddgChY9aa.jpg",
+     "cast_id": 50,
+     "character": "German Auxilliary (uncredited)",
+     "credit_id": "56cb8257c3a36865eb0000e1",
+     "order": 52
+    }
+   ],
+   "crew": [
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 9244,
+     "known_for_department": "Editing",
+     "name": "Simona Paggi",
+     "original_name": "Simona Paggi",
+     "popularity": 0.3147,
+     "profile_path": "/2LCAI7o2iE2bYYlH2seYppYchdg.jpg",
+     "credit_id": "52fe4262c3a36847f801a159",
+     "department": "Editing",
+     "job": "Editor"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9234,
+     "known_for_department": "Writing",
+     "name": "Vincenzo Cerami",
+     "original_name": "Vincenzo Cerami",
+     "popularity": 0.5946,
+     "profile_path": "/8YDpYwdW5V6EKPZiPO9xfsKKMnb.jpg",
+     "credit_id": "52fe4262c3a36847f801a11d",
+     "department": "Writing",
+     "job": "Screenplay"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9247,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Danilo Donati",
+     "original_name": "Danilo Donati",
+     "popularity": 0.3734,
+     "profile_path": "/2xo4XyJZUYDVI3yEQA12M582ibf.jpg",
+     "credit_id": "52fe4262c3a36847f801a16b",
+     "department": "Costume & Make-Up",
+     "job": "Costume Design"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4818,
+     "known_for_department": "Acting",
+     "name": "Roberto Benigni",
+     "original_name": "Roberto Benigni",
+     "popularity": 1.7163,
+     "profile_path": "/ba1Sg02XxCphu6E1dWDMAH1GzeE.jpg",
+     "credit_id": "52fe4262c3a36847f801a117",
+     "department": "Writing",
+     "job": "Screenplay"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9232,
+     "known_for_department": "Production",
+     "name": "Gianluigi Braschi",
+     "original_name": "Gianluigi Braschi",
+     "popularity": 0.195,
+     "profile_path": null,
+     "credit_id": "52fe4262c3a36847f801a105",
+     "department": "Production",
+     "job": "Producer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9247,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Danilo Donati",
+     "original_name": "Danilo Donati",
+     "popularity": 0.3734,
+     "profile_path": "/2xo4XyJZUYDVI3yEQA12M582ibf.jpg",
+     "credit_id": "52fe4262c3a36847f801a165",
+     "department": "Art",
+     "job": "Production Design"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4659,
+     "known_for_department": "Crew",
+     "name": "Giovanni Corridori",
+     "original_name": "Giovanni Corridori",
+     "popularity": 0.2401,
+     "profile_path": null,
+     "credit_id": "52fe4262c3a36847f801a171",
+     "department": "Crew",
+     "job": "Special Effects"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9245,
+     "known_for_department": "Sound",
+     "name": "Nicola Piovani",
+     "original_name": "Nicola Piovani",
+     "popularity": 0.533,
+     "profile_path": "/56tRfEIn4RBPhjJ7JOGCOtTZApU.jpg",
+     "credit_id": "52fe4262c3a36847f801a15f",
+     "department": "Sound",
+     "job": "Original Music Composer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4818,
+     "known_for_department": "Acting",
+     "name": "Roberto Benigni",
+     "original_name": "Roberto Benigni",
+     "popularity": 1.7163,
+     "profile_path": "/ba1Sg02XxCphu6E1dWDMAH1GzeE.jpg",
+     "credit_id": "52fe4262c3a36847f801a0ff",
+     "department": "Directing",
+     "job": "Director"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2361,
+     "known_for_department": "Camera",
+     "name": "Tonino Delli Colli",
+     "original_name": "Tonino Delli Colli",
+     "popularity": 0.3621,
+     "profile_path": "/asLhiGwOBxEeg1YFqZ1nd3ygm1h.jpg",
+     "credit_id": "52fe4262c3a36847f801a153",
+     "department": "Camera",
+     "job": "Director of Photography"
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 9233,
+     "known_for_department": "Production",
+     "name": "Elda Ferri",
+     "original_name": "Elda Ferri",
+     "popularity": 0.2673,
+     "profile_path": null,
+     "credit_id": "52fe4262c3a36847f801a111",
+     "department": "Production",
+     "job": "Producer"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2087823,
+     "known_for_department": "Production",
+     "name": "Pietro Sassaroli",
+     "original_name": "Pietro Sassaroli",
+     "popularity": 0.1134,
+     "profile_path": null,
+     "credit_id": "6310a91160620a0083e622f0",
+     "department": "Production",
+     "job": "Production Manager"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 3328452,
+     "known_for_department": "Art",
+     "name": "Edoardo Di Iorio",
+     "original_name": "Edoardo Di Iorio",
+     "popularity": 0.0487,
+     "profile_path": null,
+     "credit_id": "6310aa36cb80280094fb6308",
+     "department": "Art",
+     "job": "Assistant Production Design"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1946669,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Walter Cossu",
+     "original_name": "Walter Cossu",
+     "popularity": 0.1538,
+     "profile_path": null,
+     "credit_id": "6310aa7dc048a90085039d57",
+     "department": "Costume & Make-Up",
+     "job": "Makeup Department Head"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1716287,
+     "known_for_department": "Camera",
+     "name": "Roberto Brega",
+     "original_name": "Roberto Brega",
+     "popularity": 0.248,
+     "profile_path": null,
+     "credit_id": "6310a7e6d7a70a007b211442",
+     "department": "Camera",
+     "job": "Camera Operator"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 67138,
+     "known_for_department": "Art",
+     "name": "Maurizio Sabatini",
+     "original_name": "Maurizio Sabatini",
+     "popularity": 0.1713,
+     "profile_path": null,
+     "credit_id": "6310aa2be78687007f5a388a",
+     "department": "Art",
+     "job": "Assistant Production Design"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1400016,
+     "known_for_department": "Art",
+     "name": "Roberto Magagnini",
+     "original_name": "Roberto Magagnini",
+     "popularity": 0.1445,
+     "profile_path": null,
+     "credit_id": "6310aa687fcab3007a209372",
+     "department": "Art",
+     "job": "Property Master"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 3428134,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Fabio Lucchetti",
+     "original_name": "Fabio Lucchetti",
+     "popularity": 0.1686,
+     "profile_path": null,
+     "credit_id": "6310aab77fcab30091dba9a5",
+     "department": "Costume & Make-Up",
+     "job": "Hairstylist"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 3114706,
+     "known_for_department": "Camera",
+     "name": "Salvatore Bognanni",
+     "original_name": "Salvatore Bognanni",
+     "popularity": 0.1442,
+     "profile_path": null,
+     "credit_id": "6310a9eb7fcab3007fbdf3cd",
+     "department": "Camera",
+     "job": "Assistant Camera"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 235398,
+     "known_for_department": "Directing",
+     "name": "Gianni Arduini",
+     "original_name": "Gianni Arduini",
+     "popularity": 0.2768,
+     "profile_path": null,
+     "credit_id": "6310a7d77fcab30091dba8a9",
+     "department": "Directing",
+     "job": "First Assistant Director"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 3684396,
+     "known_for_department": "Directing",
+     "name": "Daniele Cama",
+     "original_name": "Daniele Cama",
+     "popularity": 0.0607,
+     "profile_path": null,
+     "credit_id": "6310a9bb0d2944007e83dbd2",
+     "department": "Directing",
+     "job": "Second Assistant Director"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2660376,
+     "known_for_department": "Editing",
+     "name": "Maddalena Colombo",
+     "original_name": "Maddalena Colombo",
+     "popularity": 0.1514,
+     "profile_path": null,
+     "credit_id": "6310aa200231f2007dbe4fc3",
+     "department": "Editing",
+     "job": "Assistant Editor"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1606272,
+     "known_for_department": "Art",
+     "name": "Luigi Urbani",
+     "original_name": "Luigi Urbani",
+     "popularity": 0.2353,
+     "profile_path": null,
+     "credit_id": "6310aa3f60620a007e62dbb8",
+     "department": "Art",
+     "job": "Set Decoration"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1607656,
+     "known_for_department": "Lighting",
+     "name": "Carlo Vinciguerra",
+     "original_name": "Carlo Vinciguerra",
+     "popularity": 0.1543,
+     "profile_path": null,
+     "credit_id": "6310aad9564ec7007ffa8dfb",
+     "department": "Lighting",
+     "job": "Gaffer"
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 1589495,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Giusy Bovino",
+     "original_name": "Giusy Bovino",
+     "popularity": 0.2381,
+     "profile_path": null,
+     "credit_id": "6310aaae564ec7007a8deceb",
+     "department": "Costume & Make-Up",
+     "job": "Hair Department Head"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1141912,
+     "known_for_department": "Sound",
+     "name": "Alberto Doni",
+     "original_name": "Alberto Doni",
+     "popularity": 0.1842,
+     "profile_path": null,
+     "credit_id": "6310ab68126ec3007b3e8618",
+     "department": "Sound",
+     "job": "Sound Mixer"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2593216,
+     "known_for_department": "Sound",
+     "name": "Claudio Chiossi",
+     "original_name": "Claudio Chiossi",
+     "popularity": 0.1157,
+     "profile_path": null,
+     "credit_id": "6310ab87126ec3007e184bee",
+     "department": "Sound",
+     "job": "Sound Mixer"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2019585,
+     "known_for_department": "Camera",
+     "name": "Aldo Colanzi",
+     "original_name": "Aldo Colanzi",
+     "popularity": 0.118,
+     "profile_path": null,
+     "credit_id": "6310aae2e78687007f5a38e0",
+     "department": "Camera",
+     "job": "Key Grip"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1339104,
+     "known_for_department": "Acting",
+     "name": "Leda Lojodice",
+     "original_name": "Leda Lojodice",
+     "popularity": 0.1393,
+     "profile_path": null,
+     "credit_id": "6310ab2de78687007a3c1e24",
+     "department": "Crew",
+     "job": "Choreographer"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1603849,
+     "known_for_department": "Sound",
+     "name": "Tullio Morganti",
+     "original_name": "Tullio Morganti",
+     "popularity": 0.1863,
+     "profile_path": null,
+     "credit_id": "6310a7a160620a007b4b3a1c",
+     "department": "Sound",
+     "job": "Sound"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1343811,
+     "known_for_department": "Production",
+     "name": "Mario Cotone",
+     "original_name": "Mario Cotone",
+     "popularity": 0.2154,
+     "profile_path": null,
+     "credit_id": "6310a84bbe55b7008d7efd6d",
+     "department": "Production",
+     "job": "Executive Producer"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1438849,
+     "known_for_department": "Production",
+     "name": "Olivia Sleiter",
+     "original_name": "Olivia Sleiter",
+     "popularity": 0.1097,
+     "profile_path": null,
+     "credit_id": "6310a933126ec3007b3e856c",
+     "department": "Production",
+     "job": "Unit Manager"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1956979,
+     "known_for_department": "Sound",
+     "name": "Ettore Mancini",
+     "original_name": "Ettore Mancini",
+     "popularity": 0.0665,
+     "profile_path": null,
+     "credit_id": "6310aa0bbe55b7008d7efdf0",
+     "department": "Sound",
+     "job": "Boom Operator"
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 1972290,
+     "known_for_department": "Sound",
+     "name": "Silvia Moraes",
+     "original_name": "Silvia Moraes",
+     "popularity": 0.2158,
+     "profile_path": null,
+     "credit_id": "6310a7c9d7a70a007b211439",
+     "department": "Sound",
+     "job": "Sound Editor"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 3684393,
+     "known_for_department": "Directing",
+     "name": "Giovanni Marino",
+     "original_name": "Giovanni Marino",
+     "popularity": 0.126,
+     "profile_path": null,
+     "credit_id": "6310a99e0d2944007e83dbbc",
+     "department": "Directing",
+     "job": "Second Assistant Director"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 1813984,
+     "known_for_department": "Directing",
+     "name": "Luigi Spoletini",
+     "original_name": "Luigi Spoletini",
+     "popularity": 0.2117,
+     "profile_path": null,
+     "credit_id": "6310a9a8564ec7007a8decb0",
+     "department": "Directing",
+     "job": "Second Assistant Director"
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 2049822,
+     "known_for_department": "Directing",
+     "name": "Giorgia Onofri",
+     "original_name": "Giorgia Onofri",
+     "popularity": 0.1158,
+     "profile_path": null,
+     "credit_id": "6310a9db0d2944007959723b",
+     "department": "Directing",
+     "job": "Script Supervisor"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2219982,
+     "known_for_department": "Camera",
+     "name": "Marco Cuzzupoli",
+     "original_name": "Marco Cuzzupoli",
+     "popularity": 0.106,
+     "profile_path": null,
+     "credit_id": "6310a9f6564ec7007ffa8d92",
+     "department": "Camera",
+     "job": "Assistant Camera"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 238075,
+     "known_for_department": "Editing",
+     "name": "Benni Atria",
+     "original_name": "Benni Atria",
+     "popularity": 0.3323,
+     "profile_path": null,
+     "credit_id": "6310aa17cb8028007d8bdf92",
+     "department": "Editing",
+     "job": "Assistant Editor"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1575788,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Enrico Iacoponi",
+     "original_name": "Enrico Iacoponi",
+     "popularity": 0.0954,
+     "profile_path": null,
+     "credit_id": "6310aa890231f2007dbe4fec",
+     "department": "Costume & Make-Up",
+     "job": "Makeup Department Head"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1559015,
+     "known_for_department": "Editing",
+     "name": "Pasquale Cuzzupoli",
+     "original_name": "Pasquale Cuzzupoli",
+     "popularity": 0.1841,
+     "profile_path": null,
+     "credit_id": "6310ab411511aa007ba2fbe4",
+     "department": "Editing",
+     "job": "Colorist"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 3451161,
+     "known_for_department": "Production",
+     "name": "Marco Albertini",
+     "original_name": "Marco Albertini",
+     "popularity": 0.0941,
+     "profile_path": null,
+     "credit_id": "6310a960be55b70083c64ef5",
+     "department": "Production",
+     "job": "Production Secretary"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1565668,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Federico Laurenti",
+     "original_name": "Federico Laurenti",
+     "popularity": 0.095,
+     "profile_path": null,
+     "credit_id": "6310aa977fcab3007a20937c",
+     "department": "Costume & Make-Up",
+     "job": "Makeup Artist"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2610123,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Martina Cossu",
+     "original_name": "Martina Cossu",
+     "popularity": 0.1455,
+     "profile_path": null,
+     "credit_id": "6310aaa47fcab3007fbdf3f8",
+     "department": "Costume & Make-Up",
+     "job": "Makeup Artist"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 238075,
+     "known_for_department": "Editing",
+     "name": "Benni Atria",
+     "original_name": "Benni Atria",
+     "popularity": 0.3323,
+     "profile_path": null,
+     "credit_id": "6310a7ab564ec7007ffa8c90",
+     "department": "Sound",
+     "job": "Sound Editor"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 3028600,
+     "known_for_department": "Production",
+     "name": "Nando Nibbi",
+     "original_name": "Nando Nibbi",
+     "popularity": 0.1186,
+     "profile_path": null,
+     "credit_id": "6310a93f564ec7007a8dec92",
+     "department": "Production",
+     "job": "Unit Manager"
+    },
+    {
+     "adult": false,
+     "gender": 1,
+     "id": 8753,
+     "known_for_department": "Production",
+     "name": "Shaila Rubin",
+     "original_name": "Shaila Rubin",
+     "popularity": 0.3472,
+     "profile_path": "/1NXDQLZG5GKghssKbVdtJDmz2K5.jpg",
+     "credit_id": "6310ab13c048a90085039d92",
+     "department": "Production",
+     "job": "Casting"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1302370,
+     "known_for_department": "Production",
+     "name": "Tullio Lullo",
+     "original_name": "Tullio Lullo",
+     "popularity": 0.0826,
+     "profile_path": null,
+     "credit_id": "6310a925be55b7008d7efdae",
+     "department": "Production",
+     "job": "Production Manager"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 2838336,
+     "known_for_department": "Camera",
+     "name": "Sergio Strizzi",
+     "original_name": "Sergio Strizzi",
+     "popularity": 0.1444,
+     "profile_path": null,
+     "credit_id": "6310aa02126ec30092a0c505",
+     "department": "Camera",
+     "job": "Still Photographer"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 3050674,
+     "known_for_department": "Costume & Make-Up",
+     "name": "Maria Pia Crapanzano",
+     "original_name": "Maria Pia Crapanzano",
+     "popularity": 0.1979,
+     "profile_path": null,
+     "credit_id": "6310aac6d7a70a007e1befe2",
+     "department": "Costume & Make-Up",
+     "job": "Hairstylist"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 2781208,
+     "known_for_department": "Production",
+     "name": "Ettore Musco",
+     "original_name": "Ettore Musco",
+     "popularity": 0.1396,
+     "profile_path": null,
+     "credit_id": "6310a96a0d29440081d89303",
+     "department": "Production",
+     "job": "Production Secretary"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 3442018,
+     "known_for_department": "Production",
+     "name": "Franco Fantini",
+     "original_name": "Franco Fantini",
+     "popularity": 0.0945,
+     "profile_path": null,
+     "credit_id": "6310a978126ec3007b3e8583",
+     "department": "Production",
+     "job": "Administration"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 9234,
+     "known_for_department": "Writing",
+     "name": "Vincenzo Cerami",
+     "original_name": "Vincenzo Cerami",
+     "popularity": 0.5946,
+     "profile_path": "/8YDpYwdW5V6EKPZiPO9xfsKKMnb.jpg",
+     "credit_id": "630de4a923bcf4007bf4cfad",
+     "department": "Writing",
+     "job": "Story"
+    },
+    {
+     "adult": false,
+     "gender": 2,
+     "id": 4818,
+     "known_for_department": "Acting",
+     "name": "Roberto Benigni",
+     "original_name": "Roberto Benigni",
+     "popularity": 1.7163,
+     "profile_path": "/ba1Sg02XxCphu6E1dWDMAH1GzeE.jpg",
+     "credit_id": "630de4b318864b00832a22d5",
+     "department": "Writing",
+     "job": "Story"
+    },
+    {
+     "adult": false,
+     "gender": 0,
+     "id": 1559007,
+     "known_for_department": "Production",
+     "name": "Attilio Viti",
+     "original_name": "Attilio Viti",
+     "popularity": 0.2008,
+     "profile_path": null,
+     "credit_id": "568d53e19251411334028694",
+     "department": "Production",
+     "job": "Production Manager"
+    }
+   ]
+  },
+  "videos": {
+   "results": [
+    {
+     "iso_639_1": "en",
+     "iso_3166_1": "US",
+     "name": "Life is Beautiful (1998) Official Trailer - Robert Benigni Movie HD",
+     "key": "pAYEQP8gx3w",
+     "site": "YouTube",
+     "size": 720,
+     "type": "Trailer",
+     "official": false,
+     "id": "58fefa9b92514107db0058b8",
+     "published_at": "2014-05-15T03:33:23.000Z"
+    }
+   ]
+  },
+  "recommendations": {
+   "page": 1,
+   "results": [
+    {
+     "adult": false,
+     "backdrop_path": "/pnTSOKcYnvdpQNQElAtJM1rWOxH.jpg",
+     "genre_ids": [
+      18,
+      36,
+      10752
+     ],
+     "id": 467244,
+     "title": "The Zone of Interest",
+     "original_language": "en",
+     "original_title": "The Zone of Interest",
+     "overview": "The commandant of Auschwitz, Rudolf Höss, and his wife Hedwig, strive to build a dream life for their family in a house and garden next to the camp.",
+     "popularity": 8.1692,
+     "poster_path": "/hUu9zyZmDd8VZegKi1iK1Vk0RYS.jpg",
+     "release_date": "2023-12-15",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.008,
+     "vote_count": 2844,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/lTyikzfGgRX5ZqIfVeT26APYfRL.jpg",
+     "genre_ids": [
+      35,
+      10752,
+      18
+     ],
+     "id": 515001,
+     "title": "Jojo Rabbit",
+     "original_language": "en",
+     "original_title": "Jojo Rabbit",
+     "overview": "Jojo, a lonely German boy during World War II has his world shaken when he learns that his single mother is hiding a Jewish girl in their home. Influenced by a buffoonish imaginary version of Adolf Hitler, he begins to question his beliefs and confront the conflict between propaganda and his own humanity.",
+     "popularity": 8.0486,
+     "poster_path": "/1mqL7VG4Ix8wmxwypmCA1HTHBky.jpg",
+     "release_date": "2019-10-18",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.969,
+     "vote_count": 10867,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/92Oqn01ncWZU5pvYY9wLST5joUM.jpg",
+     "genre_ids": [
+      18,
+      36,
+      10752
+     ],
+     "id": 30529,
+     "title": "The Truce",
+     "original_language": "it",
+     "original_title": "La tregua",
+     "overview": "After the liberation of Auschwitz, an Italian prisoner of War begins a torturous voyage home to Turin, through a Europe caught between war and peace.",
+     "popularity": 1.1112,
+     "poster_path": "/k4GWXtFvRQ8zKuf6ICOpjcyNjYE.jpg",
+     "release_date": "1997-02-14",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.139,
+     "vote_count": 79,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/3VHkoXEPDEyrvQaL9Oti8U5FlmD.jpg",
+     "genre_ids": [
+      10770,
+      18,
+      53,
+      14
+     ],
+     "id": 22509,
+     "title": "The Devil's Arithmetic",
+     "original_language": "en",
+     "original_title": "The Devil's Arithmetic",
+     "overview": "An American-born Jewish adolescent, Hannah Stern, is uninterested in the culture, faith and customs of her relatives. However, she begins to revaluate her heritage when she has a supernatural experience that transports her back to a Nazi death camp in 1941. There she meets a young girl named Rivkah, a fellow captive in the camp. As Rivkah and Hannah struggle to survive in the face of daily atrocities, they form an unbreakable bond.",
+     "popularity": 2.0309,
+     "poster_path": "/2QBXokkFDYOKLPAKk6FQO9gd6YS.jpg",
+     "release_date": "1999-03-28",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.8,
+     "vote_count": 111,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/8k2cDumng4l0QUjfA7C66762ucX.jpg",
+     "genre_ids": [
+      18,
+      10752
+     ],
+     "id": 45614,
+     "title": "The Island on Bird Street",
+     "original_language": "en",
+     "original_title": "The Island on Bird Street",
+     "overview": "Alex is an 11-year old boy who, during WWII, hides in the Jewish ghetto from Nazis after all his relatives have been sent to the concentration camp. The movie portrays the ghetto through his eyes.",
+     "popularity": 1.7411,
+     "poster_path": "/q8IXiMGnid3jSk5GAJAyjvDHL4E.jpg",
+     "release_date": "1997-04-11",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.309,
+     "vote_count": 76,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/5H4EehQFpble8qYQdf9fmeYcNA7.jpg",
+     "genre_ids": [
+      18,
+      10752,
+      36
+     ],
+     "id": 1083612,
+     "title": "The Boy in the Woods",
+     "original_language": "en",
+     "original_title": "The Boy in the Woods",
+     "overview": "The remarkable true-life survival story of a Jewish boy hiding and being hunted in the forests of Nazi-occupied Eastern Europe, based on Maxwell Smart's memoir.",
+     "popularity": 1.8082,
+     "poster_path": "/njyE1IbwfBSISTJKnWKyE7rVJcd.jpg",
+     "release_date": "2023-09-19",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7,
+     "vote_count": 56,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/l7U8hKJsDL2DfYg7nYUACewg9d0.jpg",
+     "genre_ids": [
+      18,
+      10752
+     ],
+     "id": 779816,
+     "title": "White Bird",
+     "original_language": "en",
+     "original_title": "White Bird",
+     "overview": "After being expelled from Beecher Prep for his treatment of a classmate with a facial deformity, Julian has struggled to fit in at his new school. To transform his life, Julian's grandmother finally reveals her own story of courage of her youth in Nazi-occupied France, where a classmate shelters her from mortal danger.",
+     "popularity": 3.2057,
+     "poster_path": "/s2igE99PVBEMsry3qEGEH3rM83K.jpg",
+     "release_date": "2023-10-25",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.8,
+     "vote_count": 257,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/5ujNnFpEbLK2xE9MSM8GNV6zOqF.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 1180634,
+     "title": "The Children's Train",
+     "original_language": "it",
+     "original_title": "Il treno dei bambini",
+     "overview": "In late 1940s Italy, a mother makes the difficult decision to send her son to the north, where he catches glimpses of a new life away from poverty.",
+     "popularity": 2.3927,
+     "poster_path": "/kfQvaLi9P5JdyWjz0b5IhIjLCu1.jpg",
+     "release_date": "2024-10-21",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.432,
+     "vote_count": 361,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/bMTBDpipkszdWcY9U9lRTVy4zh9.jpg",
+     "genre_ids": [
+      18,
+      36
+     ],
+     "id": 4789,
+     "title": "The Garden of the Finzi-Continis",
+     "original_language": "it",
+     "original_title": "Il giardino dei Finzi Contini",
+     "overview": "In 1930s Italy, a wealthy Jewish family tries to maintain their privileged lifestyle, hosting friends for tennis and parties at their villa. As anti-Semitism intensifies under Fascism, they must ultimately face the horrors of the Holocaust.",
+     "popularity": 1.5892,
+     "poster_path": "/qHDATOZMoiJjfy2bb1xEFFPzkuG.jpg",
+     "release_date": "1970-12-04",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.973,
+     "vote_count": 294,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/lZzW1Y6sDGhbnOh8NuMwUlOVVVe.jpg",
+     "genre_ids": [
+      35,
+      18
+     ],
+     "id": 19413,
+     "title": "Ugly, Dirty and Bad",
+     "original_language": "it",
+     "original_title": "Brutti, sporchi e cattivi",
+     "overview": "Giacinto lives with his wife, their ten children and various other family members in a shack on the hills of Rome. Some time ago he has lost his left eye while at work, and got a consistent sum of money from the insurance company, which he keeps hidden from the rest of the family. His whole life is now based on defending the money he sees as his own, while the rest of the family tries to kill him.",
+     "popularity": 2.5886,
+     "poster_path": "/rl2wUqZAZSEXymyvH3U7onEQfMN.jpg",
+     "release_date": "1976-09-23",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.519,
+     "vote_count": 363,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/ngZXl98oeifZWiQAcmaItboEx6t.jpg",
+     "genre_ids": [
+      35,
+      18
+     ],
+     "id": 457601,
+     "title": "Everything You Want",
+     "original_language": "it",
+     "original_title": "Tutto quello che vuoi",
+     "overview": "An aimless young troublemaker, Alessandro, squanders his days gambling and getting into fights, and he often spends his nights in jail. With few prospects, he begrudgingly accepts a job as a companion to Giorgio, an elderly poet suffering from Alzheimer’s. On their daily walks, the two banter and become friends, and Alessandro quickly learns more about this forgotten poet as the old man’s memory drifts. After learning a secret from Giorgio’s past, Alessandro and his friends work to uncover the mystery of this tale, an unexpected history lesson and a touching coming-of-age adventure.",
+     "popularity": 1.009,
+     "poster_path": "/1FOuI1i7jWb4MNfPgIERrsUGYrM.jpg",
+     "release_date": "2017-05-11",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.4,
+     "vote_count": 292,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/6aRuABAdhuuDypLGscM7HoEWHx4.jpg",
+     "genre_ids": [
+      18,
+      10752,
+      36
+     ],
+     "id": 14574,
+     "title": "The Boy in the Striped Pyjamas",
+     "original_language": "en",
+     "original_title": "The Boy in the Striped Pyjamas",
+     "overview": "When his family moves from their home in Berlin to a strange new house in Poland, young Bruno befriends Shmuel, a boy who lives on the other side of the fence where everyone seems to be wearing striped pajamas. Unaware of Shmuel's fate as a Jewish prisoner or the role his own Nazi father plays in his imprisonment, Bruno embarks on a dangerous journey inside the camp's walls.",
+     "popularity": 10.3557,
+     "poster_path": "/2C8QCXdMlojTxZjfBlINr4FWcb6.jpg",
+     "release_date": "2008-05-07",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.817,
+     "vote_count": 7942,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/pRYrWzkFqtPUwfEXQcnyvSVRK81.jpg",
+     "genre_ids": [
+      35,
+      18,
+      36
+     ],
+     "id": 2290,
+     "title": "Jakob the Liar",
+     "original_language": "en",
+     "original_title": "Jakob the Liar",
+     "overview": "In 1944 Poland, a Jewish shop keeper named Jakob is summoned to ghetto headquarters after being caught out after curfew. While waiting for the German Kommondant, Jakob overhears a German radio broadcast about Russian troop movements. Returned to the ghetto, the shopkeeper shares his information with a friend and then rumors fly that there is a secret radio within the ghetto.",
+     "popularity": 2.4423,
+     "poster_path": "/vvwsvPyQFuQbKKfzNgoRhAcL5ml.jpg",
+     "release_date": "1999-09-16",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.669,
+     "vote_count": 428,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/cKrWGcWHKcergHyDKxKGbgcUsMm.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 304357,
+     "title": "Woman in Gold",
+     "original_language": "en",
+     "original_title": "Woman in Gold",
+     "overview": "Maria Altmann, an octogenarian Jewish refugee, takes on the government to recover artwork she believes rightfully belongs to her family.",
+     "popularity": 2.4633,
+     "poster_path": "/6eoj6bozvgwNuDV3vOrqlvrCrX.jpg",
+     "release_date": "2015-03-20",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.3,
+     "vote_count": 1493,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/fNXUCk54vGcoKr34olN14ohUSFY.jpg",
+     "genre_ids": [
+      36,
+      35,
+      18
+     ],
+     "id": 1026227,
+     "title": "There's Still Tomorrow",
+     "original_language": "it",
+     "original_title": "C'è ancora domani",
+     "overview": "In postwar Rome, a working-class woman dreams of a better future for herself and her daughter while facing abuse at the hands of her domineering husband. When a mysterious letter arrives, she discovers the courage to change the circumstances of her life.",
+     "popularity": 2.6792,
+     "poster_path": "/4Hi7yjiQjokEDStT1MOj5rPgRfW.jpg",
+     "release_date": "2023-10-26",
+     "softcore": false,
+     "video": false,
+     "vote_average": 8.1,
+     "vote_count": 1581,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/tt1YwEB5UVDKxCYwZEtpNUaDJIi.jpg",
+     "genre_ids": [
+      18,
+      10752
+     ],
+     "id": 307,
+     "title": "Rome, Open City",
+     "original_language": "it",
+     "original_title": "Roma città aperta",
+     "overview": "During the Nazi occupation of 1944 Rome, Resistance leader Giorgio Manfredi is pursued by the Nazis as he seeks refuge and a means of escape.",
+     "popularity": 1.976,
+     "poster_path": "/ijGV4v8JxgbNzgEhqKdzHdaZn8a.jpg",
+     "release_date": "1945-10-08",
+     "softcore": false,
+     "video": false,
+     "vote_average": 8.009,
+     "vote_count": 1019,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/mZ9Y8JSLnZZoxmWlzvTjZ1cvmJ2.jpg",
+     "genre_ids": [
+      18,
+      35
+     ],
+     "id": 73827,
+     "title": "Why",
+     "original_language": "it",
+     "original_title": "Detenuto in attesa di giudizio",
+     "overview": "Giuseppe Di Noi, an Italian surveyor living in Sweden, gets arrested at the border while going back to Italy with his family for a vacation. But can someone tell the man why?",
+     "popularity": 1.0265,
+     "poster_path": "/kFGvi77y4sHMOTopRXJGTTzqEU5.jpg",
+     "release_date": "1971-10-27",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.3,
+     "vote_count": 101,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/kTUUiKGKrdRhJsCcYT3Ivtfuuzh.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 5156,
+     "title": "Bicycle Thieves",
+     "original_language": "it",
+     "original_title": "Ladri di biciclette",
+     "overview": "Unemployed Antonio is elated when he finally finds work hanging posters around war-torn Rome. However on his first day, his bicycle—essential to his work—gets stolen. His job is doomed unless he can find the thief. With the help of his son, Antonio combs the city, becoming desperate for justice.",
+     "popularity": 4.3122,
+     "poster_path": "/iPdVqIpmR3bRvOQJPrn4pr2KR3q.jpg",
+     "release_date": "1948-07-21",
+     "softcore": false,
+     "video": false,
+     "vote_average": 8.163,
+     "vote_count": 2804,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/eN2NdMeJLNzLYzWIEEoaGzZAsiD.jpg",
+     "genre_ids": [
+      35,
+      18
+     ],
+     "id": 439,
+     "title": "La Dolce Vita",
+     "original_language": "it",
+     "original_title": "La dolce vita",
+     "overview": "Episodic journey of journalist Marcello who struggles to find his place in the world, torn between the allure of Rome's elite social scene and the stifling domesticity offered by his girlfriend, all the while searching for a way to become a serious writer.",
+     "popularity": 3.8471,
+     "poster_path": "/dZ2v0DAX4aCZartCzZdg4ZinSW2.jpg",
+     "release_date": "1960-02-05",
+     "softcore": false,
+     "video": false,
+     "vote_average": 8.018,
+     "vote_count": 2105,
+     "media_type": "movie"
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/arFPEDEW4PzPaMBXgTPzJlumfGw.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 203833,
+     "title": "The Book Thief",
+     "original_language": "en",
+     "original_title": "The Book Thief",
+     "overview": "While subjected to the horrors of WWII Germany, young Liesel finds solace by stealing books and sharing them with others. Under the stairs in her home, a Jewish refugee is being sheltered by her adoptive parents.",
+     "popularity": 3.8887,
+     "poster_path": "/wj4U5sMLcJMa3WR9CpRR9e2sdgZ.jpg",
+     "release_date": "2013-11-08",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.486,
+     "vote_count": 4625,
+     "media_type": "movie"
+    }
+   ],
+   "total_pages": 36,
+   "total_results": 712
+  },
+  "similar": {
+   "page": 1,
+   "results": [
+    {
+     "adult": false,
+     "backdrop_path": "/nY2faCdUVHzuH6FmDI6QsAURE68.jpg",
+     "genre_ids": [
+      18,
+      10749
+     ],
+     "id": 145,
+     "title": "Breaking the Waves",
+     "original_language": "da",
+     "original_title": "Breaking the Waves",
+     "overview": "In a small, conservative Scottish village, an oilman is paralyzed in an accident. His wife, who prayed for his return, feels guilty; even more, when he urges her to have sex with another.",
+     "popularity": 3.4685,
+     "poster_path": "/dQWMcdHXUOSHtr7ypOCa5T79JMS.jpg",
+     "release_date": "1996-07-05",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.479,
+     "vote_count": 1164
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/7eNnAuMW3jTi3DFFUv6XjEscgiN.jpg",
+     "genre_ids": [
+      10749,
+      18
+     ],
+     "id": 148,
+     "title": "The Secret Life of Words",
+     "original_language": "en",
+     "original_title": "The Secret Life of Words",
+     "overview": "A solitary nurse bonds with a badly burned patient who survived an accident on an oil rig.",
+     "popularity": 1.616,
+     "poster_path": "/mgffUjCN2jvebZBqvyP0lvAoAhB.jpg",
+     "release_date": "2005-12-15",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7,
+     "vote_count": 242
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/fj0hwDJEOOHllRim2BMt5L7tbjf.jpg",
+     "genre_ids": [
+      80,
+      18,
+      28
+     ],
+     "id": 101,
+     "title": "Léon: The Professional",
+     "original_language": "fr",
+     "original_title": "Léon",
+     "overview": "Léon, the top hit man in New York, has earned a rep as an effective \"cleaner\". But when his next-door neighbors are wiped out by a loose-cannon DEA agent, he becomes the unwilling custodian of 12-year-old Mathilda. Before long, Mathilda's thoughts turn to revenge, and she considers following in Léon's footsteps.",
+     "popularity": 21.2671,
+     "poster_path": "/bxB2q91nKYp8JNzqE7t7TWBVupB.jpg",
+     "release_date": "1994-09-14",
+     "softcore": false,
+     "video": false,
+     "vote_average": 8.288,
+     "vote_count": 16813
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/uNLIMPxknsV4n3IAEDpS1iqF5dm.jpg",
+     "genre_ids": [
+      14,
+      18,
+      10749
+     ],
+     "id": 162,
+     "title": "Edward Scissorhands",
+     "original_language": "en",
+     "original_title": "Edward Scissorhands",
+     "overview": "A small suburban town receives a visit from a castaway unfinished science experiment named Edward.",
+     "popularity": 12.912,
+     "poster_path": "/e0FqKFvGPdQNWG8tF9cZBtev9Em.jpg",
+     "release_date": "1990-12-07",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.7,
+     "vote_count": 14214
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/1J28PJOkusMN5Ab9Q3oF310e11k.jpg",
+     "genre_ids": [
+      10749,
+      12,
+      18
+     ],
+     "id": 175,
+     "title": "The Big Blue",
+     "original_language": "fr",
+     "original_title": "Le Grand Bleu",
+     "overview": "Childhood friends Jacques and Enzo share a passion for the danger of free diving. Jacques, following in the footsteps of his father, who died at sea when Jacques was a boy, harbors a remarkable ability to adjust his heart rate and breathing patterns in the water, with his vital signs more closely resembling those of dolphins than men.",
+     "popularity": 3.795,
+     "poster_path": "/3t5t7yaFiTJQlqxiTkXJMFZdkh3.jpg",
+     "release_date": "1988-05-10",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.4,
+     "vote_count": 1654
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/3NyCi98Y2lqLawrV41kNCcyo6Ab.jpg",
+     "genre_ids": [
+      35,
+      18
+     ],
+     "id": 177,
+     "title": "The Fisher King",
+     "original_language": "en",
+     "original_title": "The Fisher King",
+     "overview": "Two troubled men face their terrible destinies and events of their past as they join together on a mission to find the Holy Grail and thus to save themselves.",
+     "popularity": 3.8886,
+     "poster_path": "/hwIYw22HmAUMobV4zsX69MgfVUz.jpg",
+     "release_date": "1991-09-20",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.31,
+     "vote_count": 1553
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/ELsTifJ2lu4vsMhoHeZ5EnncHw.jpg",
+     "genre_ids": [
+      35,
+      14,
+      878
+     ],
+     "id": 75,
+     "title": "Mars Attacks!",
+     "original_language": "en",
+     "original_title": "Mars Attacks!",
+     "overview": "A fleet of Martian spacecraft surrounds the world's major cities and all of humanity waits to see if the extraterrestrial visitors have, as they claim, \"come in peace.\" U.S. President James Dale receives assurance from science professor Donald Kessler that the Martians' mission is a friendly one. But when a peaceful exchange ends in the total annihilation of the U.S. Congress, military men call for a full-scale nuclear retaliation.",
+     "popularity": 7.0976,
+     "poster_path": "/m6BxrwE9RL6ly1B7841n7UTSCQE.jpg",
+     "release_date": "1996-12-13",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.438,
+     "vote_count": 6152
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/jDz6RYN3nKYtlo7J9IMvGoJit7B.jpg",
+     "genre_ids": [
+      18,
+      12,
+      28,
+      36
+     ],
+     "id": 79,
+     "title": "Hero",
+     "original_language": "zh",
+     "original_title": "英雄",
+     "overview": "During China's Warring States period, a district prefect arrives at the palace of Qin Shi Huang, claiming to have killed the three assassins who had made an attempt on the king's life three years ago.",
+     "popularity": 10.4941,
+     "poster_path": "/vxgZto2Cz7ILHAlmRXt50I2brB2.jpg",
+     "release_date": "2002-12-19",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.502,
+     "vote_count": 2645
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/tcZi0LQc5iu2u6i5aOWyj9NBBvl.jpg",
+     "genre_ids": [
+      18,
+      10749
+     ],
+     "id": 80,
+     "title": "Before Sunset",
+     "original_language": "en",
+     "original_title": "Before Sunset",
+     "overview": "Nine years later, Jesse travels across Europe giving readings from a book he wrote about the night he spent in Vienna with Celine. After his reading in Paris, Celine finds him, and they spend part of the day together before Jesse has to again leave for a flight. They are both in relationships now, and Jesse has a son, but as their strong feelings for each other start to return, both confess a longing for more.",
+     "popularity": 5.6502,
+     "poster_path": "/gycdE1ARByGQcK4fYR2mgpU6OO.jpg",
+     "release_date": "2004-06-16",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.811,
+     "vote_count": 4000
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/aM383Vd6Gv8WNAvjbwG15drACBR.jpg",
+     "genre_ids": [
+      18,
+      99
+     ],
+     "id": 267880,
+     "title": "Spying on Hitler’s Army: The Secret Recordings",
+     "original_language": "en",
+     "original_title": "Spying on Hitler’s Army: The Secret Recordings",
+     "overview": "British intelligence undertook an audacious operation to listen in on the private conversations of 10,000 German prisoners of war without their ever knowing they were being overheard.  The prisoners' unguarded reminiscences and unintentional confessions have only just come to light, and prove how closely the German army were involved in the atrocities of the Holocaust.  British intelligence requisitioned three stately homes for this epic task, and converted each into an elaborate trap.  The 100,000 hours of conversation they captured provided crucial intelligence that changed the course of the war, and revealed some of its worst horrors, from rape to mass executions to one of the earliest bulletins from the concentration camps.  But when the fighting ended, the recordings were destroyed and the transcripts locked away for half a century. Only now have they been declassified, researched and cross-referenced.",
+     "popularity": 0.6299,
+     "poster_path": "/jzPfkqzJK9zKlcg2BZGHKTY5YLC.jpg",
+     "release_date": "2013-06-02",
+     "softcore": false,
+     "video": false,
+     "vote_average": 9.5,
+     "vote_count": 1
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/dAHrR2Avzpdpii9RGRGglJqt0BU.jpg",
+     "genre_ids": [
+      10749,
+      18
+     ],
+     "id": 537,
+     "title": "Not Here to Be Loved",
+     "original_language": "fr",
+     "original_title": "Je ne suis pas là pour être aimé",
+     "overview": "Jean-Claude Delsart, a 50 years-old bailiff, with his worn-out smile and heart, abandoned a long time ago the idea that life could give him pleasures. Until the day, he dares to push the doors of a tango lesson...",
+     "popularity": 0.7001,
+     "poster_path": "/9nlF36ymCFTkss54lotmSSEmIaQ.jpg",
+     "release_date": "2005-10-12",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.7,
+     "vote_count": 32
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/ywWva4trKw7f3wtbz81Fe3FnrtC.jpg",
+     "genre_ids": [
+      12,
+      18,
+      37
+     ],
+     "id": 581,
+     "title": "Dances with Wolves",
+     "original_language": "en",
+     "original_title": "Dances with Wolves",
+     "overview": "Wounded Civil War soldier John Dunbar tries to commit suicide—and becomes a hero instead. As a reward, he's assigned to his dream post, a remote junction on the Western frontier, and soon makes unlikely friends with the local Sioux tribe.",
+     "popularity": 8.515,
+     "poster_path": "/hw0ZEHAaTqTxSXGVwUFX7uvanSA.jpg",
+     "release_date": "1990-11-09",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.839,
+     "vote_count": 4917
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/97MOhHIgU6ZdLcB9DrAhx3WAqrU.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 839369,
+     "title": "May December",
+     "original_language": "en",
+     "original_title": "May December",
+     "overview": "Twenty years after their notorious tabloid romance gripped the nation, a married couple buckles under the pressure when an actress arrives to do research for a film about their past.",
+     "popularity": 4.3187,
+     "poster_path": "/zhV7B610l7hjlri4ywikJ18ONuq.jpg",
+     "release_date": "2023-11-16",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.567,
+     "vote_count": 1113
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/rhdDnrUmGamF2kk9HZUgTApms2a.jpg",
+     "genre_ids": [
+      18
+     ],
+     "id": 268253,
+     "title": "Life for Life: Maximilian Kolbe",
+     "original_language": "pl",
+     "original_title": "Życie za życie. Maksymilian Kolbe",
+     "overview": "The story of catholic saint Maximilian Kolbe (1894-1941), who volunteered to die in place of a stranger in the Nazi concentration camp of Auschwitz.",
+     "popularity": 1.1129,
+     "poster_path": "/40k326IEGBbAtt81yRR8HlmWSSL.jpg",
+     "release_date": "1991-04-01",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.3,
+     "vote_count": 19
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/6ph3pU9LaWr84g2GHlurvuEzYnW.jpg",
+     "genre_ids": [
+      35
+     ],
+     "id": 268037,
+     "title": "Ñeñeñe",
+     "original_language": "es",
+     "original_title": "Ñeñeñe",
+     "overview": "Mario has prepared something for Cristina, but she doesn't seem very interested in knowing what it is.",
+     "popularity": 0.5063,
+     "poster_path": "/up3M8f4UhOfayL7nbIOoizGGevr.jpg",
+     "release_date": "2014-05-07",
+     "softcore": false,
+     "video": false,
+     "vote_average": 3,
+     "vote_count": 1
+    },
+    {
+     "adult": false,
+     "backdrop_path": null,
+     "genre_ids": [
+      18,
+      35,
+      10749
+     ],
+     "id": 1623951,
+     "title": "Bonehead 2",
+     "original_language": "en",
+     "original_title": "Bonehead 2",
+     "overview": "A skeleton's prospects at connecting with others seem hopeless, until he meets a curious stranger.",
+     "popularity": 0.2196,
+     "poster_path": "/mgmp2ZAN2sPXcF7GtNzStyW2XFW.jpg",
+     "release_date": "2026-02-01",
+     "softcore": false,
+     "video": false,
+     "vote_average": 0,
+     "vote_count": 0
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/o1l6OCqA3pYDZHIc5L1s7CEzCMv.jpg",
+     "genre_ids": [
+      28,
+      35,
+      878
+     ],
+     "id": 608,
+     "title": "Men in Black II",
+     "original_language": "en",
+     "original_title": "Men in Black II",
+     "overview": "Kay and Jay reunite to provide our best, last and only line of defense against a sinister seductress who levels the toughest challenge yet to the MIB's untarnished mission statement – protecting Earth from the scum of the universe. It's been four years since the alien-seeking agents averted an intergalactic disaster of epic proportions. Now it's a race against the clock as Jay must convince Kay – who not only has absolutely no memory of his time spent with the MIB, but is also the only living person left with the expertise to save the galaxy – to reunite with the MIB before the earth submits to ultimate destruction.",
+     "popularity": 9.3668,
+     "poster_path": "/enA22EPyzc2WQ1VVyY7zxresQQr.jpg",
+     "release_date": "2002-07-03",
+     "softcore": false,
+     "video": false,
+     "vote_average": 6.396,
+     "vote_count": 11084
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/cT80aGpjWZLn8rd7cLtsbktFMhf.jpg",
+     "genre_ids": [
+      18,
+      36,
+      10752
+     ],
+     "id": 613,
+     "title": "Downfall",
+     "original_language": "de",
+     "original_title": "Der Untergang",
+     "overview": "In April of 1945, Germany stands at the brink of defeat with the Russian Army closing in from the east and the Allied Expeditionary Force attacking from the west. In Berlin, capital of the Third Reich, Adolf Hitler proclaims that Germany will still achieve victory and orders his generals and advisers to fight to the last man. When the end finally does come, and Hitler lies dead by his own hand, what is left of his military must find a way to end the killing that is the Battle of Berlin, and lay down their arms in surrender.",
+     "popularity": 5.105,
+     "poster_path": "/cP1ElGjBhbZAAqmueXjHDKlSwiP.jpg",
+     "release_date": "2004-09-16",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.87,
+     "vote_count": 4547
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/lm15lu2jt3I3Syxsb90UJzUzMRV.jpg",
+     "genre_ids": [
+      18,
+      28,
+      10752
+     ],
+     "id": 616,
+     "title": "The Last Samurai",
+     "original_language": "en",
+     "original_title": "The Last Samurai",
+     "overview": "Nathan Algren is an American hired to instruct the Japanese army in the ways of modern warfare, which finds him learning to respect the samurai and the honorable principles that rule them. Pressed to destroy the samurai's way of life in the name of modernization and open trade, Algren decides to become an ultimate warrior himself and to fight for their right to exist.",
+     "popularity": 14.0492,
+     "poster_path": "/a8jmJPs5eZBARmnuEEvZwbjwyz4.jpg",
+     "release_date": "2003-12-05",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.613,
+     "vote_count": 7928
+    },
+    {
+     "adult": false,
+     "backdrop_path": "/cW1XlxgvxZIFkakYc9yrLpDoYhK.jpg",
+     "genre_ids": [
+      35,
+      18,
+      53
+     ],
+     "id": 290,
+     "title": "Barton Fink",
+     "original_language": "en",
+     "original_title": "Barton Fink",
+     "overview": "A renowned New York playwright is enticed to California to write for the movies and discovers the hellish truth of Hollywood.",
+     "popularity": 3.0552,
+     "poster_path": "/oDkp5iClJ9WKJGtKHz8BydodHC3.jpg",
+     "release_date": "1991-08-01",
+     "softcore": false,
+     "video": false,
+     "vote_average": 7.46,
+     "vote_count": 1996
+    }
+   ],
+   "total_pages": 1001,
+   "total_results": 20001
+  },
+  "watch/providers": {
+   "results": {
+    "AR": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=AR",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/kxUmV9TCZHfukpVOMuN90Jibbnm.png",
+       "provider_id": 339,
+       "provider_name": "MovistarTV",
+       "display_priority": 8
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ]
+    },
+    "AT": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=AT",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 15
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 5
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 15
+      }
+     ]
+    },
+    "AU": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=AU",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 16
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/aaFIYn2NGPCo0rpLiWokbvNqNJd.png",
+       "provider_id": 2784,
+       "provider_name": "JustWatch TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 16
+      }
+     ]
+    },
+    "BE": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=BE",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "BG": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=BG",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 30
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 30
+      }
+     ]
+    },
+    "BR": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=BR",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 15
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 15
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/86Ja8MBdaS8Fkjsegy3fQsUgNMu.png",
+       "provider_id": 499,
+       "provider_name": "Oldflix",
+       "display_priority": 21
+      }
+     ]
+    },
+    "BZ": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=BZ",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "CA": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=CA",
+     "flatrate": [
+      {
+       "logo_path": "/pkx3klJlwW5JdtaulvDx6hDNtch.png",
+       "provider_id": 531,
+       "provider_name": "Paramount Plus",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/bxX0YVOCY7bI85BKRlJAAQ2EjUR.png",
+       "provider_id": 582,
+       "provider_name": "Paramount+ Amazon Channel",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/4N4BMd0Mm0kHAmF7RZgL5lW3cwc.png",
+       "provider_id": 2303,
+       "provider_name": "Paramount Plus Premium",
+       "display_priority": 119
+      },
+      {
+       "logo_path": "/ylBHMFuVsJqQ8JUzmfmPsEn97Ez.png",
+       "provider_id": 2304,
+       "provider_name": "Paramount Plus Basic with Ads",
+       "display_priority": 120
+      }
+     ]
+    },
+    "CH": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=CH",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 71
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/6HNkQXm3969mV7RG1GrQb7ZMtSx.png",
+       "provider_id": 622,
+       "provider_name": "Sunrise TV",
+       "display_priority": 31
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 71
+      }
+     ]
+    },
+    "CL": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=CL",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 55
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 55
+      }
+     ]
+    },
+    "CO": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=CO",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ]
+    },
+    "CY": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=CY",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 4
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 4
+      }
+     ]
+    },
+    "CZ": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=CZ",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 40
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 40
+      }
+     ]
+    },
+    "DE": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=DE",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 21
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 25
+      },
+      {
+       "logo_path": "/iUGee0WhY5ZSBZZuCunNt0K7au2.png",
+       "provider_id": 2209,
+       "provider_name": "Freenet meinVOD",
+       "display_priority": 127
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/mjB4eyswPoC0XeJPUd1W1oitOlh.png",
+       "provider_id": 20,
+       "provider_name": "maxdome Store",
+       "display_priority": 21
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 25
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/2HcyGXRwSTh3DkgDwaF59AzACHu.png",
+       "provider_id": 2412,
+       "provider_name": "Magenta TV+",
+       "display_priority": 191
+      }
+     ]
+    },
+    "DK": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=DK",
+     "buy": [
+      {
+       "logo_path": "/q8EUxAMcTw7qjdMKMcTPLl06gum.png",
+       "provider_id": 423,
+       "provider_name": "Blockbuster",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/q8EUxAMcTw7qjdMKMcTPLl06gum.png",
+       "provider_id": 423,
+       "provider_name": "Blockbuster",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ]
+    },
+    "EC": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=EC",
+     "flatrate": [
+      {
+       "logo_path": "/kxUmV9TCZHfukpVOMuN90Jibbnm.png",
+       "provider_id": 339,
+       "provider_name": "MovistarTV",
+       "display_priority": 7
+      }
+     ]
+    },
+    "EE": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=EE",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "ES": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=ES",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ]
+    },
+    "FI": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=FI",
+     "buy": [
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/q8EUxAMcTw7qjdMKMcTPLl06gum.png",
+       "provider_id": 423,
+       "provider_name": "Blockbuster",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/yhvtjo9LTKCLCSQMv7ihPREKPnv.png",
+       "provider_id": 540,
+       "provider_name": "Elisa Viihde",
+       "display_priority": 19
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/q8EUxAMcTw7qjdMKMcTPLl06gum.png",
+       "provider_id": 423,
+       "provider_name": "Blockbuster",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/yhvtjo9LTKCLCSQMv7ihPREKPnv.png",
+       "provider_id": 540,
+       "provider_name": "Elisa Viihde",
+       "display_priority": 19
+      },
+      {
+       "logo_path": "/cNOoXFJAxHhuvFzZD3ozinKYg6V.png",
+       "provider_id": 553,
+       "provider_name": "Telia Play",
+       "display_priority": 28
+      }
+     ]
+    },
+    "FR": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=FR",
+     "buy": [
+      {
+       "logo_path": "/73lu1dtE9uJLWK1laXpeaAFh48j.png",
+       "provider_id": 61,
+       "provider_name": "Orange VOD",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/51fX3l4yElitnfui0IkbMUmfmgF.png",
+       "provider_id": 58,
+       "provider_name": "Canal VOD",
+       "display_priority": 19
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      },
+      {
+       "logo_path": "/zbXVTncv6m6ojLjPQJeW7u0SYKp.png",
+       "provider_id": 2601,
+       "provider_name": "Pathé Home",
+       "display_priority": 54
+      },
+      {
+       "logo_path": "/uzTONLCUH92RRMSzs206OYtWVml.png",
+       "provider_id": 2286,
+       "provider_name": "VIVA by videofutur",
+       "display_priority": 77
+      },
+      {
+       "logo_path": "/yERf5EH3GjWMB0ZSWPaov1kCKrR.png",
+       "provider_id": 2307,
+       "provider_name": "Premiere Max",
+       "display_priority": 79
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/73lu1dtE9uJLWK1laXpeaAFh48j.png",
+       "provider_id": 61,
+       "provider_name": "Orange VOD",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/51fX3l4yElitnfui0IkbMUmfmgF.png",
+       "provider_id": 58,
+       "provider_name": "Canal VOD",
+       "display_priority": 19
+      },
+      {
+       "logo_path": "/a9ZXOebUSXGUFxTi3N36sA8wSSh.png",
+       "provider_id": 389,
+       "provider_name": "Sooner",
+       "display_priority": 23
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      },
+      {
+       "logo_path": "/zbXVTncv6m6ojLjPQJeW7u0SYKp.png",
+       "provider_id": 2601,
+       "provider_name": "Pathé Home",
+       "display_priority": 54
+      },
+      {
+       "logo_path": "/uzTONLCUH92RRMSzs206OYtWVml.png",
+       "provider_id": 2286,
+       "provider_name": "VIVA by videofutur",
+       "display_priority": 77
+      },
+      {
+       "logo_path": "/yERf5EH3GjWMB0ZSWPaov1kCKrR.png",
+       "provider_id": 2307,
+       "provider_name": "Premiere Max",
+       "display_priority": 79
+      }
+     ]
+    },
+    "GB": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=GB",
+     "buy": [
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 10
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 7
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 20
+      }
+     ],
+     "ads": [
+      {
+       "logo_path": "/gqaJWT5oFiJyVDojVLYRSFPbhQ1.png",
+       "provider_id": 235,
+       "provider_name": "YouTube Free",
+       "display_priority": 163
+      }
+     ]
+    },
+    "GG": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=GG",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 82
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 82
+      }
+     ]
+    },
+    "GR": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=GR",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "HR": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=HR",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ]
+    },
+    "HU": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=HU",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 37
+      }
+     ]
+    },
+    "IE": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=IE",
+     "buy": [
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 43
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/nNkZ1JKe6vNhzti14KiKEUWHE6H.png",
+       "provider_id": 130,
+       "provider_name": "Sky Store",
+       "display_priority": 10
+      },
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 43
+      }
+     ]
+    },
+    "IN": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=IN",
+     "flatrate": [
+      {
+       "logo_path": "/gMZdpavHmxFNnLpMHwVxfqeux2g.png",
+       "provider_id": 119,
+       "provider_name": "Amazon Prime Video",
+       "display_priority": 4
+      },
+      {
+       "logo_path": "/tpwTT1FpWqLLhxUfAuDavIXDDfI.png",
+       "provider_id": 2100,
+       "provider_name": "Amazon Prime Video with Ads",
+       "display_priority": 70
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 40
+      }
+     ]
+    },
+    "IS": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=IS",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ]
+    },
+    "IT": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=IT",
+     "flatrate": [
+      {
+       "logo_path": "/rK1KljqmbvO9HQa1PBFLILWah72.png",
+       "provider_id": 8,
+       "provider_name": "Netflix",
+       "display_priority": 0
+      },
+      {
+       "logo_path": "/1Yvl9eP3pmktqChitnFhHJHcBtX.png",
+       "provider_id": 29,
+       "provider_name": "Sky Go",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/oFAnvlaEW2KT6J7XM0DXjlWqKu9.png",
+       "provider_id": 39,
+       "provider_name": "Now TV",
+       "display_priority": 11
+      }
+     ]
+    },
+    "JP": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=JP",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      },
+      {
+       "logo_path": "/m0tkTiV5TN7NWfazDEYc8NoVXSd.png",
+       "provider_id": 2683,
+       "provider_name": "FOD",
+       "display_priority": 79
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 9
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/3DGpCh83CR9lDzyKbNWlmUBexBF.png",
+       "provider_id": 84,
+       "provider_name": "U-NEXT",
+       "display_priority": 7
+      }
+     ]
+    },
+    "LT": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=LT",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 34
+      }
+     ]
+    },
+    "LV": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=LV",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 33
+      }
+     ]
+    },
+    "MX": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=MX",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      }
+     ]
+    },
+    "NI": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=NI",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "NL": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=NL",
+     "rent": [
+      {
+       "logo_path": "/oB7QrPnusUtIpKr8k0YQ12INLeP.png",
+       "provider_id": 71,
+       "provider_name": "Pathé Thuis",
+       "display_priority": 11
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/oB7QrPnusUtIpKr8k0YQ12INLeP.png",
+       "provider_id": 71,
+       "provider_name": "Pathé Thuis",
+       "display_priority": 11
+      }
+     ]
+    },
+    "NO": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=NO",
+     "buy": [
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/872dfVu1biZISJ8rO143CZZutPR.png",
+       "provider_id": 35,
+       "provider_name": "Rakuten TV",
+       "display_priority": 13
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 48
+      }
+     ]
+    },
+    "NZ": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=NZ",
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      },
+      {
+       "logo_path": "/aaFIYn2NGPCo0rpLiWokbvNqNJd.png",
+       "provider_id": 2784,
+       "provider_name": "JustWatch TV Store",
+       "display_priority": 8
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 57
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 6
+      }
+     ]
+    },
+    "PE": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=PE",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 42
+      }
+     ]
+    },
+    "PL": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=PL",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 27
+      },
+      {
+       "logo_path": "/xfDy4aGaOqbUqKPVQobjoJ9ZsSs.png",
+       "provider_id": 40,
+       "provider_name": "CHILI",
+       "display_priority": 32
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 27
+      },
+      {
+       "logo_path": "/xfDy4aGaOqbUqKPVQobjoJ9ZsSs.png",
+       "provider_id": 40,
+       "provider_name": "CHILI",
+       "display_priority": 32
+      }
+     ]
+    },
+    "RO": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=RO",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 35
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 35
+      }
+     ]
+    },
+    "SE": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=SE",
+     "rent": [
+      {
+       "logo_path": "/q8EUxAMcTw7qjdMKMcTPLl06gum.png",
+       "provider_id": 423,
+       "provider_name": "Blockbuster",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/q8EUxAMcTw7qjdMKMcTPLl06gum.png",
+       "provider_id": 423,
+       "provider_name": "Blockbuster",
+       "display_priority": 15
+      },
+      {
+       "logo_path": "/fVuqy8kmzsULoJjc3ROOcurRH7S.png",
+       "provider_id": 426,
+       "provider_name": "SF Anytime",
+       "display_priority": 16
+      },
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 38
+      }
+     ]
+    },
+    "SK": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=SK",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 46
+      }
+     ]
+    },
+    "SM": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=SM",
+     "flatrate": [
+      {
+       "logo_path": "/rK1KljqmbvO9HQa1PBFLILWah72.png",
+       "provider_id": 8,
+       "provider_name": "Netflix",
+       "display_priority": 1
+      }
+     ]
+    },
+    "TR": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=TR",
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 36
+      }
+     ],
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 36
+      }
+     ]
+    },
+    "TW": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=TW",
+     "rent": [
+      {
+       "logo_path": "/bonc3GQiIbZVG9WyNYEYAI9mqFy.png",
+       "provider_id": 159,
+       "provider_name": "Catchplay",
+       "display_priority": 15
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/bonc3GQiIbZVG9WyNYEYAI9mqFy.png",
+       "provider_id": 159,
+       "provider_name": "Catchplay",
+       "display_priority": 15
+      }
+     ]
+    },
+    "UA": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=UA",
+     "buy": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 3
+      }
+     ]
+    },
+    "US": {
+     "link": "https://www.themoviedb.org/movie/637-la-vita-e-bella/watch?locale=US",
+     "buy": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/aZRENwYILujqs0RVOZutTh0BVGV.png",
+       "provider_id": 3,
+       "provider_name": "Google Play Movies",
+       "display_priority": 25
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 26
+      },
+      {
+       "logo_path": "/wpOt6x0dRxTrIzuBosto4LGd7E9.png",
+       "provider_id": 7,
+       "provider_name": "Fandango At Home",
+       "display_priority": 42
+      }
+     ],
+     "flatrate": [
+      {
+       "logo_path": "/4N4BMd0Mm0kHAmF7RZgL5lW3cwc.png",
+       "provider_id": 2303,
+       "provider_name": "Paramount Plus Premium",
+       "display_priority": 19
+      },
+      {
+       "logo_path": "/uPWQPyF4nqwtfPNmGcFcenU57HG.png",
+       "provider_id": 2616,
+       "provider_name": "Paramount Plus Essential",
+       "display_priority": 20
+      },
+      {
+       "logo_path": "/bxX0YVOCY7bI85BKRlJAAQ2EjUR.png",
+       "provider_id": 582,
+       "provider_name": "Paramount+ Amazon Channel",
+       "display_priority": 31
+      },
+      {
+       "logo_path": "/tnZCMxbcKdxuVmjxefyXCaip7q3.png",
+       "provider_id": 633,
+       "provider_name": "Paramount+ Roku Premium Channel",
+       "display_priority": 67
+      }
+     ],
+     "free": [
+      {
+       "logo_path": "/cltb8XKan9ierp23ItPmCOcVLRa.png",
+       "provider_id": 191,
+       "provider_name": "Kanopy",
+       "display_priority": 40
+      },
+      {
+       "logo_path": "/gtjNBzAoGgUtYzt0UKXmwG34WWL.png",
+       "provider_id": 212,
+       "provider_name": "Hoopla",
+       "display_priority": 41
+      }
+     ],
+     "rent": [
+      {
+       "logo_path": "/jn6TLbtaTZntTRX9UYucHJvpQx1.png",
+       "provider_id": 10,
+       "provider_name": "Amazon Video",
+       "display_priority": 11
+      },
+      {
+       "logo_path": "/qdEGArH3lKfFnAtYXMkSYk5wxuG.png",
+       "provider_id": 2,
+       "provider_name": "Apple TV Store",
+       "display_priority": 12
+      },
+      {
+       "logo_path": "/aaFIYn2NGPCo0rpLiWokbvNqNJd.png",
+       "provider_id": 2784,
+       "provider_name": "JustWatch TV Store",
+       "display_priority": 14
+      },
+      {
+       "logo_path": "/aZRENwYILujqs0RVOZutTh0BVGV.png",
+       "provider_id": 3,
+       "provider_name": "Google Play Movies",
+       "display_priority": 25
+      },
+      {
+       "logo_path": "/5Maob4o5w8oZnNeYpCDyVFD3M7X.png",
+       "provider_id": 192,
+       "provider_name": "YouTube",
+       "display_priority": 26
+      },
+      {
+       "logo_path": "/wpOt6x0dRxTrIzuBosto4LGd7E9.png",
+       "provider_id": 7,
+       "provider_name": "Fandango At Home",
+       "display_priority": 42
+      }
+     ]
+    }
+   }
+  },
+  "release_dates": {
+   "results": [
+    {
+     "iso_3166_1": "AU",
+     "release_dates": [
+      {
+       "certification": "M",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2006-05-06T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "BR",
+     "release_dates": [
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1999-02-05T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "CA",
+     "release_dates": [
+      {
+       "certification": "PG",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1998-11-06T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "CZ",
+     "release_dates": [
+      {
+       "certification": "U",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1999-04-01T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD, FilmX",
+       "release_date": "2008-05-29T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "DE",
+     "release_dates": [
+      {
+       "certification": "6",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1998-11-12T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "ES",
+     "release_dates": [
+      {
+       "certification": "APTA",
+       "descriptors": [],
+       "iso_639_1": "es",
+       "note": "",
+       "release_date": "1999-02-26T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "FR",
+     "release_dates": [
+      {
+       "certification": "U",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1998-10-21T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "fr",
+       "note": "6ter",
+       "release_date": "2026-03-29T00:00:00.000Z",
+       "type": 6
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "GB",
+     "release_dates": [
+      {
+       "certification": "PG",
+       "descriptors": [],
+       "iso_639_1": "it",
+       "note": "",
+       "release_date": "1999-02-12T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "HU",
+     "release_dates": [
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1999-04-08T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2006-05-29T00:00:00.000Z",
+       "type": 5
+      },
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2002-10-01T00:00:00.000Z",
+       "type": 5
+      },
+      {
+       "certification": "12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2010-12-01T00:00:00.000Z",
+       "type": 5
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "IE",
+     "release_dates": [
+      {
+       "certification": "PG",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1999-02-12T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "IT",
+     "release_dates": [
+      {
+       "certification": "T",
+       "descriptors": [],
+       "iso_639_1": "it",
+       "note": "",
+       "release_date": "1997-12-20T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "KR",
+     "release_dates": [
+      {
+       "certification": "ALL",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1999-03-06T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "ALL",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Re-release",
+       "release_date": "2016-04-13T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "LT",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "2009-12-15T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "MX",
+     "release_dates": [
+      {
+       "certification": "B-15",
+       "descriptors": [],
+       "iso_639_1": "es",
+       "note": "",
+       "release_date": "1999-02-26T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "NL",
+     "release_dates": [
+      {
+       "certification": "AL",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1998-12-03T00:00:00.000Z",
+       "type": 3
+      },
+      {
+       "certification": "AL",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "DVD",
+       "release_date": "2000-05-04T00:00:00.000Z",
+       "type": 5
+      },
+      {
+       "certification": "AL",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "Nederland 1",
+       "release_date": "2002-05-04T00:00:00.000Z",
+       "type": 6
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "NZ",
+     "release_dates": [
+      {
+       "certification": "M",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "2020-08-01T00:00:00.000Z",
+       "type": 4
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "PT",
+     "release_dates": [
+      {
+       "certification": "M/12",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1999-01-22T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "SE",
+     "release_dates": [
+      {
+       "certification": "11",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1999-01-22T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "TW",
+     "release_dates": [
+      {
+       "certification": "",
+       "descriptors": [],
+       "iso_639_1": "",
+       "note": "",
+       "release_date": "1999-11-12T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    },
+    {
+     "iso_3166_1": "US",
+     "release_dates": [
+      {
+       "certification": "PG-13",
+       "descriptors": [],
+       "iso_639_1": "it",
+       "note": "",
+       "release_date": "1998-10-22T00:00:00.000Z",
+       "type": 3
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

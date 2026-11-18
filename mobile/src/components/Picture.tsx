@@ -71,6 +71,10 @@ export function RemoteImage({ uri: given, fallback, cachePolicy = 'memory-disk',
     <Image
       key={phase ?? 'first'}
       {...rest}
+      // A picture is its address: a reused row given another address shows its placeholder until
+      // its own picture arrives, never the last row's (expo-image keeps the old one drawn until a
+      // new one has loaded unless the key changes). A site that keys its rows otherwise says so.
+      recyclingKey={rest.recyclingKey ?? uri}
       source={{ uri }}
       cachePolicy={cachePolicy}
       onError={(e) => {

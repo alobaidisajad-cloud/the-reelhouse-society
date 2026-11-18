@@ -7,6 +7,8 @@ import { VaultService } from '@/src/services/VaultService';
 import { captureError } from '@/src/lib/sentry';
 import { isNetworkError } from '@/src/utils/networkError';
 import { enqueueMutation, getOfflineQueue } from '@/src/utils/offlineQueue';
+import { keyOf, whenNotesAreSent, writeOnline } from '@/src/utils/oneWritePerThing';
+import { houseIso } from '@/src/lib/houseClock';
 import { useAuthStore } from '@/src/stores/auth';
 import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
@@ -70,6 +72,9 @@ type VaultState = {
 
 const STORAGE_KEY = 'reelhouse-vault';
 
+/** Records asked to be read again (forced) while a read of them was out: read once more after it. */
+const _readAgain = new Set<string>();
+
 export const useVaultStore = create<VaultState>()(
   persist(
     (set, get) => ({
@@ -87,7 +92,11 @@ export const useVaultStore = create<VaultState>()(
       loadForLog: async (logId, opts) => {
         if (!logId) return;
         const state = get();
-        if (state.loading[logId]) return;
+        if (state.loading[logId]) {
+          // A forced read asked while another is out is kept, and made once that one is answered.
+          if (opts?.force) _readAgain.add(logId);
+          return;
+        }
         if (!opts?.force && state.loaded[logId]) return;
 
         // WHO asked. A note is the one thing in this app that must never land in
@@ -145,6 +154,10 @@ export const useVaultStore = create<VaultState>()(
             delete loading[logId];
             return { loading, unreachable: { ...s.unreachable, [logId]: true } };
           });
+        } finally {
+          // Asked to read it again while this read was out (the queue had just sent a note): this
+          // answer may predate the send, so it is read once more now.
+          if (_readAgain.delete(logId) && stillSignedIn(askedBy)) void useVaultStore.getState().loadForLog(logId, { force: true });
         }
       },
 
@@ -168,6 +181,15 @@ export const useVaultStore = create<VaultState>()(
         const text = sanitizeInput(note ?? '', 'privateNotes');
         const before = get().notes[viewingId];
         const askedBy = useAuthStore.getState().user?.id ?? null;
+        // The moment it was written, sent with it: the house lays it only over a note written no
+        // later, so a note queued on another phone before it never lands over it (round 13).
+        const writtenAt = houseIso();
+        const queued: Parameters<typeof enqueueMutation>[0] = {
+          type: text ? 'set_viewing_note' : 'remove_viewing_note',
+          payload: text
+            ? { log_id: logId, viewing_id: viewingId, notes: text, written_at: writtenAt }
+            : { log_id: logId, viewing_id: viewingId, written_at: writtenAt },
+        };
 
         // Shown as written straight away. A note is the member's own writing
         // about their own viewing — there is nothing for the server to decide,
@@ -176,18 +198,15 @@ export const useVaultStore = create<VaultState>()(
         else get().forgetNote(viewingId);
 
         try {
-          await VaultService.setNote(logId, viewingId, text);
+          // Through the one door of a viewing's note (writeOnline): a note for it still queued,
+          // older than this one, is let go when this lands, never sent over it.
+          await writeOnline(keyOf(queued), () => VaultService.setNote(logId, viewingId, text, writtenAt));
           return { queuedOffline: false };
         } catch (e) {
           // Nothing is put back into a Vault that now belongs to someone else.
           if (!stillSignedIn(askedBy)) throw e;
           if (isNetworkError(e)) {
-            enqueueMutation({
-              type: text ? 'set_viewing_note' : 'remove_viewing_note',
-              payload: text
-                ? { log_id: logId, viewing_id: viewingId, notes: text }
-                : { viewing_id: viewingId },
-            });
+            enqueueMutation({ type: text ? 'set_viewing_note' : 'remove_viewing_note', payload: queued.payload });
             return { queuedOffline: true };
           }
           // Put back exactly what was there. A refusal — the rank, most likely —
@@ -201,14 +220,19 @@ export const useVaultStore = create<VaultState>()(
       dropNote: async (logId, viewingId) => {
         const before = get().notes[viewingId];
         const askedBy = useAuthStore.getState().user?.id ?? null;
+        const writtenAt = houseIso();
+        const queued: Parameters<typeof enqueueMutation>[0] = {
+          type: 'remove_viewing_note', payload: { log_id: logId, viewing_id: viewingId, written_at: writtenAt },
+        };
         get().forgetNote(viewingId);
         try {
-          await VaultService.removeNote(viewingId);
+          // The same door as saveNote: an older note still queued for this viewing is let go.
+          await writeOnline(keyOf(queued), () => VaultService.removeNote(viewingId, writtenAt));
           return { queuedOffline: false };
         } catch (e) {
           if (!stillSignedIn(askedBy)) throw e;
           if (isNetworkError(e)) {
-            enqueueMutation({ type: 'remove_viewing_note', payload: { viewing_id: viewingId } });
+            enqueueMutation({ type: 'remove_viewing_note', payload: queued.payload });
             return { queuedOffline: true };
           }
           if (before !== undefined) get().rememberNote(viewingId, before, logId);
@@ -246,10 +270,22 @@ export const rehydrateVaultStore = () => useVaultStore.persist.rehydrate();
  * member's writing on the device.
  */
 registerStoreReset(() => {
+  _readAgain.clear();
   useVaultStore.getState().clear();
   try {
     zustandMMKVStorageSensitive.removeItem(STORAGE_KEY);
   } catch {
     /* the store is already empty in memory; the key is rewritten empty anyway */
+  }
+});
+
+/**
+ * Once the offline queue has sent a record's notes, that record's notes are read again if they are
+ * held here: a note sent late may have been done unwritten at the house (a later note, or a later
+ * removal, stands there), and while it waited its words were laid over every read (round 13).
+ */
+whenNotesAreSent((logIds) => {
+  for (const logId of logIds) {
+    if (useVaultStore.getState().isLoaded(logId)) void useVaultStore.getState().loadForLog(logId, { force: true });
   }
 });

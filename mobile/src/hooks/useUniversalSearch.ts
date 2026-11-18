@@ -9,7 +9,7 @@ import { resolveTier } from '@/src/utils/tier';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
 import { cutWhole } from '@/src/utils/text';
 import { memberPath } from '@/src/utils/memberPath';
-import { buildCursor, keysetFilter, parseCursor } from '@/src/utils/keysetCursor';
+import { buildCursor, parseCursor } from '@/src/utils/keysetCursor';
 import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
@@ -45,12 +45,12 @@ interface LogRow {
   username?: string | null;
   role?: string | null;
 }
+/** A stack as search_stacks answers: a public one the reader may read. */
 interface ListRow {
   id: string;
   user_id?: string;
   title: string;
-  description: string;
-  is_private: boolean;
+  description: string | null;
   is_ranked: boolean;
   created_at: string;
 }
@@ -124,9 +124,10 @@ type MemberCursor = { closeness: number; username: string };
 
 /**
  * The house-wide search. Each source is its own paged read: the catalogue by its pages, the
- * members, records and stacks each by a keyset cursor. `data` is what has been found once every
- * source asked has answered its first page (the screen draws them together); `more` says which
- * sources hold a next page, and `loadMore` reads it.
+ * members, records and stacks each by a keyset cursor. `data` is what has been found so far, from
+ * the first source asked to answer its first page on: each is drawn as it answers, never held for
+ * the slowest (`isFetching` says a first page is still out, and the screen says so); `more` says
+ * which sources hold a next page, and `loadMore` reads it.
  */
 export function useUniversalSearch(query: string) {
   const text = query.trim();
@@ -273,18 +274,16 @@ export function useUniversalSearch(query: string) {
   const lists = useInfiniteQuery({
     queryKey: ['universalSearch', 'lists', text],
     queryFn: async ({ pageParam, signal }): Promise<RowsPage<string>> => {
-      let read = supabase
-        .from('lists')
-        .select('id, user_id, title, description, is_private, is_ranked, created_at')
-        .or(`title.ilike.*${pattern}*,description.ilike.*${pattern}*`)
-        .eq('is_private', false)
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
-        .limit(SEARCH_PAGE + 1);
-      // Newest first, by pages: everything after the last stack shown, the id breaking a tie.
-      const past = keysetFilter('created_at', parseCursor(pageParam), 'desc');
-      if (past) read = read.or(past);
-      const { data, error } = await withAbortSignal(read, signal);
+      const cursor = parseCursor(pageParam);
+      // One read in the house (search_stacks): a public stack whose title or description holds the
+      // words, newest first, by pages; found by the words' indexes before the read rule is asked of
+      // the few found, never by asking it of every stack; never a hidden member's.
+      const { data, error } = await withAbortSignal(supabase.rpc('search_stacks', {
+        p_pattern: pattern,
+        p_cursor_at: cursor?.primary ?? null,
+        p_cursor_id: cursor?.id ?? null,
+        p_limit: SEARCH_PAGE + 1,
+      }), signal);
       if (error) {
         logger.error('[useUniversalSearch] a source failed', 'lists', error);
         throw error;
@@ -318,10 +317,11 @@ export function useUniversalSearch(query: string) {
   /** A source's first page could not be read: its tab is unknown, not empty. */
   const downOf = (s: SearchSource) => asked[s] && reads[s].isError && reads[s].data === undefined;
   const down: SourcesDown = usePerSource(downOf('films'), downOf('users'), downOf('logs'), downOf('lists'));
-  // Every source asked has answered its first page, or failed it; one not asked (nothing it could
-  // search) is settled too.
-  const settled = (!asked.films || !catalogue.isPending) && (!asked.users || !members.isPending)
-    && (!asked.logs || !logs.isPending) && (!asked.lists || !lists.isPending);
+  // Some source asked has answered its first page, or failed it: what it found is drawn now, and each
+  // other source's rows join as it answers. Held until the slowest answered, the films the catalogue
+  // found at once waited on the house's searches.
+  const noneAnswered = (!asked.films || catalogue.isPending) && (!asked.users || members.isPending)
+    && (!asked.logs || logs.isPending) && (!asked.lists || lists.isPending);
   const everyAskedDown = searchable && SEARCH_SOURCES.every((s) => !asked[s] || down[s]);
 
   const catalogueData = catalogue.data;
@@ -332,7 +332,7 @@ export function useUniversalSearch(query: string) {
   const data: SearchResults | undefined = useMemo(() => {
     if (!text) return undefined;
     if (!searchable) return EMPTY_RESULTS;
-    if (!settled || everyAskedDown) return undefined;
+    if (noneAnswered || everyAskedDown) return undefined;
     return {
       films: once(pagesOf(catalogueData).flatMap((p) => p.films)),
       actors: once(pagesOf(catalogueData).flatMap((p) => p.actors)),
@@ -343,8 +343,14 @@ export function useUniversalSearch(query: string) {
       _partial: partial,
       _down: down,
     };
-  }, [text, searchable, settled, everyAskedDown, catalogueData, membersData, logsData, listsData, partial, down]);
+  }, [text, searchable, noneAnswered, everyAskedDown, catalogueData, membersData, logsData, listsData, partial, down]);
 
+  // Per source: its first page has answered (or failed), or it was not asked. ALL draws its sections
+  // in their order, each once those above it have answered, so no row is put above one drawn.
+  const answered = usePerSource(
+    !asked.films || !catalogue.isPending, !asked.users || !members.isPending,
+    !asked.logs || !logs.isPending, !asked.lists || !lists.isPending,
+  );
   // Each kept as one object while its four flags hold, so a screen's memos do not run every render.
   const more = usePerSource(
     asked.films && !!catalogue.hasNextPage, asked.users && !!members.hasNextPage,
@@ -379,6 +385,7 @@ export function useUniversalSearch(query: string) {
     // Every source asked could not be: the screen's "the telegraph is down" is then the truthful one.
     isError: everyAskedDown,
     refetch,
+    answered,
     more,
     readingMore,
     moreFailed,

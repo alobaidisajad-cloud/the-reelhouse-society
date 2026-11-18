@@ -17,8 +17,8 @@ import { supabaseFake } from '@/test-utils/supabaseFake';
 /** Every call the house was asked, by name, with its arguments. */
 const mockAsked: { fn: string; args: Record<string, unknown> }[] = [];
 const mockHouse = supabaseFake({
-  answer: { lists: () => [] },
   rpc: {
+    search_stacks: [],
     // The house's own order, closest first: the handle itself, then one that begins with it, then one holding it.
     search_members: (args: Record<string, unknown>) => {
       mockAsked.push({ fn: 'search_members', args });
@@ -69,7 +69,7 @@ describe('the search asks for what the member typed', () => {
   // The house chooses the members now, closest first (review round 12): the phone keeps its order.
   it('"@kane" asks for the handle without its @, and the exact handle comes first', async () => {
     const { result } = await renderHook(() => useUniversalSearch('@kane'), { wrapper: Wrapper });
-    await waitFor(() => expect(result.current.data).toBeDefined());
+    await waitFor(() => expect([result.current.data !== undefined, result.current.isFetching]).toEqual([true, false]));
     const members = mockAsked.filter((a) => a.fn === 'search_members');
     expect(JSON.stringify(members)).not.toContain('@');
     const asked = members[0];
@@ -80,7 +80,7 @@ describe('the search asks for what the member typed', () => {
 
   it('a review is quoted as plain words, and not marked as cut when it is whole', async () => {
     const { result } = await renderHook(() => useUniversalSearch('vertigo'), { wrapper: Wrapper });
-    await waitFor(() => expect(result.current.data).toBeDefined());
+    await waitFor(() => expect([result.current.data !== undefined, result.current.isFetching]).toEqual([true, false]));
     const first = result.current.data.logs[0];
     expect(first).toBeDefined();
     expect(first.extra).toBe('"Tom & Jerry"');
@@ -117,7 +117,8 @@ describe('a row says what it is', () => {
 describe('the search room', () => {
   /** Each source read to its end: no next page, none being read, none failed (review round 12). */
   const none = { films: false, users: false, logs: false, lists: false };
-  const paging = { more: none, readingMore: none, moreFailed: none, loadMore: jest.fn() };
+  const every = { films: true, users: true, logs: true, lists: true };
+  const paging = { answered: every, more: none, readingMore: none, moreFailed: none, loadMore: jest.fn() };
   const answer = (over: Record<string, unknown> = {}) => ({
     data: {
       films: [], actors: [], directors: [], logs: [], lists: [],
@@ -134,6 +135,26 @@ describe('the search room', () => {
     await fireEvent.changeText(r.getByLabelText('Search the archives'), 'kane');
     return r;
   }
+
+  // Round 13: each source is drawn as it answers. On ALL a slower catalogue put its films above the
+  // members already drawn, and a tap meant for "@kane" opened a film. Now ALL draws its sections in
+  // order, each once those above it answered; each source's own tab draws at once.
+  it('on ALL, the members found wait for the films above them; the PEOPLE tab shows them at once', async () => {
+    mockSearchResult.mockReturnValue({ ...answer(), answered: { ...every, films: false }, isFetching: true });
+    const r = await open();
+    await waitFor(() => expect(r.getAllByText('SCANNING ARCHIVES…').length).toBeGreaterThan(0));
+    expect(r.queryByText('@kane')).toBeNull();
+    await fireEvent.press(r.getByRole('tab', { name: 'People' }));
+    expect(r.getByText('@kane')).toBeTruthy();
+
+    // The catalogue answers: on ALL the films come first, the members below them.
+    const film = { id: 'film-1398', type: 'film', title: 'Stalker', subtitle: '1979', image: null, _nav: '/film/1398' };
+    mockSearchResult.mockReturnValue(answer({ films: [film] }));
+    await fireEvent.press(r.getByRole('tab', { name: /^All/ }));
+    await waitFor(() => expect(r.getByRole('tab', { name: 'All, 2 results' })).toBeTruthy());
+    const shown = r.getAllByText(/^(Stalker|@kane)$/).map((n) => n.props.children);
+    expect(shown).toEqual(['Stalker', '@kane']);
+  });
 
   it('opens ready to be typed into: the keys are up at once (review round 4)', async () => {
     mockSearchResult.mockReturnValue(answer());

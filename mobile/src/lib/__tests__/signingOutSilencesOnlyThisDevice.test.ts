@@ -25,9 +25,16 @@ let mockDeletes: [string, unknown][][] = [];
 let mockAnswer: { data: unknown; error: unknown } = { data: [], error: null };
 jest.mock('expo-device', () => ({ isDevice: true }));
 let mockRegisterError: unknown = null;
+/** Each token forgotten by the token itself (forget_push_token), and what the house answers it. */
+let mockForgets: unknown[] = [];
+let mockForgetError: unknown = null;
 jest.mock('../supabase', () => ({
   supabase: {
-    rpc: async () => ({ data: null, error: mockRegisterError }),
+    rpc: async (fn: string, args: unknown) => {
+      if (fn !== 'forget_push_token') return { data: null, error: mockRegisterError };
+      mockForgets.push(args);
+      return { data: mockForgetError ? null : true, error: mockForgetError };
+    },
     auth: { getSession: async () => ({ data: { session: { user: { id: 'member-1' } } } }) },
     from: () => ({
       delete: () => {
@@ -48,12 +55,16 @@ beforeEach(() => {
   mockStore.clear();
   mockDeletes = [];
   mockAnswer = { data: [], error: null };
+  mockForgets = [];
+  mockForgetError = null;
 });
 
 it('removes this device\'s own token, and nothing of the member\'s other devices', async () => {
   mockStore.set(PUSH_TOKEN_KEY, 'ExponentPushToken[this-ipad]');
   await expect(removePushToken('member-1')).resolves.toBe(true);
-  expect(mockDeletes).toEqual([[['user_id', 'member-1'], ['token', 'ExponentPushToken[this-ipad]']]]);
+  // By the token itself, named with its member (round 13: no session needed); no row of the platform.
+  expect(mockForgets).toEqual([{ p_token: 'ExponentPushToken[this-ipad]', p_user: 'member-1' }]);
+  expect(mockDeletes).toEqual([]);
   // Forgotten once gone: the next member on this device registers their own.
   expect(mockStore.has(PUSH_TOKEN_KEY)).toBe(false);
 });
@@ -65,7 +76,7 @@ it('an install that never remembered its token still clears the platform — pri
 
 it('a refused removal is reported, and the token is kept to try again', async () => {
   mockStore.set(PUSH_TOKEN_KEY, 'ExponentPushToken[this-ipad]');
-  mockAnswer = { data: null, error: { message: 'permission denied' } };
+  mockForgetError = { message: 'permission denied' };
   await expect(removePushToken('member-1')).resolves.toBe(false);
   expect(mockStore.get(PUSH_TOKEN_KEY)).toBe('ExponentPushToken[this-ipad]');
 });

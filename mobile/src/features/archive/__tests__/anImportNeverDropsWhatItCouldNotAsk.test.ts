@@ -11,7 +11,7 @@
 import { resolveFilmsBatch, CATALOGUE_AWAY } from '../archiveImport';
 
 jest.mock('@/src/lib/supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
-jest.mock('@/src/lib/tmdb', () => ({ tmdb: { search: jest.fn() } }));
+jest.mock('@/src/lib/tmdb', () => ({ tmdb: { findFilm: jest.fn() } }));
 jest.mock('@/src/stores/auth', () => ({ useAuthStore: { getState: jest.fn(() => ({ user: null })) } }));
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'test-uuid') }));
 jest.mock('expo-file-system/legacy', () => ({ getInfoAsync: jest.fn(), readAsStringAsync: jest.fn(), EncodingType: {} }));
@@ -21,10 +21,10 @@ const away = () => Promise.reject(Object.assign(new Error('offline'), { name: 'T
 const found = (id: number, title: string, year: string) =>
   Promise.resolve({ results: [{ id, title, media_type: 'movie', release_date: `${year}-01-01` }], searchType: 'exact' });
 
-beforeEach(() => mockTmdb.search.mockReset());
+beforeEach(() => mockTmdb.findFilm.mockReset());
 
 it('stops, and says so, when the catalogue cannot be asked — it never calls a film unmatched for it', async () => {
-  mockTmdb.search
+  mockTmdb.findFilm
     .mockImplementationOnce(() => found(1, 'Sunrise', '1927'))
     .mockImplementation(away);
   await expect(resolveFilmsBatch([
@@ -33,11 +33,11 @@ it('stops, and says so, when the catalogue cannot be asked — it never calls a 
     { title: 'Nosferatu', year: '1922' },
   ])).rejects.toThrow(CATALOGUE_AWAY);
   // It stopped at the first it could not ask, rather than asking the rest into the void.
-  expect(mockTmdb.search).toHaveBeenCalledTimes(2);
+  expect(mockTmdb.findFilm).toHaveBeenCalledTimes(2);
 });
 
 it('a film the catalogue answered for with nothing is unmatched, and the import goes on', async () => {
-  mockTmdb.search
+  mockTmdb.findFilm
     .mockImplementationOnce(() => Promise.resolve({ results: [], searchType: 'failed' }))
     .mockImplementationOnce(() => Promise.resolve({ results: [], searchType: 'failed' }))
     .mockImplementationOnce(() => found(3, 'Metropolis', '1927'));

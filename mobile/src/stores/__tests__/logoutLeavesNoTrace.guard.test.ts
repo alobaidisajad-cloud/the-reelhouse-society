@@ -334,24 +334,84 @@ describe('#64 · every per-member cache on disk is erased', () => {
     expect(authSrc).toMatch(/clearRequestedHandle\(\)/);
   });
 
-  it('and DELETING an account takes the whole install with it', () => {
+  it('and DELETING an account takes everything of the closed member and the install\'s own, and only another member\'s kept work stays', () => {
     /**
      * A third way a session ends, and the one where leaving anything behind is
      * least defensible: somebody asked to be erased.
      *
-     * It already does the strongest possible thing — `storage.clearAll()` after
-     * the logout, so every key this install ever wrote goes, including drafts
-     * and any key invented later. Pinned because it is the kind of line that
-     * looks removable to somebody tidying up, and because "logout already
-     * cleared it" is only true of the keys logout knows about.
+     * It did `storage.clearAll()` after the logout, so every key this install
+     * ever wrote went, including drafts and any key invented later. On a shared
+     * phone that also erased ANOTHER member's work the phone was keeping for
+     * their return (writes set aside when their session ended elsewhere, their
+     * drafts), unsent and unsaid (review round 13). The erasure is now
+     * eraseAllButOthers(closed): every key goes except one of the forms that
+     * name a member (MEMBER_KEY_HEADS) naming a member who is NOT the closed
+     * one, and the dead letter, which logout has already emptied of theirs.
+     *
+     * So the strength is kept, and proved by running it rather than by a line:
+     * every key of the closed member goes, whatever its form; every key of the
+     * install's own goes; a key invented later goes too, for both members (no
+     * form names it, so nothing keeps it); and only another member's key, in a
+     * form the erasure knows, stays.
      */
     const settings = readCode('src/features/settings/SettingsScreen.tsx');
+    const deletion = settings.slice(settings.indexOf('const completeAccountDeletion'), settings.indexOf('const executePendingOtpAction'));
+    // Whose account closed is read BEFORE the logout clears it, and the erasure is told so.
+    expect(deletion).toMatch(/const closed = useAuthStore\.getState\(\)\.user\?\.id \?\? null;/);
+    expect(deletion).toMatch(/eraseAllButOthers\(closed\)/);
+    // After the logout, not instead of it: the server-side request and the store
+    // teardown (and logout's own sweep of the member's queue and drafts) happen first.
+    expect(deletion.indexOf('closed = ')).toBeLessThan(deletion.indexOf('logout()'));
+    expect(deletion.indexOf('logout()')).toBeLessThan(deletion.indexOf('eraseAllButOthers(closed)'));
+    expect(deletion).not.toMatch(/storage\.clearAll\(\)/);
 
-    const deletion = settings.slice(settings.indexOf('completeAccountDeletion'));
-    expect(deletion).toMatch(/storage\.clearAll\(\)/);
-    // After the logout, not instead of it: the server-side request and the
-    // store teardown both have to happen first.
-    expect(deletion.indexOf('logout()')).toBeLessThan(deletion.indexOf('storage.clearAll()'));
+    // Run over a phone holding every key form there is, for the closed member and for another.
+    const { eraseAllButOthers, MEMBER_KEY_HEADS } = require('@/src/utils/othersKeptHere') as typeof import('@/src/utils/othersKeptHere');
+    const { DEAD_LETTER_KEY, QUEUE_KEY } = require('@/src/utils/queueOwnership') as typeof import('@/src/utils/queueOwnership');
+    const CLOSED = '11111111-1111-4111-8111-111111111111';
+    const OTHER = '22222222-2222-4222-8222-222222222222';
+    const mine = MEMBER_KEY_HEADS.map((h) => `${h}${CLOSED}`);
+    const theirs = MEMBER_KEY_HEADS.map((h) => `${h}${OTHER}`);
+    const installs = ['last_user_id', 'REELHOUSE_QUERY_CACHE', 'import_receipt_last', 'review_prompt_count', 'reelhouse_has_launched', 'push_token_this_device'];
+    const invented = [`a_key_made_tomorrow_${CLOSED}`, `a_key_made_tomorrow_${OTHER}`];
+    const disk = [...mine, ...theirs, ...installs, ...invented, DEAD_LETTER_KEY, QUEUE_KEY, `reelhouse_draft_${CLOSED}_critique_33333333-3333-4333-8333-333333333333`];
+    // The two lists every member's writes share, each holding one write of each member's: as if
+    // logout's own sweep of them had failed, which the erasure must not lean on.
+    const write = (id: string, owner: string) => ({ id, owner, type: 'add_comment', payload: {}, createdAt: 0 });
+    const lists: Record<string, string> = {
+      [DEAD_LETTER_KEY]: JSON.stringify([write('d-closed', CLOSED), write('d-other', OTHER)]),
+      [QUEUE_KEY]: JSON.stringify([write('q-closed', CLOSED), write('q-other', OTHER)]),
+    };
+    const storage = (jest.requireMock('../mmkv-storage') as { storage: { getAllKeys: jest.Mock; getString: jest.Mock; set: jest.Mock } }).storage;
+    storage.getAllKeys.mockReturnValueOnce(disk);
+    storage.getString.mockImplementation((k: string) => lists[k]);
+    storage.set.mockImplementation((k: string, v: string) => { lists[k] = v; });
+    deleted.length = 0;
+    try {
+      eraseAllButOthers(CLOSED);
+    } finally {
+      storage.getString.mockReset();
+      storage.set.mockReset();
+    }
+
+    expect(MEMBER_KEY_HEADS.length).toBeGreaterThanOrEqual(10);
+    // Every per-member key the app writes at a call site is of a form the erasure knows (swept, as the
+    // first case here sweeps; the keys built by a helper are aClosedAccountLeavesOthersWorkOnThePhone's).
+    const all = universe('appCode').map((f) => fs.readFileSync(f, 'utf8')).join('\n');
+    const heads = new Set<string>();
+    for (const m of all.matchAll(/(?:storage\.set|setSensitive)\(\s*`([A-Za-z][\w-]*_)\$\{/g)) heads.add(m[1] ?? '');
+    expect(heads.size).toBeGreaterThanOrEqual(4);
+    expect([...heads].filter((h) => !MEMBER_KEY_HEADS.includes(h))).toEqual([]);
+    const stayed = disk.filter((k) => !deleted.includes(k));
+    // Only another member's keys of the forms the erasure knows, and the two shared lists...
+    expect(stayed.sort()).toEqual([...theirs, DEAD_LETTER_KEY, QUEUE_KEY].sort());
+    // ...holding another member's writes alone: the closed member's failed words and queued writes go.
+    const ids = (k: string) => (JSON.parse(lists[k] ?? '[]') as { id: string }[]).map((m) => m.id);
+    expect([ids(DEAD_LETTER_KEY), ids(QUEUE_KEY)]).toEqual([['d-other'], ['q-other']]);
+    // Nothing of the closed member's, in any form, stays; nor the install's own, nor a key invented later.
+    for (const k of [...mine, ...installs, ...invented, `reelhouse_draft_${CLOSED}_critique_33333333-3333-4333-8333-333333333333`]) {
+      expect([k, deleted.includes(k)]).toEqual([k, true]);
+    }
   });
 });
 

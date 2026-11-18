@@ -39,8 +39,8 @@ const mockHouse = supabaseFake({
   rows: { profiles: MEMBERS },
   // The phone's own reads of the logs and members, as the search made them before this round,
   // answered with the same records.
-  answer: { logs: () => LOGS, profiles: () => [], lists: () => [] },
-  rpc: { search_logs: FOUND, search_members: [] },
+  answer: { logs: () => LOGS, profiles: () => [] },
+  rpc: { search_logs: FOUND, search_members: [], search_stacks: [] },
 });
 jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));
 const mockAuth = { user: { id: '11111111-1111-4111-8111-111111111111', username: 'kane' } };
@@ -67,7 +67,7 @@ beforeEach(() => { mockTmdb.search.mockReset().mockResolvedValue({ results: [] }
 
 async function searched(words: string): Promise<SR[]> {
   const { result } = await renderHook(() => useUniversalSearch(words), { wrapper: Wrapper });
-  await waitFor(() => expect(result.current.data).toBeDefined());
+  await waitFor(() => expect([result.current.data !== undefined, result.current.isFetching]).toEqual([true, false]));
   return result.current.data?.logs ?? [];
 }
 

@@ -13,7 +13,7 @@ import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { testQueryClient } from '@/test-utils/testQueryClient';
-import { supabaseFake, type Ask } from '@/test-utils/supabaseFake';
+import { supabaseFake } from '@/test-utils/supabaseFake';
 
 /** A uuid of its own for each row: the n-th of a kind. */
 const uuid = (kind: number, n: number) => `${String(kind).repeat(8)}-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -27,7 +27,7 @@ const record = (n: number) => ({
 });
 const member = (n: number, closeness: number) => ({ id: uuid(4, n), username: `sam${n}`, avatar_url: null, role: 'cinephile', closeness });
 const stack = (n: number) => ({
-  id: uuid(5, n), user_id: uuid(2, n), title: `Kubrick stack ${n}`, description: 'kubrick', is_private: false, is_ranked: false, created_at: at(n),
+  id: uuid(5, n), user_id: uuid(2, n), title: `Kubrick stack ${n}`, description: 'kubrick', is_ranked: false, created_at: at(n),
 });
 
 /** Every call the house was asked to answer, in order. */
@@ -38,17 +38,13 @@ const FIRST_MEMBERS = Array.from({ length: 21 }, (_, i) => member(i + 1, i === 0
 const NEXT_MEMBERS = [member(22, 3), member(23, 3)];
 const FIRST_STACKS = Array.from({ length: 21 }, (_, i) => stack(i + 1));
 const NEXT_STACKS = [stack(22)];
-/** The stacks each read asked for, as the phone wrote its filters. */
-const mockListsAsked: Ask[] = [];
 
 const mockHouse = supabaseFake({
-  answer: {
-    lists: (ask) => {
-      mockListsAsked.push(ask);
-      return (ask.ors ?? []).length > 1 ? NEXT_STACKS : FIRST_STACKS;
-    },
-  },
   rpc: {
+    search_stacks: (args: Record<string, unknown>) => {
+      mockAsked.push({ fn: 'search_stacks', args });
+      return args.p_cursor_at ? NEXT_STACKS : FIRST_STACKS;
+    },
     search_logs: (args: Record<string, unknown>) => {
       mockAsked.push({ fn: 'search_logs', args });
       return args.p_cursor_at ? NEXT_RECORDS : FIRST_RECORDS;
@@ -75,7 +71,6 @@ const film = (id: number) => ({ id, media_type: 'movie', title: `Film ${id}`, re
 
 beforeEach(() => {
   mockAsked.length = 0;
-  mockListsAsked.length = 0;
   mockTmdb.search.mockReset().mockImplementation(async (_words: string, page = 1) => (
     page === 1
       ? { results: [film(1), film(2)], page: 1, total_pages: 2 }
@@ -85,7 +80,8 @@ beforeEach(() => {
 
 async function search(words: string) {
   const r = await renderHook(() => useUniversalSearch(words), { wrapper: Wrapper });
-  await waitFor(() => expect(r.result.current.data).toBeDefined());
+  // Every source's first page answered: each is drawn as it answers.
+  await waitFor(() => expect([r.result.current.data !== undefined, r.result.current.isFetching]).toEqual([true, false]));
   return r;
 }
 
@@ -115,10 +111,9 @@ describe('each source is read past its first page', () => {
     await waitFor(() => expect(result.current.data?.lists).toHaveLength(21));
     const twentieth = FIRST_STACKS[19];
     expect(twentieth).toBeDefined();
-    const asked = mockListsAsked[1];
-    expect(asked).toBeDefined();
-    expect(asked!.ors?.[1]).toContain(`created_at.lt."${twentieth!.created_at}"`);
-    expect(asked!.ors?.[1]).toContain(`id.lt."${twentieth!.id}"`);
+    const next = mockAsked.filter((a) => a.fn === 'search_stacks')[1];
+    expect(next).toBeDefined();
+    expect(next!.args).toMatchObject({ p_pattern: 'kubrick', p_cursor_at: twentieth!.created_at, p_cursor_id: twentieth!.id, p_limit: 21 });
     expect(result.current.more.lists).toBe(false);
   });
 

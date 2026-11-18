@@ -11,6 +11,7 @@ import { tally } from './profileComputed';
 import { EDGE_LIT } from '@/src/theme/light';
 import { counted } from '@/src/utils/counted';
 import { Arrive } from '@/src/components/Arrive';
+import { TryAgainLine } from '@/src/components/TryAgain';
 
 /**
  * THE PROJECTOR ROOM — the member's standing on the one ladder (the ring and the
@@ -113,7 +114,7 @@ function StatDial({ count, color, progress, isHighest }: { count: number; color:
     );
 }
 
-export function ProjectorRoom({ stats, user, isSelf = false, record, streak }: {
+export function ProjectorRoom({ stats, user, isSelf = false, record, streak, recordUnread = false, onRetry }: {
     stats?: CinephileStats;
     user?: ProjectorUser;
     /** Your own file: the share calls the standing yours. */
@@ -126,6 +127,13 @@ export function ProjectorRoom({ stats, user, isSelf = false, record, streak }: {
      * fallback exists precisely for the case where `record` is null.
      */
     streak?: number | null;
+    /**
+     * The house's summary could not be read: the run and the record below the standing are
+     * unknown. Said, with TRY AGAIN (onRetry), never drawn as a file with no run or record.
+     */
+    recordUnread?: boolean;
+    /** Asks the summary again; its promise lets TRY AGAIN say it is asking. */
+    onRetry?: () => Promise<unknown> | void;
 }) {
     if (!stats) return null;
 
@@ -216,6 +224,15 @@ export function ProjectorRoom({ stats, user, isSelf = false, record, streak }: {
                         </>
                     )}
 
+                    {/* The summary could not be read: said where the run and the record
+                        would be, and asked again. */}
+                    {recordUnread && (
+                        <View style={s.unread}>
+                            <Text {...scaledTextProps} style={s.unreadNote}>THE RECORD COULD NOT BE READ</Text>
+                            {onRetry && <TryAgainLine onPress={onRetry} what="read the record" />}
+                        </View>
+                    )}
+
                     {/* THE RECORD — from the server's summary, read on every
                         profile load. */}
                     {hasRecord && (
@@ -295,6 +312,8 @@ const s = StyleSheet.create({
     progressFill: { height: '100%', borderRadius: 2 },
     trackNote: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog, marginTop: 9 },
 
+    unread: { alignItems: 'center', gap: 6, marginTop: 18 },
+    unreadNote: { fontFamily: fonts.sub, fontSize: type.meta, letterSpacing: 2, color: colors.fog, textAlign: 'center' },
     record: { flexDirection: 'row', alignSelf: 'stretch', marginTop: 20, paddingTop: 18, borderTopWidth: 1, borderTopColor: 'rgba(232,223,208,0.08)' },
     recordCell: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
     recordDivided: { borderLeftWidth: 1, borderLeftColor: 'rgba(232,223,208,0.08)' },

@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * The calendar tab skipped its own read whenever the Projector had loaded first,
  * to reuse those logs. But the Projector reads NOTHING for another member below
- * the Auteur rank (fetchAnalyticsLogs returns [] for them), so the calendar was
+ * the Auteur rank (it read none of their records), so the calendar was
  * left drawing the first page of that member's logs as if it were their year.
  *
  * While the calendar was locked below the Archivist rank that path was narrow.
@@ -22,7 +22,6 @@ jest.mock('@/src/services/ProfileDataService', () => ({
     fetchCounts: jest.fn(),
     fetchAnalyticsSummary: jest.fn(),
     fetchOtherUserLogs: jest.fn(),
-    fetchAnalyticsLogs: jest.fn(),
     fetchProfileAnalytics: jest.fn(),
     fetchTasteProfile: jest.fn(),
     fetchHighestRated: jest.fn(),
@@ -61,7 +60,6 @@ beforeEach(() => {
   svc.fetchCounts.mockResolvedValue({});
   svc.fetchAnalyticsSummary.mockResolvedValue(null);
   svc.fetchOtherUserLogs.mockResolvedValue({ items: [], nextCursor: null });
-  svc.fetchAnalyticsLogs.mockResolvedValue([]);        // what the service really returns here
   svc.fetchProfileAnalytics.mockResolvedValue(null);
   svc.fetchTasteProfile.mockResolvedValue(null);
   svc.fetchHighestRated.mockResolvedValue([]);
@@ -80,8 +78,7 @@ describe('the Viewing Calendar reads its own year', () => {
   it('after the Projector — the order a member taps', async () => {
     const { result } = await openProfile();
     await act(async () => { await result.current.loadTabData('projector'); });
-    expect(svc.fetchAnalyticsLogs).toHaveBeenCalled();
-    expect(result.current.analyticsLogs).toEqual([]);
+    expect(svc.fetchProfileAnalytics).toHaveBeenCalled();
 
     await act(async () => { await result.current.loadTabData('calendar'); });
     expect(svc.fetchCalendarData).toHaveBeenCalledWith(expect.objectContaining({ id: CINEPHILE.id }), expect.anything());

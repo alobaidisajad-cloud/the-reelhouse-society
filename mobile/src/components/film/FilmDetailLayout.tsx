@@ -85,7 +85,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   const {
     film, reviews, reviewsFailed, reviewsReading, similarFilms, directors, cast, videos, trailer, score, providers, studios, verdict,
     existingLog, marksUnknown, rereadMarks, isAuthenticated, isArchivist, user,
-    validFilmId, loading, isError, retry, isFocused,
+    validFilmId, loading, isError, catalogueBusy, retry, isFocused,
     goBack, handleLog, handleRewatch, handleOpenTrailer,
     handleOpenShare, handleOpenLounge, handleReadFullLog, playVideo,
   } = useFilmDetailContext();
@@ -374,7 +374,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
     return (
       <View style={[s.container, s.notFoundContainer]}>
         <RoomLight room="film" />
-        <EmptyOffline onRetry={retry} wayOut={{ label: nav.canGoBack() ? 'Go back' : 'Return to the Lobby', onPress: goBack }} />
+        <EmptyOffline onRetry={retry} busy={catalogueBusy} wayOut={{ label: nav.canGoBack() ? 'Go back' : 'Return to the Lobby', onPress: goBack }} />
       </View>
     );
   }

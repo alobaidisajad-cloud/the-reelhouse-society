@@ -1,8 +1,14 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { nextRead } from './reread.js'
 
 /**
  * sync-films — reads the films nobody has read yet, and fills them in.
+ *
+ * And reads again a film read too early: one read before it settled after its
+ * release, or read with its genres, director or cast missing, is claimed again
+ * when its `reread_after` comes (reread.js decides it at each read), after every
+ * film nobody has read yet.
  *
  * ── WHY THIS EXISTS ─────────────────────────────────────────────────────────
  * TasteDNA and CinematicInsights need genres, cast and directors. None of it is
@@ -83,6 +89,8 @@ interface TmdbPerson {
 interface TmdbFilm {
   title?: string
   release_date?: string
+  /** TMDB's word on where the film stands: Rumored, Planned, In Production, Post Production, Released, Canceled. */
+  status?: string
   runtime?: number
   popularity?: number
   poster_path?: string | null
@@ -221,7 +229,11 @@ serve(async (req) => {
     const { data: claimed, error: claimError } = await db.rpc('claim_films_to_sync', { p_limit: BATCH })
     if (claimError) return json({ error: 'claim failed', detail: claimError.message }, 500)
 
-    const ids: number[] = (claimed ?? []).map((r: { id: number }) => r.id)
+    const rows = (claimed ?? []) as { id: number; sync_reads?: number | null }[]
+    const ids: number[] = rows.map((r) => r.id)
+    // How many settled reads each has had, as the claim hands them back: the next read is decided
+    // from it (reread.js). A claim from before the house counted reads hands back none: null.
+    const reads = new Map<number, number | null>(rows.map((r) => [r.id, r.sync_reads ?? null]))
     if (ids.length === 0) {
       // Not an error, and worth saying plainly: a caller that gets this knows
       // the archive is fully read rather than that something went wrong.
@@ -281,7 +293,13 @@ serve(async (req) => {
         }
 
         const movie = (await res.json()) as TmdbFilm
-        const { error } = await db.from('films').update(shape(id, movie)).eq('id', id)
+        const film = shape(id, movie)
+        let { error } = await db.from('films')
+          .update({ ...film, ...nextRead({ film, release: movie.release_date, status: movie.status, reads: reads.get(id) ?? null, now: Date.now() }) })
+          .eq('id', id)
+        // A house without the read bookkeeping's columns yet (this function deployed before its
+        // migration): the film is still filled in, as it was before them.
+        if (error?.code === 'PGRST204') ({ error } = await db.from('films').update(film).eq('id', id))
         if (error) {
           await db.from('films').update({ sync_claimed_at: null }).eq('id', id)
           return

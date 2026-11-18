@@ -1258,7 +1258,7 @@ BEGIN
     INSERT INTO rh_d2_rows VALUES ('reply to ' || w.what, v_id);
     INSERT INTO public.lounge_messages (lounge_id, user_id, content, type, metadata)
     VALUES ((SELECT pg_temp.rh_d2_row('salon')), (SELECT pg_temp.rh_d2('S')), 'rh-d2 S shares a stack', 'list_share',
-            jsonb_build_object('listId', gen_random_uuid(), 'title', 'rh-d2 a stack', 'curator', w.handle)) RETURNING id INTO v_id;
+            jsonb_build_object('listId', (SELECT pg_temp.rh_d2_row('stack'))::text, 'title', 'rh-d2 a stack', 'curator', w.handle)) RETURNING id INTO v_id;
     INSERT INTO rh_d2_rows VALUES ('card of ' || w.what, v_id);
     INSERT INTO public.dossier_comments_legacy (dossier_id, user_id, username, body)
     VALUES ((SELECT pg_temp.rh_d2_row('S old essay')), w.id, w.handle, v_mark || ' old critique');

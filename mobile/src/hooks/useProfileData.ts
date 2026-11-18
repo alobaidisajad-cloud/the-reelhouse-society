@@ -64,7 +64,6 @@ export interface ProfileState {
   mainLogs: ProfileLog[];
   archiveLogs: ProfileLog[];
   ledgerLogs: ProfileLog[];
-  analyticsLogs: ProfileLog[];
   /** The last year of viewings, by day. Null until its read has answered. */
   calendarData: CalendarDay[] | null;
   serverAnalytics: any | null;
@@ -100,6 +99,10 @@ export interface ProfileState {
    * known is not drawn at all.
    */
   analyticsShape: AnalyticsShape | null;
+  /** The house's summary of the file could not be read: its run and its record are unknown, and said so. */
+  summaryUnread: boolean;
+  /** The member's records as the house counted them on this read; null while no count has answered. */
+  recordCounted: number | null;
   activeFilters: {
     ledger?: { search?: string, rating?: LedgerRating, hasRatingOrReview?: boolean };
     watchlist?: { search?: string, sort?: ShelfSort, decade?: WatchlistDecade };
@@ -116,9 +119,9 @@ export type ProfileAction =
   | { type: 'SET_REFRESHING'; payload: boolean }
   | { type: 'SET_COUNTS'; payload: CountsRead }
   | { type: 'SET_TAB_LOADED'; tabs: Record<string, boolean> }
-  | { type: 'SET_ANALYTICS'; payload: ProfileLog[] }
   | { type: 'SET_CALENDAR_DATA'; payload: CalendarDay[] }
   | { type: 'SET_SERVER_ANALYTICS'; payload: any }
+  | { type: 'SET_SUMMARY'; shape: AnalyticsShape | null; unread: boolean }
   | { type: 'SET_HIGHEST_RATED'; payload: ProfileLog[] }
   | { type: 'SET_TASTE'; payload: TasteProfile | null }
   | { type: 'SET_LOGS_PAGE'; tab: 'main' | 'archive' | 'ledger'; items: ProfileLog[]; cursor: string | null; append?: boolean }
@@ -126,7 +129,7 @@ export type ProfileAction =
   | { type: 'SET_VAULT_PAGE'; items: ProfileVaultItem[]; cursor: string | null; append?: boolean }
   | { type: 'SET_LISTS_PAGE'; items: ProfileList[]; cursor: string | null; append?: boolean }
   | { type: 'SET_LOADING_MORE'; key: string; value: boolean }
-  | { type: 'USER_DATA_LOADED'; user: ProfileUser; counts: CountsRead; serverStreak: number | null; analyticsShape?: AnalyticsShape | null; logs?: ProfileLog[]; logsCursor?: string | null }
+  | { type: 'USER_DATA_LOADED'; user: ProfileUser; counts: CountsRead; serverStreak: number | null; analyticsShape?: AnalyticsShape | null; summaryUnread?: boolean; logs?: ProfileLog[]; logsCursor?: string | null }
   | { type: 'SET_ACTIVE_FILTERS'; tab: 'archive' | 'ledger' | 'watchlist' | 'physical' | 'lists'; filters: any }
   | { type: 'RESET_STATE' };
 
@@ -138,7 +141,6 @@ export const initialState: ProfileState = {
   mainLogs: [],
   archiveLogs: [],
   ledgerLogs: [],
-  analyticsLogs: [],
   calendarData: null,
   serverAnalytics: null,
   highestRated: [],
@@ -163,6 +165,8 @@ export const initialState: ProfileState = {
   serverStreak: null,
   taste: null,
   analyticsShape: null,
+  summaryUnread: false,
+  recordCounted: null,
   activeFilters: {
     archive: { status: 'all' },
     ledger: { search: '', rating: 'all', hasRatingOrReview: true },
@@ -208,9 +212,16 @@ export function profileReducer(state: ProfileState, action: ProfileAction): Prof
       return { ...state, counts: withCounts(state.counts, action.payload) };
     case 'SET_TAB_LOADED':
       return { ...state, tabDataLoaded: { ...state.tabDataLoaded, ...action.tabs } };
-    case 'SET_ANALYTICS': return { ...state, analyticsLogs: action.payload };
     case 'SET_CALENDAR_DATA': return { ...state, calendarData: action.payload };
     case 'SET_SERVER_ANALYTICS': return { ...state, serverAnalytics: action.payload };
+    case 'SET_SUMMARY':
+      // The summary asked again alone (retrySummary): what it answered, or still unread.
+      return {
+        ...state,
+        analyticsShape: action.shape ?? state.analyticsShape,
+        serverStreak: action.unread ? state.serverStreak : action.shape?.current_streak ?? null,
+        summaryUnread: action.unread && !(action.shape ?? state.analyticsShape),
+      };
     case 'SET_HIGHEST_RATED': return { ...state, highestRated: action.payload };
     case 'SET_TASTE': return { ...state, taste: action.payload };
     case 'SET_LOGS_PAGE': {
@@ -260,6 +271,10 @@ export function profileReducer(state: ProfileState, action: ProfileAction): Prof
         counts: withCounts(state.counts, action.counts),
         serverStreak: action.serverStreak,
         analyticsShape: action.analyticsShape ?? state.analyticsShape,
+        // Unread only while no summary is held: one read before stays drawn through a failed pull.
+        summaryUnread: !!action.summaryUnread && !(action.analyticsShape ?? state.analyticsShape),
+        // Only a count the house answered on a read: one kept from an earlier start may be short.
+        recordCounted: action.counts.logs ?? state.recordCounted,
         mainLogs: action.logs ?? state.mainLogs,
         archiveLogs: hasArchiveFilters ? state.archiveLogs : (action.logs ?? state.archiveLogs),
         ledgerLogs: hasLedgerFilters ? state.ledgerLogs : (action.logs ?? state.ledgerLogs),
@@ -347,8 +362,7 @@ export function useProfileData({
 
   // A room the member's rank does not hold is never read. Only the shelf is
   // ranked (Archivist and above); the calendar, Projector and passport are every
-  // member's (another member's full history is read only for an Auteur and
-  // above, inside fetchAnalyticsLogs).
+  // member's, each read from the house's own summaries.
   const canAccessTierTab = useCallback((tab: ProfileTab) => {
     if (!state.targetUser) return false;
     if (tab === 'physical' && !isArchivistPlusTier(state.targetUser)) return false;
@@ -399,10 +413,15 @@ export function useProfileData({
       // own rule (a sealed file's logs and summary answer a stranger nothing, and are not drawn).
       // Each is awaited below, or let go unread; none is left to reject unheard.
       const quiet = <T,>(p: Promise<T>): Promise<T> => { p.catch(() => {}); return p; };
+      // The summary, or that it could not be read: a failure is never taken for a file with no record.
+      const summaryOf = (p: Promise<AnalyticsShape | null>) => p.then(
+        (shape) => ({ shape, unread: false }),
+        () => ({ shape: null, unread: true }),
+      );
       const early = knownId ? {
         id: knownId,
         counts: quiet(ProfileDataService.fetchCountsOf(knownId, isSelf, signal)),
-        summary: quiet(ProfileDataService.fetchAnalyticsSummary({ id: knownId }, signal)),
+        summary: summaryOf(ProfileDataService.fetchAnalyticsSummary({ id: knownId }, signal)),
         logs: isSelf ? null : quiet(ProfileDataService.fetchOtherUserLogs(knownId, 50, undefined, signal, undefined)),
         selfLogs: isSelf && useLogStore.getState().logs.length === 0 ? quiet(fetchLogs()) : null,
       } : null;
@@ -447,7 +466,7 @@ export function useProfileData({
 
         const [countsResult, analyticsSummary] = await Promise.all([
           asked ? asked.counts.then((c) => shownCounts(c, typedProfile)) : ProfileDataService.fetchCounts(typedProfile, isSelf, signal),
-          asked ? asked.summary : ProfileDataService.fetchAnalyticsSummary(typedProfile, signal),
+          asked ? asked.summary : summaryOf(ProfileDataService.fetchAnalyticsSummary(typedProfile, signal)),
           (asked?.selfLogs ?? (storeHasLogs ? Promise.resolve(true) : fetchLogs())).then((logsRead) => {
             if (signal.aborted || !isMounted.current) return;
             // With nothing held to show, a logs read that failed leaves the archive
@@ -466,7 +485,7 @@ export function useProfileData({
         // These are exact. Keep them, so the NEXT cold start seeds the real totals
         // instead of counting the 150-entry window the film store persists.
         writeCachedCounts(typedProfile.id, countsResult);
-        dispatch({ type: 'USER_DATA_LOADED', user: typedProfile, counts: countsResult, serverStreak: analyticsSummary?.current_streak ?? null, analyticsShape: analyticsSummary ?? null });
+        dispatch({ type: 'USER_DATA_LOADED', user: typedProfile, counts: countsResult, serverStreak: analyticsSummary.shape?.current_streak ?? null, analyticsShape: analyticsSummary.shape, summaryUnread: analyticsSummary.unread });
 
         // Background refresh: fetch fresh logs without blocking the spinner.
         // fetchLogs() has its own _fetchingLogs mutex so this is safe.
@@ -477,7 +496,7 @@ export function useProfileData({
 
       const [countsResult, analyticsSummary, result] = await Promise.all([
         asked ? asked.counts.then((c) => shownCounts(c, typedProfile)) : ProfileDataService.fetchCounts(typedProfile, isSelf, signal),
-        asked ? asked.summary : ProfileDataService.fetchAnalyticsSummary(typedProfile, signal),
+        asked ? asked.summary : summaryOf(ProfileDataService.fetchAnalyticsSummary(typedProfile, signal)),
         // Never contaminate the root user data fetch with volatile tab filters.
         asked?.logs ?? ProfileDataService.fetchOtherUserLogs(typedProfile.id, 50, undefined, signal, undefined),
       ]);
@@ -489,8 +508,9 @@ export function useProfileData({
         type: 'USER_DATA_LOADED',
         user: typedProfile,
         counts: countsResult,
-        serverStreak: analyticsSummary?.current_streak ?? null,
-        analyticsShape: analyticsSummary ?? null,
+        serverStreak: analyticsSummary.shape?.current_streak ?? null,
+        analyticsShape: analyticsSummary.shape,
+        summaryUnread: analyticsSummary.unread,
         logs: result.items,
         logsCursor: result.nextCursor,
       });
@@ -556,8 +576,10 @@ export function useProfileData({
         }
       } else if ((tab === 'projector' || tab === 'passport') && (!state.tabDataLoaded.analytics || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { analytics: true } });
-        const [parsedAnalytics, serverAnalyticsPayload, tastePayload, highestRated] = await Promise.all([
-          ProfileDataService.fetchAnalyticsLogs(state.targetUser, isSelf, roomSignal(_roomAbortRef, 'analytics')),
+        // Three reads of the house's own summaries, side by side: the room draws after one round trip.
+        // The member's whole history is never walked for it (ten serial pages of a thousand for a long
+        // record, its rows feeding only a fallback the summary leaves unused): the run is the house's.
+        const [serverAnalyticsPayload, tastePayload, highestRated] = await Promise.all([
           ProfileDataService.fetchProfileAnalytics(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),
           // Replaces dozens of TMDB round trips from the phone with one call.
           ProfileDataService.fetchTasteProfile(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),
@@ -568,7 +590,6 @@ export function useProfileData({
         // so a lost ping costs nothing.
         ProfileDataService.pingFilmSync();
         if (!isMounted.current || uid !== targetUserIdRef.current) return;
-        dispatch({ type: 'SET_ANALYTICS', payload: parsedAnalytics });
         if (serverAnalyticsPayload) {
           dispatch({ type: 'SET_SERVER_ANALYTICS', payload: serverAnalyticsPayload });
         }
@@ -876,6 +897,25 @@ export function useProfileData({
    * is narrowed, your own logs for your archive and ledger, and otherwise the
    * room's own read.
    */
+  /**
+   * The house's summary of the file (its run and its record), asked again alone: the one read that
+   * failed, never the whole file (which would put another member's archive back at its first page).
+   * Under the file's own cancel, and landing only on the member it was asked for.
+   */
+  const retrySummary = useCallback(async (): Promise<void> => {
+    const member = state.targetUser;
+    if (!member) return;
+    const signal = _fetchAbortRef.current?.signal;
+    try {
+      const shape = await ProfileDataService.fetchAnalyticsSummary(member, signal);
+      if (!isMounted.current || member.id !== targetUserIdRef.current) return;
+      dispatch({ type: 'SET_SUMMARY', shape, unread: false });
+    } catch {
+      if (signal?.aborted || !isMounted.current || member.id !== targetUserIdRef.current) return;
+      dispatch({ type: 'SET_SUMMARY', shape: null, unread: true });
+    }
+  }, [state.targetUser]);
+
   const retryRoom = useCallback(async (tab: ProfileTab) => {
     if ((ROOMS as readonly string[]).includes(tab)) {
       const room = tab as Room;
@@ -898,7 +938,7 @@ export function useProfileData({
       dispatch({ type: 'SET_USER', payload: u });
     },
     loading: state.loading, error: state.error, refreshing: state.refreshing, setRefreshing: (v: boolean) => dispatch({ type: 'SET_REFRESHING', payload: v }),
-    mainLogs: state.mainLogs, archiveLogs: state.archiveLogs, ledgerLogs: state.ledgerLogs, analyticsLogs: state.analyticsLogs, calendarData: state.calendarData, serverAnalytics: state.serverAnalytics, highestRated: state.highestRated, serverStreak: state.serverStreak, analyticsShape: state.analyticsShape, taste: state.taste, watchlist: state.watchlist, vault: state.vault, lists: state.lists,
+    mainLogs: state.mainLogs, archiveLogs: state.archiveLogs, ledgerLogs: state.ledgerLogs, calendarData: state.calendarData, serverAnalytics: state.serverAnalytics, highestRated: state.highestRated, serverStreak: state.serverStreak, analyticsShape: state.analyticsShape, summaryUnread: state.summaryUnread, recordCounted: state.recordCounted, taste: state.taste, watchlist: state.watchlist, vault: state.vault, lists: state.lists,
     hasMoreMainLogs: state.hasMoreMainLogs, hasMoreArchiveLogs: state.hasMoreArchiveLogs, hasMoreLedgerLogs: state.hasMoreLedgerLogs, hasMoreWatchlist: state.hasMoreWatchlist, hasMoreVault: state.hasMoreVault, hasMoreLists: state.hasMoreLists,
     isLoadingMore: state.isLoadingMore,
     counts: state.counts, tabDataLoaded: state.tabDataLoaded, setTabDataLoaded: (v: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => {
@@ -907,6 +947,6 @@ export function useProfileData({
     },
     fetchUserData, loadTabData, tabFailed, tabAnswered, answeredFilters, moreFailed,
     loadMoreLogs, loadMoreWatchlist, loadMoreVault, loadMoreLists,
-    refreshTabWithFilters, retryRoom,
+    refreshTabWithFilters, retryRoom, retrySummary,
   };
 }

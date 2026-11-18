@@ -13,7 +13,7 @@ import { useProfileComputed } from '../profileComputed';
 
 const base = {
   isSelf: false, myLogs: [], myWatchlist: [], myVault: [], myLists: [],
-  mainLogs: [], archiveLogs: [], ledgerLogs: [], analyticsLogs: [], watchlist: [], vault: [], lists: [],
+  mainLogs: [], archiveLogs: [], ledgerLogs: [], watchlist: [], vault: [], lists: [],
   counts: { logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0 },
   isArchivistPlus: false, isAuteurPlus: false, targetUser: { id: 'u9' }, username: 'vesper', serverStreak: null,
   archiveSieve: 'all', archiveSearch: '', listsSearch: '', physicalSearch: '',

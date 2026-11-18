@@ -20,7 +20,9 @@ import reelToast from '../../utils/reelToast';
 import { logger } from '../../utils/logger';
 import { isNetworkError } from '../../utils/networkError';
 import { isRefusedOnPurpose, saidOfARefusal } from '../../utils/saidOfARefusal';
-import { enqueueMutation, getOfflineQueue } from '../../utils/offlineQueue';
+import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../../utils/offlineQueue';
+import { keyOf, writeOnline } from '../../utils/oneWritePerThing';
+import { atTheHousesPace, isRateLimited } from '../../utils/housePace';
 import { isLookupSafeHandle } from '../../utils/handleGuard';
 import { queryClient } from '../../lib/queryClient';
 
@@ -67,6 +69,9 @@ function pruneSocialThrottles() {
 // ── Username → Profile cache ──
 const _usernameProfileCache = new Map<string, { id: string; isPrivate: boolean; ts: number }>();
 const _USERNAME_CACHE_TTL = 10 * 60 * 1000;
+
+/** What a member is told who follows a handle the house no longer knows (renamed, or closed). */
+export const noMemberGoesBy = (handle: string) => `No member goes by @${handle} now.`;
 
 async function resolveUsernameToProfile(username: string): Promise<{ id: string; isPrivate: boolean } | null> {
   // A handle no profile could hold is never looked up (utils/handleGuard.ts).
@@ -235,7 +240,16 @@ export async function followUser(targetUsername: string, known?: { id: string; i
     const targetProfile = await resolveUsernameToProfile(targetUsername);
     // Answered after they left: the store and the saved list are the next member's now.
     if (!stillSignedIn(userId)) return false;
-    if (!targetProfile) throw new Error(`User "${targetUsername}" not found in profiles table`);
+    // No member goes by the handle now (renamed, or the account closed): an answer, not a defect. It
+    // was thrown, with the handle in its words, and the report carried another member's name away.
+    if (!targetProfile) {
+      _actedHere.delete(targetUsername);
+      store.removeFollowing(targetUsername);
+      store.removeRequested(targetUsername);
+      persistFollowingToCache(userId);
+      reelToast.error(noMemberGoesBy(targetUsername));
+      return false;
+    }
 
     const { id: targetId, isPrivate } = targetProfile;
     const interactionType = isPrivate ? 'follow_request' : 'follow';
@@ -253,13 +267,29 @@ export async function followUser(targetUsername: string, known?: { id: string; i
       persistFollowingToCache(userId);
     }
 
-    const { data: existing } = await supabase
-      .from('interactions')
-      .select('id, type')
-      .eq('user_id', userId)
-      .eq('target_user_id', targetId)
-      .in('type', ['follow', 'follow_request'])
-      .maybeSingle();
+    // Through the one door of a follow of this member (writeOnline): an unfollow or follow of them
+    // still queued, older than this, is let go once this lands (or is found already held), never
+    // sent after it (round 13). The insert goes at the house's pace (housePace.ts).
+    const { existing, filed } = await writeOnline(keyOf({ type: 'follow_user', payload: { target_username: targetUsername } }), async () => {
+      const { data: held } = await supabase
+        .from('interactions')
+        .select('id, type')
+        .eq('user_id', userId)
+        .eq('target_user_id', targetId)
+        .in('type', ['follow', 'follow_request'])
+        .maybeSingle();
+      if (held) return { existing: held, filed: null };
+      // The row is asked back: the house files a follow of a member who is private now as a request
+      // (enforce_privacy_on_follow), though the screen read them open (review round 11).
+      const made = await atTheHousesPace(async () => {
+        const { data, error } = await supabase.from('interactions').insert([{
+          user_id: userId, target_user_id: targetId, type: interactionType,
+        }]).select('type').maybeSingle();
+        if (error && !error.message?.includes('duplicate')) throw error;
+        return data;
+      });
+      return { existing: null, filed: made };
+    });
 
     // Each landing written only for the member still here: two members may follow one handle.
     if (existing) {
@@ -278,12 +308,6 @@ export async function followUser(targetUsername: string, known?: { id: string; i
       return true;
     }
 
-    // The row is asked back: the house files a follow of a member who is private now as a request
-    // (enforce_privacy_on_follow), though the screen read them open (review round 11).
-    const { data: filed, error } = await supabase.from('interactions').insert([{
-      user_id: userId, target_user_id: targetId, type: interactionType,
-    }]).select('type').maybeSingle();
-    if (error && !error.message?.includes('duplicate')) throw error;
     if (stillSignedIn(userId)) {
       const filedAs: 'following' | 'requested' = filed?.type === 'follow_request' ? 'requested'
         : filed?.type === 'follow' ? 'following'
@@ -309,11 +333,28 @@ export async function followUser(targetUsername: string, known?: { id: string; i
     // Mirrors the network check below exactly (both msg and err) so an offline
     // failure — which is queued, not lost — is never reported as a defect; nor is the house's
     // refusal for the member's standing.
-    if (!isNetworkError(msg) && !isNetworkError(err) && !isRefusedOnPurpose(err)) {
+    if (!isNetworkError(msg) && !isNetworkError(err) && !isRateLimited(err) && !isRefusedOnPurpose(err)) {
       captureError(err, { scope: 'socialSlice' });
     }
     // Neither queued nor undone for a member who has left: both would land on the next.
     if (!stillSignedIn(userId)) return false;
+    // The house asked to wait longer than the phone waits (housePace.ts): kept, and sent once the
+    // wait is over. Nothing failed, so nothing is said and the screen keeps what it shows.
+    if (isRateLimited(err)) {
+      const cached = _usernameProfileCache.get(targetUsername);
+      if (enqueueMutation({
+        type: cached?.isPrivate ? 'follow_request_user' : 'follow_user',
+        payload: { user_id: userId, target_username: targetUsername, target_user_id: cached?.id ?? null },
+      })) {
+        if (shownPrivate === null) {
+          if (cached?.isPrivate) useSocialStore.getState().addRequested(targetUsername);
+          else useSocialStore.getState().addFollowing(targetUsername);
+          persistFollowingToCache(userId);
+        }
+        void flushOfflineQueue();
+        return true;
+      }
+    }
     if (isNetworkError(msg) || isNetworkError(err)) {
       const cached = _usernameProfileCache.get(targetUsername);
       const interactionType = cached?.isPrivate ? 'follow_request' : 'follow';
@@ -384,9 +425,13 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
         payload: { user_id: userId, target_username: targetUsername },
       });
     } else {
-      const { error } = await supabase.from('interactions').delete()
-        .eq('user_id', userId).eq('target_user_id', targetProfile.id).in('type', ['follow', 'follow_request']);
-      if (error) throw error;
+      // Through the one door of a follow of this member (writeOnline): a follow of them still
+      // queued, older than this unfollow, is let go once it lands, never sent after it (round 13).
+      await writeOnline(keyOf({ type: 'unfollow_user', payload: { target_username: targetUsername } }), async () => {
+        const { error } = await supabase.from('interactions').delete()
+          .eq('user_id', userId).eq('target_user_id', targetProfile.id).in('type', ['follow', 'follow_request']);
+        if (error) throw error;
+      });
       if (stillSignedIn(userId)) _actedHere.set(targetUsername, { as: 'none', at: monotonicNow() });
     }
     refreshFollowGraphFeeds();

@@ -6,7 +6,7 @@
  */
 import { AppState } from 'react-native';
 import { focusManager, onlineManager, QueryObserver } from '@tanstack/react-query';
-import { CACHE_KEEPS, keepsQuery, mmkvPersister, queryClient } from '@/src/lib/queryClient';
+import { CACHE_KEEPS, keepsQuery, mmkvPersister, queryClient, writeHeldCache } from '@/src/lib/queryClient';
 import { QUERY_POLICY, shouldRetry } from '@/src/lib/queryPolicy';
 import { TmdbUnreachable } from '@/src/lib/tmdbErrors';
 import { storage, setSensitive } from '@/src/stores/mmkv-storage';
@@ -55,13 +55,18 @@ const client = (over: Record<string, unknown> = {}) => ({
 }) as never;
 
 beforeEach(() => jest.clearAllMocks());
+/** A cache handed to the persister and written at once, as at the end of its second. */
+const persisted = async (c: Parameters<typeof mmkvPersister.persistClient>[0]) => {
+  await mmkvPersister.persistClient(c);
+  writeHeldCache();
+};
 // The app's own client keeps a query thirty minutes after its last observer
 // goes: the queries these tests made leave with them.
 afterEach(() => queryClient.clear());
 
 describe('mmkvPersister — cache size ceiling', () => {
   it('persists an ordinary cache', async () => {
-    await mmkvPersister.persistClient(client());
+    await persisted(client());
     // The persister writes through setSensitive now — the query cache holds
     // fetched member data. Same intent: it persisted.
     expect(setSensitive).toHaveBeenCalled();
@@ -72,17 +77,17 @@ describe('mmkvPersister — cache size ceiling', () => {
     // thing this cap exists to prevent. Dropping a read that size is the right
     // trade: a slow launch is worse than a cold one.
     const huge = { timestamp: Date.now(), buster: '', clientState: { mutations: [], queries: [{ big: 'x'.repeat(3 * 1024 * 1024) }] } };
-    await mmkvPersister.persistClient(huge as never);
+    await persisted(huge as never);
     expect(setSensitive).not.toHaveBeenCalled();
     expect(storage.delete).toHaveBeenCalled();
   });
 
   it('a whale\'s 3 MB cache over a saved one leaves nothing, whole or partial, and the next start reads afresh (P4.9)', async () => {
     const disk = (storage as unknown as { __store: Map<string, string> }).__store;
-    await mmkvPersister.persistClient(client());
+    await persisted(client());
     expect(disk.has('REELHOUSE_QUERY_CACHE')).toBe(true);
     const whale = { timestamp: Date.now(), buster: '', clientState: { mutations: [], queries: [{ big: 'x'.repeat(3 * 1024 * 1024) }] } };
-    await mmkvPersister.persistClient(whale as never);
+    await persisted(whale as never);
     expect(disk.has('REELHOUSE_QUERY_CACHE')).toBe(false);
     await expect(mmkvPersister.restoreClient()).resolves.toBeUndefined();
   });
@@ -92,7 +97,7 @@ describe('mmkvPersister — cache size ceiling', () => {
     ({ queryHash: hash, queryKey: [root], state: { dataUpdatedAt: at, data: 'x'.repeat(800 * 1024) } });
 
   it('past the ceiling, keeps its newest reads that fit, each whole, and never the oldest', async () => {
-    await mmkvPersister.persistClient(client({ clientState: { mutations: [], queries: [read('first', 1), read('third', 3), read('second', 2)] } }));
+    await persisted(client({ clientState: { mutations: [], queries: [read('first', 1), read('third', 3), read('second', 2)] } }));
     const written = disk.get('REELHOUSE_QUERY_CACHE') ?? '';
     expect(Buffer.byteLength(written, 'utf8')).toBeLessThanOrEqual(2 * 1024 * 1024);
     const kept = (JSON.parse(written) as { clientState: { queries: { queryHash: string; state: { data: string } }[] } }).clientState.queries;
@@ -103,7 +108,7 @@ describe('mmkvPersister — cache size ceiling', () => {
   });
 
   it('keeps the Lobby and the Reels before films opened since, which a start does not draw first', async () => {
-    await mmkvPersister.persistClient(client({ clientState: { mutations: [], queries: [
+    await persisted(client({ clientState: { mutations: [], queries: [
       read('wall', 1, 'lobby'), read('film-a', 4, 'film'), read('reviews', 2, 'feed'), read('film-b', 5, 'film'),
     ] } }));
     const kept = (JSON.parse(disk.get('REELHOUSE_QUERY_CACHE') ?? '') as { clientState: { queries: { queryHash: string }[] } }).clientState.queries;
@@ -116,11 +121,11 @@ describe('mmkvPersister — cache size ceiling', () => {
   const frame = Buffer.byteLength(JSON.stringify(filled('')), 'utf8');
 
   it('measures the bytes it would store: a cache of exactly 2 MB is kept, one byte more is not', async () => {
-    await mmkvPersister.persistClient(filled('x'.repeat(MAX - frame)));
+    await persisted(filled('x'.repeat(MAX - frame)));
     expect(setSensitive).toHaveBeenCalledTimes(1);
 
     (setSensitive as jest.Mock).mockClear();
-    await mmkvPersister.persistClient(filled('x'.repeat(MAX - frame + 1)));
+    await persisted(filled('x'.repeat(MAX - frame + 1)));
     expect(setSensitive).not.toHaveBeenCalled();
     expect(storage.delete).toHaveBeenCalled();
   });
@@ -131,7 +136,7 @@ describe('mmkvPersister — cache size ceiling', () => {
     const fill = '観'.repeat(Math.ceil((MAX - frame + 1) / 3));
     expect(Buffer.byteLength(JSON.stringify(filled(fill)), 'utf8')).toBeGreaterThan(MAX);
     expect(JSON.stringify(filled(fill)).length * 2).toBeLessThan(MAX);
-    await mmkvPersister.persistClient(filled(fill));
+    await persisted(filled(fill));
     expect(setSensitive).not.toHaveBeenCalled();
     expect(storage.delete).toHaveBeenCalled();
   });
@@ -140,11 +145,11 @@ describe('mmkvPersister — cache size ceiling', () => {
     // 🎬 is a surrogate pair: two UTF-16 units, four bytes. As many as fit are kept;
     // one more is refused.
     const fits = Math.floor((MAX - frame) / 4);
-    await mmkvPersister.persistClient(filled('🎬'.repeat(fits)));
+    await persisted(filled('🎬'.repeat(fits)));
     expect(setSensitive).toHaveBeenCalledTimes(1);
 
     (setSensitive as jest.Mock).mockClear();
-    await mmkvPersister.persistClient(filled('🎬'.repeat(fits + 1)));
+    await persisted(filled('🎬'.repeat(fits + 1)));
     expect(setSensitive).not.toHaveBeenCalled();
   });
 });
@@ -184,7 +189,7 @@ describe('mmkvPersister — restore', () => {
 
   it('round-trips a real cache', async () => {
     const c = client({ clientState: { mutations: [], queries: [{ queryKey: ['film', 1], state: { data: 'Ozu' } }] } });
-    await mmkvPersister.persistClient(c);
+    await persisted(c);
     const back = await mmkvPersister.restoreClient();
     expect(back).toEqual(c);
   });
@@ -194,15 +199,15 @@ describe('mmkvPersister — restore', () => {
     expect(storage.delete).toHaveBeenCalled();
   });
 
-  it('writes for the speed lab each write\'s bytes and each read\'s characters, and the ms each held the thread', async () => {
+  it('writes for the speed lab each write\'s and each read\'s characters, and the ms each held the thread', async () => {
     const e2e = jest.requireActual('@/src/utils/e2eTrace');
     const traced = jest.spyOn(e2e, 'e2eTrace').mockImplementation(() => {});
     const c = client({ clientState: { mutations: [], queries: [{ queryKey: ['film', 1], state: { data: 'Ozu' } }] } });
-    await mmkvPersister.persistClient(c);
+    await persisted(c);
     await mmkvPersister.restoreClient();
     const length = JSON.stringify(c).length;
     expect(traced.mock.calls.filter(([e]) => String(e).startsWith('cache.'))).toEqual([
-      ['cache.persist', { bytes: length, ms: expect.any(Number) }],
+      ['cache.persist', { chars: length, ms: expect.any(Number) }],
       ['cache.restore', { chars: length, ms: expect.any(Number) }],
     ]);
     traced.mockRestore();
@@ -367,12 +372,14 @@ describe('a saved cache, across builds and updates', () => {
     const writer = testQueryClient();
     writer.setQueryData(['film', 1], { title: 'Sunrise' });
     await persistQueryClientSave({ queryClient: writer, persister: mmkvPersister, buster: 'ios:41:update-a' });
+    writeHeldCache();
 
     const after = testQueryClient();
     await persistQueryClientRestore({ queryClient: after, persister: mmkvPersister, buster: 'ios:42:update-b' });
     expect(after.getQueryData(['film', 1])).toBeUndefined();
 
     await persistQueryClientSave({ queryClient: writer, persister: mmkvPersister, buster: 'ios:41:update-a' });
+    writeHeldCache();
     const same = testQueryClient();
     await persistQueryClientRestore({ queryClient: same, persister: mmkvPersister, buster: 'ios:41:update-a' });
     expect(same.getQueryData(['film', 1])).toEqual({ title: 'Sunrise' });

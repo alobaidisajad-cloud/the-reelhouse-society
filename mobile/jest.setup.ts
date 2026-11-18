@@ -548,6 +548,7 @@ jest.mock('./src/lib/tmdb', () => {
       // that state rejects the call it needs.
       trending: jest.fn().mockResolvedValue({ results: [] }),
       search: jest.fn().mockResolvedValue({ results: [] }),
+      findFilm: jest.fn().mockResolvedValue({ results: [] }),
       canon: jest.fn().mockResolvedValue({ results: [] }),
       discover: jest.fn().mockResolvedValue({ results: [] }),
       detail: jest.fn().mockResolvedValue(null),
@@ -608,6 +609,8 @@ jest.mock('expo-notifications', () => ({
   // could never be mounted by a test (notificationsMockCoverage.test.ts now
   // fails if the app reaches for one the list lacks).
   setBadgeCountAsync: jest.fn().mockResolvedValue(true),
+  // A sign-out takes the member's delivered notices off the phone (clearDeliveredNotices).
+  dismissAllNotificationsAsync: jest.fn().mockResolvedValue(undefined),
   setNotificationChannelAsync: jest.fn().mockResolvedValue(null),
   getLastNotificationResponseAsync: jest.fn().mockResolvedValue(null),
   clearLastNotificationResponseAsync: jest.fn().mockResolvedValue(undefined),
@@ -754,3 +757,12 @@ console.error = (...args: any[]) => {
   noteIfMockGap(args);
   originalError(...args);
 };
+
+// React Native gives every app requestIdleCallback and cancelIdleCallback (its JS timers); its jest
+// preset does not. Here the idle comes at the callback's timeout, the latest a phone would run it,
+// on the (possibly fake) timers a test runs (the query cache's write waits for it: queryClient.ts).
+if (typeof globalThis.requestIdleCallback !== 'function') {
+  globalThis.requestIdleCallback = ((callback: IdleRequestCallback, options?: IdleRequestOptions) =>
+    setTimeout(() => callback({ didTimeout: true, timeRemaining: () => 0 }), options?.timeout ?? 1)) as unknown as typeof requestIdleCallback;
+  globalThis.cancelIdleCallback = ((handle: ReturnType<typeof setTimeout>) => clearTimeout(handle)) as unknown as typeof cancelIdleCallback;
+}

@@ -49,6 +49,7 @@ import { PersonDefining } from '@/src/components/person/PersonDefining';
 import { FilmPosterCard, FilmographyHeader, GridColumn } from '@/src/components/person/PersonFilmography';
 import { sortCanon } from '@/src/components/person/canon';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
+import { isTmdbBusy } from '@/src/lib/tmdbErrors';
 import Buster from '@/src/components/Buster';
 import reelToast from '@/src/utils/reelToast';
 
@@ -391,7 +392,7 @@ export default function PersonDetailScreen() {
       <PressableScale touch="wayOut" style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light" accessibilityLabel="Go back">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
-      <EmptyOffline onRetry={() => { void handleRefresh(); }} />
+      <EmptyOffline onRetry={() => { void handleRefresh(); }} busy={isTmdbBusy(error)} />
     </View>
   );
 

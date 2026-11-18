@@ -8,7 +8,11 @@
  * screen's check for this error must still be the real one there.
  */
 export class TmdbUnreachable extends Error {
-  constructor(readonly path: string, readonly why: string) {
+  /**
+   * `answered`: the house's proxy answered (a 5xx after its tries, or its own deadline for TMDB
+   * spent, 504): the phone's connection is fine and TMDB is the one not answering.
+   */
+  constructor(readonly path: string, readonly why: string, readonly answered: boolean = false) {
     super(`The film catalogue could not be reached (${why})`);
     this.name = 'TmdbUnreachable';
   }
@@ -16,4 +20,20 @@ export class TmdbUnreachable extends Error {
 
 export function isTmdbUnreachable(e: unknown): e is TmdbUnreachable {
   return e instanceof TmdbUnreachable || (e as { name?: unknown } | null)?.name === 'TmdbUnreachable';
+}
+
+/**
+ * The house's catalogue asked us to wait: this phone has asked TMDB more than its share for the
+ * moment (the proxy's 429). The connection is fine, so it is never TmdbUnreachable: an import
+ * waits `retryAfterMs` and goes on, and a screen asks again.
+ */
+export class TmdbBusy extends Error {
+  constructor(readonly path: string, readonly retryAfterMs: number) {
+    super(`The film catalogue asked us to wait ${Math.ceil(retryAfterMs / 1000)} s`);
+    this.name = 'TmdbBusy';
+  }
+}
+
+export function isTmdbBusy(e: unknown): e is TmdbBusy {
+  return e instanceof TmdbBusy || (e as { name?: unknown } | null)?.name === 'TmdbBusy';
 }

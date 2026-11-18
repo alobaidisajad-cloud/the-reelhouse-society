@@ -8,7 +8,7 @@
  */
 
 import { onlineManager, type DefaultOptions } from '@tanstack/react-query';
-import { isTmdbUnreachable } from './tmdbErrors';
+import { isTmdbBusy, isTmdbUnreachable } from './tmdbErrors';
 
 /**
  * One more try, once — never for a failure that another try cannot mend: the
@@ -19,12 +19,24 @@ export function shouldRetry(failures: number, error: unknown): boolean {
   return failures < 1 && onlineManager.isOnline() && !isTmdbUnreachable(error);
 }
 
+/**
+ * How long before that one more try: as long as the catalogue asked us to wait (TmdbBusy's
+ * retryAfterMs, at most ten seconds), else a short backoff.
+ */
+export function retryDelay(attempt: number, error?: unknown): number {
+  if (isTmdbBusy(error)) {
+    const asked = Number(error.retryAfterMs);
+    return Math.min(10_000, Math.max(1000, Number.isFinite(asked) ? asked : 1000));
+  }
+  return Math.min(1000 * 2 ** attempt, 8000);
+}
+
 export const QUERY_POLICY = {
   queries: {
     staleTime: 5 * 60 * 1000,        // 5 min — data is "fresh" for this window
     gcTime: 30 * 60 * 1000,           // 30 min — garbage collect unused queries
     retry: shouldRetry,
-    retryDelay: (attempt: number) => Math.min(1000 * 2 ** attempt, 8000),
+    retryDelay,
     // Asked even with no connection, so a read fails and the screen says it
     // could not reach the house. React Query's default ('online') instead
     // PAUSES the read: it is neither loading nor failed, and a page opened

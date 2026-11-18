@@ -450,7 +450,16 @@ const functions = readFunctions(SCHEMA);
 // migration makes (DROP and CREATE, its form for a new or changed call) is taken as made there. The
 // website and the edge functions go live on their own push, before any train: theirs are judged by
 // production as it is, so a call they make that only a pending migration takes is refused.
-const functionsShipped = new Map([...functions, ...readFunctions(PENDING_SQL())]);
+// By its forms: a pending migration that adds a form beside one production holds (a call with a new
+// argument, the old kept for the builds before it) leaves that one standing, and one that drops or
+// makes a form of as many arguments replaces it.
+const pendingFunctions = readFunctions(PENDING_SQL());
+const droppedArity = (name: string) => [...PENDING_SQL().matchAll(new RegExp(`DROP FUNCTION (?:IF EXISTS )?public\\.${name}\\(([^)]*)\\)`, 'g'))]
+  .map((d) => topLevel(d[1] ?? '').filter(Boolean).length);
+const functionsShipped = new Map([...functions, ...[...pendingFunctions].map(([name, made]): [string, Param[][]] => {
+  const gone = new Set([...made.map((ps) => ps.length), ...droppedArity(name)]);
+  return [name, [...(functions.get(name) ?? []).filter((ps) => !gone.has(ps.length)), ...made]];
+})]);
 // A computed field is a function too, judged as the calls are: the app's by the train's functions,
 // the website's and the edge functions' by production's.
 const computedLive = readComputedFields(SCHEMA);

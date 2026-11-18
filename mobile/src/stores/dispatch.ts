@@ -37,6 +37,7 @@ import { wasOf } from '../utils/keepWhatChangedSince';
 import { keepPage, keptPage } from '../utils/keptPages';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
+import { keyOf, writeOnline } from '../utils/oneWritePerThing';
 import reelToast from '../utils/reelToast';
 import { sanitizeInput } from '../utils/sanitizeInput';
 import { withAbortSignal } from '../utils/withAbortSignal';
@@ -1255,7 +1256,10 @@ async function writeThrough(
   startedAs: string,
 ): Promise<void> {
   try {
-    await online();
+    // Through the one door of the thing it sets (writeOnline, keyed by what the queue would carry):
+    // a certification, save or answer of it still queued, older than this act, is let go once this
+    // lands, never sent after it (round 13). A vote or an end has no key and goes as it is.
+    await writeOnline(keyOf(queued), online);
   } catch (e) {
     // After a logout the store is already clear: undoing would write the last member's
     // counts back into it (and to disk), and queueing would send the act as the next

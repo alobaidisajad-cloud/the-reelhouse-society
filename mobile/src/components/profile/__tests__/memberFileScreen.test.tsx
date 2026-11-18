@@ -42,7 +42,7 @@ const makeCtl = (over: Record<string, unknown> = {}, dataOver: Record<string, un
     targetUser: baseUser(), loading: false,
     counts: { logs: 34, ledger: 12, watchlist: 22, vault: 0, lists: 1 },
     mainLogs: [], archiveLogs: [], ledgerLogs: [], watchlist: [], vault: [], lists: [],
-    analyticsLogs: [], calendarData: [], serverAnalytics: null, highestRated: [], serverStreak: null,
+    calendarData: [], serverAnalytics: null, highestRated: [], serverStreak: null,
     setTargetUser: jest.fn(),
     hasMoreLogs: false, hasMoreWatchlist: false, hasMoreVault: false, hasMoreLists: false,
     isLoadingMore: false, loadMoreLogs: jest.fn(),

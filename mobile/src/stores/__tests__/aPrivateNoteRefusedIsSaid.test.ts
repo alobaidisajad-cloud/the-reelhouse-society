@@ -8,7 +8,7 @@
  * sheet said RECORD SEALED, and nothing told the member the note was gone. Now each of the three
  * note writes (a new record, a rewatch, an amendment) says it: the rank's door with "the record is
  * sealed; its private note was not kept", the member's standing in the house's own words, or "The
- * record is sealed, but its private note could not be kept." A lost connection says nothing: the
+ * record is sealed, but its private note could not be kept." A lost connection says the note waits: the
  * Vault keeps the note for the queue.
  */
 import { supabaseFake } from '@/test-utils/supabaseFake';
@@ -146,14 +146,24 @@ describe('a note refused for another reason', () => {
   });
 });
 
-it('a note kept for the queue when the connection is lost says nothing of the note, and is kept', async () => {
+it('a note kept for the queue when the connection is lost says it waits for the connection, and is kept', async () => {
   mockHouse = house(NETWORK);
   await fileNew();
-  expect(told()).toEqual([]);
+  // The record landed; its note did not: said, never sealed whole in silence (round 13).
+  expect(told()).toEqual([['plain', 'The record is sealed; its private note will be kept when the connection returns.']]);
   expect(getOfflineQueue().map((m) => m.type)).toEqual(['set_viewing_note']);
   // And beside it, a note the rank no longer covers is still said: the two are told apart.
   clearOfflineQueue(ME);
   mockHouse = house(RANK);
   await useFilmStore.getState().addLog({ filmId: 238, title: 'The Godfather', rating: 5, status: 'watched', privateNotes: NOTE });
-  expect(told().map(([kind]) => kind)).toEqual(['info']);
+  expect(told().map(([kind]) => kind)).toEqual(['plain', 'info']);
+});
+
+it('an amendment that lands with its note only queued says the note waits, never sealed whole in silence', async () => {
+  holdTheRecord();
+  mockHouse = house(NETWORK, [row]);
+  await amend();
+  expect(mockHouse.rows('logs').map((r) => r.rating)).toEqual([5]);
+  expect(told()).toEqual([['plain', 'The record is sealed; its private note will be kept when the connection returns.']]);
+  expect(getOfflineQueue().map((m) => m.type)).toEqual(['set_viewing_note']);
 });

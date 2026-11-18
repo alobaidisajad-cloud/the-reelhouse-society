@@ -20,7 +20,6 @@ const ROOT = join(__dirname, '..', '..', '..');
 /** Direct calls of the SDK outside sentry.ts, each with why. */
 const SDK_CALLS: Record<string, string> = {
   'src/hooks/useScreenReady.tsx': "the SDK's own full-display component; screens' tests replace src/lib/sentry whole",
-  'src/services/ProfileDataService.ts': 'one span by a fixed name, a row count set on it; its tests replace src/lib/sentry whole',
 };
 /** The two places a context is passed on as built: the logger (a server code alone) and sentry.ts itself. */
 const PASSES_ON = new Set(['src/utils/logger.ts', 'src/lib/sentry.ts']);

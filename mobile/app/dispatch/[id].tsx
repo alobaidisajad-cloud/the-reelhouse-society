@@ -74,6 +74,7 @@ import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
 import { useReadAgainWhenToldHere } from '@/src/hooks/useReadAgainWhenToldHere';
+import { filingShareLine, filingShareOpening, filingSpineLine } from '@/src/components/dispatch/paper/filingShared';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
@@ -325,7 +326,8 @@ function FilingReader({ id }: { id: string }) {
     }
 
     try {
-      await Share.share({ message: `${live.title || live.body}\n\nThe Dispatch — ${link}` });
+      // Its words never leave when they are marked as a spoiler (filingShareLine).
+      await Share.share({ message: `${filingShareLine(live)}\n\nThe Dispatch — ${link}` });
     } catch {
       // A share sheet the member dismissed is not an error.
     }
@@ -506,7 +508,8 @@ function FilingReader({ id }: { id: string }) {
     : (
       <CritiqueSpine
         kind={live.kind}
-        opening={live.title || live.body}
+        // The spine pinned over the page says no word the page veils: a spoiler take is named, not quoted.
+        opening={filingSpineLine(live)}
         count={live.commentCount}
         onBack={() => nav.back()}
         onTop={() => scroller.current?.scrollTo({ y: 0, animated: true })}
@@ -812,7 +815,7 @@ function FilingReader({ id }: { id: string }) {
           <ViewShot ref={cardRef} options={{ format: 'png', quality: 1 }}>
             <DossierShareCard
               title={live.title ?? ''}
-              opening={live.fullContent ?? live.body}
+              opening={filingShareOpening(live)}
               author={author}
               filed={formatDateMonthDay(live.createdAt).toUpperCase()}
               logo={Image.resolveAssetSource(HOUSE_MARK).uri}
@@ -875,7 +878,7 @@ function FilingReader({ id }: { id: string }) {
           <ShareSheet
             lounge={speaking}
             preview={<Text style={p.sharePreview} numberOfLines={2} {...scaledTextProps}>
-              {live.title || live.body}
+              {filingShareLine(live)}
             </Text>}
             onDest={(label) => {
               if (label === 'TO THE LOUNGE') { setSharing(false); if (speaking.held) setToLounge(true); else speaking.openOr(() => setToLounge(true)); }
@@ -891,7 +894,7 @@ function FilingReader({ id }: { id: string }) {
         // Every kind goes this way. "dossier" is the message type's name, kept
         // for the messages already in rooms; `dossierKind` makes a take say TAKE.
         dossierId={live.id}
-        dossierTitle={live.title || live.body}
+        dossierTitle={filingShareLine(live)}
         dossierAuthor={author?.name}
         dossierKind={live.kind}
       />

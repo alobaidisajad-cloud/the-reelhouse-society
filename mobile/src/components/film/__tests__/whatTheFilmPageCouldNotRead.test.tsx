@@ -68,8 +68,16 @@ describe('the film read', () => {
   it('keeps the film, and calls a verdict it could not read unknown, never silence', async () => {
     mockVerdict.mockRejectedValue(new Error('network'));
     const r = await read();
-    expect(r.detail).toBe(FILM);
+    expect(r.detail).toEqual(FILM);
     expect(r.verdict).toBeNull();
+  });
+
+  it('keeps the film as its page draws it, never the films like it twice (round 13)', async () => {
+    const like = { results: [{ id: 604, title: 'The Matrix Reloaded', poster_path: '/r.jpg' }] };
+    mockDetail.mockResolvedValue({ ...FILM, recommendations: like, similar: { results: [] } });
+    const r = await read();
+    expect(r.detail).toEqual(FILM);
+    expect(r.similar).toEqual([expect.objectContaining({ id: 604 })]);
   });
 
   it('keeps the failure of the critiques, beside an empty page of them', async () => {

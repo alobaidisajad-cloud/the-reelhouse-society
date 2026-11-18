@@ -14,16 +14,20 @@
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { resolveTmdbUrl } from "./paths.js"
+import { rateRule } from "./rate.js"
 
 const TMDB_API_KEY = Deno.env.get('TMDB_API_KEY') || ''
 // Where the checked path is fetched: TMDB itself, unless the settings name the sealed world's stand-in.
 const TMDB_ORIGIN = Deno.env.get('TMDB_ORIGIN') || ''
-// How long TMDB may take, its answer read: past it, the caller hears 504 and tries again.
+// How long TMDB may take, its answer read: past it, the caller hears 504, a deadline already
+// spent, which the app says at once rather than asking again.
 const TMDB_LIMIT_MS = 10_000
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    // So the website can read how long to wait after a 429.
+    'Access-Control-Expose-Headers': 'Retry-After',
 }
 
 const json = (body: unknown, status: number, extra: Record<string, string> = {}) =>
@@ -53,22 +57,9 @@ function setCache(key: string, data: unknown, status: number) {
     responseCache.set(key, { data, status, expiry: Date.now() + CACHE_TTL_MS });
 }
 
-// A best-effort per-IP throttle. In memory, so per instance rather than global,
-// but it caps the easy abuse path; the cache absorbs most legitimate load.
-const RATE_WINDOW_MS = 60_000
-const RATE_MAX = 120 // requests / IP / minute
-const _ipHits = new Map<string, { count: number; resetAt: number }>()
-function rateLimited(ip: string): boolean {
-    const now = Date.now()
-    const e = _ipHits.get(ip)
-    if (!e || now > e.resetAt) {
-        if (_ipHits.size > 5000) _ipHits.clear() // bound memory
-        _ipHits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
-        return false
-    }
-    e.count += 1
-    return e.count > RATE_MAX
-}
+// How fast each address may make this instance ask TMDB (rate.js), counted only for a question
+// the cache cannot answer.
+const admit = rateRule()
 
 /** The TMDB path the caller asked for: the POST body's `path`, or what follows /tmdb-proxy in the URL. */
 async function callerPath(req: Request): Promise<string> {
@@ -91,7 +82,6 @@ serve(async (req) => {
     }
 
     const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
-    if (rateLimited(ip)) return json({ error: 'Rate limit exceeded' }, 429)
 
     try {
         const target = resolveTmdbUrl(await callerPath(req));
@@ -101,6 +91,10 @@ serve(async (req) => {
         const cacheKey = target.toString();
         const cached = getCached(cacheKey);
         if (cached) return json(cached.data, cached.status, { 'X-Cache': 'HIT' });
+
+        // Only a question TMDB must answer is counted: the cache above costs it nothing.
+        const verdict = admit({ address: ip, now: Date.now() });
+        if (!verdict.ok) return json({ error: 'Rate limit exceeded' }, 429, { 'Retry-After': String(verdict.retryAfter) });
 
         // Moved after the check: the path is still the one paths.js allowed.
         const fetched = TMDB_ORIGIN ? new URL(target.pathname + target.search, TMDB_ORIGIN) : target;
@@ -119,7 +113,9 @@ serve(async (req) => {
             return json({ error: 'TMDB answered something unreadable' }, 502);
         }
         if (response.ok) setCache(cacheKey, data, response.status);
-        return json(data, response.status, { 'X-Cache': 'MISS' });
+        // TMDB pacing the house itself: its own word on how long to wait is passed on.
+        const tmdbWait = response.status === 429 ? response.headers.get('retry-after') : null;
+        return json(data, response.status, { 'X-Cache': 'MISS', ...(tmdbWait ? { 'Retry-After': tmdbWait } : {}) });
     } catch (err: unknown) {
         if (err instanceof DOMException && err.name === 'TimeoutError') return json({ error: 'TMDB did not answer in time' }, 504);
         // Never the error's own text: a fetch error can quote the URL, and the URL holds the key.

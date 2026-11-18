@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { removePushToken } from '../lib/pushNotifications';
-import { queryClient } from '../lib/queryClient';
+import { clearDeliveredNotices, removePushToken } from '../lib/pushNotifications';
+import { forgetCache, queryClient } from '../lib/queryClient';
 import { identifyUser, logoutRevenueCat } from '../lib/revenueCat';
 import { rememberRequestedHandle, clearRequestedHandle } from '../utils/handleNotice';
 import { clearHandleHistory } from '../utils/handleHistory';
@@ -10,7 +10,7 @@ import { captureAuthRefusal, captureError, setSentryUser } from '../lib/sentry';
 import { isNetworkError } from '../utils/networkError';
 import type { User as AuthUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { endSessionHere } from '../lib/endSession';
+import { endSessionHere, owePushToken } from '../lib/endSession';
 import { PROFILE_SELECT_COLUMNS, ProfileService } from '../services/ProfileWriteService';
 import { User } from '../types';
 import { logger } from '../utils/logger';
@@ -280,12 +280,31 @@ async function leaveBehind(previousUserId: string): Promise<void> {
     captureError(err instanceof Error ? err : new Error(String(err)), { context: 'leave_behind' });
   }
   try { queryClient.clear(); } catch { /* the next reads fill it */ }
+  // The cache on disk, with any write of it still waiting its turn (one door: forgetCache).
+  forgetCache();
   _prefTimers.forEach((t) => clearTimeout(t));
   _prefTimers.clear();
   _prefBaselines.clear();
   storage.delete(`ironvault_user_cache_${previousUserId}`);
-  storage.delete('REELHOUSE_QUERY_CACHE');
+  forgetCache();
   storage.delete('nitrate_memory_feed');
+}
+
+/**
+ * A session found gone at launch: this phone's push token forgotten (owed when the house cannot be
+ * reached) and the notices it was shown taken off it, as every sign-out does (logout, step 7).
+ */
+async function forgetThisPhoneFor(memberId: string | null): Promise<void> {
+  try {
+    if (memberId) {
+      let gone = false;
+      try { gone = await raceDeadline(removePushToken(memberId), 4000); } catch { gone = false; }
+      if (!gone) owePushToken(memberId);
+    }
+  } catch (e) {
+    logger.warn('[auth] the push token of a session found gone was not forgotten', e);
+  }
+  try { await clearDeliveredNotices(); } catch { /* the sign-out stands without it */ }
 }
 
 function keepForTheirReturn(memberId: string | null): void {
@@ -453,14 +472,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         if (hadStaleSession) {
           // Not by their own hand: what they had not yet sent waits for them.
           keepForTheirReturn(staleUserId);
+          // Their phone's token and the notices it was shown go with the session, as at any sign-out:
+          // forgotten by the token (no session needed), or owed until the network returns.
+          void forgetThisPhoneFor(staleUserId);
           try {
             const { resetAllStores } = require('./resetAllStores') as typeof import('./resetAllStores');
             await resetAllStores(staleUserId);
             if (staleUserId) storage.delete(`ironvault_user_cache_${staleUserId}`);
             storage.delete('last_user_id');
-            storage.delete('REELHOUSE_QUERY_CACHE');
             storage.delete('nitrate_memory_feed');
             queryClient.clear();
+            // After the clear: its own changes would otherwise hold a write of the cache.
+            forgetCache();
           } catch { /* best effort — the auth flag is already cleared */ }
         }
         return;
@@ -672,21 +695,25 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // 6. Clear React Query cache — prevents next user seeing stale data
     try {
       queryClient.clear();
+      // The cache on disk with it, and any write of it still waiting its turn (one door: forgetCache).
+      forgetCache();
     } catch { cleanupErrors.push('query-cache'); }
 
-    // 7. The push token, BEFORE the session goes (RLS needs it to delete).
+    // 7. The push token, forgotten by the token itself (no session needed: a session ended
+    //    elsewhere has its phone's token forgotten too), and the notices this phone was shown.
     try {
       if (previousUserId) {
-        // A surviving token keeps sending their notifications here: a failure is reported.
+        // A surviving token keeps sending their notifications here: a failure is reported, and owed.
         const removed = await raceDeadline(removePushToken(previousUserId), 4000);
         if (!removed) cleanupErrors.push('push-token');
       }
     } catch { cleanupErrors.push('push-token'); }
+    try { await clearDeliveredNotices(); } catch { /* best effort: it says its own failure */ }
 
     // 8. The session LAST among network ops, this device's only (web and other devices stay
     //    signed in). Ended on the phone even when the server cannot be reached; what the server
     //    still holds, the push token's row with it when step 7 failed, is owed (endSession).
-    if (!(await endSessionHere({ pushStillHeld: cleanupErrors.includes('push-token') }))) cleanupErrors.push('auth');
+    if (!(await endSessionHere({ pushStillHeld: cleanupErrors.includes('push-token'), memberId: previousUserId }))) cleanupErrors.push('auth');
 
     // 9. The member's caches on disk, on every platform.
     if (previousUserId) storage.delete(`ironvault_user_cache_${previousUserId}`);
@@ -702,7 +729,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // Their old handles and the one they asked for: never left on another's phone.
     clearHandleHistory();
     clearRequestedHandle();
-    storage.delete('REELHOUSE_QUERY_CACHE');
+    // Again after the network's steps: a read that answered meanwhile held a write of the cache.
+    forgetCache();
     storage.delete('nitrate_memory_feed');
 
     // 10. Clear module-level caches

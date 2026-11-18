@@ -1,5 +1,6 @@
 import { supabase } from '@/src/lib/supabase';
 import { z } from 'zod';
+import { atTheHousesPace } from '@/src/utils/housePace';
 
 /** A certification of a log or of a stack: the two a member can make. */
 export const InteractionPayloadSchema = z.object({
@@ -19,9 +20,12 @@ export const InteractionService = {
   async addEndorsement(payload: unknown) {
     const safePayload = InteractionPayloadSchema.parse(payload);
 
-    // Direct insertion for all interactions
-    const { error } = await supabase.from('interactions').insert([safePayload]);
-    if (error) throw error;
+    // Direct insertion for all interactions, at the house's pace: a moment's wait is waited
+    // (housePace.ts), a longer one thrown for the caller to keep the certification queued.
+    await atTheHousesPace(async () => {
+      const { error } = await supabase.from('interactions').insert([safePayload]);
+      if (error) throw error;
+    });
   },
 
   /**

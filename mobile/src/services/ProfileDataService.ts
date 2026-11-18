@@ -8,7 +8,6 @@
 
 import { z } from 'zod';
 import { supabase } from '../lib/supabase';
-import * as Sentry from '@sentry/react-native';
 import { logger } from '../utils/logger';
 import { withAbortSignal } from '../utils/withAbortSignal';
 import { mapLogRow, PUBLIC_LOG_COLUMNS } from '../utils/mappers';
@@ -19,7 +18,7 @@ import { sortAxis, parseCursor, keysetFilter, buildCursor, pgLiteral } from '../
 import type { AnalyticsShape } from '../hooks/useProfileData';
 import type { TasteProfile } from '../constants/taste';
 import { ProfileUserSchema, type ValidatedProfileUser } from '../schemas/profile.schema';
-import { isArchivistPlusTier, isAuteurPlusTier } from '../utils/tier';
+import { isArchivistPlusTier } from '../utils/tier';
 import { buildSearchPattern } from '../utils/searchPattern';
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -101,21 +100,6 @@ const ListRowSchema = z.object({
   updated_at: z.string().nullable().optional(),
   list_items: ListItemsField,
 }).passthrough();
-
-const AnalyticsRowSchema = z.object({
-  id: z.coerce.string(),
-  film_id: z.coerce.number(),
-  film_title: z.string(),
-  poster_path: z.string().nullable().optional(),
-  year: z.coerce.number().nullable().optional(),
-  rating: z.coerce.number().nullable().optional(),
-  status: z.string().nullable().optional(),
-  watched_date: z.string().nullable().optional(),
-  created_at: z.string(),
-  physical_media: z.string().nullable().optional(),
-  is_autopsied: z.boolean().nullable().optional(),
-  autopsy: z.any().nullable().optional(),
-});
 
 // ── Service ────────────────────────────────────────────────────────────
 
@@ -536,127 +520,21 @@ export const ProfileDataService = {
     return { items, nextCursor };
   },
 
-  /**
-   * Fetches cursor-paginated analytics logs (for projector/calendar views).
-   */
-    async fetchAnalyticsBatch(
-      targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>,
-      batchSize: number,
-      cursor: { lastDate: string | null; lastId: string | null; wasDateNull?: boolean },
-      signal?: AbortSignal
-    ) {
-
-      if (!isAuteurPlusTier(targetUser)) return [];
-
-      let query = withAbortSignal(
-        supabase.from('logs')
-          .select('id, film_id, film_title, poster_path, year, rating, status, watched_date, created_at, physical_media, is_autopsied, autopsy')
-          .eq('user_id', targetUser.id)
-          .order('watched_date', { ascending: false, nullsFirst: false })
-          .order('id', { ascending: false })
-          .limit(batchSize),
-        signal
-      );
-
-      if (cursor.lastId) {
-        const safeId = pgLiteral(String(cursor.lastId));
-        if (cursor.wasDateNull) {
-          query = query.is('watched_date', null).lt('id', cursor.lastId);
-        } else if (cursor.lastDate) {
-          const safeDate = pgLiteral(String(cursor.lastDate));
-          query = query.or(`watched_date.lt.${safeDate},and(watched_date.eq.${safeDate},id.lt.${safeId}),watched_date.is.null`);
-        }
-      }
-
-    const { data, error } = await query;
+  /** A member's analytics, summed by the database (~2KB, not every log); null if refused. */
+  async fetchAnalyticsSummary(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal): Promise<AnalyticsShape | null> {
+    const { data, error } = await withAbortSignal(
+      supabase.rpc('get_user_analytics', { p_user_id: targetUser.id }),
+      signal
+    );
+    // A read that failed throws: the file says its record could not be read, never that it has none.
     if (error) {
-      logger.warn('[ProfileDataService] analytics batch error:', error.message);
+      logger.warn('[ProfileDataService] get_user_analytics error:', error.message);
       throw error;
     }
-    return (data ?? []) as z.infer<typeof AnalyticsRowSchema>[];
-  },
-
-  /** The whole history for analytics, in batches of 1,000, validated, capped at 10,000. */
-  async fetchAnalyticsLogs(targetUser: Pick<ValidatedProfileUser, 'id' | 'tier' | 'role' | 'is_founding'>, isSelf: boolean, signal?: AbortSignal): Promise<ProfileLog[]> {
-    if (!isSelf && !isAuteurPlusTier(targetUser)) return [];
-
-    const BATCH_SIZE = 1000;
-    const MAX_ROWS = 10_000;
-    const allRows: z.infer<typeof AnalyticsRowSchema>[] = [];
-
-    // Timed on members' phones (Sentry): a long history is the slowest read a profile makes.
-    const read = await Sentry.startSpan({ name: 'profile.analytics', op: 'db.query' }, async (span) => {
-      let cursor: { lastDate: string | null; lastId: string | null; wasDateNull?: boolean } = { lastDate: null, lastId: null, wasDateNull: false };
-      let hasMore = true;
-      while (hasMore) {
-        if (signal?.aborted) return false;
-
-        const batch = await this.fetchAnalyticsBatch(targetUser, BATCH_SIZE, cursor, signal);
-        const validBatch = parseRowsSafely(AnalyticsRowSchema, batch);
-
-        // A breath for the JS thread after parsing 1,000 rows, so frames keep coming.
-        await new Promise(r => setTimeout(r, 0));
-
-        if (validBatch.length < batch.length) {
-          logger.warn('[ProfileDataService] dropped invalid analytics logs', batch.length - validBatch.length);
-        }
-        allRows.push(...validBatch);
-
-        if (batch.length < BATCH_SIZE || allRows.length >= MAX_ROWS) {
-          hasMore = false;
-        } else {
-          const lastRaw = batch[batch.length - 1];
-          cursor = {
-            lastDate: lastRaw.watched_date ?? null,
-            lastId: String(lastRaw.id),
-            wasDateNull: lastRaw.watched_date == null,
-          };
-        }
-      }
-      span.setAttribute('rows', allRows.length);
-      return true;
-    });
-    if (!read) return [];
-
-    return allRows.slice(0, MAX_ROWS).map(l => ({
-      id: String(l.id),
-      filmId: l.film_id,
-      title: l.film_title ?? '',
-      poster: l.poster_path ?? null,
-      year: l.year ?? null,
-      rating: l.rating ?? 0,
-      status: l.status ?? 'watched',
-      watchedDate: l.watched_date ?? null,
-      physicalMedia: l.physical_media ?? null,
-      createdAt: l.created_at,
-      review: null,
-      pullQuote: '',
-      altPoster: null,
-      watchedWith: null,
-      abandonedReason: null,
-      isAutopsied: l.is_autopsied ?? false,
-      autopsy: l.autopsy ?? null
-    }));
-  },
-
-  /** A member's analytics, summed by the database (~2KB, not every log); null if refused. */
-  async fetchAnalyticsSummary(targetUser: Pick<ValidatedProfileUser, 'id'>, signal?: AbortSignal) {
-    try {
-      const { data, error } = await withAbortSignal(
-        supabase.rpc('get_user_analytics', { p_user_id: targetUser.id }),
-        signal
-      );
-      if (!error && data) {
-        const shape = data as AnalyticsShape;
-        // A refusal is `{ error: 'forbidden' }`, not a throw: never data (0 films).
-        if (shape?.error) return null;
-        return shape;
-      }
-      logger.info('[ProfileDataService] get_user_analytics RPC unavailable');
-    } catch {
-      // Nothing: the caller falls back to fetchAnalyticsLogs.
-    }
-    return null;
+    const shape = (data ?? null) as AnalyticsShape | null;
+    // A refusal is `{ error: 'forbidden' }`, not a throw: never data (0 films).
+    if (!shape || shape.error) return null;
+    return shape;
   },
 
   /**

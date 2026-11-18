@@ -29,7 +29,7 @@ describe('the cold-start case that caused #86', () => {
     const queue = Array.from({ length: 42 }, (_, i) => ({ id: i + 1, title: `Film ${i + 1}`, poster: null, year: 1950 }));
     const c = (await renderHook(() => useProfileComputed({
       isSelf: true, myLogs: [], myWatchlist: queue, myVault: [], myLists: [],
-      mainLogs: [], archiveLogs: [], ledgerLogs: [], analyticsLogs: [], watchlist: [], vault: [], lists: [],
+      mainLogs: [], archiveLogs: [], ledgerLogs: [], watchlist: [], vault: [], lists: [],
       counts: { logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0 },
       isArchivistPlus: false, isAuteurPlus: false, targetUser: { id: 'me' }, username: 'tomas', serverStreak: null,
       archiveSieve: 'all', archiveSearch: '', listsSearch: '', physicalSearch: '',

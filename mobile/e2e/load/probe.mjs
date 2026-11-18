@@ -38,6 +38,9 @@ const PROPOSED_STACKS = execFileSync('psql', [DB, '-X', '-q', '-t', '-A', '-c',
 { encoding: 'utf8' }).trim() === 't';
 
 const PROBES = [
+  // The launch: every film the whale has logged and kept, in one trip (get_marks_ledger), as the phone
+  // reads it at each start.
+  { screen: 'Launch', what: 'the marks ledger, of the whale', as: WHALE, sql: 'SELECT public.get_marks_ledger()' },
   // The Lobby
   { screen: 'Lobby', what: 'the day\'s wall (get_lobby)', as: MEMBER, sql: 'SELECT public.get_lobby()' },
   // The Reel
@@ -76,6 +79,14 @@ const PROBES = [
   { screen: 'Film', what: 'the house\'s logs of the hot film, first page', as: MEMBER,
     sql: 'SELECT id, user_id, rating, review, created_at FROM public.logs WHERE film_id = 1 ORDER BY created_at DESC LIMIT 20' },
   { screen: 'Film', what: 'the house verdict of the hot film', as: MEMBER, sql: 'SELECT avg_rating, rating_count, log_count FROM public.films WHERE id = 1' },
+  // A film's written critiques, as its page (ten) and its Log Archive (twenty) read them: for the hot film
+  // (a third of its 47,000 logs reviewed) and for a film like most (some 50 critiques among its 170 logs).
+  ...[[1, 'the hot film'], [4251, 'a film like most']].flatMap(([film, which]) => [
+    { screen: 'Film', what: `the critiques of ${which}, first page`, as: MEMBER,
+      sql: `SELECT l.id, l.rating, l.review, l.created_at, p.username FROM public.logs l LEFT JOIN public.profiles p ON p.id = l.user_id WHERE l.film_id = ${film} AND l.review IS NOT NULL AND l.review <> '' ORDER BY l.created_at DESC, l.id DESC LIMIT 10` },
+    { screen: 'Film', what: `the Log Archive of ${which}, first page`, as: MEMBER,
+      sql: `SELECT id, rating, review, created_at FROM public.logs WHERE film_id = ${film} AND review IS NOT NULL AND review <> '' ORDER BY created_at DESC, id DESC LIMIT 20` },
+  ]),
   // The Dispatch
   { screen: 'Dispatch', what: 'the door (dispatch_door)', as: MEMBER, sql: 'SELECT public.dispatch_door()' },
   { screen: 'Dispatch', what: 'a member\'s room totals', as: MEMBER, sql: `SELECT public.dispatch_room_totals('${CELEBRITY}')` },
@@ -118,9 +129,17 @@ const PROBES = [
     sql: `SELECT id, type, message, is_read, created_at FROM public.notifications WHERE user_id = '${CELEBRITY}' ORDER BY created_at DESC, id DESC LIMIT 30` },
   { screen: 'Notices', what: 'the celebrity\'s unread count', as: CELEBRITY,
     sql: `SELECT count(*) FROM public.notifications WHERE user_id = '${CELEBRITY}' AND is_read = false` },
-  // Search
-  { screen: 'Search', what: 'members by handle', as: MEMBER,
-    sql: "SELECT id, username FROM public.profiles WHERE username ILIKE '%m123%' AND NOT coalesce(is_banned, false) ORDER BY followers_count DESC NULLS LAST LIMIT 20" },
+  // Search: the house-wide search's three house sources, as the phone asks each (a page of 21), for a
+  // word few hold and for one many hold. A word in no review or stack ("tarkovsky") is the rare word's
+  // worst case: every reader of the trigram indexes, none of the walk.
+  { screen: 'Search', what: 'members, a handle few share (search_members)', as: MEMBER, sql: "SELECT * FROM public.search_members('m54321', false, NULL, NULL, 21)" },
+  { screen: 'Search', what: 'members, a handle many share (search_members)', as: MEMBER, sql: "SELECT * FROM public.search_members('m1', false, NULL, NULL, 21)" },
+  { screen: 'Search', what: 'records, a word none holds (search_logs)', as: MEMBER, sql: "SELECT * FROM public.search_logs('tarkovsky', 'tarkovsky', NULL, NULL, 21)" },
+  { screen: 'Search', what: 'records, a word many hold (search_logs)', as: MEMBER, sql: "SELECT * FROM public.search_logs('considered', 'considered', NULL, NULL, 21)" },
+  { screen: 'Search', what: 'stacks, a word none holds (search_stacks)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('tarkovsky', NULL, NULL, 21)" },
+  { screen: 'Search', what: 'stacks, one member\'s (search_stacks)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('stack 2001-', NULL, NULL, 21)" },
+  { screen: 'Search', what: 'stacks, a word every stack holds (search_stacks)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('stack', NULL, NULL, 21)" },
+  { screen: 'Search', what: 'stacks, two letters (search_stacks, walked)', as: MEMBER, sql: "SELECT * FROM public.search_stacks('m1', NULL, NULL, 21)" },
 ];
 
 /** An annotation holds one message; GitHub encodes its line breaks as %0A. */

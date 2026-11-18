@@ -17,6 +17,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { truncateReview } from '@/src/utils/text';
 import { HOUSE_WEB } from '@/src/constants/support';
 import { stripHtml } from '@/src/utils/html';
+import { SPOILERS_LEADER, sharedWords } from '@/src/utils/sharedWords';
 import {
   NitrateFileCard,
   NITRATE_CARD_WIDTH,
@@ -47,6 +48,8 @@ interface ShareLog {
   altPoster?: string;
   abandonedReason?: string | null;
   pullQuote?: string | null;
+  /** The review is marked as a spoiler: its words never leave, on the file or in the text. */
+  isSpoiler?: boolean | null;
 }
 
 /** The card's own frame around its preview (padding, header, gaps, button), as last measured; a guess until then. */
@@ -113,7 +116,10 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
       } else {
         const deepLink = `${HOUSE_WEB}/film/${film.id}`;
         const ratingText = log && log.rating > 0 ? ` • ${log.rating}/5 reels` : '';
-        const reviewLine = log?.review ? `\n\n"${truncateReview(stripHtml(log.review))}"` : '';
+        // A review marked as a spoiler never leaves: the line says only that there are spoilers.
+        const words = sharedWords(log?.review, log?.isSpoiler);
+        const reviewLine = words ? `\n\n"${truncateReview(stripHtml(words))}"`
+          : log?.isSpoiler && log.review?.trim() ? `\n\n${SPOILERS_LEADER}` : '';
         await Share.share({
           message: `${film.title}${ratingText}${reviewLine}\n\n• view on ReelHouse: ${deepLink}`.trim(),
         });
@@ -165,6 +171,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
                       rating: log?.rating ?? 0,
                       review: log?.review,
                       pullQuote: log?.pullQuote,
+                      isSpoiler: log?.isSpoiler,
                       status: log?.status ?? null,
                       username,
                       memberNo,

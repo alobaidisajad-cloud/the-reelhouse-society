@@ -58,6 +58,8 @@ export interface FilmDetailContextValue {
   validFilmId: boolean;
   loading: boolean;
   isError: boolean;
+  /** The read failed because the catalogue asked us to wait (TmdbBusy), not for want of a connection. */
+  catalogueBusy?: boolean;
   /** Ask for the film again, after a read that could not reach the catalogue. */
   retry: () => void;
   isFocused: boolean;

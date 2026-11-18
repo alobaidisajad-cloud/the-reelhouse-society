@@ -244,6 +244,58 @@ const markRefused = (ids: readonly string[]) => { for (const id of ids) readHere
  */
 let allReadAt: number | null = null;
 const goneHere = new Map<string, number>();
+/**
+ * Notices heard live here, by when (round 13): a read asked before one arrived answered without it,
+ * and its answer took the notice off the board and its one out of the bell, until a later read. A
+ * notice heard since a read was asked that its answer does not hold is laid on top of it.
+ */
+const heardHere = new Map<string, number>();
+/** A read of the board asked while one was out: made once more when that one is answered. */
+let _fetchAgain = false;
+
+/** notices_page's answer: the board's newest rows, and the unread count, from one moment. */
+const BoardSchema = z.object({ rows: z.array(z.unknown()), unread: z.number().int().min(0) });
+type Failed = { message: string } | null;
+
+/**
+ * The board's newest page and its unread count, read at one moment (notices_page, round 13): read
+ * as two reads, each at its own moment, a notice that came between them was in one and not the
+ * other, and the bell counted a notice the board did not hold (or missed one it did). A house
+ * without the form yet (its migration not applied: PGRST202) is read as before, in two reads.
+ */
+async function readBoard(userId: string): Promise<{ data: unknown[] | null; error: Failed; unread: { count: number | null; error: Failed } }> {
+    let page: { data: unknown; error: { code?: string; message: string } | null } | null = null;
+    try {
+        page = await supabase.rpc('notices_page', { p_limit: PAGE_SIZE });
+    } catch {
+        // The call could not be made at all: read as before.
+        page = null;
+    }
+    if (page && page.error?.code !== 'PGRST202') {
+        if (page.error) return { data: null, error: page.error, unread: { count: null, error: page.error } };
+        const board = BoardSchema.safeParse(page.data);
+        if (!board.success) {
+            const malformed = { message: `notices_page answered malformed: ${board.error.message}` };
+            return { data: null, error: malformed, unread: { count: null, error: malformed } };
+        }
+        return { data: board.data.rows, error: null, unread: { count: board.data.unread, error: null } };
+    }
+    const [{ data, error }, unreadRes] = await Promise.all([
+        supabase
+            .from('notifications')
+            .select(NOTIFICATION_COLUMNS)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(PAGE_SIZE),
+        supabase
+            .from('notifications')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('is_read', false),
+    ]);
+    return { data: data as unknown[] | null, error, unread: { count: unreadRes.count, error: unreadRes.error } };
+}
 
 export const useNotificationStore = create<NotificationState>()(
     persist(
@@ -255,26 +307,16 @@ export const useNotificationStore = create<NotificationState>()(
         if (!user) return;
 
         const state = get();
-        if (state._fetching) return;
+        // Asked while a read is out (a channel back, its first live moment): that read may predate what
+        // it was asked for, so it is made once more when the one out is answered (round 13).
+        if (state._fetching) { _fetchAgain = true; return; }
 
         set({ loading: true, _fetching: true });
         const askedAt = monotonicNow();
         try {
-            // The badge is asked of the SERVER, never counted from one page of 30.
-            const [{ data, error }, unreadRes] = await Promise.all([
-                supabase
-                    .from('notifications')
-                    .select(NOTIFICATION_COLUMNS)
-                    .eq('user_id', user.id)
-                    .order('created_at', { ascending: false })
-                    .order('id', { ascending: false })
-                    .limit(PAGE_SIZE),
-                supabase
-                    .from('notifications')
-                    .select('id', { count: 'exact', head: true })
-                    .eq('user_id', user.id)
-                    .eq('is_read', false),
-            ]);
+            // The badge is asked of the SERVER, never counted from one page of 30: with the page, at
+            // one moment (readBoard).
+            const { data, error, unread: unreadRes } = await readBoard(user.id);
 
         if (unreadRes.error) {
             // The page's own count stands in, said aloud.
@@ -309,13 +351,25 @@ export const useNotificationStore = create<NotificationState>()(
             const readSince = (n: AppNotification) => allReadSince || markedSince.has(n.id);
             const answeredUnread = validated.filter((n) => (readSince(n) || goneSince.has(n.id)) && !n.read).length;
             const kept = goneSince.size ? validated.filter((n) => !goneSince.has(n.id)) : validated;
-            const shown = answeredUnread ? kept.map((n) => (readSince(n) ? { ...n, read: true } : n)) : kept;
+            const answered = answeredUnread ? kept.map((n) => (readSince(n) ? { ...n, read: true } : n)) : kept;
+            // Heard live since this read was asked, and not in its answer (it came after the house
+            // read the board): kept on top, as the board holds it now, and counted in the bell. The
+            // count was read in the page's own moment (readBoard), so a notice the page missed, its
+            // count missed too.
+            const heardSince = new Set([...heardHere].filter(([, at]) => at >= askedAt).map(([id]) => id));
+            for (const [id, at] of heardHere) if (at < askedAt) heardHere.delete(id);
+            const inAnswer = new Set(validated.map((n) => n.id));
+            const heard = heardSince.size === 0 ? [] : get().notifications
+                .filter((n) => heardSince.has(n.id) && !inAnswer.has(n.id) && !goneSince.has(n.id))
+                .map((n) => (!n.read && readSince(n) ? { ...n, read: true } : n));
+            const heardUnread = heard.filter((n) => !n.read).length;
+            const shown = heard.length === 0 ? answered : [...heard, ...answered];
             set({
                 fetchFailed: false,
                 moreFailed: false,
                 notifications: shown,
                 // The server's count; the page's only as a fallback.
-                _unreadCount: unreadRes.error || allReadSince ? shown.filter(n => !n.read).length : Math.max(0, (unreadRes.count ?? 0) - answeredUnread),
+                _unreadCount: unreadRes.error || allReadSince ? shown.filter(n => !n.read).length : Math.max(0, (unreadRes.count ?? 0) - answeredUnread) + heardUnread,
                 // Did the SERVER send a full page (not: how many rows survived)?
                 _hasMore: !!cursor && data.length >= PAGE_SIZE,
                 _cursor: cursor,
@@ -325,10 +379,16 @@ export const useNotificationStore = create<NotificationState>()(
             logger.warn('[notificationStore.fetch] Supabase error:', error.message);
             set({ fetchFailed: true });
         }
+        } catch (e) {
+            // A read that threw (no answer at all) is a board not read, never a clear one; and, asked
+            // with no one waiting on it (a channel's first live moment), never left unheard.
+            logger.warn('[notificationStore.fetch] the board could not be read:', e);
+            if (stillSignedIn(user.id)) set({ fetchFailed: true });
         } finally {
             // Lowered for this read alone: an older page still on its way keeps the list reading.
             // Signed out meanwhile, the reset has lowered them already.
             if (stillSignedIn(user.id)) set((state) => ({ loading: state._fetchingMore, _fetching: false }));
+            if (_fetchAgain && stillSignedIn(user.id)) { _fetchAgain = false; void get().fetchNotifications(); }
         }
     },
 
@@ -694,12 +754,17 @@ export const useNotificationStore = create<NotificationState>()(
         });
         const watch = watchChannel({
             reread: () => { void get().fetchNotifications(); },
+            // Live for the first time: a notice between the board's read and this moment is in neither
+            // (the board is read at launch before its channel opens), so the board is read again.
+            onFirstLive: () => { void get().fetchNotifications(); },
             onLive: (on) => { live.notices = on; sayLive(); },
         });
         // A word of notices taken back missed while its channel was down: the board read again holds
         // only what the house still has.
         const watchGone = watchChannel({
             reread: () => { void get().fetchNotifications(); },
+            // Live for the first time: a notice taken back between the board's read and now is still on it.
+            onFirstLive: () => { void get().fetchNotifications(); },
             onLive: (on) => { live.gone = on; sayLive(); },
         });
 
@@ -746,6 +811,8 @@ export const useNotificationStore = create<NotificationState>()(
                     // Already taken back by the house (its word came first): never drawn.
                     if (goneHere.has(newNotif.id)) return;
 
+                    // Heard now: a read already on its way, whose answer misses it, keeps it (heardHere).
+                    heardHere.set(newNotif.id, monotonicNow());
                     set((state) => ({ ...applyIncomingNotification(state, newNotif), noticesHeard: state.noticesHeard + 1 }));
                     // A request answered: the follow is the house's now, and the phone's list said
                     // REQUESTED, the dossier sealed under the notice that said it was open.
@@ -798,6 +865,8 @@ registerStoreReset(() => {
     useNotificationStore.setState(noticesAtStart());
     readHere.clear();
     goneHere.clear();
+    heardHere.clear();
+    _fetchAgain = false;
     allReadAt = null;
     try { zustandMMKVStorage.removeItem('reelhouse-notifications'); } catch { /* noop */ }
 });

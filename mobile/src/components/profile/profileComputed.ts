@@ -38,7 +38,6 @@ interface UseProfileComputedParams {
   mainLogs: ProfileLog[];
   archiveLogs: ProfileLog[];
   ledgerLogs: ProfileLog[];
-  analyticsLogs: ProfileLog[];
   watchlist: ProfileWatchlistItem[];
   vault: ProfileVaultItem[];
   lists: ProfileList[];
@@ -49,6 +48,10 @@ interface UseProfileComputedParams {
   serverStreak: number | null;
   /** The house's summary of the file: its newest run is judged here, on the phone's own calendar. */
   analyticsShape?: AnalyticsShape | null;
+  /** The summary could not be read: the record and the run are unknown, and the room says so. */
+  summaryUnread?: boolean;
+  /** The member's records as the house counted them on this read; null while no count has answered. */
+  recordCounted?: number | null;
   // Filter state
   archiveSieve: string;
   archiveSearch?: string;
@@ -146,6 +149,20 @@ export function computeDailyStreak(
   return count;
 }
 
+/**
+ * The run counted over the records held here, only when they are the member's whole record (as
+ * many as the house counted on this read): a run counted over a part may stop at a night whose
+ * record was never read. Null, unknown, otherwise, and when no count has answered.
+ */
+export function runOverHeld(
+  held: Parameters<typeof computeDailyStreak>[0],
+  recordCount: number | null,
+  now?: Date,
+): number | null {
+  if (recordCount === null || held.length < recordCount) return null;
+  return computeDailyStreak(held, now);
+}
+
 /** The newest run of a file as the house gives it: its nights, and the last night of it. */
 export interface HouseRun { length: number; endsOn: string | null }
 
@@ -208,8 +225,8 @@ export function decadesOfLoaded(films: { year?: number | null }[]): DecadeCount[
 export function useProfileComputed(params: UseProfileComputedParams) {
   const {
     isSelf, myLogs, myWatchlist, myVault, myLists,
-    mainLogs, archiveLogs, ledgerLogs, analyticsLogs, watchlist, vault, lists,
-    counts, isArchivistPlus, targetUser, serverStreak, analyticsShape,
+    mainLogs, archiveLogs, ledgerLogs, watchlist, vault, lists,
+    counts, isArchivistPlus, targetUser, serverStreak, analyticsShape, summaryUnread, recordCounted,
     archiveSieve, archiveSearch, listsSearch, physicalSearch, ledgerSearch, ledgerRatingFilter,
     watchlistSearch, watchlistSort, watchlistDecade,
     physicalFilter, physicalSort, listsSort, serverDecades,
@@ -258,16 +275,19 @@ export function useProfileComputed(params: UseProfileComputedParams) {
 
   // Daily streak. The house's newest run, judged against the member's own yesterday, which
   // turns at their midnight (useClock). Without it (an older house, or no summary), the
-  // house's own count, then a count over the records held here, the analytics' and the
-  // loaded ones together (only the loaded ones carry their earlier viewings' days); that
-  // count reads the clock itself, and `yesterday` has it counted again at midnight.
+  // house's own count, then a count over the records held here when the house's count of the
+  // record says they are all of it; past that, or with no count read, unknown (null), never a run
+  // counted short from a part. That count reads the clock itself, and `yesterday` has it counted
+  // again at midnight.
   const yesterday = useClock((t) => localCalendarDate(-1, t));
   const houseRun = useMemo(() => houseRunOf(analyticsShape), [analyticsShape]);
   const streak = useMemo(() => {
     if (houseRun) return runStillStanding(houseRun, yesterday);
     if (serverStreak !== null) return serverStreak;
-    return computeDailyStreak([...analyticsLogs, ...displayLogs]);
-  }, [houseRun, yesterday, serverStreak, displayLogs, analyticsLogs]);
+    return runOverHeld(displayLogs, recordCounted ?? null);
+  }, [houseRun, yesterday, serverStreak, displayLogs, recordCounted]);
+  /** The house's summary could not be read: the room says its record could not be read, and asks again. */
+  const recordUnread = !!summaryUnread;
 
   // Archive filtering
   const archiveFiltered = useMemo(() => {
@@ -453,7 +473,7 @@ export function useProfileComputed(params: UseProfileComputedParams) {
   return {
     displayLogs, displayWatchlist, displayVault, displayLists,
     totalFilms, statsLevel, statsColor, statsProgress,
-    streak, archiveFiltered, ledgerFiltered, halfLifeMap,
+    streak, recordUnread, archiveFiltered, ledgerFiltered, halfLifeMap,
     // For each StatCard: the same reconciled numbers the rooms show.
     totalWatchlist, totalLedger, totalLists, totalVault,
     watchlistFiltered, watchlistDecadeCounts, physicalFiltered, physicalFormatCounts,

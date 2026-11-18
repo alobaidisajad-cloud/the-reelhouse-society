@@ -22,6 +22,8 @@ jest.mock('@/src/stores/auth', () => ({
 }));
 jest.mock('@/src/lib/pushNotifications', () => ({
   PUSH_TOKEN_KEY: 'push',
+  // A token registered within the day: not registered again on a return to the front.
+  registrationIsDue: () => false,
   registerForPushNotifications: jest.fn(async () => {}),
   setupNotificationResponseHandler: () => Promise.resolve(() => {}),
 }));

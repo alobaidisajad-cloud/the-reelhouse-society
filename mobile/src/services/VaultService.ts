@@ -83,12 +83,14 @@ export const fetchNotesForLog = async (logId: string): Promise<VaultNoteRow[]> =
  * Write a note on one viewing. An empty note CLEARS it — that is the same act
  * as removing it, and it is open to every member, paying or not.
  */
-export const setNote = async (logId: string, viewingId: string, notes: string): Promise<void> => {
-  const { error } = await supabase.rpc('viewing_note_set', {
-    p_log_id: logId,
-    p_viewing_id: viewingId,
-    p_notes: notes,
-  });
+export const setNote = async (logId: string, viewingId: string, notes: string, writtenAt?: string): Promise<void> => {
+  // With the moment the member wrote it, the house writes it only over a note written no later
+  // (round 13): a note queued on one phone never lands over one written since on another.
+  let { error } = writtenAt
+    ? await supabase.rpc('viewing_note_set', { p_log_id: logId, p_viewing_id: viewingId, p_notes: notes, p_written_at: writtenAt })
+    : await supabase.rpc('viewing_note_set', { p_log_id: logId, p_viewing_id: viewingId, p_notes: notes });
+  // A house without that form yet (its migration not applied: PGRST202) is asked as before.
+  if (error && writtenAt && error.code === 'PGRST202') ({ error } = await supabase.rpc('viewing_note_set', { p_log_id: logId, p_viewing_id: viewingId, p_notes: notes }));
   if (error) throw error;
 };
 
@@ -112,8 +114,12 @@ export const restoreNotes = async (
 };
 
 /** Take a note back. Never gated; removing one that is already gone is fine. */
-export const removeNote = async (viewingId: string): Promise<void> => {
-  const { error } = await supabase.rpc('viewing_note_remove', { p_viewing_id: viewingId });
+export const removeNote = async (viewingId: string, writtenAt?: string): Promise<void> => {
+  // Taken back only from a note written no later than this (round 13), as setNote.
+  let { error } = writtenAt
+    ? await supabase.rpc('viewing_note_remove', { p_viewing_id: viewingId, p_written_at: writtenAt })
+    : await supabase.rpc('viewing_note_remove', { p_viewing_id: viewingId });
+  if (error && writtenAt && error.code === 'PGRST202') ({ error } = await supabase.rpc('viewing_note_remove', { p_viewing_id: viewingId }));
   if (error) throw error;
 };
 

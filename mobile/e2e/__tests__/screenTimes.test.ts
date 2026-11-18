@@ -48,6 +48,19 @@ function run(log: string, ceilings?: Ceilings, ...extra: string[]) {
 }
 
 describe('screen-times.mjs', () => {
+  // Round 13: the query cache's writes (queryClient.ts's cache.persist trace) were written to the
+  // log by every E2E run and read by nothing.
+  const write = (chars: number, ms: number) =>
+    `10-02 18:01:05.000  4321  4377 W ReactNativeJS: [e2e] cache.persist {"chars":${chars},"ms":${ms}}`;
+  it("reads the query cache's writes, and fails one that held the JS thread too long", () => {
+    const quick = run([LOG, write(120000, 12), write(980000, 41)].join('\n'));
+    expect(quick.code).toBe(0);
+    expect(quick.out).toMatch(/the query cache written 2 times: the largest 980000 characters, the slowest 41 ms/);
+    const stall = run([LOG, write(120000, 12), write(1900000, 140)].join('\n'));
+    expect(stall.code).toBe(1);
+    expect(stall.out).toMatch(/a write of the query cache held the JS thread 140 ms, over 100 ms/);
+  });
+
   it('reports each screen: how often, the median and the slowest; other trace lines are not screens', () => {
     const { code, out } = run(LOG);
     expect(code).toBe(0);

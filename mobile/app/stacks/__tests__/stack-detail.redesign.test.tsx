@@ -397,6 +397,18 @@ describe('LOUNGE, sharing the stack into a salon (P4.16)', () => {
     expect(mockRope).not.toHaveBeenCalled();
     expect(mockSalonsShown).toBe(true);
   });
+
+  // Round 13: a curator could send their SEALED stack into a salon, and every member there read its
+  // title, its count and its curator, and met CLASSIFIED at each tap.
+  it('a sealed stack offers its curator no LOUNGE: it is shown in no salon', async () => {
+    mockSpeaking = { held: true, standing: 'stranger' };
+    mockSalonsShown = false;
+    const r = mount({ isPrivate: true });
+    await waitFor(() => expect(r.getByText('CERTIFY')).toBeTruthy());
+    expect(r.queryByText('LOUNGE')).toBeNull();
+    expect(r.queryByLabelText('Share to lounge')).toBeNull();
+    expect(mockSalonsShown).toBe(false);
+  });
 });
 
 describe('the critiques action', () => {

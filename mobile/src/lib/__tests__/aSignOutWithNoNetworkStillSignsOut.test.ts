@@ -4,8 +4,8 @@
  * supabase-js answers a sign-out the server never heard with `{ error }` and keeps the stored
  * session, and the app's next launch signed the member back in. Here the real client signs out
  * over a network that is down: the session is gone from the phone all the same, and what the
- * server still holds is owed. When the network returns, the owed sign-out is sent once: the old
- * session refreshed apart from this phone's, its push token's row deleted, the session ended.
+ * server still holds is owed. When the network returns, the owed sign-out is sent once: the push
+ * token forgotten by the token, the old session refreshed apart from this phone's and ended.
  */
 import { supabase } from '@/src/lib/supabase';
 import { endSessionHere, settleOwedSignOut, __owedForTests } from '@/src/lib/endSession';
@@ -76,7 +76,7 @@ it('owes the push token too when its row could not be deleted', async () => {
   expect(__owedForTests()).toEqual({ refreshToken: 'first', userId: ME, pushToken: 'ExponentPushToken[phone]' });
 });
 
-it('settles what is owed once the network returns: refreshed apart, token row deleted, session ended', async () => {
+it('settles what is owed once the network returns: the token forgotten, refreshed apart, the session ended', async () => {
   mockDisk.set(KEY, session('first'));
   mockDisk.set(PUSH_TOKEN_KEY, 'ExponentPushToken[phone]');
   await endSessionHere({ pushStillHeld: true });
@@ -89,7 +89,8 @@ it('settles what is owed once the network returns: refreshed apart, token row de
   networkUp = true;
   asked = [];
   await settleOwedSignOut();
-  expect(asked).toEqual(['POST /auth/v1/token?refresh', 'DELETE /rest/v1/push_tokens', 'POST /auth/v1/logout']);
+  // The token first, by the token itself (round 13: it needs no session), then the old session.
+  expect(asked).toEqual(['POST /rest/v1/rpc/forget_push_token', 'POST /auth/v1/token?refresh', 'POST /auth/v1/logout']);
   expect(__owedForTests()).toBeNull();
   // …and this phone's own session was never touched by it.
   expect(mockDisk.has(KEY)).toBe(false);

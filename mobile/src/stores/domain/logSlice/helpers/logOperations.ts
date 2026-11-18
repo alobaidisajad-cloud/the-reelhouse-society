@@ -67,6 +67,15 @@ export const LOG_BUSY = 'LOG_BUSY' as const;
  * connection never reaches here: the Vault keeps the note for the queue.
  */
 const NOTE_NOT_KEPT = 'The record is sealed, but its private note could not be kept.';
+/** The record landed; its note, with no signal, waits in the queue: said, never claimed as sealed whole. */
+export const NOTE_HELD = 'The record is sealed; its private note will be kept when the connection returns.';
+/**
+ * A note the Vault could only queue (round 13): the record it rides landed, so the seal said all was
+ * kept. Said here unless the record is queued too, which says so itself ("Saved offline").
+ */
+function noteHeldIfQueued(kept: { queuedOffline: boolean }, recordQueued: boolean): void {
+    if (kept.queuedOffline && !recordQueued) reelToast(NOTE_HELD);
+}
 function noteNotKept(e: unknown, scope: string, logId: string): void {
     if (isNetworkError(e)) return;
     if (showTierDoor(e, { also: 'The record is sealed; its private note was not kept.' })) return;
@@ -315,7 +324,9 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
         viewCount: newViewCount,
         viewingHistory: newHistory,
         viewingId: newViewingId,
-    } as Partial<DomainLog>, { silentAnnounce: true, viewingOp: { kind: 'add', viewingId: newViewingId } });
+    // held: the record this rewatch is filed on, which the phone may hold nowhere (found at the
+    // house by the seal's check or by its insert meeting it): the index learns the film from it.
+    } as Partial<DomainLog>, { silentAnnounce: true, viewingOp: { kind: 'add', viewingId: newViewingId }, held: existingLog });
 
     // Their note is not written into the next member's Vault.
     if (!stillSignedIn(startedAs)) return { queuedOffline: merge?.queuedOffline === true };
@@ -325,7 +336,7 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
     // after the viewing exists, because a note must have a viewing to belong to.
     if (typeof log.privateNotes === 'string' && log.privateNotes.trim()) {
         try {
-            await useVaultStore.getState().saveNote(existingLog.id, newViewingId, log.privateNotes);
+            noteHeldIfQueued(await useVaultStore.getState().saveNote(existingLog.id, newViewingId, log.privateNotes), merge?.queuedOffline === true);
         } catch (e) {
             // The rewatch is filed; the note's refusal is said.
             noteNotKept(e, 'applyRewatchMerge.saveNote', existingLog.id);
@@ -400,7 +411,12 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             const keptAhead = !existingLog && enqueueMutation({ type: 'add_log', payload }, { ahead: true });
             // Kept: the record is the queue's now, and the form's draft of it has done its work.
             if (keptAhead) opts?.onKeptAhead?.();
-            if (!existingLog && log.filmId) {
+            // The house asked first for a record of the film only while the phone does not know
+            // every film the member has logged. With the ledger held, a film it does not hold was
+            // never logged: the insert goes at once, one round trip, and a record filed meanwhile
+            // elsewhere (the one case the check found) is met by the insert's duplicate path below,
+            // which reads the winner and files this as its rewatch.
+            if (!existingLog && log.filmId && get().marksKnown !== 'held') {
                 const { data: serverCheck } = await supabase.from('logs')
                     .select(LOG_SELECT_COLUMNS)
                     .eq('user_id', user.id).eq('film_id', log.filmId)
@@ -477,7 +493,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
             // note refused for the rank does not take the record down with it.
             if (typeof log.privateNotes === 'string' && log.privateNotes.trim()) {
                 try {
-                    await useVaultStore.getState().saveNote(newId, newViewingId, log.privateNotes);
+                    noteHeldIfQueued(await useVaultStore.getState().saveNote(newId, newViewingId, log.privateNotes), queuedOffline);
                 } catch (e) {
                     noteNotKept(e, 'addLogOp.saveNote', newId);
                 }
@@ -660,8 +676,12 @@ export const updateLogOp = async (
             const nextIdx = { ...state._loggedIndex };
             if (filmIdToUpdate) {
                 const indexed = state._loggedIndex[filmIdToUpdate];
+                // A record the phone held nowhere (read from the house by its editor, or found
+                // there by a seal filed as its rewatch) is laid in the index as it now stands:
+                // the film is known as logged at once, never only at the next launch.
                 const updated = nextLogs.find(l => l.filmId === filmIdToUpdate)
-                    ?? (indexed?.id === id ? { ...indexed, ...cleanUpdates } as DomainLog : undefined);
+                    ?? (indexed?.id === id ? { ...indexed, ...cleanUpdates } as DomainLog : undefined)
+                    ?? (opts?.held?.id === id ? { ...opts.held, ...cleanUpdates } as DomainLog : undefined);
                 if (updated) nextIdx[filmIdToUpdate] = updated as DomainLog;
             }
             return { logs: nextLogs, _loggedIndex: nextIdx };
@@ -794,7 +814,7 @@ export const updateLogOp = async (
                 const viewingId = heldLog(get(), id)?.viewingId ?? originalLog?.viewingId ?? null;
                 if (viewingId) {
                     try {
-                        await useVaultStore.getState().saveNote(id, viewingId, updates.privateNotes ?? '');
+                        noteHeldIfQueued(await useVaultStore.getState().saveNote(id, viewingId, updates.privateNotes ?? ''), queuedOffline);
                     } catch (e) {
                         // The record is saved; the note's refusal is said.
                         noteNotKept(e, 'updateLogOp.saveNote', id);

@@ -71,6 +71,24 @@
       "touch": { "pushed_at": "2026-01-02" }, "read": "none",
       "why": "Written by tg_notify_push alone: that a member's act at another (a certification, a follow, a request to enter a salon, an answer taken) has pushed once."
     },
+    "interaction_budget": {
+      "owner": "user_id", "key": ["user_id"],
+      "specimen": { "user_id": "{owner}", "tokens": 120, "refilled_at": "2026-01-01", "day": "2026-01-01", "follows": 0, "certs": 0, "swept_at": "2026-01-01" }, "variant": "none",
+      "touch": { "tokens": 1000000 }, "read": "none",
+      "why": "Written by check_interaction_rate_limit alone: a member's room to follow and certify, never given themselves more of it."
+    },
+    "interaction_churn": {
+      "owner": "user_id", "key": ["user_id", "target"],
+      "specimen": { "user_id": "{owner}", "target": "member:{uid@V}", "since": "2026-01-01", "n": 1 }, "variant": { "target": "member:{uid@X2}" },
+      "touch": { "n": 0 }, "read": "none",
+      "why": "Written by check_interaction_rate_limit alone: how often a member acted at one thing within the hour, never wiped by them."
+    },
+    "viewing_notes_removed": {
+      "owner": "user_id", "key": ["viewing_id"],
+      "specimen": { "viewing_id": "{ref:viewings}", "user_id": "{owner}", "removed_at": "2026-01-01" }, "variant": "none",
+      "touch": { "removed_at": "2000-01-01" }, "read": "none",
+      "why": "Written by viewing_note_remove alone: when a member took a viewing's note away, never moved by them."
+    },
     "viewings": {
       "owner": { "via": "logs", "on": "log_id" }, "key": ["viewing_id"],
       "specimen": { "viewing_id": "{id}", "log_id": "{ref:logs}" }, "variant": { "viewing_id": "{id}" },
@@ -580,9 +598,18 @@
         "result": "EXISTS (SELECT 1 FROM jsonb_array_elements($1->0->'faces') e WHERE e->>'lounge_id' = '{ref:lounges@P}')" },
       { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.get_lounge_list()" }
     ] },
+    "notices_page": { "why": "The caller's own newest notices and their unread count, from one moment: never another member's.", "cases": [
+      { "name": "one's own board", "as": "members", "expect": "ok", "call": "public.notices_page(30)",
+        "result": "NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1 -> 0 -> 'rows') e WHERE e->>'user_id' <> '{owner}') AND jsonb_array_length($1 -> 0 -> 'rows') > 0 AND ($1 -> 0 ->> 'unread') IS NOT NULL" },
+      { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.notices_page(30)" }
+    ] },
     "get_lounge_unread_counts": { "why": "The caller's own salons' unread counts.", "cases": [
       { "name": "read", "as": "all", "expect": { "ok": "all" }, "call": "public.get_lounge_unread_counts()",
         "result": "NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1) e WHERE e->>'lounge_id' <> '{ref:lounges}')" }
+    ] },
+    "get_marks_ledger": { "why": "The caller's own marks, every film they logged and keep, in one read: never another member's; a visitor has none.", "cases": [
+      { "name": "read", "as": "all", "expect": { "ok": "all" }, "call": "public.get_marks_ledger()",
+        "result": "position('{ref:logs}' in $1::text) > 0 AND position('{ref:logs@V}' in $1::text) = 0 AND position('{ref:logs@P}' in $1::text) = 0 AND position('{ref:logs@BK}' in $1::text) = 0" }
     ] },
     "get_moderation_history_for_users": { "why": "The house's record of its acts, for admins.", "cases": [
       { "name": "an open member's", "as": "all", "expect": { "ok": "all" },
@@ -722,6 +749,22 @@
     "record_gate_event": { "why": "A count of a door's use, naming no one.", "cases": [
       { "name": "counted", "as": "all", "expect": "ok", "call": "public.record_gate_event('gate_tapped', 'rh')" }
     ] },
+    "forget_push_token": { "why": "A phone forgets its own token, signed in or not: the token is the proof (only the phone holds it), named with the member it was registered to, so a phone registered since to another member keeps theirs.", "cases": [
+      { "name": "a phone's own token, named with its member", "as": "all", "expect": "ok",
+        "lay": { "push_tokens": { "id": "{new}", "user_id": "{owner}", "token": "rh-forget-{owner}", "platform": "ios" } },
+        "call": "public.forget_push_token('rh-forget-{owner}', '{owner}')",
+        "then": "NOT EXISTS (SELECT 1 FROM public.push_tokens WHERE token = 'rh-forget-{owner}')" },
+      { "name": "a token named with another member takes nothing", "as": "all", "expect": "ok",
+        "lay": { "push_tokens": { "id": "{new}", "user_id": "{owner}", "token": "rh-forget2-{owner}", "platform": "ios" } },
+        "call": "public.forget_push_token('rh-forget2-{owner}', '{uid@V}')",
+        "then": "EXISTS (SELECT 1 FROM public.push_tokens WHERE token = 'rh-forget2-{owner}' AND user_id = '{owner}')" }
+    ] },
+    "forget_other_devices": { "why": "Signed out of every other device, a member's other phones' tokens go; this phone's stays, and no one else's is touched.", "cases": [
+      { "name": "one's own other phones", "as": "all", "expect": { "ok": "all" },
+        "lay": { "push_tokens": { "id": "{new}", "user_id": "{owner}", "token": "rh-other-{owner}", "platform": "android" } },
+        "call": "public.forget_other_devices('rh-keep-{owner}')",
+        "then": "NOT EXISTS (SELECT 1 FROM public.push_tokens WHERE token = 'rh-other-{owner}')" }
+    ] },
     "register_push_token": { "why": "A device is registered to the member signed in on it.", "cases": [
       { "name": "a device", "as": "all", "expect": { "ok": "all" }, "call": "public.register_push_token('rh-token-{owner}', 'ios')",
         "then": "EXISTS (SELECT 1 FROM public.push_tokens WHERE token = 'rh-token-{owner}' AND user_id = '{owner}')" }
@@ -770,6 +813,12 @@
       { "name": "the words every member's handle holds", "as": "all", "expect": "ok", "call": "public.search_members('at', false, NULL, NULL, 51)",
         "result": "position('{uid@V}' in $1::text) > 0 AND (position('{uid@BK}' in $1::text) = 0 OR '{owner}' = '{uid@X2}') AND (position('{uid@BY}' in $1::text) = 0 OR '{owner}' = '{uid@X2}')" }
     ] },
+    "search_stacks": { "why": "The house-wide search's stacks: one's own and the open, never a private stack, a private member's to a stranger, nor a hidden author's to a member.", "cases": [
+      { "name": "a word every stack's title holds, read by its pieces", "as": "all", "expect": "ok", "call": "public.search_stacks('list', NULL, NULL, 51)",
+        "result": "position('{ref:lists}' in $1::text) > 0 AND position('{ref:lists#2}' in $1::text) = 0 AND position('{ref:lists@P}' in $1::text) = 0 AND (position('{ref:lists@BK}' in $1::text) = 0 OR '{owner}' = '{uid@X2}') AND (position('{ref:lists@BY}' in $1::text) = 0 OR '{owner}' = '{uid@X2}')" },
+      { "name": "two letters, every stack walked", "as": "all", "expect": "ok", "call": "public.search_stacks('rh', NULL, NULL, 51)",
+        "result": "position('{ref:lists}' in $1::text) > 0 AND position('{ref:lists#2}' in $1::text) = 0 AND position('{ref:lists@P}' in $1::text) = 0 AND (position('{ref:lists@BK}' in $1::text) = 0 OR '{owner}' = '{uid@X2}') AND (position('{ref:lists@BY}' in $1::text) = 0 OR '{owner}' = '{uid@X2}')" }
+    ] },
     "send_salon_typing": { "why": "Typing is sent only from a seat.", "cases": [
       { "name": "a private salon of another", "as": "all", "expect": { "ok": "all" }, "call": "public.send_salon_typing('{ref:lounges@P}')", "result": "$1 = '[false]'" }
     ] },
@@ -812,10 +861,13 @@
     ] },
     "viewing_note_remove": { "why": "A Vault note is removed by its writer alone.", "cases": [
       { "name": "another's note", "as": "all", "expect": { "ok": "all" }, "call": "public.viewing_note_remove('{ref:viewings@V}')",
+        "then": "EXISTS (SELECT 1 FROM public.log_private_notes WHERE viewing_id = '{ref:viewings@V}')" },
+      { "name": "another's note, with the moment it was written", "as": "all", "expect": { "ok": "all" }, "call": "public.viewing_note_remove('{ref:viewings@V}', now())",
         "then": "EXISTS (SELECT 1 FROM public.log_private_notes WHERE viewing_id = '{ref:viewings@V}')" }
     ] },
     "viewing_note_set": { "why": "A Vault note is written on one's own viewing alone.", "cases": [
-      { "name": "another's viewing", "as": "all", "expect": "error", "call": "public.viewing_note_set('{ref:logs@V}', '{ref:viewings@V}', 'rh forged')" }
+      { "name": "another's viewing", "as": "all", "expect": "error", "call": "public.viewing_note_set('{ref:logs@V}', '{ref:viewings@V}', 'rh forged')" },
+      { "name": "another's viewing, with the moment it was written", "as": "all", "expect": "error", "call": "public.viewing_note_set('{ref:logs@V}', '{ref:viewings@V}', 'rh forged', now())" }
     ] },
     "withdraw_lounge_message": { "why": "A message is withdrawn by its writer or its salon's host.", "cases": [
       { "name": "another's message in another's salon", "as": "all", "expect": "error", "call": "public.withdraw_lounge_message('{ref:lounge_messages@V}')" }
@@ -914,7 +966,9 @@
   },
   "probes": [
     {"name":"a private member who opens their file lets in those who asked","table":"profiles","as":["P"],"kind":"update","lay":{"interactions":{"id":"{new}","user_id":"{uid@X1}","target_user_id":"{owner}","type":"follow_request"}},"id":"{owner}","set":{"is_social_private":false},"then":"EXISTS (SELECT 1 FROM public.interactions WHERE id = '{new}' AND type = 'follow')","expect":"ok","why":"Going open turns every waiting request into a follow (handle_privacy_switch): no one is left asking at an open door."},
-    {"name":"a second interaction within a second is refused","table":"interactions","as":["free","auteur"],"kind":"insert","lay":{"interactions":{"id":"{id#9}","user_id":"{owner}","target_user_id":"{uid@X2}","type":"follow","created_at":"now"}},"row":{"id":"{new}","user_id":"{owner}","target_user_id":"{uid@V}","type":"follow"},"expect":"refused","why":"A member's interactions are kept a second apart (check_interaction_rate_limit), against floods."},
+    {"name":"a second follow a moment after the first lands","table":"interactions","as":["free","auteur"],"kind":"insert","lay":{"interactions":{"id":"{id#9}","user_id":"{owner}","target_user_id":"{uid@X2}","type":"follow","created_at":"now"}},"row":{"id":"{new}","user_id":"{owner}","target_user_id":"{uid@V}","type":"follow"},"expect":"ok","why":"A member's follows and certifications a moment apart both land: the house paces only what a script does (check_interaction_rate_limit, round 13)."},
+    {"name":"a member with no room left to act is refused","table":"interactions","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.interaction_budget (user_id, tokens, refilled_at, day, follows, certs, swept_at) VALUES ('{owner}', 0, now(), (now() AT TIME ZONE 'UTC')::date, 0, 0, now()) ON CONFLICT (user_id) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","user_id":"{owner}","target_user_id":"{uid@V}","type":"follow"},"expect":"refused","why":"A member's room to act holds 120 and comes back one every 2 seconds: a script is held to 30 a minute (check_interaction_rate_limit, RH429)."},
+    {"name":"a fourth follow of one member within the hour is refused","table":"interactions","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.interaction_churn (user_id, target, since, n) VALUES ('{owner}', 'member:{uid@V}', now(), 3) ON CONFLICT (user_id, target) DO UPDATE SET since = now(), n = 3","row":{"id":"{new}","user_id":"{owner}","target_user_id":"{uid@V}","type":"follow"},"expect":"refused","why":"Follow, unfollow, follow again: a member is followed at most three times an hour by one member, against notice floods (check_interaction_rate_limit, RH429)."},
     {"name":"a member's 201st error report of a day is refused","table":"error_logs","as":["free"],"kind":"insert","laySql":"INSERT INTO public.error_logs (user_id, error_type, error_message, created_at) SELECT '{owner}', 'rh', 'rh', now() FROM generate_series(1, 200)","row":{"id":"{new}","user_id":"{owner}","error_type":"rh","error_message":"rh"},"expect":"refused","why":"A member's error reports are kept to 200 a day (20261015_07)."},
     {"name":"a muted member does not unmute themselves","table":"lounge_members","as":["free","auteur"],"kind":"update","lay":{"lounge_members":{"id":"{new}","lounge_id":"{ref:lounges@V}","user_id":"{owner}","status":"muted"}},"id":"{new}","set":{"status":"approved"},"expect":"refused","why":"A seat's standing in a salon is its host's to set."},
     {"name":"a seated member moves their own reading place","table":"lounge_members","as":["free"],"kind":"update","lay":{"lounge_members":{"id":"{new}","lounge_id":"{ref:lounges@V}","user_id":"{owner}","status":"muted","last_read_at":"2001-01-01"}},"id":"{new}","set":{"last_read_at":"now"},"expect":"ok","why":"The control beside the case above."},

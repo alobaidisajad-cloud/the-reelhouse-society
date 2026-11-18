@@ -16,7 +16,8 @@ import * as Crypto from 'expo-crypto';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
-import { isTmdbUnreachable } from '@/src/lib/tmdbErrors';
+import { isTmdbBusy, isTmdbUnreachable } from '@/src/lib/tmdbErrors';
+import { monotonicNow } from '@/src/lib/waits';
 import { useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
 import { isArchivistPlusTier, resolveTier } from '@/src/utils/tier';
@@ -96,7 +97,20 @@ interface ReelHouseArchive {
 //  CONSTANTS
 // ═══════════════════════════════════════════════════════════════
 const BATCH_SIZE = 50;
-const RESOLVE_DELAY_MS = 60;
+
+/**
+ * The pace films are asked of the catalogue: 60 at once, then 3 a second. The house's proxy lets
+ * one member make it ask TMDB 4 times a second after a first 60 (tmdb-proxy/rate.js), so an
+ * import of any size walks under it and leaves the member's own screens room. 500 films: about
+ * two and a half minutes.
+ */
+export const IMPORT_PACE = { burst: 60, perSecond: 3 } as const;
+
+/**
+ * How long an import keeps waiting on a catalogue that asks it to wait, with no film answered
+ * in between, before it stops and says so.
+ */
+export const BUSY_GIVE_UP_MS = 3 * 60_000;
 
 /**
  * Generic header synonyms — works with any film tracking app.
@@ -526,79 +540,111 @@ function cacheKey(title: string, year: string): string {
   return `${title.toLowerCase().trim()}|${year.trim()}`;
 }
 
+/** Said when the catalogue kept asking the import to wait: nothing has been written yet. */
+export const CATALOGUE_BUSY =
+  'The film catalogue kept asking us to wait, so nothing was imported. Import the file again in a few minutes.';
+
+/** Said when TMDB kept not answering the house mid-import: the phone's connection is fine, and nothing has been written yet. */
+export const CATALOGUE_DOWN =
+  'The film catalogue (TMDB) is not answering right now, so nothing was imported. Import the file again in a few minutes.';
+
+/** How long an import waits on a catalogue that is not answering before it asks the same film again. */
+const DOWN_WAIT_MS = 5000;
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 /**
- * Resolves a single film via TMDB search.
- * Uses /search/multi with year filter for precision.
- * Caches results to avoid duplicate lookups.
+ * A pail of tokens at the import's pace (IMPORT_PACE): each read of the catalogue takes one,
+ * and waits for the next when the pail is empty.
  */
-async function resolveFilm(title: string, year: string): Promise<TMDBMatch | null> {
+function pacer(): () => Promise<void> {
+  let tokens: number = IMPORT_PACE.burst;
+  let at = monotonicNow();
+  return async function paced() {
+    for (;;) {
+      const now = monotonicNow();
+      tokens = Math.min(IMPORT_PACE.burst, tokens + ((now - at) * IMPORT_PACE.perSecond) / 1000);
+      at = now;
+      if (tokens >= 1) { tokens -= 1; return; }
+      await sleep(Math.ceil(((1 - tokens) * 1000) / IMPORT_PACE.perSecond));
+    }
+  };
+}
+
+/** A year an export wrote ("1994", or a date "1994-05-12"), or null. */
+function yearOf(raw: string): number | null {
+  const m = /^\s*(\d{4})/.exec(raw);
+  return m ? Number(m[1]) : null;
+}
+
+/** A title as it is compared: its case, its spacing and its punctuation set aside. */
+function plainTitle(t: string | undefined): string {
+  return (t ?? '').toLowerCase().replace(/[\s.,:;!?'"’‘“”&()[\]-]+/g, ' ').trim();
+}
+
+type Found = { id: number; title?: string; original_title?: string; poster_path?: string | null; release_date?: string };
+
+/**
+ * The film a catalogue answer names for a row, or null when none can be trusted. With a year, the
+ * answers are ranked by each one's OWN first release: that year first, then a year either side (an
+ * export's year and TMDB's differ by a festival), the row's own title first within each. An
+ * answer of another year is taken only when it carries the row's own title and is the only one
+ * that does: a remake and its original share a title, and a review filed against the wrong one
+ * stays there for good. With no year, the row's own title first, else TMDB's first answer.
+ */
+function bestOf(found: Found[], title: string, year: number | null): Found | null {
+  const asked = plainTitle(title);
+  const same = (f: Found) => !!asked && (plainTitle(f.title) === asked || plainTitle(f.original_title) === asked);
+  if (year === null) return found.find(same) ?? found[0] ?? null;
+  const yearOfFound = (f: Found) => (f.release_date ? Number(f.release_date.slice(0, 4)) : null);
+  const inYear = found.filter((f) => yearOfFound(f) === year);
+  const beside = found.filter((f) => { const y = yearOfFound(f); return y !== null && Math.abs(y - year) === 1; });
+  const ranked = [...inYear.filter(same), ...inYear, ...beside.filter(same), ...beside];
+  const pick = ranked[0];
+  if (pick) return pick;
+  const titled = found.filter(same);
+  return titled.length === 1 ? titled[0] ?? null : null;
+}
+
+/** A catalogue that cannot answer just now, the house's proxy saying so: waited on as a busy one. */
+const houseAnswered = (err: unknown) => isTmdbUnreachable(err) && (err as { answered?: unknown }).answered === true;
+
+/**
+ * Resolves one film: one read of the catalogue for the title in its year, and one without the
+ * year when that finds nothing. Each read waits its turn at the import's pace. An answer is
+ * kept for the session, a match or no match; a read that went wrong is no answer about the
+ * film and is never kept: the catalogue unreachable stops the import, the catalogue asking us
+ * to wait is passed up (TmdbBusy) for the batch to wait and ask again.
+ */
+async function resolveFilm(title: string, year: string, paced: () => Promise<void>): Promise<TMDBMatch | null> {
   const key = cacheKey(title, year);
   if (resolutionCache.has(key)) return resolutionCache.get(key) ?? null;
 
   try {
-    const query = year ? `${title} ${year}` : title;
-    const searchResult = await tmdb.search(query, 1);
-
-    if (!searchResult?.results?.length) {
-      // Retry without year (handles year mismatches)
-      if (year) {
-        const fallback = await tmdb.search(title, 1);
-        const movie = fallback?.results?.find(r =>
-          r.media_type === 'movie' || !r.media_type
-        );
-        if (movie) {
-          const match: TMDBMatch = {
-            id: movie.id,
-            title: movie.title ?? movie.name ?? title,
-            poster_path: movie.poster_path ?? null,
-            year: movie.release_date ? parseInt(movie.release_date.slice(0, 4)) : null,
-          };
-          resolutionCache.set(key, match);
-          return match;
-        }
-      }
-      resolutionCache.set(key, null);
-      return null;
+    const yearNum = yearOf(year);
+    let best: Found | null = null;
+    if (yearNum !== null) {
+      await paced();
+      const dated = await tmdb.findFilm(title, String(yearNum));
+      best = bestOf(dated?.results ?? [], title, yearNum);
     }
-
-    // Confidence gate. 'semantic' (keyword discovery) returns *a* film for any title,
-    // and 'person' matched a name, not a title: neither proves the film. A rejected row
-    // is reported as unmatched; a wrong match would file a review against an unseen film,
-    // invisibly and for ever.
-    const st = searchResult.searchType;
-    if (st === 'semantic' || st === 'person' || st === 'failed') {
-      resolutionCache.set(key, null);
-      return null;
-    }
-
-    // Find best movie match
-    const yearNum = year ? parseInt(year) : null;
-    const movies = searchResult.results.filter(r =>
-      r.media_type === 'movie' || !r.media_type
-    );
-
-    // Prefer exact year match
-    let best = yearNum
-      ? movies.find(m => m.release_date?.startsWith(String(yearNum)))
-      : null;
-
-    // No year agrees: only an exact title match may carry it (a typo fix has no corroboration).
-    if (!best && (!yearNum || st === 'exact' || st === undefined)) best = movies[0] ?? null;
-
     if (!best) {
-      resolutionCache.set(key, null);
-      return null;
+      await paced();
+      const undated = await tmdb.findFilm(title);
+      best = bestOf(undated?.results ?? [], title, yearNum);
     }
 
-    const match: TMDBMatch = {
+    const match: TMDBMatch | null = best ? {
       id: best.id,
-      title: best.title ?? best.name ?? title,
+      title: best.title ?? title,
       poster_path: best.poster_path ?? null,
       year: best.release_date ? parseInt(best.release_date.slice(0, 4)) : null,
-    };
+    } : null;
     resolutionCache.set(key, match);
     return match;
   } catch (err: unknown) {
+    // Asked to wait, or TMDB not answering the house just now: passed up for the batch to wait on.
+    if (isTmdbBusy(err) || houseAnswered(err)) throw err;
     // The catalogue could not be asked: that is no answer about a film. Carried
     // on, every film after it was counted "unmatched" and left out of the import
     // for good. So the import stops here, before a single row is written.
@@ -610,7 +656,9 @@ async function resolveFilm(title: string, year: string): Promise<TMDBMatch | nul
 }
 
 /**
- * Resolves a batch of films with rate limiting and progress reporting.
+ * Resolves a batch of films at the catalogue's pace, with progress reporting. A catalogue that
+ * asks the import to wait is waited on, and the same film asked again; only one that keeps
+ * asking for BUSY_GIVE_UP_MS with no film answered stops the import, and says so.
  * (Exported for its test.)
  */
 export async function resolveFilmsBatch(
@@ -619,6 +667,7 @@ export async function resolveFilmsBatch(
 ): Promise<Map<string, TMDBMatch>> {
   const resolved = new Map<string, TMDBMatch>();
   const total = entries.length;
+  const paced = pacer();
 
   // Deduplicate by cache key
   const uniqueEntries = new Map<string, { title: string; year: string }>();
@@ -630,6 +679,7 @@ export async function resolveFilmsBatch(
   }
 
   let current = 0;
+  let waitingSince: number | null = null;
   for (const [key, entry] of uniqueEntries) {
     current++;
     onProgress?.({
@@ -640,16 +690,32 @@ export async function resolveFilmsBatch(
     });
 
     const wasCached = resolutionCache.has(key);
-    const match = await resolveFilm(entry.title, entry.year);
+    let match: TMDBMatch | null;
+    for (;;) {
+      try {
+        match = await resolveFilm(entry.title, entry.year, paced);
+        waitingSince = null;
+        break;
+      } catch (err: unknown) {
+        const busy = isTmdbBusy(err);
+        if (!busy && !houseAnswered(err)) throw err;
+        const now = monotonicNow();
+        waitingSince ??= now;
+        if (now - waitingSince >= BUSY_GIVE_UP_MS) throw new Error(busy ? CATALOGUE_BUSY : CATALOGUE_DOWN);
+        onProgress?.({
+          phase: 'RESOLVING FILMS',
+          current,
+          total: uniqueEntries.size,
+          detail: busy ? 'The catalogue asks us to wait a moment' : 'The catalogue is not answering; asking again',
+        });
+        const asked = Number((err as { retryAfterMs?: unknown }).retryAfterMs);
+        await sleep(busy ? Math.min(30_000, Math.max(1000, Number.isFinite(asked) ? asked : 1000)) : DOWN_WAIT_MS);
+      }
+    }
     if (match) resolved.set(key, match);
 
-    // Rate limit only actual API calls, not cache hits
-    if (!wasCached) {
-      await new Promise(r => setTimeout(r, RESOLVE_DELAY_MS));
-    } else if (current % 20 === 0) {
-      // Micro-batching event-loop yield for cache hits
-      await new Promise(r => setTimeout(r, 0));
-    }
+    // A row already answered asks nothing; the event loop is given a turn now and then.
+    if (wasCached && current % 20 === 0) await sleep(0);
   }
 
   // Report final resolved count at diary level for the outer progress

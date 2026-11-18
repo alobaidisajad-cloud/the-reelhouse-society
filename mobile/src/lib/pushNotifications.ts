@@ -14,12 +14,37 @@ import type { NotificationResponse } from 'expo-notifications';
 import { ensureNoticeChannels } from './noticeChannels';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import { houseNow } from './houseClock';
 
 /**
  * This device's own token, as last registered. Sign-out removes exactly this
  * row: a member signed in on two phones keeps the other one.
  */
 export const PUSH_TOKEN_KEY = 'push_token_this_device';
+
+/** When this device's token was last registered with the house, on the house's clock. */
+export const PUSH_REGISTERED_AT_KEY = 'push_token_registered_at';
+
+/** A registration older than this is made again when the app comes back to the front. */
+export const REREGISTER_AFTER_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Whether this device's token is due to be registered again: none is remembered, or the last
+ * registration is over a day old. The house sends only to a token registered under a session that
+ * still stands (push_tokens_of), and ties a token to its session at each registration; a phone kept
+ * warm for weeks registered only at a cold launch, so a token from before round 13 stayed untied and
+ * the house could only bound it by age. Registering at least daily on a return to the front keeps
+ * every phone in use tied to its session.
+ */
+export function registrationIsDue(): boolean {
+  try {
+    if (!storage.getString(PUSH_TOKEN_KEY)) return true;
+    const at = Number(storage.getString(PUSH_REGISTERED_AT_KEY));
+    return !Number.isFinite(at) || at <= 0 || houseNow() - at > REREGISTER_AFTER_MS;
+  } catch {
+    return true;
+  }
+}
 
 /** A notice that arrives while the app is open: a banner and in the list, with its sound and badge. */
 export const FOREGROUND_NOTICES = {
@@ -150,69 +175,80 @@ async function storePushToken(_userId: string, token: string): Promise<void> {
       if (__DEV__) console.warn('[Push] register_push_token failed:', error.message);
       return;
     }
-    try { storage.set(PUSH_TOKEN_KEY, token); } catch { /* sign-out then removes by platform */ }
+    try {
+      storage.set(PUSH_TOKEN_KEY, token);
+      storage.set(PUSH_REGISTERED_AT_KEY, String(houseNow()));
+    } catch { /* sign-out then removes by platform */ }
+    // Registered again here: a forget of this token still owed from an earlier sign-out would take
+    // this registration with it. Required, not imported: endSession reads this module's key.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded late, past the import loop
+    const { tokenRegisteredAgain } = require('./endSession') as typeof import('./endSession');
+    tokenRegisteredAgain(token);
   } catch {
     // Non-critical — token will be re-registered on next app open
   }
 }
 
 /**
- * Remove push token on logout.
+ * Forget this phone's push token: on every way a session ends here, the member's own sign-out, a
+ * session ended elsewhere (a refused refresh, "Sign out of every other device" on another phone),
+ * and a launch that finds the session gone.
  *
  * ── THIS ONE CANNOT FAIL QUIETLY ────────────────────────────────────────────
- * If the token survives a logout, the device goes on receiving the PREVIOUS
- * member's notifications — their critiques, their admissions, the names of
- * people they follow — on somebody else's phone. `logout` already knows that;
- * it is why step 7 runs this BEFORE revoking the session.
+ * If the token survives, the phone goes on receiving the member's notices, their critiques, their
+ * admissions, the names of people they follow, on a lock screen no longer signed in as them.
  *
- * But it could not tell whether it worked, three ways over:
- *   · the delete is narrowed by `user_id`, and the policy is
- *     `user_id = auth.uid()`, so a refusal matches no row and PostgREST calls
- *     that 200 with no error;
- *   · every throw was swallowed;
- *   · and it returned `void`, so logout could not record it either.
+ * It is forgotten by the token itself (forget_push_token), which needs no session: the delete
+ * this replaced ran under the row's policy (`user_id = auth.uid()`), so a session already gone (a
+ * refresh refused while the app was away, a session ended on another phone) matched no row,
+ * PostgREST answered 200, and the token stayed, on the very path whose purpose is to stop that.
+ * The token is the proof (only this phone holds it), and the member it was registered to is named
+ * with it, so a phone registered since to someone else keeps theirs. Removing by platform would
+ * silence the member's other phones (20260929_01), so only an install that registered before the
+ * token was remembered falls back to it, which needs the session.
  *
- * The case that matters is not a hostile one. It is the ordinary one: if the
- * session has ALREADY expired by the time logout runs — a refresh that failed
- * while the app was backgrounded — then `auth.uid()` is null, the delete
- * matches nothing, and the token stays. Silently, on the path whose entire
- * purpose is to stop that.
- *
- * So the session is checked first, because without one this cannot possibly
- * succeed and that is worth saying out loud. With a session, an empty result is
- * legitimate — this member simply had no token registered.
- *
- * @returns true if the token is gone (or was never there); false if the removal
- *          could not be carried out, so logout can report it.
+ * @returns true if the token is gone (or none was ever there); false if it could not be forgotten,
+ *          so the sign-out can owe it (endSession) and report it.
  */
 export async function removePushToken(userId: string): Promise<boolean> {
+  let mine: string | undefined;
+  try { mine = storage.getString(PUSH_TOKEN_KEY); } catch { mine = undefined; }
   try {
+    if (mine) {
+      const { error } = await supabase.rpc('forget_push_token', { p_token: mine, p_user: userId });
+      if (error) {
+        logger.warn('[Push] token not forgotten:', error.message);
+        return false;
+      }
+      try { storage.delete(PUSH_TOKEN_KEY); storage.delete(PUSH_REGISTERED_AT_KEY); } catch { /* nothing left to forget */ }
+      return true;
+    }
+
+    // No token remembered, and notices not allowed: nothing was ever registered from this phone, so
+    // nothing is left to forget. Said as a failure, every session ended elsewhere on a phone that
+    // never allowed notices filed a defect report for nothing.
+    let allowed = true;
+    try { allowed = (await Notifications.getPermissionsAsync()).status === 'granted'; } catch { allowed = true; }
+    if (!allowed) return true;
+
+    // An install that registered before the token was remembered: the previous member's notices must
+    // not reach this device, so every row of this platform goes, under the member's session.
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user?.id) {
-      // No session means auth.uid() is null and the policy can match nothing.
-      // Reported rather than attempted-and-shrugged-at.
+      // No session means auth.uid() is null and the policy can match nothing: said, not shrugged at.
       logger.warn('[Push] token NOT removed: the session was already gone');
       return false;
     }
-
-    // This device's own row. A member is heard on every device they sign in on
-    // (20260929_01), so removing by platform would silence their other phone.
-    // An install that registered before the token was remembered falls back to
-    // the platform: the previous member's notices must not reach this device.
-    let mine: string | undefined;
-    try { mine = storage.getString(PUSH_TOKEN_KEY); } catch { mine = undefined; }
     const { error } = await supabase
       .from('push_tokens')
       .delete()
       .eq('user_id', userId)
-      .eq(mine ? 'token' : 'platform', mine ?? Platform.OS)
+      .eq('platform', Platform.OS)
       .select('id');
-
     if (error) {
       logger.warn('[Push] token removal refused:', error.message);
       return false;
     }
-    try { storage.delete(PUSH_TOKEN_KEY); } catch { /* nothing left to forget */ }
     // An empty result here is fine: with a live session the policy matches this
     // member's rows, so nothing coming back means nothing was registered.
     return true;
@@ -221,6 +257,18 @@ export async function removePushToken(userId: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * The notices this phone was shown, taken off it: the notification centre, the lock screen and the
+ * icon's badge. Called on every way a session ends here, as the token is forgotten: the next person
+ * to wake the phone read the member's notices ("@x left a critique on your log of ..."). Best effort:
+ * a phone that cannot clear them still signs out.
+ */
+export async function clearDeliveredNotices(): Promise<void> {
+  try { await Notifications.dismissAllNotificationsAsync(); } catch (e) { logger.warn('[Push] the delivered notices were not cleared:', e); }
+  try { await Notifications.setBadgeCountAsync(0); } catch (e) { logger.warn('[Push] the badge was not cleared:', e); }
+}
+
 
 /** A notification response → its data, handed on once per notification request (pure, so testable). */
 export function deliverEachTapOnce(onTap: (data: Record<string, string>) => void) {

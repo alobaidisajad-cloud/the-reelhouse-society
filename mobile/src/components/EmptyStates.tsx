@@ -109,10 +109,15 @@ export const REFRESH_FAILED = 'Could not refresh — check your connection.';
  * the same, so a failure never reads as an empty room. With `onRetry`, the
  * house's one TRY AGAIN.
  */
-export function EmptyOffline({ onRetry, wayOut }: {
+export function EmptyOffline({ onRetry, wayOut, busy = false }: {
     onRetry?: () => void;
     /** The way out beside TRY AGAIN, spaced so neither touch area takes the other's. */
     wayOut?: { label: string; onPress: () => void };
+    /**
+     * The read was refused because the film catalogue asked us to wait (TmdbBusy): the
+     * connection is fine, so it is said as it is, never as a lost signal.
+     */
+    busy?: boolean;
 } = {}) {
     // Chosen once: picked per render, the line changed while it was read.
     const [lore] = useState(() => pickRandom([
@@ -120,13 +125,14 @@ export function EmptyOffline({ onRetry, wayOut }: {
         'No signal from the Society. Hold your ground.',
         'The projector requires a connection. We wait.'
     ]));
-    useStateSaid('failed', 'Transmission Interrupted');
+    const title = busy ? 'The Catalogue Is Busy' : 'Transmission Interrupted';
+    useStateSaid('failed', title);
     return (
         <View style={s.offline}>
             <StateCard
                 buster="dimmed"
-                title="Transmission Interrupted"
-                subtitle={lore}
+                title={title}
+                subtitle={busy ? 'The catalogue asks us to wait a moment. Try again shortly.' : lore}
             />
             {(onRetry || wayOut) && (
                 <View style={s.acts}>

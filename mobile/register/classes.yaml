@@ -235,7 +235,7 @@ classes:
     seriousness: behaviour
     area: tests
     status: OPEN
-    count: 0
+    count: 1
     source: { kind: reviewer, ref: "P4.22, P4.26" }
     methods:
       - { kind: running, file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "presents the message as notify-push built it, in its own channel, in the E2E build" }
@@ -244,7 +244,10 @@ classes:
       - { kind: running, file: src/utils/__tests__/aPushIsPresentedAsTheAppsOwn.test.ts, test: "answers the link in no other build: nothing presented, the address left as it came" }
       - { kind: running, file: e2e/__tests__/pushPresent.test.ts, test: "waits for the room as the app marks it: a member's file, a log, a salon, the notices sheet" }
       - { kind: running, file: e2e/__tests__/pushPresent.test.ts, test: "sends every kind a push flow taps, and every push flow taps a kind it sends" }
-    fix: "the E2E build alone answers reelhouse://e2e/present?message=…: the message notify-push sent to the Expo stand-in is presented through expo-notifications with its own title, body, data and channel (e2ePresent), so it is the app's own notice and its tap reaches setupNotificationResponseHandler; every other build reads the address as one it does not have. notify-push is served in the sealed world, its messages kept by the stand-in; the flows tap each from the shade by its title line (presented with its sound, as a delivered push alerts) and wait for the route mark of the room it must open: a follow in front, in the background and killed (push_tap), a critique of a log (push_tap_critique: the log), an admission (push_tap_salon: the salon) and word from the house (push_tap_house: the notices sheet), one flow for each kind push-present sends and each kind a flow (audit P4-22-PUSH-TAP-PLAN)"
+      - { kind: running, file: e2e/__tests__/thePushedPhoneRegistersAsTheAppDoes.test.ts, test: "signs in as the member and registers the phone's token under that session, as the app does" }
+      - { kind: running, file: e2e/__tests__/thePushedPhoneRegistersAsTheAppDoes.test.ts, test: "stops the run when the token does not stand under a session the house still holds" }
+      - { kind: running, file: e2e/__tests__/thePushedPhoneRegistersAsTheAppDoes.test.ts, test: "stops the run when the house refuses the registration, or the member cannot sign in to make it" }
+    fix: "the E2E build alone answers reelhouse://e2e/present?message=…: the message notify-push sent to the Expo stand-in is presented through expo-notifications with its own title, body, data and channel (e2ePresent), so it is the app's own notice and its tap reaches setupNotificationResponseHandler; every other build reads the address as one it does not have. notify-push is served in the sealed world, its messages kept by the stand-in; the flows tap each from the shade by its title line (presented with its sound, as a delivered push alerts) and wait for the route mark of the room it must open: a follow in front, in the background and killed (push_tap), a critique of a log (push_tap_critique: the log), an admission (push_tap_salon: the salon) and word from the house (push_tap_house: the notices sheet), one flow for each kind push-present sends and each kind a flow (audit P4-22-PUSH-TAP-PLAN); round 13: the push flows register the member's phone as the app does, under a session, read back as standing (registerAsThePhone; mutant shape-pushed-phone-laid-without-a-session); the functions suite proves a signed-out phone is never pushed"
     places: [emulator]
 
   - id: E2E-route-never-opened
@@ -955,12 +958,12 @@ classes:
     seriousness: serious
     area: database
     status: OPEN
-    count: 3
+    count: 4
     source: { kind: history, ref: "Load 39747386418, the lock lab's second run: a closing account held the train's locks a second on 100,000 members" }
     methods:
       - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY in its turn by name, alone and outside any transaction: after the cars that make what it indexes, probed before the cars after it" }
       - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "drops an index left not whole and builds it once more, and fails one still not whole" }
-    fix: "two indexes built CONCURRENTLY (20261022_01 lounge_messages(reply_to_id), 20261022_02 a GIN index of the cards' metadata), live on production since the train of 2026-10-25 and read back valid (train_2_indexes_live_check.sql), each with a rehearsal that the index is whole and the reads are planned through it (db-integration.yml shows each failing without its index); request_account_deletion (20261016_02, pending) asks for a departed member's cards by containment, which that index answers. The train builds such a file first, alone, outside any transaction, drops one left not whole and builds it once more, then probes it; up-down-up.mjs and the lock lab run it alone too (P0.8) (mutant shape-index-never-built-first)"
+    fix: "two indexes built CONCURRENTLY (20261022_01 lounge_messages(reply_to_id), 20261022_02 a GIN index of the cards' metadata), live on production since the train of 2026-10-25 and read back valid (train_2_indexes_live_check.sql), each with a rehearsal that the index is whole and the reads are planned through it (db-integration.yml shows each failing without its index); request_account_deletion (20261016_02, pending) asks for a departed member's cards by containment, which that index answers. The train builds such a file first, alone, outside any transaction, drops one left not whole and builds it once more, then probes it; up-down-up.mjs and the lock lab run it alone too (P0.8) (mutant shape-index-never-built-first); round 13: two more built CONCURRENTLY, alone: logs_film_reviewed_newest (a film's critiques as one range, the H-DX.index rehearsal planning both reads through it) and lists_description_trigram (H-D4.index, its rehearsal that it is whole and the titles' twin); each car's rehearsal fails without its index (rehearsals.mjs --without)"
     places: [none]
 
   - id: E2E-no-flow-on-ios
@@ -1297,7 +1300,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 268
+    count: 267
     source: { kind: reviewer, ref: "P0.65 (DB-42, COD-11)" }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
@@ -1307,7 +1310,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1435
+    count: 1431
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
@@ -1448,12 +1451,16 @@ classes:
     seriousness: behaviour
     area: lounge
     status: OPEN
-    count: 2
+    count: 4
     source: { kind: reviewer, ref: "study of the salon's opening for P0.112: speed lab 39889250983, the salon ready 2.7 s over its budget" }
     methods:
       - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "the first page: each word with its reactions, counted and marked mine, and nothing else asked" }
       - { kind: running, file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "asks the house once for the whole corridor, and reads nothing else" }
-    fix: "a page of words and its reactions in one request (MESSAGE_COLUMNS, the reactions embedded by their key; the contract proves the embed against the house, which answers a wrong key 400); the salons' seats, newest rooms and hosted rooms asked at once, then the joined rooms, unread counts, door requests and faces together (mutants shape-reactions-asked-apart, shape-salons-read-in-turn)"
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "every read asks with the public key, and none waits on the member's session" }
+      - { kind: running, file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "never waits on the house's auth server to know who asks: a film page is TMDB's answer and no more" }
+      - { kind: running, file: src/hooks/__tests__/theProjectorDrawsOnTheHousesThreeReads.test.tsx, test: "an Auteur's projector draws once the house's three summaries answer" }
+      - { kind: running, file: src/hooks/__tests__/theProjectorDrawsOnTheHousesThreeReads.test.tsx, test: "an Auteur's passport draws once the house's three summaries answer" }
+    fix: "a page of words and its reactions in one request (MESSAGE_COLUMNS, the reactions embedded by their key; the contract proves the embed against the house, which answers a wrong key 400); the salons' seats, newest rooms and hosted rooms asked at once, then the joined rooms, unread counts, door requests and faces together (mutants shape-reactions-asked-apart, shape-salons-read-in-turn); a catalogue read never waits on the member's session or the house's auth server: the anon key alone, paced by address (review round 13; mutant shape-catalogue-waits-on-the-session); round 13: the Projector and Passport draw on the house's three summaries alone, the walk of the member's history gone (mutant shape-projector-waits-on-a-walk)"
     places: [none]
 
   - id: DATA-older-words-without-reactions
@@ -1498,7 +1505,7 @@ classes:
     seriousness: behaviour
     area: states
     status: OPEN
-    count: 14
+    count: 15
     source: { kind: reviewer, ref: "P0.112: the salon's transcript, then a sweep of every empty state in app/ and src/ (42 sites, 10 wrong)" }
     methods:
       - { kind: running, file: src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx, test: "while its words are on their way: reading, never \"be the first\"" }
@@ -1534,7 +1541,15 @@ classes:
       - { kind: running, file: src/components/lounge/__tests__/aSeatedMemberKeepsTheirSeatBeforeTheRoster.test.tsx, test: "a guest, at the door or banned, is still told the roster is kept for those seated" }
       - { kind: running, file: src/components/lounge/__tests__/aSeatedMemberKeepsTheirSeatBeforeTheRoster.test.tsx, test: "read, the seated member is drawn the roster whole" }
       - { kind: running, file: src/components/lounge/__tests__/aSalonsNoticeInItsRoomOpensTheDoorThere.test.tsx, test: "a seated member whose roster could not be read hands the settings their seat, and a way to read it again" }
-    fix: "each empty state is said only once its read has answered: the salon's transcript reads its own flags; the film page's critiques are unread while it is drawn from the warm catalogue (isPlaceholderData) and the section is set down only once they come; the stack's critiques sheet reads while the query is pending; the corridor and the share sheet read until the salons answered once (loungesRead); the door remembers which search it answered (answeredFor); the member's file knows a room's read answered (tabAnswered) and which filters its rows answer (answeredFilters, searchAnswered), a superseded search landing nothing; the follow list says whether it is known (followingKnown); the dockets are rebuilt during the render that brings their read (mutants shape-transcript-empty-while-reading, shape-film-invites-while-reading, shape-film-reading-never, shape-stack-critiques-empty-while-reading, shape-corridor-empty-before-read, shape-share-empty-before-read, shape-door-empty-before-read, shape-own-room-empty-before-answer, shape-search-empty-before-answer, shape-search-answered-never-said, shape-room-answer-unrecorded, shape-search-overtaken-lands, shape-answers-outlive-member, shape-own-logs-never-answered, shape-orbit-quiet-unread, shape-orbit-quiet-failed, shape-follows-never-held, shape-follows-never-failed, shape-follows-held-after-sign-out, shape-docket-copied-after-paint); a filing's critiques that could not be read are said at their foot, first page or next, with TRY AGAIN, never a blank under a MORE that did nothing (critiquesFailed) (mutant shape-critique-failure-unsaid); round 6: a stack’s critiques that could not be read stay said so when a critique is filed; the Tribunal’s URGENT is rebuilt from the answer held, never \"The docket is clear\" over waiting cases, and a failed pull says so (mutants shape-one-critique-taken-for-the-list, shape-urgent-emptied-on-return, shape-urgent-emptied-on-pull, shape-urgent-pull-fails-unsaid); the settings of a salon judge the seat by the standing the room acts on, never the roster rows alone: a seated member before the roster is read is told it is being read, after a failed read that it could not be, with TRY AGAIN, and is offered STEP OUT; a standing not yet known is never told it is a guest (mutant shape-unread-roster-said-kept-from-the-seated)"
+      - { kind: running, file: src/components/profile/__tests__/aRecordUnreadIsSaid.test.tsx, test: "a summary that could not be read is kept as unread, never as a file with no record" }
+      - { kind: running, file: src/components/profile/__tests__/aRecordUnreadIsSaid.test.tsx, test: "TRY AGAIN asks the summary alone: the file is not read again, and the archive's pages stay" }
+      - { kind: running, file: src/components/profile/__tests__/aRecordUnreadIsSaid.test.tsx, test: "a count that could not be read is no count: the record is not counted as 0" }
+      - { kind: running, file: src/components/profile/__tests__/aRecordUnreadIsSaid.test.tsx, test: "with no summary and no count answered, no run is drawn from the first page, and the record is said unread" }
+      - { kind: running, file: src/components/profile/__tests__/aRecordUnreadIsSaid.test.tsx, test: "the Projector says its record could not be read, and TRY AGAIN asks for it" }
+      - { kind: running, file: src/components/profile/__tests__/aRecordUnreadIsSaid.test.tsx, test: "TRY AGAIN says it is asking until the summary answers" }
+      - { kind: running, file: src/components/profile/__tests__/aRunIsNeverCountedFromAPart.test.ts, test: "is unknown when no count of the record answered: never a run counted from what is held" }
+      - { kind: running, file: src/components/profile/__tests__/aRunIsNeverCountedFromAPart.test.ts, test: "is unknown when only part of the record is held: never a run counted short from the first page" }
+    fix: "each empty state is said only once its read has answered: the salon's transcript reads its own flags; the film page's critiques are unread while it is drawn from the warm catalogue (isPlaceholderData) and the section is set down only once they come; the stack's critiques sheet reads while the query is pending; the corridor and the share sheet read until the salons answered once (loungesRead); the door remembers which search it answered (answeredFor); the member's file knows a room's read answered (tabAnswered) and which filters its rows answer (answeredFilters, searchAnswered), a superseded search landing nothing; the follow list says whether it is known (followingKnown); the dockets are rebuilt during the render that brings their read (mutants shape-transcript-empty-while-reading, shape-film-invites-while-reading, shape-film-reading-never, shape-stack-critiques-empty-while-reading, shape-corridor-empty-before-read, shape-share-empty-before-read, shape-door-empty-before-read, shape-own-room-empty-before-answer, shape-search-empty-before-answer, shape-search-answered-never-said, shape-room-answer-unrecorded, shape-search-overtaken-lands, shape-answers-outlive-member, shape-own-logs-never-answered, shape-orbit-quiet-unread, shape-orbit-quiet-failed, shape-follows-never-held, shape-follows-never-failed, shape-follows-held-after-sign-out, shape-docket-copied-after-paint); a filing's critiques that could not be read are said at their foot, first page or next, with TRY AGAIN, never a blank under a MORE that did nothing (critiquesFailed) (mutant shape-critique-failure-unsaid); round 6: a stack’s critiques that could not be read stay said so when a critique is filed; the Tribunal’s URGENT is rebuilt from the answer held, never \"The docket is clear\" over waiting cases, and a failed pull says so (mutants shape-one-critique-taken-for-the-list, shape-urgent-emptied-on-return, shape-urgent-emptied-on-pull, shape-urgent-pull-fails-unsaid); the settings of a salon judge the seat by the standing the room acts on, never the roster rows alone: a seated member before the roster is read is told it is being read, after a failed read that it could not be, with TRY AGAIN, and is offered STEP OUT; a standing not yet known is never told it is a guest (mutant shape-unread-roster-said-kept-from-the-seated); round 13: the house's summary that could not be read is kept unread and the Projector says THE RECORD COULD NOT BE READ with TRY AGAIN, which asks the summary alone and says ASKING… until it answers; the run is counted over the records held only against a count the house answered on this read (mutants shape-summary-failure-taken-as-none, shape-run-counted-from-a-part, shape-run-counted-with-no-count, shape-retry-reads-the-whole-file, shape-retry-unsaid-while-asking)"
     places: [none]
 
   - id: TEST-sweep-blind-to-a-handed-on-read
@@ -1584,10 +1599,10 @@ classes:
     seriousness: serious
     area: states
     status: OPEN
-    count: 5
+    count: 6
     source: { kind: reviewer, ref: "sweep of member state drawn before it was known (P0.112): _loggedIndex and _watchlistIndex were built from fetchLogs and fetchWatchlist alone, and fetchLogs ran only from the member's own profile" }
     methods:
-      - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "reads every log and every save, past a page of a thousand, and then holds them" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "reads every log and every save, more than a thousand in one read, and then holds them" }
       - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "says a read that failed as failed, never as \"nothing logged\", and keeps a ledger held" }
       - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "lays a page read later over the ledger, never in its place" }
       - { kind: running, file: src/stores/__tests__/theLedgerIsKnownWhole.test.ts, test: "lays the writes still queued offline over what it read, as they will land" }
@@ -1599,7 +1614,10 @@ classes:
       - { kind: running, file: app/person/__tests__/thePersonFileReadsTrue.test.tsx, test: "while the ledger is read, or could not be, draws no count: a short one is a wrong one" }
       - { kind: running, file: src/components/darkroom/__tests__/aSaveNotYetReadIsUninked.test.tsx, test: "unread: the bookmark is uninked, and still offered" }
       - { kind: running, file: src/components/log/__tests__/theDeckSaysWhatItKnows.test.tsx, test: "a mark not yet read is uninked and said so; the bookmark stays pressable" }
-    fix: "readMarks (marksLedger.ts) reads every log (light: film, status, rating, viewings, date) and every save, by id a thousand at a time, at launch and at sign-in; lays the offline queue's writes and the pages' fuller records over it; is read again once when a write overlapped it; lands nowhere after a sign-out; says failed, never none. marksKnown says whether it is held. Page reads lay over it; the watchlist adds and removes by the index. The ledger is kept on the phone, light, once held (marksDisk.ts). The editor is never handed a light record (heldLog). The film page draws a film the ledger does not hold as READING YOUR LEDGER / YOUR LEDGER UNREAD, uninked, and its log and watchlist rows ask for the ledger instead of filing; the director's hunt waits for it; Darkroom's save is uninked until it (mutants shape-ledger-one-page, shape-ledger-replaced-by-pages, shape-unknown-offered-as-unseen, shape-light-record-edited, shape-hunt-counted-short). The log page's bookmark is uninked too until the ledger is held (shape-darkroom-save-inked-unread, shape-log-save-inked-unread)"
+      - { kind: running, file: src/stores/__tests__/theLedgerIsReadOnceALaunch.test.ts, test: "an answer out of shape is a ledger not read, never one with nothing in it" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsReadOnceALaunch.test.ts, test: "refuses an answer whose columns are not all as long as the ids, or are missing" }
+      - { kind: running, file: src/stores/__tests__/aFirstSealIsOneTrip.test.ts, test: "a record of the film filed meanwhile on another phone is met by the insert, and the seal is filed as its rewatch" }
+    fix: "readMarks (marksLedger.ts) reads every log (light: film, status, rating, viewings, date) and every save, by id a thousand at a time, at launch and at sign-in; lays the offline queue's writes and the pages' fuller records over it; is read again once when a write overlapped it; lands nowhere after a sign-out; says failed, never none. marksKnown says whether it is held. Page reads lay over it; the watchlist adds and removes by the index. The ledger is kept on the phone, light, once held (marksDisk.ts). The editor is never handed a light record (heldLog). The film page draws a film the ledger does not hold as READING YOUR LEDGER / YOUR LEDGER UNREAD, uninked, and its log and watchlist rows ask for the ledger instead of filing; the director's hunt waits for it; Darkroom's save is uninked until it (mutants shape-ledger-one-page, shape-ledger-replaced-by-pages, shape-unknown-offered-as-unseen, shape-light-record-edited, shape-hunt-counted-short). The log page's bookmark is uninked too until the ledger is held (shape-darkroom-save-inked-unread, shape-log-save-inked-unread); round 13: an answer whose columns are not all as long as the ids is a ledger not read (mutant shape-ledger-misshapen-taken-as-read); a seal filed as the rewatch of a record the phone held nowhere lays it in the index at once (mutant shape-rewatch-leaves-the-film-unknown); shape-ledger-one-page now cuts the one read (D-mutants.yaml replaces its entry)"
     places: [none]
 
   - id: DATA-rank-sold-before-it-was-read
@@ -1620,7 +1638,7 @@ classes:
     seriousness: behaviour
     area: copy
     status: OPEN
-    count: 10
+    count: 11
     source: { kind: reviewer, ref: "the first minute, read as a new member (2026-10-24): lobby-empty drawn and read" }
     methods:
       - { kind: running, file: src/components/lobby/__tests__/theWallHasNoDeadEnds.test.tsx, test: "to a member with nothing logged, or whose ledger is still read: never that the house has seen their taste" }
@@ -1651,7 +1669,9 @@ classes:
       - { kind: running, file: src/services/__tests__/aRenameIsAnsweredWithTheHandleKept.test.ts, test: "a chosen rename goes through the house's rename, and is answered with the handle the house kept" }
       - { kind: running, file: src/services/__tests__/aRenameIsAnsweredWithTheHandleKept.test.ts, test: "an amendment without a rename is answered with the handle the house holds, and renames no one" }
       - { kind: running, file: src/services/__tests__/aRenameIsAnsweredWithTheHandleKept.test.ts, test: "a rename the house refuses is thrown, never answered as kept, and records no past handle" }
-    fix: "the line is said only once the member's ledger is read whole and holds a film (marksLedger); before, the bill says what is true of anyone: The house keeps its best seats / for those who keep the record. The Lobby's other words about a member are true by their rank (mutant shape-taste-claimed-unseen); SAVE files the changed preferences through the house's key-by-key merge (savePreferences), keys changed from what the form opened with, and says amended, kept on this phone, or refused (mutants shape-save-files-nothing, shape-save-kept-said-amended, shape-save-sends-untouched-keys); the Reel's SAVE leaves the saying to the store, once (mutant shape-deck-says-saved-at-the-tap); SAVE files the visibility (no offline path) before the preferences, so its \"changes reverted\" never stands over preferences kept to send, and a refusal after it says which went (mutant shape-visibility-filed-after-kept-preferences); round 6: a log page’s SAVE says nothing at the tap; the store says how it went, once (mutants shape-removal-said-at-the-tap, shape-save-said-at-the-tap); \"No salon matches that.\" waits for the house's answer, and an amendment the house wrote nowhere is never sealed or announced (mutants shape-no-match-before-the-answer, shape-amend-sealed-over-nothing); a salon message kept offline answers 'queued', never true, and a share kept for the wire is marked but never said \"Shared to lounge\" (mutants shape-queued-share-said-shared, shape-queued-message-answered-sent); ADMIT feels its success only when the house says it admitted someone (accept_follow_request answers whether, 20261117_01); a request withdrawn meanwhile is said no longer at the door (mutant shape-withdrawn-request-felt-as-admitted); a fresh confirmation carries its PKCE challenge (supabase-js 2.118), so its link is traded on the phone; a sign-up link that did not open leads with SIGN IN, and a fresh confirmation sent says the address may already be confirmed, never that a link was sent to it (mutant shape-fresh-confirmation-said-sent); a rename goes through the house's own rename (rename_my_handle, 20261117_01) and the save is answered with the handle the house kept: the phone holds that handle, never the one it asked for, and a rename the house did not take is said, with no AMENDED seal (mutant shape-rename-held-as-asked)"
+      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "a note kept for the queue when the connection is lost says it waits for the connection, and is kept" }
+      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "an amendment that lands with its note only queued says the note waits, never sealed whole in silence" }
+    fix: "the line is said only once the member's ledger is read whole and holds a film (marksLedger); before, the bill says what is true of anyone: The house keeps its best seats / for those who keep the record. The Lobby's other words about a member are true by their rank (mutant shape-taste-claimed-unseen); SAVE files the changed preferences through the house's key-by-key merge (savePreferences), keys changed from what the form opened with, and says amended, kept on this phone, or refused (mutants shape-save-files-nothing, shape-save-kept-said-amended, shape-save-sends-untouched-keys); the Reel's SAVE leaves the saying to the store, once (mutant shape-deck-says-saved-at-the-tap); SAVE files the visibility (no offline path) before the preferences, so its \"changes reverted\" never stands over preferences kept to send, and a refusal after it says which went (mutant shape-visibility-filed-after-kept-preferences); round 6: a log page’s SAVE says nothing at the tap; the store says how it went, once (mutants shape-removal-said-at-the-tap, shape-save-said-at-the-tap); \"No salon matches that.\" waits for the house's answer, and an amendment the house wrote nowhere is never sealed or announced (mutants shape-no-match-before-the-answer, shape-amend-sealed-over-nothing); a salon message kept offline answers 'queued', never true, and a share kept for the wire is marked but never said \"Shared to lounge\" (mutants shape-queued-share-said-shared, shape-queued-message-answered-sent); ADMIT feels its success only when the house says it admitted someone (accept_follow_request answers whether, 20261117_01); a request withdrawn meanwhile is said no longer at the door (mutant shape-withdrawn-request-felt-as-admitted); a fresh confirmation carries its PKCE challenge (supabase-js 2.118), so its link is traded on the phone; a sign-up link that did not open leads with SIGN IN, and a fresh confirmation sent says the address may already be confirmed, never that a link was sent to it (mutant shape-fresh-confirmation-said-sent); a rename goes through the house's own rename (rename_my_handle, 20261117_01) and the save is answered with the handle the house kept: the phone holds that handle, never the one it asked for, and a rename the house did not take is said, with no AMENDED seal (mutant shape-rename-held-as-asked); a record that lands with its private note only queued says so (NOTE_HELD), on a new record, a rewatch and an amendment (mutant shape-note-queued-said-sealed)"
     places: [none]
 
   - id: LOOK-stand-in-eye
@@ -2007,7 +2027,7 @@ classes:
     seriousness: behaviour
     area: speed
     status: OPEN
-    count: 23
+    count: 24
     source: { kind: reviewer, ref: "P4.53: every page opens at its floor (audit/final/P4-53-STUDY.md)" }
     methods:
       - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "seeds the page from the feed row it was opened from, its critiques still to come" }
@@ -2061,7 +2081,14 @@ classes:
       - { kind: running, file: src/hooks/__tests__/aMemberFileIsReadInOneTrip.test.tsx, test: "draws a sealed file's counts and none of its logs, though they were asked with its row" }
       - { kind: running, file: src/stores/__tests__/theSalonListIsWholeOrSaysSo.test.ts, test: "says the list could not be read when the answer lacks any one of its lists, never a short list" }
       - { kind: running, file: src/components/dispatch/__tests__/seriesScreen.test.tsx, test: "asks for the house’s count of each essay, never the essays, so the read time is the essay’s" }
-    fix: "the log page asks for the record and its critiques together and draws the feed row it was opened from in its first frame (seedFromCards), its critiques said to be coming, and keeps that row when the house cannot be reached; the Darkroom draws its kept sheet while it reads, keeps a sheet whole while its next batch develops, reads its kept sheet once a key, and asks again only on a return to the network; the person page asks the network beside the archive; the edit form asks for a viewing's id only for a log it holds without one. The Dispatch reader draws an essay it holds (opened before: a notice, the part before) in its first frame and asks for its critiques with it, not after; the next part and a series' parts, read whole already, are kept where the reader looks first; a stack opened from the Reel's card draws its title, curator, first posters and true size at once. A log's critiques come with their authors and a member's followers and following with their profiles, in the one answer (the keys log_comments and interactions hold to profiles, probed live), not a second request after the first. The salon page read its room with every column (its invite code and limits among them); it reads ROOM_COLUMNS, and a guard finds any read of every column. Year in Cinema read every column of a whole year (each log's words and past viewings) behind its loading frame at every opening; it reads the seven it draws, and keeps the year it told, drawn at once on the next opening and read again beneath. The cache kept on the phone was dropped whole past 2 MB, so a member with the most reads opened every tab on nothing; past it, it keeps the Lobby's and the Reels' reads, then the newest, each whole, and never a search. The Reel read the following feed and the stacks beside the house's logs it opens on, three answers parsed under its first frame; the two are asked once the logs have answered, or at once when the member turns to them. The Dispatch kept nothing on the phone, and every launch drew its skeletons until the house answered; the paper as it opens is kept as the house sent it (keptPages), for the member who read it, a day at most, drawn at once and read again beneath, its rows checked again and anyone hidden since left out, with no pull spinner over that read. The film page drew its hero 1.0 to 1.8 s after its answer on the lab's phone (critical-path.mjs): the push's slide ended while the film was read, so the answer drew the hero and every section below it in one commit; the rest of the page now waits for the hero drawn with its film, a frame after. A salon left for another lost its words, and opened again was read whole behind a spinner; the rooms left are kept (the last five, this run only), drawn at once with anyone hidden since left out and caught up beneath as the open room is, and a sign-out keeps none. The Lounge kept nothing on the phone either, and every launch drew its skeletons behind five reads; the corridor as drawn is kept (keptPages) for the member who read it, a day at most, drawn at once before the first read only and read again beneath, each row held to a room's shape as it is read back. A member's file read the member's row by name, then the counts, the summary and the first logs: two trips on every opening, the own file's included; with the member's id known (the own file; a link from a row that holds it, memberPath), the four are asked together, each under its own rule, a sealed file's logs never drawn, a name now another member's read again by its own id, the shelf's count shown once the rank is read. The series page read every part's whole essay, up to 24 at 25,000 characters, to print 24 read times; it reads the count the house keeps of each (dispatch_posts.words, 20261109_01), and a part with no count shows none. The Lounge read its corridor in five reads over two round trips; it is one call (get_lounge_list, 20261109_02), and an answer missing any piece is a read that failed, never a short list. The rest of the study's list is P4.53's next batches"
+      - { kind: running, file: src/stores/__tests__/theLedgerIsReadOnceALaunch.test.ts, test: "a record of 10,000 films is read in one trip, every film known and kept" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsReadOnceALaunch.test.ts, test: "the launch asks twice, the session then the boot: the ledger is read once" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsReadOnceALaunch.test.ts, test: "read again once the moment has passed" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsReadOnceALaunch.test.ts, test: "a ledger that could not be read is asked again at once, and then held" }
+      - { kind: running, file: src/stores/__tests__/theLedgerIsReadOnceALaunch.test.ts, test: "a member signed out and in again a moment later has their ledger read for them" }
+      - { kind: running, file: src/stores/__tests__/aFirstSealIsOneTrip.test.ts, test: "a film's first record, the ledger held, is one trip to the house: the insert" }
+      - { kind: running, file: src/stores/__tests__/aFirstSealIsOneTrip.test.ts, test: "with the ledger not yet known, the house is asked first, and a record of the film there is filed as its rewatch" }
+    fix: "the log page asks for the record and its critiques together and draws the feed row it was opened from in its first frame (seedFromCards), its critiques said to be coming, and keeps that row when the house cannot be reached; the Darkroom draws its kept sheet while it reads, keeps a sheet whole while its next batch develops, reads its kept sheet once a key, and asks again only on a return to the network; the person page asks the network beside the archive; the edit form asks for a viewing's id only for a log it holds without one. The Dispatch reader draws an essay it holds (opened before: a notice, the part before) in its first frame and asks for its critiques with it, not after; the next part and a series' parts, read whole already, are kept where the reader looks first; a stack opened from the Reel's card draws its title, curator, first posters and true size at once. A log's critiques come with their authors and a member's followers and following with their profiles, in the one answer (the keys log_comments and interactions hold to profiles, probed live), not a second request after the first. The salon page read its room with every column (its invite code and limits among them); it reads ROOM_COLUMNS, and a guard finds any read of every column. Year in Cinema read every column of a whole year (each log's words and past viewings) behind its loading frame at every opening; it reads the seven it draws, and keeps the year it told, drawn at once on the next opening and read again beneath. The cache kept on the phone was dropped whole past 2 MB, so a member with the most reads opened every tab on nothing; past it, it keeps the Lobby's and the Reels' reads, then the newest, each whole, and never a search. The Reel read the following feed and the stacks beside the house's logs it opens on, three answers parsed under its first frame; the two are asked once the logs have answered, or at once when the member turns to them. The Dispatch kept nothing on the phone, and every launch drew its skeletons until the house answered; the paper as it opens is kept as the house sent it (keptPages), for the member who read it, a day at most, drawn at once and read again beneath, its rows checked again and anyone hidden since left out, with no pull spinner over that read. The film page drew its hero 1.0 to 1.8 s after its answer on the lab's phone (critical-path.mjs): the push's slide ended while the film was read, so the answer drew the hero and every section below it in one commit; the rest of the page now waits for the hero drawn with its film, a frame after. A salon left for another lost its words, and opened again was read whole behind a spinner; the rooms left are kept (the last five, this run only), drawn at once with anyone hidden since left out and caught up beneath as the open room is, and a sign-out keeps none. The Lounge kept nothing on the phone either, and every launch drew its skeletons behind five reads; the corridor as drawn is kept (keptPages) for the member who read it, a day at most, drawn at once before the first read only and read again beneath, each row held to a room's shape as it is read back. A member's file read the member's row by name, then the counts, the summary and the first logs: two trips on every opening, the own file's included; with the member's id known (the own file; a link from a row that holds it, memberPath), the four are asked together, each under its own rule, a sealed file's logs never drawn, a name now another member's read again by its own id, the shelf's count shown once the rank is read. The series page read every part's whole essay, up to 24 at 25,000 characters, to print 24 read times; it reads the count the house keeps of each (dispatch_posts.words, 20261109_01), and a part with no count shows none. The Lounge read its corridor in five reads over two round trips; it is one call (get_lounge_list, 20261109_02), and an answer missing any piece is a read that failed, never a short list. The rest of the study's list is P4.53's next batches; round 13: the marks ledger is one read (get_marks_ledger, H-D2: each column one array; its rehearsal compares it with the member's own read), read once a launch (mutant shape-ledger-read-twice-a-launch); a film's first seal with the ledger held is the insert alone, a record filed elsewhere met by its duplicate path (mutant shape-first-seal-checks-first)"
     places: [none]
 
   - id: RUNTIME-an-instant-read-by-the-engine
@@ -2239,13 +2266,15 @@ classes:
     seriousness: layout
     area: states
     status: OPEN
-    count: 3
+    count: 4
     source: { kind: reviewer, ref: "review round 1, the Lobby, Reel, Darkroom and film page, 2026-11-14" }
     methods:
       - { kind: running, file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "signed out, the reel and the stacks go back to everyone's, never waiting on a list no one reads" }
       - { kind: running, file: src/components/reels/__tests__/theReelSaysWhenItCouldNotRead.test.tsx, test: "the next person on the phone is never handed the last member’s stack search or reels" }
       - { kind: running, file: src/components/lounge/__tests__/theSalonSearchIsTheMembersOwn.test.tsx, test: "the next member on the phone opens the salons with the search empty, every salon shown" }
-    fix: "the member's choice of reel holds while they are signed in; signed out the Reel shows the main reel and the stacks of all (mutant shape-following-kept-signed-out); each member's choices and search start afresh when the member on the phone changes (mutant shape-reel-choices-kept-for-the-next); round 6: the Lounge’s salon search starts empty when the member on the phone changes (mutants shape-salon-search-kept-for-the-next)"
+      - { kind: running, file: src/stores/__tests__/aSignOutTakesTheCacheWithIt.test.ts, test: "a read of the member's that answers while they sign out is never written after: the next start opens on nothing of theirs" }
+      - { kind: running, file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "a cache held for one member is never written once another has signed in" }
+    fix: "the member's choice of reel holds while they are signed in; signed out the Reel shows the main reel and the stacks of all (mutant shape-following-kept-signed-out); each member's choices and search start afresh when the member on the phone changes (mutant shape-reel-choices-kept-for-the-next); round 6: the Lounge’s salon search starts empty when the member on the phone changes (mutants shape-salon-search-kept-for-the-next); round 13: every sign-out takes the query cache away through forgetCache, a write still waiting with it, and a held write taken for one member is never written for another (mutants shape-held-cache-outlives-sign-out, shape-held-cache-written-for-another-member)"
     places: [none]
 
   - id: WRITE-words-let-go-unsent
@@ -3562,7 +3591,7 @@ classes:
       - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "for the member's own standing, the house's own words, and no defect reported" }
       - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "by a fault at the house, \"its private note could not be kept\", and the fault reported" }
       - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "on a rewatch and on an amendment, the same sentence" }
-      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "a note kept for the queue when the connection is lost says nothing of the note, and is kept" }
+      - { kind: running, file: src/stores/__tests__/aPrivateNoteRefusedIsSaid.test.ts, test: "a note kept for the queue when the connection is lost says it waits for the connection, and is kept" }
       - { kind: running, file: src/stores/__tests__/aNoticeUndoneIsSaid.test.ts, test: "READ ALL refused: the notices are unread again, and the member is told it did not take; one taken says nothing" }
       - { kind: running, file: src/stores/__tests__/aNoticeUndoneIsSaid.test.ts, test: "a notice's X refused: the notice comes back, and the member is told it was not dismissed; one taken says nothing" }
       - { kind: running, file: src/stores/__tests__/aNoticeUndoneIsSaid.test.ts, test: "a group's X refused: the group comes back, and the member is told they were not dismissed" }
@@ -3672,7 +3701,7 @@ classes:
     seriousness: behaviour
     area: search
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: reviewer, ref: "review round 12, every feature, 2026-11-18" }
     methods:
       - { kind: running, file: src/hooks/__tests__/aSpoilerIsNeverQuotedInSearch.test.tsx, test: "is never quoted to another member: the row says it holds spoilers" }
@@ -3680,7 +3709,14 @@ classes:
       - { kind: running, file: src/hooks/__tests__/aSpoilerIsNeverQuotedInSearch.test.tsx, test: "is quoted to its own author, whose words they are" }
       - { kind: running, file: src/hooks/__tests__/aSpoilerIsNeverQuotedInSearch.test.tsx, test: "a review not marked is quoted as before" }
       - { kind: running, file: src/hooks/__tests__/aSpoilerIsNeverQuotedInSearch.test.tsx, test: "the row neither shows nor speaks the words, only that it holds spoilers" }
-    fix: "search_logs gives each record its spoiler mark (20261118_01) and a marked review is never quoted to another member: the row says CONTAINS SPOILERS, drawn and heard, an abandoned record keeps its reason, and the author reads their own words (logExcerpt; mutant shape-spoiler-quoted-to-another)"
+      - { kind: running, file: src/utils/__tests__/aSpoilerNeverLeavesTheHouse.test.tsx, test: "words marked as a spoiler never leave; others leave as they are" }
+      - { kind: running, file: src/utils/__tests__/aSpoilerNeverLeavesTheHouse.test.tsx, test: "a take marked SPOILERS leaves as what it is, its film and its spoilers: never its words" }
+      - { kind: running, file: src/utils/__tests__/aSpoilerNeverLeavesTheHouse.test.tsx, test: "the spine pinned over a take's page names its film and its spoilers, never its words, and not its kind twice" }
+      - { kind: running, file: src/utils/__tests__/aSpoilerNeverLeavesTheHouse.test.tsx, test: "a review marked as a spoiler leaves no words on the file, only that there are spoilers" }
+      - { kind: running, file: src/utils/__tests__/aSpoilerNeverLeavesTheHouse.test.tsx, test: "the film page's file sent as text never quotes a spoiler review" }
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "a take marked SPOILERS leaves as what it is, never in its words: the line sent and the one previewed" }
+      - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "a review marked as a spoiler is handed to the file as one, which then prints none of it" }
+    fix: "search_logs gives each record its spoiler mark (20261118_01) and a marked review is never quoted to another member: the row says CONTAINS SPOILERS, drawn and heard, an abandoned record keeps its reason, and the author reads their own words (logExcerpt; mutant shape-spoiler-quoted-to-another); round 13: a share never sends spoiler-marked words (sharedWords: the log's file, the film page's text share, a take's line, its preview, its salon card, its clipping, the spine over its page), and the house retitles a spoiler take's cards already in the salons and on each mark (rehearsals of the B9 and B9.locks pieces; mutants shape-spoiler-on-the-nitrate-file, shape-spoiler-film-text-share, shape-log-file-not-told-spoiler, shape-spoiler-take-shared-in-words, shape-spoiler-on-the-spine)"
     places: [none]
 
   - id: READ-a-search-cut-at-a-fixed-count
@@ -3688,7 +3724,7 @@ classes:
     seriousness: behaviour
     area: search
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: reviewer, ref: "review round 12, every feature, 2026-11-18" }
     methods:
       - { kind: running, file: src/hooks/__tests__/theSearchReadsPastItsFirstPage.test.tsx, test: "the records: twenty shown, more said, and the next twenty asked from the last one shown" }
@@ -3702,7 +3738,7 @@ classes:
       - { kind: running, file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "while the next page is read, the foot says so" }
       - { kind: running, file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "a next page that could not be read is said, and asked again" }
       - { kind: running, file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "a section read to its end counts exactly, and offers nothing more" }
-    fix: "each source is its own paged read: records by search_logs (the film, the writing or the handle of its writer, newest first, the hidden left out at the house) and members by search_members (the handle itself, then handles and names that begin with the words, then the rest, paged by closeness and handle), both 20261118_01, stacks by a keyset cursor, films by the catalogue page; each tab reads on at its foot, said while it reads and when it fails (mutants shape-search-records-stop-at-the-first-page, shape-members-paged-without-their-closeness)"
+    fix: "each source is its own paged read: records by search_logs (the film, the writing or the handle of its writer, newest first, the hidden left out at the house) and members by search_members (the handle itself, then handles and names that begin with the words, then the rest, paged by closeness and handle), both 20261118_01, stacks by a keyset cursor, films by the catalogue page; each tab reads on at its foot, said while it reads and when it fails (mutants shape-search-records-stop-at-the-first-page, shape-members-paged-without-their-closeness); round 13: the stacks are paged by search_stacks's cursor (mutant shape-stacks-asked-from-the-first-again); shape-search-records-stop-at-the-first-page's find made unique (D-mutants.yaml replaces its entry)"
     places: [none]
 
   - id: DB-a-car-rehearsed-under-earlier-locks
@@ -3742,4 +3778,467 @@ classes:
       - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY in its turn by name, alone and outside any transaction: after the cars that make what it indexes, probed before the cars after it" }
       - { kind: running, file: e2e/__tests__/trainLocks.test.ts, test: "in name order: each car rehearsed (A) and applied (B) before the next, the index built (B) in its turn" }
     fix: "train.cjs goes car by car strictly in name order, the order CI applies them in: an index built CONCURRENTLY is built alone in its own turn, after the cars named before it and before the cars after it, whose rehearsals read through it; train-locks.mjs measures the same runs (mutant shape-train-builds-indexes-first)"
+    places: [none]
+
+  - id: WRITE-an-older-write-sent-over-a-newer
+    title: "A write waiting in the offline queue was sent after a newer write of the same thing had landed, and undid it: a Vault note rewritten went back to its older words, an unfollow or a withdrawn certification was made again and the other member told; a note queued on one phone landed over one written later, or taken away later, on another"
+    seriousness: behaviour
+    area: offline queue
+    status: OPEN
+    count: 1
+    source:
+      kind: reviewer
+      ref: review round 13, races and the queue, 2026-11-18
+    methods:
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: is named the same by its setting and its unsetting, and not at all by a write that adds
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: "a note written again with no signal replaces the one waiting: one note for the viewing is queued, the newer"
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: a follow then an unfollow made offline leave only the unfollow waiting, and the follow is settled as done with
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: "lets the older go once it lands: the queue never sends the older note over it"
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: keeps the older waiting when it does not land, so nothing the member did is lost
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: holds the queue's write of the same thing while it is out, and the queue sends the rest
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: waits for the queue's write of the same thing already out, so the newer lands last
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: two online writes of one thing go one after the other
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: never sends a write let go while the send was out
+      - kind: running
+        file: src/stores/__tests__/aNoteWrittenLaterStands.test.ts
+        test: "a note sealed online lets go the older note still queued: the queue never sends it, and the house keeps the newer"
+      - kind: running
+        file: src/stores/__tests__/aNoteWrittenLaterStands.test.ts
+        test: read again on the way back to the front, the house's newer note is shown, never the older one that waited
+      - kind: running
+        file: src/stores/__tests__/aNoteWrittenLaterStands.test.ts
+        test: a note taken away online lets go the older note still queued too
+      - kind: running
+        file: src/stores/__tests__/aNoteWrittenLaterStands.test.ts
+        test: every note is sent with the moment it was written, for the house to keep only the newest
+      - kind: running
+        file: src/stores/__tests__/aFilingMarkLandedLetsTheQueuedOneGo.test.ts
+        test: a withdrawal that lands online lets go the certification still queued, so it is never made again
+      - kind: running
+        file: src/stores/__tests__/aFilingMarkLandedLetsTheQueuedOneGo.test.ts
+        test: a save that lands online lets go the removal of it still queued
+      - kind: running
+        file: src/stores/__tests__/aFollowTheHouseAsksToWaitForIsKept.test.ts
+        test: an unfollow that lands online lets go the follow of that member still queued from before
+      - kind: running
+        file: src/stores/__tests__/twoHeartsAMomentApartBothLand.test.ts
+        test: lets go a withdrawal of it still queued from before, so the queue never takes it back
+      - kind: running
+        file: src/stores/__tests__/aNoteSentLateShowsTheHousesWord.test.ts
+        test: once the queue has sent a note the house did not write, the Vault shows no note
+      - kind: running
+        file: src/stores/__tests__/aNoteSentLateShowsTheHousesWord.test.ts
+        test: a removal sent late, done unremoved (a later note stands at the house), shows the later note
+      - kind: running
+        file: src/stores/__tests__/aNoteSentLateShowsTheHousesWord.test.ts
+        test: a read asked again while one is out is made once that one is answered, never dropped
+    fix: "One pending write per thing set whole (keyOf: a note, a follow, a certification, a save, an answer, a film on the watchlist): a newer queued write lets the older go; every online write of such a thing goes through writeOnline, which waits for the queue's copy already out, holds the queue's copy back while it is out, and lets go every older one when it lands; the send reads the queue again before each write; after a send the Vault reads the sent notes' records again. The house keeps a note only over one written no later (viewing_note_set/remove with the moment written, H-A1) and keeps a removal's moment so an older note sent later is done unwritten, one viewing's set and removal one after the other (H-A5); their rehearsals (the round's, rehearsals.mjs --without) fail without them (mutants shape-older-queued-write-kept, shape-online-landing-keeps-older, shape-send-reads-queue-once, shape-queue-sends-beside-the-online-write, shape-note-door-unkeyed, shape-unfollow-door-unkeyed, shape-filing-mark-door-unkeyed, shape-certify-door-unkeyed, shape-vault-not-read-after-send, shape-forced-vault-read-dropped, shape-late-removal-not-read-again)"
+    places:
+      - none
+
+  - id: WRITE-a-mark-refused-for-coming-quickly
+    title: "The house refused a member's second follow or certification within a second of the first: the heart sprang back with \"Failed to certify entry.\" and a defect report, and a queue of marks sent one per send and halted every write behind it; a follow resent by the queue spent the member's pace on an insert that made nothing"
+    seriousness: behaviour
+    area: offline queue
+    status: OPEN
+    count: 1
+    source:
+      kind: reviewer
+      ref: review round 13, races and the queue, 2026-11-18
+    methods:
+      - kind: running
+        file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts
+        test: names the seconds to wait and what is paced
+      - kind: running
+        file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts
+        test: "is not any other failure: a refusal, no signal, or the old floor's words"
+      - kind: running
+        file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts
+        test: waits the seconds the house names and asks again, and lands
+      - kind: running
+        file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts
+        test: hands back a wait longer than the phone waits, asking only once
+      - kind: running
+        file: src/stores/__tests__/twoHeartsAMomentApartBothLand.test.ts
+        test: waits out the house's short pace and lands, with nothing said and nothing reported
+      - kind: running
+        file: src/stores/__tests__/twoHeartsAMomentApartBothLand.test.ts
+        test: asked to wait long, keeps the heart and queues the certification to go later, never said as failed
+      - kind: running
+        file: src/stores/__tests__/twoHeartsAMomentApartBothLand.test.ts
+        test: a stack asked to wait long too
+      - kind: running
+        file: src/stores/__tests__/aFollowTheHouseAsksToWaitForIsKept.test.ts
+        test: a follow the house asks to wait a moment for waits it out and lands, with nothing said
+      - kind: running
+        file: src/stores/__tests__/aFollowTheHouseAsksToWaitForIsKept.test.ts
+        test: a follow the house asks to wait an hour for stays FOLLOWING and is queued to go later, never said as failed
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: keeps a follow the house asks an hour's wait for, unspent and unsaid, and sends the words behind it
+      - kind: running
+        file: src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+        test: paced for the member's own acts, holds their other marks this send, and still sends their words
+      - kind: running
+        file: src/utils/__tests__/aResentFollowSpendsNoPace.test.ts
+        test: already held at the house, it is done without an insert
+      - kind: running
+        file: src/utils/__tests__/aResentFollowSpendsNoPace.test.ts
+        test: not yet held, it is inserted, once
+    fix: "The house paces a member as a script is paced, not a person (check_interaction_rate_limit, H-A2: a room of 120 refilling one every 2 seconds, 400 follows and 3,000 certifications a day, 3 follows of one member or 5 certifications of one piece an hour), refusing with RH429 and the wait; the phone waits a short wait and asks again (atTheHousesPace), keeps a long one queued with nothing said or reported, the queue never spends a retry on it and goes on with the rest, and the queue's follow reads the row first; H-A2's rehearsal fails without it (mutants shape-pace-said-as-failure, shape-pace-never-waited, shape-member-pace-sends-every-mark, shape-resent-follow-spends-pace)"
+    places:
+      - none
+
+  - id: READ-an-answer-that-wipes-what-was-heard
+    title: "A read answered after words were heard live replaced the list with its older answer: a salon's first read wiped a message said meanwhile, and the member's own message sent meanwhile; the notices board dropped a notice heard during its read and the bell one with it; and a channel's first live moment was never caught up on, nor a read asked while one was out"
+    seriousness: behaviour
+    area: live channels
+    status: OPEN
+    count: 1
+    source:
+      kind: reviewer
+      ref: review round 13, races and the queue, 2026-11-18
+    methods:
+      - kind: running
+        file: src/stores/__tests__/aWordHeardWhileTheRoomIsReadStays.test.ts
+        test: a word heard over the channel while the room's first read is out stays after the read answers, in its place
+      - kind: running
+        file: src/stores/__tests__/aWordHeardWhileTheRoomIsReadStays.test.ts
+        test: the channel's first live moment, after the room's read landed, reads what came since
+      - kind: running
+        file: src/stores/__tests__/aWordHeardWhileTheRoomIsReadStays.test.ts
+        test: "live while the room's read is still out: what came between is read as soon as the read lands"
+      - kind: running
+        file: src/stores/__tests__/aWordHeardWhileTheRoomIsReadStays.test.ts
+        test: the member's own words sent while the room's first read is out stay after it answers, still sending or failed
+      - kind: running
+        file: src/stores/__tests__/aNoticeHeardWhileTheBoardIsReadStays.test.ts
+        test: a notice heard while the board is read stays on top after the read answers, and in the bell
+      - kind: running
+        file: src/stores/__tests__/aNoticeHeardWhileTheBoardIsReadStays.test.ts
+        test: a notice the read already holds is neither drawn twice nor counted twice
+      - kind: running
+        file: src/lib/__tests__/aChannelsFirstLiveMomentIsReadToo.test.ts
+        test: the first SUBSCRIBED asks the screen to read what came since its read, once
+      - kind: running
+        file: src/lib/__tests__/aChannelsFirstLiveMomentIsReadToo.test.ts
+        test: a break and a return read again as before, never the first-live read twice
+      - kind: running
+        file: src/stores/__tests__/theBoardAndItsBellAreOneRead.test.ts
+        test: the board and the bell come from the house's one read, in one trip
+      - kind: running
+        file: src/stores/__tests__/theBoardAndItsBellAreOneRead.test.ts
+        test: a notice heard while the one read is out is counted once on top of it
+      - kind: running
+        file: src/stores/__tests__/theBoardAndItsBellAreOneRead.test.ts
+        test: a malformed answer is a failed read, never an empty board
+      - kind: running
+        file: src/stores/__tests__/theBoardAndItsBellAreOneRead.test.ts
+        test: a house without the one read is read as before, in two reads
+      - kind: running
+        file: src/stores/__tests__/theBoardIsReadAtItsChannelsFirstMoment.test.ts
+        test: each channel's first live moment reads the board again, and the second, asked while the first is out, is made after it
+      - kind: running
+        file: src/stores/__tests__/theBoardIsReadAtItsChannelsFirstMoment.test.ts
+        test: a read asked while one is out is made once more when it is answered, never dropped
+    fix: "A read is laid under what was heard since it was asked (the salon's _heardLive and its own sending or failed words; the notices' heardHere), never replaces it; watchChannel's first SUBSCRIBED reads what came since the screen's read (onFirstLive: the salon catches up, at once or once its read lands; the board reads again); a board read asked while one is out is made after it; the board and its unread count come from one read at one moment (notices_page, H-A6, whose rehearsal fails without it) (mutants shape-salon-read-replaces-heard, shape-own-sending-dropped-by-first-read, shape-first-live-unread, shape-salon-first-live-lost-while-reading, shape-notice-read-replaces-heard, shape-board-read-in-two-moments, shape-board-read-asked-while-out-dropped, shape-board-unread-at-first-live)"
+    places:
+      - none
+
+  - id: DB-a-count-taken-before-its-lock
+    title: "A salon's member count was recounted inside the UPDATE that waited on another seat's lock, on a snapshot taken before the wait: two seats taken at once left it one short; held FOR UPDATE, two seats at once deadlocked against their own foreign-key checks; the one-time repair counted on the car's own snapshot"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source:
+      kind: reviewer
+      ref: review round 13, races and the queue, 2026-11-18
+    fix: "recount_lounge_members holds the salon FOR NO KEY UPDATE in a statement of its own and counts its approved seats in the next (a fresh snapshot after the other seat committed; compatible with every foreign-key check's FOR KEY SHARE, so no deadlock and no word waits on a seat); the one-time repair does the same one salon at a time (H-A4; proved with two sessions on the local PostgreSQL in both orders: the old function 1 of 2, FOR UPDATE a deadlock, this 2 of 2; the old repair 1 of 2, this 2 of 2). SQL alone: its rehearsal (rehearsals.mjs --without) fails without it"
+    places:
+      - none
+
+  - id: AUTH-a-signed-out-phone-still-pushed
+    title: "A phone whose session ended without its own sign-out (\"Sign out of every other device\", a refused refresh, a session found gone at launch) kept its push token, and its lock screen went on showing the member's notices: the removal ran under the row's policy and needed the session it no longer had, and the house sent to every token its member held"
+    seriousness: serious
+    area: auth
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, what the phone keeps, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a phone whose session already ended forgets its token by the token, named with its member" }
+      - { kind: running, file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "\"Sign out of every other device\" takes the other phones' tokens, and keeps this one's" }
+      - { kind: running, file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "the others are not touched when the sign-out itself was refused" }
+      - { kind: running, file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a token the house could not be told of is owed, with no session to refresh, and forgotten when the network returns" }
+      - { kind: running, file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a token registered again on this phone is no longer owed: the forget would take the new registration" }
+      - { kind: running, file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a forget of the other phones’ tokens that failed is owed, and asked again, under this phone’s session" }
+      - { kind: running, file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a forget owed by a member no longer signed in here is let go, never asked under another’s session" }
+      - { kind: running, file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "is due with no token, or a registration over a day old; not within the day" }
+      - { kind: running, file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a registration stamps the day, and a forget takes the stamp with the token" }
+      - { kind: running, file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a phone that never allowed notices has nothing to forget: no request, and no failure to report" }
+      - { kind: running, file: src/stores/__tests__/aSessionEndedTakesItsTokenAndNotices.test.ts, test: "a session ended elsewhere forgets this phone's token by the token, with no session left" }
+      - { kind: running, file: src/stores/__tests__/aSessionEndedTakesItsTokenAndNotices.test.ts, test: "a token the house could not be told of is owed with the member, for the network's return" }
+      - { kind: running, file: src/stores/__tests__/aSessionEndedTakesItsTokenAndNotices.test.ts, test: "a launch that finds the session gone forgets the token and takes the notices off the phone" }
+      - { kind: running, file: src/lib/__tests__/aSignOutWithNoNetworkStillSignsOut.test.ts, test: "settles what is owed once the network returns: the token forgotten, refreshed apart, the session ended" }
+      - { kind: running, file: src/lib/__tests__/signingOutSilencesOnlyThisDevice.test.ts, test: "removes this device's own token, and nothing of the member's other devices" }
+    fix: "a token keeps the session it is registered under and the house sends only through push_tokens_of, a session ended taking its phone's token (a token from before round 13 only while a session that could have registered it stands, claimed by no other phone, for at most 30 days); the phone forgets its own token by the token on every way a session ends, owed and settled when offline, and registers at least daily on a return to the front; \"Sign out of every other device\" forgets the other phones' tokens and ties this phone's, owed when it fails (rehearsals of 20261119 B1, B1.column, B1.index, B8, B11 pieces; mutants shape-token-forgotten-only-with-a-session, shape-token-owed-only-with-a-session, shape-token-registered-again-still-owed, shape-others-forget-not-owed, shape-registration-only-at-launch, shape-never-registered-reported); notify-push reads push_tokens_of (deploy after its car); the E2E registers the phone as the app does (DATA appended to E2E-push-tap-unproven)"
+    places: [none]
+
+  - id: STATE-a-members-notices-left-on-the-lock-screen
+    title: "A member's sign-out, a session ended elsewhere or an account closed left their delivered notices in the notification centre, on the lock screen and on the icon's badge, for the next person to wake the phone"
+    seriousness: behaviour
+    area: auth
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, what the phone keeps, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aSessionEndedTakesItsTokenAndNotices.test.ts, test: "and takes the notices it was shown off the phone, the badge with them" }
+      - { kind: running, file: src/stores/__tests__/aSessionEndedTakesItsTokenAndNotices.test.ts, test: "the member's own sign-out takes the notices off the phone too" }
+    fix: "clearDeliveredNotices (dismissAllNotificationsAsync and the badge set to 0) runs at every sign-out, the session ended elsewhere and the account closed included, and at a launch that finds the session gone (mutant shape-notices-left-after-sign-out)"
+    places: [none]
+
+  - id: DATA-a-closed-account-erases-anothers-work
+    title: "Closing an account on a shared phone erased every key on it (storage.clearAll): another member's writes set aside for their return, their drafts, preferences and caches went with it, unsent and unsaid; and a failed logout sweep left the closed member's failed words in the shared lists"
+    seriousness: serious
+    area: settings
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, what the phone keeps, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/aClosedAccountLeavesOthersWorkOnThePhone.test.ts, test: "Ben's deletion leaves Ana's set-aside writes, drafts, preferences and caches" }
+      - { kind: running, file: src/utils/__tests__/aClosedAccountLeavesOthersWorkOnThePhone.test.ts, test: "and, of the two lists every member's writes share, keeps Ana's alone, though logout's own sweep of them failed" }
+      - { kind: running, file: src/utils/__tests__/aClosedAccountLeavesOthersWorkOnThePhone.test.ts, test: "and takes everything of Ben's and every mark of the phone's own" }
+      - { kind: running, file: src/utils/__tests__/aClosedAccountLeavesOthersWorkOnThePhone.test.ts, test: "none in the app's code is unknown" }
+      - { kind: running, file: src/stores/__tests__/logoutLeavesNoTrace.guard.test.ts, test: "and DELETING an account takes everything of the closed member and the install's own, and only another member's kept work stays" }
+    fix: "eraseAllButOthers(closed) after the logout: every key goes but those of the forms that name a member (MEMBER_KEY_HEADS) naming another member, and the queue and the dead letter keep another member's entries alone (mutants shape-closed-account-erases-the-others, shape-closed-members-failed-words-kept)"
+    places: [none]
+
+  - id: CODE-a-members-words-in-an-error
+    title: "An Error the app worded with a member's words reached Sentry: a follow of a handle the house no longer knows threw User \"<handle>\" not found, reported as a defect, past the scrub that promises no handle leaves the phone"
+    seriousness: behaviour
+    area: social
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, what the phone keeps, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aFollowOfAGoneHandleIsAnAnswer.test.ts, test: "a follow of a handle no one holds now is said plainly, taken back, and never reported" }
+      - { kind: running, file: src/stores/__tests__/aFollowOfAGoneHandleIsAnAnswer.test.ts, test: "a member the house does know is followed as before" }
+      - { kind: running, file: src/lib/__tests__/noReportIsWordedWithAMembersWords.guard.test.ts, test: "the reader sees what an Error is worded with, and would have seen the handle" }
+      - { kind: running, file: src/lib/__tests__/noReportIsWordedWithAMembersWords.guard.test.ts, test: "no Error the app words carries anything but what is named here as no member's words" }
+    fix: "a member gone is an answer (noMemberGoesBy said, the follow taken back, nothing reported); every Error the app words from a template names each thing written into it as no member's words (mutant shape-gone-handle-thrown-to-sentry)"
+    places: [none]
+
+  - id: DATA-a-sealed-stack-shown-in-a-salon
+    title: "A sealed (private) stack could be shared into a salon, a stack shared and then sealed kept its card (title, count, curator, the website's caption, its quotes), a share made at the moment of a seal slipped past it, every member's tap on the card met CLASSIFIED, and a refused share was offered again with \"tap to retry\""
+    seriousness: behaviour
+    area: lounge
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, what the phone keeps, 2026-11-18" }
+    methods:
+      - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a sealed stack offers its curator no LOUNGE: it is shown in no salon" }
+      - { kind: running, file: src/components/lounge/__tests__/aSealedStacksCardSaysSo.test.tsx, test: "is a card still, says it is sealed, and is no door to a member who is not its curator" }
+      - { kind: running, file: src/components/lounge/__tests__/aSealedStacksCardSaysSo.test.tsx, test: "opens for its curator, whose own stack it is" }
+      - { kind: running, file: src/components/lounge/__tests__/aSealedStacksCardSaysSo.test.tsx, test: "a card the website made, its caption taken with the seal, is a sealed card with no words" }
+      - { kind: running, file: src/components/lounge/__tests__/aSealedStacksCardSaysSo.test.tsx, test: "says it is sealed by its curator where the title was, with no curator or count" }
+      - { kind: running, file: src/components/lounge/__tests__/aSealedStacksCardSaysSo.test.tsx, test: "a tap on it takes a member who is not its curator nowhere" }
+      - { kind: running, file: src/stores/__tests__/aSealedStackShareIsSaidAndLetGo.test.ts, test: "reads the house's two final answers to a stack's card, and nothing else as one" }
+      - { kind: running, file: src/stores/__tests__/aSealedStackShareIsSaidAndLetGo.test.ts, test: "a sealed stack's card is said as sealed, and leaves the transcript: no retry that cannot work" }
+      - { kind: running, file: src/stores/__tests__/aSealedStackShareIsSaidAndLetGo.test.ts, test: "a stack no longer in the house is said as gone, and leaves the transcript" }
+      - { kind: running, file: src/stores/__tests__/aSealedStackShareIsSaidAndLetGo.test.ts, test: "a share made offline and refused on its way is let go, said, and taken off the room" }
+    fix: "the house refuses a card of a sealed or gone stack (a_sealed_stack_is_not_shared, its stack row read FOR SHARE), sealing turns every card sealed and takes the website's caption and its quotes, opening it again rebuilds them (rehearsals of the B3, B3.locks, B7 and B10 pieces; the race proved in two sessions); the phone draws no LOUNGE for a sealed stack, draws its card as sealed and inert but for its curator, and says STACK_SEALED and STACK_GONE, the card dropped, live and replayed from the queue (mutants shape-sealed-stack-offered-to-a-salon, shape-sealed-card-drawn-as-nothing, shape-sealed-card-a-door, shape-stack-refusal-offered-again, shape-queued-stack-share-retried)"
+    places: [none]
+
+  - id: COPY-a-share-said-as-the-senders
+    title: "A visitor's share of another member's log was sent as \"Check out my log for <film>\": the sender's words claimed the author's record"
+    seriousness: behaviour
+    area: log
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, what the phone keeps, 2026-11-18" }
+    methods:
+      - { kind: running, file: app/log/__tests__/theRecordReadsTrue.test.tsx, test: "a visitor sends the author’s log, never \"my log\"" }
+    fix: "\"my log\" from its author alone; anyone else sends \"@<author>'s log of <film>\" (mutant shape-anothers-log-sent-as-mine)"
+    places: [none]
+
+  - id: NET-a-busy-catalogue-told-as-a-lost-connection
+    title: "The house's own TMDB proxy refusing a phone that asked too fast, or TMDB not answering the house, was told as the member's lost connection: an archive import of a few hundred films stopped with \"check your connection\", every film page on that phone failed for the rest of the minute, and everyone behind one carrier address shared the same 120 reads a minute, cached ones counted"
+    seriousness: behaviour
+    area: film
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, outside services, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "an address asks 1,200 at once, is then told when to ask again, and is let through as tokens come" }
+      - { kind: running, file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "an address asking without end is held at 1,200 a minute" }
+      - { kind: running, file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "an archive import of 500 films, asked at the app's pace, is never told to wait" }
+      - { kind: running, file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "a website import of 500 films, every film asked twice, is never told to wait" }
+      - { kind: running, file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "a website search in the middle of that import is never told to wait" }
+      - { kind: running, file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "build 41's import of 500 films, and a website import beside it from the same address, are never told to wait" }
+      - { kind: running, file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "asks the rule only for what its cache cannot answer" }
+      - { kind: running, file: src/services/__tests__/theCatalogueIsAskedAtItsPace.test.ts, test: "tells a caller it refused when to ask again, and lets a website read it" }
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "a short wait is sat out, and the film is read" }
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "a long wait is said as busy, with how long, at once: never as a lost connection" }
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "asked to wait three times running, it is busy, not unreachable" }
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "a wait unsaid is a second; a wait past reason is a minute" }
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "its own deadline spent, or a failure after its tries, is said as answered: the connection was fine" }
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "no connection at all is not" }
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "asks again after as long as it was asked (at most ten seconds), not on the usual backoff" }
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "says the catalogue is busy, never that the connection was lost" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "asks one read a film, the first 60 at once, then three a second" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "asked to wait, it waits as long as it is asked and goes on: every film matched, nothing blamed on the connection" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "a film whose read was asked to wait is never kept as unmatched" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "a catalogue that keeps asking it to wait stops the import, and says it was busy, not unreachable" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "a catalogue that cannot be reached still stops the import, having written nothing" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "is waited on, and the same film asked again: nothing blamed on the connection" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "stops the import only when it keeps not answering, and says it is TMDB, not the connection" }
+    fix: "tmdb-proxy counts only what TMDB must answer, per address, 1,200 at once then 20 a second, answers a refusal 429 with Retry-After (exposed to the website) and passes TMDB's own 429 on with its Retry-After (rate.js; the functions world's live suite checks both); fetchTMDB sits out a short wait and says a longer one as busy (TmdbBusy), never unreachable, and says a failure the house answered as answered; a screen asks again after the wait asked and says the catalogue is busy (EmptyOffline busy, the film and person pages); the import asks one read a film at 3 a second after 60, waits on a busy or not-answering catalogue and asks the same film again, and gives up only after three minutes, in words that blame neither the member nor their connection (mutants shape-proxy-pail-of-a-hundred-and-twenty, shape-house-ceiling-under-the-address, shape-busy-told-as-unreachable, shape-import-ends-on-busy, shape-house-failure-ends-the-import, shape-busy-screen-said-as-lost-signal, shape-busy-retried-on-the-backoff, shape-import-unpaced)"
+    places: [none]
+
+  - id: NET-a-hung-catalogue-asked-three-times
+    title: "A hung TMDB was said after some 31 seconds, not at the deadline: the proxy's 504, its own 10-second deadline already spent, was asked twice more like a server failing for a moment"
+    seriousness: behaviour
+    area: film
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, outside services, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "the proxy's own deadline spent (504) is said at once, not after two more of it" }
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "a server failing for a moment (503) is still asked again" }
+    fix: "fetchTMDB says the proxy's 504 at once (a deadline already spent), and still asks again after a 500, 502 or 503 (mutant shape-hung-catalogue-asked-three-times)"
+    places: [none]
+
+  - id: UI-a-player-that-never-arrived-said-nothing
+    title: "A trailer opened with no signal, or one too weak for YouTube, drew a silent black box (iPhone) or the browser's own error page (Android): the player never arrived, so it never spoke, and nothing in the box said so or offered TRY AGAIN"
+    seriousness: behaviour
+    area: film
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, outside services, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "offline, it says at once that the player cannot be reached" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "online, a player that never speaks is said unreached at its time, and not before" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "a player that arrives in time is never said unreached" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "asked again, it loads the player once more, says so, and watches for it again" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "the connection back, a player that never arrived is asked for again by itself" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "the connection back, a player already playing is left alone" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "hears the page's word" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "the page asking again by itself clears the word while the player comes" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "offers YouTube's own one way, whichever word is said" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "says so, offers TRY AGAIN, which loads the player once more, and YouTube's own" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "a player that arrives late clears the word; a late word that it never did is none" }
+      - { kind: running, file: src/components/film/__tests__/aTrailerOutOfReachSaysSo.test.tsx, test: "draws the word and both ways on inside the box" }
+    fix: "the player's page says the player unreached at once offline and after eight seconds of silence; the box says THE FOOTAGE COULD NOT BE REACHED with TRY AGAIN (the player loaded once more) and WATCH ON YOUTUBE, drawn one way in both panels; the page asks again by itself when the connection returns, and a late player clears the word (mutants shape-unreached-player-silent, shape-player-not-asked-when-online, shape-ask-again-loads-nothing, shape-youtube-offered-two-ways)"
+    places: [none]
+
+  - id: UI-a-reused-row-shows-the-last-picture
+    title: "A list's reused row showed the last row's poster or face under its own title until its picture came: a person's filmography, the log's search, the notices and a film's rails on a slow network, because the one place every picture is drawn named no picture by its address"
+    seriousness: behaviour
+    area: app
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, outside services, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/__tests__/aReusedRowShowsItsOwnPicture.test.tsx, test: "a picture is named by its address, so a row given another one clears before it draws" }
+      - { kind: running, file: src/components/__tests__/aReusedRowShowsItsOwnPicture.test.tsx, test: "a row that names its picture its own way keeps its name" }
+    fix: "RemoteImage names each picture by its address (expo-image's recyclingKey) unless its site names it another way, for every site at once (mutant shape-reused-row-keeps-its-picture)"
+    places: [none]
+
+  - id: DATA-a-film-read-once-too-early
+    title: "A film the house first noted while only announced was read from TMDB once, before its cast, director and genres were there, and never again; every member who later logged it got a Taste DNA without them while the coverage line said the profile was complete"
+    seriousness: behaviour
+    area: profile
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, outside services, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/services/__tests__/aFilmReadEarlyIsReadAgain.test.ts, test: "announced, it is read again once it has settled after its release, however full it looks" }
+      - { kind: running, file: src/services/__tests__/aFilmReadEarlyIsReadAgain.test.ts, test: "announced far ahead, it is looked at within ninety days, so a date that moves is seen" }
+      - { kind: running, file: src/services/__tests__/aFilmReadEarlyIsReadAgain.test.ts, test: "settled with its genres, director and cast, it is never read again" }
+      - { kind: running, file: src/services/__tests__/aFilmReadEarlyIsReadAgain.test.ts, test: "settled and still blank, it is read again in two weeks, and taken as TMDB has it after the third read" }
+      - { kind: running, file: src/services/__tests__/aFilmReadEarlyIsReadAgain.test.ts, test: "a film TMDB dates nowhere is not settled: looked at every ninety days, its reads never spent, until it has a date" }
+      - { kind: running, file: src/services/__tests__/aFilmReadEarlyIsReadAgain.test.ts, test: "a film TMDB calls anything but Released is not settled, whatever its date" }
+      - { kind: running, file: src/services/__tests__/aFilmReadEarlyIsReadAgain.test.ts, test: "a film TMDB calls Canceled will never come: it is taken as TMDB has it" }
+    fix: "films keeps release_date, reread_after and sync_reads (round 13's films column car); sync-films decides each film's next read from TMDB's date and status (reread.js) and the claim takes a film whose time has come after every film never read, handing back its settled reads (claim_films_to_sync, the H-C5 car); get_taste_profile counts a film unknown only while never read or read only before it settled; the H-C5 car's rehearsal fails without it, and the functions world's live suite checks the three columns written (mutants shape-undated-film-counted-settled, shape-blank-film-read-once)"
+    places: [none]
+
+  - id: DATA-an-import-matched-to-a-same-titled-film
+    title: "An imported row was matched to another film of its title: the original handed back first for a remake's year (a restoration released that year), or a film of that title decades away, so the member's review and rating were filed for good against a film they never logged"
+    seriousness: behaviour
+    area: settings
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, outside services, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "found nowhere in its year, it is asked once more without it, and a film of the year beside is taken" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "a film of another year and another title is never taken for it" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "its own title, whatever its case and punctuation, is taken in another year only when no other film bears it" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "a title two films bear, decades apart, neither of them of its year, is left unmatched" }
+      - { kind: running, file: src/features/archive/__tests__/anImportWaitsItsTurn.test.ts, test: "a remake is matched to itself, never to the original handed back first for a restoration that year" }
+      - { kind: running, file: src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx, test: "an import asks for one film, by its title and its own first release year, films alone" }
+    fix: "the import asks TMDB for the film's own first release year (primary_release_year), ranks answers by their own release year (that year, then one either side, its own title first), and takes a film of another year only when it bears the row's exact title and no other answer does (mutants shape-same-title-any-year-taken, shape-original-taken-for-its-remake, shape-import-asks-any-release-that-year)"
+    places: [none]
+
+  - id: SPEED-the-cache-written-whole-at-every-change
+    title: "The query cache was written to the phone whole at every change to it (each read started, answered or set, a film opened three times over), synchronously, its bytes counted character by character, and each film kept as the catalogue's whole answer (every country's dates and services, the whole cast and crew, every video, two pages of films like it): the JS thread held while a screen loaded or the Reel was flung, more the more films the member had opened; and no run measured a write at a member's size"
+    seriousness: behaviour
+    area: speed
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, speed, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "a film opened, its read changing the cache again and again, is written once in that second, as it last stood" }
+      - { kind: running, file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "its turn come, the write waits for the JS thread to be idle (a fling is never held up by it), two seconds at most" }
+      - { kind: running, file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "the app leaving the front writes what is held at once, where the phone may end it unseen" }
+      - { kind: running, file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "a cache taken away is never put back by a write still waiting its turn" }
+      - { kind: running, file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "a string a third of the ceiling or shorter is under it, and one longer than the ceiling over it, its characters never counted" }
+      - { kind: running, file: src/lib/__tests__/theCacheIsWrittenAtMostOnceASecond.test.ts, test: "between the two, the bytes are counted: CJK text past the ceiling is over it, plain text under it is not" }
+      - { kind: running, file: src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts, test: "keeps the first fifteen of the cast and the directors, and the page names the same people" }
+      - { kind: running, file: src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts, test: "keeps the member's own country's services and certificate, the ones the page shows" }
+      - { kind: running, file: src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts, test: "keeps the film's own facts whole, and not the two pages of films like it (their pool is built first)" }
+      - { kind: running, file: src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts, test: "keeps of each film like it only what its card draws: its poster, its title, its id" }
+      - { kind: running, file: src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts, test: "keeps the six videos the page lists and the trailer it opens, as the whole answer gives them" }
+      - { kind: running, file: src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts, test: "keeps a film in some 10-12 KB, about a tenth of the whole answer" }
+      - { kind: running, file: src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx, test: "keeps the film as its page draws it, never the films like it twice (round 13)" }
+      - { kind: running, file: e2e/__tests__/screenTimes.test.ts, test: "reads the query cache's writes, and fails one that held the JS thread too long" }
+      - { kind: running, file: e2e/__tests__/theLabFillsTheCache.test.ts, test: "passes a run that read the thirty films and wrote a member-sized cache quickly" }
+      - { kind: running, file: e2e/__tests__/theLabFillsTheCache.test.ts, test: "fails a write that held the JS thread over its bound, naming it" }
+      - { kind: running, file: e2e/__tests__/theLabFillsTheCache.test.ts, test: "fails a run whose cache never reached a member's size: its times say nothing of it" }
+      - { kind: running, file: e2e/__tests__/theLabFillsTheCache.test.ts, test: "fails a run that did not read the thirty films" }
+      - { kind: running, file: e2e/__tests__/theLabFillsTheCache.test.ts, test: "opens the thirty films on an emulator, and fails on the judge's word" }
+      - { kind: running, file: e2e/__tests__/theLabFillsTheCache.test.ts, test: "opens each film in the same run of the app, so the cache grows as a member's does" }
+    fix: "the persister holds the newest cache and writes it once a second at most, then only when the JS thread is idle (requestIdleCallback, two seconds at most), at once when the app leaves the front; its bytes counted only when the length leaves the ceiling open; a film's read keeps what its page draws (filmAsDrawn: fifteen of the cast, the directors, one country's services and certificate, six videos and the trailer; poolAsDrawn: each film like it as its card draws it), about a tenth of the answer on the catalogue's real recordings; every E2E run's cache writes read and bounded (screen-times.mjs), and the speed lab opens thirty recorded films in a row as the member and fails a write over the bound or a cache under a member's size (e2e/lab/films.sh, films.mjs) (mutants shape-cache-written-at-every-change, shape-cache-written-mid-fling, shape-cache-bytes-counted-every-write, shape-film-kept-whole, shape-film-pool-kept-whole, shape-film-every-video-kept, shape-cache-write-ungated, shape-lab-cache-write-unbounded, shape-lab-cache-never-filled)"
+    places: [emulator]
+
+  - id: SPEED-a-search-held-for-its-slowest-source
+    title: "The house-wide search drew nothing until its slowest source answered, and its stacks were read through the row rule asked of every public stack before the words (349-427 ms at 20,000 stacks, some 1.8 s at 100,000); drawn source by source, a slower catalogue put its films above rows already under the member's finger"
+    seriousness: behaviour
+    area: search
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, speed, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/hooks/__tests__/theSearchDrawsEachSourceAsItAnswers.test.tsx, test: "the house's members and stacks are drawn while the catalogue is still out, and its films join when it answers" }
+      - { kind: running, file: src/hooks/__tests__/theSearchDrawsEachSourceAsItAnswers.test.tsx, test: "the stacks are asked of the house by their words, one page at a time" }
+      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "on ALL, the members found wait for the films above them; the PEOPLE tab shows them at once" }
+      - { kind: running, file: src/utils/__tests__/searchWiring.guard.test.ts, test: "reads the stacks through search_stacks, given the words through the funnel" }
+    fix: "search_stacks (H-D4, with lists_description_trigram: H-D4.index) finds the stacks by the words' trigram indexes and asks the rule of the few found, as the phone's read found them (the H-D4 rehearsal compares the two for a visitor and four members, rare, common and two-letter words and a next page; 0.7 ms for a rare word); each source is drawn as it answers, ALL's sections in their order once those above them answered, each source's own tab at once (mutants shape-search-held-for-the-slowest, shape-all-rows-put-above-the-drawn)"
     places: [none]

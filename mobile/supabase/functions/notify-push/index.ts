@@ -12,6 +12,11 @@
  * omits the `x-function-secret` header, the request is rejected (fail closed).
  * The DB trigger reads the secret from Supabase Vault and sends it automatically.
  * Stale tokens that Expo reports as DeviceNotRegistered are pruned automatically.
+ * v8 (2026-11-18): a phone signed out is not pushed to (review round 13). A phone whose session ended
+ * without its own sign-out ("Sign out of every other device", a refused refresh) kept its token, and
+ * its lock screen kept showing the member's notices. The tokens are read through push_tokens_of,
+ * which keeps only those registered under a session that still stands and deletes the rest.
+ *
  * v7 (2026-11-17): two kinds of their own (review round 12). A salon's door (a request to enter, an
  * admission) is 'salon', titled "The Lounge" and sent to the Members channel; a ballot's close is
  * 'ballot', titled "The Count Is In" and sent to the Critiques channel. Both arrived as the house's
@@ -167,11 +172,9 @@ serve(async (req) => {
     }
     claimed = record.id
 
-    // Recipient's device tokens.
-    const { data: tokens, error } = await admin
-      .from('push_tokens')
-      .select('token')
-      .eq('user_id', record.user_id)
+    // Recipient's device tokens, through the house's one door to them (push_tokens_of): only a phone
+    // whose session still stands, the tokens of ended sessions deleted as they are read.
+    const { data: tokens, error } = await admin.rpc('push_tokens_of', { p_user: record.user_id })
     if (error) throw error
     if (!tokens || tokens.length === 0) {
       return new Response(JSON.stringify({ delivered: 0, reason: 'no tokens' }), {

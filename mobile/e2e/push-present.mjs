@@ -3,8 +3,9 @@
  * push-present.mjs — a notice sent as production sends it, and the link that puts it on the phone
  * (WORKLIST P4.22, P4.26; audit P4-22-PUSH-TAP-PLAN).
  *
- * In the sealed world: the member is given a push token (as the app registers one: the emulator
- * reaches no Expo server for a real one), a notice is written for them as the house writes one, and
+ * In the sealed world: the member's phone registers a push token as the app registers one, signed in
+ * as the member, under their session (the emulator reaches no Expo server for a real token, so the
+ * token is a stand-in's), a notice is written for them as the house writes one, and
  * notify-push is called with the body production's notice trigger sends it ({type, table, record})
  * and the function secret the world set. notify-push builds the message and sends it to the Expo
  * stand-in (e2e/functions/stand-ins.mjs), which keeps it. The kept message, as notify-push built it,
@@ -19,7 +20,8 @@
  *     its notice the trigger's), salon (the salon admitted to), house (a notice from the house,
  *     which opens the notices sheet)
  *
- * Needs API_URL (the local stack), FN_FUNCTION_SHARED_SECRET (the world's), E2E_MEMBER_USERNAME.
+ * Needs API_URL and ANON_KEY (the local stack), FN_FUNCTION_SHARED_SECRET (the world's),
+ * E2E_MEMBER_USERNAME, E2E_MEMBER_EMAIL and E2E_MEMBER_PASSWORD (the seed's).
  */
 import { execFileSync } from 'node:child_process';
 
@@ -30,6 +32,10 @@ const SECRET = process.env.FN_FUNCTION_SHARED_SECRET ?? '';
 const STAND_INS = 'http://127.0.0.1:54990';
 const MEMBER = process.env.E2E_MEMBER_USERNAME ?? 'e2e_member';
 const SENDER = 'e2e_admin';
+// The member signs in to register their phone, as the app does (registerAsThePhone): the seed's.
+const ANON = process.env.ANON_KEY ?? '';
+const EMAIL = process.env.E2E_MEMBER_EMAIL ?? '';
+const PASSWORD = process.env.E2E_MEMBER_PASSWORD ?? '';
 /** The token the member's phone stands for: a token's form, the stand-in's to answer. */
 export const TOKEN = 'ExponentPushToken[e2e-phone]';
 
@@ -108,6 +114,33 @@ export function messageFor(seen, token = TOKEN) {
 /** The link the E2E build presents the message from. */
 export const linkOf = (message) => `reelhouse://e2e/present?message=${encodeURIComponent(JSON.stringify(message))}`;
 
+/**
+ * The member's phone registers its token as the app does: signed in as the member, through
+ * register_push_token, which keeps the session it is registered under (review round 13). notify-push
+ * sends only to a token whose session still stands (push_tokens_of), so the run proves the phone's
+ * own path, never a row laid with no session. Read back: the token is the member's, under a session
+ * that stands.
+ */
+export async function registerAsThePhone(memberId, { api = API, anon = ANON, email = EMAIL, password = PASSWORD, run = sql } = {}) {
+  if (!anon || !email || !password) {
+    throw new Error('ANON_KEY, E2E_MEMBER_EMAIL and E2E_MEMBER_PASSWORD are needed: the member\'s phone registers its token as the member');
+  }
+  const signed = await fetch(`${api}/auth/v1/token?grant_type=password`, {
+    method: 'POST', headers: { apikey: anon, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }),
+  });
+  const session = await signed.json().catch(() => ({}));
+  if (!signed.ok || !session.access_token) throw new Error(`the member could not sign in to register their phone: HTTP ${signed.status}`);
+  const registered = await fetch(`${api}/rest/v1/rpc/register_push_token`, {
+    method: 'POST',
+    headers: { apikey: anon, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_token: TOKEN, p_platform: 'android' }),
+  });
+  if (!registered.ok) throw new Error(`register_push_token refused the member's phone: HTTP ${registered.status} ${(await registered.text()).slice(0, 200)}`);
+  const held = run(`SELECT count(*) FROM public.push_tokens t JOIN auth.sessions s ON s.id = t.session_id
+    WHERE t.token = ${quote(TOKEN)} AND t.user_id = ${quote(memberId)} AND s.user_id = ${quote(memberId)}`);
+  if (held !== '1') throw new Error('the member\'s phone is not registered under a session that stands');
+}
+
 async function main(kind) {
   const make = KINDS[kind];
   if (!make) throw new Error(`no kind ${kind}: ${Object.keys(KINDS).join(', ')}`);
@@ -116,8 +149,8 @@ async function main(kind) {
   const ids = Object.fromEntries(sql(`SELECT username || '=' || id FROM public.profiles WHERE username IN (${quote(MEMBER)}, ${quote(SENDER)})`)
     .split('\n').filter(Boolean).map((l) => l.split('=')));
   if (!ids[MEMBER] || !ids[SENDER]) throw new Error(`the seed holds no ${ids[MEMBER] ? SENDER : MEMBER}`);
-  sql(`DELETE FROM public.push_tokens WHERE user_id = ${quote(ids[MEMBER])};
-       INSERT INTO public.push_tokens (user_id, token, platform) VALUES (${quote(ids[MEMBER])}, ${quote(TOKEN)}, 'android')`);
+  sql(`DELETE FROM public.push_tokens WHERE user_id = ${quote(ids[MEMBER])}`);
+  await registerAsThePhone(ids[MEMBER]);
   const { record, lands } = make({ member: ids[MEMBER], sender: ids[SENDER] });
   await fetch(`${STAND_INS}/__reset`, { method: 'POST' });
   const res = await fetch(`${API}/functions/v1/notify-push`, {

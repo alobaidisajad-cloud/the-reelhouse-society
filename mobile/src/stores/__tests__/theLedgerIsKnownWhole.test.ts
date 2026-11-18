@@ -4,8 +4,9 @@
  *
  * The phone knew a member's marks from the pages it had read: fifty logs, and only once they
  * opened their own file. A film logged before them was NOT YET SEEN, LOG THIS FILM filed it a
- * second viewing, a director's canon was counted short. The ledger is read whole:
- *   - every log and every save, past a page of a thousand, and then it is held;
+ * second viewing, a director's canon was counted short. The ledger is read whole, in one read of
+ * the house (get_marks_ledger, round 13), answered here as the house answers the member:
+ *   - every log and every save, however many, and then it is held;
  *   - a read that failed is said as failed, and a ledger held stays held;
  *   - a page read later is laid over the ledger, never in place of it;
  *   - the writes still queued offline are laid over it as they will land;
@@ -41,9 +42,22 @@ const saveRow = (n: number, owner = ME) => ({
   id: uuid(500000 + n), user_id: owner, film_id: 2000 + n, film_title: `Saved ${n}`, created_at: '2024-01-01T00:00:00Z',
 });
 
-const house = (logs: Record<string, unknown>[], saves: Record<string, unknown>[], fail?: Record<string, typeof NETWORK>) => {
-  mockHouse = supabaseFake({ rows: { logs, watchlists: saves }, fail });
+/** get_marks_ledger's answer from what the house holds: the member's own logs, a column an array, and the films they keep. */
+const ledgerOfHouse = () => {
+  const mine = mockHouse.rows('logs').filter((r) => r.user_id === ME);
+  const column = (c: string) => mine.map((r) => r[c] ?? null);
+  return {
+    logs: Object.fromEntries(['id', 'film_id', 'film_title', 'poster_path', 'year', 'status', 'rating', 'view_count', 'watched_date'].map((c) => [c, column(c)])),
+    saved: mockHouse.rows('watchlists').filter((r) => r.user_id === ME).map((r) => r.film_id),
+  };
 };
+const house = (logs: Record<string, unknown>[], saves: Record<string, unknown>[], failed = false) => {
+  mockHouse = supabaseFake({ rows: { logs, watchlists: saves }, rpc: { get_marks_ledger: failed ? { error: NETWORK } : () => ledgerOfHouse() } });
+};
+/** The phone's clock a minute on at every look, so each read here is never one "just read". */
+let clock = 0;
+beforeEach(() => { jest.spyOn(performance, 'now').mockImplementation(() => (clock += 60_000)); });
+afterEach(() => jest.restoreAllMocks());
 const film = () => useFilmStore.getState();
 
 beforeEach(() => {
@@ -52,7 +66,7 @@ beforeEach(() => {
   useFilmStore.setState({ logs: [], watchlist: [], _loggedIndex: {}, _watchlistIndex: {}, marksKnown: 'unread' } as never);
 });
 
-it('reads every log and every save, past a page of a thousand, and then holds them', async () => {
+it('reads every log and every save, more than a thousand in one read, and then holds them', async () => {
   house([...Array.from({ length: 1001 }, (_, i) => logRow(i + 1)), logRow(5000, OTHER)], [saveRow(1), saveRow(2, OTHER)]);
   await act(async () => { await readMarks(); });
   expect(film().marksKnown).toBe('held');
@@ -64,13 +78,13 @@ it('reads every log and every save, past a page of a thousand, and then holds th
 });
 
 it('says a read that failed as failed, never as "nothing logged", and keeps a ledger held', async () => {
-  house([logRow(1)], [], { logs: NETWORK });
+  house([logRow(1)], [], true);
   await act(async () => { await readMarks(); });
   expect(film().marksKnown).toBe('failed');
   house([logRow(1)], []);
   await act(async () => { await readMarks(); });
   expect(film().marksKnown).toBe('held');
-  house([], [], { watchlists: NETWORK });
+  house([], [], true);
   await act(async () => { await readMarks(); });
   expect([film().marksKnown, !!film()._loggedIndex[1001]]).toEqual(['held', true]);
 });

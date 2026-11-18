@@ -61,6 +61,7 @@ jest.mock('@/src/hooks/useUniversalSearch', () => ({
     data: q ? { films: [{ id: 'f843', type: 'film', title: 'In the Mood for Love', subtitle: '2000', image: null, _nav: '/film/843' }] } : undefined,
     isFetching: false, isError: false, refetch: jest.fn(),
     // Each source read to its end (the search pages each source: review round 12).
+    answered: { films: true, users: true, logs: true, lists: true },
     more: { films: false, users: false, logs: false, lists: false },
     readingMore: { films: false, users: false, logs: false, lists: false },
     moreFailed: { films: false, users: false, logs: false, lists: false },

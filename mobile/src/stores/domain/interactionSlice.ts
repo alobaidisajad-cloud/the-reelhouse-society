@@ -5,7 +5,9 @@ import { supabase } from '../../lib/supabase';
 import { InteractionService } from '../../services/InteractionService';
 import { Interaction } from '../../types';
 import { isNetworkError } from '../../utils/networkError';
+import { isRateLimited } from '../../utils/housePace';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../../utils/offlineQueue';
+import { keyOf, writeOnline } from '../../utils/oneWritePerThing';
 import reelToast from '../../utils/reelToast';
 import { isRefusedOnPurpose, saidOfARefusal } from '../../utils/saidOfARefusal';
 import { useAuthStore } from '../auth';
@@ -74,28 +76,35 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 set({ interactions: next, _endorsedIndex: { ...get()._endorsedIndex, [targetId]: newInteraction } });
             }
 
+            // What the queue would carry, and the key the online write goes under (writeOnline): a
+            // certification of this entry still queued, older than this tap, is let go when it lands.
+            const queued: Parameters<typeof enqueueMutation>[0] = exists
+                ? { type: 'remove_endorsement', payload: { user_id: user.id, type: 'endorse_log', target_log_id: targetId } }
+                : { type: 'endorse_log', payload: { user_id: user.id, type: 'endorse_log', target_log_id: targetId } };
             try {
-                if (exists) {
-                    await InteractionService.removeEndorsement({
-                        user_id: user.id,
-                        type: 'endorse_log',
-                        target_log_id: targetId,
-                    });
-                    try { require('react-native').AccessibilityInfo.announceForAccessibility('Certification removed'); } catch { /* test env */ }
-                } else {
-                    await InteractionService.addEndorsement({
-                        user_id: user.id,
-                        type: 'endorse_log',
-                        target_log_id: targetId,
-                    });
-                    try { require('react-native').AccessibilityInfo.announceForAccessibility('Entry certified'); } catch { /* test env */ }
-                }
+                await writeOnline(keyOf(queued), async () => {
+                    if (exists) {
+                        await InteractionService.removeEndorsement({
+                            user_id: user.id,
+                            type: 'endorse_log',
+                            target_log_id: targetId,
+                        });
+                    } else {
+                        await InteractionService.addEndorsement({
+                            user_id: user.id,
+                            type: 'endorse_log',
+                            target_log_id: targetId,
+                        });
+                    }
+                }, { landedDespite: (e) => (e as { code?: string } | null)?.code === '23505' });
+                try { require('react-native').AccessibilityInfo.announceForAccessibility(exists ? 'Certification removed' : 'Entry certified'); } catch { /* test env */ }
                 settleTap('certify', targetId, tap);
             } catch (e: any) {
-                // Two EXPECTED failures are excluded: 23505 is a duplicate row
-                // (idempotent success, handled just below) and a network error is
-                // queued offline. Anything else is a genuine defect.
-                if (e?.code !== '23505' && !isNetworkError(e) && !isRefusedOnPurpose(e)) {
+                // Three EXPECTED failures are excluded: 23505 is a duplicate row
+                // (idempotent success, handled just below), and a network error or the
+                // house's pace (a wait longer than the phone waits) is queued. Anything
+                // else is a genuine defect.
+                if (e?.code !== '23505' && !isNetworkError(e) && !isRateLimited(e) && !isRefusedOnPurpose(e)) {
                     captureError(e, { scope: 'interactionSlice.toggleEndorsement' });
                 }
                 // Telemetry above still fires — a defect is worth knowing about
@@ -111,13 +120,10 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                     return;
                 }
 
-                if (isNetworkError(e)) {
-                    // Queue BOTH add and remove for offline sync
-                    if (exists) {
-                        enqueueMutation({ type: 'remove_endorsement', payload: { user_id: user.id, type: 'endorse_log', target_log_id: targetId } });
-                    } else {
-                        enqueueMutation({ type: 'endorse_log', payload: { user_id: user.id, type: 'endorse_log', target_log_id: targetId } });
-                    }
+                if (isNetworkError(e) || isRateLimited(e)) {
+                    // Queue BOTH add and remove for offline sync; one the house asked to wait for
+                    // goes once the wait is over (the queue's send waits it), never said as failed.
+                    enqueueMutation({ type: exists ? 'remove_endorsement' : 'endorse_log', payload: queued.payload });
                     flushOfflineQueue();
                     // Queued, not delivered: it stays on top of every count until
                     // the queue delivers it (markCounts.settleDelivered).
@@ -204,26 +210,31 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                 set({ interactions: next, _listEndorsedIndex: { ...get()._listEndorsedIndex, [listId]: newInteraction } });
             }
 
+            // As toggleEndorse: one door for this stack's certification (writeOnline).
+            const queued: Parameters<typeof enqueueMutation>[0] = exists
+                ? { type: 'remove_endorsement', payload: { user_id: user.id, target_list_id: listId, type: 'endorse_list' } }
+                : { type: 'endorse_list', payload: { user_id: user.id, type: 'endorse_list', target_list_id: listId } };
             try {
-                if (exists) {
-                    await InteractionService.removeEndorsement({
-                        user_id: user.id,
-                        type: 'endorse_list',
-                        target_list_id: listId,
-                    });
-                } else {
-                    await InteractionService.addEndorsement({
-                        user_id: user.id,
-                        type: 'endorse_list',
-                        target_list_id: listId,
-                    });
-                }
+                await writeOnline(keyOf(queued), async () => {
+                    if (exists) {
+                        await InteractionService.removeEndorsement({
+                            user_id: user.id,
+                            type: 'endorse_list',
+                            target_list_id: listId,
+                        });
+                    } else {
+                        await InteractionService.addEndorsement({
+                            user_id: user.id,
+                            type: 'endorse_list',
+                            target_list_id: listId,
+                        });
+                    }
+                }, { landedDespite: (e) => (e as { code?: string } | null)?.code === '23505' });
                 settleTap('certify', listId, tap);
             } catch (e: any) {
-                // Two EXPECTED failures are excluded: 23505 is a duplicate row
-                // (idempotent success, handled just below) and a network error is
-                // queued offline. Anything else is a genuine defect.
-                if (e?.code !== '23505' && !isNetworkError(e) && !isRefusedOnPurpose(e)) {
+                // Three EXPECTED failures are excluded, as in toggleEndorse: a duplicate row, and
+                // a network error or the house's pace, queued. Anything else is a genuine defect.
+                if (e?.code !== '23505' && !isNetworkError(e) && !isRateLimited(e) && !isRefusedOnPurpose(e)) {
                     captureError(e, { scope: 'interactionSlice.toggleEndorsement' });
                 }
                 // Telemetry above still fires — a defect is worth knowing about
@@ -238,13 +249,9 @@ export const createInteractionSlice: StateCreator<InteractionSlice, [], [], Inte
                     return;
                 }
 
-                if (isNetworkError(e)) {
-                    // Queue BOTH add and remove for offline sync
-                    if (exists) {
-                        enqueueMutation({ type: 'remove_endorsement', payload: { user_id: user.id, target_list_id: listId, type: 'endorse_list' } });
-                    } else {
-                        enqueueMutation({ type: 'endorse_list', payload: { user_id: user.id, type: 'endorse_list', target_list_id: listId } });
-                    }
+                if (isNetworkError(e) || isRateLimited(e)) {
+                    // Queue BOTH add and remove for offline sync (a wait the house asked for too).
+                    enqueueMutation({ type: exists ? 'remove_endorsement' : 'endorse_list', payload: queued.payload });
                     flushOfflineQueue();
                     queueTap('certify', listId, tap);
                 } else {

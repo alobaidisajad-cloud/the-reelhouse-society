@@ -12,6 +12,7 @@ import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { youtubeKey } from '@/src/utils/outsideValues';
 import { e2eTrace } from '@/src/utils/e2eTrace';
+import TryAgain, { ACTS_GAP, TRY_AGAIN_ABOVE_A_WAY_OUT } from '@/src/components/TryAgain';
 
 /** YouTube's privacy-enhanced origin: the player's page and its embed, and nothing else at the top. */
 export const PLAYER_ORIGIN = 'https://www.youtube-nocookie.com';
@@ -23,7 +24,13 @@ export const PLAYER_ORIGIN = 'https://www.youtube-nocookie.com';
 // written into the page, so only a key of YouTube's own shape (youtubeKey) is ever given.
 // The picture waits for the member's tap to play. The page listens to the player as YouTube's
 // iframe API speaks (enablejsapi): it says it is listening, and passes on the player's ready
-// and its refusal (heardFromPlayer).
+// and its refusal (heardFromPlayer). The page itself is written here, so it is always there;
+// the player inside it comes over the network, and a player that never arrives (no signal, or
+// one too weak for YouTube) would say nothing at all. So the page says so itself: at once when
+// the phone is offline, or when the player has not spoken in UNREACHED_AFTER_MS ('unreached').
+// askAgain ('asking') loads the player once more and watches again: on TRY AGAIN, and by itself
+// when the connection comes back.
+export const UNREACHED_AFTER_MS = 8000;
 const buildEmbedHtml = (key: string) => `<!DOCTYPE html>
 <html>
 <head>
@@ -42,19 +49,44 @@ const buildEmbedHtml = (key: string) => `<!DOCTYPE html>
   </iframe>
 <script>
   var player = document.getElementById('player');
+  var heard = false, watchdog = null;
+  function unreached() {
+    if (heard || !window.ReactNativeWebView) return;
+    window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'unreached' }));
+  }
+  function watch() {
+    heard = false;
+    clearTimeout(watchdog);
+    if (navigator.onLine === false) { unreached(); return; }
+    watchdog = setTimeout(unreached, ${UNREACHED_AFTER_MS});
+  }
+  window.askAgain = function () {
+    if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'asking' }));
+    watch();
+    player.src = player.src;
+  };
+  window.addEventListener('offline', unreached);
+  // The connection back: a player that never arrived is asked for again, as every read in the house is.
+  window.addEventListener('online', function () { if (!heard) window.askAgain(); });
   window.addEventListener('message', function (e) {
     if (e.origin !== '${PLAYER_ORIGIN}' || !window.ReactNativeWebView) return;
     var said; try { said = JSON.parse(e.data); } catch (_) { return; }
     if (said && (said.event === 'onReady' || said.event === 'onError')) {
+      heard = true;
+      clearTimeout(watchdog);
       window.ReactNativeWebView.postMessage(JSON.stringify({ event: said.event, info: said.info }));
     }
   });
   player.addEventListener('load', function () {
     player.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '${PLAYER_ORIGIN}');
   });
+  watch();
 </script>
 </body>
 </html>`;
+
+// Loads the player once more, the page watching for it again (buildEmbedHtml's askAgain).
+const ASK_AGAIN_JS = `(function(){ try { window.askAgain && window.askAgain(); } catch(e){} })(); true;`;
 
 // Stops playback immediately by navigating the embed frame away — the parent
 // document may re-point its own iframe even cross-origin.
@@ -78,15 +110,38 @@ export function playerMayLoad({ url, isTopFrame }: { url: string; isTopFrame?: b
 
 /**
  * What the player said, as the page passes it on: ready, or a refusal by YouTube's error code
- * (153: the page's origin refused; 100: no such video; 101 and 150: not to be played here).
- * Anything else the page is sent is nothing.
+ * (153: the page's origin refused; 100: no such video; 101 and 150: not to be played here), or,
+ * from the page itself, that the player never arrived (unreached). Anything else is nothing.
  */
-export function heardFromPlayer(data: string): { said: 'ready' } | { said: 'refused'; code: number | null } | null {
+export function heardFromPlayer(data: string): { said: 'ready' } | { said: 'refused'; code: number | null } | { said: 'unreached' } | { said: 'asking' } | null {
   let m: { event?: unknown; info?: unknown };
   try { m = JSON.parse(data); } catch { return null; }
   if (m?.event === 'onReady') return { said: 'ready' };
   if (m?.event === 'onError') return { said: 'refused', code: typeof m.info === 'number' ? m.info : null };
+  if (m?.event === 'unreached') return { said: 'unreached' };
+  // The page asking for the player again (TRY AGAIN, or the connection back).
+  if (m?.event === 'asking') return { said: 'asking' };
   return null;
+}
+
+/**
+ * WATCH ON YOUTUBE, one way wherever the box offers it: through the house's one door out
+ * (safeOpenURL), which says so itself when nothing can open it. Below TRY AGAIN, it reaches up
+ * only to meet TRY AGAIN's reach (ACTS_GAP).
+ */
+function WatchOnYouTube({ youtubeId, belowAnAct = false }: { youtubeId: string; belowAnAct?: boolean }) {
+    return (
+        <PressableScale room
+            style={s.refusedBtn}
+            onPress={() => { void safeOpenURL(`https://www.youtube.com/watch?v=${youtubeId}`); }}
+            hitSlop={belowAnAct ? { top: ACTS_GAP / 2 } : undefined}
+            haptic="medium"
+            accessibilityRole="link"
+            accessibilityLabel="Watch on YouTube"
+        >
+            <Text style={s.refusedBtnText}>WATCH ON YOUTUBE</Text>
+        </PressableScale>
+    );
 }
 
 /** A video as TMDB lists it: the player names it by what it is. */
@@ -110,19 +165,27 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
     const webviewRef = useRef<WebView>(null);
     const key = youtubeKey(videoId);
     // What the player said of this play: the sealed run waits for 'ready' (trailer.yaml).
-    const [said, setSaid] = useState<'ready' | 'refused' | null>(null);
+    // 'unreached': the page's word that the player never arrived.
+    const [said, setSaid] = useState<'ready' | 'refused' | 'unreached' | null>(null);
     // Refused, why: 100 is no such video; any other refusal is YouTube's own to play (101, 150,
     // 153). Said over the player, never YouTube's grey "Video unavailable" alone with no way on.
     const [refusal, setRefusal] = useState<number | null>(null);
 
-    useEffect(() => {
-        const wv = webviewRef.current;
-        let timer: ReturnType<typeof setTimeout>;
+    // Opened again: a fresh start, made as it renders (what the last play said is forgotten).
+    const [openedFor, setOpenedFor] = useState(visible);
+    if (openedFor !== visible) {
+        setOpenedFor(visible);
         if (visible) {
             setShouldRender(true);
             setSaid(null);
             setRefusal(null);
-        } else {
+        }
+    }
+
+    useEffect(() => {
+        const wv = webviewRef.current;
+        let timer: ReturnType<typeof setTimeout>;
+        if (!visible) {
             wv?.injectJavaScript(STOP_PLAYBACK_JS);
             timer = setTimeout(() => setShouldRender(false), 300);
         }
@@ -163,7 +226,14 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                         onMessage={(e) => {
                             const heard = heardFromPlayer(e.nativeEvent.data);
                             if (!heard) return;
-                            setSaid(heard.said);
+                            if (heard.said === 'asking') {
+                                // Asked for again (the connection back): the word that it never came is cleared while it comes.
+                                setSaid((was) => (was === 'unreached' ? null : was));
+                                e2eTrace('trailer.asking');
+                                return;
+                            }
+                            // A player that has spoken has arrived: a late word that it never did is none.
+                            setSaid((was) => (heard.said === 'unreached' && was !== null && was !== 'unreached' ? was : heard.said));
                             if (heard.said === 'refused') setRefusal(heard.code ?? 0);
                             e2eTrace(`trailer.${heard.said}`, heard.said === 'refused' ? { code: heard.code } : undefined);
                         }}
@@ -187,18 +257,23 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, label
                             <Text style={s.refusedWords}>
                                 {refusal === 100 ? 'THIS FOOTAGE IS NO LONGER ON YOUTUBE.' : 'YOUTUBE PLAYS THIS FOOTAGE ONLY ON ITS OWN.'}
                             </Text>
-                            {refusal === 100 ? null : (
-                                <PressableScale room
-                                    style={s.refusedBtn}
-                                    // Through the house's one door out (safeOpenURL): it says so itself when nothing can open it.
-                                    onPress={() => { void safeOpenURL(`https://www.youtube.com/watch?v=${key}`); }}
-                                    haptic="medium"
-                                    accessibilityRole="link"
-                                    accessibilityLabel="Watch on YouTube"
-                                >
-                                    <Text style={s.refusedBtnText}>WATCH ON YOUTUBE</Text>
-                                </PressableScale>
-                            )}
+                            {refusal === 100 ? null : <WatchOnYouTube youtubeId={key} />}
+                        </View>
+                    ) : null}
+                    {said === 'unreached' ? (
+                        <View style={s.refused}>
+                            <Text style={s.refusedWords}>THE FOOTAGE COULD NOT BE REACHED.</Text>
+                            <View style={s.acts}>
+                                <TryAgain
+                                    what="play the footage"
+                                    hitSlop={TRY_AGAIN_ABOVE_A_WAY_OUT}
+                                    onPress={() => {
+                                        setSaid(null);
+                                        webviewRef.current?.injectJavaScript(ASK_AGAIN_JS);
+                                    }}
+                                />
+                                <WatchOnYouTube youtubeId={key} belowAnAct />
+                            </View>
                         </View>
                     ) : null}
                 </View>
@@ -273,6 +348,8 @@ const s = StyleSheet.create({
         textAlign: 'center',
         includeFontPadding: false,
     },
+    /** TRY AGAIN and the way out below it, ACTS_GAP apart, so neither touch area takes the other's. */
+    acts: { alignItems: 'center', gap: ACTS_GAP },
     refusedBtn: {
         borderWidth: 1,
         borderColor: colors.sepia,

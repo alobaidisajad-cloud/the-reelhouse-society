@@ -11,6 +11,9 @@
  *   • a duplicate counts as delivered; a broken statement or an unknown refusal
  *     goes to the dead letter (7 days, 50 at most)
  *   • each write is sent only under its own member's session (queueOwnership.ts)
+ *   • one write waits per thing set whole (a note, a follow, a mark): the newer lets the older
+ *     go, and one that lands online lets go those queued before it (oneWritePerThing.ts)
+ *   • the house's pace for follows and certifications (RH429) is waited, never a retry spent
  */
 import * as Crypto from 'expo-crypto';
 import { houseIso, houseNow } from '@/src/lib/houseClock';
@@ -21,6 +24,7 @@ import { logger } from './logger';
 import { instantOf } from './instant';
 import { applyIdMapToPayload, executeMutation } from './mutationExecutor';
 import { isNetworkError, isTransientError } from './networkError';
+import { rateLimitOf } from './housePace';
 import reelToast from './reelToast';
 import { e2eTrace } from './e2eTrace';
 import { isSuspensionRefusal } from './refusedForStanding';
@@ -30,6 +34,7 @@ import { counted } from './counted';
 import { queryClient } from '../lib/queryClient';
 import { settleDelivered } from '../stores/markCounts';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
+import { isWritingOnline, keyOf, notesWereSent, sentUnder } from './oneWritePerThing';
 import {
     DEAD_LETTER_KEY, QUEUE_KEY, changesKept, changesMadeOffline, heldKey, heldOwnerOf, keepForOwners, kindOf,
     marksLetGo, marksRefused, NOT_KEPT, queueKeys, readList, readQueue, wordsGivenBack, writeList, writeQueue,
@@ -103,6 +108,7 @@ export function classifyQueueError(code: string, message: string, status: number
 }
 
 export { QUEUED_WRITE_KIND, changesMadeOffline, holdQueue, kindOf, releaseHeldWrites } from './queueOwnership';
+export { keyOf, writeOnline } from './oneWritePerThing';
 export type { QueuedWriteKind } from './queueOwnership';
 
 const MAX_QUEUE_SIZE = 100;
@@ -343,6 +349,16 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
         owner,
     };
 
+    // The member's older write of the same thing is let go: this one is their word now, and the
+    // older, sent after it, would undo it. Held ones too: sent again by the member's hand, an
+    // older refused write would undo this one.
+    const key = keyOf(newMutation);
+    const older = key ? queue.filter((m) => m.owner === owner && keyOf(m) === key) : [];
+    if (older.length > 0) {
+        queue = queue.filter((m) => !older.includes(m));
+        logger.debug('[OfflineSync] an older write of the same thing let go for the newer', key);
+    }
+
     // Full: the oldest marks go to make room, and the member is told which. Never their words
     // or a record of what they did: with no mark to let go, the write is queued over the cap.
     if (queue.length >= MAX_QUEUE_SIZE) {
@@ -365,6 +381,8 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
         if (!ahead) reelToast.error(NOT_KEPT);
         return false;
     }
+    // Finished with, unsent: the house's answer is the truth about them from now on (markCounts).
+    for (const m of older) settleDelivered(m);
     logger.debug(`[OfflineSync] Queued ${mutation.type} for background sync.`);
     return true;
 }
@@ -399,6 +417,26 @@ export function flushOfflineQueue(): Promise<void> {
         }
     })();
     return running;
+}
+
+// ── What a pass asks before each write, and the house's pace (round 13) ──
+
+/** Is this write still in the stored queue (not let go meanwhile)? */
+function stillQueued(id: string): boolean {
+    return readQueue().some((m) => m.id === id);
+}
+
+/** The writes the house paces (check_interaction_rate_limit): each inserts a follow or a certification. */
+const PACED_TYPES = new Set<QueuedMutation['type']>(['endorse_log', 'endorse_list', 'follow_user', 'follow_request_user']);
+
+/** A send asked for once the house's wait is over, when that is within ten minutes; one at a time. */
+let paceTimer: ReturnType<typeof setTimeout> | null = null;
+function paceAgain(seconds: number): void {
+    if (paceTimer || seconds > 600) return;
+    paceTimer = setTimeout(() => {
+        paceTimer = null;
+        void flushOfflineQueue();
+    }, seconds * 1000);
 }
 
 /** One pass over the queue, as the signed-in member: what it can send, sent in order. */
@@ -516,6 +554,8 @@ async function sendOnce(): Promise<void> {
     const refused: Refused[] = [];
     /** Did a write that changes who someone follows reach the server? */
     let socialMutationSynced = false;
+    /** The records whose Vault notes this send wrote: each read again once it is over. */
+    const notesSentFor = new Set<string>();
 
     let successCount = 0;
 
@@ -527,9 +567,22 @@ async function sendOnce(): Promise<void> {
     // Salon messages refused for the rank, held for the member at the end, with the refusal.
     const heldForRank: { mutation: QueuedMutation; error: unknown }[] = [];
 
+    // Met the house's pace for the member's own acts (rateLimitOf, scope 'member') with a wait longer
+    // than a send waits: their other follows and certifications wait with it, unsent, this pass.
+    let memberPaced = false;
+
     for (const mutation of queue) {
         // Held for the member: sent again only when they ask (the lounge store's retry).
         if (mutation._held) continue;
+        // Let go while this send ran (a newer write of the same thing landed online, or was queued
+        // over it): never sent. Read from the stored queue before each send (round 13: an older note,
+        // follow or certification sent after a newer one had landed undid it).
+        if (!stillQueued(mutation.id)) continue;
+        // Its thing is being written online now: that write lets it go when it lands (writeOnline),
+        // and one sent beside it could land after it. It waits, in the queue.
+        const key = keyOf(mutation);
+        if (isWritingOnline(key)) continue;
+        if (memberPaced && PACED_TYPES.has(mutation.type)) continue;
         try {
             // A payload that fails its schema is dead-lettered unsent.
             const schema = MutationSchemaMap[mutation.type];
@@ -541,12 +594,14 @@ async function sendOnce(): Promise<void> {
                     continue;
                 }
             }
-            const result = await executeMutation(withNewestRead(mutation, readAts), idMap);
+            // Out, under its key: an online write of the same thing waits for it to land first.
+            const result = await sentUnder(key, executeMutation(withNewestRead(mutation, readAts), idMap));
             if (result.fakeId && result.newId) {
                 idMap[result.fakeId] = result.newId;
             }
             if (result.readAt) readAts[result.readAt.key] = result.readAt.at;
             if (SOCIAL_MUTATION_TYPES.has(mutation.type)) socialMutationSynced = true;
+            if ((mutation.type === 'set_viewing_note' || mutation.type === 'remove_viewing_note') && typeof mutation.payload.log_id === 'string') notesSentFor.add(mutation.payload.log_id);
             if (result.letGo) {
                 // Let go of by its handler, which said so (a page gone from the house): through the one
                 // door of refusals, finished there with its copy kept, never counted as sent (round 12).
@@ -563,8 +618,20 @@ async function sendOnce(): Promise<void> {
             const status = Number((error as any)?.status);
             const errorClass = classifyQueueError(code, errMsg, status);
 
-            if (__DEV__) console.error(`[OfflineSync] Failed to execute ${mutation.type}:`, error);
+            const pace = rateLimitOf(error);
+            if (!pace && __DEV__) console.error(`[OfflineSync] Failed to execute ${mutation.type}:`, error);
 
+            if (pace) {
+                // The house's pace, with a wait longer than a send waits (housePace.ts waited the
+                // short ones): kept as it is, never a retry spent, never a refusal; the rest go on, for
+                // nothing depends on a follow or a certification. Paced for the member's own acts,
+                // their other marks wait with it; paced for one thing, only that one. Sent again once
+                // the wait is over (paceAgain), or at the next send.
+                if (pace.scope === 'member') memberPaced = true;
+                paceAgain(pace.seconds);
+                logger.debug('[OfflineSync] the house asks to wait: kept for a later send', mutation.type, pace.seconds, pace.scope);
+                continue;
+            }
             // No network: stop here and keep the rest, in order. A later write may
             // depend on this one (a critique on a filing not yet sent).
             if (isNetworkError(error)) {
@@ -670,5 +737,10 @@ async function sendOnce(): Promise<void> {
             logger.warn('[OfflineSync] post-flush feed invalidation failed:', e);
         }
     }
+
+    // A note sent late may have been done unwritten: a later note, or a later removal, stands at the
+    // house (round 13). Now the note has left the queue, the Vault reads those records' notes again
+    // (whenNotesAreSent), so it shows the house's word.
+    notesWereSent([...notesSentFor]);
     }
 }
