@@ -33,13 +33,16 @@ function judged(lines: string[]) {
 }
 
 describe('the thirty films', () => {
-  it('are thirty, each a film the sealed world holds, those whose page is recorded first', () => {
+  it('are thirty, each a film the sealed world holds, whose page the sealed world records', () => {
     const r = spawnSync(process.execPath, [SCRIPT, 'ids'], { encoding: 'utf8' });
     const ids = r.stdout.trim().split(/\r?\n/).map(Number);
     expect(ids).toHaveLength(30);
     expect(new Set(ids).size).toBe(30);
-    // The pages recorded so far (The Godfather's 238 among them) come first.
-    expect(ids.slice(0, 4)).toEqual(expect.arrayContaining([238]));
+  });
+
+  it('each has its whole page recorded, so every one of them fills the cache', () => {
+    const r = spawnSync(process.execPath, [SCRIPT, 'paths'], { encoding: 'utf8' });
+    expect({ status: r.status, unrecorded: r.stdout.trim() }).toEqual({ status: 0, unrecorded: '' });
   });
 });
 
