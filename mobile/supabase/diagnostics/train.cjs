@@ -7,11 +7,13 @@
 //      whose migrations, functions and rehearsals are HEAD's (read with gh);
 //   3. production matches the committed snapshot (schema-snapshot.mjs --check);
 //   4. a full copy of production is taken and read back (dump-production.cjs full);
-//   5. each index built CONCURRENTLY (a file of one statement, P0.8) is built alone, outside any
-//      transaction, while members write; one left not whole is dropped and built once more; then
-//      its rehearsal of its name, which only reads, probes it whole and read through;
-//   6. then car by car, each other pending migration in name order: rehearsed on production as it
-//      now is (the cars before it already applied and committed), in one transaction that is
+//   5. then car by car, every pending migration in name order, the order CI applied and proved
+//      them in: an index built CONCURRENTLY (a file of one statement, P0.8) is built alone, outside
+//      any transaction, while members write, in its own turn (after the cars named before it, whose
+//      tables and columns it may index, and before the cars after it, whose rehearsals read through
+//      it); one left not whole is dropped and built once more; then its rehearsal of its name, which
+//      only reads, probes it whole and read through. Every other car is rehearsed on production as
+//      it now is (the cars before it already applied and committed), in one transaction that is
 //      always rolled back; applied as apply.cjs applies one; then its rehearsal runs again, rolled
 //      back, on production as it now is (the live probe).
 // Car by car, so no car's rehearsal runs while an earlier car's locks are held: one transaction
@@ -106,25 +108,22 @@ const plan = (pending, rehearsals) => {
     return { ...m, rehearsal: own[0] };
   });
   if (faults.length) return { refuse: faults.join('\n  ') };
-  // The indexes first, each alone while members write: the rehearsals after them read through them.
-  const built = cars.filter((m) => m.concurrent);
-  const rest = cars.filter((m) => !m.concurrent);
   return {
     steps: [
       { kind: 'tree', what: 'the checkout is what CI ran' },
       { kind: 'ci', what: 'CI passed on these migrations, functions and rehearsals' },
       { kind: 'check', what: 'production matches the committed snapshot' },
       { kind: 'dump', what: 'a full copy of production, read back' },
-      ...built.flatMap((m) => [
+      // Car by car in name order, as CI applied them: an index built alone in its turn, while members
+      // write; every other car rehearsed on production as the cars before it left it, then applied.
+      ...cars.flatMap((m) => (m.concurrent ? [
         { kind: 'build', what: `build ${m.name} alone, as members write`, car: m },
         { kind: 'probe', what: `probe ${m.name}: the index whole, and read through`, car: m },
-      ]),
-      // Car by car: each rehearsed on production as the cars before it left it, then applied.
-      ...rest.flatMap((m) => [
+      ] : [
         { kind: 'rehearse', what: `rehearse ${m.name} on production as it now is`, car: m },
         { kind: 'apply', what: `apply ${m.name}`, car: m },
         { kind: 'probe', what: `probe ${m.name} on production as it now is`, car: m },
-      ]),
+      ])),
     ],
   };
 };

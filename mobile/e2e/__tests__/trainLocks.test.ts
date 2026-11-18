@@ -95,11 +95,11 @@ describe('the train is measured as it runs, car by car', () => {
       reh('x_id_rehearsal.sql'), reh('c_rehearsal.sql', C.name)]);
   });
 
-  it('the index built first, then each car rehearsed (A) and applied (B) before the next is rehearsed', () => {
+  it('in name order: each car rehearsed (A) and applied (B) before the next, the index built (B) in its turn', () => {
     expect(measured.map((r) => r.label)).toEqual([
-      `B · build ${idx.name} alone, as members write`,
       `A · rehearse ${A.name} on production as it now is`, `B · apply ${A.name}`,
       `A · rehearse ${B.name} on production as it now is`, `B · apply ${B.name}`,
+      `B · build ${idx.name} alone, as members write`,
       `A · rehearse ${C.name} on production as it now is`, `B · apply ${C.name}`,
     ]);
   });

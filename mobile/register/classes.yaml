@@ -958,7 +958,7 @@ classes:
     count: 3
     source: { kind: history, ref: "Load 39747386418, the lock lab's second run: a closing account held the train's locks a second on 100,000 members" }
     methods:
-      - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY first, alone and outside any transaction, and probes it before any rehearsal" }
+      - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY in its turn by name, alone and outside any transaction: after the cars that make what it indexes, probed before the cars after it" }
       - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "drops an index left not whole and builds it once more, and fails one still not whole" }
     fix: "two indexes built CONCURRENTLY (20261022_01 lounge_messages(reply_to_id), 20261022_02 a GIN index of the cards' metadata), live on production since the train of 2026-10-25 and read back valid (train_2_indexes_live_check.sql), each with a rehearsal that the index is whole and the reads are planned through it (db-integration.yml shows each failing without its index); request_account_deletion (20261016_02, pending) asks for a departed member's cards by containment, which that index answers. The train builds such a file first, alone, outside any transaction, drops one left not whole and builds it once more, then probes it; up-down-up.mjs and the lock lab run it alone too (P0.8) (mutant shape-index-never-built-first)"
     places: [none]
@@ -3730,3 +3730,16 @@ classes:
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "is found in its attempt though the runner's copy of the log is seconds behind the phone" }
     fix: "run-flows.sh's cut_log writes a mark to the device's log (log -t e2e-cut) and cuts the attempt once the copy holds it, so every line the attempt left is in its cut; a device that takes no mark or a copy that stopped is cut as it is, and a mark not seen in 60 s is warned of (mutant shape-attempt-log-cut-on-a-guess)"
     places: [emulator]
+
+  - id: DB-an-index-built-before-what-it-indexes
+    title: "The train built every pending index before any other car, out of the name order CI applied and proved them in: an index on a column a car before it adds (round 13's films re-read index) would fail on production, and the train stop, though every check had passed"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 13, assembling the cars, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY in its turn by name, alone and outside any transaction: after the cars that make what it indexes, probed before the cars after it" }
+      - { kind: running, file: e2e/__tests__/trainLocks.test.ts, test: "in name order: each car rehearsed (A) and applied (B) before the next, the index built (B) in its turn" }
+    fix: "train.cjs goes car by car strictly in name order, the order CI applies them in: an index built CONCURRENTLY is built alone in its own turn, after the cars named before it and before the cars after it, whose rehearsals read through it; train-locks.mjs measures the same runs (mutant shape-train-builds-indexes-first)"
+    places: [none]

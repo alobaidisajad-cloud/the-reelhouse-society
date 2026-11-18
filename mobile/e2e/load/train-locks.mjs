@@ -127,10 +127,10 @@ function measure(label, args, dir, n) {
 }
 
 /**
- * The runs, from the train's own steps, in its own order: each index built alone first (as
- * production builds it, the rehearsals then read through it), then car by car its rehearsal and
- * its apply, so each car is rehearsed with the cars before it committed and none of their locks
- * held. Each with psql's arguments as the train gives them (`psqlArgs`, train.cjs's).
+ * The runs, from the train's own steps, in its own order, car by car in name order: an index
+ * built alone in its turn (as production builds it, the cars after it then read through it),
+ * every other car its rehearsal and its apply, so each car is rehearsed with the cars before it
+ * committed and none of their locks held. Each with psql's arguments as the train gives them (`psqlArgs`, train.cjs's).
  */
 export function runsOf(steps, psqlArgs) {
   const RUN = { build: 'B', rehearse: 'A', apply: 'B' };

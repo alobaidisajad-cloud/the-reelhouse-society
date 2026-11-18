@@ -990,9 +990,9 @@ mutants:
     source: shape
     edits:
       - file: supabase/diagnostics/train.cjs
-        find: "  const built = cars.filter((m) => m.concurrent);"
-        replace: "  const built = cars.filter((m) => m.concurrent && false);"
-    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY first, alone and outside any transaction, and probes it before any rehearsal" }
+        find: "      ...cars.flatMap((m) => (m.concurrent ? ["
+        replace: "      ...cars.filter((m) => !m.concurrent).flatMap((m) => (m.concurrent ? ["
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY in its turn by name, alone and outside any transaction: after the cars that make what it indexes, probed before the cars after it" }
 
   - id: shape-ios-flows-unrun
     class: E2E-no-flow-on-ios
@@ -6849,3 +6849,12 @@ mutants:
         find: "  if timeout 20 adb shell log -t e2e-cut \"$mark\" < /dev/null > /dev/null 2>&1; then"
         replace: "  sleep 2; if false; then"
     proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "is found in its attempt though the runner's copy of the log is seconds behind the phone" }
+
+  - id: shape-train-builds-indexes-first
+    class: DB-an-index-built-before-what-it-indexes
+    source: shape
+    edits:
+      - file: supabase/diagnostics/train.cjs
+        find: "      ...cars.flatMap((m) => (m.concurrent ? ["
+        replace: "      ...[...cars.filter((m) => m.concurrent), ...cars.filter((m) => !m.concurrent)].flatMap((m) => (m.concurrent ? ["
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "builds an index CONCURRENTLY in its turn by name, alone and outside any transaction: after the cars that make what it indexes, probed before the cars after it" }

@@ -382,20 +382,24 @@ describe('the train: every pending migration in one command', () => {
     expect(train.verdict(train.run(steps, () => ({ ok: true, out: '' })))[0]).toBe(`TRAIN DONE: 2 applied (${A.name}, ${B.name}), each probed.`);
   });
 
-  it('builds an index CONCURRENTLY first, alone and outside any transaction, and probes it before any rehearsal', () => {
-    const idx = car('20990101_03_c.sql', "SET lock_timeout = '2s';\nSET statement_timeout = '10min';\nCREATE INDEX CONCURRENTLY IF NOT EXISTS x_id ON public.x (id);\n");
-    const p = train.plan([A, idx, B], [reh('a_rehearsal.sql', A.name), reh('b_rehearsal.sql', B.name), reh('c_rehearsal.sql')]);
+  it('builds an index CONCURRENTLY in its turn by name, alone and outside any transaction: after the cars that make what it indexes, probed before the cars after it', () => {
+    // The index reads a column the car before it adds (round 13's films re-read index): built first, it would fail.
+    const col = car('20990101_02_col.sql', "SET LOCAL lock_timeout = '2s';\nSET LOCAL statement_timeout = '30s';\nALTER TABLE public.x ADD COLUMN due timestamptz;\n");
+    const idx = car('20990101_03_c.sql', "SET lock_timeout = '2s';\nSET statement_timeout = '10min';\nCREATE INDEX CONCURRENTLY IF NOT EXISTS x_due ON public.x (due);\n");
+    const D = car('20990101_04_d.sql');
+    const p = train.plan([A, col, idx, D], [reh('a_rehearsal.sql', A.name), reh('col_rehearsal.sql', col.name), reh('c_rehearsal.sql'), reh('d_rehearsal.sql', D.name)]);
     expect(p.steps?.slice(4).map((s) => s.what)).toEqual([
-      `build ${idx.name} alone, as members write`, `probe ${idx.name}: the index whole, and read through`,
       `rehearse ${A.name} on production as it now is`, `apply ${A.name}`, `probe ${A.name} on production as it now is`,
-      `rehearse ${B.name} on production as it now is`, `apply ${B.name}`, `probe ${B.name} on production as it now is`,
+      `rehearse ${col.name} on production as it now is`, `apply ${col.name}`, `probe ${col.name} on production as it now is`,
+      `build ${idx.name} alone, as members write`, `probe ${idx.name}: the index whole, and read through`,
+      `rehearse ${D.name} on production as it now is`, `apply ${D.name}`, `probe ${D.name} on production as it now is`,
     ]);
     const steps = p.steps ?? [];
     const build = steps.find((s) => s.kind === 'build') as Step;
     expect(train.psqlArgs(build)).toEqual(['-X', '-v', 'ON_ERROR_STOP=1', '-f', `/m/${idx.name}`]);
-    // The index built counts as a car applied: a later car's stop never says nothing was.
-    const atA = train.run(steps, (s) => ({ ok: s.what !== `rehearse ${A.name} on production as it now is`, out: 'REHEARSAL FAILED' }));
-    expect(train.verdict(atA).slice(1, 3)).toEqual([`Applied before it stopped: ${idx.name}`, `Not applied: ${A.name}, ${B.name}`]);
+    // The index built counts as a car applied: a later car's stop names it among those applied.
+    const atD = train.run(steps, (s) => ({ ok: s.what !== `rehearse ${D.name} on production as it now is`, out: 'REHEARSAL FAILED' }));
+    expect(train.verdict(atD).slice(1, 3)).toEqual([`Applied before it stopped: ${A.name}, ${col.name}, ${idx.name}`, `Not applied: ${D.name}`]);
   });
 
   it('drops an index left not whole and builds it once more, and fails one still not whole', () => {

@@ -5234,5 +5234,12 @@
     "proof": "m1",
     "commit": "0bce9845b8ec01c2c9bc8b706290e524094c6c54",
     "verdict": "caught"
+  },
+  {
+    "class": "E2E-a-log-cut-before-it-arrived",
+    "mutant": "shape-attempt-log-cut-on-a-guess",
+    "proof": "m1",
+    "commit": "822f9d3fac15e11e53c8f72d1611ee8ff08cb9c5",
+    "verdict": "caught"
   }
 ]
