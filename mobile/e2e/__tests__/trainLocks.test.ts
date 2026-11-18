@@ -85,7 +85,9 @@ describe('the train is measured as it runs, car by car', () => {
     if (r.status !== 0) throw new Error(r.stderr);
     return JSON.parse(r.stdout) as { label: string; args: string[] }[];
   };
-  const [A, B, C] = ['20990101_01_a.sql', '20990101_02_b.sql', '20990101_04_c.sql'].map((n) => car(n));
+  const A = car('20990101_01_a.sql');
+  const B = car('20990101_02_b.sql');
+  const C = car('20990101_04_c.sql');
   const idx = car('20990101_03_x_id.sql', INDEX);
   let measured: { label: string; args: string[] }[];
   beforeAll(() => {

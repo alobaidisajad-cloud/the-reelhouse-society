@@ -142,7 +142,8 @@ function giveBack(m: QueuedMutation): boolean {
 const SILENCED = 'Your account has been silenced by The Society.';
 
 /** A write the house will not take, and why, in its own words. */
-type Refused = { mutation: QueuedMutation; why: string };
+/** A write the house would not take; `letGo` when its handler let it go and said so itself (a page gone). */
+type Refused = { mutation: QueuedMutation; why: string; letGo?: boolean };
 
 /**
  * Every write the house will not take, given back to its member by kind (WORKLIST P4.14), each
@@ -157,12 +158,16 @@ function sortRefused(refused: readonly Refused[]): { done: QueuedMutation[]; hel
         ...mutation,
         payload: { ...mutation.payload, _failReason: why, _failedAt: houseIso() },
     })));
-    const lapsed = refused.filter((r) => kindOf(r.mutation) === 'toggle').map((r) => r.mutation);
+    // Let go of by its handler (a page gone from the house): finished, its copy above, nothing given
+    // back to a page that is no longer there and nothing said twice (the handler said it).
+    const letGo = refused.filter((r) => r.letGo).map((r) => r.mutation);
+    const sorted = refused.filter((r) => !r.letGo);
+    const lapsed = sorted.filter((r) => kindOf(r.mutation) === 'toggle').map((r) => r.mutation);
     // A salon message is held instead: its room draws it failed, with tap to retry (useHeld).
-    const back = refused
+    const back = sorted
         .filter((r) => kindOf(r.mutation) === 'words' && r.mutation.type !== 'send_lounge_message' && giveBack(r.mutation))
         .map((r) => r.mutation);
-    const done = [...lapsed, ...back];
+    const done = [...letGo, ...lapsed, ...back];
     const held = refused.filter((r) => !done.includes(r.mutation));
     if (lapsed.length) reelToast.error(marksRefused(lapsed));
     if (back.length) reelToast.error(wordsGivenBack(back));
@@ -541,14 +546,14 @@ async function sendOnce(): Promise<void> {
                 idMap[result.fakeId] = result.newId;
             }
             if (result.readAt) readAts[result.readAt.key] = result.readAt.at;
-            if (result.letGo) {
-                // Let go of by its handler, which said so (a page gone from the house): finished, a
-                // copy kept for diagnosis, and never counted as sent (review round 12).
-                addToDeadLetter([{ ...mutation, payload: { ...mutation.payload, _failReason: `let go: ${result.letGo}`, _failedAt: houseIso() } }]);
-            } else {
-                successCount++;
-            }
             if (SOCIAL_MUTATION_TYPES.has(mutation.type)) socialMutationSynced = true;
+            if (result.letGo) {
+                // Let go of by its handler, which said so (a page gone from the house): through the one
+                // door of refusals, finished there with its copy kept, never counted as sent (round 12).
+                refused.push({ mutation, why: `let go: ${result.letGo}`, letGo: true });
+                continue;
+            }
+            successCount++;
             finished(mutation);
         } catch (error: unknown) {
             const errMsg = (typeof error === 'object' && error !== null && 'message' in error)
