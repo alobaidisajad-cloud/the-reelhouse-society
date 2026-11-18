@@ -2891,8 +2891,8 @@ mutants:
     source: shape
     edits:
       - file: app/lounge/[id].tsx
-        find: "    metAtTheDoor.current = true;\n    setDoorOpen(true);"
-        replace: "    metAtTheDoor.current = true;"
+        find: "    metAtTheDoor.current = doorAsked;\n    setDoorOpen(true);"
+        replace: "    metAtTheDoor.current = doorAsked;"
     proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "a host opened from a notice is shown who waits at the door" }
 
   - id: shape-door-met-by-a-guest
@@ -2900,8 +2900,8 @@ mutants:
     source: shape
     edits:
       - file: app/lounge/[id].tsx
-        find: "    if (!toTheDoor || metAtTheDoor.current || !isCreator || pendingMembers.length === 0) return;"
-        replace: "    if (!toTheDoor || metAtTheDoor.current || pendingMembers.length === 0) return;"
+        find: "    if (doorAsked <= metAtTheDoor.current || !isCreator || pendingMembers.length === 0) return;"
+        replace: "    if (doorAsked <= metAtTheDoor.current || pendingMembers.length === 0) return;"
     proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "a member admitted, opening the same link, is shown the room and no door" }
 
   - id: shape-door-met-twice
@@ -2909,8 +2909,8 @@ mutants:
     source: shape
     edits:
       - file: app/lounge/[id].tsx
-        find: "    if (!toTheDoor || metAtTheDoor.current || !isCreator || pendingMembers.length === 0) return;"
-        replace: "    if (!toTheDoor || !isCreator || pendingMembers.length === 0) return;"
+        find: "    if (doorAsked <= metAtTheDoor.current || !isCreator || pendingMembers.length === 0) return;"
+        replace: "    if (doorAsked === 0 || !isCreator || pendingMembers.length === 0) return;"
     proof: { file: src/components/lounge/__tests__/aSalonsNoticeOpensItsDoor.test.tsx, test: "the door is shown once: closed, a new roster read does not open it again" }
 
   - id: shape-present-without-its-sound
@@ -4722,9 +4722,9 @@ mutants:
     class: NAV-a-sheet-asked-for-over-one-still-there
     source: shape
     edits:
-      - file: src/utils/openNoticeFromPush.ts
-        find: "{ if (currentHref() !== route) nav.push(route); }"
-        replace: "{ nav.push(route); }"
+      - file: src/utils/pageInFront.ts
+        find: "  if (!tellThePageInFront(route)) nav.push(route);"
+        replace: "  tellThePageInFront(route); nav.push(route);"
     proof: { file: src/utils/__tests__/theTappedNoticeOpensIt.test.ts, test: "about the page already in front, opens no second copy over it (review round 4)" }
 
   - id: shape-log-door-opens-search
@@ -5856,8 +5856,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "    _closeActive = leave;\n"
-        replace: "    _closeActive = close;\n"
+        find: "      // Left on purpose: its CLOSED is not a drop.\n      watch.end();\n"
+        replace: "      // Left on purpose: its CLOSED is not a drop.\n"
     proof: { file: src/stores/__tests__/aSalonJoinedAgainHearsTheRoom.test.ts, test: "a salon live at sign-out is left whole: its closing is no drop, the next member is never told the room is not live, and nothing is read again" }
 
   - id: shape-standing-blamed-on-the-author
@@ -6108,8 +6108,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/lounge/LoungeSettingsPanel.tsx
-        find: "              ) : !myRow || iAmBanned ? null : ("
-        replace: "              ) : iAmBanned ? null : ("
+        find: "              ) : !holdsARow ? null : ("
+        replace: "              ) : ("
     proof: { file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a guest with no seat is told the salon’s count and that the roster is kept for those seated, and is offered no STEP OUT" }
 
   - id: shape-follow-standing-said-try-again
@@ -6579,3 +6579,255 @@ mutants:
         find: "const isComputed = (table: string, name: string): boolean => !!house().computed.get(table)?.has(name);"
         replace: "const isComputed = (_table: string, name: string): boolean => [...house().computed.values()].some((fns) => fns.has(name));"
     proof: { file: test-utils/__tests__/theFakeAnswersAComputedField.test.ts, test: "refuses a name no function of that table's row has, and a computed field it was told of that no table has" }
+
+  - id: shape-unread-roster-said-kept-from-the-seated
+    class: UI-read-drawn-as-empty
+    source: shape
+    edits:
+      - file: src/components/lounge/LoungeSettingsPanel.tsx
+        find: "  const rosterAwaited = (seated || standing === 'unknown') && !rosterRead;"
+        replace: "  const rosterAwaited = standing === 'unknown' && !rosterRead;"
+    proof: { file: src/components/lounge/__tests__/aSeatedMemberKeepsTheirSeatBeforeTheRoster.test.tsx, test: "a seated member before the roster is read is told it is being read, never that it is kept from them, and may step out" }
+
+  - id: shape-let-go-amendment-counted-as-sent
+    class: COPY-one-act-told-as-another
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "            letGoOfGoneStack(String(list_id));\n            return { letGo: 'STACK_GONE' };"
+        replace: "            letGoOfGoneStack(String(list_id));\n            return {};"
+    proof: { file: src/utils/__tests__/aWriteOnAPageGoneIsLetGoNotSent.test.ts, test: "a stack amended offline and deleted elsewhere is said to be let go, and never said to have updated the archive" }
+
+  - id: shape-critique-on-a-gone-record-given-back
+    class: COPY-a-refusal-told-as-anothers
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "        // The record deleted meanwhile: let go of and said, never handed back to a page that is gone.\n        const gone = letGoOfACritiqueOnAGonePage(sent.error, p);\n        if (gone) return gone;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aWriteOnAPageGoneIsLetGoNotSent.test.ts, test: "a critique written offline under a record deleted meanwhile is let go: the record leaves the phone, the words are never put back, and the member is told truly" }
+
+  - id: shape-answered-salon-request-kept-on-the-bell
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    if (memberUnchanged(startedAs)) forgetTheRequestNotice(loungeId, userId);\n    return true;\n  },\n\n  declineMember:"
+        replace: "    return true;\n  },\n\n  declineMember:"
+    proof: { file: src/stores/__tests__/aSalonRequestAnsweredLeavesTheBell.test.ts, test: "the host admits a member at the door: that member’s request leaves the bell and the board, and nothing else" }
+
+  - id: shape-notice-taken-back-kept-on-the-bell
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "                get().forgetGoneNotices(parsed.data.payload.ids);\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aNoticeTheHouseTookBackLeavesTheBell.test.ts, test: "a notice the house took back leaves the board, and its unread count leaves the bell" }
+
+  - id: shape-salon-door-rung-as-the-house
+    class: COPY-one-act-told-as-another
+    source: shape
+    edits:
+      - file: src/lib/noticeChannels.ts
+        find: "  salon: 'members',\n"
+        replace: ""
+    proof: { file: src/lib/__tests__/theNoticesKnowTheirChannels.test.ts, test: "a salon’s door rings with the members, a ballot’s close with the critiques: channels a launched build made" }
+
+  - id: shape-answer-pushed-as-a-new-critique
+    class: COPY-one-act-told-as-another
+    source: shape
+    edits:
+      - file: supabase/functions/notify-push/index.ts
+        find: "    : type === 'comment' && record.metadata?.answer === true\n      ? ANSWER_TITLE\n      : TYPE_TITLES[type] ?? DEFAULT_TITLE"
+        replace: "    : TYPE_TITLES[type] ?? DEFAULT_TITLE"
+    proof: { file: src/lib/__tests__/theNoticesKnowTheirChannels.test.ts, test: "each is titled as what it is on the lock screen" }
+
+  - id: shape-page-in-front-told-nothing
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: src/utils/pageInFront.ts
+        find: "    if (one.inFront()) one.told(query);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aNoticeAboutThePageInFrontTellsIt.test.ts, test: "a critique announced on the essay being read is read there: the page is told, nothing is opened" }
+
+  - id: shape-notice-judged-by-its-whole-address
+    class: UI-notice-opens-elsewhere
+    source: shape
+    edits:
+      - file: src/utils/pageInFront.ts
+        find: "  if (currentPathname() !== path) return false;"
+        replace: "  if (currentPathname() !== route) return false;"
+    proof: { file: src/utils/__tests__/aNoticeAboutThePageInFrontTellsIt.test.ts, test: "a salon’s notice tapped in that salon stacks no second room: the room in front is told to open its door" }
+
+  - id: shape-copy-leaving-takes-the-shared-channel
+    class: NET-a-channel-opened-on-its-leaving-one
+    source: shape
+    edits:
+      - file: src/lib/openChannel.ts
+        find: "    if (h.holders > 0) return;\n"
+        replace: ""
+    proof: { file: src/lib/__tests__/twoHoldersShareOneChannel.test.ts, test: "the copy leaving first never removes the channel the room beneath still listens on" }
+
+  - id: shape-spoiler-quoted-to-another
+    class: DATA-a-spoiler-quoted-in-the-clear
+    source: shape
+    edits:
+      - file: src/hooks/useUniversalSearch.ts
+        find: "  const veiled = !!log.is_spoiler && (!me || log.user_id !== me);"
+        replace: "  const veiled = !!log.is_spoiler && !!me && log.user_id === me;"
+    proof: { file: src/hooks/__tests__/aSpoilerIsNeverQuotedInSearch.test.tsx, test: "is never quoted to another member: the row says it holds spoilers" }
+
+  - id: shape-cleared-search-comes-back
+    class: READ-an-answer-drawn-under-an-order-left
+    source: shape
+    edits:
+      - file: src/hooks/useDebouncedSearch.ts
+        find: "  const clear = useCallback(() => {\n    cancel();\n"
+        replace: "  const clear = useCallback(() => {\n"
+    proof: { file: src/components/profile/__tests__/aClearedSearchStaysCleared.test.tsx, test: "a clear inside the wait cancels it" }
+
+  - id: shape-search-records-stop-at-the-first-page
+    class: READ-a-search-cut-at-a-fixed-count
+    source: shape
+    edits:
+      - file: src/hooks/useUniversalSearch.ts
+        find: "        p_cursor_at: cursor?.primary ?? null,\n        p_cursor_id: cursor?.id ?? null,\n"
+        replace: "        p_cursor_at: null,\n        p_cursor_id: null,\n"
+    proof: { file: src/hooks/__tests__/theSearchReadsPastItsFirstPage.test.tsx, test: "the records: twenty shown, more said, and the next twenty asked from the last one shown" }
+
+  - id: shape-search-count-said-as-a-total
+    class: COPY-an-unknown-said-as-a-count
+    source: shape
+    edits:
+      - file: app/(modals)/search-modal.tsx
+        find: "  return more ? `${n}+` : `${n}`;"
+        replace: "  return `${n}`;"
+    proof: { file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "a head names its section and its own count, \"20+\" while more remain" }
+
+  - id: shape-members-paged-without-their-closeness
+    class: READ-a-search-cut-at-a-fixed-count
+    source: shape
+    edits:
+      - file: src/hooks/useUniversalSearch.ts
+        find: "        p_cursor_closeness: pageParam?.closeness ?? null,\n"
+        replace: "        p_cursor_closeness: null,\n"
+    proof: { file: src/hooks/__tests__/theSearchReadsPastItsFirstPage.test.tsx, test: "the next members are asked after the last one shown, by how close it was and its handle" }
+
+  - id: shape-last-cans-drawn-as-the-answer
+    class: READ-an-answer-drawn-under-an-order-left
+    source: shape
+    edits:
+      - file: app/(tabs)/reels.tsx
+        find: "    if (stacksLoading || stacksRereading || stacksFollowsUnread) return <CansReading />;"
+        replace: "    if (stacksLoading || stacksFollowsUnread) return <CansReading />;"
+    proof: { file: src/components/reels/__tests__/theCansReadAgainSaySo.test.tsx, test: "an empty last answer, held while new words are asked, is the reading frame, never \"no match\"" }
+
+  - id: shape-door-next-page-under-a-search
+    class: READ-an-answer-drawn-under-an-order-left
+    source: shape
+    edits:
+      - file: src/hooks/useFollowRequests.ts
+        find: "    if (!enabled || topReading.current || answeredRef.current !== search) return;\n"
+        replace: "    if (!enabled) return;\n"
+    proof: { file: src/hooks/__tests__/aSearchAtTheDoorIsNotMixedWithTheNextPage.test.tsx, test: "a foot reached while a search is read asks nothing, and the search's answer is what the door shows" }
+
+  - id: shape-case-card-one-stop
+    class: UI-a-control-lost-inside-one-stop
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "                    accessible={multiSelectMode}\n"
+        replace: "                    accessible={multiSelectMode || undefined}\n"
+    proof: { file: app/(admin)/__tests__/everyVerdictIsReachedByAScreenReader.test.tsx, test: "reaches every verdict, the accused and the evidence, each as its own stop, not lost inside the case card" }
+
+  - id: shape-stack-row-offers-no-remove
+    class: UI-a-control-lost-inside-one-stop
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "                    { name: 'remove', label: 'Remove' },\n"
+        replace: ""
+    proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "a film can be taken out without sight: VoiceOver stops on its row, never its ×, so the row offers Remove (round 12)" }
+
+  - id: shape-notice-row-offers-no-dismiss
+    class: UI-a-control-lost-inside-one-stop
+    source: shape
+    edits:
+      - file: app/(modals)/notifications-modal.tsx
+        find: "const DISMISS_ACT = [{ name: 'dismiss', label: 'Dismiss' }];"
+        replace: "const DISMISS_ACT: { name: string; label: string }[] = [];"
+    proof: { file: app/(modals)/__tests__/aNoticeIsDismissedWithoutSight.test.tsx, test: "can dismiss one notice: its row, where VoiceOver stops, offers Dismiss" }
+
+  - id: shape-start-clean-inside-the-line
+    class: UI-a-control-lost-inside-one-stop
+    source: shape
+    edits:
+      - file: src/components/TakenUpLine.tsx
+        find: "    <View style={[s.row, style]}>\n"
+        replace: "    <View style={[s.row, style]} accessible>\n"
+    proof: { file: src/components/__tests__/aDraftTakenUpSaysWhenItWasKept.test.tsx, test: "START CLEAN is a stop of its own for VoiceOver, beside the words, not lost inside them" }
+
+  - id: shape-capture-drops-offered-acts
+    class: UI-a-control-lost-inside-one-stop
+    source: shape
+    edits:
+      - file: src/components/profile/__tests__/zz-render.lib.ts
+        find: "  const actions = acts.length ? ` data-actions=\"${esc(acts.join('|'))}\"` : '';"
+        replace: "  const actions = '';"
+    proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "writes each act by its label, or its name when it has none" }
+
+  - id: shape-refused-code-drawn-unspoken
+    class: UI-a-word-drawn-never-spoken
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "{!!otpError && <SaidText style={st.modalFail} {...scaledTextProps}>{otpError}</SaidText>}"
+        replace: "{!!otpError && <Text style={st.modalFail} {...scaledTextProps}>{otpError}</Text>}"
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "a screen-reader member hears VERIFY busy while it checks, and then hears the refusal as it appears" }
+
+  - id: shape-said-text-silent-on-iphone
+    class: UI-a-word-drawn-never-spoken
+    source: shape
+    edits:
+      - file: src/components/SaidText.tsx
+        find: "    if (Platform.OS === 'ios' && children.trim()) AccessibilityInfo.announceForAccessibility(children);\n"
+        replace: ""
+    proof: { file: src/components/__tests__/aMessageThatAppearsIsSpoken.test.tsx, test: "are spoken on an iPhone as they appear, again when they change, and not again when they do not" }
+
+  - id: shape-link-sent-unheard
+    class: UI-a-word-drawn-never-spoken
+    source: shape
+    edits:
+      - file: src/components/auth/PasswordRecoveryModal.tsx
+        find: "    if (forgotSent && titleRef.current) AccessibilityInfo.sendAccessibilityEvent(titleRef.current, 'focus');\n"
+        replace: ""
+    proof: { file: src/components/auth/__tests__/aLinkSentIsHeard.test.tsx, test: "moves a screen reader onto \"Check Your Inbox\" when the link is sent, and not before" }
+
+  - id: shape-seat-request-unheard
+    class: UI-a-word-drawn-never-spoken
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "    if (seatAsked > 0 && withTheHost.current) AccessibilityInfo.sendAccessibilityEvent(withTheHost.current, 'focus');\n"
+        replace: ""
+    proof: { file: src/components/lounge/__tests__/aSeatRequestedIsHeard.test.tsx, test: "moves a screen reader onto \"Your request is with the host.\" once the house has taken the request, and not before" }
+
+  - id: shape-verdict-named-execute
+    class: UI-shown-but-not-said
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "            accessibilityLabel={`Render verdict: ${config.title.toLowerCase()}`}"
+        replace: "            accessibilityLabel={`Execute ${config.title}`}"
+    proof: { file: app/(admin)/__tests__/everyVerdictIsReachedByAScreenReader.test.tsx, test: "can say the words the button shows: it is named \"Render verdict\"" }
+
+  - id: shape-disabled-control-left-unmeasured
+    class: UI-shown-but-not-said
+    source: shape
+    edits:
+      - file: src/components/profile/__tests__/zz-render.lib.ts
+        find: "  if (!presses) return '';\n"
+        replace: "  if (!presses || p.disabled === true || p.accessibilityState && (p.accessibilityState as { disabled?: boolean }).disabled) return '';\n"
+    proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "marks a disabled control as disabled, not as nothing: a screen reader still reads and names it" }
