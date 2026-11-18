@@ -710,7 +710,7 @@
     "class": "DB-lookup-without-index",
     "mutant": "shape-index-never-built-first",
     "proof": "m1",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
+    "commit": "63c6cd9cb24b92048843c90b202fa20f84a813f2",
     "verdict": "caught"
   },
   {
@@ -5240,6 +5240,13 @@
     "mutant": "shape-attempt-log-cut-on-a-guess",
     "proof": "m1",
     "commit": "822f9d3fac15e11e53c8f72d1611ee8ff08cb9c5",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-an-index-built-before-what-it-indexes",
+    "mutant": "shape-train-builds-indexes-first",
+    "proof": "m1",
+    "commit": "63c6cd9cb24b92048843c90b202fa20f84a813f2",
     "verdict": "caught"
   }
 ]
