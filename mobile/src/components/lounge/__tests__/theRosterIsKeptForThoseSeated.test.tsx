@@ -42,7 +42,7 @@ beforeEach(() => {
 /** The sheet as `me` sees it, with the rows the house gave them. */
 function sheet(me: string, members: LoungeMember[]) {
   useAuthStore.setState({ user: { id: me, username: me } });
-  return render(<LoungeSettingsPanel lounge={room} members={members} visible isCreator={me === HOST} onClose={jest.fn()} />);
+  return render(<LoungeSettingsPanel lounge={room} members={members} visible isCreator={me === HOST} standing={members.find((m) => m.user_id === me)?.status ?? 'none'} onClose={jest.fn()} />);
 }
 /**
  * Which of these words the sheet shows, each true or false: a miss is said in a line, never as

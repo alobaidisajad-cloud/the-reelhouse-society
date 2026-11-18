@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
+import { useDebouncedSearch } from '@/src/hooks/useDebouncedSearch';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -194,17 +195,8 @@ export default React.memo(function ProfilePhysicalTab({
 
   /** Search — the way IN, past one screenful (and always while one is live). */
   const showSearch = held > 12 || searching;
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [localSearch, setLocalSearch] = useState(physicalSearch ?? '');
-  const handleSearchChange = useCallback((val: string) => {
-    setLocalSearch(val);
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(() => setPhysicalSearch?.(val), 300);
-  }, [setPhysicalSearch]);
-  // A pending debounce must not outlive the room.
-  useEffect(() => () => {
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-  }, []);
+  // The box shows each key; the room follows a moment behind, and a ✕ cancels what is pending.
+  const { value: localSearch, onChange: handleSearchChange, clear: clearSearch } = useDebouncedSearch(physicalSearch, setPhysicalSearch);
 
 
 
@@ -324,7 +316,7 @@ export default React.memo(function ProfilePhysicalTab({
             <RoomSearch
               value={localSearch}
               onChange={handleSearchChange}
-              onClear={() => { setLocalSearch(''); setPhysicalSearch?.(''); }}
+              onClear={clearSearch}
               placeholder="Find a copy…"
               a11y="Search the Physical Archive by title or by your notes"
               ember={<Search size={13} color={colors.fog} strokeWidth={1.5} style={s.searchIcon} />}
@@ -370,7 +362,7 @@ export default React.memo(function ProfilePhysicalTab({
       </ScrollView>
       </>
     );
-  }, [shelfChips, held, filtering, physicalFilter, totalVault, setPhysicalFilter, physicalSort, setPhysicalSort, showSearch, localSearch, handleSearchChange, setPhysicalSearch]);
+  }, [shelfChips, held, filtering, physicalFilter, totalVault, setPhysicalFilter, physicalSort, setPhysicalSort, showSearch, localSearch, handleSearchChange, clearSearch]);
 
   const ListEmptyComponent = useMemo(() => {
     if (physicalFiltered.length > 0) return null;
@@ -386,7 +378,7 @@ export default React.memo(function ProfilePhysicalTab({
           title="Nothing under that name"
           body={`No copy in the Physical Archive matches “${physicalSearch?.trim()}”.`}
           actionLabel="CLEAR THE SEARCH"
-          onAction={() => { setLocalSearch(''); setPhysicalSearch?.(''); }}
+          onAction={clearSearch}
         />
       );
     }
@@ -426,7 +418,7 @@ export default React.memo(function ProfilePhysicalTab({
         body="This member hasn’t catalogued a physical copy yet."
       />
     );
-  }, [physicalFiltered.length, vault.length, physicalFilter, setPhysicalFilter, searching, physicalSearch, setPhysicalSearch, ready, unreachable, isSelf, pulseStyle]);
+  }, [physicalFiltered.length, vault.length, physicalFilter, setPhysicalFilter, searching, physicalSearch, clearSearch, ready, unreachable, isSelf, pulseStyle]);
 
   const ListFooterComponent = useMemo(() => {
     if (flashData.length === 0) return null;

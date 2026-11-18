@@ -20,7 +20,7 @@ jest.mock('@shopify/flash-list', () => require('@/mockups/tabs/flashListMock').m
 
 const room = { id: 'l1', name: 'The Nitrate Circle', description: '', creator_id: 'host', is_private: false, cover_image: null } as never;
 const draw = (visible: boolean, onClose: () => void) =>
-  <LoungeSettingsPanel lounge={room} members={[]} visible={visible} isCreator onClose={onClose} />;
+  <LoungeSettingsPanel lounge={room} members={[]} visible={visible} isCreator standing="approved" onClose={onClose} />;
 
 beforeEach(() => {
   mockPush.mockClear();

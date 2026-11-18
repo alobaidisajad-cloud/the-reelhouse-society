@@ -46,11 +46,6 @@ const JUDGED: Record<string, { n: number; why: string }> = {
   'src/hooks/useMemberRoom.ts · Promise.all · totals': {
     n: 1, why: 'read through `r`, its typed alias',
   },
-  'src/hooks/useUniversalSearch.ts · Promise.all · usersRes': { n: 1, why: 'read by `failed()`' },
-  'src/hooks/useUniversalSearch.ts · Promise.all · exactRes': { n: 1, why: 'read by `failed()`' },
-  'src/hooks/useUniversalSearch.ts · Promise.all · logsTextRes': { n: 1, why: 'read by `failed()`' },
-  'src/hooks/useUniversalSearch.ts · Promise.all · logsAuthorRes': { n: 1, why: 'read by `failed()`' },
-  'src/hooks/useUniversalSearch.ts · Promise.all · listsRes': { n: 1, why: 'read by `failed()`' },
 };
 
 // ── the scan ────────────────────────────────────────────────────────────────

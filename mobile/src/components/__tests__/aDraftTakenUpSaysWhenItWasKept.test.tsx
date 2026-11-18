@@ -8,6 +8,7 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { TakenUpLine, whenKept } from '../TakenUpLine';
+import { stopAround } from '@/test-utils/voiceOver';
 
 // Local time, as the line reads it: Tuesday 27 October 2026, 21:40.
 const KEPT = new Date(2026, 9, 27, 21, 40).toISOString();
@@ -35,4 +36,12 @@ it('what could not be read is said, with nothing to start clean from', () => {
   expect(view.getByText('WHAT WAS HERE COULD NOT BE READ')).toBeTruthy();
   expect(view.queryByLabelText('Start clean, and discard what was here')).toBeNull();
   expect(view.getByLabelText('What was here could not be read. The room has cleared it.')).toBeTruthy();
+});
+
+// Review round 12: the line was ONE accessible element, which VoiceOver reads whole and never
+// enters, so START CLEAN inside it could not be reached. The words and the act are two stops.
+it('START CLEAN is a stop of its own for VoiceOver, beside the words, not lost inside them', () => {
+  const view = render(<TakenUpLine savedAt={KEPT} onStartClean={jest.fn()} />);
+  expect(stopAround(view.getByLabelText('Start clean, and discard what was here'))).toBeNull();
+  expect(view.getByLabelText('Taken up where you left it, TUESDAY · 21:40.').props.accessibilityRole).toBe('summary');
 });

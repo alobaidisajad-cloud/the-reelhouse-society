@@ -4,7 +4,8 @@
 -- back as before, an account is deleted with its words kept unsigned, no choice offered, a withdrawn
 -- salon message reads as found to a moderator, a certification may push again, and a shared card
 -- keeps its headline. The notices a certification took with it, and the headlines a gone card
--- gave up, are not put back.
+-- gave up, are not put back. The triggers on these functions go first, with the undo of
+-- 20261117_02.
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
@@ -83,7 +84,8 @@ GRANT ALL ON FUNCTION public.request_account_deletion() TO authenticated;
 GRANT ALL ON FUNCTION public.request_account_deletion() TO service_role;
 
 -- ── Undo: a shared card whose piece is gone reads as gone (review round 11) ──
--- The erase of a filing as it was (the filing alone), and the stack's trigger and its function gone.
+-- The erase of a filing as it was (the filing alone), and the stack's trigger's function gone (the
+-- trigger went with the undo of 20261117_02).
 -- The cards already taken down stay down: the words they copied were their writers' to take back,
 -- and are not kept anywhere to put back.
 CREATE OR REPLACE FUNCTION public.dispatch_empty_filing(p_post uuid, p_by text) RETURNS void
@@ -101,7 +103,6 @@ $$;
 COMMENT ON FUNCTION public.dispatch_empty_filing(uuid, text) IS
   'The one erase of a filing that ends. Called by end_filing and the no_hard_delete trigger (both SECURITY DEFINER); no role may call it directly.';
 
-DROP TRIGGER IF EXISTS a_deleted_stack_leaves_its_cards ON public.lists;
 DROP FUNCTION IF EXISTS public.a_deleted_stack_leaves_its_cards();
 
 -- Undo of the round 11 piece for a handle's rename: no chosen rename, and the handle's rule puts an
@@ -276,16 +277,13 @@ BEGIN
 END;
 $$;
 
--- add-only (1): no shipped client uses it: a table made in round 11, named by neither TestFlight build 41 nor the website
-DROP TABLE IF EXISTS public.certifications_pushed;
+-- The table itself goes with the undo of 20261117_00, which made it.
 
 -- ── B6 undone · a certification taken back leaves its notice again ──────────────────────────────
---   The two triggers and their functions are new in round 11: undone, they are gone. The notices
---   the up removed (each for a certification already taken back) are not written again: they
---   named an act that no longer stood.
+--   The two functions are new in round 11: undone, they are gone (their triggers went with the undo
+--   of 20261117_02). The notices the up removed (each for a certification already taken back) are
+--   not written again: they named an act that no longer stood.
 
-DROP TRIGGER IF EXISTS a_certification_takes_its_notice ON public.interactions;
-DROP TRIGGER IF EXISTS a_certification_takes_its_notice ON public.dispatch_certifications;
 DROP FUNCTION IF EXISTS public.a_certification_takes_its_notice();
 DROP FUNCTION IF EXISTS public.a_dispatch_certification_takes_its_notice();
 
@@ -546,10 +544,8 @@ GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO authent
 GRANT ALL ON FUNCTION public.accept_follow_request(requester_id uuid) TO service_role;
 
 -- ── Undo: a critique on a page gone is told as such (review round 11) ──
--- The two triggers and their function go; a critique on a page gone is refused by the annotate
--- gates (42501) again, as before.
-DROP TRIGGER IF EXISTS a_critique_has_its_page ON public.log_comments;
-DROP TRIGGER IF EXISTS a_critique_has_its_page ON public.list_comments;
+-- The function goes (its two triggers went with the undo of 20261117_02, which made them); a
+-- critique on a page gone is refused by the annotate gates (42501) again, as before.
 DROP FUNCTION IF EXISTS public.a_critique_has_its_page();
 
 -- ── A2 undone · the two salon doors raise 'Lounge not found' again ───────────────────────────────

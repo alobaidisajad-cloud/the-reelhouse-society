@@ -73,7 +73,10 @@ its icon — `MarkFigure` — that crowds the icon at rest, runs past its reach,
 cut short, or was shrunk under 10pt), **UNDER** (a line a docked bar covers at
 every scroll position). Every control: **STEAL** (its touch area — box plus
 hitSlop — overlaps a neighbour's; both platforms give the overlap to the later
-one), **NAMELESS** (a screen reader can call it only "button"). Every view, when
+one), **NAMELESS** (a screen reader can call it only "button"; a disabled one is still
+named), **NESTED** (with `--kinds NESTED`: drawn inside an accessible element, which iOS
+reads as one stop and never enters, unless that element is adjustable or offers the
+control's act by name). Every view, when
 drawn with `MOCKUPS_YOGA=1`: **SHADOW** (an iOS shadow asked of a view that
 clips — iOS draws none). `--kinds A,B` limits the report; `--shorts` also lists
 text the phone shortens with "…" or a clamp (not a fault). Exits 1 on any fault.
@@ -154,7 +157,7 @@ a finding names its source line, and the tool can say what it MEASURED:
 # every test and generator screen, with sites (the CI `captures` job)
 $env:MOCKUPS=1; $env:MOCKUPS_OUT='mockups/out/cap-gens'; $env:MOCKUPS_CAPTURE=1; $env:RNTL_SKIP_AUTO_CLEANUP='true'; $env:MOCKUPS_YOGA=1; $env:MOCKUPS_CAPTURED_OUT='mockups/out/captured'; npx jest
 Copy-Item mockups/out/cap-gens/*.html mockups/out/captured/
-node mockups/tools/layout.cjs --src mockups/out/captured --passes ios@1 --kinds STEAL,NAMELESS,UNSAID,ORDER,UNDER,SHADOW --sites mockups/out/sites.txt --require mockups/touch-measured.txt
+node mockups/tools/layout.cjs --src mockups/out/captured --passes ios@1 --kinds STEAL,NAMELESS,UNSAID,ORDER,UNDER,SHADOW,NESTED --sites mockups/out/sites.txt --require mockups/touch-measured.txt
 ```
 
 - `--sites OUT` writes every control site (`file:line`) measured beside a

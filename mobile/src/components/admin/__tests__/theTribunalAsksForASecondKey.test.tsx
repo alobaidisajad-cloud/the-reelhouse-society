@@ -10,7 +10,7 @@
  *   - a check that failed says so and asks again, and is never taken for "no key".
  */
 import React from 'react';
-import { Linking, Text as RNText } from 'react-native';
+import { AccessibilityInfo, Linking, Text as RNText } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import * as Clipboard from 'expo-clipboard';
 import { supabaseFake, FAKE_SECRET, type MfaWorld } from '@/test-utils/supabaseFake';
@@ -83,6 +83,22 @@ it('asks an admin with a key for its code: a wrong one is refused in words and c
   expect(r.queryByText('THE DOCKET')).toBeNull();
   await type('246810');
   expect(r.getByText('THE DOCKET')).toBeTruthy();
+});
+
+// Review round 12: the refusal carried only a live region, which iOS ignores, so on an iPhone a
+// moderator's wrong code (and a key the house would not register) was never spoken.
+it('speaks a refused code on an iPhone too', async () => {
+  const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
+  await door({ code: '246810', factors: [KEY] });
+  await type('135791');
+  expect(announce).toHaveBeenCalledWith(REFUSED.wrong);
+});
+
+it('speaks a key the house would not register on an iPhone too', async () => {
+  const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
+  await door({ code: '246810', fail: { enroll: { code: 'unexpected_failure', message: 'Failed to fetch' } } });
+  await act(async () => { await fireEvent.press(r.getByTestId('second-key-register')); });
+  expect(announce).toHaveBeenCalledWith('The house could not register a key. Nothing was kept: try again.');
 });
 
 it('takes only the six digits of what is typed or pasted, and gives nothing before all six', async () => {

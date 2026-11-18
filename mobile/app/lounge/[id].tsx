@@ -51,7 +51,7 @@ import {
     X,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, AppState, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { saidStruck, useStruck } from '@/src/components/StruckWords';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
@@ -68,6 +68,7 @@ import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import { authorName, isDepartedHandle, quotedName } from '@/src/constants/departed';
 import { useScrollTrace } from '@/src/hooks/useScrollTrace';
+import { useReadAgainWhenToldHere } from '@/src/hooks/useReadAgainWhenToldHere';
 import { counted } from '@/src/utils/counted';
 import { useHeld } from '@/src/stores/offlineQueueStore';
 import { Arrive } from '@/src/components/Arrive';
@@ -467,6 +468,9 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   const [myStatus, setMyStatus] = useState<RoomStanding>(() => knownStanding(useLoungeStore.getState().lounges, id));
   const [rosterFailed, setRosterFailed] = useState(false);
   const [pending, setPending] = useState(false);
+  // How many requests for a seat the house has taken here: each moves a screen reader onto the
+  // words that say so (GateView), as REQUEST A SEAT gives way under its focus (round 12).
+  const [seatAsked, setSeatAsked] = useState(0);
   const [notFound, setNotFound] = useState(false);
   // The room could not be asked for — not "incinerated", which it said of any
   // room opened with no signal.
@@ -607,13 +611,21 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   // there, as at the follow-request door: the host was shown them with ADMIT (review round 6).
   // eslint-disable-next-line react-hooks/exhaustive-deps -- whoIsHidden is the change that redraws it; filterContentByBlocks reads the block store itself
   const pendingMembers = useMemo(() => filterContentByBlocks(members.filter(m => m.status === 'pending'), (m) => m.user_id), [members, whoIsHidden]);
-  // Opened from a notice: the host meets the door once the roster says someone waits, once.
-  const metAtTheDoor = useRef(false);
+  // Opened from a notice: the host meets the door once the roster says someone waits, once for each
+  // notice. A salon's notice opened while its room is in front (a push, or the notices sheet over
+  // it) stacks no second room: this one is told, reads its room and roster again, and its door is
+  // asked for once more (pageInFront, review round 12).
+  const [doorAsked, setDoorAsked] = useState(toTheDoor ? 1 : 0);
+  const metAtTheDoor = useRef(0);
+  useReadAgainWhenToldHere(`/lounge/${id}`, (query) => {
+    if (query.get('door') === '1') setDoorAsked((n) => n + 1);
+    rereadRoom();
+  });
   useEffect(() => {
-    if (!toTheDoor || metAtTheDoor.current || !isCreator || pendingMembers.length === 0) return;
-    metAtTheDoor.current = true;
+    if (doorAsked <= metAtTheDoor.current || !isCreator || pendingMembers.length === 0) return;
+    metAtTheDoor.current = doorAsked;
     setDoorOpen(true);
-  }, [toTheDoor, isCreator, pendingMembers.length]);
+  }, [doorAsked, isCreator, pendingMembers.length]);
   // Seated: the members the house counts (member_count, approved alone, as the corridor's card
   // says). The roster counts them only for one who reads it whole, the seated and the host: a muted
   // or banned reader is given their own row alone, and read "1 MEMBER" in a full salon; and the
@@ -751,6 +763,7 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
     if (result === 'error') { setPending(false); rereadRoom(); } else refreshMembership();
     // The door promises to let them in the moment they're admitted: the moment to ask to send word.
     if (result === 'requested' && userId) void offerWord('seat', userId);
+    if (result === 'requested') setSeatAsked((n) => n + 1);
   }, [id, requestMembership, refreshMembership, rereadRoom, userId]);
 
   // From the registry the Society page sells from; enforced by tr_tier_gate_lounge_*.
@@ -918,6 +931,7 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
           onRequest={handleRequest}
           onRetry={retryRoster}
           pending={pending}
+          seatAsked={seatAsked}
         />
       )}
 
@@ -1121,6 +1135,9 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
         visible={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         isCreator={isCreator}
+        standing={myStatus}
+        rosterFailed={rosterFailed}
+        onRetryRoster={retryRoster}
         onMembersChanged={refreshMembership}
       />
     </Animated.View>
@@ -1130,12 +1147,20 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
 // ════════════════════════════════════════════════════════════
 // GATE VIEW — velvet rope (request), pending, banned
 // ════════════════════════════════════════════════════════════
-export function GateView({ gate, lounge, memberCount, onRequest, onRetry, pending }: {
+export function GateView({ gate, lounge, memberCount, onRequest, onRetry, pending, seatAsked = 0 }: {
   gate: RoomGate;
   lounge: LoungeRoom; memberCount: number; onRequest: () => void; onRetry: () => void; pending: boolean;
+  /** Counts each request for a seat the house took: a screen reader is moved onto the words that say so. */
+  seatAsked?: number;
 }) {
   // The room's name and description, each slur struck for a reader who asked (StruckWords).
   const struck = useStruck();
+  // REQUEST A SEAT gives way under the member's focus at the press: when the house has taken the
+  // request (its answer, not the press), a screen reader is moved onto the words that say so.
+  const withTheHost = useRef<Text>(null);
+  useEffect(() => {
+    if (seatAsked > 0 && withTheHost.current) AccessibilityInfo.sendAccessibilityEvent(withTheHost.current, 'focus');
+  }, [seatAsked]);
   return (
     <Arrive name="lounge-1" duration={400} style={s.gate}>
       <View style={s.gateCrest}><MasterLogo size={52} /></View>
@@ -1158,7 +1183,7 @@ export function GateView({ gate, lounge, memberCount, onRequest, onRetry, pendin
       {gate === 'pending' && (
         <View style={s.gatePending}>
           <Hourglass size={16} color={colors.sepia} strokeWidth={1.5} />
-          <Text style={s.gatePendingText}>Your request is with the host.</Text>
+          <Text ref={withTheHost} style={s.gatePendingText}>Your request is with the host.</Text>
           <Text style={s.gateCopy}>We&apos;ll let you in the moment you&apos;re admitted.</Text>
         </View>
       )}

@@ -18,6 +18,7 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { stripComments } from '@/test-utils/readCode';
+import { actsOffered, stopAround } from '@/test-utils/voiceOver';
 import { DOCKED_BAR_GAP } from '@/src/components/layout/navMetrics';
 
 import ListModal from '../list-modal';
@@ -724,11 +725,27 @@ describe('a stack can be ordered, and its terms read, without sight', () => {
     const r = mount();
     await waitFor(() => expect(r.getByLabelText(/^\d+\. Blade Runner$/)).toBeTruthy());
     const row = r.getByLabelText(/^\d+\. Blade Runner$/);
-    expect(row.props.accessibilityActions.map((a: { name: string }) => a.name)).toEqual(['moveUp', 'moveDown']);
+    expect(row.props.accessibilityActions.map((a: { name: string }) => a.name)).toEqual(['moveUp', 'moveDown', 'remove']);
     await act(async () => { await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'moveDown' } }); });
     await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
     await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
     expect(mockUpdateList.mock.calls[0][1].films.map((f: { title: string }) => f.title)).toEqual(['Chinatown', 'Blade Runner']);
+  });
+
+  it('a film can be taken out without sight: VoiceOver stops on its row, never its ×, so the row offers Remove (round 12)', async () => {
+    mockParams = { editId: STACK_ID };
+    mockCachedStack = { list: { ...STACK, films: FILMS, filmCount: 2 } };
+    const r = mount();
+    await waitFor(() => expect(r.getByLabelText(/^\d+\. Blade Runner$/)).toBeTruthy());
+    const row = r.getByLabelText(/^\d+\. Blade Runner$/);
+    // The × is drawn inside the row, which iOS reads as one stop: the row is where it is offered.
+    expect(stopAround(r.getByLabelText('Remove Blade Runner'))?.props.accessibilityLabel).toBe(row.props.accessibilityLabel);
+    expect(actsOffered(row)).toContain('Remove');
+    await act(async () => { await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'remove' } }); });
+    expect(r.queryByLabelText(/^\d+\. Blade Runner$/)).toBeNull();
+    await act(async () => { await fireEvent.press(r.getByLabelText('SAVE THE AMENDMENTS')); });
+    await waitFor(() => expect(mockUpdateList).toHaveBeenCalled());
+    expect(mockUpdateList.mock.calls[0][1].films.map((f: { title: string }) => f.title)).toEqual(['Chinatown']);
   });
 
   it('the drag has a sighted twin too: a tap takes a film up, and its arrows move it a step (P4.36)', async () => {

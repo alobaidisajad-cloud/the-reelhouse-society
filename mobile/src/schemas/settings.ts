@@ -17,6 +17,8 @@ export const SettingsSchema = z.object({
   notifFollows: z.boolean(),
   notifEndorsements: z.boolean(),
   notifComments: z.boolean(),
+  /** A salon's door: a member asks to enter yours, or you are admitted (review round 12). */
+  notifSalons: z.boolean(),
   notifSystem: z.boolean(),
   biometricLock: z.boolean(),
 });

@@ -10,17 +10,21 @@
 //   5. each index built CONCURRENTLY (a file of one statement, P0.8) is built alone, outside any
 //      transaction, while members write; one left not whole is dropped and built once more; then
 //      its rehearsal of its name, which only reads, probes it whole and read through;
-//   6. every other pending migration is rehearsed before any is applied, each with the ones before
-//      it applied first, in one transaction that is always rolled back;
-//   7. each is applied, in name order, as apply.cjs applies one; then its rehearsal runs again,
-//      rolled back, on production as it now is (the live probe).
-// It stops at the first step that fails and says what was done and what was not. "Pending" is a
-// migration in either tree not named in mobile/supabase/APPLIED.txt; each must have exactly one
-// rehearsal (a *_rehearsal.sql here that includes it under with_train; an index's, of its name). The address comes from
-// the private settings file and is never printed; the whole run is kept in <private>/trains/.
+//   6. then car by car, each other pending migration in name order: rehearsed on production as it
+//      now is (the cars before it already applied and committed), in one transaction that is
+//      always rolled back; applied as apply.cjs applies one; then its rehearsal runs again, rolled
+//      back, on production as it now is (the live probe).
+// Car by car, so no car's rehearsal runs while an earlier car's locks are held: one transaction
+// holding the cars before it would keep members waiting, through every case of the rehearsal, on
+// each table those cars lock (e2e/load/train-locks.mjs measures each car). Each car is a whole
+// migration, one transaction, so stopping between two leaves production consistent.
+// It stops at the first step that fails and says which cars were applied and which were not.
+// "Pending" is a migration in either tree not named in mobile/supabase/APPLIED.txt; each must
+// have exactly one rehearsal (a *_rehearsal.sql here that includes it under with_train, and no
+// other pending car; an index's, of its name). The address comes from the private settings file
+// and is never printed; the whole run is kept in <private>/trains/.
 const { spawnSync } = require('child_process');
-const { appendFileSync, mkdirSync, readFileSync, writeFileSync } = require('fs');
-const { tmpdir } = require('os');
+const { appendFileSync, mkdirSync, readFileSync } = require('fs');
 const { basename, join, relative, sep } = require('path');
 
 const MOBILE = join(__dirname, '..', '..');
@@ -95,6 +99,10 @@ const plan = (pending, rehearsals) => {
     }
     const own = rehearsals.filter((r) => r.includes.includes(m.name));
     if (own.length !== 1) faults.push(`${m.name}: needs exactly one rehearsal that includes it, found ${own.length}`);
+    // Rehearsed car by car: one holding a later car too would apply it before its turn, and one
+    // holding an earlier car would apply that car again, on production where it is already applied.
+    const others = own.length === 1 ? own[0].includes.filter((n) => n !== m.name && pending.some((p) => p.name === n)) : [];
+    if (others.length) faults.push(`${m.name}: its rehearsal ${own[0].name} includes another pending car too (${others.join(', ')}); car by car, each rehearsal holds its one car`);
     return { ...m, rehearsal: own[0] };
   });
   if (faults.length) return { refuse: faults.join('\n  ') };
@@ -111,8 +119,9 @@ const plan = (pending, rehearsals) => {
         { kind: 'build', what: `build ${m.name} alone, as members write`, car: m },
         { kind: 'probe', what: `probe ${m.name}: the index whole, and read through`, car: m },
       ]),
-      ...rest.map((m, i) => ({ kind: 'rehearse', what: `rehearse ${m.name}`, car: m, before: rest.slice(0, i) })),
+      // Car by car: each rehearsed on production as the cars before it left it, then applied.
       ...rest.flatMap((m) => [
+        { kind: 'rehearse', what: `rehearse ${m.name} on production as it now is`, car: m },
         { kind: 'apply', what: `apply ${m.name}`, car: m },
         { kind: 'probe', what: `probe ${m.name} on production as it now is`, car: m },
       ]),
@@ -120,10 +129,10 @@ const plan = (pending, rehearsals) => {
   };
 };
 
-/** psql's arguments for a step running SQL; `prior` opens the transaction, earlier cars applied. */
-const psqlArgs = (step, prior) => {
+/** psql's arguments for a step running SQL. A rehearsal applies its own car alone (with_train). */
+const psqlArgs = (step) => {
   const quiet = ['-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1'];
-  if (step.kind === 'rehearse') return [...quiet, '-v', 'with_train=1', ...(prior ? ['-f', prior] : []), '-f', step.car.rehearsal.path];
+  if (step.kind === 'rehearse') return [...quiet, '-v', 'with_train=1', '-f', step.car.rehearsal.path];
   if (step.kind === 'probe') return [...quiet, '-f', step.car.rehearsal.path];
   if (step.kind === 'apply') return ['-X', '-1', '-v', 'ON_ERROR_STOP=1', '-f', step.car.path];
   if (step.kind === 'build') return ['-X', '-v', 'ON_ERROR_STOP=1', '-f', step.car.path];
@@ -139,19 +148,14 @@ const validSql = (index) => `SELECT i.indisvalid FROM pg_index i WHERE i.indexre
  * dropped, CONCURRENTLY, and built once more. Returns { ok, out }.
  */
 const buildIndex = (step, run, ask) => {
-  const first = run(psqlArgs(step, null));
+  const first = run(psqlArgs(step));
   if (first.status === 0 && ask(validSql(step.car.index)) === 't') return { ok: true, out: first.out };
   const drop = run(['-X', '-v', 'ON_ERROR_STOP=1', '-c', `DROP INDEX CONCURRENTLY IF EXISTS public.${step.car.index}`]);
-  const again = run(psqlArgs(step, null));
+  const again = run(psqlArgs(step));
   const whole = ask(validSql(step.car.index)) === 't';
   return { ok: drop.status === 0 && again.status === 0 && whole,
     out: `${first.out}\n(the index was not whole: dropped and built once more)\n${drop.out}\n${again.out}${whole ? '' : `\n${step.car.index} is still not whole`}` };
 };
-
-/** The SQL that opens a rehearsal's transaction with the cars before it applied (none: no file). */
-const priorSql = (before) => (before.length
-  ? ['BEGIN;', ...before.map((c) => `\\ir ${c.path.replace(/\\/g, '/')}`), ''].join('\n')
-  : null);
 
 /**
  * Runs the steps in order through `exec(step) -> {ok, out}`, stopping at the first that fails.
@@ -169,16 +173,20 @@ const run = (steps, exec, say = () => {}) => {
   return { done, failed: null, left: [] };
 };
 
-/** What the person running it reads at the end. */
+/** What the person running it reads at the end: an index built is a car applied too. */
+const lands = (s) => s.kind === 'apply' || s.kind === 'build';
 const verdict = (result) => {
-  const applied = result.done.filter((s) => s.kind === 'apply').map((s) => s.car.name);
+  const applied = result.done.filter(lands).map((s) => s.car.name);
   if (!result.failed) return [`TRAIN DONE: ${applied.length} applied (${applied.join(', ')}), each probed.`];
   const lines = [`TRAIN STOPPED at: ${result.failed.step.what}`];
   lines.push(applied.length ? `Applied before it stopped: ${applied.join(', ')}` : 'Nothing was applied to production.');
-  const notApplied = result.left.filter((s) => s.kind === 'apply').map((s) => s.car.name);
-  if (result.failed.step.kind === 'apply') notApplied.unshift(result.failed.step.car.name);
+  const notApplied = result.left.filter(lands).map((s) => s.car.name);
+  if (lands(result.failed.step)) notApplied.unshift(result.failed.step.car.name);
   if (notApplied.length) {
     lines.push(`Not applied: ${notApplied.join(', ')}${result.failed.step.kind === 'apply' ? ' (the failed one was undone whole)' : ''}`);
+  }
+  if (applied.length && notApplied.length) {
+    lines.push('Each car applied is whole and committed; production stands consistent between cars, and the rest wait for the next train.');
   }
   lines.push('Its last words:', ...String(result.failed.out).trim().split('\n').slice(-25).map((l) => `  ${l}`));
   return lines;
@@ -234,19 +242,14 @@ if (require.main === module) {
       const ask = (sql) => run(['-X', '-q', '-t', '-A', '-c', sql]).out.trim();
       return buildIndex(step, run, ask);
     }
-    let prior = null;
-    if (step.kind === 'rehearse' && step.before.length) {
-      prior = join(tmpdir(), `train-${stamp}-${step.car.name}`);
-      writeFileSync(prior, priorSql(step.before));
-    }
-    const r = shell('psql', [url, ...psqlArgs(step, prior)], { env: { ...process.env, PGOPTIONS: LIMITS } });
+    const r = shell('psql', [url, ...psqlArgs(step)], { env: { ...process.env, PGOPTIONS: LIMITS } });
     return { ok: r.status === 0, out: r.out };
   };
-  say(`The train: ${p.steps.filter((s) => s.kind === 'apply').map((s) => s.car.name).join(', ')}`);
+  say(`The train, car by car: ${p.steps.filter(lands).map((s) => s.car.name).join(', ')}`);
   const result = run(p.steps, exec, say);
   for (const line of verdict(result)) say(line);
   say(`The whole run is kept in ${log}. Paste everything above to Claude.`);
   process.exit(result.failed ? 1 : 0);
 }
 
-module.exports = { MUST_PASS, buildIndex, pendingIn, plan, priorSql, psqlArgs, rehearsalsIn, run, unproven, validSql, verdict };
+module.exports = { MUST_PASS, buildIndex, pendingIn, plan, psqlArgs, rehearsalsIn, run, unproven, validSql, verdict };

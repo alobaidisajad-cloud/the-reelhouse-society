@@ -2,6 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallba
 import { View, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, Platform, TextInputSelectionChangeEventData } from 'react-native';
 import { houseIso } from '@/src/lib/houseClock';
 import { Text, TextInput } from '@/src/components/text';
+import { SaidText } from '@/src/components/SaidText';
 import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 // The preview mounts `EssayBody`, which carries the link guard and the render cap.
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
@@ -922,11 +923,12 @@ function ComposeDossierScreen() {
                             {/* The essay to amend, until it is in the room: nothing is written over it blind. */}
                             {amendRead !== 'held' ? (
                                 <View style={styles.elsewhereBox}>
-                                    <Text style={styles.elsewhereHead} {...scaledTextProps} accessibilityLiveRegion="polite">
+                                    {/* Spoken on both phones as it changes (a live region alone is Android's). */}
+                                    <SaidText style={styles.elsewhereHead} {...scaledTextProps}>
                                         {amendRead === 'reading' ? 'READING THE ESSAY AS FILED…'
                                             : amendRead === 'unreachable' ? 'THE ESSAY COULD NOT BE READ'
                                                 : 'THIS ESSAY CAN NO LONGER BE AMENDED'}
-                                    </Text>
+                                    </SaidText>
                                     {amendRead === 'unreachable' ? (
                                         <TryAgainLine onPress={readFiled} what="read the essay again" />
                                     ) : null}
@@ -968,7 +970,7 @@ function ComposeDossierScreen() {
                                 >
                                     <Text style={styles.slotLabel} {...actionLabelProps}>FILM</Text>
                                     <Text style={[styles.slotValue, film && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
-                                        {film ? [film.title, film.sub].filter(Boolean).join(' · ') : 'Name the film this is about'}
+                                        {film ? [film.title, film.sub].filter(Boolean).join(' · ') : edit ? 'None, as filed' : 'Name the film this is about'}
                                     </Text>
                                 </PressableScale>
                                 <PressableScale
@@ -980,9 +982,10 @@ function ComposeDossierScreen() {
                                         ? `Series: ${series ? `${series.title}, part ${series.part}` : 'none'}, as filed`
                                         : series ? `Series: ${series.title}, part ${series.part}. Change it.` : 'Series: part of a series? Choose one'}
                                 >
+                                    {/* Amending, an empty slot cannot be filled: it says so, never "Part of a series?". */}
                                     <Text style={styles.slotLabel} {...actionLabelProps}>SERIES</Text>
                                     <Text style={[styles.slotValue, series && styles.slotValueSet]} numberOfLines={1} {...scaledTextProps}>
-                                        {series ? `${series.title.toUpperCase()} · ${roman(series.part)}` : 'Part of a series?'}
+                                        {series ? `${series.title.toUpperCase()} · ${roman(series.part)}` : edit ? 'None, as filed' : 'Part of a series?'}
                                     </Text>
                                 </PressableScale>
                             </View>

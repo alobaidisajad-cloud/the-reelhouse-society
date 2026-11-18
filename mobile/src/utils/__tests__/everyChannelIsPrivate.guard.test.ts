@@ -64,11 +64,25 @@ it('every topic it joins has its rule on realtime.messages, in production as it 
   const applied = new Set(readFileSync(join(MOBILE, 'supabase/APPLIED.txt'), 'utf8').split(/\r?\n/).filter((l) => l && !l.startsWith('#')));
   const pending = universe('migrations').filter((f) => !applied.has(basename(f))).map((f) => readFileSync(f, 'utf8'));
   const willBe = [readFileSync(join(MOBILE, 'supabase/schema/live-outside-public.sql'), 'utf8'), ...pending].join('\n');
-  const rules = [...willBe.matchAll(/CREATE POLICY [^\n]*?ON realtime\.messages[\s\S]*?;/g)].map((m) => m[0]);
-  // The two topics the app joins, as the code writes them.
-  expect(CHANNELS.map((c) => c.topic).sort()).toEqual(['\'global_notifications\'', '`lounge-${loungeId}`']);
+  // Each rule as it was made, and as a later migration changed it (ALTER POLICY ... USING): a rule's
+  // reach is read from its latest words, keyed by its name.
+  const latest = new Map<string, string>();
+  for (const m of willBe.matchAll(/(CREATE|ALTER) POLICY ("[^"]+"|\w+) ON realtime\.messages[\s\S]*?;/g)) {
+    const name = m[2] ?? '';
+    const made = m[1] === 'CREATE';
+    // An ALTER keeps the command the rule was made for (FOR SELECT), and takes its new USING.
+    const before = latest.get(name) ?? '';
+    latest.set(name, made ? m[0] : `${(/FOR \w+/.exec(before) ?? [''])[0]} ${m[0]}`);
+  }
+  const rules = [...latest.values()];
+  // The three topics the app joins, as the code writes them: a salon's, the notices', and the member's
+  // own word of notices the house took back (round 12).
+  expect(CHANNELS.map((c) => c.topic).sort()).toEqual(['\'global_notifications\'', '`lounge-${loungeId}`', '`notices:${user.id}`']);
   expect(rules.some((r) => /FOR SELECT/.test(r) && /salon_channel_readable\(realtime\.topic\(\)\)/.test(r))).toBe(true);
   expect(rules.some((r) => /FOR SELECT/.test(r) && /realtime\.topic\(\) = 'global_notifications'/.test(r))).toBe(true);
+  // A member's own topic, and only their own: the topic is the member's id, asked of the session.
+  expect(rules.some((r) => /FOR SELECT/.test(r)
+    && /realtime\.topic\(\) = 'notices:' \|\| \(\( SELECT auth\.uid\(\) AS uid\)\)::text/.test(r))).toBe(true);
 });
 
 it('the reader says NO to a public join, and to one whose private is not plainly true', () => {

@@ -338,7 +338,9 @@ function ActionModal({
             haptic="medium"
             pressedScale={0.97}
             accessibilityRole="button"
-            accessibilityLabel={`Execute ${config.title}`}
+            // Named by the words it shows, then the verdict: a Voice Control moderator says
+            // "Tap Render Verdict" (named "Execute …", it heard nothing, round 12).
+            accessibilityLabel={`Render verdict: ${config.title.toLowerCase()}`}
           >
             <Text style={[s.submitBtnText, !reason.trim() && UNREADY.words]}>RENDER VERDICT</Text>
           </PressableScale>
@@ -843,7 +845,8 @@ function TribunalScreen() {
               haptic="selection"
               pressedScale={0.95}
               accessibilityRole="button"
-              accessibilityLabel={multiSelectMode ? 'Exit multi-select mode' : 'Enter multi-select mode'}
+              // Named with the word it shows: SELECTING, while it is on.
+              accessibilityLabel={multiSelectMode ? 'Selecting: exit multi-select mode' : 'Enter multi-select mode'}
             >
               {multiSelectMode ? (
                 <CheckSquare size={14} color={colors.sepia} />
@@ -949,8 +952,14 @@ function TribunalScreen() {
                     onPress={multiSelectMode ? () => toggleReportSelection(item.id) : undefined}
                     disabled={!multiSelectMode}
                     pressedScale={multiSelectMode ? 0.98 : 1}
-                    accessibilityRole={multiSelectMode ? 'checkbox' : undefined}
-                    accessibilityState={multiSelectMode ? { checked: isSelected } : undefined}
+                    // Outside SELECT the card only holds its controls: an accessibility element there
+                    // (Pressable's default) was ONE dimmed stop to VoiceOver, which never goes inside one,
+                    // so no verdict could be reached (round 12). In SELECT it is the case's checkbox,
+                    // named for the case; what is inside it then neither speaks nor takes a tap.
+                    accessible={multiSelectMode}
+                    accessibilityRole={multiSelectMode ? 'checkbox' : 'none'}
+                    accessibilityLabel={multiSelectMode ? `Case filed ${formatDate(item.created_at)}: ${chargeLabel(item.reason).toLowerCase()}${accused?.username ? `, against @${accused.username}` : ''}` : undefined}
+                    accessibilityState={multiSelectMode ? { checked: isSelected } : {}}
                   >
                     {/* Checkbox for multi-select mode */}
                     {multiSelectMode && (
@@ -963,6 +972,9 @@ function TribunalScreen() {
                       </View>
                     )}
 
+                    {/* The case itself. In SELECT a tap anywhere on the card chooses it, and its
+                        checkbox speaks for it, so nothing in here is a stop or takes the tap. */}
+                    <View pointerEvents={multiSelectMode ? 'none' : 'auto'} importantForAccessibility={multiSelectMode ? 'no-hide-descendants' : 'auto'} accessibilityElementsHidden={multiSelectMode}>
                     <View style={s.cardHeader}>
                       <Text style={s.reportMeta}>
                         CASE FILED {formatDate(item.created_at)}
@@ -1015,7 +1027,7 @@ function TribunalScreen() {
                             {!!ev.data.title && <Text style={s.evidenceTitle} numberOfLines={2}>{ev.data.title}</Text>}
                             <Text style={s.contextValue} selectable>“{ev.data.body}”</Text>
                             {!!ev.data.route && (
-                              <PressableScale
+                              <PressableScale room="vertical"
                                 onPress={() => nav.push(ev.data!.route!)}
                                 haptic="selection"
                                 pressedScale={0.97}
@@ -1164,6 +1176,7 @@ function TribunalScreen() {
                         )}
                       </View>
                     )}
+                    </View>
                   </PressableScale>
                 </PresenceView>
               );

@@ -28,9 +28,10 @@ import { useContentBottom, useModalTop } from '@/src/components/layout/navMetric
 
 import PressableScale from '@/src/components/PressableScale';
 import { SearchResultRow } from '@/src/components/search/SearchResultRow';
-import { SR, useUniversalSearch } from '@/src/hooks/useUniversalSearch';
+import { SR, useUniversalSearch, type SearchSource } from '@/src/hooks/useUniversalSearch';
 import { colors, fonts } from '@/src/theme/theme';
 import SearchUnreachable, { SearchPartly } from '@/src/components/search/SearchUnreachable';
+import { TryAgainLine } from '@/src/components/TryAgain';
 import Buster from '@/src/components/Buster';
 import { Arrive } from '@/src/components/Arrive';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
@@ -38,6 +39,41 @@ import { SEARCH_MAX } from '@/src/constants/inputLimits';
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
 type FilterTab = 'all' | 'films' | 'actors' | 'directors' | 'people' | 'logs' | 'lists';
+type SourceTab = Exclude<FilterTab, 'all'>;
+
+/** The place each tab's rows are read from: the catalogue holds three tabs. */
+const SOURCE_OF: Record<SourceTab, SearchSource> = {
+  films: 'films', actors: 'films', directors: 'films', people: 'users', logs: 'logs', lists: 'lists',
+};
+
+/** ALL is a sampler: the first few of each, under a head that opens that tab. */
+const SAMPLED: { tab: SourceTab; take: number }[] = [
+  { tab: 'films', take: 5 }, { tab: 'actors', take: 3 }, { tab: 'directors', take: 2 },
+  { tab: 'people', take: 3 }, { tab: 'logs', take: 4 }, { tab: 'lists', take: 3 },
+];
+
+/** A section's head on ALL: its name and its count, and the way to the whole of it. */
+interface Head { kind: 'head'; id: string; tab: SourceTab; count: number; more: boolean }
+type Row = SR | Head;
+const isHead = (r: Row): r is Head => (r as Head).kind === 'head';
+
+/**
+ * A count as it is drawn: exact once the source has no more, "N+" while it holds a next page (the
+ * house never counts every match of a word it cannot index); never past 99.
+ */
+export function countDrawn(n: number, more: boolean): string {
+  if (n > 99) return '99+';
+  return more ? `${n}+` : `${n}`;
+}
+
+/** The same count, spoken. */
+export function countSaid(n: number, more: boolean): string {
+  if (more || n > 99) return `${Math.min(n, 99)} or more results`;
+  return `${n} result${n === 1 ? '' : 's'}`;
+}
+
+/** A tab's name as it is spoken: "Films", not "FILMS". */
+const spokenName = (label: string) => `${label.charAt(0)}${label.slice(1).toLowerCase()}`;
 
 const TABS: { key: FilterTab; label: string; icon: typeof Film }[] = [
   { key: 'all',       label: 'ALL',       icon: Search },
@@ -65,7 +101,7 @@ export default function SearchModal() {
     return () => clearTimeout(t);
   }, [query]);
 
-  const { data, isFetching, isError, refetch } = useUniversalSearch(debouncedQuery);
+  const { data, isFetching, isError, refetch, more, readingMore, moreFailed, loadMore } = useUniversalSearch(debouncedQuery);
 
   const searched = query.trim().length > 0;
   const searching = searched && (isFetching || debouncedQuery.trim() !== query.trim());
@@ -99,26 +135,33 @@ export default function SearchModal() {
     if (!text.trim()) setDebouncedQuery('');
   };
 
-  const filtered = useMemo(() => {
-    switch (tab) {
-      case 'films': return films;
-      case 'actors': return actors;
-      case 'directors': return directors;
-      case 'people': return users;
-      case 'logs': return logs;
-      case 'lists': return lists;
-      default: {
-        const all: SR[] = [];
-        all.push(...films.slice(0, 5));
-        all.push(...actors.slice(0, 3));
-        all.push(...directors.slice(0, 2));
-        all.push(...users.slice(0, 3));
-        all.push(...logs.slice(0, 4));
-        all.push(...lists.slice(0, 3));
-        return all;
-      }
+  const rowsOf = useMemo<Record<SourceTab, SR[]>>(() => ({
+    films, actors, directors, people: users, logs, lists,
+  }), [films, actors, directors, users, logs, lists]);
+  /** Whether a tab's source holds a next page: its count is then "N+", never a total. */
+  const moreOf = useCallback((key: FilterTab) => (key === 'all'
+    ? more.films || more.users || more.logs || more.lists
+    : more[SOURCE_OF[key]]), [more]);
+
+  const filtered = useMemo<Row[]>(() => {
+    if (tab !== 'all') return rowsOf[tab];
+    // ALL: each section's first few under its head, the head carrying the section's own count.
+    const all: Row[] = [];
+    for (const { tab: key, take } of SAMPLED) {
+      const rows = rowsOf[key];
+      if (rows.length === 0) continue;
+      all.push({ kind: 'head', id: `head-${key}`, tab: key, count: rows.length, more: more[SOURCE_OF[key]] });
+      all.push(...rows.slice(0, take));
     }
-  }, [tab, films, actors, directors, users, logs, lists]);
+    return all;
+  }, [tab, rowsOf, more]);
+
+  // The foot of a tab: the next page of its source, as it is read.
+  const tabSource = tab === 'all' ? null : SOURCE_OF[tab];
+  const readOn = useCallback(() => { if (tabSource) loadMore(tabSource); }, [tabSource, loadMore]);
+  const tabMore = !!tabSource && more[tabSource];
+  const tabReadingMore = !!tabSource && readingMore[tabSource];
+  const tabMoreFailed = !!tabSource && moreFailed[tabSource];
 
   // No results, and held there while the next letter is searched: otherwise the
   // answer (and Buster with it) blinks out at every keystroke and back.
@@ -177,6 +220,7 @@ export default function SearchModal() {
   const renderTabItem = useCallback(({ item: t }: { item: typeof TABS[0] }) => {
     const active = tab === t.key;
     const c = counts[t.key] as number;
+    const m = moreOf(t.key);
     const Icon = t.icon;
     return (
       <PressableScale room
@@ -189,29 +233,70 @@ export default function SearchModal() {
         accessibilityState={{ selected: active }}
         // A count is said only once it is known: while a search is out, or its source could not
         // be asked, "0 results" was a count nobody had (review round 7).
-        accessibilityLabel={`${t.label.charAt(0)}${t.label.slice(1).toLowerCase()}${
-          isError || downFor(t.key) ? ', not reached' : searching || !data ? '' : `, ${c} result${c === 1 ? '' : 's'}`}`}>
+        // A count said "or more" while its source holds a next page (review round 12).
+        accessibilityLabel={`${spokenName(t.label)}${
+          isError || downFor(t.key) ? ', not reached' : searching || !data ? '' : `, ${countSaid(c, m)}`}`}>
         <Icon size={11} color={active ? colors.ink : colors.fog} strokeWidth={active ? 2.5 : 1.5} />
         <Text style={[st.tabText, active && st.tabTextActive]}>{t.label}</Text>
         {/* A count drawn only once it is known, as it is said: a tab whose source was not reached shows none. */}
         {c > 0 && !isError && !downFor(t.key) && (
           <View style={[st.tabCountBg, active && st.tabCountBgActive]}>
             <Text style={[st.tabCountNum, active && st.tabCountNumActive]}>
-              {c > 99 ? '99+' : c}
+              {countDrawn(c, m)}
             </Text>
           </View>
         )}
       </PressableScale>
     );
-  }, [tab, counts, isError, downFor, searching, data]);
+  }, [tab, counts, moreOf, isError, downFor, searching, data]);
 
   const keyExtractorTab = useCallback((t: typeof TABS[0]) => t.key, []);
 
-  const renderSearchResult = useCallback(({ item, index }: { item: SR; index: number }) => (
-    <SearchResultRow item={item} index={index} onPress={onPress} />
-  ), [onPress]);
+  const openTab = useCallback((key: SourceTab) => { TactileEngine.selection(); setTab(key); }, []);
 
-  const keyExtractorResult = useCallback((r: SR) => r.id, []);
+  const renderSearchResult = useCallback(({ item, index }: { item: Row; index: number }) => (
+    isHead(item)
+      ? <SectionHead head={item} onPress={openTab} />
+      : <SearchResultRow item={item} index={index} onPress={onPress} />
+  ), [onPress, openTab]);
+
+  const keyExtractorResult = useCallback((r: Row) => r.id, []);
+  const itemTypeOf = useCallback((r: Row) => (isHead(r) ? 'head' : 'row'), []);
+
+  // A tab's foot: its next page read as the list reaches it, said while it is read or when it
+  // could not be, and offered as a press while there is more (a catalogue page may add nothing
+  // to this tab, and the list's end is then not reached again).
+  const footer = useMemo(() => {
+    if (!tabSource || filtered.length === 0) return null;
+    if (tabReadingMore) {
+      return (
+        <View style={st.foot}>
+          <ActivityIndicator size="small" color={colors.sepia} accessibilityLabel="Reading more of the archive" />
+        </View>
+      );
+    }
+    if (tabMoreFailed) {
+      return (
+        <View style={st.foot}>
+          <Text style={st.footWords}>The rest could not be reached.</Text>
+          <TryAgainLine onPress={readOn} what="ask for the rest" />
+        </View>
+      );
+    }
+    if (!tabMore) return null;
+    return (
+      <PressableScale
+        style={st.readOn}
+        onPress={readOn}
+        haptic="selection"
+        accessibilityRole="button"
+        accessibilityLabel="More from the archive"
+      >
+        <Text style={st.readOnText}>MORE FROM THE ARCHIVE</Text>
+      </PressableScale>
+    );
+  }, [tabSource, filtered.length, tabReadingMore, tabMoreFailed, tabMore, readOn]);
+  const onEndReached = tabMore && !tabReadingMore && !tabMoreFailed ? readOn : undefined;
 
   return (
     <Animated.View style={[st.root, animatedContainerStyle]}>
@@ -268,12 +353,17 @@ export default function SearchModal() {
             />
           </View>
 
-          {/* Count line */}
+          {/* Count line: one number a tab, the tab's own. ALL has none: each section's head
+              carries its own, and a sum beside the badges was a second total (review round 12). */}
           <View style={st.countBar}>
-            <Text style={st.countText}>
+            <Text
+              style={st.countText}
+              accessibilityLabel={!searching && reachable && tab !== 'all' ? countSaid(filtered.length, tabMore) : undefined}
+            >
               {searching ? 'SCANNING ARCHIVES…'
                 : !reachable && filtered.length === 0 ? 'NOT REACHED'
-                : `${filtered.length} RESULT${filtered.length !== 1 ? 'S' : ''}`}
+                : tab === 'all' ? ''
+                : `${countDrawn(filtered.length, tabMore)} RESULT${filtered.length !== 1 || tabMore ? 'S' : ''}`}
             </Text>
           </View>
         </Arrive>
@@ -324,7 +414,11 @@ export default function SearchModal() {
             data={filtered}
             ListHeaderComponent={!searching && (isError || tabSourceDown) ? <SearchPartly onRetry={retrySearch} /> : null}
             keyExtractor={keyExtractorResult}
+            getItemType={itemTypeOf}
             renderItem={renderSearchResult}
+            ListFooterComponent={footer}
+            onEndReached={onEndReached}
+            onEndReachedThreshold={0.5}
             contentContainerStyle={listContentStyle}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
@@ -334,6 +428,27 @@ export default function SearchModal() {
         )}
       </View>
     </Animated.View>
+  );
+}
+
+/**
+ * A section's head on ALL: its name and its count ("LOGS · 20+ ›"), pressed to open its tab,
+ * where the whole of it is read page by page.
+ */
+function SectionHead({ head, onPress }: { head: Head; onPress: (tab: SourceTab) => void }) {
+  const label = TABS.find((t) => t.key === head.tab)?.label ?? head.tab.toUpperCase();
+  return (
+    <PressableScale
+      style={st.head}
+      onPress={() => onPress(head.tab)}
+      haptic="selection"
+      hitSlop={null}
+      accessibilityRole="button"
+      accessibilityLabel={`${spokenName(label)}, ${countSaid(head.count, head.more)}: show them all`}
+    >
+      <Text style={st.headText}>{`${label} · ${countDrawn(head.count, head.more)}`}</Text>
+      <Text style={st.headArrow}>›</Text>
+    </PressableScale>
   );
 }
 
@@ -392,6 +507,22 @@ const st = StyleSheet.create({
   countText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.fogQuiet },
 
   resultsWrap: { flex: 1 },
+
+  // ALL's section heads: a full-width line, 48 tall, so its own box is the finger's.
+  head: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    minHeight: 48, paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(184,137,26,0.10)',
+  },
+  headText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia },
+  headArrow: { fontFamily: fonts.sub, fontSize: 14, color: colors.sepia },
+
+  // A tab's foot: the next page, as it is read.
+  foot: { alignItems: 'center', paddingVertical: 18, gap: 6 },
+  footWords: { fontFamily: fonts.body, fontSize: 12, color: colors.fogQuiet, textAlign: 'center' },
+  readOn: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  readOnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia },
 
   // Center states
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 10 },

@@ -121,14 +121,18 @@ const ListFilmItem = React.memo(({ item, index, count, drag, isActive, moving, s
                 // at a time. Without these a ranked stack could not be ordered
                 // by a member who cannot see it.
                 accessibilityState={sealed ? undefined : { selected: moving }}
-                accessibilityHint={sealed ? undefined : 'Reorder it: its actions move it up or down.'}
+                accessibilityHint={sealed ? undefined : 'Its actions move it up or down, or remove it.'}
+                // The row is one stop to VoiceOver, which never goes inside it: the × drawn in it
+                // is offered here as Remove, or a member who cannot see could never take a film out.
                 accessibilityActions={sealed ? undefined : [
                     { name: 'moveUp', label: 'Move up' },
                     { name: 'moveDown', label: 'Move down' },
+                    { name: 'remove', label: 'Remove' },
                 ]}
                 onAccessibilityAction={sealed ? undefined : (e) => {
                     if (e.nativeEvent.actionName === 'moveUp') onMove(item.id, -1);
                     else if (e.nativeEvent.actionName === 'moveDown') onMove(item.id, 1);
+                    else if (e.nativeEvent.actionName === 'remove') onRemove(item.id);
                 }}
             >
                 {!sealed && <GripVertical size={16} color={isActive || moving ? colors.sepia : colors.fog} style={s.gripOpacity} />}

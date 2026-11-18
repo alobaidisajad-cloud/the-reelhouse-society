@@ -259,9 +259,36 @@ describe('6g — a control is marked with the area it answers touches in', () =>
     expect(press({})).toBe('0,0,0,0');
   });
 
-  it('marks nothing that cannot be pressed — or is disabled', () => {
+  it('marks nothing that cannot be pressed', () => {
     expect(/data-press/.test(toHtml({ type: 'View', props: {}, children: [] }))).toBe(false);
-    expect(press({ accessibilityState: { disabled: true } })).toBeNull();
+  });
+
+  it('marks a disabled control as disabled, not as nothing: a screen reader still reads and names it', () => {
+    // Dropped, a control drawn dimmed escaped every name check (round 12: a verdict button
+    // named otherwise than it shows was never measured, as each test drew it dimmed).
+    const html = (props: Record<string, unknown>) => toHtml({ type: 'View', props: { onClick: () => {}, ...props }, children: [] });
+    expect(press({ accessibilityState: { disabled: true } })).toBe('0,0,0,0');
+    expect(html({ accessibilityState: { disabled: true } })).toContain(' data-disabled');
+    expect(html({ disabled: true })).toContain(' data-disabled');
+    expect(html({})).not.toContain('data-disabled');
+  });
+});
+
+describe('6i — an accessible element carries its role and the acts it offers by name', () => {
+  // layout.cjs (NESTED) reads these: a control inside an accessible element is lost to
+  // VoiceOver unless the element is adjustable or offers the control's act by name.
+  const html = (props: Record<string, unknown>) => toHtml({ type: 'View', props, children: [] });
+
+  it('writes the role it is said as', () => {
+    expect(html({ accessible: true, accessibilityRole: 'adjustable' })).toContain(' data-role="adjustable"');
+    expect(html({ accessible: true, role: 'checkbox' })).toContain(' data-role="checkbox"');
+    expect(html({ accessible: true })).not.toContain('data-role');
+  });
+
+  it('writes each act by its label, or its name when it has none', () => {
+    const row = html({ accessible: true, accessibilityActions: [{ name: 'moveUp', label: 'Move up' }, { name: 'remove', label: 'Remove' }, { name: 'activate' }] });
+    expect(row).toContain(' data-actions="Move up|Remove|activate"');
+    expect(html({ accessible: true, accessibilityActions: [] })).not.toContain('data-actions');
   });
 });
 

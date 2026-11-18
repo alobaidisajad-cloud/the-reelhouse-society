@@ -9,7 +9,7 @@
  *   - supabase/diagnostics/apply.cjs: lints before it runs, always runs under
  *     the time limits, and takes --no-transaction for a CONCURRENTLY file only;
  *   - supabase/diagnostics/train.cjs: every pending migration in one command,
- *     production touched only once CI passed on its files;
+ *     car by car, production touched only once CI passed on its files;
  *   - scripts/private-settings.cjs: the one reader of the address, refusing a
  *     folder inside OneDrive or the repo; no other script reads it from a
  *     `.env` file or writes it anywhere.
@@ -299,13 +299,12 @@ describe('a rehearsal on production', () => {
 describe('the train: every pending migration in one command', () => {
   type Car = { name: string; path: string; sql: string };
   type Rehearsal = { name: string; path: string; includes: string[] };
-  type Step = { kind: string; what: string; car?: Car & { rehearsal: Rehearsal }; before?: Car[] };
+  type Step = { kind: string; what: string; car?: Car & { rehearsal: Rehearsal } };
   const train = require('../../../supabase/diagnostics/train.cjs') as {
     pendingIn: () => Car[];
     rehearsalsIn: () => Rehearsal[];
     plan: (p: Car[], r: Rehearsal[]) => { refuse?: string; steps?: Step[] };
-    priorSql: (before: Car[]) => string | null;
-    psqlArgs: (step: Step, prior: string | null) => string[] | null;
+    psqlArgs: (step: Step) => string[] | null;
     run: (steps: Step[], exec: (s: Step) => { ok: boolean; out: string }) => { done: Step[]; failed: { step: Step; out: string } | null; left: Step[] };
     verdict: (r: ReturnType<typeof train.run>) => string[];
     MUST_PASS: { file: string; what: string; paths: string[] }[];
@@ -320,27 +319,36 @@ describe('the train: every pending migration in one command', () => {
   const B = car('20990101_02_b.sql');
   const both = train.plan([A, B], [reh('a_rehearsal.sql', A.name), reh('b_rehearsal.sql', B.name)]);
 
-  it('checks the tree, production and a copy first, rehearses every car before applying any, then applies and probes each', () => {
+  it('checks the tree, production and a copy first, then goes car by car: each rehearsed, applied and probed before the next', () => {
     expect(both.steps?.map((s) => s.what)).toEqual([
       'the checkout is what CI ran', 'CI passed on these migrations, functions and rehearsals',
       'production matches the committed snapshot', 'a full copy of production, read back',
-      `rehearse ${A.name}`, `rehearse ${B.name}`,
-      `apply ${A.name}`, `probe ${A.name} on production as it now is`,
-      `apply ${B.name}`, `probe ${B.name} on production as it now is`,
+      `rehearse ${A.name} on production as it now is`, `apply ${A.name}`, `probe ${A.name} on production as it now is`,
+      `rehearse ${B.name} on production as it now is`, `apply ${B.name}`, `probe ${B.name} on production as it now is`,
     ]);
   });
 
-  it('rehearses each car with the ones before it applied first, in the same rolled-back transaction', () => {
+  it('rehearses each car alone, on production as the cars before it left it, never with their locks held', () => {
     const [ra, rb] = (both.steps ?? []).filter((s) => s.kind === 'rehearse');
-    expect([ra.before?.map((c) => c.name), rb.before?.map((c) => c.name)]).toEqual([[], [A.name]]);
-    expect(train.priorSql([])).toBeNull();
-    expect(train.priorSql([A])).toBe(`BEGIN;\n\\ir /m/${A.name}\n`);
-    expect(train.psqlArgs(rb, '/tmp/prior')).toEqual(['-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-v', 'with_train=1',
-      '-f', '/tmp/prior', '-f', '/d/b_rehearsal.sql']);
+    // Its own rehearsal file alone: no file before it opens a transaction holding an earlier car.
+    expect(train.psqlArgs(ra)).toEqual(['-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-v', 'with_train=1', '-f', '/d/a_rehearsal.sql']);
+    expect(train.psqlArgs(rb)).toEqual(['-X', '-q', '-t', '-A', '-v', 'ON_ERROR_STOP=1', '-v', 'with_train=1', '-f', '/d/b_rehearsal.sql']);
+    // B is rehearsed only once A is applied, committed, and probed.
+    const whats = (both.steps ?? []).map((s) => s.what);
+    expect(whats.indexOf(`rehearse ${B.name} on production as it now is`)).toBeGreaterThan(whats.indexOf(`probe ${A.name} on production as it now is`));
     const apply = (both.steps ?? []).find((s) => s.kind === 'apply') as Step;
-    expect(train.psqlArgs(apply, null)).toEqual(['-X', '-1', '-v', 'ON_ERROR_STOP=1', '-f', `/m/${A.name}`]);
+    expect(train.psqlArgs(apply)).toEqual(['-X', '-1', '-v', 'ON_ERROR_STOP=1', '-f', `/m/${A.name}`]);
     const probe = (both.steps ?? []).find((s) => s.kind === 'probe') as Step;
-    expect(train.psqlArgs(probe, null)).not.toContain('with_train=1');
+    expect(train.psqlArgs(probe)).not.toContain('with_train=1');
+  });
+
+  it('says NO to a rehearsal that holds another pending car: it would apply that car out of its turn, or again', () => {
+    expect(train.plan([A, B], [reh('a_rehearsal.sql', A.name, B.name), reh('b_rehearsal.sql', B.name)]).refuse)
+      .toMatch(/20990101_01_a\.sql: its rehearsal a_rehearsal\.sql includes another pending car too \(20990101_02_b\.sql\)/);
+    expect(train.plan([A, B], [reh('a_rehearsal.sql', A.name), reh('b_rehearsal.sql', A.name, B.name)]).refuse)
+      .toMatch(/needs exactly one rehearsal that includes it, found 2/);
+    // One already applied, named alongside, is not a pending car.
+    expect(train.plan([B], [reh('b_rehearsal.sql', A.name, B.name)]).refuse).toBeUndefined();
   });
 
   it('says NO to a car with no rehearsal, or two, to a CONCURRENTLY file, to one the lint refuses, and to an empty train', () => {
@@ -354,12 +362,18 @@ describe('the train: every pending migration in one command', () => {
     expect(train.plan([], []).refuse).toMatch(/nothing is pending/);
   });
 
-  it('stops at the first step that fails, and says what was applied and what was not', () => {
+  it('stops at the first step that fails, and says which cars were applied and which were not', () => {
     const steps = both.steps ?? [];
-    const atRehearsal = train.run(steps, (s) => ({ ok: s.what !== `rehearse ${B.name}`, out: 'REHEARSAL FAILED: 1 of 3 cases missed' }));
-    expect(atRehearsal.done.some((s) => s.kind === 'apply')).toBe(false);
-    expect(train.verdict(atRehearsal).slice(0, 3)).toEqual([
-      `TRAIN STOPPED at: rehearse ${B.name}`, 'Nothing was applied to production.', `Not applied: ${A.name}, ${B.name}`,
+    const atFirstRehearsal = train.run(steps, (s) => ({ ok: s.what !== `rehearse ${A.name} on production as it now is`, out: 'REHEARSAL FAILED: 1 of 3 cases missed' }));
+    expect(atFirstRehearsal.done.some((s) => s.kind === 'apply')).toBe(false);
+    expect(train.verdict(atFirstRehearsal).slice(0, 3)).toEqual([
+      `TRAIN STOPPED at: rehearse ${A.name} on production as it now is`, 'Nothing was applied to production.', `Not applied: ${A.name}, ${B.name}`,
+    ]);
+    const atRehearsal = train.run(steps, (s) => ({ ok: s.what !== `rehearse ${B.name} on production as it now is`, out: 'REHEARSAL FAILED: 1 of 3 cases missed' }));
+    expect(atRehearsal.done.filter((s) => s.kind === 'apply').map((s) => s.car?.name)).toEqual([A.name]);
+    expect(train.verdict(atRehearsal).slice(0, 4)).toEqual([
+      `TRAIN STOPPED at: rehearse ${B.name} on production as it now is`, `Applied before it stopped: ${A.name}`, `Not applied: ${B.name}`,
+      'Each car applied is whole and committed; production stands consistent between cars, and the rest wait for the next train.',
     ]);
     const atSecondApply = train.run(steps, (s) => ({ ok: s.what !== `apply ${B.name}`, out: 'ERROR: lock timeout' }));
     expect(train.verdict(atSecondApply).slice(0, 3)).toEqual([
@@ -373,15 +387,15 @@ describe('the train: every pending migration in one command', () => {
     const p = train.plan([A, idx, B], [reh('a_rehearsal.sql', A.name), reh('b_rehearsal.sql', B.name), reh('c_rehearsal.sql')]);
     expect(p.steps?.slice(4).map((s) => s.what)).toEqual([
       `build ${idx.name} alone, as members write`, `probe ${idx.name}: the index whole, and read through`,
-      `rehearse ${A.name}`, `rehearse ${B.name}`,
-      `apply ${A.name}`, `probe ${A.name} on production as it now is`,
-      `apply ${B.name}`, `probe ${B.name} on production as it now is`,
+      `rehearse ${A.name} on production as it now is`, `apply ${A.name}`, `probe ${A.name} on production as it now is`,
+      `rehearse ${B.name} on production as it now is`, `apply ${B.name}`, `probe ${B.name} on production as it now is`,
     ]);
     const steps = p.steps ?? [];
-    // No rehearsal holds the index file: it cannot run inside their transaction.
-    expect(steps.filter((s) => s.kind === 'rehearse').map((s) => s.before?.map((c) => c.name))).toEqual([[], [A.name]]);
     const build = steps.find((s) => s.kind === 'build') as Step;
-    expect(train.psqlArgs(build, null)).toEqual(['-X', '-v', 'ON_ERROR_STOP=1', '-f', `/m/${idx.name}`]);
+    expect(train.psqlArgs(build)).toEqual(['-X', '-v', 'ON_ERROR_STOP=1', '-f', `/m/${idx.name}`]);
+    // The index built counts as a car applied: a later car's stop never says nothing was.
+    const atA = train.run(steps, (s) => ({ ok: s.what !== `rehearse ${A.name} on production as it now is`, out: 'REHEARSAL FAILED' }));
+    expect(train.verdict(atA).slice(1, 3)).toEqual([`Applied before it stopped: ${idx.name}`, `Not applied: ${A.name}, ${B.name}`]);
   });
 
   it('drops an index left not whole and builds it once more, and fails one still not whole', () => {

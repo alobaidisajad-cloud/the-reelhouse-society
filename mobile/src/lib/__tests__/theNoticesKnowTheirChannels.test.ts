@@ -89,3 +89,54 @@ describe('the notice channels', () => {
     }
   });
 });
+
+/**
+ * Review round 12: a salon's door (a request to enter, an admission) and a ballot's close came as
+ * the house's own word: titled "The ReelHouse Society" or by the salon alone, in "From the house"
+ * at its weight. A critique taken as the answer was pushed as "A New Critique". Each now has its own
+ * kind and title, in a channel every installed build already makes. composeBanner is run here as
+ * notify-push runs it (an edge function's source, which no app render reaches).
+ */
+describe('a salon’s door, a ballot’s close and an answer', () => {
+  type Banner = (record: Record<string, unknown>) => { title: string; body: string };
+  function serverBanner(): Banner {
+    const src = readCode('supabase/functions/notify-push/index.ts');
+    const from = src.indexOf('const TYPE_TITLES');
+    const to = src.indexOf('serve(');
+    expect(from).toBeGreaterThan(0);
+    expect(to).toBeGreaterThan(from);
+    const ts = jest.requireActual('typescript') as typeof import('typescript');
+    const js = ts.transpileModule(`${src.slice(from, to)}\nreturn composeBanner;`, { compilerOptions: { target: ts.ScriptTarget.ES2020 } }).outputText;
+    return new Function(js)() as Banner;
+  }
+
+  it('a salon’s door rings with the members, a ballot’s close with the critiques: channels a launched build made', () => {
+    expect(KIND_CHANNEL.salon).toBe('members');
+    expect(KIND_CHANNEL.ballot).toBe('critiques');
+    expect(serverMap()).toEqual(expect.objectContaining({ salon: 'members', ballot: 'critiques' }));
+    expect(LAUNCHED).toEqual(expect.arrayContaining(['members', 'critiques']));
+  });
+
+  it('each is titled as what it is on the lock screen', () => {
+    const banner = serverBanner();
+    expect(banner({ type: 'salon', from_username: 'orson', message: 'is asking to enter The Back Row.', related_lounge_id: '11111111-1111-4111-8111-111111111111' }))
+      .toEqual({ title: 'The Lounge', body: '@orson is asking to enter The Back Row.' });
+    expect(banner({ type: 'salon', message: 'You were admitted to The Back Row.', related_lounge_id: '11111111-1111-4111-8111-111111111111' }))
+      .toEqual({ title: 'The Lounge', body: 'You were admitted to The Back Row.' });
+    expect(banner({ type: 'ballot', message: 'The ballot “Best of 1958” you voted in has closed.' }))
+      .toEqual({ title: 'The Count Is In', body: 'The ballot “Best of 1958” you voted in has closed.' });
+    expect(banner({ type: 'comment', from_username: 'agnes', message: 'took your critique as the answer.', metadata: { answer: true, comment_id: 'c1' } }).title)
+      .toBe('Taken as the Answer');
+    // A critique is still a critique; a house notice about a salon written before round 12 still The Lounge.
+    expect(banner({ type: 'comment', from_username: 'agnes', message: 'left a critique on your take.', metadata: { comment_id: 'c1' } }).title)
+      .toBe('A New Critique');
+    expect(banner({ type: 'system', message: 'is asking to enter The Back Row.', related_lounge_id: '11111111-1111-4111-8111-111111111111' }).title)
+      .toBe('The Lounge');
+  });
+
+  it('reads the notice’s metadata from the house, the answer’s mark with it', () => {
+    const src = readCode('supabase/functions/notify-push/index.ts');
+    const columns = /const NOTICE_COLUMNS = '([^']*)'/.exec(src)?.[1] ?? '';
+    expect(columns.split(',').map((c) => c.trim())).toContain('metadata');
+  });
+});

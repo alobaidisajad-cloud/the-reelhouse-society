@@ -17,6 +17,8 @@ import * as Sharing from 'expo-sharing';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
+import { useReadAgainWhenToldHere } from '@/src/hooks/useReadAgainWhenToldHere';
+import { letTheRecordGo } from '@/src/utils/letTheRecordGo';
 import { Platform, RefreshControl, Share, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import Animated, { Extrapolation, interpolate, useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
@@ -53,8 +55,6 @@ import { colors } from '@/src/theme/theme';
 import { isNetworkError } from '@/src/utils/networkError';
 import { saidOfARefusal } from '@/src/utils/saidOfARefusal';
 import { isGoneFromTheHouse } from '@/src/utils/goneFromTheHouse';
-import { reelMayHaveChanged } from '@/src/components/feed/reelRead';
-import { wallMayHaveChanged } from '@/src/components/lobby/wallRead';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import { stillQueued } from '@/src/stores/offlineQueueStore';
 import reelToast from '@/src/utils/reelToast';
@@ -190,27 +190,6 @@ function seedFromCards(queryClient: QueryClient, id: string): LogRead | undefine
     }
   }
   return undefined;
-}
-
-/**
- * A record the house says is gone (a critique filed on it found it deleted meanwhile): its page
- * is read as gone, it leaves the Reel, the wall and every list told of records withdrawn, and,
- * were it the member's own (deleted from their other phone), their archive on this phone, as an
- * amendment that finds its record gone lets it go (round 11).
- */
-function letTheRecordGo(queryClient: QueryClient, id: string): void {
-  queryClient.setQueryData<LogRead>(['log', id], (old) => (old ? { ...old, log: null } : old));
-  const { logs, _loggedIndex } = useFilmStore.getState();
-  const held = logs.find((l) => l.id === id) ?? Object.values(_loggedIndex).find((l) => l?.id === id);
-  if (held) {
-    useFilmStore.setState((state) => {
-      const nextIdx = { ...state._loggedIndex };
-      if (held.filmId !== undefined && nextIdx[held.filmId]?.id === id) delete nextIdx[held.filmId];
-      return { logs: state.logs.filter((l) => l.id !== id), _loggedIndex: nextIdx };
-    });
-  }
-  wallMayHaveChanged();
-  reelMayHaveChanged(id);
 }
 
 const PARAMS = { id: P.uuid };
@@ -580,6 +559,9 @@ function LogDetailScreen({ id }: { id: string }) {
     // The page stays as it was; a pull that reached nothing says so, as every list does.
     if (queryClient.getQueryState(['log', id])?.status === 'error') reelToast.error(REFRESH_FAILED);
   }, [queryClient, id]);
+  // A notice about this record opened while it is in front (a new critique, a certification): it is
+  // read again, as a pull reads it, so what the notice announced is on the page (review round 12).
+  useReadAgainWhenToldHere(`/log/${id}`, () => { void onRefresh(); });
 
   const handlePostComment = async () => {
     if (!isAuthenticated) { askIn(); return; }

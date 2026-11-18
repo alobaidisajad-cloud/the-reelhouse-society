@@ -14,7 +14,7 @@
  */
 import React, { act } from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
-import { Alert, AppState } from 'react-native';
+import { AccessibilityInfo, Alert, AppState } from 'react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { stripComments } from '@/test-utils/readCode';
@@ -455,7 +455,7 @@ describe('account', () => {
   it('every switch says its own name', async () => {
     const r = await settle(mount());
     // A Switch with no label announces "off, switch" and never which switch.
-    for (const name of ['Biometric security', 'New Followers', 'Certifications', 'Annotations', 'System Alerts', 'Tactile feedback']) {
+    for (const name of ['Biometric security', 'New Followers', 'Certifications', 'Annotations', 'Salons', 'System Alerts', 'Tactile feedback']) {
       expect(r.getByLabelText(name)).toBeTruthy();
     }
   });
@@ -682,11 +682,12 @@ describe('notifications — four switches nobody read', () => {
  * The trigger's mapping, applied live 2026-08-20:
  *   follow | follow_request | follow_accept  -> notif_follows
  *   endorse | endorse_log                    -> notif_endorsements
- *   comment | annotate                       -> notif_comments
+ *   comment | annotate | ballot              -> notif_comments
+ *   salon (since round 12)                   -> notif_salons
  *   system                                   -> notif_system
  */
 describe('the keys the trigger reads', () => {
-  const KEYS = ['notif_follows', 'notif_endorsements', 'notif_comments', 'notif_system'] as const;
+  const KEYS = ['notif_follows', 'notif_endorsements', 'notif_comments', 'notif_salons', 'notif_system'] as const;
 
   it('are the exact keys the app writes, at EVERY save path', () => {
     // Two paths save: the ordinary save, and the one that resumes after an
@@ -1289,6 +1290,34 @@ describe('a security code the house could not check', () => {
     expect(r.getByText('That code is invalid or has expired.')).toBeTruthy();
     r.unmount();
   });
+
+  // Review round 12: the refusal was drawn and never spoken (focus stays on VERIFY; the field's hint
+  // is heard only by going back to it), and VERIFY said "Verify code, dimmed" while it read VERIFYING….
+  it('a screen-reader member hears VERIFY busy while it checks, and then hears the refusal as it appears', async () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
+    mockUser = { ...BASE, preferences: { biometric_lock: true } };
+    const local = jest.requireMock('expo-local-authentication') as { authenticateAsync: jest.Mock };
+    local.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'authentication_failed' });
+    const { supabase } = jest.requireActual<typeof import('@/src/lib/supabase')>('@/src/lib/supabase');
+    const auth = supabase.auth as unknown as { signInWithOtp: jest.Mock; verifyOtp: jest.Mock };
+    auth.signInWithOtp = jest.fn().mockResolvedValue({ data: null, error: null });
+    let answer!: (v: unknown) => void;
+    auth.verifyOtp = jest.fn().mockReturnValue(new Promise((done) => { answer = done; }));
+    const r = await settle(mount());
+    await act(async () => { await fireEvent.press(r.getByLabelText('DELETE ACCOUNT')); });
+    const [, , buttons] = mockAlert.mock.calls[mockAlert.mock.calls.length - 1] as [string, string, { text: string; onPress?: () => Promise<void> }[]];
+    await act(async () => { await buttons.find((b) => b.text === 'DELETE')!.onPress!(); });
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Six digit security code'), '123456'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Verify code')); });
+    const checking = r.getByLabelText('Verifying code');
+    expect(checking.props.accessibilityState).toEqual(expect.objectContaining({ busy: true, disabled: true }));
+    announce.mockClear();
+    await act(async () => { answer({ data: null, error: Object.assign(new Error('Token has expired or is invalid'), { status: 403 }) }); });
+    expect(announce).toHaveBeenCalledWith('That code is invalid or has expired.');
+    expect(r.getByLabelText('Verify code').props.accessibilityState).toEqual(expect.objectContaining({ busy: false, disabled: false }));
+    announce.mockRestore();
+    r.unmount();
+  });
 });
 
 /**
@@ -1351,5 +1380,38 @@ describe('deleting the account says what goes and what stays', () => {
     await act(async () => { await del!.onPress!(); });
     expect(mockRequestDeletion).toHaveBeenCalledWith(false);
     r.unmount();
+  });
+});
+
+/**
+ * Review round 12: a salon's door (a member asking to enter, an admission) rode System Alerts, the
+ * switch of the house's announcements: a host who turned those off heard no one at their door. It
+ * has a switch of its own now, filed under the key the push trigger reads for it (notif_salons).
+ */
+describe('a salon’s door has a switch of its own', () => {
+  beforeEach(() => {
+    mockUser = { ...BASE, preferences: { notif_follows: true } };
+    mockSavePrefs.mockReset().mockResolvedValue('saved');
+  });
+
+  it('a host turns off Salons and keeps System Alerts: Salons alone is filed off', async () => {
+    const r = await settle(mount());
+    expect(r.getByText('When someone asks to enter your salon, or you are admitted')).toBeTruthy();
+    await act(async () => { await fireEvent(r.getByLabelText('Salons'), 'valueChange', false); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Save settings')); });
+    await act(async () => {});
+    expect(mockSavePrefs.mock.calls).toEqual([[{ notif_salons: false }]]);
+    await r.unmount();
+  });
+
+  it('a member who never chose reads it on, and one who turned it off reads it off', async () => {
+    const r = await settle(mount());
+    expect(r.getByLabelText('Salons').props.value).toBe(true);
+    await r.unmount();
+    mockUser = { ...BASE, preferences: { notif_salons: false } };
+    const off = await settle(mount());
+    expect(off.getByLabelText('Salons').props.value).toBe(false);
+    expect(off.getByLabelText('System Alerts').props.value).toBe(true);
+    await off.unmount();
   });
 });

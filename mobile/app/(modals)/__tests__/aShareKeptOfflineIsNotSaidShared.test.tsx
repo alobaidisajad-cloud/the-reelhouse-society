@@ -61,11 +61,11 @@ const shareTo = async (answer: boolean | 'queued') => {
 it('a share kept for the wire marks the salon and never says "Shared to lounge"; one the house took says it', async () => {
   const screen = await shareTo('queued');
   // Marked, so a second tap cannot share it twice.
-  expect(await screen.findByLabelText('Already shared to this lounge')).toBeTruthy();
+  expect(await screen.findByLabelText('Sent: already shared to this lounge')).toBeTruthy();
   expect([toast.mock.calls, toast.success.mock.calls, toast.error.mock.calls]).toEqual([[], [], []]);
   screen.unmount();
 
   const taken = await shareTo(true);
-  expect(await taken.findByLabelText('Already shared to this lounge')).toBeTruthy();
+  expect(await taken.findByLabelText('Sent: already shared to this lounge')).toBeTruthy();
   expect(toast.success.mock.calls).toEqual([['Shared to lounge']]);
 });

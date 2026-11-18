@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
+import { SaidText } from '@/src/components/SaidText';
 import { colors, fonts } from '@/src/theme/theme';
 import { Arrive } from '@/src/components/Arrive';
 
@@ -93,7 +94,8 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
         ))}
       </View>
       {!passwordFits(password) && (
-        <Text style={[s.checkLabel, { color: colors.crimsonInk }]} accessibilityLiveRegion="polite">{PASSWORD_TOO_LONG}</Text>
+        // Spoken on both phones as it appears (a live region alone is Android's).
+        <SaidText style={[s.checkLabel, { color: colors.crimsonInk }]}>{PASSWORD_TOO_LONG}</SaidText>
       )}
     </Arrive>
   );

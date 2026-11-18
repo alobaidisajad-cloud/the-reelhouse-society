@@ -3,7 +3,6 @@ import PressableScale from '@/src/components/PressableScale';
 import { InColumn, useWindowFill } from '@/src/components/layout/InColumn';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
-import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { LoungeMember } from '@/src/types/social.types';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -22,6 +21,8 @@ import { Arrive } from '@/src/components/Arrive';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 import { nav } from '@/src/utils/typedRouter';
 import { useSheetBottom } from '@/src/components/layout/navMetrics';
+import { TryAgainLine } from '@/src/components/TryAgain';
+import type { RoomStanding } from '@/src/components/lounge/roomGate';
 
 const BLOOD = colors.crimson;
 /** The same red as WORDS — BANNED, REMOVE, BAN. The pigment is 2.78:1 as a word. */
@@ -33,10 +34,16 @@ export interface LoungeSettingsPanelProps {
   visible: boolean;
   onClose: () => void;
   isCreator: boolean;
+  /** The member's standing as the room holds it (its own judge of the seat), read or known from the corridor. */
+  standing: RoomStanding;
+  /** The room's last roster read failed. */
+  rosterFailed?: boolean;
+  /** Reads the roster again. */
+  onRetryRoster?: () => void;
   onMembersChanged?: () => void;
 }
 
-export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator, onMembersChanged }: LoungeSettingsPanelProps) {
+export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator, standing, rosterFailed = false, onRetryRoster, onMembersChanged }: LoungeSettingsPanelProps) {
   const sheetFoot = useSheetBottom();
   // The room's name and description, each slur struck for a reader who asked (StruckWords).
   const struck = useStruck();
@@ -51,16 +58,22 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
 
   // Only approved/muted/banned are "members"; pending live in the At-the-Door panel.
   const roster = members.filter(m => m.status !== 'pending');
-  // The reader the host has banned holds no seat to step out of: stepping out took their row, and the
-  // host's UNBAN with it, while the ban stood (review round 9).
-  const myId = useAuthStore((st) => st.user?.id ?? null);
-  const myRow = members.find((m) => m.user_id === myId);
-  const iAmBanned = myRow?.status === 'banned';
+  // The seat is judged by the room's standing, the one the room itself acts on: judged from the roster's
+  // rows, a seated member who opened the sheet before the roster was read, or after the read failed,
+  // was told "The roster is kept for those seated." and offered no STEP OUT (review round 12).
   // The roster the house gives: the host's and the seated's (a muted member keeps their seat). Anyone
   // else is given their own row at most, and the sheet said "MEMBERS (1)" over a full salon, and
   // offered a guest STEP OUT of a seat they never held (review round 10). They are told the salon's
-  // own count, and step out only of a row they hold.
-  const readsRoster = isCreator || myRow?.status === 'approved' || myRow?.status === 'muted';
+  // own count, and step out only of a row they hold (a request at the door included).
+  const seated = isCreator || standing === 'approved' || standing === 'muted';
+  // A roster read holds the reader's own row: none yet is a roster not read.
+  const rosterRead = members.length > 0;
+  const readsRoster = seated && rosterRead;
+  // Not yet known (the corridor does not know it, the roster unread): never told it is a guest.
+  const rosterAwaited = (seated || standing === 'unknown') && !rosterRead;
+  // The reader the host has banned holds no seat to step out of: stepping out took their row, and the
+  // host's UNBAN with it, while the ban stood (review round 9).
+  const holdsARow = standing === 'approved' || standing === 'muted' || standing === 'pending';
 
   const handleLeave = () => {
     Alert.alert('Step out of this salon?', 'You can rejoin a public salon any time; a private one needs the host to re-admit you.', [
@@ -251,7 +264,14 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
                 </View>
               )}
               <Text style={s.label}>MEMBERS ({readsRoster ? roster.length : (lounge.member_count ?? 0)})</Text>
-              {readsRoster ? null : <Text style={s.subtitle}>The roster is kept for those seated.</Text>}
+              {readsRoster ? null : rosterAwaited ? (
+                rosterFailed ? (
+                  <View style={s.rosterFailed}>
+                    <Text style={s.subtitle}>The roster could not be read.</Text>
+                    {onRetryRoster ? <TryAgainLine onPress={onRetryRoster} what="read the roster" style={s.rosterRetry} /> : null}
+                  </View>
+                ) : <Text style={s.subtitle}>Reading the roster…</Text>
+              ) : <Text style={s.subtitle}>The roster is kept for those seated.</Text>}
             </View>
           }
           renderItem={renderMember}
@@ -262,7 +282,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
                   <Trash2 size={14} color={colors.sepia} strokeWidth={1.5} />
                   <Text style={s.leaveText}>INCINERATE SALON</Text>
                 </PressableScale>
-              ) : !myRow || iAmBanned ? null : (
+              ) : !holdsARow ? null : (
                 <PressableScale style={s.leaveBtn} onPress={handleLeave} accessibilityRole="button">
                   <LogOut size={14} color={colors.sepia} strokeWidth={1.5} />
                   <Text style={s.leaveText}>STEP OUT OF SALON</Text>
@@ -311,6 +331,9 @@ const s = StyleSheet.create({
   subtitle: { fontFamily: fonts.serif, fontSize: 13, color: colors.fog, marginTop: 4, lineHeight: 18 },
   // Solid sepia: a word never borrows its contrast from the ground behind it.
   label: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
+  // The failed read's line and its TRY AGAIN, the act under the words.
+  rosterFailed: { alignItems: 'flex-start' },
+  rosterRetry: { marginTop: 4 },
 
   memberBlock: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
   memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 10 },

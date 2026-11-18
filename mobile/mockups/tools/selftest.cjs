@@ -447,6 +447,33 @@ for (const [width, want] of [['390', ''], ['1024', '']]) {
   console.log(`${ok ? 'ok  ' : 'FAIL'}  frame-below  SMALL at ${width.padEnd(4)}  want [${want}]  got [${got}] exit ${r.status}${ok ? '' : `: ${`${r.stderr}${r.stdout}`.trim().split('\n').slice(-3).join(' / ')}`}`);
 }
 fs.rmSync(FDIR, { recursive: true, force: true });
+// NESTED: a control inside an accessible element is lost to VoiceOver (iOS reads the element as one
+// stop), unless the element offers its act by name or is adjustable; an element set accessible={false}
+// is no stop and hides nothing. A disabled control is still named (UNSAID), unless it is no stop.
+const NEDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'nested-selftest-'));
+const nestRow = (outer, inner) => box('padding:40px',
+  `<div data-press="0,0,0,0"${outer} style="display:flex;flex-direction:row;justify-content:flex-end;width:300px;height:60px">`
+  + `<div data-press="0,0,0,0"${inner} aria-label="Remove Heat" style="width:48px;height:48px"></div></div>`);
+fs.writeFileSync(path.join(NEDIR, 'lost.html'), nestRow(' data-accessible aria-label="1. Heat" data-actions="Move up|Move down"', ''));
+fs.writeFileSync(path.join(NEDIR, 'lostdimmed.html'), nestRow(' data-accessible aria-label="1. Heat"', ' data-disabled data-accessible'));
+fs.writeFileSync(path.join(NEDIR, 'offered.html'), nestRow(' data-accessible aria-label="1. Heat" data-actions="Move up|Move down|Remove"', ''));
+fs.writeFileSync(path.join(NEDIR, 'adjustable.html'), nestRow(' data-accessible data-role="adjustable" aria-label="Your rating"', ''));
+fs.writeFileSync(path.join(NEDIR, 'container.html'), nestRow(' data-disabled', ''));
+fs.writeFileSync(path.join(NEDIR, 'dimmedname.html'), box('padding:40px',
+  `<div data-press="0,0,0,0" data-disabled data-accessible aria-label="Execute ISSUE WARNING" style="width:200px;height:48px">${T('font-size:12px', 'RENDER VERDICT', 1)}</div>`));
+fs.writeFileSync(path.join(NEDIR, 'dimmedbox.html'), box('padding:40px',
+  `<div data-press="0,0,0,0" data-disabled aria-label="Execute ISSUE WARNING" style="width:200px;height:48px">${T('font-size:12px', 'RENDER VERDICT', 1)}</div>`));
+const njsonN = path.join(NEDIR, 'report.json');
+const nestedRun = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', NEDIR, '--passes', 'ios@1', '--kinds', 'NESTED,NAMELESS,UNSAID', '--json', njsonN], { encoding: 'utf8' });
+const nrepN = fs.existsSync(njsonN) ? JSON.parse(fs.readFileSync(njsonN, 'utf8')) : {};
+if (!fs.existsSync(njsonN)) console.error(`layout.cjs wrote no NESTED report (exit ${nestedRun.status}): ${`${nestedRun.stderr}${nestedRun.stdout}`.trim().split('\n').slice(-5).join('\n')}`);
+for (const [name, want] of [['lost', ['NESTED']], ['lostdimmed', ['NESTED']], ['offered', []], ['adjustable', []], ['container', []], ['dimmedname', ['UNSAID']], ['dimmedbox', []]]) {
+  const got = [...new Set((nrepN[`${name}@1`] ?? { found: null }).found?.map((x) => x.kind) ?? ['NO REPORT'])].sort();
+  const ok = JSON.stringify(got) === JSON.stringify(want);
+  if (!ok) bad++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  nested-${name.padEnd(10)} ios@1       want [${want}]  got [${got}]`);
+}
+fs.rmSync(NEDIR, { recursive: true, force: true });
 // --allow-short: a text cut at its floor is excused only where the source line
 // it was written on matches — the title, not the copy beside it in the same file.
 const srcDir = path.join(__dirname, '..', 'out', 'selftest-src');

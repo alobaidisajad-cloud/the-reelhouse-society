@@ -1,4 +1,5 @@
-import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
+import { useDebouncedSearch } from '@/src/hooks/useDebouncedSearch';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { CinematicFlashList } from '../layout/CinematicFlashList';
@@ -129,22 +130,8 @@ export default function ProfileWatchlistTab({
       opacity: searchEmberOpacity.value,
   }));
 
-  // Typing is debounced: the filter and the server's read follow 300ms behind.
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [localSearch, setLocalSearch] = useState(watchlistSearch);
-
-  const handleSearchChange = useCallback((val: string) => {
-      setLocalSearch(val);
-      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-      searchTimeoutRef.current = setTimeout(() => {
-          setWatchlistSearch(val);
-      }, 300);
-  }, [setWatchlistSearch]);
-
-  // A pending debounce never outlives the room.
-  useEffect(() => () => {
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-  }, []);
+  // The box shows each key; the room follows a moment behind, and a ✕ cancels what is pending.
+  const { value: localSearch, onChange: handleSearchChange, clear: clearSearch } = useDebouncedSearch(watchlistSearch, setWatchlistSearch);
 
   // The queue's TRUE size, never the rows in hand: under a filter those are
   // the filter's answer, and a search that found three films would take away
@@ -218,7 +205,7 @@ export default function ProfileWatchlistTab({
             <RoomSearch
               value={localSearch}
               onChange={handleSearchChange}
-              onClear={() => { setLocalSearch(''); setWatchlistSearch(''); }}
+              onClear={clearSearch}
               placeholder="Search the queue…"
               a11y="Search the watchlist"
               ember={<AnimatedSearchIcon size={13} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />}
@@ -267,7 +254,7 @@ export default function ProfileWatchlistTab({
       </>
     );
    
-  }, [held, filtering, watchlistFiltered.length, isSelf, setRouletteOpen, localSearch, handleSearchChange, setWatchlistSearch, watchlistSort, setWatchlistSort, watchlistDecade, setWatchlistDecade, decades, animatedSearchProps, animatedSearchStyle]);
+  }, [held, filtering, watchlistFiltered.length, isSelf, setRouletteOpen, localSearch, handleSearchChange, clearSearch, watchlistSort, setWatchlistSort, watchlistDecade, setWatchlistDecade, decades, animatedSearchProps, animatedSearchStyle]);
 
   const ListEmptyComponent = useMemo(() => {
     if (watchlist.length > 0 && watchlistFiltered.length > 0) return null;
@@ -292,7 +279,7 @@ export default function ProfileWatchlistTab({
           }
           actionLabel={watchlistSearch ? 'CLEAR THE SEARCH' : era ? 'SHOW EVERY ERA' : undefined}
           onAction={
-            watchlistSearch ? () => { setLocalSearch(''); setWatchlistSearch(''); }
+            watchlistSearch ? clearSearch
               : era ? () => setWatchlistDecade(null)
               : undefined
           }
@@ -319,7 +306,7 @@ export default function ProfileWatchlistTab({
         body="This member hasn’t saved a film for later yet."
       />
     );
-  }, [watchlist.length, watchlistFiltered.length, filtering, isSelf, ready, unreachable, watchlistSearch, setWatchlistSearch, watchlistDecade, setWatchlistDecade, pulseStyle]);
+  }, [watchlist.length, watchlistFiltered.length, filtering, isSelf, ready, unreachable, watchlistSearch, clearSearch, watchlistDecade, setWatchlistDecade, pulseStyle]);
 
   return (
     <View style={r.container}>

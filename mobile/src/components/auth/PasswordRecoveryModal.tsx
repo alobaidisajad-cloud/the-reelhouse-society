@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { InColumn } from '@/src/components/layout/InColumn';
-import { View, StyleSheet, ActivityIndicator, Modal } from 'react-native';
+import { AccessibilityInfo, View, StyleSheet, ActivityIndicator, Modal } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { KeyRound, X } from 'lucide-react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
@@ -54,6 +54,13 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
   const w = WORDS[purpose];
   // Ledger line warms to brass while the field is active
   const [emailFocused, setEmailFocused] = useState(false);
+  // Sent: the form (and the SEND button the member pressed) gives way to the sent words, and a
+  // screen reader's focus is moved onto their title, which says it. Left where it was, the focus
+  // fell on nothing and the success was never heard (round 12).
+  const titleRef = useRef<Text>(null);
+  useEffect(() => {
+    if (forgotSent && titleRef.current) AccessibilityInfo.sendAccessibilityEvent(titleRef.current, 'focus');
+  }, [forgotSent]);
 
   return (
     <Modal
@@ -87,7 +94,7 @@ export function PasswordRecoveryModal({ visible, purpose, forgotSent, forgotEmai
             <View style={s.modalHeader}>
               <HaloIcon icon={KeyRound} iconSize={24} haloSize={104} style={s.iconWrap} />
               <SocietyEyebrow label={w.eyebrow} style={s.eyebrowWrap} />
-              <Text style={s.modalTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              <Text ref={titleRef} accessibilityRole="header" style={s.modalTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {forgotSent ? w.sentTitle : w.title}
               </Text>
             </View>

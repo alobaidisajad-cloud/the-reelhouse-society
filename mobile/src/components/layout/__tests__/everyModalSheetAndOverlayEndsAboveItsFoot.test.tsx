@@ -60,6 +60,11 @@ jest.mock('@/src/hooks/useUniversalSearch', () => ({
   useUniversalSearch: (q: string) => ({
     data: q ? { films: [{ id: 'f843', type: 'film', title: 'In the Mood for Love', subtitle: '2000', image: null, _nav: '/film/843' }] } : undefined,
     isFetching: false, isError: false, refetch: jest.fn(),
+    // Each source read to its end (the search pages each source: review round 12).
+    more: { films: false, users: false, logs: false, lists: false },
+    readingMore: { films: false, users: false, logs: false, lists: false },
+    moreFailed: { films: false, users: false, logs: false, lists: false },
+    loadMore: jest.fn(),
   }),
 }));
 
@@ -268,7 +273,7 @@ const SHEETS: { name: string; draw: () => React.ReactElement; want: (b: number) 
   { name: 'the salon’s door', want: sheetBottom,
     draw: () => <AtTheDoorPanel visible loungeId="room" pending={[]} onClose={jest.fn()} onResolved={jest.fn()} /> },
   { name: 'the salon’s settings', want: sheetBottom,
-    draw: () => <LoungeSettingsPanel lounge={ROOM as never} members={[]} visible onClose={jest.fn()} isCreator /> },
+    draw: () => <LoungeSettingsPanel lounge={ROOM as never} members={[]} visible onClose={jest.fn()} isCreator standing="approved" /> },
   { name: 'a member’s acts', want: sheetBottom,
     draw: () => (
       <ContentActionSheet visible targetUserId="u2" targetUsername="morpho" contentType="profile" contentId="u2"

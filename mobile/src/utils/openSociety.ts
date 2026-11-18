@@ -75,3 +75,8 @@ export function openSociety(href: string): void {
 
   push(href);
 }
+
+/** Where the member stands, the path alone (its query left out): the page in front, whatever it was opened with. */
+export function currentPathname(): string | null {
+  return currentPath;
+}

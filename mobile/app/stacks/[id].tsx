@@ -69,6 +69,7 @@ import { characterCount } from '@/src/utils/text';
 import type { StackData } from '@/src/schemas/feed.schema';
 import { useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
+import { useReadAgainWhenToldHere } from '@/src/hooks/useReadAgainWhenToldHere';
 import { stackCritiques } from '@/src/components/critique/stackCritiques';
 import { onePress } from '@/src/utils/onePress';
 
@@ -251,6 +252,9 @@ function StackDetailScreen({ id }: { id: string }) {
       reelToast.error(REFRESH_FAILED);
     }
   }, [queryClient, id]);
+  // A notice about this stack opened while it is in front (a new critique, a certification): it is
+  // read again, as a pull reads it, so what the notice announced is on the page (review round 12).
+  useReadAgainWhenToldHere(`/stacks/${id}`, () => { void onRefresh(); });
   const keyboard = useAnimatedKeyboard();
   const animatedContainerStyle = useAnimatedStyle(() => ({
     paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,

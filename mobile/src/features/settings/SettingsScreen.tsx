@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { InColumn, InWindow } from '@/src/components/layout/InColumn';
 import { View, StyleSheet, Alert, Modal, type LayoutChangeEvent, type ScrollView } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
+import { SaidText } from '@/src/components/SaidText';
 import { AnimatedText } from '@/src/components/text/AnimatedText';
 import { HouseBlur } from '@/src/components/HouseBlur';
 import { useContentBottom, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
@@ -302,6 +303,7 @@ export function SettingsScreen() {
       notif_follows: data.notifFollows,
       notif_endorsements: data.notifEndorsements,
       notif_comments: data.notifComments,
+      notif_salons: data.notifSalons,
       notif_system: data.notifSystem,
       social_visibility: data.socialVisibility,
       privacy_endorsements: data.privacyEndorsements,
@@ -356,6 +358,7 @@ export function SettingsScreen() {
       notifFollows: currentPrefs?.notif_follows ?? true,
       notifEndorsements: currentPrefs?.notif_endorsements ?? true,
       notifComments: currentPrefs?.notif_comments ?? true,
+      notifSalons: currentPrefs?.notif_salons ?? true,
       notifSystem: currentPrefs?.notif_system ?? true,
       biometricLock: (currentPrefs?.biometric_lock as boolean) ?? false,
     }
@@ -372,6 +375,7 @@ export function SettingsScreen() {
         notifFollows: currentPrefs?.notif_follows ?? true,
         notifEndorsements: currentPrefs?.notif_endorsements ?? true,
         notifComments: currentPrefs?.notif_comments ?? true,
+        notifSalons: currentPrefs?.notif_salons ?? true,
         notifSystem: currentPrefs?.notif_system ?? true,
         biometricLock: (currentPrefs?.biometric_lock as boolean) ?? false,
       });
@@ -766,7 +770,9 @@ export function SettingsScreen() {
                 {otpAction === 'deleteAccount' && 'Enter the 6-digit cipher sent to your email to authorize account deletion.'}
                 {otpAction === 'toggleBiometric' && 'Enter the 6-digit cipher sent to your email to authorize this security change.'}
               </Text>
-              {!!otpError && <Text style={st.modalFail} {...scaledTextProps}>{otpError}</Text>}
+              {/* Spoken as it appears (SaidText): the member's focus is on VERIFY, and a refused code
+                  heard only as the field's hint was never heard at all (round 12). */}
+              {!!otpError && <SaidText style={st.modalFail} {...scaledTextProps}>{otpError}</SaidText>}
               <TextInput
                 style={st.otpInput}
                 value={otpCode}
@@ -806,7 +812,10 @@ export function SettingsScreen() {
                 <PressableScale touch="wayOut" style={st.modalBtnCancel} disabled={otpVerifying} hitSlop={null} accessibilityRole="button" accessibilityLabel="Cancel" onPress={() => { setOtpModalVisible(false); setOtpCode(''); setOtpError(null); }}>
                   <Text style={st.modalBtnCancelText} {...scaledTextProps}>CANCEL</Text>
                 </PressableScale>
-                <PressableScale style={[st.modalBtnConfirm, (!otpCode || otpCode.length < 6) && st.disabledBtn]} hitSlop={null} onPress={handleOtpVerify} disabled={otpVerifying || !otpCode || otpCode.length < 6} accessibilityRole="button" accessibilityLabel="Verify code">
+                <PressableScale style={[st.modalBtnConfirm, (!otpCode || otpCode.length < 6) && st.disabledBtn]} hitSlop={null} onPress={handleOtpVerify} disabled={otpVerifying || !otpCode || otpCode.length < 6} accessibilityRole="button"
+                  // Busy while it checks, and named as it reads then (VERIFYING…).
+                  accessibilityLabel={otpVerifying ? 'Verifying code' : 'Verify code'}
+                  accessibilityState={{ disabled: otpVerifying || !otpCode || otpCode.length < 6, busy: otpVerifying }}>
                   <Text style={st.modalBtnConfirmText} {...scaledTextProps}>{otpVerifying ? 'VERIFYING…' : 'VERIFY'}</Text>
                 </PressableScale>
               </View>

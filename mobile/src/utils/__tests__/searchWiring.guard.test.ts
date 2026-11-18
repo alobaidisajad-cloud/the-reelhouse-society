@@ -99,38 +99,27 @@ describe('every ilike carrying member input goes through the funnel', () => {
   });
 });
 
-describe('#84 · the LOGS tab asks for columns that exist', () => {
+describe('#84 · the LOGS tab asks the house for what exists', () => {
   const hook = FILES.find(f => f.path === 'src/hooks/useUniversalSearch.ts')!;
 
-  it('no longer selects logs.username or logs.role — both return 42703', () => {
-    expect(hook.code).not.toMatch(/rating,\s*username,\s*role/);
-    expect(hook.code).not.toMatch(/username\.ilike[^)]*film_title|film_title[^)]*username\.ilike/);
-  });
-
-  it('takes the author from the profile it is linked to', () => {
-    expect(hook.code).toMatch(/profiles!logs_user_id_fkey\(username, role\)/);
-  });
-
-  it('matches the writer through a separate query, because .or() cannot', () => {
-    // PostgREST refuses a dotted embedded path inside a top-level or() — the
-    // filter tree fails to parse. Verified live.
-    expect(hook.code).toMatch(/profiles!logs_user_id_fkey!inner\(username, role\)/);
-    expect(hook.code).toMatch(/\.ilike\('profiles\.username'/);
-  });
-
-  it('excludes blank reviews, which the old filter never did', () => {
-    // `.not('review','is',null)` passed 258 of 258 logs; only 132 have a review.
-    expect(hook.code).toMatch(/\.not\('review', 'is', null\)\s*\.neq\('review', ''\)/);
+  // Review round 12: the two reads of the logs (the film or the writing; the writer's handle,
+  // which PostgREST could not fold into one .or()) became one house read, search_logs, which
+  // matches all three, pages, and leaves out blank reviews and hidden authors in the house.
+  it('reads the logs through search_logs, given the words through the funnel', () => {
+    expect(hook.code).toMatch(/rpc\('search_logs', \{\s*p_pattern: pattern,\s*p_handle: handle,/);
+    expect(hook.code).not.toMatch(/\.from\('logs'\)/);
   });
 
   it('a failure is recorded, and only a TOTAL failure is shown as one', () => {
     expect(hook.code).toMatch(/logger\.error\('\[useUniversalSearch\] a source (failed|was rejected)'/);
-    expect(hook.code).toMatch(/allFailed/);
+    expect(hook.code).toMatch(/everyAskedDown/);
   });
 
-  it('a partial result is not cached for five minutes', () => {
-    // Otherwise a momentary blip is remembered as "no results" after recovery.
-    expect(hook.code).toMatch(/_partial\s*\?\s*0/);
+  it('a source that failed holds no answer to be kept', () => {
+    // Each source is its own read: one that failed is an error, never an empty page kept five
+    // minutes as "no results" after the source recovered.
+    expect(hook.code).toMatch(/if \(error\) \{[^}]*throw error;/);
+    expect(hook.code).not.toMatch(/data: \[\] as never\[\], error: null/);
   });
 });
 

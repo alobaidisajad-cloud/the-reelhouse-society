@@ -194,15 +194,20 @@ SELECT ('00000000-0000-4000-a000-' || lpad(to_hex(1), 12, '0'))::uuid, pg_temp.m
   FROM generate_series(1, 200000) i;
 
 -- ── critiques on logs, and the notices they all make ─────────────────────────
+-- Each row draws its own member in the subquery's own list: a LATERAL that names nothing outside
+-- it is run once, and would give every critique one author and every notice one reader and one
+-- sender (e2e/__tests__/loadSeed.test.ts refuses a draw inside a LATERAL).
 INSERT INTO public.log_comments (log_id, user_id, username, body, created_at)
-SELECT l.id, pg_temp.mid(u), 'm' || u, 'A critique of a log.', l.created_at + interval '2 hours'
-  FROM (SELECT id, created_at FROM public.logs WHERE review IS NOT NULL ORDER BY id LIMIT 300000) l,
-       LATERAL (SELECT 1 + floor(random() * :members)::int AS u) x;
+SELECT l.id, pg_temp.mid(l.u), 'm' || l.u, 'A critique of a log.', l.created_at + interval '2 hours'
+  FROM (SELECT id, created_at, 1 + floor(random() * :members)::int AS u
+          FROM public.logs WHERE review IS NOT NULL ORDER BY id LIMIT 300000) l;
+-- Never from the reader themselves: a sender drawn as the reader is the next member.
 INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, created_at, is_read, group_key)
 SELECT pg_temp.mid(t), (ARRAY['follow','endorse','comment'])[1 + k % 3], 'm' || f, pg_temp.mid(f),
        'm' || f || ' did something.', now() - k * interval '7 minutes', (k % 4 <> 0), 'load:' || (k % 1000)
-  FROM generate_series(1, 2500000 * :scale) k,
-       LATERAL (SELECT 1 + floor(random() * :members)::int AS t, 1 + floor(random() * :members)::int AS f) x;
+  FROM (SELECT k, t, CASE WHEN d = t THEN d % :members + 1 ELSE d END AS f
+          FROM (SELECT k, 1 + floor(random() * :members)::int AS t, 1 + floor(random() * :members)::int AS d
+                  FROM generate_series(1, 2500000 * :scale) k) r) x;
 INSERT INTO public.notifications (user_id, type, from_username, from_user_id, message, created_at, is_read)
 SELECT pg_temp.mid(2), 'follow', 'm' || k, pg_temp.mid(k), 'm' || k || ' follows you.', now() - k * interval '1 minute', false
   FROM generate_series(3, 50000) k;

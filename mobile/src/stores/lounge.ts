@@ -355,16 +355,24 @@ let _lastTypingBroadcastAt = -Infinity;
 const TYPING_THROTTLE = 2000; // max one broadcast per 2s per member
 const TYPING_TTL = 4000;      // a typist goes quiet after 4s of silence
 const _typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
-/** The active salon channel — lets broadcastTyping ride the same socket. */
-let _activeChannel: RealtimeChannel | null = null;
-/** Whether the member holds a seat in the active salon: only a seated member types. */
-let _seatedInActive = false;
+/** One room holding a salon's channel: what the channel's status and the seats' changes are told to. */
+interface SalonHolder { watch: ReturnType<typeof watchChannel>; onMembership?: () => void; seated: boolean }
 /**
- * The open salon's way out, as its screen leaves: the reset leaves through it too, one still waiting
- * to open included. Closed by its channel alone, its watch heard the CLOSED as a drop: five seconds
- * after a sign-out the next member's room said it was not live, and its re-read ran on (review round 9).
+ * Each salon's live channel, the rooms holding it, and the last status it gave. Two copies of one room
+ * on the stack (the salon opened again from inside it) hold ONE channel (openChannel shares it): its
+ * word goes to every room holding it, a room that came later is told its last status at once, and it
+ * is left only when the last room leaves. The second copy took the first's channel and, leaving, took
+ * it from the room beneath, which then said it was not live for as long as it stood (review round 12).
+ * broadcastTyping rides the same channel, from a seat alone.
  */
-let _closeActive: (() => void) | null = null;
+const _salons = new Map<string, { holders: Set<SalonHolder>; channel: RealtimeChannel | null; status: string | null }>();
+/**
+ * Each open room's way out, as its screen leaves: the reset leaves through them too, one still
+ * waiting to open included. Closed by its channel alone, its watch heard the CLOSED as a drop: five
+ * seconds after a sign-out the next member's room said it was not live, and its re-read ran on
+ * (review round 9).
+ */
+const _roomLeaves = new Set<() => void>();
 
 function clearTypingState(set: (partial: Partial<LoungeState>) => void) {
   for (const t of _typingTimers.values()) clearTimeout(t);
@@ -1419,27 +1427,33 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   },
 
   approveMember: async (loungeId, userId) => {
+    const startedAs = useAuthStore.getState().user?.id ?? null;
     try {
       const { error } = await supabase.rpc('approve_lounge_member', { p_lounge_id: loungeId, p_user_id: userId });
       if (error) throw error;
-      return true;
     } catch (e) {
       logger.error('[LoungeStore.approveMember] failed:', e);
       reelToast.error('Could not admit this guest.');
       return false;
     }
+    // The request answered: its notice leaves the bell now, as it has left the house.
+    if (memberUnchanged(startedAs)) forgetTheRequestNotice(loungeId, userId);
+    return true;
   },
 
   declineMember: async (loungeId, userId) => {
+    const startedAs = useAuthStore.getState().user?.id ?? null;
     try {
       const { error } = await supabase.rpc('decline_lounge_member', { p_lounge_id: loungeId, p_user_id: userId });
       if (error) throw error;
-      return true;
     } catch (e) {
       logger.error('[LoungeStore.declineMember] failed:', e);
       reelToast.error('Could not decline this request.');
       return false;
     }
+    // The request answered: its notice leaves the bell now, as it has left the house.
+    if (memberUnchanged(startedAs)) forgetTheRequestNotice(loungeId, userId);
+    return true;
   },
 
   setMemberStatus: async (loungeId, userId, status) => {
@@ -1692,11 +1706,22 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // Back after a drop, what was said in the gap is read; down past a beat, the room says it is
     // not live and is read again on a fixed interval until the channel answers.
     const watch = watchChannel({ reread: () => { void get().catchUpMessages(loungeId); }, onLive: (live) => set((s) => (s.roomLive === live ? s : { roomLive: live })) });
+    const holder: SalonHolder = { watch, onMembership: opts?.onMembership, seated };
+    const salon = _salons.get(loungeId) ?? { holders: new Set<SalonHolder>(), channel: null, status: null };
+    _salons.set(loungeId, salon);
+    salon.holders.add(holder);
+    // Its channel already open for another copy of this room: this one shares it, told at once
+    // where it stands.
+    if (salon.channel && salon.status) watch.status(salon.status);
+    /**
+     * The rooms the channel's word goes to. The salon's entry goes with its last room, and the channel
+     * with it: a channel being left (its CLOSED, a status of the one before) tells no one.
+     */
+    const holdersNow = (): SalonHolder[] => (_salons.get(loungeId) === salon ? [...salon.holders] : []);
     // Opened once the salon's last leave is answered: joined again at once, it was handed the channel
     // on its way out and heard nothing (openChannel, review round 9).
-    let mine: RealtimeChannel | null = null;
     const close = openChannel(`lounge-${loungeId}`, (topic) => {
-      const channel = supabase
+      const channel: RealtimeChannel = supabase
         .channel(topic, {
           // Private: the salon's rules decide who receives it (realtime.messages); own echoes muted.
           config: { private: true, presence: { key: me?.id ?? 'anon' }, broadcast: { self: false } },
@@ -1842,7 +1867,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'lounge_members', filter: `lounge_id=eq.${loungeId}` },
-          () => { opts?.onMembership?.(); }
+          () => { for (const h of holdersNow()) h.onMembership?.(); }
         )
         // ── THE HOUSE PULSE: who's in the room right now ──
         .on('presence', { event: 'sync' }, () => {
@@ -1866,31 +1891,34 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           set(s => s.typingUsers.includes(username) ? s : { typingUsers: [...s.typingUsers, username] });
         })
         .subscribe((status) => {
-          watch.status(status);
+          // Told to every room holding the channel, and kept for a room that comes to share it.
+          const holders = holdersNow();
+          if (holders.length === 0) return;
+          salon.status = status;
+          for (const h of holders) h.watch.status(status);
           // Presence once the channel is live, from a seated member only: a reader
           // without a seat is in the room unseen.
-          if (status === 'SUBSCRIBED' && me && seated) {
+          if (status === 'SUBSCRIBED' && me && holders.some((h) => h.seated)) {
             channel.track({ username: me.username });
           }
         });
-      mine = channel;
-      _activeChannel = channel;
-      _seatedInActive = seated;
+      salon.channel = channel;
       return channel;
     });
     const leave = () => {
       // Left on purpose: its CLOSED is not a drop.
       watch.end();
       close();
-      if (_closeActive === leave) _closeActive = null;
-      if (mine && _activeChannel === mine) {
-        _activeChannel = null;
-        _seatedInActive = false;
-      }
+      _roomLeaves.delete(leave);
+      salon.holders.delete(holder);
+      // The last room holding the channel: it went with the close. Another copy of the room still
+      // holds it: the channel, the room's pulse and its typists stay theirs.
+      if (salon.holders.size > 0) return;
+      if (_salons.get(loungeId) === salon) _salons.delete(loungeId);
       set({ roomLive: true });
       clearTypingState(set);
     };
-    _closeActive = leave;
+    _roomLeaves.add(leave);
     return leave;
   },
 
@@ -1898,7 +1926,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const now = monotonicNow();
     if (now - _lastTypingBroadcastAt < TYPING_THROTTLE) return;
     const me = useAuthStore.getState().user;
-    if (!me || !_activeChannel || !_seatedInActive || get().currentLoungeId !== loungeId) return;
+    const salon = _salons.get(loungeId);
+    const seatedHere = !!salon?.channel && [...salon.holders].some((h) => h.seated);
+    if (!me || !seatedHere || get().currentLoungeId !== loungeId) return;
     _lastTypingBroadcastAt = now;
     // Through the house, never the channel: it checks the seat and stamps the
     // sender's own id and handle, so no member can type as another.
@@ -1950,12 +1980,23 @@ registerStoreReset(() => {
     // Unsubscribe, not just forget: a live channel would write the next message into
     // the store this reset just cleared.
     // Through its close, so one still waiting on its last leave never opens for the next member.
-    if (_closeActive) {
-        try { _closeActive(); } catch { /* already gone */ }
+    // Every room's: two copies of one room hold one channel, and it is left only with the last.
+    for (const leave of [..._roomLeaves]) {
+        try { leave(); } catch { /* already gone */ }
     }
-    _closeActive = null;
-    _activeChannel = null;
-    _seatedInActive = false;
+    _roomLeaves.clear();
+    _salons.clear();
     // Purge profile cache to prevent cross-session PII leakage
     _profileCache.clear();
 });
+
+/**
+ * A request to enter a salon, answered at its door: its notice leaves the host's bell and board at
+ * once, as the house has taken it (a_salon_request_takes_its_notice, review round 12). Required
+ * here, not imported: the notices' store hears the block store when it loads, and the salon's store
+ * is loaded where the block store is a stand-in without that.
+ */
+function forgetTheRequestNotice(loungeId: string, userId: string): void {
+  const { useNotificationStore } = require('./notificationStore') as typeof import('./notificationStore');
+  useNotificationStore.getState().forgetSalonRequestNotices(loungeId, userId);
+}

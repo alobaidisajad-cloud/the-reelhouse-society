@@ -149,10 +149,11 @@ jobs:
           echo "── the runner's disk: $(df -h / | tail -n 1)"
           exit $rc
 
-      # The pending train, as production will run it (each rehearsal in one rolled-back
-      # transaction, then file by file), every lock it takes timed on the full house: a lock
-      # that blocks members' reads or writes held over a second fails (WORKLIST P0.6). Its file-by-
-      # file run leaves the train applied, so the reads below are timed on production as it will be.
+      # The pending train, as production will run it (car by car: each car's rehearsal in one
+      # rolled-back transaction on the house the cars before it left, then the car applied as one
+      # transaction), every lock it takes timed on the full house: a lock that blocks members'
+      # reads or writes held over a second fails (WORKLIST P0.6). Its applies leave the train
+      # applied, so the reads below are timed on production as it will be.
       - name: The pending train on the full house, its locks timed
         env:
           LOAD_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres

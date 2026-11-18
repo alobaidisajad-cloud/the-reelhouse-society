@@ -12,41 +12,33 @@ import React from 'react';
 import { fireEvent, render, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { testQueryClient } from '@/test-utils/testQueryClient';
+import { supabaseFake } from '@/test-utils/supabaseFake';
 
-type Op = [string, ...unknown[]];
-const mockReads: { table: string; ops: Op[] }[] = [];
-
-function mockAnswer(table: string, ops: Op[]) {
-  if (table === 'profiles') {
-    const exact = ops.some(([k, col]) => k === 'ilike' && col === 'username');
-    return exact
-      ? [{ id: 'k', username: 'kane', role: 'cinephile' }]
-      : [
-          { id: 'a', username: 'akane', role: 'cinephile' },
-          { id: 'b', username: 'kanefan', role: 'cinephile' },
-        ];
-  }
-  if (table === 'logs') {
-    return [{ id: 'l1', user_id: 'u9', film_title: 'Vertigo', review: '<p>Tom &amp; Jerry</p>', rating: 3.5, created_at: '2026-01-01', profiles: { username: 'kane', role: 'cinephile' } }];
-  }
-  return [];
-}
-
-jest.mock('@/src/lib/supabase', () => ({
-  supabase: {
-    from: (table: string) => {
-      const read = { table, ops: [] as Op[] };
-      mockReads.push(read);
-      const chain: Record<string, unknown> = {};
-      for (const k of ['select', 'or', 'not', 'neq', 'order', 'limit', 'eq', 'ilike', 'abortSignal']) {
-        chain[k] = (...args: unknown[]) => { read.ops.push([k, ...args]); return chain; };
-      }
-      chain.then = (res: (v: unknown) => unknown) =>
-        Promise.resolve({ data: mockAnswer(table, read.ops), error: null }).then(res);
-      return chain;
+/** Every call the house was asked, by name, with its arguments. */
+const mockAsked: { fn: string; args: Record<string, unknown> }[] = [];
+const mockHouse = supabaseFake({
+  answer: { lists: () => [] },
+  rpc: {
+    // The house's own order, closest first: the handle itself, then one that begins with it, then one holding it.
+    search_members: (args: Record<string, unknown>) => {
+      mockAsked.push({ fn: 'search_members', args });
+      return [
+        { id: '11111111-1111-4111-8111-111111111111', username: 'kane', avatar_url: null, role: 'cinephile', closeness: 0 },
+        { id: '22222222-2222-4222-8222-222222222222', username: 'kanefan', avatar_url: null, role: 'cinephile', closeness: 1 },
+        { id: '33333333-3333-4333-8333-333333333333', username: 'akane', avatar_url: null, role: 'cinephile', closeness: 3 },
+      ];
+    },
+    search_logs: (args: Record<string, unknown>) => {
+      mockAsked.push({ fn: 'search_logs', args });
+      return [{
+        id: '44444444-4444-4444-8444-444444444444', user_id: '55555555-5555-4555-8555-555555555555', film_title: 'Vertigo',
+        review: '<p>Tom &amp; Jerry</p>', rating: 3.5, poster_path: null, status: 'watched', abandoned_reason: null,
+        is_spoiler: false, created_at: '2026-01-01T00:00:00+00:00', username: 'kane', role: 'cinephile',
+      }];
     },
   },
-}));
+});
+jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));
 jest.mock('@/src/utils/logger', () => ({ logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn() } }));
 
 const mockSearchResult = jest.fn();
@@ -69,23 +61,29 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 }
 
 beforeEach(() => {
-  mockReads.length = 0;
+  mockAsked.length = 0;
   mockTmdb.search.mockReset().mockResolvedValue({ results: [] });
 });
 
 describe('the search asks for what the member typed', () => {
+  // The house chooses the members now, closest first (review round 12): the phone keeps its order.
   it('"@kane" asks for the handle without its @, and the exact handle comes first', async () => {
     const { result } = await renderHook(() => useUniversalSearch('@kane'), { wrapper: Wrapper });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    const profileOps = mockReads.filter((r) => r.table === 'profiles').flatMap((r) => r.ops);
-    expect(JSON.stringify(profileOps)).not.toContain('@');
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    const members = mockAsked.filter((a) => a.fn === 'search_members');
+    expect(JSON.stringify(members)).not.toContain('@');
+    const asked = members[0];
+    expect(asked).toBeDefined();
+    expect(asked!.args).toMatchObject({ p_pattern: 'kane', p_handles_only: true });
     expect(result.current.data.users.map((u: { title: string }) => u.title)).toEqual(['@kane', '@kanefan', '@akane']);
   });
 
   it('a review is quoted as plain words, and not marked as cut when it is whole', async () => {
     const { result } = await renderHook(() => useUniversalSearch('vertigo'), { wrapper: Wrapper });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data.logs[0].extra).toBe('"Tom & Jerry"');
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    const first = result.current.data.logs[0];
+    expect(first).toBeDefined();
+    expect(first.extra).toBe('"Tom & Jerry"');
   });
 });
 
@@ -117,6 +115,9 @@ describe('a row says what it is', () => {
 });
 
 describe('the search room', () => {
+  /** Each source read to its end: no next page, none being read, none failed (review round 12). */
+  const none = { films: false, users: false, logs: false, lists: false };
+  const paging = { more: none, readingMore: none, moreFailed: none, loadMore: jest.fn() };
   const answer = (over: Record<string, unknown> = {}) => ({
     data: {
       films: [], actors: [], directors: [], logs: [], lists: [],
@@ -125,7 +126,7 @@ describe('the search room', () => {
       _down: { films: false, users: false, logs: false, lists: false },
       ...over,
     },
-    isFetching: false, isError: false, refetch: jest.fn(),
+    isFetching: false, isError: false, refetch: jest.fn(), ...paging,
   });
 
   async function open() {
@@ -188,7 +189,7 @@ describe('the search room', () => {
   });
 
   it('a search that failed: the count line says NOT REACHED, and every tab says not reached', async () => {
-    mockSearchResult.mockReturnValue({ data: undefined, isFetching: false, isError: true, refetch: jest.fn() });
+    mockSearchResult.mockReturnValue({ data: undefined, isFetching: false, isError: true, refetch: jest.fn(), ...paging });
     const r = await open();
     await waitFor(() => expect(r.getByText('NOT REACHED')).toBeTruthy());
     expect(r.queryByText('0 RESULTS')).toBeNull();
@@ -198,7 +199,7 @@ describe('the search room', () => {
   });
 
   it('while the search is out, a tab is named without a count', async () => {
-    mockSearchResult.mockReturnValue({ data: undefined, isFetching: true, isError: false, refetch: jest.fn() });
+    mockSearchResult.mockReturnValue({ data: undefined, isFetching: true, isError: false, refetch: jest.fn(), ...paging });
     const r = await open();
     await waitFor(() => expect(r.getByRole('tab', { name: 'All' })).toBeTruthy());
     expect(r.getAllByText('SCANNING ARCHIVES…').length).toBeGreaterThanOrEqual(1);

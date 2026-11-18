@@ -785,13 +785,16 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, text
 /**
  * A control's touch area: its box grown by the host's `hitSlop`. layout.cjs
  * measures these against each other (an overlap goes to the LATER control).
+ * A disabled control is marked too, as `data-disabled`: a finger cannot use it, so
+ * the touch checks pass it by, but a screen reader still reaches it and names it.
  */
 function pressAttr(p: Record<string, unknown>): string {
   const presses = ['onClick', 'onPress', 'onResponderRelease'].some((k) => typeof p[k] === 'function');
-  if (!presses || p.disabled === true || p.accessibilityState && (p.accessibilityState as { disabled?: boolean }).disabled) return '';
+  if (!presses) return '';
+  const off = p.disabled === true || !!(p.accessibilityState && (p.accessibilityState as { disabled?: boolean }).disabled);
   const s = p.hitSlop;
   const side = (k: string) => (typeof s === 'number' ? s : s && typeof s === 'object' ? Number((s as Record<string, number>)[k] ?? 0) : 0);
-  return ` data-press="${[side('top'), side('right'), side('bottom'), side('left')].join(',')}"`;
+  return ` data-press="${[side('top'), side('right'), side('bottom'), side('left')].join(',')}"${off ? ' data-disabled' : ''}`;
 }
 
 /**
@@ -804,11 +807,21 @@ function a11yAttr(p: Record<string, unknown>): string {
   // An accessible element is ONE stop for a screen reader: what is inside it is
   // read as part of it, not reached separately.
   const whole = p.accessible === true ? ' data-accessible' : '';
+  // Its role (an 'adjustable' one is moved by swiping, not by reaching what is inside it), and
+  // the acts it offers by name: a control inside it may be offered there instead (layout.cjs NESTED).
+  const said = p.accessibilityRole ?? p.role;
+  const role = typeof said === 'string' ? ` data-role="${esc(said)}"` : '';
+  const acts = Array.isArray(p.accessibilityActions)
+    ? (p.accessibilityActions as ({ name?: unknown; label?: unknown } | null)[])
+      .map((a) => (typeof a?.label === 'string' ? a.label : typeof a?.name === 'string' ? a.name : ''))
+      .filter(Boolean)
+    : [];
+  const actions = acts.length ? ` data-actions="${esc(acts.join('|'))}"` : '';
   // A chosen state, as a screen reader is told it: layout.cjs (COLOUR) compares the chosen with the not.
   const state = (p.accessibilityState ?? {}) as { selected?: boolean; checked?: boolean | 'mixed' };
   const chosen = typeof state.selected === 'boolean' ? ` aria-selected="${state.selected}"`
     : typeof state.checked === 'boolean' ? ` aria-checked="${state.checked}"` : '';
-  return label + hidden + whole + chosen;
+  return label + hidden + whole + role + actions + chosen;
 }
 
 /** The RN style, carried when MOCKUPS_YOGA=1 so yoga-parity.cjs can lay it out with Yoga. */

@@ -32,6 +32,9 @@
  *            platforms give the overlap to the LATER control;
  *   NAMELESS a screen reader can call it nothing but "button": no label, and
  *            no words inside it;
+ *   NESTED   (only with `--kinds NESTED`) it sits inside an accessible element, which iOS reads
+ *            as one stop and never enters: lost to VoiceOver, unless the element is 'adjustable'
+ *            or offers the control's act by name (an accessibilityAction);
  *   UNSAID   (only with `--kinds UNSAID`) it shows six words or fewer of its own, and its
  *            name does not hold them: a voice-control user says what they see;
  *   ORDER    (only with `--kinds ORDER`) it is read after a stop drawn wholly below it,
@@ -581,10 +584,16 @@ async function audit(page) {
       e.style.position = was;
       return { left: x.left, right: x.right, top: x.top, bottom: x.bottom };
     };
-    const controls = [...document.querySelectorAll('[data-press]')]
+    // Every control drawn: a disabled one (`data-disabled`) too, as a screen reader still reads
+    // and names it. The touch checks (STEAL, SMALL) take only those a finger can use.
+    const drawnControls = [...document.querySelectorAll('[data-press]')]
       .filter((e) => opacityOf(e) > 0.05 && getComputedStyle(e).display !== 'none' && (!topModal || topModal.contains(e)))
       .map((e) => ({ e, r: e.getBoundingClientRect(), x: haloOf(e) }))
       .filter((c) => c.r.width > 0 && c.r.height > 0 && !parked(c.r));
+    const controls = drawnControls.filter((c) => !c.e.hasAttribute('data-disabled'));
+    // What a screen reader reaches: every control a finger can use, and a disabled one that is
+    // still an accessibility element (a disabled box set accessible={false} is no stop at all).
+    const readable = drawnControls.filter((c) => !c.e.hasAttribute('data-disabled') || c.e.hasAttribute('data-accessible'));
     // NAMELESS: a control a screen reader can only call "button". Named as iOS names
     // it: its own label, else the labels and words inside, less anything hidden.
     const spoken = (e) => {
@@ -592,10 +601,36 @@ async function audit(page) {
       if (e.nodeType !== 1 || e.getAttribute('aria-hidden') === 'true') return '';
       return e.getAttribute('aria-label') || [...e.childNodes].map(spoken).join('');
     };
-    for (const c of controls) {
-      // Hidden, or part of a larger named control a screen reader stops on once
-      // (a rating's ten halves under "Your rating"): not reached on its own.
-      if (c.e.closest('[aria-hidden="true"]') || c.e.parentElement?.closest('[data-accessible][aria-label]')) continue;
+    const words = (s) => s.toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    // NESTED (`--kinds NESTED`): a control inside an accessible element. iOS reads an accessible
+    // element as ONE stop and never goes inside it, so the control inside is lost to VoiceOver
+    // (a case card swallowed its nine verdict buttons; a notice row its Dismiss). It is reached
+    // only when the element around it is 'adjustable' (a rating's halves, moved by swiping), or
+    // offers the control's act by name: every word of an act's label is a word of the control's
+    // name ("Remove" offers "Remove Heat", "Move up" offers "Move Heat up").
+    const outerOf = (e) => e.parentElement?.closest('div[data-accessible]') ?? null;
+    const offeredBy = (e, outer) => {
+      if (outer.dataset.role === 'adjustable') return true;
+      const name = new Set(words(e.getAttribute('aria-label') || spoken(e)).split(' '));
+      return (outer.dataset.actions || '').split('|').map(words).filter(Boolean)
+        .some((act) => act.split(' ').every((w) => name.has(w)));
+    };
+    // Reached through the element around it, not on its own: the name checks leave it to that
+    // element. A control lost inside one is NOT excused: NESTED says so, and the rest still apply.
+    const reachedThrough = (e) => { const outer = outerOf(e); return !!outer && offeredBy(e, outer); };
+    for (const c of readable) {
+      if (c.e.closest('[aria-hidden="true"]')) continue;
+      const outer = outerOf(c.e);
+      if (!outer || offeredBy(c.e, outer)) continue;
+      const inner = (c.e.getAttribute('aria-label') || say(c.e) || 'a control') + (c.e.dataset.src ? ` [${c.e.dataset.src}]` : '');
+      const around = (outer.getAttribute('aria-label') || say(outer) || 'an element').slice(0, 48)
+        + (outer.dataset.src ? ` [${outer.dataset.src}]` : '');
+      found.push({ kind: 'NESTED', text: `"${inner}" inside "${around}": unreachable on iOS`, size: 0, by: `${c.r.width.toFixed(0)}×${c.r.height.toFixed(0)} at ${c.r.left.toFixed(0)},${c.r.top.toFixed(0)}` });
+    }
+    for (const c of readable) {
+      // Hidden, or reached through the element around it (a rating's ten halves under
+      // "Your rating"; a row's Remove offered as its action): not reached on its own.
+      if (c.e.closest('[aria-hidden="true"]') || reachedThrough(c.e)) continue;
       if (!spoken(c.e)) {
         found.push({ kind: 'NAMELESS', text: c.e.dataset.t || '(a control with no name)', size: 0, by: `${c.r.width.toFixed(0)}×${c.r.height.toFixed(0)} at ${c.r.left.toFixed(0)},${c.r.top.toFixed(0)}` });
       }
@@ -603,18 +638,19 @@ async function audit(page) {
     // UNSAID: a control that shows a few words of its own (a button's label, not a card's
     // content) and is named something that does not hold them. A voice-control user says
     // what they see ("tap Ascend the ranks"), and the phone listens for the control's name.
-    const words = (s) => s.toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
     // The same word said another way: a numeral in Roman is its number (PART III, part 3),
     // and MIN is the minutes a screen reader says.
     const ROMAN = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9, x: 10, xi: 11, xii: 12 };
-    const alike = (w) => [w, ROMAN[w] && String(ROMAN[w]), w === 'min' && 'minutes', w === 'min' && 'minute'].filter(Boolean);
+    // A count of seconds shown short (IN 60s) is its number, as the name says it (in 60 seconds).
+    const alike = (w) => [w, ROMAN[w] && String(ROMAN[w]), w === 'min' && 'minutes', w === 'min' && 'minute',
+      /^[0-9]+s$/.test(w) && w.slice(0, -1)].filter(Boolean);
     const shown = (e) => {
       if (e.nodeType === 3) return e.textContent;
       if (e.nodeType !== 1 || e.getAttribute('aria-hidden') === 'true') return '';
       return [...e.childNodes].map(shown).join(' ');
     };
-    for (const c of controls) {
-      if (c.e.closest('[aria-hidden="true"]') || c.e.parentElement?.closest('[data-accessible][aria-label]')) continue;
+    for (const c of readable) {
+      if (c.e.closest('[aria-hidden="true"]') || reachedThrough(c.e)) continue;
       const label = c.e.getAttribute('aria-label');
       const seen = words(shown(c.e));
       if (!label || !seen || seen.split(' ').length > 6) continue;
@@ -630,8 +666,10 @@ async function audit(page) {
     // above it, the two stacked (sharing some width), is a screen read out of order:
     // a pinned header built after its scroller is read after everything in it.
     // The stops: each control a screen reader lands on, and each text not inside one.
-    const stopOf = (e) => !e.closest('[aria-hidden="true"]') && !e.parentElement?.closest('[data-accessible][aria-label], [data-press], span[data-scale-cap]');
-    const stops = [...document.querySelectorAll('[data-press], [data-accessible][aria-label], span[data-scale-cap]')]
+    // A disabled control is a stop only while it is still an accessibility element.
+    const STOP = '[data-press]:not([data-disabled]), [data-press][data-accessible], [data-accessible][aria-label], span[data-scale-cap]';
+    const stopOf = (e) => !e.closest('[aria-hidden="true"]') && !e.parentElement?.closest(STOP);
+    const stops = [...document.querySelectorAll(STOP)]
       .filter((e) => stopOf(e) && opacityOf(e) > 0.05 && getComputedStyle(e).display !== 'none' && (!topModal || topModal.contains(e)))
       .map((e) => ({ e, r: e.getBoundingClientRect() }))
       .filter((s) => s.r.width > 0 && s.r.height > 0 && !parked(s.r));
@@ -787,7 +825,7 @@ async function audit(page) {
     const onScreen = controls.map((c) => [c.r, c.x]);
     for (const c of controls) { c.r = c.e.getBoundingClientRect(); c.x = haloOf(c.e); }
     for (const c of controls) {
-      if (c.e.closest('[aria-hidden="true"]') || c.e.parentElement?.closest('[data-accessible][aria-label]')) continue;
+      if (c.e.closest('[aria-hidden="true"]') || reachedThrough(c.e)) continue;
       if (excused(c.e)) continue;
       // Drawn without its marks (a test that stands in its own PressableScale, or builds the control
       // outside any component): its weight and growth are unknown here, so it is judged where the
@@ -932,7 +970,7 @@ async function audit(page) {
     await page.setViewportSize({ width: PHONE_W, height: Math.min(h, 16000) });
     const r = KINDS?.length === 1 && KINDS[0] === 'NAME' ? await namesOnly(page) : await audit(page);
     // SMALL is reported only when asked for by name (see the check).
-    r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID' && x.kind !== 'ORDER' && x.kind !== 'BENEATH' && x.kind !== 'COLOUR'))
+    r.found = r.found.filter((x) => (KINDS ? KINDS.includes(x.kind) : x.kind !== 'SMALL' && x.kind !== 'UNSAID' && x.kind !== 'ORDER' && x.kind !== 'BENEATH' && x.kind !== 'COLOUR' && x.kind !== 'NESTED'))
       .filter((x) => x.kind !== 'NAME' || !nameAllowed(x));
     await page.close();
     return r;

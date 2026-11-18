@@ -58,7 +58,17 @@ export function useFollowRequests(enabled: boolean) {
   const loadingMoreRef = useRef(false);
   const [hasMore, setHasMore] = useState(true);
   const isMounted = useRef(true);
-  const reqSeq = useRef(0); // guards against out-of-order responses when searching
+  /** Each read of the list from its top (opening, a search, a refresh, a retry): the latest is the one shown. */
+  const reqSeq = useRef(0);
+  /**
+   * The list as it stands was begun by this read of its top. A next page carries the one it was
+   * asked under, and is dropped once another began: its cursor belongs to a list no longer shown.
+   */
+  const listGen = useRef(0);
+  /** A read of the list's top is out: no next page is asked of the list it will replace. */
+  const topReading = useRef(false);
+  /** The search the list shown answers (its last read of the top), for loadMore to refuse another's. */
+  const answeredRef = useRef<string | null>(null);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -78,16 +88,24 @@ export function useFollowRequests(enabled: boolean) {
       loadingMoreRef.current = true;
       setLoadingMore(true);
     }
-    const seq = ++reqSeq.current;
+    // A read of the top begins a new list; a next page belongs to the list it was asked under, and
+    // never supersedes a read of the top still out (a search's answer was dropped for it, and the
+    // door stayed "reading" until the words changed: review round 12).
+    const top = mode !== 'more';
+    const seq = top ? ++reqSeq.current : reqSeq.current;
+    const gen = top ? ++listGen.current : listGen.current;
+    if (top) topReading.current = true;
     if (mode === 'refresh') {
       setRefreshing(true);
     } else if (mode === 'initial') {
       setLoading(true);
     }
+    /** This answer is still for the list shown: no later read of the top began. */
+    const current = () => isMounted.current && seq === reqSeq.current && gen === listGen.current;
     try {
       const cursor = mode === 'more' ? cursorRef.current : null;
       const page = await FollowRequestService.fetchPage({ myId, cursor, search: searchTerm });
-      if (!isMounted.current || seq !== reqSeq.current) return; // stale response
+      if (!current()) return; // stale response
       cursorRef.current = page.nextCursor;
       hasMoreRef.current = page.nextCursor !== null;
       setHasMore(page.nextCursor !== null);
@@ -100,7 +118,7 @@ export function useFollowRequests(enabled: boolean) {
       });
       if (mode === 'more') setMoreFailed(false); else { setFailed(false); setMoreFailed(false); }
     } catch {
-      if (!isMounted.current || seq !== reqSeq.current) return;
+      if (!current()) return;
       if (mode === 'more') setMoreFailed(true);
       else { setItems([]); setFailed(true); }
     } finally {
@@ -110,6 +128,8 @@ export function useFollowRequests(enabled: boolean) {
         loadingMoreRef.current = false;
         if (isMounted.current) setLoadingMore(false);
       } else if (isMounted.current && seq === reqSeq.current) {
+        topReading.current = false;
+        answeredRef.current = searchTerm;
         setLoading(false); setRefreshing(false);
         setAnsweredFor(searchTerm);
       }
@@ -129,7 +149,12 @@ export function useFollowRequests(enabled: boolean) {
     return () => { if (searchDebounce.current) clearTimeout(searchDebounce.current); };
   }, [enabled, search, load]);
 
-  const loadMore = useCallback(() => { if (enabled) load('more', search); }, [enabled, load, search]);
+  // A next page only of the list shown, answered for the words in the box: never while its top is
+  // being read again, nor while a search typed is still to be read (its debounce, or its read).
+  const loadMore = useCallback(() => {
+    if (!enabled || topReading.current || answeredRef.current !== search) return;
+    load('more', search);
+  }, [enabled, load, search]);
   const refresh = useCallback(() => { cursorRef.current = null; hasMoreRef.current = true; load('refresh', search); }, [load, search]);
   const retry = useCallback(() => { cursorRef.current = null; hasMoreRef.current = true; load('initial', search); }, [load, search]);
   const setSearch = useCallback((v: string) => setSearchRaw(v), []);

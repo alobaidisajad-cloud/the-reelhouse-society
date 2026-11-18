@@ -225,6 +225,18 @@ section('notify-push — the database\'s push sender, behind its own secret');
   check(lonely.status === 200 && lonely.json?.delivered === 0, 'a member with no device is no error', said(lonely));
   await drain();
 
+  // A critique taken as the answer is titled as what it is, never "A New Critique" (round 12).
+  const answerId = randomUUID();
+  sql(`INSERT INTO public.notifications (id, user_id, type, from_username, from_user_id, message, metadata)
+         VALUES (${literal(answerId)}, ${literal(two.id)}, 'comment', ${literal(one.username)}, ${literal(one.id)},
+                 'took your critique as the answer.', '{"answer": true}'::jsonb)`);
+  const answered = await push({ record: { id: answerId } });
+  const answerSeen = await drain();
+  const answerMessages = answerSeen[0] ? JSON.parse(answerSeen[0].body) : [];
+  check(answered.status === 200 && answerMessages.length > 0
+      && answerMessages.every((m) => m.title === 'Taken as the Answer' && m.channelId === 'critiques'),
+    'a critique taken as the answer is titled as one, in the critiques\' channel', JSON.stringify(answerMessages).slice(0, 300));
+
   // The database's own call: its trigger, through pg_net, to this function, to Expo.
   const before = sql("SELECT pg_get_functiondef('public.tg_notify_push()'::regprocedure)");
   sql(`DO $do$ DECLARE d text; BEGIN

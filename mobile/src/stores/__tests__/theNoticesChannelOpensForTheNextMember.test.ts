@@ -101,8 +101,11 @@ it('the next member on the phone hears their own notices live, on a channel of t
   const leaveNext = useNotificationStore.getState().setupRealtime();
   await answerLeaves();
 
-  expect(mockMade).toHaveLength(2);
-  const theirs = mockMade[1];
+  // The notices' channel, made once for each member (each member's own notices:<id> topic, round
+  // 12, is opened beside it under a name of its own).
+  const made = mockMade.filter((w) => w.topic === 'realtime:global_notifications');
+  expect(made).toHaveLength(2);
+  const theirs = made[1];
   expect(theirs).toBeDefined();
   expect(theirs!.state).toBe('joined');
   arrives(NEXT, '00000000-0000-4000-8000-0000000000a1', 'Your request was admitted.');

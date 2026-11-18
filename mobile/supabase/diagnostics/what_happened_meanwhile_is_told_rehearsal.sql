@@ -4,17 +4,16 @@
 --   node mobile/supabase/diagnostics/rehearse.cjs what_happened_meanwhile_is_told_rehearsal.sql --with-train
 --
 -- The train applies 20261117_01 here (with_train); a sealed copy already holds it. Then members in
--- good standing, acting as themselves, find each of its ten pieces holding: a verdict on a case
--- judged meanwhile or on a piece already gone refused whole; a seat in a dissolved salon refused as
--- gone; a critique on a deleted record or stack refused as gone, the owner's rule as before; an
+-- good standing, acting as themselves, find each of its pieces holding: a verdict on a case judged
+-- meanwhile or on a piece already gone refused whole; a seat in a dissolved salon refused as gone; an
 -- admission that admits no one saying so; a ballot's running count for its voters alone; every
 -- viewing counted and the run told with its last day; the feeds counting the critiques the reader
--- can read; a certification taken back taking its notice, and pushed once however often given; a
--- withdrawn salon message read as gone in the evidence; a shared card of a gone piece marked gone;
--- a deliberate rename kept; and a member leaving with their words unsigned, or erased when they
--- choose. Every row here is undone with the
--- transaction. Read each NOTICE as  case|expected|got ; the last line is the verdict, and any miss
--- makes psql exit non-zero.
+-- can read; a certification pushed once however often given; a withdrawn salon message read as gone
+-- in the evidence; a withdrawn filing's card in a salon marked gone; a deliberate rename kept; and a
+-- member leaving with their words unsigned, or erased when they choose. The cases that need the
+-- triggers are rehearsed with them, in what_goes_takes_its_word_with_it_rehearsal.sql.
+-- Every row here is undone with the transaction. Read each NOTICE as  case|expected|got ; the last
+-- line is the verdict, and any miss makes psql exit non-zero.
 -- ════════════════════════════════════════════════════════════════════════════
 \set ON_ERROR_STOP 1
 BEGIN;
@@ -31,7 +30,71 @@ CREATE TEMP TABLE rehearsal_members ON COMMIT DROP AS
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rehearsal_members), 4) AS done \gset rh_
 GRANT SELECT ON rehearsal_members TO authenticated;
 
--- The train applies it here first (with_train); a sealed copy already holds every pending migration.
+-- The pieces' own tables, made before the train, empty: each piece fills its own as it runs.
+CREATE TEMP TABLE rh_a15_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
+GRANT SELECT ON rh_a15_rows TO authenticated;
+CREATE TEMP TABLE rh_a15_got (n serial, what text, got text) ON COMMIT DROP;
+GRANT ALL ON rh_a15_got TO authenticated;
+CREATE TEMP TABLE rh_f1_members ON COMMIT DROP AS
+  SELECT id, n FROM rehearsal_members WHERE n <= 3;
+GRANT SELECT ON rh_f1_members TO authenticated;
+CREATE TEMP TABLE rh_f1_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
+GRANT SELECT ON rh_f1_rows TO authenticated;
+CREATE TEMP TABLE rh_f1_got (what text PRIMARY KEY, got text) ON COMMIT DROP;
+GRANT ALL ON rh_f1_got TO authenticated;
+CREATE TEMP TABLE a2_rooms (what text, id uuid) ON COMMIT DROP;
+GRANT SELECT ON a2_rooms TO authenticated;
+CREATE TEMP TABLE a2_seen (what text, got text) ON COMMIT DROP;
+GRANT ALL ON a2_seen TO authenticated;
+CREATE TEMP TABLE rh_a7_members ON COMMIT DROP AS
+  SELECT id, n FROM rehearsal_members WHERE n <= 4;
+GRANT SELECT ON rh_a7_members TO authenticated;
+CREATE TEMP TABLE rh_a7_got (who int, got text) ON COMMIT DROP;
+GRANT ALL ON rh_a7_got TO authenticated;
+CREATE TEMP TABLE b1_ballots (what text, id uuid) ON COMMIT DROP;
+GRANT SELECT ON b1_ballots TO authenticated;
+CREATE TEMP TABLE b1_seen (what text, got jsonb) ON COMMIT DROP;
+GRANT ALL ON b1_seen TO authenticated;
+CREATE TEMP TABLE rh_b25_members ON COMMIT DROP AS
+  SELECT id, n FROM rehearsal_members WHERE n <= 3;
+GRANT SELECT ON rh_b25_members TO authenticated, anon;
+CREATE TEMP TABLE rh_b25_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
+GRANT SELECT ON rh_b25_rows TO authenticated, anon;
+CREATE TEMP TABLE rh_b25_got (what text PRIMARY KEY, got text) ON COMMIT DROP;
+GRANT ALL ON rh_b25_got TO authenticated, anon;
+CREATE TEMP TABLE rh_b25_page (k integer, day date, viewing_id uuid) ON COMMIT DROP;
+GRANT ALL ON rh_b25_page TO authenticated;
+CREATE TEMP TABLE rh_b4_members ON COMMIT DROP AS
+  SELECT id, n FROM rehearsal_members WHERE n <= 4;
+GRANT SELECT ON rh_b4_members TO authenticated;
+CREATE TEMP TABLE rh_b4_got (what text PRIMARY KEY, got text) ON COMMIT DROP;
+GRANT ALL ON rh_b4_got TO authenticated;
+GRANT ALL ON rh_b4_got TO anon;
+CREATE TEMP TABLE rh_f11_members ON COMMIT DROP AS
+  SELECT id, n FROM rehearsal_members WHERE n <= 3;
+GRANT SELECT ON rh_f11_members TO authenticated;
+CREATE TEMP TABLE rh_f11_own (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
+GRANT SELECT ON rh_f11_own TO authenticated;
+CREATE TEMP TABLE rh_f11_queued (n serial, what text PRIMARY KEY, queued bigint) ON COMMIT DROP;
+CREATE TEMP TABLE rh_d1_members ON COMMIT DROP AS
+  SELECT id, n FROM rehearsal_members WHERE n <= 4;
+GRANT SELECT ON rh_d1_members TO authenticated;
+CREATE TEMP TABLE rh_d1_got (who int, got text) ON COMMIT DROP;
+GRANT ALL ON rh_d1_got TO authenticated;
+CREATE TEMP TABLE rh_f4_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
+GRANT SELECT ON rh_f4_rows TO authenticated;
+CREATE TEMP TABLE rh_d2_who (what text PRIMARY KEY, id uuid, handle text) ON COMMIT DROP;
+GRANT SELECT ON rh_d2_who TO authenticated;
+CREATE TEMP TABLE rh_d2_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
+GRANT SELECT ON rh_d2_rows TO authenticated;
+CREATE TEMP TABLE rh_d2_got (what text PRIMARY KEY, got text) ON COMMIT DROP;
+GRANT INSERT, SELECT ON rh_d2_got TO authenticated;
+CREATE TEMP TABLE rh_d2_read (what text PRIMARY KEY, got text) ON COMMIT DROP;
+GRANT INSERT ON rh_d2_read TO authenticated;
+CREATE TEMP TABLE rh_d2_plan (line text) ON COMMIT DROP;
+
+-- The train applies it here first (with_train), on production as the cars before it left it; a
+-- sealed copy already holds every pending migration.
 \if :{?with_train}
 \ir ../../../supabase/migrations/20261117_01_what_happened_meanwhile_is_told.sql
 \endif
@@ -39,7 +102,8 @@ GRANT SELECT ON rehearsal_members TO authenticated;
 -- ── A1A5 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
 -- ── Rehearsal piece: a verdict is given once, and a removal removes something (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Three members in good standing: 1 sits as a moderator for the run, 2 is
@@ -56,11 +120,11 @@ UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE
 -- decides them (FOR UPDATE on the pending case) is read from the function's definition instead, and
 -- the second verdict above is the one that lock hands back, the case found no longer pending.
 
+-- The round's first 3 members in good standing (rehearsal_members, read once before the train).
 CREATE TEMP TABLE rh_a15_members ON COMMIT DROP AS
-  SELECT u.id, row_number() OVER (ORDER BY u.created_at) AS n, p.role AS was_role
-    FROM auth.users u JOIN public.profiles p ON p.id = u.id
-   WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
-   ORDER BY u.created_at LIMIT 3;
+  SELECT m.id, m.n, p.role AS was_role
+    FROM rehearsal_members m JOIN public.profiles p ON p.id = m.id
+   WHERE m.n <= 3;
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rh_a15_members), 3) AS done \gset rh_
 GRANT SELECT ON rh_a15_members TO authenticated;
 
@@ -68,8 +132,6 @@ SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
 -- 2's pieces: a record deleted before the case is judged, a record that stands, and a salon message
 -- already removed.
-CREATE TEMP TABLE rh_a15_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
-GRANT SELECT ON rh_a15_rows TO authenticated;
 WITH r AS (INSERT INTO public.logs (user_id, film_id, film_title, watched_date)
            VALUES ((SELECT id FROM rh_a15_members WHERE n = 2), 990001101, 'rh a gone record', current_date) RETURNING id)
 INSERT INTO rh_a15_rows SELECT 'gone log', id FROM r;
@@ -134,8 +196,6 @@ EXCEPTION WHEN OTHERS THEN
   RETURN SQLSTATE || ': ' || SQLERRM;
 END $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_a15_judge(text, text) TO authenticated;
-CREATE TEMP TABLE rh_a15_got (n serial, what text, got text) ON COMMIT DROP;
-GRANT ALL ON rh_a15_got TO authenticated;
 GRANT USAGE ON SEQUENCE rh_a15_got_n_seq TO authenticated;
 
 -- The moderator judges, as themselves, in this order.
@@ -215,7 +275,8 @@ UPDATE public.profiles p SET role = m.was_role FROM rh_a15_members m WHERE m.n =
 -- ── F1 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
 -- ── Rehearsal piece F1: a withdrawn salon message is evidence destroyed (review round 11) ────────
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Three members in good standing: 1 sits as a moderator for the run, 2
@@ -224,19 +285,12 @@ UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE
 -- destroyed (found: false), the standing one as before (found, its words and its room); a removal
 -- of the withdrawn one is still refused as PIECE_GONE, and the case stays pending.
 
-CREATE TEMP TABLE rh_f1_members ON COMMIT DROP AS
-  SELECT u.id, row_number() OVER (ORDER BY u.created_at) AS n
-    FROM auth.users u JOIN public.profiles p ON p.id = u.id
-   WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
-   ORDER BY u.created_at LIMIT 3;
+-- The round's first 3 members in good standing (rehearsal_members, read once before the train).
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rh_f1_members), 3) AS done \gset rh_
-GRANT SELECT ON rh_f1_members TO authenticated;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
 -- 2's salon and its two messages, laid by the house as the app's send lays them.
-CREATE TEMP TABLE rh_f1_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
-GRANT SELECT ON rh_f1_rows TO authenticated;
 WITH r AS (INSERT INTO public.lounges (name, creator_id, is_private)
            VALUES ('The Rehearsal Evidence Room', (SELECT id FROM rh_f1_members WHERE n = 2), false) RETURNING id)
 INSERT INTO rh_f1_rows SELECT 'room', id FROM r;
@@ -283,8 +337,6 @@ EXCEPTION WHEN OTHERS THEN
   RETURN SQLSTATE || ': ' || SQLERRM;
 END $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_f1_remove(text) TO authenticated;
-CREATE TEMP TABLE rh_f1_got (what text PRIMARY KEY, got text) ON COMMIT DROP;
-GRANT ALL ON rh_f1_got TO authenticated;
 
 -- The moderator reads both exhibits, then tries to remove the withdrawn one, as themselves.
 SET LOCAL ROLE authenticated;
@@ -315,7 +367,8 @@ END $$;
 -- ── A2 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
 -- ── A2 rehearsal · a dissolved salon's doors say it is gone ─────────────────────────────────────
 --   Run inside the round's rehearsal, after rehearsal_kit.sql and its rehearsal_members (four
 --   members in good standing, n = 1..4), the round's migration applied. Member 1 hosts an open
@@ -325,8 +378,6 @@ UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE
 --   at each door. Every row goes with the rehearsal's rollback.
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-CREATE TEMP TABLE a2_rooms (what text, id uuid) ON COMMIT DROP;
-GRANT SELECT ON a2_rooms TO authenticated;
 WITH made AS (
   INSERT INTO public.lounges (name, creator_id, is_private)
   VALUES ('A2 Rehearsal Open', (SELECT id FROM rehearsal_members WHERE n = 1), false)
@@ -341,8 +392,6 @@ DELETE FROM public.lounge_members
  WHERE lounge_id IN (SELECT id FROM a2_rooms) AND user_id = (SELECT id FROM rehearsal_members WHERE n = 2);
 DELETE FROM public.lounge_sanctions
  WHERE lounge_id IN (SELECT id FROM a2_rooms) AND user_id = (SELECT id FROM rehearsal_members WHERE n = 2);
-CREATE TEMP TABLE a2_seen (what text, got text) ON COMMIT DROP;
-GRANT ALL ON a2_seen TO authenticated;
 
 -- Member 2 knocks at both while they stand, as themselves.
 SET LOCAL ROLE authenticated;
@@ -398,118 +447,11 @@ SELECT pg_temp.rh_case('a seat in a dissolved salon is refused as gone', 'P0002 
 SELECT pg_temp.rh_case('and a request at its door', 'P0002 SALON_GONE',
   (SELECT got FROM a2_seen WHERE what = 'request, dissolved')) AS done \gset rh_
 
--- ── A4 ──
-RESET ROLE;
-SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
--- ── Rehearsal piece: a critique on a page gone is told as such (review round 11) ──
--- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
--- rolled back with the rest). Two members in good standing: 1 keeps a record and a stack, 2 critiques
--- them. As themselves, they find:
---   2's critique on 1's record and on 1's stack is filed, as before;
---   once 1 has deleted both, 2's next critique on each is refused as the page gone: P0002 LOG_GONE
---   and P0002 STACK_GONE, never 42501 (the owner's rule);
---   1 critiquing their own stack after deleting it is told STACK_GONE too, never that they limit
---   themselves;
---   a record whose owner lets nobody annotate it still refuses 2 with 42501, the owner's rule, as
---   before.
-
-CREATE TEMP TABLE rh_a4_members ON COMMIT DROP AS
-  SELECT u.id, row_number() OVER (ORDER BY u.created_at) AS n
-    FROM auth.users u JOIN public.profiles p ON p.id = u.id
-   WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
-   ORDER BY u.created_at LIMIT 2;
-SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rh_a4_members), 2) AS done \gset rh_
-GRANT SELECT ON rh_a4_members TO authenticated;
-
--- As the house: nothing stands between the two, and 1's file is open to 2's critiques.
-SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-DELETE FROM public.user_blocks
- WHERE blocker_id IN (SELECT id FROM rh_a4_members) AND blocked_id IN (SELECT id FROM rh_a4_members);
-UPDATE public.profiles
-   SET is_social_private = false,
-       preferences = coalesce(preferences, '{}'::jsonb) || '{"privacy_annotations": "everyone"}'::jsonb
- WHERE id = (SELECT id FROM rh_a4_members WHERE n = 1);
-
--- 1's pieces: a record and a stack to be deleted, and a record kept to show the owner's rule.
-CREATE TEMP TABLE rh_a4_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
-GRANT SELECT ON rh_a4_rows TO authenticated;
-WITH r AS (INSERT INTO public.logs (user_id, film_id, film_title, watched_date)
-           VALUES ((SELECT id FROM rh_a4_members WHERE n = 1), 990001401, 'rh a record to be deleted', current_date) RETURNING id)
-INSERT INTO rh_a4_rows SELECT 'log', id FROM r;
-WITH r AS (INSERT INTO public.logs (user_id, film_id, film_title, watched_date)
-           VALUES ((SELECT id FROM rh_a4_members WHERE n = 1), 990001402, 'rh a record kept', current_date) RETURNING id)
-INSERT INTO rh_a4_rows SELECT 'kept log', id FROM r;
-WITH r AS (INSERT INTO public.lists (user_id, title, is_private)
-           VALUES ((SELECT id FROM rh_a4_members WHERE n = 1), 'rh a stack to be deleted', false) RETURNING id)
-INSERT INTO rh_a4_rows SELECT 'stack', id FROM r;
-
--- A critique, named by what came back: 'ok', or the house's refusal as SQLSTATE: message.
-CREATE FUNCTION pg_temp.rh_a4_critique(p_on text, p_by integer) RETURNS text LANGUAGE plpgsql AS $$
-DECLARE
-  v_by uuid := (SELECT id FROM rh_a4_members WHERE n = p_by);
-BEGIN
-  IF p_on LIKE '%stack' THEN
-    INSERT INTO public.list_comments (list_id, user_id, content)
-    VALUES ((SELECT id FROM rh_a4_rows WHERE what = p_on), v_by, 'rh a critique');
-  ELSE
-    INSERT INTO public.log_comments (log_id, user_id, username, body)
-    VALUES ((SELECT id FROM rh_a4_rows WHERE what = p_on), v_by,
-            (SELECT username FROM public.profiles WHERE id = v_by), 'rh a critique');
-  END IF;
-  RETURN 'ok';
-EXCEPTION WHEN OTHERS THEN
-  RETURN SQLSTATE || ': ' || SQLERRM;
-END $$;
-GRANT EXECUTE ON FUNCTION pg_temp.rh_a4_critique(text, integer) TO authenticated;
-CREATE TEMP TABLE rh_a4_got (what text PRIMARY KEY, got text) ON COMMIT DROP;
-GRANT ALL ON rh_a4_got TO authenticated;
-
--- 2 critiques the record and the stack while they stand.
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_a4_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
-INSERT INTO rh_a4_got VALUES ('record standing', pg_temp.rh_a4_critique('log', 2));
-INSERT INTO rh_a4_got VALUES ('stack standing', pg_temp.rh_a4_critique('stack', 2));
--- 1 deletes both, as themselves.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_a4_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
-DELETE FROM public.logs WHERE id = (SELECT id FROM rh_a4_rows WHERE what = 'log');
-DELETE FROM public.lists WHERE id = (SELECT id FROM rh_a4_rows WHERE what = 'stack');
--- 1 critiques their own stack, gone.
-INSERT INTO rh_a4_got VALUES ('own stack gone', pg_temp.rh_a4_critique('stack', 1));
--- 2 presses FILE on each, gone.
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_a4_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
-INSERT INTO rh_a4_got VALUES ('record gone', pg_temp.rh_a4_critique('log', 2));
-INSERT INTO rh_a4_got VALUES ('stack gone', pg_temp.rh_a4_critique('stack', 2));
-RESET ROLE;
-
--- As the house: 1 now lets nobody annotate; 2 critiques the record that stands.
-SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.profiles
-   SET preferences = coalesce(preferences, '{}'::jsonb) || '{"privacy_annotations": "nobody"}'::jsonb
- WHERE id = (SELECT id FROM rh_a4_members WHERE n = 1);
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rh_a4_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
-INSERT INTO rh_a4_got VALUES ('owner limits', pg_temp.rh_a4_critique('kept log', 2));
-RESET ROLE;
-SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-
-SELECT pg_temp.rh_case('a critique on a record that stands is filed, as before', 'ok',
-  (SELECT got FROM rh_a4_got WHERE what = 'record standing')) AS done \gset rh_
-SELECT pg_temp.rh_case('and on a stack that stands', 'ok',
-  (SELECT got FROM rh_a4_got WHERE what = 'stack standing')) AS done \gset rh_
-SELECT pg_temp.rh_case('a critique on a record its owner deleted is told the record is gone', 'P0002: LOG_GONE',
-  (SELECT got FROM rh_a4_got WHERE what = 'record gone')) AS done \gset rh_
-SELECT pg_temp.rh_case('and on a stack its owner deleted, the stack', 'P0002: STACK_GONE',
-  (SELECT got FROM rh_a4_got WHERE what = 'stack gone')) AS done \gset rh_
-SELECT pg_temp.rh_case('the owner critiquing their own stack, gone, is told the same, never that they limit themselves', 'P0002: STACK_GONE',
-  (SELECT got FROM rh_a4_got WHERE what = 'own stack gone')) AS done \gset rh_
-SELECT pg_temp.rh_case('a record whose owner lets nobody annotate still refuses as the owner''s rule', '42501',
-  split_part((SELECT got FROM rh_a4_got WHERE what = 'owner limits'), ':', 1)) AS done \gset rh_
-
 -- ── A7 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
 -- ── Rehearsal piece: an admission says whether anyone was admitted (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Four members in good standing; 2, 3 and 4 each ask at 1's door. 2
@@ -517,13 +459,8 @@ UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE
 -- themselves, admits each: 3 is admitted (true) and told and counted as before; 2's withdrawn request
 -- admits no one (false); 4's across the block admits no one (false) and leaves the door.
 
-CREATE TEMP TABLE rh_a7_members ON COMMIT DROP AS
-  SELECT u.id, row_number() OVER (ORDER BY u.created_at) AS n
-    FROM auth.users u JOIN public.profiles p ON p.id = u.id
-   WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
-   ORDER BY u.created_at LIMIT 4;
+-- The round's first 4 members in good standing (rehearsal_members, read once before the train).
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rh_a7_members), 4) AS done \gset rh_
-GRANT SELECT ON rh_a7_members TO authenticated;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
@@ -558,8 +495,6 @@ DELETE FROM public.interactions
 CREATE TEMP TABLE rh_a7_counted ON COMMIT DROP AS
   SELECT m.n, p.followers_count, p.following_count
     FROM rh_a7_members m JOIN public.profiles p ON p.id = m.id;
-CREATE TEMP TABLE rh_a7_got (who int, got text) ON COMMIT DROP;
-GRANT ALL ON rh_a7_got TO authenticated;
 
 -- 1 presses ADMIT on each, as themselves.
 SET LOCAL ROLE authenticated;
@@ -603,7 +538,8 @@ END $$;
 -- ── B1 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
 -- ── B1 rehearsal · an open ballot is counted for its voters alone ───────────────────────────────
 --   Run inside the round's rehearsal, after rehearsal_kit.sql and its rehearsal_members (four
 --   members in good standing, n = 1..4), the round's migration applied. Member 1 files an open
@@ -616,8 +552,6 @@ SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 -- Nothing stands between the four, so each case is this run's own doing.
 DELETE FROM public.user_blocks
  WHERE blocker_id IN (SELECT id FROM rehearsal_members) AND blocked_id IN (SELECT id FROM rehearsal_members);
-CREATE TEMP TABLE b1_ballots (what text, id uuid) ON COMMIT DROP;
-GRANT SELECT ON b1_ballots TO authenticated;
 WITH made AS (
   INSERT INTO public.dispatch_posts (kind, user_id, author_username, title, body, options, closes_at, is_published)
   SELECT 'ballot', m.id, p.username, 'B1 rehearsal: open', 'B1 rehearsal: open',
@@ -634,8 +568,6 @@ WITH made AS (
 INSERT INTO b1_ballots SELECT 'closed', id FROM made;
 INSERT INTO public.dispatch_votes (post_id, user_id, option_index)
 VALUES ((SELECT id FROM b1_ballots WHERE what = 'closed'), (SELECT id FROM rehearsal_members WHERE n = 2), 0);
-CREATE TEMP TABLE b1_seen (what text, got jsonb) ON COMMIT DROP;
-GRANT ALL ON b1_seen TO authenticated;
 
 SET LOCAL ROLE authenticated;
 -- 3 has not voted: nothing.
@@ -686,7 +618,8 @@ SELECT pg_temp.rh_case('no one reads a withdrawn ballot''s count', 'null',
 -- ── B2B5 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
 -- ── Rehearsal piece: every viewing keeps its own day, and a run is judged by the member's own day (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Three members in good standing, each acting as themselves:
@@ -702,13 +635,8 @@ UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE
 --   viewing, no year and no analytics of theirs.
 -- "Tonight" is the house's day (current_date); the member's own day is the phone's to judge.
 
-CREATE TEMP TABLE rh_b25_members ON COMMIT DROP AS
-  SELECT u.id, row_number() OVER (ORDER BY u.created_at) AS n
-    FROM auth.users u JOIN public.profiles p ON p.id = u.id
-   WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
-   ORDER BY u.created_at LIMIT 3;
+-- The round's first 3 members in good standing (rehearsal_members, read once before the train).
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rh_b25_members), 3) AS done \gset rh_
-GRANT SELECT ON rh_b25_members TO authenticated, anon;
 
 -- As the house: claims cleared, so no member's gate judges the setup.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
@@ -723,8 +651,6 @@ UPDATE public.profiles SET is_social_private = false WHERE id = (SELECT id FROM 
 DELETE FROM public.logs WHERE user_id IN (SELECT id FROM rh_b25_members WHERE n IN (1, 2));
 
 -- 1: four films, four nights running, the last of them last night; the second marked 5.
-CREATE TEMP TABLE rh_b25_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
-GRANT SELECT ON rh_b25_rows TO authenticated, anon;
 WITH r AS (
   INSERT INTO public.logs (user_id, film_id, film_title, watched_date, rating)
   SELECT (SELECT id FROM rh_b25_members WHERE n = 1), 990001200 + k, 'rh night ' || k, current_date - (5 - k), k + 1
@@ -738,8 +664,6 @@ INSERT INTO public.logs (user_id, film_id, film_title, watched_date)
 SELECT (SELECT id FROM rh_b25_members WHERE n = 2), 990001210 + k, 'rh ended ' || k, current_date - (1 + k)
   FROM generate_series(1, 3) AS k;
 
-CREATE TEMP TABLE rh_b25_got (what text PRIMARY KEY, got text) ON COMMIT DROP;
-GRANT ALL ON rh_b25_got TO authenticated, anon;
 
 -- 1, as themselves: sees the second film again tonight, marked 2, and reads their own file.
 SET LOCAL ROLE authenticated;
@@ -760,8 +684,6 @@ SELECT 'year', coalesce(string_agg(y.film_title || '@' || (current_date - y.day)
  WHERE y.film_title = 'rh night 2';
 -- A page read on from the second viewing of a year starts after it: the year of last night, which
 -- holds two of the run's viewings at least whatever the date.
-CREATE TEMP TABLE rh_b25_page (k integer, day date, viewing_id uuid) ON COMMIT DROP;
-GRANT ALL ON rh_b25_page TO authenticated;
 INSERT INTO rh_b25_page
 SELECT row_number() OVER (ORDER BY y.day DESC, y.viewing_id DESC), y.day, y.viewing_id
   FROM public.year_viewings((SELECT id FROM rh_b25_members WHERE n = 1), extract(year FROM current_date - 1)::integer) y;
@@ -842,7 +764,8 @@ END $$;
 -- ── B4 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
 -- ── Rehearsal piece: a log's critiques are the reader's (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Four members in good standing: 1 files a reviewed record, 2 and 4
@@ -852,13 +775,8 @@ UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE
 --   4, who hides no one, reads 2 in the house feed, as before;
 --   3, once 2 is let back, reads 2 again.
 
-CREATE TEMP TABLE rh_b4_members ON COMMIT DROP AS
-  SELECT u.id, row_number() OVER (ORDER BY u.created_at) AS n
-    FROM auth.users u JOIN public.profiles p ON p.id = u.id
-   WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
-   ORDER BY u.created_at LIMIT 4;
+-- The round's first 4 members in good standing (rehearsal_members, read once before the train).
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rh_b4_members), 4) AS done \gset rh_
-GRANT SELECT ON rh_b4_members TO authenticated;
 
 -- As the house: nothing stands between the four, 1's file is open, 3 follows 1, and 3 mutes 2.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
@@ -883,8 +801,6 @@ SELECT (SELECT id FROM rh_b4_log), m.id, p.username, 'rh a critique'
 INSERT INTO public.user_blocks (blocker_id, blocked_id, type)
 VALUES ((SELECT id FROM rh_b4_members WHERE n = 3), (SELECT id FROM rh_b4_members WHERE n = 2), 'mute');
 
-CREATE TEMP TABLE rh_b4_got (what text PRIMARY KEY, got text) ON COMMIT DROP;
-GRANT ALL ON rh_b4_got TO authenticated;
 
 -- 3 reads, as themselves, with 2 muted.
 SET LOCAL ROLE authenticated;
@@ -931,7 +847,6 @@ SELECT pg_temp.rh_case('a member let back is counted again', '2',
   (SELECT got FROM rh_b4_got WHERE what = 'following feed, let back')) AS done \gset rh_
 
 -- A visitor is not given the reader's count (a visitor hides no one, and reads log_counts'): refused.
-GRANT ALL ON rh_b4_got TO anon;
 GRANT SELECT ON rh_b4_log TO anon;
 SET LOCAL ROLE anon;
 SELECT set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true) AS done \gset rh_
@@ -949,122 +864,11 @@ SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 SELECT pg_temp.rh_case('a visitor is not given critiques_seen, and reads log_counts'' count', 'refused',
   (SELECT got FROM rh_b4_got WHERE what = 'critiques_seen, a visitor')) AS done \gset rh_
 
--- ── B6 ──
-RESET ROLE;
-SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
--- ── B6 rehearsal · a certification taken back takes its notice ──────────────────────────────────
---   Run inside the round's rehearsal, after rehearsal_kit.sql and its rehearsal_members (four
---   members in good standing, n = 1..4), the round's migration applied. Member 1 keeps a record and
---   a stack and files a take; member 2 critiques the take. Member 2 certifies the record, takes it
---   back as themselves and certifies it again; member 3 certifies it: member 1 holds one notice from
---   each, never a third. Member 2 takes it back once more: their notice goes, 3's stands. Member 2
---   certifies the stack and takes it back: its notice goes. Member 3 certifies the take and the
---   critique and takes back the critique's: the critic's notice goes, the author's stands.
-
-SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
--- Nothing stands between the four, so each case is this run's own doing.
-DELETE FROM public.user_blocks
- WHERE blocker_id IN (SELECT id FROM rehearsal_members) AND blocked_id IN (SELECT id FROM rehearsal_members);
-CREATE TEMP TABLE b6_own (what text, id uuid) ON COMMIT DROP;
-GRANT SELECT ON b6_own TO authenticated;
-WITH r AS (INSERT INTO public.logs (user_id, film_id, film_title, watched_date)
-           VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 990000611, 'b6 film', current_date) RETURNING id)
-INSERT INTO b6_own SELECT 'log', id FROM r;
-WITH r AS (INSERT INTO public.lists (user_id, title) VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 'b6 stack') RETURNING id)
-INSERT INTO b6_own SELECT 'stack', id FROM r;
-WITH r AS (
-  INSERT INTO public.dispatch_posts (kind, user_id, author_username, body, is_published)
-  SELECT 'take', m.id, p.username, 'B6 rehearsal: a take', true
-    FROM rehearsal_members m JOIN public.profiles p ON p.id = m.id WHERE m.n = 1
-  RETURNING id)
-INSERT INTO b6_own SELECT 'take', id FROM r;
-WITH r AS (
-  INSERT INTO public.dispatch_comments (post_id, user_id, author_username, body)
-  SELECT (SELECT id FROM b6_own WHERE what = 'take'), m.id, p.username, 'B6 rehearsal: a critique'
-    FROM rehearsal_members m JOIN public.profiles p ON p.id = m.id WHERE m.n = 2
-  RETURNING id)
-INSERT INTO b6_own SELECT 'critique', id FROM r;
-
--- 2 certifies the record (laid by the house, as the certify the app sends), and takes it back as themselves.
-INSERT INTO public.interactions (user_id, target_log_id, type)
-VALUES ((SELECT id FROM rehearsal_members WHERE n = 2), (SELECT id FROM b6_own WHERE what = 'log'), 'endorse_log');
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
-DELETE FROM public.interactions
- WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 2) AND type = 'endorse_log'
-   AND target_log_id = (SELECT id FROM b6_own WHERE what = 'log');
-RESET ROLE;
-SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
--- 2 certifies it again; 3 certifies it.
-INSERT INTO public.interactions (user_id, target_log_id, type)
-VALUES ((SELECT id FROM rehearsal_members WHERE n = 2), (SELECT id FROM b6_own WHERE what = 'log'), 'endorse_log'),
-       ((SELECT id FROM rehearsal_members WHERE n = 3), (SELECT id FROM b6_own WHERE what = 'log'), 'endorse_log');
-CREATE TEMP TABLE b6_count (what text, n bigint) ON COMMIT DROP;
-INSERT INTO b6_count SELECT 'log notices', count(*) FROM public.notifications
- WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1) AND type = 'endorse'
-   AND group_key = 'endorse:log:' || (SELECT id FROM b6_own WHERE what = 'log');
-INSERT INTO b6_count SELECT 'log members', count(DISTINCT from_user_id) FROM public.notifications
- WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1) AND type = 'endorse'
-   AND group_key = 'endorse:log:' || (SELECT id FROM b6_own WHERE what = 'log');
-
--- 2 takes the record's back once more, and certifies the stack and takes that back; 3 certifies the
--- take and the critique (laid by the house) and takes back the critique's. Each takes back as themselves.
-INSERT INTO public.interactions (user_id, target_list_id, type)
-VALUES ((SELECT id FROM rehearsal_members WHERE n = 2), (SELECT id FROM b6_own WHERE what = 'stack'), 'endorse_list');
-INSERT INTO public.dispatch_certifications (user_id, post_id)
-VALUES ((SELECT id FROM rehearsal_members WHERE n = 3), (SELECT id FROM b6_own WHERE what = 'take'));
-INSERT INTO public.dispatch_certifications (user_id, comment_id)
-VALUES ((SELECT id FROM rehearsal_members WHERE n = 3), (SELECT id FROM b6_own WHERE what = 'critique'));
-INSERT INTO b6_count SELECT 'critique notices before', count(*) FROM public.notifications
- WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 2) AND type = 'endorse'
-   AND metadata ->> 'comment_id' = (SELECT id::text FROM b6_own WHERE what = 'critique');
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 2), 'role', 'authenticated')::text, true) AS done \gset rh_
-DELETE FROM public.interactions
- WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 2) AND type = 'endorse_log'
-   AND target_log_id = (SELECT id FROM b6_own WHERE what = 'log');
-DELETE FROM public.interactions
- WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 2) AND type = 'endorse_list'
-   AND target_list_id = (SELECT id FROM b6_own WHERE what = 'stack');
-SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
-DELETE FROM public.dispatch_certifications
- WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 3) AND comment_id = (SELECT id FROM b6_own WHERE what = 'critique');
-RESET ROLE;
-SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-
-SELECT pg_temp.rh_case('a certification taken back and given again leaves one notice, never a second', '2',
-  (SELECT n::text FROM b6_count WHERE what = 'log notices')) AS done \gset rh_
-SELECT pg_temp.rh_case('one from each member who certified', '2',
-  (SELECT n::text FROM b6_count WHERE what = 'log members')) AS done \gset rh_
-SELECT pg_temp.rh_case('taken back, its notice goes', '0',
-  (SELECT count(*)::text FROM public.notifications
-    WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1) AND from_user_id = (SELECT id FROM rehearsal_members WHERE n = 2)
-      AND group_key = 'endorse:log:' || (SELECT id FROM b6_own WHERE what = 'log'))) AS done \gset rh_
-SELECT pg_temp.rh_case('another member''s on the same record stands', '1',
-  (SELECT count(*)::text FROM public.notifications
-    WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1) AND from_user_id = (SELECT id FROM rehearsal_members WHERE n = 3)
-      AND group_key = 'endorse:log:' || (SELECT id FROM b6_own WHERE what = 'log'))) AS done \gset rh_
-SELECT pg_temp.rh_case('a stack''s certification taken back takes its notice', '0',
-  (SELECT count(*)::text FROM public.notifications
-    WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1) AND from_user_id = (SELECT id FROM rehearsal_members WHERE n = 2)
-      AND group_key = 'endorse:list:' || (SELECT id FROM b6_own WHERE what = 'stack'))) AS done \gset rh_
-SELECT pg_temp.rh_case('a critique''s certification was told to its critic', '1',
-  (SELECT n::text FROM b6_count WHERE what = 'critique notices before')) AS done \gset rh_
-SELECT pg_temp.rh_case('and taken back, its notice goes', '0',
-  (SELECT count(*)::text FROM public.notifications
-    WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 2) AND type = 'endorse'
-      AND metadata ->> 'comment_id' = (SELECT id::text FROM b6_own WHERE what = 'critique'))) AS done \gset rh_
-SELECT pg_temp.rh_case('while the certification of the filing stands, told to its author', '1',
-  (SELECT count(*)::text FROM public.notifications
-    WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1) AND from_user_id = (SELECT id FROM rehearsal_members WHERE n = 3)
-      AND type = 'endorse' AND metadata ->> 'dispatch_post_id' = (SELECT id::text FROM b6_own WHERE what = 'take')
-      AND NOT (metadata ? 'comment_id'))) AS done \gset rh_
-
 -- ── F11 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
 -- ── Rehearsal piece F11: a certification buzzes the phone once (review round 11) ─────────────────
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest, so no push queued here is ever sent). Three members in good standing:
@@ -1080,13 +884,8 @@ UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE
 --   remembered; 1 switches them on, 3 takes it back and certifies again: its one push.
 --   A notice of another kind is pushed as before.
 
-CREATE TEMP TABLE rh_f11_members ON COMMIT DROP AS
-  SELECT u.id, row_number() OVER (ORDER BY u.created_at) AS n
-    FROM auth.users u JOIN public.profiles p ON p.id = u.id
-   WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
-   ORDER BY u.created_at LIMIT 3;
+-- The round's first 3 members in good standing (rehearsal_members, read once before the train).
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rh_f11_members), 3) AS done \gset rh_
-GRANT SELECT ON rh_f11_members TO authenticated;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
@@ -1098,8 +897,6 @@ DELETE FROM public.user_blocks
 UPDATE public.profiles SET preferences = coalesce(preferences, '{}'::jsonb) - 'notif_endorsements'
  WHERE id IN (SELECT id FROM rh_f11_members);
 
-CREATE TEMP TABLE rh_f11_own (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
-GRANT SELECT ON rh_f11_own TO authenticated;
 WITH r AS (INSERT INTO public.logs (user_id, film_id, film_title, watched_date)
            VALUES ((SELECT id FROM rh_f11_members WHERE n = 1), 990001111, 'rh f11 film', current_date) RETURNING id)
 INSERT INTO rh_f11_own SELECT 'log', id FROM r;
@@ -1125,7 +922,6 @@ WITH r AS (
 INSERT INTO rh_f11_own SELECT 'critique 2', id FROM r;
 
 -- The pushes queued so far, read after each step.
-CREATE TEMP TABLE rh_f11_queued (n serial, what text PRIMARY KEY, queued bigint) ON COMMIT DROP;
 CREATE FUNCTION pg_temp.rh_f11_mark(p_what text) RETURNS void LANGUAGE sql AS $$
   INSERT INTO rh_f11_queued (what, queued) SELECT p_what, count(*) FROM net.http_request_queue;
 $$;
@@ -1210,8 +1006,10 @@ BEGIN
   PERFORM pg_temp.rh_case('a certification pushes once', '1', pg_temp.rh_f11_pushed('2 certifies the record'));
   PERFORM pg_temp.rh_case('taken back, no push', '0', pg_temp.rh_f11_pushed('2 takes it back'));
   PERFORM pg_temp.rh_case('given again, no second push', '0', pg_temp.rh_f11_pushed('2 certifies it again'));
-  PERFORM pg_temp.rh_case('and its notice is written again, under the bell', '1',
-    (SELECT count(*)::text FROM public.notifications
+  -- One notice, never a second, once 20261117_02's trigger takes the first with its certification:
+  -- counted in that car's rehearsal (B6). Here, before it, the notice is under the bell.
+  PERFORM pg_temp.rh_case('and its notice is written again, under the bell', 'true',
+    (SELECT (count(*) >= 1)::text FROM public.notifications
       WHERE user_id = m1 AND from_user_id = m2 AND type = 'endorse' AND group_key = 'endorse:log:' || rec));
   PERFORM pg_temp.rh_case('another member''s certification of the same record pushes', '1',
     pg_temp.rh_f11_pushed('3 certifies the record'));
@@ -1233,7 +1031,8 @@ END $$;
 -- ── D1 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
 -- ── Rehearsal piece: a rename the member chooses is kept (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Four members in good standing. 1 and 2 are given handles that predate
@@ -1244,13 +1043,8 @@ UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE
 -- a fresh handle and keeps it, and asking for 1's new handle is refused as taken; 4, banned, is
 -- refused and keeps their handle. Members call it; visitors do not.
 
-CREATE TEMP TABLE rh_d1_members ON COMMIT DROP AS
-  SELECT u.id, row_number() OVER (ORDER BY u.created_at) AS n
-    FROM auth.users u JOIN public.profiles p ON p.id = u.id
-   WHERE NOT coalesce(p.is_banned, false) AND (p.suspended_until IS NULL OR p.suspended_until <= now())
-   ORDER BY u.created_at LIMIT 4;
+-- The round's first 4 members in good standing (rehearsal_members, read once before the train).
 SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rh_d1_members), 4) AS done \gset rh_
-GRANT SELECT ON rh_d1_members TO authenticated;
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
@@ -1264,8 +1058,6 @@ SELECT set_config('session_replication_role', 'origin', true) AS done \gset rh_
 
 CREATE TEMP TABLE rh_d1_handles ON COMMIT DROP AS
   SELECT m.n, p.username FROM rh_d1_members m JOIN public.profiles p ON p.id = m.id;
-CREATE TEMP TABLE rh_d1_got (who int, got text) ON COMMIT DROP;
-GRANT ALL ON rh_d1_got TO authenticated;
 
 SET LOCAL ROLE authenticated;
 
@@ -1330,33 +1122,26 @@ END $$;
 -- ── F4 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
--- ── Rehearsal piece: a shared card whose piece is gone reads as gone (review round 11) ──
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
+-- ── Rehearsal piece: a shared filing whose piece is gone reads as gone (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql, its rehearsal_members (four
--- members in good standing, n = 1..4) and the train. Member 1 writes a take and two stacks; member 2
--- hosts a salon and, as the house sets it, shares in it member 1's take and both stacks (each card
--- carrying its headline, as the phone sends it). Then, signed in as themselves, member 1 withdraws
--- the take and deletes one stack. The house finds:
+-- members in good standing, n = 1..4) and the train. Member 1 writes a take; member 2 hosts a salon
+-- and, as the house sets it, shares in it member 1's take (the card carrying its headline, as the
+-- phone sends it). Then, signed in as themselves, member 1 withdraws the take. The house finds:
 --   the take's card has no headline and no byline, is marked gone, and still names its filing;
---   the deleted stack's card keeps only its id, marked gone;
---   the stack still standing keeps its card whole, and member 2's own words under each card stay.
+--   member 2's own words under the card stay.
+-- A stack's card goes with its stack by a trigger, made in the next car (20261117_02), and is
+-- rehearsed there.
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-CREATE TEMP TABLE rh_f4_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
-GRANT SELECT ON rh_f4_rows TO authenticated;
 
--- As the house: member 1's take and two stacks, member 2's salon, and member 2's three cards.
+-- As the house: member 1's take, member 2's salon, and member 2's card.
 WITH r AS (INSERT INTO public.dispatch_posts (kind, user_id, author_username, title, body)
            VALUES ('take', (SELECT id FROM rehearsal_members WHERE n = 1),
                    (SELECT p.username FROM public.profiles p WHERE p.id = (SELECT id FROM rehearsal_members WHERE n = 1)),
                    'rh-f4 a headline', 'rh-f4 the take''s words') RETURNING id)
 INSERT INTO rh_f4_rows SELECT 'take', id FROM r;
-WITH r AS (INSERT INTO public.lists (user_id, title, is_private)
-           VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 'rh-f4 a stack to go', false) RETURNING id)
-INSERT INTO rh_f4_rows SELECT 'stack to go', id FROM r;
-WITH r AS (INSERT INTO public.lists (user_id, title, is_private)
-           VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 'rh-f4 a stack that stays', false) RETURNING id)
-INSERT INTO rh_f4_rows SELECT 'stack that stays', id FROM r;
 WITH r AS (INSERT INTO public.lounges (name, creator_id, is_private)
            VALUES ('rh-f4 a salon', (SELECT id FROM rehearsal_members WHERE n = 2), false) RETURNING id)
 INSERT INTO rh_f4_rows SELECT 'salon', id FROM r;
@@ -1367,26 +1152,12 @@ WITH r AS (INSERT INTO public.lounge_messages (lounge_id, user_id, content, type
                    jsonb_build_object('dossier_id', (SELECT id FROM rh_f4_rows WHERE what = 'take')::text,
                                       'author_username', 'rh-f4-author', 'kind', 'take')) RETURNING id)
 INSERT INTO rh_f4_rows SELECT 'take card', id FROM r;
-WITH r AS (INSERT INTO public.lounge_messages (lounge_id, user_id, content, type, metadata)
-           VALUES ((SELECT id FROM rh_f4_rows WHERE what = 'salon'), (SELECT id FROM rehearsal_members WHERE n = 2),
-                   'rh-f4 see this stack', 'list_share',
-                   jsonb_build_object('listId', (SELECT id FROM rh_f4_rows WHERE what = 'stack to go')::text,
-                                      'title', 'rh-f4 a stack to go', 'filmCount', 3, 'curator', 'rh-f4-author',
-                                      'topPosters', jsonb_build_array('/a.jpg'))) RETURNING id)
-INSERT INTO rh_f4_rows SELECT 'gone stack card', id FROM r;
-WITH r AS (INSERT INTO public.lounge_messages (lounge_id, user_id, content, type, metadata)
-           VALUES ((SELECT id FROM rh_f4_rows WHERE what = 'salon'), (SELECT id FROM rehearsal_members WHERE n = 2),
-                   'rh-f4 and this one', 'list_share',
-                   jsonb_build_object('listId', (SELECT id FROM rh_f4_rows WHERE what = 'stack that stays')::text,
-                                      'title', 'rh-f4 a stack that stays', 'curator', 'rh-f4-author')) RETURNING id)
-INSERT INTO rh_f4_rows SELECT 'standing stack card', id FROM r;
-SELECT pg_temp.rh_need('the three cards', (SELECT count(*) FROM rh_f4_rows WHERE what LIKE '%card'), 3) AS done \gset rh_
+SELECT pg_temp.rh_need('the card', (SELECT count(*) FROM rh_f4_rows WHERE what LIKE '%card'), 1) AS done \gset rh_
 
--- Member 1, as themselves, withdraws the take and deletes one stack, as the app does.
+-- Member 1, as themselves, withdraws the take, as the app does.
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
 SELECT public.end_filing((SELECT id FROM rh_f4_rows WHERE what = 'take'), 'author') AS done \gset rh_
-DELETE FROM public.lists WHERE id = (SELECT id FROM rh_f4_rows WHERE what = 'stack to go');
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
@@ -1397,22 +1168,14 @@ SELECT pg_temp.rh_case('the take''s card has no headline', NULL,
 SELECT pg_temp.rh_case('and reads as gone, still naming its filing and its kind, with no byline',
   jsonb_build_object('dossier_id', (SELECT id FROM rh_f4_rows WHERE what = 'take')::text, 'kind', 'take', 'gone', true)::text,
   (SELECT metadata::text FROM public.lounge_messages WHERE id = (SELECT id FROM rh_f4_rows WHERE what = 'take card'))) AS done \gset rh_
-SELECT pg_temp.rh_case('the deleted stack is gone', '0',
-  (SELECT count(*)::text FROM public.lists WHERE id = (SELECT id FROM rh_f4_rows WHERE what = 'stack to go'))) AS done \gset rh_
-SELECT pg_temp.rh_case('its card keeps only its id, and reads as gone',
-  jsonb_build_object('listId', (SELECT id FROM rh_f4_rows WHERE what = 'stack to go')::text, 'gone', true)::text,
-  (SELECT metadata::text FROM public.lounge_messages WHERE id = (SELECT id FROM rh_f4_rows WHERE what = 'gone stack card'))) AS done \gset rh_
-SELECT pg_temp.rh_case('a stack still standing keeps its card whole', 'rh-f4 a stack that stays|rh-f4-author|',
-  (SELECT concat_ws('|', metadata ->> 'title', metadata ->> 'curator', coalesce(metadata ->> 'gone', ''))
-     FROM public.lounge_messages WHERE id = (SELECT id FROM rh_f4_rows WHERE what = 'standing stack card'))) AS done \gset rh_
-SELECT pg_temp.rh_case('the sharer''s own words under each card stay', 'rh-f4 and this one|rh-f4 read this take|rh-f4 see this stack',
-  (SELECT string_agg(content, '|' ORDER BY content) FROM public.lounge_messages
-    WHERE id IN (SELECT id FROM rh_f4_rows WHERE what LIKE '%card'))) AS done \gset rh_
+SELECT pg_temp.rh_case('the sharer''s own words under the card stay', 'rh-f4 read this take',
+  (SELECT content FROM public.lounge_messages WHERE id = (SELECT id FROM rh_f4_rows WHERE what = 'take card'))) AS done \gset rh_
 
 -- ── D2 ──
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
-UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE created_at = now();
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id IN (SELECT id FROM rehearsal_members) AND created_at = now();
 -- ── Rehearsal piece: a member who leaves may take their words with them (review round 11) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
 -- rolled back with the rest). Three members in good standing: S stays; K and E leave. S keeps a record,
@@ -1429,8 +1192,6 @@ UPDATE public.interactions SET created_at = created_at - interval '1 hour' WHERE
 --   filing and S's critique under E's take, the salon and S's reply; the counters settle (one critique
 --   on S's record, one on S's filing, no answer taken); E's take reads as withdrawn by its author.
 
-CREATE TEMP TABLE rh_d2_who (what text PRIMARY KEY, id uuid, handle text) ON COMMIT DROP;
-GRANT SELECT ON rh_d2_who TO authenticated;
 INSERT INTO rh_d2_who
 SELECT (ARRAY['S', 'K', 'E'])[n], id, username FROM (
   SELECT p.id, p.username, row_number() OVER (ORDER BY p.created_at) AS n
@@ -1448,8 +1209,6 @@ SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 DELETE FROM public.user_blocks
  WHERE blocker_id IN (SELECT id FROM rh_d2_who) AND blocked_id IN (SELECT id FROM rh_d2_who);
 
-CREATE TEMP TABLE rh_d2_rows (what text PRIMARY KEY, id uuid) ON COMMIT DROP;
-GRANT SELECT ON rh_d2_rows TO authenticated;
 CREATE FUNCTION pg_temp.rh_d2_row(name text) RETURNS uuid LANGUAGE sql AS $$ SELECT id FROM rh_d2_rows WHERE what = name $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_d2_row(text) TO authenticated;
 
@@ -1521,7 +1280,7 @@ UPDATE public.dispatch_posts SET frozen_totals = '{"total": 1, "counts": {"0": 1
 UPDATE public.dispatch_posts SET answer_id = (SELECT pg_temp.rh_d2_row('E answer')) WHERE id = (SELECT pg_temp.rh_d2_row('seeking'));
 
 SELECT pg_temp.rh_need('the ballot''s notice to S, quoting its question',
-  (SELECT count(*) FROM public.notifications WHERE user_id = (SELECT pg_temp.rh_d2('S')) AND message LIKE '%rh-d2-E ballot%'), 1) AS done \gset rh_
+  (SELECT count(*) FROM public.notifications WHERE created_at >= now() AND user_id = (SELECT pg_temp.rh_d2('S')) AND message LIKE '%rh-d2-E ballot%'), 1) AS done \gset rh_
 SELECT pg_temp.rh_need('S''s reply quoting E''s message',
   (SELECT count(*) FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('reply to E')) AND reply_to_content LIKE 'rh-d2-E%'), 1) AS done \gset rh_
 
@@ -1534,25 +1293,31 @@ EXCEPTION WHEN OTHERS THEN
   RETURN SQLSTATE || ': ' || SQLERRM;
 END $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_d2_try(text) TO authenticated;
-CREATE TEMP TABLE rh_d2_got (what text PRIMARY KEY, got text) ON COMMIT DROP;
-GRANT INSERT, SELECT ON rh_d2_got TO authenticated;
-CREATE TEMP TABLE rh_d2_read (what text PRIMARY KEY, got text) ON COMMIT DROP;
-GRANT INSERT ON rh_d2_read TO authenticated;
 
 -- Every place another member can read a member's words, counted for one writer's mark (as the reader).
+-- Each table is read where this piece wrote and where the house copies it: under S's record, stack,
+-- essay and salon, on the filings laid here, and in the notices to or from the three. A house of any
+-- size is never read whole for them.
 CREATE FUNCTION pg_temp.rh_d2_words(v_mark text) RETURNS text LANGUAGE sql AS $$
   SELECT concat_ws('|',
-    (SELECT count(*) FROM public.log_comments WHERE body LIKE v_mark || '%'),
-    (SELECT count(*) FROM public.list_comments WHERE content LIKE v_mark || '%'),
-    (SELECT count(*) FROM public.dispatch_comments WHERE body LIKE v_mark || '%'),
+    (SELECT count(*) FROM public.log_comments WHERE log_id = (SELECT pg_temp.rh_d2_row('record')) AND body LIKE v_mark || '%'),
+    (SELECT count(*) FROM public.list_comments WHERE list_id = (SELECT pg_temp.rh_d2_row('stack')) AND content LIKE v_mark || '%'),
+    (SELECT count(*) FROM public.dispatch_comments
+      WHERE post_id IN (SELECT id FROM rh_d2_rows) AND body LIKE v_mark || '%'),
     (SELECT count(*) FROM public.dispatch_posts
-      WHERE concat_ws(' ', title, body, full_content, series_title) LIKE '%' || v_mark || '%'),
+      WHERE id IN (SELECT id FROM rh_d2_rows)
+        AND concat_ws(' ', title, body, full_content, series_title) LIKE '%' || v_mark || '%'),
     (SELECT count(*) FROM public.lounge_messages
-      WHERE concat_ws(' ', content, reply_to_content, film_title, metadata::text) LIKE '%' || v_mark || '%'),
-    (SELECT count(*) FROM public.notifications WHERE concat_ws(' ', message, metadata::text) LIKE '%' || v_mark || '%'),
-    (SELECT count(*) FROM public.dossier_comments_legacy WHERE body LIKE v_mark || '%'),
+      WHERE lounge_id = (SELECT pg_temp.rh_d2_row('salon'))
+        AND concat_ws(' ', content, reply_to_content, film_title, metadata::text) LIKE '%' || v_mark || '%'),
+    (SELECT count(*) FROM public.notifications
+      WHERE created_at >= now() AND (user_id IN (SELECT id FROM rh_d2_who) OR from_user_id IN (SELECT id FROM rh_d2_who))
+        AND concat_ws(' ', message, metadata::text) LIKE '%' || v_mark || '%'),
+    (SELECT count(*) FROM public.dossier_comments_legacy
+      WHERE dossier_id = (SELECT pg_temp.rh_d2_row('S old essay')) AND body LIKE v_mark || '%'),
     (SELECT count(*) FROM public.dispatch_dossiers_legacy
-      WHERE concat_ws(' ', title, excerpt, full_content) LIKE '%' || v_mark || '%'))
+      WHERE id IN (SELECT id FROM rh_d2_rows)
+        AND concat_ws(' ', title, excerpt, full_content) LIKE '%' || v_mark || '%'))
 $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_d2_words(text) TO authenticated;
 
@@ -1568,13 +1333,17 @@ SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT pg_temp
 INSERT INTO rh_d2_read VALUES ('K words', pg_temp.rh_d2_words('rh-d2-K'));
 INSERT INTO rh_d2_read VALUES ('E words', pg_temp.rh_d2_words('rh-d2-E'));
 INSERT INTO rh_d2_read VALUES ('K signed', concat_ws('|',
-  (SELECT string_agg(DISTINCT username, ',') FROM public.log_comments WHERE body LIKE 'rh-d2-K%'),
-  (SELECT bool_and(user_id IS NULL)::text FROM public.list_comments WHERE content LIKE 'rh-d2-K%'),
-  (SELECT string_agg(DISTINCT author_username, ',') FROM public.dispatch_comments WHERE body LIKE 'rh-d2-K%'),
+  (SELECT string_agg(DISTINCT username, ',') FROM public.log_comments
+    WHERE log_id = (SELECT pg_temp.rh_d2_row('record')) AND body LIKE 'rh-d2-K%'),
+  (SELECT bool_and(user_id IS NULL)::text FROM public.list_comments
+    WHERE list_id = (SELECT pg_temp.rh_d2_row('stack')) AND content LIKE 'rh-d2-K%'),
+  (SELECT string_agg(DISTINCT author_username, ',') FROM public.dispatch_comments
+    WHERE post_id IN (SELECT id FROM rh_d2_rows) AND body LIKE 'rh-d2-K%'),
   (SELECT author_username || ',' || (ended_at IS NULL)::text FROM public.dispatch_posts WHERE id = (SELECT pg_temp.rh_d2_row('K take'))),
   (SELECT (user_id IS NULL)::text || ',' || (deleted_at IS NULL)::text FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('K message'))),
   (SELECT reply_to_username || ',' || (reply_to_content LIKE 'rh-d2-K%')::text FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('reply to K'))),
-  (SELECT string_agg(DISTINCT username, ',') FROM public.dossier_comments_legacy WHERE body LIKE 'rh-d2-K%'),
+  (SELECT string_agg(DISTINCT username, ',') FROM public.dossier_comments_legacy
+    WHERE dossier_id = (SELECT pg_temp.rh_d2_row('S old essay')) AND body LIKE 'rh-d2-K%'),
   (SELECT author_username FROM public.dispatch_dossiers_legacy WHERE id = (SELECT pg_temp.rh_d2_row('K old essay'))),
   (SELECT (metadata ? 'curator')::text FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('card of K')))));
 INSERT INTO rh_d2_read VALUES ('E take', (SELECT concat_ws('|', ended_by, (ended_at IS NOT NULL)::text, body, author_username)
@@ -1586,7 +1355,7 @@ INSERT INTO rh_d2_read VALUES ('E message', (SELECT concat_ws('|', (deleted_at I
 INSERT INTO rh_d2_read VALUES ('reply to E', (SELECT concat_ws('|', content, coalesce(reply_to_content, 'no quote'), reply_to_username)
   FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('reply to E'))));
 INSERT INTO rh_d2_read VALUES ('E ballot notice', (SELECT string_agg(message || '|' || (metadata ? 'title')::text, ',')
-  FROM public.notifications WHERE user_id = (SELECT pg_temp.rh_d2('S')) AND metadata @> jsonb_build_object('dispatch_post_id', (SELECT pg_temp.rh_d2_row('E ballot')))));
+  FROM public.notifications WHERE created_at >= now() AND user_id = (SELECT pg_temp.rh_d2('S')) AND metadata @> jsonb_build_object('dispatch_post_id', (SELECT pg_temp.rh_d2_row('E ballot')))));
 INSERT INTO rh_d2_read VALUES ('S pages', concat_ws('|',
   (SELECT count(*) FROM public.logs WHERE id = (SELECT pg_temp.rh_d2_row('record'))),
   (SELECT count(*) FROM public.lists WHERE id = (SELECT pg_temp.rh_d2_row('stack'))),
@@ -1631,7 +1400,6 @@ SELECT pg_temp.rh_case('the counts settle: one critique on the record, one on th
 -- The card read now also asks a stack's curator: still answered by the cards' own index
 -- (lounge_messages_card_names), never by reading every message. Sequential scans are off for the plan
 -- alone, and put back.
-CREATE TEMP TABLE rh_d2_plan (line text) ON COMMIT DROP;
 DO $$
 DECLARE l text;
 BEGIN

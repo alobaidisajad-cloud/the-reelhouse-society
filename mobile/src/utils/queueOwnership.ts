@@ -390,3 +390,14 @@ export function stampOwnerlessWrites(sessionUserId: string | null): void {
 export function __resetStampForTests(): void {
   stamped = false;
 }
+
+/**
+ * "A critique written offline, “The light in the last reel…”, was not filed: the record it answered
+ * is no longer in the house." Said when the queue sends a critique whose record or stack was deleted
+ * meanwhile: its first words quoted, as the page they were written on no longer opens (review round 12).
+ */
+export function critiqueOnAGonePage(m: Pick<QueuedMutation, 'payload'>, page: 'record' | 'stack'): string {
+  const { body, content } = m.payload;
+  const quoted = heldDetail({ payload: { body: typeof body === 'string' ? body : content } });
+  return `A critique written offline${quoted ? `, ${quoted},` : ''} was not filed: the ${page} it answered is no longer in the house.`;
+}

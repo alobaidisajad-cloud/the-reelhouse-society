@@ -305,8 +305,11 @@ export const plan = (matrix, columns = {}) => {
         c.anyError = true;
       }
       if (p.kind === 'read') {
-        // A row laid for the probe, or one the setting holds (p.id).
-        if (p.lay) c.lay = insertSql(p.table, dated(p.table, fill(p.lay, ctx), columns));
+        // A row laid for the probe, or one the setting holds (p.id). layAsBefore: laid as it stood before
+        // the setting's blocks, its triggers asleep (a notice written before a block, which the house no
+        // longer writes across one, still stands and is the read rule's to hide).
+        if (p.lay && p.layAsBefore) c.before = insertSql(p.table, dated(p.table, fill(p.lay, ctx), columns));
+        else if (p.lay) c.lay = insertSql(p.table, dated(p.table, fill(p.lay, ctx), columns));
         c.sql = `SELECT count(*) FROM ${rel(p.table)} WHERE id = ${literal(p.id ? fill(p.id, ctx) : newId)}`;
       }
       if (p.then && p.kind !== 'update') c.then = fill(p.then, ctx);

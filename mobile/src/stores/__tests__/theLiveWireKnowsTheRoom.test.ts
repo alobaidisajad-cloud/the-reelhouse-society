@@ -67,6 +67,14 @@ const profileChain = () => {
   return c;
 };
 
+/**
+ * Each room joined is left when its case ends, as its screen leaves it: two rooms of one salon
+ * share one channel (openChannel, review round 12), so a room left standing would hand the next
+ * case its channel, and no handlers of its own.
+ */
+const leaves: (() => void)[] = [];
+afterEach(() => { for (const leave of leaves.splice(0)) leave(); });
+
 beforeEach(() => {
   handlers.length = 0;
   mockFrom.mockReset().mockImplementation(() => profileChain());
@@ -89,7 +97,7 @@ const wireRow = (id: string, lounge: string) => ({
 describe('a dispatch arriving over the wire', () => {
   it('is DISCARDED when the member has already moved to another room', async () => {
     useLoungeStore.setState({ currentLoungeId: A } as never);
-    useLoungeStore.getState().subscribeToLounge(A);
+    leaves.push(useLoungeStore.getState().subscribeToLounge(A));
 
     // The wire delivers a message for room A; the profile lookup is in flight.
     const landing = insertHandler()(wireRow('a-live', A));
@@ -107,7 +115,7 @@ describe('a dispatch arriving over the wire', () => {
 
   it('lands when the member is still in that room', async () => {
     useLoungeStore.setState({ currentLoungeId: A } as never);
-    useLoungeStore.getState().subscribeToLounge(A);
+    leaves.push(useLoungeStore.getState().subscribeToLounge(A));
 
     const landing = insertHandler()(wireRow('a-live', A));
     releaseProfile();
@@ -125,7 +133,7 @@ describe('a dispatch arriving over the wire', () => {
         content: 'Arriving.', type: 'text', created_at: '2026-09-11T12:00:00Z',
       }],
     } as never);
-    useLoungeStore.getState().subscribeToLounge(A);
+    leaves.push(useLoungeStore.getState().subscribeToLounge(A));
 
     const landing = insertHandler()(wireRow('a-live', A));
     releaseProfile();
@@ -145,7 +153,7 @@ describe('a message the offline queue delivered', () => {
         content: 'Written on the train.', type: 'text', created_at: '2026-09-11T11:59:00Z', status: 'sending',
       }],
     } as never);
-    useLoungeStore.getState().subscribeToLounge(A);
+    leaves.push(useLoungeStore.getState().subscribeToLounge(A));
 
     await insertHandler()(wireRow('queued-1', A));
 
@@ -161,7 +169,7 @@ describe('a message the offline queue delivered', () => {
       content: 'Hello.', type: 'text', created_at: '2026-09-11T11:59:00Z', status: 'sent',
     };
     useLoungeStore.setState({ currentLoungeId: A, currentMessages: [sent] } as never);
-    useLoungeStore.getState().subscribeToLounge(A);
+    leaves.push(useLoungeStore.getState().subscribeToLounge(A));
     const before = useLoungeStore.getState().currentMessages;
 
     await insertHandler()(wireRow('sent-1', A));

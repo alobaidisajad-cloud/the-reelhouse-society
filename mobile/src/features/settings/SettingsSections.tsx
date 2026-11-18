@@ -679,12 +679,15 @@ export function NotificationsSection({ control, saving }: { control: Control<Set
         <SectionHead icon={Bell} label="NOTIFICATIONS" />
         {/* ABOVE the switches, not below them. If the phone will not deliver
             anything, the member should learn that before spending time setting
-            four controls that cannot take effect — not after. */}
+            five controls that cannot take effect — not after. */}
         <PushPermissionNotice />
         {[
           { name: 'notifFollows' as const, label: 'New Followers', desc: 'When someone follows you' },
           { name: 'notifEndorsements' as const, label: 'Certifications', desc: 'When someone certifies your log' },
-          { name: 'notifComments' as const, label: 'Annotations', desc: 'When someone annotates your log' },
+          { name: 'notifComments' as const, label: 'Annotations', desc: 'When someone annotates your log, or a ballot you voted in closes' },
+          // A salon's door had no switch of its own: it rode System Alerts, and turning off the
+          // house's announcements silenced every member asking to enter (review round 12).
+          { name: 'notifSalons' as const, label: 'Salons', desc: 'When someone asks to enter your salon, or you are admitted' },
           { name: 'notifSystem' as const, label: 'System Alerts', desc: 'Society announcements' },
         ].map((item, idx, arr) => (
           <View key={item.label} style={[st.notifRow, idx === arr.length - 1 && st.notifRowLast]}>

@@ -79,8 +79,9 @@ it('an amendment queued offline that finds its stack deleted is let go of, here 
     id: 'q1', type: 'update_list', timestamp: 0,
     payload: { list_id: STACK_ID, user_id: ME, updates: { title: 'Silents, Revised' }, read_at: '2026-11-01T00:00:00Z' },
   }, {});
-  // Delivered nowhere, and never sent again: answered, not thrown (a throw holds it as an unsent change).
-  expect(answer).toEqual({});
+  // Delivered nowhere, and never sent again: answered, not thrown (a throw holds it as an unsent
+  // change), and answered as let go, never as sent (review round 12).
+  expect(answer).toEqual({ letGo: 'STACK_GONE' });
   expect(useFilmStore.getState().lists.map((l) => l.title)).toEqual(['Talkies']);
   expect(askedAgain(['stack', STACK_ID])).toBe(true);
   expect(toastError()).toHaveBeenCalledWith('A stack amended offline is no longer in the house: the amendment was let go.');

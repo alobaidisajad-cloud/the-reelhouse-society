@@ -33,7 +33,7 @@ const ALLOWED: [file: string, line: string, why: string][] = [
   ['src/components/lobby/FeatureRow.tsx', 'ONE_SHEET.tagline[0].toUpperCase()', "the tagline's first LINE, not its first letter"],
   ['src/components/society/PurchaseDock.tsx', '${cta.charAt(0)}${cta.slice(1).toLowerCase()}', "a rank's own English call to action, spoken"],
   ['src/components/TryAgain.tsx', 'const said = shown.charAt(0) + shown.slice(1).toLowerCase();', "a retry's own English words (TRY AGAIN), spoken"],
-  ['app/(modals)/search-modal.tsx', '${t.label.charAt(0)}${t.label.slice(1).toLowerCase()}', "a search tab's own English label, spoken"],
+  ['app/(modals)/search-modal.tsx', '${label.charAt(0)}${label.slice(1).toLowerCase()}', "a search tab's own English label, spoken"],
   ['app/lounge/[id].tsx', '${typingUsers[0].toUpperCase()}', 'the first member typing, whole: an ITEM, not a letter'],
   ['src/utils/validateWithTelemetry.ts', 'result.error.issues.slice(0, 1)', 'the first ISSUE of a list'],
 ];

@@ -415,7 +415,13 @@ export function supabaseFake(options: Options = {}) {
     return chain;
   };
 
-  const rpc = (fn: string, args: Row = {}): Promise<{ data: unknown; error: Failure | null }> => {
+  type RpcAnswer = Promise<{ data: unknown; error: Failure | null }> & { abortSignal: (signal: AbortSignal) => RpcAnswer };
+  // An rpc's answer takes an abort signal as supabase-js's builder does (a read made through
+  // react-query is handed one, and the app gives it to the call): the signal is taken, the answer is the same.
+  const signalled = (answer: Promise<{ data: unknown; error: Failure | null }>): RpcAnswer =>
+    Object.assign(answer, { abortSignal: () => signalled(answer) });
+  const rpc = (fn: string, args: Row = {}): RpcAnswer => signalled(answerRpc(fn, args));
+  const answerRpc = (fn: string, args: Row): Promise<{ data: unknown; error: Failure | null }> => {
     const overloads = house().functions.get(fn);
     if (!overloads) throw new Error(`supabaseFake: production has no function "${fn}"`);
     if (!fitsAnOverload(overloads, Object.keys(args))) {

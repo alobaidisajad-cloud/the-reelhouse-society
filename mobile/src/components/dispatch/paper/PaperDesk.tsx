@@ -410,7 +410,8 @@ export const FilmFinder = memo(function FilmFinder({
           <PressableScale style={d.result} haptic="selection" hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
             onPress={onPick && (() => onPick(f, i))} disabled={!onPick}
             accessibilityRole="button" accessibilityState={{ disabled: !onPick }}
-            accessibilityLabel={`${f.title}${f.year ? `, ${f.year}` : ''}`}>
+            // Named with every word it shows (the director too): a voice-control member says what they see.
+            accessibilityLabel={[f.title, f.year, f.director].filter(Boolean).join(', ')}>
             <View style={d.resultArt}>
               <RemoteImage uri={f.posterPath} style={p.plateArt} contentFit="cover" fallback={<PosterMark style={p.plateArt} size={12} ground={false} />} />
             </View>

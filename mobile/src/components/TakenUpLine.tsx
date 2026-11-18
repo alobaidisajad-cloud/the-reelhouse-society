@@ -38,19 +38,22 @@ export function TakenUpLine({ savedAt, unreadable = false, onStartClean, style }
 }) {
   const when = savedAt ? whenKept(savedAt) : '';
   return (
-    <View
-      style={[s.row, style]}
-      accessible
-      accessibilityRole="summary"
-      accessibilityLabel={unreadable
-        ? 'What was here could not be read. The room has cleared it.'
-        : `Taken up where you left it${when ? `, ${when}` : ''}.`}
-    >
-      <Text style={[s.text, unreadable && s.lost]} {...scaledTextProps}>
+    // Two stops, never one: an accessible row is read by VoiceOver as one element it never goes
+    // inside, and START CLEAN drawn within it could not be reached (round 12).
+    <View style={[s.row, style]}>
+      <Text
+        style={[s.text, unreadable && s.lost]}
+        {...scaledTextProps}
+        accessibilityRole="summary"
+        accessibilityLabel={unreadable
+          ? 'What was here could not be read. The room has cleared it.'
+          : `Taken up where you left it${when ? `, ${when}` : ''}.`}
+      >
         {unreadable ? 'WHAT WAS HERE COULD NOT BE READ' : `TAKEN UP WHERE YOU LEFT IT${when ? ` · ${when}` : ''}`}
       </Text>
       {unreadable ? null : (
-        <PressableScale
+        // It discards the words the room took up: a slip costs them, so its box is grown to 48.
+        <PressableScale touch="destructive"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           haptic="selection"
           onPress={onStartClean}

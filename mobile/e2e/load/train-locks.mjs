@@ -5,12 +5,15 @@
  * Runs on the CI runner's own copy of production's shape, after e2e/load/seed.sql, before
  * probe.mjs. It takes the train's own plan (supabase/diagnostics/train.cjs: the pending
  * migrations, each with its one rehearsal, production's lock wait and statement limits) and runs
- * it twice, as production will:
- *   A. each rehearsal as the train rehearses it: the cars before it applied first, its own
- *      migration, its cases, all in one transaction that is rolled back;
- *   B. each migration applied file by file, one transaction each, as apply.cjs applies it.
+ * it car by car, as production will, each car in two runs:
+ *   A. its rehearsal as the train rehearses it, on the house as the cars before it left it
+ *      (applied and committed by their own B): its migration and its cases, in one transaction
+ *      that is rolled back;
+ *   B. its migration applied, one transaction, as apply.cjs applies it.
  * Each index built CONCURRENTLY comes first, alone and outside any transaction, as the train
- * builds it, so the rehearsals after it read through it.
+ * builds it, so the rehearsals after it read through it. The train's probe after each apply is
+ * not run here: it is A's cases without the migration, so it takes no lock A did not and holds
+ * each for less time.
  * Meanwhile a second connection reads pg_locks every SAMPLE_MS. A lock is timed from the first
  * sample that sees it granted to the last (a lock is held to the end of the transaction that took
  * it, so in A a migration's lock is held through every case after it), and blamed on the
@@ -123,6 +126,17 @@ function measure(label, args, dir, n) {
   return { label, ok: r.status === 0, out, ms: Date.now() - began, statements: statementsIn(out), holds: holds(samplesIn(read(files.samples))) };
 }
 
+/**
+ * The runs, from the train's own steps, in its own order: each index built alone first (as
+ * production builds it, the rehearsals then read through it), then car by car its rehearsal and
+ * its apply, so each car is rehearsed with the cars before it committed and none of their locks
+ * held. Each with psql's arguments as the train gives them (`psqlArgs`, train.cjs's).
+ */
+export function runsOf(steps, psqlArgs) {
+  const RUN = { build: 'B', rehearse: 'A', apply: 'B' };
+  return steps.filter((x) => RUN[x.kind]).map((step) => ({ label: `${RUN[step.kind]} · ${step.what}`, args: psqlArgs(step) }));
+}
+
 function main() {
   if (!/@(127\.0\.0\.1|localhost):/.test(DB)) {
     console.error('Refusing: the train is measured only on the runner\'s own database.');
@@ -135,21 +149,7 @@ function main() {
     return;
   }
   const dir = mkdtempSync(join(tmpdir(), 'train-locks-'));
-  const runs = [];
-  // In the train's own order: each index built alone first (as production builds it, the
-  // rehearsals then read through it), then the rehearsals, then the applies.
-  for (const step of p.steps.filter((x) => x.kind === 'build')) {
-    runs.push(measure(`B · ${step.what}`, train.psqlArgs(step, null), dir, runs.length));
-  }
-  for (const step of p.steps.filter((x) => x.kind === 'rehearse')) {
-    const prior = train.priorSql(step.before);
-    let priorPath = null;
-    if (prior) { priorPath = join(dir, `prior-${step.car.name}`); writeFileSync(priorPath, prior); }
-    runs.push(measure(`A · ${step.what}`, train.psqlArgs(step, priorPath), dir, runs.length));
-  }
-  for (const step of p.steps.filter((x) => x.kind === 'apply')) {
-    runs.push(measure(`B · ${step.what}`, train.psqlArgs(step, null), dir, runs.length));
-  }
+  const runs = runsOf(p.steps, train.psqlArgs).map((r, n) => measure(r.label, r.args, dir, n));
 
   const lines = [];
   let failed = false;
@@ -166,16 +166,25 @@ function main() {
       if (h.fault) failed = true;
     }
   }
-  const report = [`The train on 100,000 members: ${runs.length} runs; a blocking lock may be held ${HELD_MS} ms at most.`, '', ...lines, ''].join('\n');
+  const report = [`The train on 100,000 members, car by car: ${runs.length} runs; a blocking lock may be held ${HELD_MS} ms at most.`,
+    'A: a car rehearsed, rolled back, on the house the cars before it left. B: a car applied, committed.', '', ...lines, ''].join('\n');
   console.log(report);
   writeFileSync(join(process.env.RUNNER_TEMP ?? dir, 'lock-report.txt'), report);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n### Locks\n\n\`\`\`\n${report}\n\`\`\`\n`);
   if (failed) process.exit(1);
 }
 
-// `--holds` and a file of saved samples, or `--statements` and psql's saved output: the reading alone.
+// `--holds` and a file of saved samples, or `--statements` and psql's saved output: the reading
+// alone. `--runs` and a file of { pending, rehearsals } (train.cjs's plan's own inputs): the runs
+// that train would be measured in, with no database.
 const at = process.argv.indexOf('--holds');
 const timed = process.argv.indexOf('--statements');
+const planned = process.argv.indexOf('--runs');
 if (at >= 0) console.log(JSON.stringify(holds(JSON.parse(readFileSync(process.argv[at + 1], 'utf8')))));
 else if (timed >= 0) console.log(JSON.stringify(statementsIn(readFileSync(process.argv[timed + 1], 'utf8'))));
-else main();
+else if (planned >= 0) {
+  const train = require(join(MOBILE, 'supabase', 'diagnostics', 'train.cjs'));
+  const { pending, rehearsals } = JSON.parse(readFileSync(process.argv[planned + 1], 'utf8'));
+  const p = train.plan(pending, rehearsals);
+  console.log(JSON.stringify(p.refuse ? { refuse: p.refuse } : runsOf(p.steps, train.psqlArgs)));
+} else main();

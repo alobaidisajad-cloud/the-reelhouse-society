@@ -73,6 +73,7 @@ import { useScrollTrace } from '@/src/hooks/useScrollTrace';
 import { useBackCloses } from '@/src/hooks/useBackCloses';
 import { filterContentByBlocks, useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
+import { useReadAgainWhenToldHere } from '@/src/hooks/useReadAgainWhenToldHere';
 
 /** The house's own mark, bundled — never a stand-in glyph on the share card. */
 const HOUSE_MARK = require('@/assets/images/reelhouse-logo.png');
@@ -224,6 +225,20 @@ function FilingReader({ id }: { id: string }) {
     // The member too: a visitor asked in from this page comes back to it signed in, and its
     // critiques and their own marks on it are read for them, as a member (review round 11).
   }, [id, attempt, me?.id]);
+  // A notice about this filing opened while it is in front (a new critique, its ballot closed): the
+  // filing and its critiques, in the order chosen, are read again, so what the notice announced is
+  // on the page; the page has no pull to read it (review round 12).
+  const shownId = useRef(id);
+  useEffect(() => { shownId.current = id; }, [id]);
+  useReadAgainWhenToldHere(`/dispatch/${id}`, () => {
+    const asked = id;
+    void useDispatch.getState().fetchCritiques(asked, order);
+    void useDispatch.getState().hydrate(asked).then((got) => {
+      // Unreached, the page stands as drawn; an answer for a filing no longer on the page is dropped.
+      if (got === 'unreachable' || shownId.current !== asked) return;
+      setFiling(got);
+    });
+  });
 
   // The next part: the lowest part number above this one that a reader could
   // open, behind the series page's three gates, so a withheld part is never next.

@@ -176,7 +176,9 @@ export default function FollowRequestsPanel({ visible, onClose }: { visible: boo
                 keyExtractor={(it: FollowRequest) => it.requesterId}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
-                onEndReached={hasMore ? loadMore : undefined}
+                // No next page while the list is being read again for new words: it would be laid
+                // under the list that read replaces.
+                onEndReached={hasMore && !loading ? loadMore : undefined}
                 onEndReachedThreshold={0.5}
                 renderItem={({ item }: { item: FollowRequest }) => (
                   <RequestRow item={item} busy={busyIds.has(item.requesterId)} onAccept={accept} onDecline={decline} />

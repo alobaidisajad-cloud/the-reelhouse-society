@@ -6,10 +6,10 @@ app/(admin)/tribunal.tsx · Ban member · destructive
 app/(admin)/tribunal.tsx · Bulk dismiss … · destructive
 app/(admin)/tribunal.tsx · Close · wayOut
 app/(admin)/tribunal.tsx · Dismiss report · destructive
-app/(admin)/tribunal.tsx · Execute … · destructive
 app/(admin)/tribunal.tsx · Go back · wayOut
 app/(admin)/tribunal.tsx · Permanent exile: ban this member for good · destructive
 app/(admin)/tribunal.tsx · Remove the reported content · destructive
+app/(admin)/tribunal.tsx · Render verdict: … · destructive
 app/(admin)/tribunal.tsx · Suspend member · destructive
 app/(admin)/tribunal.tsx · Warn: issue a warning · destructive
 app/(modals)/cover-picker.tsx · Close · wayOut
@@ -51,6 +51,7 @@ app/user/[username].tsx · {!followKnown ? (followingKnown === 'failed' ? 'Ask a
 app/year-in-cinema.tsx · Close Year in Cinema · wayOut
 app/year-in-cinema.tsx · Close Year in Cinema · wayOut
 src/components/ShareToLoungeModal.tsx · Close · wayOut
+src/components/TakenUpLine.tsx · Start clean, and discard what was here · destructive
 src/components/TryAgain.tsx · {label} · wayOut
 src/components/UnsentChanges.tsx · Close · wayOut
 src/components/UnsentChanges.tsx · Let go: … · destructive

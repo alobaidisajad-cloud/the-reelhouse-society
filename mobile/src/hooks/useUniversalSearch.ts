@@ -1,15 +1,17 @@
 import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
 import { logger } from '@/src/utils/logger';
+import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { buildSearchPattern } from '@/src/utils/searchPattern';
 import { stripHtml } from '@/src/utils/html';
-import { byKey } from '@/src/utils/order';
 import { resolveTier } from '@/src/utils/tier';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
 import { cutWhole } from '@/src/utils/text';
 import { memberPath } from '@/src/utils/memberPath';
-import { useQuery } from '@tanstack/react-query';
+import { buildCursor, keysetFilter, parseCursor } from '@/src/utils/keysetCursor';
+import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 
 // ═══════════════════════════════════════════════════════════════
 // RESULT TYPE
@@ -26,20 +28,22 @@ export interface SR {
   _nav: string; // navigation path
 }
 
-interface ProfileRow { id: string; username: string; avatar_url?: string; role?: string }
-/** A log's author arrives embedded: `logs` has no username or role of its own. */
-interface LogAuthor { username?: string; role?: string }
+/** A member as search_members answers: closest first, and how close (the next page's cursor). */
+interface MemberRow { id: string; username: string; avatar_url?: string | null; role?: string | null; closeness: number }
+/** A record as search_logs answers, its author's handle and rank with it. */
 interface LogRow {
   id: string;
   user_id?: string;
   film_title: string;
-  review?: string;
-  rating?: number;
-  poster_path?: string;
-  created_at?: string;
-  status?: string;
+  review?: string | null;
+  rating?: number | null;
+  poster_path?: string | null;
+  created_at: string;
+  status?: string | null;
   abandoned_reason?: string | null;
-  profiles?: LogAuthor | LogAuthor[] | null;
+  is_spoiler?: boolean | null;
+  username?: string | null;
+  role?: string | null;
 }
 interface ListRow {
   id: string;
@@ -53,298 +57,347 @@ interface ListRow {
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w92';
 
+/**
+ * The four places a search asks: the catalogue (its films, actors and directors), the members,
+ * the records and the stacks. Each is read on its own and pages on its own.
+ */
+export type SearchSource = 'films' | 'users' | 'logs' | 'lists';
+export const SEARCH_SOURCES: readonly SearchSource[] = ['films', 'users', 'logs', 'lists'];
+
 /** Which sources could not be asked: an empty tab is then unknown, not empty. */
-export interface SourcesDown { films: boolean; users: boolean; logs: boolean; lists: boolean }
+export type SourcesDown = Record<SearchSource, boolean>;
+/** Per source: a next page exists / is being read / could not be read. */
+export type PerSource = Record<SearchSource, boolean>;
 
-const NONE_DOWN: SourcesDown = { films: false, users: false, logs: false, lists: false };
+const NONE: PerSource = { films: false, users: false, logs: false, lists: false };
 
-const EMPTY_RESULTS = {
-  films: [] as SR[], actors: [] as SR[], directors: [] as SR[],
-  users: [] as SR[], logs: [] as SR[], lists: [] as SR[],
+/** What a search has found so far, each source's pages laid end to end. */
+export interface SearchResults {
+  films: SR[]; actors: SR[]; directors: SR[];
+  users: SR[]; logs: SR[]; lists: SR[];
+  /** Some source could not be asked: what is shown is not all there is. */
+  _partial: boolean;
+  _down: SourcesDown;
+}
+
+const EMPTY_RESULTS: SearchResults = {
+  films: [], actors: [], directors: [], users: [], logs: [], lists: [],
   _partial: false,
-  _down: NONE_DOWN,
+  _down: NONE,
 };
 
-/** Columns the LOGS tab needs, plus the author it could never fetch before. */
-const LOG_SEARCH_COLUMNS =
-  'id, user_id, film_title, review, rating, poster_path, status, abandoned_reason, created_at';
+/** Rows shown a page, for the house's three sources; one more is asked, to know there is a next. */
+export const SEARCH_PAGE = 20;
 
-/** How many members a search shows, and how many it reads to choose them from. */
-const MEMBERS_SHOWN = 15;
-const MEMBERS_READ = 30;
-
-/** A source that is not asked: the search had nothing to ask it. */
-const NOT_ASKED = Promise.resolve({ data: [] as never[], error: null });
-
-/** The exact handle first, then handles that begin with the search, then the rest. */
-function closeness(handle: string) {
-  const h = handle.toLowerCase();
-  return (row: ProfileRow) => {
-    const u = (row.username ?? '').toLowerCase();
-    return u === h ? 0 : u.startsWith(h) ? 1 : 2;
-  };
-}
+/** What a record's excerpt says in place of a review its author marked as spoilers. */
+export const SPOILER_MARK = '[CONTAINS SPOILERS]';
 
 /** A review as one plain line: no markup, entities decoded, whitespace folded. */
 function plainLine(review: string | null | undefined): string {
   return cutWhole(stripHtml(review ?? '').replace(/\s+/g, ' '), 200);
 }
 
-/** PostgREST returns an embedded to-one either as an object or a one-element array. */
-function firstAuthor(embedded: LogRow['profiles']): LogAuthor | null {
-  if (!embedded) return null;
-  return Array.isArray(embedded) ? (embedded[0] ?? null) : embedded;
+/**
+ * A record's excerpt as a search row quotes it. A review its author marked as spoilers is never
+ * quoted to another member (every other reader of a record veils it; the wall leaves it out): the
+ * row says it holds spoilers, and the record's page veils it as it always does. The author's own
+ * review is theirs to read.
+ */
+export function logExcerpt(log: Pick<LogRow, 'review' | 'status' | 'abandoned_reason' | 'is_spoiler' | 'user_id'>, me: string | undefined): string | undefined {
+  const veiled = !!log.is_spoiler && (!me || log.user_id !== me);
+  const line = plainLine(log.review);
+  if (log.status === 'abandoned') {
+    const why = log.abandoned_reason ? ` — ${log.abandoned_reason.toUpperCase()}` : '';
+    const after = veiled ? SPOILER_MARK : line;
+    return `[ABANDONED${why}]${after ? ` ${after}` : ''}`;
+  }
+  if (veiled) return SPOILER_MARK;
+  return line ? `"${line}"` : undefined;
 }
 
+/** One page of the catalogue: its films and people, and the catalogue's next page. */
+interface CataloguePage { films: SR[]; actors: SR[]; directors: SR[]; next: number | undefined }
+/** One page of a house source: its rows, and where the next page begins. */
+interface RowsPage<C> { rows: SR[]; next: C | undefined }
+
+type MemberCursor = { closeness: number; username: string };
+
+/**
+ * The house-wide search. Each source is its own paged read: the catalogue by its pages, the
+ * members, records and stacks each by a keyset cursor. `data` is what has been found once every
+ * source asked has answered its first page (the screen draws them together); `more` says which
+ * sources hold a next page, and `loadMore` reads it.
+ */
 export function useUniversalSearch(query: string) {
-  return useQuery({
-    queryKey: ['universalSearch', query.trim()],
-    queryFn: async ({ signal }) => {
-      const text = query.trim();
-      if (!text) return EMPTY_RESULTS;
+  const text = query.trim();
+  const me = useAuthStore((s) => s.user?.id);
 
-      // `null` means the text carries nothing searchable — a term of only commas
-      // would otherwise become pure wildcards and match every row.
-      const pattern = buildSearchPattern(text);
-      if (pattern === null) return EMPTY_RESULTS;
+  // `null` means the text carries nothing searchable — a term of only commas
+  // would otherwise become pure wildcards and match every row.
+  const pattern = buildSearchPattern(text);
+  // "@kane" asks for a handle: the @ is how members write one, and no
+  // username holds it. Such a search reads handles only.
+  const asHandle = text.startsWith('@');
+  const handle = buildSearchPattern(text.replace(/^@+/, '').trim());
 
-      // "@kane" asks for a handle: the @ is how members write one, and no
-      // username holds it. Such a search reads usernames only.
-      const asHandle = text.startsWith('@');
-      const handleText = text.replace(/^@+/, '').trim();
-      const handle = buildSearchPattern(handleText);
+  const nothingToSearch = !text || pattern === null;
+  const searchable = !nothingToSearch;
+  const membersAsked = searchable && !(handle === null);
 
-      const [tmdbRes, usersRes, exactRes, logsTextRes, logsAuthorRes, listsRes] = await Promise.allSettled([
-        tmdb.search(text),
-        handle === null ? NOT_ASKED : withAbortSignal(
-          supabase
-            .from('profiles')
-            .select('id, username, avatar_url, role')
-            .or(asHandle
-              ? `username.ilike.*${handle}*`
-              : `username.ilike.*${handle}*,display_name.ilike.*${handle}*`)
-            .order('username')
-            .limit(MEMBERS_READ),
-          signal
-        ),
-        // The exact handle, asked for on its own: among many near matches the
-        // read above can leave it out, and it is the one being looked for.
-        handle === null ? NOT_ASKED : withAbortSignal(
-          supabase
-            .from('profiles')
-            .select('id, username, avatar_url, role')
-            .ilike('username', handle)
-            .limit(1),
-          signal
-        ),
-        // Logs matching the film or the writing.
-        withAbortSignal(
-          supabase
-            .from('logs')
-            .select(`${LOG_SEARCH_COLUMNS}, profiles!logs_user_id_fkey(username, role)`)
-            .or(`film_title.ilike.*${pattern}*,review.ilike.*${pattern}*`)
-            .not('review', 'is', null)
-            .neq('review', '')
-            .order('created_at', { ascending: false })
-            .limit(20),
-          signal
-        ),
-        // Logs matching the WRITER's name. This cannot be folded into the query
-        // above: PostgREST refuses to reference an embedded column inside a
-        // top-level `or()` — the dotted path fails to parse. A separate query is
-        // the only way, and it is safe to merge because this tab is not paged.
-        handle === null ? NOT_ASKED : withAbortSignal(
-          supabase
-            .from('logs')
-            .select(`${LOG_SEARCH_COLUMNS}, profiles!logs_user_id_fkey!inner(username, role)`)
-            .ilike('profiles.username', `*${handle}*`)
-            .not('review', 'is', null)
-            .neq('review', '')
-            .order('created_at', { ascending: false })
-            .limit(20),
-          signal
-        ),
-        withAbortSignal(
-          supabase
-            .from('lists')
-            .select('id, user_id, title, description, is_private, is_ranked, created_at')
-            .or(`title.ilike.*${pattern}*,description.ilike.*${pattern}*`)
-            .eq('is_private', false)
-            .order('created_at', { ascending: false })
-            .limit(12),
-          signal
-        ),
-      ]);
-
-      // ── Failures are recorded, never swallowed ──
-      // Each source degrades on its own: a broken section returns nothing while
-      // the rest of the screen still works. Throwing here would replace a
-      // perfectly good search with a full-screen error whenever one source
-      // hiccups. Only a total failure is reported as one — see below.
-      const failed = (label: string, res: PromiseSettledResult<{ error?: unknown } | unknown>) => {
-        if (res.status === 'rejected') {
-          logger.error('[useUniversalSearch] a source was rejected', label, res.reason);
-          return true;
-        }
-        const err = (res.value as { error?: unknown } | null)?.error;
-        if (err) {
-          logger.error('[useUniversalSearch] a source failed', label, err);
-          return true;
-        }
-        return false;
-      };
-
-      const tmdbFailed = tmdbRes.status === 'rejected';
-      if (tmdbFailed) logger.error('[useUniversalSearch] tmdb rejected:', tmdbRes.reason);
-      const usersFailed = failed('profiles', usersRes) || failed('profiles (exact)', exactRes);
-      const logsTextFailed = failed('logs (text)', logsTextRes);
-      const logsAuthorFailed = failed('logs (author)', logsAuthorRes);
-      const listsFailed = failed('lists', listsRes);
-
-      const allFailed =
-        tmdbFailed && usersFailed && logsTextFailed && logsAuthorFailed && listsFailed;
-      if (allFailed) {
-        // Every source is down — the screen's "the telegraph is down" state is
-        // then the truthful one.
-        throw new Error('universal search: every source failed');
-      }
-
-      const f: SR[] = [];
-      const a: SR[] = [];
-      const d: SR[] = [];
-      let u: SR[] = [];
-      let l: SR[] = [];
-      let lst: SR[] = [];
-
-      // ── Parse TMDB ──
-      if (tmdbRes.status === 'fulfilled') {
-        const raw = (tmdbRes.value?.results || []).slice(0, 25);
-        for (const item of raw) {
-          if (item.media_type === 'movie' || (!item.media_type && item.title)) {
-            f.push({
-              id: `film-${item.id}`, type: 'film',
-              title: item.title ?? item.name ?? '',
-              subtitle: item.release_date?.slice(0, 4) || 'FILM',
-              image: item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null,
-              extra: item.vote_average ? `★ ${item.vote_average.toFixed(1)}` : undefined,
-              _nav: `/film/${item.id}`,
-            });
-          } else if (item.media_type === 'person') {
-            const dept = (item.known_for_department || 'Acting').toUpperCase();
-            const isDir = dept.includes('DIRECT') || dept.includes('PRODUC') || dept.includes('WRIT');
-            const entry: SR = {
-              id: `person-${item.id}`, type: isDir ? 'director' : 'actor',
-              title: item.name ?? '',
-              subtitle: dept,
-              image: item.profile_path ? `${TMDB_IMG}${item.profile_path}` : null,
-              _nav: `/person/${item.id}`,
-            };
-            if (isDir) d.push(entry); else a.push(entry);
-          }
-        }
-      }
-
-      // ── Parse users (filter blocked/muted) ──
-      {
-        const { isHidden } = useBlockStore.getState();
-        const rows: ProfileRow[] = [];
-        if (exactRes.status === 'fulfilled' && !exactRes.value.error) rows.push(...((exactRes.value.data ?? []) as ProfileRow[]));
-        if (usersRes.status === 'fulfilled' && !usersRes.value.error) rows.push(...((usersRes.value.data ?? []) as ProfileRow[]));
-        const seen = new Set<string>();
-        const rank = closeness(handleText);
-        u = rows
-          .filter((user) => {
-            if (seen.has(user.id)) return false;
-            seen.add(user.id);
-            return !isHidden(user.id);
-          })
-          .sort((x, y) => rank(x) - rank(y))
-          .slice(0, MEMBERS_SHOWN)
-          .map((user: ProfileRow) => ({
-            id: `user-${user.id}`, type: 'user',
-            title: `@${user.username ?? 'anonymous'}`,
-            // Empty: the rank is the row's badge, drawn from `role`.
-            subtitle: '',
-            image: user.avatar_url || null,
-            role: resolveTier(user),
-            _nav: memberPath(String(user.username), user.id),
-          }));
-      }
-
-      // ── Parse logs (merge both matches, filter blocked/muted) ──
-      // Blocked members are removed BEFORE the cut to 20, so they cannot consume
-      // result slots and leave the tab looking emptier than it is.
-      {
-        const { isHidden } = useBlockStore.getState();
-        const rows: LogRow[] = [];
-        if (logsTextRes.status === 'fulfilled' && !logsTextRes.value.error) {
-          rows.push(...((logsTextRes.value.data ?? []) as LogRow[]));
-        }
-        if (logsAuthorRes.status === 'fulfilled' && !logsAuthorRes.value.error) {
-          rows.push(...((logsAuthorRes.value.data ?? []) as LogRow[]));
-        }
-
-        const seen = new Set<string>();
-        l = rows
-          .filter(log => {
-            if (seen.has(log.id)) return false;      // a log can match both queries
-            seen.add(log.id);
-            return !log.user_id || !isHidden(log.user_id);
-          })
-          .sort((x, y) => byKey(y.created_at ?? '', x.created_at ?? ''))
-          .slice(0, 20)
-          .map((log: LogRow) => {
-            const author = firstAuthor(log.profiles);
-            return {
-              id: `log-${log.id}`, type: 'log' as const,
-              title: log.film_title ?? 'Untitled',
-              subtitle: `@${(author?.username ?? 'anon').toUpperCase()}`,
-              image: log.poster_path ? `${TMDB_IMG}${log.poster_path}` : null,
-              rating: log.rating,
-              role: author?.role,
-              // One line; the row ellipsizes it where it runs out of room.
-              extra: log.status === 'abandoned'
-                ? `[ABANDONED${log.abandoned_reason ? ` — ${log.abandoned_reason.toUpperCase()}` : ''}]${plainLine(log.review) ? ` ${plainLine(log.review)}` : ''}`
-                : (plainLine(log.review) ? `"${plainLine(log.review)}"` : undefined),
-              _nav: `/log/${log.id}`,
-            };
+  const catalogue = useInfiniteQuery({
+    queryKey: ['universalSearch', 'films', text],
+    queryFn: async ({ pageParam }): Promise<CataloguePage> => {
+      // A catalogue that cannot be reached throws (TmdbUnreachable): its tabs are then unknown.
+      const res = await tmdb.search(text, pageParam).catch((e: unknown) => {
+        logger.error('[useUniversalSearch] a source was rejected', 'tmdb', e);
+        throw e;
+      });
+      const page: CataloguePage = { films: [], actors: [], directors: [], next: undefined };
+      for (const item of res?.results ?? []) {
+        if (item.media_type === 'movie' || (!item.media_type && item.title)) {
+          page.films.push({
+            id: `film-${item.id}`, type: 'film',
+            title: item.title ?? item.name ?? '',
+            subtitle: item.release_date?.slice(0, 4) || 'FILM',
+            image: item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null,
+            extra: item.vote_average ? `★ ${item.vote_average.toFixed(1)}` : undefined,
+            _nav: `/film/${item.id}`,
           });
+        } else if (item.media_type === 'person') {
+          const dept = (item.known_for_department || 'Acting').toUpperCase();
+          const isDir = dept.includes('DIRECT') || dept.includes('PRODUC') || dept.includes('WRIT');
+          const entry: SR = {
+            id: `person-${item.id}`, type: isDir ? 'director' : 'actor',
+            title: item.name ?? '',
+            subtitle: dept,
+            image: item.profile_path ? `${TMDB_IMG}${item.profile_path}` : null,
+            _nav: `/person/${item.id}`,
+          };
+          if (isDir) page.directors.push(entry); else page.actors.push(entry);
+        }
       }
+      // The catalogue's own page count: a search answered by a fallback is one page.
+      const at = res?.page ?? pageParam;
+      page.next = res?.total_pages && at < res.total_pages ? at + 1 : undefined;
+      return page;
+    },
+    initialPageParam: 1,
+    getNextPageParam: (last) => last.next,
+    enabled: searchable,
+    staleTime: 1000 * 60 * 5,
+  });
 
-      // ── Parse lists (filter blocked/muted) ──
-      if (listsRes.status === 'fulfilled' && !listsRes.value.error) {
-        const { isHidden } = useBlockStore.getState();
-        lst = (listsRes.value.data ?? [])
-          .filter((p: ListRow) => !p.user_id || !isHidden(p.user_id))
-          .map((p: ListRow) => ({
+  const members = useInfiniteQuery({
+    queryKey: ['universalSearch', 'users', text],
+    queryFn: async ({ pageParam, signal }): Promise<RowsPage<MemberCursor>> => {
+      // Chosen by the house, closest first (search_members): the handle that is the words, the
+      // handles that begin with them, the names that begin with them, the rest; never a member
+      // the reader has hidden.
+      const { data, error } = await withAbortSignal(supabase.rpc('search_members', {
+        p_pattern: handle,
+        p_handles_only: asHandle,
+        p_cursor_closeness: pageParam?.closeness ?? null,
+        p_cursor_username: pageParam?.username ?? null,
+        p_limit: SEARCH_PAGE + 1,
+      }), signal);
+      if (error) {
+        logger.error('[useUniversalSearch] a source failed', 'members', error);
+        throw error;
+      }
+      const all = (data ?? []) as MemberRow[];
+      const shown = all.slice(0, SEARCH_PAGE);
+      const last = shown[shown.length - 1];
+      const { isHidden } = useBlockStore.getState();
+      return {
+        rows: shown.filter((m) => !isHidden(m.id)).map((m): SR => ({
+          id: `user-${m.id}`, type: 'user',
+          title: `@${m.username ?? 'anonymous'}`,
+          // Empty: the rank is the row's badge, drawn from `role`.
+          subtitle: '',
+          image: m.avatar_url || null,
+          role: resolveTier({ role: m.role ?? undefined }),
+          _nav: memberPath(String(m.username), m.id),
+        })),
+        next: all.length > SEARCH_PAGE && last ? { closeness: last.closeness, username: last.username } : undefined,
+      };
+    },
+    initialPageParam: null as MemberCursor | null,
+    getNextPageParam: (last) => last.next,
+    enabled: membersAsked,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const logs = useInfiniteQuery({
+    // The reader is in the key: their own spoiler is quoted to them, and to no one else.
+    queryKey: ['universalSearch', 'logs', text, me ?? null],
+    queryFn: async ({ pageParam, signal }): Promise<RowsPage<string>> => {
+      const cursor = parseCursor(pageParam);
+      // One read in the house (search_logs): the film, the writing, or the writer's handle;
+      // newest first, by pages; never a record of a member the reader has hidden.
+      const { data, error } = await withAbortSignal(supabase.rpc('search_logs', {
+        p_pattern: pattern,
+        p_handle: handle,
+        p_cursor_at: cursor?.primary ?? null,
+        p_cursor_id: cursor?.id ?? null,
+        p_limit: SEARCH_PAGE + 1,
+      }), signal);
+      if (error) {
+        logger.error('[useUniversalSearch] a source failed', 'logs', error);
+        throw error;
+      }
+      const all = (data ?? []) as LogRow[];
+      const shown = all.slice(0, SEARCH_PAGE);
+      const last = shown[shown.length - 1];
+      const { isHidden } = useBlockStore.getState();
+      return {
+        rows: shown.filter((log) => !log.user_id || !isHidden(log.user_id)).map((log): SR => ({
+          id: `log-${log.id}`, type: 'log',
+          title: log.film_title ?? 'Untitled',
+          subtitle: `@${(log.username ?? 'anon').toUpperCase()}`,
+          image: log.poster_path ? `${TMDB_IMG}${log.poster_path}` : null,
+          rating: log.rating ?? undefined,
+          role: log.role ?? undefined,
+          // One line; the row ellipsizes it where it runs out of room.
+          extra: logExcerpt(log, me),
+          _nav: `/log/${log.id}`,
+        })),
+        next: all.length > SEARCH_PAGE && last ? buildCursor(last.created_at, last.id) : undefined,
+      };
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.next,
+    enabled: searchable,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const lists = useInfiniteQuery({
+    queryKey: ['universalSearch', 'lists', text],
+    queryFn: async ({ pageParam, signal }): Promise<RowsPage<string>> => {
+      let read = supabase
+        .from('lists')
+        .select('id, user_id, title, description, is_private, is_ranked, created_at')
+        .or(`title.ilike.*${pattern}*,description.ilike.*${pattern}*`)
+        .eq('is_private', false)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(SEARCH_PAGE + 1);
+      // Newest first, by pages: everything after the last stack shown, the id breaking a tie.
+      const past = keysetFilter('created_at', parseCursor(pageParam), 'desc');
+      if (past) read = read.or(past);
+      const { data, error } = await withAbortSignal(read, signal);
+      if (error) {
+        logger.error('[useUniversalSearch] a source failed', 'lists', error);
+        throw error;
+      }
+      const all = (data ?? []) as ListRow[];
+      const shown = all.slice(0, SEARCH_PAGE);
+      const last = shown[shown.length - 1];
+      const { isHidden } = useBlockStore.getState();
+      return {
+        rows: shown.filter((p) => !p.user_id || !isHidden(p.user_id)).map((p): SR => ({
           id: `list-${p.id}`, type: 'list',
           title: p.title ?? 'Untitled Stack',
           subtitle: p.description
-              ? (p.is_ranked ? `✦ RANKED · ${cutWhole(p.description, 50)}` : cutWhole(p.description, 60))
-              : (p.is_ranked ? '✦ RANKED STACK' : 'PUBLIC STACK'),
+            ? (p.is_ranked ? `✦ RANKED · ${cutWhole(p.description, 50)}` : cutWhole(p.description, 60))
+            : (p.is_ranked ? '✦ RANKED STACK' : 'PUBLIC STACK'),
           image: null,
           _nav: `/stacks/${p.id}`,
-        }));
-      }
-
-      // The catalogue counts too: left out, a search made while it was down was
-      // kept five minutes as "no films", and the Films tab said so throughout.
-      return {
-        films: f, actors: a, directors: d, users: u, logs: l, lists: lst,
-        _partial: tmdbFailed || usersFailed || logsTextFailed || logsAuthorFailed || listsFailed,
-        _down: {
-          films: tmdbFailed,
-          users: usersFailed,
-          logs: logsTextFailed || logsAuthorFailed,
-          lists: listsFailed,
-        },
+        })),
+        next: all.length > SEARCH_PAGE && last ? buildCursor(last.created_at, last.id) : undefined,
       };
     },
-    enabled: query.trim().length > 0,
-    // A clean result is worth keeping for five minutes. A result assembled while
-    // one source was failing must NOT be — otherwise a momentary blip is
-    // remembered as "no results" long after the backend has recovered, and
-    // nothing retries.
-    staleTime: (q) => ((q.state.data as { _partial?: boolean } | undefined)?._partial ? 0 : 1000 * 60 * 5),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.next,
+    enabled: searchable,
+    staleTime: 1000 * 60 * 5,
   });
+
+  const reads = useMemo(() => ({ films: catalogue, users: members, logs, lists }), [catalogue, members, logs, lists]);
+  const asked: PerSource = { films: searchable, users: membersAsked, logs: searchable, lists: searchable };
+
+  /** A source's first page could not be read: its tab is unknown, not empty. */
+  const downOf = (s: SearchSource) => asked[s] && reads[s].isError && reads[s].data === undefined;
+  const down: SourcesDown = usePerSource(downOf('films'), downOf('users'), downOf('logs'), downOf('lists'));
+  // Every source asked has answered its first page, or failed it; one not asked (nothing it could
+  // search) is settled too.
+  const settled = (!asked.films || !catalogue.isPending) && (!asked.users || !members.isPending)
+    && (!asked.logs || !logs.isPending) && (!asked.lists || !lists.isPending);
+  const everyAskedDown = searchable && SEARCH_SOURCES.every((s) => !asked[s] || down[s]);
+
+  const catalogueData = catalogue.data;
+  const membersData = members.data;
+  const logsData = logs.data;
+  const listsData = lists.data;
+  const partial = down.films || down.users || down.logs || down.lists;
+  const data: SearchResults | undefined = useMemo(() => {
+    if (!text) return undefined;
+    if (!searchable) return EMPTY_RESULTS;
+    if (!settled || everyAskedDown) return undefined;
+    return {
+      films: once(pagesOf(catalogueData).flatMap((p) => p.films)),
+      actors: once(pagesOf(catalogueData).flatMap((p) => p.actors)),
+      directors: once(pagesOf(catalogueData).flatMap((p) => p.directors)),
+      users: once(pagesOf(membersData).flatMap((p) => p.rows)),
+      logs: once(pagesOf(logsData).flatMap((p) => p.rows)),
+      lists: once(pagesOf(listsData).flatMap((p) => p.rows)),
+      _partial: partial,
+      _down: down,
+    };
+  }, [text, searchable, settled, everyAskedDown, catalogueData, membersData, logsData, listsData, partial, down]);
+
+  // Each kept as one object while its four flags hold, so a screen's memos do not run every render.
+  const more = usePerSource(
+    asked.films && !!catalogue.hasNextPage, asked.users && !!members.hasNextPage,
+    asked.logs && !!logs.hasNextPage, asked.lists && !!lists.hasNextPage,
+  );
+  const readingMore = usePerSource(
+    catalogue.isFetchingNextPage, members.isFetchingNextPage, logs.isFetchingNextPage, lists.isFetchingNextPage,
+  );
+  const moreFailed = usePerSource(
+    catalogue.isFetchNextPageError, members.isFetchNextPageError, logs.isFetchNextPageError, lists.isFetchNextPageError,
+  );
+
+  /** The next page of one source; asked twice, or with none left, it does nothing. */
+  const loadMore = useCallback((source: SearchSource) => {
+    const read = reads[source];
+    if (!read.hasNextPage || read.isFetchingNextPage) return;
+    void read.fetchNextPage();
+  }, [reads]);
+
+  /** Ask again: the sources that could not be asked, or all of them when none failed. */
+  const refetch = useCallback(() => {
+    const failed = SEARCH_SOURCES.filter((s) => reads[s].isError);
+    for (const s of failed.length ? failed : SEARCH_SOURCES) void reads[s].refetch();
+  }, [reads]);
+
+  // Searching: a first page is out (a next page is the foot's own reading, never the whole search's).
+  const isFetching = SEARCH_SOURCES.some((s) => asked[s] && reads[s].isFetching && !reads[s].isFetchingNextPage);
+
+  return {
+    data,
+    isFetching,
+    // Every source asked could not be: the screen's "the telegraph is down" is then the truthful one.
+    isError: everyAskedDown,
+    refetch,
+    more,
+    readingMore,
+    moreFailed,
+    loadMore,
+  };
+}
+
+/** One flag a source, as one object for as long as the four hold. */
+function usePerSource(films: boolean, users: boolean, logs: boolean, lists: boolean): PerSource {
+  return useMemo(() => ({ films, users, logs, lists }), [films, users, logs, lists]);
+}
+
+/** A paged read's pages, none before its first answer. */
+function pagesOf<P>(d: InfiniteData<P, unknown> | undefined): P[] {
+  return d?.pages ?? [];
+}
+
+/** Each row once, the first time it came: a catalogue page may repeat a film another page held. */
+function once(rows: SR[]): SR[] {
+  const seen = new Set<string>();
+  return rows.filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
 }

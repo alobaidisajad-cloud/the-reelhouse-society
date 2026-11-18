@@ -341,10 +341,13 @@ describe('every room that can grow can be searched', () => {
     expect(read(f)).toMatch(/<RoomSearch|<TextInput/);
   });
 
-  it.each(ROOMS)('%s ends its debounce when the room closes', (_name, f) => {
+  // Review round 12: each room's wait is useDebouncedSearch's (its ✕ cancels the wait, which the
+  // rooms' own timers never did), and that one wait ends with the room (aClearedSearchStaysCleared).
+  it.each(ROOMS)('%s waits through the one debounce, which ends when the room closes', (_name, f) => {
     const src = read(f);
-    if (!/searchTimeoutRef/.test(src)) return;   // no debounce, nothing to end
-    expect(src).toMatch(/useEffect\(\(\)\s*=>\s*\(\)\s*=>\s*\{[\s\S]{0,220}?clearTimeout\(searchTimeoutRef/);
+    if (!/<RoomSearch/.test(src)) return;   // no search box, nothing to wait for
+    expect(src).toMatch(/useDebouncedSearch\(/);
+    expect(src).not.toMatch(/searchTimeoutRef|setTimeout\(/);
   });
 
   it('every search box is gated on the REAL total, never the loaded array', () => {

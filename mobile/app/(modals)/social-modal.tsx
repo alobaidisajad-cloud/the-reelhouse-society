@@ -108,7 +108,7 @@ const LoungeRow = React.memo(function LoungeRow({
                 haptic="selection"
                 pressedScale={0.92}
                 accessibilityRole="button"
-                accessibilityLabel={isShared ? 'Already shared to this lounge' : `Share to ${lounge.name}`}
+                accessibilityLabel={isShared ? 'Sent: already shared to this lounge' : `Share to ${lounge.name}`}
             >
                 <View style={[styles.shareChip, isShared && styles.shareChipDone]}>
                     {isSharing ? (

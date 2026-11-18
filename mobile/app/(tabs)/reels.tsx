@@ -215,7 +215,10 @@ export default function ReelScreen() {
   const followingAsked = feedFilter === 'following' || !communityLoading;
   const stacksAsked = section === 'stacks' || !communityLoading;
   const { data: followingData, isLoading: followingLoading, isError: followingFailed, refetch: refetchFollowing, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing, isFetchNextPageError: followingNextFailed } = useFollowingFeed(logsBack, followingAsked);
-  const { data: stacksData, isLoading: stacksLoading, isError: stacksFailed, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks, isFetchNextPageError: stacksNextFailed } = useStacksFeed(stackFilter, stackSearch, stacksBack, stacksAsked);
+  const { data: stacksData, isLoading: stacksLoading, isError: stacksFailed, refetch: refetchStacks, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks, isFetchNextPageError: stacksNextFailed, isPlaceholderData: stacksPlaceholder } = useStacksFeed(stackFilter, stackSearch, stacksBack, stacksAsked);
+  // The cans shown are the last answer, held while new words (or FOLLOWING) are asked: drawn as
+  // being read again, never as the answer to the words now in the box (review round 12).
+  const stacksRereading = stacksPlaceholder;
 
   const followingCount = useSocialStore((s) => s.following.length);
   // Following nobody is a fact only of a list read: one unread or failed follows someone, perhaps.
@@ -272,10 +275,11 @@ export default function ReelScreen() {
   }, [feedFilter, hasNextFollowing, fetchNextFollowing, hasNextCommunity, fetchNextCommunity]);
 
   const onLoadMoreStacks = useCallback(() => {
-    if (hasNextStacks) {
+    // Never a next page of the last answer while new words are asked: it would be laid under them.
+    if (hasNextStacks && !stacksRereading) {
       fetchNextStacks();
     }
-  }, [hasNextStacks, fetchNextStacks]);
+  }, [hasNextStacks, stacksRereading, fetchNextStacks]);
 
   const switchSection = useCallback((s: ReelSection) => {
     if (s === section) return;
@@ -405,9 +409,14 @@ export default function ReelScreen() {
           onChangeText={handleStackSearchChange}
           onClear={handleClearSearch}
         />
+        {/* The cans below are the last answer while the new one is asked: said in the box, so the
+            grid does not move under the member's eye. */}
+        {stacksRereading && filteredStacks.length > 0 ? (
+          <Text style={st.searchReading} accessibilityLiveRegion="polite" accessibilityLabel="Reading the cans">READING…</Text>
+        ) : null}
       </View>
     </>
-  ), [section, stackSearch, stackFilter, switchSection, switchStackFilter, handleStackSearchChange, handleClearSearch]);
+  ), [section, stackSearch, stackFilter, switchSection, switchStackFilter, handleStackSearchChange, handleClearSearch, stacksRereading, filteredStacks.length]);
   const curate = useCallback(() => {
     if (!isAuthenticated) return askForAName();
     TactileEngine.destroy();
@@ -416,7 +425,7 @@ export default function ReelScreen() {
 
   const logsExtraData = useMemo(() => [feedFilter, section, logCount, resolvedRole, feedLoading], [feedFilter, section, logCount, resolvedRole, feedLoading]);
   const stacksFollowsUnread = stackFilter === 'following' && followsUnread;
-  const stacksExtraData = useMemo(() => [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading, stacksFollowsUnread], [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading, stacksFollowsUnread]);
+  const stacksExtraData = useMemo(() => [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading, stacksFollowsUnread, stacksRereading], [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading, stacksFollowsUnread, stacksRereading]);
 
 
   const stacksLost = (stacksFailed && stacksData === undefined) || (stackFilter === 'following' && followsLost);
@@ -426,7 +435,8 @@ export default function ReelScreen() {
   }, [stackFilter, followsLost, refetchStacks]);
 
   const stackEmpty = useMemo(() => {
-    if (stacksLoading || stacksFollowsUnread) return <CansReading />;
+    // An empty last answer held while new words are asked is no answer to them: the cans are read.
+    if (stacksLoading || stacksRereading || stacksFollowsUnread) return <CansReading />;
     if (stacksLost) return <StateFrame><EmptyOffline onRetry={rereadStacks} /></StateFrame>;
     return (
       <Arrive name="stacks.empty">
@@ -459,7 +469,7 @@ export default function ReelScreen() {
         </StateFrame>
       </Arrive>
     );
-  }, [stacksLoading, stacksFollowsUnread, stacksLost, rereadStacks, stackSearch, stackFilter, handleClearSearch, switchStackFilter, isAuthenticated, askForAName]);
+  }, [stacksLoading, stacksRereading, stacksFollowsUnread, stacksLost, rereadStacks, stackSearch, stackFilter, handleClearSearch, switchStackFilter, isAuthenticated, askForAName]);
 
 
 
@@ -475,11 +485,12 @@ export default function ReelScreen() {
     return logsHasNext ? null : <TheEnd />;
   }, [logCount, logsNextReading, logsNextFailed, logsHasNext, onLoadMoreLogs]);
   const stacksFooter = useMemo(() => {
-    if (filteredStacks.length === 0) return null;
+    // The last answer's foot is not the new one's: nothing below cans being read again.
+    if (filteredStacks.length === 0 || stacksRereading) return null;
     if (isFetchingNextStacks) return <CansReading />;
     if (stacksNextFailed) return <NextReelFailed words="The next cans did not load." what="read the next cans" onRetry={onLoadMoreStacks} />;
     return null;
-  }, [filteredStacks.length, isFetchingNextStacks, stacksNextFailed, onLoadMoreStacks]);
+  }, [filteredStacks.length, stacksRereading, isFetchingNextStacks, stacksNextFailed, onLoadMoreStacks]);
 
   // Why a stranger may read the Reel and not the Lounge: theReelIsTheAdvertisement.test.ts.
   return (
@@ -519,6 +530,7 @@ export default function ReelScreen() {
       <Animated.View testID="reels-stacks-layer" {...heardIf(section === 'stacks')} pointerEvents={section === 'stacks' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, crossfaded ? (section === 'stacks' ? SHOWN : HIDDEN) : stacksOpacityStyle]}>
         <ReelsStackList
           stacks={filteredStacks}
+          rereading={stacksRereading}
           refreshing={isManualRefreshing}
           onRefresh={onRefresh}
           topPad={topPad}
@@ -530,7 +542,7 @@ export default function ReelScreen() {
           onCurate={curate}
           contentContainerStyle={{ paddingTop: topPad, paddingBottom: endPad }}
           listRef={stacksFlatListRef}
-          onEndReached={onLoadMoreStacks}
+          onEndReached={stacksRereading ? undefined : onLoadMoreStacks}
           footer={stacksFooter}
           extraData={stacksExtraData}
         />
@@ -556,6 +568,7 @@ const st = StyleSheet.create({
     paddingVertical: 12,
   },
   searchClear: { padding: 4, marginLeft: 4 },
+  searchReading: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.fog },
   searchClearText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog },
 
   // An empty reel's frame: Buster, what is so, and the one thing to do about it.

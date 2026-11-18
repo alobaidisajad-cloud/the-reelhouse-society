@@ -310,7 +310,7 @@ describe('TribunalScreen Integration', () => {
 
       // Submit
       await act(async () => {
-        await fireEvent.press(getByLabelText('Execute ISSUE WARNING'));
+        await fireEvent.press(getByLabelText('Render verdict: issue warning'));
       });
 
       await waitFor(() => {
@@ -394,7 +394,7 @@ describe('TribunalScreen Integration', () => {
 
       // Submit
       await act(async () => {
-        await fireEvent.press(getByLabelText('Execute SUSPEND MEMBER'));
+        await fireEvent.press(getByLabelText('Render verdict: suspend member'));
       });
 
       await waitFor(() => {

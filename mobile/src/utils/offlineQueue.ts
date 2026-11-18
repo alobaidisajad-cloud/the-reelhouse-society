@@ -541,7 +541,13 @@ async function sendOnce(): Promise<void> {
                 idMap[result.fakeId] = result.newId;
             }
             if (result.readAt) readAts[result.readAt.key] = result.readAt.at;
-            successCount++;
+            if (result.letGo) {
+                // Let go of by its handler, which said so (a page gone from the house): finished, a
+                // copy kept for diagnosis, and never counted as sent (review round 12).
+                addToDeadLetter([{ ...mutation, payload: { ...mutation.payload, _failReason: `let go: ${result.letGo}`, _failedAt: houseIso() } }]);
+            } else {
+                successCount++;
+            }
             if (SOCIAL_MUTATION_TYPES.has(mutation.type)) socialMutationSynced = true;
             finished(mutation);
         } catch (error: unknown) {

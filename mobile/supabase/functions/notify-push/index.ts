@@ -12,6 +12,12 @@
  * omits the `x-function-secret` header, the request is rejected (fail closed).
  * The DB trigger reads the secret from Supabase Vault and sends it automatically.
  * Stale tokens that Expo reports as DeviceNotRegistered are pruned automatically.
+ * v7 (2026-11-17): two kinds of their own (review round 12). A salon's door (a request to enter, an
+ * admission) is 'salon', titled "The Lounge" and sent to the Members channel; a ballot's close is
+ * 'ballot', titled "The Count Is In" and sent to the Critiques channel. Both arrived as the house's
+ * own word, at its weight, under its switch. A critique taken as the answer is titled as what it is
+ * ("Taken as the Answer"), read from the notice's metadata, never "A New Critique".
+ *
  * v6 (2026-11-11): the caller names a notice by its id, and nothing else is taken from it. The
  * notice is read from the house and claimed (pushed_at, 20261111_01) while it is fresh, so it is
  * pushed once, in its own words. The secret travels in the trigger's request, which waits in
@@ -52,7 +58,7 @@ const EXPO_LIMIT_MS = 10_000
 const PUSH_WINDOW_MS = 15 * 60_000
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 /** What a push is made of, read from the house: never the caller's words. */
-const NOTICE_COLUMNS = 'id, user_id, type, from_username, message, related_lounge_id'
+const NOTICE_COLUMNS = 'id, user_id, type, from_username, message, related_lounge_id, metadata'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -66,6 +72,8 @@ interface NotificationRecord {
   from_username?: string | null
   message?: string
   related_lounge_id?: string | null
+  /** Read for one key alone: 'answer', on a critique taken as the answer. */
+  metadata?: Record<string, unknown> | null
 }
 
 // ── The banner voice ────────────────────────────────────────────────────────
@@ -77,8 +85,12 @@ const TYPE_TITLES: Record<string, string> = {
   endorse: 'A Certification',
   comment: 'A New Critique',
   moderation: 'A Notice from the House',
+  salon: 'The Lounge',
+  ballot: 'The Count Is In',
 }
 const DEFAULT_TITLE = 'The ReelHouse Society'
+/** A critique taken as the answer of a seeking: a 'comment' the house marks with metadata.answer. */
+const ANSWER_TITLE = 'Taken as the Answer'
 
 /**
  * Each kind's Android channel: the app creates these at start (src/lib/noticeChannels.ts, the same
@@ -91,6 +103,8 @@ const KIND_CHANNEL: Record<string, string> = {
   follow: 'members',
   follow_request: 'members',
   follow_accept: 'members',
+  salon: 'members',
+  ballot: 'critiques',
   endorse: 'honours',
   reaction: 'honours',
   featured: 'honours',
@@ -104,9 +118,12 @@ const KIND_CHANNEL: Record<string, string> = {
 function composeBanner(record: NotificationRecord): { title: string; body: string } {
   const type = record.type ?? 'system'
   // a house notice is about a salon when it names one: a request to enter, an admission
+  // (a 'system' notice naming a salon was written before the salon's own kind, round 12)
   const title = type === 'system'
     ? (record.related_lounge_id ? 'The Lounge' : DEFAULT_TITLE)
-    : TYPE_TITLES[type] ?? DEFAULT_TITLE
+    : type === 'comment' && record.metadata?.answer === true
+      ? ANSWER_TITLE
+      : TYPE_TITLES[type] ?? DEFAULT_TITLE
   const message = record.message ?? ''
   const body = record.from_username ? `@${record.from_username} ${message}` : message
   return { title, body }

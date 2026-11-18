@@ -193,7 +193,8 @@ async function measureControls(browser, file, pass) {
       }).filter((f) => f.w > 8 && f.h > 8 && !(f.say in ALLOW_FIELDS));
     // A control with no words of its own is known by its icon alone.
     const icons = [];
-    for (const c of document.querySelectorAll('[data-press]')) {
+    // A disabled control (data-disabled) is not judged: an inactive control's ink is exempt.
+    for (const c of document.querySelectorAll('[data-press]:not([data-disabled])')) {
       if (seen(c) < 0.05) continue;
       const words = [...c.querySelectorAll('span[data-scale-cap]')].some((s) => s.textContent.trim() && seen(s) > 0.05);
       if (words) continue;

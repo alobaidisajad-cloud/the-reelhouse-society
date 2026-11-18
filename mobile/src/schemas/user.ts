@@ -26,6 +26,8 @@ export const UserPreferencesSchema = z.object({
   notif_follows: z.boolean().optional(),
   notif_endorsements: z.boolean().optional(),
   notif_comments: z.boolean().optional(),
+  // The pushes of a salon's door ('salon' notices: a request to enter, an admission). Absent means on.
+  notif_salons: z.boolean().optional(),
   notif_system: z.boolean().optional(),
   biometric_lock: z.boolean().optional(),
   tactile_audio_enabled: z.boolean().optional(),

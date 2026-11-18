@@ -3,7 +3,8 @@
 //
 //   node mobile/supabase/diagnostics/rehearse.cjs <name>_rehearsal.sql
 //   node mobile/supabase/diagnostics/rehearse.cjs train_0_rehearsal.sql --with-train
-//     the pending train's files applied first, inside the same rolled-back transaction
+//     its own pending migration applied first, inside the same rolled-back transaction, on
+//     production as the cars before it left it (train.cjs rehearses each car so, car by car)
 //
 // Every session runs under the time limits apply.cjs uses. The address comes from the private
 // settings file (scripts/private-settings.cjs) and is never printed.

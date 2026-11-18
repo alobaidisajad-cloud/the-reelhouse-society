@@ -18,7 +18,7 @@
  * find that out at the end.
  */
 import React, { act } from 'react';
-import { Alert, AppState, InteractionManager } from 'react-native';
+import { AccessibilityInfo, Alert, AppState, InteractionManager } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -662,6 +662,18 @@ describe('amending a dossier that already exists', () => {
     await press(getByLabelText('Re-file the essay'));
     await flush();
     expect(mockAmended).toEqual([[ESSAY_ID, expect.objectContaining({ title: 'The Empty Room', fullContent: 'The first version, corrected.' })]]);
+  });
+
+  // Review round 12: the page's state was a live region only, which iOS ignores.
+  it('an essay that could not be read is spoken on an iPhone as the page says it', async () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
+    mockHydrate = async () => 'unreachable';
+    at({ kind: 'dossier', edit: ESSAY_ID });
+    const { getByText } = render(<ComposeScreen />);
+    await flush(); await flush();
+    expect(getByText('THE ESSAY COULD NOT BE READ')).toBeTruthy();
+    expect(announce).toHaveBeenCalledWith('THE ESSAY COULD NOT BE READ');
+    announce.mockRestore();
   });
 
   it('an essay that could not be read is said, asked again, and never written over', async () => {

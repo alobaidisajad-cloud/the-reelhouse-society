@@ -39,6 +39,11 @@ export const KIND_CHANNEL: Readonly<Record<string, string>> = {
   follow: 'members',
   follow_request: 'members',
   follow_accept: 'members',
+  // A salon's door: a member asks to enter, or the host admits you (review round 12; it came as the
+  // house's own word, in 'the-house').
+  salon: 'members',
+  // A ballot you voted in has closed: a word on the Dispatch, heard with the critiques.
+  ballot: 'critiques',
   endorse: 'honours',
   reaction: 'honours',
   featured: 'honours',

@@ -14,6 +14,9 @@ import { UNREADY } from '@/src/theme/unready';
 import { DisplayItem, GroupedDisplayItem, groupNotifications } from '@/src/utils/groupNotifications';
 import { groupRoute, parseGroupKey } from '@/src/utils/endorsementGroupKey';
 import { noticeRoute } from '@/src/utils/noticeRoute';
+import { openOrTellHere } from '@/src/utils/pageInFront';
+import { NOTICES_SHEET } from '@/src/utils/openNoticeFromPush';
+import { useReadAgainWhenToldHere } from '@/src/hooks/useReadAgainWhenToldHere';
 import * as Notifications from 'expo-notifications';
 
 import { EmptyOffline, EmptyState, REFRESH_FAILED } from '@/src/components/EmptyStates';
@@ -26,7 +29,7 @@ import { useTimeAgo } from '@/src/hooks/useClock';
 import { useOfflineAware } from '@/src/hooks/useOfflineAware';
 import { useAuthStore } from '@/src/stores/auth';
 import { MembersOnly } from '@/src/components/MembersOnly';
-import { Award, Bell, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
+import { Award, Bell, CheckSquare, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useContentBottom, useModalTop } from '@/src/components/layout/navMetrics';
 import { RoomMoreFailed } from '@/src/components/profile/RoomParts';
@@ -49,6 +52,10 @@ const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
   rate:    { Icon: Star, color: colors.sepia },
   // a piece of theirs hangs in the Lobby today (20260930_03): the house's award, in brass
   featured: { Icon: Award, color: colors.sepia },
+  // A salon's door (a member asks to enter, you are admitted) and a ballot's close: their own kinds
+  // since round 12, drawn as what they are, never as the house's own word.
+  salon: { Icon: KeyRound, color: colors.sepia },
+  ballot: { Icon: CheckSquare, color: colors.bone },
   default: { Icon: Award, color: colors.fog },
 };
 
@@ -56,6 +63,12 @@ const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
 function noticeLabel(unread: boolean, who: string | null | undefined, message: string, ago: string): string {
   return `${unread ? 'Unread. ' : ''}${who ? `@${who} ` : ''}${message}, ${ago.toLowerCase()}`;
 }
+
+/**
+ * A notice's Dismiss, offered on its row: VoiceOver reads the row as one stop and never reaches
+ * the × drawn inside it, so without this a screen-reader member could not dismiss one notice.
+ */
+const DISMISS_ACT = [{ name: 'dismiss', label: 'Dismiss' }];
 
 const NotificationItem = React.memo(function NotificationItem({ item, index }: { item: AppNotification; index: number }) {
   const isRead = item.read;
@@ -69,12 +82,19 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
       useNotificationStore.getState().markRead(item.id);
     }
     // Where the notice is about (noticeRoute, which a tapped push uses too);
-    // the sheet closes before the room opens.
+    // the sheet closes before the room opens. The page beneath it already that room (the salon,
+    // whatever its door): it is told, never stacked again (pageInFront, review round 12).
     const route = noticeRoute(item);
     if (route) {
       nav.back();
-      InteractionManager.runAfterInteractions(() => nav.push(route as never));
+      InteractionManager.runAfterInteractions(() => openOrTellHere(route));
     }
+  };
+
+  // The × and the row's Dismiss action: one act. The warning buzz before a destructive act.
+  const handleDismiss = () => {
+    TactileEngine.warn();
+    useNotificationStore.getState().dismiss(item.id);
   };
 
   const posterUri = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : null;
@@ -87,6 +107,8 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
         haptic="light"
         pressedScale={0.96}
         accessibilityLabel={noticeLabel(!isRead, item.from_username, item.message, ago)}
+        accessibilityActions={DISMISS_ACT}
+        onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'dismiss') handleDismiss(); }}
       >
         {/* Action icon */}
         <View style={[s.iconCircle, { borderColor: typeInfo.color }]}>
@@ -114,10 +136,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
         ) : null} />
 
         {/* TactileEngine.warn() before dismiss for destructive-action feedback */}
-        <PressableScale touch="destructive" style={s.dismissBtn} hitSlop={HITSLOP_DISMISS} onPress={() => {
-            TactileEngine.warn();
-            useNotificationStore.getState().dismiss(item.id);
-        }} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss notice">
+        <PressableScale touch="destructive" style={s.dismissBtn} hitSlop={HITSLOP_DISMISS} onPress={handleDismiss} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss notice">
           <X size={12} color={colors.fog} />
         </PressableScale>
       </PressableScale>
@@ -137,7 +156,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
     InteractionManager.runAfterInteractions(() => {
       // By what the group is about: a log, a stack, an essay or a filing.
       const route = groupRoute(parseGroupKey(item.groupKey));
-      if (route) nav.push(route as never);
+      if (route) openOrTellHere(route);
     });
   };
 
@@ -154,6 +173,8 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
         haptic="light"
         pressedScale={0.96}
         accessibilityLabel={noticeLabel(item.hasUnread, null, item.message, ago)}
+        accessibilityActions={DISMISS_ACT}
+        onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'dismiss') handleDismiss(); }}
       >
         {/* Count badge */}
         <View style={s.groupBadge}>
@@ -234,6 +255,9 @@ export default function NotificationsModal() {
     if (after.fetchFailed && after.notifications.length > 0) reelToast.error(REFRESH_FAILED);
   }, [fetchNotifications]);
   const rereadBoard = useCallback(() => { void fetchNotifications(); }, [fetchNotifications]);
+  // A push tapped while the board is open (one that points nowhere in particular opens the board):
+  // the board is read again, so what it announced is on it (review round 12).
+  useReadAgainWhenToldHere(NOTICES_SHEET, rereadBoard);
 
   // Infinite scroll handler — wires to existing cursor pagination in store
   const handleLoadMore = useCallback(() => {

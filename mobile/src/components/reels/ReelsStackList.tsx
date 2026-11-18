@@ -19,6 +19,11 @@ const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as any;
 
 interface ReelsStackListProps {
   stacks: StackData[];
+  /**
+   * The cans are the last answer, held while the next is asked (new words, or FOLLOWING): drawn
+   * dimmed, not pressed and not heard, so none is taken for the answer to the words in the box.
+   */
+  rereading?: boolean;
   refreshing: boolean;
   onRefresh: () => void;
   topPad: number;
@@ -39,6 +44,7 @@ interface ReelsStackListProps {
 
 export function ReelsStackList({
   stacks,
+  rereading = false,
   refreshing,
   onRefresh,
   topPad,
@@ -78,13 +84,19 @@ export function ReelsStackList({
     return (
       <View style={grid.pad(index % grid.cols)}>
         {item === CURATE ? <CurateCan height={height} onPress={onCurate} /> : (
-          <View testID="reel-stack">
+          <View
+            testID="reel-stack"
+            style={rereading ? REREAD : undefined}
+            pointerEvents={rereading ? 'none' : 'auto'}
+            accessibilityElementsHidden={rereading}
+            importantForAccessibility={rereading ? 'no-hide-descendants' : 'auto'}
+          >
             <StackCan stack={item} width={grid.can} height={height} onPress={() => { TactileEngine.selection(); nav.push(`/stacks/${item.id}`); }} />
           </View>
         )}
       </View>
     );
-  }, [rows, grid, onCurate]);
+  }, [rows, grid, onCurate, rereading]);
 
   const scrollHeight = useSharedValue(0);
   const viewHeight = useSharedValue(0);
@@ -148,3 +160,6 @@ export function ReelsStackList({
 
 /** The empty can's place in the grid. */
 const CURATE = 'curate' as const;
+
+/** A can of the last answer while the next is read: there, but plainly not the answer. */
+const REREAD = { opacity: 0.4 } as const;

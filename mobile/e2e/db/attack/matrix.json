@@ -69,7 +69,7 @@
       "owner": "from_user_id", "key": ["from_user_id", "thing"],
       "specimen": { "from_user_id": "{owner}", "user_id": "{uid@V}", "thing": "endorse:log:{ref:logs@V}", "pushed_at": "2026-01-01" }, "variant": "none",
       "touch": { "pushed_at": "2026-01-02" }, "read": "none",
-      "why": "Written by tg_notify_push alone: that a member's certification of a thing has pushed once."
+      "why": "Written by tg_notify_push alone: that a member's act at another (a certification, a follow, a request to enter a salon, an answer taken) has pushed once."
     },
     "viewings": {
       "owner": { "via": "logs", "on": "log_id" }, "key": ["viewing_id"],
@@ -762,6 +762,14 @@
     "save_stack": { "why": "A stack is saved by its owner alone.", "cases": [
       { "name": "another's stack", "as": "all", "expect": "error", "call": "public.save_stack('{ref:lists@V}', 'rh changed')" }
     ] },
+    "search_logs": { "why": "The house-wide search's records: one's own, never a private member's to a stranger, nor a hidden author's to a member.", "cases": [
+      { "name": "the words every member's review holds", "as": "all", "expect": "ok", "call": "public.search_logs('rh review', NULL, NULL, NULL, 51)",
+        "result": "position('{ref:logs}' in $1::text) > 0 AND position('{ref:logs@P}' in $1::text) = 0 AND (position('{ref:logs@BK}' in $1::text) = 0 OR '{owner}' = '{uid@X2}') AND (position('{ref:logs@BY}' in $1::text) = 0 OR '{owner}' = '{uid@X2}')" }
+    ] },
+    "search_members": { "why": "The house-wide search's members: never one hidden from the member searching.", "cases": [
+      { "name": "the words every member's handle holds", "as": "all", "expect": "ok", "call": "public.search_members('at', false, NULL, NULL, 51)",
+        "result": "position('{uid@V}' in $1::text) > 0 AND (position('{uid@BK}' in $1::text) = 0 OR '{owner}' = '{uid@X2}') AND (position('{uid@BY}' in $1::text) = 0 OR '{owner}' = '{uid@X2}')" }
+    ] },
     "send_salon_typing": { "why": "Typing is sent only from a seat.", "cases": [
       { "name": "a private salon of another", "as": "all", "expect": { "ok": "all" }, "call": "public.send_salon_typing('{ref:lounges@P}')", "result": "$1 = '[false]'" }
     ] },
@@ -923,7 +931,7 @@
     {"name":"nor by a visitor","table":"dispatch_posts","as":["visitor"],"kind":"read","id":"{ref:dispatch_posts@V#4}","expect":"unseen","why":"A filing the house withheld leaves the Dispatch for everyone but its writer."},
     {"name":"an ended filing takes no critique","table":"dispatch_comments","as":["free","auteur"],"kind":"insert","row":{"id":"{new}","post_id":"{ref:dispatch_posts@V#5}","user_id":"{owner}","author_username":"{username}","body":"rh late"},"expect":"refused","why":"An ended filing is closed to new words."},
     {"name":"nor a certification","table":"dispatch_certifications","as":["free","auteur"],"kind":"insert","row":{"id":"{new}","user_id":"{owner}","post_id":"{ref:dispatch_posts@V#5}"},"expect":"refused","why":"An ended filing is closed to new certifications."},
-    {"name":"a notice from one who blocked the member is not shown","table":"notifications","as":["free","lapsed","archivist","auteur","founding","banned","admin"],"kind":"read","lay":{"id":"{new}","user_id":"{owner}","from_user_id":"{uid@BY}","type":"system","message":"rh notice"},"expect":"unseen","why":"A block silences its member's notices both ways."},
+    {"name":"a notice from one who blocked the member is not shown","table":"notifications","as":["free","lapsed","archivist","auteur","founding","banned","admin"],"kind":"read","layAsBefore":true,"lay":{"id":"{new}","user_id":"{owner}","from_user_id":"{uid@BY}","type":"system","message":"rh notice"},"expect":"unseen","why":"A block silences its member's notices both ways: none is written across it since round 12, and one written before it is not shown."},
     {"name":"a notice from anyone else is","table":"notifications","as":["free","lapsed","archivist","auteur","founding","banned","admin"],"kind":"read","lay":{"id":"{new}","user_id":"{owner}","from_user_id":"{uid@X1}","type":"system","message":"rh notice"},"expect":"seen","why":"The control beside the case above."},
     {"name":"a newcomer is not yet through the Dispatch door","table":"dispatch_posts","as":["NEW"],"kind":"insert","row":{"id":"{new}","kind":"take","user_id":"{owner}","author_username":"{username}","body":"rh first take"},"expect":"refused","why":"A member files once they have been here two days and logged five films (may_file)."},
     {"name":"a member who has is","table":"dispatch_posts","as":["V"],"kind":"insert","row":{"id":"{new}","kind":"take","user_id":"{owner}","author_username":"{username}","body":"rh take"},"expect":"ok","why":"The control beside the case above: a take needs no rank."},

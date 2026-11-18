@@ -151,7 +151,7 @@ describe('a case another moderator already judged', () => {
 
     await act(async () => { await fireEvent.press(firstOf(r.getAllByLabelText('Warn: issue a warning'))); });
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Reason for this action'), 'Repeated abuse'); });
-    await act(async () => { await fireEvent.press(r.getByLabelText('Execute ISSUE WARNING')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Render verdict: issue warning')); });
 
     await waitFor(() => expect(mockResolveReportV2).toHaveBeenCalledWith('report-001', 'warn', expect.anything()));
     await waitFor(() => expect(r.queryByText('HATE SPEECH IN FILM REVIEW')).toBeNull());
@@ -207,7 +207,7 @@ describe('a piece its author already deleted', () => {
 
     await act(async () => { await fireEvent.press(r.getByLabelText('Remove the reported content')); });
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Reason for this action'), 'Slurs'); });
-    await act(async () => { await fireEvent.press(r.getByLabelText('Execute REMOVE CONTENT')); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Render verdict: remove content')); });
 
     await waitFor(() => expect(mockResolveReportV2).toHaveBeenCalledWith('report-001', 'delete_content', expect.anything()));
     await waitFor(() => expect(reelToast.error).toHaveBeenCalledWith('The piece is already gone. Dismiss the case, or judge the member.'));

@@ -42,7 +42,7 @@ const ME = { id: 'ada', username: 'ada' };
 const panel = (isCreator: boolean, onClose = jest.fn()) => {
   useAuthStore.setState({ user: isCreator ? { id: 'host', username: 'host' } : ME } as never);
   const members = [{ user_id: 'host', status: 'approved', username: 'host' }, { user_id: 'ada', status: 'approved', username: 'ada' }] as never;
-  return { onClose, r: render(<LoungeSettingsPanel lounge={room} members={members} visible isCreator={isCreator} onClose={onClose} />) };
+  return { onClose, r: render(<LoungeSettingsPanel lounge={room} members={members} visible isCreator={isCreator} standing="approved" onClose={onClose} />) };
 };
 
 describe('the salon panel', () => {

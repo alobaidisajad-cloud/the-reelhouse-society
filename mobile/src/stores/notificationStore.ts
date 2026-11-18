@@ -139,6 +139,13 @@ export interface NotificationState {
      * so the board does too, unread count and all. `null`: every request (declined all at once).
      */
     forgetRequestNotices: (fromUserId: string | null) => void;
+    /**
+     * A request to enter a salon answered at its door (admitted or declined): the house takes its
+     * notice (a_salon_request_takes_its_notice), so the board does too, unread count and all.
+     */
+    forgetSalonRequestNotices: (loungeId: string, fromUserId: string) => void;
+    /** Notices the house took back (told on the member's own topic): off the board and the bell. */
+    forgetGoneNotices: (ids: readonly string[]) => void;
     /** Members now hidden (blocked or muted): their notices leave the board and the bell. */
     forgetNoticesFrom: (hidden: ReadonlySet<string>) => void;
     /** Derived O(1) counter — updated on every mutation */
@@ -204,6 +211,20 @@ function putBack(state: Board, removed: readonly AppNotification[]): Board {
         _unreadCount: state._unreadCount + missing.filter((n) => !n.read).length,
     };
 }
+
+/** These notices taken off the board, their unread ones off the bell; the same state when none is held. */
+function withoutNotices<T extends Board>(state: T, isGone: (n: AppNotification) => boolean): T | Board {
+    const gone = state.notifications.filter(isGone);
+    if (gone.length === 0) return state;
+    const unreadGone = gone.filter((n) => !n.read).length;
+    return {
+        notifications: state.notifications.filter((n) => !isGone(n)),
+        _unreadCount: Math.max(0, state._unreadCount - unreadGone),
+    };
+}
+
+/** What the house says on the member's own topic when it took notices back (a_notice_gone_is_told). */
+const NoticesGoneSchema = z.object({ payload: z.object({ ids: z.array(z.string()) }) });
 
 /**
  * Notices this phone marked read, by when the house took the mark (Infinity while it is on its
@@ -621,6 +642,25 @@ export const useNotificationStore = create<NotificationState>()(
         };
     }),
 
+    // A host who admitted or declined a member at a salon's door kept "@X is asking to enter …" unread
+    // under the bell, opening a door with no one at it (review round 12). The request's notice is
+    // the salon's own kind since round 12 ('salon'); one written before is 'system'.
+    forgetSalonRequestNotices: (loungeId, fromUserId) => set((state) => withoutNotices(state,
+        (n) => (n.type === 'salon' || n.type === 'system')
+            && n.related_lounge_id === loungeId && n.from_user_id === fromUserId)),
+
+    // The house took these back: a request withdrawn, a follow or a certification taken back, a
+    // request answered on another phone. Heard on the member's own topic (a_notice_gone_is_told),
+    // they stood counted in the bell until the next whole read (review round 12). Kept as gone here,
+    // so a read asked before the word, or the notice's own arrival heard after it, never puts one back.
+    forgetGoneNotices: (ids) => {
+        if (ids.length === 0) return;
+        const at = monotonicNow();
+        for (const id of ids) goneHere.set(id, at);
+        const gone = new Set(ids);
+        set((state) => withoutNotices(state, (n) => gone.has(n.id)));
+    },
+
     // The house withholds a hidden member's notices from every read (notifications_hide_blocked),
     // but the board held what it had read: after a block or a mute the bell still counted theirs
     // and the board drew them until it was read again, and offline for good (review round 7).
@@ -645,10 +685,39 @@ export const useNotificationStore = create<NotificationState>()(
 
         // Back after a drop, the notices missed in the gap are read; down past a beat, they are
         // said not to be live and read again on a fixed interval until the channel answers.
+        // Two channels feed the board (new notices, and the house's word of the ones it took back):
+        // it is live while both answer.
+        const live = { notices: true, gone: true };
+        const sayLive = () => set((s) => {
+            const now = live.notices && live.gone;
+            return s.noticesLive === now ? s : { noticesLive: now };
+        });
         const watch = watchChannel({
             reread: () => { void get().fetchNotifications(); },
-            onLive: (live) => set((s) => (s.noticesLive === live ? s : { noticesLive: live })),
+            onLive: (on) => { live.notices = on; sayLive(); },
         });
+        // A word of notices taken back missed while its channel was down: the board read again holds
+        // only what the house still has.
+        const watchGone = watchChannel({
+            reread: () => { void get().fetchNotifications(); },
+            onLive: (on) => { live.gone = on; sayLive(); },
+        });
+
+        // The house's word that it took notices back, on this member's own private topic (no one
+        // else's phone may hear it: realtime.messages admits each member to their own alone).
+        const closeGone = openChannel(`notices:${user.id}`, (topic) => supabase
+            .channel(topic, { config: { private: true } })
+            .on('broadcast', { event: 'notices_gone' }, (message) => {
+                const parsed = NoticesGoneSchema.safeParse(message);
+                if (!parsed.success) {
+                    logger.warn('[NotificationStore.realtime] Malformed notices_gone discarded:', parsed.error.message);
+                    return;
+                }
+                // Heard after a sign-out or a member switch: the last member's word, never applied.
+                if (!stillSignedIn(user.id)) return;
+                get().forgetGoneNotices(parsed.data.payload.ids);
+            })
+            .subscribe((status) => { watchGone.status(status); }));
 
         // Private: realtime.messages admits a signed-in member; each row still
         // reaches only its own member, by the notifications table's rules.
@@ -674,6 +743,8 @@ export const useNotificationStore = create<NotificationState>()(
                     if (newNotif.from_user_id && useBlockStore.getState().isHidden(newNotif.from_user_id)) {
                         return;
                     }
+                    // Already taken back by the house (its word came first): never drawn.
+                    if (goneHere.has(newNotif.id)) return;
 
                     set((state) => ({ ...applyIncomingNotification(state, newNotif), noticesHeard: state.noticesHeard + 1 }));
                     // A request answered: the follow is the house's now, and the phone's list said
@@ -686,7 +757,9 @@ export const useNotificationStore = create<NotificationState>()(
         const cleanup = () => {
             // Left on purpose: its CLOSED is not a drop.
             watch.end();
+            watchGone.end();
             close();
+            closeGone();
             _realtimeCleanup = null;
             set({ noticesLive: true });
         };

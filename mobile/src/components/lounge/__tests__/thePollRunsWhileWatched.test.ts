@@ -12,7 +12,7 @@
  * ── AND IT CANNOT SIMPLY BE DELETED ────────────────────────────────────────
  * That is the part worth pinning, because "kill the 30-second poll" is the
  * obvious call and it is wrong. Realtime covers exactly ONE room —
- * `_activeChannel` is a single channel for the salon you have open — so nothing
+ * `_salons` holds a channel only for the salon you have open — so nothing
  * pushes changes for the rooms you are NOT in. `get_lounge_unread_counts` under
  * this query is the only thing feeding the corridor's badges. Deleting it
  * leaves every badge stale until a manual pull.
@@ -56,7 +56,7 @@ describe('the poll runs while the screen is watched', () => {
     // Realtime is per-open-room, so this query is the only source of unread
     // counts for the rooms a member is NOT currently sitting in.
     expect(CODE).toMatch(/setInterval\(refresh, 30000\)/);
-    expect(STORE).toMatch(/_activeChannel/);
+    expect(STORE).toMatch(/const _salons = new Map/);
   });
 
   it('arriving on the screen refreshes at once, rather than waiting out a tick', () => {

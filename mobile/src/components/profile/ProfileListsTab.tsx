@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
+import { useDebouncedSearch } from '@/src/hooks/useDebouncedSearch';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -147,17 +148,8 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
    */
   const searching = !!listsSearch?.trim();
   const showSearch = (totalLists ?? lists.length) > 6 || searching;
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [localSearch, setLocalSearch] = useState(listsSearch ?? '');
-  const handleSearchChange = useCallback((val: string) => {
-    setLocalSearch(val);
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(() => setListsSearch?.(val), 300);
-  }, [setListsSearch]);
-  // A pending debounce must not outlive the room.
-  useEffect(() => () => {
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-  }, []);
+  // The box shows each key; the room follows a moment behind, and a ✕ cancels what is pending.
+  const { value: localSearch, onChange: handleSearchChange, clear: clearSearch } = useDebouncedSearch(listsSearch, setListsSearch);
 
 
 
@@ -182,7 +174,7 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
             title="Nothing under that name"
             body={`No stack matches “${listsSearch?.trim()}”.`}
             actionLabel="CLEAR THE SEARCH"
-            onAction={() => { setLocalSearch(''); setListsSearch?.(''); }}
+            onAction={clearSearch}
           />
         </View>
       );
@@ -216,7 +208,7 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
         />
       </View>
     );
-  }, [lists.length, ready, unreachable, searching, listsSearch, setListsSearch, isSelf, pulseStyle]);
+  }, [lists.length, ready, unreachable, searching, listsSearch, clearSearch, isSelf, pulseStyle]);
 
   /**
    * The search and the order the volumes stand in — only when there are
@@ -230,7 +222,7 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
           <RoomSearch
             value={localSearch}
             onChange={handleSearchChange}
-            onClear={() => { setLocalSearch(''); setListsSearch?.(''); }}
+            onClear={clearSearch}
             placeholder="Find a stack…"
             a11y="Search the stacks by name or description"
             ember={<Search size={13} color={colors.fog} strokeWidth={1.5} style={s.searchIcon} />}
@@ -250,7 +242,7 @@ export default React.memo(function ProfileListsTab({ lists, listsSort = 'default
         </View>
       </View>
     );
-  }, [showSearch, listsSort, setListsSort, localSearch, handleSearchChange, setListsSearch]);
+  }, [showSearch, listsSort, setListsSort, localSearch, handleSearchChange, clearSearch]);
 
   const ListFooterComponent = useMemo(() => {
     if (lists.length === 0) return null;

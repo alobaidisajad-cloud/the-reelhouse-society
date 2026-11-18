@@ -32,8 +32,11 @@ import { filmOfRecord } from './recordsFilm';
 /**
  * What a write hands back: a row's real id for the one the phone made, and, for an edit, the
  * row's time now (`readAt`), which the queue gives a later edit of the same row (readAtOf).
+ * `letGo`: the house's word for what it found gone ('STACK_GONE', 'LOG_GONE'): the write was let
+ * go of, here and on the phone, and said by its handler. Finished, never sent again, and never
+ * counted as sent: the queue said "Archive updated" over an amendment let go (review round 12).
  */
-type MutationResult = { newId?: string; fakeId?: string; readAt?: { key: string; at: string } };
+export type MutationResult = { newId?: string; fakeId?: string; readAt?: { key: string; at: string }; letGo?: string };
 
 type MutationHandler = (
     payload: Record<string, unknown>,
@@ -251,6 +254,36 @@ function letGoOfGoneStack(listId: string): void {
     reelToast.error('A stack amended offline is no longer in the house: the amendment was let go.');
 }
 
+/**
+ * A critique written offline whose record or stack was deleted (or hidden from the member) before
+ * the queue sent it: the house answers LOG_GONE or STACK_GONE. The page leaves the phone, as it does
+ * when a critique filed online meets the same word, and the member is told, their first words
+ * quoted. Its words were given back to the page's box, a page that no longer opens, and the member
+ * was told they were "back where it was written" (review round 12). Null for any other answer.
+ */
+function letGoOfACritiqueOnAGonePage(error: unknown, payload: Record<string, unknown>): MutationResult | null {
+    const onRecord = isGoneFromTheHouse(error, 'LOG_GONE');
+    if (!onRecord && !isGoneFromTheHouse(error, 'STACK_GONE')) return null;
+    // Required here, not imported: the stores import the queue, which imports this file.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const reelToast = (require('./reelToast') as typeof import('./reelToast')).default;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { critiqueOnAGonePage } = require('./queueOwnership') as typeof import('./queueOwnership');
+    if (onRecord) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { letTheRecordGo } = require('./letTheRecordGo') as typeof import('./letTheRecordGo');
+        letTheRecordGo(queryClient, String(payload.log_id));
+    } else {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { useListStore } = require('../stores/films') as typeof import('../stores/films');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { forgetGoneStack } = require('../stores/domain/listSlice') as typeof import('../stores/domain/listSlice');
+        forgetGoneStack(String(payload.list_id), useListStore.setState);
+    }
+    reelToast.error(critiqueOnAGonePage({ payload }, onRecord ? 'record' : 'stack'));
+    return { letGo: onRecord ? 'LOG_GONE' : 'STACK_GONE' };
+}
+
 const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     // ── Endorsements ──
     endorse_log: async (p: any) => { await InteractionService.addEndorsement({ ...p, type: 'endorse_log' }); return {}; },
@@ -354,8 +387,11 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const username = (p.username as string) || useAuthStore.getState().user?.username || 'anonymous';
         // Zero-width and control characters stripped; MAX_LENGTHS.logComment enforced.
         const cleanBody = sanitizeInput(body as string, 'logComment');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const result = throwIfError(await supabase.from('log_comments').upsert([{ id, log_id, user_id, username, body: cleanBody }], { onConflict: 'id' }).select('id').maybeSingle());
+        const sent = await supabase.from('log_comments').upsert([{ id, log_id, user_id, username, body: cleanBody }], { onConflict: 'id' }).select('id').maybeSingle();
+        // The record deleted meanwhile: let go of and said, never handed back to a page that is gone.
+        const gone = letGoOfACritiqueOnAGonePage(sent.error, p);
+        if (gone) return gone;
+        throwIfError(sent);
         return {};
     },
 
@@ -434,8 +470,12 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         };
         // By its own id, and a row already there is left as it is: a send whose
         // answer was lost is replayed, and must not file the critique twice.
-        throwIfError(await supabase.from('list_comments')
-            .upsert([dbPayload], { onConflict: 'id', ignoreDuplicates: true }));
+        const sent = await supabase.from('list_comments')
+            .upsert([dbPayload], { onConflict: 'id', ignoreDuplicates: true });
+        // The stack deleted meanwhile: let go of and said, never handed back to a page that is gone.
+        const gone = letGoOfACritiqueOnAGonePage(sent.error, p);
+        if (gone) return gone;
+        throwIfError(sent);
 
         // The notice is the `tr_notify_list_comment` trigger's, on the INSERT above.
         return {};
@@ -508,7 +548,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         // phone, and said (round 11), as a queued edit of a record deleted meanwhile is let go.
         if (isGoneFromTheHouse(saved.error)) {
             letGoOfGoneStack(String(list_id));
-            return {};
+            return { letGo: 'STACK_GONE' };
         }
         const { data } = throwIfError(saved);
         const at = (data as { updated_at?: unknown } | null)?.updated_at;

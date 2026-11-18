@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, KeyRound } from 'lucide-react-native';
 import { Text, TextInput } from '@/src/components/text';
 import PressableScale from '@/src/components/PressableScale';
+import { SaidText } from '@/src/components/SaidText';
 import TryAgain from '@/src/components/TryAgain';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { useContentBottom, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
@@ -105,7 +106,8 @@ function CodeField({ act, label, give, factorId }: {
   };
   return (
     <View style={s.block}>
-      {!!refused && <Text style={s.fail} accessibilityLiveRegion="polite">{REFUSED[refused]}</Text>}
+      {/* Spoken on both phones (a live region alone is Android's): a refused code was silent on an iPhone. */}
+      {!!refused && <SaidText style={s.fail}>{REFUSED[refused]}</SaidText>}
       <TextInput
         testID="second-key-code"
         style={s.code}
@@ -167,7 +169,7 @@ function Register({ stale, enrol, give }: {
     return (
       <>
         <Text style={s.body}>The Tribunal acts on other members’ words and accounts, so it asks for a second key: a code from an authenticator app, on top of your password. Register one now; you will give its code each time you sign in.</Text>
-        {refused && <Text style={s.fail} accessibilityLiveRegion="polite">The house could not register a key. Nothing was kept: try again.</Text>}
+        {refused && <SaidText style={s.fail}>The house could not register a key. Nothing was kept: try again.</SaidText>}
         <PressableScale testID="second-key-register" style={s.primary} onPress={() => { void make(); }} disabled={making} haptic="medium" accessibilityRole="button" accessibilityState={{ disabled: making, busy: making }} accessibilityLabel="Register a key">
           <Text style={s.primaryText}>{making ? 'REGISTERING…' : 'REGISTER A KEY'}</Text>
         </PressableScale>

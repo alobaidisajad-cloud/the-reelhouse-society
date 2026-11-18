@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet, ScrollView, ActivityIndicator, InteractionManager, Platform, AccessibilityInfo } from 'react-native';
 import { Text } from '@/src/components/text';
+import { SaidText } from '@/src/components/SaidText';
 import { useContentBottom, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -185,9 +186,10 @@ export function EditProfileScreen() {
         {!!submitError && (
           <Arrive name="editprofilescreen-1" duration={300} style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.errorBackground, borderWidth: 1, borderColor: colors.errorBorder, borderRadius: 4, marginBottom: 16, marginHorizontal: 16 }}>
             {/* Type-guard submitError to prevent invariant violation on object errors */}
-            <Text {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimsonInk, textAlign: 'center', letterSpacing: 1 }}>
-              {typeof submitError === 'string' ? submitError : (submitError instanceof Error ? submitError.message : (submitError as any)?.message || 'An unexpected error occurred while saving your dossier.')}
-            </Text>
+            {/* Spoken as it appears (SaidText): a failed save was drawn here in silence on both phones. */}
+            <SaidText {...scaledTextProps} style={{ fontFamily: fonts.sub, fontSize: 10, color: colors.crimsonInk, textAlign: 'center', letterSpacing: 1 }}>
+              {String(typeof submitError === 'string' ? submitError : (submitError instanceof Error ? submitError.message : (submitError as any)?.message || 'An unexpected error occurred while saving your dossier.'))}
+            </SaidText>
           </Arrive>
         )}
 

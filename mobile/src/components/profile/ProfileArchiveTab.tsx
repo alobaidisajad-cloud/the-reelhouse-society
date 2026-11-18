@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -16,6 +16,7 @@ import { r, rtlText, posterColumns, completeCount, countLabel, ROOM_INSET, yearM
 import { scrollEndAbove, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
+import { useDebouncedSearch } from '@/src/hooks/useDebouncedSearch';
 
 /**
  * THE ARCHIVE — every film, by the month it was seen: the room for SHEER
@@ -176,19 +177,8 @@ export default function ProfileArchiveTab({
    * that, looking is faster than typing.
    */
   const showSearch = (totalFilms ?? logs.length) > 12;
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [localSearch, setLocalSearch] = useState(archiveSearch ?? '');
-
-  const handleSearchChange = useCallback((val: string) => {
-    setLocalSearch(val);
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(() => setArchiveSearch?.(val), 300);
-  }, [setArchiveSearch]);
-
-  // A pending debounce must not outlive the room — see the Ledger.
-  useEffect(() => () => {
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-  }, []);
+  // The box shows each key; the room follows a moment behind, and a ✕ cancels what is pending.
+  const { value: localSearch, onChange: handleSearchChange, clear: clearSearch } = useDebouncedSearch(archiveSearch, setArchiveSearch);
 
   /**
    * The TRUE size of each month, and how heavy it was — from the server's
@@ -339,7 +329,7 @@ export default function ProfileArchiveTab({
             <RoomSearch
               value={localSearch}
               onChange={handleSearchChange}
-              onClear={() => { setLocalSearch(''); setArchiveSearch?.(''); }}
+              onClear={clearSearch}
               placeholder="Find a film…"
               a11y="Search the archive by title"
               ember={<Search size={13} color={colors.fog} strokeWidth={1.5} style={s.searchIcon} />}
@@ -360,7 +350,7 @@ export default function ProfileArchiveTab({
         </ScrollView>
       </>
     );
-  }, [logs.length, archiveSieve, setArchiveSieve, showSearch, localSearch, handleSearchChange, setArchiveSearch]);
+  }, [logs.length, archiveSieve, setArchiveSieve, showSearch, localSearch, handleSearchChange, clearSearch]);
 
   const ListEmptyComponent = useMemo(() => {
     if (logs.length > 0 && archiveFiltered.length > 0) return null;
@@ -379,7 +369,7 @@ export default function ProfileArchiveTab({
           title="Nothing under that name"
           body={`No film in the archive matches “${archiveSearch}”.`}
           actionLabel="CLEAR THE SEARCH"
-          onAction={() => { setLocalSearch(''); setArchiveSearch?.(''); }}
+          onAction={clearSearch}
         />
       );
     }
@@ -439,7 +429,7 @@ export default function ProfileArchiveTab({
         body="This member hasn’t filed a screening yet."
       />
     );
-  }, [logs.length, archiveFiltered.length, isSelf, ready, unreachable, archiveSieve, setArchiveSieve, searching, archiveSearch, setArchiveSearch, pulseStyle]);
+  }, [logs.length, archiveFiltered.length, isSelf, ready, unreachable, archiveSieve, setArchiveSieve, searching, archiveSearch, clearSearch, pulseStyle]);
 
   // A row is a poster at 3:2, its title block and the gap beneath; too small
   // a guess makes FlashList render and re-measure more rows than it needs.

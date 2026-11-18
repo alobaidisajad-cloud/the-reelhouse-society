@@ -32,7 +32,11 @@
 --      time: a certification from one member for one thing is pushed once (certifications_pushed).
 --  13. A salon card sharing an essay or a stack kept the piece's headline after the piece was
 --      withdrawn or deleted: the card is marked gone and keeps no headline.
---   The rehearsal holds each, the members acting as themselves.
+--   This car makes every function and runs every one-time statement; it holds no table members
+--   write. The table of 12 is the car before, 20261117_00, so its keys never hold auth.users while
+--   this car runs. The triggers of 3, 8 and 13 (a stack's card) are the next car, 20261117_02, applied by
+--   the same train run right after this one. The rehearsal holds each, the members acting as
+--   themselves; the cases that need the triggers are 20261117_02's.
 -- Undo: mobile/supabase/migrations-down/20261117_01_what_happened_meanwhile_is_told.sql
 -- ════════════════════════════════════════════════════════════════════════════
 SET LOCAL lock_timeout = '2s';
@@ -414,8 +418,12 @@ END $$;
 -- house says so: P0002 'LOG_GONE' for a record, P0002 'STACK_GONE' for a stack. It runs as the
 -- member (SECURITY INVOKER), so a page hidden from them reads as gone too, which leaks nothing they
 -- could not already see. A critique on a page that stands goes on to the gates exactly as before.
+-- The two triggers are made in the next car of the same train (20261117_02, A4.locks), whose
+-- rehearsal holds only the cases that need them, so the critiques are held for milliseconds.
 
-CREATE OR REPLACE FUNCTION public.a_critique_has_its_page() RETURNS trigger
+-- add-only (1): no shipped client uses it: a trigger function this migration makes, which no client can call (TestFlight build 41 and the website checked)
+DROP FUNCTION IF EXISTS public.a_critique_has_its_page();
+CREATE FUNCTION public.a_critique_has_its_page() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public', 'pg_temp'
     AS $$
@@ -435,13 +443,6 @@ END $$;
 -- add-only (1): no shipped client uses it: a trigger function this migration makes, which no client can call (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION public.a_critique_has_its_page() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.a_critique_has_its_page() TO service_role;
-
--- add-only (3): it only fixes: a critique on a record that stands is filed as before, and one on a record gone is refused as LOG_GONE where it was refused as 42501; replayed as the members themselves (A4 rehearsal: critique_has_its_page)
-CREATE OR REPLACE TRIGGER a_critique_has_its_page BEFORE INSERT ON public.log_comments
-    FOR EACH ROW EXECUTE FUNCTION public.a_critique_has_its_page();
--- add-only (3): it only fixes: a critique on a stack that stands is filed as before, and one on a stack gone is refused as STACK_GONE where it was refused as 42501; replayed as the members themselves (A4 rehearsal: critique_has_its_page)
-CREATE OR REPLACE TRIGGER a_critique_has_its_page BEFORE INSERT ON public.list_comments
-    FOR EACH ROW EXECUTE FUNCTION public.a_critique_has_its_page();
 
 -- ── An admission says whether anyone was admitted (review round 11) ──────────
 -- accept_follow_request answered the same when it admitted the member at the door, when the
@@ -907,8 +908,16 @@ $$;
 --   wrote when it is withdrawn, or when what it certified is gone. The notices already standing
 --   for a certification since withdrawn go once, here. Only new triggers: no client is changed by
 --   it but in the notices it is shown.
+--   The functions and the one-time sweep come here, while nothing is held; the two triggers are
+--   made in the next car of the same train (20261117_02, B6.locks), whose rehearsal holds only the
+--   cases that need them, so the tables they hold are held for milliseconds. A certification
+--   withdrawn between the sweep and its trigger (the seconds between two cars of one train run,
+--   never longer: the train stops at a car that fails, and its next run applies the trigger first)
+--   keeps its notice, as every one did before.
 
-CREATE OR REPLACE FUNCTION public.a_certification_takes_its_notice() RETURNS trigger
+-- add-only (1): no shipped client uses it: a trigger's function this migration makes, called by no client (TestFlight build 41 and the website checked)
+DROP FUNCTION IF EXISTS public.a_certification_takes_its_notice();
+CREATE FUNCTION public.a_certification_takes_its_notice() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
@@ -928,16 +937,9 @@ END $$;
 -- add-only (1): no shipped client uses it: a trigger's function this migration makes, called by no client (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION public.a_certification_takes_its_notice() FROM PUBLIC, anon, authenticated;
 
--- add-only (1): no shipped client uses it: a trigger this migration makes, dropped first only so the piece runs again (TestFlight build 41 and the website checked)
-DROP TRIGGER IF EXISTS a_certification_takes_its_notice ON public.interactions;
--- add-only (3): it only fixes: a certification taken back takes its notice, every other write to interactions as before; replayed as the members themselves (B6 rehearsal)
-CREATE TRIGGER a_certification_takes_its_notice
-  AFTER DELETE ON public.interactions
-  FOR EACH ROW
-  WHEN (OLD.type IN ('endorse_log', 'endorse_list'))
-  EXECUTE FUNCTION public.a_certification_takes_its_notice();
-
-CREATE OR REPLACE FUNCTION public.a_dispatch_certification_takes_its_notice() RETURNS trigger
+-- add-only (1): no shipped client uses it: a trigger's function this migration makes, called by no client (TestFlight build 41 and the website checked)
+DROP FUNCTION IF EXISTS public.a_dispatch_certification_takes_its_notice();
+CREATE FUNCTION public.a_dispatch_certification_takes_its_notice() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
@@ -962,161 +964,33 @@ END $$;
 -- add-only (1): no shipped client uses it: a trigger's function this migration makes, called by no client (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION public.a_dispatch_certification_takes_its_notice() FROM PUBLIC, anon, authenticated;
 
--- add-only (1): no shipped client uses it: a trigger this migration makes, dropped first only so the piece runs again (TestFlight build 41 and the website checked)
-DROP TRIGGER IF EXISTS a_certification_takes_its_notice ON public.dispatch_certifications;
--- add-only (3): it only fixes: a Dispatch certification taken back takes its notice, every other write to dispatch_certifications as before; replayed as the members themselves (B6 rehearsal)
-CREATE TRIGGER a_certification_takes_its_notice
-  AFTER DELETE ON public.dispatch_certifications
-  FOR EACH ROW
-  EXECUTE FUNCTION public.a_dispatch_certification_takes_its_notice();
-
 -- Notices standing for a certification already taken back, or for one whose log, stack, filing or
--- critique is gone: each goes as the triggers above would have taken it.
+-- critique is gone: each goes as the triggers would have taken it. One reading of the notices finds
+-- the certifications' own (keyed as each writer keys them); only those are asked whether their
+-- certification still stands, each kind as its trigger matches it.
+WITH told AS MATERIALIZED (
+  SELECT id FROM public.notifications
+   WHERE type = 'endorse'
+     AND (group_key LIKE 'endorse:log:%' OR group_key LIKE 'endorse:list:%'
+          OR metadata ? 'comment_id' OR metadata ? 'dispatch_post_id'))
 DELETE FROM public.notifications n
- WHERE n.type = 'endorse'
-   AND n.group_key LIKE 'endorse:log:%'
-   AND NOT EXISTS (SELECT 1 FROM public.interactions i
-                    WHERE i.user_id = n.from_user_id AND i.type = 'endorse_log'
-                      AND 'endorse:log:' || i.target_log_id = n.group_key);
-DELETE FROM public.notifications n
- WHERE n.type = 'endorse'
-   AND n.group_key LIKE 'endorse:list:%'
-   AND NOT EXISTS (SELECT 1 FROM public.interactions i
-                    WHERE i.user_id = n.from_user_id AND i.type = 'endorse_list'
-                      AND 'endorse:list:' || i.target_list_id = n.group_key);
-DELETE FROM public.notifications n
- WHERE n.type = 'endorse'
-   AND n.metadata ? 'comment_id'
-   AND NOT EXISTS (SELECT 1 FROM public.dispatch_certifications c
-                    WHERE c.user_id = n.from_user_id AND c.comment_id::text = n.metadata ->> 'comment_id');
-DELETE FROM public.notifications n
- WHERE n.type = 'endorse'
-   AND n.metadata ? 'dispatch_post_id'
-   AND NOT (n.metadata ? 'comment_id')
-   AND NOT EXISTS (SELECT 1 FROM public.dispatch_certifications c
-                    WHERE c.user_id = n.from_user_id AND c.post_id::text = n.metadata ->> 'dispatch_post_id');
-
--- ── F11 · a certification buzzes the phone once (review round 11) ───────────────────────────────
---   A member who certified a record, took it back and certified it again sent its author a fresh
---   notice each time, and each notice a push: certifying and taking back at will, one member could
---   buzz another's phone as often as they liked. Since round 11 a certification taken back takes
---   its notice with it (a_certification_takes_its_notice), so the notices cannot remember a push
---   already sent. The house now keeps that memory itself: certifications_pushed holds, for each
---   member and each thing they certified (a record, a stack, a filing, a critique, a dossier), that
---   its push went. tg_notify_push sends a certification's push only when it can write that row; a
---   certification given again writes its notice as before (under the bell, counted once), and the
---   phone stays still. A push stopped before it was sent (the owner's switch, a block, the member's
---   own setting) writes no row, so a later certification may still push once.
---   The thing is named as its notice names it: a critique by the critique (its notice's group key
---   is the filing's, shared by every critique on it), every other by its notice's group key. The
---   rows go with either member's account; the table is the house's alone (no client reads or
---   writes it, row security on with no rule).
-
--- add-only (1): no shipped client uses it: a table made here, named by neither TestFlight build 41 nor the website
-CREATE TABLE public.certifications_pushed (
-    from_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    thing text NOT NULL,
-    pushed_at timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT certifications_pushed_pkey PRIMARY KEY (from_user_id, thing),
-    CONSTRAINT certifications_pushed_thing_len CHECK (char_length(thing) <= 200)
-);
--- The certified member's rows, found when their account goes.
-CREATE INDEX certifications_pushed_user_id ON public.certifications_pushed (user_id);
-ALTER TABLE public.certifications_pushed ENABLE ROW LEVEL SECURITY;
--- add-only (1): no shipped client uses it: a table made here, read by neither TestFlight build 41 nor the website
-REVOKE ALL ON TABLE public.certifications_pushed FROM anon, authenticated;
-
--- A certification whose notice stands has been told already: taken back and given again after
--- this, it does not push a second time either.
-INSERT INTO public.certifications_pushed (from_user_id, user_id, thing, pushed_at)
-SELECT DISTINCT ON (n.from_user_id, t.thing) n.from_user_id, n.user_id, t.thing, coalesce(n.pushed_at, n.created_at, now())
-  FROM public.notifications n
- CROSS JOIN LATERAL (SELECT CASE WHEN n.metadata ? 'comment_id' THEN 'endorse:comment:' || (n.metadata ->> 'comment_id')
-                                 ELSE n.group_key END AS thing) t
- WHERE n.type = 'endorse' AND n.from_user_id IS NOT NULL AND t.thing IS NOT NULL AND char_length(t.thing) <= 200
- ORDER BY n.from_user_id, t.thing, n.created_at
-ON CONFLICT (from_user_id, thing) DO NOTHING;
-
--- As live, with one step before the push: a certification already pushed is not pushed again.
--- add-only (3): it only fixes: every other notice is pushed as before, and a certification's first push as before; replayed as the members in the F11 rehearsal (a certification, taken back, given again; another member's; a critique's and a filing's)
-CREATE OR REPLACE FUNCTION public.tg_notify_push() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public', 'pg_temp'
-    AS $$
-DECLARE
-  v_secret   text;
-  v_pref_key text;
-  v_thing    text;
-BEGIN
-  -- Switched off by the owner: every notice stays under the bell, unpushed.
-  IF NOT coalesce((SELECT pushes_sent FROM public.house_settings WHERE id), true) THEN
-    RETURN NEW;
-  END IF;
-
-  -- The Lobby's edition turns at 00:00 UTC, while much of the house sleeps:
-  -- its notice waits under the bell and is never pushed.
-  IF NEW.type = 'featured' THEN
-    RETURN NEW;
-  END IF;
-
-  IF NEW.from_user_id IS NOT NULL AND EXISTS (
-    SELECT 1 FROM public.user_blocks
-    WHERE (blocker_id = NEW.user_id      AND blocked_id = NEW.from_user_id)
-       OR (blocker_id = NEW.from_user_id AND blocked_id = NEW.user_id AND type = 'block')
-  ) THEN
-    RETURN NEW;
-  END IF;
-
-  v_pref_key := CASE NEW.type
-                  WHEN 'follow'         THEN 'notif_follows'
-                  WHEN 'follow_request' THEN 'notif_follows'
-                  WHEN 'follow_accept'  THEN 'notif_follows'
-                  WHEN 'endorse'        THEN 'notif_endorsements'
-                  WHEN 'endorse_log'    THEN 'notif_endorsements'
-                  WHEN 'comment'        THEN 'notif_comments'
-                  WHEN 'annotate'       THEN 'notif_comments'
-                  WHEN 'system'         THEN 'notif_system'
-                  ELSE NULL
-                END;
-
-  IF v_pref_key IS NOT NULL THEN
-    IF (SELECT preferences ->> v_pref_key
-          FROM public.profiles
-         WHERE id = NEW.user_id) = 'false'
-    THEN
-      RETURN NEW;
-    END IF;
-  END IF;
-
-  -- A certification buzzes the phone once: given again after it was taken back, its notice is
-  -- written, and its push is not sent. The thing is named as the notice names it, a critique by
-  -- the critique (its group key is the filing's), every other by the group key.
-  IF NEW.type = 'endorse' AND NEW.from_user_id IS NOT NULL THEN
-    v_thing := CASE WHEN NEW.metadata ? 'comment_id' THEN 'endorse:comment:' || (NEW.metadata ->> 'comment_id')
-                    ELSE NEW.group_key END;
-    IF v_thing IS NOT NULL AND char_length(v_thing) <= 200 THEN
-      INSERT INTO public.certifications_pushed (from_user_id, user_id, thing)
-      VALUES (NEW.from_user_id, NEW.user_id, v_thing)
-      ON CONFLICT (from_user_id, thing) DO NOTHING;
-      IF NOT FOUND THEN
-        RETURN NEW;
-      END IF;
-    END IF;
-  END IF;
-
-  SELECT decrypted_secret INTO v_secret
-  FROM vault.decrypted_secrets
-  WHERE name = 'notify_push_secret' LIMIT 1;
-
-  PERFORM net.http_post(
-    url     := 'https://wihyqkpoymwcvbprslyz.supabase.co/functions/v1/notify-push',
-    headers := jsonb_build_object('Content-Type','application/json','x-function-secret', v_secret),
-    body    := jsonb_build_object('type','INSERT','table','notifications','record', to_jsonb(NEW))
-  );
-  RETURN NEW;
-END;
-$$;
+ USING told
+ WHERE n.id = told.id
+   AND ((n.group_key LIKE 'endorse:log:%'
+         AND NOT EXISTS (SELECT 1 FROM public.interactions i
+                          WHERE i.user_id = n.from_user_id AND i.type = 'endorse_log'
+                            AND 'endorse:log:' || i.target_log_id = n.group_key))
+     OR (n.group_key LIKE 'endorse:list:%'
+         AND NOT EXISTS (SELECT 1 FROM public.interactions i
+                          WHERE i.user_id = n.from_user_id AND i.type = 'endorse_list'
+                            AND 'endorse:list:' || i.target_list_id = n.group_key))
+     OR (n.metadata ? 'comment_id'
+         AND NOT EXISTS (SELECT 1 FROM public.dispatch_certifications c
+                          WHERE c.user_id = n.from_user_id AND c.comment_id::text = n.metadata ->> 'comment_id'))
+     OR (n.metadata ? 'dispatch_post_id'
+         AND NOT (n.metadata ? 'comment_id')
+         AND NOT EXISTS (SELECT 1 FROM public.dispatch_certifications c
+                          WHERE c.user_id = n.from_user_id AND c.post_id::text = n.metadata ->> 'dispatch_post_id')));
 
 -- ── A rename the member chooses is kept, even to a handle's own cleaned form (review round 11) ──
 -- A member whose handle predates today's letters (a dot or a capital: "john.doe") renamed it in Edit
@@ -1287,7 +1161,11 @@ GRANT EXECUTE ON FUNCTION public.rename_my_handle(text) TO authenticated, servic
 --   Stacks: a trigger after a stack's delete, which every way a stack goes reaches (the member's
 --   own delete, and the account's cascade).
 --   The cards of pieces already gone are taken down here, once: a filing ended before today, a
---   stack no longer in the house.
+--   stack no longer in the house. They are taken down while nothing is held; the trigger is made
+--   in the next car of the same train (20261117_02, F4.locks), so stacks are held for
+--   milliseconds. A stack deleted between the two (the seconds between two cars of one train run,
+--   never longer: the train stops at a car that fails, and its next run applies the trigger first)
+--   keeps its card's headline, as every one did before.
 -- A card is found by containment, so the cards' own index (lounge_messages_card_names) finds it.
 
 -- The one erase of a filing that ends: as before, and now the filing's cards with it.
@@ -1317,9 +1195,7 @@ $$;
 COMMENT ON FUNCTION public.dispatch_empty_filing(uuid, text) IS
   'The one erase of a filing that ends, its cards in the salons with it. Called by end_filing and the no_hard_delete trigger (both SECURITY DEFINER); no role may call it directly.';
 
--- A stack deleted takes its cards down with it.
--- add-only (1): no shipped client uses it: a trigger's function, new here; TestFlight build 41 and the website never call it
-DROP TRIGGER IF EXISTS a_deleted_stack_leaves_its_cards ON public.lists;
+-- A stack deleted takes its cards down with it (its trigger is made in 20261117_02, F4.locks).
 -- add-only (1): no shipped client uses it: a trigger's function, new here; TestFlight build 41 and the website never call it
 DROP FUNCTION IF EXISTS public.a_deleted_stack_leaves_its_cards();
 
@@ -1339,10 +1215,6 @@ END $$;
 
 -- add-only (1): no shipped client uses it: a trigger's function, new here; TestFlight build 41 and the website never call it
 REVOKE ALL ON FUNCTION public.a_deleted_stack_leaves_its_cards() FROM PUBLIC, anon, authenticated;
-
--- add-only (3): it only fixes: the calls replayed as the members themselves, a stack deleted by its curator and its card in a salon reading as gone, a stack still standing and its card untouched (F4 rehearsal); TestFlight build 41 deletes a stack as before, and draws a card with no title as no card; the website draws a stack's card only when it has a title
-CREATE TRIGGER a_deleted_stack_leaves_its_cards AFTER DELETE
-  ON public.lists FOR EACH ROW EXECUTE FUNCTION public.a_deleted_stack_leaves_its_cards();
 
 -- The cards of pieces gone before today, taken down once, as the house would have.
 UPDATE public.lounge_messages m
@@ -1513,3 +1385,116 @@ $$;
 REVOKE ALL ON FUNCTION public.request_account_deletion(boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.request_account_deletion(boolean) TO authenticated;
 GRANT ALL ON FUNCTION public.request_account_deletion(boolean) TO service_role;
+
+-- ── F11 · a certification buzzes the phone once (review round 11) ───────────────────────────────
+--   A member who certified a record, took it back and certified it again sent its author a fresh
+--   notice each time, and each notice a push: certifying and taking back at will, one member could
+--   buzz another's phone as often as they liked. Since round 11 a certification taken back takes
+--   its notice with it (a_certification_takes_its_notice), so the notices cannot remember a push
+--   already sent. The house now keeps that memory itself: certifications_pushed holds, for each
+--   member and each thing they certified (a record, a stack, a filing, a critique, a dossier), that
+--   its push went. tg_notify_push sends a certification's push only when it can write that row; a
+--   certification given again writes its notice as before (under the bell, counted once), and the
+--   phone stays still. A push stopped before it was sent (the owner's switch, a block, the member's
+--   own setting) writes no row, so a later certification may still push once.
+--   The thing is named as its notice names it: a critique by the critique (its notice's group key
+--   is the filing's, shared by every critique on it), every other by its notice's group key. The
+--   rows go with either member's account; the table is the house's alone (no client reads or
+--   writes it, row security on with no rule).
+
+-- The table is made by the car before this one (20261117_00, F11.table), so the sign-ins that its keys
+-- hold wait only for that car; here it is filled and written.
+
+-- A certification whose notice stands has been told already: taken back and given again after
+-- this, it does not push a second time either. Only a certification's own name is remembered:
+-- every writer of a certification's notice keys it 'endorse:…' (a log's, a stack's, a filing's, a
+-- dossier's; a critique's is named 'endorse:comment:…' here), so a row under any other key is one
+-- tg_notify_push could never look up.
+INSERT INTO public.certifications_pushed (from_user_id, user_id, thing, pushed_at)
+SELECT DISTINCT ON (n.from_user_id, t.thing) n.from_user_id, n.user_id, t.thing, coalesce(n.pushed_at, n.created_at, now())
+  FROM public.notifications n
+ CROSS JOIN LATERAL (SELECT CASE WHEN n.metadata ? 'comment_id' THEN 'endorse:comment:' || (n.metadata ->> 'comment_id')
+                                 ELSE n.group_key END AS thing) t
+ WHERE n.type = 'endorse' AND n.from_user_id IS NOT NULL AND t.thing LIKE 'endorse:%' AND char_length(t.thing) <= 200
+ ORDER BY n.from_user_id, t.thing, n.created_at
+ON CONFLICT (from_user_id, thing) DO NOTHING;
+
+-- As live, with one step before the push: a certification already pushed is not pushed again.
+-- add-only (3): it only fixes: every other notice is pushed as before, and a certification's first push as before; replayed as the members in the F11 rehearsal (a certification, taken back, given again; another member's; a critique's and a filing's)
+CREATE OR REPLACE FUNCTION public.tg_notify_push() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_secret   text;
+  v_pref_key text;
+  v_thing    text;
+BEGIN
+  -- Switched off by the owner: every notice stays under the bell, unpushed.
+  IF NOT coalesce((SELECT pushes_sent FROM public.house_settings WHERE id), true) THEN
+    RETURN NEW;
+  END IF;
+
+  -- The Lobby's edition turns at 00:00 UTC, while much of the house sleeps:
+  -- its notice waits under the bell and is never pushed.
+  IF NEW.type = 'featured' THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.from_user_id IS NOT NULL AND EXISTS (
+    SELECT 1 FROM public.user_blocks
+    WHERE (blocker_id = NEW.user_id      AND blocked_id = NEW.from_user_id)
+       OR (blocker_id = NEW.from_user_id AND blocked_id = NEW.user_id AND type = 'block')
+  ) THEN
+    RETURN NEW;
+  END IF;
+
+  v_pref_key := CASE NEW.type
+                  WHEN 'follow'         THEN 'notif_follows'
+                  WHEN 'follow_request' THEN 'notif_follows'
+                  WHEN 'follow_accept'  THEN 'notif_follows'
+                  WHEN 'endorse'        THEN 'notif_endorsements'
+                  WHEN 'endorse_log'    THEN 'notif_endorsements'
+                  WHEN 'comment'        THEN 'notif_comments'
+                  WHEN 'annotate'       THEN 'notif_comments'
+                  WHEN 'system'         THEN 'notif_system'
+                  ELSE NULL
+                END;
+
+  IF v_pref_key IS NOT NULL THEN
+    IF (SELECT preferences ->> v_pref_key
+          FROM public.profiles
+         WHERE id = NEW.user_id) = 'false'
+    THEN
+      RETURN NEW;
+    END IF;
+  END IF;
+
+  -- A certification buzzes the phone once: given again after it was taken back, its notice is
+  -- written, and its push is not sent. The thing is named as the notice names it, a critique by
+  -- the critique (its group key is the filing's), every other by the group key.
+  IF NEW.type = 'endorse' AND NEW.from_user_id IS NOT NULL THEN
+    v_thing := CASE WHEN NEW.metadata ? 'comment_id' THEN 'endorse:comment:' || (NEW.metadata ->> 'comment_id')
+                    ELSE NEW.group_key END;
+    IF v_thing IS NOT NULL AND char_length(v_thing) <= 200 THEN
+      INSERT INTO public.certifications_pushed (from_user_id, user_id, thing)
+      VALUES (NEW.from_user_id, NEW.user_id, v_thing)
+      ON CONFLICT (from_user_id, thing) DO NOTHING;
+      IF NOT FOUND THEN
+        RETURN NEW;
+      END IF;
+    END IF;
+  END IF;
+
+  SELECT decrypted_secret INTO v_secret
+  FROM vault.decrypted_secrets
+  WHERE name = 'notify_push_secret' LIMIT 1;
+
+  PERFORM net.http_post(
+    url     := 'https://wihyqkpoymwcvbprslyz.supabase.co/functions/v1/notify-push',
+    headers := jsonb_build_object('Content-Type','application/json','x-function-secret', v_secret),
+    body    := jsonb_build_object('type','INSERT','table','notifications','record', to_jsonb(NEW))
+  );
+  RETURN NEW;
+END;
+$$;

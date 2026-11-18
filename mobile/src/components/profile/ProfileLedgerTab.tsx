@@ -1,4 +1,5 @@
-import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
+import { useDebouncedSearch } from '@/src/hooks/useDebouncedSearch';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -324,22 +325,8 @@ export default function ProfileLedgerTab({
       opacity: searchEmberOpacity.value,
   }));
 
-  // Typing is debounced: the filter and the server's read follow 300ms behind.
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [localSearch, setLocalSearch] = useState(ledgerSearch);
-
-  const handleSearchChange = useCallback((val: string) => {
-      setLocalSearch(val);
-      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-      searchTimeoutRef.current = setTimeout(() => {
-          setLedgerSearch(val);
-      }, 300);
-  }, [setLedgerSearch]);
-
-  // A pending debounce never outlives the room.
-  useEffect(() => () => {
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-  }, []);
+  // The box shows each key; the room follows a moment behind, and a ✕ cancels what is pending.
+  const { value: localSearch, onChange: handleSearchChange, clear: clearSearch } = useDebouncedSearch(ledgerSearch, setLedgerSearch);
 
   /**
    * The server's month counts cover EVERY log — the Ledger holds only the ones
@@ -431,7 +418,7 @@ export default function ProfileLedgerTab({
         <RoomSearch
           value={localSearch}
           onChange={handleSearchChange}
-          onClear={() => { setLocalSearch(''); setLedgerSearch(''); }}
+          onClear={clearSearch}
           placeholder="Search the ledger…"
           a11y="Search the ledger by film or by what was written"
           ember={<AnimatedSearchIcon size={13} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />}
@@ -459,7 +446,7 @@ export default function ProfileLedgerTab({
       </View>
     );
    
-  }, [logs.length, localSearch, handleSearchChange, setLedgerSearch, ledgerRatingFilter, setLedgerRatingFilter, ratings, ratingTotal, animatedSearchProps, animatedSearchStyle]);
+  }, [logs.length, localSearch, handleSearchChange, clearSearch, ledgerRatingFilter, setLedgerRatingFilter, ratings, ratingTotal, animatedSearchProps, animatedSearchStyle]);
 
   const ListEmptyComponent = useMemo(() => {
     if (logs.length > 0 && ledgerFiltered.length > 0) return null;
@@ -475,7 +462,7 @@ export default function ProfileLedgerTab({
           title="Nothing under that name"
           body={`No entry matches “${ledgerSearch}”.`}
           actionLabel="CLEAR THE SEARCH"
-          onAction={() => { setLocalSearch(''); setLedgerSearch(''); }}
+          onAction={clearSearch}
         />
       );
     }
@@ -518,7 +505,7 @@ export default function ProfileLedgerTab({
       />
     );
    
-  }, [logs.length, ledgerFiltered.length, ledgerSearch, ledgerRatingFilter, setLedgerSearch, setLedgerRatingFilter, ready, unreachable, isSelf, pulseStyle]);
+  }, [logs.length, ledgerFiltered.length, ledgerSearch, ledgerRatingFilter, clearSearch, setLedgerRatingFilter, ready, unreachable, isSelf, pulseStyle]);
 
   return (
     <View style={r.container}>

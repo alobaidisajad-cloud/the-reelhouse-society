@@ -131,10 +131,12 @@ describe('logout clears what a store keeps outside itself', () => {
     // Nulling the reference left the socket live, and messages kept arriving
     // into a store the reset had just cleared.
     const body = resetBody(readCode(path.join(ROOT, 'src/stores/lounge.ts')));
-    // Since review round 9 through openChannel's close (_closeActive), which calls removeChannel.
-    expect(body).toMatch(/_closeActive\(\)/);
+    // Since review round 9 through openChannel's close, which calls removeChannel; since round 12
+    // every open room's (_roomLeaves), as two copies of one room hold one channel.
+    expect(body).toMatch(/for \(const leave of \[\.\.\._roomLeaves\]\)/);
+    expect(body).toMatch(/leave\(\)/);
     expect(readCode(path.join(ROOT, 'src/lib/openChannel.ts'))).toMatch(/removeChannel\(/);
-    expect(body).toMatch(/_activeChannel\s*=\s*null/);
+    expect(body).toMatch(/_salons\.clear\(\)/);
   });
 
   /**

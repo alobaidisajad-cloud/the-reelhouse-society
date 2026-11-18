@@ -515,14 +515,14 @@ export default function DataVault() {
 
         <Text style={s.subLabel}>EXPORT YOUR DATA</Text>
 
-        <PressableScale style={[s.actionBtn, !!exporting && s.dimmed]} onPress={handleExportCSV} disabled={!!exporting} hitSlop={null} haptic="medium" pressedScale={0.97} accessibilityRole="button" accessibilityState={{ disabled: !!exporting }} accessibilityLabel="Export data as CSV">
+        <PressableScale style={[s.actionBtn, !!exporting && s.dimmed]} onPress={handleExportCSV} disabled={!!exporting} hitSlop={null} haptic="medium" pressedScale={0.97} accessibilityRole="button" accessibilityState={{ disabled: !!exporting, busy: exporting === 'csv' }} accessibilityLabel={exporting === 'csv' ? 'Exporting data as CSV' : 'Export data as CSV'}>
           <Download size={12} color={colors.fog} />
           <Text style={s.actionBtnText}>{exporting === 'csv' ? 'EXPORTING…' : 'EXPORT DATA (CSV)'}</Text>
         </PressableScale>
 
         <View style={s.exportSpacer} />
 
-        <PressableScale style={[s.actionBtn, !!exporting && s.dimmed]} onPress={handleExportJSON} disabled={!!exporting} hitSlop={null} haptic="medium" pressedScale={0.97} accessibilityRole="button" accessibilityState={{ disabled: !!exporting }} accessibilityLabel="Export full archive as JSON">
+        <PressableScale style={[s.actionBtn, !!exporting && s.dimmed]} onPress={handleExportJSON} disabled={!!exporting} hitSlop={null} haptic="medium" pressedScale={0.97} accessibilityRole="button" accessibilityState={{ disabled: !!exporting, busy: exporting === 'json' }} accessibilityLabel={exporting === 'json' ? 'Exporting full archive as JSON' : 'Export full archive as JSON'}>
           <Download size={12} color={colors.fog} />
           <Text style={s.actionBtnText}>{exporting === 'json' ? 'EXPORTING…' : 'EXPORT FULL ARCHIVE (JSON)'}</Text>
         </PressableScale>

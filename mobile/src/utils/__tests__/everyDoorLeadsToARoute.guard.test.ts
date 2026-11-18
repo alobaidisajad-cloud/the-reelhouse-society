@@ -83,7 +83,6 @@ function targets(): Target[] {
 /** Targets worked out at run time, by file and their own text, each with where its path comes from. */
 const COMPUTED: { at: string; text: string; from: string }[] = [
   { at: 'app/(admin)/tribunal.tsx', text: 'ev.data!.route!', from: 'the reported item\'s page, as the server\'s get_report_evidence names it' },
-  { at: 'app/(modals)/notifications-modal.tsx', text: 'route as never', from: 'noticeRoute (a notice) or groupRoute (a group of certifications): checked below' },
   { at: 'app/(modals)/search-modal.tsx', text: 'r._nav', from: 'each result\'s _nav, written beside its kind in useUniversalSearch: checked below' },
   { at: 'app/(tabs)/_layout.tsx', text: '`/${tab}` as Href', from: 'tabToReopen: a name from lastTab.ts\'s TABS, never index: checked below' },
   { at: 'app/(tabs)/_layout.tsx', text: 'ROOMS[room].href', from: 'roomToReopen: a room of lastRoom.ts\'s ROOMS: checked below' },
@@ -97,7 +96,8 @@ const COMPUTED: { at: string; text: string; from: string }[] = [
   { at: 'src/components/lobby/parts.tsx', text: 'memberPath(author.username, author.id)', from: 'memberPath: checked below' },
   { at: 'src/components/reels/MemberRegistry.tsx', text: 'memberPath(member.username, member.id)', from: 'memberPath: checked below' },
   { at: 'src/components/layout/ConciergeButton.tsx', text: 'route', from: 'handleAction\'s callers: /log-modal, /list-modal, /dispatch/compose: checked below' },
-  { at: 'src/utils/openNoticeFromPush.ts', text: 'route', from: 'noticeRoute, or the notices sheet: checked below' },
+  // Since round 12 a notice opens through openOrTellHere, which tells the page in front instead of stacking it.
+  { at: 'src/utils/pageInFront.ts', text: 'route', from: "openOrTellHere's callers: a tapped push (noticeRoute, or the notices sheet) and the notices sheet's rows (noticeRoute, or groupRoute for a group): checked below" },
   { at: 'src/utils/typedRouter.ts', text: 'query ? `${path}${path.includes(\'?\') ? \'&\' : \'?\'}${query}` : path', from: 'nav.replace\'s own path, into the tabs, with its params: whatever its caller named, checked at that caller' },
   { at: 'src/hooks/useAuthFlow.ts', text: 'landing', from: 'returnAfterSignIn (signInReturn.ts): a screen of the app by its shape, or /(tabs) (aStrangerIsAskedInAndBroughtBack)' },
   { at: 'src/components/MembersOnly.tsx', text: 'signInHref(next)', from: 'signInHref (signInReturn.ts): /login, told a screen of the app to return to' },

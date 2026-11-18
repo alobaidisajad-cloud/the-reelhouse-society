@@ -1,6 +1,7 @@
 /**
  * The lock clock for the train on 100,000 members (e2e/load/train-locks.mjs), run as a process on
- * saved samples: how a lock is timed, and which holds fail the run.
+ * saved samples: how a lock is timed, and which holds fail the run; and, from the train's own plan,
+ * the runs it is measured in, car by car.
  */
 import { spawnSync } from 'child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'fs';
@@ -69,6 +70,42 @@ describe('a hold fails the run', () => {
   it('and not for one let go within the second', () => {
     expect(judge([at(0, 'public.logs', 'AccessExclusiveLock'), at(HELD_MS - 2 * SAMPLE_MS, 'public.logs', 'AccessExclusiveLock')])[0])
       .toMatchObject({ fault: false });
+  });
+});
+
+describe('the train is measured as it runs, car by car', () => {
+  const SQL = "SET LOCAL lock_timeout = '2s';\nSET LOCAL statement_timeout = '30s';\nCREATE TABLE public.x (id int);\n";
+  const INDEX = "SET lock_timeout = '2s';\nSET statement_timeout = '10min';\nCREATE INDEX CONCURRENTLY IF NOT EXISTS x_id ON public.x (id);\n";
+  const car = (name: string, sql = SQL) => ({ name, path: `/m/${name}`, sql });
+  const reh = (name: string, ...includes: string[]) => ({ name, path: `/d/${name}`, includes });
+  const runs = (pending: unknown[], rehearsals: unknown[]) => {
+    const file = join(dir, `p${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(file, JSON.stringify({ pending, rehearsals }));
+    const r = spawnSync(process.execPath, [SCRIPT, '--runs', file], { encoding: 'utf8' });
+    if (r.status !== 0) throw new Error(r.stderr);
+    return JSON.parse(r.stdout) as { label: string; args: string[] }[];
+  };
+  const [A, B, C] = ['20990101_01_a.sql', '20990101_02_b.sql', '20990101_04_c.sql'].map((n) => car(n));
+  const idx = car('20990101_03_x_id.sql', INDEX);
+  let measured: { label: string; args: string[] }[];
+  beforeAll(() => {
+    measured = runs([A, B, idx, C], [reh('a_rehearsal.sql', A.name), reh('b_rehearsal.sql', B.name),
+      reh('x_id_rehearsal.sql'), reh('c_rehearsal.sql', C.name)]);
+  });
+
+  it('the index built first, then each car rehearsed (A) and applied (B) before the next is rehearsed', () => {
+    expect(measured.map((r) => r.label)).toEqual([
+      `B · build ${idx.name} alone, as members write`,
+      `A · rehearse ${A.name} on production as it now is`, `B · apply ${A.name}`,
+      `A · rehearse ${B.name} on production as it now is`, `B · apply ${B.name}`,
+      `A · rehearse ${C.name} on production as it now is`, `B · apply ${C.name}`,
+    ]);
+  });
+
+  it('each rehearsal its own file alone: no earlier car held open in its transaction', () => {
+    expect(measured.filter((r) => r.label.startsWith('A')).map((r) => r.args.filter((a) => a.endsWith('.sql'))))
+      .toEqual([['/d/a_rehearsal.sql'], ['/d/b_rehearsal.sql'], ['/d/c_rehearsal.sql']]);
+    expect(measured.find((r) => r.label === `B · apply ${B.name}`)?.args).toEqual(['-X', '-1', '-v', 'ON_ERROR_STOP=1', '-f', `/m/${B.name}`]);
   });
 });
 

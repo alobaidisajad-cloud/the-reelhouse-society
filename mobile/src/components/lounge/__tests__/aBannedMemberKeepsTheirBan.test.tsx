@@ -48,7 +48,7 @@ afterEach(() => { jest.restoreAllMocks(); });
 /** The panel as `me` sees it, the roster given, a member's row opened by the host. */
 async function panel(me: string, members: LoungeMember[], opened?: number) {
   useAuthStore.setState({ user: { id: me, username: me } });
-  const r = render(<LoungeSettingsPanel lounge={room} members={members} visible isCreator={me === HOST} onClose={jest.fn()} />);
+  const r = render(<LoungeSettingsPanel lounge={room} members={members} visible isCreator={me === HOST} standing={members.find((m) => m.user_id === me)?.status ?? 'none'} onClose={jest.fn()} />);
   if (opened !== undefined) {
     const rows = r.getAllByLabelText('Member actions');
     const row = rows[opened];
