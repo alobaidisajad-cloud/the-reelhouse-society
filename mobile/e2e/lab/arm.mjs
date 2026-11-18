@@ -311,13 +311,13 @@ const bootReadsWait = [
     "        setTimeout(() => { useNotificationStore.getState().fetchNotifications().catch(e => logger.warn('[Bootstrapper] Notices read failed:', e)); }, 1500);\n"),
 ];
 
-// The query cache, written whole on the thread (JSON, its bytes counted a character at a time, then
-// stored) after each change, and read whole at launch. Speed lab 40191043799: the Dispatch's posts
+// The query cache, written whole on the thread (JSON, then stored; since round 13 at most once a
+// second, when the phone is idle) and read whole at launch. Speed lab 40191043799: the Dispatch's posts
 // answered at 0.9 s and were taken in at 1.9 s, the thread held meanwhile. Qp: never written; Qr:
 // never read back.
 const QUERY_FILE = 'src/lib/queryClient.ts';
-const cacheNotWritten = [edit(QUERY_FILE, '  persistClient: async (client: PersistedClient) => {\n    try {\n',
-  '  persistClient: async (client: PersistedClient) => {\n    if (globalThis) return;\n    try {\n')];
+const cacheNotWritten = [edit(QUERY_FILE, '  persistClient: async (client: PersistedClient) => {\n    held = { client, member: memberNow() };\n',
+  '  persistClient: async (client: PersistedClient) => {\n    if (globalThis) return;\n    held = { client, member: memberNow() };\n')];
 const cacheNotRead = [edit(QUERY_FILE, '  restoreClient: async () => {\n    try {\n',
   '  restoreClient: async () => {\n    if (globalThis) return undefined;\n    try {\n')];
 

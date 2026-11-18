@@ -21,6 +21,7 @@ const MAY_LIST: Record<string, string> = {
   'src/components/__tests__/busterRegister.test.ts': "assets/buster/ must hold exactly the pictures the register names, at every density",
   'src/utils/__tests__/expoImagePatch.guard.test.ts': 'patches/ must hold exactly the one patch package.json pins',
   'src/utils/__tests__/theRecordingsTravel.test.ts': 'the recordings folders must each be tracked by git, file by file',
+  'src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts': "the catalogue's recorded film pages are the subject: each real answer is kept as its page draws it",
   'src/utils/__tests__/easUpload.guard.test.ts': 'which .easignore files git tracks is what an EAS upload reads',
   'scripts/comment-truth.js': "git's own list of the files it tracks, and the type declarations of installed packages",
   'scripts/functions-check.mjs': "a function's whole folder is what a deploy bundles, and a download is a folder of its own",
