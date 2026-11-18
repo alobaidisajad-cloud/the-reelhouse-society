@@ -5856,8 +5856,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "      // Left on purpose: its CLOSED is not a drop.\n      watch.end();\n"
-        replace: "      // Left on purpose: its CLOSED is not a drop.\n"
+        find: "    for (const leave of [..._roomLeaves]) {\n        try { leave(); } catch { /* already gone */ }\n    }\n"
+        replace: ""
     proof: { file: src/stores/__tests__/aSalonJoinedAgainHearsTheRoom.test.ts, test: "a salon live at sign-out is left whole: its closing is no drop, the next member is never told the room is not live, and nothing is read again" }
 
   - id: shape-standing-blamed-on-the-author
