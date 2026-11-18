@@ -51,9 +51,16 @@ case "$1" in
     case "$*" in
       -c) ;;
       "-v threadtime") [ -f "$T/state/dead-stream" ] && exit 0
-        # A copy behind the phone, as a busy runner's is: what the phone said reaches it seconds later.
+        # A copy behind the phone, as a busy runner's is: each line the phone said reaches it 8 s later.
         if [ -f "$T/state/slow-stream" ]; then
-          n=0; while :; do sleep 4; m=$(wc -l < "$T/device.log"); [ "$m" -gt "$n" ] && sed -n "$((n + 1)),$m"p "$T/device.log"; n=$m; done
+          n=0; : > "$T/state/held"
+          while :; do
+            now=$(date +%s); m=$(wc -l < "$T/device.log")
+            [ "$m" -gt "$n" ] && sed -n "$((n + 1)),$m"p "$T/device.log" | while IFS= read -r l; do echo "$now $l"; done >> "$T/state/held"; n=$m
+            awk -v t=$((now - 8)) '$1 <= t' "$T/state/held" | cut -d' ' -f2-
+            awk -v t=$((now - 8)) '$1 > t' "$T/state/held" > "$T/state/held.next"; mv "$T/state/held.next" "$T/state/held"
+            sleep 1
+          done
         fi
         exec tail -n +1 -f "$T/device.log" ;;
       *) cat "$T/device.log" ;;

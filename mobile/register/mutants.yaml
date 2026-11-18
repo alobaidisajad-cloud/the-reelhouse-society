@@ -6846,6 +6846,6 @@ mutants:
     source: shape
     edits:
       - file: e2e/run-flows.sh
-        find: "    until grep -qF \"$mark\" \"$OUT/logcat-stream.txt\" 2>/dev/null; do"
-        replace: "    sleep 2; until true; do"
+        find: "  if timeout 20 adb shell log -t e2e-cut \"$mark\" < /dev/null > /dev/null 2>&1; then"
+        replace: "  sleep 2; if false; then"
     proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "is found in its attempt though the runner's copy of the log is seconds behind the phone" }
