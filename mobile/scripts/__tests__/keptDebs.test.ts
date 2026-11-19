@@ -4,7 +4,8 @@
  * left as they are, and a failure says so by its exit, so the workflow lets apt fetch them.
  */
 import { spawnSync } from 'child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, existsSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, existsSync, writeFileSync } from 'fs';
+import { files as universe } from '@/test-utils/universe';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { MOBILE } from '../../test-utils/readCode';
@@ -97,13 +98,12 @@ describe('the kept packages belong to one image', () => {
 describe('apt is never waited into a lock it still holds', () => {
   it("every wait for apt, in every workflow, ends an apt that still holds its locks and repairs what it left", () => {
     // God-Tier 44473860748: the first try's apt, cut off at its five minutes, held the lists lock through the retry.
-    const dir = join(MOBILE, '..', '.github', 'workflows');
     const WAIT = "timeout 180 bash -c 'while pgrep -x apt-get";
     const END = '&& { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true';
     const left: string[] = [];
     let waits = 0;
-    for (const name of readdirSync(dir).filter((n) => n.endsWith('.yml'))) {
-      const lines = readFileSync(join(dir, name), 'utf8').split(/\r?\n/);
+    for (const name of universe('workflows')) {
+      const lines = readFileSync(name, 'utf8').split(/\r?\n/);
       lines.forEach((line, i) => {
         if (!line.includes(WAIT)) return;
         waits++;
