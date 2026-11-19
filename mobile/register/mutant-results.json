@@ -5878,5 +5878,19 @@
     "proof": "m3",
     "commit": "424c7d7b94da97e1e81c1134c7cbac0bd5ab2aca",
     "verdict": "caught"
+  },
+  {
+    "class": "CI-a-cache-kept-past-its-image",
+    "mutant": "shape-kept-debs-left-half-installed",
+    "proof": "m1",
+    "commit": "bb54f3715a052e58856cdb796aa1ab23377d09cd",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-a-cache-kept-past-its-image",
+    "mutant": "shape-kept-debs-keyed-by-no-image",
+    "proof": "m2",
+    "commit": "bb54f3715a052e58856cdb796aa1ab23377d09cd",
+    "verdict": "caught"
   }
 ]

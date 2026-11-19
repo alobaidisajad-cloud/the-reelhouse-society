@@ -3,8 +3,13 @@
   "dispatch": { "median": 4050, "once": 3800 },
   "film": { "median": 4950, "once": 6700 },
   "lobby": { "median": 950, "once": 2050 },
+  "log": { "median": 1550, "once": 4750 },
   "lounges": { "median": 250, "once": 1900 },
   "member": { "median": 2250, "once": 5100 },
+  "reader": { "median": 750, "once": 450 },
   "reel": { "median": 1900, "once": 2550 },
+  "room": { "median": 2550, "once": 2650 },
+  "settings": { "median": 650, "once": 650 },
+  "stack": { "median": 1100, "once": 850 },
   "welcome": { "median": 250, "once": 900 }
 }

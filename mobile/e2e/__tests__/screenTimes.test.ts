@@ -232,9 +232,11 @@ describe('a screen whose read failed', () => {
 
 describe('the ceilings are derived from the recorded history', () => {
   /** ceilingsFrom, run in Node as the module is (an .mjs), on a history given here. */
+  // The history goes to the child on its input: on its command line, Windows refuses past 32,767 characters,
+  // and the whole history (69 runs) is longer than that.
   const derive = (history: unknown) => JSON.parse(spawnSync(process.execPath, ['--input-type=module', '-e',
-    `import(${JSON.stringify(pathToFileURL(SCRIPT).href)}).then((m) => console.log(JSON.stringify(m.ceilingsFrom(${JSON.stringify(history)}))))`],
-  { encoding: 'utf8' }).stdout);
+    `let t = ''; process.stdin.on('data', (c) => { t += c; }).on('end', () => import(${JSON.stringify(pathToFileURL(SCRIPT).href)}).then((m) => console.log(JSON.stringify(m.ceilingsFrom(JSON.parse(t))))));`],
+  { encoding: 'utf8', input: JSON.stringify(history) }).stdout);
   const sample = (screen: string, median: number, slowest: number) => ({ run: 1, screen, opened: 3, median, slowest });
 
   it('takes half again the slowest median, and twice the slowest opening nine in ten stay under, up to 50 ms', () => {
