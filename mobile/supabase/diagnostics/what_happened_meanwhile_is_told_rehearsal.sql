@@ -1048,13 +1048,23 @@ SELECT pg_temp.rh_need('members in good standing', (SELECT count(*) FROM rh_d1_m
 
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
--- The handles from before today's letters, and 4's ban, laid as the house past the rules (as the
--- rows from before the rules were made).
-SELECT set_config('session_replication_role', 'replica', true) AS done \gset rh_
+-- The handles from before today's letters, and 4's ban, laid as the house past the username rule (as
+-- the rows from before the rule was made). The rehearsal runs as production's postgres, which is no
+-- superuser and may not turn every trigger off for its writes; it owns the rule's function, so
+-- the rule is set aside for these three writes alone and put back whole, its own definition read
+-- first, all in this transaction: no table is held, and no other session ever sees it set aside.
+CREATE TEMP TABLE rh_d1_rule ON COMMIT DROP AS
+  SELECT pg_get_functiondef('public.enforce_username_policy()'::regprocedure) AS def;
+CREATE OR REPLACE FUNCTION public.enforce_username_policy() RETURNS trigger
+    LANGUAGE plpgsql
+    SET search_path TO 'public', 'pg_temp'
+    AS $$ BEGIN RETURN NEW; END $$;
 UPDATE public.profiles SET username = 'Rh_R11.Kept' WHERE id = (SELECT id FROM rh_d1_members WHERE n = 1);
 UPDATE public.profiles SET username = 'Rh_R11.Old' WHERE id = (SELECT id FROM rh_d1_members WHERE n = 2);
 UPDATE public.profiles SET is_banned = true, banned_at = now() WHERE id = (SELECT id FROM rh_d1_members WHERE n = 4);
-SELECT set_config('session_replication_role', 'origin', true) AS done \gset rh_
+DO $$ BEGIN EXECUTE (SELECT def FROM rh_d1_rule); END $$;
+SELECT pg_temp.rh_case('the username rule is put back whole before the members act', 'true',
+  (SELECT (pg_get_functiondef('public.enforce_username_policy()'::regprocedure) = def)::text FROM rh_d1_rule)) AS done \gset rh_
 
 CREATE TEMP TABLE rh_d1_handles ON COMMIT DROP AS
   SELECT m.n, p.username FROM rh_d1_members m JOIN public.profiles p ON p.id = m.id;

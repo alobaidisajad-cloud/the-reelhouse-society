@@ -13,6 +13,8 @@
  *   - every case is recorded through the kit, never printed alone;
  *   - no migration applied that production already holds (it would run old
  *     code over the new);
+ *   - nothing only a superuser may do (every trigger turned off, the server's
+ *     own settings): production and CI run each as Supabase's postgres;
  *   - no row picked by a pg_temp helper's call itself, which is read on every
  *     row: the rehearsal holds its migration's locks while it reads.
  * The rules are checked on planted text first, so each is seen to say no.
@@ -63,6 +65,11 @@ const faultsOf = (sql: string, applied: Set<string>) => {
   for (const m of sql.matchAll(/^\\i[r]?\s+\S*migrations\/(\S+\.sql)/gm)) {
     if (applied.has(m[1])) faults.push(`applies ${m[1]}, which production already holds`);
   }
+  // Production and CI run every rehearsal as Supabase's postgres, which is no superuser: what only a
+  // superuser may do (turn every trigger off, change the server's own settings) is refused there.
+  for (const m of sql.matchAll(/\b(session_replication_role|ALTER\s+SYSTEM)\b/gi)) {
+    faults.push(`${m[1]}: only a superuser may, and production's postgres is none`);
+  }
   // A helper is volatile and never leakproof: as a filter's value it is called once per row, the
   // index unused and the row rules run on every row (30 s on 100,000 members, P0.6's lock lab).
   for (const m of sql.matchAll(/\b(?:where|and|or|on)\s+[\w.]+\s*(?:=|<>|!=)\s*(pg_temp\.\w+)\(/gi)) {
@@ -94,6 +101,8 @@ describe('the rules say no', () => {
       `applies ${[...applied].pop()}, which production already holds`],
     ['a row picked by a helper read on every row', GOOD.replace('SAVEPOINT c;', "SELECT body FROM public.lounge_messages WHERE id = pg_temp.rh_row('m');\nSAVEPOINT c;"),
       'a row picked by pg_temp.rh_row() itself, read on every row: pick it by (SELECT pg_temp.rh_row(…))'],
+    ['triggers turned off, which only a superuser may', GOOD.replace('SAVEPOINT c;', "SELECT set_config('session_replication_role', 'replica', true);\nSAVEPOINT c;"),
+      'session_replication_role: only a superuser may, and production\'s postgres is none'],
   ])('says NO to %s', (_name, sql, fault) => {
     expect(faultsOf(sql, applied)).toContain(fault);
   });

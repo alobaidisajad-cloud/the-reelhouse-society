@@ -1,0 +1,127 @@
+-- ════════════════════════════════════════════════════════════════════════════
+-- 20261119_25 — a handle many share is found at once.
+-- ════════════════════════════════════════════════════════════════════════════
+--   1. Member search read every member whose handle or name held the words and sorted them all for one
+--      page: a handle many share took some 165 ms at 100,000 members (the load lab's "m1"). Each closeness
+--      is now read on its own and only as far as the page needs, the answer the same row for row (review
+--      round 13).
+--   search_members only, as 20261118_01 made it but for how it reads; no table is locked.
+-- Undo: mobile/supabase/migrations-down/20261119_25_a_handle_many_share_is_found_at_once.sql
+-- ════════════════════════════════════════════════════════════════════════════
+SET LOCAL lock_timeout = '2s';
+SET LOCAL statement_timeout = '30s';
+
+-- ── search_members · a handle many share fills its page from the first members it meets, never from all of them sorted (review round 13) ──
+--   Member search answers by closeness (0: the handle is the words; 1: the handle begins with them;
+--   2: the name begins with them; 3: either holds them), then by handle, a page at a time. It read
+--   every member whose handle or name held the words, then sorted them all for the one page: for a
+--   handle many share ("m1" on the load house: 11,112 members, two letters no trigram index can find
+--   by), each search fetched them all from the table and sorted them, some 165 ms at 100,000 members.
+--   Now each closeness is read on its own, in handle order, and only as far as the page needs: the
+--   exact handles first, then the beginnings, the names' beginnings, the rest, each stopping once the
+--   page is full. Each is asked with the words written in, so the planner sees them and picks for
+--   each: the handles walked in their own order (profiles_username_unique) when many hold the words,
+--   so the page is found among the first few hundred; the trigram indexes and a sort of the few found
+--   when few do. The answer is the same, row for row and in the same order: the same closeness for
+--   each member (a test that is unknown, a name not given, counts as not met, as before), the same
+--   order by handle, the same cursor, the same hidden members left out, the same limit. It runs as
+--   the reader, as before: the rules of profiles shape it as they shaped the one read.
+-- add-only (1): no shipped client uses it as it was changed: search_members is round 12's (20261118_01, pending), asked by the phone only after both trains; TestFlight build 41 and the website never call it
+CREATE OR REPLACE FUNCTION public.search_members(p_pattern text, p_handles_only boolean DEFAULT false, p_cursor_closeness integer DEFAULT NULL::integer, p_cursor_username text DEFAULT NULL::text, p_limit integer DEFAULT 20)
+RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)
+    LANGUAGE plpgsql STABLE
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+DECLARE
+  v_limit  integer := LEAST(GREATEST(COALESCE(p_limit, 20), 1), 51);
+  v_names  boolean := NOT COALESCE(p_handles_only, false);
+  v_hidden uuid[];
+  v_tests  text[];
+  v_few    uuid[];
+  v_past   text;
+  v_tier   integer;
+  v_not    text := '';
+  v_got    integer := 0;
+  v_n      integer;
+BEGIN
+  IF COALESCE(p_pattern, '') = '' THEN
+    RETURN;
+  END IF;
+  v_hidden := COALESCE((SELECT public.hidden_authors())::uuid[], '{}'::uuid[]);
+  -- Each closeness's own test, as the one read's CASE asked it. Plain, so the planner reads the words
+  -- and their indexes: a WHERE drops a test that is unknown (a name not given), as the CASE did.
+  -- The handle that is the words: words with no wildcard left once their escapes are read are one
+  -- handle, any case, so the case-blind unique index (profiles_username_lower_unique) finds it at once
+  -- (ILIKE is that same lower() on both sides: the equality adds no member and takes none away).
+  v_tests := ARRAY[
+    format('p.username ILIKE %L ESCAPE %L', p_pattern, '\')
+      || CASE WHEN regexp_replace(p_pattern, '\\.', '', 'g') !~ '[%_\\]'
+              THEN format(' AND lower(p.username) = lower(%L)', regexp_replace(p_pattern, '\\(.)', '\1', 'g')) ELSE '' END,
+    format('p.username ILIKE %L ESCAPE %L', p_pattern || '%', '\'),
+    CASE WHEN v_names THEN format('p.display_name ILIKE %L ESCAPE %L', p_pattern || '%', '\') ELSE 'false' END,
+    format('(p.username ILIKE %L ESCAPE %L', '%' || p_pattern || '%', '\')
+      || CASE WHEN v_names THEN format(' OR p.display_name ILIKE %L ESCAPE %L)', '%' || p_pattern || '%', '\') ELSE ')' END
+  ];
+  -- Who holds the words at all (the one read's own WHERE), gathered once by the plan the words want,
+  -- up to a thousand: when fewer hold them, the page is the one read's own over just those few, by id.
+  EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT 1001) p',
+                 v_tests[4])
+    INTO v_few USING v_hidden;
+  IF COALESCE(cardinality(v_few), 0) <= 1000 THEN
+    RETURN QUERY
+    SELECT m.id, m.username, m.avatar_url, m.role, m.closeness
+      FROM (
+        SELECT p.id, p.username, p.avatar_url, p.role,
+               CASE WHEN p.username ILIKE p_pattern ESCAPE '\' THEN 0
+                    WHEN p.username ILIKE p_pattern || '%' ESCAPE '\' THEN 1
+                    WHEN v_names AND p.display_name ILIKE p_pattern || '%' ESCAPE '\' THEN 2
+                    ELSE 3 END AS closeness
+          FROM public.profiles p
+         WHERE p.id = ANY (COALESCE(v_few, '{}'::uuid[]))
+      ) m
+     WHERE p_cursor_closeness IS NULL OR (m.closeness, m.username) > (p_cursor_closeness, p_cursor_username)
+     ORDER BY m.closeness, m.username
+     LIMIT v_limit;
+    RETURN;
+  END IF;
+  -- More hold them: each closeness in turn, as far as the page needs. A member of a closeness meets its
+  -- test and none of the closer ones; in the cursor's own closeness, it is past the cursor's handle (a
+  -- member with no handle is never past it). Its members are gathered first, up to a thousand, by the
+  -- plan the words want: fewer, and they are put in handle order themselves; more, and the closeness
+  -- holds so many that its handles are walked in their own order (profiles_username_unique) and the
+  -- page is met within the first few hundred. The walk asks its test as one the planner cannot weigh
+  -- (COALESCE), so it is planned as a walk however few it guesses: its guess of a name's beginning
+  -- once took 100,000 for 4, and sorted them all.
+  FOR v_tier IN 0..3 LOOP
+    IF (p_cursor_closeness IS NULL OR v_tier >= p_cursor_closeness) AND v_tests[v_tier + 1] <> 'false' THEN
+      v_past := CASE WHEN v_tier = p_cursor_closeness THEN format(' AND p.username > %L', p_cursor_username) ELSE '' END;
+      EXECUTE format('SELECT array_agg(p.id) FROM (SELECT p.id FROM public.profiles p WHERE %s%s%s AND NOT COALESCE(p.id = ANY ($1), false) LIMIT 1001) p',
+                     v_tests[v_tier + 1], v_not, v_past)
+        INTO v_few USING v_hidden;
+      IF COALESCE(cardinality(v_few), 0) <= 1000 THEN
+        RETURN QUERY
+        SELECT p.id, p.username, p.avatar_url, p.role, v_tier
+          FROM public.profiles p
+         WHERE p.id = ANY (COALESCE(v_few, '{}'::uuid[]))
+         ORDER BY p.username
+         LIMIT v_limit - v_got;
+      ELSE
+        RETURN QUERY EXECUTE format(
+          'SELECT p.id, p.username, p.avatar_url, p.role, %s
+             FROM public.profiles p
+            WHERE COALESCE(%s, false)%s%s
+              AND NOT COALESCE(p.id = ANY ($1), false)
+            ORDER BY p.username
+            LIMIT %s',
+          v_tier, v_tests[v_tier + 1], v_not, v_past, v_limit - v_got)
+        USING v_hidden;
+      END IF;
+      GET DIAGNOSTICS v_n = ROW_COUNT;
+      v_got := v_got + v_n;
+      EXIT WHEN v_got >= v_limit;
+    END IF;
+    -- A closer test ruled out: one that is unknown was not met, so it rules nothing out.
+    v_not := v_not || ' AND NOT COALESCE(' || v_tests[v_tier + 1] || ', false)';
+  END LOOP;
+END;
+$$;

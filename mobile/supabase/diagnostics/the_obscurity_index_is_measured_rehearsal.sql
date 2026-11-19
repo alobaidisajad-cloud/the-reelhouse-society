@@ -56,8 +56,14 @@ BEGIN
   SELECT array_agg(c.id) INTO taken FROM public.claim_films_to_sync(100) c;
   PERFORM pg_temp.rh_case('a film read before popularity is read again', 'true',
     ((SELECT min(id) FROM public.films WHERE synced_at IS NOT NULL) = ANY(taken))::text);
-  PERFORM pg_temp.rh_case('a read film that has its popularity is left alone', '0',
-    (SELECT count(*) FROM public.films WHERE id = ANY(taken) AND synced_at IS NOT NULL AND popularity IS NOT NULL)::text);
+  -- A read film that has its popularity is taken again only when it was read too early (round 13's
+  -- re-read, 20261119_17: a re-read due, or read before the house counted with its genres, director
+  -- or cast missing, no year, or of 2026 on), rehearsed in a_film_read_early_is_read_again_rehearsal.sql.
+  PERFORM pg_temp.rh_case('a read film that has its popularity and its details settled is left alone', '0',
+    (SELECT count(*) FROM public.films WHERE id = ANY(taken) AND synced_at IS NOT NULL AND popularity IS NOT NULL
+        AND NOT (reread_after IS NOT NULL
+                 OR (sync_reads IS NULL AND (cardinality(genres) = 0 OR director_id IS NULL OR cardinality(cast_ids) = 0
+                                             OR year IS NULL OR year >= 2026))))::text);
 END $$;
 
 SELECT pg_temp.rh_verdict();

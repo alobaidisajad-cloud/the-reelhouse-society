@@ -18,9 +18,15 @@ BEGIN;
 
 SELECT pg_temp.rh_case('the index is built, and whole', 'true',
   coalesce((SELECT i.indisvalid::text FROM pg_index i WHERE i.indexrelid = to_regclass('public.logs_reviewed_words')), 'missing')) AS done \gset rh_
+-- The definition is read on the catalogue's path alone, so it names each operator class with its
+-- schema wherever it is read: production's postgres has extensions on its own path, and there the
+-- class printed bare.
+SELECT current_setting('search_path') AS path \gset rh_was_
+SELECT set_config('search_path', 'pg_catalog', true) AS done \gset rh_
 SELECT pg_temp.rh_case('it holds the trigram pieces of each reviewed record''s title and review', 'true',
   coalesce((SELECT (pg_get_indexdef(i.indexrelid) LIKE '%USING gin (film_title extensions.gin_trgm_ops, review extensions.gin_trgm_ops) WHERE ((review IS NOT NULL) AND (review <> ''''::text))')::text
               FROM pg_index i WHERE i.indexrelid = to_regclass('public.logs_reviewed_words')), 'missing')) AS done \gset rh_
+SELECT set_config('search_path', :'rh_was_path', true) AS done \gset rh_
 
 SELECT pg_temp.rh_verdict();
 ROLLBACK;
