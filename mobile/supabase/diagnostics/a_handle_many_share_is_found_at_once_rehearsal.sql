@@ -55,6 +55,8 @@ RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness inte
    ORDER BY m.closeness, m.username
    LIMIT LEAST(GREATEST(COALESCE(p_limit, 20), 1), 51);
 $$;
+-- Supabase gives a new function to no one (its default privileges): the readers asked as below are granted it.
+GRANT EXECUTE ON FUNCTION pg_temp.sm_before(text, boolean, integer, text, integer) TO authenticated, anon;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
