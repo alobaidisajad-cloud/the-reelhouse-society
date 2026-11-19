@@ -808,14 +808,14 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-install-waits-on-the-mirror",
     "proof": "m1",
-    "commit": "92e5558d503debebf0e61e705e4d3781b16a28cb",
+    "commit": "c676c21b11bae38d05e130cd9193d52498f68ed7",
     "verdict": "caught"
   },
   {
     "class": "CI-install-fails-on-a-source-it-never-uses",
     "mutant": "shape-install-reads-every-source",
     "proof": "m1",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
+    "commit": "c676c21b11bae38d05e130cd9193d52498f68ed7",
     "verdict": "caught"
   },
   {
@@ -5239,7 +5239,7 @@
     "class": "E2E-a-log-cut-before-it-arrived",
     "mutant": "shape-attempt-log-cut-on-a-guess",
     "proof": "m1",
-    "commit": "822f9d3fac15e11e53c8f72d1611ee8ff08cb9c5",
+    "commit": "c676c21b11bae38d05e130cd9193d52498f68ed7",
     "verdict": "caught"
   },
   {
@@ -5898,6 +5898,27 @@
     "mutant": "shape-iphone-flow-never-given-again",
     "proof": "m4",
     "commit": "a3143df76c7992cc8452838dde0f976c4974b4e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-retry-blocked-by-its-first-try",
+    "mutant": "shape-apt-waited-into-its-lock",
+    "proof": "m2",
+    "commit": "c676c21b11bae38d05e130cd9193d52498f68ed7",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-two-crashes-of-one-pid-in-one-second-as-one",
+    "mutant": "shape-soft-crash-keyed-by-pid-alone",
+    "proof": "m1",
+    "commit": "c676c21b11bae38d05e130cd9193d52498f68ed7",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-a-log-cut-before-it-arrived",
+    "mutant": "shape-run-read-on-a-guess",
+    "proof": "m2",
+    "commit": "c676c21b11bae38d05e130cd9193d52498f68ed7",
     "verdict": "caught"
   }
 ]
