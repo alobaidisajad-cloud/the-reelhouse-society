@@ -32,6 +32,18 @@ CREATE TEMP TABLE sm_who ON COMMIT DROP AS
 GRANT SELECT ON sm_who TO anon, authenticated;
 SELECT pg_temp.rh_need('a member with a handle', (SELECT count(*) FROM sm_who WHERE n = 1 AND username <> ''), 1) AS done \gset rh_
 
+-- Those hidden from the caller, asked where the house keeps the rule: public before round 14, the
+-- unexposed schema private after it (no member may ask it directly), so this runs before and after.
+CREATE FUNCTION pg_temp.sm_hidden() RETURNS uuid[]
+    LANGUAGE plpgsql STABLE
+    AS $$
+BEGIN
+  IF to_regprocedure('private.hidden_authors()') IS NOT NULL THEN
+    RETURN private.hidden_authors();
+  END IF;
+  RETURN public.hidden_authors();
+END $$;
+
 -- Round 12's search, as 20261118_01 made it, kept beside the new one for this transaction alone.
 CREATE FUNCTION pg_temp.sm_before(p_pattern text, p_handles_only boolean DEFAULT false, p_cursor_closeness integer DEFAULT NULL::integer, p_cursor_username text DEFAULT NULL::text, p_limit integer DEFAULT 20)
 RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)
@@ -49,20 +61,19 @@ RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness inte
        WHERE COALESCE(p_pattern, '') <> ''
          AND (p.username ILIKE '%' || p_pattern || '%' ESCAPE '\'
               OR (NOT COALESCE(p_handles_only, false) AND p.display_name ILIKE '%' || p_pattern || '%' ESCAPE '\'))
-         AND NOT COALESCE(p.id = ANY ((SELECT public.hidden_authors())::uuid[]), false)
+         AND NOT COALESCE(p.id = ANY ((SELECT pg_temp.sm_hidden())::uuid[]), false)
     ) m
    WHERE p_cursor_closeness IS NULL OR (m.closeness, m.username) > (p_cursor_closeness, p_cursor_username)
    ORDER BY m.closeness, m.username
    LIMIT LEAST(GREATEST(COALESCE(p_limit, 20), 1), 51);
 $$;
 -- Supabase gives a new function to no one (its default privileges): the readers asked as below are granted it.
+GRANT EXECUTE ON FUNCTION pg_temp.sm_hidden() TO authenticated, anon;
 GRANT EXECUTE ON FUNCTION pg_temp.sm_before(text, boolean, integer, text, integer) TO authenticated, anon;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261119_25_a_handle_many_share_is_found_at_once.sql
-\endif
+-- 20261119_25 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- Its answers are the old function's by design (a speed fix): this case reads the function the house holds, which
 -- gathers at most a thousand members before it orders them (LIMIT 1001); the old one sorted every match.

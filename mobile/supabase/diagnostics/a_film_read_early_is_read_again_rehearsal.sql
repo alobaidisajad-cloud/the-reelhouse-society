@@ -29,9 +29,7 @@ GRANT ALL ON rh_c5_taste TO authenticated;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261119_17_a_film_read_early_is_read_again.sql
-\endif
+-- 20261119_17 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── H-C5 ──
 RESET ROLE;

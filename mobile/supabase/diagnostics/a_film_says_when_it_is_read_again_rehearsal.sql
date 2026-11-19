@@ -25,9 +25,7 @@ GRANT SELECT ON rehearsal_members TO authenticated;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261119_03_a_film_says_when_it_is_read_again.sql
-\endif
+-- 20261119_03 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── H-C5.locks ──
 RESET ROLE;

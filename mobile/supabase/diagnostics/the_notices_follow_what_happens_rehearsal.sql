@@ -42,9 +42,7 @@ GRANT ALL ON gb7_board TO authenticated;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261118_03_the_notices_follow_what_happens.sql
-\endif
+-- 20261118_03 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── G-B1 ──
 RESET ROLE;

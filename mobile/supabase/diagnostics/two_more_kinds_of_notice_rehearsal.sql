@@ -27,9 +27,7 @@ GRANT SELECT ON rehearsal_members TO authenticated;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261118_00_two_more_kinds_of_notice.sql
-\endif
+-- 20261118_00 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── G-B6.kinds ──
 RESET ROLE;

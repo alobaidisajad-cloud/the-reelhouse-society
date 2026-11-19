@@ -31,9 +31,7 @@ GRANT ALL ON b10_seen TO authenticated;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261119_24_a_share_waits_for_a_seal.sql
-\endif
+-- 20261119_24 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── B10 ──
 RESET ROLE;

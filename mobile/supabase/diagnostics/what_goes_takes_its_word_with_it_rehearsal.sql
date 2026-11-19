@@ -41,9 +41,7 @@ GRANT SELECT ON rh_f4s_rows TO authenticated;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a
 -- sealed copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261117_02_what_goes_takes_its_word_with_it.sql
-\endif
+-- 20261117_02 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── A4 ──
 RESET ROLE;
@@ -297,7 +295,9 @@ WITH r AS (INSERT INTO public.lounge_messages (lounge_id, user_id, content, type
            VALUES ((SELECT id FROM rh_f4s_rows WHERE what = 'salon'), (SELECT id FROM rehearsal_members WHERE n = 2),
                    'rh-f4 and this one', 'list_share',
                    jsonb_build_object('listId', (SELECT id FROM rh_f4s_rows WHERE what = 'stack that stays')::text,
-                                      'title', 'rh-f4 a stack that stays', 'curator', 'rh-f4-author')) RETURNING id)
+                                      'title', 'rh-f4 a stack that stays',
+                                      -- Its curator's own handle: since round 14 the house writes a card's curator from its stack.
+                                      'curator', (SELECT username FROM public.profiles WHERE id = (SELECT id FROM rehearsal_members WHERE n = 1)))) RETURNING id)
 INSERT INTO rh_f4s_rows SELECT 'standing stack card', id FROM r;
 SELECT pg_temp.rh_need('the two cards', (SELECT count(*) FROM rh_f4s_rows WHERE what LIKE '%card'), 2) AS done \gset rh_
 
@@ -313,7 +313,8 @@ SELECT pg_temp.rh_case('the deleted stack is gone', '0',
 SELECT pg_temp.rh_case('its card keeps only its id, and reads as gone',
   jsonb_build_object('listId', (SELECT id FROM rh_f4s_rows WHERE what = 'stack to go')::text, 'gone', true)::text,
   (SELECT metadata::text FROM public.lounge_messages WHERE id = (SELECT id FROM rh_f4s_rows WHERE what = 'gone stack card'))) AS done \gset rh_
-SELECT pg_temp.rh_case('a stack still standing keeps its card whole', 'rh-f4 a stack that stays|rh-f4-author|',
+SELECT pg_temp.rh_case('a stack still standing keeps its card whole',
+  'rh-f4 a stack that stays|' || (SELECT username FROM public.profiles WHERE id = (SELECT id FROM rehearsal_members WHERE n = 1)) || '|',
   (SELECT concat_ws('|', metadata ->> 'title', metadata ->> 'curator', coalesce(metadata ->> 'gone', ''))
      FROM public.lounge_messages WHERE id = (SELECT id FROM rh_f4s_rows WHERE what = 'standing stack card'))) AS done \gset rh_
 SELECT pg_temp.rh_case('the sharer''s own words under each card stay', 'rh-f4 and this one|rh-f4 see this stack',

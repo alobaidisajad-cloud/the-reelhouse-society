@@ -31,9 +31,7 @@ GRANT ALL ON b1_seen TO anon, authenticated, service_role;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261119_12_a_session_ended_takes_its_pushes.sql
-\endif
+-- 20261119_12 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── B1 ──
 RESET ROLE;

@@ -14,9 +14,7 @@ BEGIN;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a
 -- sealed copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261117_00_the_house_remembers_each_push.sql
-\endif
+-- 20261117_00 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── F11 table rehearsal · the memory of the pushes is there, the house's alone (review round 11) ──
 -- Run inside the car's rehearsal transaction, after rehearsal_kit.sql and the car. The table is there,

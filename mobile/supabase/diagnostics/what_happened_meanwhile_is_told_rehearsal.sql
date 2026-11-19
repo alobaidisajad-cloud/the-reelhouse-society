@@ -95,9 +95,7 @@ CREATE TEMP TABLE rh_d2_plan (line text) ON COMMIT DROP;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a
 -- sealed copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261117_01_what_happened_meanwhile_is_told.sql
-\endif
+-- 20261117_01 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── A1A5 ──
 RESET ROLE;
@@ -237,18 +235,22 @@ BEGIN
     (SELECT got FROM rh_a15_got WHERE what = 'remove the ended take') || '|'
     || (SELECT status FROM public.reports WHERE id = (SELECT id FROM rh_a15_rows WHERE what = 'case: ended take')) || '|'
     || (SELECT count(*)::text FROM public.mod_actions WHERE report_id = (SELECT id FROM rh_a15_rows WHERE what = 'case: ended take')));
-  PERFORM pg_temp.rh_case('REMOVE CONTENT on a filing that stands empties it and records it, as before', 'ok|true|resolved|1',
+  -- Taken from the paper: emptied (as REMOVE CONTENT ended a filing before round 14), or withheld whole until
+  -- its appeal is judged (round 14's H-B10, asked through the row so the rehearsal reads either house).
+  PERFORM pg_temp.rh_case('REMOVE CONTENT on a filing that stands takes it from the paper and records it, as before', 'ok|true|resolved|1',
     (SELECT got FROM rh_a15_got WHERE what = 'remove the standing take') || '|'
-    || (SELECT (ended_at IS NOT NULL)::text FROM public.dispatch_posts WHERE id = (SELECT id FROM rh_a15_rows WHERE what = 'standing take')) || '|'
+    || (SELECT (d.ended_at IS NOT NULL OR (to_jsonb(d) ->> 'withheld_at') IS NOT NULL)::text FROM public.dispatch_posts d WHERE d.id = (SELECT id FROM rh_a15_rows WHERE what = 'standing take')) || '|'
     || (SELECT status FROM public.reports WHERE id = (SELECT id FROM rh_a15_rows WHERE what = 'case: standing take')) || '|'
     || (SELECT count(*)::text FROM public.mod_actions WHERE report_id = (SELECT id FROM rh_a15_rows WHERE what = 'case: standing take') AND action = 'delete_content'));
   PERFORM pg_temp.rh_case('the member is told of the two removals made, a record and a filing', '2',
     (SELECT count(*)::text FROM public.notifications
       WHERE user_id = m2 AND title = 'A Notice from the House' AND metadata ->> 'action' = 'delete_content'
         AND created_at >= now()));
+  -- Removed: deleted (before round 14), or withheld whole until its appeal is judged (round 14's H-B10).
   PERFORM pg_temp.rh_case('REMOVE CONTENT on a record that stands removes it and records it, as before', 'ok|0|resolved|1',
     (SELECT got FROM rh_a15_got WHERE what = 'remove the standing log') || '|'
-    || (SELECT count(*)::text FROM public.logs WHERE id = (SELECT id FROM rh_a15_rows WHERE what = 'standing log')) || '|'
+    || (SELECT count(*)::text FROM public.logs l WHERE l.id = (SELECT id FROM rh_a15_rows WHERE what = 'standing log')
+          AND (to_jsonb(l) ->> 'withheld_at') IS NULL) || '|'
     || (SELECT status FROM public.reports WHERE id = stand) || '|'
     || (SELECT count(*)::text FROM public.mod_actions WHERE report_id = stand AND action = 'delete_content'));
   PERFORM pg_temp.rh_case('a warning is carried out as before', 'ok|warn',
@@ -1271,9 +1273,13 @@ BEGIN
     INSERT INTO public.lounge_messages (lounge_id, user_id, content, reply_to_id)
     VALUES ((SELECT pg_temp.rh_d2_row('salon')), (SELECT pg_temp.rh_d2('S')), 'rh-d2 S replies', v_id) RETURNING id INTO v_id;
     INSERT INTO rh_d2_rows VALUES ('reply to ' || w.what, v_id);
+    -- A stack the writer curates, shared by S: its card names its curator (since round 14 the house
+    -- writes a card's curator from the stack it names, so the stack is the writer's own).
+    INSERT INTO public.lists (user_id, title, is_private)
+    VALUES (w.id, 'rh-d2 a stack curated by ' || w.what, false) RETURNING id INTO v_id;
     INSERT INTO public.lounge_messages (lounge_id, user_id, content, type, metadata)
     VALUES ((SELECT pg_temp.rh_d2_row('salon')), (SELECT pg_temp.rh_d2('S')), 'rh-d2 S shares a stack', 'list_share',
-            jsonb_build_object('listId', (SELECT pg_temp.rh_d2_row('stack'))::text, 'title', 'rh-d2 a stack', 'curator', w.handle)) RETURNING id INTO v_id;
+            jsonb_build_object('listId', v_id::text, 'title', 'rh-d2 a stack curated by ' || w.what, 'curator', w.handle)) RETURNING id INTO v_id;
     INSERT INTO rh_d2_rows VALUES ('card of ' || w.what, v_id);
     INSERT INTO public.dossier_comments_legacy (dossier_id, user_id, username, body)
     VALUES ((SELECT pg_temp.rh_d2_row('S old essay')), w.id, w.handle, v_mark || ' old critique');
@@ -1309,6 +1315,16 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_d2_try(text) TO authenticated;
 
+-- The old Dispatch's tables, read by no member since round 14 (H-B10.locks), are read as the house:
+-- what they still hold of a member's words, which no reader may then reach either.
+CREATE FUNCTION pg_temp.rh_d2_legacy(stmt text) RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v text;
+BEGIN
+  EXECUTE stmt INTO v;
+  RETURN v;
+END $$;
+GRANT EXECUTE ON FUNCTION pg_temp.rh_d2_legacy(text) TO authenticated;
+
 -- Every place another member can read a member's words, counted for one writer's mark (as the reader).
 -- Each table is read where this piece wrote and where the house copies it: under S's record, stack,
 -- essay and salon, on the filings laid here, and in the notices to or from the three. A house of any
@@ -1328,11 +1344,10 @@ CREATE FUNCTION pg_temp.rh_d2_words(v_mark text) RETURNS text LANGUAGE sql AS $$
     (SELECT count(*) FROM public.notifications
       WHERE created_at >= now() AND (user_id IN (SELECT id FROM rh_d2_who) OR from_user_id IN (SELECT id FROM rh_d2_who))
         AND concat_ws(' ', message, metadata::text) LIKE '%' || v_mark || '%'),
-    (SELECT count(*) FROM public.dossier_comments_legacy
-      WHERE dossier_id = (SELECT pg_temp.rh_d2_row('S old essay')) AND body LIKE v_mark || '%'),
-    (SELECT count(*) FROM public.dispatch_dossiers_legacy
-      WHERE id IN (SELECT id FROM rh_d2_rows)
-        AND concat_ws(' ', title, excerpt, full_content) LIKE '%' || v_mark || '%'))
+    pg_temp.rh_d2_legacy(format('SELECT count(*)::text FROM public.dossier_comments_legacy WHERE dossier_id = %L AND body LIKE %L',
+      (SELECT pg_temp.rh_d2_row('S old essay')), v_mark || '%')),
+    pg_temp.rh_d2_legacy(format('SELECT count(*)::text FROM public.dispatch_dossiers_legacy WHERE id = ANY (%L::uuid[]) AND concat_ws('' '', title, excerpt, full_content) LIKE %L',
+      (SELECT array_agg(id) FROM rh_d2_rows), '%' || v_mark || '%')))
 $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_d2_words(text) TO authenticated;
 
@@ -1357,9 +1372,9 @@ INSERT INTO rh_d2_read VALUES ('K signed', concat_ws('|',
   (SELECT author_username || ',' || (ended_at IS NULL)::text FROM public.dispatch_posts WHERE id = (SELECT pg_temp.rh_d2_row('K take'))),
   (SELECT (user_id IS NULL)::text || ',' || (deleted_at IS NULL)::text FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('K message'))),
   (SELECT reply_to_username || ',' || (reply_to_content LIKE 'rh-d2-K%')::text FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('reply to K'))),
-  (SELECT string_agg(DISTINCT username, ',') FROM public.dossier_comments_legacy
-    WHERE dossier_id = (SELECT pg_temp.rh_d2_row('S old essay')) AND body LIKE 'rh-d2-K%'),
-  (SELECT author_username FROM public.dispatch_dossiers_legacy WHERE id = (SELECT pg_temp.rh_d2_row('K old essay'))),
+  pg_temp.rh_d2_legacy(format('SELECT string_agg(DISTINCT username, '','') FROM public.dossier_comments_legacy WHERE dossier_id = %L AND body LIKE ''rh-d2-K%%''',
+    (SELECT pg_temp.rh_d2_row('S old essay')))),
+  pg_temp.rh_d2_legacy(format('SELECT author_username FROM public.dispatch_dossiers_legacy WHERE id = %L', (SELECT pg_temp.rh_d2_row('K old essay')))),
   (SELECT (metadata ? 'curator')::text FROM public.lounge_messages WHERE id = (SELECT pg_temp.rh_d2_row('card of K')))));
 INSERT INTO rh_d2_read VALUES ('E take', (SELECT concat_ws('|', ended_by, (ended_at IS NOT NULL)::text, body, author_username)
   FROM public.dispatch_posts WHERE id = (SELECT pg_temp.rh_d2_row('E take'))));

@@ -31,9 +31,7 @@ GRANT ALL ON b8_seen TO service_role;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261119_13_an_old_token_follows_the_session_that_made_it.sql
-\endif
+-- 20261119_13 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── B8 ──
 RESET ROLE;

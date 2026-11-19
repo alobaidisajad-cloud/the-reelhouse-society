@@ -45,9 +45,7 @@ DELETE FROM public.lounge_members WHERE lounge_id = (SELECT id FROM rh_gallery) 
 \endif
 
 -- The train applies it here first (with_train); a sealed copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261116_01_each_is_told_as_what_it_is.sql
-\endif
+-- 20261116_01 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- Nothing stands between the four before the run begins, so each case is the run's own doing.
 DELETE FROM public.user_blocks

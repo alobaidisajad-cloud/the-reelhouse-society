@@ -31,9 +31,7 @@ GRANT ALL ON b9_seen TO authenticated;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261119_22_a_spoilers_mark_reaches_its_cards.sql
-\endif
+-- 20261119_22 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── B9.locks ──
 RESET ROLE;

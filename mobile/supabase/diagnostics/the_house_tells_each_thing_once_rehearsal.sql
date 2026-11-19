@@ -57,9 +57,7 @@ GRANT ALL ON gc4_page TO authenticated;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261118_01_the_house_tells_each_thing_once.sql
-\endif
+-- 20261118_01 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── G-sweeps ──
 RESET ROLE;
@@ -201,7 +199,11 @@ BEGIN
     (record ->> 'found') || '|' || (record ->> 'body') || '|' || (record ->> 'route'));
   PERFORM pg_temp.rh_case('a removal of a standing take is carried out as before', 'ok',
     (SELECT got FROM ga2_got WHERE what = 'remove the standing'));
-  PERFORM pg_temp.rh_case('its second report then reads as destroyed', '{"found": false}',
+  -- Withheld by the first removal since round 14 (H-B10): not destroyed, and said so; destroyed before it
+  -- (the train rehearses this car before round 14's, so it reads either house).
+  PERFORM pg_temp.rh_case('its second report then reads as withheld by the first removal (destroyed before round 14), not found',
+    CASE WHEN to_regprocedure('public.withhold_piece(uuid, text, uuid)') IS NULL THEN '{"found": false}'
+         ELSE '{"found": false, "appealed": false, "withheld": true}' END,
     (SELECT got FROM ga2_got WHERE what = 'second report'));
   PERFORM pg_temp.rh_case('and a removal on it is refused as gone', 'P0002: PIECE_GONE',
     (SELECT got FROM ga2_got WHERE what = 'remove it again'));

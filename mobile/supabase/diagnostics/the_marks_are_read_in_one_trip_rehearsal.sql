@@ -31,9 +31,7 @@ GRANT ALL ON hd2_visitor TO anon;
 
 -- The train applies it here first (with_train), on production as the cars before it left it; a sealed
 -- copy already holds every pending migration.
-\if :{?with_train}
-\ir ../../../supabase/migrations/20261119_18_the_marks_are_read_in_one_trip.sql
-\endif
+-- 20261119_18 is applied on production (the train of 2026-11-19); this shows it still holds there.
 
 -- ── H-D2 ──
 RESET ROLE;
