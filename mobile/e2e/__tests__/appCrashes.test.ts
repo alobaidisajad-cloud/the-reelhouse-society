@@ -158,6 +158,17 @@ describe('a soft crash: React destroyed with no crash dialog, the app alive and 
     expect(elsewhere).toContain(' 7777 ');
     expect(check(elsewhere).status).toBe(0);
   });
+
+  it('is one report, though a hard crash of its process lands in the same second: only a start begins a process', () => {
+    const r = check(
+      line('01:15:00', 16631, 'W', 'unknown:BridgelessReact', 'ReactHost{0}.handleHostException(message = "undefined is not a function")') +
+      javaCrash('01:15:00', 16631, 'com.reelhouse.society') +
+      line('01:15:00', 16631, 'W', 'unknown:ReactNative', "Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable."));
+    expect(r.status).toBe(1);
+    expect(r.out.split('\n').filter((l) => l.includes('JS error (React instance destroyed)'))).toEqual([
+      '01:15:00 JS error (React instance destroyed) during login_flow (attempt 2): undefined is not a function',
+    ]);
+  });
 });
 
 describe('a shipped client\'s own crash (--own): reported apart, failing nothing; anything else fails as ever', () => {
@@ -224,6 +235,29 @@ describe('a shipped client\'s own crash (--own): reported apart, failing nothing
     expect(own(RUN + other + '\n').status).toBe(1);
     // Nor is a new crash of the same process two seconds on its aftermath.
     expect(own(RUN + other.replace('04:40:08', '04:40:10') + '\n').status).toBe(1);
+  });
+
+  it('names each own crash in its own attempt, though one pid crashed three times in one second (CI 44473860748)', () => {
+    const at = (ms: string, pid: number, tag: string, msg: string) =>
+      `10-04 01:15:00.${ms}  ${pid}  ${pid + 20} ${pid === 525 ? 'I' : 'W'} ${tag}: ${msg}\n`;
+    // As the rehearsal's phone launches: one pid every time, a fresh start before each crash.
+    const attempt = (start: string, crash: string) =>
+      at(start, 525, 'ActivityManager', 'Start proc 16631:com.reelhouse.society/u0a192 for next-top-activity') +
+      at(crash, 16631, 'unknown:BridgelessReact', 'ReactHost{0}.handleHostException(message = "Unable to find viewState for tag 2450. Surface stopped: false")') +
+      at(crash, 16631, 'unknown:ReactNative', "Tried to enqueue runnable on already finished thread: 'v_native... dropping Runnable.");
+    writeFileSync(join(dir, 'own.json'), JSON.stringify(BUILD_41));
+    writeFileSync(join(dir, 'one-second.txt'),
+      'a_flow\t1\t10-04 01:15:00.000\na_flow\t2\t10-04 01:15:00.200\nb_flow\t1\t10-04 01:15:00.400\nb_flow\t2\t10-04 01:15:00.700\n');
+    const r = check(attempt('010', '020') + attempt('410', '420') + attempt('710', '720'),
+      ['--own', join(dir, 'own.json'), '--flow-times', join(dir, 'one-second.txt')]);
+    expect(r).toMatchObject({ status: 0, stderr: '' });
+    const named = "TestFlight build 41's own crash, class RN-react-destroyed-on-mount, fixed in e103781c";
+    const what = 'Unable to find viewState for tag 2450. Surface stopped: false';
+    expect(r.out.split('\n').filter((l) => l.includes("'s own crash, class "))).toEqual([
+      `01:15:00 ${named}: during a_flow: ${what}`,
+      `01:15:00 ${named}: during b_flow: ${what}`,
+      `01:15:00 ${named}: during b_flow (attempt 2): ${what}`,
+    ]);
   });
 
   it('refuses an own file that does not hold a client\'s own crashes', () => {

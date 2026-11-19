@@ -51,6 +51,18 @@ case "$1" in
     case "$*" in
       -c) ;;
       "-v threadtime") [ -f "$T/state/dead-stream" ] && exit 0
+        # A copy behind the phone by any amount: it gives what the phone said only once the runner's mark
+        # (e2e-cut) has reached it, and then everything up to that mark.
+        if [ -f "$T/state/held-stream" ]; then
+          n=0; : > "$T/state/held"
+          while :; do
+            m=$(wc -l < "$T/device.log")
+            [ "$m" -gt "$n" ] && sed -n "$((n + 1)),$m"p "$T/device.log" >> "$T/state/held"; n=$m
+            last=$(grep -n 'e2e-cut' "$T/state/held" | tail -n 1 | cut -d: -f1)
+            if [ -n "$last" ]; then sed -n "1,$last"p "$T/state/held"; sed -i "1,$last"d "$T/state/held"; fi
+            sleep 0.5
+          done
+        fi
         # A copy behind the phone, as a busy runner's is: each line the phone said reaches it 8 s later.
         if [ -f "$T/state/slow-stream" ]; then
           n=0; : > "$T/state/held"
@@ -378,6 +390,15 @@ it('the app’s answers are never run again: a failed step, and a flow that lost
   expect(r.stdout).toContain("decided: not run again: a step failed, which is the app's answer");
   expect(r.stdout).toContain('decided: not run again: Maestro lost its driver (DeviceServerDiedException) — no verdict on the app');
   expect(titled(r, 'warning', 'Run twice')).toBe('');
+  always(r);
+});
+
+it('names a crash during the last flow, which passed, however far the copy of the log is behind the phone', async () => {
+  // Every flow passed, so no attempt was cut and only the run's last read can catch the copy up: a fixed two
+  // seconds there could leave a crash out of the report, and a run that crashed would read green.
+  const r = await rehearse(['a_flow', 'b_flow'], { b_flow: ['crash-then-pass'] }, { state: { 'held-stream': '1' } });
+  expect(r.status).toBe(1);
+  expect(titled(r, 'error', 'The app crashed or froze during the run')).toContain('crash during b_flow: java.lang.IllegalStateException: a rehearsed crash');
   always(r);
 });
 

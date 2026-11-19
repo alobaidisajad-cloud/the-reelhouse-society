@@ -64,23 +64,32 @@ export const AFTERMATH_SECONDS = 5;
 export function findCrashes(lines, pkg = APP) {
   const found = [];
   const appPids = new Set();
+  // Each pid's starts so far: a pid used again is a new process, its life apart from the last one's.
+  const lives = new Map();
   const softSeen = new Map();
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const started = /\sActivityManager\s*: Start proc (\d+):([^/\s]+)/.exec(line) ?? /Process: ([^,\s]+), PID: (\d+)/.exec(line);
     if (started) {
-      const [pid, name] = /Start proc/.test(line) ? [started[1], started[2]] : [started[2], started[1]];
-      if (isApp(name, pkg)) appPids.add(pid);
+      const isStart = /Start proc/.test(line);
+      const [pid, name] = isStart ? [started[1], started[2]] : [started[2], started[1]];
+      if (isApp(name, pkg)) {
+        appPids.add(pid);
+        // Only a start begins a process; a "Process: <app>, PID: <pid>" line is a crash report of one.
+        if (isStart) lives.set(pid, (lives.get(pid) ?? 0) + 1);
+      }
     }
     // AndroidRuntime's lines belong to a hard crash's report, read below.
     if (SOFT.test(line) && appPids.has(pidOf(line)) && !/\sAndroidRuntime\s*:/.test(line)) {
-      // One report per process per second: a destruction writes several of these lines.
+      // One report per process life per second: a destruction writes several of these lines, and
+      // a pid started again (the rehearsal's phone gives every launch one pid) is another process.
       // Each report keeps all its lines, so an own crash is matched on every one (splitOwn).
-      const key = `${pidOf(line)} ${line.slice(0, 14)}`;
+      const proc = `${pidOf(line)}#${lives.get(pidOf(line)) ?? 0}`;
+      const key = `${proc} ${line.slice(0, 14)}`;
       if (softSeen.has(key)) softSeen.get(key).lines.push(line);
       else {
         const what = /message = "([^"]*)/.exec(line)?.[1] ?? line.replace(/^.*?:\s+/, '').trim();
-        const report = { kind: SOFT_KIND, at: line.slice(0, 18), time: timeOf(line), what, detail: [], pid: pidOf(line), lines: [line] };
+        const report = { kind: SOFT_KIND, at: line.slice(0, 18), time: timeOf(line), what, detail: [], pid: pidOf(line), proc, lines: [line] };
         softSeen.set(key, report);
         found.push(report);
       }
@@ -133,10 +142,10 @@ export function splitOwn(crashes, own = []) {
       && c.lines.every((l) => l.includes(o.match) || AFTERMATH.test(l)));
     if (hit) {
       mine.push({ ...c, own: hit, aftermath: false });
-      lastOwn.set(c.pid, { since: stamp(c.at), own: hit });
+      lastOwn.set(c.proc, { since: stamp(c.at), own: hit });
       continue;
     }
-    const before = lastOwn.get(c.pid);
+    const before = lastOwn.get(c.proc);
     const gap = before ? stamp(c.at) - before.since : NaN;
     if (before && gap >= 0 && gap <= AFTERMATH_SECONDS && c.lines.every((l) => AFTERMATH.test(l))) {
       mine.push({ ...c, own: before.own, aftermath: true });

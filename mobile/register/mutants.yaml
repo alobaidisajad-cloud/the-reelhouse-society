@@ -1124,8 +1124,8 @@ mutants:
     source: shape
     edits:
       - file: ../.github/workflows/god_tier_ci.yml
-        find: "        id: install-13\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if bash \"$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh\"; then\n"
-        replace: "        id: install-13\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if false; then\n"
+        find: "        id: install-13\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if bash \"$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh\"; then\n"
+        replace: "        id: install-13\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if false; then\n"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
 
   - id: shape-install-reads-every-source
@@ -1133,8 +1133,8 @@ mutants:
     source: shape
     edits:
       - file: ../.github/workflows/load.yml
-        find: "        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n"
-        replace: "        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n"
+        find: "        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n"
+        replace: "        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true\n"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install reads only Ubuntu's own sources, so a source it never uses cannot fail it" }
 
   - id: shape-frames-commit-again
@@ -7773,3 +7773,30 @@ mutants:
         find: "            elif ! node e2e/maestro-reached-a-step.cjs \"$S/${f%.yaml}.txt\" && mv \"$S/${f%.yaml}.txt\" \"$S/${f%.yaml}.first-try.txt\" && flow \"$f\"; then\n"
         replace: "            elif false; then\n"
     proof: { file: e2e/__tests__/iosFlows.test.ts, test: "give a flow that reached no step once more, and never one whose step ran and failed" }
+
+  - id: shape-apt-waited-into-its-lock
+    class: CI-retry-blocked-by-its-first-try
+    source: shape
+    edits:
+      - file: ../.github/workflows/load.yml
+        find: "      - name: Postgres 18 client tools, once more\n        if: steps.install-1.outcome == 'failure'\n        timeout-minutes: 5\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true\n"
+        replace: "      - name: Postgres 18 client tools, once more\n        if: steps.install-1.outcome == 'failure'\n        timeout-minutes: 5\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n"
+    proof: { file: scripts/__tests__/keptDebs.test.ts, test: "every wait for apt, in every workflow, ends an apt that still holds its locks and repairs what it left" }
+
+  - id: shape-soft-crash-keyed-by-pid-alone
+    class: E2E-two-crashes-of-one-pid-in-one-second-as-one
+    source: shape
+    edits:
+      - file: e2e/app-crashes.mjs
+        find: "      const key = `${proc} ${line.slice(0, 14)}`;"
+        replace: "      const key = `${pidOf(line)} ${line.slice(0, 14)}`;"
+    proof: { file: e2e/__tests__/appCrashes.test.ts, test: "names each own crash in its own attempt, though one pid crashed three times in one second (CI 44473860748)" }
+
+  - id: shape-run-read-on-a-guess
+    class: E2E-a-log-cut-before-it-arrived
+    source: shape
+    edits:
+      - file: e2e/run-flows.sh
+        find: "copy_caught_up \"the whole run's log\"\n"
+        replace: "sleep 2\n"
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "names a crash during the last flow, which passed, however far the copy of the log is behind the phone" }

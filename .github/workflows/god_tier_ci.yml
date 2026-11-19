@@ -533,6 +533,7 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
             npx playwright install chromium
@@ -546,6 +547,7 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
             npx playwright install chromium
@@ -706,6 +708,7 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
             npx playwright install chromium
@@ -719,6 +722,7 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
             npx playwright install chromium
@@ -1130,6 +1134,7 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           sudo apt-get install -y -q libicu-dev ninja-build
       - name: Hermes's build tools, once more
@@ -1138,6 +1143,7 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           sudo apt-get install -y -q libicu-dev ninja-build
       - name: Hermes's source, at the pinned commit
@@ -1257,6 +1263,7 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
             npx playwright install
@@ -1270,6 +1277,7 @@ jobs:
         run: |
           echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
           timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
           grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
           if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
             npx playwright install

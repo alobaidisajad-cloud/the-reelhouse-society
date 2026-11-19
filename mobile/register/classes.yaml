@@ -984,11 +984,12 @@ classes:
     seriousness: code
     area: ci
     status: OPEN
-    count: 18
+    count: 19
     source: { kind: history, ref: "God-Tier 39763330037: Could not get lock /var/lib/dpkg/lock-frontend, both retries" }
     methods:
       - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
-    fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock; and Playwright's system packages are kept between runs in GitHub's cache and installed from there by dpkg alone (scripts/kept-debs.sh) before apt is asked, since a mirror at 30-60 KB/s outlived the wait too (God-Tier 39774848287) and apt-get update alone outlived a try (God-Tier 39806861456, its retry then refused on the package lists' lock) (mutants shape-retry-blocked-by-lock, shape-install-waits-on-the-mirror)"
+      - { kind: running, file: scripts/__tests__/keptDebs.test.ts, test: "every wait for apt, in every workflow, ends an apt that still holds its locks and repairs what it left" }
+    fix: "every step that installs through apt (the Postgres client, Playwright's --with-deps) first sets DPkg::Lock::Timeout to 240 s, so a retry waits for the try before it to let go of the lock; and Playwright's system packages are kept between runs in GitHub's cache and installed from there by dpkg alone (scripts/kept-debs.sh) before apt is asked, since a mirror at 30-60 KB/s outlived the wait too (God-Tier 39774848287) and apt-get update alone outlived a try (God-Tier 39806861456, its retry then refused on the package lists' lock) (mutants shape-retry-blocked-by-lock, shape-install-waits-on-the-mirror); and a wait that gives up while apt still holds its locks ends that apt and lets dpkg repair what it left, in all twenty waits (God-Tier 44473860748: the first try's apt held the lists lock through the retry; mutant shape-apt-waited-into-its-lock)"
     places: [none]
 
   - id: DATA-read-keyed-on-a-replaced-object
@@ -3761,11 +3762,12 @@ classes:
     seriousness: behaviour
     area: tests
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: running, ref: "the local push gate, runFlows rehearsal, 2026-11-18: an old client's own crash judged a failed step" }
     methods:
       - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "is found in its attempt though the runner's copy of the log is seconds behind the phone" }
-    fix: "run-flows.sh's cut_log writes a mark to the device's log (log -t e2e-cut) and cuts the attempt once the copy holds it, so every line the attempt left is in its cut; a device that takes no mark or a copy that stopped is cut as it is, and a mark not seen in 60 s is warned of (mutant shape-attempt-log-cut-on-a-guess)"
+      - { kind: running, file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "names a crash during the last flow, which passed, however far the copy of the log is behind the phone" }
+    fix: "run-flows.sh's cut_log writes a mark to the device's log (log -t e2e-cut) and cuts the attempt once the copy holds it, so every line the attempt left is in its cut; a device that takes no mark or a copy that stopped is cut as it is, and a mark not seen in 60 s is warned of (mutant shape-attempt-log-cut-on-a-guess); the run's last read catches the copy up the same way (copy_caught_up), since a run whose flows all passed cut no attempt and its last read rested on a fixed two seconds (mutant shape-run-read-on-a-guess)"
     places: [emulator]
 
   - id: DB-an-index-built-before-what-it-indexes
@@ -4255,4 +4257,17 @@ classes:
       - { kind: running, file: scripts/__tests__/keptDebs.test.ts, test: "takes a refused set back out before apt runs, and never one that went in" }
       - { kind: running, file: scripts/__tests__/keptDebs.test.ts, test: "every key the kept packages are cached under names the runner's image, restored and saved alike" }
     fix: "each job reads its runner's image ($ImageVersion) and keys the kept packages by it, restored and saved alike; kept-debs.sh takes a refused set back out (dpkg --purge) before the caller lets apt fetch them (mutants shape-kept-debs-left-half-installed, shape-kept-debs-keyed-by-no-image)"
+    places: [none]
+
+  - id: E2E-two-crashes-of-one-pid-in-one-second-as-one
+    title: "The crash gate made one report of every soft crash from one process id in one second, though a start between them made each a new process: on a fast runner the rehearsal's three own crashes (one pid, a fresh start before each) fell in one second and were reported as one, named after the first flow, so the second flow's two crashes went unnamed"
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "CI 44473860748, Native Jest part 2: three own crashes in one second reported as one" }
+    methods:
+      - { kind: running, file: e2e/__tests__/appCrashes.test.ts, test: "names each own crash in its own attempt, though one pid crashed three times in one second (CI 44473860748)" }
+      - { kind: running, file: e2e/__tests__/appCrashes.test.ts, test: "is one report, though a hard crash of its process lands in the same second: only a start begins a process" }
+    fix: "app-crashes.mjs groups a soft crash's lines by the process's life, not its pid alone: each pid's count of ActivityManager starts (Start proc <pid>:<app>, never a crash report's Process: line) is part of the key, kept on the report as proc, and an own crash's aftermath is matched to the same life (mutant shape-soft-crash-keyed-by-pid-alone)"
     places: [none]
