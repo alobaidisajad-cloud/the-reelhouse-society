@@ -32,7 +32,7 @@ describe('the flows the iPhone runs', () => {
   it('are run by the iPhone launch check, each, on the simulator it launched', () => {
     const wf = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'ios-launch.yml'), 'utf8');
     expect(wf).toContain("require('./e2e/ios-flows.json').flows");
-    expect(wf).toMatch(/"\$MAESTRO_BIN" --device "\$SIM_DEVICE" test "\.maestro\/\$f"/);
+    expect(wf).toMatch(/flow\(\) \{ "\$MAESTRO_BIN" --device "\$SIM_DEVICE" test "\.maestro\/\$1"/);
     expect(wf).toContain('echo "SIM_DEVICE=$DEV" >> "$GITHUB_ENV"');
     // Maestro's screenshots sit under a hidden .maestro folder: the records are kept with them.
     expect(wf).toMatch(/name: ios-flows\s+path: \$\{\{ runner\.temp \}\}\/ios-flows\s+include-hidden-files: true/);
@@ -44,6 +44,16 @@ describe('the flows the iPhone runs', () => {
     const step = wf.slice(wf.indexOf('- name: The flows that need no server, on the simulator'));
     const wait = Number((/MAESTRO_DRIVER_STARTUP_TIMEOUT: '(\d+)'/.exec(step.slice(0, step.indexOf('run: |'))) ?? [])[1]);
     expect(wait).toBeGreaterThanOrEqual(120000);
+  });
+
+  it('give a flow that reached no step once more, and never one whose step ran and failed', () => {
+    // iPhone launch 44447946172: two flows failed on "iOS driver not ready in time", the app never asked anything.
+    const wf = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'ios-launch.yml'), 'utf8').replace(/\r\n/g, '\n');
+    const step = wf.slice(wf.indexOf('- name: The flows that need no server, on the simulator'));
+    const loop = step.slice(step.indexOf('for f in'), step.indexOf('exit $rc'));
+    // The second try is asked only when the first reached no step, and only once.
+    expect(loop).toContain('elif ! node e2e/maestro-reached-a-step.cjs "$S/${f%.yaml}.txt" && mv "$S/${f%.yaml}.txt" "$S/${f%.yaml}.first-try.txt" && flow "$f"; then');
+    expect(loop.match(/flow "\$f"/g)).toHaveLength(2);
   });
 
   it('hand the link to the app running on iOS: the simulator gives up a link that must launch the app at ten seconds', () => {

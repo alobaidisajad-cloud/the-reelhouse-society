@@ -999,8 +999,8 @@ mutants:
     source: shape
     edits:
       - file: ../.github/workflows/ios-launch.yml
-        find: "            if \"$MAESTRO_BIN\" --device \"$SIM_DEVICE\" test \".maestro/$f\""
-        replace: "            if true"
+        find: "          flow() { \"$MAESTRO_BIN\" --device \"$SIM_DEVICE\" test \".maestro/$1\""
+        replace: "          flow() { true"
     proof: { file: e2e/__tests__/iosFlows.test.ts, test: "are run by the iPhone launch check, each, on the simulator it launched" }
 
   - id: shape-retry-blocked-by-lock
@@ -7764,3 +7764,12 @@ mutants:
         find: "          key: apt-debs-ubuntu-24.04-${{ steps.image-13.outputs.version }}-playwright-all\n      - name: Playwright's browsers and their system libraries\n"
         replace: "          key: apt-debs-ubuntu-24.04-playwright-all\n      - name: Playwright's browsers and their system libraries\n"
     proof: { file: scripts/__tests__/keptDebs.test.ts, test: "every key the kept packages are cached under names the runner's image, restored and saved alike" }
+
+  - id: shape-iphone-flow-never-given-again
+    class: E2E-ios-driver-start-unwaited
+    source: shape
+    edits:
+      - file: ../.github/workflows/ios-launch.yml
+        find: "            elif ! node e2e/maestro-reached-a-step.cjs \"$S/${f%.yaml}.txt\" && mv \"$S/${f%.yaml}.txt\" \"$S/${f%.yaml}.first-try.txt\" && flow \"$f\"; then\n"
+        replace: "            elif false; then\n"
+    proof: { file: e2e/__tests__/iosFlows.test.ts, test: "give a flow that reached no step once more, and never one whose step ran and failed" }
