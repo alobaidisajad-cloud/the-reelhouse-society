@@ -39,6 +39,8 @@ type Key = { words: string[]; open: boolean; file: string };
 const sweep = () => {
   const made: Key[] = [];
   const asked: Key[] = [];
+  const builders: (Key & { name: string })[] = [];
+  const usedAsKey: string[] = [];
   for (const abs of universe('appCode')) {
     const file = rel(abs);
     if (file.includes('__tests__')) continue;
@@ -58,7 +60,13 @@ const sweep = () => {
       const key = openingWords(code.slice(at));
       if (key.words.length) made.push({ ...key, file });
     }
+    builders.push(...[...code.matchAll(/(?:export\s+)?const\s+(\w+)\s*=\s*\([^)]*\)\s*(?::[^=]*)?=>\s*\[/g)]
+      .map((m) => ({ name: m[1] ?? '', ...openingWords(code.slice((m.index ?? 0) + m[0].length)), file })));
+    usedAsKey.push(...[...code.matchAll(/queryKey:\s*(\w+)\(/g)].map((m) => m[1] ?? ''));
   }
+  // A key built by a function (`const myVerdictsKey = (id) => ['my-verdicts', id]`) is made where a query is made
+  // with that function's key.
+  for (const b of builders) if (b.words.length && usedAsKey.includes(b.name)) made.push({ words: b.words, open: b.open, file: b.file });
   return { made, asked };
 };
 
@@ -78,6 +86,8 @@ describe('every refresh names a query the app makes', () => {
     expect(asked.length).toBeGreaterThan(20);
     // The Reel's stacks are found as made, and asked as the screens that change a stack ask.
     expect(made.some((k) => opens(k, ['feed', 'stacks']))).toBe(true);
+    // A key built by a function counts where a query is made with it: the member's own verdicts.
+    expect(made.some((k) => opens(k, ['my-verdicts']))).toBe(true);
     expect(asked.filter((k) => opens({ words: k.words, open: false }, ['feed', 'stacks'])).map((k) => k.file).sort())
       .toEqual(expect.arrayContaining(['app/(modals)/list-modal.tsx', 'app/stacks/[id].tsx']));
   });

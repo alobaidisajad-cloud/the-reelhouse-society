@@ -60,8 +60,9 @@ it('the page’s own row says it is withheld before the member’s list is read:
 
 it('a piece that stands carries no mark', async () => {
   mockMine.mockResolvedValue([]);
-  const r = render(<WithheldBanner pieceId={LOG} withheldAt={null} />);
+  const r = render(<><Text>The piece itself</Text><WithheldBanner pieceId={LOG} withheldAt={null} /></>);
   await act(async () => {});
+  expect(r.getByText('The piece itself')).toBeTruthy();
   expect(r.queryByText(WITHHELD_TITLE)).toBeNull();
 });
 

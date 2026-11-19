@@ -80,9 +80,10 @@ it('every topic it joins has its rule on realtime.messages, in production as it 
   expect(CHANNELS.map((c) => c.topic).sort()).toEqual(['\'global_notifications\'', '`lounge-${loungeId}`', '`notices:${user.id}`']);
   expect(rules.some((r) => /FOR SELECT/.test(r) && /salon_channel_readable\(realtime\.topic\(\)\)/.test(r))).toBe(true);
   expect(rules.some((r) => /FOR SELECT/.test(r) && /realtime\.topic\(\) = 'global_notifications'/.test(r))).toBe(true);
-  // A member's own topic, and only their own: the topic is the member's id, asked of the session.
+  // A member's own topic, and only their own: the topic is the member's id, asked of the session. Read as a
+  // migration writes it and as the database prints it back once applied ('notices:'::text || ..., in brackets).
   expect(rules.some((r) => /FOR SELECT/.test(r)
-    && /realtime\.topic\(\) = 'notices:' \|\| \(\( SELECT auth\.uid\(\) AS uid\)\)::text/.test(r))).toBe(true);
+    && /realtime\.topic\(\) = \(?'notices:'(::text)? \|\| \(\( ?SELECT auth\.uid\(\) AS uid\)\)::text/.test(r))).toBe(true);
 });
 
 it('the reader says NO to a public join, and to one whose private is not plainly true', () => {

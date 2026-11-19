@@ -37,7 +37,7 @@
       "what": "What a member writes and keeps: logs, reviews, critiques, Dispatch posts and essays, comments, stacks and lists, their shelf of physical copies, private notes, drafts, their bio, and what they import from a file they choose.",
       "purpose": "The member's own record of films, kept for as long as the account exists and read by the members they choose.",
       "linked": true, "required": false, "clients": ["app", "website"],
-      "kept": ["public.logs", "public.lists", "public.list_comments", "public.log_comments", "public.log_private_notes", "public.dispatch_posts", "public.dispatch_comments", "public.dispatch_dossiers_legacy", "public.dossier_comments_legacy", "public.member_drafts", "public.physical_archive", "public.watchlists", "public.profiles"],
+      "kept": ["public.logs", "public.lists", "public.list_comments", "public.log_comments", "public.log_private_notes", "public.dispatch_posts", "public.dispatch_comments", "public.dispatch_dossiers_legacy", "public.dossier_comments_legacy", "public.member_drafts", "public.physical_archive", "public.watchlists", "public.profiles", "public.viewing_notes_removed"],
       "sentTo": ["supabase"],
       "apple": { "type": "Other User Content", "purposes": ["App Functionality"] },
       "play": { "type": "App activity: Other user-generated content", "purposes": ["App functionality"] }
@@ -55,7 +55,7 @@
       "what": "What a member does to others' writing and to members: endorsements, votes, saves, certifications, follows, blocks, and the reports they file.",
       "purpose": "Shown to the members it concerns (an endorsement, a follow), keeping a blocked member away, and moderation.",
       "linked": true, "required": false, "clients": ["app", "website"],
-      "kept": ["public.interactions", "public.dispatch_votes", "public.dispatch_saves", "public.dispatch_certifications", "public.dossier_certifications_legacy", "public.user_blocks", "public.reports"],
+      "kept": ["public.interactions", "public.dispatch_votes", "public.dispatch_saves", "public.dispatch_certifications", "public.dossier_certifications_legacy", "public.user_blocks", "public.reports", "public.certifications_pushed", "public.interaction_budget", "public.interaction_churn"],
       "sentTo": ["supabase"],
       "apple": { "type": "Other User Content", "purposes": ["App Functionality"] },
       "play": { "type": "App activity: Other actions", "purposes": ["App functionality"] }
@@ -251,6 +251,7 @@
     "auth.audit_log_entries": { "data": ["sign-in-records"], "kind": "record" },
     "storage.objects": { "data": ["portrait"], "kind": "own" },
     "public.analytics_events": { "data": ["website-visits"], "kind": "record" },
+    "public.certifications_pushed": { "data": ["actions"], "kind": "record" },
     "public.dispatch_certifications": { "data": ["actions"], "kind": "own" },
     "public.dispatch_comments": { "data": ["writing"], "kind": "own" },
     "public.dispatch_dossiers_legacy": { "data": ["writing"], "kind": "own" },
@@ -260,6 +261,8 @@
     "public.dossier_certifications_legacy": { "data": ["actions"], "kind": "own" },
     "public.dossier_comments_legacy": { "data": ["writing"], "kind": "own" },
     "public.error_logs": { "data": ["website-errors"], "kind": "record" },
+    "public.interaction_budget": { "data": ["actions"], "kind": "record" },
+    "public.interaction_churn": { "data": ["actions"], "kind": "record" },
     "public.interactions": { "data": ["actions"], "kind": "own" },
     "public.list_comments": { "data": ["writing"], "kind": "own" },
     "public.lists": { "data": ["writing"], "kind": "own" },
@@ -284,12 +287,13 @@
     "public.reports": { "data": ["actions", "moderation"], "kind": "record" },
     "public.salon_typing_sent": { "data": ["salon-messages"], "kind": "record" },
     "public.user_blocks": { "data": ["actions"], "kind": "own" },
+    "public.viewing_notes_removed": { "data": ["writing"], "kind": "record" },
     "public.warnings": { "data": ["moderation"], "kind": "record" },
     "public.watchlists": { "data": ["writing"], "kind": "own" }
   },
   "memberColumnsWithoutKey": {
     "why": "Columns that hold a member's id with no foreign key to say so (WORKLIST P3.6), and the id columns named like them that hold something else.",
-    "members": ["error_logs.user_id", "lobby_editions.author_id", "lobby_withheld.withheld_by", "reports.resolved_by"],
+    "members": ["error_logs.user_id", "lobby_editions.author_id", "lobby_withheld.withheld_by", "reports.resolved_by", "viewing_notes_removed.user_id"],
     "notMembers": {
       "interactions.target_log_id": "a log's id",
       "interactions.target_list_id": "a stack's id",

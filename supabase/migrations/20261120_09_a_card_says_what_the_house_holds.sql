@@ -71,7 +71,7 @@ CREATE FUNCTION private.a_card_cut(p_line text) RETURNS text
     AS $$
 DECLARE
   -- JavaScript's whitespace (\s, and what trim() takes away).
-  c_ws       constant text := '[\u0009-\u000d    -     　﻿]';
+  c_ws       constant text := '[\u0009-\u000d\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]';
   -- What may not be cut from the character before it.
   c_joins    constant text := '^[̀-ͯ҃-҉֑-ׇֽֿׁׂׅׄؐ-ًؚ-ٰٟۖ-ۜ۟-۪ۤۧۨ-ۭऀ-ःऺ-ॏ॑-ॗॢॣঁ-ঃ়া-্ัิ-ฺ็-๎ᅠ-ᇿ᪰-᫿᷀-᷿‌‍⃐-⃿〪-゙゚〯︀-️︠-︯\U0001f3fb-\U0001f3ff\U000e0020-\U000e007f\U000e0100-\U000e01ef]$';
   c_flag     constant text := '^[\U0001f1e6-\U0001f1ff]$';
@@ -159,7 +159,7 @@ BEGIN
     EXIT WHEN NOT (v_last = ANY (c_dangling));
     v_words := v_words[1:cardinality(v_words) - 1];
   END LOOP;
-  RETURN regexp_replace(array_to_string(v_words, ' '), '[\u0009-\u000d    -     　﻿,;:—-]+$', '') || '…';
+  RETURN regexp_replace(array_to_string(v_words, ' '), '[\u0009-\u000d\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff,;:\u2014-]+$', '') || '…';
 END $$;
 -- add-only (1): no shipped client uses it: a function this piece makes, asked by the house alone (TestFlight build 41 and the website checked)
 REVOKE ALL ON FUNCTION private.a_card_cut(text) FROM PUBLIC;

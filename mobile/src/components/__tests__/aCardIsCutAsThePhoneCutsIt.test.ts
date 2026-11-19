@@ -9,8 +9,8 @@
  * the phone or the house wrote it. The pairs below are the phone's cuts; the house's rehearsal runs the
  * same pairs through private.a_card_cut, line by line, and this test holds both lists to be one.
  */
-import { readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { files as universe } from '@/test-utils/universe';
 import { cardTitle } from '@/src/components/ShareToLoungeModal';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 
@@ -66,13 +66,12 @@ const CUTS: [string, string][] = [
   ]
 ];
 
-const DIAGNOSTICS = join(__dirname, '..', '..', '..', 'supabase', 'diagnostics');
 const unquote = (s: string) => s.split("''").join("'");
 /** The pairs the house's rehearsal cuts, read from its lines (pg_temp.ha4_cut('<line>', '<cut>')). */
 const houseCuts = (): [string, string][] => {
   const out: [string, string][] = [];
-  for (const f of readdirSync(DIAGNOSTICS).filter((n) => n.endsWith('_rehearsal.sql'))) {
-    const sql = readFileSync(join(DIAGNOSTICS, f), 'utf8');
+  for (const f of universe('rehearsals')) {
+    const sql = readFileSync(f, 'utf8');
     for (const m of sql.matchAll(/pg_temp\.ha4_cut\('((?:[^']|'')*)', '((?:[^']|'')*)'\)/g)) out.push([unquote(m[1]!), unquote(m[2]!)]);
   }
   return out;

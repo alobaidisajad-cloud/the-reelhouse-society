@@ -24,11 +24,15 @@ const code = stripComments(screen, 'tribunal.tsx');
 
 describe('#24 · a docket that failed can never render as a docket that is clear', () => {
   it('EVERY queue query reports failure — enumerated, not spot-checked', () => {
-    // Three useQuery calls live here and none reported errors. Fixing only the
-    // urgent one would have left the MAIN docket a single bad request away from
-    // the same lie — it simply had not failed yet.
+    // Fixing only the urgent queue would have left the MAIN docket a single bad
+    // request away from the same lie — it simply had not failed yet. Both queues
+    // are found by name, so a queue that moves out of this shape fails here.
     const queries = [...code.matchAll(/const \{([\s\S]*?)\} = useQuery\(\{([\s\S]*?)queryKey: (\[[^\]]*\])/g)];
-    expect(queries.length).toBeGreaterThanOrEqual(3);
+    const keys = queries.map(([, , , key]) => key);
+    expect(keys).toEqual(expect.arrayContaining([
+      "['admin', 'reports', 'pending']",
+      "['admin', 'reports', 'priority']",
+    ]));
 
     const unreported = queries
       .filter(([, destructured, , key]) => {
@@ -41,6 +45,12 @@ describe('#24 · a docket that failed can never render as a docket that is clear
       .map(([, , , key]) => key);
 
     expect(unreported).toEqual([]);
+  });
+
+  it('a member record that failed to read is said as failed, never as a clean record', () => {
+    // The records are read in pages beside the queues; a page that failed must reach the row as failed.
+    expect(code).toMatch(/queryKey: \['admin', 'moderation-history', ids\]/);
+    expect(code).toMatch(/const recordFailed = \(memberId: string\) => !!readOf\(memberId\)\?\.isError;/);
   });
 
   it('the failure branch is checked BEFORE the empty branch', () => {
