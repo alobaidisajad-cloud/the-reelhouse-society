@@ -7746,3 +7746,21 @@ mutants:
         find: "      if (!answered[SOURCE_OF[key]]) break;\n"
         replace: ""
     proof: { file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "on ALL, the members found wait for the films above them; the PEOPLE tab shows them at once" }
+
+  - id: shape-kept-debs-left-half-installed
+    class: CI-a-cache-kept-past-its-image
+    source: shape
+    edits:
+      - file: scripts/kept-debs.sh
+        find: "  sudo dpkg --purge --force-depends \"${names[@]}\" > /dev/null 2>&1 || true\n"
+        replace: ""
+    proof: { file: scripts/__tests__/keptDebs.test.ts, test: "takes a refused set back out before apt runs, and never one that went in" }
+
+  - id: shape-kept-debs-keyed-by-no-image
+    class: CI-a-cache-kept-past-its-image
+    source: shape
+    edits:
+      - file: ../.github/workflows/god_tier_ci.yml
+        find: "          key: apt-debs-ubuntu-24.04-${{ steps.image-13.outputs.version }}-playwright-all\n      - name: Playwright's browsers and their system libraries\n"
+        replace: "          key: apt-debs-ubuntu-24.04-playwright-all\n      - name: Playwright's browsers and their system libraries\n"
+    proof: { file: scripts/__tests__/keptDebs.test.ts, test: "every key the kept packages are cached under names the runner's image, restored and saved alike" }

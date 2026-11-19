@@ -517,12 +517,15 @@ jobs:
       # Its system packages kept between runs: on a slow Ubuntu mirror their 26 MB outlived a
       # five-minute try (God-Tier 39774848287), and apt-get update alone another (39806861456), so
       # the kept ones go in by dpkg (mobile/scripts/kept-debs.sh) and apt runs only when they cannot.
+      - name: The runner's image, which the kept packages are keyed by
+        id: image-5
+        run: echo "version=$ImageVersion" >> "$GITHUB_OUTPUT"
       - name: Chromium for the measuring tools — its system packages, from the cache
         id: debs-install-5
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/apt-debs
-          key: apt-debs-ubuntu-24.04-playwright-chromium
+          key: apt-debs-ubuntu-24.04-${{ steps.image-5.outputs.version }}-playwright-chromium
       - name: Chromium for the measuring tools
         id: install-5
         timeout-minutes: 5
@@ -555,7 +558,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/apt-debs
-          key: apt-debs-ubuntu-24.04-playwright-chromium
+          key: apt-debs-ubuntu-24.04-${{ steps.image-5.outputs.version }}-playwright-chromium
       - name: Install Mobile Dependencies
         id: install-6
         timeout-minutes: 5
@@ -687,12 +690,15 @@ jobs:
       # Its system packages kept between runs: on a slow Ubuntu mirror their 26 MB outlived a
       # five-minute try (God-Tier 39774848287), and apt-get update alone another (39806861456), so
       # the kept ones go in by dpkg (mobile/scripts/kept-debs.sh) and apt runs only when they cannot.
+      - name: The runner's image, which the kept packages are keyed by
+        id: image-8
+        run: echo "version=$ImageVersion" >> "$GITHUB_OUTPUT"
       - name: Chromium for the measuring tools — its system packages, from the cache
         id: debs-install-8
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/apt-debs
-          key: apt-debs-ubuntu-24.04-playwright-chromium
+          key: apt-debs-ubuntu-24.04-${{ steps.image-8.outputs.version }}-playwright-chromium
       - name: Chromium for the measuring tools
         id: install-8
         timeout-minutes: 5
@@ -725,7 +731,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/apt-debs
-          key: apt-debs-ubuntu-24.04-playwright-chromium
+          key: apt-debs-ubuntu-24.04-${{ steps.image-8.outputs.version }}-playwright-chromium
       - name: Install Mobile Dependencies
         id: install-9
         timeout-minutes: 5
@@ -1235,12 +1241,15 @@ jobs:
       # Its system packages kept between runs: on a slow Ubuntu mirror their 26 MB outlived a
       # five-minute try (God-Tier 39774848287), and apt-get update alone another (39806861456), so
       # the kept ones go in by dpkg (mobile/scripts/kept-debs.sh) and apt runs only when they cannot.
+      - name: The runner's image, which the kept packages are keyed by
+        id: image-13
+        run: echo "version=$ImageVersion" >> "$GITHUB_OUTPUT"
       - name: Playwright's system libraries, from the cache
         id: debs-install-13
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/apt-debs
-          key: apt-debs-ubuntu-24.04-playwright-all
+          key: apt-debs-ubuntu-24.04-${{ steps.image-13.outputs.version }}-playwright-all
       - name: Playwright's browsers and their system libraries
         id: install-13
         timeout-minutes: 5
@@ -1273,7 +1282,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/apt-debs
-          key: apt-debs-ubuntu-24.04-playwright-all
+          key: apt-debs-ubuntu-24.04-${{ steps.image-13.outputs.version }}-playwright-all
       
       # A path outside playwright.config.ts's testDir (./tests) silently finds nothing.
       - name: Run E2E Feed Tests

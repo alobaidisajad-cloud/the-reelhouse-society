@@ -4242,3 +4242,16 @@ classes:
       - { kind: running, file: src/utils/__tests__/searchWiring.guard.test.ts, test: "reads the stacks through search_stacks, given the words through the funnel" }
     fix: "search_stacks (H-D4, with lists_description_trigram: H-D4.index) finds the stacks by the words' trigram indexes and asks the rule of the few found, as the phone's read found them (the H-D4 rehearsal compares the two for a visitor and four members, rare, common and two-letter words and a next page; 0.7 ms for a rare word); each source is drawn as it answers, ALL's sections in their order once those above them answered, each source's own tab at once (mutants shape-search-held-for-the-slowest, shape-all-rows-put-above-the-drawn)"
     places: [none]
+
+  - id: CI-a-cache-kept-past-its-image
+    title: "Playwright's system packages were kept in a cache under a key that named no runner image, so packages kept on one image went onto the next: a kept Mesa a patch behind the runner's own was refused by dpkg, which left it half-installed, and apt then installed nothing; the web visual job and the measuring tools failed though nothing in the app changed"
+    seriousness: behaviour
+    area: tests
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "God-Tier CI 44447946174, Web Playwright Visual Regression: unmet dependencies on mesa-libgallium" }
+    methods:
+      - { kind: running, file: scripts/__tests__/keptDebs.test.ts, test: "takes a refused set back out before apt runs, and never one that went in" }
+      - { kind: running, file: scripts/__tests__/keptDebs.test.ts, test: "every key the kept packages are cached under names the runner's image, restored and saved alike" }
+    fix: "each job reads its runner's image ($ImageVersion) and keys the kept packages by it, restored and saved alike; kept-debs.sh takes a refused set back out (dpkg --purge) before the caller lets apt fetch them (mutants shape-kept-debs-left-half-installed, shape-kept-debs-keyed-by-no-image)"
+    places: [none]

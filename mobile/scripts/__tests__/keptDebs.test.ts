@@ -22,9 +22,12 @@ const DPKG_QUERY = `#!/usr/bin/env bash
 grep -qx "\${@: -1}" __T__/installed 2>/dev/null && printf 'install ok installed' && exit 0
 exit 1
 `;
-// sudo dpkg -i: records what it was handed; refuses all when __T__/refuses is there.
+// sudo dpkg -i: records what it was handed; refuses all when __T__/refuses is there, as dpkg does
+// after unpacking them (half-installed). sudo dpkg --purge: records the names it takes back out.
 const SUDO = `#!/usr/bin/env bash
-[ "$1" = dpkg ] && [ "$2" = -i ] || exit 2
+[ "$1" = dpkg ] || exit 2
+if [ "$2" = --purge ]; then shift 2; [ "$1" = --force-depends ] && shift; printf '%s\\n' "$@" >> __T__/purged; exit 0; fi
+[ "$2" = -i ] || exit 2
 shift 2
 [ -f __T__/refuses ] && exit 1
 for d in "$@"; do cat "$d" >> __T__/dpkg; done
@@ -47,7 +50,8 @@ function run(o: Machine = {}) {
     env: { ...process.env, PATH: `${join(T, 'bin')}${process.platform === 'win32' ? ';' : ':'}${process.env.PATH}` },
   });
   const dpkg = existsSync(join(T, 'dpkg')) ? readFileSync(join(T, 'dpkg'), 'utf8').trim().split('\n') : [];
-  return { status: r.status, out: r.stdout, dpkg };
+  const purged = existsSync(join(T, 'purged')) ? readFileSync(join(T, 'purged'), 'utf8').trim().split('\n') : [];
+  return { status: r.status, out: r.stdout, dpkg, purged };
 }
 
 describe('the kept packages go in without apt', () => {
@@ -69,5 +73,23 @@ describe('the kept packages go in without apt', () => {
     const refused = run({ kept: ['libnss3'], refuses: true });
     expect(refused.status).toBe(1);
     expect(refused.out).toContain('dpkg refused a kept package');
+  });
+
+  it('takes a refused set back out before apt runs, and never one that went in', () => {
+    // dpkg leaves what it unpacked half-installed, and apt then installs nothing (God-Tier 44447946174).
+    const refused = run({ kept: ['libgbm1', 'mesa-libgallium', 'libnss3'], installed: ['libnss3'], refuses: true });
+    expect({ status: refused.status, purged: refused.purged.sort() }).toEqual({ status: 1, purged: ['libgbm1', 'mesa-libgallium'] });
+    expect(run({ kept: ['libgbm1'] }).purged).toEqual([]);
+  });
+});
+
+describe('the kept packages belong to one image', () => {
+  it("every key the kept packages are cached under names the runner's image, restored and saved alike", () => {
+    // Packages kept on one image and put on the next broke apt (God-Tier 44447946174: Mesa a patch behind).
+    const wf = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'god_tier_ci.yml'), 'utf8');
+    const keys = [...wf.matchAll(/key: (apt-debs-[^\r\n]*)/g)].map((m) => m[1]);
+    expect(keys.length).toBeGreaterThan(0);
+    expect(keys.filter((k) => !/\$\{\{ steps\.image-\d+\.outputs\.version \}\}/.test(k))).toEqual([]);
+    expect(wf.match(/run: echo "version=\$ImageVersion" >> "\$GITHUB_OUTPUT"/g)?.length).toBe(keys.length / 2);
   });
 });
