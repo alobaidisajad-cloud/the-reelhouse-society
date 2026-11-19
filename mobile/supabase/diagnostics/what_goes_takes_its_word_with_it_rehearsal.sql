@@ -204,6 +204,11 @@ INSERT INTO b6_count SELECT 'log members', count(DISTINCT from_user_id) FROM pub
 
 -- 2 takes the record's back once more, and certifies the stack and takes that back; 3 certifies the
 -- take and the critique (laid by the house) and takes back the critique's. Each takes back as themselves.
+-- Before 20261119_07 a member's interactions are kept a second apart, and now() stands still in this
+-- transaction: 2's certification of the record is stepped an hour back, as the house, so the train's
+-- rehearsal of this car (applied before 20261119_07) lets 2 certify the stack too.
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 2) AND created_at = now();
 INSERT INTO public.interactions (user_id, target_list_id, type)
 VALUES ((SELECT id FROM rehearsal_members WHERE n = 2), (SELECT id FROM b6_own WHERE what = 'stack'), 'endorse_list');
 INSERT INTO public.dispatch_certifications (user_id, post_id)

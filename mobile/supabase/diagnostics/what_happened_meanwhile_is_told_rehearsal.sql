@@ -976,6 +976,11 @@ SELECT pg_temp.rh_f11_mark('3 takes back a critique''s and gives it again') AS d
 -- back and certifies again.
 UPDATE public.profiles SET preferences = coalesce(preferences, '{}'::jsonb) || '{"notif_endorsements": "false"}'::jsonb
  WHERE id = (SELECT id FROM rh_f11_members WHERE n = 1);
+-- Before 20261119_07 a member's interactions are kept a second apart, and now() stands still in this
+-- transaction: 3's certification of the record is stepped an hour back, as the house, so the train's
+-- rehearsal of this car (applied before 20261119_07) lets 3 certify the stack too.
+UPDATE public.interactions SET created_at = created_at - interval '1 hour'
+ WHERE user_id = (SELECT id FROM rh_f11_members WHERE n = 3) AND created_at = now();
 INSERT INTO public.interactions (user_id, target_list_id, type)
 VALUES ((SELECT id FROM rh_f11_members WHERE n = 3), (SELECT id FROM rh_f11_own WHERE what = 'stack'), 'endorse_list');
 SELECT pg_temp.rh_f11_mark('3 certifies the stack, its pushes off') AS done \gset rh_

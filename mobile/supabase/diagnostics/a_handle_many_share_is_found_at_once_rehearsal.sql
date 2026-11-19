@@ -64,6 +64,11 @@ GRANT EXECUTE ON FUNCTION pg_temp.sm_before(text, boolean, integer, text, intege
 \ir ../../../supabase/migrations/20261119_25_a_handle_many_share_is_found_at_once.sql
 \endif
 
+-- Its answers are the old function's by design (a speed fix): this case reads the function the house holds, which
+-- gathers at most a thousand members before it orders them (LIMIT 1001); the old one sorted every match.
+SELECT pg_temp.rh_case('the search gathers at most a thousand before it orders them, never every match', 'true',
+  (SELECT (pg_get_functiondef('public.search_members(text, boolean, integer, text, integer)'::regprocedure) LIKE '%LIMIT 1001%')::text)) AS done \gset rh_
+
 -- As member 1, themselves.
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
