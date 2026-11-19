@@ -87,7 +87,7 @@ describe('the kept packages belong to one image', () => {
   it("every key the kept packages are cached under names the runner's image, restored and saved alike", () => {
     // Packages kept on one image and put on the next broke apt (God-Tier 44447946174: Mesa a patch behind).
     const wf = readFileSync(join(MOBILE, '..', '.github', 'workflows', 'god_tier_ci.yml'), 'utf8');
-    const keys = [...wf.matchAll(/key: (apt-debs-[^\r\n]*)/g)].map((m) => m[1]);
+    const keys = [...wf.matchAll(/key: (apt-debs-[^\r\n]*)/g)].map(([, key]) => key ?? '');
     expect(keys.length).toBeGreaterThan(0);
     expect(keys.filter((k) => !/\$\{\{ steps\.image-\d+\.outputs\.version \}\}/.test(k))).toEqual([]);
     expect(wf.match(/run: echo "version=\$ImageVersion" >> "\$GITHUB_OUTPUT"/g)?.length).toBe(keys.length / 2);
