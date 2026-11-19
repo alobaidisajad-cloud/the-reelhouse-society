@@ -51,7 +51,13 @@ const RealtimeNotifSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).nullish(),
 }).transform(({ is_read, metadata, ...rest }) => {
   const critique = metadata?.comment_id;
-  return { ...rest, read: is_read, ...(typeof critique === 'string' ? { comment_id: critique } : {}) };
+  // The verdict a notice of the house's tells, read for its key alone as the critique is (round 14).
+  const verdict = metadata?.mod_action_id;
+  return {
+    ...rest, read: is_read,
+    ...(typeof critique === 'string' ? { comment_id: critique } : {}),
+    ...(typeof verdict === 'string' ? { verdict_id: verdict } : {}),
+  };
 });
 
 export interface AppNotification {
@@ -74,6 +80,11 @@ export interface AppNotification {
      * so the group tells one critique from several by this (review round 11).
      */
     comment_id?: string;
+    /**
+     * The verdict a notice of the house's tells (its metadata's mod_action_id): the notice opens it
+     * whole, its reason and its one appeal (VerdictSheet, review round 14).
+     */
+    verdict_id?: string;
     read: boolean;
     created_at: string;
 }

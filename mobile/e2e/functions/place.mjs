@@ -8,7 +8,8 @@
  * and the one written but not deployed that can be served whole (SERVED_UNDEPLOYED),
  * with each outside service's address pointed at stand-ins.mjs:
  *   · e2e/supabase/functions is emptied, and each function copied in, with the
- *     shared code they import (mobile/supabase/functions/_shared);
+ *     shared code they import (each folder's _shared: the files in both are
+ *     the same where their names are, edgeFunctionsKnowTheirCaller.test.ts);
  *   · e2e/supabase/config.toml's [functions.*] sections are written from the
  *     same list, verify_jwt as each is deployed, and its Auth mail made
  *     production's: addresses confirmed, the House's templates (withMail);
@@ -31,7 +32,7 @@ const ROOT = join(HERE, '..', '..', '..');
 const PROJECT = join(HERE, '..', 'supabase');
 const FUNCTIONS = join(PROJECT, 'functions');
 const CONFIG = join(PROJECT, 'config.toml');
-const { DEPLOYED, NOT_DEPLOYED, MOBILE } = createRequire(import.meta.url)(join(ROOT, 'mobile', 'scripts', 'edge-functions.cjs'));
+const { DEPLOYED, NOT_DEPLOYED, MOBILE, WEB } = createRequire(import.meta.url)(join(ROOT, 'mobile', 'scripts', 'edge-functions.cjs'));
 
 /**
  * Written, not deployed, and served here all the same, with how it would be
@@ -126,6 +127,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     cpSync(from, join(FUNCTIONS, name), { recursive: true });
   }
   cpSync(join(ROOT, MOBILE, '_shared'), join(FUNCTIONS, '_shared'), { recursive: true });
+  cpSync(join(ROOT, WEB, '_shared'), join(FUNCTIONS, '_shared'), { recursive: true });
 
   mkdirSync(join(PROJECT, 'templates'), { recursive: true });
   for (const t of Object.values(MAIL)) cpSync(join(TEMPLATES, t.file), join(PROJECT, 'templates', t.file));

@@ -5,9 +5,10 @@
  * The house refuses their writes (see `standing.ts`); without this, each write
  * failed into its own "could not save" and nothing said why. It reads the
  * standing the app holds, says when a suspension ends, and goes when it does.
- * Information only: touches pass through to the page beneath. Its frame also
- * holds the plate of changes the house did not take (UnsentChanges), above it,
- * the one plate here that is pressed.
+ * Pressed, it opens the member's record with the house in Settings, where the
+ * verdict is read whole and appealed (round 14: its notice may be dismissed).
+ * Touches beside it pass through to the page beneath. Its frame also holds the
+ * plate of changes the house did not take (UnsentChanges), above it.
  */
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -21,6 +22,8 @@ import { formatClockTime, formatDate } from '@/src/utils/timeAgo';
 import { useOverlayBottom } from '@/src/components/layout/navMetrics';
 import { UnsentChangesPlate } from '@/src/components/UnsentChanges';
 import { useRefused } from '@/src/stores/offlineQueueStore';
+import PressableScale from '@/src/components/PressableScale';
+import { nav } from '@/src/utils/typedRouter';
 
 /** The offline plate's room, above which this one stands: the two never cover each other. */
 const ABOVE_THE_OFFLINE_PLATE = 44;
@@ -60,11 +63,14 @@ export default function StandingNotice() {
     >
       <UnsentChangesPlate />
       {standing && (
-      <View style={s.plate} pointerEvents="none" accessible accessibilityRole="text"
-        accessibilityLabel={`${standing.kind === 'silenced' ? 'Your account has been silenced by The Society' : `Your account is suspended until ${formatDate(standing.until, 'long')}, ${formatClockTime(standing.until)}`}. You may read, and may not write.`}>
+      <PressableScale style={s.plate} onPress={() => nav.push('/settings', { section: 'record' })} haptic="selection" pressedScale={0.98}
+        accessibilityRole="button"
+        accessibilityLabel={`${standing.kind === 'silenced' ? 'Your account has been silenced by The Society' : `Your account is suspended until ${formatDate(standing.until, 'long')}, ${formatClockTime(standing.until)}`}. You may read, and may not write.`}
+        accessibilityHint="Opens your record with the house, where the verdict is read whole and may be appealed">
         <Text style={s.title}>{title}</Text>
         <Text style={s.line}>YOU MAY READ. YOU MAY NOT WRITE.</Text>
-      </View>
+        <Text style={s.open}>READ THE VERDICT ›</Text>
+      </PressableScale>
       )}
     </View>
   );
@@ -82,9 +88,13 @@ const s = StyleSheet.create({
     borderRadius: 4,
     maxWidth: 360,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 2,
     elevation: 8,
+    // Pressed, it opens the record: 48 tall by its own box.
+    minHeight: 48,
   },
   title: { color: colors.crimsonInk, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, textAlign: 'center' },
   line: { color: colors.parchment, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, textAlign: 'center' },
+  open: { color: colors.sepia, fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, textAlign: 'center', marginTop: 2 },
 });

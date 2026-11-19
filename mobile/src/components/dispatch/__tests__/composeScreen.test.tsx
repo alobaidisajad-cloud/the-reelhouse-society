@@ -18,7 +18,7 @@
  * find that out at the end.
  */
 import React, { act } from 'react';
-import { AccessibilityInfo, Alert, AppState, InteractionManager } from 'react-native';
+import { AccessibilityInfo, Alert, AppState, InteractionManager, StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -386,7 +386,8 @@ describe('the writing room', () => {
     expect(mockFiled).toHaveLength(0);
     expect(mockStore.has(DRAFT_KEY)).toBe(true);
     expect(getByLabelText('Essay content body').props.accessibilityHint).toMatch(/over the limit/);
-    expect(getByText(/characters over the limit/)).toBeTruthy();
+    // One over, said as one: never "1 characters" (round 14).
+    expect(getByText(/This essay is 1 character over the limit./)).toBeTruthy();
     expect(mockToast.error).not.toHaveBeenCalled();
   });
 
@@ -431,6 +432,30 @@ describe('the door sends you to the right desk', () => {
     await flush();
     await press(getByText('TAKE'));
     expect(mockParams).toContainEqual({ kind: 'take' });
+  });
+
+  it('the picker scrolls when it outgrows the screen: its head and TAKE are never above the top', async () => {
+    // Round 14: kept to the foot with nothing to scroll, on a 320pt phone at a large text size the
+    // head and the first forms stood above the screen (layout.cjs, f1-picker at 320). In a scroll
+    // kept to its foot, from the modal's top, the earliest form is scrolled to.
+    at({});
+    const r = render(<ComposeScreen />);
+    await flush();
+    type Node = { type: string; props: Record<string, unknown>; children: (Node | string)[] | null };
+    const holds = (n: Node | string, words: string): boolean =>
+      typeof n !== 'string' && (n.children ?? []).some((c) => c === words || holds(c, words));
+    const scrolls: Node[] = [];
+    const walk = (n: Node | string | null) => {
+      if (!n || typeof n === 'string') return;
+      if (n.type === 'RCTScrollView') scrolls.push(n);
+      n.children?.forEach(walk);
+    };
+    [r.toJSON() as unknown as Node | Node[]].flat().forEach(walk);
+    const kept = scrolls.filter((s) => holds(s, 'TAKE'));
+    expect(kept).toHaveLength(1);
+    const content = StyleSheet.flatten(kept[0]!.props.contentContainerStyle as never) as Record<string, unknown>;
+    expect(content.flexGrow).toBe(1);
+    expect(content.justifyContent).toBe('flex-end');
   });
 });
 

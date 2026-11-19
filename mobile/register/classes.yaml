@@ -108,7 +108,7 @@ classes:
     seriousness: layout
     area: tests
     status: OPEN
-    count: 0
+    count: 2
     source: { kind: reviewer, ref: "P0.69 (android-keyboard-room)" }
     methods:
       - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "fails a target the keyboard covers, and says by how much" }
@@ -134,7 +134,8 @@ classes:
       - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "on Android, while the member writes, the list ends at the bar’s top" }
       - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "reads the letters of a keyboard speaking Arabic, its names led by a direction mark — nightly 43848225969" }
       - { kind: running, file: e2e/__tests__/keyboardRoom.test.ts, test: "a panel it cannot name says the names it saw, words only, so the next run can be taught them" }
-    fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers); the reading page takes no inset of its own for the keyboard, where the critique composer docked under it already rides the keys and the OS's inset left blank ink to scroll past (mutant shape-reader-inset-for-the-keyboard); on Android the stack sheet's list ends at its measured bar while the member writes, as the log sheet's scroll ends at its seal (mutant shape-stack-list-under-the-bar); the panel is named in the phone's language, the right-to-left run's Arabic (mutant shape-keyboard-named-in-english-only)"
+      - { kind: static, file: src/components/__tests__/aListBesideAFieldKeepsTheTap.guard.test.ts, test: "names no list as pressless that keeps the tap after all, or is gone" }
+    fix: "keyboard-room.mjs measures the target against the input method's own window, Android's answer (mutant judge-keyboard-covers); the reading page takes no inset of its own for the keyboard, where the critique composer docked under it already rides the keys and the OS's inset left blank ink to scroll past (mutant shape-reader-inset-for-the-keyboard); on Android the stack sheet's list ends at its measured bar while the member writes, as the log sheet's scroll ends at its seal (mutant shape-stack-list-under-the-bar); the panel is named in the phone's language, the right-to-left run's Arabic (mutant shape-keyboard-named-in-english-only); round 14: the Dispatch's kind picker, now a scroll in a file with fields, keeps the first tap (keyboardShouldPersistTaps; mutant shape-picker-lets-the-first-tap-go), and aSheetRisesWithItsAct's stand-in for useModalKeyboardPadding gives useSheetFootWhileTyping as the real hook does, so the share and report sheets are drawn rising there, each with its act in the box that rose (mutant shape-report-sheet-pinned-in-its-frame)"
     places: [emulator]
 
   - id: E2E-phone-runtime-changed-unseen
@@ -785,11 +786,17 @@ classes:
     seriousness: layout
     area: copy
     status: OPEN
-    count: 11
+    count: 13
     source: { kind: history, ref: "the route walk's Lounge, 2026-10-21: 1 SEATS TAKEN; the sweep found ten more" }
     methods:
       - { kind: static, file: src/utils/__tests__/aCountSaysItsWord.guard.test.ts, test: "prints no count before its word but through counted(), or one that can never be one" }
-    fix: "the Dispatch's counted() (one count, its singular and its plural named, decided on the raw number) moved to src/utils/counted.ts for the whole app, and every count goes through it; the guard reads the app's code for a count before a plural word, letting stand only a line that decides on its own or one listed with why it can never be one (mutant shape-seats-uncounted)"
+      - { kind: running, file: src/components/lounge/__tests__/theSealSaysWhatTheCountMeans.test.tsx, test: "one message waiting is said in the singular: \"1 new dispatch\"" }
+      - { kind: running, file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "one film and one follower are said, and printed, in the singular" }
+      - { kind: running, file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "a figure is written from its count alone, so the two can never disagree" }
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "refuses an over-length essay before touching anything" }
+      - { kind: running, file: app/__tests__/yourYearFillsItsWindow.test.tsx, test: "one film in the year is \"Film Logged\", not \"Films Logged\"" }
+      - { kind: running, file: app/__tests__/yourYearFillsItsWindow.test.tsx, test: "two films are \"Films Logged\"" }
+    fix: "the Dispatch's counted() (one count, its singular and its plural named, decided on the raw number) moved to src/utils/counted.ts for the whole app, and every count goes through it; the guard reads the app's code for a count before a plural word, letting stand only a line that decides on its own or one listed with why it can never be one (mutant shape-seats-uncounted); round 14: spoken counts took the plural at one (\"1 new dispatches\", \"1 films\", \"Show 1 more critiques\", \"1 copies\", \"Bulk dismiss 1 reports\", \"1 characters over the limit\"): each through counted(), StatCard given its count and its singular and writing its figure from the count (tally), and the guard reads a word between a count and its noun (new, more, other, unread, open, pending) and the nouns found; Year in Cinema says \"Film Logged\" for one (mutants shape-one-new-dispatches, shape-one-films-on-the-plate, shape-one-more-critiques-said, shape-one-reports-said, shape-one-copies-said, shape-one-characters-over, shape-one-films-logged)"
     places: [none]
 
   - id: UI-actions-twice
@@ -1259,11 +1266,16 @@ classes:
     seriousness: behaviour
     area: database
     status: OPEN
-    count: 11
+    count: 15
     source: { kind: reviewer, ref: "P0.48 part 2 follow-up (car 07), 2026-10-15/16" }
     methods:
       - { kind: running, file: src/services/__tests__/aRefusedRenameKeepsWhatWasSaved.test.ts, test: "a handle held by another in other capitals is taken at the press, as the house judges it; an underscore is a letter" }
-    fix: "20261015_07_a_rule_holds_on_every_path, the 10: rate_limit_check counted any table/column (oracle); a block refused no comment, certification, critique or follow (write side, #113); can_annotate_*/can_endorse_content answered for any p_actor and visitors could ask (who-follows-whom oracle); analytics_events filed under any user_id; error_logs unlimited and back-datable; toggle_dossier_certify skipped the ban/suspension and open-post rules; a report whose reporter left could not be resolved with notify (NEW-M1); salon messages from blocked/muted/blocking members still delivered by the server; 1 member's private choice in preferences only (desync); 3 public profiles' stale following/followers text arrays readable by visitors. Rehearsal 41/41 with, 20 missed without, on a local copy of production's shape; up-down-up clean; every other rehearsal holds with it. Judged, no change: record_gate_event open to visitors (names nobody, 500 rows a day, any member could inflate it as easily). Live on production since the train of 2026-10-25, read back by train_3_live_check.sql; Edit Profile's check that a handle is free judges it in any case, whole, as the house judges a handle taken (ilike through buildSearchPattern), so a handle held in other capitals is refused at the press, not at the rename after the rest was saved (mutant shape-handle-check-by-exact-case)"
+      - { kind: running, file: src/stores/__tests__/aBlockerIsNeverNamedAtTheTypewriter.test.ts, test: "names a member the house shows the reader, and never one who blocked them" }
+      - { kind: running, file: src/stores/__tests__/aBlockerIsNeverNamedAtTheTypewriter.test.ts, test: "names no one when the house could not be asked" }
+      - { kind: running, file: src/stores/__tests__/aBlockerIsNeverNamedAtTheTypewriter.test.ts, test: "is the row the house gives the reader: one it gives is shown, one it does not is not" }
+      - { kind: running, file: src/stores/__tests__/aBlockerIsNeverNamedAtTheTypewriter.test.ts, test: "a read that fails shows no one, and is asked again, never kept" }
+      - { kind: running, file: e2e/__tests__/attack.test.ts, test: "hides a member who blocked the reader from every member but an admin, and the member the reader blocked from no one" }
+    fix: "20261015_07_a_rule_holds_on_every_path, the 10: rate_limit_check counted any table/column (oracle); a block refused no comment, certification, critique or follow (write side, #113); can_annotate_*/can_endorse_content answered for any p_actor and visitors could ask (who-follows-whom oracle); analytics_events filed under any user_id; error_logs unlimited and back-datable; toggle_dossier_certify skipped the ban/suspension and open-post rules; a report whose reporter left could not be resolved with notify (NEW-M1); salon messages from blocked/muted/blocking members still delivered by the server; 1 member's private choice in preferences only (desync); 3 public profiles' stale following/followers text arrays readable by visitors. Rehearsal 41/41 with, 20 missed without, on a local copy of production's shape; up-down-up clean; every other rehearsal holds with it. Judged, no change: record_gate_event open to visitors (names nobody, 500 rows a day, any member could inflate it as easily). Live on production since the train of 2026-10-25, read back by train_3_live_check.sql; Edit Profile's check that a handle is free judges it in any case, whole, as the house judges a handle taken (ilike through buildSearchPattern), so a handle held in other capitals is refused at the press, not at the rename after the rest was saved (mutant shape-handle-check-by-exact-case); round 14: a block closed the blocker's records and stacks to the member blocked, but not the Watchlist, the Vault, the follows or any figure drawn from the records (the counts, statistics, Taste DNA, honours, taste match): can_view_user_data closes a file across a block, so every rule and definer figure that asks it closes with it; the follows rule reads a follow only where no block stands with either end; get_profile_counts counts no follow across a block; the blocker's profile, salons, seats, reactions and old dossiers are rows that do not exist to the member blocked; and the seats a block stands between today are let go once (rehearsals a_block_closes_a_file_rehearsal.sql, a_follow_is_not_read_across_a_block_rehearsal.sql, whom_a_member_follows_is_read_newest_first_rehearsal.sql; the attack matrix hides a blocker from every member but an admin); a salon's typing line names a typist only when the house gives the reader their row (typistShown) (mutant shape-typist-named-across-a-block); BULK DISMISS closed its cases and told no reporter, where a single dismissal tells each: bulk_dismiss_reports tells each as resolve_moderation_report_v2 does, and closes no case judged meanwhile (rehearsal a_bulk_dismissal_tells_each_reporter_rehearsal.sql); the old Dispatch's tables (dispatch_dossiers_legacy, dossier_comments_legacy, dossier_certifications_legacy) gave anyone a filing or critique the house withheld or emptied: no member or visitor reads them; a withheld critique still took certifications and counted toward the Lobby's regard: both leave it out (rehearsals a_withheld_piece_is_read_by_its_author_alone_rehearsal.sql, a_removed_piece_waits_for_its_appeal_rehearsal.sql)"
     places: [none]
 
   - id: DB-row-reaches-past-its-reader
@@ -1312,7 +1324,7 @@ classes:
     seriousness: behaviour
     area: code
     status: OPEN
-    count: 1431
+    count: 1429
     source: { kind: reviewer, ref: P0.65 }
     methods:
       - { kind: static, file: src/utils/__tests__/frozenCounts.guard.test.ts, test: "each finder counts the cases planted for it, by running it" }
@@ -2634,7 +2646,7 @@ classes:
     seriousness: behaviour
     area: moderation
     status: OPEN
-    count: 24
+    count: 25
     source: { kind: reviewer, ref: "review round 2, every feature, 2026-11-15" }
     methods:
       - { kind: running, file: src/hooks/__tests__/aMemberHiddenLeavesTheFilmsPages.test.tsx, test: "the film page: a reviewer blocked since its read leaves it at once" }
@@ -2663,7 +2675,14 @@ classes:
       - { kind: running, file: src/stores/__tests__/aHiddenMembersNoticesLeaveTheBoard.test.ts, test: "a member muted takes their notices off the board and the bell, and leaves everyone else’s" }
       - { kind: running, file: src/components/lounge/__tests__/aHiddenHostsSalonLeavesTheDirectory.test.tsx, test: "a salon whose host is blocked or muted is not among the salons; the member's own stays" }
       - { kind: running, file: src/components/lounge/__tests__/aHiddenHostsSalonLeavesTheDirectory.test.tsx, test: "a salon leaves at once when its host is blocked while the tab is shown, and comes back when let back" }
-    fix: "what is drawn is drawn through who is hidden now (useWhoIsHidden, a value that changes with every block, mute or unblock): the film page's critiques in its select, the archive's rows, and the salon purges whenever it changes (mutants shape-film-page-keeps-the-hidden, shape-archive-filtered-once, shape-room-purges-for-its-sheet-alone); the Dispatch's paper and a filing's critiques, a stack's critiques (stackCritiques), the Registry by isHidden, a member's circles and the request door the same way (mutants shape-paper-keeps-the-hidden, shape-critiques-keep-the-hidden, shape-stack-critiques-keep-the-hidden, shape-registry-offers-the-muted, shape-door-offers-the-hidden, shape-circle-keeps-the-hidden); the log page, the archive and the series draw through who is hidden now (mutants shape-log-page-keeps-the-hidden, shape-archive-keeps-the-hidden, shape-series-stays-for-the-hidden); round 6: a log, a stack, a filing and a series leave once their author is hidden (useLeavesWhenHidden), from anywhere, waiting for the page’s own sheet to close; a host’s salon door and the corridor’s count leave out whoever the host has hidden (20261116_01 too) (mutants shape-hidden-author-leaves-from-under-a-sheet, shape-log-stands-for-a-hidden-author, shape-stack-stands-for-a-hidden-curator, shape-reader-stands-on-a-mute, shape-series-stands-for-a-hidden-author, shape-host-shown-who-they-hid, shape-corridor-counts-the-hidden); a member's Dispatch room leaves once they are hidden (mutant shape-room-stays-for-the-hidden); a member hidden takes their notices off the board and the bell (mutant shape-hidden-notices-kept); a salon whose host is hidden leaves the Lounge directory (mutant shape-hidden-hosts-salon-listed); a member an author blocked no longer reads the author's records and stacks, by the house's one rule (logs_hide_blocked, lists_hide_blocked, 20261116_01 piece 8, rehearsal-tested; no phone change); the close of a ballot is told to no voter across a block or mute, and to no one for a ballot withheld, ended or unpublished, from its author, so the board and the push see whose words it carries (dispatch_notify_ballot_closed, 20261118_01, rehearsal-tested; no phone change); one gate at the door of the notices table refuses a notice from one member to another across a block or mute, so no writer can forget it and an unmute brings back nothing written meanwhile (a_hidden_members_word_is_not_written, 20261118_01, rehearsal-tested; the attack matrix lays its notice as written before the block; no phone change)"
+      - { kind: running, file: src/stores/__tests__/aHiddenMembersWordsLeaveTheSalon.test.ts, test: "a message written by a member they hid is hidden" }
+      - { kind: running, file: src/stores/__tests__/aHiddenMembersWordsLeaveTheSalon.test.ts, test: "another member's message carrying the words of one they hid is hidden" }
+      - { kind: running, file: src/stores/__tests__/aHiddenMembersWordsLeaveTheSalon.test.ts, test: "a message carrying no one hidden is read" }
+      - { kind: running, file: src/stores/__tests__/aHiddenMembersWordsLeaveTheSalon.test.ts, test: "the member's own message is never hidden, whoever it quotes" }
+      - { kind: running, file: src/stores/__tests__/aHiddenMembersWordsLeaveTheSalon.test.ts, test: "blocking Bea takes Cal's answer to her and his card of her essay off the open room with her own words" }
+      - { kind: running, file: src/stores/__tests__/aHiddenMembersWordsLeaveTheSalon.test.ts, test: "read from the house with Bea hidden, Cal's answer to her and his card of her essay are never drawn" }
+      - { kind: running, file: src/stores/__tests__/aHiddenMembersWordsLeaveTheSalon.test.ts, test: "heard live with Bea hidden, Cal's answer to her is never drawn, and his plain word is" }
+    fix: "what is drawn is drawn through who is hidden now (useWhoIsHidden, a value that changes with every block, mute or unblock): the film page's critiques in its select, the archive's rows, and the salon purges whenever it changes (mutants shape-film-page-keeps-the-hidden, shape-archive-filtered-once, shape-room-purges-for-its-sheet-alone); the Dispatch's paper and a filing's critiques, a stack's critiques (stackCritiques), the Registry by isHidden, a member's circles and the request door the same way (mutants shape-paper-keeps-the-hidden, shape-critiques-keep-the-hidden, shape-stack-critiques-keep-the-hidden, shape-registry-offers-the-muted, shape-door-offers-the-hidden, shape-circle-keeps-the-hidden); the log page, the archive and the series draw through who is hidden now (mutants shape-log-page-keeps-the-hidden, shape-archive-keeps-the-hidden, shape-series-stays-for-the-hidden); round 6: a log, a stack, a filing and a series leave once their author is hidden (useLeavesWhenHidden), from anywhere, waiting for the page’s own sheet to close; a host’s salon door and the corridor’s count leave out whoever the host has hidden (20261116_01 too) (mutants shape-hidden-author-leaves-from-under-a-sheet, shape-log-stands-for-a-hidden-author, shape-stack-stands-for-a-hidden-curator, shape-reader-stands-on-a-mute, shape-series-stands-for-a-hidden-author, shape-host-shown-who-they-hid, shape-corridor-counts-the-hidden); a member's Dispatch room leaves once they are hidden (mutant shape-room-stays-for-the-hidden); a member hidden takes their notices off the board and the bell (mutant shape-hidden-notices-kept); a salon whose host is hidden leaves the Lounge directory (mutant shape-hidden-hosts-salon-listed); a member an author blocked no longer reads the author's records and stacks, by the house's one rule (logs_hide_blocked, lists_hide_blocked, 20261116_01 piece 8, rehearsal-tested; no phone change); the close of a ballot is told to no voter across a block or mute, and to no one for a ballot withheld, ended or unpublished, from its author, so the board and the push see whose words it carries (dispatch_notify_ballot_closed, 20261118_01, rehearsal-tested; no phone change); one gate at the door of the notices table refuses a notice from one member to another across a block or mute, so no writer can forget it and an unmute brings back nothing written meanwhile (a_hidden_members_word_is_not_written, 20261118_01, rehearsal-tested; the attack matrix lays its notice as written before the block; no phone change); round 14: a member's words reached the members who hid them, and those they hid, through another member's reply quoting them or card of their piece in a salon: the house names on each message whose words it carries (carries_words_of, its writer unable to change it; the messages already written named once), and the hiding rule, the realtime filter, a salon's unread count and its last word leave out a message carrying the words of one hidden from the reader (rehearsals a_message_names_whose_words_it_carries_rehearsal.sql, a_hidden_members_words_stay_hidden_rehearsal.sql); the phone hides such a message by one rule (hiddenHere) in every read, live, in a kept room and when a block is made (mutants shape-quote-of-the-hidden-kept-on-a-block, shape-quote-of-the-hidden-heard-live)"
     places: [none]
 
   - id: UI-a-sheet-opened-by-a-screen-beneath
@@ -3126,7 +3145,7 @@ classes:
     seriousness: behaviour
     area: dispatch
     status: OPEN
-    count: 12
+    count: 13
     source: { kind: reviewer, ref: "review round 5, every feature, 2026-11-16" }
     methods:
       - { kind: running, file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "a filing withdrawn in the reader is drawn withdrawn here, not in its old words" }
@@ -3158,7 +3177,9 @@ classes:
       - { kind: running, file: src/hooks/__tests__/theFileFollowsEveryRecordChange.test.tsx, test: "a film an older build marked watched, delivered by the queue, is heard too" }
       - { kind: running, file: src/hooks/__tests__/theFileFollowsEveryRecordChange.test.tsx, test: "another member's file is not the reader's records, and reads nothing again" }
       - { kind: running, file: src/features/profile/__tests__/aRenameIsWhatTheHouseKept.test.tsx, test: "a rename the house kept is the handle the phone holds, and the handle given up is handed over" }
-    fix: "a withdrawal or amendment keeps what it left in the store's acted, and every row drawn from its own copy follows it (mutants shape-row-prints-the-old-words, shape-act-kept-for-no-list); round 6: a log amended or deleted from its sheet reads the Reel again and takes a deleted record’s card off it at once, each page keeping its word on what follows through the cache (feedPages); a request answered at the door leaves the bell; Year in Cinema reads the year again on every return (mutants shape-deleted-card-stays-on-the-reel, shape-a-page-loses-its-word, shape-feeds-share-without-their-word, shape-restored-page-taken-as-last, shape-deleted-log-card-stays, shape-queued-delete-card-stays, shape-amended-log-card-old, shape-answered-request-on-the-bell, shape-declined-all-on-the-bell, shape-year-not-read-on-return); a record filed tells the Reel and the wall (mutant shape-filed-record-off-the-reel); a room's and an archive's row moves its critique count by the member's own, a film's Log Archive hears a record withdrawn or amended, and a record the queue sent tells the Reel and the wall (mutants shape-row-critique-count-kept, shape-withdrawn-record-on-the-archive, shape-amended-record-not-read-again, shape-queued-record-off-the-reel); a record filed has its film read again, the house's verdict with it, as an amendment, a rewatch and a deletion already did; one queued offline once the queue delivers it (mutant shape-logged-film-verdict-left-unread); a rewatch, an amendment or a removal queued offline names its film, and the film is read again once the queue delivers it; one an older build queued is matched to its film by the record the phone holds (mutant shape-queued-change-film-unread); the member's own file hears every change to their records (hearRecordsChanged, the queue's deliveries too): the summary is read again, the calendar or the Projector in front now and another when next opened, and the Year in Cinema while open (mutant shape-file-deaf-to-record-changes); Edit Profile hands the handle held before to the write that records it, so the open file follows the rename on a phone whose keystore failed too, never Member Not Found on the old handle (mutant shape-old-handle-not-handed-over)"
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "counts the cases and the appeals waiting" }
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "a case judged at the Tribunal above is no longer counted on return: the door is read again with it" }
+    fix: "a withdrawal or amendment keeps what it left in the store's acted, and every row drawn from its own copy follows it (mutants shape-row-prints-the-old-words, shape-act-kept-for-no-list); round 6: a log amended or deleted from its sheet reads the Reel again and takes a deleted record’s card off it at once, each page keeping its word on what follows through the cache (feedPages); a request answered at the door leaves the bell; Year in Cinema reads the year again on every return (mutants shape-deleted-card-stays-on-the-reel, shape-a-page-loses-its-word, shape-feeds-share-without-their-word, shape-restored-page-taken-as-last, shape-deleted-log-card-stays, shape-queued-delete-card-stays, shape-amended-log-card-old, shape-answered-request-on-the-bell, shape-declined-all-on-the-bell, shape-year-not-read-on-return); a record filed tells the Reel and the wall (mutant shape-filed-record-off-the-reel); a room's and an archive's row moves its critique count by the member's own, a film's Log Archive hears a record withdrawn or amended, and a record the queue sent tells the Reel and the wall (mutants shape-row-critique-count-kept, shape-withdrawn-record-on-the-archive, shape-amended-record-not-read-again, shape-queued-record-off-the-reel); a record filed has its film read again, the house's verdict with it, as an amendment, a rewatch and a deletion already did; one queued offline once the queue delivers it (mutant shape-logged-film-verdict-left-unread); a rewatch, an amendment or a removal queued offline names its film, and the film is read again once the queue delivers it; one an older build queued is matched to its film by the record the phone holds (mutant shape-queued-change-film-unread); the member's own file hears every change to their records (hearRecordsChanged, the queue's deliveries too): the summary is read again, the calendar or the Projector in front now and another when next opened, and the Year in Cinema while open (mutant shape-file-deaf-to-record-changes); Edit Profile hands the handle held before to the write that records it, so the open file follows the rename on a phone whose keystore failed too, never Member Not Found on the old handle (mutant shape-old-handle-not-handed-over); round 14: the Settings door kept \"ENTER THE TRIBUNAL · 5 WAITING\" after the five were judged: it reads through the query cache under the key the Tribunal reads again after every verdict, dismissal, hearing and lift, and again on each return to Settings (useTribunalWaiting; tribunal_waiting counts the cases and the appeals the admin may hear, rehearsal a_verdict_is_read_whole_and_appealed_once_rehearsal.sql) (mutant shape-tribunal-door-read-outside-its-key)"
     places: [none]
 
   - id: WRITE-a-rollback-that-undoes-another-write
@@ -3243,7 +3264,7 @@ classes:
     seriousness: behaviour
     area: dispatch
     status: OPEN
-    count: 13
+    count: 15
     source: { kind: reviewer, ref: "review round 6, every feature, 2026-11-16" }
     methods:
       - { kind: running, file: src/stores/__tests__/aFilingTheHouseNoLongerGivesLeavesThePaper.test.ts, test: "a filing the house no longer gives leaves the page and the opened filings, so the reader says it is no longer here" }
@@ -3290,7 +3311,15 @@ classes:
       - { kind: running, file: src/stores/__tests__/aNoticeTheHouseTookBackLeavesTheBell.test.ts, test: "a word heard after the member signed out is never applied, and a malformed one is dropped" }
       - { kind: running, file: src/stores/__tests__/aNoticeTheHouseTookBackLeavesTheBell.test.ts, test: "forgetGoneNotices takes only the notices it names, read or unread, and nothing when none is held" }
       - { kind: running, file: src/stores/__tests__/aNoticeTheHouseTookBackLeavesTheBell.test.ts, test: "the word’s channel back after a drop reads the board again, and down past a beat the board is not said live" }
-    fix: "a filing the house no longer gives leaves the paper and the opened filings, so the reader says it is no longer here; one still waiting in the queue stays (mutants shape-withheld-filing-kept); a record deleted offline: its own page reads it gone at once and is not read again offline (mutants shape-offline-delete-page-read-again, shape-offline-delete-copy-kept); a case judged leaves the Tribunal's dockets at once (mutant shape-judged-case-stands); the Tribunal offers REMOVE CONTENT only while the evidence is not known destroyed, and a removal the house refuses as PIECE_GONE (the piece already deleted, judged per type; a withdrawn salon message is gone too) keeps the case, draws its evidence destroyed and says what is left; the house removes, records and tells nothing over a piece already gone (20261117_01, rehearsal-tested; mutant shape-gone-piece-offered-for-removal); a verdict on a case another moderator already judged is refused by the house (ALREADY_JUDGED, the case locked and only a pending one judged, so two verdicts can no longer both land; 20261117_01) and the case leaves the docket, both dockets read again, said as judged by another moderator (mutant shape-judged-case-kept-on-the-docket); a salon dissolved while the member sat in it, or was away, is asked again (rereadRoom: the room and its roster) on a return to the app and after a word, a seat or a request refused, and draws its Signal Lost page (mutant shape-dissolved-salon-unread-on-return); an amendment of a stack deleted elsewhere (save_stack's P0002) lets the stack go on the phone (forgetGoneStack: the member's stacks, its page, the Reel's STACKS, the wall) and the sheet says it is gone and closes; one queued offline is let go of and said, never held as an unsent change (mutants shape-gone-stack-kept-and-said-unsaved, shape-queued-amendment-of-gone-stack-held); the open room keeps its reaction rows by their id, from every read and every reaction heard, so a withdrawal the channel sends as its key alone takes its count away (mutant shape-reaction-withdrawal-dropped); a salon card whose piece is gone (withdrawn, deleted, or its writer gone and their words erased) is taken down by the house in the sharer's message and marked gone (20261117_01), and the card says withdrawn, heard so, live too, never the old headline (mutant shape-gone-card-keeps-its-headline); a valid session that finds no profile row asks the auth server once (getUser): an account closed on another phone is signed out here at launch and on a return to the app, and the member told; unreached, or a read that failed, keeps the member (mutant shape-closed-account-kept-signed-in); a filing withdrawn or removed before its case was opened reads as evidence destroyed: one question, piece_stands, answers the evidence and the verdict alike, so REMOVE CONTENT is never offered over a piece the house would refuse as gone (20261118_01, rehearsal-tested; no phone change); a request at a salon's door answered, withdrawn or dissolved takes its notice with it at the house (a_salon_request_takes_its_notice, 20261118_01), and the host's phone takes it off the bell and the board at once on ADMIT or DECLINE, that member's request alone, of either kind (mutant shape-answered-salon-request-kept-on-the-bell); the house tells the member it was for, on their own private topic (notices:<id>, a_notice_gone_is_told, 20261118_01), which notices it took back, and the phone takes them off the board and the bell, kept as gone so a read or an arrival heard after never puts one back (mutant shape-notice-taken-back-kept-on-the-bell)"
+      - { kind: running, file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts, test: "the house takes the words out of Cal's reply: the room open here stops quoting them at once" }
+      - { kind: running, file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts, test: "Bea's message withdrawn or removed, heard live: every reply quoting it here loses the words with it" }
+      - { kind: running, file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts, test: "back in a kept room after the removal, Cal's reply is read again without the words" }
+      - { kind: running, file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts, test: "a quote the house gives back (a sealed stack opened again) is read again as it stands" }
+      - { kind: running, file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts, test: "the member withdraws their own message: the replies quoting it here lose the words at once" }
+      - { kind: running, file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts, test: "the house refuses the withdrawal: the message and its quotes come back as they were" }
+      - { kind: running, file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts, test: "heard live: the message put back stands with its words, no longer withdrawn" }
+      - { kind: running, file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts, test: "back in a kept room: the message put back, its card made again, are read again as they stand" }
+    fix: "a filing the house no longer gives leaves the paper and the opened filings, so the reader says it is no longer here; one still waiting in the queue stays (mutants shape-withheld-filing-kept); a record deleted offline: its own page reads it gone at once and is not read again offline (mutants shape-offline-delete-page-read-again, shape-offline-delete-copy-kept); a case judged leaves the Tribunal's dockets at once (mutant shape-judged-case-stands); the Tribunal offers REMOVE CONTENT only while the evidence is not known destroyed, and a removal the house refuses as PIECE_GONE (the piece already deleted, judged per type; a withdrawn salon message is gone too) keeps the case, draws its evidence destroyed and says what is left; the house removes, records and tells nothing over a piece already gone (20261117_01, rehearsal-tested; mutant shape-gone-piece-offered-for-removal); a verdict on a case another moderator already judged is refused by the house (ALREADY_JUDGED, the case locked and only a pending one judged, so two verdicts can no longer both land; 20261117_01) and the case leaves the docket, both dockets read again, said as judged by another moderator (mutant shape-judged-case-kept-on-the-docket); a salon dissolved while the member sat in it, or was away, is asked again (rereadRoom: the room and its roster) on a return to the app and after a word, a seat or a request refused, and draws its Signal Lost page (mutant shape-dissolved-salon-unread-on-return); an amendment of a stack deleted elsewhere (save_stack's P0002) lets the stack go on the phone (forgetGoneStack: the member's stacks, its page, the Reel's STACKS, the wall) and the sheet says it is gone and closes; one queued offline is let go of and said, never held as an unsent change (mutants shape-gone-stack-kept-and-said-unsaved, shape-queued-amendment-of-gone-stack-held); the open room keeps its reaction rows by their id, from every read and every reaction heard, so a withdrawal the channel sends as its key alone takes its count away (mutant shape-reaction-withdrawal-dropped); a salon card whose piece is gone (withdrawn, deleted, or its writer gone and their words erased) is taken down by the house in the sharer's message and marked gone (20261117_01), and the card says withdrawn, heard so, live too, never the old headline (mutant shape-gone-card-keeps-its-headline); a valid session that finds no profile row asks the auth server once (getUser): an account closed on another phone is signed out here at launch and on a return to the app, and the member told; unreached, or a read that failed, keeps the member (mutant shape-closed-account-kept-signed-in); a filing withdrawn or removed before its case was opened reads as evidence destroyed: one question, piece_stands, answers the evidence and the verdict alike, so REMOVE CONTENT is never offered over a piece the house would refuse as gone (20261118_01, rehearsal-tested; no phone change); a request at a salon's door answered, withdrawn or dissolved takes its notice with it at the house (a_salon_request_takes_its_notice, 20261118_01), and the host's phone takes it off the bell and the board at once on ADMIT or DECLINE, that member's request alone, of either kind (mutant shape-answered-salon-request-kept-on-the-bell); the house tells the member it was for, on their own private topic (notices:<id>, a_notice_gone_is_told, 20261118_01), which notices it took back, and the phone takes them off the board and the bell, kept as gone so a read or an arrival heard after never puts one back (mutant shape-notice-taken-back-kept-on-the-bell); round 14: words the house removed from a salon, or their author withdrew, stayed quoted in other members' replies on every phone holding the room: the quote the house clears is taken live, on return to a kept room, and at the member's own withdrawal, put back if the house refuses it (mutants shape-cleared-quote-unheard-live, shape-own-withdrawal-keeps-its-quotes, shape-kept-room-keeps-a-removed-quote); a message put back by an overturned verdict stood withdrawn on every open phone: its withdrawal is taken as the house now holds it, live and on return, and the house gives its words back to the replies that quoted it (rehearsal a_removed_piece_waits_for_its_appeal_rehearsal.sql; mutant shape-put-back-message-drawn-withdrawn)"
     places: [none]
 
   - id: WRITE-a-choice-offered-then-dropped
@@ -3630,7 +3659,7 @@ classes:
     seriousness: behaviour
     area: profile
     status: OPEN
-    count: 1
+    count: 2
     source: { kind: reviewer, ref: "review round 11, every feature, 2026-11-17" }
     methods:
       - { kind: running, file: src/components/profile/__tests__/aRunIsJudgedOnTheMembersOwnDay.test.ts, test: "still stands at 8pm on the member's day after its last night, whatever the house's day" }
@@ -3641,7 +3670,8 @@ classes:
       - { kind: running, file: src/components/profile/__tests__/aRunIsJudgedOnTheMembersOwnDay.test.ts, test: "ends at the member's own midnight while the file stays open" }
       - { kind: running, file: src/components/profile/__tests__/aRunIsJudgedOnTheMembersOwnDay.test.ts, test: "reads a run, a run of none, and says nothing for a house that gave none" }
       - { kind: running, file: src/components/profile/__tests__/aRunIsJudgedOnTheMembersOwnDay.test.ts, test: "stands from the last night to the night after it, and no later" }
-    fix: "the house gives its newest run whole (current_run: its nights and its last night, 20261117_01) and the phone judges it on its own calendar, standing while its last night is the member's yesterday or later and ending at the member's own midnight while the file is open (houseRunOf, runStillStanding; mutant shape-run-judged-on-the-houses-day)"
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "the day to appeal by is said in the member’s own day and hour" }
+    fix: "the house gives its newest run whole (current_run: its nights and its last night, 20261117_01) and the phone judges it on its own calendar, standing while its last night is the member's yesterday or later and ending at the member's own midnight while the file is open (houseRunOf, runStillStanding; mutant shape-run-judged-on-the-houses-day); round 14: a removed piece's appeal deadline was printed as a UTC date with no hour, already past for a member west of UTC when the piece was deleted: every surface says the one instant it is kept until, in the member's own day and hour, the notice too (rehearsal a_removed_piece_waits_for_its_appeal_rehearsal.sql) (mutant shape-appeal-day-said-without-its-hour)"
     places: [none]
 
   - id: COPY-a-count-past-its-measure
@@ -4270,4 +4300,477 @@ classes:
       - { kind: running, file: e2e/__tests__/appCrashes.test.ts, test: "names each own crash in its own attempt, though one pid crashed three times in one second (CI 44473860748)" }
       - { kind: running, file: e2e/__tests__/appCrashes.test.ts, test: "is one report, though a hard crash of its process lands in the same second: only a start begins a process" }
     fix: "app-crashes.mjs groups a soft crash's lines by the process's life, not its pid alone: each pid's count of ActivityManager starts (Start proc <pid>:<app>, never a crash report's Process: line) is part of the key, kept on the report as proc, and an own crash's aftermath is matched to the same life (mutant shape-soft-crash-keyed-by-pid-alone)"
+    places: [none]
+
+  - id: SEC-a-sign-in-pace-hardened
+    title: "A per-address pace trusted an address the caller writes: the handle sign-in, the TMDB proxy and the feed reader each took the first entry of X-Forwarded-For, which the platform keeps as the caller sent it and adds its own after, so a script naming a new address on each call guessed any member's password without end (Auth's own limit was told the same written address) and was never held by the proxy or the reader"
+    seriousness: serious
+    area: security
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "review round 14, the attacker, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "Cloudflare's own CF-Connecting-IP is the caller, whatever X-Forwarded-For says" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "a new address written on every call is still the one caller" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "with no vouched address, no entry of X-Forwarded-For is ever taken as the caller: none, never a bucket all share" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "nothing that is not an address becomes one" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "an IPv6 caller is paced by its /64, however it is written; an IPv4 one whole" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "the two folders hold the same file, each deployed beside its own functions" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "every function that paces by address asks callerAddress and paces only a vouched one, and none reads X-Forwarded-For itself" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "every answer names the source it read, never the address, and lets the website read it" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "the proxy and the reader pace no address when none is vouched" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "Auth is told the vouched address, or the caller's own written one, never a hop the platform added" }
+    fix: "the edge functions read the caller through _shared/callerAddress.js (one file in each functions folder, held the same): only the address the platform vouches for, Cloudflare's CF-Connecting-IP, never an entry of X-Forwarded-For, an IPv6 caller paced by its /64; with no vouched address no function paces by address at all, never one key every caller shares (round 14's review: an entry the gateway adds would be the same for the whole house); each answer names which headers came (x-rh-caller-source: cf, xff or none, never the address), so the first call after a deploy shows whether the pace by address is on; the sign-in tells Auth the vouched address, else the caller's own written one, and counts each handle's attempts at the house (AUTH-a-member-held-out-by-anothers-guesses); the functions world calls the proxy and the sign-in with a new X-Forwarded-For on each call and is held all the same, and with none vouched paces no one (e2e/functions/suites.mjs) (mutants shape-pace-keyed-on-the-written-address, shape-unvouched-caller-paced-by-the-last-hop, shape-ipv6-caller-paced-per-address, shape-proxy-paces-the-unvouched-as-one)"
+    places: [none]
+  - id: AUTH-a-member-held-out-by-anothers-guesses
+    title: "A handle's sign-in held back by the house after wrong passwords held its own member back too: counted on the handle alone, one wrong password sent as each rest ended kept any member's handle sign-in resting for good while the screen said it would open soon; an attempt the house or Auth could not answer was counted against the member; any string got a row of its own; and the function deployed before its migration would refuse every handle sign-in"
+    seriousness: serious
+    area: auth
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "review round 14, the attacker, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "asks the count, by door and with the phone's key, before the handle is looked up or any password is tried" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "an attempt held back is told as that, from where and for how long, its password never tried" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "a count that could not be asked is the house's failure: never a password tried uncounted" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "every answer the house or Auth could not give is given back, never counted" }
+      - { kind: running, file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts, test: "the right password clears this door, gives the attempt back and hands the phone its key, after the session is in hand" }
+      - { kind: running, file: src/stores/__tests__/auth.test.ts, test: "this connection resting after its own wrong passwords says so, how long, and that the email address still signs in" }
+      - { kind: running, file: src/stores/__tests__/auth.test.ts, test: "a handle slowed by attempts from elsewhere says that, never that this member got it wrong" }
+      - { kind: running, file: src/stores/__tests__/auth.test.ts, test: "a phone holding the key the house handed it sends it, and keeps the key the house hands back" }
+      - { kind: running, file: src/stores/__tests__/auth.test.ts, test: "a phone holding no key sends none, and keeps nothing from a refusal" }
+      - { kind: running, file: src/stores/__tests__/auth.test.ts, test: "a 429 that names no handle, or whose words cannot be read, is the caller's own pace" }
+      - { kind: running, file: src/utils/__tests__/anAddressIsToldFromAHandle.test.ts, test: "a handle the house holds back carries its whole seconds, at least one, and from where, read back as them" }
+      - { kind: running, file: src/utils/__tests__/anAddressIsToldFromAHandle.test.ts, test: "nothing else is read as a handle held back" }
+      - { kind: running, file: src/utils/__tests__/anAddressIsToldFromAHandle.test.ts, test: "is kept for the handle as the house finds it, whatever its spelling, and read back" }
+      - { kind: running, file: src/utils/__tests__/anAddressIsToldFromAHandle.test.ts, test: "a newer key for a handle replaces its older one; five handles at most, the newest kept" }
+      - { kind: running, file: src/utils/__tests__/anAddressIsToldFromAHandle.test.ts, test: "nothing not shaped as a key is kept or read as one" }
+    fix: "the house counts each attempt on a member's handle before any password is tried (sign_in_attempt): at its door, the vouched address (five wrong a day, then a rest doubling from a minute to an hour), so a guesser rests only their own door; and in a pail every door not known to the member shares (20, one more every 5 minutes), so many doors at once are slowed together; the right password hands the phone a key (sign_in_cleared), and a phone sending it is never held by the pail, so the member's own phone always has a way in, and the email address, at Auth's own door, is never held by any of it; an attempt the house or Auth could not answer is given back (sign_in_unasked); a handle no member holds leaves no row; the car's header puts the migration before the function's deploy, and the function back first on the way down (rehearsals a_members_sign_in_doors_are_kept_rehearsal.sql, a_guesser_rests_only_their_own_door_rehearsal.sql; the functions world plays the guesser, the member at another door, a new phone and the member's own phone, e2e/functions/suites.mjs); the phone keeps each handle's key in its encrypted store and sends it, and says a rest as what it is, from this connection or from elsewhere, how long, and that the email address signs in now (mutants shape-unanswered-sign-in-counted, shape-handle-rest-said-as-a-pace, shape-phone-key-never-sent)"
+    places: [none]
+
+  - id: SEC-a-write-a-script-repeats-without-end
+    title: "A member's write had no pace and no ceiling, so a script repeated it without end: a critique on another member's record, stack or filing, each a notice and a push (the phone buzzed once per critique, and a burst across many pieces once each); an analytics event; a message in a salon the member hosts alone; each filling the notices, pg_net's queue or the disk as fast as the script ran"
+    seriousness: serious
+    area: security
+    status: OPEN
+    count: 5
+    source: { kind: reviewer, ref: "review round 14, the attacker, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/services/__tests__/aCritiqueWaitsOnTheHousesPace.test.ts, test: "asked to wait a moment, waits and is filed" }
+      - { kind: running, file: src/services/__tests__/aCritiqueWaitsOnTheHousesPace.test.ts, test: "asked to wait an hour on that record, hands the wait to the page" }
+      - { kind: running, file: src/services/__tests__/aCritiqueWaitsOnTheHousesPace.test.ts, test: "asked to wait the day out, hands the wait to the page" }
+      - { kind: running, file: app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx, test: "says how long, keeps the words in the box, and keeps nothing for later" }
+      - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "asked by the house to wait, it says how long and keeps the words in the box, never kept for later (round 14)" }
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "asked by the house to wait an hour on this filing, it says so and keeps what was written (round 14)" }
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "asked by the house to wait a moment, it waits and files, saying nothing (round 14)" }
+      - { kind: running, file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts, test: "the piece's hour, with the wait the house named" }
+      - { kind: running, file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts, test: "the member's own pace: a wait of seconds" }
+      - { kind: running, file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts, test: "the day's critiques: the day's own word, its wait to the house's midnight in hours or minutes" }
+      - { kind: running, file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts, test: "the day's ceiling met a minute before midnight is still the day's, never a pace" }
+      - { kind: running, file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts, test: "nothing for any other failure" }
+      - { kind: running, file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts, test: "the day's salon messages, with the wait to the house's midnight" }
+      - { kind: running, file: src/stores/__tests__/aSalonsDayHasACeiling.test.ts, test: "a word past the day's thousand says how long until the house takes more, and stays in the room, failed, with its words" }
+      - { kind: running, file: src/utils/__tests__/wordsRefusedForTheRankAreKept.test.ts, test: "is held in its room with its words, failed, the wait said once, never sent again on its own" }
+      - { kind: running, file: src/utils/__tests__/wordsRefusedForTheRankAreKept.test.ts, test: "the member's own retry, asked again, sends it" }
+    fix: "check_critique_pace asks each critique on a record, a stack or a filing (a room of 30, one more every 20 seconds, 500 a day, 20 within an hour on one piece) and refuses past it with RH429 and the seconds to wait, the day's ceiling with its own DETAIL ('day'), so one met a minute before midnight is still said as the day's; a member's critiques push another member's phone once an hour (critique_to:<recipient> in certifications_pushed), every notice still written under the bell; analytics_events_daily_ceiling and lounge_messages_daily_ceiling hold each member to a thousand a day, counted in one row each (analytics_budget, salon_budget), never by reading the rows back, and a batch past it refused whole (rehearsals a_members_room_to_critique_is_kept_rehearsal.sql, a_critique_buzzes_a_phone_once_rehearsal.sql, critiques_are_paced_as_a_person_writes_rehearsal.sql, a_members_events_are_counted_by_the_day_rehearsal.sql, the_events_have_a_days_ceiling_rehearsal.sql, a_members_events_are_held_to_the_ceiling_rehearsal.sql, a_members_salon_messages_are_counted_by_the_day_rehearsal.sql, the_salons_have_a_days_ceiling_rehearsal.sql, a_members_salon_messages_are_held_to_the_ceiling_rehearsal.sql); the phone waits a moment's pace and files the critique, and says a longer wait as what it is, the words kept in the box (critiquePaceSaid: the piece's hour, the day's critiques, the member's pace); a salon message past the day's ceiling stays in its room, failed, its wait said once, sent live or from the queue (mutants shape-critique-filed-without-the-pace, shape-critique-pace-unsaid-on-a-record, shape-days-ceiling-said-as-a-pace, shape-salon-day-unsaid, shape-salon-day-left-sending)"
+    places: [none]
+
+  - id: SEC-a-card-that-speaks-for-another
+    title: "A seated member could post a share card in a salon naming another member as its author under any headline: the house kept the card's byline, headline, count and kind as the sharer wrote them, so every member in the room read words the named member never wrote over the door of a real piece"
+    seriousness: serious
+    area: lounge
+    status: OPEN
+    count: 4
+    source: { kind: reviewer, ref: "review round 14, the attacker, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/aCardIsWhatTheHouseHolds.test.ts, test: "reads the house's final answers to a card, and nothing else as one" }
+      - { kind: running, file: src/stores/__tests__/aCardIsWhatTheHouseHolds.test.ts, test: "a record's card refused as no longer in the house is said so, and leaves the transcript: no retry that cannot work" }
+      - { kind: running, file: src/stores/__tests__/aCardIsWhatTheHouseHolds.test.ts, test: "a filing's card refused as no longer in the house is said so, and leaves the transcript" }
+      - { kind: running, file: src/stores/__tests__/aCardIsWhatTheHouseHolds.test.ts, test: "a stack's card is still said as sealed or gone, as round 13 says it" }
+      - { kind: running, file: src/stores/__tests__/aCardIsWhatTheHouseHolds.test.ts, test: "a record's card made offline and refused on its way is let go with the house's word, said, and taken off the room" }
+      - { kind: running, file: src/stores/__tests__/aCardIsWhatTheHouseHolds.test.ts, test: "the phone's cards name the piece each shows, with the words the house writes the same" }
+      - { kind: running, file: src/components/__tests__/aCardIsCutAsThePhoneCutsIt.test.ts, test: "the phone cuts each line as the pairs say: a sentence, else a word, never inside a character" }
+      - { kind: running, file: src/components/__tests__/aCardIsCutAsThePhoneCutsIt.test.ts, test: "the house cuts the very same lines the very same way (its rehearsal holds these pairs)" }
+      - { kind: running, file: src/components/__tests__/aCardIsCutAsThePhoneCutsIt.test.ts, test: "a filing's line cut by its sharer mid-thought is never what the card says" }
+    fix: "the house writes every card from the piece it names, read as the sharer (a_shared_card_is_the_houses, before each salon message is kept, after a_sealed_stack_is_not_shared): its byline, headline, count, kind and pictures the piece's own, a film's title, poster and year from the house's films (the website's cards keep their pictures), its title cut by the phone's own rule (cardTitle: a sentence, else a word), never where the sharer chose; a piece the sharer cannot read, or gone, is refused (LOG_GONE, PIECE_GONE, STACK_SEALED, STACK_GONE); the cards already in the salons are made true once, in the car after the trigger's, so none slips between (rehearsals a_card_says_what_the_house_holds_rehearsal.sql, a_card_is_written_by_the_house_rehearsal.sql, the_cards_already_shared_are_made_true_rehearsal.sql; the first's cut pairs are the phone's, aCardIsCutAsThePhoneCutsIt); the phone says a record's or a filing's card refused for good and lets it go, live and from the queue with the house's word, never offered again (mutants shape-record-card-refusal-offered-again, shape-filing-card-refusal-offered-again, shape-queued-card-let-go-as-a-stacks)"
+    places: [none]
+
+  - id: SEC-a-rule-helper-served-to-members
+    title: "A function the read rules call was served to members over /rest/v1/rpc and answered what the house hides: hidden_authors() listed every member who had blocked the caller, is_hidden_by and no_block_stands_with answered it member by member, can_view_user_data answered it for any public member, and a_card_shows_a_withheld_piece told anyone whether the house had withheld a piece"
+    seriousness: serious
+    area: database
+    status: OPEN
+    count: 4
+    source: { kind: reviewer, ref: "review round 14, the attacker, 2026-11-18" }
+    fix: "each moves to the private schema the API never serves, the rules calling it by its id unchanged and the functions members run as themselves calling private.* (hidden_authors and is_hidden_by; no_block_stands_with and can_view_user_data; a_withheld_piece_holds_it, and a salon card of a withheld piece is turned gone by the house's write, so a_card_shows_a_withheld_piece is gone); public.hidden_authors, is_hidden_by and can_view_user_data stay for the house's own definer functions, with no grant to a member or the visitor; the rehearsal also fails on any function a member runs as themselves that still names public.hidden_authors or public.is_hidden_by (rehearsals no_member_asks_who_blocked_them_rehearsal.sql, a_block_closes_a_file_rehearsal.sql, a_withheld_piece_is_read_by_its_author_alone_rehearsal.sql; the attack matrix's calls to each refused). SQL alone: CI shows each car's rehearsal failing without it"
+    places: [none]
+
+  - id: DATA-a-count-anyone-can-inflate
+    title: "Anyone holding the anon key could make the rank funnel say any number: record_gate_event added one to the day's counter on every call, from a visitor or a member, so a script inflated \"rank_purchased\" and \"membership_opened\" at will, and a member's own call could still say a rank was bought"
+    seriousness: behaviour
+    area: security
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "review round 14, the attacker, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/lib/__tests__/theCounterNamesNobody.test.ts, test: "a rank bought or ended is not sent: the house counts it from its own record of the rank" }
+      - { kind: running, file: src/lib/__tests__/theCounterNamesNobody.test.ts, test: "a visitor's tap is not sent; it is counted once they sign in, as the member they became" }
+      - { kind: running, file: src/lib/__tests__/theCounterNamesNobody.test.ts, test: "a visitor who taps without end holds twenty, never more" }
+    fix: "record_gate_event refuses a visitor and adds at most 1 per member to each counter a day, and to at most 100 counters a day, kept by a fingerprint keyed for the day alone (gate_day, gate_counted); a rank bought or ended is counted by the house alone, where grant_entitlement writes a store's grant, and a member's call naming either adds nothing (rehearsal the_rank_funnel_counts_each_member_once_rehearsal.sql); the phone sends no rank bought or ended, and holds a visitor's taps (twenty at most) until they sign in, counted as the member they became (mutants shape-rank-purchase-sent-by-the-phone, shape-visitor-tap-sent-as-a-visitor)"
+    places: [none]
+
+  - id: UI-a-refusal-drawn-as-a-failure
+    title: "A member's file the house refuses the reader (a private file to a stranger, and since round 14 a file across a block) was drawn as a failure: the honours and the passport said they could not be reached, under a TRY AGAIN the house would refuse the same way for ever, and the fingerprint and the insights stood at RETRIEVING for as long as the reader stayed"
+    seriousness: behaviour
+    area: profile
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, the attacker, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/profile/__tests__/aClosedRecordIsSaidClosed.test.tsx, test: "a record the house refused is kept as refused: never a failure, never a read still out" }
+      - { kind: running, file: src/components/profile/__tests__/aClosedRecordIsSaidClosed.test.tsx, test: "a taste the house answered is not refused" }
+      - { kind: running, file: src/components/profile/__tests__/aClosedRecordIsSaidClosed.test.tsx, test: "the honours" }
+      - { kind: running, file: src/components/profile/__tests__/aClosedRecordIsSaidClosed.test.tsx, test: "the passport" }
+      - { kind: running, file: src/components/profile/__tests__/aClosedRecordIsSaidClosed.test.tsx, test: "the Cinema DNA reading" }
+      - { kind: running, file: src/components/profile/__tests__/aClosedRecordIsSaidClosed.test.tsx, test: "the fingerprint" }
+      - { kind: running, file: src/components/profile/__tests__/aClosedRecordIsSaidClosed.test.tsx, test: "the insights" }
+      - { kind: running, file: src/components/profile/__tests__/aClosedRecordIsSaidClosed.test.tsx, test: "a record not yet read is still said as being read, and one that failed as unreached" }
+    fix: "a refusal (the figures' { error: 'forbidden' }, or no taste at all) is kept as one (tasteRefused), and each room says the house keeps it closed to the reader, with nothing to ask again (RoomClosed: the honours, the passport, the Cinema DNA reading, the fingerprint, the insights); one not yet read is still said as being read, and one that failed as unreached (mutants shape-refused-taste-read-as-unread, shape-refused-honours-said-unreachable)"
+    places: [none]
+
+  - id: MOD-a-repeat-offender-read-as-a-first
+    title: "The Tribunal drew a member's record of verdicts as cleaner than it was: THE DOCKET, where it opens, read no member's record, so a repeat offender's case there showed none, as a first offence does; and a ban lifted marked every verdict on the member lifted, sentences long served among them, each drawn struck"
+    seriousness: behaviour
+    area: moderation
+    status: OPEN
+    count: 3
+    source: { kind: reviewer, ref: "review round 14, moderation, 2026-11-18" }
+    methods:
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a member suspended twice and with a piece removed reads as a repeat offender on THE DOCKET" }
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a record that could not be read is said so on THE DOCKET, never left blank" }
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "says how each verdict stands" }
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "only a verdict overturned is drawn struck: a lift is mercy, a sentence served was given" }
+      - { kind: running, file: app/(admin)/__tests__/tribunal.test.tsx, test: "fetches enforcement records ONCE for the whole docket, not per card" }
+    fix: "the record is read for the members of both dockets, those a page of either brings read together, keyed on themselves, so a page more reads only its own members, never every record already held; one not yet read says Retrieving, one that failed says so; a lift lifts only what holds now, a ban or a sentence not yet run out (rehearsal a_shorter_sentence_never_cuts_a_longer_one_rehearsal.sql), and each verdict says how it stands (OVERTURNED ON APPEAL, LIFTED, SERVED, UNDER APPEAL, UPHELD ON APPEAL), only an overturned one drawn struck (mutants shape-docket-reads-no-record, shape-every-record-read-again-each-page, shape-a-lift-drawn-struck)"
+    places: [none]
+
+  - id: MOD-a-later-sentence-cuts-a-longer-one
+    title: "A later, shorter suspension cut short an earlier, longer one: each suspension and mute wrote its own end over the one standing, so a member suspended for 720 hours and then for 24 could write again the next day, and was told their membership was paused for 24 hours"
+    seriousness: behaviour
+    area: moderation
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, moderation, 2026-11-18" }
+    fix: "a suspension or a mute runs to the later of its own end and the one standing, with the reason that governs it, and its notice says when the longer pause stands (rehearsal a_shorter_sentence_never_cuts_a_longer_one_rehearsal.sql, both orders). SQL alone: CI shows its car's rehearsal failing without it"
+    places: [none]
+
+  - id: MOD-a-verdict-with-no-way-back
+    title: "A member the house warned, suspended, banned or removed a piece of could not read why and had no way back: the notice was cut at three lines and opened nothing, no screen showed the reason whole, there was no appeal, nothing could lift a ban or a suspension though the BAN sheet promised an admin could, and a notice dismissed lost the verdict for good"
+    seriousness: behaviour
+    area: moderation
+    status: OPEN
+    count: 7
+    source: { kind: reviewer, ref: "review round 14, moderation, 2026-11-18" }
+    methods:
+      - { kind: running, file: app/(modals)/__tests__/aVerdictsNoticeOpensItWhole.test.tsx, test: "a notice of a verdict leads to the board, the verdict named, from its push too" }
+      - { kind: running, file: app/(modals)/__tests__/aVerdictsNoticeOpensItWhole.test.tsx, test: "tapping a verdict’s notice opens the verdict whole over the board, and says it does" }
+      - { kind: running, file: app/(modals)/__tests__/aVerdictsNoticeOpensItWhole.test.tsx, test: "the board opened by a verdict’s push opens that verdict" }
+      - { kind: running, file: app/(modals)/__tests__/aVerdictsNoticeOpensItWhole.test.tsx, test: "a verdict’s push with the board in front opens the verdict on it" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "the member reads the verdict whole: what the house did, until when, and the reason in full" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "the member files one appeal in their own words, and reads it waiting for the Tribunal" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "an appeal the house could not take keeps the member’s words in the box" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "an appeal already filed elsewhere is said, and read as it stands" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "the outcome is read with the Tribunal’s word: overturned, a removal’s words handed back" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "a verdict no longer on the record is said so; one that could not be read is asked again" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "the sheet closes on its way out" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "heads each verdict as what it is, and tells the house’s refusals apart" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "overturned, a piece the house gave back whole is said to stand again, as the hearing wrote it on the verdict" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "an appeal no moderator may hear yet is said to wait for one other than the one who ruled, the piece kept whole meanwhile" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "an appeal a moderator may hear says nothing of waiting" }
+      - { kind: running, file: src/components/moderation/__tests__/aVerdictIsReachedWithoutItsNotice.test.tsx, test: "lists every verdict on the member, how each stands, and opens each whole: its notice dismissed or not" }
+      - { kind: running, file: src/components/moderation/__tests__/aVerdictIsReachedWithoutItsNotice.test.tsx, test: "an empty record says so; one that could not be read is never an empty one, and is asked again" }
+      - { kind: running, file: src/components/moderation/__tests__/aVerdictIsReachedWithoutItsNotice.test.tsx, test: "a full page offers the next, read after the last verdict held" }
+      - { kind: running, file: src/components/moderation/__tests__/aVerdictIsReachedWithoutItsNotice.test.tsx, test: "says how each verdict stands in plain words" }
+      - { kind: running, file: src/components/moderation/__tests__/aVerdictIsReachedWithoutItsNotice.test.tsx, test: "the banner of a pause opens the record, where the verdict is read whole and appealed" }
+      - { kind: running, file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx, test: "lists each member held, how, and why; an exile with nothing to press" }
+      - { kind: running, file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx, test: "an admin lifts a ban with a word for the member: the house hears it, and the member leaves the list" }
+      - { kind: running, file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx, test: "a ban lifted meanwhile by another admin leaves the list, said so" }
+      - { kind: running, file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx, test: "a failed read of the sanctions says so, never an empty list" }
+      - { kind: running, file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx, test: "tells the house’s refusals apart, and says how each member is held" }
+      - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "an appeal shows the member, how they stand, the verdict whole, the case and the appeal" }
+      - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "another moderator overturns it with a word for the member: the house hears it, and the appeal leaves" }
+      - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "a hearing another moderator gave first leaves the docket, said so" }
+      - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "a failed read of the appeals says so, never an empty docket" }
+      - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "tells the house’s refusals apart, and says what overturning each verdict does" }
+      - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "the hearing sheet asks for the house’s word before it acts, and says what upholding does" }
+      - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "the house’s only moderator reads which appeals wait for another: each card, and the docket above them" }
+      - { kind: running, file: src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx, test: "counts what waits at the door: the cases, and the appeals this moderator may hear (round 14)" }
+      - { kind: running, file: src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx, test: "the member reads their verdict and files their one appeal, each by the verdict" }
+      - { kind: running, file: src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx, test: "a refused appeal is thrown with its word, for the sheet to tell apart" }
+      - { kind: running, file: src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx, test: "the appeals and the sanctions are read a page at a time, from where the last page ended" }
+      - { kind: running, file: src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx, test: "a hearing and a lift name their verdict or member, the outcome and the house’s word" }
+      - { kind: running, file: src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx, test: "reads a page newest first, the next from the last verdict held, and says a refused read" }
+      - { kind: running, file: src/utils/__tests__/sanitizeInput.test.ts, test: "an appeal is kept whole, cleaned as stored words are" }
+      - { kind: running, file: src/utils/__tests__/sanitizeInput.test.ts, test: "an appeal past the rule is cut at it, never inside a character" }
+    fix: "the owner's decision (2026-11-19): each notice of a verdict names it (mod_action_id; the notices already written given theirs once) and opens it whole over the notices board, from its row and from its push (VerdictSheet: what the house did, until when, the reason in full, what it removed); the member appeals each verdict once in their own words, kept as they write (file_appeal, ALREADY_APPEALED for a second, mod_actions_appeal_whole holding it at the table); a moderator other than the one who ruled hears it at the Tribunal's APPEALS (get_pending_appeals, judge_appeal) and the member is told the outcome, an overturn striking the verdict and reading standing again from the verdicts still holding (standing_from_verdicts); an admin lifts a ban or a suspension with a word for the member at SANCTIONS (lift_sanction, get_sanctioned_members; an exile only by its appeal); the hearing writes on the verdict whether it gave the piece back (put_back), and the sheet reads that, never the register the give-back deleted; every verdict is on the member's record in Settings (get_my_verdicts), opened whole and appealed from there and from the banner of a pause, whatever became of its notice; a verdict's notice is true on TestFlight build 41, which opens nothing, by telling the member to open it in the current app; an appeal no moderator may hear yet (the house's only moderator ruled it, or it is about them) is said to wait for another, on the member's sheet and on the docket, what it removed kept whole meanwhile (no_moderator_yet); the overturn tells the author \"you deleted it meanwhile\" of a piece they deleted (rehearsals a_verdict_keeps_its_appeal_rehearsal.sql, a_shorter_sentence_never_cuts_a_longer_one_rehearsal.sql, the_members_under_sanction_are_found_at_once_rehearsal.sql, the_moderators_are_found_at_once_rehearsal.sql, a_verdict_is_read_whole_and_appealed_once_rehearsal.sql, the_appeals_waiting_are_found_at_once_rehearsal.sql, a_removed_piece_waits_for_its_appeal_rehearsal.sql) (mutants shape-verdict-notice-points-nowhere, shape-verdict-row-opens-no-verdict, shape-second-appeal-said-as-a-failure, shape-lift-sent-without-its-word, shape-given-back-read-from-the-register, shape-pause-banner-opens-no-record, shape-appeal-waiting-for-another-unsaid)"
+    places: [none]
+
+  - id: MOD-a-judge-hears-their-own-case
+    title: "A verdict's appeal or its lifting could be decided by the one it concerned: once members could appeal, an admin could hear the appeal of a verdict about themselves, and lift their own ban or suspension and be told they may write again, the verdicts marked lifted though the freeze on their own page put the ban back"
+    seriousness: serious
+    area: moderation
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "review round 14, moderation, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "the moderator who gave the verdict is told they may not hear it, and offered nothing to press" }
+      - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "a moderator is offered no hearing of an appeal of a verdict about themselves, as the house refuses it" }
+      - { kind: running, file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx, test: "an admin under a sanction of their own is offered no lift of it: another admin must, as the house refuses it" }
+    fix: "one rule of who may judge a case: judge_appeal refuses the moderator who ruled (OWN_VERDICT) and the one the verdict is about (OWN_CASE), under the verdict's lock; lift_sanction refuses one's own (OWN_CASE); the Tribunal door counts no appeal its admin may not hear (rehearsals a_shorter_sentence_never_cuts_a_longer_one_rehearsal.sql, a_verdict_is_read_whole_and_appealed_once_rehearsal.sql, a_removed_piece_waits_for_its_appeal_rehearsal.sql); the Tribunal offers neither a hearing nor a lift to the one refused, and says another must (mutants shape-own-verdict-offered-for-hearing, shape-own-case-offered-for-hearing, shape-own-sanction-offered-for-lifting)"
+    places: [none]
+
+  - id: MOD-the-evidence-changed-before-the-verdict
+    title: "The moderator judged what was left of a reported piece, never what was reported: nothing was kept when a report was filed, so an author who edited or deleted the words before the verdict handed over a clean exhibit or \"The evidence has been destroyed\"; a reported picture was kept only as a link its member's next upload deleted; and a piece an earlier verdict withheld read as destroyed"
+    seriousness: behaviour
+    area: moderation
+    status: OPEN
+    count: 3
+    source: { kind: reviewer, ref: "review round 14, moderation, 2026-11-18" }
+    methods:
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a piece edited since it was reported shows the reported words beside what stands now" }
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a piece deleted since it was reported reads destroyed, its reported words beside it" }
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a page reported shows its display name and picture as reported" }
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a picture whose file is gone is said so, never left blank" }
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "a piece an earlier verdict withholds reads withheld, never destroyed" }
+    fix: "submit_report keeps the piece's words as they stand, through the same reading the evidence uses (reported_words), and get_report_evidence reads them beside the piece as it stands now and says whether they changed; the Tribunal shows the words as reported beside what stands now, and beside a piece deleted since, a page's display name and picture and a salon's cover among them; a picture held as evidence is never deleted by its member (avatars_held_as_evidence), and one whose file is gone says so; a piece an earlier verdict withholds reads withheld, awaiting its appeal or while it may be appealed, never destroyed (rehearsals the_reported_words_are_kept_rehearsal.sql, the_tribunal_reads_the_words_as_reported_rehearsal.sql, a_withheld_piece_is_read_by_its_author_alone_rehearsal.sql, a_removed_piece_waits_for_its_appeal_rehearsal.sql) (mutants shape-reported-words-hidden-once-edited, shape-gone-picture-drawn-blank, shape-withheld-evidence-said-destroyed)"
+    places: [none]
+
+  - id: MOD-reported-words-that-cannot-be-removed
+    title: "Words reported on a member's page (bio, display name, picture, links) or a salon (name, description, cover) could never be removed: REMOVE CONTENT was not offered for either and the house refused it, and a ban then froze the member's own page and salon, so a slur in a bio or a salon's name stood for as long as the ban did"
+    seriousness: behaviour
+    area: moderation
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, moderation, 2026-11-18" }
+    methods:
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "is offered on a page, and says it clears the words on it, never the handle" }
+      - { kind: running, file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx, test: "is offered on a salon, and says it clears its name and words, never its rooms" }
+      - { kind: running, file: __tests__/moderationActs.test.ts, test: "is offered for a page and a salon, saying what it takes from each (round 14)" }
+    fix: "REMOVE CONTENT on a page clears the member's words on it (bio, display name, picture and links; the handle stays) and on a salon its name, description and cover (its rooms and the words left in them stay), each kept with the verdict to put back if it is overturned (rehearsal a_shorter_sentence_never_cuts_a_longer_one_rehearsal.sql); the Tribunal offers it for both and says what it takes from each (mutant shape-page-and-salon-offered-no-removal)"
+    places: [none]
+
+  - id: MOD-a-removal-that-cannot-be-undone
+    title: "REMOVE CONTENT deleted a log, a stack, a critique or a filing at once, so an appeal overturned could give back only its words: its critiques, marks, cards and notices were gone with it"
+    seriousness: behaviour
+    area: moderation
+    status: OPEN
+    count: 4
+    source: { kind: reviewer, ref: "review round 14, moderation, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/moderation/__tests__/aWithheldPieceIsMarkedForItsAuthor.test.tsx, test: "the author reads their withheld log marked so: who can read it, until when it is kept, and its verdict a tap away" }
+      - { kind: running, file: src/components/moderation/__tests__/aWithheldPieceIsMarkedForItsAuthor.test.tsx, test: "appealed, the banner says it is kept until the hearing" }
+      - { kind: running, file: src/components/moderation/__tests__/aWithheldPieceIsMarkedForItsAuthor.test.tsx, test: "the page’s own row says it is withheld before the member’s list is read: the mark stands, the verdict waits" }
+      - { kind: running, file: src/components/moderation/__tests__/aWithheldPieceIsMarkedForItsAuthor.test.tsx, test: "a piece that stands carries no mark" }
+      - { kind: running, file: src/components/moderation/__tests__/aWithheldPieceIsMarkedForItsAuthor.test.tsx, test: "a row of the member’s room is stamped, and says so" }
+      - { kind: running, file: src/components/moderation/__tests__/aWithheldPieceIsMarkedForItsAuthor.test.tsx, test: "says each state in plain words" }
+      - { kind: running, file: src/components/moderation/__tests__/aWithheldPieceIsMarkedForItsAuthor.test.tsx, test: "a critique of theirs is marked under its words, its verdict and WITHDRAW each a control of their own" }
+      - { kind: running, file: src/components/moderation/__tests__/aWithheldPieceIsMarkedForItsAuthor.test.tsx, test: "the list outlives a restart: the phone keeps it in its stored cache, and a row read from that store still finds its piece" }
+      - { kind: running, file: src/services/__tests__/aWithheldPieceIsReadWithItsMark.test.ts, test: "the author’s withheld log is read with its mark, so its page says so" }
+      - { kind: running, file: src/services/__tests__/aWithheldPieceIsReadWithItsMark.test.ts, test: "the author’s withheld stack is read with its mark, so its page says so" }
+      - { kind: running, file: src/services/__tests__/aWithheldPieceIsReadWithItsMark.test.ts, test: "the member reads which of their pieces are withheld, by which verdict, until when" }
+      - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "a removal withheld for its hearing is given back whole if overturned, and deleted if upheld: each sheet says which" }
+      - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "a piece removed is said withheld, not deleted: seen by its author alone, kept whole until the appeal window ends or the appeal is heard" }
+      - { kind: running, file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts, test: "heard live: a card taken down and made again by the house is drawn as the house now holds it" }
+    fix: "REMOVE CONTENT on a log, a stack, a critique or a filing withholds it (withheld_pieces, withheld_at): read by its author and the Tribunal alone, its critiques, films, marks, cards and notices out of every reader, count, list and search; kept whole for 30 days, or until an appeal filed within them is heard; upheld or unappealed, deleted as before (expire_withheld_pieces, hourly, each piece's deadline asked again under its own lock, so an appeal filed at the deadline keeps it); overturned, everything returns as it was; withholding turns its salon cards gone as a sealed stack's are, live on every open phone, and giving it back makes them again, and no new card of it is written; the undo settles every withheld piece as the old REMOVE CONTENT did before it drops the register (rehearsals a_removed_piece_is_kept_whole_rehearsal.sql, a_withheld_piece_is_read_by_its_author_alone_rehearsal.sql, a_removed_piece_waits_for_its_appeal_rehearsal.sql); the author reads each withheld piece marked so on its page, its rows and its critiques, from its own row before their list of withheld pieces is read, its verdict a tap away; a card the house makes again is taken live (mutants shape-withheld-page-unmarked-until-its-list-reads, shape-withheld-log-read-without-its-mark, shape-card-made-again-heard-as-it-was)"
+    places: [none]
+
+  - id: COPY-a-slur-shown-to-a-member-who-hid-them
+    title: "\"Hide slurs\" left slurs whole where another member's words were shown away from their own page: a stack's title on the Reel's shelf, and a ballot's title or a salon's name inside a notice, drawn and spoken"
+    seriousness: behaviour
+    area: moderation
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, moderation, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/reels/__tests__/aStackTitleIsStruckOnTheShelf.test.tsx, test: "a member who hides slurs reads the title struck on the shelf, and hears it struck" }
+      - { kind: running, file: src/components/reels/__tests__/aStackTitleIsStruckOnTheShelf.test.tsx, test: "a member who did not ask reads the title as written" }
+      - { kind: running, file: app/(modals)/__tests__/aVerdictsNoticeOpensItWhole.test.tsx, test: "another member’s words in a notice are struck for a member who hides slurs, and said struck" }
+    fix: "the shelf's stack title and every notice's words, single and grouped, are drawn through useStruck and spoken through saidStruck, as the stack's own page and the salon are (mutants shape-shelf-title-unstruck, shape-notice-words-unstruck)"
+    places: [none]
+
+  - id: TEXT-words-cut-where-they-are-read-whole
+    title: "A member's own words were cut short in the one place they are read whole: a salon's name and its description of up to 300 characters (cut on its cards, in ALL SALONS, in the room's header and in its settings sheet, whole only at the door of a room the reader could not enter), a stack's title on its own page past the default text size (cut after four or six lines, no other place showing it whole), and a bio written one line to an item (four lines of eight); and the layout check took every clamp for a design, wherever it stood"
+    seriousness: layout
+    area: type
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, extreme content, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/lounge/__tests__/aSalonsNameAndWordsAreReadWhole.test.tsx, test: "a description written right to left is set right to left, by its first strong letter" }
+      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "opens the sheet that reads the name and the description whole, named for what it is" }
+      - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a long title is set smaller, and drawn whole rather than cut" }
+      - { kind: static, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "sets a long title smaller rather than cutting it" }
+      - { kind: running, file: src/components/stack/__tests__/aStackTitleIsDrawnWhole.test.ts, test: "a title that fills four lines at 30pt keeps 30pt: a larger text size never sets it smaller" }
+      - { kind: running, file: src/components/stack/__tests__/aStackTitleIsDrawnWhole.test.ts, test: "a short title is set large, and a long one at 24pt, never smaller" }
+      - { kind: running, file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "a bio written one line to an item is drawn whole: all eight lines, none cut" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a listed member’s words cut by a clamp are a fault, not a design (wholecut)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a listed one-line text whose words run past a line break is cut there (wholebroken)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same words drawn whole are clean, and an unlisted clamp is still the design (wholekept)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "an entry no page drew fails the run as unmeasured (whole-unmeasured)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same entry, drawn, is measured and clean (whole-measured)" }
+    fix: "the salon's settings sheet, open to every reader of the room, draws the name whole beside its X and the description whole above the roster, set right to left by its first strong letter (the each-standing test in aSalonsNameAndWordsAreReadWhole reads both uncut), and the room's header name opens that sheet, said 'About <name>'; a stack's title is set at 30pt or 24pt from Rye's own widths at the default size (stackTitleType.ts) and drawn whole at the member's size, never smaller for a larger text size; the bio is drawn whole (160 characters, its breaks kept); mockups/shown-whole.txt lists the four texts that are the one place their words are read whole, and layout.cjs --whole reports any of them cut (WHOLE) and any entry no page drew (UNMEASURED), run in CI's 'Every word fits' step on every drawn screen, with zz-sheets.gen drawing the settings sheet at the 60 and 300 maximums (its self-test's cases wholecut, wholebroken, wholekept, whole-unmeasured and whole-measured, each a test of its own in theMeasuringRulesSayNo) (mutants shape-salon-description-cut-at-two, shape-salon-name-in-the-header-opens-nothing, shape-stack-title-cut-at-its-lines, shape-stack-title-stepped-at-the-largest-size, shape-bio-cut-at-a-count-of-characters, shape-whole-judged-only-when-shorts-asked, shape-unmeasured-said-but-passed)"
+    places: [none]
+
+  - id: TOOL-a-drawing-measured-unlike-the-phone
+    title: "The drawings the layout check measures were not what the phone shows: a Text's line breaks and runs of spaces folded as HTML folds them (a bio of eight one-item lines measured as two, the lines its clamp hid unseen), a one-line Text drawn past a break the phone stops at, every entrance (Arrive, an ignition, a Presence) drawn at its first frame and skipped as invisible (the salon's settings sheet: 5 texts, 5 invisible), and a space hanging at a line's end read as words past the edge"
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, the fixes' review, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "keeps both, in a wrapping Text and a clamped one, wrapping a space at a line end" }
+      - { kind: running, file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "a one-line Text shows its first line alone, and is marked cut, as the phone shows it" }
+      - { kind: running, file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "a one-line Text with no break is whole, and not marked" }
+      - { kind: running, file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "a break inside a nested Text cuts there, and drops what follows it" }
+      - { kind: running, file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "reads the style again: an Arrive at rest, not at its first frame" }
+      - { kind: running, file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "a view hidden at rest reads hidden still (the culled projector beam)" }
+      - { kind: running, file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "a plain style, or a reading that fails, is drawn as given" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a view at opacity 0 is not drawn (hiddenatrest)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the culled projector beam, moved 3000pt up at opacity 0, is not drawn (culledbeam)" }
+    fix: "zz-render draws a Text's breaks and spaces as React Native does (white-space break-spaces, a space at a line's end wrapping), and a one-line Text up to its first break, marked cut (data-break-hidden, which layout.cjs reports as lines after a break hidden); a capture keeps each animated style's own reading (jest.setup.ts useAnimatedStyle, `__now`, under MOCKUPS_CAPTURE alone) and zz-render reads it again as the test ends, so an entrance is drawn at rest and a view hidden at rest stays hidden, where a guess from a style's shape revealed the culled projector beam and missed every ignition (its self-test's cases hiddenatrest and culledbeam, each a test of its own in theMeasuringRulesSayNo); layout.cjs measures a text past its box by its words' own boxes, never a space's (mutants shape-render-folds-line-breaks, shape-render-one-line-past-its-break, shape-render-entrance-at-its-first-frame)"
+    places: [none]
+
+  - id: TIME-a-day-placed-on-another-calendar
+    title: "A member's day placed on another calendar than their own: a film watched on 1 January showed the year before on the film's page for every member west of UTC (its calendar date read as midnight UTC, its year taken on the member's clock), and the rooms filed a log with no watched date under the UTC day it was made, so a New Year's Eve evening's log stood under January"
+    seriousness: behaviour
+    area: film
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, extreme content, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/film/__tests__/aViewingOnNewYearsDayKeepsItsYear.test.ts, test: "a viewing on New Year’s Day this year reads as its day, not as last year" }
+      - { kind: running, file: src/components/film/__tests__/aViewingOnNewYearsDayKeepsItsYear.test.ts, test: "a viewing on New Year’s Day of another year reads as that year" }
+      - { kind: running, file: src/components/film/__tests__/aViewingOnNewYearsDayKeepsItsYear.test.ts, test: "a viewing on New Year’s Eve reads as the year it ended" }
+      - { kind: running, file: src/components/film/__tests__/aViewingOnNewYearsDayKeepsItsYear.test.ts, test: "no date, or one that names no day, prints nothing" }
+      - { kind: static, file: src/components/film/__tests__/stubFits.test.ts, test: "and it is the CALLER that keeps it short" }
+      - { kind: running, file: src/components/profile/__tests__/aLogIsFiledUnderTheMonthItWasMade.test.ts, test: "a log with no watched date, made on New Year’s Eve evening, stays in December" }
+      - { kind: running, file: src/components/profile/__tests__/aLogIsFiledUnderTheMonthItWasMade.test.ts, test: "a watched date is its own calendar day, whatever the zone" }
+      - { kind: running, file: src/components/profile/__tests__/aLogIsFiledUnderTheMonthItWasMade.test.ts, test: "another key is read the same way, and nothing readable stands under January 1970" }
+    fix: "the stub's date is made in watchedLabel.ts from the calendar date's own parts (dateParts), its year compared with the member's clock's, and the film page hands the stub nothing else; the rooms' months come from one groupByMonth (profileComputed.ts), a watched date its own calendar day and a moment read on the member's clock; both tests run in six zones (npm run test:tz). The mutant runner reads its host's zone alone, where neither defect shows east of UTC, so each mutant puts back a read that fails in any zone: the film page's own year read from a Date, and a log's month read from its making before its watched date (mutants shape-watched-year-read-from-a-date, shape-month-read-from-the-logging-moment)"
+    places: [none]
+
+  - id: COPY-another-years-day-said-as-this-years
+    title: "A day of another year printed without its year, read as this year's: a salon scrolled back to last November said NOVEMBER 12 over its messages, an essay filed then '7 MIN · NOV 12' on its byline and its share card, and the Dispatch's dividers WEDNESDAY, NOVEMBER 12, a weekday wrong for this year's 12th"
+    seriousness: behaviour
+    area: dispatch
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, extreme content, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/utils/__tests__/calendarDates.test.ts, test: "this year: the month and day alone" }
+      - { kind: running, file: src/utils/__tests__/calendarDates.test.ts, test: "another year, before or after: the year said" }
+      - { kind: running, file: src/utils/__tests__/calendarDates.test.ts, test: "a calendar date keeps its own day and year, in every zone" }
+      - { kind: running, file: src/utils/__tests__/calendarDates.test.ts, test: "the year turns with the clock: 30 December says its year on 2 January" }
+      - { kind: running, file: src/utils/__tests__/aDayOfAnotherYearSaysItsYear.test.ts, test: "scrolled back to last November, the divider says the year" }
+      - { kind: running, file: src/utils/__tests__/aDayOfAnotherYearSaysItsYear.test.ts, test: "this year’s days, today and yesterday, as they were" }
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "an essay filed in another year says its year in the byline and on the card; this year’s does not" }
+      - { kind: running, file: src/components/dispatch/__tests__/dayLabel.test.ts, test: "a day of another year carries its year (round 14): last November is not this one" }
+      - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "a filing of another year is divided under its day and its year, on the paper and the saved page" }
+      - { kind: static, file: src/hooks/__tests__/everyDrawnTimeReadsTheClock.guard.test.ts, test: "reads the time where a screen is drawn only where the register says, as many times as it says" }
+    fix: "formatDateMonthDayInYear (timeAgo.ts) adds the year to a day of any year but the reader's, comparing an instant's local parts or a calendar date's own with the clock's year; the salon's divider and the essay's byline read it through useClock, so the year appears as the year turns, and the share card, read outside the house in any year after, always carries its year (formatDate); dayLabel takes this year, which the Dispatch reads from its own day (useToday, at noon) where it draws, never a new Date() off the clock (mutants shape-another-year-said-without-its-year, shape-salon-divider-without-its-year, shape-essay-byline-without-its-year, shape-essay-card-without-its-year, shape-feed-day-without-its-year, shape-feed-year-read-off-the-clock)"
+    places: [none]
+
+  - id: COPY-a-sum-written-as-no-ledger-writes-it
+    title: "A film's budget or takings written as no ledger writes them: a sum under $50,000 printed BUDGET $0.0M (the silent pictures and shorts the house's members log), a sum just under a billion $1000.0M, and TMDB's 1 or 100 (a figure entered in millions) printed as a sum"
+    seriousness: behaviour
+    area: film
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, extreme content, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/film/__tests__/filmDossier.test.tsx, test: "writes a silent picture’s small budget whole, never $0.0M" }
+      - { kind: running, file: src/components/film/__tests__/filmDossier.test.tsx, test: "a sum just under a billion is a billion, never $1000.0M" }
+      - { kind: running, file: src/components/film/__tests__/filmDossier.test.tsx, test: "prints no row for TMDB’s figure entered in millions (1, 100)" }
+    fix: "formatMoney writes a sum under a million whole ($18,000), one that rounds to a thousand millions in billions ($1.00B), and prints no row under $1,000, for NaN or for a negative (mutants shape-small-budget-in-millions, shape-billion-in-millions, shape-figure-in-millions-printed)"
+    places: [none]
+
+  - id: A11Y-films-of-one-title-said-alike
+    title: "Adding a film to a stack, a screen reader heard only its title, so three films of one title (Nosferatu: 1922, 1979, 2024) were said alike, though the row printed each year; and a film TMDB dates with \"\" printed nothing where its year stands"
+    seriousness: behaviour
+    area: search
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, extreme content, 2026-11-18" }
+    methods:
+      - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "three films of one title are told apart by ear: each is said with its year" }
+      - { kind: running, file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "a film TMDB gives no date (\"\") prints the dash and is said without a year" }
+    fix: "the stack sheet's HOLDINGS row is said with the year it prints, as the Log search says it, and TMDB's empty date is no year, printed as the dash (mutants shape-twin-films-said-alike, shape-no-date-printed-blank)"
+    places: [none]
+
+  - id: LAYOUT-words-stood-where-no-scroll-reaches
+    title: "Words stood off the screen where no scroll brings them: Share to Lounge, its message typed, rose whole past the status bar on a short phone (its title and X under the clock, or above the glass with its SHARING line on a 360x640 Android), and the Dispatch's kind picker at a large text size on a 320pt phone stood its head and TAKE above the top; the layout check looked for words off the screen only sideways"
+    seriousness: layout
+    area: lounge
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, device shapes, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/__tests__/theShareSheetStaysBelowTheStatusBar.test.tsx, test: "the sheet stops below the status bar, with the keys up as with them down" }
+      - { kind: running, file: src/components/__tests__/theShareSheetStaysBelowTheStatusBar.test.tsx, test: "the card gives up room from its body, never its title and X" }
+      - { kind: running, file: src/components/__tests__/theShareSheetStaysBelowTheStatusBar.test.tsx, test: "typing the message, the body keeps the message and SHARE in view as the keys rise" }
+      - { kind: running, file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "the picker scrolls when it outgrows the screen: its head and TAKE are never above the top" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a sheet at the foot taller than the screen, nothing in it scrolling, has its title above the top (riseoff)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a card laid from its top on a screen-sized page runs past the home indicator’s edge (cardfoot)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "words drawn over the status bar inside a Modal sit under the clock (underclock)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "words past the home indicator’s edge inside a Modal are off the screen (modalfoot)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a page’s own top, which may be an iOS sheet’s below the clock, is not judged under it (sheetpage)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a board marked a plate is laid out past the foot by design (plateboard)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a page drawn taller than the phone is a generator’s plate: its foot is not the screen’s (tallplate)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "words far down a scroll are reached by scrolling, never off the screen (scrolllong)" }
+    fix: "the share sheet's overlay stops below the status bar (overlayTop, as CreateLoungeSheet's), its card shrinks to the room above the keys and its body scrolls with the header outside it, and while the message is typed the body keeps the message and SHARE TO LOUNGE in view; the kind picker is kept to the foot in a scroll from the modal's top, as the paper's plates now draw it, and the room's transcript plates too; layout.cjs OFF judges up and down what no scroll reaches (a text's reach is its outermost scroll view, or itself), against the safe area's floors read from navMetrics (STATUS_BAR_FLOOR, HOME_INDICATOR_FLOOR): over the clock inside a Modal's layer, past the home indicator inside a Modal and on a page drawn at the phone's height, never on a taller plate or one marked data-plate (its self-test's cases riseoff, cardfoot, underclock, sheetpage, plateboard, modalfoot, tallplate and scrolllong, each a test of its own in theMeasuringRulesSayNo); the stack page's test list is drawn a scroll view, as the list is; zz-sheets.gen draws the share sheet with the keys up at every width and size (mutants shape-share-sheet-past-the-status-bar, shape-share-card-never-gives-way, shape-share-message-left-under-the-keys, shape-picker-stands-above-the-top, shape-off-reach-held-to-the-glass, shape-off-foot-judged-in-a-modal-alone, shape-off-judged-from-the-bare-glass)"
+    places: [none]
+
+  - id: LAYOUT-the-keys-taken-from-a-sheets-room
+    title: "A sheet with the keys up lost its room: the report sheet kept its fixed height and took the keyboard's height out of its form, leaving 65-95pt on a short window for an 80pt details field, its counter, the block switch and FILE REPORT; and the share and report sheets kept their home-indicator foot above iOS's keys, which cover the indicator, 34pt of the tightest room left empty"
+    seriousness: layout
+    area: moderation
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, device shapes, 2026-11-18" }
+    methods:
+      - { kind: running, file: src/components/moderation/__tests__/ReportSheet.test.tsx, test: "the keys lift the whole sheet, which keeps its height and stops below the status bar" }
+      - { kind: running, file: src/components/moderation/__tests__/ReportSheet.test.tsx, test: "typing the details where the room is short, the field is kept in view" }
+      - { kind: running, file: src/hooks/__tests__/aSheetFootGivesWayToTheKeys.test.tsx, test: "keeps the foot while the keys are down" }
+      - { kind: running, file: src/hooks/__tests__/aSheetFootGivesWayToTheKeys.test.tsx, test: "gives the foot to the words while the keys cover the indicator: the gap alone" }
+      - { kind: running, file: src/hooks/__tests__/aSheetFootGivesWayToTheKeys.test.tsx, test: "eases as the keys rise, never under the gap" }
+      - { kind: running, file: src/hooks/__tests__/aSheetFootGivesWayToTheKeys.test.tsx, test: "keeps the foot: the keyboard height there leaves the navigation bar out" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a field taller than its scroll can never be seen whole (fieldcramped)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a field its scroll has room for is whole at some position (fieldroomy)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a page-sized editor is the page, read by scrolling (fieldpage)" }
+    fix: "the report sheet stands at the foot of a frame that runs from below the status bar to the window's foot, the keys padding the frame: it rises whole at its own height and gives way only where the room above the keys is shorter, and its form scrolls the details field into view while it is typed; useSheetFootWhileTyping gives a sheet's home-indicator foot to its words on iOS as the keys rise (the sheet's own gap stays), Android keeping it for the navigation bar React Native's keyboard height leaves out; layout.cjs reports a field taller than the scroll view it stands in (CUT), an editor set at half the screen or more excepted (its self-test's cases fieldcramped, fieldroomy and fieldpage, each a test of its own in theMeasuringRulesSayNo), and zz-sheets.gen draws the report sheet with the keys up at every width (mutants shape-report-keys-padded-into-the-sheet, shape-report-details-left-out-of-view, shape-sheet-foot-kept-under-the-keys, shape-field-measured-against-its-content)"
+    places: [none]
+
+  - id: LAYOUT-a-story-short-of-its-window
+    title: "Year in Cinema's slides were the window less both insets, laid from the top: on a phone with a notch and a home indicator each slide's gradient, vignette and sprocket strips stopped in a hard edge 93pt above the foot, its paginator floated 143pt up, and its footer counted the home indicator twice"
+    seriousness: layout
+    area: profile
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, device shapes, 2026-11-18" }
+    methods:
+      - { kind: running, file: app/__tests__/yourYearFillsItsWindow.test.tsx, test: "each slide is the whole height the pager is laid at, its words below the status bar" }
+    fix: "each slide is the pager's own laid height (the window's until it measures itself), its words below the status bar by its top padding (useTopBarPadding), and its footer alone clears the home indicator; safeAreaHeight, read nowhere else, is gone (mutant shape-year-slide-short-of-its-window)"
+    places: [none]
+
+  - id: LAYOUT-a-pager-left-between-its-pages
+    title: "A paging scroll whose window changed width mid-story (a foldable unfolded or folded, an iPad window resized) was left between its pages: Year in Cinema's slides were laid again at the new width while the offset stayed, and the member saw an empty frame, the slide in view never drawn"
+    seriousness: layout
+    area: profile
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "review round 14, device shapes, 2026-11-18" }
+    methods:
+      - { kind: running, file: app/__tests__/yourYearFillsItsWindow.test.tsx, test: "a window that changes width puts the pager back on the slide it was on" }
+    fix: "the pager keeps the page it settled on and, once its pages have their new size (onContentSizeChange, never before: a scroll asked of the old size is cut short), is put back on it at the new width (mutant shape-year-pager-left-between-pages)"
     places: [none]

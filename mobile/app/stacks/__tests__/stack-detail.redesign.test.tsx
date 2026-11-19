@@ -140,13 +140,15 @@ jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: j
 jest.mock('@/src/lib/tmdb', () => ({ tmdb: { poster: (p: string | null, size: string) => (p ? `https://img/${size}${p}` : undefined) } }));
 jest.mock('@/src/components/layout/CinematicFlashList', () => {
   const React = require('react');
-  const { View } = require('react-native');
+  // A scroll view, as the list is one: drawn for measuring (MOCKUPS_CAPTURE), a plain View let the
+  // page's foot run past the screen with nothing to scroll it.
+  const { ScrollView } = require('react-native');
   const render = (c: React.ReactNode) => (typeof c === 'function' ? React.createElement(c as never) : c);
   return { CinematicFlashList: ({ ListHeaderComponent, ListEmptyComponent, data, renderItem, refreshControl, onEndReached }: {
     ListHeaderComponent?: React.ReactNode; ListEmptyComponent?: React.ReactNode;
     data?: unknown[]; renderItem?: (a: { item: unknown; index: number }) => React.ReactNode;
     refreshControl?: unknown; onEndReached?: () => Promise<void>;
-  }) => (mockRefresh = refreshControl as never, mockEndReached = onEndReached ?? null, React.createElement(View, null,
+  }) => (mockRefresh = refreshControl as never, mockEndReached = onEndReached ?? null, React.createElement(ScrollView, null,
     render(ListHeaderComponent),
     // Every row rendered, so the index is tested as drawn.
     ...(data ?? []).map((item, index) =>
@@ -280,9 +282,11 @@ describe('the hero', () => {
   });
 
   it('sets a long title smaller rather than cutting it', () => {
-    // Steps from the measured width, for the 100 characters a title may hold.
-    expect(SOURCE).toMatch(/capacity\(30, 4\)/);
-    expect(SOURCE).toMatch(/fontSize: 24, lineHeight: 28, numberOfLines: 6/);
+    // Steps measured at the default size (stackTitleType), and the title drawn whole at
+    // either: no line count cuts it at a larger text size (round 14).
+    expect(SOURCE).toMatch(/stackTitleType\(struckTitle, windowWidth - 36\)/);
+    const title = SOURCE.slice(SOURCE.indexOf('style={[s.title'), SOURCE.indexOf('{struckTitle}'));
+    expect(title).not.toMatch(/numberOfLines/);
     // and never shrink-to-fit, which disagrees across platforms
     expect(SOURCE.slice(SOURCE.indexOf('style={[s.title'), SOURCE.indexOf('</Animated.Text>')))
       .not.toMatch(/adjustsFontSizeToFit/);
@@ -686,12 +690,13 @@ describe('the states a real stack arrives in', () => {
     return { fontSize: flat.fontSize as number, lines: node.props.numberOfLines as number };
   };
 
-  it('a long title is set smaller, and given more room, rather than cut', async () => {
+  it('a long title is set smaller, and drawn whole rather than cut', async () => {
     // A RELATION, not a number: the steps depend on the screen's width.
     const short = await titleSetting('Noir');
     const long = await titleSetting(LONG_TITLE);
     expect(long.fontSize).toBeLessThan(short.fontSize);
-    expect(long.lines).toBeGreaterThan(short.lines);
+    // No line count at either step: at a larger text size a capped title ended in "…" (round 14).
+    expect([short.lines, long.lines]).toEqual([undefined, undefined]);
   });
 
   it('a short title keeps the full display size', async () => {
@@ -1257,6 +1262,18 @@ describe('the critiques as they stand, sent or waiting', () => {
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'Said from the corner.'); });
     await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
     expect(mockToastError.mock.calls).toEqual([['Your account has been silenced by The Society.']]);
+  });
+
+  it('asked by the house to wait, it says how long and keeps the words in the box, never kept for later (round 14)', async () => {
+    mockToastError.mockClear();
+    mockEnqueue.mockClear();
+    mockAddComment.mockRejectedValue({ code: 'RH429', message: 'RATE_LIMITED', details: 'member', hint: '20' });
+    const r = await open();
+    await act(async () => { await fireEvent.changeText(r.getByLabelText('Stack critique'), 'One more thought.'); });
+    await act(async () => { await fireEvent.press(r.getByLabelText('Submit critique')); });
+    expect(mockToastError.mock.calls).toEqual([['You are filing critiques faster than the house takes them. Send it again in 20 seconds.']]);
+    expect(r.getByLabelText('Stack critique').props.value).toBe('One more thought.');
+    expect(mockEnqueue).not.toHaveBeenCalled();
   });
 
   it('a send that timed out is kept for later, not thrown away as refused', async () => {

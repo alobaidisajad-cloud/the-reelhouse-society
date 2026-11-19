@@ -125,7 +125,6 @@
     "mobile/app/person/__tests__/thePersonFileReadsTrue.test.tsx": 2,
     "mobile/app/stacks/__tests__/stack-detail.redesign.test.tsx": 7,
     "mobile/app/stacks/__tests__/stack-detail.telemetry.test.tsx": 2,
-    "mobile/app/user/[username].tsx": 2,
     "mobile/e2e/__tests__/appCrashes.test.ts": 1,
     "mobile/e2e/__tests__/flowScreens.test.ts": 31,
     "mobile/e2e/__tests__/keyboardRoom.test.ts": 7,

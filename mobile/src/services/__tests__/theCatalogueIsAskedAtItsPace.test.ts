@@ -131,6 +131,6 @@ describe('the proxy itself', () => {
 
   it('tells a caller it refused when to ask again, and lets a website read it', () => {
     expect(PROXY).toMatch(/429, \{ 'Retry-After': String\(verdict\.retryAfter\) \}/);
-    expect(PROXY).toMatch(/'Access-Control-Expose-Headers': 'Retry-After'/);
+    expect(PROXY).toMatch(/'Access-Control-Expose-Headers': 'Retry-After[,']/);
   });
 });

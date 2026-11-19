@@ -6,6 +6,7 @@ import { formatCount, UNSPOKEN } from '@/src/components/dispatch/paper/paperMetr
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { colors, fonts } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
+import { counted } from '@/src/utils/counted';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import { ChevronDown } from 'lucide-react-native';
 import React, { RefObject, useMemo, useState } from 'react';
@@ -126,7 +127,7 @@ export default function LogComments({
                 hitSlop={HITSLOP}
                 pressedScale={0.97}
                 haptic="selection"
-                accessibilityLabel={loadingOlder ? 'Reading earlier critiques' : `Show ${hidden} more critiques`}
+                accessibilityLabel={loadingOlder ? 'Reading earlier critiques' : `Show ${counted(hidden, 'more critique', 'more critiques')}`}
               >
                 <Text style={st.moreText}>{loadingOlder ? 'READING EARLIER CRITIQUES…' : `SHOW MORE CRITIQUES · ${hidden} MORE`}</Text>
                 <ChevronDown size={12} color={colors.sepia} strokeWidth={2} />

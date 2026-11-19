@@ -15,6 +15,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { resolveTmdbUrl } from "./paths.js"
 import { rateRule } from "./rate.js"
+import { callerAddress, paceKey } from "../_shared/callerAddress.js"
 
 const TMDB_API_KEY = Deno.env.get('TMDB_API_KEY') || ''
 // Where the checked path is fetched: TMDB itself, unless the settings name the sealed world's stand-in.
@@ -26,8 +27,8 @@ const TMDB_LIMIT_MS = 10_000
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    // So the website can read how long to wait after a 429.
-    'Access-Control-Expose-Headers': 'Retry-After',
+    // So the website can read how long to wait after a 429, and which address the pace read.
+    'Access-Control-Expose-Headers': 'Retry-After, x-rh-caller-source',
 }
 
 const json = (body: unknown, status: number, extra: Record<string, string> = {}) =>
@@ -76,12 +77,20 @@ async function callerPath(req: Request): Promise<string> {
     return path + url.search;
 }
 
+// Every answer says which headers the address could be read from (cf, xff or none), never the
+// address: the first call after a deploy shows whether the pace by address is on.
 serve(async (req) => {
+    const caller = callerAddress(req.headers)
+    const answered = await answer(req, paceKey(caller.address))
+    answered.headers.set('x-rh-caller-source', caller.source)
+    return answered
+})
+
+/** The proxy's answer; `door` is the vouched address's pace key (IPv6 by its /64), or null. */
+async function answer(req: Request, door: string | null): Promise<Response> {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
-
-    const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
 
     try {
         const target = resolveTmdbUrl(await callerPath(req));
@@ -92,8 +101,10 @@ serve(async (req) => {
         const cached = getCached(cacheKey);
         if (cached) return json(cached.data, cached.status, { 'X-Cache': 'HIT' });
 
-        // Only a question TMDB must answer is counted: the cache above costs it nothing.
-        const verdict = admit({ address: ip, now: Date.now() });
+        // Only a question TMDB must answer is counted: the cache above costs it nothing. Counted by
+        // the address the platform vouches for, never the first X-Forwarded-For entry, which the
+        // caller writes; with none vouched, by no address (never one pace the whole house shares).
+        const verdict = door ? admit({ address: door, now: Date.now() }) : { ok: true, retryAfter: 0 };
         if (!verdict.ok) return json({ error: 'Rate limit exceeded' }, 429, { 'Retry-After': String(verdict.retryAfter) });
 
         // Moved after the check: the path is still the one paths.js allowed.
@@ -122,4 +133,4 @@ serve(async (req) => {
         console.error('tmdb-proxy error:', err instanceof Error ? err.name : 'unknown');
         return json({ error: 'Internal Server Error' }, 500);
     }
-})
+}

@@ -21,7 +21,7 @@ import reelToast from '../utils/reelToast';
 import { isRetryable, withRetry } from '../utils/withRetry';
 import { hydrateFollowing } from './domain/socialSlice';
 import { storage, setSensitive } from './mmkv-storage';
-import { BAD_CREDENTIALS, isAddress, authLink } from '../utils/authSignals';
+import { BAD_CREDENTIALS, isAddress, authLink, handleResting, doorFor, keepDoor } from '../utils/authSignals';
 import { e2eTrace } from '../utils/e2eTrace';
 import { raceDeadline } from '../utils/raceDeadline';
 import { profileRead } from '../utils/profileRead';
@@ -69,11 +69,21 @@ const _prefBaselines = new Map<string, Record<string, unknown>>();
 
 
 /** A failed username sign-in, in the words mapAuthError reads: the cause, never a guess. */
-function usernameRefusal(error: unknown): Error {
-  const e = error as { name?: string; context?: { status?: number } } | null;
+async function usernameRefusal(error: unknown): Promise<Error> {
+  const e = error as { name?: string; context?: { status?: number; json?: () => Promise<unknown> } } | null;
   if (e?.name === 'FunctionsFetchError') return new Error('network request failed');
   if (e?.name === 'FunctionsHttpError' && e.context?.status === 401) return new Error(BAD_CREDENTIALS);
-  if (e?.name === 'FunctionsHttpError' && e.context?.status === 429) return new Error('Too many requests');
+  if (e?.name === 'FunctionsHttpError' && e.context?.status === 429) {
+    // The house holding this handle back says so, with the seconds left and from where: this
+    // connection's own wrong passwords (here), or the handle tried from many places (elsewhere).
+    // Any other 429 is this caller's own pace.
+    const said = typeof e.context.json === 'function' ? await e.context.json().catch(() => null) : null;
+    const rest = said as { paused?: unknown; from?: unknown; retry_after?: unknown } | null;
+    if (rest?.paused === 'handle' && typeof rest.retry_after === 'number' && rest.retry_after > 0) {
+      return new Error(handleResting(rest.retry_after, rest.from === 'here' ? 'here' : 'elsewhere'));
+    }
+    return new Error('Too many requests');
+  }
   return new Error('Sign-in service unavailable');
 }
 
@@ -502,21 +512,26 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (!isAddress(identifier)) {
       // By username, entirely server-side: the function never reveals the email or
       // whether the account exists (one refusal for every wrong handle or password).
+      // The key the house handed this phone at an earlier sign-in by this handle, if it holds one: a
+      // phone the member signed in on before is never slowed by attempts on the handle elsewhere.
+      const door = doorFor(identifier, (k) => storage.getString(k));
       const { data: fnData, error: fnError } = await supabase.functions.invoke('sign-in-with-username', {
-        body: { username: identifier.replace(/^@/, ''), password },
+        body: { username: identifier.replace(/^@/, ''), password, ...(door ? { device: door } : {}) },
       });
       if (fnError) {
         if (!isNetworkError(fnError)) captureAuthRefusal('sign_in');
-        throw usernameRefusal(fnError);
+        throw await usernameRefusal(fnError);
       }
-      if (!fnData?.access_token || !fnData?.refresh_token) throw usernameRefusal(null);
+      if (!fnData?.access_token || !fnData?.refresh_token) throw await usernameRefusal(null);
       const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
         access_token: fnData.access_token,
         refresh_token: fnData.refresh_token,
       });
       if (sessionError) throw sessionError;
-      if (!sessionData.user) throw usernameRefusal(null);
+      if (!sessionData.user) throw await usernameRefusal(null);
       authedUser = sessionData.user;
+      // Kept for the next sign-in by this handle on this phone (encrypted storage only).
+      keepDoor(identifier, fnData.device, (k) => storage.getString(k), setSensitive);
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email: identifier, password });
       if (error) {

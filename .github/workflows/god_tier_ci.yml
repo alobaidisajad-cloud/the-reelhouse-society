@@ -190,7 +190,68 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
+
+      # The measuring tools' own tests (mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts) prove
+      # layout.cjs's mutants: they run its self-test, which draws in the root's Playwright and Chromium.
+      - name: Install Root (Web) Dependencies
+        id: install-21
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npm ci
+      - name: Install Root (Web) Dependencies, once more
+        if: steps.install-21.outcome == 'failure'
+        timeout-minutes: 5
+        run: npm ci
+      # Its system packages kept between runs: on a slow Ubuntu mirror their 26 MB outlived a
+      # five-minute try (God-Tier 39774848287), and apt-get update alone another (39806861456), so
+      # the kept ones go in by dpkg (mobile/scripts/kept-debs.sh) and apt runs only when they cannot.
+      - name: The runner's image, which the kept packages are keyed by
+        id: image-22
+        run: echo "version=$ImageVersion" >> "$GITHUB_OUTPUT"
+      - name: Chromium for the measuring tools — its system packages, from the cache
+        id: debs-install-22
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-${{ steps.image-22.outputs.version }}-playwright-chromium
+      - name: Chromium for the measuring tools
+        id: install-22
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
+      - name: Chromium for the measuring tools, once more
+        if: steps.install-22.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
+      - name: Chromium for the measuring tools — its system packages, kept in the cache
+        if: steps.debs-install-22.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-${{ steps.image-22.outputs.version }}-playwright-chromium
 
       - name: Install Mobile Dependencies
         id: install-mutants
@@ -600,8 +661,10 @@ jobs:
         working-directory: ./mobile
         run: |
           set +e
+          # --whole: a member's words in the one place they are read whole are never cut there, and
+          # each place listed is drawn by some generator (an entry no page measured fails the run).
           node mockups/tools/layout.cjs --src mockups/out/ci --width ${{ matrix.width }} \
-            --allow-short mockups/shortened-on-purpose.txt > layout.txt 2>&1
+            --allow-short mockups/shortened-on-purpose.txt --whole mockups/shown-whole.txt > layout.txt 2>&1
           rc=$?
           # every member's name made fifteen letters long, and shown whole wherever it is
           node mockups/tools/layout.cjs --src mockups/out/ci --width ${{ matrix.width }} --kinds NAME \

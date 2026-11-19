@@ -115,12 +115,14 @@ export const allows = (rule, actor) => {
 
 /**
  * May this actor see the target's row, by the table's read rule? target: self, V, P, BK, BY or
- * house. A table that hides the words of a block hides BK's and BY's rows from every member.
+ * house. A table that hides the words of a block hides BK's and BY's rows from every member; one
+ * that hides those who blocked the reader hides BY's from every member but an admin (round 14).
  */
-export const sees = (read, actor, target, hidesBlocked = false) => {
+export const sees = (read, actor, target, hidesBlocked = false, hidesBlockers = false) => {
   const member = actor !== 'visitor';
   const mine = target === 'self';
   if (hidesBlocked && member && (target === 'BK' || target === 'BY')) return false;
+  if (hidesBlockers && member && actor !== 'admin' && target === 'BY') return false;
   const open = mine || target === 'V' || target === 'BK' || target === 'BY' || target === 'house';
   switch (read) {
     case 'everyone': return true;
@@ -136,7 +138,7 @@ export const sees = (read, actor, target, hidesBlocked = false) => {
 
 /** The answer the matrix writes for one try. */
 export const expected = (spec, action, actor, target) => {
-  if (action === 'select') return sees(spec.read, actor, target, spec.hidesBlocked) ? 'seen' : 'unseen';
+  if (action === 'select') return sees(spec.read, actor, target, spec.hidesBlocked, spec.hidesBlockers) ? 'seen' : 'unseen';
   if (actor === 'visitor') return 'refused';
   // No write reaches across a block, an admin's included: the house's own functions moderate there.
   const rules = target === 'self' || spec.owner === 'house' ? spec.self

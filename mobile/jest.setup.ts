@@ -451,7 +451,17 @@ jest.mock('react-native-reanimated', () => {
       if (ref.current === null) ref.current = mockSharedValue(v);
       return ref.current;
     }),
-    useAnimatedStyle: jest.fn((fn: any) => fn()),
+    // A capture keeps each animated style's own reading (`__now`, not enumerable: no test sees it),
+    // so the drawing reads it again as the test ends, when every entrance has reached the value
+    // its animation set (these timings land at once): the screen as it stands once the motion has
+    // played, as a member sees it (zz-render.lib.ts, round 14). A view hidden at rest stays hidden.
+    useAnimatedStyle: jest.fn((fn: any) => {
+      const style = fn();
+      if (process.env.MOCKUPS_CAPTURE && style && typeof style === 'object') {
+        Object.defineProperty(style, '__now', { value: fn, enumerable: false });
+      }
+      return style;
+    }),
     useDerivedValue: jest.fn((fn: any) => mockSharedValue(fn())),
     useAnimatedScrollHandler: jest.fn(() => jest.fn()),
     withTiming: jest.fn((v: any, config?: any) => { strictConfig('withTiming', config); return v; }),
@@ -691,6 +701,7 @@ if (process.env.MOCKUPS_CAPTURE || process.env.MOCKUPS) {
     };
   });
 }
+
 
 // The drawings themselves: every entrance is drawn arrived, as a member sees the page once it
 // has played. Drawn at its first frame it is invisible, and the measures skip what cannot be seen.

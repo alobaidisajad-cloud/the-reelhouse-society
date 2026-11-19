@@ -8,6 +8,7 @@
  * keeps the write in the offline queue to go later, as it would with no signal. Never a failure
  * toast, never a report: a person never meets the pace, only a script does.
  */
+import { counted } from '@/src/utils/counted';
 
 /**
  * The house's pace, as it refuses a write that came faster than it takes them: the seconds to wait
@@ -57,4 +58,50 @@ export async function atTheHousesPace<T>(
             await wait(ms);
         }
     }
+}
+
+/** A wait in words: "20 seconds", "a minute", "12 minutes", "an hour", "9 hours". */
+function waitInWords(seconds: number): string {
+    // A count of seconds goes through counted(), the house's one rule for a count and its word.
+    if (seconds < 60) return seconds <= 1 ? 'a second' : counted(seconds, 'second', 'seconds');
+    if (seconds < 3600) {
+        const minutes = Math.ceil(seconds / 60);
+        return minutes === 1 ? 'a minute' : `${minutes} minutes`;
+    }
+    const hours = Math.ceil(seconds / 3600);
+    return hours === 1 ? 'an hour' : `${hours} hours`;
+}
+
+/**
+ * The sentence for a critique the house asked to wait for (check_critique_pace, round 14), or null
+ * for any other failure. The house paces each member's critiques: a room of 30, one more every 20
+ * seconds, 500 in a day, and 20 within an hour on one record, stack or filing. Said as what it is,
+ * with the wait the house named, for the critique the member just wrote (its words stay in the box):
+ * the piece's hour ('target'), the day's critiques ('day', a wait to the house's midnight, however
+ * short: met a minute before midnight it is still the day's), or the member's pace ('member').
+ */
+export function critiquePaceSaid(e: unknown): string | null {
+    const pace = rateLimitOf(e);
+    if (!pace) return null;
+    const wait = waitInWords(pace.seconds);
+    if (pace.scope === 'target') return `You have filed many critiques here within the hour. The house takes your next one here in ${wait}.`;
+    if (isTheDaysCeiling(e)) return `You have filed the day's critiques. The house takes more in ${wait}.`;
+    return `You are filing critiques faster than the house takes them. Send it again in ${wait}.`;
+}
+
+/** The house's pace refusing a write for the day's ceiling (DETAIL 'day', round 14), to its midnight. */
+function isTheDaysCeiling(e: unknown): boolean {
+    return rateLimitOf(e) !== null && typeof e === 'object' && e !== null && 'details' in e
+        && (e as { details?: unknown }).details === 'day';
+}
+
+/**
+ * The sentence for a salon message the house asked to wait for (lounge_messages_daily_ceiling, round
+ * 14: a thousand a day, to the house's midnight), or null for any other failure. The message stays in
+ * the room, failed, for the member to send again.
+ */
+export function salonPaceSaid(e: unknown): string | null {
+    const pace = rateLimitOf(e);
+    if (!pace) return null;
+    return `You have sent the day's salon messages. The house takes more in ${waitInWords(pace.seconds)}.`;
 }

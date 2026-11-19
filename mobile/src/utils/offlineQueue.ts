@@ -24,7 +24,7 @@ import { logger } from './logger';
 import { instantOf } from './instant';
 import { applyIdMapToPayload, executeMutation } from './mutationExecutor';
 import { isNetworkError, isTransientError } from './networkError';
-import { rateLimitOf } from './housePace';
+import { rateLimitOf, salonPaceSaid } from './housePace';
 import reelToast from './reelToast';
 import { e2eTrace } from './e2eTrace';
 import { isSuspensionRefusal } from './refusedForStanding';
@@ -73,9 +73,11 @@ export interface QueuedMutation {
     /**
      * Kept for the member, never sent on its own, never aged out: refused for their rank (a salon
      * message held so is drawn in its room, failed, for the member to send again), or refused by
-     * the house for good (WORKLIST P4.14), listed under UNSENT CHANGES to send again or let go.
+     * the house for good (WORKLIST P4.14), listed under UNSENT CHANGES to send again or let go; or a
+     * salon message past the day's ceiling ('paced', round 14), drawn in its room, failed, as one
+     * held for the rank is.
      */
-    _held?: 'rank' | 'refused';
+    _held?: 'rank' | 'refused' | 'paced';
     /** Why the house refused a write held 'refused', in its own words, kept for the member. */
     _refusal?: string;
 }
@@ -566,6 +568,8 @@ async function sendOnce(): Promise<void> {
     const retryBumps: Record<string, number> = {};
     // Salon messages refused for the rank, held for the member at the end, with the refusal.
     const heldForRank: { mutation: QueuedMutation; error: unknown }[] = [];
+    // Salon messages past the day's ceiling (round 14), held for the member at the end, with the refusal.
+    const heldForDay: { mutation: QueuedMutation; error: unknown }[] = [];
 
     // Met the house's pace for the member's own acts (rateLimitOf, scope 'member') with a wait longer
     // than a send waits: their other follows and certifications wait with it, unsent, this pass.
@@ -621,6 +625,13 @@ async function sendOnce(): Promise<void> {
             const pace = rateLimitOf(error);
             if (!pace && __DEV__) console.error(`[OfflineSync] Failed to execute ${mutation.type}:`, error);
 
+            if (pace && mutation.type === 'send_lounge_message') {
+                // A salon message past the day's ceiling (round 14): its words stay in their room,
+                // failed, as a live send refused so does, for the member to send again once the day
+                // turns; never left "sending" until the house's midnight, never said to be lost.
+                heldForDay.push({ mutation, error });
+                continue;
+            }
             if (pace) {
                 // The house's pace, with a wait longer than a send waits (housePace.ts waited the
                 // short ones): kept as it is, never a retry spent, never a refusal; the rest go on, for
@@ -709,6 +720,11 @@ async function sendOnce(): Promise<void> {
             also: 'Your words are kept in the salon',
         });
     }
+    // Past the day's ceiling: said once, with the wait the house named; the words stay in their room.
+    const heldDay = new Set(heldForDay.map(({ mutation }) => mutation.id));
+    const [firstDay] = heldForDay;
+    const daySaid = firstDay ? salonPaceSaid(firstDay.error) : null;
+    if (daySaid) reelToast.error(daySaid);
 
     // Read again, not the snapshot above: a write queued while this send waited
     // must survive it. What remains learns the real ids of rows made just now.
@@ -719,6 +735,7 @@ async function sendOnce(): Promise<void> {
             const next = withNewestRead({ ...m, payload: applyIdMapToPayload(m.payload, idMap) }, readAts);
             if (retryBumps[m.id] !== undefined) next._retryCount = retryBumps[m.id];
             if (held.has(m.id)) next._held = 'rank';
+            if (heldDay.has(m.id)) next._held = 'paced';
             const why = refusal.get(m.id);
             if (why !== undefined) { next._held = 'refused'; next._refusal = why; }
             return next;

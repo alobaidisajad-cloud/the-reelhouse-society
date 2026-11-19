@@ -35,6 +35,10 @@ describe('the unread seal', () => {
     expect(seen(9).seal).toBe('9 NEW');
   });
 
+  it('one message waiting is said in the singular: "1 new dispatch"', () => {
+    expect(seen(1)).toEqual({ label: 'Enter salon The Back Row, 1 new dispatch, 4 members', seal: '1 NEW' });
+  });
+
   it('shows 9+ past nine, and still says the number', () => {
     expect(seen(42)).toEqual({ label: 'Enter salon The Back Row, 42 new dispatches, 4 members', seal: '9+ NEW' });
   });

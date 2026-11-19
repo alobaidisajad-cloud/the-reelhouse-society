@@ -18,7 +18,7 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { tally } from './profileComputed';
 import { tasteReadiness, coverageNote, type TasteProfile } from '@/src/constants/taste';
 import { EDGE_LIT } from '@/src/theme/light';
-import { RoomRetrieving, RoomUnreachable } from './RoomParts';
+import { RoomClosed, RoomRetrieving, RoomUnreachable } from './RoomParts';
 import { counted } from '@/src/utils/counted';
 import { Arrive } from '@/src/components/Arrive';
 
@@ -39,10 +39,12 @@ interface TasteDNAProps {
     isSelf: boolean;
     /** The taste read failed. */
     failed?: boolean;
+    /** The house refused this reader the record: a closed room, never one still being read. */
+    refused?: boolean;
     onRetry?: () => void;
 }
 
-export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSelf, failed, onRetry }: TasteDNAProps) {
+export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSelf, failed, refused, onRetry }: TasteDNAProps) {
     const [isSharing, setIsSharing] = useState(false);
     const viewShotRef = React.useRef<ViewShotRef>(null);
 
@@ -80,6 +82,8 @@ export const TasteDNA = memo(function TasteDNA({ taste, username, memberNo, isSe
         </View>
     );
     if (!taste) {
+        // A refusal is a closed room: nothing is still coming, and asking again is refused the same way.
+        if (refused) return plain(<RoomClosed room="the fingerprint" />);
         return plain(failed
             ? <RoomUnreachable room="the fingerprint" onRetry={onRetry ?? (() => {})} />
             : <RoomRetrieving room="the fingerprint" />);

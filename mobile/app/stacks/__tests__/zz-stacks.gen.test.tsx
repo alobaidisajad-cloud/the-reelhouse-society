@@ -22,6 +22,8 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 }));
 
 let mockStackData: Record<string, unknown>;
+/** The member's own withheld pieces, as the house sends the list: none, unless a state says so. */
+let mockWithheld: unknown[] = [];
 jest.mock('expo-router', () => ({
   ...require('@/test-utils/expoRouterMock').expoRouterMock(),
   router: { back: jest.fn(), push: jest.fn(), replace: jest.fn(), dismiss: jest.fn() },
@@ -40,6 +42,7 @@ jest.mock('@tanstack/react-query', () => ({
   useQuery: (opts: { queryKey: unknown[] }) => {
     const key = String(opts.queryKey[0]);
     if (key === 'stackComments') return { data: [] };
+    if (key === require('@/src/hooks/useMyWithheld').MY_WITHHELD) return { data: mockWithheld };
     if (key === 'stack') return { data: mockStackData, isLoading: false, isError: false };
     return { data: undefined, isLoading: false, isError: false };
   },
@@ -60,7 +63,14 @@ jest.mock('@/src/stores/blockStore', () => {
   (useBlockStore as unknown as { getState: () => unknown }).getState = () => state;
   return { useBlockStore };
 });
-jest.mock('@/src/stores/auth', () => ({ useAuthStore: () => ({ user: { id: 'u2', username: 'visitor', is_social_private: false } }) }));
+// The store as the app reads it: through a selector, or whole by getState. One that ignored the
+// selector handed the page the whole state for its user, so no reader was ever signed in.
+jest.mock('@/src/stores/auth', () => {
+  const state = { user: { id: 'u2', username: 'visitor', is_social_private: false }, isAuthenticated: true };
+  const useAuthStore = (sel?: (s: unknown) => unknown) => (sel ? sel(state) : state);
+  (useAuthStore as unknown as { getState: () => unknown }).getState = () => state;
+  return { useAuthStore };
+});
 jest.mock('@/src/services/StackService', () => ({
   STACK_COMMENT_PAGE: 50,
   StackService: { getStackFullPayload: jest.fn(), getStackComments: jest.fn(), addStackComment: jest.fn() },
@@ -92,14 +102,22 @@ const STATES: [string, Record<string, unknown>][] = [
   ['stack', {}],
   // No film with art: no hero, so no veil — the room itself is the ground.
   ['stack-noart', { films: FILMS.map((f) => ({ ...f, poster_path: null })) }],
+  // The reader's own stack, which the house withholds: marked for them, the appeal-by date and the
+  // verdict a tap away (round 14).
+  ['stack-own-withheld', { userId: 'u2', user: 'visitor', withheldAt: '2026-11-18T10:00:00Z' }],
 ];
+/** The states whose reader reads a stack of theirs withheld: the list the house sends them. */
+const WITHHELD: Record<string, unknown[]> = {
+  'stack-own-withheld': [{ kind: 'list', piece_id: STACK_ID, verdict_id: 'v-list', appeal_by: '2026-12-18T10:00:00Z', appealed: false }],
+};
 
 // Each state in every layout: the captions' two-line box grows with the text.
-const RUNS = STATES.flatMap(([name, over]) => LAYOUTS.map((l) => [`${name}${l.suffix}`, over, l] as const));
+const RUNS = STATES.flatMap(([name, over]) => LAYOUTS.map((l) => [`${name}${l.suffix}`, over, l, name] as const));
 
 whenRendering('stack page generator', () => {
-  it.each(RUNS)('writes %s', async (name, over, layout) => {
+  it.each(RUNS)('writes %s', async (name, over, layout, state) => {
     mockStackData = { list: { ...STACK, ...over }, endorseCount: 3 };
+    mockWithheld = WITHHELD[state] ?? [];
     const html = await atLayout(layout, async () => {
       let r!: ReturnType<typeof render>;
       await act(async () => { r = render(<StackDetailScreen />); });
@@ -108,5 +126,7 @@ whenRendering('stack page generator', () => {
     writeScreen(name, html);
     console.log(`WROTE ${name}: ${html.length} bytes`);
     expect(html.length).toBeGreaterThan(3000);
+    // A withheld stack drawn with its mark, and only then.
+    expect(html.split('WITHHELD BY THE HOUSE').length - 1).toBe(WITHHELD[state]?.length ?? 0);
   });
 });

@@ -318,11 +318,64 @@ const CASES = {
   hangopen: [hung({ col: 50, count: '9.9K', open: true, hangRight: '-50%', marginRight: 11.5, span: '' }), {}],
   // an OPEN bar whose count runs onto the next icon
   hangopenicon: [hung({ col: 40, count: '999K 999K', open: true, hangRight: '-200%', marginRight: 0, span: '' }), EVERY],
+  // a view hidden at rest is not drawn, and holds nothing to measure, a translate or none (the
+  // culled projector beam: opacity 0, moved 3000pt up). An entrance is drawn at rest by the capture
+  // itself (jest.setup.ts, ArrivedAtOnce), never guessed from a style here.
+  hiddenatrest: [box('width:200px', `<div style="position:relative;display:flex;flex-direction:column;opacity:0">${
+    box('width:40px;overflow:hidden', T('font-size:12px;white-space:nowrap', 'CERTIFIED 2.1K', 1.35))}</div>`), {}],
+  culledbeam: [box('width:200px;height:200px', `<div style="position:absolute;left:0;right:0;top:0;height:300px;opacity:0;transform:translateY(-3000px)">${
+    box('width:40px;overflow:hidden', T('font-size:12px;white-space:nowrap', 'CERTIFIED 2.1K', 1.35))}</div>`
+    + T('font-size:12px', 'Ozu frames a room.', 1.35)), {}],
+  // a sheet at the foot taller than the screen, nothing in it scrolling: its title rises past the
+  // top, where no scroll brings it back (the share sheet with the keys up, round 14)
+  riseoff: [box('flex:1 1 0%;min-height:0;justify-content:flex-end',
+    box('flex-shrink:0;height:1000px;padding:24px', T('font-size:18px;line-height:22px', 'Share to Lounge', 1.35))), ALL('OFF')],
+  // a card laid out from its top on a screen-sized page, nothing scrolling: at a large size its act
+  // ends past the home indicator's edge, where no scroll brings it up (round 14)…
+  cardfoot: [box('flex:1 1 0%;min-height:0;padding-top:828px', T('font-size:14px;line-height:18px', 'FILE REPORT', 1.35)), ALL('OFF')],
+  // …and words drawn over the status bar inside a Modal, a window always the whole screen, sit under the clock…
+  underclock: [box('padding:40px', T('font-size:12px;line-height:16px', 'The page beneath.', 1.35)
+    + `<div data-t="modal" style="position:fixed;left:0;right:0;top:0;height:844px;display:flex;flex-direction:column;z-index:1000">`
+    + box('flex:1 1 0%;min-height:0;padding-top:4px', T('font-size:14px;line-height:18px', 'Share to Lounge', 1.35)) + `</div>`), ALL('OFF')],
+  // …where a page's top may be an iOS sheet's own, below the clock: its drawing's top is not judged
+  sheetpage: [box('flex:1 1 0%;min-height:0;padding-top:4px', T('font-size:14px;line-height:18px', 'THE WRITING ROOM', 1.35)), {}],
+  // a plate (the paper's boards, `data-plate`) the phone's height, its page laid out past the foot
+  plateboard: [box('flex:1 1 0%;min-height:0;padding-top:828px', T('font-size:14px;line-height:18px', 'CERTIFY', 1.35)).replace(/^<div/, '<div data-plate="1"'), {}],
+  // …the same inside a Modal's layer, a screen-sized root of its own
+  modalfoot: [box('padding:40px', T('font-size:12px;line-height:16px', 'The page beneath.', 1.35)
+    + `<div data-t="modal" style="position:fixed;left:0;right:0;top:0;height:844px;display:flex;flex-direction:column;z-index:1000">`
+    + box('flex:1 1 0%;min-height:0;padding-top:820px', T('font-size:14px;line-height:18px', 'CLOSE', 1.35)) + `</div>`), ALL('OFF')],
+  // …but a page drawn taller than the phone is a generator's plate, laid out whole: its foot is the drawing
+  tallplate: [box('height:1400px;padding-top:1300px', T('font-size:14px;line-height:18px', 'The last act.', 1.35)), {}],
+  // the same words far down a page that scrolls: reached by scrolling, not off the screen
+  scrolllong: [box('flex:1 1 0%;min-height:0', `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0">` +
+    `<div style="height:1200px;flex-shrink:0"></div>` + T('font-size:18px;line-height:22px', 'Share to Lounge', 1.35) + `</div>`), {}],
+  // a field taller than the scroll view it stands in: no scroll shows it whole (the report form,
+  // the keys up on a short window, round 14)…
+  fieldcramped: [box('height:60px', `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0">` +
+    `<div data-field="Additional details" style="position:relative;display:flex;flex-direction:column;flex-shrink:0;min-height:80px">${T('font-size:13px;line-height:18px;display:block', 'Describe the infraction', 1.35)}</div></div>`), ALL('CUT')],
+  // …while one the scroll has room for is whole at some scroll position
+  fieldroomy: [box('height:120px', `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0">` +
+    `<div data-field="Additional details" style="position:relative;display:flex;flex-direction:column;flex-shrink:0;min-height:80px">${T('font-size:13px;line-height:18px;display:block', 'Describe the infraction', 1.35)}</div></div>`), {}],
+  // …and a page-sized editor (an essay, set at half the screen or more) is the page, scrolled through
+  fieldpage: [box('height:300px', `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0">` +
+    `<div data-field="Essay content body" style="position:relative;display:flex;flex-direction:column;flex-shrink:0;min-height:500px">${T('font-size:13px;line-height:18px;display:block', 'There is a shot in Tokyo Story', 1.35)}</div></div>`), {}],
+  // a member's words listed as read whole here (--whole), cut by a clamp: a fault, not a design…
+  wholecut: [box('width:200px', T('font-size:12px;line-height:16px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden',
+    'Cinephile. Critic. Archivist. Night owl. Nitrate. Silents. Noir. London. Programmer at the Electric.', 1.35, ' data-src="mockups/tools/selftest.cjs:1"')), ALL('WHOLE')],
+  // …and a one-line text whose words run past a line break shows its first line alone, however wide
+  wholebroken: [box('width:300px', T('font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block', 'Cinephile.', 1.35,
+    ' data-break-hidden="1" data-src="mockups/tools/selftest.cjs:1"')), ALL('WHOLE')],
+  // …the same words drawn whole are clean, and an unlisted clamp is still the design
+  wholekept: [box('width:200px', T('font-size:12px;line-height:16px', 'Cinephile. Critic. Archivist. Night owl.', 1.35, ' data-src="mockups/tools/selftest.cjs:1"')), {}],
 };
 
 for (const [name, [html]] of Object.entries(CASES)) fs.writeFileSync(path.join(DIR, `${name}.html`), html);
 const json = path.join(DIR, 'report.json');
-const measured = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', DIR, '--json', json], { encoding: 'utf8' });
+// The cases under `data-src="mockups/tools/selftest.cjs:…"` stand for words listed as read whole.
+const whole = path.join(DIR, 'whole.txt');
+fs.writeFileSync(whole, 'mockups/tools/selftest.cjs — the whole-words cases of this self-test, standing for a member\'s words in the one place they are read whole\n');
+const measured = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', DIR, '--json', json, '--whole', whole], { encoding: 'utf8' });
 // It ends 1 on the faults planted here; a missing report means it never measured.
 if (!fs.existsSync(json)) {
   console.error(`layout.cjs wrote no report (exit ${measured.status}): ${`${measured.stderr}${measured.stdout}`.trim().split('\n').slice(-5).join('\n')}`);
@@ -503,6 +556,23 @@ const quietOk = quiet.status === 0 && /^small\s+×1\s+clean/m.test(quiet.stdout)
 if (!quietOk) bad++;
 console.log(`${quietOk ? 'ok  ' : 'FAIL'}  small-quiet  default kinds  want exit 0, "small ×1 clean", no SMALL  got exit ${quiet.status}${/SMALL/.test(quiet.stdout) ? ', SMALL' : ''}`);
 fs.rmSync(XDIR, { recursive: true, force: true });
+
+// --whole: an entry no page measured has judged nothing, and fails the run (round 14)…
+const UDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'whole-unmeasured-'));
+fs.writeFileSync(path.join(UDIR, 'plain.html'), box('padding:40px', T('font-size:12px;line-height:16px', 'Ozu frames a room.', 1.35)));
+const ulist = path.join(UDIR, 'whole.txt');
+fs.writeFileSync(ulist, 'mockups/tools/selftest.cjs — a member\'s words listed as read whole here, which no page of this run draws at all\n');
+const unmeasured = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', UDIR, '--passes', 'ios@1', '--whole', ulist], { encoding: 'utf8' });
+const unmeasuredOk = unmeasured.status === 1 && /^UNMEASURED\s+mockups\/tools\/selftest\.cjs/m.test(unmeasured.stdout);
+if (!unmeasuredOk) bad++;
+console.log(`${unmeasuredOk ? 'ok  ' : 'FAIL'}  whole-unmeasured --whole     want exit 1, UNMEASURED  got exit ${unmeasured.status}`);
+// …and the same entry, drawn, is measured and clean
+fs.writeFileSync(path.join(UDIR, 'plain.html'), box('padding:40px', T('font-size:12px;line-height:16px', 'Ozu frames a room.', 1.35, ' data-src="mockups/tools/selftest.cjs:1"')));
+const measuredWhole = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', UDIR, '--passes', 'ios@1', '--whole', ulist], { encoding: 'utf8' });
+const measuredOk = measuredWhole.status === 0 && !/UNMEASURED/.test(measuredWhole.stdout);
+if (!measuredOk) bad++;
+console.log(`${measuredOk ? 'ok  ' : 'FAIL'}  whole-measured --whole      want exit 0, no UNMEASURED  got exit ${measuredWhole.status}`);
+fs.rmSync(UDIR, { recursive: true, force: true });
 
 // yoga-parity.cjs: NO to a box drawn wrong, nothing to a right one, and RN's own
 // Yoga (errata on): two pages agree only if the tool runs the phone's engine.

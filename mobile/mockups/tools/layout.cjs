@@ -5,8 +5,13 @@
  * ×1, ×1.35 and ×3.1 and Android at ×1.35 and ×2), every text box is checked for:
  *
  *   CUT      its glyphs reach past an ancestor that clips (overflow hidden),
- *            sideways OR downward;
- *   OFF      it runs off the phone's edge, outside a horizontal rail;
+ *            sideways OR downward; or a field is taller than the scroll view it
+ *            stands in, so no scroll position shows it whole;
+ *   WHOLE    (with `--whole FILE`) a text listed there as shown whole, the one
+ *            place a member's words are read whole, is cut short by its clamp;
+ *   OFF      it runs off the phone's edge, outside a horizontal rail; or it
+ *            stands above the screen's top where no scroll brings it down (its
+ *            reach is the outermost scroll view's box, or out of every one, its own);
  *   CLASH    its lines overlap another text's lines;
  *   INK      a letter's ink (marks piled on it, a script's vowels and tones) leaves
  *            its own line and paints over a letter on another row, its own text's
@@ -68,7 +73,7 @@
  *
  *   node mockups/tools/layout.cjs [--src DIR] [--only a,b] [--skip c,d]
  *     [--passes ios@1,android@2] [--width 360] [--kinds STEAL,NAMELESS] [--shorts]
- *     [--json OUT] [--sites OUT] [--require FILE] [--allow FILE] [--allow-short FILE] [--allow-name FILE]
+ *     [--json OUT] [--sites OUT] [--require FILE] [--allow FILE] [--allow-short FILE] [--allow-name FILE] [--whole FILE]
  *     [--jobs N]   pages measured at once (the machine's cores, at most 4); the report keeps its order
  *   exits 1 when anything is found, and 2 when there is nothing to measure: no
  *   screen, or an --only name with no file.
@@ -126,6 +131,22 @@ const SMALL_ALLOW = readAllow('allow'); // controls SMALL does not report
 const SHORT_ALLOW = readAllow('allow-short');
 // Names that may end short: a one-line preview of words shown whole a tap away, never the name a row is for.
 const NAME_ALLOW = readAllow('allow-name');
+// Texts that must be drawn whole where they are set (WHOLE): a member's words in the one place they are read whole.
+const WHOLE_ALLOW = readAllow('whole');
+/**
+ * The safe area a drawing is judged against: a capture reports no insets, and the app then keeps
+ * its floors (navMetrics' STATUS_BAR_FLOOR over the top, HOME_INDICATOR_FLOOR at the foot), read
+ * from the source so the two cannot drift.
+ */
+const SAFE = (() => {
+  const nav = fs.readFileSync(path.join(MOBILE, 'src', 'components', 'layout', 'navMetrics.ts'), 'utf8');
+  const floor = (name) => {
+    const m = new RegExp(`export const ${name} = (\\d+)`).exec(nav);
+    if (!m) throw new Error(`navMetrics.ts has no ${name}: the safe area cannot be read`);
+    return Number(m[1]);
+  };
+  return { top: floor('STATUS_BAR_FLOOR'), foot: floor('HOME_INDICATOR_FLOOR') };
+})();
 const nameAllowed = (x) => {
   const [file, line] = (x.site ?? '').split(/:(?=\d+$)/);
   return NAME_ALLOW.some((a) => a.file === file && (!a.label || new RegExp(a.label).test(x.said)) && (!a.lines || a.lines.includes(Number(line))));
@@ -250,8 +271,18 @@ async function audit(page) {
       const hs = getComputedStyle(host);
       const left = hb.left + parseFloat(hs.paddingLeft) + parseFloat(hs.borderLeftWidth);
       const right = hb.right - parseFloat(hs.paddingRight) - parseFloat(hs.borderRightWidth);
-      const r = document.createRange(); r.selectNodeContents(e);
-      return Math.max(0, ...[...r.getClientRects()].filter((q) => q.width > 0.5).map((q) => Math.max(q.right - right, left - q.left)));
+      // The words' own boxes, never a space's: a space kept as the phone keeps it (zz-render's
+      // break-spaces) sits at a line's end, where the phone lets it hang, and is no word.
+      const rects = [];
+      const walker = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+      for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+        for (const m of t.textContent.matchAll(/\S+/g)) {
+          const r = document.createRange();
+          r.setStart(t, m.index); r.setEnd(t, m.index + m[0].length);
+          rects.push(...r.getClientRects());
+        }
+      }
+      return Math.max(0, ...rects.filter((q) => q.width > 0.5).map((q) => Math.max(q.right - right, left - q.left)));
     };
     const lineCount = (host) => {
       const r = document.createRange(); r.selectNodeContents(host);
@@ -289,10 +320,11 @@ async function audit(page) {
   await shrinkToFit(page);
 
   // 3 · the faults, on the page as the phone draws it.
-  return page.evaluate(([SHORTS, ALLOW, SHORT_OK]) => {
+  return page.evaluate(([SHORTS, ALLOW, SHORT_OK, WHOLE_OK, SAFE]) => {
     const { phone, opacityOf, truncates, texts, rectOf, parked, linesOf, namesCut } = window.RN;
     const runs =[...document.querySelectorAll('[data-run]')].map((e) => [e, Number(e.dataset.run)]);
     const found = [];
+    const wholeSeen = new Set();
     const live = texts.filter((e) => opacityOf(e) > 0.05 && getComputedStyle(e).visibility !== 'hidden');
     const invisible = texts.length - live.length;
     const say = (e) => e.textContent.trim().replace(/\s+/g, ' ').slice(0, 48);
@@ -365,10 +397,23 @@ async function audit(page) {
       found.push(...namesCut(e));
       // SHORT: fits only because the phone cuts it. Not a fault: only a reader can
       // tell a title ellipsising (design) from a label losing its count.
-      if (SHORTS && truncates(e)) {
+      // WHOLE: a text listed as shown whole here (--whole: a member's words in the one place they
+      // are read whole) that the phone cuts short is a fault, not a design.
+      const site = e.closest('[data-src]')?.dataset.src || '';
+      const [siteFile, siteLine] = site.split(/:(?=\d+$)/);
+      const wholeAt = WHOLE_OK.findIndex(({ file, label, lines }) => file === siteFile
+        && (!label || new RegExp(label).test(say(e))) && (!lines || lines.includes(Number(siteLine))));
+      const mustBeWhole = wholeAt !== -1;
+      // Each listed text a page drew: an entry no page measured has proved nothing (see the end).
+      if (mustBeWhole) wholeSeen.add(wholeAt);
+      if ((SHORTS || mustBeWhole) && truncates(e)) {
         const cs = getComputedStyle(e);
-        const over = cs.textOverflow === 'ellipsis' ? e.scrollWidth > e.clientWidth + 1 : e.scrollHeight > e.clientHeight + 1;
-        if (over) found.push({ kind: 'SHORT', text: say(e), size: parseFloat(cs.fontSize), by: cs.textOverflow === 'ellipsis' ? `${(e.scrollWidth - e.clientWidth).toFixed(0)}pt hidden` : 'lines hidden' });
+        // A one-line text whose words run past a line break shows its first line alone (zz-render
+        // draws it so, and marks it): what follows the break is hidden however wide the line.
+        const broken = e.dataset.breakHidden === '1';
+        const over = broken || (cs.textOverflow === 'ellipsis' ? e.scrollWidth > e.clientWidth + 1 : e.scrollHeight > e.clientHeight + 1);
+        const by = broken ? 'lines after a break hidden' : cs.textOverflow === 'ellipsis' ? `${(e.scrollWidth - e.clientWidth).toFixed(0)}pt hidden` : 'lines hidden';
+        if (over) found.push({ kind: mustBeWhole ? 'WHOLE' : 'SHORT', text: say(e) + (mustBeWhole ? ` [${site}]` : ''), size: parseFloat(cs.fontSize), by });
       }
       // WIDE: words wider than a reading measure, on a window wide enough to hold a column.
       const windowW = phone.right - phone.left;
@@ -377,6 +422,66 @@ async function audit(page) {
       }
       if (!inRail && (q.right > phone.right + 0.75 || q.left < phone.left - 0.75)) {
         found.push({ kind: 'OFF', text: say(e), size: parseFloat(getComputedStyle(e).fontSize), by: `${Math.max(q.right - phone.right, phone.left - q.left).toFixed(1)}pt` });
+      }
+      // OFF, up or down: what no scroll can bring onto the screen. Inside a scroll view a text is
+      // read by scrolling, so its reach is the outermost scroll view's own box (its viewport); out
+      // of every one, it is the text itself. A sheet taller than the room above the keys rose
+      // past the status bar with its title and its X, and was measured clean (round 14).
+      // Its lines, within its content box: a title's glow room (padding a margin hands back) is no
+      // line, and a face's font box standing proud of a tight line is not where the line is.
+      const ls = linesOf(e);
+      const own = e.getBoundingClientRect();
+      const ecs = getComputedStyle(e);
+      const inner = { top: own.top + parseFloat(ecs.paddingTop) + parseFloat(ecs.borderTopWidth), bottom: own.bottom - parseFloat(ecs.paddingBottom) - parseFloat(ecs.borderBottomWidth) };
+      let reach = ls.length && ecs.display !== 'inline'
+        ? { top: Math.max(inner.top, Math.min(...ls.map((l) => l.top))), bottom: Math.min(inner.bottom, Math.max(...ls.map((l) => l.bottom))) }
+        : q;
+      let scrolls = false;
+      for (let a = e.parentElement; a && !a.classList.contains('phone'); a = a.parentElement) {
+        if (a.classList.contains('vscroll')) { reach = a.getBoundingClientRect(); scrolls = true; }
+      }
+      // Where the screen is the screen, judged against its safe area (the floors the app keeps where
+      // a capture reports no insets, navMetrics). Words out of every scroll view past the home
+      // indicator's edge sit under it, or below the glass (a card laid out from its top at a large
+      // size, its FILE or CLOSE under the foot): judged inside a Modal (a layer the screen's size)
+      // and on a page whose root is drawn at the phone's height. Words over the status bar sit
+      // under the clock: judged inside a Modal alone, a window always the whole screen; a page
+      // may be an iOS sheet, whose own top is below the clock and is its drawing's top.
+      // Not judged: a root drawn TALLER than the phone, or marked a plate (`data-plate`, the
+      // paper's boards): a page laid out whole with no scroll view drawn, the glass's top alone.
+      const layer = e.closest('[data-t="modal"]');
+      let root = e;
+      while (root.parentElement && root.parentElement.dataset.frame !== 'column' && !root.parentElement.classList.contains('phone')) root = root.parentElement;
+      // (A root drawn shorter than the phone is a part, not a screen: a component on its own.)
+      const screenSized = !!layer || (root.dataset.plate !== '1'
+        && Math.abs(root.getBoundingClientRect().height - (phone.bottom - phone.top)) <= 0.75);
+      // A scroll view may start under the status bar (a page's does, its content padded down to
+      // clear it): its words can be scrolled out from under the clock, so only the glass bounds it.
+      const clock = !!layer && !scrolls;
+      const top = clock ? phone.top + SAFE.top : phone.top;
+      const above = top - reach.top;
+      const below = screenSized && !scrolls ? reach.bottom - (phone.bottom - SAFE.foot) : 0;
+      if (above > 0.75) {
+        found.push({ kind: 'OFF', text: say(e), size: parseFloat(getComputedStyle(e).fontSize), by: `${above.toFixed(1)}pt ${clock ? 'over the status bar' : 'above the screen'}${scrolls ? ' (its scroll view starts there)' : ''}` });
+      } else if (below > 0.75) {
+        found.push({ kind: 'OFF', text: say(e), size: parseFloat(getComputedStyle(e).fontSize), by: `${below.toFixed(1)}pt past the home indicator's edge` });
+      }
+    }
+    // A field taller than the scroll view it stands in can never be seen whole: at every scroll
+    // position the viewport cuts it (the report form, the keys up on a short window: a strip of
+    // 48pt for an 80pt field, its counter and FILE REPORT, round 14). Below the fold is reached
+    // by scrolling; this is not. A page-sized editor (set at half the screen or more: the writing
+    // room's essay) is the page itself, read and written by scrolling as a page is.
+    for (const fld of document.querySelectorAll('[data-field]')) {
+      if (opacityOf(fld) <= 0.05) continue;
+      const s = fld.closest('.vscroll');
+      const fb = fld.getBoundingClientRect();
+      if (!s || parked(fb)) continue;
+      if ((parseFloat(getComputedStyle(fld).minHeight) || 0) >= (phone.bottom - phone.top) / 2) continue;
+      const room = s.getBoundingClientRect().height;
+      if (fb.height > room + 0.75) {
+        const words = fld.querySelector('span[data-scale-cap]');
+        found.push({ kind: 'CUT', text: `the field "${fld.dataset.field || ''}"`, size: words ? parseFloat(getComputedStyle(words).fontSize) : 0, by: `${fb.height.toFixed(1)}pt in ${room.toFixed(1)}pt of scroll` });
       }
     }
     // CLASH: lines of two different texts overlapping, neither inside the other.
@@ -945,8 +1050,8 @@ async function audit(page) {
       if (parked(e.getBoundingClientRect())) continue;
       found.push({ kind: 'SHADOW', text: e.dataset.t || say(e) || `a view at ${e.getBoundingClientRect().left.toFixed(0)},${e.getBoundingClientRect().top.toFixed(0)}`, size: 0, by: 'clips: iOS draws no shadow' });
     }
-    return { found, texts: texts.length, invisible, measured: [...measured] };
-  }, [SHORTS, SMALL_ALLOW, SHORT_ALLOW]);
+    return { found, texts: texts.length, invisible, measured: [...measured], wholeSeen: [...wholeSeen] };
+  }, [SHORTS, SMALL_ALLOW, SHORT_ALLOW, WHOLE_ALLOW, SAFE]);
 }
 
 (async () => {
@@ -999,6 +1104,16 @@ async function audit(page) {
   // (--require) is kept per FILE, so an edit above a control does not break it.
   const measured = [...new Set(Object.values(report).flatMap((r) => r.measured))].sort();
   if (SITES_OUT) fs.writeFileSync(SITES_OUT, measured.join('\n') + '\n');
+  // A --whole entry no page measured has judged nothing: a listed text that nothing draws would
+  // pass for ever without being checked. Judged on a whole run only (no --only, WHOLE among the kinds).
+  if (WHOLE_ALLOW.length && !ONLY && (!KINDS || KINDS.includes('WHOLE'))) {
+    const seen = new Set(Object.values(report).flatMap((r) => r.wholeSeen ?? []));
+    for (const [i, w] of WHOLE_ALLOW.entries()) {
+      if (seen.has(i)) continue;
+      console.log(`UNMEASURED  ${w.file}${w.lines ? `:${w.lines.join(',')}` : ''} — listed as shown whole, and no page drew it`);
+      faults += 1;
+    }
+  }
   if (REQUIRE) {
     const lost = lostFiles(fs.readFileSync(REQUIRE, 'utf8'), measured);
     for (const f of lost) console.log(`LOST  ${f} — no control of it was measured beside a neighbour`);

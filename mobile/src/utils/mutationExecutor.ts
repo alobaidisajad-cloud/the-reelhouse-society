@@ -25,7 +25,7 @@ import { keepFilingEdit, keepLogEdit, mergeHistory } from '../services/KeptEdits
 import { FILING_EDITABLE_COLUMNS } from '../stores/dispatchTypes';
 import { queryClient } from '../lib/queryClient';
 import { isGoneFromTheHouse } from './goneFromTheHouse';
-import { saidOfStackShareRefusal, stackShareRefusal } from './stackShareRefusal';
+import { cardShareRefusal, saidOfCardShareRefusal, wordOfCardShareRefusal } from './stackShareRefusal';
 import { filmOfRecord } from './recordsFilm';
 import { atTheHousesPace } from './housePace';
 
@@ -705,17 +705,18 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const cleaned = Object.fromEntries(Object.entries(dbPayload).filter(([, v]) => v !== undefined));
         const sent = await supabase.from('lounge_messages').insert([cleaned]).select('id').maybeSingle();
         // A stack's card the house refuses for good (sealed, or no longer in the house): let go, said,
-        // and taken off the room's transcript, never offered again (review round 13).
-        const stackRefused = stackShareRefusal(sent.error);
-        if (stackRefused) {
+        // and taken off the room's transcript, never offered again (review round 13); a record's or a
+        // filing's card likewise, the house writing each card from its piece (round 14).
+        const cardRefused = cardShareRefusal(sent.error);
+        if (cardRefused) {
             // Required here, not imported: the stores import the queue, which imports this file.
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const reelToast = (require('./reelToast') as typeof import('./reelToast')).default;
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { useLoungeStore } = require('../stores/lounge') as typeof import('../stores/lounge');
             useLoungeStore.setState((s) => ({ currentMessages: s.currentMessages.filter((m) => m.id !== dbPayload.id) }));
-            reelToast.error(saidOfStackShareRefusal(stackRefused));
-            return { letGo: stackRefused === 'sealed' ? 'STACK_SEALED' : 'STACK_GONE' };
+            reelToast.error(saidOfCardShareRefusal(cardRefused));
+            return { letGo: wordOfCardShareRefusal(cardRefused) };
         }
         const result = throwIfError(sent);
         if (_tempId && result.data) {

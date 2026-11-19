@@ -1,5 +1,4 @@
 
-import { houseIso } from '@/src/lib/houseClock';
 import { isNarrowed, ROOMS, type Room } from '@/src/utils/roomFilters';
 import { RemoteImage } from '@/src/components/Picture';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -49,7 +48,7 @@ import { ProjectorRoom } from '@/src/components/profile/ProjectorRoom';
 import { TasteDNA } from '@/src/components/profile/TasteDNA';
 import { TasteMatch } from '@/src/components/profile/TasteMatch';
 import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
-import { useProfileComputed, tally } from '@/src/components/profile/profileComputed';
+import { groupByMonth as groupItemsByMonth, useProfileComputed, tally } from '@/src/components/profile/profileComputed';
 import { s } from '@/src/components/profile/profileStyles';
 import { RoomPlate, RoomSealed, RoomFoot, RoomRetrieving, RoomUnreachable } from '@/src/components/profile/RoomParts';
 
@@ -95,7 +94,6 @@ import { OPEN_QUOTE, CLOSE_QUOTE, characterCount } from '@/src/utils/text';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import Buster, { BusterEyes } from '@/src/components/Buster';
-import { dateOf } from '@/src/utils/instant';
 
 /** The back button's 40pt row and the 6pt under it, which a pushed file's hero clears. */
 const BACK_ROW = 46;
@@ -337,12 +335,12 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const nameStyle = { fontSize: nameSize, lineHeight: Math.round(nameSize * 1.16), letterSpacing: nameSize >= 26 ? 1.4 : 1 };
 
   const bioText = struck(targetUser?.bio?.trim()) || (isSelf ? 'No bio yet. Tell the society who you are.' : 'No bio on file.');
-  // Same reasoning as the name: fixed steps, and the longest bios get more
-  // lines rather than smaller type.
+  // Same reasoning as the name: fixed steps by length. The bio is drawn whole, never cut: it is the
+  // one place a visitor reads it, the house holds it to 160 characters (profiles_bio_len), and a
+  // bio written one line to an item keeps its breaks, so no count of characters says its lines.
   const bioCount = characterCount(bioText);
   const bioSize = bioCount <= 90 ? 12.5 : bioCount <= 170 ? 11.5 : 10.5;
   const bioStyle = { fontSize: bioSize, lineHeight: Math.round(bioSize * 1.52) };
-  const bioLines = bioCount <= 90 ? 4 : bioCount <= 170 ? 5 : 6;
 
   // `Nº 0147 · ADMITTED MARCH 2026`, the month by the house formatter (no Intl).
   // At large text it may wrap, only where a reader would: no-break spaces keep
@@ -527,39 +525,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // The six rated highest over the whole record (the server's read), as the title says.
   const highestRated = data.highestRated;
 
-  // Group by month helper
-  const groupByMonth = useCallback(<T extends ProfileLog | ProfileVaultItem>(items: T[], dateKey = 'watchedDate') => {
-    const grouped: Record<string, T[]> = {};
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    for (const item of items) {
-      const d = (item as any)[dateKey] || (item as any).createdAt || houseIso();
-      let year = 1970;
-      let month = 0;
-      if (typeof d === 'string') {
-        const parts = d.substring(0, 10).split('-');
-        if (parts.length === 3) {
-          year = parseInt(parts[0], 10);
-          month = parseInt(parts[1], 10) - 1;
-        } else {
-          const dateObj = dateOf(d);
-          if (!isNaN(dateObj.getTime())) {
-            year = dateObj.getFullYear();
-            month = dateObj.getMonth();
-          }
-        }
-      } else {
-        const dateObj = dateOf(d);
-        if (!isNaN(dateObj.getTime())) {
-          year = dateObj.getFullYear();
-          month = dateObj.getMonth();
-        }
-      }
-      const title = `${months[month]} ${year}`.toUpperCase();
-      if (!grouped[title]) grouped[title] = [];
-      grouped[title].push(item);
-    }
-    return grouped;
-  }, []);
+  // Group by month: each item under the day a member would call it (profileComputed.ts).
+  const groupByMonth = useCallback(<T extends ProfileLog | ProfileVaultItem>(items: T[], dateKey = 'watchedDate') =>
+    groupItemsByMonth(items, dateKey), []);
   // ════════════════════════════════════════════════════════════
   // POSTER CARD — Reusable log poster with tier glow
   // ════════════════════════════════════════════════════════════
@@ -897,13 +865,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     {/* Taste DNA */}
                     <View>
                       <SectionDivider label="TASTE FINGERPRINT" />
-                      <TasteDNA taste={taste} username={targetUser?.username || username} memberNo={memberNo} isSelf={isSelf} failed={roomFailed} onRetry={retryRoom} />
+                      <TasteDNA taste={taste} username={targetUser?.username || username} memberNo={memberNo} isSelf={isSelf} failed={roomFailed} refused={data.tasteRefused} onRetry={retryRoom} />
                     </View>
 
                     {/* Cinematic Insights */}
                     <View>
                       <SectionDivider label="REAL ANALYTICS" />
-                      <CinematicInsights taste={taste} isSelf={isSelf} failed={roomFailed} onRetry={retryRoom} />
+                      <CinematicInsights taste={taste} isSelf={isSelf} failed={roomFailed} refused={data.tasteRefused} onRetry={retryRoom} />
                     </View>
 
                     {/* Society Honors */}
@@ -1093,7 +1061,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
             </AnimatedView>
 
             {/* ── The bio, in the house's own quotation marks ── */}
-            <Text {...scaledTextProps} style={[s.heroBio, bioStyle]} numberOfLines={bioLines}>
+            <Text {...scaledTextProps} style={[s.heroBio, bioStyle]}>
               {/* The guillemets grow with the bio they sit inside. */}
               <Text {...scaledTextProps} style={isAuteurPlus ? s.bioMarkRuby : isArchivistPlus ? s.bioMarkBrass : s.bioMark}>{OPEN_QUOTE}</Text>
               {/* A bio is the member's own words, and may hold a pasted link:
@@ -1127,10 +1095,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 No "hide stats": privacy is `is_social_private`, which the
                 database enforces; hiding numbers whose films stay readable is not. */}
             <View style={[s.statsBox, { borderColor: tierStatsBorder }]}>
-              <StatCard label="FILMS" value={tally(totalFilms)} />
-              <StatCard label="WATCHLIST" value={tally(totalWatchlist)} rule />
-              <StatCard label="FOLLOWERS" value={tally(targetUser.followers_count || 0)} onPress={isPrivate || sealUnknown ? undefined : navToFollowers} rule />
-              <StatCard label="FOLLOWING" value={tally(targetUser.following_count || 0)} onPress={isPrivate || sealUnknown ? undefined : navToFollowing} rule />
+              <StatCard label="FILMS" one="FILM" count={totalFilms} />
+              <StatCard label="WATCHLIST" one="WATCHLIST" count={totalWatchlist} rule />
+              <StatCard label="FOLLOWERS" one="FOLLOWER" count={targetUser.followers_count || 0} onPress={isPrivate || sealUnknown ? undefined : navToFollowers} rule />
+              <StatCard label="FOLLOWING" one="FOLLOWING" count={targetUser.following_count || 0} onPress={isPrivate || sealUnknown ? undefined : navToFollowing} rule />
             </View>
 
             {/* ── The two acts ── */}

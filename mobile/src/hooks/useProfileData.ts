@@ -91,6 +91,11 @@ export interface ProfileState {
   /** Genres, actors and directors over the WHOLE archive. Null = not read. */
   taste: TasteProfile | null;
   /**
+   * The house refused this reader the taste (a private file to a stranger, a file across a block):
+   * a closed room, said as one, never one still being read or one that failed.
+   */
+  tasteRefused: boolean;
+  /**
    * The whole pre-aggregated summary — month counts, format counts, rating
    * spread, streaks, average mark: real at any collection size, one round trip.
    *
@@ -123,7 +128,7 @@ export type ProfileAction =
   | { type: 'SET_SERVER_ANALYTICS'; payload: any }
   | { type: 'SET_SUMMARY'; shape: AnalyticsShape | null; unread: boolean }
   | { type: 'SET_HIGHEST_RATED'; payload: ProfileLog[] }
-  | { type: 'SET_TASTE'; payload: TasteProfile | null }
+  | { type: 'SET_TASTE'; payload: TasteProfile | null; refused?: boolean }
   | { type: 'SET_LOGS_PAGE'; tab: 'main' | 'archive' | 'ledger'; items: ProfileLog[]; cursor: string | null; append?: boolean }
   | { type: 'SET_WATCHLIST_PAGE'; items: ProfileWatchlistItem[]; cursor: string | null; append?: boolean }
   | { type: 'SET_VAULT_PAGE'; items: ProfileVaultItem[]; cursor: string | null; append?: boolean }
@@ -164,6 +169,7 @@ export const initialState: ProfileState = {
   tabDataLoaded: {},
   serverStreak: null,
   taste: null,
+  tasteRefused: false,
   analyticsShape: null,
   summaryUnread: false,
   recordCounted: null,
@@ -223,7 +229,7 @@ export function profileReducer(state: ProfileState, action: ProfileAction): Prof
         summaryUnread: action.unread && !(action.shape ?? state.analyticsShape),
       };
     case 'SET_HIGHEST_RATED': return { ...state, highestRated: action.payload };
-    case 'SET_TASTE': return { ...state, taste: action.payload };
+    case 'SET_TASTE': return { ...state, taste: action.payload, tasteRefused: !!action.refused };
     case 'SET_LOGS_PAGE': {
       if (action.tab === 'main') {
         const items = action.append ? (() => { const ids = new Set(state.mainLogs.map(p => p.id)); return [...state.mainLogs, ...action.items.filter(p => !ids.has(p.id))]; })() : action.items;
@@ -593,7 +599,8 @@ export function useProfileData({
         if (serverAnalyticsPayload) {
           dispatch({ type: 'SET_SERVER_ANALYTICS', payload: serverAnalyticsPayload });
         }
-        dispatch({ type: 'SET_TASTE', payload: tastePayload });
+        // fetchTasteProfile answers null for a refusal alone (a failure throws): the room is closed.
+        dispatch({ type: 'SET_TASTE', payload: tastePayload, refused: tastePayload === null });
         dispatch({ type: 'SET_HIGHEST_RATED', payload: highestRated });
       } else if (tab === 'calendar' && (!state.tabDataLoaded.calendar || forceRefresh)) {
         dispatch({ type: 'SET_TAB_LOADED', tabs: { calendar: true } });
@@ -938,7 +945,7 @@ export function useProfileData({
       dispatch({ type: 'SET_USER', payload: u });
     },
     loading: state.loading, error: state.error, refreshing: state.refreshing, setRefreshing: (v: boolean) => dispatch({ type: 'SET_REFRESHING', payload: v }),
-    mainLogs: state.mainLogs, archiveLogs: state.archiveLogs, ledgerLogs: state.ledgerLogs, calendarData: state.calendarData, serverAnalytics: state.serverAnalytics, highestRated: state.highestRated, serverStreak: state.serverStreak, analyticsShape: state.analyticsShape, summaryUnread: state.summaryUnread, recordCounted: state.recordCounted, taste: state.taste, watchlist: state.watchlist, vault: state.vault, lists: state.lists,
+    mainLogs: state.mainLogs, archiveLogs: state.archiveLogs, ledgerLogs: state.ledgerLogs, calendarData: state.calendarData, serverAnalytics: state.serverAnalytics, highestRated: state.highestRated, serverStreak: state.serverStreak, analyticsShape: state.analyticsShape, summaryUnread: state.summaryUnread, recordCounted: state.recordCounted, taste: state.taste, tasteRefused: state.tasteRefused, watchlist: state.watchlist, vault: state.vault, lists: state.lists,
     hasMoreMainLogs: state.hasMoreMainLogs, hasMoreArchiveLogs: state.hasMoreArchiveLogs, hasMoreLedgerLogs: state.hasMoreLedgerLogs, hasMoreWatchlist: state.hasMoreWatchlist, hasMoreVault: state.hasMoreVault, hasMoreLists: state.hasMoreLists,
     isLoadingMore: state.isLoadingMore,
     counts: state.counts, tabDataLoaded: state.tabDataLoaded, setTabDataLoaded: (v: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) => {

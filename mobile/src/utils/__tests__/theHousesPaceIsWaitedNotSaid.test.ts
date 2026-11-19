@@ -7,7 +7,7 @@
  * only what a script does, says how long, and the phone waits that long and goes on. A wait longer
  * than the phone waits is handed back, for the caller to keep the write queued.
  */
-import { atTheHousesPace, isRateLimited, PACE_WAIT_MAX_MS, rateLimitOf } from '../housePace';
+import { atTheHousesPace, critiquePaceSaid, isRateLimited, PACE_WAIT_MAX_MS, rateLimitOf, salonPaceSaid } from '../housePace';
 import { isTransientError } from '../networkError';
 
 const paced = (hint: string, details = 'member') => ({ code: 'RH429', message: 'RATE_LIMITED', hint, details });
@@ -86,6 +86,48 @@ describe('a write at the house\'s pace', () => {
       expect(asked).toBe(2);
     } finally {
       jest.useRealTimers();
+    }
+  });
+});
+
+describe('a critique the house asks to wait for, said as what it is (round 14)', () => {
+  it('the piece\'s hour, with the wait the house named', () => {
+    expect(critiquePaceSaid(paced('3600', 'target'))).toBe('You have filed many critiques here within the hour. The house takes your next one here in an hour.');
+    expect(critiquePaceSaid(paced('720', 'target'))).toBe('You have filed many critiques here within the hour. The house takes your next one here in 12 minutes.');
+    expect(critiquePaceSaid(paced('45', 'target'))).toBe('You have filed many critiques here within the hour. The house takes your next one here in 45 seconds.');
+  });
+
+  it('the member\'s own pace: a wait of seconds', () => {
+    expect(critiquePaceSaid(paced('20'))).toBe('You are filing critiques faster than the house takes them. Send it again in 20 seconds.');
+    expect(critiquePaceSaid(paced('1'))).toBe('You are filing critiques faster than the house takes them. Send it again in a second.');
+  });
+
+  it('the day\'s critiques: the day\'s own word, its wait to the house\'s midnight in hours or minutes', () => {
+    expect(critiquePaceSaid(paced('32400', 'day'))).toBe('You have filed the day\'s critiques. The house takes more in 9 hours.');
+    expect(critiquePaceSaid(paced('3000', 'day'))).toBe('You have filed the day\'s critiques. The house takes more in 50 minutes.');
+    expect(critiquePaceSaid(paced('61', 'day'))).toBe('You have filed the day\'s critiques. The house takes more in 2 minutes.');
+  });
+
+  it('the day\'s ceiling met a minute before midnight is still the day\'s, never a pace', () => {
+    expect(critiquePaceSaid(paced('45', 'day'))).toBe('You have filed the day\'s critiques. The house takes more in 45 seconds.');
+  });
+
+  it('nothing for any other failure', () => {
+    for (const other of [{ code: '42501', message: 'refused' }, new Error('Network request failed'), null]) {
+      expect(critiquePaceSaid(other)).toBeNull();
+    }
+  });
+});
+
+describe('a salon message the house asks to wait for, said as the day\'s (round 14)', () => {
+  it('the day\'s salon messages, with the wait to the house\'s midnight', () => {
+    expect(salonPaceSaid(paced('32400', 'day'))).toBe('You have sent the day\'s salon messages. The house takes more in 9 hours.');
+    expect(salonPaceSaid(paced('45', 'day'))).toBe('You have sent the day\'s salon messages. The house takes more in 45 seconds.');
+  });
+
+  it('nothing for any other failure', () => {
+    for (const other of [{ code: '42501', message: 'refused' }, new Error('Network request failed'), null]) {
+      expect(salonPaceSaid(other)).toBeNull();
     }
   });
 });

@@ -74,8 +74,26 @@ export const flat = (s: unknown): Record<string, unknown> => {
   if (!s) return {};
   if (Array.isArray(s)) return s.reduce<Record<string, unknown>>((a, x) => ({ ...a, ...flat(x) }), {});
   if (typeof s === 'number') return (RNStyleSheet.flatten(s) as unknown as Record<string, unknown>) ?? {};
-  return s as Record<string, unknown>;
+  return nowOf(s as Record<string, unknown>);
 };
+
+/**
+ * An animated style as it stands now. A capture (jest.setup.ts) keeps each animated style's own
+ * reading as `__now`: read again as the test ends, an entrance (Arrive, an ignition, a Presence)
+ * has reached the value its animation set, as a member sees it once the motion has played, where
+ * the style the test last rendered is its first frame, invisible (round 14: the salon's settings
+ * sheet drew "5 texts, 5 invisible"). A view hidden at rest reads hidden still.
+ */
+function nowOf(style: Record<string, unknown>): Record<string, unknown> {
+  const read = (style as { __now?: unknown }).__now;
+  if (typeof read !== 'function') return style;
+  try {
+    const now = read();
+    return now && typeof now === 'object' ? (now as Record<string, unknown>) : style;
+  } catch {
+    return style;
+  }
+}
 
 /**
  * RN's shorthands CSS lacks (`paddingHorizontal`, the commonest style key here),
@@ -716,7 +734,16 @@ export function toHtml(node: unknown, opts: RenderOpts = {}, inSvg = false, text
     // The harness holds text to its parent's width, but a Text with its OWN width keeps
     // it, as in Yoga (the ticket's rotated ADMIT ONE is 96pt in a 42pt stub).
     const ownWidth = st.width !== undefined && st.width !== null && st.width !== 'auto' ? ';max-width:none' : '';
-    return `<span${capAttr}${a11yAttr(p)}${rnAttr(rn)} style="${css(st, true)}${clamp}${ownWidth}">${(n.children || []).map((c) => toHtml(c, opts, inSvg, cap)).join('')}</span>`;
+    // A "\n" breaks the line and a run of spaces is kept, as React Native draws them (HTML folds
+    // both: a bio written one line to an item was measured as two lines, and its four hidden ones
+    // went unseen). `break-spaces`, as the field below: a space at a line's end wraps, never hangs.
+    // Set on the outer Text, which its nested Texts inherit.
+    const breaks = textCap === undefined && lines !== 1 ? ';white-space:break-spaces' : '';
+    // A one-line Text shows its first line alone (iOS stops there; Android ends it in "…"): it is
+    // drawn so, and marked cut (`data-break-hidden`), as the phone hides the rest.
+    const kids = lines === 1 && textCap === undefined ? firstLineOf(n.children || []) : { kids: n.children || [], cut: false };
+    const hidden = kids.cut ? ' data-break-hidden="1"' : '';
+    return `<span${capAttr}${hidden}${a11yAttr(p)}${rnAttr(rn)} style="${css(st, true)}${breaks}${clamp}${ownWidth}">${kids.kids.map((c) => toHtml(c, opts, inSvg, cap)).join('')}</span>`;
   }
   if (t === 'ActivityIndicator') return '<div class="spinner"></div>';
 
@@ -827,4 +854,30 @@ function a11yAttr(p: Record<string, unknown>): string {
 /** The RN style, carried when MOCKUPS_YOGA=1 so yoga-parity.cjs can lay it out with Yoga. */
 function rnAttr(st: Record<string, unknown>): string {
   return process.env.MOCKUPS_YOGA === '1' ? ` data-rn="${esc(JSON.stringify(st))}"` : '';
+}
+
+/**
+ * A one-line Text's children up to its first line break, as the phone shows them, and whether
+ * anything was left out. A nested Text is cut inside itself, and nothing after it is kept.
+ */
+function firstLineOf(children: unknown[]): { kids: unknown[]; cut: boolean } {
+  const kids: unknown[] = [];
+  for (const c of children) {
+    if (typeof c === 'string') {
+      const at = c.indexOf('\n');
+      if (at === -1) { kids.push(c); continue; }
+      kids.push(c.slice(0, at));
+      return { kids, cut: true };
+    }
+    const node = c as { children?: unknown[] } | null;
+    if (node && typeof node === 'object' && Array.isArray(node.children)) {
+      const inner = firstLineOf(node.children);
+      if (inner.cut) {
+        kids.push({ ...node, children: inner.kids });
+        return { kids, cut: true };
+      }
+    }
+    kids.push(c);
+  }
+  return { kids, cut: false };
 }

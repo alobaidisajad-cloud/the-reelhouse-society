@@ -13,7 +13,8 @@ import { ArrowLeft, RotateCcw, Check, XCircle } from 'lucide-react-native';
 
 import { colors, fonts, SEPIA_HASH, metrics } from '@/src/theme/theme';
 import { tmdb, formatRuntime } from '@/src/lib/tmdb';
-import { formatDate, formatDateMonthDay } from '@/src/utils/timeAgo';
+import { formatDate } from '@/src/utils/timeAgo';
+import { watchedLabel as watchedLabelOf } from '@/src/components/film/watchedLabel';
 import { useClock } from '@/src/hooks/useClock';
 import { stripHtml } from '@/src/utils/html';
 
@@ -46,7 +47,6 @@ import { useFilmDetailContext } from '@/src/providers/FilmDetailProvider';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline } from '@/src/components/EmptyStates';
 import Buster from '@/src/components/Buster';
-import { dateOf } from '@/src/utils/instant';
 
 /** The backdrop's fade into the room: how much house it lays down, top to hem. */
 const BACKDROP_VEIL: VeilStops = [[0, 0.05], [0.5, 0.4], [0.75, 0.85], [1, 1]];
@@ -216,18 +216,9 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
    * the year is the interesting part.
    */
   const thisYear = useClock((now) => new Date(now).getFullYear());
-  const watchedLabel = useMemo(() => {
-    if (!existingLog?.watchedDate) return null;
-    const watched = dateOf(existingLog.watchedDate);
-    if (Number.isNaN(watched.getTime())) return null;
-    // Watched this year, the DAY is what a member is placing. Watched years
-    // ago, the YEAR is the whole point and the day is noise. Both forms are
-    // short, which is what lets the row survive a rewatch count and five reels
-    // beside them (`JUL 21, 2025` would not).
-    return watched.getFullYear() === thisYear
-      ? formatDateMonthDay(existingLog.watchedDate).toUpperCase()
-      : String(watched.getFullYear());
-  }, [existingLog?.watchedDate, thisYear]);
+  // Both forms are short, which is what lets the row survive a rewatch count and five reels beside
+  // them (`JUL 21, 2025` would not). The year is the calendar date's own (watchedLabel.ts).
+  const watchedLabel = useMemo(() => watchedLabelOf(existingLog?.watchedDate, thisYear), [existingLog?.watchedDate, thisYear]);
 
   const trayActs = useMemo<TrayAct[]>(() => {
     // Whether a film is logged, or saved, that the ledger does not hold is not yet known:

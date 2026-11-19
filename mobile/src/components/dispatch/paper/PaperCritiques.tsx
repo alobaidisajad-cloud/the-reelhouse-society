@@ -24,6 +24,7 @@ import { Credit, UNINKED, type PaperAuthor, type PaperFilm } from './PaperPost';
 import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFigure';
 import { saidStruck, useStruck } from '@/src/components/StruckWords';
 import { TryAgainLine } from '@/src/components/TryAgain';
+import { WithheldBanner } from '@/src/components/moderation/WithheldBanner';
 
 export interface Critique {
   id: string;
@@ -202,6 +203,8 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
         ) : null}
 
         <Text style={[p.commentBody, isRTLText(c.body) && p.rtlText]} {...scaledTextProps}>{softBreak(struck(c.body))}</Text>
+        {/* One's own critique the house withholds: marked so, never as if others read it (round 14). */}
+        {c.mine && <WithheldBanner pieceId={c.id} compact />}
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <PressableScale room

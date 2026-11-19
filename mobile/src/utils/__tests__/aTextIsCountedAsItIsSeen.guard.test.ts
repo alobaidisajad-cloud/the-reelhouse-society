@@ -40,7 +40,6 @@ const ALLOWED: [file: string, line: string, why: string][] = [
   ['src/utils/handleGuard.ts', 'username.length > MAX_HANDLE_LENGTH', HANDLE],
   ['src/components/InitiationModal.tsx', 'handle.length <= STAMP_LINE', HANDLE],
   ['src/components/reels/StackCan.tsx', 'p.length < 2', "a piece of a handle broken at its joints: ASCII"],
-  ['app/user/[username].tsx', 'd.substring(0, 10)', DATE],
   ['src/components/dispatch/ComposeDesks.tsx', 'String(r.release_date).slice(0, 4)', DATE],
   ['src/components/film/releaseOf.ts', 'today.slice(0, 4)', DATE],
   ['src/components/lobby/wallRead.ts', 'release.slice(0, 4)', DATE],

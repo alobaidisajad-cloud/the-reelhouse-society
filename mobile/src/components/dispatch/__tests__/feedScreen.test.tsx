@@ -238,8 +238,8 @@ describe('the Dispatch feed', () => {
     const { getByText, queryByText } = await mount();
     // The running head already names today, so printing it again ten points
     // below would be the same sentence twice.
-    expect(queryByText(dayLabel(today))).toBeNull();
-    expect(getByText(dayLabel(yesterday))).toBeTruthy();
+    expect(queryByText(dayLabel(today, now.getFullYear()))).toBeNull();
+    expect(getByText(dayLabel(yesterday, now.getFullYear()))).toBeTruthy();
   });
 
   // The running head prints TODAY, so a page whose newest filing was last Thursday read as filed
@@ -253,8 +253,8 @@ describe('the Dispatch feed', () => {
       ],
     });
     const { getByText } = await mount();
-    expect(getByText('FRIDAY, AUGUST 28')).toBeTruthy();
-    expect(getByText('THURSDAY, AUGUST 27')).toBeTruthy();
+    expect(getByText(/^FRIDAY, AUGUST 28(, 2026)?$/)).toBeTruthy();
+    expect(getByText(/^THURSDAY, AUGUST 27(, 2026)?$/)).toBeTruthy();
   });
 
   it('the saved page names the day above its first filing, even one filed today', async () => {
@@ -264,7 +264,18 @@ describe('the Dispatch feed', () => {
     put({ savedOnly: true, filings: [filing({ id: 'a', createdAt: today, body: 'Kept today.' })] });
     const { getByText } = await mount();
     expect(getByText('WHAT YOU KEPT')).toBeTruthy();
-    expect(getByText(dayLabel(today))).toBeTruthy();
+    expect(getByText(dayLabel(today, now.getFullYear()))).toBeTruthy();
+  });
+
+  it('a filing of another year is divided under its day and its year, on the paper and the saved page', async () => {
+    // Round 14: "WEDNESDAY, NOVEMBER 12" read as this year's, its weekday against this year's calendar.
+    const last = new Date().getFullYear() - 1;
+    for (const savedOnly of [false, true]) {
+      put({ savedOnly, filings: [filing({ id: 'a', createdAt: at(last, 11, 12, 12), body: 'Kept a year.' })] });
+      const r = await mount();
+      expect(r.getByText(new RegExp(`^[A-Z]+DAY, NOVEMBER 12, ${last}$`))).toBeTruthy();
+      await r.unmount();
+    }
   });
 
   it('the bookmark says it is selected on the saved page, and not on the paper', async () => {

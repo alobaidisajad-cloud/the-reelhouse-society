@@ -36,6 +36,8 @@ const mockHeldReads: (() => void)[] = [];
 let mockCritiqueRows: unknown[] = [];
 let mockNextRows: unknown[] = [];
 let mockWriteFails = false;
+/** The house's answers to the next writes, one each, before any other: its pace (round 14). */
+let mockWriteAnswers: unknown[] = [];
 /** No connection: the write throws as fetch does, and the store queues it. */
 let mockWriteOffline = false;
 const mockToastError = jest.fn();
@@ -116,7 +118,9 @@ jest.mock('@/src/lib/supabase', () => ({
         : builder(mockRow));
       chain.limit = () => builder(mockNextRows); // the next part (critiques use range)
       // Writes: missing, every act would roll back as if refused.
-      chain.insert = () => (mockWriteOffline
+      chain.insert = () => (mockWriteAnswers.length
+        ? Promise.resolve({ data: null, error: mockWriteAnswers.shift() })
+        : mockWriteOffline
         ? Promise.reject(Object.assign(new TypeError('Network request failed'), { name: 'TypeError' }))
         : mockWriteFails
         ? Promise.resolve({ data: null, error: { message: 'refused', code: '42501' } })
@@ -219,6 +223,7 @@ beforeEach(() => {
   mockCritiqueRows = [];
   mockNextRows = [];
   mockWriteFails = false;
+  mockWriteAnswers = [];
   mockWriteOffline = false;
   mockToastSuccess.mockClear();
   mockToastError.mockClear();
@@ -810,6 +815,24 @@ describe('the reader', () => {
     spy.mockRestore();
   });
 
+  it('an essay filed in another year says its year in the byline and on the card; this year’s does not', async () => {
+    // Round 14: "7 MIN · NOV 12" read as this year for an essay filed the November before.
+    const thisYear = new Date(Date.now()).getFullYear();
+    mockRow = row({ created_at: `${thisYear - 1}-11-12T12:00:00Z` });
+    const old = await mount();
+    expect(old.getByText(new RegExp(`MIN · NOV 1[23], ${thisYear - 1}$`))).toBeTruthy();
+    await act(async () => { await fireEvent.press(old.getByLabelText('Share')); });
+    expect(old.getAllByText(new RegExp(`^NOV 1[23], ${thisYear - 1}$`)).length).toBeGreaterThan(0);
+    await act(async () => { old.unmount(); });
+
+    mockRow = row({ created_at: `${thisYear}-06-15T12:00:00Z` });
+    const now = await mount();
+    expect(now.getByText(/MIN · JUN 1[56]$/)).toBeTruthy();
+    // The card goes out of the house, and is read in any year after: it always says its year.
+    await act(async () => { await fireEvent.press(now.getByLabelText('Share')); });
+    expect(now.getAllByText(new RegExp(`^JUN 1[56], ${thisYear}$`)).length).toBeGreaterThan(0);
+  });
+
   it('mounts the clipping only while an ESSAY is being shared', async () => {
     // Mounted only while the sheet is open, never on a page merely being read.
     const { getByLabelText, getAllByText } = await mount();
@@ -1164,6 +1187,35 @@ describe('the reader', () => {
     expect(mockToastError).toHaveBeenCalledWith('That critique did not go.');
     // The words survive for another try.
     expect(getByLabelText('Your critique').props.value).toBe('That is the argument.');
+  });
+
+  it('asked by the house to wait an hour on this filing, it says so and keeps what was written (round 14)', async () => {
+    mockWriteAnswers = [{ code: 'RH429', message: 'RATE_LIMITED', details: 'target', hint: '3600' }];
+    const { getByLabelText } = await mount();
+    await act(async () => { await fireEvent.press(getByLabelText('Write a critique')); });
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Your critique'), 'That is the argument.');
+    });
+    await act(async () => { await fireEvent.press(getByLabelText('File this critique')); });
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockToastError.mock.calls).toEqual([['You have filed many critiques here within the hour. The house takes your next one here in an hour.']]);
+    expect(getByLabelText('Your critique').props.value).toBe('That is the argument.');
+  });
+
+  it('asked by the house to wait a moment, it waits and files, saying nothing (round 14)', async () => {
+    mockWriteAnswers = [{ code: 'RH429', message: 'RATE_LIMITED', details: 'member', hint: '1' }];
+    const { getByLabelText, queryByLabelText } = await mount();
+    await act(async () => { await fireEvent.press(getByLabelText('Write a critique')); });
+    await act(async () => {
+      await fireEvent.changeText(getByLabelText('Your critique'), 'That is the argument.');
+    });
+    await act(async () => { await fireEvent.press(getByLabelText('File this critique')); });
+    await act(async () => { await new Promise((r) => setTimeout(r, 1100)); });
+
+    expect(mockWriteAnswers).toEqual([]);
+    expect(mockToastError).not.toHaveBeenCalled();
+    expect(queryByLabelText('Your critique')).toBeNull();
   });
 
   it('a critique written without a connection says it goes out when the wire is back', async () => {

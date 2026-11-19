@@ -43,6 +43,7 @@ import { p } from '@/src/components/dispatch/paper/paperStyles';
 import { NOT_SENT_LINE, WITHHELD_LINE, partOf } from '@/src/components/dispatch/paper/paperText';
 import { measure, KIND_NAME, SHARE_CARD_WIDTH, UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
+import { WithheldBanner } from '@/src/components/moderation/WithheldBanner';
 import { roomOf } from '@/src/components/dispatch/roomLink';
 import { hourLabel } from '@/src/components/dispatch/dayLabel';
 import { useAuthStore } from '@/src/stores/auth';
@@ -58,8 +59,9 @@ import type { CritiqueOrder, Filing } from '@/src/stores/dispatchTypes';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
 import { isNetworkError } from '@/src/utils/networkError';
-import { formatDateMonthDay } from '@/src/utils/timeAgo';
-import { useHasPassed, useTimesAgo, useTimeUntil } from '@/src/hooks/useClock';
+import { critiquePaceSaid } from '@/src/utils/housePace';
+import { formatDate, formatDateMonthDayInYear } from '@/src/utils/timeAgo';
+import { useClock, useHasPassed, useTimesAgo, useTimeUntil } from '@/src/hooks/useClock';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
@@ -203,6 +205,11 @@ function FilingReader({ id }: { id: string }) {
   // A ballot open as the page was drawn closes while it is read: both from the shared clock.
   const closesIn = useTimeUntil(live?.closesAt);
   const closesPassed = useHasPassed(live?.closesAt);
+  // The day it was filed, with its year once that is not this one ("NOV 12, 2025"), read from the
+  // shared clock so the year is added as the year turns. The share card goes out of the house and
+  // is read in any year after, so it always carries its year.
+  const filedOn = useClock((t) => (live ? formatDateMonthDayInYear(live.createdAt, t).toUpperCase() : ''));
+  const filedOnCard = live ? formatDate(live.createdAt).toUpperCase() : '';
   // Filed on this phone while the wire was down, and not gone yet.
   const pending = useUnsent('add_filing').has(id);
   // Its author blocked or muted (the ···, a REPORT that also blocks, or anywhere else): the page
@@ -348,6 +355,13 @@ function FilingReader({ id }: { id: string }) {
       // Filed, where members may certify or answer it: the moment to ask to send word.
       if (memberId) void offerWord('critique', memberId);
     } catch (e) {
+      // The house's pace (round 14): said with the wait it named, the words kept in the box; the
+      // filing stands, so it is not read again.
+      const paced = critiquePaceSaid(e);
+      if (paced) {
+        reelToast.error(paced);
+        return;
+      }
       // The store rolls the row back and keeps the text for another try. Refused, the filing is
       // read again: withdrawn or withheld while the critique was written, it takes none, and
       // the page draws it as it now stands, without the composer (review round 11).
@@ -539,6 +553,8 @@ function FilingReader({ id }: { id: string }) {
         >
           <PaperSheet>
             {/* The honour stays: the day this filing hung in the Lobby, if it did. */}
+            {/* Withheld by the house: its author reads it marked so, with its verdict a tap away (round 14). */}
+            {mine && <WithheldBanner pieceId={id} withheldAt={live.withheldAt} />}
             <LobbyHonour kind="post" id={id} style={{ marginBottom: 12 }} />
             {/* ── THE FILING ─────────────────────────────────────────────────
                 Each kind is drawn by the component the design drew for it, and
@@ -554,7 +570,7 @@ function FilingReader({ id }: { id: string }) {
                   // and offers no door: a stand-in name opened a room that is not there.
                   author={author}
                   readTime={readTimeOf(live.fullContent ?? live.body)}
-                  filed={formatDateMonthDay(live.createdAt).toUpperCase()}
+                  filed={filedOn}
                   film={live.film}
                   onAuthor={author ? () => openAuthor(author.name) : undefined}
                   onFilm={live.subjectId ? openFilm : undefined}
@@ -817,7 +833,7 @@ function FilingReader({ id }: { id: string }) {
               title={live.title ?? ''}
               opening={filingShareOpening(live)}
               author={author}
-              filed={formatDateMonthDay(live.createdAt).toUpperCase()}
+              filed={filedOnCard}
               logo={Image.resolveAssetSource(HOUSE_MARK).uri}
               width={SHARE_CARD_WIDTH}
             />

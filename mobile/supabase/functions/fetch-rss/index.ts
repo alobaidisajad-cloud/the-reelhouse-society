@@ -10,11 +10,13 @@
  * fetches only allowlisted https hosts, so it is no open relay.
  */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { callerAddress, paceKey } from '../_shared/callerAddress.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, content-type, x-client-info, apikey',
+  'Access-Control-Expose-Headers': 'x-rh-caller-source',
 };
 
 // A per-IP rate limit (best-effort, per isolate) and a host allowlist: no open relay.
@@ -108,7 +110,17 @@ function parseRss(xml: string): RssItem[] {
   });
 }
 
+// Every answer says which headers the address could be read from (cf, xff or none), never the
+// address: the first call after a deploy shows whether the pace by address is on.
 serve(async (req: Request) => {
+  const caller = callerAddress(req.headers);
+  const answered = await answer(req, paceKey(caller.address));
+  answered.headers.set('x-rh-caller-source', caller.source);
+  return answered;
+});
+
+/** The reader's answer; `door` is the vouched address's pace key (IPv6 by its /64), or null. */
+async function answer(req: Request, door: string | null): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -119,11 +131,10 @@ serve(async (req: Request) => {
     });
   }
 
-  // Rate limited by client IP
-  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    || req.headers.get('cf-connecting-ip')
-    || 'unknown';
-  if (isRateLimited(clientIp)) {
+  // Rate limited by the address the platform vouches for, never the first X-Forwarded-For
+  // entry, which the caller writes (a new one each call was never paced); with none vouched, by
+  // no address (never one limit the whole house shares).
+  if (door && isRateLimited(door)) {
     return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try again shortly.' }), {
       status: 429,
       headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' },
@@ -198,4 +209,4 @@ serve(async (req: Request) => {
       },
     );
   }
-});
+}

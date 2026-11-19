@@ -4,7 +4,7 @@
  * Strips zero-width and control characters and caps each field's length, at the
  * store's mutation layer and again at the offline queue's replay.
  */
-import { characterStart } from './text';
+import { characterStart, cutWhole } from './text';
 
 // Invisible characters, all THREE bidi families (the test enumerates every bidi codepoint):
 // marks, isolates, embeddings/overrides \u2014 U+202E reorders what is shown from what is stored.
@@ -167,4 +167,12 @@ export function isOverLimit(text: string, fieldType: FieldType): boolean {
 export function remainingChars(text: string, fieldType: FieldType): number {
   // Same measure as isOverLimit and as the cap itself.
   return MAX_LENGTHS[fieldType] - cleanForStorage(text ?? '').length;
+}
+
+/** A member's one appeal of a verdict of the house's (mod_actions_appeal_len): round 14. */
+export const APPEAL_MAX = 1000;
+
+/** An appeal as it is stored: cleaned as every member's words are, and kept to its rule, never cut inside a character. */
+export function sanitizeAppeal(text: string): string {
+  return text ? cutWhole(cleanForStorage(text), APPEAL_MAX) : '';
 }

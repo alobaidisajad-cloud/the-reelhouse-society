@@ -61,7 +61,7 @@ type Answers = {
   fixtureCoverage: { unjudged: string[]; gone: string[] };
   cases: { label: string; table: string; action: string; actor: string; target: string; sql: string; then?: string }[];
   actors: string[]; head: string; tail: string; commits: boolean;
-  expected: string[]; acrossBlocks: string; ranked: string[]; judged: string[]; met: boolean[];
+  expected: string[]; acrossBlocks: string; blockers: string[]; ranked: string[]; judged: string[]; met: boolean[];
   filled: Record<string, unknown>; uidP: string; unknownPlaceholder: string;
   columns: string[]; dated: string[];
   functions: { unjudged: string[]; gone: string[]; count: number };
@@ -95,6 +95,8 @@ const answers: Answers = (() => {
       head: sql.slice(0, 40), tail: sql.trimEnd().slice(-20), commits: /^COMMIT\\b/m.test(sql),
       expected: ${JSON.stringify(EXPECTED)}.map(([action, actor, target]) => a.expected(spec, action, actor, target)),
       acrossBlocks: a.expected({ ...spec, acrossBlocks: true }, 'delete', 'admin', 'BK'),
+      blockers: [['free', 'BY'], ['free', 'BK'], ['admin', 'BY'], ['visitor', 'BY']]
+        .map(([actor, target]) => a.expected({ owner: 'id', read: 'everyone', hidesBlockers: true }, 'select', actor, target)),
       ranked: [a.expected(notes, 'insert', 'banned', 'self'), a.expected(notes, 'insert', 'lapsed', 'self')],
       judged: ${JSON.stringify(JUDGED)}.map(([c, got]) => a.judge(c, got)),
       met: [['refused-or-then', 'refused'], ['refused-or-then', 'ok then:true'], ['refused-or-then', 'ok then:false'],
@@ -105,7 +107,16 @@ const answers: Answers = (() => {
       functions: (() => {
         const callable = a.callableFunctions(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, ''));
         const pending = (globalThis.__pending ?? []).join('\\n');
-        const dropped = [...pending.matchAll(/^DROP FUNCTION public\\.(\\w+)\\(/gm)].map((m) => m[1]);
+        const dropped = [...pending.matchAll(/^DROP FUNCTION (?:IF EXISTS )?public\\.(\\w+)\\(/gm)].map((m) => m[1]);
+        // A function a pending migration closes to every member and visitor (REVOKE ... FROM anon and
+        // authenticated, not granted again after), as production will be once it is applied (round 14).
+        const opened = new Map();
+        for (const m of pending.matchAll(/^(GRANT|REVOKE) (?:ALL|EXECUTE) ON FUNCTION public\\.(\\w+)\\(.*\\) (?:TO|FROM) (.*);$/gm)) {
+          const roles = m[3].split(',').map((r) => r.trim());
+          if (m[1] === 'GRANT' && (roles.includes('anon') || roles.includes('authenticated'))) opened.set(m[2], true);
+          if (m[1] === 'REVOKE' && roles.includes('anon') && roles.includes('authenticated')) opened.set(m[2], false);
+        }
+        dropped.push(...[...opened].filter(([, open]) => !open).map(([f]) => f));
         const created = [...pending.matchAll(/^CREATE (?:OR REPLACE )?FUNCTION public\\.(\\w+)\\(/gm)].map((m) => m[1]);
         const judged = Object.keys(matrix.functions);
         return {
@@ -225,6 +236,10 @@ describe('every try is planned, filled and written out', () => {
 describe('the answer the matrix expects follows its words', () => {
   it.each(EXPECTED.map((e, i) => [...e, i] as const))('%s by %s on %s: %s', (_action, _actor, _target, want, i) => {
     expect(answers.expected[i]).toBe(want);
+  });
+
+  it('hides a member who blocked the reader from every member but an admin, and the member the reader blocked from no one', () => {
+    expect(answers.blockers).toEqual(['unseen', 'seen', 'seen', 'seen']);
   });
 
   it('lets the house\'s word cross a block where the matrix says so', () => {

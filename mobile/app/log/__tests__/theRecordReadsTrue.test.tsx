@@ -84,7 +84,7 @@ jest.mock('@/src/stores/auth', () => {
   return { useAuthStore };
 });
 jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ held: true, standing: 'held', open: jest.fn() }) }));
-jest.mock('@/src/hooks/useVault', () => ({ useVault: () => ({ note: null, loaded: true, unreachable: false }) }));
+jest.mock('@/src/hooks/useVault', () => ({ useVault: () => ({ note: null, loaded: true, unreachable: false, noteFor: () => '' }) }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn(), addBreadcrumb: jest.fn() }));
 jest.mock('@/src/utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(() => true), flushOfflineQueue: jest.fn(), getOfflineQueue: jest.fn(() => []),
@@ -582,5 +582,20 @@ describe('a record opened from its card draws what the card held, at once (P4.53
     mockLogService.getLogComments.mockRejectedValue(new Error('Network request failed'));
     const read = await mockOptions.queryFn({ signal: new AbortController().signal });
     expect(read).toEqual(expect.objectContaining({ critiquesUnread: true, seeded: false, commentTotal: 3, log: expect.objectContaining({ film_title: 'In the Mood for Love' }) }));
+  });
+});
+
+describe('a record the house withholds (round 14)', () => {
+  const ME = '33333333-3333-4333-8333-333333333333';
+  it('its author reads it marked withheld, never as if it stood public', async () => {
+    const r = await page({ user_id: ME, withheld_at: '2026-11-18T10:00:00Z' });
+    expect(words(r)).toContain('WITHHELD BY THE HOUSE');
+    expect(words(r)).toContain('No one but you can read this.');
+    expect(r.getByLabelText('Withheld by the house. No one but you can read this.')).toBeTruthy();
+  });
+
+  it('a record that stands carries no mark', async () => {
+    const r = await page({ user_id: ME, withheld_at: null });
+    expect(words(r)).not.toContain('WITHHELD BY THE HOUSE');
   });
 });

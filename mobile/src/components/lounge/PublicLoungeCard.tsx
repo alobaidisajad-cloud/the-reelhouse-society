@@ -113,7 +113,7 @@ export const PublicLoungeCard = React.memo(({ lounge: room, first, seated, onRep
         ) : null}
         <View style={s.words} {...UNSPOKEN}>
           <View style={[s.nameLine, !timeBeside && s.nameLineStacked]}>
-            {/* A salon's name is content: past two lines it ends in "…", shown whole in the room. */}
+            {/* A salon's name is content: past two lines it ends in "…", shown whole, with its description, in the room's settings sheet. */}
             <Text style={s.name} {...displayTextProps} numberOfLines={2}>{lounge.name}</Text>
             {lastWord ? <Text style={s.lastWord} {...scaledTextProps}>{lastWord.toUpperCase()}</Text> : null}
           </View>

@@ -16,8 +16,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { computeYearStats, fetchYearLogs, yearToTell, YearStats } from '@/src/services/YearInCinemaService';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { safeAreaHeight, useBottomEdge, useOverlayTop, useColumnWidth } from '@/src/components/layout/navMetrics';
+import { useBottomEdge, useOverlayTop, useColumnWidth, useTopBarPadding } from '@/src/components/layout/navMetrics';
 import { WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { BusterEyes } from '@/src/components/Buster';
@@ -65,7 +64,6 @@ function FilmEdges() {
 
 export default function YearInCinemaScreen() {
   const user = useAuthStore((s) => s.user);
-  const insets = useSafeAreaInsets();
   const edge = useBottomEdge();
   // The close button floats over the slides: an overlay's top (navMetrics).
   const closeTop = useOverlayTop();
@@ -124,14 +122,24 @@ export default function YearInCinemaScreen() {
     return list;
   }, [stats]);
 
-  const slideHeight = safeAreaHeight(height, insets);
+  // Each slide is the whole window the pager is given, as it measured itself (the window's height
+  // until then): its gradient, vignette and sprocket strips reach both edges. Its words start below
+  // the status bar (the slide's top padding), and the footer alone clears the home indicator. The
+  // slide was the window less both insets, laid from the top: short of the foot by both, so its
+  // ground stopped in a hard edge and the paginator floated (round 14).
+  const [pagerHeight, setPagerHeight] = useState<number | null>(null);
+  const slideHeight = pagerHeight ?? height;
+  const slideTop = useTopBarPadding();
+  // The page the pager is on, for the re-snap below: kept as the pager settles on a page (a ref, read in its own event).
+  const page = useRef(0);
+  const pager = useRef<ScrollView>(null);
 
   const renderSlide = useCallback(({ item, index }: { item: SlideType; index: number }) => {
     const isActive = currentIndex === index;
     if (!stats) return null;
 
     return (
-      <View style={[s.slide, { width, height: slideHeight }]}>
+      <View style={[s.slide, { width, height: slideHeight, paddingTop: slideTop }]}>
         <LinearGradient colors={['#1a1510', colors.ink, '#0D0B09']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFill, WASH]} />
         {/* Filmic vertical vignette — depth without a flat grey wash */}
         <LinearGradient colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.55)']} locations={[0, 0.5, 1]} style={[StyleSheet.absoluteFill, WASH]} pointerEvents="none" />
@@ -150,7 +158,7 @@ export default function YearInCinemaScreen() {
           {isActive && item === 'total' && (
             <Arrive name="year-in-cinema-2" duration={700} style={s.centerBox}>
               <Text style={s.number} numberOfLines={1} adjustsFontSizeToFit>{stats.total}</Text>
-              <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit>Films Logged</Text>
+              <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit>{stats.total === 1 ? 'Film Logged' : 'Films Logged'}</Text>
               <Text style={s.sub}>
                 {stats.total === 1
                   ? (stats.year === thisYear ? 'A single reel so far this year.' : `A single reel in all of ${stats.year}.`)
@@ -225,7 +233,7 @@ export default function YearInCinemaScreen() {
         )}
       </View>
     );
-  }, [currentIndex, width, slideHeight, stats, slides, user, edge, thisYear]);
+  }, [currentIndex, width, slideHeight, slideTop, stats, slides, user, edge, thisYear]);
 
   if (phase === 'stranger') return <MembersOnly next="/year-in-cinema" />;
 
@@ -281,14 +289,27 @@ export default function YearInCinemaScreen() {
           laid its pages out wider than the phone, and each page's words stood off it
           (the route walk, 2026-10-21: a blank year). */}
       <ScrollView
+        ref={pager}
+        testID="year-pager"
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         bounces={false}
+        onLayout={(e) => {
+          const laid = e.nativeEvent.layout.height;
+          if (laid > 0 && laid !== pagerHeight) setPagerHeight(laid);
+        }}
+        // Its pages laid again at a new width (a foldable unfolded, an iPad window resized), the
+        // pager is put back on the page it was on: neither platform's paging scroll moves its
+        // offset for a layout change, which left it between pages, on a slide not drawn.
+        // Here, once the pages have their new size, never before (a scroll asked of the old
+        // size is cut short at its end).
+        onContentSizeChange={() => pager.current?.scrollTo({ x: page.current * width, animated: false })}
         onMomentumScrollEnd={(e) => {
           const index = Math.round(e.nativeEvent.contentOffset.x / width);
           if (index !== currentIndex) {
             TactileEngine.selection();
+            page.current = index;
             setCurrentIndex(index);
           }
         }}

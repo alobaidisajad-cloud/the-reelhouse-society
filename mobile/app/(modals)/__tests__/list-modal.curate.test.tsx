@@ -14,7 +14,7 @@
  */
 import React, { act } from 'react';
 import * as RN from 'react-native';
-import { render, waitFor, fireEvent } from '@testing-library/react-native';
+import { render, waitFor, fireEvent, within } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { stripComments } from '@/test-utils/readCode';
@@ -699,6 +699,28 @@ describe('the search says what happened', () => {
     await act(async () => { await fireEvent.press(r.getByLabelText('Try again')); });
     await waitFor(() => expect(r.getByText('Sunrise')).toBeTruthy(), { timeout: 2000 });
     expect(mockTmdb.search).toHaveBeenLastCalledWith('sunrise', 1);
+  });
+
+  it('three films of one title are told apart by ear: each is said with its year', async () => {
+    mockTmdb.search.mockResolvedValueOnce({ results: [
+      { id: 616, title: 'Nosferatu', media_type: 'movie', release_date: '1922-03-04' },
+      { id: 6404, title: 'Nosferatu', media_type: 'movie', release_date: '1979-01-17' },
+      { id: 426063, title: 'Nosferatu', media_type: 'movie', release_date: '2024-12-25' },
+    ] });
+    const r = mount();
+    await typeIn(r, 'nosferatu');
+    await waitFor(() => expect(r.getByLabelText('Add Nosferatu, 1922')).toBeTruthy(), { timeout: 2000 });
+    expect(r.getByLabelText('Add Nosferatu, 1979')).toBeTruthy();
+    expect(r.getByLabelText('Add Nosferatu, 2024')).toBeTruthy();
+  });
+
+  it('a film TMDB gives no date ("") prints the dash and is said without a year', async () => {
+    mockTmdb.search.mockResolvedValueOnce({ results: [{ id: 9001, title: 'The Lost Reel', media_type: 'movie', release_date: '' }] });
+    const r = mount();
+    await typeIn(r, 'lost reel');
+    await waitFor(() => expect(r.getByLabelText('Add The Lost Reel')).toBeTruthy(), { timeout: 2000 });
+    // A mark for the eye: the house's Text keeps a lone dash from a screen reader.
+    expect(within(r.getByLabelText('Add The Lost Reel')).getByText('—', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('a search that found nothing says so, rather than looking like one still out', async () => {

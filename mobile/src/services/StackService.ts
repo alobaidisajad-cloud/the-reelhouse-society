@@ -2,6 +2,7 @@ import { supabase } from '@/src/lib/supabase';
 import { z } from 'zod';
 import { logger } from '@/src/utils/logger';
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
+import { atTheHousesPace } from '@/src/utils/housePace';
 import { captureError } from '@/src/lib/sentry';
 import { useAuthStore } from '@/src/stores/auth';
 
@@ -90,7 +91,7 @@ export const StackService = {
     const viewer = useAuthStore.getState().user?.id ?? null;
     const [listRes, itemsRes, filmCountRes, endorseRes, critiqueCountRes, mineRes] = await Promise.all([
       supabase.from('lists')
-        .select('id, title, description, user_id, is_private, is_ranked, created_at, updated_at, profiles(username)')
+        .select('id, title, description, user_id, is_private, is_ranked, created_at, updated_at, withheld_at, profiles(username)')
         .eq('id', stackId)
         .maybeSingle(),
       // Bounded. This was unbounded — a stack of any size loaded in full, and the
@@ -192,6 +193,8 @@ export const StackService = {
       critiqueCount: critiqueCountRes.error ? null : (critiqueCountRes.count ?? 0),
       isPrivate: listRes.data.is_private ?? false,
       isRanked: listRes.data.is_ranked ?? false,
+      // Withheld by the house (round 14): its curator alone reads it, marked so on its page.
+      withheldAt: (listRes.data as { withheld_at?: string | null }).withheld_at ?? null,
       // The RPC returns the count as `data`, not as PostgREST's `count` header.
       endorseCount: Number(endorseRes.data ?? 0) || 0,
       // null when signed out or the question failed: the heart is left as it was.
@@ -271,14 +274,19 @@ export const StackService = {
     const { content, ...rest } = safePayload;
     const dbPayload = { ...rest, content: sanitizeInput(content, 'listComment') };
     
-    // Add the comment and fetch joined profile in a single query
-    const { data, error } = await supabase
-      .from('list_comments')
-      .insert([dbPayload])
-      .select('id, list_id, user_id, content, created_at, profiles(username, avatar_url)')
-      .maybeSingle();
+    // Add the comment and fetch joined profile in a single query, at the house's pace
+    // (check_critique_pace, round 14): a moment's wait is waited and the critique filed; a longer
+    // one is thrown, for the page to say how long (housePace.critiquePaceSaid).
+    const { data } = await atTheHousesPace(async () => {
+      const sent = await supabase
+        .from('list_comments')
+        .insert([dbPayload])
+        .select('id, list_id, user_id, content, created_at, profiles(username, avatar_url)')
+        .maybeSingle();
+      if (sent.error) throw sent.error;
+      return sent;
+    });
 
-    if (error) throw error;
     if (!data) throw new Error('Failed to add stack comment');
 
     // SVC-1: the DB trigger tr_notify_list_comment already emits the correct

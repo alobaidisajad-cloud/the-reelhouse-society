@@ -1,5 +1,8 @@
 import { useShallow } from 'zustand/react/shallow';
+import { P, useRouteParams } from '@/src/utils/routeParams';
 import { nav } from '@/src/utils/typedRouter';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
+import { VerdictSheet } from '@/src/components/moderation/VerdictSheet';
 import { RemoteImage } from '@/src/components/Picture';
 import { FlashList } from '@shopify/flash-list';
 import { ANCHORED_BELOW_THE_TOP } from '@/src/components/layout/CinematicFlashList';
@@ -59,10 +62,19 @@ const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
   default: { Icon: Award, color: colors.fog },
 };
 
-/** What a screen reader says for a notice: whether it is new, who, what and when. */
+/** What a screen reader says for a notice: whether it is new, who, what and when (a struck slur said "struck"). */
 function noticeLabel(unread: boolean, who: string | null | undefined, message: string, ago: string): string {
-  return `${unread ? 'Unread. ' : ''}${who ? `@${who} ` : ''}${message}, ${ago.toLowerCase()}`;
+  return `${unread ? 'Unread. ' : ''}${who ? `@${who} ` : ''}${saidStruck(message)}, ${ago.toLowerCase()}`;
 }
+
+/** The words under a notice of the house's that opens its verdict whole, said as they are shown. */
+const READ_IN_FULL = 'READ IN FULL';
+
+/** The verdict a notice opens, by its id: the board opens it in place (VerdictSheet). */
+const VerdictOpener = React.createContext<(verdictId: string) => void>(() => {});
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** The board's address may name a verdict to open over it (a verdict's push). */
+const BOARD_PARAMS = { verdict: P.uuid };
 
 /**
  * A notice's Dismiss, offered on its row: VoiceOver reads the row as one stop and never reaches
@@ -73,6 +85,11 @@ const DISMISS_ACT = [{ name: 'dismiss', label: 'Dismiss' }];
 const NotificationItem = React.memo(function NotificationItem({ item, index }: { item: AppNotification; index: number }) {
   const isRead = item.read;
   const ago = useTimeAgo(item.created_at);
+  // Another member's words in a notice (a ballot's title, a salon's name) struck for a member who
+  // asked, as they are on the ballot and the salon themselves (round 14).
+  const message = useStruck()(item.message);
+  const openVerdict = React.useContext(VerdictOpener);
+  const verdict = item.verdict_id && UUID.test(item.verdict_id) ? item.verdict_id : null;
 
   const typeInfo = TYPE_ICONS[item.type] || TYPE_ICONS.default;
   const TypeIcon = typeInfo.Icon;
@@ -80,6 +97,12 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
   const handlePress = () => {
     if (!isRead) {
       useNotificationStore.getState().markRead(item.id);
+    }
+    // A notice of the house's about a verdict opens it whole, here over the board: its reason in
+    // full (the row is cut at three lines) and its one appeal (review round 14).
+    if (verdict) {
+      openVerdict(verdict);
+      return;
     }
     // Where the notice is about (noticeRoute, which a tapped push uses too);
     // the sheet closes before the room opens. The page beneath it already that room (the salon,
@@ -106,7 +129,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
         onPress={handlePress}
         haptic="light"
         pressedScale={0.96}
-        accessibilityLabel={noticeLabel(!isRead, item.from_username, item.message, ago)}
+        accessibilityLabel={`${noticeLabel(!isRead, item.from_username, message, ago)}${verdict ? `. ${READ_IN_FULL.toLowerCase()}` : ''}`}
         accessibilityActions={DISMISS_ACT}
         onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'dismiss') handleDismiss(); }}
       >
@@ -121,11 +144,13 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
               hangs in the Lobby today.") is a whole sentence, as the push banner prints it —
               never "@system …". */}
           <Text style={s.itemMessage} numberOfLines={3} ellipsizeMode="tail">
-            {item.from_username ? <><Text style={s.itemUser}>@{item.from_username}</Text>{' '}</> : null}{item.message}
+            {item.from_username ? <><Text style={s.itemUser}>@{item.from_username}</Text>{' '}</> : null}{message}
           </Text>
           <Text style={s.itemTime} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
             {ago}
           </Text>
+          {/* A verdict's notice is cut here; the whole of it, and its appeal, a tap away. */}
+          {verdict && <Text style={s.readInFull}>{READ_IN_FULL} ›</Text>}
         </View>
 
         {/* Mini poster thumbnail */}
@@ -146,6 +171,8 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
 
 const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ item, index }: { item: GroupedDisplayItem; index: number }) {
   const ago = useTimeAgo(item.created_at);
+  // The certified piece's name is a member's words: struck for a member who asked (round 14).
+  const message = useStruck()(item.message);
   const posterUri = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : null;
 
   const handlePress = () => {
@@ -172,7 +199,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
         onPress={handlePress}
         haptic="light"
         pressedScale={0.96}
-        accessibilityLabel={noticeLabel(item.hasUnread, null, item.message, ago)}
+        accessibilityLabel={noticeLabel(item.hasUnread, null, message, ago)}
         accessibilityActions={DISMISS_ACT}
         onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'dismiss') handleDismiss(); }}
       >
@@ -184,7 +211,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
         {/* Content */}
         <View style={s.itemContent}>
           <Text style={s.itemMessage} numberOfLines={2} ellipsizeMode="tail">
-            {item.message}
+            {message}
           </Text>
           <Text style={s.itemTime} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
             {ago}
@@ -255,9 +282,30 @@ export default function NotificationsModal() {
     if (after.fetchFailed && after.notifications.length > 0) reelToast.error(REFRESH_FAILED);
   }, [fetchNotifications]);
   const rereadBoard = useCallback(() => { void fetchNotifications(); }, [fetchNotifications]);
+
+  // A verdict opened whole over the board (VerdictSheet, round 14): from its row, from its push (the
+  // board opened at ?verdict=<id>), or from its push while the board is already open (told so).
+  const [verdictOpen, setVerdictOpen] = useState<string | null>(null);
+  const { verdict: askedVerdict } = useRouteParams(BOARD_PARAMS);
+  const [verdictAsked, setVerdictAsked] = useState<string | undefined>(undefined);
+  if (askedVerdict !== verdictAsked) {
+    setVerdictAsked(askedVerdict);
+    // Opened once the board has finished arriving: a sheet asked for over a screen still coming in
+    // (or going out) is the iPhone's two-Modal trap.
+    if (askedVerdict) {
+      const id = askedVerdict;
+      InteractionManager.runAfterInteractions(() => setVerdictOpen(id));
+    }
+  }
   // A push tapped while the board is open (one that points nowhere in particular opens the board):
-  // the board is read again, so what it announced is on it (review round 12).
-  useReadAgainWhenToldHere(NOTICES_SHEET, rereadBoard);
+  // the board is read again, so what it announced is on it (review round 12); one about a verdict
+  // opens it whole (round 14).
+  const toldHere = useCallback((query: URLSearchParams) => {
+    rereadBoard();
+    const v = query.get('verdict');
+    if (v && UUID.test(v)) setVerdictOpen(v);
+  }, [rereadBoard]);
+  useReadAgainWhenToldHere(NOTICES_SHEET, toldHere);
 
   // Infinite scroll handler — wires to existing cursor pagination in store
   const handleLoadMore = useCallback(() => {
@@ -275,6 +323,7 @@ export default function NotificationsModal() {
   if (!member) return <MembersOnly next="/notifications-modal" style={{ paddingTop: handleTop }} />;
 
   return (
+    <VerdictOpener.Provider value={setVerdictOpen}>
     <View style={s.container}>
       <RoomLight room="default" />
       {/* Drag handle */}
@@ -379,7 +428,9 @@ export default function NotificationsModal() {
       />
 
       <FollowRequestsPanel visible={doorOpen} onClose={() => setDoorOpen(false)} />
+      <VerdictSheet verdictId={verdictOpen} onClose={() => setVerdictOpen(null)} />
     </View>
+    </VerdictOpener.Provider>
   );
 }
 
@@ -442,6 +493,8 @@ const s = StyleSheet.create({
   itemMessage: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },
   itemUser: { fontFamily: fonts.sub, color: colors.parchment },
   itemTime: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 0.6, color: colors.fog, marginTop: 4, includeFontPadding: false },
+  // Under a verdict's notice: its whole, and its one appeal, a tap away.
+  readInFull: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginTop: 6, includeFontPadding: false },
   miniPoster: {
     width: 24, height: 36, borderRadius: 2,
     backgroundColor: colors.soot,

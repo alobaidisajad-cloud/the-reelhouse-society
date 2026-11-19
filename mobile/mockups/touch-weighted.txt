@@ -8,10 +8,10 @@ app/(admin)/tribunal.tsx · Close · wayOut
 app/(admin)/tribunal.tsx · Dismiss report · destructive
 app/(admin)/tribunal.tsx · Go back · wayOut
 app/(admin)/tribunal.tsx · Permanent exile: ban this member for good · destructive
-app/(admin)/tribunal.tsx · Remove the reported content · destructive
 app/(admin)/tribunal.tsx · Render verdict: … · destructive
 app/(admin)/tribunal.tsx · Suspend member · destructive
 app/(admin)/tribunal.tsx · Warn: issue a warning · destructive
+app/(admin)/tribunal.tsx · {item.content_type === 'profile' ? 'Remove content: clear the words on the page' : item.content_type === 'lounge' ? 'Remove content: clear the salon’s name and words' : 'Remove the reported content'} · destructive
 app/(modals)/cover-picker.tsx · Close · wayOut
 app/(modals)/list-modal.tsx · Close list modal · wayOut
 app/(modals)/list-modal.tsx · Remove … · destructive
@@ -56,6 +56,11 @@ src/components/TryAgain.tsx · {label} · wayOut
 src/components/UnsentChanges.tsx · Close · wayOut
 src/components/UnsentChanges.tsx · Let go: … · destructive
 src/components/UnsentChanges.tsx · Send again: … · commit
+src/components/admin/AppealsDocket.tsx · Overturn the verdict · destructive
+src/components/admin/AppealsDocket.tsx · Uphold the verdict · destructive
+src/components/admin/HearingSheet.tsx · Close · wayOut
+src/components/admin/HearingSheet.tsx · {hearing.actSaid} · destructive
+src/components/admin/SanctionsList.tsx · {m.is_banned ? `Lift the ban on ${m.username ?? 'the member'}` : `Lift the suspension of ${m.username ?? 'the member'}`} · destructive
 src/components/admin/SecondKeyDoor.tsx · Go back · wayOut
 src/components/auth/EmailConfirmationScreen.tsx · Close · wayOut
 src/components/critique/CritiqueRow.tsx · Withdraw your critique · destructive
@@ -111,6 +116,8 @@ src/components/moderation/ContentActionSheet.tsx · Close action sheet · wayOut
 src/components/moderation/ContentActionSheet.tsx · {option.accessibilityLabel} · destructive
 src/components/moderation/ReportSheet.tsx · Dismiss report form · wayOut
 src/components/moderation/ReportSheet.tsx · File report · commit
+src/components/moderation/VerdictSheet.tsx · Close · wayOut
+src/components/moderation/VerdictSheet.tsx · {filing ? 'Filing the appeal' : 'File the appeal'} · commit
 src/components/profile/AvatarCropSheet.tsx · Close · wayOut
 src/components/profile/CinemaDNACard.tsx · Close cinema DNA · wayOut
 src/components/profile/FollowRequestsPanel.tsx · Admit … · commit

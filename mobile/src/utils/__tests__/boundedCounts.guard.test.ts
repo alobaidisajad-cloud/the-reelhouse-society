@@ -133,11 +133,13 @@ describe('#94 · the Tribunal asks once, for the whole docket', () => {
     expect(svc).not.toMatch(/async getUserModerationHistory/);
   });
 
-  it('the batch is keyed on the ACCUMULATED docket, not page one', () => {
-    // The docket appends pages; a fetch keyed to the first page would leave every
-    // later card with an empty record.
-    expect(tribunal).toMatch(/docketUserIds/);
-    expect(tribunal).toMatch(/queryKey: \['admin', 'moderation-history', docketUserIds\]/);
+  it('the records are read as the docket grows: the new members of each page once, every member read', () => {
+    // The docket appends pages: a fetch keyed to the first page left every later card with an empty
+    // record, and one keyed on the whole docket read every record held again with each page (round 14).
+    // Each page of new members is its own read, kept: none dropped, none read twice.
+    expect(tribunal).toMatch(/setRecordPages\(\(pages\) =>/);
+    expect(tribunal).toMatch(/queryKey: \['admin', 'moderation-history', ids\]/);
+    expect(tribunal).toMatch(/recordPages\.map\(\(ids\) =>/);
   });
 
   it('it ranks per member, so one heavy offender cannot starve the rest', () => {

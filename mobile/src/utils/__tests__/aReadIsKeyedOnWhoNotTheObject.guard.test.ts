@@ -21,7 +21,7 @@ const JUDGED: Record<string, string> = {
   'app/stacks/[id].tsx [user, id, isCertified, certifyKnown, rereadStack, toggleListEndorse, isCertifying, queryClient]': 'a press handler (certify)',
   'app/stacks/[id].tsx [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount, letGoOfComment, setCommentText]': 'a press handler (file a critique)',
   'app/stacks/[id].tsx [user, id, queryClient, bumpCritiqueCount]': 'a press handler (delete a critique)',
-  'app/year-in-cinema.tsx [currentIndex, width, slideHeight, stats, slides, user, edge, thisYear]': 'a slide drawer: it draws the member\'s name, reads nothing',
+  'app/year-in-cinema.tsx [currentIndex, width, slideHeight, slideTop, stats, slides, user, edge, thisYear]': 'a slide drawer: it draws the member\'s name, reads nothing',
   'src/components/moderation/ReportSheet.tsx [selectedReason, user, submitReport, contentId, contentType, details, blockToggle, targetUserId, onDismiss, refuse]': 'a press handler (send the report)',
   'src/hooks/useEditProfile.ts [user, form, opened]': 'lays the member\'s own record under the form each time the object is replaced (a read again, a session restore): keepDirtyValues keeps every field they changed, so a replaced object brings in the same record or a newer one, never over their words',
   'src/hooks/useProfileController.ts [isSelf, user, data.targetUser?.username, targetUserHash]': 'copies the member\'s own record onto their file on screen: no read',

@@ -204,6 +204,8 @@ export default function DispatchScreen() {
 
   // The paper's date turns at the member's midnight, with the paper open.
   const todayIs = useToday();
+  // Read at its noon, so no timezone moves its day or its year (the day labels take the year from it).
+  const today = useMemo(() => dateOf(`${todayIs}T12:00:00`), [todayIs]);
   // A divider wherever the day changes, under LATEST only: ordered by
   // certifications the list is not chronological, so no day boundary is real.
   const rows = useMemo<Row[]>(() => {
@@ -217,13 +219,13 @@ export default function DispatchScreen() {
           // Above the first only when the running head does not already name its day: the head
           // prints TODAY (and the saved page, its title), so a page whose newest filing was
           // last Thursday read as filed today until the next divider (review round 6).
-          if (out.length > 0 || savedOnly || k !== todayIs) out.push({ type: 'day', key: `day-${k}`, label: dayLabel(f.createdAt) });
+          if (out.length > 0 || savedOnly || k !== todayIs) out.push({ type: 'day', key: `day-${k}`, label: dayLabel(f.createdAt, today.getFullYear()) });
         }
       }
       out.push({ type: 'filing', key: f.id, filing: f });
     }
     return out;
-  }, [filings, sort, savedOnly, todayIs]);
+  }, [filings, sort, savedOnly, todayIs, today]);
 
   // The column at THIS screen's width, not a 390pt phone's.
   const screenWidth = useColumnWidth();
@@ -281,7 +283,6 @@ export default function DispatchScreen() {
   }, [sort, width, certifiedIds, savedIds, unsent, member]);
 
   const empty = EMPTY[section];
-  const today = useMemo(() => dateOf(`${todayIs}T12:00:00`), [todayIs]);
   // The empty BALLOTS and ESSAYS pages' "WHAT AN AUTEUR CAN DO →": each its own
   // rope, so the tap names the form reached for; never shown to who holds it.
   const ballots = useClearance('ballots', '/dispatch');
@@ -293,13 +294,13 @@ export default function DispatchScreen() {
     <>
       {filings.length === 0 && !reading && section === 'ALL' && !savedOnly ? (
         <>
-          <PaperMasthead date={today} dateLabel={dayLabel(today.toISOString()).split(', ')[1] ?? ''} />
+          <PaperMasthead date={today} dateLabel={dayLabel(today.toISOString(), today.getFullYear()).split(', ')[1] ?? ''} />
           <Ornament />
         </>
       ) : (
         <RunningHead
           date={today}
-          dayLabel={dayLabel(today.toISOString())}
+          dayLabel={dayLabel(today.toISOString(), today.getFullYear())}
           sort={sort}
           saved={savedOnly}
           title={savedOnly ? 'WHAT YOU KEPT' : undefined}

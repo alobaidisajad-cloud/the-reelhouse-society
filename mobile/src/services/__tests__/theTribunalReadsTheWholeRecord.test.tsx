@@ -49,12 +49,57 @@ describe('the docket', () => {
   it('says a refused read, never an empty docket', async () => {
     from(refused);
     await expect(ModerationService.getPendingReports()).rejects.toMatchObject({ code: '42501' });
-    await expect(ModerationService.getPendingCount()).rejects.toMatchObject({ code: '42501' });
+    rpc(refused);
+    await expect(ModerationService.getTribunalWaiting()).rejects.toMatchObject({ code: '42501' });
   });
 
-  it('counts what waits', async () => {
-    from({ data: null, error: null, count: 7 });
-    expect(await ModerationService.getPendingCount()).toBe(7);
+  it('counts what waits at the door: the cases, and the appeals this moderator may hear (round 14)', async () => {
+    rpc({ data: { cases: 7, appeals: 2 }, error: null });
+    expect(await ModerationService.getTribunalWaiting()).toEqual({ cases: 7, appeals: 2 });
+    expect(calls).toContainEqual({ fn: 'rpc', args: ['tribunal_waiting', undefined] });
+    // An answer that is no count counts nothing.
+    rpc({ data: { cases: -1, appeals: 'x' }, error: null });
+    expect(await ModerationService.getTribunalWaiting()).toEqual({ cases: 0, appeals: 0 });
+  });
+});
+
+describe('a verdict read whole, appealed once, heard by another; a ban lifted (round 14)', () => {
+  it('the member reads their verdict and files their one appeal, each by the verdict', async () => {
+    rpc({ data: { id: 'v1', reason: 'r' }, error: null });
+    expect(await ModerationService.getMyVerdict('v1')).toEqual({ id: 'v1', reason: 'r' });
+    await ModerationService.fileAppeal('v1', 'my words');
+    expect(calls).toContainEqual({ fn: 'rpc', args: ['get_my_verdict', { p_action_id: 'v1' }] });
+    expect(calls).toContainEqual({ fn: 'rpc', args: ['file_appeal', { p_action_id: 'v1', p_appeal: 'my words' }] });
+  });
+
+  it('a refused appeal is thrown with its word, for the sheet to tell apart', async () => {
+    rpc({ data: null, error: { code: 'P0002', message: 'ALREADY_APPEALED' } });
+    await expect(ModerationService.fileAppeal('v1', 'again')).rejects.toMatchObject({ message: 'ALREADY_APPEALED' });
+    await expect(ModerationService.getMyVerdict('v1')).rejects.toMatchObject({ code: 'P0002' });
+  });
+
+  it('the appeals and the sanctions are read a page at a time, from where the last page ended', async () => {
+    rpc({ data: [{ id: 'a1' }], error: null });
+    expect(await ModerationService.getPendingAppeals()).toEqual([{ id: 'a1' }]);
+    await ModerationService.getPendingAppeals({ appeal_filed_at: '2026-11-01T00:00:00Z', id: 'a1' }, 20);
+    expect(calls).toContainEqual({ fn: 'rpc', args: ['get_pending_appeals', { p_cursor_at: null, p_cursor_id: null, p_limit: 20 }] });
+    expect(calls).toContainEqual({ fn: 'rpc', args: ['get_pending_appeals', { p_cursor_at: '2026-11-01T00:00:00Z', p_cursor_id: 'a1', p_limit: 20 }] });
+    await ModerationService.getSanctionedMembers({ username: null, id: 'm1' });
+    expect(calls).toContainEqual({ fn: 'rpc', args: ['get_sanctioned_members', { p_cursor_name: '', p_cursor_id: 'm1', p_limit: 30 }] });
+    // An answer that is no list lists no one.
+    rpc({ data: null, error: null });
+    expect(await ModerationService.getSanctionedMembers()).toEqual([]);
+    expect(await ModerationService.getPendingAppeals()).toEqual([]);
+  });
+
+  it('a hearing and a lift name their verdict or member, the outcome and the house’s word', async () => {
+    rpc({ data: null, error: null });
+    await ModerationService.judgeAppeal('v1', 'overturned', 'struck');
+    await ModerationService.liftSanction('m1', 'served');
+    expect(calls).toContainEqual({ fn: 'rpc', args: ['judge_appeal', { p_action_id: 'v1', p_outcome: 'overturned', p_note: 'struck' }] });
+    expect(calls).toContainEqual({ fn: 'rpc', args: ['lift_sanction', { p_user_id: 'm1', p_reason: 'served' }] });
+    rpc({ data: null, error: { code: 'P0001', message: 'EXILE_STANDS' } });
+    await expect(ModerationService.liftSanction('m1', 'mercy')).rejects.toMatchObject({ message: 'EXILE_STANDS' });
   });
 });
 
@@ -181,5 +226,17 @@ describe("the accused's record", () => {
   it('and a record read empty draws nothing, as a clean record does', () => {
     const { toJSON } = render(<EnforcementHistory history={[]} isLoading={false} />);
     expect(toJSON()).toBeNull();
+  });
+});
+
+describe('the member\'s own record of verdicts (round 14)', () => {
+  it('reads a page newest first, the next from the last verdict held, and says a refused read', async () => {
+    rpc({ data: [{ id: 'v1' }], error: null });
+    expect(await ModerationService.getMyVerdicts()).toEqual([{ id: 'v1' }]);
+    await ModerationService.getMyVerdicts({ created_at: '2026-11-18T10:00:00Z', id: 'v1' }, 30);
+    expect(calls).toContainEqual({ fn: 'rpc', args: ['get_my_verdicts', { p_cursor_at: null, p_cursor_id: null, p_limit: 30 }] });
+    expect(calls).toContainEqual({ fn: 'rpc', args: ['get_my_verdicts', { p_cursor_at: '2026-11-18T10:00:00Z', p_cursor_id: 'v1', p_limit: 30 }] });
+    rpc(refused);
+    await expect(ModerationService.getMyVerdicts()).rejects.toMatchObject({ code: '42501' });
   });
 });

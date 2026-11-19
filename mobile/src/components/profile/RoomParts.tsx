@@ -373,3 +373,16 @@ export function RoomLoadMore({ busy, onPress }: { busy?: boolean; onPress?: () =
     </PressableScale>
   );
 }
+
+/**
+ * A room the house will not open to this reader: its answer was a refusal, not a failure, so there
+ * is nothing to ask again and nothing still coming. Never "could not be reached" with a TRY AGAIN
+ * that would be refused the same way, and never RETRIEVING for ever.
+ */
+export function RoomClosed({ room }: { room: string }) {
+  return (
+    <View style={r.state}>
+      <Text {...scaledTextProps} style={r.stateBody}>{`The house keeps ${room} closed to you.`}</Text>
+    </View>
+  );
+}

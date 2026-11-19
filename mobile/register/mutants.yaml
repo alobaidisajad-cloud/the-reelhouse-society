@@ -2729,7 +2729,7 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "    const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !useBlockStore.getState().isHidden(m.user_id));"
+        find: "    const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !hiddenHere(m));"
         replace: "    const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !!m);"
     proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "leaves out anyone the member has hidden since they left it" }
 
@@ -6180,8 +6180,8 @@ mutants:
     source: shape
     edits:
       - file: app/(admin)/tribunal.tsx
-        find: " && !(ev?.data && !ev.data.found) && ("
-        replace: " && ("
+        find: "{!(ev?.data && !ev.data.found) && ("
+        replace: "{("
     proof: { file: app/(admin)/__tests__/aVerdictOnACaseThatMovedOnIsTold.test.tsx, test: "is not offered for removal once its evidence reads destroyed; the case can still be dismissed or judged" }
 
   - id: shape-judged-case-kept-on-the-docket
@@ -7323,8 +7323,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "      const stackRefused = stackShareRefusal(error);\n"
-        replace: "      const stackRefused = isNetworkError(error) ? stackShareRefusal(error) : null;\n"
+        find: "      const cardRefused = cardShareRefusal(error);\n"
+        replace: "      const cardRefused = isNetworkError(error) ? cardShareRefusal(error) : null;\n"
     proof: { file: src/stores/__tests__/aSealedStackShareIsSaidAndLetGo.test.ts, test: "a sealed stack's card is said as sealed, and leaves the transcript: no retry that cannot work" }
 
   - id: shape-queued-stack-share-retried
@@ -7332,8 +7332,8 @@ mutants:
     source: shape
     edits:
       - file: src/utils/mutationExecutor.ts
-        find: "        const stackRefused = stackShareRefusal(sent.error);\n"
-        replace: "        const stackRefused = sent.data ? stackShareRefusal(sent.error) : null;\n"
+        find: "        const cardRefused = cardShareRefusal(sent.error);\n"
+        replace: "        const cardRefused = sent.data ? cardShareRefusal(sent.error) : null;\n"
     proof: { file: src/stores/__tests__/aSealedStackShareIsSaidAndLetGo.test.ts, test: "a share made offline and refused on its way is let go, said, and taken off the room" }
 
   - id: shape-pushed-phone-laid-without-a-session
@@ -7800,3 +7800,976 @@ mutants:
         find: "copy_caught_up \"the whole run's log\"\n"
         replace: "sleep 2\n"
     proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "names a crash during the last flow, which passed, however far the copy of the log is behind the phone" }
+
+  - id: shape-unanswered-sign-in-counted
+    class: AUTH-a-member-held-out-by-anothers-guesses
+    source: shape
+    edits:
+      - file: ../supabase/functions/sign-in-with-username/index.ts
+        find: "lookupError.code ?? lookupError.message)\n      await unasked()\n"
+        replace: "lookupError.code ?? lookupError.message)\n"
+    proof:
+      file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts
+      test: "every answer the house or Auth could not give is given back, never counted"
+
+  - id: shape-handle-rest-said-as-a-pace
+    class: AUTH-a-member-held-out-by-anothers-guesses
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "    if (rest?.paused === 'handle' && typeof rest.retry_after === 'number' && rest.retry_after > 0) {\n      return new Error(handleResting(rest.retry_after, rest.from === 'here' ? 'here' : 'elsewhere'));\n    }\n"
+        replace: ""
+    proof:
+      file: src/stores/__tests__/auth.test.ts
+      test: "this connection resting after its own wrong passwords says so, how long, and that the email address still signs in"
+
+  - id: shape-phone-key-never-sent
+    class: AUTH-a-member-held-out-by-anothers-guesses
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "        body: { username: identifier.replace(/^@/, ''), password, ...(door ? { device: door } : {}) },\n"
+        replace: "        body: { username: identifier.replace(/^@/, ''), password },\n"
+    proof:
+      file: src/stores/__tests__/auth.test.ts
+      test: "a phone holding the key the house handed it sends it, and keeps the key the house hands back"
+
+  - id: shape-critique-filed-without-the-pace
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/services/LogService.ts
+        find: "    const { data: commentData } = await atTheHousesPace(async () => {\n"
+        replace: "    const { data: commentData } = await (async () => {\n"
+      - file: src/services/LogService.ts
+        find: "      return sent;\n    });\n\n    if (!commentData) throw new Error('Failed to add comment');\n"
+        replace: "      return sent;\n    })();\n\n    if (!commentData) throw new Error('Failed to add comment');\n"
+    proof:
+      file: src/services/__tests__/aCritiqueWaitsOnTheHousesPace.test.ts
+      test: "asked to wait a moment, waits and is filed"
+
+  - id: shape-critique-pace-unsaid-on-a-record
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: app/log/[id].tsx
+        find: "        const paced = critiquePaceSaid(error);\n        if (paced) {\n          reelToast.error(paced);\n          return;\n        }\n"
+        replace: ""
+    proof:
+      file: app/log/__tests__/aCritiqueIsSaidAsOnAStack.test.tsx
+      test: "says how long, keeps the words in the box, and keeps nothing for later"
+
+  - id: shape-days-ceiling-said-as-a-pace
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/utils/housePace.ts
+        find: "    if (isTheDaysCeiling(e)) return"
+        replace: "    if (isTheDaysCeiling(e) && pace.seconds > 60) return"
+    proof:
+      file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts
+      test: "the day's ceiling met a minute before midnight is still the day's, never a pace"
+
+  - id: shape-salon-day-unsaid
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      const paced = salonPaceSaid(error);\n      if (paced) {\n        reelToast.error(paced);\n        return false;\n      }\n"
+        replace: ""
+    proof:
+      file: src/stores/__tests__/aSalonsDayHasACeiling.test.ts
+      test: "a word past the day's thousand says how long until the house takes more, and stays in the room, failed, with its words"
+
+  - id: shape-salon-day-left-sending
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/utils/offlineQueue.ts
+        find: "            if (pace && mutation.type === 'send_lounge_message') {\n                // A salon message past the day's ceiling (round 14): its words stay in their room,\n                // failed, as a live send refused so does, for the member to send again once the day\n                // turns; never left \"sending\" until the house's midnight, never said to be lost.\n                heldForDay.push({ mutation, error });\n                continue;\n            }\n"
+        replace: ""
+    proof:
+      file: src/utils/__tests__/wordsRefusedForTheRankAreKept.test.ts
+      test: "is held in its room with its words, failed, the wait said once, never sent again on its own"
+
+  - id: shape-record-card-refusal-offered-again
+    class: SEC-a-card-that-speaks-for-another
+    source: shape
+    edits:
+      - file: src/utils/stackShareRefusal.ts
+        find: "  if (isGoneFromTheHouse(e, 'LOG_GONE')) return 'record gone';\n"
+        replace: ""
+    proof:
+      file: src/stores/__tests__/aCardIsWhatTheHouseHolds.test.ts
+      test: "a record's card refused as no longer in the house is said so, and leaves the transcript: no retry that cannot work"
+
+  - id: shape-filing-card-refusal-offered-again
+    class: SEC-a-card-that-speaks-for-another
+    source: shape
+    edits:
+      - file: src/utils/stackShareRefusal.ts
+        find: "  if (isGoneFromTheHouse(e, 'PIECE_GONE')) return 'filing gone';\n"
+        replace: ""
+    proof:
+      file: src/stores/__tests__/aCardIsWhatTheHouseHolds.test.ts
+      test: "a filing's card refused as no longer in the house is said so, and leaves the transcript"
+
+  - id: shape-queued-card-let-go-as-a-stacks
+    class: SEC-a-card-that-speaks-for-another
+    source: shape
+    edits:
+      - file: src/utils/mutationExecutor.ts
+        find: "            return { letGo: wordOfCardShareRefusal(cardRefused) };"
+        replace: "            return { letGo: cardRefused === 'sealed' ? 'STACK_SEALED' : 'STACK_GONE' };"
+    proof:
+      file: src/stores/__tests__/aCardIsWhatTheHouseHolds.test.ts
+      test: "a record's card made offline and refused on its way is let go with the house's word, said, and taken off the room"
+
+  - id: shape-rank-purchase-sent-by-the-phone
+    class: DATA-a-count-anyone-can-inflate
+    source: shape
+    edits:
+      - file: src/lib/gateMetricsSink.ts
+        find: "  if (COUNTED_BY_THE_HOUSE.includes(event)) return;\n"
+        replace: ""
+    proof:
+      file: src/lib/__tests__/theCounterNamesNobody.test.ts
+      test: "a rank bought or ended is not sent: the house counts it from its own record of the rank"
+
+  - id: shape-visitor-tap-sent-as-a-visitor
+    class: DATA-a-count-anyone-can-inflate
+    source: shape
+    edits:
+      - file: src/lib/gateMetricsSink.ts
+        find: "    if (!useAuthStore.getState().user) {\n      if (heldForSignIn.length < HELD_AT_MOST) heldForSignIn.push([event, detail]);\n      return;\n    }\n"
+        replace: ""
+    proof:
+      file: src/lib/__tests__/theCounterNamesNobody.test.ts
+      test: "a visitor's tap is not sent; it is counted once they sign in, as the member they became"
+
+  - id: shape-refused-taste-read-as-unread
+    class: UI-a-refusal-drawn-as-a-failure
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "        dispatch({ type: 'SET_TASTE', payload: tastePayload, refused: tastePayload === null });"
+        replace: "        dispatch({ type: 'SET_TASTE', payload: tastePayload });"
+    proof:
+      file: src/components/profile/__tests__/aClosedRecordIsSaidClosed.test.tsx
+      test: "a record the house refused is kept as refused: never a failure, never a read still out"
+
+  - id: shape-refused-honours-said-unreachable
+    class: UI-a-refusal-drawn-as-a-failure
+    source: shape
+    edits:
+      - file: src/components/profile/Achievements.tsx
+        find: "        {analytics?.error\n          ? <RoomClosed room=\"the honours\" />\n          : failed || analytics\n"
+        replace: "        {failed || analytics\n"
+    proof:
+      file: src/components/profile/__tests__/aClosedRecordIsSaidClosed.test.tsx
+      test: "the honours"
+
+  - id: shape-typist-named-across-a-block
+    class: DB-rule-kept-on-one-path
+    source: shape
+    edits:
+      - file: src/stores/typistShown.ts
+        find: "    const shown = !!data;"
+        replace: "    const shown = data !== undefined;"
+    proof:
+      file: src/stores/__tests__/aBlockerIsNeverNamedAtTheTypewriter.test.ts
+      test: "is the row the house gives the reader: one it gives is shown, one it does not is not"
+
+  - id: shape-docket-reads-no-record
+    class: MOD-a-repeat-offender-read-as-a-first
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "[...new Set([...pendingItems, ...priorityItems].map("
+        replace: "[...new Set([...priorityItems].map("
+    proof:
+      file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx
+      test: "a member suspended twice and with a piece removed reads as a repeat offender on THE DOCKET"
+
+  - id: shape-every-record-read-again-each-page
+    class: MOD-a-repeat-offender-read-as-a-first
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "      return brought.length > 0 ? [...pages, brought] : pages;"
+        replace: "      return brought.length > 0 ? [[...held, ...brought]] : pages;"
+    proof:
+      file: app/(admin)/__tests__/tribunal.test.tsx
+      test: "fetches enforcement records ONCE for the whole docket, not per card"
+
+  - id: shape-a-lift-drawn-struck
+    class: MOD-a-repeat-offender-read-as-a-first
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "        const struck = standing === 'OVERTURNED ON APPEAL';"
+        replace: "        const struck = standing === 'OVERTURNED ON APPEAL' || standing === 'LIFTED';"
+    proof:
+      file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx
+      test: "only a verdict overturned is drawn struck: a lift is mercy, a sentence served was given"
+
+  - id: shape-verdict-notice-points-nowhere
+    class: MOD-a-verdict-with-no-way-back
+    source: shape
+    edits:
+      - file: src/utils/noticeRoute.ts
+        find: "  if (notice.verdict_id && UUID.test(notice.verdict_id)) return `${VERDICT_BOARD}?verdict=${notice.verdict_id}`;\n"
+        replace: ""
+    proof:
+      file: app/(modals)/__tests__/aVerdictsNoticeOpensItWhole.test.tsx
+      test: "a notice of a verdict leads to the board, the verdict named, from its push too"
+
+  - id: shape-verdict-row-opens-no-verdict
+    class: MOD-a-verdict-with-no-way-back
+    source: shape
+    edits:
+      - file: app/(modals)/notifications-modal.tsx
+        find: "    if (verdict) {\n      openVerdict(verdict);\n      return;\n    }\n"
+        replace: ""
+    proof:
+      file: app/(modals)/__tests__/aVerdictsNoticeOpensItWhole.test.tsx
+      test: "tapping a verdict’s notice opens the verdict whole over the board, and says it does"
+
+  - id: shape-second-appeal-said-as-a-failure
+    class: MOD-a-verdict-with-no-way-back
+    source: shape
+    edits:
+      - file: src/components/moderation/VerdictSheet.tsx
+        find: "  return message === 'VERDICT_GONE' || message === 'ALREADY_APPEALED' ? message : null;"
+        replace: "  return message === 'VERDICT_GONE' ? message : null;"
+    proof:
+      file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx
+      test: "an appeal already filed elsewhere is said, and read as it stands"
+
+  - id: shape-lift-sent-without-its-word
+    class: MOD-a-verdict-with-no-way-back
+    source: shape
+    edits:
+      - file: src/components/admin/SanctionsList.tsx
+        find: "ModerationService.liftSanction(member.id, reason)"
+        replace: "ModerationService.liftSanction(member.id, '')"
+    proof:
+      file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx
+      test: "an admin lifts a ban with a word for the member: the house hears it, and the member leaves the list"
+
+  - id: shape-given-back-read-from-the-register
+    class: MOD-a-verdict-with-no-way-back
+    source: shape
+    edits:
+      - file: src/components/moderation/VerdictSheet.tsx
+        find: "{v.action === 'delete_content' ? overturnedSays(v) :"
+        replace: "{v.action === 'delete_content' ? overturnedSays({ put_back: v.restorable, removed: v.removed }) :"
+    proof:
+      file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx
+      test: "overturned, a piece the house gave back whole is said to stand again, as the hearing wrote it on the verdict"
+
+  - id: shape-pause-banner-opens-no-record
+    class: MOD-a-verdict-with-no-way-back
+    source: shape
+    edits:
+      - file: src/components/StandingNotice.tsx
+        find: "onPress={() => nav.push('/settings', { section: 'record' })}"
+        replace: "onPress={() => nav.push('/settings')}"
+    proof:
+      file: src/components/moderation/__tests__/aVerdictIsReachedWithoutItsNotice.test.tsx
+      test: "the banner of a pause opens the record, where the verdict is read whole and appealed"
+
+  - id: shape-appeal-waiting-for-another-unsaid
+    class: MOD-a-verdict-with-no-way-back
+    source: shape
+    edits:
+      - file: src/components/moderation/VerdictSheet.tsx
+        find: "          {v.appeal.status === 'pending' && v.no_moderator_yet && (\n            <Text style={[st.words, st.spaced]}>{appealWaitsSays(v)}</Text>\n          )}\n"
+        replace: ""
+    proof:
+      file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx
+      test: "an appeal no moderator may hear yet is said to wait for one other than the one who ruled, the piece kept whole meanwhile"
+
+  - id: shape-own-verdict-offered-for-hearing
+    class: MOD-a-judge-hears-their-own-case
+    source: shape
+    edits:
+      - file: src/components/admin/AppealsDocket.tsx
+        find: "  const why = a.refused ?? (a.ruled_by_you ? 'OWN_VERDICT' : null);"
+        replace: "  const why = a.refused ?? null;"
+    proof:
+      file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx
+      test: "the moderator who gave the verdict is told they may not hear it, and offered nothing to press"
+
+  - id: shape-own-case-offered-for-hearing
+    class: MOD-a-judge-hears-their-own-case
+    source: shape
+    edits:
+      - file: src/components/admin/AppealsDocket.tsx
+        find: "  if (why === 'OWN_CASE') return `This verdict is about you: another moderator must hear its appeal.${waits}`;\n"
+        replace: ""
+    proof:
+      file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx
+      test: "a moderator is offered no hearing of an appeal of a verdict about themselves, as the house refuses it"
+
+  - id: shape-own-sanction-offered-for-lifting
+    class: MOD-a-judge-hears-their-own-case
+    source: shape
+    edits:
+      - file: src/components/admin/SanctionsList.tsx
+        find: "                {!m.exiled && m.id !== me && ("
+        replace: "                {!m.exiled && ("
+    proof:
+      file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx
+      test: "an admin under a sanction of their own is offered no lift of it: another admin must, as the house refuses it"
+
+  - id: shape-reported-words-hidden-once-edited
+    class: MOD-the-evidence-changed-before-the-verdict
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "{ev.data.changed && !!ev.data.reported && ("
+        replace: "{!ev.data.changed && !!ev.data.reported && ("
+    proof:
+      file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx
+      test: "a piece edited since it was reported shows the reported words beside what stands now"
+
+  - id: shape-gone-picture-drawn-blank
+    class: MOD-the-evidence-changed-before-the-verdict
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "          fallback={<Text style={s.exhibitGone}>{words.avatar_url ? 'The page’s picture is no longer held.' : 'The salon’s cover is no longer held.'}</Text>}\n"
+        replace: "          fallback={null}\n"
+    proof:
+      file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx
+      test: "a picture whose file is gone is said so, never left blank"
+
+  - id: shape-withheld-evidence-said-destroyed
+    class: MOD-the-evidence-changed-before-the-verdict
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "  if (e.withheld) {\n"
+        replace: "  if (e.withheld && !e.appealed) {\n"
+    proof:
+      file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx
+      test: "a piece an earlier verdict withholds reads withheld, never destroyed"
+
+  - id: shape-page-and-salon-offered-no-removal
+    class: MOD-reported-words-that-cannot-be-removed
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "{!(ev?.data && !ev.data.found) && ("
+        replace: "{item.content_type !== 'profile' && item.content_type !== 'lounge' && !(ev?.data && !ev.data.found) && ("
+    proof:
+      file: app/(admin)/__tests__/theTribunalJudgesWhatWasReported.test.tsx
+      test: "is offered on a page, and says it clears the words on it, never the handle"
+
+  - id: shape-withheld-page-unmarked-until-its-list-reads
+    class: MOD-a-removal-that-cannot-be-undone
+    source: shape
+    edits:
+      - file: src/components/moderation/WithheldBanner.tsx
+        find: "  if (!piece && !withheldAt) return null;"
+        replace: "  if (!piece) return null;"
+    proof:
+      file: src/components/moderation/__tests__/aWithheldPieceIsMarkedForItsAuthor.test.tsx
+      test: "the page’s own row says it is withheld before the member’s list is read: the mark stands, the verdict waits"
+
+  - id: shape-withheld-log-read-without-its-mark
+    class: MOD-a-removal-that-cannot-be-undone
+    source: shape
+    edits:
+      - file: src/services/LogService.ts
+        find: "`${PUBLIC_LOG_COLUMNS}, withheld_at, profiles!logs_user_id_fkey"
+        replace: "`${PUBLIC_LOG_COLUMNS}, profiles!logs_user_id_fkey"
+    proof:
+      file: src/services/__tests__/aWithheldPieceIsReadWithItsMark.test.ts
+      test: "the author’s withheld log is read with its mark, so its page says so"
+
+  - id: shape-card-made-again-heard-as-it-was
+    class: MOD-a-removal-that-cannot-be-undone
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "            const card = isCardOfAPiece(row.type) && row.metadata && typeof row.metadata === 'object'\n"
+        replace: "            const card = row.metadata && typeof row.metadata === 'object' && row.metadata.gone === true\n"
+    proof:
+      file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts
+      test: "heard live: a card taken down and made again by the house is drawn as the house now holds it"
+
+  - id: shape-shelf-title-unstruck
+    class: COPY-a-slur-shown-to-a-member-who-hid-them
+    source: shape
+    edits:
+      - file: src/components/reels/StackCan.tsx
+        find: "numberOfLines={CAN.label.title.lines}>{title}</Text>"
+        replace: "numberOfLines={CAN.label.title.lines}>{stack.title}</Text>"
+    proof:
+      file: src/components/reels/__tests__/aStackTitleIsStruckOnTheShelf.test.tsx
+      test: "a member who hides slurs reads the title struck on the shelf, and hears it struck"
+
+  - id: shape-notice-words-unstruck
+    class: COPY-a-slur-shown-to-a-member-who-hid-them
+    source: shape
+    edits:
+      - file: app/(modals)/notifications-modal.tsx
+        find: "  const message = useStruck()(item.message);\n  const openVerdict"
+        replace: "  const message = item.message;\n  const openVerdict"
+    proof:
+      file: app/(modals)/__tests__/aVerdictsNoticeOpensItWhole.test.tsx
+      test: "another member’s words in a notice are struck for a member who hides slurs, and said struck"
+
+  - id: shape-quote-of-the-hidden-kept-on-a-block
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "    currentMessages: state.currentMessages.filter(\n      m => !hiddenHere(m)\n"
+        replace: "    currentMessages: state.currentMessages.filter(\n      m => !useBlockStore.getState().isHidden(m.user_id)\n"
+    proof:
+      file: src/stores/__tests__/aHiddenMembersWordsLeaveTheSalon.test.ts
+      test: "blocking Bea takes Cal's answer to her and his card of her essay off the open room with her own words"
+
+  - id: shape-quote-of-the-hidden-heard-live
+    class: DATA-a-hidden-member-drawn-on
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "            if (hiddenHere(msg)) return;"
+        replace: "            if (useBlockStore.getState().isHidden(msg.user_id)) return;"
+    proof:
+      file: src/stores/__tests__/aHiddenMembersWordsLeaveTheSalon.test.ts
+      test: "heard live with Bea hidden, Cal's answer to her is never drawn, and his plain word is"
+
+  - id: shape-cleared-quote-unheard-live
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "? { ...m, ...card, ...quote, content:"
+        replace: "? { ...m, ...card, content:"
+    proof:
+      file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts
+      test: "the house takes the words out of Cal's reply: the room open here stops quoting them at once"
+
+  - id: shape-own-withdrawal-keeps-its-quotes
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "          : quoted.has(m.id) ? { ...m, reply_to_content: null } : m\n"
+        replace: "          : m\n"
+    proof:
+      file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts
+      test: "the member withdraws their own message: the replies quoting it here lose the words at once"
+
+  - id: shape-kept-room-keeps-a-removed-quote
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "          const quote = mark.reply_to_content ?? null;"
+        replace: "          const quote = mark.reply_to_content ?? m.reply_to_content ?? null;"
+    proof:
+      file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts
+      test: "back in a kept room after the removal, Cal's reply is read again without the words"
+
+  - id: shape-put-back-message-drawn-withdrawn
+    class: STATE-a-copy-drawn-after-the-house-let-it-go
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "deleted_at: 'deleted_at' in row ? (row.deleted_at ?? null) : m.deleted_at }"
+        replace: "deleted_at: row.deleted_at ?? m.deleted_at }"
+    proof:
+      file: src/stores/__tests__/aWithdrawnMessageLeavesEveryQuote.test.ts
+      test: "heard live: the message put back stands with its words, no longer withdrawn"
+
+  - id: shape-tribunal-door-read-outside-its-key
+    class: STATE-one-screen-changed-another-printing-the-old
+    source: shape
+    edits:
+      - file: src/hooks/useTribunalWaiting.ts
+        find: "    queryKey: ['admin', 'tribunal-waiting', adminId],"
+        replace: "    queryKey: ['settings', 'tribunal-waiting', adminId],"
+    proof:
+      file: src/features/settings/__tests__/settings.redesign.test.tsx
+      test: "a case judged at the Tribunal above is no longer counted on return: the door is read again with it"
+
+  - id: shape-appeal-day-said-without-its-hour
+    class: TIME-a-day-judged-on-the-houses-clock
+    source: shape
+    edits:
+      - file: src/components/moderation/VerdictSheet.tsx
+        find: "  return hour ? `${formatDate(at, 'long')}, ${hour}` : formatDate(at, 'long');"
+        replace: "  return formatDate(at, 'long');"
+    proof:
+      file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx
+      test: "the day to appeal by is said in the member’s own day and hour"
+
+  - id: shape-salon-description-cut-at-two
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: src/components/lounge/LoungeSettingsPanel.tsx
+        find: "              {!!lounge.description && <Text style={[s.description, isRTLText(lounge.description) && rtlText]}>{struck(lounge.description)}</Text>}"
+        replace: "              {!!lounge.description && <Text style={s.subtitle} numberOfLines={2}>{struck(lounge.description)}</Text>}"
+    proof: { file: src/components/lounge/__tests__/aSalonsNameAndWordsAreReadWhole.test.tsx, test: "a description written right to left is set right to left, by its first strong letter" }
+
+  - id: shape-salon-name-in-the-header-opens-nothing
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "          <PressableScale room=\"vertical\" onPress={() => setSettingsOpen(true)} haptic=\"selection\"\n            accessibilityRole=\"button\" accessibilityLabel={`About ${saidStruck(struckRoom(activeLounge.name))}`}>\n            <Text style={s.headerTitle} numberOfLines={1}>{struckRoom(activeLounge.name)}</Text>\n          </PressableScale>\n"
+        replace: "          <Text style={s.headerTitle} numberOfLines={1}>{struckRoom(activeLounge.name)}</Text>\n"
+    proof: { file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "opens the sheet that reads the name and the description whole, named for what it is" }
+
+  - id: shape-stack-title-cut-at-its-lines
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "<Text style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]}>"
+        replace: "<Text style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]} numberOfLines={titleType.fontSize === 30 ? 4 : 6}>"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a long title is set smaller, and drawn whole rather than cut" }
+
+  - id: shape-stack-title-stepped-at-the-largest-size
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: src/components/stack/stackTitleType.ts
+        find: "linesAt(drawn, 'rye', STACK_TITLE_LARGE.fontSize, 1, 0, width)"
+        replace: "linesAt(drawn, 'rye', STACK_TITLE_LARGE.fontSize, 1.35, 0, width)"
+    proof: { file: src/components/stack/__tests__/aStackTitleIsDrawnWhole.test.ts, test: "a title that fills four lines at 30pt keeps 30pt: a larger text size never sets it smaller" }
+
+  - id: shape-bio-cut-at-a-count-of-characters
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: app/user/[username].tsx
+        find: "<Text {...scaledTextProps} style={[s.heroBio, bioStyle]}>"
+        replace: "<Text {...scaledTextProps} style={[s.heroBio, bioStyle]} numberOfLines={bioCount <= 90 ? 4 : bioCount <= 170 ? 5 : 6}>"
+    proof: { file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "a bio written one line to an item is drawn whole: all eight lines, none cut" }
+
+  - id: shape-render-folds-line-breaks
+    class: TOOL-a-drawing-measured-unlike-the-phone
+    source: shape
+    edits:
+      - file: src/components/profile/__tests__/zz-render.lib.ts
+        find: "const breaks = textCap === undefined && lines !== 1 ? ';white-space:break-spaces' : '';"
+        replace: "const breaks = textCap === undefined && lines !== 1 ? ';white-space:pre-line' : '';"
+    proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "keeps both, in a wrapping Text and a clamped one, wrapping a space at a line end" }
+
+  - id: shape-render-one-line-past-its-break
+    class: TOOL-a-drawing-measured-unlike-the-phone
+    source: shape
+    edits:
+      - file: src/components/profile/__tests__/zz-render.lib.ts
+        find: "const kids = lines === 1 && textCap === undefined ? firstLineOf(n.children || []) : { kids: n.children || [], cut: false };"
+        replace: "const kids = { kids: n.children || [], cut: false };"
+    proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "a one-line Text shows its first line alone, and is marked cut, as the phone shows it" }
+
+  - id: shape-render-entrance-at-its-first-frame
+    class: TOOL-a-drawing-measured-unlike-the-phone
+    source: shape
+    edits:
+      - file: src/components/profile/__tests__/zz-render.lib.ts
+        find: "  return nowOf(s as Record<string, unknown>);"
+        replace: "  return s as Record<string, unknown>;"
+    proof: { file: src/components/profile/__tests__/zz-render.lib.test.ts, test: "reads the style again: an Arrive at rest, not at its first frame" }
+
+  - id: shape-watched-year-read-from-a-date
+    class: TIME-a-day-placed-on-another-calendar
+    source: shape
+    edits:
+      - file: src/components/film/FilmDetailLayout.tsx
+        find: "import { formatDate } from '@/src/utils/timeAgo';\n"
+        replace: "import { formatDate, formatDateMonthDay } from '@/src/utils/timeAgo';\nimport { dateOf } from '@/src/utils/instant';\n"
+      - file: src/components/film/FilmDetailLayout.tsx
+        find: "  const watchedLabel = useMemo(() => watchedLabelOf(existingLog?.watchedDate, thisYear), [existingLog?.watchedDate, thisYear]);\n"
+        replace: "  const watchedLabel = useMemo(() => {\n    if (!existingLog?.watchedDate) return null;\n    const watched = dateOf(existingLog.watchedDate);\n    if (Number.isNaN(watched.getTime())) return null;\n    return watched.getFullYear() === thisYear\n      ? formatDateMonthDay(existingLog.watchedDate).toUpperCase()\n      : String(watched.getFullYear());\n  }, [existingLog?.watchedDate, thisYear]);\n"
+    proof: { file: src/components/film/__tests__/stubFits.test.ts, test: "and it is the CALLER that keeps it short" }
+
+  - id: shape-month-read-from-the-logging-moment
+    class: TIME-a-day-placed-on-another-calendar
+    source: shape
+    edits:
+      - file: src/components/profile/profileComputed.ts
+        find: "    const raw = row[dateKey] || row.createdAt || new Date(now).toISOString();"
+        replace: "    const raw = row.createdAt || row[dateKey] || new Date(now).toISOString();"
+    proof: { file: src/components/profile/__tests__/aLogIsFiledUnderTheMonthItWasMade.test.ts, test: "a watched date is its own calendar day, whatever the zone" }
+
+  - id: shape-another-year-said-without-its-year
+    class: COPY-another-years-day-said-as-this-years
+    source: shape
+    edits:
+      - file: src/utils/timeAgo.ts
+        find: "  return parts.year === new Date(now).getFullYear() ? day : `${day}, ${parts.year}`;"
+        replace: "  return formatDateMonthDay(dateStr, format);"
+    proof: { file: src/utils/__tests__/calendarDates.test.ts, test: "another year, before or after: the year said" }
+
+  - id: shape-salon-divider-without-its-year
+    class: COPY-another-years-day-said-as-this-years
+    source: shape
+    edits:
+      - file: app/lounge/[id].tsx
+        find: "import { formatClockTime, formatDateMonthDayInYear } from '@/src/utils/timeAgo';"
+        replace: "import { formatClockTime, formatDateMonthDay, formatDateMonthDayInYear } from '@/src/utils/timeAgo';"
+      - file: app/lounge/[id].tsx
+        find: "  return formatDateMonthDayInYear(d, now, 'long');"
+        replace: "  return formatDateMonthDay(d, 'long');"
+    proof: { file: src/utils/__tests__/aDayOfAnotherYearSaysItsYear.test.ts, test: "scrolled back to last November, the divider says the year" }
+
+  - id: shape-essay-byline-without-its-year
+    class: COPY-another-years-day-said-as-this-years
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "import { formatDate, formatDateMonthDayInYear } from '@/src/utils/timeAgo';"
+        replace: "import { formatDate, formatDateMonthDay, formatDateMonthDayInYear } from '@/src/utils/timeAgo';"
+      - file: app/dispatch/[id].tsx
+        find: "                  filed={filedOn}\n"
+        replace: "                  filed={formatDateMonthDay(live.createdAt).toUpperCase()}\n"
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "an essay filed in another year says its year in the byline and on the card; this year’s does not" }
+
+  - id: shape-essay-card-without-its-year
+    class: COPY-another-years-day-said-as-this-years
+    source: shape
+    edits:
+      - file: app/dispatch/[id].tsx
+        find: "              filed={filedOnCard}"
+        replace: "              filed={filedOn}"
+    proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "an essay filed in another year says its year in the byline and on the card; this year’s does not" }
+
+  - id: shape-feed-day-without-its-year
+    class: COPY-another-years-day-said-as-this-years
+    source: shape
+    edits:
+      - file: src/components/dispatch/dayLabel.ts
+        find: "  return d.getFullYear() === thisYear ? day : `${day}, ${d.getFullYear()}`;"
+        replace: "  return day;"
+    proof: { file: src/components/dispatch/__tests__/dayLabel.test.ts, test: "a day of another year carries its year (round 14): last November is not this one" }
+
+  - id: shape-feed-year-read-off-the-clock
+    class: COPY-another-years-day-said-as-this-years
+    source: shape
+    edits:
+      - file: app/(tabs)/dispatch.tsx
+        find: "label: dayLabel(f.createdAt, today.getFullYear()) });"
+        replace: "label: dayLabel(f.createdAt, new Date().getFullYear()) });"
+    proof: { file: src/hooks/__tests__/everyDrawnTimeReadsTheClock.guard.test.ts, test: "reads the time where a screen is drawn only where the register says, as many times as it says" }
+
+  - id: shape-small-budget-in-millions
+    class: COPY-a-sum-written-as-no-ledger-writes-it
+    source: shape
+    edits:
+      - file: src/components/film/FilmDossier.tsx
+        find: "  if (n < 1e6) return `$${grouped(Math.round(n))}`;\n"
+        replace: ""
+    proof: { file: src/components/film/__tests__/filmDossier.test.tsx, test: "writes a silent picture’s small budget whole, never $0.0M" }
+
+  - id: shape-billion-in-millions
+    class: COPY-a-sum-written-as-no-ledger-writes-it
+    source: shape
+    edits:
+      - file: src/components/film/FilmDossier.tsx
+        find: "  return Number(millions) >= 1000 ? `$${(n / 1e9).toFixed(2)}B` : `$${millions}M`;"
+        replace: "  return n >= 1e9 ? `$${(n / 1e9).toFixed(2)}B` : `$${millions}M`;"
+    proof: { file: src/components/film/__tests__/filmDossier.test.tsx, test: "a sum just under a billion is a billion, never $1000.0M" }
+
+  - id: shape-figure-in-millions-printed
+    class: COPY-a-sum-written-as-no-ledger-writes-it
+    source: shape
+    edits:
+      - file: src/components/film/FilmDossier.tsx
+        find: "  if (!n || !Number.isFinite(n) || n < 1000) return undefined;"
+        replace: "  if (!n || !Number.isFinite(n) || n <= 0) return undefined;"
+    proof: { file: src/components/film/__tests__/filmDossier.test.tsx, test: "prints no row for TMDB’s figure entered in millions (1, 100)" }
+
+  - id: shape-one-new-dispatches
+    class: COPY-count-before-plural
+    source: shape
+    edits:
+      - file: src/components/lounge/JoinedLoungeCard.tsx
+        find: "counted(unread, 'new dispatch', 'new dispatches', () => unreadSpoken)"
+        replace: "`${unreadSpoken} new dispatches`"
+    proof: { file: src/components/lounge/__tests__/theSealSaysWhatTheCountMeans.test.tsx, test: "one message waiting is said in the singular: \"1 new dispatch\"" }
+
+  - id: shape-one-films-on-the-plate
+    class: COPY-count-before-plural
+    source: shape
+    edits:
+      - file: src/components/profile/ProfileHelpers.tsx
+        find: "  const caption = count === 1 ? one : label;"
+        replace: "  const caption = label;"
+    proof: { file: src/components/profile/__tests__/memberFileScreen.test.tsx, test: "one film and one follower are said, and printed, in the singular" }
+
+  - id: shape-one-more-critiques-said
+    class: COPY-count-before-plural
+    source: shape
+    edits:
+      - file: src/components/log/LogComments.tsx
+        find: "`Show ${counted(hidden, 'more critique', 'more critiques')}`"
+        replace: "`Show ${hidden} more critiques`"
+    proof: { file: src/utils/__tests__/aCountSaysItsWord.guard.test.ts, test: "prints no count before its word but through counted(), or one that can never be one" }
+
+  - id: shape-one-reports-said
+    class: COPY-count-before-plural
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "`Bulk dismiss ${counted(selectedReports.size, 'report', 'reports')}`"
+        replace: "`Bulk dismiss ${selectedReports.size} reports`"
+    proof: { file: src/utils/__tests__/aCountSaysItsWord.guard.test.ts, test: "prints no count before its word but through counted(), or one that can never be one" }
+
+  - id: shape-one-copies-said
+    class: COPY-count-before-plural
+    source: shape
+    edits:
+      - file: src/components/profile/ProfilePhysicalTab.tsx
+        find: "`Show all shelves, ${counted(totalVault, 'copy', 'copies')}`"
+        replace: "`Show all shelves, ${totalVault} copies`"
+    proof: { file: src/utils/__tests__/aCountSaysItsWord.guard.test.ts, test: "prints no count before its word but through counted(), or one that can never be one" }
+
+  - id: shape-one-characters-over
+    class: COPY-count-before-plural
+    source: shape
+    edits:
+      - file: app/dispatch/compose.tsx
+        find: "${countOf(Math.abs(limit.remaining), 'character', 'characters', groupDigits)} over the limit"
+        replace: "${groupDigits(Math.abs(limit.remaining))} characters over the limit"
+    proof: { file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "refuses an over-length essay before touching anything" }
+
+  - id: shape-one-films-logged
+    class: COPY-count-before-plural
+    source: shape
+    edits:
+      - file: app/year-in-cinema.tsx
+        find: "{stats.total === 1 ? 'Film Logged' : 'Films Logged'}"
+        replace: "Films Logged"
+    proof: { file: app/__tests__/yourYearFillsItsWindow.test.tsx, test: "one film in the year is \"Film Logged\", not \"Films Logged\"" }
+
+  - id: shape-twin-films-said-alike
+    class: A11Y-films-of-one-title-said-alike
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "accessibilityLabel={`Add ${r.title ?? r.name}${year ? `, ${year}` : ''}`}"
+        replace: "accessibilityLabel={`Add ${r.title ?? r.name}`}"
+    proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "three films of one title are told apart by ear: each is said with its year" }
+
+  - id: shape-no-date-printed-blank
+    class: A11Y-films-of-one-title-said-alike
+    source: shape
+    edits:
+      - file: app/(modals)/list-modal.tsx
+        find: "<Text style={s.dropMeta}>{year || '—'}</Text>"
+        replace: "<Text style={s.dropMeta}>{year ?? '—'}</Text>"
+    proof: { file: app/(modals)/__tests__/list-modal.curate.test.tsx, test: "a film TMDB gives no date (\"\") prints the dash and is said without a year" }
+
+  - id: shape-share-sheet-past-the-status-bar
+    class: LAYOUT-words-stood-where-no-scroll-reaches
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "style={[s.overlay, { paddingTop: sheetTop }, animatedSheetStyle]}"
+        replace: "style={[s.overlay, animatedSheetStyle]}"
+    proof: { file: src/components/__tests__/theShareSheetStaysBelowTheStatusBar.test.tsx, test: "the sheet stops below the status bar, with the keys up as with them down" }
+
+  - id: shape-share-card-never-gives-way
+    class: LAYOUT-words-stood-where-no-scroll-reaches
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "    card: {\n        flexShrink: 1,\n"
+        replace: "    card: {\n"
+    proof: { file: src/components/__tests__/theShareSheetStaysBelowTheStatusBar.test.tsx, test: "the card gives up room from its body, never its title and X" }
+
+  - id: shape-share-message-left-under-the-keys
+    class: LAYOUT-words-stood-where-no-scroll-reaches
+    source: shape
+    edits:
+      - file: src/components/ShareToLoungeModal.tsx
+        find: "                                onFocus={() => setWriting(true)}\n"
+        replace: ""
+    proof: { file: src/components/__tests__/theShareSheetStaysBelowTheStatusBar.test.tsx, test: "typing the message, the body keeps the message and SHARE in view as the keys rise" }
+
+  - id: shape-picker-stands-above-the-top
+    class: LAYOUT-words-stood-where-no-scroll-reaches
+    source: shape
+    edits:
+      - file: app/dispatch/compose.tsx
+        find: "            <ScrollView\n                style={{ flex: 1 }}\n                contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingTop: top }}\n                showsVerticalScrollIndicator={false}\n                bounces={false}\n                keyboardShouldPersistTaps=\"handled\"\n            >\n            <View style={{ paddingBottom: edge }}>\n"
+        replace: "            <View style={{ flex: 1, justifyContent: 'flex-end', paddingTop: top }}>\n            <View style={{ paddingBottom: edge }}>\n"
+      - file: app/dispatch/compose.tsx
+        find: "            </View>\n            </ScrollView>\n        </View>\n    );\n"
+        replace: "            </View>\n            </View>\n        </View>\n    );\n"
+    proof: { file: src/components/dispatch/__tests__/composeScreen.test.tsx, test: "the picker scrolls when it outgrows the screen: its head and TAKE are never above the top" }
+
+  - id: shape-report-keys-padded-into-the-sheet
+    class: LAYOUT-the-keys-taken-from-a-sheets-room
+    source: shape
+    edits:
+      - file: src/components/moderation/ReportSheet.tsx
+        find: "style={[styles.frame, { top: frameTop }, kbPad]}"
+        replace: "style={[styles.frame, { top: frameTop }]}"
+      - file: src/components/moderation/ReportSheet.tsx
+        find: "              foot,\n              sheetStyle,\n"
+        replace: "              foot,\n              sheetStyle,\n              kbPad,\n"
+    proof: { file: src/components/moderation/__tests__/ReportSheet.test.tsx, test: "the keys lift the whole sheet, which keeps its height and stops below the status bar" }
+
+  - id: shape-report-details-left-out-of-view
+    class: LAYOUT-the-keys-taken-from-a-sheets-room
+    source: shape
+    edits:
+      - file: src/components/moderation/ReportSheet.tsx
+        find: "              onLayout={() => { if (isFocused) form.current?.scrollTo({ y: Math.max(0, detailsAt.current - 12), animated: false }); }}\n"
+        replace: ""
+    proof: { file: src/components/moderation/__tests__/ReportSheet.test.tsx, test: "typing the details where the room is short, the field is kept in view" }
+
+  - id: shape-sheet-foot-kept-under-the-keys
+    class: LAYOUT-the-keys-taken-from-a-sheets-room
+    source: shape
+    edits:
+      - file: src/hooks/useModalKeyboardPadding.ts
+        find: "    paddingBottom: ios ? Math.max(SHEET_BOTTOM_GAP, foot - height.value) : foot,"
+        replace: "    paddingBottom: foot,"
+    proof: { file: src/hooks/__tests__/aSheetFootGivesWayToTheKeys.test.tsx, test: "gives the foot to the words while the keys cover the indicator: the gap alone" }
+
+  - id: shape-year-slide-short-of-its-window
+    class: LAYOUT-a-story-short-of-its-window
+    source: shape
+    edits:
+      - file: app/year-in-cinema.tsx
+        find: "  const slideHeight = pagerHeight ?? height;"
+        replace: "  const slideHeight = (pagerHeight ?? height) - edge;"
+    proof: { file: app/__tests__/yourYearFillsItsWindow.test.tsx, test: "each slide is the whole height the pager is laid at, its words below the status bar" }
+
+  - id: shape-year-pager-left-between-pages
+    class: LAYOUT-a-pager-left-between-its-pages
+    source: shape
+    edits:
+      - file: app/year-in-cinema.tsx
+        find: "            page.current = index;\n"
+        replace: ""
+    proof: { file: app/__tests__/yourYearFillsItsWindow.test.tsx, test: "a window that changes width puts the pager back on the slide it was on" }
+
+  - id: shape-picker-lets-the-first-tap-go
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: app/dispatch/compose.tsx
+        find: "                bounces={false}\n                keyboardShouldPersistTaps=\"handled\"\n            >\n            <View style={{ paddingBottom: edge }}>\n"
+        replace: "                bounces={false}\n            >\n            <View style={{ paddingBottom: edge }}>\n"
+    proof: { file: src/components/__tests__/aListBesideAFieldKeepsTheTap.guard.test.ts, test: "names no list as pressless that keeps the tap after all, or is gone" }
+
+  - id: shape-report-sheet-pinned-in-its-frame
+    class: E2E-keyboard-covers-the-field
+    source: shape
+    edits:
+      - file: src/components/moderation/ReportSheet.tsx
+        find: "  sheet: {\n    // height is applied inline from useWindowDimensions: a stylesheet is\n"
+        replace: "  sheet: {\n    position: 'absolute',\n    bottom: 0,\n    left: 0,\n    right: 0,\n    // height is applied inline from useWindowDimensions: a stylesheet is\n"
+    proof: { file: src/components/layout/__tests__/aSheetRisesWithItsAct.test.tsx, test: "rises with the keyboard, its act inside the box that rose" }
+
+  - id: shape-off-reach-held-to-the-glass
+    class: LAYOUT-words-stood-where-no-scroll-reaches
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "      const above = top - reach.top;\n"
+        replace: "      const above = top - Math.max(reach.top, phone.top);\n"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a sheet at the foot taller than the screen, nothing in it scrolling, has its title above the top (riseoff)" }
+
+  - id: shape-off-foot-judged-in-a-modal-alone
+    class: LAYOUT-words-stood-where-no-scroll-reaches
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "      const below = screenSized && !scrolls ? reach.bottom - (phone.bottom - SAFE.foot) : 0;\n"
+        replace: "      const below = layer && !scrolls ? reach.bottom - (phone.bottom - SAFE.foot) : 0;\n"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a card laid from its top on a screen-sized page runs past the home indicator’s edge (cardfoot)" }
+
+  - id: shape-off-judged-from-the-bare-glass
+    class: LAYOUT-words-stood-where-no-scroll-reaches
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "      const top = clock ? phone.top + SAFE.top : phone.top;\n"
+        replace: "      const top = phone.top;\n"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "words drawn over the status bar inside a Modal sit under the clock (underclock)" }
+
+  - id: shape-field-measured-against-its-content
+    class: LAYOUT-the-keys-taken-from-a-sheets-room
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "      const room = s.getBoundingClientRect().height;\n"
+        replace: "      const room = s.scrollHeight;\n"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a field taller than its scroll can never be seen whole (fieldcramped)" }
+
+  - id: shape-whole-judged-only-when-shorts-asked
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "      if ((SHORTS || mustBeWhole) && truncates(e)) {\n"
+        replace: "      if (SHORTS && truncates(e)) {\n"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "a listed member’s words cut by a clamp are a fault, not a design (wholecut)" }
+
+  - id: shape-unmeasured-said-but-passed
+    class: TEXT-words-cut-where-they-are-read-whole
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "— listed as shown whole, and no page drew it`);\n      faults += 1;\n"
+        replace: "— listed as shown whole, and no page drew it`);\n"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "an entry no page drew fails the run as unmeasured (whole-unmeasured)" }
+
+  - id: shape-pace-keyed-on-the-written-address
+    class: SEC-a-sign-in-pace-hardened
+    source: shape
+    edits:
+      - file: ../supabase/functions/_shared/callerAddress.js
+        find: "  if (ADDRESS.test(connecting)) return { address: connecting, source: 'cf', written }\n"
+        replace: "  if (written) return { address: written, source: 'xff', written }\n  if (ADDRESS.test(connecting)) return { address: connecting, source: 'cf', written }\n"
+    proof:
+      file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts
+      test: "a new address written on every call is still the one caller"
+
+  - id: shape-unvouched-caller-paced-by-the-last-hop
+    class: SEC-a-sign-in-pace-hardened
+    source: shape
+    edits:
+      - file: ../supabase/functions/_shared/callerAddress.js
+        find: "  return { address: null, source: hops.length > 0 ? 'xff' : 'none', written }\n"
+        replace: "  return { address: hops.length > 0 ? hops[hops.length - 1] : null, source: hops.length > 0 ? 'xff' : 'none', written }\n"
+    proof:
+      file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts
+      test: "with no vouched address, no entry of X-Forwarded-For is ever taken as the caller: none, never a bucket all share"
+
+  - id: shape-ipv6-caller-paced-per-address
+    class: SEC-a-sign-in-pace-hardened
+    source: shape
+    edits:
+      - file: ../supabase/functions/_shared/callerAddress.js
+        find: "  return `${groups.slice(0, 4).map((g) => parseInt(g, 16).toString(16)).join(':')}::/64`\n"
+        replace: "  return lower\n"
+    proof:
+      file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts
+      test: "an IPv6 caller is paced by its /64, however it is written; an IPv4 one whole"
+
+  - id: shape-proxy-paces-the-unvouched-as-one
+    class: SEC-a-sign-in-pace-hardened
+    source: shape
+    edits:
+      - file: ../supabase/functions/tmdb-proxy/index.ts
+        find: "        const verdict = door ? admit({ address: door, now: Date.now() }) : { ok: true, retryAfter: 0 };\n"
+        replace: "        const verdict = admit({ address: door ?? 'unknown', now: Date.now() });\n"
+    proof:
+      file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts
+      test: "the proxy and the reader pace no address when none is vouched"

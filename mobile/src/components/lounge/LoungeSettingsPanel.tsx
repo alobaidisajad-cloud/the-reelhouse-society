@@ -23,6 +23,8 @@ import { nav } from '@/src/utils/typedRouter';
 import { useSheetBottom } from '@/src/components/layout/navMetrics';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import type { RoomStanding } from '@/src/components/lounge/roomGate';
+import { isRTLText } from '@/src/utils/text';
+import { rtlText } from '@/src/components/profile/roomStyles';
 
 const BLOOD = colors.crimson;
 /** The same red as WORDS — BANNED, REMOVE, BAN. The pigment is 2.78:1 as a word. */
@@ -227,9 +229,12 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
         <WhenGone run={() => { if (coverPending.current) requestAnimationFrame(toCover); }} />
         <View style={s.handle} />
         <View style={s.headerRow}>
+          {/* The room's name and description are drawn whole here, the one place every member
+              and a public salon's visitor can read them: the cards, the room's header and the
+              ALL SALONS row cut them. The name stays with the X; the description scrolls with the
+              roster, so 300 characters never crowd it out. */}
           <View style={{ flex: 1, marginRight: 12 }}>
-            <Text style={s.title} numberOfLines={1}>{struck(lounge.name)}</Text>
-            {!!lounge.description && <Text style={s.subtitle} numberOfLines={2}>{struck(lounge.description)}</Text>}
+            <Text style={s.title}>{struck(lounge.name)}</Text>
           </View>
           <PressableScale touch="wayOut" onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Close">
             <X size={20} color={colors.fog} strokeWidth={1.5} />
@@ -244,6 +249,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
           estimatedItemSize={56}
           ListHeaderComponent={
             <View>
+              {!!lounge.description && <Text style={[s.description, isRTLText(lounge.description) && rtlText]}>{struck(lounge.description)}</Text>}
               {isCreator && (
                 <View style={s.coverBlock}>
                   <Text style={s.label}>SALON COVER</Text>
@@ -329,6 +335,8 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment },
   subtitle: { fontFamily: fonts.serif, fontSize: 13, color: colors.fog, marginTop: 4, lineHeight: 18 },
+  // The room's own words, whole, above the roster: the subtitle's face, with the room a label has below it.
+  description: { fontFamily: fonts.serif, fontSize: 13, color: colors.fog, lineHeight: 18, marginBottom: 20 },
   // Solid sepia: a word never borrows its contrast from the ground behind it.
   label: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginBottom: 12, includeFontPadding: false },
   // The failed read's line and its TRY AGAIN, the act under the words.

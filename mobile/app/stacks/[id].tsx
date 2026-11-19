@@ -40,6 +40,7 @@ import { logger } from '@/src/utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
 import { isNetworkError } from '@/src/utils/networkError';
 import { saidOfARefusal } from '@/src/utils/saidOfARefusal';
+import { critiquePaceSaid } from '@/src/utils/housePace';
 import { isGoneFromTheHouse } from '@/src/utils/goneFromTheHouse';
 import { wallMayHaveChanged } from '@/src/components/lobby/wallRead';
 import { instantOf, dateOf } from '@/src/utils/instant';
@@ -55,17 +56,18 @@ import { formatDateMonthYear } from '@/src/utils/timeAgo';
 import { z } from 'zod';
 import { EDGE_LIT } from '@/src/theme/light';
 import { useLineScale } from '@/src/hooks/useTextScale';
+import { stackTitleType } from '@/src/components/stack/stackTitleType';
 import { useLater } from '@/src/hooks/useLater';
 import { RoomLight, RoomVeil, type VeilStops } from '@/src/components/atmosphere/RoomLight';
 import { EmptyOffline, REFRESH_FAILED } from '@/src/components/EmptyStates';
 import Buster, { BusterEyes } from '@/src/components/Buster';
 import { nav } from '@/src/utils/typedRouter';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
+import { WithheldBanner } from '@/src/components/moderation/WithheldBanner';
 import { Arrive } from '@/src/components/Arrive';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { useClearance } from '@/src/hooks/useClearance';
 import { ropeSpoken } from '@/src/components/clearance/Clearance';
-import { characterCount } from '@/src/utils/text';
 import type { StackData } from '@/src/schemas/feed.schema';
 import { useWhoIsHidden } from '@/src/utils/filterContentByBlocks';
 import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
@@ -112,6 +114,8 @@ interface ListDetail {
   critiqueCount?: number | null;
   isPrivate: boolean;
   isRanked: boolean;
+  /** Withheld by the house (round 14): read by its curator alone, marked so on its page. */
+  withheldAt?: string | null;
 }
 
 interface ListComment {
@@ -417,17 +421,17 @@ function StackDetailScreen({ id }: { id: string }) {
   const readyMark = useScreenReady('stack', loading ? 'reading' : isError && !list ? 'failed' : 'ready');
 
   /**
-   * A long title is SET SMALLER, as a catalogue sets one: two fixed steps
-   * from the measured width (adjustsFontSizeToFit is unreliable multiline on
-   * Android). The smallest holds the 100-character maximum on a 360dp screen.
+   * A long title is SET SMALLER, as a catalogue sets one: two fixed steps,
+   * measured word by word at the default size (stackTitleType.ts;
+   * adjustsFontSizeToFit is unreliable multiline on Android), and drawn WHOLE
+   * at the step chosen, grown with the member's text: no line count cuts it,
+   * and a larger text size never sets it smaller.
    */
-  const titleType = React.useMemo(() => {
-    const width = windowWidth - 36;                    // one column, 18 each side
-    const capacity = (size: number, lines: number) => (width / (size * 0.723)) * lines;
-    const len = characterCount(list?.title);
-    if (len <= capacity(30, 4)) return { fontSize: 30, lineHeight: 34, numberOfLines: 4 };
-    return { fontSize: 24, lineHeight: 28, numberOfLines: 6 };
-  }, [windowWidth, list?.title]);
+  const struckTitle = useStruck()(list?.title ?? '').toUpperCase();
+  const titleType = React.useMemo(
+    () => stackTitleType(struckTitle, windowWidth - 36),   // one column, 18 each side
+    [windowWidth, struckTitle],
+  );
 
   const [isCertifying, setIsCertifying] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -729,6 +733,12 @@ function StackDetailScreen({ id }: { id: string }) {
           nav.back();
           return;
         }
+        // The house's pace (round 14): said with the wait it named, the words kept in the box.
+        const paced = critiquePaceSaid(err);
+        if (paced) {
+          reelToast.error(paced);
+          return;
+        }
         // As on a log: a stack whose maker limits who may annotate it says so.
         // The member's own standing said as the house says it, never blamed on the maker (review round 9).
         reelToast.error(saidOfARefusal(err, 'This member limits who may annotate their critiques.', 'Your critique could not be filed.'));
@@ -976,11 +986,8 @@ function StackDetailScreen({ id }: { id: string }) {
               <View style={[s.headerContentWrap, { marginTop: HEADER_HEIGHT - 120 }]}>
                 {/* No eyebrow: a catalogue does not print its category above its title. */}
                 <Arrive name="stacks-title" duration={600} delay={100}>
-                <Text
-                  style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]}
-                  numberOfLines={titleType.numberOfLines}
-                >
-                  {struck(list.title).toUpperCase()}
+                <Text style={[s.title, { fontSize: titleType.fontSize, lineHeight: titleType.lineHeight }]}>
+                  {struckTitle}
                 </Text>
                 </Arrive>
 
@@ -1004,6 +1011,9 @@ function StackDetailScreen({ id }: { id: string }) {
                     </View>
                   )}
                 </Arrive>
+
+                {/* Withheld by the house: its curator reads it marked so, never as if it stood public (round 14). */}
+                {isOwner && <WithheldBanner pieceId={id} withheldAt={list.withheldAt ?? null} />}
 
                 {/* The honour stays: the day this stack hung in the Lobby, if it did. */}
                 <LobbyHonour kind="list" id={id} style={s.lobbyHonour} />

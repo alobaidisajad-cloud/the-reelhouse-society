@@ -27,8 +27,9 @@ export const HEIGHT_AT: Record<number, number> = Object.fromEntries(Object.entri
 // The device drawn ON (the default unless MOCKUPS_WIDTH names another), not only measured
 // at: a box sized in code from the window is sized for the device it was drawn for.
 const asked = Number(process.env.MOCKUPS_WIDTH ?? DEVICES.default);
-if (!WIDTHS.includes(asked)) throw new Error(`MOCKUPS_WIDTH=${process.env.MOCKUPS_WIDTH} is not one of ${WIDTHS.join(', ')}`);
-export const PHONE = { width: asked, height: HEIGHT_AT[asked] };
+const askedHeight = HEIGHT_AT[asked];
+if (askedHeight === undefined) throw new Error(`MOCKUPS_WIDTH=${process.env.MOCKUPS_WIDTH} is not one of ${WIDTHS.join(', ')}`);
+export const PHONE = { width: asked, height: askedHeight };
 
 /** Screens drawn at the default width land in out/screens; at another, out/screens-<width>. */
 export const OUT = process.env.MOCKUPS_OUT

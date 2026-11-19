@@ -10,13 +10,114 @@ export interface PriorityCursor {
   id: string;
 }
 
-/** Evidence bundle returned by the admin-verified get_report_evidence RPC. */
-export interface ReportEvidence {
-  found: boolean;
-  title?: string;
-  body?: string;
-  route?: string;
+/** The words of a piece as the house reads them: a page's display name and picture, a salon's cover too. */
+export interface PieceWords {
+  title?: string | null;
+  body?: string | null;
+  display_name?: string | null;
+  avatar_url?: string | null;
+  cover_image?: string | null;
 }
+
+/**
+ * Evidence bundle returned by the admin-verified get_report_evidence RPC: the piece as it stands now,
+ * and (for a report filed since round 14) the words as they stood when it was reported, and whether
+ * they have changed since. A piece deleted since reads found: false, with the words reported beside it.
+ */
+export interface ReportEvidence extends PieceWords {
+  found: boolean;
+  /** Not found because an earlier verdict withholds it (round 14): not destroyed; it may come back on appeal. */
+  withheld?: boolean;
+  /** Withheld, and its appeal filed: it waits for the hearing. */
+  appealed?: boolean;
+  route?: string;
+  reported?: PieceWords;
+  changed?: boolean;
+}
+
+/** A verdict of the house's, as its member reads it (get_my_verdict). */
+export interface MyVerdict {
+  id: string;
+  action: 'warn' | 'suspend' | 'mute_user' | 'ban' | 'permanent_exile' | 'delete_content';
+  reason: string;
+  created_at: string;
+  duration_hours: number | null;
+  expires_at: string | null;
+  /** What a removal took: the member's own words, kept with the verdict. */
+  removed: { title?: string; body?: string } | null;
+  /** Whether an overturned removal puts the piece back where it stood (else only its words come back). */
+  restorable: boolean;
+  /**
+   * A removed log, stack, critique or filing withheld, not yet deleted (round 14): seen by its author
+   * alone, kept whole until `appeal_by` unappealed, or until its appeal is heard (no end once filed).
+   */
+  withheld?: boolean;
+  appeal_by?: string | null;
+  /** Overturned: whether what it removed was put back where it stood (whole, for a piece withheld). */
+  put_back?: boolean;
+  /**
+   * Its appeal waits and no moderator may hear it yet (the house's only moderator ruled it, or it is about
+   * them): it waits for another, never heard by one refused; what it removed stays withheld, whole.
+   */
+  no_moderator_yet?: boolean;
+  lifted_at: string | null;
+  lift_reason: string | null;
+  appeal: { text: string; filed_at: string; status: 'pending' | 'upheld' | 'overturned'; judged_at: string | null; note: string | null } | null;
+  can_appeal: boolean;
+}
+
+/** An appeal waiting for the Tribunal (get_pending_appeals). */
+export interface PendingAppeal {
+  id: string;
+  action: MyVerdict['action'];
+  reason: string;
+  created_at: string;
+  duration_hours: number | null;
+  expires_at: string | null;
+  lifted_at: string | null;
+  appeal: string;
+  appeal_filed_at: string;
+  /** The moderator reading it gave the verdict: they may not hear its appeal. */
+  ruled_by_you: boolean;
+  /** Why the moderator reading it may not hear it: they ruled, or the verdict is about them; none when they may. */
+  refused?: 'OWN_VERDICT' | 'OWN_CASE' | null;
+  /** No moderator of the house may hear it yet: it waits for another to be appointed. */
+  no_moderator_yet?: boolean;
+  ruled_by: string | null;
+  member: { id: string | null; username: string | null; avatar_url: string | null; is_banned: boolean; exiled: boolean; suspended_until: string | null };
+  case: { content_type: string; reason: string; details: string | null } | null;
+  removed: { title?: string; body?: string } | null;
+  restorable: boolean;
+  /** The piece it removed is withheld whole for this hearing (round 14). */
+  withheld?: boolean;
+}
+
+/** A member under a ban or a suspension now (get_sanctioned_members). */
+export interface SanctionedMember {
+  id: string;
+  username: string | null;
+  avatar_url: string | null;
+  is_banned: boolean;
+  exiled: boolean;
+  suspended_until: string | null;
+  reason: string | null;
+  since: string | null;
+}
+
+/** The Tribunal door's count: the cases pending, and the appeals this moderator may hear. */
+export interface TribunalWaiting { cases: number; appeals: number }
+
+/** One of the member's own pieces the house withholds (get_my_withheld_pieces, round 14). */
+export interface WithheldPiece {
+  kind: 'log' | 'list' | 'log_comment' | 'list_comment' | 'dispatch_comment' | 'dispatch_post';
+  piece_id: string;
+  verdict_id: string;
+  /** Kept whole until then unappealed; none once an appeal is filed (kept until it is heard). */
+  appeal_by: string | null;
+  appealed: boolean;
+}
+
+const asCount = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : 0);
 
 export const ModerationService = {
   /**
@@ -41,16 +142,6 @@ export const ModerationService = {
     const { data, error, count } = await query;
     if (error) throw error;
     return { rows: data || [], total: count ?? null };
-  },
-
-  /** Lightweight pending count for the Settings door badge. */
-  async getPendingCount(): Promise<number> {
-    const { count, error } = await supabase
-      .from('reports')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'pending');
-    if (error) throw error;
-    return count ?? 0;
   },
 
   // ── Block/Mute CRUD ─────────────────────────────────────────────────────
@@ -183,4 +274,92 @@ export const ModerationService = {
     }
     return byUser;
   },
+
+  // ── A verdict read whole, appealed once, heard by another; a ban or suspension lifted (round 14) ──
+
+  /** One verdict on the member asking, whole. Refused VERDICT_GONE for another's, or one no longer there. */
+  async getMyVerdict(actionId: string): Promise<MyVerdict> {
+    const { data, error } = await supabase.rpc('get_my_verdict', { p_action_id: actionId });
+    if (error) throw error;
+    return data as MyVerdict;
+  },
+
+  /** The member's one appeal of a verdict on them. Refused ALREADY_APPEALED for a second. */
+  async fileAppeal(actionId: string, appeal: string): Promise<void> {
+    const { error } = await supabase.rpc('file_appeal', { p_action_id: actionId, p_appeal: appeal });
+    if (error) throw error;
+  },
+
+  /** The appeals waiting, oldest first, a page at a time (keyset on the moment filed and the verdict). */
+  async getPendingAppeals(cursor?: { appeal_filed_at: string; id: string }, limit = 20): Promise<PendingAppeal[]> {
+    const { data, error } = await supabase.rpc('get_pending_appeals', {
+      p_cursor_at: cursor?.appeal_filed_at ?? null,
+      p_cursor_id: cursor?.id ?? null,
+      p_limit: limit,
+    });
+    if (error) throw error;
+    return Array.isArray(data) ? (data as PendingAppeal[]) : [];
+  },
+
+  /** An appeal heard: upheld or overturned, with the house's word to the member. Never by the one who ruled. */
+  async judgeAppeal(actionId: string, outcome: 'upheld' | 'overturned', note: string): Promise<void> {
+    const { error } = await supabase.rpc('judge_appeal', { p_action_id: actionId, p_outcome: outcome, p_note: note });
+    if (error) throw error;
+  },
+
+  /** The members under a ban or a suspension now, by handle, a page at a time. */
+  async getSanctionedMembers(cursor?: { username: string | null; id: string }, limit = 30): Promise<SanctionedMember[]> {
+    const { data, error } = await supabase.rpc('get_sanctioned_members', {
+      p_cursor_name: cursor ? (cursor.username ?? '') : null,
+      p_cursor_id: cursor?.id ?? null,
+      p_limit: limit,
+    });
+    if (error) throw error;
+    return Array.isArray(data) ? (data as SanctionedMember[]) : [];
+  },
+
+  /** A member's ban and suspension lifted, with a reason they are told. Refused EXILE_STANDS for an exile. */
+  async liftSanction(userId: string, reason: string): Promise<void> {
+    const { error } = await supabase.rpc('lift_sanction', { p_user_id: userId, p_reason: reason });
+    if (error) throw error;
+  },
+
+  /** The member's own pieces the house withholds: each page of theirs marks them, never as standing. */
+  async getMyWithheldPieces(): Promise<WithheldPiece[]> {
+    const { data, error } = await supabase.rpc('get_my_withheld_pieces');
+    if (error) throw error;
+    return Array.isArray(data) ? (data as WithheldPiece[]) : [];
+  },
+
+  /** The Tribunal door's count: the cases pending and the appeals this moderator may hear. */
+  async getTribunalWaiting(): Promise<TribunalWaiting> {
+    const { data, error } = await supabase.rpc('tribunal_waiting');
+    if (error) throw error;
+    const d = (data ?? {}) as Record<string, unknown>;
+    return { cases: asCount(d.cases), appeals: asCount(d.appeals) };
+  },
+
+  /** The member's own record of verdicts, newest first, a page at a time (each opens whole: getMyVerdict). */
+  async getMyVerdicts(cursor?: { created_at: string; id: string }, limit = 30): Promise<MyVerdictEntry[]> {
+    const { data, error } = await supabase.rpc('get_my_verdicts', {
+      p_cursor_at: cursor?.created_at ?? null,
+      p_cursor_id: cursor?.id ?? null,
+      p_limit: limit,
+    });
+    if (error) throw error;
+    return Array.isArray(data) ? (data as MyVerdictEntry[]) : [];
+  },
 };
+
+/** One verdict on the member's own record (get_my_verdicts): how it stands, opened whole from here. */
+export interface MyVerdictEntry {
+  id: string;
+  action: MyVerdict['action'];
+  reason: string;
+  created_at: string;
+  duration_hours: number | null;
+  expires_at: string | null;
+  lifted_at: string | null;
+  appeal_status: 'pending' | 'upheld' | 'overturned' | null;
+  content_type: string | null;
+}

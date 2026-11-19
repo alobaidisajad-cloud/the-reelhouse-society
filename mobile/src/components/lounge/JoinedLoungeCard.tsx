@@ -8,6 +8,7 @@ import React from 'react';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
+import { counted } from '@/src/utils/counted';
 import { nav } from '@/src/utils/typedRouter';
 import { Film as FilmIcon, DoorOpen, Hourglass, Lock } from 'lucide-react-native';
 import { LoungeRoom } from '@/src/stores/lounge';
@@ -43,7 +44,7 @@ export const JoinedLoungeCard = React.memo(({ lounge: room, width }: { lounge: L
   const members = lounge.member_count || 0;
   const news = isAwaiting ? 'awaiting the host'
     : atDoor > 0 ? `${atDoor} at your door`
-      : unread > 0 ? `${unreadSpoken} new dispatches` : null;
+      : unread > 0 ? counted(unread, 'new dispatch', 'new dispatches', () => unreadSpoken) : null;
 
   return (
     <PressableScale style={[s.card, { width }]} onPress={() => nav.push(`/lounge/${lounge.id}`)} haptic="light" hitSlop={null}
@@ -59,7 +60,7 @@ export const JoinedLoungeCard = React.memo(({ lounge: room, width }: { lounge: L
       <View style={s.body} {...UNSPOKEN}>
         <View style={[s.nameRow, nameRoom]}>
           {lounge.is_private ? <Lock size={12} color={colors.bone} style={s.lock} /> : null}
-          {/* A salon's name is content: past two lines it ends in "…", said whole and shown whole in the room. */}
+          {/* A salon's name is content: past two lines it ends in "…", said whole, and shown whole in the room's settings sheet. */}
           <Text style={s.name} {...displayTextProps} numberOfLines={2}>{lounge.name}</Text>
         </View>
         {lastWord ? <Text style={s.lastWord} {...scaledTextProps}>LAST WORD {lastWord.toUpperCase()}</Text> : null}

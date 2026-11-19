@@ -341,6 +341,53 @@ describe('AuthStore', () => {
       expect(said.message).toMatch(/Too many attempts/);
     });
 
+    /** The house's 429 resting a handle, as sign-in-with-username answers it (round 14). */
+    const resting = (body: unknown) => ({ name: 'FunctionsHttpError', context: { status: 429, json: async () => body } });
+
+    it('this connection resting after its own wrong passwords says so, how long, and that the email address still signs in', async () => {
+      const said = await saidFor(resting({ error: 'Too many wrong passwords from here.', paused: 'handle', from: 'here', retry_after: 125 }));
+      expect(said.isInvalidCredentials).toBe(false);
+      expect(said.message).toBe('Too many wrong passwords from this connection. It opens again in 3 minutes. Your email address signs you in now.');
+    });
+
+    it('a handle slowed by attempts from elsewhere says that, never that this member got it wrong', async () => {
+      const said = await saidFor(resting({ paused: 'handle', from: 'elsewhere', retry_after: 20 }));
+      expect(said.isInvalidCredentials).toBe(false);
+      expect(said.message).toBe('This handle is being tried from elsewhere, so it is slowed. Try again in a minute, or sign in with your email address now.');
+    });
+
+    it('a phone holding the key the house handed it sends it, and keeps the key the house hands back', async () => {
+      const { storage, setSensitive } = jest.requireMock('../mmkv-storage') as { storage: { getString: jest.Mock }; setSensitive: jest.Mock };
+      const key = 'a'.repeat(64);
+      storage.getString.mockImplementation((k: string) => (k === 'handle_doors' ? JSON.stringify([['noir_fan', key]]) : undefined));
+      setSensitive.mockClear();
+      mockInvoke.mockResolvedValue({ data: { access_token: 'at', refresh_token: 'rt', device: 'b'.repeat(64) }, error: null });
+      mockSetSession.mockResolvedValue({ data: { user: { id: 'u9', email: 'x@y.z' } }, error: null });
+      await useAuthStore.getState().login('@Noir_Fan', 'pw').catch(() => undefined);
+      expect(mockInvoke).toHaveBeenCalledWith('sign-in-with-username', { body: { username: 'Noir_Fan', password: 'pw', device: key } });
+      const kept = setSensitive.mock.calls.filter(([k]) => k === 'handle_doors');
+      expect(kept).toEqual([['handle_doors', JSON.stringify([['noir_fan', 'b'.repeat(64)]])]]);
+      storage.getString.mockReset();
+    });
+
+    it('a phone holding no key sends none, and keeps nothing from a refusal', async () => {
+      const { storage, setSensitive } = jest.requireMock('../mmkv-storage') as { storage: { getString: jest.Mock }; setSensitive: jest.Mock };
+      storage.getString.mockReturnValue(undefined);
+      setSensitive.mockClear();
+      mockInvoke.mockResolvedValue({ data: null, error: { name: 'FunctionsHttpError', context: { status: 401 } } });
+      await useAuthStore.getState().login('noir_fan', 'pw').catch(() => undefined);
+      expect(mockInvoke).toHaveBeenCalledWith('sign-in-with-username', { body: { username: 'noir_fan', password: 'pw' } });
+      expect(setSensitive.mock.calls.filter(([k]) => k === 'handle_doors')).toEqual([]);
+    });
+
+    it('a 429 that names no handle, or whose words cannot be read, is the caller\'s own pace', async () => {
+      for (const error of [resting({ error: 'Too many attempts.' }), resting({ paused: 'handle', retry_after: 'soon' }),
+        { name: 'FunctionsHttpError', context: { status: 429, json: async () => { throw new Error('not JSON'); } } }]) {
+        const said = await saidFor(error);
+        expect(said.message).toMatch(/^Too many attempts\. The door needs a moment/);
+      }
+    });
+
     it('a handle typed as the house prints it, with its @, signs in by handle', async () => {
       mockInvoke.mockResolvedValue({ data: null, error: { name: 'FunctionsHttpError', context: { status: 401 } } });
       await useAuthStore.getState().login('@noir_fan', 'pw').catch(() => undefined);

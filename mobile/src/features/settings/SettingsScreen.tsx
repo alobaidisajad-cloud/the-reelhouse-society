@@ -32,7 +32,8 @@ import reelToast from '@/src/utils/reelToast';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useUpdateUser } from '@/src/hooks/useUpdateUser';
 import { AuthService } from '@/src/services/AuthService';
-import { ModerationService } from '@/src/services/ModerationService';
+import { useTribunalWaiting } from '@/src/hooks/useTribunalWaiting';
+import { VerdictRecord } from '@/src/components/moderation/VerdictRecord';
 import { useAmbientGlow } from '@/src/hooks/useAmbientGlow';
 import { colors } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
@@ -92,8 +93,8 @@ const OTP_UNREACHED = 'The house could not be reached, so your code was not chec
 const TITLE_FADE_FROM = 130;
 const TITLE_FADE_TO = 210;
 
-/** A door to one section of the page (`/settings?section=import`). */
-const PARAMS = { section: P.oneOf('account', 'import') };
+/** A door to one section of the page (`/settings?section=import`; `record`, the banner of a pause or a silence's). */
+const PARAMS = { section: P.oneOf('account', 'import', 'record') };
 
 export function SettingsScreen() {
   const { user, logout } = useAuthStore(useShallow((s) => ({ user: s.user, logout: s.logout })));
@@ -134,15 +135,8 @@ export function SettingsScreen() {
     { text: 'A native crash', style: 'destructive', onPress: testCrash.native },
     { text: 'Cancel', style: 'cancel' },
   ]);
-  const [tribunalWaiting, setTribunalWaiting] = useState<number | null>(null);
-  useEffect(() => {
-    if (!isAdmin) return;
-    let cancelled = false;
-    ModerationService.getPendingCount()
-      .then((n) => { if (!cancelled) setTribunalWaiting(n); })
-      .catch(() => { /* the door still opens without its number */ });
-    return () => { cancelled = true; };
-  }, [isAdmin]);
+  // The Tribunal door's count, read again as the Tribunal judges and as Settings is come back to (round 14).
+  const tribunalWaiting = useTribunalWaiting(user?.id, isAdmin);
 
   const [otpModalVisible, setOtpModalVisible] = useState(false);
   const [otpAction, setOtpAction] = useState<'deleteAccount' | 'toggleBiometric' | null>(null);
@@ -700,6 +694,15 @@ export function SettingsScreen() {
             onHelp={() => { void openHousePage(SUPPORT_URL); }}
             onCopy={() => { void copySupportAddress(); }}
           />
+        </Arrive>
+
+        {/* Every verdict of the house on the member, each opened whole and appealed from here: never only
+            from its notice, which a member may dismiss (round 14). `?section=record` opens here. */}
+        <Arrive name="settingsscreen-record" duration={DEFAULT_DURATION} delay={340} onLayout={(e) => landOn('record', e)}>
+          <SectionCard>
+            <SectionHead icon={Scale} label="YOUR RECORD WITH THE HOUSE" />
+            <VerdictRecord />
+          </SectionCard>
         </Arrive>
 
         <Arrive name="settingsscreen-4" duration={DEFAULT_DURATION} delay={350}>

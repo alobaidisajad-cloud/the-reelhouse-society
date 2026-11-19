@@ -11,7 +11,7 @@
  * this member, in this state, what is on the page.
  */
 import React, { act } from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, within } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 // The screen itself. `jest.mock` factories are hoisted above every import by
@@ -339,6 +339,27 @@ describe('the figures and the holdings', () => {
     expect(r.getByLabelText('204 following')).toBeTruthy();
   });
 
+  it('a figure is written from its count alone, so the two can never disagree', async () => {
+    const { StatCard } = jest.requireActual('@/src/components/profile/ProfileHelpers') as typeof import('@/src/components/profile/ProfileHelpers');
+    const r = render(<StatCard label="FOLLOWERS" one="FOLLOWER" count={18206} />);
+    expect(r.getByLabelText('18,206 followers')).toBeTruthy();
+    expect(r.getByText('18,206')).toBeTruthy();
+    await r.unmount();
+  });
+
+  it('one film and one follower are said, and printed, in the singular', async () => {
+    const r = await mount({}, {
+      targetUser: baseUser({ followers_count: 1, following_count: 1 }),
+      counts: { logs: 1, ledger: 0, watchlist: 1, vault: 0, lists: 0 },
+    });
+    expect(r.getByLabelText('1 film')).toBeTruthy();
+    expect(r.getByLabelText('1 follower')).toBeTruthy();
+    expect(r.queryByLabelText('1 films')).toBeNull();
+    expect(r.queryByLabelText('1 followers')).toBeNull();
+    expect(within(r.getByLabelText('1 film')).getByText('FILM')).toBeTruthy();
+    expect(within(r.getByLabelText('1 follower')).getByText('FOLLOWER')).toBeTruthy();
+  });
+
   it('an empty collection reads as a dash and SAYS "no" aloud', async () => {
     const r = await mount({}, {
       targetUser: baseUser({ followers_count: 0, following_count: 0 }),
@@ -543,6 +564,15 @@ describe('the page survives the edges', () => {
       bio: 'x'.repeat(600),
     }) });
     expect(r.getByText(/BARTHOLOMEW/)).toBeTruthy();
+  });
+
+  it('a bio written one line to an item is drawn whole: all eight lines, none cut', async () => {
+    const bio = 'Cinephile.\nCritic.\nArchivist.\nNight owl.\nNitrate.\nSilents.\nNoir.\nLondon.';
+    const r = await mount({}, { targetUser: baseUser({ bio }) });
+    const shown = r.getByText(/Cinephile/);
+    expect(shown.props.numberOfLines).toBeUndefined();
+    const text = [shown.props.children].flat(3).filter((c) => typeof c === 'string').join('');
+    expect(text.replace(/\u200B/g, '')).toContain('London.');
   });
 
   it('a pasted link in a bio is offered places to wrap, at its joints', async () => {

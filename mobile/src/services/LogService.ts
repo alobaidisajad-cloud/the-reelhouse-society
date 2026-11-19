@@ -8,6 +8,7 @@ import { resolveTier } from '@/src/utils/tier';
 import { validateWithTelemetry } from '@/src/utils/validateWithTelemetry';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
 import { sanitizeInput } from '@/src/utils/sanitizeInput';
+import { atTheHousesPace } from '@/src/utils/housePace';
 import { z } from 'zod';
  
 import { getOfflineQueue } from '@/src/utils/offlineQueue';
@@ -122,7 +123,8 @@ export const LogService = {
     // the server's answer and not the sign-in index's (learnEndorsements).
     let query = withLogCountFilters(supabase
       .from('logs')
-      .select(`${PUBLIC_LOG_COLUMNS}, profiles!logs_user_id_fkey(username, avatar_url, role, display_name, member_no), ${logCertifySelect(currentUserId)}`), currentUserId)
+      // withheld_at: withheld by the house, its author reads it marked so (round 14; only its author reads it at all).
+      .select(`${PUBLIC_LOG_COLUMNS}, withheld_at, profiles!logs_user_id_fkey(username, avatar_url, role, display_name, member_no), ${logCertifySelect(currentUserId)}`), currentUserId)
       .eq('id', logId)
       .maybeSingle();
 
@@ -237,14 +239,19 @@ export const LogService = {
     const username = useAuthStore.getState().user?.username ?? 'anonymous';
     const sanitized = { ...safePayload, username, body: sanitizeInput(safePayload.body, 'logComment') };
 
-    const { data: commentData, error } = await supabase
-      .from('log_comments')
-      .upsert(sanitized, { onConflict: 'id' })
-      // Explicit columns replace select('*') - prevents payload bloat
-      .select('id, log_id, user_id, body, created_at')
-      .maybeSingle();
+    // At the house's pace (check_critique_pace, round 14): a moment's wait is waited and the critique
+    // filed; a longer one is thrown, for the page to say how long (housePace.critiquePaceSaid).
+    const { data: commentData } = await atTheHousesPace(async () => {
+      const sent = await supabase
+        .from('log_comments')
+        .upsert(sanitized, { onConflict: 'id' })
+        // Explicit columns replace select('*') - prevents payload bloat
+        .select('id, log_id, user_id, body, created_at')
+        .maybeSingle();
+      if (sent.error) throw sent.error;
+      return sent;
+    });
 
-    if (error) throw error;
     if (!commentData) throw new Error('Failed to add comment');
 
     // The comment is the signed-in member's own (the row rules write it only as

@@ -190,10 +190,13 @@ describe('the Tribunal can now ask for content removal', () => {
     expect(ui).toMatch(/A copy is kept with the record/);
   });
 
-  it('is hidden for a profile report', () => {
-    // The server refuses it — a profile is not content, it is a person. Offering
-    // a button that can only fail is how a moderator learns to distrust the tool.
-    expect(ui).toMatch(/item\.content_type !== 'profile' &&/);
+  it('is offered for a page and a salon, saying what it takes from each (round 14)', () => {
+    // A page and a salon are no piece, and the house refused them, so a slur in a bio or a salon's
+    // name stood for as long as the ban that froze it. The house now clears what was written on
+    // each (never the page or the room), and the sheet says so for each.
+    expect(ui).not.toMatch(/item\.content_type !== 'profile' &&/);
+    expect(ui).toMatch(/Their handle stays/);
+    expect(ui).toMatch(/its rooms and the words members left in them stay/);
   });
 
   it('is NOT hidden when the reported member has left', () => {
@@ -213,8 +216,10 @@ describe('the Tribunal can now ask for content removal', () => {
     expect(`guard mentions target_user_id: ${/target_user_id/.test(lastGuard)}`).toBe(
       'guard mentions target_user_id: false',
     );
-    expect(`guard checks the content type: ${/content_type !== 'profile'/.test(lastGuard)}`).toBe(
-      "guard checks the content type: true",
+    // Its one condition is whether the piece still stands (round 14: a page and a salon are offered
+    // too, so no content type is left out).
+    expect(`guard checks the piece still stands: ${/ev\.data\.found/.test(lastGuard)}`).toBe(
+      'guard checks the piece still stands: true',
     );
   });
 

@@ -34,11 +34,17 @@ export function dayKey(iso: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** `WEDNESDAY, AUGUST 28`. Empty for a date that cannot be read, never `Invalid Date`. */
-export function dayLabel(iso: string): string {
+/**
+ * `WEDNESDAY, AUGUST 28`, and `WEDNESDAY, NOVEMBER 12, 2025` for a day of another year than
+ * `thisYear` (the member's, from the clock). Without its year, last November's twelfth read as this
+ * year's, its weekday against this year's calendar (round 14). Empty for a date that cannot be
+ * read, never `Invalid Date`.
+ */
+export function dayLabel(iso: string, thisYear: number): string {
   const d = dateOf(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return `${WEEKDAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
+  const day = `${WEEKDAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
+  return d.getFullYear() === thisYear ? day : `${day}, ${d.getFullYear()}`;
 }
 
 /**

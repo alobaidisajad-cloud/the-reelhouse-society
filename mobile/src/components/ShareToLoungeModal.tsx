@@ -4,12 +4,13 @@
 import { FlashList } from '@shopify/flash-list';
 import { InColumn } from '@/src/components/layout/InColumn';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/src/components/text';
 import Animated from 'react-native-reanimated';
-import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
-import { useSheetBottom } from '@/src/components/layout/navMetrics';
+import { useModalKeyboardPadding, useSheetFootWhileTyping } from '@/src/hooks/useModalKeyboardPadding';
+import { overlayTop, useSheetBottom } from '@/src/components/layout/navMetrics';
 
 import PressableScale from '@/src/components/PressableScale';
 import { useAuthStore } from '@/src/stores/auth';
@@ -205,12 +206,22 @@ function ShareSheet({
     const animatedSheetStyle = useModalKeyboardPadding();
     // Its last control clears the home indicator, as every bottom sheet's does.
     const sheetFoot = useSheetBottom();
+    // …and on iOS gives that room to the sheet's words while the keys cover the indicator.
+    const foot = useSheetFootWhileTyping(sheetFoot);
+    // And it stops below the status bar, as CreateLoungeSheet does: a card taller than the room
+    // above the keys gives up the room from its body, which scrolls, never from its top. It rose
+    // whole past the status bar and off the screen, taking its title and its X (round 14).
+    const sheetTop = overlayTop(useSafeAreaInsets().top);
+    // While the message is typed, the body keeps it and SHARE TO LOUNGE in view as the keys
+    // take the room; the salons are above, a scroll away.
+    const body = useRef<ScrollView>(null);
+    const [writing, setWriting] = useState(false);
 
     return (
         <Modal statusBarTranslucent visible={visible} transparent animationType="slide" onRequestClose={onClose}>
           <InColumn scrim={{ color: 'rgba(0,0,0,0.85)' }}>
-            <Animated.View style={[s.overlay, animatedSheetStyle]} accessibilityViewIsModal={true} onAccessibilityEscape={onClose}>
-                <View style={[s.card, { paddingBottom: sheetFoot }]}>
+            <Animated.View style={[s.overlay, { paddingTop: sheetTop }, animatedSheetStyle]} accessibilityViewIsModal={true} onAccessibilityEscape={onClose}>
+                <Animated.View style={[s.card, foot]}>
                     <View style={s.header}>
                         <Text style={s.title}>Share to Lounge</Text>
                         <PressableScale touch="wayOut" onPress={() => { onClose(); }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic="selection" pressedScale={0.92}
@@ -219,6 +230,16 @@ function ShareSheet({
                         </PressableScale>
                     </View>
 
+                    <ScrollView
+                        ref={body}
+                        testID="share-body"
+                        style={s.body}
+                        bounces={false}
+                        showsVerticalScrollIndicator={false}
+                        // A salon or SHARE pressed while the message is typed acts on the first press.
+                        keyboardShouldPersistTaps="handled"
+                        onLayout={() => { if (writing) body.current?.scrollToEnd({ animated: false }); }}
+                    >
                     {dossierId ? (
                         <Text style={s.filmLabel} numberOfLines={1}>SHARING ESSAY: {struck(dossierTitle)?.toUpperCase()}</Text>
                     ) : listId ? (
@@ -252,6 +273,8 @@ function ShareSheet({
                                 keyboardDismissMode="on-drag"
                                 // A salon chosen while the message is typed is chosen on the first press.
                                 keyboardShouldPersistTaps="handled"
+                                // Scrolls inside the body's scroll: Android hands it the drag.
+                                nestedScrollEnabled
                             />
 
                             <TextInput
@@ -265,6 +288,8 @@ function ShareSheet({
                                 keyboardAppearance="dark"
                                 accessibilityLabel="Share message"
                                 selectionColor={colors.selection}
+                                onFocus={() => setWriting(true)}
+                                onBlur={() => setWriting(false)}
                             />
 
                             <PressableScale
@@ -278,7 +303,8 @@ function ShareSheet({
                             </PressableScale>
                         </>
                     )}
-                </View>
+                    </ScrollView>
+                </Animated.View>
                 <ToastHost />
             </Animated.View>
           </InColumn>
@@ -289,10 +315,14 @@ function ShareSheet({
 const s = StyleSheet.create({
     // Its ground is the scrim InColumn draws across the window.
     overlay: { flex: 1, justifyContent: 'flex-end' },
+    // Shrinks to the room between the status bar and the keys; its body gives up what it must.
     card: {
+        flexShrink: 1,
         backgroundColor: colors.ink, borderTopLeftRadius: 16, borderTopRightRadius: 16,
         borderTopWidth: 2, borderTopColor: colors.sepia, padding: 24,
     },
+    // As tall as its words while they fit; past that, it scrolls (the header stays).
+    body: { flexGrow: 0, flexShrink: 1 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
     title: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment },
     closeText: { fontSize: 18, color: colors.fog },

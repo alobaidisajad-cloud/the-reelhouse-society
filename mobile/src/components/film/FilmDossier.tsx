@@ -6,6 +6,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
+import { grouped } from '@/src/utils/counted';
 import { releaseOf } from './releaseOf';
 import type { PickedCertificate } from './pickCertificate';
 
@@ -31,10 +32,18 @@ const Row = memo(function Row({ label, value }: { label: string; value?: string 
   );
 });
 
-/** A billion is not `$1446.2M`. Nobody writes it that way and nobody reads it. */
+/**
+ * A sum as a ledger writes it. A billion is not `$1446.2M`, and a silent picture's $18,000 is not
+ * `$0.0M`: under a million the sum is written whole (`$18,000`). A sum that rounds to a thousand
+ * millions is written in billions (`$1.00B`, never `$1000.0M`). Under $1,000 is no sum a picture was
+ * made or earned for: TMDB's `1` or `100` is a figure entered in millions, so no row is printed
+ * rather than a wrong one.
+ */
 export function formatMoney(n: number | null | undefined): string | undefined {
-  if (!n || n <= 0) return undefined;
-  return n >= 1e9 ? `$${(n / 1e9).toFixed(2)}B` : `$${(n / 1e6).toFixed(1)}M`;
+  if (!n || !Number.isFinite(n) || n < 1000) return undefined;
+  if (n < 1e6) return `$${grouped(Math.round(n))}`;
+  const millions = (n / 1e6).toFixed(1);
+  return Number(millions) >= 1000 ? `$${(n / 1e9).toFixed(2)}B` : `$${millions}M`;
 }
 
 /**

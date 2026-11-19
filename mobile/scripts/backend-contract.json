@@ -58,6 +58,10 @@
       "signature": "end_filing(p_post uuid, p_by text)"
     },
     {
+      "name": "file_appeal",
+      "signature": "file_appeal(p_action_id uuid, p_appeal text)"
+    },
+    {
       "name": "forget_other_devices",
       "signature": "forget_other_devices(p_keep_token text)"
     },
@@ -94,6 +98,22 @@
       "signature": "get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer)"
     },
     {
+      "name": "get_my_verdict",
+      "signature": "get_my_verdict(p_action_id uuid)"
+    },
+    {
+      "name": "get_my_verdicts",
+      "signature": "get_my_verdicts(p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer)"
+    },
+    {
+      "name": "get_my_withheld_pieces",
+      "signature": "get_my_withheld_pieces()"
+    },
+    {
+      "name": "get_pending_appeals",
+      "signature": "get_pending_appeals(p_cursor_at timestamp with time zone, p_cursor_id uuid, p_limit integer)"
+    },
+    {
       "name": "get_priority_reports",
       "signature": "get_priority_reports(p_limit integer, p_cursor_count bigint, p_cursor_created timestamp with time zone, p_cursor_id uuid)"
     },
@@ -108,6 +128,10 @@
     {
       "name": "get_report_evidence",
       "signature": "get_report_evidence(p_report_id uuid)"
+    },
+    {
+      "name": "get_sanctioned_members",
+      "signature": "get_sanctioned_members(p_cursor_name text, p_cursor_id uuid, p_limit integer)"
     },
     {
       "name": "get_taste_match",
@@ -132,6 +156,14 @@
     {
       "name": "join_public_lounge",
       "signature": "join_public_lounge(p_lounge_id uuid)"
+    },
+    {
+      "name": "judge_appeal",
+      "signature": "judge_appeal(p_action_id uuid, p_outcome text, p_note text)"
+    },
+    {
+      "name": "lift_sanction",
+      "signature": "lift_sanction(p_user_id uuid, p_reason text)"
     },
     {
       "name": "list_certify_count",
@@ -224,6 +256,10 @@
     {
       "name": "toggle_dossier_certify",
       "signature": "toggle_dossier_certify(dossier_uuid uuid)"
+    },
+    {
+      "name": "tribunal_waiting",
+      "signature": "tribunal_waiting()"
     },
     {
       "name": "update_my_preferences",

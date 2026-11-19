@@ -96,10 +96,15 @@ describe('why the date form had to change rather than the date being dropped', (
   it('and it is the CALLER that keeps it short', () => {
     // The stub renders whatever it is handed. If the layout ever goes back to
     // a full date this guard is the only thing between that and a clipped row.
+    // The label is made in watchedLabel.ts (round 14: its year read from the calendar date's own
+    // parts), and the layout hands the stub nothing else.
     const src = require('fs').readFileSync(
       require('path').join(__dirname, '..', 'FilmDetailLayout.tsx'), 'utf8');
-    expect(src).toMatch(/formatDateMonthDay/);
-    expect(src).toMatch(/String\(watched\.getFullYear\(\)\)/);
+    expect(src).toMatch(/watchedLabel=\{watchedLabel\}/);
+    expect(src).toMatch(/watchedLabelOf\(existingLog\?\.watchedDate, thisYear\)/);
+    const { watchedLabel } = require('../watchedLabel') as typeof import('../watchedLabel');
+    expect(watchedLabel('2026-07-21', 2026)).toBe('JUL 21');
+    expect(watchedLabel('2025-07-21', 2026)).toBe('2025');
   });
 
   it('and the rewatch count has a worst case', () => {

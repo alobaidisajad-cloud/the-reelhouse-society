@@ -13,12 +13,14 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 import { tally } from './profileComputed';
 import { tasteReadiness, type TasteProfile } from '@/src/constants/taste';
 import { EDGE_LIT } from '@/src/theme/light';
-import { RoomRetrieving, RoomUnreachable } from './RoomParts';
+import { RoomClosed, RoomRetrieving, RoomUnreachable } from './RoomParts';
 import { counted } from '@/src/utils/counted';
 import { Arrive } from '@/src/components/Arrive';
 
-export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
+export function CinematicInsights({ taste, isSelf, failed, refused, onRetry }: {
     taste?: TasteProfile | null;
+    /** The house refused this reader the record: a closed room, never one still being read. */
+    refused?: boolean;
     /** Your own file: the words say "your". */
     isSelf: boolean;
     /** The taste read failed. */
@@ -38,7 +40,9 @@ export function CinematicInsights({ taste, isSelf, failed, onRetry }: {
     if (!taste) {
         return (
             <View style={s.card}>
-                {failed
+                {refused
+                    ? <RoomClosed room="the insights" />
+                    : failed
                     ? <RoomUnreachable room="the insights" onRetry={onRetry ?? (() => {})} />
                     : <RoomRetrieving room="the insights" />}
             </View>

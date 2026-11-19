@@ -22,9 +22,12 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 }));
 
 let mockQuery: Record<string, unknown>;
+/** The member's own withheld pieces, as the house sends the list: none, unless a kind says so. */
+let mockWithheld: { data: unknown[] } = { data: [] };
 jest.mock('@tanstack/react-query', () => ({
   ...jest.requireActual('@tanstack/react-query'),
-  useQuery: () => mockQuery,
+  // The log's read; the member's withheld pieces answered in their own shape (round 14).
+  useQuery: (o: { queryKey: unknown[] }) => (o.queryKey[0] === require('@/src/hooks/useMyWithheld').MY_WITHHELD ? mockWithheld : mockQuery),
   useQueryClient: () => ({
     setQueryData: jest.fn(), getQueryData: jest.fn(), invalidateQueries: jest.fn(),
     cancelQueries: jest.fn(() => Promise.resolve()), removeQueries: jest.fn(),
@@ -115,12 +118,24 @@ const KINDS: [string, Record<string, unknown>][] = [
   // others: the house's Text keeps four a letter, and none may reach another row (layout's INK).
   ['log-piled-marks', { data: { log: { ...LOG, pull_quote: null, drop_cap: false, review: piled('The clocks run backwards in the last reel and nobody in the room noticed but me.') },
     profile: PROFILE, comments: [NOTES[0], { ...NOTES[1], user_id: 'u3', username: 'zalgo', body: piled('It comes for every frame, and then it comes for the next.') }, NOTES[1]], commentTotal: 3 }, isLoading: false }],
+  // An Auteur's own record the house withholds, and a critique of theirs it withholds too: each
+  // marked for its author with the appeal-by date and the verdict a tap away (round 14).
+  ['log-auteur-withheld', { data: { log: { ...LOG, user_id: 'me', withheld_at: '2026-11-18T10:00:00Z' }, profile: { ...PROFILE, id: 'me', role: 'auteur' },
+    comments: NOTES, commentTotal: 2 }, isLoading: false }],
 ];
-const RUNS = KINDS.flatMap(([name, q]) => LAYOUTS.map((l) => [`${name}${l.suffix}`, q, l] as const));
+/** The kinds whose author reads a piece of theirs withheld: the list the house sends them. */
+const WITHHELD: Record<string, unknown[]> = {
+  'log-auteur-withheld': [
+    { kind: 'log', piece_id: LOG_ID, verdict_id: 'v-log', appeal_by: '2026-12-18T10:00:00Z', appealed: false },
+    { kind: 'log_comment', piece_id: 'c2', verdict_id: 'v-c2', appeal_by: null, appealed: true },
+  ],
+};
+const RUNS = KINDS.flatMap(([name, q]) => LAYOUTS.map((l) => [`${name}${l.suffix}`, q, l, name] as const));
 
 whenRendering('log page generator', () => {
-  it.each(RUNS)('writes %s', async (name, q, layout) => {
+  it.each(RUNS)('writes %s', async (name, q, layout, kind) => {
     mockQuery = q;
+    mockWithheld = { data: WITHHELD[kind] ?? [] };
     const html = await atLayout(layout, async () => {
       let r!: ReturnType<typeof render>;
       await act(async () => { r = render(<LogDetailScreen />); });
@@ -129,5 +144,7 @@ whenRendering('log page generator', () => {
     writeScreen(name, html);
     console.log(`WROTE ${name}: ${html.length} bytes`);
     expect(html.length).toBeGreaterThan(3000);
+    // Each withheld piece drawn with its mark: the record's banner and the critique's.
+    expect(html.split('WITHHELD BY THE HOUSE').length - 1).toBe(WITHHELD[kind]?.length ?? 0);
   });
 });

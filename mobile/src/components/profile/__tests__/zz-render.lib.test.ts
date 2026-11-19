@@ -456,3 +456,62 @@ describe('the colour decoder', () => {
     expect(decodeColour(null)).toBeNull();
   });
 });
+
+describe('a line break, and a run of spaces, in a Text', () => {
+  // React Native breaks the line at "\n" and draws every space; HTML folds both. A bio of eight
+  // one-item lines in a four-line clamp was measured as two lines, and its hidden four went unseen
+  // (round 14).
+  const text = (props: Record<string, unknown>, children: unknown[]) => toHtml({ type: 'Text', props, children });
+  const style = (html: string) => /^<span[^>]* style="([^"]*)"/.exec(html)?.[1] ?? '';
+
+  it('keeps both, in a wrapping Text and a clamped one, wrapping a space at a line end', () => {
+    expect(wins(style(text({}, ['Cinephile.\nCritic.'])), 'white-space')).toBe('white-space:break-spaces');
+    expect(wins(style(text({ numberOfLines: 4 }, ['Cinephile.\nCritic.'])), 'white-space')).toBe('white-space:break-spaces');
+  });
+
+  it('a one-line Text shows its first line alone, and is marked cut, as the phone shows it', () => {
+    const html = text({ numberOfLines: 1 }, ['Cinephile.\nCritic.\nLondon.']);
+    expect(wins(style(html), 'white-space')).toBe('white-space:nowrap');
+    expect(html).toContain('data-break-hidden="1"');
+    expect(html).toContain('Cinephile.');
+    expect(html).not.toContain('Critic.');
+  });
+
+  it('a one-line Text with no break is whole, and not marked', () => {
+    const html = text({ numberOfLines: 1 }, ['Cinephile, critic, London.']);
+    expect(html).not.toContain('data-break-hidden');
+    expect(html).toContain('Cinephile, critic, London.');
+  });
+
+  it('a break inside a nested Text cuts there, and drops what follows it', () => {
+    const html = text({ numberOfLines: 1 }, ['« ', { type: 'Text', props: {}, children: ['a\nb'] }, ' »']);
+    expect(html).toContain('data-break-hidden="1"');
+    expect(html).not.toContain('b<');
+    expect(html).not.toContain('»');
+    const inner = /<span[^>]*><span[^>]* style="([^"]*)"/.exec(html)?.[1] ?? '';
+    expect(wins(inner, 'white-space')).toBeNull();
+  });
+});
+
+describe('an animated style, drawn as it stands when the test ends', () => {
+  // A capture keeps each animated style's reading (jest.setup.ts, `__now`): an entrance caught at
+  // its first frame (opacity 0, lowered) is drawn where its animation has set it, as a member sees
+  // the screen once the motion has played (round 14: "5 texts, 5 invisible").
+  const animated = (first: Record<string, unknown>, now: () => Record<string, unknown>) =>
+    Object.defineProperty({ ...first }, '__now', { value: now, enumerable: false });
+
+  it('reads the style again: an Arrive at rest, not at its first frame', () => {
+    const style = animated({ opacity: 0, transform: [{ translateY: 25 }] }, () => ({ opacity: 1, transform: [{ translateY: 0 }] }));
+    expect(flat([{ padding: 4 }, style])).toEqual({ padding: 4, opacity: 1, transform: [{ translateY: 0 }] });
+  });
+
+  it('a view hidden at rest reads hidden still (the culled projector beam)', () => {
+    const style = animated({ opacity: 0, transform: [{ translateY: -3000 }] }, () => ({ opacity: 0, transform: [{ translateY: -3000 }] }));
+    expect(flat(style)).toEqual({ opacity: 0, transform: [{ translateY: -3000 }] });
+  });
+
+  it('a plain style, or a reading that fails, is drawn as given', () => {
+    expect(flat({ opacity: 0.5 })).toEqual({ opacity: 0.5 });
+    expect(flat(animated({ opacity: 0 }, () => { throw new Error('gone'); }))).toEqual({ opacity: 0 });
+  });
+});

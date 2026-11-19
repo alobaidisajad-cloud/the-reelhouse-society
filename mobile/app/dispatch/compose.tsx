@@ -60,6 +60,8 @@ import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { UnderSheet } from '@/src/components/layout/UnderSheet';
 import { nav } from '@/src/utils/typedRouter';
+// As countOf: the desk keeps its own `counted`, the words it last counted.
+import { counted as countOf } from '@/src/utils/counted';
 
 // A long essay survives a background-kill. Whose each draft is: src/utils/memberDrafts.ts.
 
@@ -157,6 +159,7 @@ function KindPicker() {
     const ballots = useClearance('ballots', '/dispatch/compose');
     const holds = (k: string) => (k === 'ballot' ? ballots.held : essays.held);
     const edge = useBottomEdge();
+    const top = useModalTop();
     // Read once, on mount. A draft cannot appear while this sheet is open — the
     // only thing that writes one is the room this sheet leads to.
     const hasDossierDraft = useMemo(
@@ -169,9 +172,19 @@ function KindPicker() {
     );
 
     return (
-        <View style={[p.screen, { justifyContent: 'flex-end' }]}>
+        <View style={p.screen}>
             <RoomLight room="dispatch" />
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
+            {/* Kept to the foot, in a scroll that starts at the modal's top: on a small phone at a
+                large text size the five forms outgrow the screen, and the head and TAKE stood above
+                its top with nothing to bring them down (round 14, measured at 320pt). */}
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingTop: top }}
+                showsVerticalScrollIndicator={false}
+                bounces={false}
+                keyboardShouldPersistTaps="handled"
+            >
             <View style={{ paddingBottom: edge }}>
                 <PaperPicker
                     forms={FORMS.map((f) => ({
@@ -187,6 +200,7 @@ function KindPicker() {
                     onRules={() => (router.push as (h: string) => void)('/dispatch/rules')}
                 />
             </View>
+            </ScrollView>
         </View>
     );
 }
@@ -701,7 +715,7 @@ function ComposeDossierScreen() {
         if (limit.over) {
             // "essay", the word a member reads (dossier is the database's), written plainly:
             // nameOf() gives the label form, in capitals.
-            refuse('body', `This essay is ${groupDigits(Math.abs(limit.remaining))} characters over the limit. Trim it and file again — nothing has been lost.`);
+            refuse('body', `This essay is ${countOf(Math.abs(limit.remaining), 'character', 'characters', groupDigits)} over the limit. Trim it and file again — nothing has been lost.`);
             return;
         }
 

@@ -10,7 +10,7 @@ import type { AnalyticsShape } from '@/src/hooks/useProfileData';
 import { useClock } from '@/src/hooks/useClock';
 
 import { colors } from '@/src/theme/theme';
-import { calendarDateString, localCalendarDate } from '@/src/utils/timeAgo';
+import { calendarDateString, dateParts, localCalendarDate } from '@/src/utils/timeAgo';
 import { instantOf } from '@/src/utils/instant';
 import { byTitle } from '@/src/utils/order';
 import { FORMAT_META } from '@/src/constants/formats';
@@ -490,3 +490,23 @@ export function useProfileComputed(params: UseProfileComputedParams) {
  * every read. A real "hide my volume" must start server-side and hide the
  * CONTENT too.
  */
+
+const MONTH_TITLES = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'] as const;
+
+/**
+ * The rooms' months ("MARCH 2026"), each item under the day a member would call it: a watched date
+ * is its own calendar day; with none, the moment it was logged is read on the member's clock. Its
+ * UTC day put a log made on the evening of 31 December, west of UTC, under January (round 14).
+ * Nothing readable stands under JANUARY 1970, as before.
+ */
+export function groupByMonth<T extends object>(items: readonly T[], dateKey = 'watchedDate', now: number = houseNow()): Record<string, T[]> {
+  const grouped: Record<string, T[]> = {};
+  for (const item of items) {
+    const row = item as Record<string, unknown>;
+    const raw = row[dateKey] || row.createdAt || new Date(now).toISOString();
+    const parts = typeof raw === 'string' || raw instanceof Date ? dateParts(raw) : null;
+    const title = parts ? `${MONTH_TITLES[parts.month] ?? 'JANUARY'} ${parts.year}` : 'JANUARY 1970';
+    (grouped[title] ??= []).push(item);
+  }
+  return grouped;
+}

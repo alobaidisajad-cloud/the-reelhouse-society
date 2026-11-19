@@ -2,7 +2,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
-import { BAD_CREDENTIALS, authLink } from '@/src/utils/authSignals';
+import { BAD_CREDENTIALS, authLink, handleRestingOf } from '@/src/utils/authSignals';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { nav } from '@/src/utils/typedRouter';
 import TactileEngine from '@/src/utils/TactileEngine';
@@ -63,6 +63,10 @@ export function validateLoginSubmission(input: LoginSubmissionInput): string | n
 // isInvalidCredentials tells the caller whether to record a throttle attempt.
 export function mapAuthError(rawMsg: string): { message: string; isInvalidCredentials: boolean } {
   const isInvalidCredentials = rawMsg.includes(BAD_CREDENTIALS);
+  // The house holding a handle back: from where, how long, and the door still open.
+  const resting = handleRestingOf(rawMsg);
+  const restingMinutes = resting === null ? 0 : Math.max(1, Math.ceil(resting.seconds / 60));
+  const restingFor = restingMinutes === 1 ? 'a minute' : `${restingMinutes} minutes`;
 
   // Every test reads rawMsg, never the partly-rewritten value. The first draft
   // of this chain tested `message`, so each branch was matching against
@@ -76,6 +80,8 @@ export function mapAuthError(rawMsg: string): { message: string; isInvalidCreden
   // 1924 members' club.
   const message =
     isInvalidCredentials              ? 'Identity not recognized. Check your credentials.'
+  : resting?.from === 'here'          ? `Too many wrong passwords from this connection. It opens again in ${restingFor}. Your email address signs you in now.`
+  : resting?.from === 'elsewhere'     ? `This handle is being tried from elsewhere, so it is slowed. Try again in ${restingFor}, or sign in with your email address now.`
   : rawMsg.includes('Database error saving new user')
                                       ? 'The register could not take your details just now. Try again.'
   : rawMsg.includes('User already registered')

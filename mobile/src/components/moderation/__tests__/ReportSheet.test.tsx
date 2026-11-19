@@ -24,8 +24,10 @@ jest.mock('react-native-gesture-handler', () => {
   const React = require('react');
   const { View } = require('react-native');
   return {
-    GestureHandlerRootView: ({ children }: any) => React.createElement(View, null, children),
-    GestureDetector: ({ children }: any) => React.createElement(View, null, children),
+    // As the real ones draw: the root keeps its style, and a detector draws no view of its own
+    // (a stand-in View between the frame and the sheet held the sheet's height in a capture).
+    GestureHandlerRootView: ({ children, style }: any) => React.createElement(View, { style }, children),
+    GestureDetector: ({ children }: any) => children,
     Gesture: {
       Pan: () => ({
         onChange: jest.fn().mockReturnThis(),
@@ -272,5 +274,84 @@ describe('ReportSheet', () => {
       rerender(<ReportSheet {...defaultProps} visible />);
       expect(getByLabelText('File report')).toBeTruthy();
     });
+  });
+});
+
+// ── Round 14: the sheet rises with the keys and keeps its room ──────────────
+describe('ReportSheet with the keyboard up', () => {
+  type Handler = (e?: unknown) => void;
+  let listeners: Record<string, Handler[]>;
+  const { Keyboard, Platform, ScrollView } = jest.requireActual('react-native') as typeof import('react-native');
+  const { overlayTop, SHEET_BOTTOM_GAP } = jest.requireActual('@/src/components/layout/navMetrics') as typeof import('@/src/components/layout/navMetrics');
+  const was = Platform.OS;
+  beforeEach(() => {
+    Platform.OS = 'ios';
+    listeners = {};
+    jest.spyOn(Keyboard, 'addListener').mockImplementation(((event: string, fn: Handler) => {
+      (listeners[event] ??= []).push(fn);
+      return { remove: () => { listeners[event] = (listeners[event] ?? []).filter((x) => x !== fn); } };
+    }) as never);
+  });
+  afterEach(() => {
+    Platform.OS = was;
+    jest.restoreAllMocks();
+  });
+  /** The keys rise to `height`, and the sheet is drawn again (the jest Reanimated draws a style as it renders). */
+  const keysUp = async (r: ReturnType<typeof render>, height: number) => {
+    await act(async () => {
+      (listeners.keyboardWillShow ?? []).forEach((fn) => fn({ duration: 250, endCoordinates: { height, screenY: 0, screenX: 0, width: 0 } }));
+    });
+    await act(async () => { r.rerender(<ReportSheet {...defaultProps} />); });
+  };
+  type Node = { type: string; props: Record<string, unknown>; children: (Node | string)[] | null };
+  const all = (n: Node | string | null, out: Node[] = []): Node[] => {
+    if (!n || typeof n === 'string') return out;
+    out.push(n);
+    n.children?.forEach((c) => all(c, out));
+    return out;
+  };
+  const tree = (r: ReturnType<typeof render>) => [r.toJSON() as unknown as Node | Node[]].flat().flatMap((n) => all(n));
+  const styleOf = (n: Node) => (StyleSheet.flatten(n.props.style as never) ?? {}) as Record<string, unknown>;
+
+  it('the keys lift the whole sheet, which keeps its height and stops below the status bar', async () => {
+    // A reason chosen, so the details field stands in the form; the keys an iPad shows with its
+    // prediction bar (400pt). On the shortest large window, 841x701, the form had 48pt left for its
+    // 80pt field: CI measures the sheet with the keys up at every width (zz-sheets.gen, layout.cjs's
+    // field-taller-than-its-scroll CUT); this holds the shape that makes the room.
+    const r = render(<ReportSheet {...defaultProps} />);
+    await act(async () => { await fireEvent.press(r.getAllByRole('radio')[2]!); });
+    await keysUp(r, 400);
+    const frameNode = tree(r).find((n) => n.props.testID === 'report-frame');
+    expect(frameNode).toBeDefined();
+    const frame = styleOf(frameNode!);
+    // the frame runs from below the status bar to the foot, and the keys pad its foot
+    expect(frame.top).toBe(overlayTop(0));
+    expect(frame.bottom).toBe(0);
+    expect(frame.paddingBottom).toBe(400);
+    expect(frame.justifyContent).toBe('flex-end');
+    // the sheet inside keeps its own height and foot: the keys come out of the frame, not the form
+    const sheet = all(frameNode!).find((n) => n !== frameNode && styleOf(n).borderTopLeftRadius === 16);
+    expect(sheet).toBeDefined();
+    // on iOS the keys cover the home indicator: the foot is the sheet's own gap alone
+    expect(styleOf(sheet!).paddingBottom).toBe(SHEET_BOTTOM_GAP);
+    expect(styleOf(sheet!).flexShrink).toBe(1);
+    expect(typeof styleOf(sheet!).height).toBe('number');
+  });
+
+  it('typing the details where the room is short, the field is kept in view', async () => {
+    const r = render(<ReportSheet {...defaultProps} />);
+    const scrollTo = jest.spyOn(ScrollView.prototype as unknown as { scrollTo: (o: unknown) => void }, 'scrollTo');
+    await act(async () => { await fireEvent.press(r.getAllByRole('radio')[2]!); });
+    // the details stand 520pt down the form
+    const box = tree(r).find((n) => typeof n.props.onLayout === 'function' && all(n).some((m) => m.props.accessibilityLabel === 'Additional details')
+      && !all(n).some((m) => m.props.accessibilityLabel === 'File report'));
+    expect(box).toBeDefined();
+    await act(async () => { (box!.props.onLayout as (e: unknown) => void)({ nativeEvent: { layout: { x: 0, y: 520, width: 340, height: 120 } } }); });
+    await act(async () => { await fireEvent(r.getByLabelText('Additional details'), 'focus'); });
+    await keysUp(r, 400);
+    const form = tree(r).find((n) => typeof n.props.onLayout === 'function' && n.props.keyboardShouldPersistTaps === 'handled');
+    expect(form).toBeDefined();
+    await act(async () => { (form!.props.onLayout as (e: unknown) => void)({ nativeEvent: { layout: { x: 0, y: 0, width: 340, height: 230 } } }); });
+    expect(scrollTo).toHaveBeenLastCalledWith({ y: 508, animated: false });
   });
 });

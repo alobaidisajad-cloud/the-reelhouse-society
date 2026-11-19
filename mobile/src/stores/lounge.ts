@@ -13,11 +13,12 @@ import { LoungeMessagePayloadSchema } from '../services/LoungeService';
 import { logger } from '../utils/logger';
 import { buildSearchPattern } from '../utils/searchPattern';
 import { isNetworkError } from '../utils/networkError';
+import { salonPaceSaid } from '../utils/housePace';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue, letHeldGo, sendHeldAgain } from '../utils/offlineQueue';
 import { stillHeld } from './offlineQueueStore';
 import reelToast from '../utils/reelToast';
 import { showTierDoor } from '../utils/tierDoor';
-import { saidOfStackShareRefusal, stackShareRefusal } from '../utils/stackShareRefusal';
+import { cardShareRefusal, saidOfCardShareRefusal } from '../utils/stackShareRefusal';
 import { sanitizeInput, MAX_LENGTHS } from '../utils/sanitizeInput';
 import type { LoungeMember } from '../types/social.types';
 import { useAuthStore } from './auth';
@@ -27,6 +28,7 @@ import { registerStoreReset } from './resetAllStores';
 import { agedSince, monotonicNow } from '../lib/waits';
 import { keepPage, keptPage } from '../utils/keptPages';
 import { DEPARTED_HANDLE } from '../constants/departed';
+import { forgetShownTypists, shownByTheHouse } from './typistShown';
 
 // ── Types ──
 export interface LoungeRoom {
@@ -81,6 +83,11 @@ export interface LoungeMessage {
   reply_to_id?: string | null;
   reply_to_username?: string | null;
   reply_to_content?: string | null;
+  /**
+   * The members whose words the message carries besides its writer's (the one it answers, the author
+   * of the piece its card shows), named by the house: hidden from whoever any of them is hidden from.
+   */
+  carries_words_of?: string[] | null;
   film_id?: number | null;
   film_title?: string | null;
   film_poster?: string | null;
@@ -408,6 +415,7 @@ const _roomLeaves = new Set<() => void>();
 function clearTypingState(set: (partial: Partial<LoungeState>) => void) {
   for (const t of _typingTimers.values()) clearTimeout(t);
   _typingTimers.clear();
+  forgetShownTypists();
   set({ presentCount: 0, typingUsers: [] });
 }
 
@@ -525,6 +533,9 @@ export function applyReactionDelta(
 }
 
 // ── Raw Realtime payload shape ──
+/** The kinds of message whose card the house writes, takes down and makes again. */
+const isCardOfAPiece = (type: string | null | undefined) => type === 'log_share' || type === 'list_share' || type === 'dossier_share';
+
 interface RawLoungePayload {
   id: string;
   lounge_id: string;
@@ -534,6 +545,7 @@ interface RawLoungePayload {
   reply_to_id?: string | null;
   reply_to_username?: string | null;
   reply_to_content?: string | null;
+  carries_words_of?: string[] | null;
   film_id?: number | null;
   film_title?: string | null;
   film_poster?: string | null;
@@ -552,13 +564,14 @@ interface LoungeMessageRow {
   reply_to_id?: string | null;
   reply_to_username?: string | null;
   reply_to_content?: string | null;
+  carries_words_of?: string[] | null;
   film_id?: number | null;
   film_title?: string | null;
   film_poster?: string | null;
   metadata?: Record<string, unknown>;
   created_at: string;
   deleted_at?: string | null;
-  profiles: { username: string; avatar_url?: string } | { username: string; avatar_url?: string }[] | null;
+  profiles:{ username: string; avatar_url?: string } | { username: string; avatar_url?: string }[] | null;
   lounge_message_reactions?: ReactionRow[] | null;
 }
 
@@ -567,7 +580,7 @@ interface LoungeMessageRow {
  * reactions asked for after the words cost the opening a second round trip, and a page read on
  * scrolling up never asked for them at all.
  */
-export const MESSAGE_COLUMNS = 'id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, metadata, created_at, deleted_at, profiles!lounge_messages_user_id_fkey(username, avatar_url), lounge_message_reactions!lounge_message_reactions_message_id_fkey(id, message_id, reaction, user_id)';
+export const MESSAGE_COLUMNS = 'id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, carries_words_of, film_id, film_title, film_poster, metadata, created_at, deleted_at, profiles!lounge_messages_user_id_fkey(username, avatar_url), lounge_message_reactions!lounge_message_reactions_message_id_fkey(id, message_id, reaction, user_id)';
 
 /** A page's rows, oldest first, as messages with their reactions summed for `myId`. */
 function messagesOf(rows: LoungeMessageRow[], myId: string | undefined): LoungeMessage[] {
@@ -586,6 +599,7 @@ function messagesOf(rows: LoungeMessageRow[], myId: string | undefined): LoungeM
       reply_to_id: m.reply_to_id,
       reply_to_username: m.reply_to_username,
       reply_to_content: m.reply_to_content,
+      carries_words_of: m.carries_words_of,
       film_id: m.film_id,
       film_title: m.film_title,
       film_poster: m.film_poster,
@@ -595,6 +609,21 @@ function messagesOf(rows: LoungeMessageRow[], myId: string | undefined): LoungeM
       ...(reactions ? { reactions } : {}),
     };
   });
+}
+
+/**
+ * Whether a message is hidden from this member: its writer is one they blocked or muted, or, written
+ * by someone else, it carries the words of one they did (a reply quoting them, a card of their piece),
+ * as the house names them (carries_words_of). The house's own rule (lounge_messages_hide_blocked) hides
+ * the same rows from every read and every live message, the other way of a block too (one who blocked
+ * this member, which the phone does not know); this is that rule for the blocks and mutes this phone
+ * holds, so a block made here takes them off the screen at once. One's own message is never hidden.
+ */
+export function hiddenHere(m: Pick<LoungeMessage, 'user_id' | 'carries_words_of'>): boolean {
+  const { isHidden } = useBlockStore.getState();
+  if (isHidden(m.user_id)) return true;
+  if (m.user_id && m.user_id === useAuthStore.getState().user?.id) return false;
+  return (m.carries_words_of ?? []).some((id) => isHidden(id));
 }
 
 /**
@@ -859,7 +888,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       for (const oldest of _keptRooms.keys()) { if (_keptRooms.size <= KEPT_ROOMS) break; _keptRooms.delete(oldest); }
     }
     if (_readBackIn !== loungeId) _readBackIn = null;
-    const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !useBlockStore.getState().isHidden(m.user_id));
+    const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !hiddenHere(m));
     _keptRooms.delete(loungeId);
     if (serverHeld(kept).length > 0) {
       set({ currentLoungeId: loungeId, currentMessages: kept, messagesLoading: false, messagesFailed: false });
@@ -937,7 +966,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           const heardSince = s.currentMessages.filter(m => !answered.has(m.id)
             && ((_heardLive.get(m.id) ?? 0) > heardFrom || m.status === 'sending' || m.status === 'failed'));
           const words = heardSince.length === 0 ? finalMessages : capMessages([...finalMessages, ...heardSince].sort(before));
-          return { currentMessages: words.filter(m => !useBlockStore.getState().isHidden(m.user_id)) };
+          return { currentMessages: words.filter(m => !hiddenHere(m)) };
         });
         // The channel went live while this read was out: what was said between the read's moment
         // and the channel's is read now, from the newest word held.
@@ -991,7 +1020,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         const olderMessages = messagesOf(data as unknown as LoungeMessageRow[], useAuthStore.getState().user?.id);
 
         // Prepend older messages (filter blocked/muted)
-        const filteredOlder = olderMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id));
+        const filteredOlder = olderMessages.filter(m => !hiddenHere(m));
         if (!memberUnchanged(startedAs)) return;
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // Into the LIVE list, not `current` (read before the await), which would erase what
@@ -1069,21 +1098,26 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           // One of this phone's own the house now holds is the house's: kept as well, it was drawn twice.
           const answered = new Set(newest.map((m) => m.id));
           const own = s.currentMessages.filter((m) => !fromHouse.has(m.id) && !answered.has(m.id));
-          return { currentMessages: [...newest.filter((m) => !useBlockStore.getState().isHidden(m.user_id)), ...own].sort(before) };
+          return { currentMessages: [...newest.filter((m) => !hiddenHere(m)), ...own].sort(before) };
         });
         return;
       }
 
-      // What is held, read again light: withdrawn or gone since, and its reactions now.
+      // What is held, read again light: withdrawn or gone since (or put back, a verdict overturned),
+      // the words it quotes as they stand now (a quoted message withdrawn or removed takes its words
+      // out of every reply), its card as the house holds it now, and its reactions now.
       const { data: marks, error: marksError } = await supabase
         .from('lounge_messages')
-        .select('id, deleted_at, lounge_message_reactions!lounge_message_reactions_message_id_fkey(id, message_id, reaction, user_id)')
+        .select('id, deleted_at, content, metadata, film_title, film_poster, reply_to_content, lounge_message_reactions!lounge_message_reactions_message_id_fkey(id, message_id, reaction, user_id)')
         .eq('lounge_id', loungeId)
         .gte('created_at', oldestHeld.created_at)
         .lte('created_at', newestHeld.created_at)
         .limit(1000);
       if (!memberUnchanged(startedAs)) return;
-      type Mark = { id: string; deleted_at: string | null; lounge_message_reactions?: ReactionRow[] };
+      type Mark = {
+        id: string; deleted_at: string | null; content?: string | null; metadata?: Record<string, unknown> | null;
+        film_title?: string | null; film_poster?: string | null; reply_to_content?: string | null; lounge_message_reactions?: ReactionRow[];
+      };
       const read = !marksError && marks ? (marks as unknown as Mark[]) : null;
       const byId = new Map((read ?? []).map((r) => [r.id, r]));
       const reactions = summarizeReactions((read ?? []).flatMap((r) => r.lounge_message_reactions ?? []), myId);
@@ -1106,9 +1140,20 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           }
           const r = reactions.get(m.id);
           const withdrawn = !!mark.deleted_at && !m.deleted_at;
-          if (!withdrawn && JSON.stringify(r ?? null) === JSON.stringify(m.reactions ?? null)) return [m];
+          const putBack = !mark.deleted_at && !!m.deleted_at;
+          const quote = mark.reply_to_content ?? null;
+          const requoted = quote !== (m.reply_to_content ?? null);
+          const recarded = isCardOfAPiece(m.type) && !!mark.metadata && JSON.stringify(mark.metadata) !== JSON.stringify(m.metadata ?? null);
+          if (!withdrawn && !putBack && !requoted && !recarded && JSON.stringify(r ?? null) === JSON.stringify(m.reactions ?? null)) return [m];
           changed = true;
-          return [{ ...m, ...(withdrawn ? { content: '', deleted_at: mark.deleted_at } : {}), reactions: r }];
+          return [{
+            ...m,
+            ...(withdrawn ? { content: '', deleted_at: mark.deleted_at } : {}),
+            ...(putBack ? { content: (mark.content ?? '').replace(/<[^>]*>/g, ''), deleted_at: null } : {}),
+            ...(requoted ? { reply_to_content: quote } : {}),
+            ...(recarded ? { metadata: mark.metadata ?? undefined, film_title: mark.film_title ?? undefined, film_poster: mark.film_poster ?? undefined } : {}),
+            reactions: r,
+          }];
         });
         // One of this phone's still drawn sending (or failed) that the read holds was delivered by the
         // queue while the channel was down, and its echo never came: it stood dimmed, with no reply or
@@ -1122,7 +1167,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           return { ...m, created_at: got.created_at, status: 'sent' as const };
         });
         const have = new Set(mine.map((m) => m.id));
-        const add = fresh.filter((m) => !have.has(m.id) && !useBlockStore.getState().isHidden(m.user_id));
+        const add = fresh.filter((m) => !have.has(m.id) && !hiddenHere(m));
         if (add.length === 0 && !changed && !settled) return s;
         return { currentMessages: add.length === 0 && !settled ? mine : [...mine, ...add].sort(before) };
       });
@@ -1133,12 +1178,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   clearMessages: () => set({ currentMessages: [] }),
 
-  // Uses the same isHidden() check as fetchMessages, loadMoreMessages, the realtime
-  // insert handler and the typing indicator — so a message that survives here is
-  // exactly one that would survive a fresh load. No second definition of "hidden".
+  // Uses the same hiddenHere() check as fetchMessages, loadMoreMessages and the realtime
+  // insert handler — so a message that survives here is exactly one that would survive a
+  // fresh load. No second definition of "hidden": a reply quoting, or a card of the work of,
+  // a member just blocked goes with their own words.
   purgeHiddenMessages: () => set(state => ({
     currentMessages: state.currentMessages.filter(
-      m => !useBlockStore.getState().isHidden(m.user_id)
+      m => !hiddenHere(m)
     ),
   })),
 
@@ -1268,11 +1314,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }
       // A stack's card the house refuses for good (the stack sealed, or no longer in the house):
       // no try can change it, so no retry is offered, and the card, which names the stack, leaves
-      // the transcript; the member is told which it was (review round 13).
-      const stackRefused = stackShareRefusal(error);
-      if (stackRefused) {
+      // the transcript; the member is told which it was (review round 13). A record's or a filing's
+      // card likewise, since the house writes each card from its piece (round 14).
+      const cardRefused = cardShareRefusal(error);
+      if (cardRefused) {
         inRoomWords(loungeId, (words) => words.filter((m) => m.id !== optimisticMsg.id));
-        reelToast.error(saidOfStackShareRefusal(stackRefused));
+        reelToast.error(saidOfCardShareRefusal(cardRefused));
         return false;
       }
       // Keep the dispatch and mark it failed so the transcript shows a discreet
@@ -1290,6 +1337,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // The server said why, in a sentence written for this member. Say it,
       // instead of "Failed to send message." over a retry that cannot succeed.
       if (showTierDoor(error, { returnTo: `/lounge/${loungeId}` })) return false;
+      // The day's ceiling (round 14): said with the wait the house named; the message stays, failed,
+      // for the member to send again once the day turns.
+      const paced = salonPaceSaid(error);
+      if (paced) {
+        reelToast.error(paced);
+        return false;
+      }
       // A refusal that says no more than 42501: the house is asked whether the salon still stands
       // and the seat is still this member's, and that is said (review round 11).
       if (!isNetworkError(error) && await saidWhyTheSalonRefused(loungeId, user.id)) return false;
@@ -1597,10 +1651,16 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         const startedAs = useAuthStore.getState().user?.id ?? null;
     const target = get().currentMessages.find(m => m.id === messageId);
     if (!target) return;
-    // Optimistic tombstone (continuity over a jarring disappearance).
+    // Optimistic tombstone (continuity over a jarring disappearance), and its words taken out of
+    // every reply here that quotes it, as the house takes them (a_withdrawn_message_leaves_its_quotes):
+    // the words withdrawn stayed quoted under other members' replies for the rest of the run.
+    const quoted = new Map(get().currentMessages
+      .filter((m) => m.reply_to_id === messageId && m.reply_to_content)
+      .map((m) => [m.id, m.reply_to_content] as const));
     set(s => ({
       currentMessages: s.currentMessages.map(m =>
-        m.id === messageId ? { ...m, content: '', deleted_at: houseIso(), reactions: [] } : m
+        m.id === messageId ? { ...m, content: '', deleted_at: houseIso(), reactions: [] }
+          : quoted.has(m.id) ? { ...m, reply_to_content: null } : m
       ),
     }));
     try {
@@ -1621,8 +1681,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }
       // A real refusal (not yours to withdraw, row gone) — restore it intact.
       logger.error('[LoungeStore.withdrawMessage] failed, reverting:', e);
+      // Its quotes come back with it, where nothing has taken them since.
       set(s => ({
-        currentMessages: s.currentMessages.map(m => m.id === messageId ? target : m),
+        currentMessages: s.currentMessages.map(m => m.id === messageId ? target
+          : quoted.has(m.id) && m.reply_to_content == null ? { ...m, reply_to_content: quoted.get(m.id) } : m),
       }));
       reelToast.error('Could not withdraw this dispatch.');
     }
@@ -1678,12 +1740,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'sending' as const } : m) }));
         return true;
       }
-      // The stack sealed or gone since: final, said, and the card (which names it) leaves (round 13).
-      const stackRefused = stackShareRefusal(e);
-      if (stackRefused) {
+      // The stack sealed or gone since, or the record or filing (round 14): final, said, and the card
+      // (which names it) leaves (round 13).
+      const cardRefused = cardShareRefusal(e);
+      if (cardRefused) {
         if (held) letHeldGo(messageId);
         set(s => ({ currentMessages: s.currentMessages.filter(m => m.id !== messageId) }));
-        reelToast.error(saidOfStackShareRefusal(stackRefused));
+        reelToast.error(saidOfCardShareRefusal(cardRefused));
         return false;
       }
       set(s => ({ currentMessages: s.currentMessages.map(m => m.id === messageId ? { ...m, status: 'failed' as const } : m) }));
@@ -1820,7 +1883,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             }
 
             // Filter messages from blocked/muted users
-            if (useBlockStore.getState().isHidden(msg.user_id)) return;
+            if (hiddenHere(msg)) return;
 
             // Resolve username via cache — prevents N+1 queries in busy lounges
             const { username, avatar_url } = await resolveProfile(msg.user_id);
@@ -1836,6 +1899,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
               reply_to_id: msg.reply_to_id,
               reply_to_username: msg.reply_to_username,
               reply_to_content: msg.reply_to_content,
+              carries_words_of: msg.carries_words_of,
               film_id: msg.film_id,
               film_title: msg.film_title,
               film_poster: msg.film_poster,
@@ -1876,15 +1940,25 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           (payload) => {
             const row = payload.new as RawLoungePayload;
             if (!row?.id) return;
-            // A card whose piece went (withdrawn, deleted, its writer left) is taken down by the house
-            // in the sharer's message, its headline gone: taken as it comes, so it reads as gone live.
-            const card = row.metadata && typeof row.metadata === 'object' && row.metadata.gone === true
+            // A card is written by the house alone: taken down when its piece goes (withdrawn, deleted,
+            // its writer left, withheld by a verdict), and made again when it comes back (a verdict
+            // overturned, a stack opened again). Taken as it comes, both ways, so it reads true live.
+            const card = isCardOfAPiece(row.type) && row.metadata && typeof row.metadata === 'object'
               ? { metadata: row.metadata, film_title: row.film_title ?? undefined, film_poster: row.film_poster ?? undefined }
               : {};
+            // A reply whose quoted message was withdrawn or removed by the house has its quote taken
+            // by the house (a_withdrawn_message_leaves_its_quotes): taken as it comes, so the words
+            // leave every screen holding the room, not only the next read (review round 14).
+            const quote = 'reply_to_content' in row ? { reply_to_content: row.reply_to_content ?? null } : {};
             set(s => ({
               currentMessages: s.currentMessages.map(m =>
                 m.id === row.id
-                  ? { ...m, ...card, content: row.deleted_at ? '' : (row.content?.replace(/<[^>]*>/g, '') ?? m.content), deleted_at: row.deleted_at ?? m.deleted_at }
+                  // Its withdrawal as the house now holds it: a message put back by an overturned
+                  // verdict comes with deleted_at null, and is drawn whole again, never as withdrawn.
+                  ? { ...m, ...card, ...quote, content: row.deleted_at ? '' : (row.content?.replace(/<[^>]*>/g, '') ?? m.content),
+                      deleted_at: 'deleted_at' in row ? (row.deleted_at ?? null) : m.deleted_at }
+                  // A message withdrawn takes its words out of every reply quoting it, as the house does.
+                  : row.deleted_at && m.reply_to_id === row.id && m.reply_to_content ? { ...m, reply_to_content: null }
                   : m
               ),
             }));
@@ -1950,14 +2024,21 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           if (p.user_id === self?.id) return;
           if (useBlockStore.getState().isHidden(p.user_id)) return;
           const username = p.username;
-          // Reset this typist's silence timer.
-          const existing = _typingTimers.get(username);
-          if (existing) clearTimeout(existing);
-          _typingTimers.set(username, setTimeout(() => {
-            _typingTimers.delete(username);
-            set(s => ({ typingUsers: s.typingUsers.filter(u => u !== username) }));
-          }, TYPING_TTL));
-          set(s => s.typingUsers.includes(username) ? s : { typingUsers: [...s.typingUsers, username] });
+          const viewer = self?.id ?? null;
+          // Named only if the house shows this reader the typist: the broadcast reaches every reader of
+          // the room, and one who blocked the reader is no one to them (typistShown). Not if the room
+          // was left, or another member signed in, meanwhile.
+          void shownByTheHouse(viewer, p.user_id).then((shown) => {
+            if (!shown || holdersNow().length === 0 || (useAuthStore.getState().user?.id ?? null) !== viewer) return;
+            // Reset this typist's silence timer.
+            const existing = _typingTimers.get(username);
+            if (existing) clearTimeout(existing);
+            _typingTimers.set(username, setTimeout(() => {
+              _typingTimers.delete(username);
+              set(s => ({ typingUsers: s.typingUsers.filter(u => u !== username) }));
+            }, TYPING_TTL));
+            set(s => s.typingUsers.includes(username) ? s : { typingUsers: [...s.typingUsers, username] });
+          });
         })
         .subscribe((status) => {
           // Told to every room holding the channel, and kept for a room that comes to share it.

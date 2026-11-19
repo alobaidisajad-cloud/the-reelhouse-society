@@ -14,17 +14,25 @@
 const mockRpc = jest.fn();
 jest.mock('@/src/lib/supabase', () => ({ supabase: { rpc: (...a: unknown[]) => mockRpc(...a) } }));
 jest.mock('@/src/lib/sentry', () => ({ addBreadcrumb: jest.fn() }));
+// The member signed in, or none: the house counts members only (review round 14).
+jest.mock('@/src/stores/auth', () => {
+  const { create } = require('zustand');
+  return { useAuthStore: create(() => ({ user: { id: 'member-1' } as { id: string } | null })) };
+});
 
 // eslint-disable-next-line import/first
 import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 // eslint-disable-next-line import/first
 import { recordGateEvent, setGateTelemetrySink } from '@/src/utils/gateTelemetry';
+// eslint-disable-next-line import/first
+import { useAuthStore } from '@/src/stores/auth';
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
 beforeEach(() => {
   mockRpc.mockReset().mockResolvedValue({ data: null, error: null });
   setGateTelemetrySink(null);
+  useAuthStore.setState({ user: { id: 'member-1' } } as never);
 });
 afterAll(() => setGateTelemetrySink(null));
 
@@ -42,10 +50,22 @@ describe('the counter names nobody', () => {
     // A NULL in a primary-key column makes every upsert a new row, so one
     // counter would become one row per event.
     installGateMetricsSink();
-    recordGateEvent('rank_relinquished');
+    recordGateEvent('gate_refused');
     expect(mockRpc).toHaveBeenCalledWith('record_gate_event', {
-      p_event: 'rank_relinquished', p_feature_id: '', p_rank: '', p_standing: '',
+      p_event: 'gate_refused', p_feature_id: '', p_rank: '', p_standing: '',
     });
+  });
+
+  it('a rank bought or ended is not sent: the house counts it from its own record of the rank', () => {
+    // A script with many accounts could make the funnel say any number of ranks were bought; the house
+    // counts a purchase and a relinquishment where it writes the store's grant (round 14).
+    installGateMetricsSink();
+    recordGateEvent('rank_purchased', { featureId: 'the-vault', rank: 'archivist' });
+    recordGateEvent('rank_relinquished');
+    expect(mockRpc).not.toHaveBeenCalled();
+    // A rope's tap is still sent.
+    recordGateEvent('gate_tapped', { featureId: 'the-vault' });
+    expect(mockRpc).toHaveBeenCalledTimes(1);
   });
 
   it('a refused or failed write is swallowed — no unhandled rejection reaches the app', async () => {
@@ -94,6 +114,31 @@ describe('the counter names nobody', () => {
     expect(() => recordGateEvent('gate_tapped', { featureId: 'essays' })).not.toThrow();
     // And the counting still happens after the trail failed.
     expect(mockRpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('a visitor\'s tap is not sent; it is counted once they sign in, as the member they became', () => {
+    // The house refuses a visitor's count (a stranger with the anon key could write any number), so
+    // a rope met before signing in waits for the sign-in the rope sends them to.
+    useAuthStore.setState({ user: null } as never);
+    installGateMetricsSink();
+    recordGateEvent('gate_tapped', { featureId: 'the-vault', rank: 'archivist', standing: 'guest' });
+    expect(mockRpc).not.toHaveBeenCalled();
+    useAuthStore.setState({ user: { id: 'member-1' } } as never);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledWith('record_gate_event', {
+      p_event: 'gate_tapped', p_feature_id: 'the-vault', p_rank: 'archivist', p_standing: 'guest',
+    });
+    // Counted once: the member's details read again send nothing more.
+    useAuthStore.setState({ user: { id: 'member-1' } } as never);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('a visitor who taps without end holds twenty, never more', () => {
+    useAuthStore.setState({ user: null } as never);
+    installGateMetricsSink();
+    for (let i = 0; i < 50; i++) recordGateEvent('gate_tapped', { featureId: 'essays', standing: 'guest' });
+    useAuthStore.setState({ user: { id: 'member-1' } } as never);
+    expect(mockRpc).toHaveBeenCalledTimes(20);
   });
 
   it('nothing is sent until the sink is installed', () => {

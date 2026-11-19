@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useEffect } from 'react';
+import { useMyWithheld } from '@/src/hooks/useMyWithheld';
 import { useDebouncedSearch } from '@/src/hooks/useDebouncedSearch';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, ScrollView, StyleSheet } from 'react-native';
@@ -21,6 +22,7 @@ import { r, rtlText, EMBER_REST, EMBER_BEATS, yearMarker } from './roomStyles';
 import { scrollEndAbove } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomRail, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomSearch, RoomMoreFailed } from './RoomParts';
 import { useStruck } from '@/src/components/StruckWords';
+import { WithheldStamp, useWithheldSaid } from '@/src/components/moderation/WithheldBanner';
 
 /**
  * THE LEDGER — what the member WROTE: rows, ruled like a ledger. A small plate,
@@ -110,6 +112,8 @@ const LedgerRow = React.memo(function LedgerRow({
   const posterUri = tmdb.poster(log.altPoster ?? log.poster, 'w185');
   // The member's words, each slur struck for a reader who asked (StruckWords).
   const struck = useStruck();
+  // One's own log the house withholds: stamped and said so, never shown as if others read it (round 14).
+  const withheld = useWithheldSaid(log.id);
 
   // A review arrives as HTML from the editorial desk. Rendering the raw string
   // printed `<p>` and `&mdash;` into the row; stripping it is the same call the
@@ -154,7 +158,7 @@ const LedgerRow = React.memo(function LedgerRow({
         // The words the row shows, as it shows them (180 characters at most):
         // its name holds what is drawn, and the log page reads the whole.
         words,
-      ].filter(Boolean).join(', ')}
+      ].filter(Boolean).join(', ') + withheld}
       accessibilityHint="Opens the entry"
     >
       <View style={s.plateWrap}>
@@ -168,6 +172,7 @@ const LedgerRow = React.memo(function LedgerRow({
         </View>
 
         <View style={s.rowMeta}>
+          <WithheldStamp pieceId={log.id} />
           {log.rating > 0
             ? <ReelRating rating={log.rating} size={8} />
             : <Text {...scaledTextProps} style={s.rowUnrated}>UNRATED</Text>}
@@ -291,6 +296,8 @@ export default function ProfileLedgerTab({
   onRefresh,
   bottomInset
 }: ProfileLedgerTabProps) {
+  // One's own room reads which of its pieces the house withholds, as it opens (round 14): its rows mark them.
+  useMyWithheld({ reread: !!isSelf });
   const breatheAnim = useSharedValue(0.1);
   useEffect(() => {
     breatheAnim.value = withRepeat(

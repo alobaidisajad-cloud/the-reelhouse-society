@@ -140,6 +140,10 @@ export const ModActionRecordSchema = z.object({
   expires_at: z.string().nullable(),
   /** ISO timestamp of when the action was performed. */
   created_at: z.string(),
+  /** When it stopped holding the member: lifted by an admin, or overturned on appeal (round 14). */
+  lifted_at: z.string().nullable().optional(),
+  /** Its one appeal: pending, upheld or overturned; none if never appealed (round 14). */
+  appeal_status: z.enum(['pending', 'upheld', 'overturned']).nullable().optional(),
 });
 /** Typed moderation audit log record. */
 export type ModActionRecord = z.infer<typeof ModActionRecordSchema>;

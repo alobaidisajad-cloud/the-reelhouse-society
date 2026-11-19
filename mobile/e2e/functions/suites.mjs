@@ -14,7 +14,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import {
-  API, ANON, GATEWAY_FROM_DB, SECRET, STAND, authBack, check, container, drain, everything, fn, literal, member,
+  API, ANON, GATEWAY_FROM_DB, SECRET, SERVICE, STAND, authBack, check, container, drain, everything, fn, literal, member,
   said, scriptStandIns, section, sql, standIns, tierOf, verdict,
 } from './world.mjs';
 
@@ -68,15 +68,18 @@ section('tmdb-proxy — the apps\' only road to TMDB, its key never handed back'
   await drain();
 
   // One address asking TMDB without end: held at its pail (1,200 at once, then 20 a second), told
-  // when to ask again, the website let read it; what the cache holds is still answered.
+  // when to ask again, the website let read it; what the cache holds is still answered. The address
+  // is the one the platform vouches for (Cloudflare's CF-Connecting-IP here); each call also writes
+  // an X-Forwarded-For of its own, a new address each time, as a script would, and is held all the same.
   {
-    const address = { 'x-forwarded-for': '203.0.113.77' };
+    const address = { 'cf-connecting-ip': '203.0.113.77' };
+    const written = (round, i) => ({ ...address, 'x-forwarded-for': `198.18.${round}.${i + 1}` });
     let refused = null;
     let cachedPath = null;
     let asked = 0;
     for (let round = 0; round < 120 && !refused; round++) {
       const paths = Array.from({ length: 25 }, (_, i) => `/movie/${910000 + round * 25 + i}`);
-      const answers = await Promise.all(paths.map((path) => fn('tmdb-proxy', { body: { path }, headers: address })));
+      const answers = await Promise.all(paths.map((path, i) => fn('tmdb-proxy', { body: { path }, headers: written(round, i) })));
       asked += answers.length;
       refused = answers.find((a) => a.status === 429) ?? null;
       // One answered in this round: kept in the cache, the newest there.
@@ -89,6 +92,12 @@ section('tmdb-proxy — the apps\' only road to TMDB, its key never handed back'
       'and told when to ask again, a header the website may read', JSON.stringify(refused?.headers ?? {}));
     const hit = await fn('tmdb-proxy', { body: { path: cachedPath ?? '/movie/603' }, headers: address });
     check(hit.status === 200 && hit.headers['x-cache'] === 'HIT', 'what the cache holds is still answered to that address, never counted', said(hit));
+    // Sixty more at once, each with a new address of its own written in X-Forwarded-For: the pail
+    // refills 20 a second, so a few may pass; keyed on what the caller wrote, every one would.
+    const renamed = await Promise.all(Array.from({ length: 60 }, (_, i) =>
+      fn('tmdb-proxy', { body: { path: `/movie/${919000 + i}` }, headers: { ...address, 'x-forwarded-for': `192.0.2.${i + 1}` } })));
+    const stillHeld = renamed.filter((r) => r.status === 429).length;
+    check(stillHeld >= 30, 'a new address written in X-Forwarded-For is still that caller, still held', `${stillHeld} of 60 held`);
     await drain();
   }
 
@@ -129,6 +138,142 @@ section('sign-in-with-username — a handle and a password, the address never sh
   }
   const get = await fn('sign-in-with-username', { method: 'GET', auth: null });
   check(get.status === 405, 'only POST', said(get));
+
+  // A guesser rests only their own door; many doors at once are slowed together; the member's own
+  // phone, holding the key the house handed it, is never held by the doors elsewhere (round 14). The
+  // platform's address is CF-Connecting-IP here; each call also writes an X-Forwarded-For of its own.
+  {
+    const at = (n) => ({ 'cf-connecting-ip': `203.0.113.${n}`, 'x-forwarded-for': `198.51.100.${n}` });
+    const tryAs = (password, n, device) =>
+      fn('sign-in-with-username', { body: { username: four.username, password, ...(device ? { device } : {}) }, auth: null, headers: at(n) });
+    const pail = () => sql(`SELECT round(tokens) FROM public.sign_in_handles WHERE user_id = ${literal(four.id)}`);
+
+    const tries = [];
+    for (let i = 0; i < 5; i++) tries.push(await tryAs(`${four.password}-guess-${i}`, 10));
+    check(tries.every((t) => t.status === 401), 'five wrong passwords from one door are each refused as wrong', tries.map(said).join(' / '));
+    check(tries.every((t) => t.headers['x-rh-caller-source'] === 'cf'), 'each answer names where its address was read from, and never the address',
+      JSON.stringify(tries.map((t) => t.headers['x-rh-caller-source'])));
+    const rested = await tryAs(`${four.password}-guess-5`, 10);
+    check(rested.status === 429 && rested.json?.paused === 'handle' && rested.json?.from === 'here' && rested.json?.retry_after >= 1
+      && rested.headers['retry-after'] === String(rested.json?.retry_after),
+      'the sixth from that door is told its door rests, and for how long', `${said(rested)} ${JSON.stringify(rested.headers)}`);
+    check(/retry-after/i.test(rested.headers['access-control-expose-headers'] ?? '') && /x-rh-caller-source/i.test(rested.headers['access-control-expose-headers'] ?? ''),
+      'headers the website may read', JSON.stringify(rested.headers));
+    const rightWhileResting = await tryAs(four.password, 10);
+    check(rightWhileResting.status === 429 && rightWhileResting.json?.from === 'here',
+      'the right password from the resting door is not tried: a rest never says which guess was right', said(rightWhileResting));
+    check(sql(`SELECT misses FROM public.sign_in_doors WHERE user_id = ${literal(four.id)} AND door = '203.0.113.10'`) === '5',
+      'only the five tried were counted at that door');
+
+    const member = await tryAs(four.password, 11);
+    check(member.status === 200 && typeof member.json?.access_token === 'string' && /^[0-9a-f]{64}$/.test(member.json?.device ?? ''),
+      'the member, from another door, is not held by the guesser\'s rest, and the phone is handed its key', said(member));
+    const key = member.json?.device;
+    check(pail() === '15', 'the pail every unknown door shares spent the five wrong ones, the member\'s own given back', pail());
+
+    // Many doors at once spend the pail: a door not yet tried is slowed, said as from elsewhere.
+    sql(`UPDATE public.sign_in_handles SET tokens = 0, refilled_at = now() WHERE user_id = ${literal(four.id)}`);
+    const slowed = await tryAs(`${four.password}-guess-6`, 12);
+    check(slowed.status === 429 && slowed.json?.from === 'elsewhere' && slowed.json?.retry_after >= 1,
+      'the pail spent, a new door is told the handle is slowed from elsewhere', said(slowed));
+    const newPhone = await tryAs(four.password, 13);
+    check(newPhone.status === 429 && newPhone.json?.from === 'elsewhere', 'the right password from a phone with no key waits as well: never tried', said(newPhone));
+    const ownPhone = await tryAs(four.password, 14, key);
+    check(ownPhone.status === 200 && ownPhone.json?.device === key, 'the member\'s own phone, with its key, is let in, its key kept', said(ownPhone));
+    const othersKey = await fn('sign-in-with-username', { body: { username: three.username, password: `${three.password}-not`, device: key }, auth: null, headers: at(15) });
+    check(othersKey.status === 401 && sql(`SELECT round(tokens) FROM public.sign_in_handles WHERE user_id = ${literal(three.id)}`) === '19',
+      'a key is its member\'s alone: sent with another\'s handle it is no key', said(othersKey));
+
+    // An attempt the house could not answer is never counted.
+    sql(`UPDATE public.sign_in_handles SET tokens = 20, refilled_at = now() WHERE user_id = ${literal(four.id)}`);
+    sql('REVOKE EXECUTE ON FUNCTION public.get_email_by_username(text) FROM service_role');
+    let unanswered;
+    try {
+      unanswered = await tryAs(four.password, 16);
+    } finally {
+      sql('GRANT EXECUTE ON FUNCTION public.get_email_by_username(text) TO service_role');
+    }
+    check(unanswered.status === 503 && pail() === '20'
+      && sql(`SELECT coalesce((SELECT misses FROM public.sign_in_doors WHERE user_id = ${literal(four.id)} AND door = '203.0.113.16'), 0)`) === '0',
+      'an attempt the house could not answer is given back: neither door nor pail counts it', `${said(unanswered)} pail ${pail()}`);
+
+    // A handle no one holds leaves no row anywhere.
+    const nobody = await fn('sign-in-with-username', { body: { username: `fn_nobody_${Date.now()}`, password: 'guess' }, auth: null, headers: at(17) });
+    check(nobody.status === 401 && sql("SELECT count(*) FROM public.sign_in_doors WHERE door = '203.0.113.17'") === '0',
+      'a handle no one holds is refused as wrong and grows no table', said(nobody));
+
+    // One platform address, a new X-Forwarded-For written on each call: still one caller, held at its
+    // pace (20 a minute). With no platform address, no pace by address at all, never one all share.
+    // No password, so each is refused before the house or Auth is asked.
+    const paced = [];
+    const unvouched = [];
+    for (let i = 0; i < 21; i++) {
+      paced.push(await fn('sign-in-with-username', { body: { username: `fn_paced_${i}`, password: '' }, auth: null,
+        headers: { 'cf-connecting-ip': '203.0.113.200', 'x-forwarded-for': `192.0.2.${i + 1}` } }));
+      unvouched.push(await fn('sign-in-with-username', { body: { username: `fn_paced_${i}`, password: '' }, auth: null,
+        headers: { 'x-forwarded-for': '192.0.2.250' } }));
+    }
+    check(paced.slice(0, 20).every((t) => t.status === 401) && paced[20].status === 429 && paced[20].json?.paused === undefined,
+      'one caller writing a new X-Forwarded-For each call is still held at its pace', paced.map((t) => t.status).join(','));
+    check(unvouched.every((t) => t.status === 401 && t.headers['x-rh-caller-source'] === 'xff'),
+      'with no address the platform vouches for, no caller is paced as everyone, and the answer says so', unvouched.map((t) => `${t.status}:${t.headers['x-rh-caller-source']}`).join(','));
+    // This world's counts, none kept for the sections after.
+    sql('DELETE FROM public.sign_in_doors; DELETE FROM public.sign_in_handles; DELETE FROM public.sign_in_devices');
+  }
+
+  // Deployed before round 14's train, as production is until it runs: the house has none of the
+  // count's functions, so PostgREST answers PGRST202, and the sign-in paces by the vouched address
+  // alone (20 a minute, as before) and signs in as before. The three are renamed away here, and back.
+  {
+    const COUNT = [['sign_in_attempt', 'text, text, text'], ['sign_in_unasked', 'text, text, boolean'], ['sign_in_cleared', 'text, text, boolean, text']];
+    const rename = (from, to) => sql(`${COUNT.map(([f, args]) => `ALTER FUNCTION public.${f}${from}(${args}) RENAME TO ${f}${to};`).join(' ')} NOTIFY pgrst, 'reload schema';`);
+    // The API's own answer for sign_in_attempt, as the function's key asks it (a handle no one holds: no row).
+    const apiSays = async () => {
+      const r = await fetch(`${API}/rest/v1/rpc/sign_in_attempt`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SERVICE, Authorization: `Bearer ${SERVICE}` },
+        body: JSON.stringify({ p_handle: `fn_nobody_${Date.now()}`, p_door: null, p_device: null }),
+      });
+      return { status: r.status, code: (await r.json().catch(() => null))?.code ?? null };
+    };
+    const until = async (done) => {
+      for (let i = 0; i < 60; i++) {
+        const answer = await apiSays();
+        if (done(answer)) return answer;
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      return apiSays();
+    };
+    const asTwo = (password, headers) => fn('sign-in-with-username', { body: { username: two.username, password }, auth: null, headers });
+
+    rename('', '_not_yet');
+    try {
+      const gone = await until((s) => s.code === 'PGRST202');
+      check(gone.status === 404 && gone.code === 'PGRST202', 'the house before the train answers the count as missing: 404, PGRST202', JSON.stringify(gone));
+
+      const tries = [];
+      for (let i = 0; i < 21; i++) tries.push(await asTwo(`${two.password}-guess-${i}`, { 'cf-connecting-ip': '203.0.113.220', 'x-forwarded-for': `192.0.2.${i + 1}` }));
+      check(tries.slice(0, 20).every((t) => t.status === 401) && tries[20].status === 429 && tries[20].json?.paused === undefined,
+        'before the train, a caller writing a new X-Forwarded-For each call is still held by its vouched address, 20 a minute', tries.map((t) => t.status).join(','));
+      check(tries.every((t) => t.headers['x-rh-caller-source'] === 'cf'), 'and each answer names where its address was read from',
+        JSON.stringify(tries.map((t) => t.headers['x-rh-caller-source'])));
+
+      const right = await asTwo(two.password, { 'cf-connecting-ip': '203.0.113.221', 'x-forwarded-for': '192.0.2.99' });
+      check(right.status === 200 && typeof right.json?.access_token === 'string' && right.json?.device === undefined && right.headers['x-rh-caller-source'] === 'cf',
+        'before the train, the right password signs in as before, no key handed', said(right));
+
+      // No vouched address: no pace by address (the section above holds that), and a guess is still answered as one.
+      const unvouched = await asTwo(`${two.password}-guess`, { 'x-forwarded-for': '192.0.2.251' });
+      check(unvouched.status === 401 && unvouched.headers['x-rh-caller-source'] === 'xff',
+        'before the train, a caller no address is vouched for is answered, its guess refused as wrong', said(unvouched));
+    } finally {
+      rename('_not_yet', '');
+    }
+    const back = await until((s) => s.status === 200);
+    check(back.status === 200, 'the count is found again once it is built', JSON.stringify(back));
+    const counted = await asTwo(two.password, { 'cf-connecting-ip': '203.0.113.222' });
+    check(counted.status === 200 && /^[0-9a-f]{64}$/.test(counted.json?.device ?? ''), 'after the train, the sign-in counts again and hands the phone its key', said(counted));
+    sql('DELETE FROM public.sign_in_doors; DELETE FROM public.sign_in_handles; DELETE FROM public.sign_in_devices');
+  }
 
   // The house cannot look the handle up: its failure, never "wrong password".
   sql('REVOKE EXECUTE ON FUNCTION public.get_email_by_username(text) FROM service_role');

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
+import { useMyWithheld } from '@/src/hooks/useMyWithheld';
 import { useDebouncedSearch } from '@/src/hooks/useDebouncedSearch';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
@@ -17,6 +18,7 @@ import { scrollEndAbove } from '@/src/components/layout/navMetrics';
 import { RoomChip, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore, RoomMoreFailed } from './RoomParts';
 import { EDGE_LIT } from '@/src/theme/light';
 import { saidStruck, useStruck } from '@/src/components/StruckWords';
+import { WithheldStamp, useWithheldSaid } from '@/src/components/moderation/WithheldBanner';
 
 /**
  * THE STACKS — bound volumes, not thumbnails: the one thing in these rooms a
@@ -60,6 +62,8 @@ const ProfileListCard = React.memo(({ list, edge }: { list: ProfileList, edge: s
   // The curator's title and note, each slur struck for a reader who asked (StruckWords).
   const struck = useStruck();
   const title = struck(list.title);
+  // One's own stack the house withholds: stamped and said so, never shown as if others read it (round 14).
+  const withheld = useWithheldSaid(list.id);
   const posters = (list.films || [])
     .filter((f: ProfileListFilm) => f.poster)
     .slice(0, 3)
@@ -80,7 +84,7 @@ const ProfileListCard = React.memo(({ list, edge }: { list: ProfileList, edge: s
         `${list.filmCount} ${list.filmCount === 1 ? 'film' : 'films'}`,
         list.isRanked ? 'ranked' : '',
         list.isPrivate ? 'private' : '',
-      ].filter(Boolean).join(', ')}
+      ].filter(Boolean).join(', ') + withheld}
       accessibilityHint="Opens the stack"
     >
       <View style={s.stackPosterWrap}>
@@ -113,6 +117,7 @@ const ProfileListCard = React.memo(({ list, edge }: { list: ProfileList, edge: s
               <Text {...scaledTextProps} style={s.rankedText}>RANKED</Text>
             </View>
           )}
+          <WithheldStamp pieceId={list.id} />
         </View>
         <Text {...scaledTextProps} style={s.stackTitle} numberOfLines={2}>{(title || '').toUpperCase()}</Text>
         {list.description ? (
@@ -125,6 +130,8 @@ const ProfileListCard = React.memo(({ list, edge }: { list: ProfileList, edge: s
 
 export default React.memo(function ProfileListsTab({ lists, listsSort = 'default', setListsSort, listsSearch, setListsSearch, totalLists, ready = true, unreachable, tier, onLoadMore, isLoadingMore, moreFailed, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
   const edge = useMemo(() => roomTier(tier).edge, [tier]);
+  // One's own room reads which of its stacks the house withholds, as it opens (round 14): its cards mark them.
+  useMyWithheld({ reread: !!isSelf });
 
   const breatheAnim = useSharedValue(0.1);
   useEffect(() => {

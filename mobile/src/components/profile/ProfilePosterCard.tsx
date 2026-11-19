@@ -3,6 +3,7 @@ import { RemoteImage } from '@/src/components/Picture';
 import { View, StyleSheet } from 'react-native';
 import { Sparkles, X, Film as FilmIcon } from 'lucide-react-native';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
+import { WithheldBand, useWithheldSaid } from '@/src/components/moderation/WithheldBanner';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
 import { nav } from '@/src/utils/typedRouter';
@@ -92,6 +93,8 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
   // Whether a glow exists, and the rank picks which.
   const hasGlow = isAuteurPlus || isArchivistPlus;
   const glowStyle = isAuteurPlus ? s.auteurGlow : s.archivistGlow;
+  // One's own log the house withholds: banded and said so, never shown as if others read it (round 14).
+  const withheld = useWithheldSaid(log.id);
 
   return (
     <PressableScale
@@ -116,7 +119,7 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
         log.title ?? 'Untitled film',
         log.year ? String(log.year) : '',
         log.status && log.status !== 'watched' ? String(log.status) : '',
-      ].filter(Boolean).join(', ')}
+      ].filter(Boolean).join(', ') + withheld}
       accessibilityHint="Opens the film"
     >
       <RemoteImage uri={posterUri} style={[s.posterImg, hasGlow && s.posterImgGlowed]} recyclingKey={posterUri} placeholder={{ blurhash: SEPIA_HASH }} transition={200} fallback={<View style={[s.posterImg, hasGlow && s.posterImgGlowed, s.posterPlaceholder]}>
@@ -136,6 +139,7 @@ export const ProfilePosterCard = React.memo(function ProfilePosterCard({
           <X size={7} color={colors.fog} strokeWidth={2} />
         </View>
       )}
+      <WithheldBand pieceId={log.id} />
     </PressableScale>
   );
 });

@@ -17,8 +17,8 @@ import { previewScaleFor } from '../ShareCardModal';
 
 /** The card as the share sheet shows it: its size times the window's scale, the card shrunk inside. */
 function Previewed({ data }: { data: NitrateFileData }) {
-  // Every drawn width has its height (mockups/devices.json); one without would be bound by its width alone.
-  const scale = previewScaleFor(PHONE.width, PHONE.height ?? Infinity, 0, 0);
+  // Every drawn width has its height (mockups/devices.json); mockups/paths.ts refuses a width without one.
+  const scale = previewScaleFor(PHONE.width, PHONE.height, 0, 0);
   return (
     <View style={{ alignSelf: 'center', alignItems: 'center', justifyContent: 'center', width: NITRATE_CARD_WIDTH * scale, height: NITRATE_CARD_HEIGHT * scale }}>
       <View style={{ transform: [{ scale }] }}><NitrateFileCard data={data} /></View>

@@ -170,13 +170,16 @@ const ListFilmItem = React.memo(({ item, index, count, drag, isActive, moving, s
 
  
 const DropdownResultRow = React.memo(({ r, onAdd }: { r: SearchResult, onAdd: (r: SearchResult) => void }) => {
-    // Stacked too, and a mis-tap here adds the wrong film without a word.
+    // Stacked too, and a mis-tap here adds the wrong film without a word. The year is said as it is
+    // printed, so three films of one title (Nosferatu: 1922, 1979, 2024) are told apart by ear too.
+    // TMDB sends "" for a date it does not know: that is no year, printed as the dash.
+    const year = r.release_date?.slice(0, 4) || '';
     return (
-        <PressableScale style={s.dropRow} onPress={() => onAdd(r)} hitSlop={null} accessibilityRole="button" accessibilityLabel={`Add ${r.title ?? r.name}`}>
+        <PressableScale style={s.dropRow} onPress={() => onAdd(r)} hitSlop={null} accessibilityRole="button" accessibilityLabel={`Add ${r.title ?? r.name}${year ? `, ${year}` : ''}`}>
             <RemoteImage uri={tmdb.poster(r.poster_path, 'w92')} style={s.dropPoster} transition={150} fallback={<View style={[s.dropPoster, s.filmPosterEmpty]} />} />
             <View style={s.dropFlex}>
                 <Text style={s.dropTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{r.title ?? r.name}</Text>
-                <Text style={s.dropMeta}>{r.release_date?.slice(0, 4) ?? '—'}</Text>
+                <Text style={s.dropMeta}>{year || '—'}</Text>
             </View>
             <Plus size={16} color={colors.sepia} />
         </PressableScale>

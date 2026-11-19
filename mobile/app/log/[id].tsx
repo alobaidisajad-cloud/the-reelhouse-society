@@ -54,6 +54,7 @@ import { COMMENT_PAGE_SIZE, LogService } from '@/src/services/LogService';
 import { colors } from '@/src/theme/theme';
 import { isNetworkError } from '@/src/utils/networkError';
 import { saidOfARefusal } from '@/src/utils/saidOfARefusal';
+import { critiquePaceSaid } from '@/src/utils/housePace';
 import { isGoneFromTheHouse } from '@/src/utils/goneFromTheHouse';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import { stillQueued } from '@/src/stores/offlineQueueStore';
@@ -72,6 +73,7 @@ import { EmptyOffline, EmptyState, REFRESH_FAILED } from '@/src/components/Empty
 import { BusterEyes } from '@/src/components/Buster';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { LobbyHonour } from '@/src/components/lobby/LobbyHonour';
+import { WithheldBanner } from '@/src/components/moderation/WithheldBanner';
 import { offerWord } from '@/src/lib/pushPrimer';
 import { dateOf } from '@/src/utils/instant';
 
@@ -126,6 +128,8 @@ interface LogDetail {
   viewing_history?: unknown;
   /** The viewing this log is on. A private note belongs to one of these. */
   viewing_id?: string | null;
+  /** Withheld by the house (round 14): read by its author alone, marked so on its page. */
+  withheld_at?: string | null;
 }
 
 interface LogProfile {
@@ -659,6 +663,12 @@ function LogDetailScreen({ id }: { id: string }) {
           reelToast.error('This record is no longer in the house.');
           return;
         }
+        // The house's pace (round 14): said with the wait it named, the words kept in the box.
+        const paced = critiquePaceSaid(error);
+        if (paced) {
+          reelToast.error(paced);
+          return;
+        }
         // The member's own standing said as the house says it, never blamed on the author (review round 9).
         reelToast.error(saidOfARefusal(error, 'This member limits who may annotate their critiques.', 'Your critique could not be filed.'));
       }
@@ -947,6 +957,9 @@ function LogDetailScreen({ id }: { id: string }) {
         />
 
         <View style={s.pageBody} onLayout={(e) => { bodyY.current = e.nativeEvent.layout.y; }}>
+          {/* Withheld by the house: its author reads it marked so, never as if it stood public (round 14). */}
+          {isOwner && <WithheldBanner pieceId={log.id} withheldAt={log.withheld_at ?? null} />}
+
           {/* The honour stays: the day this log hung in the Lobby, if it did. */}
           <LobbyHonour kind="log" id={log.id} style={s.lobbyHonour} />
 

@@ -70,13 +70,26 @@ CREATE FUNCTION pg_temp.rh_as(member text) RETURNS void LANGUAGE sql AS $$
 $$;
 CREATE FUNCTION pg_temp.rh_row(what text) RETURNS uuid LANGUAGE sql AS $$ SELECT id FROM rh_rows WHERE rh_rows.what = rh_row.what $$;
 GRANT EXECUTE ON FUNCTION pg_temp.rh_as(text), pg_temp.rh_row(text) TO authenticated;
+-- Whether the member may read another's file, by the test the read rules ask: in private once round 14
+-- moved it there (no member may ask public.can_view_user_data any more), in public before.
+CREATE FUNCTION pg_temp.rh_can_view(p_member uuid) RETURNS boolean LANGUAGE plpgsql AS $$
+DECLARE v boolean;
+BEGIN
+  IF to_regprocedure('private.can_view_user_data(uuid)') IS NOT NULL THEN
+    EXECUTE 'SELECT private.can_view_user_data($1)' INTO v USING p_member;
+  ELSE
+    EXECUTE 'SELECT public.can_view_user_data($1)' INTO v USING p_member;
+  END IF;
+  RETURN v;
+END $$;
+GRANT EXECUTE ON FUNCTION pg_temp.rh_can_view(uuid) TO authenticated;
 
 -- ── as the member: each edit of what a row is ────────────────────────────────
 SET LOCAL ROLE authenticated;
 SELECT pg_temp.rh_as('rehearsal.a') AS done \gset rh_
 UPDATE public.interactions SET type = 'follow' WHERE id = (SELECT pg_temp.rh_row('request'));
 UPDATE public.interactions SET target_user_id = current_setting('rehearsal.a')::uuid WHERE id = (SELECT pg_temp.rh_row('request'));
-SELECT set_config('rh.sees', public.can_view_user_data(current_setting('rehearsal.b')::uuid)::text, true) AS done \gset rh_
+SELECT set_config('rh.sees', pg_temp.rh_can_view(current_setting('rehearsal.b')::uuid)::text, true) AS done \gset rh_
 UPDATE public.lounge_members SET lounge_id = pg_temp.rh_row('private salon'), joined_at = '2000-01-01'
  WHERE id = (SELECT pg_temp.rh_row('seat'));
 UPDATE public.lounge_members SET last_read_at = '2001-01-01' WHERE id = (SELECT pg_temp.rh_row('seat'));
@@ -119,7 +132,7 @@ SET LOCAL ROLE authenticated;
 SELECT pg_temp.rh_as('rehearsal.b') AS done \gset rh_
 SELECT public.accept_follow_request(current_setting('rehearsal.a')::uuid) AS done \gset rh_
 SELECT pg_temp.rh_as('rehearsal.a') AS done \gset rh_
-SELECT set_config('rh.sees_now', public.can_view_user_data(current_setting('rehearsal.b')::uuid)::text, true) AS done \gset rh_
+SELECT set_config('rh.sees_now', pg_temp.rh_can_view(current_setting('rehearsal.b')::uuid)::text, true) AS done \gset rh_
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 DO $$ BEGIN

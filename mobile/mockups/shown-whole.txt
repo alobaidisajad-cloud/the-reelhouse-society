@@ -1,0 +1,13 @@
+# Texts that must be drawn whole where they are set (mockups/tools/layout.cjs --whole).
+#
+# A clamp on content is the design where the words are read whole a tap away: a card, a row,
+# a header. Listed here is the ONE place a member's own words are read whole: there, a clamp
+# is a defect (WHOLE), at every text size. Round 14 found three of these cut with nothing
+# else showing them.
+#
+# <file> [/words pattern/] [@/source-line pattern/] — <why>
+
+app/user/[username].tsx @/style=\{\[s\.heroBio, bioStyle\]\}/ — the bio, the one place a visitor reads a member's own words about themselves; 160 characters, kept line breaks and all
+src/components/lounge/LoungeSettingsPanel.tsx @/<Text style=\{s\.title\}>\{struck\(lounge\.name\)\}/ — a salon's name: the cards, ALL SALONS and the room's header cut it, and this sheet is where every reader of the room reads it whole
+src/components/lounge/LoungeSettingsPanel.tsx @/style=\{\[s\.description, isRTLText/ — a salon's description, up to 300 characters: the directory row cuts it at two lines, and this sheet is the one place a reader of the room reads it whole
+app/stacks/[id].tsx @/<Text style=\{\[s\.title, \{ fontSize: titleType\.fontSize/ — a stack's title on its own page, up to 100 characters: every shelf and card cuts it, and this page is the one place it is read whole

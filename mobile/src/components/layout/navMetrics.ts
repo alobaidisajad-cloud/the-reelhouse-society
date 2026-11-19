@@ -168,10 +168,6 @@ export function useOverlayTop(inIosSheet?: boolean) {
   return overlayTop(insetTop, inIosSheet ?? inSheet);
 }
 
-/** The height between the status bar and the home indicator. */
-export const safeAreaHeight = (windowHeight: number, insets: { top: number; bottom: number }) =>
-  windowHeight - insets.top - insets.bottom;
-
 // ── the bottom edge ───────────────────────────────────────────────────────────
 
 /**

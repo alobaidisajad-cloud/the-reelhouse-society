@@ -131,3 +131,31 @@ it('the member\'s own retry, sent, takes it from the queue; asked with no connec
   expect(mockExecute).toHaveBeenCalledTimes(3);
   expect(getOfflineQueue()).toEqual([]);
 });
+
+describe('a salon message past the day\'s ceiling (round 14)', () => {
+  const DAY = { code: 'RH429', message: 'RATE_LIMITED', details: 'day', hint: '32400' };
+
+  it('is held in its room with its words, failed, the wait said once, never sent again on its own', async () => {
+    say('First.', 'msg-1');
+    say('Second.', 'msg-2');
+    mockExecute.mockRejectedValueOnce(DAY).mockRejectedValueOnce(DAY);
+    await flushOfflineQueue();
+    expect(getOfflineQueue().map((m) => [m.payload._tempId, m._held, m.payload.content]))
+      .toEqual([['msg-1', 'paced', 'First.'], ['msg-2', 'paced', 'Second.']]);
+    expect(stillHeld('send_lounge_message', 'msg-1')).toBe(true);
+    expect(toast.error.mock.calls).toEqual([['You have sent the day\'s salon messages. The house takes more in 9 hours.']]);
+    expect(showTierDoor).not.toHaveBeenCalled();
+    await flushOfflineQueue();
+    expect(mockExecute).toHaveBeenCalledTimes(2);
+  });
+
+  it('the member\'s own retry, asked again, sends it', async () => {
+    say('First.', 'msg-1');
+    mockExecute.mockRejectedValueOnce(DAY);
+    await flushOfflineQueue();
+    sendHeldAgain('msg-1');
+    await flushOfflineQueue();
+    expect(mockExecute).toHaveBeenCalledTimes(2);
+    expect(getOfflineQueue()).toEqual([]);
+  });
+});

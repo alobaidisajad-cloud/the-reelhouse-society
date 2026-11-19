@@ -9,8 +9,10 @@ import {
     CheckSquare,
     Clock,
     FileSearch,
+    Gavel,
     Layers,
     List,
+    Lock,
     Scale,
     Skull,
     Square,
@@ -30,13 +32,16 @@ import { UNREADY } from '@/src/theme/unready';
 import { REPORT_REASON_LABELS, type ModAction, type ModActionRecord, type ReportReason } from '@/src/types/moderation';
 import reelToast from '@/src/utils/reelToast';
 import { REFRESH_FAILED } from '@/src/components/EmptyStates';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useClock } from '@/src/hooks/useClock';
+import { instantOf } from '@/src/utils/instant';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useContentBottom, usePushedHeaderTop, useSheetBottom } from '@/src/components/layout/navMetrics';
 import { ToastHost } from '@/src/components/ToastHost';
 import { EDGE_LIT, WASH } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
 import { formatDate } from '@/src/utils/timeAgo';
+import { counted } from '@/src/utils/counted';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { SecondKeyDoor } from '@/src/components/admin/SecondKeyDoor';
 import { nav } from '@/src/utils/typedRouter';
@@ -45,6 +50,9 @@ import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
 import { Arrive } from '@/src/components/Arrive';
 import { HOURS_DIGITS } from '@/src/constants/inputLimits';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { AppealsDocket } from '@/src/components/admin/AppealsDocket';
+import { SanctionsList } from '@/src/components/admin/SanctionsList';
+import type { PieceWords } from '@/src/services/ModerationService';
 
 interface TribunalTarget {
   id: string;
@@ -98,7 +106,28 @@ function bulkDismissedWords(asked: number, closed: number | null): string {
 }
 
 type EnforcementAction = 'warn' | 'suspend' | 'ban' | 'permanent_exile' | 'delete_content';
-type TribunalView = 'pending' | 'priority';
+// THE DOCKET, URGENT, and (round 14) the APPEALS the members filed and the SANCTIONS standing.
+type TribunalView = 'pending' | 'priority' | 'appeals' | 'sanctions';
+
+/**
+ * How a verdict on the record stands now (round 14): struck on appeal, lifted early by an admin, served
+ * to its end, waiting to be heard, or upheld. Only a verdict overturned is struck: a lift is mercy, not
+ * a finding that the member did nothing, and a sentence served is a sentence given. A sentence that ran
+ * out before a lift is served, not lifted. Null when it stands as given.
+ */
+export function recordStanding(record: Pick<ModActionRecord, 'lifted_at' | 'appeal_status'> & Partial<Pick<ModActionRecord, 'expires_at'>>,
+  now: number): string | null {
+  if (record.appeal_status === 'overturned') return 'OVERTURNED ON APPEAL';
+  const ends = record.expires_at ? instantOf(record.expires_at) : NaN;
+  if (record.lifted_at) {
+    const lifted = instantOf(record.lifted_at);
+    return Number.isFinite(ends) && Number.isFinite(lifted) && ends <= lifted ? 'SERVED' : 'LIFTED';
+  }
+  if (record.appeal_status === 'pending') return 'UNDER APPEAL';
+  if (Number.isFinite(ends) && ends <= now) return 'SERVED';
+  if (record.appeal_status === 'upheld') return 'UPHELD ON APPEAL';
+  return null;
+}
 
 interface ActionModalState {
   visible: boolean;
@@ -115,6 +144,8 @@ interface ActionModalState {
 export function EnforcementHistory({ history, isLoading, failed, onRetry }: {
   history: ModActionRecord[]; isLoading: boolean; failed?: boolean; onRetry?: () => void;
 }) {
+  // How each verdict stands now, read on the shared clock: a sentence that runs out reads SERVED then.
+  const standings = useClock((now) => history.slice(0, 5).map((r) => recordStanding(r, now) ?? '').join('|')).split('|');
   if (isLoading) {
     return (
       <View style={s.historyContainer}>
@@ -142,12 +173,15 @@ export function EnforcementHistory({ history, isLoading, failed, onRetry }: {
   return (
     <View style={s.historyContainer}>
       <Text style={s.historyLabel}>ENFORCEMENT RECORD</Text>
-      {history.slice(0, 5).map((record: ModActionRecord) => (
+      {history.slice(0, 5).map((record: ModActionRecord, i) => {
+        const standing = standings[i] || null;
+        const struck = standing === 'OVERTURNED ON APPEAL';
+        return (
         <View key={record.id} style={s.historyRow}>
-          <View style={s.historyDot} />
+          <View style={[s.historyDot, struck && s.historyDotStruck]} testID={struck ? 'record-struck' : 'record-holds'} />
           <View style={s.historyContent}>
             <Text style={s.historyAction}>
-              {record.action.toUpperCase()}
+              {record.action.toUpperCase()}{standing ? ` · ${standing}` : ''}
             </Text>
             <Text style={s.historyReason} numberOfLines={1}>
               {record.reason}
@@ -157,9 +191,45 @@ export function EnforcementHistory({ history, isLoading, failed, onRetry }: {
             </Text>
           </View>
         </View>
-      ))}
+        );
+      })}
     </View>
   );
+}
+
+/**
+ * One exhibit: a piece's words as the house read them, now or as reported (round 14). A page's
+ * display name and picture and a salon's cover are shown too: a report about them is about them.
+ */
+function Exhibit({ words, said }: { words: PieceWords; said?: string }) {
+  const picture = words.avatar_url || words.cover_image;
+  return (
+    <>
+      {!!said && <Text style={[s.contextLabel, s.exhibitSaid]}>{said}</Text>}
+      {!!words.title && <Text style={s.evidenceTitle} numberOfLines={2}>{words.title}</Text>}
+      {!!words.display_name && <Text style={s.evidenceTitle} selectable>Display name: {words.display_name}</Text>}
+      {!!picture && (
+        <RemoteImage uri={picture} style={s.exhibitPicture} contentFit="cover"
+          // Its file gone from the house (a new picture's upload once deleted the old one): said, never a blank.
+          fallback={<Text style={s.exhibitGone}>{words.avatar_url ? 'The page’s picture is no longer held.' : 'The salon’s cover is no longer held.'}</Text>}
+          accessible accessibilityLabel={words.avatar_url ? 'The page’s picture' : 'The salon’s cover'} />
+      )}
+      {!!words.body && <Text style={s.contextValue} selectable>“{words.body}”</Text>}
+    </>
+  );
+}
+
+/**
+ * The evidence not found, said as it is: withheld by an earlier verdict (not destroyed: it may come back
+ * on its appeal), or gone from the house.
+ */
+export function evidenceGoneSays(e: Pick<ReportEvidence, 'withheld' | 'appealed'>): string {
+  if (e.withheld) {
+    return e.appealed
+      ? 'Withheld under an earlier verdict, awaiting its appeal.'
+      : 'Withheld under an earlier verdict, while its member may appeal it.';
+  }
+  return 'The evidence has been destroyed — the page no longer exists.';
 }
 
 // ── Warning Count Badge ────────────────────────────────────────────────────
@@ -246,13 +316,14 @@ function ActionModal({
       title: 'BAN MEMBER',
       color: colors.crimson,
       ink: colors.crimsonInk,
-      description: 'Revoke access until an admin lifts the ban.',
+      description: 'Revoke access until an admin lifts the ban (SANCTIONS). The member may appeal it once.',
     },
+    // No admin lifts an exile; the member's one appeal, heard by another moderator, alone may strike it.
     permanent_exile: {
       title: 'PERMANENT EXILE',
       color: colors.crimson,
       ink: colors.crimsonInk,
-      description: 'Irrevocable expulsion from the Society. Cannot be undone.',
+      description: 'Expulsion from the Society for good: no admin may lift it. The member may appeal it once, to another moderator.',
     },
     // The only action here that addresses the WORK rather than the member.
     // Sepia, not crimson: this is correction, not punishment, and it is usually
@@ -261,13 +332,22 @@ function ActionModal({
       title: 'REMOVE CONTENT',
       color: colors.sepia,
       ink: colors.sepia,
+      // A log, a stack, a critique or a filing is withheld whole, never deleted at once (round 14): an
+      // overturned verdict gives it back with its critiques and marks.
       description:
-        'The reported piece is struck from the house. A lounge dispatch is struck through rather than erased, so the conversation around it still reads. A copy is kept with the record, should the decision ever be questioned.',
+        'The reported piece is withheld at once: no one but its author sees it, its critiques and marks with it. It is deleted when its appeal is upheld, or when 30 days pass unappealed; overturned, it returns whole. A lounge dispatch is struck through rather than erased, so the conversation around it still reads. A copy is kept with the record, should the decision be appealed.',
     },
   };
 
   if (!state.action) return null;
   const config = actionLabels[state.action];
+  // A page and a salon are no piece: what a removal takes from each is said for each (round 14).
+  const removing = state.action === 'delete_content' ? state.report?.content_type : null;
+  const description = removing === 'profile'
+    ? 'The member’s words on their page are cleared: bio, display name, picture and links. Their handle stays (a ban answers that). A copy is kept with the record, should the decision be appealed.'
+    : removing === 'lounge'
+      ? 'The salon’s name, description and cover are cleared; its rooms and the words members left in them stay. A copy is kept with the record, should the decision be appealed.'
+      : config.description;
 
   return (
     <Modal statusBarTranslucent visible={state.visible} transparent animationType="fade" onRequestClose={handleClose}>
@@ -290,7 +370,7 @@ function ActionModal({
             </PressableScale>
           </View>
 
-          <Text style={s.modalDescription}>{config.description}</Text>
+          <Text style={s.modalDescription}>{description}</Text>
 
           {state.action === 'suspend' && (
             <View style={s.inputGroup}>
@@ -491,15 +571,46 @@ function TribunalScreen() {
   // Keyed on the accumulated ids, not on page one. The docket grows by appending
   // pages, so a fetch tied to the first page would leave every later card with an
   // empty record — the failure mode a naive batch would have introduced.
-  const docketUserIds = React.useMemo(
-    () => [...new Set(priorityItems.map(r => r.target_user_id).filter(Boolean))] as string[],
-    [priorityItems],
+  // Both dockets' members: THE DOCKET, where the Tribunal opens, read none, and every case there
+  // drew no record, a repeat offender read as a first offence (round 14).
+  // Read as the members come: the members a page of a docket brings are read together, keyed on
+  // themselves, once. A page more reads only the members it brought, never every record already held.
+  const onDocket = React.useMemo(
+    () => [...new Set([...pendingItems, ...priorityItems].map(r => r.target_user_id).filter(Boolean))] as string[],
+    [pendingItems, priorityItems],
   );
-  const { data: historyByUser = {}, isLoading: historyLoading, isError: historyFailed, refetch: rereadHistory } = useQuery({
-    queryKey: ['admin', 'moderation-history', docketUserIds],
-    queryFn: () => ModerationService.getModerationHistoryForUsers(docketUserIds),
-    enabled: user?.role === 'admin' && docketUserIds.length > 0,
+  const [recordPages, setRecordPages] = useState<string[][]>([]);
+  const recordPlace = React.useMemo(
+    () => new Map(recordPages.flatMap((ids, page) => ids.map((id) => [id, page] as const))),
+    [recordPages],
+  );
+  const newcomers = onDocket.filter((id) => !recordPlace.has(id));
+  if (newcomers.length > 0) {
+    setRecordPages((pages) => {
+      const held = new Set(pages.flat());
+      const brought = newcomers.filter((id) => !held.has(id));
+      return brought.length > 0 ? [...pages, brought] : pages;
+    });
+  }
+  const recordReads = useQueries({
+    queries: recordPages.map((ids) => ({
+      queryKey: ['admin', 'moderation-history', ids],
+      queryFn: () => ModerationService.getModerationHistoryForUsers(ids),
+      enabled: user?.role === 'admin',
+    })),
   });
+  const historyByUser: Record<string, ModActionRecord[]> = Object.assign({}, ...recordReads.map((q) => q.data ?? {}));
+  const readOf = (memberId: string) => {
+    const page = recordPlace.get(memberId);
+    return page === undefined ? undefined : recordReads[page];
+  };
+  // A member whose page is not yet read reads "Retrieving", never a clean record.
+  const recordReading = (memberId: string) => {
+    const q = readOf(memberId);
+    return !q || q.isLoading;
+  };
+  const recordFailed = (memberId: string) => !!readOf(memberId)?.isError;
+  const rereadRecord = (memberId: string) => { void readOf(memberId)?.refetch(); };
 
   // ── Load More for priority queue (compound keyset — matches RPC order) ──
   const loadMoreMutation = useMutation({
@@ -566,6 +677,9 @@ function TribunalScreen() {
       leaveTheDocket([reportId]);
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'priority'] });
+      // The member's record has a verdict more, and the door below one case fewer (round 14).
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'moderation-history'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'tribunal-waiting'] });
       TactileEngine.success();
       reelToast('Directive executed. Action recorded in the archives.');
     },
@@ -578,13 +692,15 @@ function TribunalScreen() {
         // Read again behind the toast: a docket that fails to read says so itself.
         void queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] });
         void queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'priority'] });
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'tribunal-waiting'] });
         reelToast('Already judged by another moderator.');
         return;
       }
       // The piece was deleted before the verdict: nothing was removed, recorded or told, and the
-      // case stays. Its evidence now reads as destroyed, so REMOVE CONTENT is no longer offered.
+      // case stays. Its evidence now reads as destroyed, so REMOVE CONTENT is no longer offered; the
+      // words as reported stay beside it, to judge the member on (round 14).
       if (refused === 'PIECE_GONE') {
-        setEvidence(prev => ({ ...prev, [reportId]: { loading: false, data: { found: false } } }));
+        setEvidence(prev => ({ ...prev, [reportId]: { loading: false, data: { found: false, reported: prev[reportId]?.data?.reported } } }));
         reelToast.error('The piece is already gone. Dismiss the case, or judge the member.');
         return;
       }
@@ -605,6 +721,8 @@ function TribunalScreen() {
       leaveTheDocket(reportIds);
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'priority'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'moderation-history'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'tribunal-waiting'] });
       TactileEngine.success();
       reelToast(bulkDismissedWords(reportIds.length, closed));
       setSelectedReports(new Set());
@@ -699,7 +817,7 @@ function TribunalScreen() {
       const message =
         action === 'ban'
           ? 'This will ban the member from the Society until an admin lifts it. Are you certain?'
-          : 'PERMANENT EXILE is irrevocable. The member will be expelled forever. Proceed?';
+          : 'PERMANENT EXILE cannot be lifted by any admin. The member is expelled for good, unless their one appeal is granted by another moderator. Proceed?';
 
       Alert.alert(title, message, [
         { text: 'Cancel', style: 'cancel' },
@@ -833,6 +951,40 @@ function TribunalScreen() {
               URGENT
             </Text>
           </PressableScale>
+
+          {/* The members' appeals of the house's verdicts, heard by a moderator other than the one
+              who ruled; and the bans and suspensions standing, to lift (round 14). */}
+          <PressableScale
+            hitSlop={VIEW_TAB_SLOP}
+            style={[s.viewTab, activeView === 'appeals' && s.viewTabActive]}
+            onPress={() => switchView('appeals')}
+            haptic="selection"
+            pressedScale={0.95}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeView === 'appeals' }}
+            accessibilityLabel="Appeals: the members' appeals of verdicts"
+          >
+            <Gavel size={14} color={activeView === 'appeals' ? colors.parchment : colors.fog} />
+            <Text style={[s.viewTabText, activeView === 'appeals' && s.viewTabTextActive]}>
+              APPEALS
+            </Text>
+          </PressableScale>
+
+          <PressableScale
+            hitSlop={VIEW_TAB_SLOP}
+            style={[s.viewTab, activeView === 'sanctions' && s.viewTabActive]}
+            onPress={() => switchView('sanctions')}
+            haptic="selection"
+            pressedScale={0.95}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeView === 'sanctions' }}
+            accessibilityLabel="Sanctions: the bans and suspensions standing"
+          >
+            <Lock size={14} color={activeView === 'sanctions' ? colors.parchment : colors.fog} />
+            <Text style={[s.viewTabText, activeView === 'sanctions' && s.viewTabTextActive]}>
+              SANCTIONS
+            </Text>
+          </PressableScale>
         </View>
 
         {/* ── Multi-select toolbar ────────────────────────────────────── */}
@@ -866,7 +1018,7 @@ function TribunalScreen() {
                 pressedScale={0.95}
                 disabled={bulkDismissMutation.isPending}
                 accessibilityRole="button"
-                accessibilityLabel={`Bulk dismiss ${selectedReports.size} reports`}
+                accessibilityLabel={`Bulk dismiss ${counted(selectedReports.size, 'report', 'reports')}`}
               >
                 {bulkDismissMutation.isPending ? (
                   <ActivityIndicator size="small" color={colors.parchment} />
@@ -884,6 +1036,11 @@ function TribunalScreen() {
         )}
       </Arrive>
 
+      {activeView === 'appeals' ? (
+        <AppealsDocket adminId={user.id} end={end} />
+      ) : activeView === 'sanctions' ? (
+        <SanctionsList end={end} />
+      ) : (
       <ScrollView
         contentContainerStyle={[s.listContent, { paddingBottom: end }]}
         refreshControl={
@@ -1024,8 +1181,14 @@ function TribunalScreen() {
                       {ev?.data ? (
                         ev.data.found ? (
                           <>
-                            {!!ev.data.title && <Text style={s.evidenceTitle} numberOfLines={2}>{ev.data.title}</Text>}
-                            <Text style={s.contextValue} selectable>“{ev.data.body}”</Text>
+                            <Exhibit words={ev.data} said={ev.data.changed ? 'AS IT STANDS NOW' : undefined} />
+                            {/* Edited since it was reported: the moderator judges the words reported,
+                                kept by the house when the report was filed (round 14). */}
+                            {ev.data.changed && !!ev.data.reported && (
+                              <View style={s.asReported}>
+                                <Exhibit words={ev.data.reported} said="AS REPORTED · EDITED SINCE" />
+                              </View>
+                            )}
                             {!!ev.data.route && (
                               <PressableScale room="vertical"
                                 onPress={() => nav.push(ev.data!.route!)}
@@ -1039,7 +1202,15 @@ function TribunalScreen() {
                             )}
                           </>
                         ) : (
-                          <Text style={s.evidenceDestroyed}>The evidence has been destroyed — the page no longer exists.</Text>
+                          <>
+                            <Text style={s.evidenceDestroyed}>{evidenceGoneSays(ev.data)}</Text>
+                            {/* Deleted since it was reported: its words, as reported, still judge the member. */}
+                            {!!ev.data.reported && (
+                              <View style={s.asReported}>
+                                <Exhibit words={ev.data.reported} said="THE WORDS AS REPORTED" />
+                              </View>
+                            )}
+                          </>
                         )
                       ) : (
                         <PressableScale room
@@ -1068,7 +1239,7 @@ function TribunalScreen() {
                     </View>
 
                     {/* Enforcement History — only a real member has a record */}
-                    {!!item.target_user_id && <EnforcementHistory history={historyByUser[item.target_user_id] ?? []} isLoading={historyLoading} failed={historyFailed} onRetry={() => { void rereadHistory(); }} />}
+                    {!!item.target_user_id && <EnforcementHistory history={historyByUser[item.target_user_id] ?? []} isLoading={recordReading(item.target_user_id)} failed={recordFailed(item.target_user_id)} onRetry={() => rereadRecord(item.target_user_id!)} />}
 
                     {/* Action Row — hidden in multi-select mode */}
                     {!multiSelectMode && (
@@ -1102,31 +1273,27 @@ function TribunalScreen() {
                         </View>
 
                         {/* Removing the reported piece — a different axis from the
-                            punishments below, so it stands on its own row.
-                            Hidden for a profile report: a profile is not content,
-                            the server refuses it, and a button that cannot work
-                            should never be offered. Still shown when the member
-                            has left, because their content can outlive them. */}
-                        {/* A LOUNGE joins `profile` here. Step one added
-                            `lounge` to the reports CHECK — reporting a room had
-                            been failing silently in production until then — and
-                            the moment it became reportable, this button became
-                            offerable for it. A room is a PLACE, not a piece:
-                            removing it would take every message anyone ever left
-                            in it, which is not what "remove the reported
-                            content" means, and the server refuses the type
-                            anyway. The act on a bad room is on its owner. */}
-                        {/* Nor when the evidence is known destroyed: the piece is already gone, and
+                            punishments below, so it stands on its own row. Still
+                            shown when the member has left, because their content
+                            can outlive them. On a page or a salon it takes what was
+                            written on it (a page's words, name, picture and links; a
+                            salon's name, description and cover), never the page or the
+                            room: a ban freezes the member's own page and salon, so
+                            without it a slur in a bio or a salon's name stood for as
+                            long as the ban did (round 14). */}
+                        {/* Not when the evidence is known destroyed: the piece is already gone, and
                             a removal would remove nothing (the house refuses it, round 11). The
                             case is then dismissed, or judged on its member. */}
-                        {item.content_type !== 'profile' && item.content_type !== 'lounge' && !(ev?.data && !ev.data.found) && (
+                        {!(ev?.data && !ev.data.found) && (
                           <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             style={[s.actionBtn, { borderColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.08)' }]}
                             onPress={() => openActionModal('delete_content', item)}
                             haptic="medium"
                             pressedScale={0.95}
                             accessibilityRole="button"
-                            accessibilityLabel="Remove the reported content"
+                            accessibilityLabel={item.content_type === 'profile' ? 'Remove content: clear the words on the page'
+                              : item.content_type === 'lounge' ? 'Remove content: clear the salon’s name and words'
+                              : 'Remove the reported content'}
                           >
                             <Trash2 size={14} color={colors.sepia} />
                             <Text style={[s.actionText, { color: colors.sepia }]}>REMOVE CONTENT</Text>
@@ -1226,6 +1393,7 @@ function TribunalScreen() {
           </>
         )}
       </ScrollView>
+      )}
 
       {/* Action Modal */}
       <ActionModal
@@ -1246,7 +1414,9 @@ function TribunalScreen() {
  */
 const VIEW_GAP = 8;
 const TOOLBAR_GAP = 12;
-const VIEW_TAB_SLOP = { top: 15, bottom: TOOLBAR_GAP / 2, left: VIEW_GAP / 2, right: VIEW_GAP / 2 };
+// Four tabs, two rows of two (round 14): each reaches half the gap toward every neighbour, the row
+// below it included; each is 48 tall by its own box, so the reach is courtesy, never size.
+const VIEW_TAB_SLOP = { top: VIEW_GAP / 2, bottom: VIEW_GAP / 2, left: VIEW_GAP / 2, right: VIEW_GAP / 2 };
 const TOOLBAR_SLOP = { top: TOOLBAR_GAP / 2, bottom: 15, left: 4, right: 4 };
 
 const s = StyleSheet.create({
@@ -1343,6 +1513,11 @@ const s = StyleSheet.create({
   evidenceTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, marginBottom: 4 },
   evidenceOpen: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.6, color: colors.sepia, marginTop: 8 },
   evidenceDestroyed: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog },
+  // The words as reported, set off from the piece as it stands (round 14).
+  asReported: { marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash },
+  exhibitSaid: { color: colors.sepia },
+  exhibitPicture: { width: 64, height: 64, borderRadius: 2, marginVertical: 6, backgroundColor: 'rgba(0,0,0,0.35)' },
+  exhibitGone: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.fog, marginVertical: 6 },
   summonBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderStyle: 'dashed',
@@ -1427,7 +1602,8 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   historyEmpty: { fontFamily: fonts.body, fontSize: 12, color: colors.fog },
-  historyRetry: { marginTop: 6, alignSelf: 'flex-start' },
+  // Its box grown to 48 reaches below its words: kept clear of DISMISS's reach beneath (the touch sweep).
+  historyRetry: { marginTop: 6, marginBottom: 8, alignSelf: 'flex-start' },
   historyRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8, gap: 8 },
   historyDot: {
     width: 6,
@@ -1436,6 +1612,8 @@ const s = StyleSheet.create({
     backgroundColor: colors.sepia,
     marginTop: 4,
   },
+  // A verdict struck (overturned, lifted): its dot hollow, the words beside it say which.
+  historyDotStruck: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.fog },
   historyContent: { flex: 1 },
   historyAction: {
     fontFamily: fonts.sub,
@@ -1551,12 +1729,15 @@ const s = StyleSheet.create({
   // ── View Toggle ────────────────────────────────────────────────────────
   viewToggleRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: VIEW_GAP,
     marginTop: 16,
   },
-  // 48 by its own box, as every control on the bench is.
+  // 48 by its own box, as every control on the bench is; two to a row, a word each, and at the
+  // largest text a tab takes a row of its own rather than cut its word.
   viewTab: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '40%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -29,6 +29,12 @@ let mockKeyboard = 0;
 jest.mock('@/src/hooks/useModalKeyboardPadding', () => ({
   useModalKeyboardHeight: () => ({ value: mockKeyboard }),
   useModalKeyboardPadding: (base = 0) => ({ paddingBottom: base + mockKeyboard }),
+  // As the real one: on iOS the foot gives way to the sheet's gap as the keys rise; Android keeps it.
+  useSheetFootWhileTyping: (foot: number) => ({
+    paddingBottom: require('react-native').Platform.OS === 'ios'
+      ? Math.max(require('@/src/components/layout/navMetrics').SHEET_BOTTOM_GAP, foot - mockKeyboard)
+      : foot,
+  }),
 }));
 jest.mock('react-native-gesture-handler', () => {
   const mockReact = require('react');

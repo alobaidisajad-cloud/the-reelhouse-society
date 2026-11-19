@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useEffect } from 'react';
+import { useMyWithheld } from '@/src/hooks/useMyWithheld';
 import { RemoteImage } from '@/src/components/Picture';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
@@ -140,6 +141,8 @@ export default function ProfileArchiveTab({
   onRefresh,
   bottomInset
 }: ProfileArchiveTabProps) {
+  // One's own room reads which of its pieces the house withholds, as it opens (round 14): its posters mark them.
+  useMyWithheld({ reread: !!isSelf });
   const windowWidth = useColumnWidth();
   const grid = useMemo(() => posterColumns(windowWidth, 4), [windowWidth]);
 

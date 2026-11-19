@@ -116,3 +116,22 @@ describe('the joiners are kept where they join, and only there', () => {
     expect(remainingChars(emoji, 'bio')).toBe(MAX_LENGTHS.bio - emoji.length);
   });
 });
+
+// A member's one appeal of a verdict (round 14): cleaned as every member's words are, and kept to the
+// house's rule for it (1,000), never cut inside a character.
+describe('sanitizeAppeal', () => {
+  const { sanitizeAppeal, APPEAL_MAX } = require('../../utils/sanitizeInput') as typeof import('../../utils/sanitizeInput');
+
+  it('an appeal is kept whole, cleaned as stored words are', () => {
+    expect(sanitizeAppeal('')).toBe('');
+    expect(sanitizeAppeal('He spoke first.')).toBe('He spoke first.');
+    expect(sanitizeAppeal(`He spoke${String.fromCodePoint(0x200b)} first.`)).toBe(sanitizeInput(`He spoke${String.fromCodePoint(0x200b)} first.`, 'review'));
+  });
+
+  it('an appeal past the rule is cut at it, never inside a character', () => {
+    expect(APPEAL_MAX).toBe(1000);
+    expect(sanitizeAppeal('a'.repeat(1200))).toHaveLength(1000);
+    const cut = sanitizeAppeal(`${'a'.repeat(999)}${String.fromCodePoint(0x1f3ac)}`);
+    expect(cut).toBe('a'.repeat(999));
+  });
+});

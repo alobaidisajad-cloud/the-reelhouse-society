@@ -619,12 +619,15 @@ add('c3-answers-seeking', (
 // ══ F · EVERYTHING ELSE THE PAGE TOUCHES ════════════════════════════════════
 // The picker as the app shows it (app/dispatch/compose.tsx): its own screen, presented
 // over the page, its sheet at the foot above the phone's edge. Nothing under it is live.
+// As compose.tsx frames it: kept to the foot, in a scroll from the modal's top.
 add('f1-picker', (
-  <View style={[p.screen, { justifyContent: 'flex-end' }]}>
+  <View style={p.screen}>
+  <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingTop: 10 }}>
     <View style={{ paddingBottom: 34 }}>
       {/* `onRules`, as the app passes it: an optional prop left off is a screen it lacks. */}
       <PaperPicker onRules={() => {}} />
     </View>
+  </ScrollView>
   </View>
 ));
 
@@ -851,8 +854,11 @@ const Said = ({ who, text, mine }: { who: string; text: string; mine?: boolean }
   </View>
 );
 
+// The room's transcript, a scroll view kept to its foot as the room's list is: at the largest
+// sizes its earliest words are scrolled up to, never left above the screen's top.
 add('f8c-lounge-in-room', (
-  <View style={[p.screen, { justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 34 }]}>
+  <View style={p.screen}>
+  <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 34 }}>
     {/* Names only over a message, as over a post: no serial on every line said. */}
     <Said who="DAN" text="did anyone actually finish the Ozu run or was that just me" />
     <Said who="MIRA" text="i got three in. the fourth broke me" />
@@ -865,6 +871,7 @@ add('f8c-lounge-in-room', (
     </View>
     <Said who="DAN" text="oh this is the one. reading it now" />
     <Said mine who="" text="the eleven seconds thing ruined me honestly" />
+  </ScrollView>
   </View>
 ));
 
@@ -875,8 +882,10 @@ const MAXNAME: PaperAuthor = {
   tier: 'archivist', avatar: artPath('Setsuko Hara'),
 };
 
+// In a scroll view kept to its foot, as the room's transcript is.
 add('f8d-lounge-long-name', (
-  <View style={[p.screen, { justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 34, gap: 10 }]}>
+  <View style={p.screen}>
+  <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 34, gap: 10 }}>
     <LoungeCard kind="take" author={MAXNAME} certifyCount={2100} commentCount={318}
       body="Tokyo Story is the only film that has ever made me telephone my mother the same night." />
     <LoungeCard kind="wire" author={MAXNAME} certifyCount={44} commentCount={6}
@@ -885,6 +894,7 @@ add('f8d-lounge-long-name', (
     <LoungeCard kind="dossier" author={MAXNAME} certifyCount={61} commentCount={14}
       title="On the Long Silence in the Films of Yasujiro Ozu, and the Room Left Empty"
       body="There is a shot in Tokyo Story that lasts eleven seconds after everyone has left the frame." />
+  </ScrollView>
   </View>
 ));
 
@@ -914,8 +924,12 @@ add('f7c-share-story', (
 /* Every kind travels into a lounge — that is pointing at something, not a
    poster of yourself — so all five are drawn, stacked, to check the kind's ink
    still reads at bubble size and the meta line holds at one line for each. */
+// In a scroll view kept to its foot, as the room's transcript is (its list starts from the
+// bottom): at the largest sizes the cards outgrow the screen, and the earliest is scrolled up
+// to, never left above the screen's top.
 add('f8-lounge-card', (
-  <View style={[p.screen, { justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 34, gap: 10 }]}>
+  <View style={p.screen}>
+  <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 34, gap: 10 }}>
     <Text style={{ fontFamily: 'SpecialElite_400Regular', fontSize: 7.5, letterSpacing: 1.6, color: '#9E9488', marginBottom: 2 }}>
       MIRA · SHARED A FILING
     </Text>
@@ -931,6 +945,7 @@ add('f8-lounge-card', (
     <LoungeCard kind="dossier" author={ANA} certifyCount={61} commentCount={14}
       title="The Long Silence in Ozu"
       body="There is a shot in Tokyo Story that lasts eleven seconds after everyone has left the frame." />
+  </ScrollView>
   </View>
 ));
 
@@ -1273,9 +1288,13 @@ add('t9-se-desk', (
 
 describe('paper mockups', () => {
   it('renders every screen to html', () => {
+    // Each is a plate: the paper's pieces laid out whole on a board the phone's size, a page's
+    // scroll not drawn. layout.cjs judges a plate's words but not where a page would end
+    // (`data-plate`): a foot past the phone's is the board, not the phone.
+    const plate = (html: string) => html.replace(/^<(\w+)/, '<$1 data-plate="1"');
     for (const [name, el] of out) {
       const r = render(el);
-      writeScreen(name, toHtml(r.toJSON(), { posters: IMAGES, local: LOCAL_ART }));
+      writeScreen(name, plate(toHtml(r.toJSON(), { posters: IMAGES, local: LOCAL_ART })));
       r.unmount();
     }
     expect(out.length).toBeGreaterThan(15);

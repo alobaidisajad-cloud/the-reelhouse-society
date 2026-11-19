@@ -26,7 +26,7 @@
  *
  * Rendering either one the other way is the whole bug.
  */
-import { formatDate, formatDateMonthYear, formatDateMonthDay, formatClockTime, localCalendarDate, timeAgo, timeUntil } from '../timeAgo';
+import { formatDate, formatDateMonthYear, formatDateMonthDay, formatDateMonthDayInYear, formatClockTime, localCalendarDate, timeAgo, timeUntil } from '../timeAgo';
 import { formatDossierDate } from '@/src/components/person/PersonHero';
 import { buildFilingMark } from '@/src/components/log/logRecord';
 
@@ -217,5 +217,41 @@ describe('timeUntil — the future, said forward', () => {
     expect(timeUntil(at(-60_000))).toBe('');
     expect(timeUntil(null)).toBe('');
     expect(timeUntil('not a date')).toBe('');
+  });
+});
+
+// Round 14: a salon scrolled back to last November printed "NOVEMBER 12", and an essay filed then
+// "7 MIN · NOV 12": both read as this year's.
+describe(`a day of another year says its year [TZ=${TZ}]`, () => {
+  /** Noon on a day of the member's own calendar: the same day in every zone. */
+  const localNoon = (y: number, m: number, d: number) => new Date(y, m - 1, d, 12).getTime();
+  const NOW = localNoon(2026, 11, 19);
+
+  it('this year: the month and day alone', () => {
+    expect(formatDateMonthDayInYear(new Date(localNoon(2026, 3, 4)), NOW)).toBe('MAR 4');
+    expect(formatDateMonthDayInYear(new Date(localNoon(2026, 11, 12)), NOW, 'long')).toBe('NOVEMBER 12');
+  });
+
+  it('another year, before or after: the year said', () => {
+    expect(formatDateMonthDayInYear(new Date(localNoon(2025, 11, 12)), NOW)).toBe('NOV 12, 2025');
+    expect(formatDateMonthDayInYear(new Date(localNoon(2025, 11, 12)), NOW, 'long')).toBe('NOVEMBER 12, 2025');
+    expect(formatDateMonthDayInYear(new Date(localNoon(2027, 1, 2)), NOW)).toBe('JAN 2, 2027');
+  });
+
+  it('a calendar date keeps its own day and year, in every zone', () => {
+    expect(formatDateMonthDayInYear('2026-01-01', NOW)).toBe('JAN 1');
+    expect(formatDateMonthDayInYear('2025-12-31', NOW)).toBe('DEC 31, 2025');
+  });
+
+  it('the year turns with the clock: 30 December says its year on 2 January', () => {
+    expect(formatDateMonthDayInYear(new Date(localNoon(2026, 12, 30)), localNoon(2026, 12, 31))).toBe('DEC 30');
+    expect(formatDateMonthDayInYear(new Date(localNoon(2026, 12, 30)), localNoon(2027, 1, 2))).toBe('DEC 30, 2026');
+  });
+
+  it('nothing is nothing, and an unreadable string is echoed, never NaN', () => {
+    expect(formatDateMonthDayInYear(null, NOW)).toBe('');
+    expect(formatDateMonthDayInYear(undefined, NOW)).toBe('');
+    expect(formatDateMonthDayInYear('', NOW)).toBe('');
+    expect(formatDateMonthDayInYear('not-a-date', NOW)).toBe('not-a-date');
   });
 });

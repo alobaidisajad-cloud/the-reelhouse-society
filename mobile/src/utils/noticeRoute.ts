@@ -37,7 +37,14 @@ export function lobbyRoute(key: string | null | undefined): string | null {
   return null;
 }
 
-export function noticeRoute(notice: Pick<AppNotification, 'group_key' | 'film_id' | 'from_username'> & { from_user_id?: string | null; related_lounge_id?: string | null }): string | null {
+/** The notices board, where a notice of the house's opens its verdict whole (VerdictSheet). */
+export const VERDICT_BOARD = '/notifications-modal';
+
+export function noticeRoute(notice: Pick<AppNotification, 'group_key' | 'film_id' | 'from_username'> & { from_user_id?: string | null; related_lounge_id?: string | null; verdict_id?: string | null }): string | null {
+  // A notice of the house's about a verdict on the member (a warning, a pause, a closing, a removal,
+  // a lifting, an appeal heard) opens that verdict whole on the board: its reason in full, and its
+  // one appeal (review round 14). Before, it pointed nowhere and its reason was cut at three lines.
+  if (notice.verdict_id && UUID.test(notice.verdict_id)) return `${VERDICT_BOARD}?verdict=${notice.verdict_id}`;
   const honoured = lobbyRoute(notice.group_key);
   if (honoured) return honoured;
   const about = groupRoute(parseGroupKey(notice.group_key));

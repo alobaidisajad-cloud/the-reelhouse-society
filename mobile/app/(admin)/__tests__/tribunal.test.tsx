@@ -580,20 +580,24 @@ describe('TribunalScreen Integration', () => {
         expect(getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy();
       });
 
+      // THE DOCKET, where the Tribunal opens, reads its own members' records (round 14: it read
+      // none, and a repeat offender there read as a first offence): ONE call for its cards.
+      await waitFor(() => {
+        expect(mockGetModerationHistoryForUsers).toHaveBeenCalledTimes(1);
+      });
+      const calls = mockGetModerationHistoryForUsers.mock.calls;
+      expect([...calls[0][0]].sort()).toEqual(['target-user-1', 'target-user-2']);
+
       await act(async () => {
         await fireEvent.press(getByLabelText('Urgent: the priority queue'));
       });
 
+      // URGENT's members are read in ONE call more, carrying only the members it brought — not one
+      // call per card, and never every record already held again (round 14) — the repeat offender once.
       await waitFor(() => {
-        expect(mockGetModerationHistoryForUsers).toHaveBeenCalled();
+        expect(calls.length).toBe(2);
       });
-
-      // ONE call carrying EVERY member on the docket — not one call per card.
-      const calls = mockGetModerationHistoryForUsers.mock.calls;
-      expect(calls.length).toBe(1);
-      const [userIds] = calls[0];
-      // Every member on the docket, and the repeat offender once.
-      expect([...userIds].sort()).toEqual(['target-user-3', 'target-user-4']);
+      expect([...calls[1][0]].sort()).toEqual(['target-user-3', 'target-user-4']);
     });
   });
 

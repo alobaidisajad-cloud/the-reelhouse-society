@@ -66,7 +66,11 @@ jest.mock('@/src/stores/settings', () => {
   return { useSettingsStore };
 });
 jest.mock('@/src/hooks/useUpdateUser', () => ({ useUpdateUser: () => ({ mutateAsync: jest.fn(() => Promise.resolve()), isPending: false }) }));
-jest.mock('@/src/services/ModerationService', () => ({ ModerationService: { getPendingCount: jest.fn(() => Promise.resolve(0)) } }));
+jest.mock('@/src/services/ModerationService', () => ({ ModerationService: {
+  getTribunalWaiting: jest.fn(() => Promise.resolve({ cases: 0, appeals: 0 })),
+  // Settings reads the member's record of verdicts too (round 14): a clean one, here.
+  getMyVerdicts: jest.fn(() => Promise.resolve([])),
+} }));
 jest.mock('@/src/lib/pushNotifications', () => ({
   getPushPermissionState: jest.fn(() => Promise.resolve('granted')),
   requestPushPermission: jest.fn(() => Promise.resolve('granted')),

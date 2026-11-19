@@ -5,7 +5,7 @@ import React, { useMemo, memo } from 'react';
 import Svg, { Circle, Text as SvgText, Line } from 'react-native-svg';
 import { colors, fonts } from '@/src/theme/theme';
 import { scaledTextProps } from '@/src/constants/textScaling';
-import { RoomRetrieving, RoomUnreachable } from './RoomParts';
+import { RoomClosed, RoomRetrieving, RoomUnreachable } from './RoomParts';
 import { Arrive } from '@/src/components/Arrive';
 
 /** get_public_profile_analytics: the member's record over the WHOLE history. */
@@ -160,7 +160,10 @@ export const NoirPassport = memo(function NoirPassport({ analytics, failed, onRe
     if (!stamps) {
         return (
             <View style={s.container}>
-                {failed || analytics
+                {/* The house refused this reader the record (a refusal, never data): closed, not failed. */}
+                {analytics?.error
+                    ? <RoomClosed room="the passport" />
+                    : failed || analytics
                     ? <RoomUnreachable room="the passport" onRetry={onRetry ?? (() => {})} />
                     : <RoomRetrieving room="the passport" />}
             </View>

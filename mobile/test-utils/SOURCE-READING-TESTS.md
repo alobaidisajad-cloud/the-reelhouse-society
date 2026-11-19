@@ -285,6 +285,9 @@ Decisions, as of 2026-09-28:
 | `src/utils/__tests__/heartbeatsAreKept.test.ts` | The workflows' schedules and heartbeat jobs, and register/alert-rules.json: what GitHub runs, which no render reaches. |
 | `src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts` | The installed Reanimated's Android NativeProxy and the manifest's range: native code and a version no render reaches. |
 | `plugins/__tests__/withHouseDialogs.test.ts` | app.json's plugins: the dialog plugin is listed, so the build runs it. |
+| `src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts` | The edge functions' entry files (sign-in-with-username, tmdb-proxy, fetch-rss) and both copies of _shared/callerAddress.js, comments stripped: how each paces its caller, and that the sign-in counts before any password and gives back what the house could not answer. Edge functions run in Deno, where no jest render reaches; callerAddress itself is run in this file, and the functions world (e2e/functions/suites.mjs) runs each. |
+| `src/components/__tests__/aCardIsCutAsThePhoneCutsIt.test.ts` | The rehearsals in supabase/diagnostics (pg_temp.ha4_cut pairs): the house's card cut is held to the phone's cardTitle pairs, which this file runs. A migration's SQL runs where no jest reaches; the rehearsal runs it on production's shape. |
+| `mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts` | The layout check's self-test (mockups/tools/selftest.cjs), read from its syntax tree for its own CASES list, so every case it draws is answered in every pass; the self-test is then run, and each rule's cases are a test of their own. |
 
 ## Mounted
 

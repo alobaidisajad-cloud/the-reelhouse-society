@@ -33,7 +33,12 @@ let mockOptions: { queryFn: (ctx: { signal?: AbortSignal }) => Promise<Record<st
 let mockCache: Record<string, unknown> | undefined;
 jest.mock('@tanstack/react-query', () => ({
   ...jest.requireActual('@tanstack/react-query'),
-  useQuery: (opts: never) => { mockOptions = opts; return mockQuery; },
+  // the log's own read; any other on the page (a withheld critique's mark, round 14) answers nothing
+  useQuery: (opts: { queryKey: unknown[] }) => {
+    if (opts.queryKey[0] !== 'log') return { data: undefined };
+    mockOptions = opts as never;
+    return mockQuery;
+  },
   useQueryClient: () => ({
     setQueryData: jest.fn((_k: unknown, fn: (old: unknown) => unknown) => { mockCache = fn(mockCache) as never; }),
     getQueryData: jest.fn(() => mockCache),
@@ -254,5 +259,18 @@ describe('a critique on its way (review round 10)', () => {
     expect(r.getByLabelText('Write a critique on this log').props.editable).toBe(true);
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Write a critique on this log'), 'A fourth look.'); });
     expect(r.getByLabelText('Write a critique on this log').props.value).toBe('A fourth look.');
+  });
+});
+
+describe('a critique the house asks to wait for (round 14)', () => {
+  it('says how long, keeps the words in the box, and keeps nothing for later', async () => {
+    const add = mockLogService.addLogComment;
+    expect(add).toBeDefined();
+    add!.mockRejectedValue({ code: 'RH429', message: 'RATE_LIMITED', details: 'target', hint: '3600' });
+    const r = await mount();
+    await file(r);
+    expect(mockToastError.mock.calls).toEqual([['You have filed many critiques here within the hour. The house takes your next one here in an hour.']]);
+    expect(r.getByLabelText('Write a critique on this log').props.value).toBe('A third look.');
+    expect(mockEnqueue).not.toHaveBeenCalled();
   });
 });

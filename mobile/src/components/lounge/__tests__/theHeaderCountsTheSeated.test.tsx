@@ -7,7 +7,7 @@
  * is told the approved alone; anyone else, the house's own member_count, as the corridor's card.
  */
 import React from 'react';
-import { act, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { create } from 'zustand';
 
 import LoungeRoomScreen from '@/app/lounge/[id]';
@@ -51,7 +51,9 @@ jest.mock('expo-router/react-navigation', () => ({ ...jest.requireActual('expo-r
 jest.mock('@/src/hooks/useOfflineAware', () => ({ useOfflineAware: () => ({ isOffline: false }) }));
 jest.mock('@/src/hooks/useClearance', () => ({ useClearance: () => ({ held: true, open: () => {} }) }));
 jest.mock('@/src/lib/sentry', () => ({ captureError: jest.fn() }));
-jest.mock('@/src/components/lounge/LoungeSettingsPanel', () => ({ LoungeSettingsPanel: () => null }));
+/** Whether the room's sheet (its name and words whole, its roster) is open. */
+let mockSheetOpen = false;
+jest.mock('@/src/components/lounge/LoungeSettingsPanel', () => ({ LoungeSettingsPanel: (p: { visible: boolean }) => { mockSheetOpen = p.visible; return null; } }));
 
 const { useLoungeStore } = jest.requireMock('@/src/stores/lounge') as {
   useLoungeStore: ReturnType<typeof create> & { setState: (s: object) => void };
@@ -112,5 +114,17 @@ describe('the salon’s header, counting its members', () => {
     const r = await openAs(ME);
     expect(r.getByText('9 MEMBERS')).toBeTruthy();
     expect(r.queryByText('1 MEMBER')).toBeNull();
+  });
+});
+
+describe('the salon’s name in its header', () => {
+  it('opens the sheet that reads the name and the description whole, named for what it is', async () => {
+    // Round 14: cut to one line here, the name did nothing when pressed, and the whole of it sat
+    // behind a gear named "Lounge settings".
+    mockRoster = [{ user_id: HOST, status: 'approved', username: 'host' }, { user_id: ME, status: 'approved', username: 'me' }];
+    const r = await openAs(ME);
+    expect(mockSheetOpen).toBe(false);
+    await act(async () => { await fireEvent.press(r.getByLabelText('About The Back Row')); });
+    expect(mockSheetOpen).toBe(true);
   });
 });

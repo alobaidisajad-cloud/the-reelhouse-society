@@ -17,7 +17,7 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { View, Text } from 'react-native';
+import { ScrollView, View, Text } from 'react-native';
 import { writeScreen } from '@/mockups/paths';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 
@@ -76,12 +76,15 @@ describe('what a draft makes visible', () => {
     );
     writeScreen('y1-the-restore-line', toHtml(room.toJSON()));
 
+    // As compose.tsx frames it: kept to the foot, in a scroll from the modal's top.
     const picker = render(
-      <View style={[p.screen, { justifyContent: 'flex-end' }]}>
-        <PaperPicker
-          forms={FORMS.map((f) => ({ ...f, locked: false, inProgress: true }))}
-          onRules={() => {}}
-        />
+      <View style={p.screen}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingTop: 10 }}>
+          <PaperPicker
+            forms={FORMS.map((f) => ({ ...f, locked: false, inProgress: true }))}
+            onRules={() => {}}
+          />
+        </ScrollView>
       </View>,
     );
     writeScreen('y2-picker-in-progress', toHtml(picker.toJSON()));

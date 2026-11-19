@@ -7,6 +7,7 @@ import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Disc, Film as FilmIcon, Search } from 'lucide-react-native';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
+import { counted } from '@/src/utils/counted';
 import { nav } from '@/src/utils/typedRouter';
 import { byKey } from '@/src/utils/order';
 import { prefetchPictures } from '@/src/utils/prefetchPictures';
@@ -332,7 +333,7 @@ export default React.memo(function ProfilePhysicalTab({
           on={!physicalFilter}
           onPress={() => setPhysicalFilter(null)}
           gap={8}
-          a11y={totalVault !== undefined ? `Show all shelves, ${totalVault} copies` : 'Show all shelves'}
+          a11y={totalVault !== undefined ? `Show all shelves, ${counted(totalVault, 'copy', 'copies')}` : 'Show all shelves'}
         />
         {shelfChips.map((f) => (
           <RoomChip
@@ -342,7 +343,7 @@ export default React.memo(function ProfilePhysicalTab({
             on={physicalFilter === f.id}
             onPress={() => setPhysicalFilter(physicalFilter === f.id ? null : f.id)}
             gap={8}
-            a11y={f.count !== undefined ? `Show only ${f.label}, ${f.count} copies` : `Show only ${f.label}`}
+            a11y={f.count !== undefined ? `Show only ${f.label}, ${counted(f.count, 'copy', 'copies')}` : `Show only ${f.label}`}
           />
         ))}
         {/* WHICH shelves, then in what ORDER on them — one row, one hairline,

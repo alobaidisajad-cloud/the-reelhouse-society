@@ -345,3 +345,22 @@ export function formatTMDBDate(dateStr: string | undefined | null, format: 'shor
   // A bare year (TMDB's when it does not know the day), or anything else, as it came.
   return dateStr;
 }
+
+/**
+ * Month and day, with the year when it is not this one: "NOV 12" this year, "NOV 12, 2025" before.
+ *
+ * A date that leaves out its year is read as this year's: a salon scrolled back to last November,
+ * or an essay filed then, printed "NOVEMBER 12" (round 14). `now` is the reader's clock (useClock),
+ * so the year is added the moment the year turns.
+ */
+export function formatDateMonthDayInYear(
+  dateStr: string | Date | undefined | null,
+  now: number,
+  format: 'short' | 'long' = 'short',
+): string {
+  if (!dateStr) return '';
+  const parts = toParts(dateStr);
+  if (!parts) return echo(dateStr);
+  const day = `${(format === 'long' ? MONTHS_LONG : MONTHS_SHORT)[parts.month]} ${parts.day}`;
+  return parts.year === new Date(now).getFullYear() ? day : `${day}, ${parts.year}`;
+}

@@ -63,7 +63,7 @@ import { useClearance } from '@/src/hooks/useClearance';
 import { ropeCta, ropeSpoken } from '@/src/components/clearance/Clearance';
 import { EDGE_LIT } from '@/src/theme/light';
 import { RoomLight } from '@/src/components/atmosphere/RoomLight';
-import { formatClockTime, formatDateMonthDay } from '@/src/utils/timeAgo';
+import { formatClockTime, formatDateMonthDayInYear } from '@/src/utils/timeAgo';
 import { useClock } from '@/src/hooks/useClock';
 import { useScreenReady } from '@/src/hooks/useScreenReady';
 import { EmptyOffline } from '@/src/components/EmptyStates';
@@ -398,14 +398,16 @@ Dispatch.displayName = 'Dispatch';
 /** Between the composer, or a bar in its place, and the home indicator's edge. */
 export const BAR_FOOT_GAP = 8;
 
-function formatDay(iso: string, now: number): string {
+/** A day divider's words: TODAY, YESTERDAY, or the day, with its year when it is not this one. */
+export function formatDay(iso: string, now: number): string {
   const d = dateOf(iso);
   const today = new Date(now);
   const yesterday = new Date(now); yesterday.setDate(today.getDate() - 1);
   const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   if (sameDay(d, today)) return 'TODAY';
   if (sameDay(d, yesterday)) return 'YESTERDAY';
-  return formatDateMonthDay(d, 'long');
+  // A day of another year says its year: last November's 12th is not this one's.
+  return formatDateMonthDayInYear(d, now, 'long');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -854,7 +856,12 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
 
         <View style={s.headerCenter}>
           <View style={s.headerCrest}><MasterLogo size={22} /></View>
-          <Text style={s.headerTitle} numberOfLines={1}>{struckRoom(activeLounge.name)}</Text>
+          {/* The name, cut to one line here, opens the sheet that reads it whole with the room's
+              description (round 14: they were whole only behind a gear named "Lounge settings"). */}
+          <PressableScale room="vertical" onPress={() => setSettingsOpen(true)} haptic="selection"
+            accessibilityRole="button" accessibilityLabel={`About ${saidStruck(struckRoom(activeLounge.name))}`}>
+            <Text style={s.headerTitle} numberOfLines={1}>{struckRoom(activeLounge.name)}</Text>
+          </PressableScale>
           <View style={s.headerMeta}>
             <Text style={s.headerMetaText} numberOfLines={1}>
               {counted(seated, 'MEMBER', 'MEMBERS')}

@@ -15,7 +15,7 @@ import PressableScale from '../PressableScale';
 import type { ProfileAnalyticsPayload } from './NoirPassport';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { standingFor } from '@/src/constants/standing';
-import { RoomRetrieving, RoomUnreachable } from './RoomParts';
+import { RoomClosed, RoomRetrieving, RoomUnreachable } from './RoomParts';
 import { SCROLLBAR_STANDS } from '@/src/components/layout/CinematicScrollbar';
 
 /** A reading needs this many films before it says anything. */
@@ -62,7 +62,10 @@ export const CinemaDNACard = memo(function CinemaDNACard({ user, analytics, fail
                     <Text {...scaledTextProps} style={s.eyebrow}>CINEMATIC FINGERPRINT</Text>
                     <Text {...scaledTextProps} style={s.title}>CINEMA DNA</Text>
                     {!stamps
-                        ? (failed || analytics
+                        ? (analytics?.error
+                            // The house refused this reader the record: closed, not failed.
+                            ? <RoomClosed room="the reading" />
+                            : failed || analytics
                             ? <RoomUnreachable room="the reading" onRetry={onRetry ?? (() => {})} />
                             : <RoomRetrieving room="the reading" />)
                         : <Text {...scaledTextProps} style={s.plainLine}>{`A reading needs ${DNA_FLOOR} films; ${totalCount} ${totalCount === 1 ? 'is' : 'are'} logged.`}</Text>}

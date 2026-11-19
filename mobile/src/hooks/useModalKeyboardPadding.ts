@@ -22,6 +22,7 @@
 import { useEffect } from 'react';
 import { Keyboard, Platform, type KeyboardEvent } from 'react-native';
 import { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import { SHEET_BOTTOM_GAP } from '@/src/components/layout/navMetrics';
 
 /** The keyboard's height, as React Native reports it, eased as it moves; 0 while it is down. */
 export function useModalKeyboardHeight() {
@@ -58,4 +59,19 @@ export function useModalKeyboardHeight() {
 export function useModalKeyboardPadding(basePadding: number = 0) {
   const height = useModalKeyboardHeight();
   return useAnimatedStyle(() => ({ paddingBottom: basePadding + height.value }));
+}
+
+/**
+ * A sheet's foot, eased as the keys rise: on iOS the keyboard covers the home indicator, so the
+ * room kept for it gives way to the sheet's own gap (SHEET_BOTTOM_GAP) as the keys come up, and
+ * the sheet's words have it back (round 14: 34pt of the tightest room, kept as dead space above
+ * the keys). Android keeps its foot: React Native's keyboard height there leaves the navigation
+ * bar out, and the foot is what keeps the last control above it.
+ */
+export function useSheetFootWhileTyping(foot: number) {
+  const height = useModalKeyboardHeight();
+  const ios = Platform.OS === 'ios';
+  return useAnimatedStyle(() => ({
+    paddingBottom: ios ? Math.max(SHEET_BOTTOM_GAP, foot - height.value) : foot,
+  }));
 }

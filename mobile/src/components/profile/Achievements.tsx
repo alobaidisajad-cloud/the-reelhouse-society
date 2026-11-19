@@ -9,7 +9,7 @@ import type { ProfileAnalyticsPayload } from './NoirPassport';
 import { decorativeTextProps, scaledTextProps } from '@/src/constants/textScaling';
 import { rungAt } from '@/src/constants/standing';
 import { EDGE_LIT } from '@/src/theme/light';
-import { RoomRetrieving, RoomUnreachable } from './RoomParts';
+import { RoomClosed, RoomRetrieving, RoomUnreachable } from './RoomParts';
 
 /** The member's record over the WHOLE history (the server's count). */
 type Stamps = NonNullable<ProfileAnalyticsPayload['stamps']>;
@@ -139,7 +139,10 @@ export function Achievements({ analytics, totalFilms, failed, onRetry }: {
   if (!stamps) {
     return (
       <View style={s.container}>
-        {failed || analytics
+        {/* The house refused this reader the record (a refusal, never data): closed, not failed. */}
+        {analytics?.error
+          ? <RoomClosed room="the honours" />
+          : failed || analytics
           ? <RoomUnreachable room="the honours" onRetry={onRetry ?? (() => {})} />
           : <RoomRetrieving room="the honours" />}
       </View>

@@ -22,7 +22,7 @@ export function whisperFor(hour: number): string {
 }
 
 /** `No. 273 · WEDNESDAY, SEPTEMBER 30` — the Dispatch's running head, word for word. */
-export const datelineOf = (d: Date) => `No. ${issueOf(d)} · ${dayLabel(d.toISOString())}`;
+export const datelineOf = (d: Date) => `No. ${issueOf(d)} · ${dayLabel(d.toISOString(), d.getFullYear())}`;
 
 /**
  * The wall's clock: read again at the top of every hour (the hour's line, and

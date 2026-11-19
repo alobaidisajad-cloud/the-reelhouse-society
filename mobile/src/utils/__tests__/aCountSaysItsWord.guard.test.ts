@@ -17,9 +17,13 @@ const NOUNS = [
   'people', 'salons', 'filings', 'critiques', 'items', 'words', 'posts', 'reviews', 'times', 'hours', 'weeks', 'months',
   'years', 'minutes', 'seconds', 'nights', 'reels', 'ballots', 'essays', 'takes', 'notes', 'annotations', 'parts',
   'privileges', 'readers', 'pages', 'results', 'tickets', 'screenings', 'certifications', 'lists',
+  // Round 14: spoken counts said "1 new dispatches", "1 copies", "1 reports" and "1 more critiques".
+  'dispatches', 'copies', 'reports', 'appeals', 'requests', 'notices', 'shelves', 'characters', 'letters', 'rows', 'holdings',
 ].join('|');
+/** A word a count may carry before its noun: `${n} new dispatches`, `${n} more critiques`. */
+const BETWEEN = '(?:(?:new|more|other|unread|open|pending)\\s+)?';
 // a value in braces or in a template's ${…}, then its word: the content is code, never a quoted string
-const COUNT_THEN_WORD = new RegExp(`(?:\\$\\{([^{}]+)\\}|\\{([^{}'"]+)\\})\\s*(${NOUNS})\\b`, 'i');
+const COUNT_THEN_WORD = new RegExp(`(?:\\$\\{([^{}]+)\\}|\\{([^{}'"]+)\\})\\s*${BETWEEN}(${NOUNS})\\b`, 'i');
 /** A line that decides the singular itself, on the line it prints on. */
 const DECIDES = /counted\(|[=!]==\s*1\b|>\s*1\s*\?|<\s*2\s*\?/;
 
@@ -35,6 +39,13 @@ const NEVER_ONE: Record<string, string> = {
   'app/(modals)/list-modal.tsx · ${trueFilmCount} reels': 'said only of an index larger than the sheet can hold',
   'app/dispatch/series/[id].tsx · ${total} PARTS': 'said only when the series has more parts than the page shows (MOST_PARTS)',
   'app/year-in-cinema.tsx · ${stats.perMonth.toFixed(1)} entries': 'a decimal: "1.0 entries" is read as English is',
+  'app/(admin)/tribunal.tsx · {count} REPORTS': 'the badge is drawn only past one report (a count of one or none draws nothing)',
+  'src/components/auth/PasswordStrengthMeter.tsx · ${PASSWORD_MAX_BYTES} characters': 'the password ceiling, a constant of dozens',
+  'src/hooks/useEditProfile.ts · ${MAX_LENGTHS.linkUrl} characters': 'the link ceiling, a constant of hundreds',
+  'src/stores/lounge.ts · ${MAX_LENGTHS.loungeName} characters': 'the salon name ceiling, a constant of dozens',
+  'src/features/archive/undoImport.ts · ${receiptSize(receipt)} rows': 'a fraction in a log line for the house, never shown to a member',
+  'src/services/FeedService.ts · ${data.length} rows': 'a fraction in a log line for the house, never shown to a member',
+  'src/utils/validateWithTelemetry.ts · ${data.length} rows': 'a fraction in a log line for the house, never shown to a member',
 };
 
 const code = universe('appCode').map((f) => ({ f: relative(MOBILE, f).split('\\').join('/'), text: readCode(f) }));

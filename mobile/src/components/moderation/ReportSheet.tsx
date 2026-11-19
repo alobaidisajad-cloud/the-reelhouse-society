@@ -16,7 +16,7 @@ import { useWindowDimensions, Modal, ScrollView, StyleSheet, Switch, View } from
 import { Text, TextInput } from '@/src/components/text';
 import { FieldError, useFieldRefusal } from '@/src/components/FieldError';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useModalKeyboardPadding } from '@/src/hooks/useModalKeyboardPadding';
+import { useModalKeyboardPadding, useSheetFootWhileTyping } from '@/src/hooks/useModalKeyboardPadding';
 import { useSheetPresence } from '@/src/hooks/useSheetPresence';
 import Animated, {
     Easing,
@@ -43,7 +43,8 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { ToastHost } from '@/src/components/ToastHost';
 import { arrive, MS } from '@/src/theme/motion';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
-import { useSheetBottom } from '@/src/components/layout/navMetrics';
+import { overlayTop, useSheetBottom } from '@/src/components/layout/navMetrics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -166,6 +167,10 @@ function ReportSheet({
   const { refuse, wrongWith } = useFieldRefusal([details, selectedReason], { details: detailsRef });
   const [blockToggle, setBlockToggle] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  // Where the details field stands in the form: where the form's scroll goes while the details
+  // are typed, once the room above the keys is shorter than the sheet.
+  const form = useRef<ScrollView>(null);
+  const detailsAt = useRef(0);
 
   // ── Sheet Animation ─────────────────────────────────────────────────────
   /**
@@ -188,8 +193,17 @@ function ReportSheet({
   const fill = useWindowFill();
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
   // KEYBOARD LAW (RN-Modal tier): Modal windows never resize on either
-  // platform — the context field rises with the keyboard on BOTH.
-  const kbPad = useModalKeyboardPadding(sheetFoot);
+  // platform — the sheet rises with the keyboard on BOTH. Its frame, from below
+  // the status bar to the foot, is padded by the keys, and the sheet stands at
+  // the frame's foot at its own height: it rises whole and keeps its room, and
+  // only where the room above the keys is shorter than the sheet does it give
+  // up the difference, never past the status bar. The keys were padded INTO
+  // the sheet's fixed height, which left a 65-95pt strip for the form on a short
+  // window, smaller than its own details field (round 14).
+  const kbPad = useModalKeyboardPadding();
+  // Its foot clears the home indicator, and on iOS gives that room to the form while the keys cover it.
+  const foot = useSheetFootWhileTyping(sheetFoot);
+  const frameTop = overlayTop(useSafeAreaInsets().top);
 
   // ── Gesture Dismiss ─────────────────────────────────────────────────────
   const pan = Gesture.Pan()
@@ -269,7 +283,8 @@ function ReportSheet({
           </HouseBlur>
         </Animated.View>
 
-        {/* Sheet */}
+        {/* Sheet, at the foot of the room above the keys */}
+        <AnimatedView testID="report-frame" style={[styles.frame, { top: frameTop }, kbPad]} pointerEvents="box-none">
         <GestureDetector gesture={pan}>
           <AnimatedView
             style={[
@@ -277,17 +292,21 @@ function ReportSheet({
               // Measured now, not at bundle load — so the sheet is correct after
               // a rotation and in split-screen.
               { height: windowHeight * SHEET_HEIGHT_RATIO },
+              foot,
               sheetStyle,
-              kbPad,
             ]}
           >
             {/* Handle Bar */}
             <View style={styles.handle} />
 
             <ScrollView
+              ref={form}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={styles.scrollContent}
+              // The form's room cut by the keys while the details are typed: the field stays in view,
+              // with FILE REPORT under it, a scroll away at most.
+              onLayout={() => { if (isFocused) form.current?.scrollTo({ y: Math.max(0, detailsAt.current - 12), animated: false }); }}
             >
               {/* Header */}
               <Text style={styles.header}>REPORT TO THE TRIBUNAL</Text>
@@ -314,7 +333,7 @@ function ReportSheet({
 
               {/* Additional Context TextInput */}
               {selectedReason && (
-                <Arrive name="report.details" duration={300} style={styles.detailsContainer}>
+                <Arrive name="report.details" duration={300} style={styles.detailsContainer} onLayout={(e) => { detailsAt.current = e.nativeEvent.layout.y; }}>
                   <TextInput
                     ref={detailsRef}
                     style={[
@@ -382,6 +401,7 @@ function ReportSheet({
             </ScrollView>
           </AnimatedView>
         </GestureDetector>
+        </AnimatedView>
       </GestureHandlerRootView>
       <ToastHost />
       </InColumn>
@@ -395,13 +415,18 @@ const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFill,
   },
-  sheet: {
+  // From below the status bar to the foot of the window; its foot is padded by the keys.
+  frame: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+    justifyContent: 'flex-end',
+  },
+  sheet: {
     // height is applied inline from useWindowDimensions: a stylesheet is
-    // evaluated once.
+    // evaluated once. It gives way only where the room above the keys is shorter.
+    flexShrink: 1,
     backgroundColor: colors.ink,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,

@@ -35,7 +35,7 @@ it('counts the leap day in a time until and in an age', () => {
 });
 
 it("prints the paper's label for the 29th", () => {
-  expect(dayLabel(new Date(LEAP_DAY).toISOString())).toBe('TUESDAY, FEBRUARY 29');
+  expect(dayLabel(new Date(LEAP_DAY).toISOString(), 2028)).toBe('TUESDAY, FEBRUARY 29');
 });
 
 it("draws the picker's February 2028 with its 29th and no 30th", async () => {

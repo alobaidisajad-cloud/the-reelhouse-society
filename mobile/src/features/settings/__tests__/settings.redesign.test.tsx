@@ -78,7 +78,13 @@ jest.mock('@/src/services/AuthService', () => ({ AuthService: { requestAccountDe
 /** The profile's own write (visibility): it has no offline path, and is filed before preferences. */
 const mockUpdateUser = jest.fn((_u: Record<string, unknown>) => Promise.resolve());
 jest.mock('@/src/hooks/useUpdateUser', () => ({ useUpdateUser: () => ({ mutateAsync: (u: Record<string, unknown>) => mockUpdateUser(u), isPending: false }) }));
-jest.mock('@/src/services/ModerationService', () => ({ ModerationService: { getPendingCount: jest.fn(() => Promise.resolve(3)) } }));
+// The Tribunal door's count: the cases and the appeals waiting (round 14: read through the query cache).
+const mockTribunalWaiting = jest.fn(() => Promise.resolve({ cases: 3, appeals: 0 }));
+jest.mock('@/src/services/ModerationService', () => ({ ModerationService: {
+  getTribunalWaiting: () => mockTribunalWaiting(),
+  // Settings reads the member's record of verdicts too (round 14): a clean one, here.
+  getMyVerdicts: () => Promise.resolve([]),
+} }));
 jest.mock('@/src/lib/pushNotifications', () => ({
   getPushPermissionState: jest.fn(() => Promise.resolve(mockPerm)),
   requestPushPermission: () => mockRequestPermission(),
@@ -229,6 +235,32 @@ describe('Share crash reports, this phone\'s own choice (P4.46)', () => {
     expect(share).toHaveBeenCalledWith(false);
     expect(r.getByLabelText('Share crash reports').props.accessibilityState).toEqual(expect.objectContaining({ checked: false }));
     share.mockRestore();
+  });
+});
+
+describe('the Tribunal door counts what still waits (round 14)', () => {
+  const { QueryClientProvider } = require('@tanstack/react-query') as typeof import('@tanstack/react-query');
+  const { testQueryClient } = require('@/test-utils/testQueryClient') as typeof import('@/test-utils/testQueryClient');
+
+  it('counts the cases and the appeals waiting', async () => {
+    mockUser = { ...BASE, role: 'admin' };
+    mockTribunalWaiting.mockResolvedValue({ cases: 4, appeals: 1 });
+    const r = await settle(mount());
+    await waitFor(() => expect(r.getByLabelText('ENTER THE TRIBUNAL · 5 WAITING')).toBeTruthy());
+  });
+
+  it('a case judged at the Tribunal above is no longer counted on return: the door is read again with it', async () => {
+    mockUser = { ...BASE, role: 'admin' };
+    mockTribunalWaiting.mockResolvedValue({ cases: 5, appeals: 0 });
+    const client = testQueryClient();
+    const r = render(<QueryClientProvider client={client}><SettingsScreen /></QueryClientProvider>);
+    await waitFor(() => expect(r.getByLabelText('ENTER THE TRIBUNAL · 5 WAITING')).toBeTruthy());
+    // The five judged at the Tribunal, which reads the door again after each verdict.
+    mockTribunalWaiting.mockResolvedValue({ cases: 0, appeals: 0 });
+    await act(async () => { await client.invalidateQueries({ queryKey: ['admin', 'tribunal-waiting'] }); });
+    await waitFor(() => expect(r.getByLabelText('ENTER THE TRIBUNAL')).toBeTruthy());
+    expect(r.queryByLabelText(/WAITING/)).toBeNull();
+    client.clear();
   });
 });
 

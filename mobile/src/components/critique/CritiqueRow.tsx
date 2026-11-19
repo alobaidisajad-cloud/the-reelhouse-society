@@ -32,6 +32,7 @@ import { askToWithdrawCritique } from './withdraw';
 import { authorName } from '@/src/constants/departed';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
 import { useStruck } from '@/src/components/StruckWords';
+import { WithheldBanner } from '@/src/components/moderation/WithheldBanner';
 
 export interface Critique {
   id: string;
@@ -115,6 +116,8 @@ export const CritiqueRow = React.memo(function CritiqueRow({
         <Text style={s.commDate}>{formatDate(c.created_at)}</Text>
       </View>
       <Text style={[s.commBody, isRTLText(c.body) && s.rtlText]} {...scaledTextProps} selectable>{struck(c.body)}</Text>
+      {/* One's own critique the house withholds: marked so, never as if others read it (round 14). */}
+      {mine && <WithheldBanner pieceId={c.id} compact />}
       {mine ? (
         <PressableScale touch="destructive"
           onPress={() => askToWithdrawCritique(() => onWithdraw(c.id))}

@@ -53,7 +53,7 @@ const SERVED = Object.entries(placed.served);
 const NAMES = SERVED.map(([name]) => name).sort();
 
 /** Every source file of a served function, with the shared code they import (the universe's edge functions). */
-const homes = [...SERVED.map(([name, f]) => `${f.dir}/${name}/`), 'mobile/supabase/functions/_shared/'];
+const homes = [...SERVED.map(([name, f]) => `${f.dir}/${name}/`), 'mobile/supabase/functions/_shared/', 'supabase/functions/_shared/'];
 const sources = universe('functions').filter((file) => homes.some((home) => repoRel(file).startsWith(home))).map((file) => ({ file }));
 
 /** Text as code, its comments blanked, so a URL in a comment is not read as a call. */

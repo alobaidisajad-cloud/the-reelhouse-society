@@ -10,6 +10,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from '@/src/components/text';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import PressableScale from '@/src/components/PressableScale';
+import { saidStruck, useStruck } from '@/src/components/StruckWords';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { ceilingFor, lineWidth, linesAt } from '@/src/components/lobby/measure';
@@ -119,12 +120,15 @@ export const StackCan = memo(function StackCan({ stack, width, height, onPress }
   const reels = reelsLine(stack);
   const room = labelRoom(width);
   const curator = curatorLine(stack, certified, room);
+  // A member's title, struck for a member who asked, as it is on the stack's own page (round 14). Each
+  // struck letter is drawn as an x, so the title is the length it was measured at (labelHeight).
+  const title = useStruck()(stack.title);
   return (
     <PressableScale onPress={onPress} haptic hitSlop={null} style={[st.can, { minHeight: height }]}
-      accessibilityLabel={`${stack.title || 'A stack'}. ${reels.toLowerCase().replace(' · ✦ ', ', ')}, curated by @${stack.curator ?? 'society'}${certifyCount ? `, ${counted(certifyCount, 'certification', 'certifications')}` : ''}. Opens the stack.`}>
+      accessibilityLabel={`${saidStruck(title) || 'A stack'}. ${reels.toLowerCase().replace(' · ✦ ', ', ')}, curated by @${stack.curator ?? 'society'}${certifyCount ? `, ${counted(certifyCount, 'certification', 'certifications')}` : ''}. Opens the stack.`}>
       <Fan posters={posters} />
       <View style={st.label}>
-        <Text style={st.title} allowFontScaling maxFontSizeMultiplier={titleCap(stack.title, room)} numberOfLines={CAN.label.title.lines}>{stack.title}</Text>
+        <Text style={st.title} allowFontScaling maxFontSizeMultiplier={titleCap(stack.title, room)} numberOfLines={CAN.label.title.lines}>{title}</Text>
         <Text style={st.reels} {...scaledTextProps}>{reels}</Text>
         <Text style={st.curator} allowFontScaling maxFontSizeMultiplier={curator.cap}>{curator.text}</Text>
       </View>

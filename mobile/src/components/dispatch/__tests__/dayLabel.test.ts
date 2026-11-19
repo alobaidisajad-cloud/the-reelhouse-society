@@ -42,28 +42,34 @@ describe('dayKey', () => {
 describe('dayLabel', () => {
   it('prints the full weekday and month in caps', () => {
     // 2026-08-28 is a Friday.
-    expect(dayLabel(at(2026, 8, 28))).toBe('FRIDAY, AUGUST 28');
+    expect(dayLabel(at(2026, 8, 28), 2026)).toBe('FRIDAY, AUGUST 28');
+  });
+
+  it('a day of another year carries its year (round 14): last November is not this one', () => {
+    // 2025-11-12 is a Wednesday; this year's twelfth is a Thursday.
+    expect(dayLabel(at(2025, 11, 12), 2026)).toBe('WEDNESDAY, NOVEMBER 12, 2025');
+    expect(dayLabel(at(2027, 1, 4), 2026)).toBe('MONDAY, JANUARY 4, 2027');
   });
 
   it('covers every weekday and every month', () => {
     // Not a spot check: an off-by-one in either table would show up on exactly
     // one value, and a single example would find it only by luck.
     const days = new Set<string>();
-    for (let i = 0; i < 7; i++) days.add(dayLabel(at(2026, 8, 23 + i)).split(',')[0]);
+    for (let i = 0; i < 7; i++) days.add(dayLabel(at(2026, 8, 23 + i), 2026).split(',')[0]);
     expect(days).toEqual(new Set([
       'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
     ]));
 
     const months = new Set<string>();
-    for (let m = 1; m <= 12; m++) months.add(dayLabel(at(2026, m, 15)).split(', ')[1].split(' ')[0]);
+    for (let m = 1; m <= 12; m++) months.add(dayLabel(at(2026, m, 15), 2026).split(', ')[1].split(' ')[0]);
     expect(months.size).toBe(12);
     expect(months).toContain('JANUARY');
     expect(months).toContain('DECEMBER');
   });
 
   it('never prints Invalid Date across the top of the feed', () => {
-    expect(dayLabel('not a date')).toBe('');
-    expect(dayLabel('')).toBe('');
+    expect(dayLabel('not a date', 2026)).toBe('');
+    expect(dayLabel('', 2026)).toBe('');
   });
 });
 

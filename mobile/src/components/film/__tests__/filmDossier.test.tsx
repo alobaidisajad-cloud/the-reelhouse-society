@@ -78,6 +78,29 @@ describe('numbers a person would actually write', () => {
     expect(formatMoney(250_000_000)).toBe('$250.0M');
   });
 
+  it('writes a silent picture’s small budget whole, never $0.0M', () => {
+    expect(formatMoney(18_000)).toBe('$18,000');
+    expect(formatMoney(49_999)).toBe('$49,999');
+    expect(formatMoney(999_999)).toBe('$999,999');
+    expect(formatMoney(1_000_000)).toBe('$1.0M');
+    const t = render(<FilmDossier {...base} film={{ ...film, budget: 18_000, revenue: 0 }} />);
+    expect(t.getByText('$18,000')).toBeTruthy();
+    expect(t.queryByText('$0.0M')).toBeNull();
+  });
+
+  it('a sum just under a billion is a billion, never $1000.0M', () => {
+    expect(formatMoney(999_950_000)).toBe('$1.00B');
+    expect(formatMoney(999_940_000)).toBe('$999.9M');
+  });
+
+  it('prints no row for TMDB’s figure entered in millions (1, 100)', () => {
+    expect(formatMoney(1)).toBeUndefined();
+    expect(formatMoney(100)).toBeUndefined();
+    const t = render(<FilmDossier {...base} film={{ ...film, budget: 100, revenue: 1 }} />);
+    expect(t.queryByText('BUDGET')).toBeNull();
+    expect(t.queryByText('TAKINGS')).toBeNull();
+  });
+
   it('shows nothing at all rather than $0.0M', () => {
     expect(formatMoney(0)).toBeUndefined();
     expect(formatMoney(null)).toBeUndefined();

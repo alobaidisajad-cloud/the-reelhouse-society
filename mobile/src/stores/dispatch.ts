@@ -35,6 +35,7 @@ import { e2eTrace } from '../utils/e2eTrace';
 import { logger } from '../utils/logger';
 import { wasOf } from '../utils/keepWhatChangedSince';
 import { keepPage, keptPage } from '../utils/keptPages';
+import { atTheHousesPace } from '../utils/housePace';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
 import { keyOf, writeOnline } from '../utils/oneWritePerThing';
@@ -1059,8 +1060,12 @@ export const useDispatch = create<DispatchState>((set, get) => ({
 
     const row = { id, post_id: postId, user_id: user.id, author_username: user.username ?? '', body: clean };
     try {
-      const { error } = await supabase.from('dispatch_comments').insert([row]);
-      if (error) throw error;
+      // At the house's pace (check_critique_pace, round 14): a moment's wait is waited and the
+      // critique filed; a longer one is thrown, rolled back below, for the page to say how long.
+      await atTheHousesPace(async () => {
+        const { error } = await supabase.from('dispatch_comments').insert([row]);
+        if (error) throw error;
+      });
     } catch (e) {
       // Neither queued as the next member nor taken off their page.
       if (!memberUnchanged(startedAs)) throw e;

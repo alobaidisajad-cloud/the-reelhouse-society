@@ -59,6 +59,16 @@ export function readColumns(sql: string): Map<string, Map<string, Column>> {
     }
     tables.set(m[1] ?? '', cols);
   }
+  // A column a migration adds to a table already made (ALTER TABLE public.t ADD COLUMN [IF NOT
+  // EXISTS] name type): the app ships beside it, as beside a table a migration makes.
+  for (const m of sql.matchAll(/^ALTER TABLE (?:ONLY )?(?:IF EXISTS )?public\.(\w+)\s+([^;]*);/gm)) {
+    const cols = tables.get(m[1] ?? '');
+    if (!cols) continue;
+    for (const a of (m[2] ?? '').matchAll(/ADD COLUMN (?:IF NOT EXISTS )?"?(\w+)"? ([^,]+)/g)) {
+      const spec = (a[2] ?? '').trim();
+      cols.set(a[1] ?? '', { type: (/^([a-z ]+(?:\[\])?|[\w.]+(?:\[\])?)/i.exec(spec)?.[1] ?? '').replace(/ (DEFAULT|NOT|GENERATED).*$/, '').trim(), notNull: / NOT NULL\b/.test(spec) });
+    }
+  }
   for (const m of sql.matchAll(/CREATE (?:MATERIALIZED )?VIEW public\.(\w+)(?: WITH \([^)]*\))? AS\n([\s\S]*?);\n\n/g)) {
     // The view's columns are the names of its first select list.
     const body = m[2] ?? '';
