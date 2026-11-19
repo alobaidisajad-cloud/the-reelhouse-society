@@ -717,7 +717,7 @@
     "class": "E2E-no-flow-on-ios",
     "mutant": "shape-ios-flows-unrun",
     "proof": "m1",
-    "commit": "581a73db34be34ae73552b5e9bd6a38a44de3064",
+    "commit": "a3143df76c7992cc8452838dde0f976c4974b4e4",
     "verdict": "caught"
   },
   {
@@ -5891,6 +5891,13 @@
     "mutant": "shape-kept-debs-keyed-by-no-image",
     "proof": "m2",
     "commit": "bb54f3715a052e58856cdb796aa1ab23377d09cd",
+    "verdict": "caught"
+  },
+  {
+    "class": "E2E-ios-driver-start-unwaited",
+    "mutant": "shape-iphone-flow-never-given-again",
+    "proof": "m4",
+    "commit": "a3143df76c7992cc8452838dde0f976c4974b4e4",
     "verdict": "caught"
   }
 ]
