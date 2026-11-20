@@ -6653,7 +6653,7 @@
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-mutants-before-the-tests-end",
     "proof": "m1",
-    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "commit": "a3cafdf7b44a2d0450a95c5f5638b8b2fa0d084a",
     "verdict": "caught"
   },
   {
@@ -6695,7 +6695,7 @@
     "class": "CI-push-check-past-the-machine",
     "mutant": "shape-cap-ignores-what-runs",
     "proof": "m4",
-    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "commit": "a3cafdf7b44a2d0450a95c5f5638b8b2fa0d084a",
     "verdict": "caught"
   },
   {
@@ -6709,7 +6709,7 @@
     "class": "CI-push-check-past-the-machine",
     "mutant": "shape-rehearsal-mutants-beside-the-rehearsals",
     "proof": "m2",
-    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "commit": "a3cafdf7b44a2d0450a95c5f5638b8b2fa0d084a",
     "verdict": "caught"
   },
   {
