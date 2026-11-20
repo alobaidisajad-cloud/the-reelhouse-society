@@ -271,15 +271,17 @@ const checksFor = ({ bases, touched, changed, files, sizes, lists, clean, mutant
   for (const base of bases) {
     const green = changed.length && clean ? ['--green', `${lists.testReport},${lists.rehearsalReport}`] : [];
     const types = mutants && base === bases[0] ? ['--types-from', lists.types] : [];
+    // The lanes start once the warm checker has answered: no lane ever runs tsc beside it.
+    const warmFirst = types.length ? ['mutant-types'] : [];
     add({
       id: `mutant-rehearsals@${base}`, label: `the mutants a rehearsal proves, standing on what changed from ${base.slice(0, 8)}`, cost: costOf('rehearsal'),
       args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', base, '--lanes', '1', '--rehearsals', 'only', ...green, ...types],
-      after: ['rehearsals'],
+      after: ['rehearsals', ...warmFirst],
     });
     add({
       id: `mutants@${base}`, label: `the mutants standing on what changed from ${base.slice(0, 8)}`, cost: costOf('lane', sizes.lanes),
       args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', base, '--lanes', String(sizes.lanes), '--rehearsals', 'none', ...green, ...types],
-      after: green.length ? ['tests'] : [],
+      after: [...(green.length ? ['tests'] : []), ...warmFirst],
     });
   }
   return checks;
@@ -310,8 +312,9 @@ const fits = (cost, left) => cost.cpu <= left.cpu + 1e-9 && cost.mem <= left.mem
 /**
  * Every check, each started once those it waits for have ended and its cost fits beside the checks
  * running, in the order given: the first ready check that does not fit holds every one after it, so
- * a large check is never passed over for ever by small ones. A check larger than the whole cap runs
- * alone. Each result carries the moments it started and ended (ms from the first start).
+ * a large check is never passed over for ever by small ones. A check larger than the whole cap holds
+ * none back: it runs alone, once nothing else is running. Each result carries the moments it started
+ * and ended (ms from the first start).
  */
 const runAll = async (checks, logDir, cap = { cpu: Infinity, mem: Infinity }, run = runCheck) => {
   const ended = new Map();
@@ -325,7 +328,7 @@ const runAll = async (checks, logDir, cap = { cpu: Infinity, mem: Infinity }, ru
       if (started.has(c.id) || !c.after.every((a) => ended.has(a) || !checks.some((x) => x.id === a))) continue;
       const h = held();
       const cost = c.cost ?? { cpu: 0, mem: 0 };
-      if (!fits(cost, { cpu: cap.cpu - h.cpu, mem: cap.mem - h.mem }) && running.size) break;
+      if (!fits(cost, cap)) { if (running.size) continue; } else if (!fits(cost, { cpu: cap.cpu - h.cpu, mem: cap.mem - h.mem }) && running.size) break;
       started.set(c.id, Date.now() - t0);
       running.set(c.id, run(c, logDir).then((r) => { ended.set(c.id, { ...r, from: started.get(c.id), to: Date.now() - t0 }); running.delete(c.id); }));
     }

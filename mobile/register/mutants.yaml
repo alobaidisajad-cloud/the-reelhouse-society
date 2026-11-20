@@ -8856,8 +8856,8 @@ mutants:
     source: shape
     edits:
       - file: scripts/hooks/pre-push.cjs
-        find: "      after: green.length ? ['tests'] : [],\n"
-        replace: "      after: [],\n"
+        find: "      after: [...(green.length ? ['tests'] : []), ...warmFirst],\n"
+        replace: "      after: [...warmFirst],\n"
     proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
 
   - id: shape-green-from-a-dirty-tree
@@ -8910,9 +8910,9 @@ mutants:
     source: shape
     edits:
       - file: scripts/hooks/pre-push.cjs
-        find: "      if (!fits(cost, { cpu: cap.cpu - h.cpu, mem: cap.mem - h.mem }) && running.size) break;"
-        replace: "      if (!fits(cost, { cpu: cap.cpu, mem: cap.mem }) && running.size) break;"
-    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "never holds more than the cap at once, starts checks in their order, and runs one larger than the cap alone" }
+        find: "else if (!fits(cost, { cpu: cap.cpu - h.cpu, mem: cap.mem - h.mem }) && running.size) break;"
+        replace: "else if (!fits(cost, { cpu: cap.cpu, mem: cap.mem }) && running.size) break;"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "never holds more than the cap at once, starts checks in their order, and runs one larger than the cap alone, holding none back" }
 
   - id: shape-sizes-past-the-warm-checker
     class: CI-push-check-past-the-machine
@@ -8928,8 +8928,8 @@ mutants:
     source: shape
     edits:
       - file: scripts/hooks/pre-push.cjs
-        find: "      after: ['rehearsals'],\n"
-        replace: "      after: [],\n"
+        find: "      after: ['rehearsals', ...warmFirst],\n"
+        replace: "      after: [...warmFirst],\n"
     proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
 
   - id: shape-lane-without-the-root-modules

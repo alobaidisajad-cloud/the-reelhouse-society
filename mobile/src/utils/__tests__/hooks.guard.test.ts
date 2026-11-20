@@ -168,13 +168,15 @@ describe('before a push', () => {
 
     it('takes a mutant\'s first run from the tests only on a clean tree, after them, and in lanes of their own', () => {
       const clean = byId(plan(), `mutants@${base}`)!;
-      expect([clean.after, clean.args.slice(-8)]).toEqual([['tests'], ['--lanes', '4', '--rehearsals', 'none', '--green', 'T.json,H.json', '--types-from', 'Y.jsonl']]);
+      // Every lane after the warm checker's answers, so none runs tsc beside it.
+      expect([clean.after, clean.args.slice(-8)]).toEqual([['tests', 'mutant-types'], ['--lanes', '4', '--rehearsals', 'none', '--green', 'T.json,H.json', '--types-from', 'Y.jsonl']]);
       const dirty = byId(plan({ clean: false }), `mutants@${base}`)!;
-      expect([dirty.after, dirty.args.includes('--green')]).toEqual([[], false]);
+      expect([dirty.after, dirty.args.includes('--green')]).toEqual([['mutant-types'], false]);
+      expect(byId(plan({ clean: false, mutants: 0 }), `mutants@${base}`)!.after).toEqual([]);
       // A mutant a rehearsal proves: one lane of its own, only once the rehearsals have ended, clean or not.
       for (const at of [plan(), plan({ clean: false })]) {
         const r = byId(at, `mutant-rehearsals@${base}`)!;
-        expect([r.after, r.args.slice(r.args.indexOf('--lanes'), r.args.indexOf('--lanes') + 4)]).toEqual([['rehearsals'], ['--lanes', '1', '--rehearsals', 'only']]);
+        expect([r.after, r.args.slice(r.args.indexOf('--lanes'), r.args.indexOf('--lanes') + 4)]).toEqual([['rehearsals', 'mutant-types'], ['--lanes', '1', '--rehearsals', 'only']]);
       }
     });
 
@@ -248,7 +250,7 @@ describe('before a push', () => {
     expect(sizesFor({ cpu: 11, mem: 24 * GB }, { rehearsals: false, mutants: 0 })).toEqual({ tests: 11, lanes: 11, warmEarly: false });
   });
 
-  it('never holds more than the cap at once, starts checks in their order, and runs one larger than the cap alone', async () => {
+  it('never holds more than the cap at once, starts checks in their order, and runs one larger than the cap alone, holding none back', async () => {
     const cost = (cpu: number, gb: number) => ({ cpu, mem: gb * GB });
     const check = (id: string, c: Cost, after: string[] = []): Check => ({ id, label: id, args: [], cwd: '', after, low: true, cost: c });
     const ms = (n: number) => new Promise((r) => setTimeout(r, n));
@@ -267,8 +269,9 @@ describe('before a push', () => {
     const results = await runAll(checks, '', cap, run);
     expect([worst.cpu <= cap.cpu, worst.mem <= 9 * GB]).toEqual([true, true]);
     const order = [...results].sort((x, y) => x.from - y.from).map((r) => r.id);
-    expect(order.indexOf('huge')).toBeLessThan(order.indexOf('d'));
-    // The one larger than the cap ran with nothing beside it.
+    // The one larger than the cap held back none that fit: d ran before it, and it ran last.
+    expect([order.indexOf('d') < order.indexOf('huge'), order[order.length - 1]]).toEqual([true, 'huge']);
+    // ...and with nothing beside it.
     const huge = results.find((r) => r.id === 'huge')!;
     expect(results.filter((r) => r.id !== 'huge' && r.from < huge.to && r.to > huge.from)).toEqual([]);
     // Apart from it, never more than the cap.
