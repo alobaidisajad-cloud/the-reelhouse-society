@@ -6653,42 +6653,112 @@
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-mutants-before-the-tests-end",
     "proof": "m1",
-    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-green-from-a-dirty-tree",
     "proof": "m1",
-    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-green-from-another-test",
     "proof": "m2",
-    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-rehearsals-in-the-tests-run",
     "proof": "m3",
-    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-plant-push-with-main",
     "proof": "m5",
-    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-plant-push-unscanned",
     "proof": "m4",
-    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-cap-ignores-what-runs",
+    "proof": "m4",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-sizes-past-the-warm-checker",
+    "proof": "m3",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-rehearsal-mutants-beside-the-rehearsals",
+    "proof": "m2",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-lane-without-the-root-modules",
+    "proof": "m7",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-warm-answer-from-other-bytes",
+    "proof": "m11",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-warm-checker-reads-the-disk",
+    "proof": "m12",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-skipped-proof-caught",
+    "proof": "m10",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-dry-run-from-head",
+    "proof": "m5",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-rehearsal-run-outlives-its-test",
+    "proof": "m14",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-rehearsal-mutant-at-low-priority",
+    "proof": "m13",
+    "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
     "verdict": "caught"
   },
   {
