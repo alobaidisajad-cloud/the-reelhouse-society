@@ -7,7 +7,12 @@ comment against the code it describes, and this is the record that every file
 was read that way — not a sample, every one.
 
 A new file gets a row when it is written (`everyCommentIsTrue` fails
-without one). "Read" is the day its comments were last read against its code.
+without one): "—", from `node mobile/scripts/ledger-write.cjs --sync`.
+"Read" is the day its comments were last read against its code. A read is
+written only by `scripts/ledger-write.cjs`, from a coverage record taken from
+the reader's own work log; from 2026-11-21 every dated row names its record
+(`scripts/__tests__/readingLog.test.ts`). `scripts/READING-LOG.md` holds the
+files of the reading map this one does not.
 
 | File | Read | What changed |
 |---|---|---|
@@ -2029,3 +2034,12 @@ without one). "Read" is the day its comments were last read against its code.
 | src/hooks/__tests__/aSheetFootGivesWayToTheKeys.test.tsx | 2026-11-19 | new: on iOS a sheet's foot gives way to its own gap as the keys rise; Android keeps it |
 | src/utils/__tests__/aDayOfAnotherYearSaysItsYear.test.ts | 2026-11-19 | new: a salon's day divider says the year of another year's day; today and yesterday as before |
 | src/components/admin/__tests__/aHearingSheetHoldsWhileItActs.test.tsx | 2026-11-19 | new: a hearing sheet draws nothing with no hearing, is not closed while its act is under way, and a press let go after the act began is not heard |
+| scripts/coverage.cjs | — |  |
+| scripts/ledger-write.cjs | — |  |
+| scripts/reading-areas.cjs | — |  |
+| scripts/reading-map.cjs | — |  |
+| scripts/reading-scope.cjs | — |  |
+| scripts/__tests__/coverage.test.ts | — |  |
+| scripts/__tests__/readingLog.test.ts | — |  |
+| scripts/__tests__/readingMap.test.ts | — |  |
+| scripts/__tests__/readingScope.test.ts | — |  |

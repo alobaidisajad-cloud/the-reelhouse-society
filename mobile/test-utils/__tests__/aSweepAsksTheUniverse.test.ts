@@ -24,6 +24,7 @@ const MAY_LIST: Record<string, string> = {
   'src/hooks/__tests__/aFilmIsKeptAsItsPageDrawsIt.test.ts': "the catalogue's recorded film pages are the subject: each real answer is kept as its page draws it",
   'src/utils/__tests__/easUpload.guard.test.ts': 'which .easignore files git tracks is what an EAS upload reads',
   'scripts/comment-truth.js': "git's own list of the files it tracks, and the type declarations of installed packages",
+  'scripts/reading-map.cjs': "git's own list of every file the repo tracks: the reading map holds each to an area or a written reason, the website host's endpoints, the email templates and the root dotfiles included, which no universe holds",
   'scripts/functions-check.mjs': "a function's whole folder is what a deploy bundles, and a download is a folder of its own",
   'mockups/tools/drawn.cjs': 'the drawn pages a run of the mockups wrote',
   'mockups/tools/harness.cjs': 'the drawn pages a run of the mockups wrote',
