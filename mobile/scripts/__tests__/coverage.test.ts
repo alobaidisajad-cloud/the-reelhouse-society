@@ -52,8 +52,8 @@ describe('what a Read answer showed', () => {
     expect(cov.missing([[5, 8]], [[1, 30]])).toEqual([]);
   });
   it('reads git-bash and Windows spellings of a path as one', () => {
-    expect(cov.norm('/c/Users/x/../y/f.ts')).toBe('C:/Users/y/f.ts');
-    expect(cov.norm('c:\\Users\\y\\f.ts')).toBe('C:/Users/y/f.ts');
+    expect(cov.norm('/d/house/x/../y/f.ts')).toBe('D:/house/y/f.ts');
+    expect(cov.norm('d:\\house\\y\\f.ts')).toBe('D:/house/y/f.ts');
   });
 });
 
@@ -104,16 +104,16 @@ describe('a touch outside the copy voids the record', () => {
     return r.outside.map((o) => o.why).join('; ');
   };
   it('a file read outside it', () => {
-    expect(voids({ name: 'Read', input: { file_path: 'C:/Users/me/repo/mobile/register/classes.yaml' }, result: shown(1, 3) })).toContain('read C:/Users/me/repo/mobile/register/classes.yaml');
+    expect(voids({ name: 'Read', input: { file_path: 'D:/elsewhere/repo/mobile/register/classes.yaml' }, result: shown(1, 3) })).toContain('read D:/elsewhere/repo/mobile/register/classes.yaml');
   });
   it('a search outside it, or with no folder from a working folder outside it', () => {
-    expect(voids({ name: 'Grep', input: { pattern: 'x', path: 'C:/Users/me/repo' }, result: '' })).toContain('searched');
-    expect(voids({ name: 'Glob', input: { pattern: '**/*.ts' }, cwd: 'C:/Users/me/repo', result: '' })).toContain('searched');
+    expect(voids({ name: 'Grep', input: { pattern: 'x', path: 'D:/elsewhere/repo' }, result: '' })).toContain('searched');
+    expect(voids({ name: 'Glob', input: { pattern: '**/*.ts' }, cwd: 'D:/elsewhere/repo', result: '' })).toContain('searched');
   });
   it('a shell that names a path outside, climbs above, runs outside, or reaches the network', () => {
-    expect(voids({ name: 'Bash', input: { command: `cd ${copy} && cat /c/Users/me/repo/notes.md` }, result: '' })).toContain('named');
+    expect(voids({ name: 'Bash', input: { command: `cd ${copy} && cat /d/elsewhere/repo/notes.md` }, result: '' })).toContain('named');
     expect(voids({ name: 'Bash', input: { command: `cd ${copy} && cat ../../secret.md` }, result: '' })).toContain('above');
-    expect(voids({ name: 'PowerShell', input: { command: 'Get-Content notes.md' }, cwd: 'C:/Users/me/repo', result: '' })).toContain('ran a shell in');
+    expect(voids({ name: 'PowerShell', input: { command: 'Get-Content notes.md' }, cwd: 'D:/elsewhere/repo', result: '' })).toContain('ran a shell in');
     expect(voids({ name: 'Bash', input: { command: `cd ${copy} && curl https://example.com` }, result: '' })).toContain('network');
   });
   it('another agent, the web, or a change to the copy', () => {
@@ -123,7 +123,7 @@ describe('a touch outside the copy voids the record', () => {
   });
   it('but not the findings file it was given, nor a long answer saved where the tool said', () => {
     const findings = 'C:/rounds/R15/findings/A10.jsonl';
-    const savedAt = 'C:\\Users\\me\\.claude\\projects\\p\\s\\tool-results\\x.txt';
+    const savedAt = 'D:\\elsewhere\\.claude\\projects\\p\\s\\tool-results\\x.txt';
     const shell: Call = { name: 'Bash', input: { command: `cd ${copy} && cat mobile/src/a.ts` }, result: `<persisted-output>\nOutput too large. Full output saved to: ${savedAt}\n` };
     const r = cov.check({
       logText: logOf([full(), shell, { name: 'Read', input: { file_path: savedAt }, result: shown(1, 5) }, { name: 'Write', input: { file_path: findings, content: '{}' }, result: 'ok' }]),

@@ -6,7 +6,7 @@ import { readFileSync } from 'fs';
 import * as ts from 'typescript';
 
 type Site = { key: string; file: string; name: string; does: string; target: string; area: string | null };
-const ws = require('../write-sites.cjs') as {
+const ws = require('../../scripts/write-sites.cjs') as {
   writeSites: () => (Site & { line: number })[];
   sitesIn: (t: typeof ts, text: string, rel: string, o: { writes: { set: Set<string>; known: Set<string> }; edgeWrites: Set<string> & { known: Set<string> } }) => { name: string; does: string; target: string }[];
   functionBodies: (sql: string[]) => Map<string, string>;

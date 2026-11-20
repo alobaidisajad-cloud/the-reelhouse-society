@@ -8,7 +8,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-const rs = require('../reading-scope.cjs') as {
+const rs = require('../../scripts/reading-scope.cjs') as {
   partsOf: (entries: object[], o: { repo: string }) => Map<string, 'whole' | number[][]>;
   paragraph: (lines: string[], r: number[]) => number[];
   slicesOf: (parts: Map<string, 'whole' | number[][]>, lineCount: (r: string) => number, max: number) => { files: Record<string, unknown>; lines: number }[];
