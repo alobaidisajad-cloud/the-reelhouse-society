@@ -149,6 +149,15 @@ describe('a salon message past the day\'s ceiling (round 14)', () => {
     expect(mockExecute).toHaveBeenCalledTimes(2);
   });
 
+  it('a follow or a certification the house paces is kept to be sent again, never held as a paced message', async () => {
+    enqueueMutation({ type: 'follow_user', payload: { user_id: MEMBER, target_username: 'ada', target_user_id: 'b5a1c3d2-6e7f-4a8b-9c0d-1e2f3a4b5c6d' } });
+    enqueueMutation({ type: 'endorse_log', payload: { user_id: MEMBER, type: 'certify', target_log_id: 'l1' } });
+    mockExecute.mockRejectedValueOnce(DAY).mockRejectedValueOnce(DAY);
+    await flushOfflineQueue();
+    expect(getOfflineQueue().map((m) => [m.type, m._held])).toEqual([['follow_user', undefined], ['endorse_log', undefined]]);
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
   it('the member\'s own retry, asked again, sends it', async () => {
     say('First.', 'msg-1');
     mockExecute.mockRejectedValueOnce(DAY);

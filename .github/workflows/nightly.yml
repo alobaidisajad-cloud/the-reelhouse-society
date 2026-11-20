@@ -83,13 +83,31 @@ jobs:
   # The app's own questions asked of production itself, once a night, and never
   # on a push (P0.37): an embed resolves, a visitor may read what the app asks
   # for. Their answers are statuses, never rows. scripts/contracts-ran.cjs says
-  # no to a run whose contracts skipped.
+  # no to a run whose contracts skipped. While a train is pending, production is
+  # asked the questions of the commit that last recorded one (scripts/contracts-commit.cjs):
+  # HEAD's are asked on every push of production as the train will leave it (db-integration.yml).
   contracts:
     name: 🔌 The app's questions, asked of production
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # The commit that last recorded a train is read from the history.
+          fetch-depth: 0
+
+      - name: The code production's schema matches
+        id: asked
+        run: |
+          said=$(node mobile/scripts/contracts-commit.cjs) || exit 1
+          echo "$said" | tee -a "$GITHUB_OUTPUT"
+          read_out() { echo "$said" | grep "^$1=" | cut -d= -f2; }
+          commit=$(read_out commit); pending=$(read_out pending); oldest=$(read_out oldest)
+          if [ "$pending" -gt 0 ]; then
+            echo "::warning title=A train is pending::$pending migration(s) not on production, the oldest $oldest: production is asked the questions of $commit, the commit that last recorded a train"
+          fi
+          git checkout -q --detach "$commit"
+
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: '24'
@@ -117,7 +135,8 @@ jobs:
           set +e
           npx jest --ci --testPathPattern '\.contract\.test\.tsx?$' --json --outputFile=contracts.json > contracts-output.txt 2>&1
           rc=$?
-          tail -n 30 contracts-output.txt
+          # Whole: a drift's 400 body is in its failure, and statuses are all a contract prints.
+          cat contracts-output.txt
           node scripts/contracts-ran.cjs contracts.json || exit 1
           exit $rc
 
@@ -268,14 +287,17 @@ jobs:
   # Each mutant (register/mutants.yaml) puts one mistake of a class back, and the
   # class's own test must fail on it; a mutant that survives or no longer applies
   # turns the night red. The verdicts are kept as ids and verdicts only.
+  # In eight parts: in three, 941 mutants took 47 and 53 minutes, and the third ran out of its
+  # hour (nightly 44721686811: 10 to 11.4 s a mutant, and the measuring tools' about three
+  # minutes each with their browser). ciWorkflows.guard holds the parts to a measured budget.
   mutants:
-    name: 🧪 Every mutant, each caught by its class's own test, part ${{ matrix.part }} of 3
+    name: 🧪 Every mutant, each caught by its class's own test, part ${{ matrix.part }} of 8
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        part: [1, 2, 3]
+        part: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -285,7 +307,67 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            mobile/package-lock.json
+
+      # The measuring tools' own tests (mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts) prove
+      # layout.cjs's mutants: they run its self-test, which draws in the root's Playwright and Chromium.
+      # Without them that suite skips, and each of those mutants is invalid (nightly 44721686811).
+      - name: Install Root (Web) Dependencies
+        id: install-7
+        timeout-minutes: 5
+        continue-on-error: true
+        run: npm ci
+      - name: Install Root (Web) Dependencies, once more
+        if: steps.install-7.outcome == 'failure'
+        timeout-minutes: 5
+        run: npm ci
+      # Its system packages kept between runs, as god_tier_ci.yml keeps them (mobile/scripts/kept-debs.sh).
+      - name: The runner's image, which the kept packages are keyed by
+        id: image-8
+        run: echo "version=$ImageVersion" >> "$GITHUB_OUTPUT"
+      - name: Chromium for the measuring tools — its system packages, from the cache
+        id: debs-install-8
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-${{ steps.image-8.outputs.version }}-playwright-chromium
+      - name: Chromium for the measuring tools
+        id: install-8
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
+      - name: Chromium for the measuring tools, once more
+        if: steps.install-8.outcome == 'failure'
+        timeout-minutes: 5
+        run: |
+          echo 'DPkg::Lock::Timeout "240";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null
+          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true
+          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true
+          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f
+          if bash "$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh"; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+            mkdir -p ~/apt-debs && cp /var/cache/apt/archives/*.deb ~/apt-debs/ 2>/dev/null; true
+          fi
+      - name: Chromium for the measuring tools — its system packages, kept in the cache
+        if: steps.debs-install-8.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/apt-debs
+          key: apt-debs-ubuntu-24.04-${{ steps.image-8.outputs.version }}-playwright-chromium
 
       - name: Install Mobile Dependencies
         id: install-4
@@ -303,7 +385,7 @@ jobs:
         working-directory: ./mobile
         env:
           TZ: UTC
-        run: node scripts/mutants.cjs --part ${{ matrix.part }}/3 --results mutant-results.json --fresh
+        run: node scripts/mutants.cjs --part ${{ matrix.part }}/8 --results mutant-results.json --fresh
 
       - name: Keep the verdicts
         if: ${{ !cancelled() }}

@@ -11,6 +11,12 @@ equivalents:
     mutator: EqualityOperator
     replacement: tWeight > rWeight
     why: The store's rank and the role weigh the same only when they read as the same rank (each rank has its own weight, and the free rank's two spellings read as one), so taking either side gives the same answer.
+  - file: src/utils/authSignals.ts
+    code: "const held: unknown = JSON.parse(read(DOORS_KEY) ?? '[]');"
+    at: 53
+    mutator: StringLiteral
+    replacement: "\"\""
+    why: Only a phone that holds nothing reaches the text in its place; '[]' parses to an empty list, which the filter leaves empty, and the empty text throws, which the catch answers with the same empty list, so every caller reads no key either way.
   - file: supabase/functions/revenuecat-webhook/decide.ts
     code: "if (String(e.type ?? '').toUpperCase() === 'TEST') return [];"
     at: 22

@@ -2082,3 +2082,6 @@ files of the reading map this one does not.
 | src/utils/__tests__/theWebTestFetchesNoBrowser.test.ts | 2026-11-20 | new: the web job fetches no browser and finds the image's Chrome first; every project of the config on Chrome |
 | plugins/withPinnedDependencies.js | 2026-11-20 | new: each range pinned in every configuration of every project; any other range refused by Gradle |
 | plugins/__tests__/withPinnedDependencies.test.ts | 2026-11-20 | new: the block on the generated build.gradle, once, line ends kept, refusals; bcprov pinned to expo-updates' own bcutil |
+| scripts/__tests__/contractsCommit.test.ts | — |  |
+| scripts/contracts-commit.cjs | — |  |
+| src/utils/__tests__/aReplayTellsWhatItMoved.test.ts | — |  |

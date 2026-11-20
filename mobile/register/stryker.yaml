@@ -26,6 +26,7 @@ files:
   - file: src/lib/queryPolicy.ts
     tests:
       - src/utils/__tests__/queryClient.test.ts
+      - src/lib/__tests__/aBusyCatalogueIsNoLostConnection.test.tsx
   - file: src/utils/offlineQueue.ts
     tests:
       - src/utils/__tests__/offlineQueue.test.ts
@@ -48,6 +49,10 @@ files:
       - src/utils/__tests__/aRefusedWriteIsGivenBack.test.ts
       - src/utils/__tests__/anEditKeepsWhatChangedSince.test.ts
       - src/utils/__tests__/anEditIsLaidOnlyOverWhatItChanged.test.ts
+      - src/stores/__tests__/aFollowTheHouseAsksToWaitForIsKept.test.ts
+      - src/utils/__tests__/aResentFollowSpendsNoPace.test.ts
+      - src/utils/__tests__/aNewerWriteLetsTheOlderGo.test.ts
+      - src/utils/__tests__/aWriteOnAPageGoneIsLetGoNotSent.test.ts
   - file: src/utils/mutationExecutor.ts
     tests:
       - src/utils/__tests__/mutationExecutor.test.ts
@@ -62,6 +67,9 @@ files:
       - src/utils/__tests__/anOlderBuildsDossierStillLands.test.ts
       - src/utils/__tests__/aQueuedFilingIsCutToEachColumn.test.ts
       - src/utils/__tests__/theWallHearsEachReplayThatMovesAPiece.test.ts
+      - src/stores/__tests__/aCardIsWhatTheHouseHolds.test.ts
+      - src/stores/__tests__/aSealedStackShareIsSaidAndLetGo.test.ts
+      - src/utils/__tests__/aReplayTellsWhatItMoved.test.ts
   - file: src/utils/tier.ts
     tests:
       - src/utils/__tests__/tier.test.ts

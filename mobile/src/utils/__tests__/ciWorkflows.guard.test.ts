@@ -408,6 +408,16 @@ it('production is asked by the nightly contracts alone, and every contract run i
   const runsContracts = steps.filter(({ s }) => /\\\.contract\\\.test/.test(s.run ?? ''));
   expect(runsContracts.map(({ file, job }) => `${file} › ${job}`).sort()).toEqual(['db-integration.yml › contracts', 'nightly.yml › contracts']);
   expect(runsContracts.filter(({ s }) => !/node scripts\/contracts-ran\.cjs contracts\.json \|\| exit 1/.test(s.run ?? ''))).toEqual([]);
+  // Production is asked the questions of the code its schema matches (scripts/contracts-commit.cjs),
+  // checked out before anything is installed or run, and every answer is printed whole.
+  const nightly = (workflows.find((w) => w.file === 'nightly.yml')!.wf.jobs.contracts?.steps ?? []) as (RunStep & { with?: Record<string, unknown> })[];
+  const chosen = nightly.findIndex((s) => /node mobile\/scripts\/contracts-commit\.cjs/.test(s.run ?? '') && /git checkout -q --detach "\$commit"/.test(s.run ?? ''));
+  expect(chosen).toBeGreaterThan(0);
+  expect(nightly[0]?.with?.['fetch-depth']).toBe(0);
+  expect(nightly.slice(0, chosen).filter((s) => s.run || (s.uses && actionOf(s.uses) !== 'actions/checkout'))).toEqual([]);
+  const asked = nightly.find((s) => /\\\.contract\\\.test/.test(s.run ?? ''))?.run ?? '';
+  expect(asked).toMatch(/^\s*cat contracts-output\.txt$/m);
+  expect(asked).not.toMatch(/\b(tail|head)\b/);
   // A sealed test writes: it runs in the sealed copy's job alone, its address the runner's own,
   // proven not to have skipped and proven able to fail.
   const runsSealed = steps.filter(({ s }) => /\\\.sealed\\\.test/.test(s.run ?? '') || Object.keys(s.env ?? {}).some((k) => /^SEALED_/.test(k)));
@@ -776,6 +786,48 @@ it('finds a function copied without its _shared, in a planted step', () => {
   expect(leftBehind(step('cp -r mobile/supabase/functions/notify-push mobile/e2e/supabase/functions/'))).toEqual([
     'j: mobile/supabase/functions/notify-push is copied to mobile/e2e/supabase/functions without mobile/supabase/functions/_shared',
   ]);
+});
+
+/** Each job that judges mutants (mutants.cjs, not its gather), with its steps and its parts. */
+const mutantJobs = () => workflows.flatMap(({ file, wf }) => Object.entries(wf.jobs).flatMap(([job, j]) => {
+  const steps = (j.steps ?? []) as RunStep[];
+  const at = steps.findIndex((s) => /scripts\/mutants\.cjs/.test(s.run ?? '') && !/--gather/.test(s.run ?? ''));
+  return at < 0 ? [] : [{ at: `${file} › ${job}`, job: j as PartJob, steps, run: steps[at]?.run ?? '', before: steps.slice(0, at) }];
+}));
+/** What a mutant took in the night's parts (nightly 44721686811): the slowest part's mean, and a
+ * mutant the measuring tools prove, whose test runs their whole self-test in a browser. */
+const MUTANT_SECONDS = 12;
+const MEASURED_MUTANT_SECONDS = 180;
+/** A part's own setup (the checkout, three installs, Chromium), in minutes, at its slowest. */
+const PART_SETUP_MINUTES = 10;
+/** The minutes each part of a job is expected to take, by the mutants it holds. */
+function minutesPerPart(mutants: { proof?: { file?: string } }[], parts: number) {
+  const measured = mutants.filter((m) => m.proof?.file === 'mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts').length;
+  return ((mutants.length - measured) * MUTANT_SECONDS + measured * MEASURED_MUTANT_SECONDS) / parts / 60 + PART_SETUP_MINUTES;
+}
+
+it('installs the root packages and Chromium wherever mutants are judged: the measuring tools prove some of them', () => {
+  const jobs = mutantJobs();
+  expect(jobs.map((j) => j.at).sort()).toEqual(['god_tier_ci.yml › mutants', 'nightly.yml › mutants']);
+  for (const { at, before } of jobs) {
+    const atRoot = before.some((s) => (s.run ?? '').trim() === 'npm ci' && !(s as { 'working-directory'?: string })['working-directory']);
+    expect([at, atRoot]).toEqual([at, true]);
+    expect([at, before.some((s) => /npx playwright install chromium/.test(s.run ?? ''))]).toEqual([at, true]);
+  }
+});
+
+it('splits the night\'s mutants into parts that each end well inside their hour', () => {
+  const nightly = mutantJobs().find((j) => j.at === 'nightly.yml › mutants')!;
+  const parts = nightly.job.strategy?.matrix?.part?.length ?? 0;
+  expect(nightly.run).toContain(`--part \${{ matrix.part }}/${parts}`);
+  expect(String((nightly.job as { name?: string }).name)).toContain(`of ${parts}`);
+  const { readMutants } = require('../../../scripts/mutants.cjs') as { readMutants: () => { private?: boolean; proof?: { file?: string } }[] };
+  const mutants = readMutants().filter((m) => !m.private);
+  expect(mutants.length).toBeGreaterThan(900);
+  const limit = Number(nightly.job['timeout-minutes']);
+  expect(minutesPerPart(mutants, parts)).toBeLessThan(limit * 0.75);
+  // The three parts the night ran: each over its hour, as one was.
+  expect(minutesPerPart(mutants, 3)).toBeGreaterThan(limit);
 });
 
 it('cancels only an older run of its own kind (CI-02)', () => {

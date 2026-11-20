@@ -45,7 +45,9 @@ it('a handle the house holds back carries its whole seconds, at least one, and f
 
 it('nothing else is read as a handle held back', () => {
   for (const raw of ['Too many requests', 'Handle resting', 'Handle resting 12', 'Handle resting soon here', 'Handle resting 12s here',
-    'Handle resting 12 there', 'x Handle resting 12 here', 'Handle resting 12 here x', '']) {
+    'Handle resting 12 there', 'x Handle resting 12 here', 'Handle resting 12 here x', '',
+    // Four words, but not the refusal's: another first two, seconds with a letter before them.
+    'Handle sleeping 12 here', 'Door resting 12 here', 'Handle resting x5 here']) {
     expect([raw, handleRestingOf(raw)]).toEqual([raw, null]);
   }
 });
@@ -65,6 +67,16 @@ describe('the key the house hands a phone for a handle', () => {
     expect(doorFor('someone_else', p.read)).toBeNull();
   });
 
+  it('takes off a leading @ alone, and a run of spaces is one underscore', () => {
+    const p = phone();
+    keepDoor('noir@fan', key('a'), p.read, p.write);
+    expect(doorFor('noir@fan', p.read)).toBe(key('a'));
+    expect(doorFor('noirfan', p.read)).toBeNull();
+    keepDoor('noir   fan', key('b'), p.read, p.write);
+    expect(doorFor('noir_fan', p.read)).toBe(key('b'));
+    expect(doorFor('noir___fan', p.read)).toBeNull();
+  });
+
   it('a newer key for a handle replaces its older one; five handles at most, the newest kept', () => {
     const p = phone();
     keepDoor('noir_fan', key('a'), p.read, p.write);
@@ -78,11 +90,29 @@ describe('the key the house hands a phone for a handle', () => {
 
   it('nothing not shaped as a key is kept or read as one', () => {
     const p = phone();
-    for (const bad of [undefined, null, 42, '', 'short', key('g'), `${key('a')} `]) keepDoor('noir_fan', bad, p.read, p.write);
+    // A list holding a key reads as one in a pattern's test (its text is the key's): never a key.
+    for (const bad of [undefined, null, 42, '', 'short', key('g'), `${key('a')} `, `zz${key('a')}`, [key('a')]]) keepDoor('noir_fan', bad, p.read, p.write);
     expect(p.held.size).toBe(0);
     p.write('handle_doors', 'not json');
     expect(doorFor('noir_fan', p.read)).toBeNull();
     p.write('handle_doors', JSON.stringify([['noir_fan', 'short'], ['x'], 'y']));
     expect(doorFor('noir_fan', p.read)).toBeNull();
+    p.write('handle_doors', JSON.stringify([['noir_fan', [key('a')]]]));
+    expect(doorFor('noir_fan', p.read)).toBeNull();
+  });
+
+  it('what the phone held, unreadable or not a list of pairs, is let go whole when the next key is kept', () => {
+    const p = phone();
+    const good: [string, string] = ['kept', key('c')];
+    for (const held of ['not json', '{"a":1}', '"words"']) {
+      p.write('handle_doors', held);
+      keepDoor('noir_fan', key('a'), p.read, p.write);
+      expect([held, JSON.parse(p.held.get('handle_doors') ?? '')]).toEqual([held, [['noir_fan', key('a')]]]);
+    }
+    // Each entry not a handle and its key, side by side in a list, is dropped; the pair is kept.
+    const torn = [[1, key('a')], ['h', 2], { 0: 'obj', 1: key('a') }, [['h'], key('a')], ['h', [key('a')]], 'y', good];
+    p.write('handle_doors', JSON.stringify(torn));
+    keepDoor('noir_fan', key('b'), p.read, p.write);
+    expect(JSON.parse(p.held.get('handle_doors') ?? '')).toEqual([good, ['noir_fan', key('b')]]);
   });
 });
