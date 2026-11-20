@@ -59,7 +59,7 @@
     "class": "CI-gate-never-runs",
     "mutant": "shape-gate-on-pull-requests-alone",
     "proof": "m1",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
@@ -458,7 +458,7 @@
     "class": "CI-schedule-stops-unheard",
     "mutant": "shape-heartbeat-silent",
     "proof": "m1",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
@@ -808,7 +808,7 @@
     "class": "CI-retry-blocked-by-its-first-try",
     "mutant": "shape-install-waits-on-the-mirror",
     "proof": "m1",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
@@ -5890,7 +5890,7 @@
     "class": "CI-a-cache-kept-past-its-image",
     "mutant": "shape-kept-debs-keyed-by-no-image",
     "proof": "m2",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
@@ -6590,105 +6590,105 @@
     "class": "CI-schedule-skipped-unstarted",
     "mutant": "shape-wake-never-starts",
     "proof": "m1",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-schedule-skipped-unstarted",
     "mutant": "shape-wake-counts-a-hand-run",
     "proof": "m2",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-schedule-skipped-unstarted",
     "mutant": "shape-wake-carries-any-time",
     "proof": "m3",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-schedule-skipped-unstarted",
     "mutant": "shape-schedule-on-the-hour",
     "proof": "m4",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-heartbeat-from-a-callers-schedule",
     "mutant": "shape-heartbeat-takes-a-callers-schedule",
     "proof": "m1",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-split-by-count-not-time",
     "mutant": "shape-split-weighs-nothing",
     "proof": "m2",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-fetches-what-the-job-never-uses",
     "mutant": "shape-web-job-fetches-browsers",
     "proof": "m1",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-build-reads-a-version-list",
     "mutant": "shape-a-range-left-unpinned",
     "proof": "m1",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-build-reads-a-version-list",
     "mutant": "shape-pin-behind-expo-updates",
     "proof": "m2",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-mutants-before-the-tests-end",
     "proof": "m1",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-green-from-a-dirty-tree",
     "proof": "m1",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-green-from-another-test",
     "proof": "m2",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-rehearsals-in-the-tests-run",
     "proof": "m3",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-plant-push-with-main",
     "proof": "m5",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   },
   {
     "class": "CI-push-check-one-stage-at-a-time",
     "mutant": "shape-plant-push-unscanned",
     "proof": "m4",
-    "commit": "773782e003bd8fe8965a5c3af828eacae9320847",
+    "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
     "verdict": "caught"
   }
 ]

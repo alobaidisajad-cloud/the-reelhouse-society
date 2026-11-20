@@ -258,6 +258,30 @@
    "area": "AREA-7"
   },
   {
+   "key": "mobile/src/services/ModerationService.ts › fileAppeal › rpc file_appeal",
+   "file": "mobile/src/services/ModerationService.ts",
+   "name": "fileAppeal",
+   "does": "rpc",
+   "target": "file_appeal",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/services/ModerationService.ts › judgeAppeal › rpc judge_appeal",
+   "file": "mobile/src/services/ModerationService.ts",
+   "name": "judgeAppeal",
+   "does": "rpc",
+   "target": "judge_appeal",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/services/ModerationService.ts › liftSanction › rpc lift_sanction",
+   "file": "mobile/src/services/ModerationService.ts",
+   "name": "liftSanction",
+   "does": "rpc",
+   "target": "lift_sanction",
+   "area": "AREA-7"
+  },
+  {
    "key": "mobile/src/services/ProfileDataService.ts › pingFilmSync › invoke sync-films",
    "file": "mobile/src/services/ProfileDataService.ts",
    "name": "pingFilmSync",
@@ -330,11 +354,59 @@
    "area": "AREA-2"
   },
   {
+   "key": "mobile/src/services/VaultService.ts › setNote › rpc viewing_note_set",
+   "file": "mobile/src/services/VaultService.ts",
+   "name": "setNote",
+   "does": "rpc",
+   "target": "viewing_note_set",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/services/VaultService.ts › setNote › rpc viewing_note_set #2",
+   "file": "mobile/src/services/VaultService.ts",
+   "name": "setNote",
+   "does": "rpc",
+   "target": "viewing_note_set",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/services/VaultService.ts › setNote › rpc viewing_note_set #3",
+   "file": "mobile/src/services/VaultService.ts",
+   "name": "setNote",
+   "does": "rpc",
+   "target": "viewing_note_set",
+   "area": "AREA-3"
+  },
+  {
    "key": "mobile/src/services/VaultService.ts › restoreNotes › upsert log_private_notes",
    "file": "mobile/src/services/VaultService.ts",
    "name": "restoreNotes",
    "does": "upsert",
    "target": "log_private_notes",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/services/VaultService.ts › removeNote › rpc viewing_note_remove",
+   "file": "mobile/src/services/VaultService.ts",
+   "name": "removeNote",
+   "does": "rpc",
+   "target": "viewing_note_remove",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/services/VaultService.ts › removeNote › rpc viewing_note_remove #2",
+   "file": "mobile/src/services/VaultService.ts",
+   "name": "removeNote",
+   "does": "rpc",
+   "target": "viewing_note_remove",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/services/VaultService.ts › removeNote › rpc viewing_note_remove #3",
+   "file": "mobile/src/services/VaultService.ts",
+   "name": "removeNote",
+   "does": "rpc",
+   "target": "viewing_note_remove",
    "area": "AREA-3"
   },
   {
@@ -359,6 +431,14 @@
    "name": "sendPendingPrefs",
    "does": "rpc",
    "target": "update_my_preferences",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/stores/auth.ts › login › invoke sign-in-with-username",
+   "file": "mobile/src/stores/auth.ts",
+   "name": "login",
+   "does": "invoke",
+   "target": "sign-in-with-username",
    "area": "AREA-1"
   },
   {
