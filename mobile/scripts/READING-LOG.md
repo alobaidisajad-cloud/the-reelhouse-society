@@ -483,3 +483,4 @@ record taken from the reader's own work log, or "—" for a file never read.
 | supabase/migrations/20261119_24_a_share_waits_for_a_seal.sql | — |  |
 | supabase/migrations/20261119_25_a_handle_many_share_is_found_at_once.sql | — |  |
 | vercel.json | — |  |
+| mobile/e2e/write-sites.json | — |  |
