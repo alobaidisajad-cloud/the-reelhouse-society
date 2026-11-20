@@ -27,6 +27,8 @@ const one = await member('fn_member_one');
 const two = await member('fn_member_two');
 const three = await member('fn_member_three');
 const four = await member('fn_member_four');
+// Signed in by the sign-in pace section alone: the sessions it leaves standing are never another suite's member's.
+const five = await member('fn_member_five');
 
 section('tmdb-proxy — the apps\' only road to TMDB, its key never handed back');
 {
@@ -243,7 +245,7 @@ section('sign-in-with-username — a handle and a password, the address never sh
       }
       return apiSays();
     };
-    const asTwo = (password, headers) => fn('sign-in-with-username', { body: { username: two.username, password }, auth: null, headers });
+    const asFive = (password, headers) => fn('sign-in-with-username', { body: { username: five.username, password }, auth: null, headers });
 
     rename('', '_not_yet');
     try {
@@ -251,18 +253,18 @@ section('sign-in-with-username — a handle and a password, the address never sh
       check(gone.status === 404 && gone.code === 'PGRST202', 'the house before the train answers the count as missing: 404, PGRST202', JSON.stringify(gone));
 
       const tries = [];
-      for (let i = 0; i < 21; i++) tries.push(await asTwo(`${two.password}-guess-${i}`, { 'cf-connecting-ip': '203.0.113.220', 'x-forwarded-for': `192.0.2.${i + 1}` }));
+      for (let i = 0; i < 21; i++) tries.push(await asFive(`${five.password}-guess-${i}`, { 'cf-connecting-ip': '203.0.113.220', 'x-forwarded-for': `192.0.2.${i + 1}` }));
       check(tries.slice(0, 20).every((t) => t.status === 401) && tries[20].status === 429 && tries[20].json?.paused === undefined,
         'before the train, a caller writing a new X-Forwarded-For each call is still held by its vouched address, 20 a minute', tries.map((t) => t.status).join(','));
       check(tries.every((t) => t.headers['x-rh-caller-source'] === 'cf'), 'and each answer names where its address was read from',
         JSON.stringify(tries.map((t) => t.headers['x-rh-caller-source'])));
 
-      const right = await asTwo(two.password, { 'cf-connecting-ip': '203.0.113.221', 'x-forwarded-for': '192.0.2.99' });
+      const right = await asFive(five.password, { 'cf-connecting-ip': '203.0.113.221', 'x-forwarded-for': '192.0.2.99' });
       check(right.status === 200 && typeof right.json?.access_token === 'string' && right.json?.device === undefined && right.headers['x-rh-caller-source'] === 'cf',
         'before the train, the right password signs in as before, no key handed', said(right));
 
       // No vouched address: no pace by address (the section above holds that), and a guess is still answered as one.
-      const unvouched = await asTwo(`${two.password}-guess`, { 'x-forwarded-for': '192.0.2.251' });
+      const unvouched = await asFive(`${five.password}-guess`, { 'x-forwarded-for': '192.0.2.251' });
       check(unvouched.status === 401 && unvouched.headers['x-rh-caller-source'] === 'xff',
         'before the train, a caller no address is vouched for is answered, its guess refused as wrong', said(unvouched));
     } finally {
@@ -270,7 +272,7 @@ section('sign-in-with-username — a handle and a password, the address never sh
     }
     const back = await until((s) => s.status === 200);
     check(back.status === 200, 'the count is found again once it is built', JSON.stringify(back));
-    const counted = await asTwo(two.password, { 'cf-connecting-ip': '203.0.113.222' });
+    const counted = await asFive(five.password, { 'cf-connecting-ip': '203.0.113.222' });
     check(counted.status === 200 && /^[0-9a-f]{64}$/.test(counted.json?.device ?? ''), 'after the train, the sign-in counts again and hands the phone its key', said(counted));
     sql('DELETE FROM public.sign_in_doors; DELETE FROM public.sign_in_handles; DELETE FROM public.sign_in_devices');
   }
