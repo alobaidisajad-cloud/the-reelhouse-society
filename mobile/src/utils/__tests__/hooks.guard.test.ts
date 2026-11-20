@@ -9,28 +9,43 @@
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { basename, join } from 'path';
 
 const MOBILE = join(__dirname, '..', '..', '..');
 const ROOT = join(MOBILE, '..');
 const { mutantInPlace, refusalOf } = require('../../../scripts/hooks/pre-commit.cjs') as {
   mutantInPlace: (root: string) => string | null; refusalOf: (path: string, bytes: Buffer) => string | null;
 };
-type Check = { id: string; label: string; args: string[]; cwd: string; after: string[]; low: boolean };
-const { RUN_FLOWS, basesOf, checksFor, clearHookGitEnv, ignored, inBatches, lintTargets, plantChecks, pushKind, readers, runAll, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
+type Cost = { cpu: number; mem: number };
+type Check = { id: string; label: string; args: string[]; cwd: string; after: string[]; low: boolean; cost?: Cost };
+type Ran = Check & { code: number; from: number; to: number };
+type Sizes = { parts: number; tests: number; lanes: number; warmEarly: boolean };
+const { COST, RUN_FLOWS, basesOf, capOf, checksFor, clearHookGitEnv, dryRunInput, ignored, inBatches, lintTargets, peakOf, plantChecks, pushKind, readers, runAll, sizesFor } = require('../../../scripts/hooks/pre-push.cjs') as {
+  COST: Record<string, Cost>;
   RUN_FLOWS: RegExp;
   pushKind: (input: string) => { kind: string; plants: { local: string }[] };
   plantChecks: (plants: { local: string }[], git: (...a: string[]) => string) => Check[];
   checksFor: (o: object) => Check[];
-  runAll: (checks: Check[], logDir: string) => Promise<(Check & { code: number })[]>;
+  runAll: (checks: Check[], logDir: string, cap?: Cost, run?: (c: Check) => Promise<Check & { code: number }>) => Promise<Ran[]>;
   basesOf: (input: string, git: (...a: string[]) => string) => string[];
+  capOf: (m: { cores: number; freeBytes: number }) => Cost;
   clearHookGitEnv: (env: NodeJS.ProcessEnv) => NodeJS.ProcessEnv;
+  dryRunInput: (git: (...a: string[]) => string, base?: string) => string;
   ignored: (mobile: string) => string[];
   inBatches: (paths: string[], room?: number) => string[][];
   lintTargets: (changed: string[], tracked: string[]) => string[];
+  peakOf: (results: Ran[]) => Cost;
   readers: (mobile: string) => string[];
-  workersFor: (freeBytes: number, cores: number) => number;
+  sizesFor: (cap: Cost, o: { rehearsals: boolean; mutants: number }) => Sizes;
 };
+const jestRun = require('../../../scripts/hooks/jest-run.cjs') as { titlesPattern: (titles: string[]) => string };
+const lanes = require('../../../scripts/hooks/mutant-lanes.cjs') as {
+  missingIn: (dir: string, root?: string) => string[];
+  modulesOf: (root?: string) => string[];
+  reachOrder: (lanes: { ids: string[] }[]) => string[];
+  unproven: (mutants: object[], reports: object[], greenIn: (r: object[], p: object) => boolean, rehearsal: RegExp) => { files: string[]; titles: string[] };
+};
+const GB = 1024 ** 3;
 const { faultOf } = require('../../../scripts/hooks-ran.cjs') as {
   faultOf: (c: { author: string; committer: string; message: string }) => string | null;
 };
@@ -118,18 +133,25 @@ describe('before a push', () => {
   });
 
   describe('the checks it runs, side by side', () => {
-    const lists = { readers: 'R', rehearsals: 'H', related: 'C', testReport: 'T.json', rehearsalReport: 'H.json' };
+    const lists = { readers: 'R', rehearsals: 'H', related: 'C', testReport: 'T.json', rehearsalReport: 'H.json', types: 'Y.jsonl', rehearsalSeconds: 'S.json' };
     const base = 'b'.repeat(40);
     const plan = (over: object = {}) => checksFor({
       bases: [base], touched: ['mobile/src/a.ts'], changed: ['src/a.ts'], files: { code: ['src/a.ts'], linted: ['src/a.ts'] },
-      workers: { tests: 6, rehearsals: 3 }, lanes: 4, lists, clean: true, ...over,
+      sizes: { tests: 6, lanes: 4, warmEarly: true }, lists, clean: true, mutants: 3, ...over,
     });
     const byId = (checks: Check[], id: string) => checks.find((c) => c.id === id);
+    const scripts = [`website-freeze.cjs@${base}`, `add-only.cjs@${base}`, `migration-lint.cjs@${base}`, `frozen-base@${base}`];
+    const lanes = [`mutant-rehearsals@${base}`, `mutants@${base}`];
 
     it('runs every check the serial push ran: the scripts, the counts, the comments, the types, lint, the tests and the mutants', () => {
-      expect(plan().map((c) => c.id)).toEqual([
-        `website-freeze.cjs@${base}`, `add-only.cjs@${base}`, `migration-lint.cjs@${base}`, `frozen-base@${base}`, 'frozen',
-        'comments', 'types', 'lint-1', 'rehearsals', 'tests', `mutants@${base}`]);
+      // The warm checker checks the commit's types, beside the tests where it fits, after them where not.
+      expect(plan().map((c) => c.id)).toEqual(['rehearsals', 'mutant-types', 'tests', ...scripts, 'frozen', 'comments', 'lint-1', ...lanes]);
+      expect(plan({ sizes: { tests: 6, lanes: 4, warmEarly: false } }).map((c) => c.id))
+        .toEqual(['rehearsals', 'tests', 'mutant-types', ...scripts, 'frozen', 'comments', 'lint-1', ...lanes]);
+      // No mutant standing on the change: tsc checks the types, and the lanes ask nothing of a warm checker.
+      const none = plan({ mutants: 0 });
+      expect(none.map((c) => c.id)).toEqual(['rehearsals', 'tests', ...scripts, 'frozen', 'comments', 'types', 'lint-1', ...lanes]);
+      expect(lanes.map((id) => byId(none, id)!.args.includes('--types-from'))).toEqual([false, false]);
     });
 
     it('runs the readers and the related tests as one jest run, the rehearsals as a second, and every rehearsal there', () => {
@@ -146,9 +168,14 @@ describe('before a push', () => {
 
     it('takes a mutant\'s first run from the tests only on a clean tree, after them, and in lanes of their own', () => {
       const clean = byId(plan(), `mutants@${base}`)!;
-      expect([clean.after, clean.args.slice(-4)]).toEqual([['tests', 'rehearsals'], ['--lanes', '4', '--green', 'T.json,H.json']]);
+      expect([clean.after, clean.args.slice(-8)]).toEqual([['tests'], ['--lanes', '4', '--rehearsals', 'none', '--green', 'T.json,H.json', '--types-from', 'Y.jsonl']]);
       const dirty = byId(plan({ clean: false }), `mutants@${base}`)!;
       expect([dirty.after, dirty.args.includes('--green')]).toEqual([[], false]);
+      // A mutant a rehearsal proves: one lane of its own, only once the rehearsals have ended, clean or not.
+      for (const at of [plan(), plan({ clean: false })]) {
+        const r = byId(at, `mutant-rehearsals@${base}`)!;
+        expect([r.after, r.args.slice(r.args.indexOf('--lanes'), r.args.indexOf('--lanes') + 4)]).toEqual([['rehearsals'], ['--lanes', '1', '--rehearsals', 'only']]);
+      }
     });
 
     it('counts a mutant\'s test green only where that test, in its own file, passed', () => {
@@ -166,7 +193,7 @@ describe('before a push', () => {
 
     it('runs nothing of the app for a push that changes nothing in mobile/, but its scripts and mutants', () => {
       expect(plan({ changed: [], files: { code: [], linted: [] }, touched: ['.github/workflows/x.yml'] }).map((c) => c.id))
-        .toEqual([`website-freeze.cjs@${base}`, `add-only.cjs@${base}`, `migration-lint.cjs@${base}`, `frozen-base@${base}`, `mutants@${base}`]);
+        .toEqual(['mutant-types', ...scripts, ...lanes]);
     });
 
     it('starts each check once those it waits for have ended, and runs every check whatever another said', async () => {
@@ -195,12 +222,99 @@ describe('before a push', () => {
     expect(lintTargets(['docs/package.json.md'], tracked)).toEqual([]);
   });
 
-  it('runs as many jest workers as the free memory holds, at least one, never every core', () => {
-    const GB = 1024 ** 3;
-    expect(workersFor(4 * GB, 16)).toBe(5);
-    expect(workersFor(64 * GB, 16)).toBe(15);
-    expect(workersFor(1 * GB, 16)).toBe(1);
-    expect(workersFor(0, 16)).toBe(1);
+  it('caps the push at the processors but one and the memory free when it starts, but a reserve', () => {
+    expect(capOf({ cores: 12, freeBytes: 8 * GB })).toEqual({ cpu: 11, mem: 7.5 * GB });
+    expect(capOf({ cores: 1, freeBytes: 0 })).toEqual({ cpu: 1, mem: 0 });
+  });
+
+  it('sizes the jest workers and the lanes to the cap beside the rehearsals, the warm checker beside the tests only where it fits, each at least one', () => {
+    const roomy = sizesFor({ cpu: 11, mem: 24 * GB }, { rehearsals: true, mutants: 10 });
+    expect([roomy.tests, roomy.lanes, roomy.warmEarly]).toEqual([9, 10, true]);
+    // What runs at once fits the cap: the rehearsals, the warm checker where it runs beside the tests,
+    // and the workers; the lanes beside the rehearsals, after the tests.
+    for (const cap of [{ cpu: 11, mem: 24 * GB }, { cpu: 11, mem: 9 * GB }, { cpu: 5, mem: 12 * GB }, { cpu: 11, mem: 3.5 * GB }]) {
+      const s = sizesFor(cap, { rehearsals: true, mutants: 10 });
+      const warm = s.warmEarly ? COST.warm! : { cpu: 0, mem: 0 };
+      const r = COST.rehearsal!;
+      const beside = { cpu: r.cpu + warm.cpu + s.tests * COST.worker!.cpu, mem: r.mem + warm.mem + s.tests * COST.worker!.mem };
+      expect([cap, beside.cpu <= cap.cpu, beside.mem <= cap.mem, r.mem + s.lanes * COST.lane!.mem <= cap.mem, r.cpu + s.lanes <= cap.cpu])
+        .toEqual([cap, true, true, true, true]);
+    }
+    // A small machine: the warm checker after the tests, so the tests keep their workers.
+    const small = sizesFor({ cpu: 11, mem: 3.5 * GB }, { rehearsals: true, mutants: 10 });
+    expect([small.tests, small.lanes, small.warmEarly]).toEqual([5, 4, false]);
+    const tight = sizesFor({ cpu: 11, mem: 0.5 * GB }, { rehearsals: true, mutants: 10 });
+    expect([tight.tests, tight.lanes]).toEqual([1, 1]);
+    expect(sizesFor({ cpu: 11, mem: 24 * GB }, { rehearsals: false, mutants: 0 })).toEqual({ tests: 11, lanes: 11, warmEarly: false });
+  });
+
+  it('never holds more than the cap at once, starts checks in their order, and runs one larger than the cap alone', async () => {
+    const cost = (cpu: number, gb: number) => ({ cpu, mem: gb * GB });
+    const check = (id: string, c: Cost, after: string[] = []): Check => ({ id, label: id, args: [], cwd: '', after, low: true, cost: c });
+    const ms = (n: number) => new Promise((r) => setTimeout(r, n));
+    const live = new Set<string>();
+    let worst = { cpu: 0, mem: 0 };
+    const run = async (c: Check) => {
+      live.add(c.id);
+      const now = [...live].map((id) => checks.find((x) => x.id === id)!.cost!).reduce((a, b) => ({ cpu: a.cpu + b.cpu, mem: a.mem + b.mem }));
+      worst = { cpu: Math.max(worst.cpu, now.cpu), mem: Math.max(worst.mem, now.mem) };
+      await ms(c.id.length * 5);
+      live.delete(c.id);
+      return { ...c, code: 0 };
+    };
+    const checks = [check('big', cost(1, 3)), check('a', cost(2, 1)), check('bb', cost(2, 1)), check('ccc', cost(3, 2), ['a']), check('huge', cost(1, 9)), check('d', cost(1, 0.5))];
+    const cap = cost(4, 4);
+    const results = await runAll(checks, '', cap, run);
+    expect([worst.cpu <= cap.cpu, worst.mem <= 9 * GB]).toEqual([true, true]);
+    const order = [...results].sort((x, y) => x.from - y.from).map((r) => r.id);
+    expect(order.indexOf('huge')).toBeLessThan(order.indexOf('d'));
+    // The one larger than the cap ran with nothing beside it.
+    const huge = results.find((r) => r.id === 'huge')!;
+    expect(results.filter((r) => r.id !== 'huge' && r.from < huge.to && r.to > huge.from)).toEqual([]);
+    // Apart from it, never more than the cap.
+    const rest = results.filter((r) => r.id !== 'huge');
+    expect(peakOf(rest).cpu <= cap.cpu && peakOf(rest).mem <= cap.mem).toBe(true);
+    expect(results.find((r) => r.id === 'ccc')!.from).toBeGreaterThanOrEqual(results.find((r) => r.id === 'a')!.to);
+  });
+
+  it('checks, as a dry run, a push of HEAD to main from origin/main or the base named', () => {
+    const git = (...a: string[]) => (a[1] === 'HEAD' ? `${'h'.repeat(40)}\n` : `${a[1] === 'origin/main' ? 'o' : 'x'}${'0'.repeat(39)}\n`);
+    expect(dryRunInput(git)).toBe(`refs/heads/main ${'h'.repeat(40)} refs/heads/main o${'0'.repeat(39)}\n`);
+    expect(dryRunInput(git, 'other')).toBe(`refs/heads/main ${'h'.repeat(40)} refs/heads/main x${'0'.repeat(39)}\n`);
+    expect(basesOf(dryRunInput(git), git)).toEqual([`o${'0'.repeat(39)}`]);
+  });
+});
+
+describe('the mutant lanes (mutant-lanes.cjs)', () => {
+  it('runs a mutant\'s proof by its title, alone or after its describe\'s, and no other test', () => {
+    const titles = new RegExp(jestRun.titlesPattern(['holds', 'one (x)']), 'i');
+    expect(['holds', 'the guard holds', 'one (x)', 'the guard holds not', 'upholds', 'one x'].map((n) => titles.test(n))).toEqual([true, true, true, false, false, false]);
+  });
+
+  it('gives each lane every node_modules this checkout holds, the root\'s with Playwright among them, and names one it lacks', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'lanes-'));
+    const checkout = join(dir, 'checkout');
+    const whole = join(dir, 'whole');
+    const short = join(dir, 'short');
+    try {
+      for (const at of [checkout, whole]) for (const m of ['node_modules', join('mobile', 'node_modules')]) mkdirSync(join(at, m), { recursive: true });
+      mkdirSync(join(short, 'mobile', 'node_modules'), { recursive: true });
+      expect(lanes.modulesOf(checkout).map((m) => m.split('\\').join('/'))).toEqual(['node_modules', 'mobile/node_modules']);
+      expect([lanes.missingIn(whole, checkout), lanes.missingIn(short, checkout)]).toEqual([[], ['node_modules']]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('runs once, together, only the proofs no report holds green, never a rehearsal\'s', () => {
+    const m = (id: string, file: string, test: string) => ({ id, proof: { file, test } });
+    const mutants = [m('a', 'src/a.test.ts', 'one'), m('b', 'src/a.test.ts', 'two'), m('c', 'src/b.test.ts', 'one'), m('d', 'e2e/__tests__/runFlows.rehearsal.test.ts', 'r')];
+    const greenIn = (_: object[], p: object) => (p as { test: string }).test === 'two';
+    expect(lanes.unproven(mutants, [], greenIn, RUN_FLOWS)).toEqual({ files: ['src/a.test.ts', 'src/b.test.ts'], titles: ['one'] });
+  });
+
+  it('has the warm checker answer in the order the lanes reach their mutants', () => {
+    expect(lanes.reachOrder([{ ids: ['a', 'b', 'c'] }, { ids: ['d'] }, { ids: ['e', 'f'] }])).toEqual(['a', 'd', 'e', 'b', 'f', 'c']);
   });
 });
 
@@ -213,7 +327,8 @@ describe('a push of planted-mistakes branches (plant/*)', () => {
     expect([push.kind, push.plants.map((p) => p.local)]).toEqual(['plant', [sha('a'), sha('c')]]);
     const checks = plantChecks(push.plants, () => `${sha('f')}\n`);
     expect(checks.map((c) => c.id.split('@')[0])).toEqual(['secrets', 'website-freeze.cjs', 'disclosure', 'secrets', 'website-freeze.cjs', 'disclosure']);
-    expect(checks.filter((c) => /jest|tsc|eslint|mutant|frozen|comment-truth/.test(c.args.join(' ')))).toEqual([]);
+    // Each argument by its own name: the folder a checkout stands in (a mutant lane's rh-mutant-lanes) is no check it runs.
+    expect(checks.filter((c) => /jest|tsc|eslint|mutant|frozen|comment-truth/.test(c.args.map((a) => basename(a)).join(' ')))).toEqual([]);
     expect(checks[0]!.args.slice(0, 3)).toEqual(['git', '--log-opts', `${sha('f')}..${sha('a')}`]);
   });
 

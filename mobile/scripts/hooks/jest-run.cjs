@@ -2,14 +2,16 @@
 /**
  * jest-run.cjs — one jest run over every test file the push names, with no command line to outgrow.
  *
- *   node scripts/hooks/jest-run.cjs --workers <n> --out <report> [--paths <file>] [--related <file>] [--leave <regex>]
+ *   node scripts/hooks/jest-run.cjs --workers <n> --out <report> [--paths <file>] [--related <file>] [--leave <regex>] [--titles <file>]
  *
  * --paths names test files, one per line, from mobile/; --related names changed files, one per line,
  * whose related tests jest finds itself (`--listTests --findRelatedTests`, in batches that fit on one
  * Windows command line). Every file of both, once, minus any whose path --leave matches, runs in one
  * jest run (jest's API, so the list is handed over whole), its workers --workers, the worktrees and
- * Stryker's sandbox inside the checkout left out as the push leaves them. Writes jest's --json report
- * to --out and the list it ran beside it (<out>.files). Exits as jest does; 0 with nothing to run.
+ * Stryker's sandbox inside the checkout left out as the push leaves them. --titles runs only the tests
+ * whose name is one of those titles, or ends in one after its describe's (a mutant's proof is named by
+ * its title). Writes jest's --json report to --out and the list it ran beside it (<out>.files). Exits
+ * as jest does; 0 with nothing to run.
  */
 const { execFileSync } = require('child_process');
 const { readFileSync, writeFileSync } = require('fs');
@@ -32,23 +34,28 @@ const relatedTo = (changed) => inBatches(changed).flatMap((batch) => JSON.parse(
 const toRun = (named, related, leave) => [...new Set([...named, ...related].map(fromMobile))]
   .filter((p) => !(leave && leave.test(p))).sort();
 
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** jest's -t for every test whose full name is one of these titles, or ends in one after its describe's. */
+const titlesPattern = (titles) => `(?:^| )(?:${titles.map(escapeRe).join('|')})$`;
+
 async function main(argv) {
   const flag = (name) => { const i = argv.indexOf(name); return i < 0 ? null : argv[i + 1]; };
   const workers = Number(flag('--workers'));
   const out = flag('--out');
-  if (!(workers >= 1) || !out) { console.error('usage: jest-run.cjs --workers <n> --out <report> [--paths <file>] [--related <file>] [--leave <regex>]'); process.exit(2); }
+  if (!(workers >= 1) || !out) { console.error('usage: jest-run.cjs --workers <n> --out <report> [--paths <file>] [--related <file>] [--leave <regex>] [--titles <file>]'); process.exit(2); }
   const changed = lines(flag('--related'));
   const files = toRun(lines(flag('--paths')), changed.length ? relatedTo(changed) : [], flag('--leave') ? new RegExp(flag('--leave')) : null);
   writeFileSync(`${out}.files`, `${files.join('\n')}\n`);
-  if (!files.length) { console.log('no test file to run'); return 0; }
-  console.log(`${files.length} test files, ${workers} workers`);
+  const titles = lines(flag('--titles'));
+  if (!files.length || (flag('--titles') && !titles.length)) { console.log('no test to run'); return 0; }
+  console.log(`${files.length} test files, ${workers} workers${titles.length ? `, ${titles.length} tests by title` : ''}`);
   process.chdir(MOBILE);
   const { runCLI } = require(join(MOBILE, 'node_modules', 'jest'));
   const { results } = await runCLI({
     // From mobile/, with forward slashes: jest also reads the list as a pattern, which a Windows path's
     // backslashes make invalid.
     _: files, $0: 'jest', runTestsByPath: true, maxWorkers: workers,
-    testPathIgnorePatterns: ignored(MOBILE), json: true, outputFile: out,
+    testPathIgnorePatterns: ignored(MOBILE), json: true, outputFile: out, ...(titles.length ? { testNamePattern: titlesPattern(titles) } : {}),
   }, [MOBILE]);
   return results.success ? 0 : 1;
 }
@@ -57,4 +64,4 @@ if (require.main === module) {
   main(process.argv.slice(2)).then((code) => process.exit(code), (e) => { console.error(e); process.exit(1); });
 }
 
-module.exports = { fromMobile, toRun };
+module.exports = { fromMobile, titlesPattern, toRun };

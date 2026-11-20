@@ -21,12 +21,18 @@
  *   - every file was put back and read back byte for byte before the next.
  *
  *   node mobile/scripts/mutants.cjs                  every mutant
- *   node mobile/scripts/mutants.cjs --ids a,b        those named
+ *   node mobile/scripts/mutants.cjs --ids a,b        those named (--ids @<file>: one id a line)
  *   node mobile/scripts/mutants.cjs --results <file> also writes the count-only results (ids and verdicts, P0.39)
  *   node mobile/scripts/mutants.cjs --put-back       puts back what a stopped run left in place, and ends
  *   node mobile/scripts/mutants.cjs --green <report>[,<report>]
  *                                                    a mutant whose test a jest --json report of this same
  *                                                    committed tree holds passing counts that as its first run
+ *   node mobile/scripts/mutants.cjs --types-out <file> --ids a,b
+ *                                                    the warm checker: each one's type check in memory, a
+ *                                                    line each to <file>, nothing written to the checkout
+ *   node mobile/scripts/mutants.cjs --types-from <file>
+ *                                                    a mutant's type check taken from those lines where they
+ *                                                    were made from its very bytes; tsc's own otherwise
  *
  * Any other argument, or an option without its value, is refused before anything runs. Every
  * run first puts back what a stopped run left in place (the mutant in place, below).
@@ -35,10 +41,12 @@
  */
 const { createHash } = require('crypto');
 const { execFileSync, spawnSync } = require('child_process');
-const { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } = require('fs');
+const { appendFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } = require('fs');
 const { Buffer } = require('buffer');
-const { tmpdir } = require('os');
-const { dirname, extname, join, relative } = require('path');
+const os = require('os');
+const { dirname, extname, join, relative, resolve } = require('path');
+
+const { tmpdir } = os;
 
 const MOBILE = join(__dirname, '..');
 const ROOT = join(MOBILE, '..');
@@ -117,13 +125,32 @@ const statusIn = (report, title) => {
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/**
+ * The flow runner's rehearsals (e2e/__tests__/runFlows*.rehearsal.test.ts): whole runs of bash that
+ * wait on the clock, whose timings a starved processor breaks.
+ */
+const REHEARSAL = /^e2e\/__tests__\/runFlows(?:\.[\w-]+)?\.rehearsal\.test\.ts$/;
+
+/**
+ * `fn` run with this process at normal priority, and its old priority back after: a child started
+ * meanwhile starts at normal (Windows gives a child its parent's class only below normal). A push runs
+ * its mutants below normal, beside the rehearsals at normal; a rehearsal a mutant runs is one of them.
+ */
+const atNormalPriority = (fn, at = os) => {
+  const normal = os.constants.priority.PRIORITY_NORMAL;
+  let was = null;
+  try { was = at.getPriority(0); if (was !== normal) at.setPriority(0, normal); } catch { was = null; }
+  try { return fn(); } finally { if (was !== null && was !== normal) { try { at.setPriority(0, was); } catch { /* left at normal */ } } }
+};
+
 /** One named test, run alone; its status, and jest's own words when it never ran. */
 const runTest = ({ file, test }) => {
   const dir = mkdtempSync(join(tmpdir(), 'mutant-'));
   const out = join(dir, 'report.json');
   try {
-    const r = spawnSync(process.execPath, [join(MOBILE, 'node_modules', 'jest', 'bin', 'jest.js'), '--runTestsByPath', file,
+    const run = () => spawnSync(process.execPath, [join(MOBILE, 'node_modules', 'jest', 'bin', 'jest.js'), '--runTestsByPath', file,
       '-t', escapeRe(test), '--json', '--outputFile', out, '--silent'], { cwd: MOBILE, encoding: 'utf8', maxBuffer: 1e9 });
+    const r = REHEARSAL.test(file) ? atNormalPriority(run) : run();
     if (!existsSync(out)) return { status: 'missing', said: `${r.stderr}`.trim().split('\n').slice(-5).join(' / ') };
     const report = JSON.parse(readFileSync(out, 'utf8'));
     const status = statusIn(report, test);
@@ -134,6 +161,9 @@ const runTest = ({ file, test }) => {
   }
 };
 
+/** How this run's type checks were answered: by a warm checker from the same bytes, or by tsc. */
+const typeAnswers = { warm: 0, tsc: 0 };
+
 let tsInfo = null;
 /** The type checker's errors (`file(line,col): error ...` lines), over the whole project, kept warm between mutants. */
 const typeErrors = () => {
@@ -143,10 +173,100 @@ const typeErrors = () => {
   return lf(`${r.stdout}${r.stderr}`).split('\n').filter((l) => / error TS\d+:/.test(l));
 };
 
-/** Whether each changed file still parses or type-checks: [] when it does, else what was said. */
-const compileFaults = (changes) => {
+/** Whether a mutant's changes need the type checker: one of them is TypeScript. */
+const typed = (changes) => changes.some((c) => /\.tsx?$/.test(c.file));
+
+/**
+ * The type checker kept warm, for a run of many mutants: the project (tsconfig.json, as tsc reads it)
+ * built once from the files as committed, and each mutant's text checked against that build in memory,
+ * nothing written. tsc's own incremental builder (createSemanticDiagnosticsBuilderProgram) rechecks
+ * the files a change reaches, the changed ones and every one whose types depend on them, and keeps the
+ * rest's diagnostics, as `tsc --incremental` does; each check starts from the committed build, never from
+ * the mutant before it. Its errors are written as tsc --pretty false writes them, from mobile/. A
+ * change it cannot hold in memory (a new file, whose place among the project's files only the config's
+ * globs decide, or a tsconfig) is no change it checks: `holds` says so and the run asks tsc itself.
+ */
+const warmTypes = (mobile = MOBILE) => {
+  const ts = require(join(MOBILE, 'node_modules', 'typescript'));
+  const key = (f) => resolve(f).toLowerCase();
+  const config = ts.getParsedCommandLineOfConfigFile(join(mobile, 'tsconfig.json'), {}, {
+    ...ts.sys, onUnRecoverableConfigFileDiagnostic: (d) => { throw new Error(ts.flattenDiagnosticMessageText(d.messageText, ' ')); },
+  });
+  const over = new Map();
+  const texts = new Map();
+  const files = new Map();
+  const host = ts.createCompilerHost(config.options);
+  host.getCurrentDirectory = () => mobile;
+  host.readFile = (f) => {
+    const k = key(f);
+    if (over.has(k)) return over.get(k);
+    if (!texts.has(k)) texts.set(k, ts.sys.readFile(f));
+    return texts.get(k);
+  };
+  host.createHash = hash;
+  host.getSourceFile = (f, language) => {
+    const text = host.readFile(f);
+    if (text === undefined) return undefined;
+    const k = `${key(f)}|${typeof language === 'object' ? language.languageVersion : language}`;
+    const kept = files.get(k);
+    if (kept && kept.text === text) return kept.file;
+    const file = ts.createSourceFile(f, text, language, true);
+    file.version = hash(text);
+    // A committed file is made once; a mutant's is made for its check alone.
+    if (!over.has(key(f))) files.set(k, { text, file });
+    return file;
+  };
+  const build = (old, roots = config.fileNames) => ts.createSemanticDiagnosticsBuilderProgram(roots, config.options, host, old,
+    ts.getConfigFileParsingDiagnostics(config), config.projectReferences);
+  const errorsOf = (program) => [...program.getConfigFileParsingDiagnostics(), ...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics(),
+    ...program.getSyntacticDiagnostics(), ...program.getSemanticDiagnostics()].filter((d) => d.category === ts.DiagnosticCategory.Error);
+  const formatHost = { getCanonicalFileName: (f) => f, getCurrentDirectory: () => mobile, getNewLine: () => '\n' };
+  const lines = (errors) => lf(ts.formatDiagnostics(errors, formatHost)).split('\n').filter((l) => / error TS\d+:/.test(l));
+  // Built over an empty build, every file is new to the builder, so each one's shape is its declarations
+  // (a build from nothing takes each file's text for its shape, and then every change reaches every
+  // file that imports it): a change that leaves a file's declarations as they were rechecks that file
+  // alone, and one that changes them rechecks every file they reach.
+  const committed = build(build(undefined, []));
+  const atCommit = lines(errorsOf(committed));
+  const holds = (changes) => changes.every((c) => c.before !== null && !/(^|\/)tsconfig[^/]*\.json$/.test(c.file.split('\\').join('/')));
+  /** The type errors of the project with these changes in, as tsc would print them. */
+  const check = (changes) => {
+    over.clear();
+    for (const c of changes) over.set(key(c.path), c.after);
+    try { return lines(errorsOf(build(committed))); } finally { over.clear(); }
+  };
+  return { atCommit, check, holds };
+};
+
+/** The bytes a type check of these changes reads: each file's path from mobile/ and its text, hashed. */
+const changesHash = (changes) => hash(JSON.stringify(changes.map((c) => [c.file, c.after])));
+
+/**
+ * A warm checker's answers, as another process writes them (--types-out, one JSON line each: its pid
+ * first, then { id, hash, faults }, then { done }): the faults for this mutant when the answer was
+ * made from exactly these bytes, else null, and the run asks tsc itself. Waits while the checker lives
+ * and has not answered; a checker that ended or died without the answer is no answer.
+ */
+const typesFrom = (file, alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } }, pause = 500) => (m, changes) => {
+  const want = changesHash(changes);
+  for (;;) {
+    const text = existsSync(file) ? readFileSync(file, 'utf8') : '';
+    // Only whole lines: one being written is read on the next look.
+    const said = text.slice(0, text.lastIndexOf('\n') + 1).split('\n').filter(Boolean).flatMap((l) => { try { return [JSON.parse(l)]; } catch { return []; } });
+    const answer = said.find((l) => l.id === m.id);
+    if (answer) return answer.hash === want ? answer.faults : null;
+    const pid = said.find((l) => typeof l.pid === 'number')?.pid;
+    if (pid === undefined || said.some((l) => l.done) || !alive(pid)) return null;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, pause);
+  }
+};
+
+/** Whether each changed file still parses or type-checks: [] when it does, else what was said. `types` answers the type check. */
+const compileFaults = (changes, types = typeErrors) => [...(typed(changes) ? types() : []), ...syntaxFaults(changes)];
+
+/** Whether each changed script, JSON and YAML file still parses: [] when each does, else what was said. */
+const syntaxFaults = (changes) => {
   const faults = [];
-  if (changes.some((c) => /\.tsx?$/.test(c.file))) faults.push(...typeErrors());
   for (const c of changes) {
     const ext = extname(c.file);
     if (['.js', '.cjs', '.mjs'].includes(ext)) {
@@ -192,7 +312,10 @@ const putBackLeftover = (placed = PLACED) => {
 };
 
 /** The options and whether each takes a value. */
-const OPTIONS = { '--ids': true, '--changed': true, '--part': true, '--results': true, '--fresh': false, '--gather': true, '--out': true, '--put-back': false, '--green': true };
+const OPTIONS = {
+  '--ids': true, '--changed': true, '--part': true, '--results': true, '--fresh': false, '--gather': true, '--out': true, '--put-back': false, '--green': true,
+  '--types-out': true, '--types-from': true,
+};
 
 /** What is wrong with these arguments, or null: an unknown one, or an option missing its value. */
 const argumentsFault = (argv) => {
@@ -286,8 +409,30 @@ const greenIn = (reports, { file, test }) => reports.some((report) => (report.te
   .filter((r) => String(r.name).split('\\').join('/').endsWith(`/mobile/${file}`))
   .some((r) => statusIn({ testResults: [r] }, test) === 'passed'));
 
-/** One mutant, by the kill rules: its verdict and why. `green` are reports that already ran its test green on this tree. */
-const runOne = (m, green = []) => {
+/**
+ * A written mutant's verdict, from what its compile check found (`faults`) and its named test's run
+ * (`run`, null when it was not run): a declared type error is caught by the type checker naming one of
+ * its files; any other is invalid when it does not compile, caught only when its named test failed,
+ * survived when it passed, and invalid when it did not run at all (skipped, or the file never loaded).
+ */
+const verdictOf = (m, changes, faults, run) => {
+  if (m.expect === 'type-error') {
+    const named = faults.filter((f) => changes.some((c) => f.split('\\').join('/').includes(c.file)));
+    return named.length ? { verdict: 'caught', why: '' } : { verdict: 'survived', why: 'the type checker took it' };
+  }
+  if (faults.length) return { verdict: 'invalid', why: `does not compile: ${faults.slice(0, 2).join(' / ')}` };
+  if (run?.status === 'failed') return { verdict: 'caught', why: '' };
+  if (run?.status === 'passed') return { verdict: 'survived', why: 'its test passed with the mistake in' };
+  return { verdict: 'invalid', why: `its test did not run: ${run?.said ?? ''}`.trim() };
+};
+
+/**
+ * One mutant, by the kill rules: its verdict and why. `green` are reports that already ran its test
+ * green on this tree; `types`, when given, answers the type check of its changes (typesFrom), null
+ * sending it to tsc. The type check is read after the named test has run: the verdict is the same
+ * whichever ends first, and the test's run is not held waiting on it.
+ */
+const runOne = (m, green = [], types = null) => {
   if (m.source === 'judge') return runJudge(m);
   const files = [...new Set([...(m.files ?? []), ...(m.edits ?? []).map((e) => e.file), ...(m.plant ?? []).map((p) => p.path)])];
   const changed = dirty(files);
@@ -302,16 +447,16 @@ const runOne = (m, green = []) => {
   writeFileSync(PLACED, JSON.stringify({ mutant: m.id, changes }));
   try {
     for (const c of changes) { mkdirSync(dirname(c.path), { recursive: true }); writeFileSync(c.path, c.after); }
-    const faults = compileFaults(changes);
-    if (m.expect === 'type-error') {
-      const named = faults.filter((f) => changes.some((c) => f.split('\\').join('/').includes(c.file)));
-      return named.length ? { verdict: 'caught', why: '' } : { verdict: 'survived', why: 'the type checker took it' };
-    }
-    if (faults.length) return { verdict: 'invalid', why: `does not compile: ${faults.slice(0, 2).join(' / ')}` };
-    const r = runTest(m.proof);
-    if (r.status === 'failed') return { verdict: 'caught', why: '' };
-    if (r.status === 'passed') return { verdict: 'survived', why: 'its test passed with the mistake in' };
-    return { verdict: 'invalid', why: `its test did not run: ${r.said}` };
+    const typeFaults = () => {
+      if (!typed(changes)) return [];
+      const warm = types?.(m, changes);
+      if (warm) { typeAnswers.warm++; return warm; }
+      typeAnswers.tsc++;
+      return typeErrors();
+    };
+    const own = syntaxFaults(changes);
+    const r = m.expect === 'type-error' || own.length ? null : runTest(m.proof);
+    return verdictOf(m, changes, [...typeFaults(), ...own], r);
   } finally {
     restore(changes);
     unlinkSync(PLACED);
@@ -438,7 +583,8 @@ if (require.main === module) {
     process.exit(faults.length || bad.length ? 1 : 0);
   }
 
-  const ids = arg('--ids')?.split(',');
+  // --ids @<file>: the ids one per line, as many as a command line could not hold.
+  const ids = arg('--ids')?.startsWith('@') ? readFileSync(arg('--ids').slice(1), 'utf8').split(/\r?\n/).filter(Boolean) : arg('--ids')?.split(',');
   let chosen = ids ? all.filter((m) => ids.includes(m.id)) : all;
   if (ids && chosen.length !== ids.length) { console.error(`no such mutant: ${ids.filter((i) => !all.some((m) => m.id === i)).join(', ')}`); process.exit(2); }
   if (arg('--changed')) {
@@ -446,6 +592,24 @@ if (require.main === module) {
     console.log(`${chosen.length} of ${all.length} mutants stand on what changed since ${arg('--changed').slice(0, 8)}`);
   }
   if (arg('--part')) chosen = partOf(chosen, arg('--part'));
+  if (arg('--types-out')) {
+    // The warm checker: each chosen mutant's type check, in memory from the committed build, one line
+    // each as it ends; nothing written to the checkout. The run that reads it is told by --types-from.
+    const out = arg('--types-out');
+    const warm = warmTypes();
+    // The commit's own type errors first: the push takes them as its types check.
+    appendFileSync(out, `${JSON.stringify({ atCommit: warm.atCommit })}\n`);
+    console.log(`the warm checker: ${warm.atCommit.length} type errors at this commit`);
+    for (const m of chosen) {
+      if (m.source === 'judge') continue;
+      const plan = changesOf(m);
+      if (plan.notApplied || !typed(plan.changes) || !warm.holds(plan.changes)) continue;
+      const t0 = Date.now();
+      appendFileSync(out, `${JSON.stringify({ id: m.id, hash: changesHash(plan.changes), faults: warm.check(plan.changes), ms: Date.now() - t0 })}\n`);
+    }
+    appendFileSync(out, `${JSON.stringify({ done: true })}\n`);
+    process.exit(0);
+  }
   const register = require('./register.cjs');
   let classes = register.readCommitted().classes;
   try { const joined = register.readPrivate?.(); if (joined?.classes) classes = [...classes, ...joined.classes]; } catch { /* public only */ }
@@ -456,10 +620,12 @@ if (require.main === module) {
   process.on('SIGINT', () => { stopping = true; console.error('stopping once this mutant is put back'); });
   // Reports of a jest run of this same tree: a mutant whose test they hold green skips its own first run.
   const green = (arg('--green')?.split(',') ?? []).map((f) => JSON.parse(readFileSync(f, 'utf8')));
+  // A warm checker's answers, taken only where made from the same bytes (typesFrom).
+  const types = arg('--types-from') ? typesFrom(arg('--types-from')) : null;
   for (const m of chosen) {
     if (stopping) break;
     const t0 = Date.now();
-    const { verdict, why } = runOne(m, green);
+    const { verdict, why } = runOne(m, green, types);
     console.log(`${verdict.padEnd(11)} ${m.private ? '(private)' : m.id}  ${m.private ? '' : m.class}  ${Math.round((Date.now() - t0) / 1000)}s${why && !m.private ? `  — ${why}` : ''}`);
     results.push({ class: m.class, mutant: m.id, proof: m.source === 'judge' ? 'judge' : proofId(m, classes), commit, verdict, private: !!m.private, why, m });
   }
@@ -485,11 +651,12 @@ if (require.main === module) {
     });
   }
   const bad = results.filter((r) => r.verdict !== 'caught');
+  if (typeAnswers.warm + typeAnswers.tsc) console.log(`type checks: ${typeAnswers.warm} by the warm checker from the same bytes, ${typeAnswers.tsc} by tsc`);
   console.log(`\n${results.length - bad.length} of ${results.length} caught`);
   process.exit(bad.length ? 1 : 0);
 }
 
 module.exports = {
-  applyEdits, argumentsFault, changesOf, gather, greenIn, hunksOf, lf, partOf, pathsOf, PLACED, privateDir, proofId, putBackLeftover,
-  compileFaults, readMutants, really, reverse, runOne, standsOn, statusIn, touchedSince, withLock,
+  applyEdits, argumentsFault, atNormalPriority, changesHash, changesOf, verdictOf, gather, greenIn, hunksOf, lf, partOf, pathsOf, PLACED, privateDir, proofId, putBackLeftover,
+  compileFaults, readMutants, really, REHEARSAL, reverse, runOne, standsOn, statusIn, syntaxFaults, touchedSince, typesFrom, warmTypes, withLock,
 };

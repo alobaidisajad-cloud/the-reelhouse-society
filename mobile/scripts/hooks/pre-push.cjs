@@ -13,14 +13,25 @@
  *   - each mutant standing on what changed, caught by its class's own test
  *     (scripts/mutants.cjs --changed).
  * The checks run side by side, each its own process, its output kept and printed whole as it
- * ends, every check to its end whatever another said. The tests run as one jest run (jest-run.cjs:
- * the related tests and the readers once each, the list handed over whole), the flow runner's
- * rehearsals (RUN_FLOWS) as a second beside it, and the mutants in checkouts of their own
- * (mutant-lanes.cjs), so no mutant is ever written into the files the tests read. Each check's
- * seconds are printed as a table at the end and kept in the system's temp folder.
+ * ends, every check to its end whatever another said, and never more of them at once than the
+ * machine holds (capOf, runAll): each check says the processors and the memory it takes at its
+ * peak (COST, measured on the push's own machine), and starts, in the plan's order, only once those
+ * fit beside the checks running. The cap is measured when the push starts: the logical processors
+ * but one, and the memory free then but a reserve. The tests run as one jest run (jest-run.cjs:
+ * the related tests and the readers once each, the list handed over whole). The flow runner's
+ * rehearsals (RUN_FLOWS) run as a jest run of their own, one whole run at a time, at normal priority
+ * with every other check below it, so their clocks are never starved. The
+ * mutants run in checkouts of their own (mutant-lanes.cjs), so no mutant is ever written into the
+ * files the tests read, their type checks answered by one warm checker, which checks the commit's
+ * own types too. Each check's seconds, and when it started, are printed as a table at the end and
+ * kept in the system's temp folder.
  *
  *   node mobile/scripts/hooks/pre-push.cjs --plan     with the refs on stdin: every check and file it
  *                                                     would run, run nothing
+ *   node mobile/scripts/hooks/pre-push.cjs --dry-run [<base>]
+ *                                                     every check a push of HEAD to main would run,
+ *                                                     from <base> (origin/main by default), run as
+ *                                                     that push runs them; nothing is pushed
  * A push of plant/* branches alone (the planted-mistakes kit's copies, which CI checks whole) runs only
  * what keeps it safe to publish: the secrets scan, the website freeze, the disclosure scan (PLANT,
  * plantChecks). Plant branches pushed with any other ref are refused.
@@ -49,7 +60,7 @@ const readers = (mobile) => readFileSync(join(mobile, 'test-utils', 'SOURCE-READ
 
 /**
  * The flow runner's rehearsals: the real run-flows.sh under bash, against a fake phone, whole runs
- * that wait on bash rather than the processor. They run on every push in a jest run of their own,
+ * that wait on bash rather than the processor. They run on every push in jest runs of their own,
  * beside the rest, never inside it: one slow file there holds its last worker for the whole run.
  */
 const RUN_FLOWS = /^e2e\/__tests__\/runFlows(?:\.[\w-]+)?\.rehearsal\.test\.ts$/;
@@ -64,16 +75,62 @@ const ignored = (mobile) => {
   return ['node_modules', `${at}/\\.claude/worktrees/`, `${at}/\\.stryker-tmp/`];
 };
 
+const GB = 1024 ** 3;
+
 /**
- * How many jest workers the push can afford: each holds about one suite's heap
- * (jest.config.js lets a worker grow to 400 MB before it restarts), with a
- * gigabyte left for everything else. Too many on a busy machine and workers are
- * killed for memory, failing suites that have nothing wrong with them.
+ * What each kind of check takes at its peak: processors, and bytes of memory, measured alone on the
+ * push's own machine (12 logical processors, 16 GB) with the whole process tree's working set sampled:
+ * tsc over tsconfig.json 31 s and 2.21 GB; comment-truth 118 s and 0.75 GB; the frozen counts (its tsc
+ * and its typed eslint at once) 93 s and 3.41 GB; eslint on three files 0.36 GB; the warm type checker
+ * 2.6 GB built and 2.8 GB after thirty mutants, run under a 3.5 GB heap; the rehearsals' jest run and
+ * its worker 165 MB with their bash beside, about half a processor (three rehearsals alone raised the
+ * machine's load by none it could measure over its idle). A jest worker restarts past 400 MB of heap
+ * (jest.config.js).
  */
-const WORKER_BYTES = 600 * 1024 ** 2;
-const RESERVE_BYTES = 1024 ** 3;
-const workersFor = (freeBytes, cores) =>
-  Math.max(1, Math.min(cores - 1, Math.floor((freeBytes - RESERVE_BYTES) / WORKER_BYTES)));
+const COST = {
+  script: { cpu: 1, mem: 0.2 * GB },
+  comments: { cpu: 1, mem: 0.8 * GB },
+  types: { cpu: 1, mem: 2.3 * GB },
+  frozen: { cpu: 2, mem: 3.5 * GB },
+  lint: { cpu: 1, mem: 0.8 * GB },
+  warm: { cpu: 1, mem: 3.2 * GB },
+  worker: { cpu: 1, mem: 0.6 * GB },
+  rehearsal: { cpu: 0.5, mem: 0.45 * GB },
+  lane: { cpu: 1, mem: 0.7 * GB },
+};
+
+/** The memory kept for the system and the member at the keyboard, and the processor kept for them too. */
+const RESERVE_BYTES = 0.5 * GB;
+
+/** The machine as the push measures it when it starts: its logical processors, and the memory free then. */
+const machine = () => ({ cores: os.cpus().length, freeBytes: os.freemem(), totalBytes: os.totalmem() });
+
+/** What the push may hold at once: every logical processor but one, and the free memory but the reserve. */
+const capOf = ({ cores, freeBytes }) => ({ cpu: Math.max(1, cores - 1), mem: Math.max(0, freeBytes - RESERVE_BYTES) });
+
+/** How many of a thing of this cost fit in what is left of the cap, at least one, at most `most`. */
+const fitting = (left, cost, most) => Math.max(1, Math.min(most, Math.floor(left.cpu / cost.cpu), Math.floor(left.mem / cost.mem)));
+
+/**
+ * The jest workers and the mutant lanes the cap allows, and where the warm checker runs. The rehearsals
+ * take their share first and run whole, one test at a time, as their file is written to: two of them
+ * side by side each took half as long again (one alone 137 s, two together 211 s each), against a
+ * 300 s limit, as Git Bash starts each of their many processes the slower the more start at once. The
+ * warm checker runs beside the tests when it needs no more than half of what the rehearsals leave
+ * (`warmEarly`), else after them, and the tests' workers take what is left. The lanes start once the
+ * tests have ended, beside the rehearsals or the one lane of the mutants a rehearsal proves, so they
+ * take what a rehearsal leaves. Each is at least one: what does not fit beside the rest, runAll runs
+ * after it.
+ */
+const sizesFor = (cap, { rehearsals, mutants }) => {
+  const after = rehearsals ? { cpu: cap.cpu - COST.rehearsal.cpu, mem: cap.mem - COST.rehearsal.mem } : cap;
+  const warmEarly = mutants > 0 && COST.warm.mem <= after.mem / 2 && COST.warm.cpu <= after.cpu / 2;
+  const room = warmEarly ? { cpu: after.cpu - COST.warm.cpu, mem: after.mem - COST.warm.mem } : after;
+  return { tests: fitting(room, COST.worker, cap.cpu), lanes: fitting(after, COST.lane, cap.cpu), warmEarly };
+};
+
+/** A check's cost: what its kind takes, times how many of it run (jest's workers, the parts, the lanes). */
+const costOf = (kind, times = 1) => ({ cpu: COST[kind].cpu * times, mem: COST[kind].mem * times });
 
 /** Where each pushed ref starts: the remote's tip, or where a new branch left main. */
 const basesOf = (input, git) => input.split('\n').filter(Boolean).flatMap((line) => {
@@ -82,6 +139,9 @@ const basesOf = (input, git) => input.split('\n').filter(Boolean).flatMap((line)
   if (remote && !ZERO.test(remote)) return [remote];
   return [git('merge-base', local, 'origin/main').trim()];
 });
+
+/** The line git would hand the hook for a push of HEAD to main over `base`: what --dry-run checks. */
+const dryRunInput = (git, base = 'origin/main') => `refs/heads/main ${git('rev-parse', 'HEAD').trim()} refs/heads/main ${git('rev-parse', base).trim()}\n`;
 
 /**
  * Paths in as few batches as fit on one command line. Windows takes 8,191 characters, the shell
@@ -154,21 +214,41 @@ const plantChecks = (plants, git) => plants.flatMap(({ local }) => {
   const base = git('merge-base', local, 'origin/main').trim();
   const at = `${base.slice(0, 8)}..${local.slice(0, 8)}`;
   return [
-    { id: `secrets@${local}`, label: `no secret in the commits ${at}`, cmd: 'gitleaks', cwd: ROOT, after: [], low: false,
+    { id: `secrets@${local}`, label: `no secret in the commits ${at}`, cmd: 'gitleaks', cwd: ROOT, after: [], low: false, cost: costOf('script'),
       args: ['git', '--log-opts', `${base}..${local}`, '--config', '.gitleaks.toml', '--gitleaks-ignore-path', '.gitleaksignore', '--redact=100', '--no-banner', '--log-level', 'warn', '.'] },
-    { id: `website-freeze.cjs@${local}`, label: `website-freeze.cjs from ${base.slice(0, 8)}`, cwd: ROOT, after: [], low: false, args: [join(MOBILE, 'scripts', 'website-freeze.cjs'), base] },
-    { id: `disclosure@${local}`, label: `no message or test title of ${at} describes a hole`, cwd: ROOT, after: [], low: false, args: [join(__dirname, 'disclosure.cjs'), base, local] },
+    { id: `website-freeze.cjs@${local}`, label: `website-freeze.cjs from ${base.slice(0, 8)}`, cwd: ROOT, after: [], low: false, cost: costOf('script'), args: [join(MOBILE, 'scripts', 'website-freeze.cjs'), base] },
+    { id: `disclosure@${local}`, label: `no message or test title of ${at} describes a hole`, cwd: ROOT, after: [], low: false, cost: costOf('script'), args: [join(__dirname, 'disclosure.cjs'), base, local] },
   ];
 });
 
 /**
- * The checks for these bases and changes, each { id, label, args (node's), cwd, after, low }: `after`
- * names the checks it waits for, `low` runs it below normal priority (its children inherit it), so
- * the rehearsals' bash keeps the processor it waits on.
+ * The checks for these bases and changes, each { id, label, args (node's), cwd, after, low, cost }:
+ * `after` names the checks it waits for, `low` runs it below normal priority (its children inherit
+ * it), `cost` what it takes at its peak. Their order is the order they start in when the cap is
+ * short: the rehearsals first (long, and on the clock), the tests (the warm checker before them when
+ * it fits beside them, else after), then the rest, and the mutants last.
  */
-const checksFor = ({ bases, touched, changed, files, workers, lanes, lists, clean }) => {
+const checksFor = ({ bases, touched, changed, files, sizes, lists, clean, mutants }) => {
   const checks = [];
-  const add = (c) => checks.push({ after: [], cwd: MOBILE, low: false, ...c });
+  const add = (c) => checks.push({ after: [], cwd: MOBILE, low: true, cost: costOf('script'), ...c });
+  if (changed.length) {
+    add({
+      id: 'rehearsals', label: 'the flow runner\'s rehearsals', low: false, cost: costOf('rehearsal'),
+      args: [join(__dirname, 'jest-run.cjs'), '--workers', '1', '--out', lists.rehearsalReport, '--paths', lists.rehearsals],
+    });
+  }
+  // The warm checker: the types of the commit, then each mutant's type check, which the lanes read as they come.
+  const warm = () => add({ id: 'mutant-types', label: 'types, and the mutants\' type checks, by the warm checker', cost: costOf('warm'),
+    args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', bases[0], '--lanes', String(sizes.lanes), '--types-out', lists.types] });
+  if (mutants && sizes.warmEarly) warm();
+  if (changed.length) {
+    add({
+      id: 'tests', label: 'the tests related to the changed files, and every test that reads source, the guards among them', cost: costOf('worker', sizes.tests),
+      args: [join(__dirname, 'jest-run.cjs'), '--workers', String(sizes.tests), '--out', lists.testReport, '--paths', lists.readers,
+        ...(files.code.length ? ['--related', lists.related] : []), '--leave', RUN_FLOWS.source],
+    });
+  }
+  if (mutants && !sizes.warmEarly) warm();
   for (const base of bases) {
     for (const script of ['website-freeze.cjs', 'add-only.cjs', 'migration-lint.cjs']) {
       add({ id: `${script}@${base}`, label: `${script} from ${base.slice(0, 8)}`, args: [join(MOBILE, 'scripts', script), base], cwd: ROOT });
@@ -176,29 +256,30 @@ const checksFor = ({ bases, touched, changed, files, workers, lanes, lists, clea
     add({ id: `frozen-base@${base}`, label: `frozen counts' baseline from ${base.slice(0, 8)}`, args: [join(MOBILE, 'scripts', 'frozen-counts.cjs'), '--base', base], cwd: ROOT });
   }
   const frozen = checksTouchedBy(touched);
-  if (frozen.length) add({ id: 'frozen', label: `frozen counts: ${frozen.join(', ')}`, args: [join(MOBILE, 'scripts', 'frozen-counts.cjs'), '--only', frozen.join(',')] });
+  if (frozen.length) add({ id: 'frozen', label: `frozen counts: ${frozen.join(', ')}`, cost: costOf('frozen'), args: [join(MOBILE, 'scripts', 'frozen-counts.cjs'), '--only', frozen.join(',')] });
   // God-tier's own comment gate: a comment naming what does not exist failed CI on ede2cc32.
-  if (changed.length) add({ id: 'comments', label: 'every comment names what exists', args: [join(MOBILE, 'scripts', 'comment-truth.js'), '--kinds', 'NAME,FILE,LINE'] });
-  if (files.code.length) add({ id: 'types', label: 'types', args: [bin('typescript', 'bin', 'tsc'), '--noEmit', '-p', '.'] });
+  if (changed.length) add({ id: 'comments', label: 'every comment names what exists', cost: costOf('comments'), args: [join(MOBILE, 'scripts', 'comment-truth.js'), '--kinds', 'NAME,FILE,LINE'] });
+  // The warm checker builds the same project and fails on its errors: the types are not checked twice.
+  if (files.code.length && !mutants) add({ id: 'types', label: 'types', cost: costOf('types'), args: [bin('typescript', 'bin', 'tsc'), '--noEmit', '-p', '.'] });
   inBatches(files.linted).forEach((batch, i) => add({
-    id: `lint-${i + 1}`, label: files.linted.length > files.code.length ? 'lint on every file, as lint\'s rules changed' : 'lint on the changed files',
+    id: `lint-${i + 1}`, label: files.linted.length > files.code.length ? 'lint on every file, as lint\'s rules changed' : 'lint on the changed files', cost: costOf('lint'),
     args: [bin('eslint', 'bin', 'eslint.js'), '--max-warnings=0', '--no-warn-ignored', ...batch],
   }));
-  if (changed.length) {
-    add({ id: 'rehearsals', label: 'the flow runner\'s rehearsals', args: [join(__dirname, 'jest-run.cjs'), '--workers', String(workers.rehearsals), '--out', lists.rehearsalReport, '--paths', lists.rehearsals] });
-    add({
-      id: 'tests', label: 'the tests related to the changed files, and every test that reads source, the guards among them', low: true,
-      args: [join(__dirname, 'jest-run.cjs'), '--workers', String(workers.tests), '--out', lists.testReport, '--paths', lists.readers,
-        ...(files.code.length ? ['--related', lists.related] : []), '--leave', RUN_FLOWS.source],
-    });
-  }
   // On a tree the tests found green, a mutant's first run is theirs (clean: nothing uncommitted they read).
+  // A mutant proved by a rehearsal runs whole rehearsals: one lane of its own, once the rehearsals have
+  // ended, so no two ever run at once; every other mutant in the lanes beside, once the tests have.
   for (const base of bases) {
     const green = changed.length && clean ? ['--green', `${lists.testReport},${lists.rehearsalReport}`] : [];
+    const types = mutants && base === bases[0] ? ['--types-from', lists.types] : [];
     add({
-      id: `mutants@${base}`, label: `the mutants standing on what changed from ${base.slice(0, 8)}`,
-      args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', base, '--lanes', String(lanes), ...green],
-      after: green.length ? ['tests', 'rehearsals'] : [],
+      id: `mutant-rehearsals@${base}`, label: `the mutants a rehearsal proves, standing on what changed from ${base.slice(0, 8)}`, cost: costOf('rehearsal'),
+      args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', base, '--lanes', '1', '--rehearsals', 'only', ...green, ...types],
+      after: ['rehearsals'],
+    });
+    add({
+      id: `mutants@${base}`, label: `the mutants standing on what changed from ${base.slice(0, 8)}`, cost: costOf('lane', sizes.lanes),
+      args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', base, '--lanes', String(sizes.lanes), '--rehearsals', 'none', ...green, ...types],
+      after: green.length ? ['tests'] : [],
     });
   }
   return checks;
@@ -223,17 +304,30 @@ const runCheck = (check, logDir) => new Promise((done) => {
   }));
 });
 
-/** Every check, each started once those it waits for have ended, all side by side otherwise. */
-const runAll = async (checks, logDir) => {
+/** Whether a cost fits in what is left: processors and memory both. */
+const fits = (cost, left) => cost.cpu <= left.cpu + 1e-9 && cost.mem <= left.mem;
+
+/**
+ * Every check, each started once those it waits for have ended and its cost fits beside the checks
+ * running, in the order given: the first ready check that does not fit holds every one after it, so
+ * a large check is never passed over for ever by small ones. A check larger than the whole cap runs
+ * alone. Each result carries the moments it started and ended (ms from the first start).
+ */
+const runAll = async (checks, logDir, cap = { cpu: Infinity, mem: Infinity }, run = runCheck) => {
   const ended = new Map();
-  const started = new Set();
+  const started = new Map();
   const running = new Map();
+  const t0 = Date.now();
+  const held = () => [...running.keys()].map((id) => checks.find((c) => c.id === id).cost ?? { cpu: 0, mem: 0 })
+    .reduce((a, c) => ({ cpu: a.cpu + c.cpu, mem: a.mem + c.mem }), { cpu: 0, mem: 0 });
   while (ended.size < checks.length) {
     for (const c of checks) {
-      if (!started.has(c.id) && c.after.every((a) => ended.has(a) || !checks.some((x) => x.id === a))) {
-        started.add(c.id);
-        running.set(c.id, runCheck(c, logDir).then((r) => { ended.set(c.id, r); running.delete(c.id); }));
-      }
+      if (started.has(c.id) || !c.after.every((a) => ended.has(a) || !checks.some((x) => x.id === a))) continue;
+      const h = held();
+      const cost = c.cost ?? { cpu: 0, mem: 0 };
+      if (!fits(cost, { cpu: cap.cpu - h.cpu, mem: cap.mem - h.mem }) && running.size) break;
+      started.set(c.id, Date.now() - t0);
+      running.set(c.id, run(c, logDir).then((r) => { ended.set(c.id, { ...r, from: started.get(c.id), to: Date.now() - t0 }); running.delete(c.id); }));
     }
     // Nothing running and something left: a check waits on one that never starts, which is the push check's own fault.
     if (!running.size) throw new Error(`no check can start: ${checks.filter((c) => !started.has(c.id)).map((c) => c.id).join(', ')}`);
@@ -242,16 +336,29 @@ const runAll = async (checks, logDir) => {
   return checks.map((c) => ended.get(c.id));
 };
 
-/** The seconds each check took, as a table, and the push's whole time. */
-const table = (results, total) => ['| check | seconds | verdict |', '|---|---|---|',
-  ...results.map((r) => `| ${r.label} | ${r.seconds} | ${r.code === 0 ? 'passed' : 'FAILED'} |`), `| the whole push check | ${total} | |`].join('\n');
+/** The most the results held at once: processors and memory, from their moments and costs. */
+const peakOf = (results) => {
+  const moments = results.flatMap((r) => [[r.from, 1, r], [r.to, -1, r]]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  let cpu = 0; let mem = 0; let most = { cpu: 0, mem: 0 };
+  for (const [, d, r] of moments) {
+    cpu += d * (r.cost?.cpu ?? 0); mem += d * (r.cost?.mem ?? 0);
+    most = { cpu: Math.max(most.cpu, cpu), mem: Math.max(most.mem, mem) };
+  }
+  return most;
+};
 
-/** The push check, as git's hook runs it: the refs on stdin. */
+/** The seconds each check took, as a table, and the push's whole time. */
+const table = (results, total) => ['| check | started at s | seconds | verdict |', '|---|---|---|---|',
+  ...results.map((r) => `| ${r.label} | ${Math.round((r.from ?? 0) / 1000)} | ${r.seconds} | ${r.code === 0 ? 'passed' : 'FAILED'} |`), `| the whole push check | | ${total} | |`].join('\n');
+
+/** The push check, as git's hook runs it: the refs on stdin, or --dry-run's own line. */
 function main() {
   clearHookGitEnv(process.env);
   const plan = process.argv.includes('--plan');
   const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1e8 });
-  const input = readFileSync(0, 'utf8');
+  const dry = process.argv.indexOf('--dry-run');
+  const input = dry >= 0 ? dryRunInput(git, process.argv[dry + 1] && !process.argv[dry + 1].startsWith('--') ? process.argv[dry + 1] : undefined) : readFileSync(0, 'utf8');
+  if (dry >= 0) console.log(`a dry run: the checks of a push of HEAD to main (${input.trim()}), nothing pushed`);
   const push = pushKind(input);
   if (push.kind === 'mixed') {
     console.error('Push refused: plant/* branches go alone, never with another ref, which the code gate would then pass unchecked');
@@ -265,7 +372,7 @@ function main() {
     const checks = plantChecks(push.plants, git);
     if (process.argv.includes('--plan')) { for (const c of checks) console.log(`${c.id}\t${c.label}\t${c.args.join(' ')}`); process.exit(0); }
     const dir = mkdtempSync(join(os.tmpdir(), 'rh-push-'));
-    runAll(checks, dir).then((results) => {
+    runAll(checks, dir, capOf(machine())).then((results) => {
       const failed = results.filter((r) => r.code !== 0).map((r) => r.label);
       if (failed.length) { console.error(`\nPush refused: ${failed.join('; ')}`); process.exit(1); }
       console.log('\nA plant branch: published safely; CI runs the whole suite on it.');
@@ -285,35 +392,41 @@ function main() {
   // Every rehearsal there is, from the shared file list as well as the ledger: one the ledger misses still runs.
   const { files: universe, rel } = require('../../test-utils/universe');
   const rehearsals = [...new Set([...all, ...universe('tests').map(rel)])].filter((p) => RUN_FLOWS.test(p)).sort();
-  const cores = os.cpus().length;
-  // The rehearsals' runs each hold a core of bash; the rest of the tests take what the memory allows.
-  const workers = { rehearsals: Math.max(1, Math.min(rehearsals.length, 3)) };
-  workers.tests = Math.max(1, Math.min(workersFor(os.freemem(), cores), cores - 1 - workers.rehearsals));
-  const lanes = Math.max(1, Math.floor(cores / 3));
+  const { readMutants, touchedSince } = require('../mutants.cjs');
+  const mutants = bases.length ? touchedSince(bases[0], readMutants()).length : 0;
+  const at = machine();
+  const cap = capOf(at);
+  const sizes = sizesFor(cap, { rehearsals: changed.length > 0 && rehearsals.length > 0, mutants });
+  console.log(`the machine: ${at.cores} logical processors, ${(at.freeBytes / GB).toFixed(1)} of ${(at.totalBytes / GB).toFixed(1)} GB free; `
+    + `the cap: ${cap.cpu} processors, ${(cap.mem / GB).toFixed(1)} GB; ${sizes.tests} jest workers, ${sizes.lanes} mutant lanes, `
+    + `${mutants} mutants, the warm checker ${sizes.warmEarly ? 'beside the tests' : 'after them'}`);
   const dir = mkdtempSync(join(os.tmpdir(), 'rh-push-'));
+  console.log(`each check's log and report: ${dir}`);
+  const keep = join(os.tmpdir(), 'rh-push-times');
+  mkdirSync(keep, { recursive: true });
+  const checkout = createHash('sha256').update(ROOT.toLowerCase()).digest('hex').slice(0, 10);
   const lists = {
     readers: join(dir, 'readers.txt'), rehearsals: join(dir, 'rehearsals.txt'), related: join(dir, 'related.txt'),
-    testReport: join(dir, 'tests.json'), rehearsalReport: join(dir, 'rehearsals.json'),
+    testReport: join(dir, 'tests.json'), rehearsalReport: join(dir, 'rehearsals.json'), types: join(dir, 'types.jsonl'),
   };
   writeFileSync(lists.readers, `${all.filter((p) => !RUN_FLOWS.test(p)).join('\n')}\n`);
   writeFileSync(lists.rehearsals, `${rehearsals.join('\n')}\n`);
   writeFileSync(lists.related, `${code.join('\n')}\n`);
   const clean = git('status', '--porcelain', '--untracked-files=no').trim() === '';
-  const checks = checksFor({ bases, touched, changed, files, workers, lanes, lists, clean });
+  const checks = checksFor({ bases, touched, changed, files, sizes, lists, clean, mutants });
   if (plan) {
     for (const c of checks) console.log(`${c.id}\t${c.label}\t${c.args.slice(1).join(' ')}`);
     process.exit(faults.length ? 1 : 0);
   }
   const t0 = Date.now();
-  runAll(checks, dir).then((results) => {
+  runAll(checks, dir, cap).then((results) => {
     const total = Math.round((Date.now() - t0) / 1000);
-    console.log(`\n${table(results, total)}\n`);
+    const peak = peakOf(results);
+    console.log(`\n${table(results, total)}\n\nthe most held at once: ${peak.cpu} of ${cap.cpu} processors, ${(peak.mem / GB).toFixed(1)} of ${(cap.mem / GB).toFixed(1)} GB\n`);
     // The checks' seconds, kept per checkout for the next push's reading.
-    const keep = join(os.tmpdir(), 'rh-push-times');
-    mkdirSync(keep, { recursive: true });
-    const file = join(keep, `${createHash('sha256').update(ROOT.toLowerCase()).digest('hex').slice(0, 10)}.json`);
+    const file = join(keep, `${checkout}.json`);
     const had = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
-    writeFileSync(file, `${JSON.stringify([...had.slice(-19), { at: new Date().toISOString(), total, checks: results.map((r) => ({ label: r.label, seconds: r.seconds, code: r.code })) }], null, 1)}\n`);
+    writeFileSync(file, `${JSON.stringify([...had.slice(-19), { at: new Date().toISOString(), total, cap, checks: results.map((r) => ({ label: r.label, from: r.from, seconds: r.seconds, code: r.code })) }], null, 1)}\n`);
     faults.push(...results.filter((r) => r.code !== 0).map((r) => r.label));
     if (faults.length) { console.error(`\nPush refused: ${faults.join('; ')}`); process.exit(1); }
   }, (e) => { console.error(`\nPush refused: the push check itself failed: ${e.message}`); process.exit(1); });
@@ -322,5 +435,6 @@ function main() {
 if (require.main === module) main();
 
 module.exports = {
-  HOOK_GIT_ENV, PLANT, RUN_FLOWS, basesOf, checksFor, clearHookGitEnv, ignored, inBatches, lintTargets, plantChecks, pushKind, readers, runAll, table, workersFor,
+  COST, HOOK_GIT_ENV, PLANT, RUN_FLOWS, basesOf, capOf, checksFor, clearHookGitEnv, dryRunInput, fits, ignored, inBatches, lintTargets,
+  peakOf, plantChecks, pushKind, readers, runAll, sizesFor, table,
 };

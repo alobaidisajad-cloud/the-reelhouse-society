@@ -8856,7 +8856,7 @@ mutants:
     source: shape
     edits:
       - file: scripts/hooks/pre-push.cjs
-        find: "      after: green.length ? ['tests', 'rehearsals'] : [],\n"
+        find: "      after: green.length ? ['tests'] : [],\n"
         replace: "      after: [],\n"
     proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
 
@@ -8901,9 +8901,99 @@ mutants:
     source: shape
     edits:
       - file: scripts/hooks/pre-push.cjs
-        find: "    { id: `disclosure@${local}`, label: `no message or test title of ${at} describes a hole`, cwd: ROOT, after: [], low: false, args: [join(__dirname, 'disclosure.cjs'), base, local] },\n"
+        find: "    { id: `disclosure@${local}`, label: `no message or test title of ${at} describes a hole`, cwd: ROOT, after: [], low: false, cost: costOf('script'), args: [join(__dirname, 'disclosure.cjs'), base, local] },\n"
         replace: ""
     proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "runs only what keeps it safe to publish: the secrets scan, the website freeze and the disclosure scan, never the code gate" }
+
+  - id: shape-cap-ignores-what-runs
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "      if (!fits(cost, { cpu: cap.cpu - h.cpu, mem: cap.mem - h.mem }) && running.size) break;"
+        replace: "      if (!fits(cost, { cpu: cap.cpu, mem: cap.mem }) && running.size) break;"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "never holds more than the cap at once, starts checks in their order, and runs one larger than the cap alone" }
+
+  - id: shape-sizes-past-the-warm-checker
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "  const room = warmEarly ? { cpu: after.cpu - COST.warm.cpu, mem: after.mem - COST.warm.mem } : after;"
+        replace: "  const room = after;"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "sizes the jest workers and the lanes to the cap beside the rehearsals, the warm checker beside the tests only where it fits, each at least one" }
+
+  - id: shape-rehearsal-mutants-beside-the-rehearsals
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "      after: ['rehearsals'],\n"
+        replace: "      after: [],\n"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
+
+  - id: shape-lane-without-the-root-modules
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/mutant-lanes.cjs
+        find: "const PACKAGES = ['', 'mobile'];"
+        replace: "const PACKAGES = ['mobile'];"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "gives each lane every node_modules this checkout holds, the root's with Playwright among them, and names one it lacks" }
+
+  - id: shape-warm-answer-from-other-bytes
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/mutants.cjs
+        find: "    if (answer) return answer.hash === want ? answer.faults : null;"
+        replace: "    if (answer) return answer.faults;"
+    proof: { file: src/utils/__tests__/everyMutantIsSound.guard.test.ts, test: "takes a warm checker's answer only for the very bytes it checked, and only while it lives" }
+
+  - id: shape-warm-checker-reads-the-disk
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/mutants.cjs
+        find: "    for (const c of changes) over.set(key(c.path), c.after);\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/everyMutantIsSound.guard.test.ts, test: "the warm checker says what tsc says: an error in the changed file, one it reaches in a file importing it, and none" }
+
+  - id: shape-skipped-proof-caught
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  if (run?.status === 'failed') return { verdict: 'caught', why: '' };"
+        replace: "  if (run?.status !== 'passed') return { verdict: 'caught', why: '' };"
+    proof: { file: src/utils/__tests__/everyMutantIsSound.guard.test.ts, test: "a proof that skipped, or a mutant that does not compile, never counts as caught" }
+
+  - id: shape-dry-run-from-head
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "refs/heads/main ${git('rev-parse', base).trim()}"
+        replace: "refs/heads/main ${git('rev-parse', 'HEAD').trim()}"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "checks, as a dry run, a push of HEAD to main from origin/main or the base named" }
+
+  - id: shape-rehearsal-run-outlives-its-test
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: e2e/__tests__/runFlows.rehearsal.test.ts
+        find: "  if (child.pid === undefined || child.exitCode !== null || child.signalCode !== null) return;"
+        replace: "  if (child.pid !== -1) return;"
+    proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "ends a run its test left running, with every process under it" }
+
+  - id: shape-rehearsal-mutant-at-low-priority
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  try { was = at.getPriority(0); if (was !== normal) at.setPriority(0, normal); } catch { was = null; }"
+        replace: "  try { was = at.getPriority(0); } catch { was = null; }"
+    proof: { file: src/utils/__tests__/everyMutantIsSound.guard.test.ts, test: "runs a rehearsal a mutant names at normal priority, as the push runs the rehearsals, and puts its own back" }
 
   - id: shape-a-new-column-never-counted
     class: DB-a-column-the-planner-never-counted

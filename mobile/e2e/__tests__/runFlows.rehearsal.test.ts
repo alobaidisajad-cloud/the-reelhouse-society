@@ -23,7 +23,7 @@
  * `tail -f` it uses). A missing bash fails here rather than skipping: a rehearsal
  * that does not run proves nothing.
  */
-import { spawn } from 'child_process';
+import { spawn, spawnSync, type ChildProcess } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -269,6 +269,19 @@ interface Run { status: number | null; stdout: string; stderr: string; T: string
 const made: string[] = [];
 afterAll(() => { for (const d of made) rmSync(d, { recursive: true, force: true }); });
 
+/**
+ * A run still going when its test ends (the test ran out of time) is ended with every process under
+ * it: its fake phone's log loops and the script's own waits otherwise run on for hours beside every
+ * later test, the push's other checks among them.
+ */
+const running = new Set<ChildProcess>();
+const endTree = (child: ChildProcess) => {
+  if (child.pid === undefined || child.exitCode !== null || child.signalCode !== null) return;
+  if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+  else { try { process.kill(-child.pid, 'SIGKILL'); } catch { child.kill('SIGKILL'); } }
+};
+afterEach(() => { for (const child of running) endTree(child); running.clear(); });
+
 /** One whole run: `flows` are the top-level flows; `scenario` each flow's behaviour, one per attempt. */
 function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { env?: Record<string, string>; state?: Record<string, string>; map?: object } = {}): Promise<Run> {
   const T = posix(mkdtempSync(join(tmpdir(), 'rehearsal-')));
@@ -306,7 +319,10 @@ function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { e
   };
   return new Promise((resolve, reject) => {
     // No input, as on CI: the fake adb reads its input to the end, as the real one does.
-    const child = spawn(BASH, [posix(SCRIPT)], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+    // Its own process group off Windows, so the whole tree can be ended at once (endTree).
+    const child = spawn(BASH, [posix(SCRIPT)], { env, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
+    running.add(child);
+    child.on('close', () => running.delete(child));
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d) => { stdout += d; });
@@ -335,6 +351,23 @@ function always(r: Run) {
 // One whole run at a time, as a single test file should load the machine: six at once
 // started dozens of shells together and slowed the suite's other files past their 5 s.
 jest.setTimeout(300_000);
+
+it('ends a run its test left running, with every process under it', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'rehearsal-tree-'));
+  made.push(dir);
+  const beat = posix(join(dir, 'beat'));
+  // A run whose own child keeps writing, as a fake phone's log loop does.
+  const child = spawn(BASH, ['-c', `( while :; do echo . >> '${beat}'; sleep 0.2; done ) & wait`], { stdio: 'ignore', detached: process.platform !== 'win32' });
+  const size = () => (existsSync(beat) ? readFileSync(beat, 'utf8').length : 0);
+  const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  for (let i = 0; i < 50 && size() < 2; i++) await pause(200);
+  expect(size()).toBeGreaterThan(1);
+  endTree(child);
+  await pause(1500);
+  const after = size();
+  await pause(1500);
+  expect(size()).toBe(after);
+});
 
 it('runs in bash, as stored: LF line endings', () => {
   expect(existsSync(BASH) || BASH === 'bash').toBe(true);

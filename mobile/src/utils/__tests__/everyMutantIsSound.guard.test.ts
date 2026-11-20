@@ -33,6 +33,11 @@ const mutantsCjs = require('../../../scripts/mutants.cjs') as {
   reverse: (text: string, hunks: { before: string[]; after: string[] }[]) => { text?: string; notApplied?: string };
   standsOn: (m: Mutant, changed: string) => boolean;
   statusIn: (report: unknown, title: string) => string;
+  verdictOf: (m: Partial<Mutant>, changes: { file: string }[], faults: string[], run: { status: string; said?: string } | null) => { verdict: string; why: string };
+  changesHash: (changes: { file: string; after: string }[]) => string;
+  typesFrom: (file: string, alive?: (pid: number) => boolean, pause?: number) => (m: { id: string }, changes: { file: string; after: string }[]) => string[] | null;
+  warmTypes: (dir: string) => { atCommit: string[]; check: (changes: { file: string; path: string; before: string | null; after: string }[]) => string[]; holds: (changes: { file: string; before: string | null }[]) => boolean };
+  atNormalPriority: <T>(fn: () => T, at?: { getPriority: (pid: number) => number; setPriority: (pid: number, p: number) => void }) => T;
 };
 const RESULTS = JSON.parse(readFileSync(join(MOBILE, 'register', 'mutant-results.json'), 'utf8')) as Result[];
 
@@ -283,6 +288,79 @@ describe('the runner\'s own rules say NO', () => {
     expect(mutantsCjs.statusIn(report([{ title: 'the guard', status: 'passed' }, { title: 'another', status: 'failed' }]), 'the guard')).toBe('passed');
     expect(mutantsCjs.statusIn(report([]), 'the guard')).toBe('missing');
     expect(mutantsCjs.statusIn({ testResults: [{ message: 'Cannot find module' }] }, 'the guard')).toBe('missing');
+  });
+
+  it('a proof that skipped, or a mutant that does not compile, never counts as caught', () => {
+    const m = { id: 'shape-x', proof: { file: 'a.test.ts', test: 't' } };
+    const v = (faults: string[], run: { status: string } | null) => mutantsCjs.verdictOf(m, [{ file: 'src/a.ts' }], faults, run).verdict;
+    expect([v([], { status: 'failed' }), v([], { status: 'passed' }), v([], { status: 'missing' }), v([], null), v(['src/a.ts(1,1): error TS2322: x'], { status: 'failed' })])
+      .toEqual(['caught', 'survived', 'invalid', 'invalid', 'invalid']);
+    const typeError = { ...m, expect: 'type-error' };
+    expect([mutantsCjs.verdictOf(typeError, [{ file: 'src/a.ts' }], ['src/a.ts(1,1): error TS2322: x'], null).verdict, mutantsCjs.verdictOf(typeError, [{ file: 'src/a.ts' }], ['src/b.ts(1,1): error TS2322: x'], null).verdict])
+      .toEqual(['caught', 'survived']);
+  });
+
+  it('takes a warm checker\'s answer only for the very bytes it checked, and only while it lives', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'warm-'));
+    try {
+      const file = join(dir, 'types.jsonl');
+      const changes = [{ file: 'src/a.ts', after: 'export const a = 1;\n' }];
+      const other = [{ file: 'src/a.ts', after: 'export const a = 2;\n' }];
+      const said = (lines: object[], tail = '') => writeFileSync(file, `${lines.map((l) => JSON.stringify(l)).join('\n')}\n${tail}`);
+      const ask = (alive: boolean, id = 'shape-x', c = changes) => mutantsCjs.typesFrom(file, () => alive, 1)({ id }, c);
+      said([{ pid: 1 }, { id: 'shape-x', hash: mutantsCjs.changesHash(changes), faults: ['f'] }]);
+      expect([ask(true), ask(true, 'shape-x', other), ask(false, 'shape-y')]).toEqual([['f'], null, null]);
+      // Ended without it, or a line only half written by a checker that died: no answer.
+      said([{ pid: 1 }, { done: true }]);
+      expect(ask(true)).toBeNull();
+      said([{ pid: 1 }], `{"id":"shape-x","hash":"${mutantsCjs.changesHash(changes)}","fau`);
+      expect(ask(false)).toBeNull();
+      rmSync(file);
+      expect(ask(true)).toBeNull();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('the warm checker says what tsc says: an error in the changed file, one it reaches in a file importing it, and none', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'warm-project-'));
+    try {
+      writeFileSync(join(dir, 'tsconfig.json'), JSON.stringify({ compilerOptions: { strict: true, noEmit: true, types: [], skipLibCheck: true }, include: ['*.ts'] }));
+      const a = 'export const count = (n: number) => n + 1;\n';
+      writeFileSync(join(dir, 'a.ts'), a);
+      writeFileSync(join(dir, 'b.ts'), 'import { count } from \'./a\';\nexport const total: number = count(1);\n');
+      const warm = mutantsCjs.warmTypes(dir);
+      const tsc = (text: string) => {
+        writeFileSync(join(dir, 'a.ts'), text);
+        try {
+          execFileSync(process.execPath, [join(MOBILE, 'node_modules', 'typescript', 'bin', 'tsc'), '--noEmit', '--pretty', 'false', '-p', 'tsconfig.json'], { cwd: dir, encoding: 'utf8' });
+          return [];
+        } catch (e) {
+          return String((e as { stdout: string }).stdout).split(/\r?\n/).filter((l) => / error TS\d+:/.test(l));
+        } finally {
+          writeFileSync(join(dir, 'a.ts'), a);
+        }
+      };
+      const asMutant = (after: string) => [{ file: 'a.ts', path: join(dir, 'a.ts'), before: a, after }];
+      const cases = ['export const count = (n: number) => n + 2;\n', 'export const count = (n: number) => String(n);\n', 'export const count = (n: number): number => String(n);\n'];
+      const said = cases.map((c) => ({ warm: warm.check(asMutant(c)), tsc: tsc(c) }));
+      expect(said.map((s) => s.warm)).toEqual(said.map((s) => s.tsc));
+      expect(said.map((s) => s.warm.map((l) => l.split('(', 1).join('')))).toEqual([[], ['b.ts'], ['a.ts']]);
+      expect([warm.atCommit, warm.check(asMutant(a))]).toEqual([[], []]);
+      expect([warm.holds(asMutant(a)), warm.holds([{ file: 'c.ts', before: null }]), warm.holds([{ file: 'tsconfig.json', before: '{}' }])]).toEqual([true, false, false]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('runs a rehearsal a mutant names at normal priority, as the push runs the rehearsals, and puts its own back', () => {
+    const { PRIORITY_NORMAL, PRIORITY_BELOW_NORMAL } = (require('os') as typeof import('os')).constants.priority;
+    let now = PRIORITY_BELOW_NORMAL;
+    const at = { getPriority: () => now, setPriority: (_: number, p: number) => { now = p; } };
+    expect([mutantsCjs.atNormalPriority(() => now, at), now]).toEqual([PRIORITY_NORMAL, PRIORITY_BELOW_NORMAL]);
+    // One the system will not raise runs as it is, never stopped for it.
+    const stuck = { getPriority: () => PRIORITY_BELOW_NORMAL, setPriority: () => { throw new Error('EACCES'); } };
+    expect(mutantsCjs.atNormalPriority(() => 'ran', stuck)).toBe('ran');
   });
 
   it('a new shape is never planted over a file that stands', () => {
