@@ -8,8 +8,9 @@
  *     one transaction, so it holds no transaction control of its own (a nested
  *     COMMIT ends the outer transaction early), and it sets
  *     `SET LOCAL lock_timeout = '2s'` and `SET LOCAL statement_timeout = '30s'`
- *     before its first other statement, and builds an index only on a table it
- *     makes itself (one members write to is indexed CONCURRENTLY);
+ *     before its first other statement, builds an index only on a table it
+ *     makes itself (one members write to is indexed CONCURRENTLY), and analyzes
+ *     each column it adds to, or fills in, a table it did not make;
  *   - a CONCURRENTLY file: an index built, dropped or rebuilt CONCURRENTLY,
  *     which cannot run inside a transaction. It holds that one statement alone,
  *     with plain `SET lock_timeout = '2s'` and a plain `SET statement_timeout`
@@ -67,7 +68,72 @@ const lint = (sql, { undo = false } = {}) => {
     const on = /^CREATE (?:UNIQUE )?INDEX (?:IF NOT EXISTS )?(?:[\w.]+ )?ON (?:ONLY )?(?<table>[\w.]+)/.exec(s.masked)?.groups?.table;
     if (on && !made.has(plain(on))) faults.push(`an index on ${plain(on).toLowerCase()}, a table that already holds rows, is built CONCURRENTLY in a file of its own`);
   }
+  // A column added to a table that holds rows has no statistics, and one filled by a top-level
+  // UPDATE has stale ones; nothing gathers them soon (adding a column changes no row). The planner
+  // then guesses: `withheld_at IS NULL` read as 0.5% of logs, when it is all of them, and the feed
+  // read every log for a page of twenty. So the file analyzes each such column after it.
+  for (const [at, s] of all.entries()) {
+    for (const { table, column } of changedColumns(s.masked)) {
+      if (made.has(plain(table))) continue;
+      const counted = all.slice(at + 1).some((a) => analyzed(a.masked).some((x) => plain(x.table) === plain(table) && (!x.columns || x.columns.includes(column))));
+      if (!counted) faults.push(`${plain(table).toLowerCase()}.${column.toLowerCase()} is added or filled here with no ANALYZE after it: the planner would guess its values`);
+    }
+  }
   return { kind: 'transaction', faults };
+};
+
+/** A text split at its commas outside parentheses, each part trimmed. */
+const topLevel = (text) => {
+  const parts = [];
+  let depth = 0;
+  let from = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '(') depth++;
+    else if (text[i] === ')') depth--;
+    else if (text[i] === ',' && depth === 0) { parts.push(text.slice(from, i).trim()); from = i + 1; }
+  }
+  parts.push(text.slice(from).trim());
+  return parts.filter(Boolean);
+};
+
+/** Where a word first stands outside parentheses in a text, or -1. */
+const atTopLevel = (text, word) => {
+  let depth = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '(') depth++;
+    else if (text[i] === ')') depth--;
+    else if (depth === 0 && text.startsWith(word, i)) return i;
+  }
+  return -1;
+};
+
+/** The columns a masked statement adds (ALTER TABLE ... ADD COLUMN) or fills (a top-level UPDATE ... SET). */
+const changedColumns = (masked) => {
+  const altered = /^ALTER TABLE (?:IF EXISTS )?(?:ONLY )?([\w.]+) (.*)$/.exec(masked);
+  if (altered) {
+    return topLevel(altered[2])
+      .map((action) => /^ADD (?:COLUMN )?(?:IF NOT EXISTS )?(?!(?:CONSTRAINT|CHECK|UNIQUE|FOREIGN|PRIMARY|EXCLUDE)\b)(\w+)\b/.exec(action)?.[1])
+      .filter(Boolean).map((column) => ({ table: altered[1], column }));
+  }
+  const updated = /^UPDATE (?:ONLY )?([\w.]+)(?: (?:AS )?(?!SET\b)\w+)? SET (.*)$/.exec(masked);
+  if (!updated) return [];
+  const ends = [' FROM ', ' WHERE ', ' RETURNING '].map((w) => atTopLevel(updated[2], w)).filter((i) => i >= 0);
+  const set = updated[2].slice(0, ends.length ? Math.min(...ends) : undefined);
+  return topLevel(set).flatMap((pair) => {
+    const many = /^\(([^)]*)\) ?=/.exec(pair);
+    const names = many ? many[1].split(',') : [/^(?:\w+\.)?(\w+) ?=/.exec(pair)?.[1] ?? ''];
+    return names.map((n) => n.trim().replace(/^\w+\./, '')).filter(Boolean).map((column) => ({ table: updated[1], column }));
+  });
+};
+
+/** The tables a masked ANALYZE statement reads, each with the columns it names (null: every one). */
+const analyzed = (masked) => {
+  const a = /^ANALYZE (?:VERBOSE )?(?:\([^)]*\) )?(.+)$/.exec(masked);
+  if (!a) return [];
+  return topLevel(a[1]).map((target) => {
+    const t = /^([\w.]+)(?: ?\(([^)]*)\))?$/.exec(target);
+    return t ? { table: t[1], columns: t[2] ? t[2].split(',').map((c) => c.trim()) : null } : null;
+  }).filter(Boolean);
 };
 
 /**

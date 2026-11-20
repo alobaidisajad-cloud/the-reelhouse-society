@@ -119,10 +119,12 @@ jobs:
           echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
 
       # Only the database: the probes read it directly, as PostgREST would.
-      # config.toml names sign-in-with-username, and the CLI checks what it names.
+      # config.toml names sign-in-with-username, and the CLI checks what it names,
+      # with the shared code it imports.
       - name: Start the local database
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          cp -r supabase/functions/_shared mobile/e2e/supabase/functions/
           bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta,gotrue,realtime,storage-api,edge-runtime,kong,mailpit,postgrest "The load test's database"
 
       # As e2e.yml: production's addresses rejected for every container, its name

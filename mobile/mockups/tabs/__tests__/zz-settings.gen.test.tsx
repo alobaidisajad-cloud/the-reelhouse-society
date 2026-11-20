@@ -1,9 +1,10 @@
 /**
  * A GENERATOR, not a test. The real Settings screen, with the
- * password panel open — the only place the sunken "well" step is drawn.
+ * password panel open — the only place the sunken "well" step is drawn —
+ * and with the member's record that could not be read.
  */
 import React, { act } from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { toHtml } from '../../../src/components/profile/__tests__/zz-render.lib';
 import { whenRendering, writeScreen } from '@/mockups/paths';
 import { LOCAL_ART } from '../../../src/components/profile/__tests__/zz-art.gen';
@@ -40,7 +41,20 @@ jest.mock('@/src/stores/mmkv-storage', () => ({
 }));
 jest.mock('@/src/services/AuthService', () => ({ AuthService: { requestAccountDeletion: jest.fn(), updatePassword: jest.fn() } }));
 jest.mock('@/src/hooks/useUpdateUser', () => ({ useUpdateUser: () => ({ mutateAsync: jest.fn(() => Promise.resolve()), isPending: false }) }));
-jest.mock('@/src/services/ModerationService', () => ({ ModerationService: { getPendingCount: jest.fn(() => Promise.resolve(0)) } }));
+// The member's record with the house as one reads it: a pause served and upheld on appeal, and a
+// warning standing as given. Each state below sets what the read answers.
+const mockMyVerdicts = jest.fn();
+const RECORD = [
+  { id: 'v-2', action: 'suspend', reason: 'Words aimed at a member in a salon, against the house rules.',
+    created_at: new Date(2026, 8, 12, 12).toISOString(), duration_hours: 72, expires_at: new Date(2026, 8, 15, 12).toISOString(),
+    lifted_at: null, appeal_status: 'upheld', content_type: 'lounge_message' },
+  { id: 'v-1', action: 'warn', reason: 'A spoiler of the ending, written without its mark.',
+    created_at: new Date(2026, 5, 3, 12).toISOString(), duration_hours: null, expires_at: null,
+    lifted_at: null, appeal_status: null, content_type: 'log' },
+];
+jest.mock('@/src/services/ModerationService', () => ({
+  ModerationService: { getPendingCount: jest.fn(() => Promise.resolve(0)), getMyVerdicts: (...a: unknown[]) => mockMyVerdicts(...a) },
+}));
 jest.mock('@/src/lib/pushNotifications', () => ({
   getPushPermissionState: jest.fn(() => Promise.resolve('granted')), requestPushPermission: jest.fn(),
 }));
@@ -69,9 +83,12 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 import { SettingsScreen } from '@/src/features/settings/SettingsScreen';
 
 whenRendering('settings generator', () => {
+  beforeEach(() => mockMyVerdicts.mockResolvedValue(RECORD));
+
   it('writes Settings with the password panel open', async () => {
     let r!: ReturnType<typeof render>;
     await act(async () => { r = render(<SettingsScreen />); });
+    await waitFor(() => expect(r.getByText('MEMBERSHIP PAUSED · 72 HOURS')).toBeTruthy());
     // Found or the run fails: this plate is the only drawing of the panel's well,
     // and a plate written without it would pass as if it held it.
     const toggle = r.getByLabelText('Change password');
@@ -80,5 +97,15 @@ whenRendering('settings generator', () => {
     writeScreen('settings', html);
     console.log('settings:', html.length, 'bytes |', (html.match(/<input|TextInput/g) || []).length, 'fields');
     expect(html.length).toBeGreaterThan(5000);
+  });
+
+  // The record that could not be read, its TRY AGAIN measured in the card that clips it.
+  it('writes Settings with the record unread', async () => {
+    mockMyVerdicts.mockRejectedValue(new Error('network'));
+    let r!: ReturnType<typeof render>;
+    await act(async () => { r = render(<SettingsScreen />); });
+    await waitFor(() => expect(r.getByText('Your record could not be read.')).toBeTruthy(), { timeout: 10_000 });
+    expect(r.getByRole('button', { name: 'Try again: read your record with the house' })).toBeTruthy();
+    writeScreen('settings-record-unread', toHtml(r.toJSON(), { local: LOCAL_ART }));
   });
 });

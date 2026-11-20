@@ -31,7 +31,7 @@ const { plan } = require('../../../supabase/diagnostics/apply.cjs') as {
 const { refusal } = require('../../../scripts/private-settings.cjs') as { refusal: (dir: string) => string | null };
 
 const LIMITS = "SET LOCAL lock_timeout = '2s';\nSET LOCAL statement_timeout = '30s';\n";
-const GOOD = `-- a new column\n${LIMITS}ALTER TABLE public.t ADD COLUMN x text;\n`;
+const GOOD = `-- a new column\n${LIMITS}ALTER TABLE public.t ADD COLUMN x text;\nANALYZE public.t (x);\n`;
 const CONCURRENT = "SET lock_timeout = '2s';\nSET statement_timeout = '15min';\nCREATE INDEX CONCURRENTLY t_x ON public.t (x);\n";
 
 describe('the migration lint', () => {
@@ -66,6 +66,28 @@ describe('the migration lint', () => {
   it('says NO to an index built in a transaction on a table that holds rows', () => {
     expect(lint(`${GOOD}CREATE UNIQUE INDEX IF NOT EXISTS t_x ON public.t (x);\n`).faults)
       .toEqual(['an index on t, a table that already holds rows, is built CONCURRENTLY in a file of its own']);
+  });
+
+  it('asks each column added to, or filled in, a table that holds rows to be analyzed after it', () => {
+    const fault = (c: string) => `${c} is added or filled here with no ANALYZE after it: the planner would guess its values`;
+    const add = 'ALTER TABLE public.logs ADD COLUMN IF NOT EXISTS withheld_at timestamp with time zone;\n';
+    expect(lint(`${LIMITS}${add}`).faults).toEqual([fault('logs.withheld_at')]);
+    expect(lint(`${LIMITS}${add}ANALYZE public.logs (withheld_at);\n`).faults).toEqual([]);
+    expect(lint(`${LIMITS}${add}ANALYZE public.logs;\n`).faults).toEqual([]);
+    // Before the column is there, of another column, or of another table: not it.
+    expect(lint(`${LIMITS}ANALYZE public.logs (withheld_at);\n${add}`).faults).toEqual([fault('logs.withheld_at')]);
+    expect(lint(`${LIMITS}${add}ANALYZE public.logs (created_at), public.lists (withheld_at);\n`).faults).toEqual([fault('logs.withheld_at')]);
+    // Several columns in one statement, each asked for; a constraint is no column.
+    const many = 'ALTER TABLE public.m\n  ADD COLUMN IF NOT EXISTS a text,\n  ADD COLUMN b numeric(4, 2),\n  ADD CONSTRAINT m_a CHECK (a <> \'\');\n';
+    expect(lint(`${LIMITS}${many}ANALYZE public.m (a);\n`).faults).toEqual([fault('m.b')]);
+    expect(lint(`${LIMITS}${many}ANALYZE public.m (a, b);\n`).faults).toEqual([]);
+    // A top-level fill: the columns it sets, with an alias, a tuple, or a subquery's own WHERE.
+    const fill = "UPDATE public.lounge_messages m\n   SET carries_words_of = f(m.user_id, (SELECT x FROM y WHERE z = 1)), (seen, kept) = (1, 2)\n  FROM public.l WHERE m.id = l.id;\n";
+    expect(lint(`${LIMITS}${fill}`).faults).toEqual(['lounge_messages.carries_words_of', 'lounge_messages.seen', 'lounge_messages.kept'].map(fault));
+    expect(lint(`${LIMITS}${fill}ANALYZE public.lounge_messages (carries_words_of, seen, kept);\n`).faults).toEqual([]);
+    // A table this file makes, and a fill inside a function's body, are not asked.
+    expect(lint(`${LIMITS}CREATE TABLE public.n (id uuid);\nALTER TABLE public.n ADD COLUMN x text;\nUPDATE public.n SET x = '';\n`).faults).toEqual([]);
+    expect(lint(`${LIMITS}CREATE FUNCTION public.f() RETURNS void LANGUAGE sql AS $$ UPDATE public.t SET x = 1 $$;\n`).faults).toEqual([]);
   });
 
   it('refuses transaction control in an undo file, and asks nothing else of it', () => {
@@ -384,7 +406,7 @@ describe('the train: every pending migration in one command', () => {
 
   it('builds an index CONCURRENTLY in its turn by name, alone and outside any transaction: after the cars that make what it indexes, probed before the cars after it', () => {
     // The index reads a column the car before it adds (round 13's films re-read index): built first, it would fail.
-    const col = car('20990101_02_col.sql', "SET LOCAL lock_timeout = '2s';\nSET LOCAL statement_timeout = '30s';\nALTER TABLE public.x ADD COLUMN due timestamptz;\n");
+    const col = car('20990101_02_col.sql', "SET LOCAL lock_timeout = '2s';\nSET LOCAL statement_timeout = '30s';\nALTER TABLE public.x ADD COLUMN due timestamptz;\nANALYZE public.x (due);\n");
     const idx = car('20990101_03_c.sql', "SET lock_timeout = '2s';\nSET statement_timeout = '10min';\nCREATE INDEX CONCURRENTLY IF NOT EXISTS x_due ON public.x (due);\n");
     const D = car('20990101_04_d.sql');
     const p = train.plan([A, col, idx, D], [reh('a_rehearsal.sql', A.name), reh('col_rehearsal.sql', col.name), reh('c_rehearsal.sql'), reh('d_rehearsal.sql', D.name)]);

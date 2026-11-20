@@ -108,6 +108,12 @@ withTheBrowser('the layout check’s own self-test', () => {
     it('the same entry, drawn, is measured and clean (whole-measured)', () => holds('whole-measured'));
   });
 
+  describe('UNDER and SMALL ask only what the phone does: a page behind its sheet, a control scrolled to', () => {
+    it('a line under a docked bar at every scroll position is covered (scrollstuck)', () => holds('scrollstuck'));
+    it('the same line on a page the app hides from every reader is not asked (scrollhidden)', () => holds('scrollhidden'));
+    it('past the window, a chip keeps its halo along the scroll; 2pt short is small, and past the scroll’s end is cut (fold)', () => holds('fold'));
+  });
+
   describe('a view hidden at rest holds nothing to measure (round 14)', () => {
     it('a view at opacity 0 is not drawn (hiddenatrest)', () => holds('hiddenatrest'));
     it('the culled projector beam, moved 3000pt up at opacity 0, is not drawn (culledbeam)', () => holds('culledbeam'));

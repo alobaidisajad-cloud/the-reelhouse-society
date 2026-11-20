@@ -7,8 +7,10 @@
  * whole from there; and the banner of a pause or a silence opens that record.
  */
 import React from 'react';
+import { StyleSheet, type ViewStyle } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { useAuthStore } from '@/src/stores/auth';
+import { SectionCard } from '@/src/features/settings/SettingsSections';
 import { VerdictRecord, verdictStands } from '../VerdictRecord';
 import StandingNotice from '@/src/components/StandingNotice';
 import { nav } from '@/src/utils/typedRouter';
@@ -25,9 +27,10 @@ jest.mock('@/src/components/moderation/VerdictSheet', () => {
 });
 jest.mock('@/src/utils/typedRouter', () => ({ nav: { push: jest.fn(), back: jest.fn(), replace: jest.fn() } }));
 
+// Each moment at the member's own noon: the record prints the member's own day, the same in every zone.
 const entry = (over: Record<string, unknown> = {}) => ({
-  id: 'v-1', action: 'suspend', reason: 'Slurs in a salon.', created_at: '2026-11-18T10:00:00Z', duration_hours: 72,
-  expires_at: '2099-11-21T10:00:00Z', lifted_at: null, appeal_status: null, content_type: 'lounge_message', ...over,
+  id: 'v-1', action: 'suspend', reason: 'Slurs in a salon.', created_at: new Date(2026, 10, 18, 12).toISOString(), duration_hours: 72,
+  expires_at: new Date(2099, 10, 21, 12).toISOString(), lifted_at: null, appeal_status: null, content_type: 'lounge_message', ...over,
 });
 
 beforeEach(() => {
@@ -44,7 +47,7 @@ it('lists every verdict on the member, how each stands, and opens each whole: it
   const r = render(<VerdictRecord />);
   await waitFor(() => expect(r.getByText('MEMBERSHIP PAUSED · 72 HOURS')).toBeTruthy());
   expect(r.getByText('Slurs in a salon.')).toBeTruthy();
-  expect(r.getByText(/^GIVEN NOV 18, 2026 · UNTIL /)).toBeTruthy();
+  expect(r.getByText('GIVEN NOV 18, 2026 · UNTIL NOV 21, 2099, 12:00 PM')).toBeTruthy();
   expect(r.getByText('GIVEN NOV 18, 2026 · STRUCK ON APPEAL')).toBeTruthy();
   await act(async () => { await fireEvent.press(r.getByRole('button', { name: /^a formal warning, given nov 18, 2026, struck on appeal\. Opens it whole\.$/ })); });
   expect(r.getByTestId('verdict-sheet').props.children).toBe('v-2');
@@ -60,6 +63,21 @@ it('an empty record says so; one that could not be read is never an empty one, a
   const failed = render(<VerdictRecord />);
   await waitFor(() => expect(failed.getByText('Your record could not be read.')).toBeTruthy(), { timeout: 5000 });
   expect(failed.queryByText('No verdict of the house stands on your record.')).toBeNull();
+});
+
+// The card the record stands in clips at its edge: a TRY AGAIN grown past its own box to reach 48
+// was cut to 30 there (the touch capture of Settings). Measured on the drawn card in CI; here, how
+// the box is built, and that it asks again.
+it('a record that could not be read offers TRY AGAIN in a 48pt box of its own, inside the card that clips', async () => {
+  mockVerdicts.mockRejectedValue(new Error('network'));
+  const r = render(<SectionCard><VerdictRecord /></SectionCard>);
+  const retry = await waitFor(() => r.getByRole('button', { name: 'Try again: read your record with the house' }), { timeout: 5000 });
+  const own = StyleSheet.flatten(retry.props.style) as ViewStyle;
+  expect(own.minHeight).toBeGreaterThanOrEqual(48);
+  expect([own.marginTop ?? 0, own.marginBottom ?? 0].every((m) => typeof m === 'number' && m >= 0)).toBe(true);
+  mockVerdicts.mockResolvedValue([]);
+  await act(async () => { await fireEvent.press(retry); });
+  await waitFor(() => expect(r.getByText('No verdict of the house stands on your record.')).toBeTruthy());
 });
 
 it('a full page offers the next, read after the last verdict held', async () => {

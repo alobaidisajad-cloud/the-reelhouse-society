@@ -4,9 +4,9 @@
  * A salon scrolled back to last November printed "NOVEMBER 12" over its messages, read as this
  * year's. The day keeps its form this year and carries its year in any other, read on the
  * member's own clock (formatDateMonthDayInYear, asked in calendarDates.test.ts). No Intl. Run in
- * six zones by `npm run test:tz`.
+ * six zones by `npm run test:tz`. formatDay lives beside it in timeAgo, so this suite reads no screen.
  */
-import { formatDay } from '@/app/lounge/[id]';
+import { formatDay } from '../timeAgo';
 
 /** Noon on a day of the member's own calendar: the same day in every zone. */
 const localNoon = (y: number, m: number, d: number) => new Date(y, m - 1, d, 12).getTime();

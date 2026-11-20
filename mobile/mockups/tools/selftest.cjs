@@ -41,8 +41,8 @@ const hung = ({ col, count, hangLeft = 11.5, hangRight = '0', marginRight = 2, o
  * room's is): a line sits under the counter at the top of the scroll, and
  * `after` points of page follow it — the room it can scroll up into.
  */
-const docked = (after, bar = "#111") => box('flex:1 1 0%;min-height:0',
-  `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0">` +
+const docked = (after, bar = "#111", page = '') => box('flex:1 1 0%;min-height:0',
+  `<div class="vscroll"${page} style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0">` +
     `<div style="position:relative;display:flex;flex-direction:column">` +
       `<div style="height:810px;flex-shrink:0"></div>` +
       T('font-size:14px;line-height:18px', 'THE LINE UNDER THE BAR', 1.35) +
@@ -225,6 +225,8 @@ const CASES = {
   scrollunder: [docked(200), {}],
   // …but one still under the bar scrolled to the END can never be read
   scrollstuck: [docked(0), ALL('UNDER')],
+  // …unless the app hides that page from every reader (a page behind its sheet): nothing is asked of it
+  scrollhidden: [docked(0, '#111', ' aria-hidden="true"'), {}],
   // the same through a see-through bar: the words are drawn over each other
   scrollsheer: [docked(0, 'rgba(0,0,0,0.4)'), ALL('CLASH')],
   scrollsheerclear: [docked(200, 'rgba(0,0,0,0.4)'), {}],
@@ -500,6 +502,23 @@ for (const [width, want] of [['390', ''], ['1024', '']]) {
   console.log(`${ok ? 'ok  ' : 'FAIL'}  frame-below  SMALL at ${width.padEnd(4)}  want [${want}]  got [${got}] exit ${r.status}${ok ? '' : `: ${`${r.stderr}${r.stdout}`.trim().split('\n').slice(-3).join(' / ')}`}`);
 }
 fs.rmSync(FDIR, { recursive: true, force: true });
+// Past a scroller's window, a control keeps its whole reach along the scroll, to where the scroll's
+// content ends: a 40pt chip with 4pt of halo above and below is 48 there (the Darkroom's filters);
+// with 2 it is 44, still SMALL; and with 4 but last in the scroll, the halo past the end is cut.
+const ODIR = fs.mkdtempSync(path.join(os.tmpdir(), 'fold-selftest-'));
+const fold = (slop, after) => box('height:300px', `<div class="vscroll" style="position:relative;display:flex;flex-direction:column;flex:1 1 0%;min-height:0;overflow:hidden">` +
+  `<div style="height:600px;flex-shrink:0"></div>` +
+  `<div data-press="${slop},0,${slop},0" aria-label="1980S" data-src="src/x/Chip.tsx:1" style="width:80px;height:40px;flex-shrink:0;margin-left:40px"></div>` +
+  `<div style="height:${after}px;flex-shrink:0"></div></div>`);
+fs.writeFileSync(path.join(ODIR, 'foldheld.html'), fold(4, 200));
+fs.writeFileSync(path.join(ODIR, 'foldshort.html'), fold(2, 200));
+fs.writeFileSync(path.join(ODIR, 'foldend.html'), fold(4, 0));
+const folded = spawnSync(process.execPath, [path.join(__dirname, 'layout.cjs'), '--src', ODIR, '--passes', 'ios@1', '--kinds', 'SMALL'], { encoding: 'utf8' });
+const foldFlagged = [...new Set((folded.stdout.match(/^\S+(?=\s+×1\s+1 found)/gm) || []))].sort().join(',');
+const foldOk = foldFlagged === 'foldend,foldshort' && folded.status === 1;
+if (!foldOk) bad++;
+console.log(`${foldOk ? 'ok  ' : 'FAIL'}  fold         SMALL         want [foldend,foldshort]  got [${foldFlagged}] exit ${folded.status}`);
+fs.rmSync(ODIR, { recursive: true, force: true });
 // NESTED: a control inside an accessible element is lost to VoiceOver (iOS reads the element as one
 // stop), unless the element offers its act by name or is adjustable; an element set accessible={false}
 // is no stop and hides nothing. A disabled control is still named (UNSAID), unless it is no stop.

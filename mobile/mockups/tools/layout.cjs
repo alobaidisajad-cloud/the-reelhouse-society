@@ -618,9 +618,10 @@ async function audit(page) {
     // UNDER: a line in a scroller that something fixed covers at the top of the
     // scroll, and at every position the scroll walks to after it, so no position
     // shows it (the docked-bar law: a bar reserves its height). CLASH exempts covered
-    // words; under an open modal, nothing is asked. Judged LINE by line, and walked,
-    // not read at the two ends: a line under the rail at the top can sit under the
-    // head at the end and pass through the whole window between.
+    // words; under an open modal, nothing is asked, nor of words the app hides from every
+    // reader (aria-hidden: a page behind its sheet), as SMALL asks nothing of their controls.
+    // Judged LINE by line, and walked, not read at the two ends: a line under the rail
+    // at the top can sit under the head at the end and pass through the whole window between.
     // A layer drawn at opacity 0 (the Reel's section not shown) covers nothing, whatever it holds.
     const unseenLayer = (t) => { for (let a = t; a; a = a.parentElement) if (+getComputedStyle(a).opacity < 0.05) return true; return false; };
     const coverOf = (e, x, y) => {
@@ -644,7 +645,7 @@ async function audit(page) {
     });
     for (const s of document.querySelectorAll('.vscroll')) {
       if (topModal && !topModal.contains(s)) continue;
-      const inside = live.filter((e) => e.closest('.vscroll') === s);
+      const inside = live.filter((e) => e.closest('.vscroll') === s && !e.closest('[aria-hidden="true"]'));
       const unseen = inside
         .map((e) => [e, new Set(linesNow(e, s).flatMap((k, i) => (k === 'covered' ? [i] : [])))])
         .filter(([, at]) => at.size);
@@ -888,13 +889,14 @@ async function audit(page) {
     const reachOf = (c) => {
       const x = { ...c.x };
       let cutBy = '';
-      // The way the nearest scroller between the control and `a` scrolls ('v', 'h', or none).
+      // The nearest scroller between the control and `a` (`a` itself included), and the way it scrolls.
       const scrolled = (a) => {
-        for (let s = c.e.parentElement; s && s !== a; s = s.parentElement) {
-          if (s.matches('.vscroll')) return 'v';
-          if (s.matches('.hscroll')) return 'h';
+        for (let s = c.e.parentElement; s; s = s.parentElement) {
+          if (s.matches('.vscroll')) return { way: 'v', s };
+          if (s.matches('.hscroll')) return { way: 'h', s };
+          if (s === a) break;
         }
-        return a.matches('.vscroll') ? 'v' : a.matches('.hscroll') ? 'h' : null;
+        return { way: null, s: null };
       };
       for (let a = c.e.parentElement; a && a !== document.body; a = a.parentElement) {
         const r = a.getBoundingClientRect();
@@ -904,12 +906,20 @@ async function audit(page) {
         // only across, and a scroller drawn as one tall page runs on below it as scrolled to.
         const clips = a.dataset.frame !== 'column' && getComputedStyle(a).overflow !== 'visible';
         const loose = { left: Math.min(r.left, c.r.left), right: Math.max(r.right, c.r.right), top: Math.min(r.top, c.r.top), bottom: Math.max(r.bottom, c.r.bottom) };
-        // A scroller, and a clipping box that holds one, clip only across the way it scrolls:
-        // along it, a control is scrolled to (the drawing lays a scroll out as one tall page).
-        const way = clips ? scrolled(a) : null;
-        const b = !clips ? loose
-          : way === 'v' ? { ...loose, left: r.left, right: r.right }
-            : way === 'h' ? { ...loose, top: r.top, bottom: r.bottom } : r;
+        // A scroller, and any box that holds one, bound a reach only across the way it scrolls (a
+        // box that clips, by its own edges): along it, a control is scrolled to (the drawing lays a
+        // scroll out as one tall page), so a control past the window keeps its whole reach that way,
+        // up to where the scroll's content ends (a touch past that end is past the scroller's edge
+        // even scrolled to its last).
+        const { way, s } = scrolled(a);
+        const across = clips ? r : loose;
+        // Where the scroll's content ends, never short of the box's own edge.
+        const ends = (start, size, edge) => Math.max(edge, start + size);
+        const b = way === 'v' ? { left: across.left, right: across.right, top: loose.top,
+          bottom: Math.max(loose.bottom, Math.min(x.bottom, ends(s.getBoundingClientRect().top, s.scrollHeight, r.bottom))) }
+          : way === 'h' ? { top: across.top, bottom: across.bottom, left: loose.left,
+            right: Math.max(loose.right, Math.min(x.right, ends(s.getBoundingClientRect().left, s.scrollWidth, r.right))) }
+            : across;
         const was = `${x.left},${x.right},${x.top},${x.bottom}`;
         x.left = Math.max(x.left, b.left); x.right = Math.min(x.right, b.right);
         x.top = Math.max(x.top, b.top); x.bottom = Math.min(x.bottom, b.bottom);

@@ -75,3 +75,8 @@ ALTER TABLE public.mod_actions ADD CONSTRAINT mod_actions_content_snapshot_len C
 
 COMMENT ON COLUMN public.mod_actions.appeal IS 'The member''s one appeal of this verdict, in their words (file_appeal). appeal_status: pending, upheld or overturned (judge_appeal, by a moderator other than admin_id).';
 COMMENT ON COLUMN public.mod_actions.lifted_at IS 'When this verdict stopped holding the member''s standing: a ban or suspension lifted by an admin (lift_sanction), or any verdict overturned on appeal.';
+
+-- The new columns' statistics, gathered now: adding a column changes no row, so nothing else gathers
+-- them soon, and the planner guesses at a column it has none for.
+ANALYZE public.mod_actions (appeal, appeal_filed_at, appeal_status, appeal_judged_by, appeal_judged_at,
+  appeal_note, lifted_at, lifted_by, lift_reason);

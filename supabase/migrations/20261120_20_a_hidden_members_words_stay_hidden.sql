@@ -174,3 +174,7 @@ UPDATE public.lounge_messages m
  WHERE m.carries_words_of IS NULL
    AND (m.reply_to_id IS NOT NULL OR m.type IN ('log_share', 'list_share', 'dossier_share'))
    AND public.whose_words_a_message_carries(m.user_id, m.type, m.metadata, m.reply_to_id) IS NOT NULL;
+
+-- The column's statistics, gathered again now that it is filled: the hiding rule and the unread counts
+-- filter on it.
+ANALYZE public.lounge_messages (carries_words_of);

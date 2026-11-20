@@ -8416,10 +8416,7 @@ mutants:
     class: COPY-another-years-day-said-as-this-years
     source: shape
     edits:
-      - file: app/lounge/[id].tsx
-        find: "import { formatClockTime, formatDateMonthDayInYear } from '@/src/utils/timeAgo';"
-        replace: "import { formatClockTime, formatDateMonthDay, formatDateMonthDayInYear } from '@/src/utils/timeAgo';"
-      - file: app/lounge/[id].tsx
+      - file: src/utils/timeAgo.ts
         find: "  return formatDateMonthDayInYear(d, now, 'long');"
         replace: "  return formatDateMonthDay(d, 'long');"
     proof: { file: src/utils/__tests__/aDayOfAnotherYearSaysItsYear.test.ts, test: "scrolled back to last November, the divider says the year" }

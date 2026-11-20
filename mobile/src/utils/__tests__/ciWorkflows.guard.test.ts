@@ -29,6 +29,9 @@
  * 11. A run cancels only an older run of its own kind (CI-02): a workflow that
  *    cancels runs in progress keys them by the event as well, so a nightly that
  *    GitHub starts hours late never cancels a push's run, nor a push the nightly's.
+ * 12. A function copied into a local stack brings what it imports: the same step
+ *    copies its tree's _shared, and every other folder of that tree it imports, to
+ *    the same place. Without them the CLI cannot bundle it, and the stack stops.
  *
  * Parsed as YAML, not matched as text: the rules are about the structure.
  */
@@ -719,6 +722,60 @@ it('finds a background start the rule would let through, in a planted script', (
   expect(backgrounded('xcrun simctl spawn "$DEV" log stream \\\n  --level info > s.txt 2>&1 &\nstream=$!\nkill $stream')).toEqual([{ command: 'xcrun simctl spawn "$DEV" log stream --level info', stopped: true }]);
   expect(backgrounded('adb logcat > out.txt &\nstreamer=$!\nkill -0 "$streamer" && echo alive')).toEqual([{ command: 'adb logcat', stopped: false }]);
   expect(backgrounded('a && b\n# x &\nc 2>&1')).toEqual([]);
+});
+
+const REPO = join(DIR, '..', '..');
+/** The edge functions' files (both trees), each from the top of the repo. */
+const FUNCTION_FILES = universe('functions').map((f) => ({ path: f, rel: relative(REPO, f).split('\\').join('/') }));
+/** The sibling folders a function's code imports (`../_shared/x.js` names `_shared`), with its tree's _shared always. */
+function needs(tree: string, name: string): string[] {
+  const under = (folder: string) => FUNCTION_FILES.filter((f) => f.rel.startsWith(`${tree}/functions/${folder}/`));
+  const imported = under(name)
+    .flatMap((f) => [...readFileSync(f.path, 'utf8').matchAll(/from\s+['"]\.\.\/([\w-]+)\//g)].map((m) => m[1] ?? ''));
+  return [...new Set([...(under('_shared').length ? ['_shared'] : []), ...imported])].sort();
+}
+/** Each function a workflow step copies without a folder it needs beside it, in words. */
+function leftBehind(wf: Workflow): string[] {
+  const faults: string[] = [];
+  for (const [job, j] of Object.entries(wf.jobs ?? {})) {
+    for (const step of j.steps ?? []) {
+      const run = step.run ?? '';
+      const copies = [...run.matchAll(/\bcp\s+-r\s+((?:[\w.-]+\/)*supabase)\/functions\/([\w-]+)\/?\s+(\S+?)\/?(?=\s|$)/g)]
+        .map((m) => ({ tree: m[1] ?? '', name: m[2] ?? '', to: m[3] ?? '' }));
+      for (const c of copies.filter((x) => !x.name.startsWith('_'))) {
+        for (const need of needs(c.tree, c.name)) {
+          if (!copies.some((x) => x.tree === c.tree && x.name === need && x.to === c.to)) {
+            faults.push(`${job}: ${c.tree}/functions/${c.name} is copied to ${c.to} without ${c.tree}/functions/${need}`);
+          }
+        }
+      }
+    }
+  }
+  return faults;
+}
+
+it('copies each function into a local stack with what it imports, its tree\'s _shared among it', () => {
+  expect(workflows.flatMap(({ file, wf }) => leftBehind(wf).map((f) => `${file} ${f}`))).toEqual([]);
+  // It reads the copies there are: every workflow that copies a function names it here.
+  const copying = workflows.filter(({ text }) => /\bcp\s+-r\s+\S*supabase\/functions\/[\w-]+/.test(text)).map(({ file }) => file).sort();
+  expect(copying).toEqual(['db-integration.yml', 'e2e.yml', 'load.yml', 'speed-lab.yml']);
+  expect(needs('supabase', 'sign-in-with-username')).toEqual(['_shared']);
+});
+
+it('finds a function copied without its _shared, in a planted step', () => {
+  const step = (run: string) => parse(`name: x\non: push\njobs:\n  j:\n    steps:\n      - run: |\n${run.split('\n').map((l) => `          ${l}`).join('\n')}\n`) as Workflow;
+  const fn = 'cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/';
+  const shared = 'cp -r supabase/functions/_shared mobile/e2e/supabase/functions/';
+  expect(leftBehind(step(`${fn}\nbash mobile/e2e/start-stack.sh x "y"`))).toEqual([
+    'j: supabase/functions/sign-in-with-username is copied to mobile/e2e/supabase/functions without supabase/functions/_shared',
+  ]);
+  expect(leftBehind(step(`${fn}\n${shared}`))).toEqual([]);
+  // Another tree's _shared, or the same one copied elsewhere, is not it.
+  expect(leftBehind(step(`${fn}\ncp -r mobile/supabase/functions/_shared mobile/e2e/supabase/functions/`))).toHaveLength(1);
+  expect(leftBehind(step(`${fn}\ncp -r supabase/functions/_shared /tmp/elsewhere/`))).toHaveLength(1);
+  expect(leftBehind(step('cp -r mobile/supabase/functions/notify-push mobile/e2e/supabase/functions/'))).toEqual([
+    'j: mobile/supabase/functions/notify-push is copied to mobile/e2e/supabase/functions without mobile/supabase/functions/_shared',
+  ]);
 });
 
 it('cancels only an older run of its own kind (CI-02)', () => {

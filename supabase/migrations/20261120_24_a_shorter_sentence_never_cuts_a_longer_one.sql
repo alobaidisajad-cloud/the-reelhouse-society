@@ -486,3 +486,6 @@ UPDATE public.notifications n
    AND n.user_id = m.target_user_id AND n.created_at = m.created_at
    AND n.type = 'moderation' AND n.metadata ->> 'action' = m.action
    AND NOT (coalesce(n.metadata, '{}'::jsonb) ? 'mod_action_id');
+
+-- The notices' statistics, gathered again after the fill.
+ANALYZE public.notifications (metadata);

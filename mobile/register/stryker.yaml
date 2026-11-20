@@ -83,6 +83,7 @@ files:
       - src/utils/__tests__/calendarDates.test.ts
       - src/components/log/__tests__/logSurfaces.test.ts
       - src/utils/__tests__/aDateIsSaidInTheHouseVoice.test.ts
+      - src/utils/__tests__/aDayOfAnotherYearSaysItsYear.test.ts
   - file: src/components/dispatch/paper/paperMetrics.ts
     tests:
       - src/components/dispatch/__tests__/paperTextLogic.test.ts

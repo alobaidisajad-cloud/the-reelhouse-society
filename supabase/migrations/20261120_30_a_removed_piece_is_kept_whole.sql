@@ -53,3 +53,7 @@ ALTER TABLE public.mod_actions ADD COLUMN IF NOT EXISTS appeal_put_back boolean;
 COMMENT ON COLUMN public.mod_actions.appeal_put_back IS 'Whether the overturn of a removal put the piece back where it stood (judge_appeal). Read by the member''s verdict sheet.';
 
 COMMENT ON TABLE public.withheld_pieces IS 'Each piece a REMOVE CONTENT withholds (a log, a stack, a critique, a filing): kept whole, seen by its author and the Tribunal alone, until its appeal is upheld or 30 days pass unappealed (then deleted), or the verdict is overturned (then given back whole, with the notices set aside here). The house''s alone.';
+
+-- The new columns' statistics, gathered now: adding a column changes no row, so nothing else gathers
+-- them soon, and the planner guesses at a column it has none for.
+ANALYZE public.mod_actions (appeal_put_back);

@@ -364,3 +364,15 @@ export function formatDateMonthDayInYear(
   const day = `${(format === 'long' ? MONTHS_LONG : MONTHS_SHORT)[parts.month]} ${parts.day}`;
   return parts.year === new Date(now).getFullYear() ? day : `${day}, ${parts.year}`;
 }
+
+/** A salon's day divider: TODAY, YESTERDAY, or the day, with its year when it is not this one. */
+export function formatDay(iso: string, now: number): string {
+  const d = dateOf(iso);
+  const today = new Date(now);
+  const yesterday = new Date(now); yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+  if (sameDay(d, today)) return 'TODAY';
+  if (sameDay(d, yesterday)) return 'YESTERDAY';
+  // A day of another year says its year: last November's 12th is not this one's.
+  return formatDateMonthDayInYear(d, now, 'long');
+}

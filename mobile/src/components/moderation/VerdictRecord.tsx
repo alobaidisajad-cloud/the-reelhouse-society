@@ -75,20 +75,20 @@ export function VerdictRecord() {
   // How each stands now, read on the shared clock: a pause that runs out reads SERVED then.
   const standings = useClock((now) => items.map((v) => verdictStands(v, now) ?? '').join('|')).split('|');
 
-  if (isLoading) return <Text style={st.quiet}>Reading your record…</Text>;
+  if (isLoading) return <View style={st.body}><Text style={st.quiet}>Reading your record…</Text></View>;
   // Unread is not clean: a record that could not be read never reads as an empty one.
   if (isError && !firstPage) {
     return (
-      <View>
+      <View style={st.body}>
         <Text style={st.quiet}>Your record could not be read.</Text>
-        <TryAgainLine onPress={() => refetch()} what="read your record with the house" />
+        <TryAgainLine onPress={() => refetch()} what="read your record with the house" style={st.retry} />
       </View>
     );
   }
-  if (items.length === 0) return <Text style={st.quiet}>No verdict of the house stands on your record.</Text>;
+  if (items.length === 0) return <View style={st.body}><Text style={st.quiet}>No verdict of the house stands on your record.</Text></View>;
 
   return (
-    <View>
+    <View style={st.body}>
       {items.map((v, i) => {
         const heading = verdictHeading(v);
         const stands = standings[i] || null;
@@ -116,6 +116,11 @@ export function VerdictRecord() {
 }
 
 const st = StyleSheet.create({
+  // Inset from the card's edge as its heading is.
+  body: { padding: 16 },
+  // TRY AGAIN in a 48pt box of its own, as wide as its words: the card clips at its edge, so a touch
+  // grown past the box would be cut there.
+  retry: { minHeight: 48, justifyContent: 'center', alignSelf: 'flex-start', marginTop: 4 },
   quiet: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.fog, lineHeight: 19 },
   // Each verdict one control, 48 tall by its own box.
   row: { minHeight: 48, justifyContent: 'center', paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },

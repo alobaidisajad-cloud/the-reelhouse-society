@@ -119,10 +119,11 @@ jobs:
 
       # The database, and Realtime, whose own tables (realtime.messages) the salon
       # channels' rules sit on. config.toml names sign-in-with-username, and the
-      # CLI checks what it names.
+      # CLI checks what it names, with the shared code it imports.
       - name: Start the local database
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          cp -r supabase/functions/_shared mobile/e2e/supabase/functions/
           bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta,gotrue,storage-api,edge-runtime,kong,mailpit,postgrest "The DB check's database"
 
       # The snapshot's push sender names production; bootstrap proves it cannot reach it.
@@ -423,6 +424,7 @@ jobs:
       - name: Start the local database and its API
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          cp -r supabase/functions/_shared mobile/e2e/supabase/functions/
           bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta,gotrue,storage-api,edge-runtime,mailpit "The contracts' database"
 
       - name: Seal it — production's host goes nowhere

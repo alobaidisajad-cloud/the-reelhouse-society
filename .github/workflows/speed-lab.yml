@@ -89,6 +89,7 @@ jobs:
       - name: Start the local stack
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          cp -r supabase/functions/_shared mobile/e2e/supabase/functions/
           bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta "The lab's stack"
 
       - name: Keys for the local stack
@@ -460,6 +461,7 @@ jobs:
       - name: Start the local stack
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          cp -r supabase/functions/_shared mobile/e2e/supabase/functions/
           bash mobile/e2e/start-stack.sh studio,imgproxy,logflare,vector,supavisor,postgres-meta "The lab's sealed world"
 
       - name: Keys for the local stack, the app's among them

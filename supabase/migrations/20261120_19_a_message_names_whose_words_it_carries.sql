@@ -48,3 +48,7 @@ ALTER POLICY lounge_messages_hide_blocked ON public.lounge_messages
   USING ((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false))
      AND ((user_id = ( SELECT auth.uid() AS uid))
        OR (NOT COALESCE((carries_words_of && (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false))));
+
+-- The new column's statistics, gathered now: adding a column changes no row, so nothing else gathers
+-- them soon. Empty for every message here; 20261120_20 fills it and gathers them again.
+ANALYZE public.lounge_messages (carries_words_of);

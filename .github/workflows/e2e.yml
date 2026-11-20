@@ -514,10 +514,13 @@ jobs:
 
       # notify-push is production's own function, served as it is deployed (verify_jwt false, its own
       # secret), its Expo address at the stand-in and its secret made for this run alone.
+      # Each function comes with its tree's _shared, which the CLI needs to bundle it (ciWorkflows.guard).
       - name: Start the local stack
         run: |
           cp -r supabase/functions/sign-in-with-username mobile/e2e/supabase/functions/
+          cp -r supabase/functions/_shared mobile/e2e/supabase/functions/
           cp -r mobile/supabase/functions/notify-push mobile/e2e/supabase/functions/
+          cp -r mobile/supabase/functions/_shared mobile/e2e/supabase/functions/
           printf '\n[functions.notify-push]\nverify_jwt = false\n' >> mobile/e2e/supabase/config.toml
           secret=$(openssl rand -hex 24)
           echo "::add-mask::$secret"

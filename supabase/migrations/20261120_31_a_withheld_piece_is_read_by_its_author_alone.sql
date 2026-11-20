@@ -245,3 +245,9 @@ BEGIN
   END IF;
 END
 $do$;
+
+-- The new columns' statistics, gathered now: adding a column changes no row, so nothing else gathers
+-- them soon. With none, the planner reads `withheld_at IS NULL` as rare when it holds for nearly every
+-- piece, and the feed, a film's pages and search read every row for a page of twenty.
+ANALYZE public.logs (withheld_at), public.lists (withheld_at), public.log_comments (withheld_at),
+  public.list_comments (withheld_at), public.dispatch_comments (withheld_at);
