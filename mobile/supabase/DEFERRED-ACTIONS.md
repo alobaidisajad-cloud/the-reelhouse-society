@@ -13,10 +13,16 @@ can find is indistinguishable from a mistake.
 `npm run schema:check` reconciles what IS. This file records what is **meant to
 change later**, which no snapshot can infer.
 
+Every entry has a `**Trigger**` line: `launch-build` (done on or after the launch build), `before-launch-build`
+(done before it is made), `date YYYY-MM-DD`, or `standing` (nothing will trigger it: the line says why and what
+watches it). `scripts/deferred-actions.cjs` refuses an entry without one and fails once a trigger has fired: the
+launch build is recorded in `e2e/old-clients.json` with `"launch": true` as it ships, and a date is a day.
+
 ---
 
 ## DA-1. A narrowing of one column's read, held for the old build
 
+**Trigger** `launch-build`
 **Blocked on** the launch build replacing the TestFlight build on every phone that has it (and any old client the
 audit records). Its text, its probe and its steps are kept privately until it is closed and probed.
 
@@ -24,6 +30,8 @@ audit records). Its text, its probe and its steps are kept privately until it is
 
 ## 2. `supabase_admin` default privileges
 
+**Trigger** `standing` — nothing we control triggers it; `noWipePrivileges` in `scripts/check-backend-live.mjs` fails if a
+table it would reach appears.
 **Found in** batch 29
 **Blocked on** nothing we control
 
@@ -44,6 +52,7 @@ if such a table ever appears.
 
 ## 3. Drop `public.lounges.invite_code`
 
+**Trigger** `launch-build`
 **Found in** the Lounge polish pass, 2026-08-14
 **Blocked on** a mobile build shipping
 
@@ -80,12 +89,14 @@ caller.
 
 ## DA-4. A Realtime setting switched off
 
+**Trigger** `launch-build`
 **Blocked on** the launch build having shipped. Its text is kept privately until it is done and probed.
 
 ---
 
 ## DA-5. The admin second factor required
 
+**Trigger** `launch-build`
 **Blocked on** the launch build (which offers the second factor) replacing the TestFlight build. Its text is kept
 privately until it is done and probed.
 
@@ -95,6 +106,7 @@ privately until it is done and probed.
 
 The update channels a build on a phone follows (`production`, `preview`, `e2e`) are paused on Expo's server, so a
 publish from any machine reaches no phone.
+**Trigger** `launch-build`
 **Blocked on** a build whose runtime is tied to its native code having shipped, and the user's answer to keeping
 updates on. If the answer is no, they stay paused.
 
@@ -102,6 +114,7 @@ updates on. If the answer is no, they stay paused.
 
 ## DA-7. The legacy-handle grace in `enforce_username_policy`
 
+**Trigger** `launch-build`
 **File** `mobile/supabase/migrations/20260802_01_username_charset_backstop.sql`, the block marked TEMPORARY
 **Blocked on** the launch build replacing the TestFlight build.
 
@@ -113,6 +126,9 @@ member can then rename to the cleaned form of their handle.
 ---
 
 ## A web page for one filing — `/dispatch/:id`
+
+**Trigger** `standing` — the website is frozen, and the share is correct as it stands; it is a feature for the owner's
+yes or dated no at the audit's showing, and `readerScreen.test.tsx` pins the share as it is.
 
 **Where:** the web app, `src/App.tsx` and a new page beside `DispatchPage.tsx`.
 **Not the mobile app.** Nothing here is blocked on it.
@@ -154,6 +170,9 @@ writing, the link carries the house.
 
 ## SAVE THE CARD — a row that needs a native dependency
 
+**Trigger** `standing` — it needs a native dependency and a new build; a feature for the owner's yes or dated no at
+the audit's showing, and `readerScreen.test.tsx` pins the sheet as it is.
+
 **Found 2026-09-04**, coverage-mapping the reader's dark statements.
 
 `ShareSheet` takes a `card` prop that adds a SAVE THE CARD row, described as
@@ -184,3 +203,95 @@ sheet and never sets it, so the row has never appeared.
 
 **Until then** the prop stays unset with the reason written at its declaration,
 so the next sweep finds a decision rather than re-finding a gap.
+
+---
+
+# Launch-time steps
+
+Each is an item of the audit that can only happen on or around the launch build. When it is done, its entry
+leaves this file.
+
+## LT-P0.2. The builds already in hands, settled
+
+**Trigger** `before-launch-build`
+The owner says whether internal iOS build 34 is still on any phone (delete it, or it is recorded as a shipped client), and the iPhone launch check runs once on build 41's own commit.
+
+## LT-P0.64. The first real check of the crash-report uploads
+
+**Trigger** `launch-build`
+The launch build's EAS build is the first real run of `scripts/sentry-holds.cjs`; it must pass before the build goes out.
+
+## LT-P0.95. The Play Console steps
+
+**Trigger** `before-launch-build`
+The owner's Play account steps: the closed-track testers, the listing and data-safety forms, the review account.
+
+## LT-P0.96. Real Android phones
+
+**Trigger** `before-launch-build`
+The app on real Android phones, the sealed staging copy and the phone farm (owner decisions of 2026-10-15).
+
+## LT-P0.115. The Featured pair on the owner's iPhone 14 Plus
+
+**Trigger** `launch-build`
+The owner's yes on the Featured Log and Featured Stack side by side, on the launch build on the iPhone 14 Plus.
+
+## LT-P1.9. The legal pages
+
+**Trigger** `before-launch-build`
+Terms and Privacy made true to what the app does (after the audit, owner 2026-11-18), the crash-report switch and its line included.
+
+## LT-P1.11. Every sign-in email in a real inbox
+
+**Trigger** `launch-build`
+The owner opens every Auth email in Gmail and Outlook from the launch build.
+
+## LT-P3.5. Store test purchases, the payments stage
+
+**Trigger** `before-launch-build`
+The payments stage's handling of store test purchases, with its replay test (parked with payments, 2026-11-14).
+
+## LT-P4.18. StoreKit tests
+
+**Trigger** `before-launch-build`
+The StoreKit configuration and its purchase tests, in the payments stage, run on a Mac or named as not run in the done report.
+
+## LT-P4.28. The first Play-track build
+
+**Trigger** `launch-build`
+A Play test purchase with the licence tester, a real push, and the pre-launch report read into the register.
+
+## LT-P4.30. An update rolled back, rehearsed
+
+**Trigger** `launch-build`
+The rollback rehearsal of an over-the-air update on the launch build (`scripts/publish-update.cjs`).
+
+## LT-P4.45. Readable crash reports from the real build
+
+**Trigger** `launch-build`
+The owner presses the three test crashes on the launch build and after the rehearsal update: readable stacks, no query words.
+
+## LT-P4.48. The age question
+
+**Trigger** `before-launch-build`
+The store questionnaires' age answers and the Terms' age line, with the age laws in force on the launch date.
+
+## LT-P7.7. The store listings
+
+**Trigger** `before-launch-build`
+The store listing files, review accounts, screenshots and the remaining store forms; the owner submits.
+
+## LT-P7.10. The owner's TestFlight check
+
+**Trigger** `launch-build`
+The owner walks the iPhone checklist on the launch build in TestFlight.
+
+## LT-P7.11. The email link on the launch build
+
+**Trigger** `launch-build`
+A sign-in and a reset email opened on a phone carrying the launch build.
+
+## LT-N2. Trains kept clear of a new build
+
+**Trigger** `before-launch-build`
+No database train within 7 days of a new TestFlight build, and the launch-time trains 7 days after the launch build: the train is made to refuse otherwise before the launch build.
