@@ -2043,3 +2043,5 @@ files of the reading map this one does not.
 | scripts/__tests__/readingLog.test.ts | — |  |
 | scripts/__tests__/readingMap.test.ts | — |  |
 | scripts/__tests__/readingScope.test.ts | — |  |
+| scripts/__tests__/writeSites.test.ts | — |  |
+| scripts/write-sites.cjs | — |  |

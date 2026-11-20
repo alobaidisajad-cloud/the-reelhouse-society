@@ -1,0 +1,1213 @@
+{
+ "why": "Every place the app writes to the house, made by scripts/write-sites.cjs: the exactly-once reviewer reads each, and each gets a phone test that checks its row once. writeSites.test.ts refuses a site this list lacks.",
+ "sites": [
+  {
+   "key": "mobile/src/components/lobby/KeepOff.tsx › onPress › rpc set_lobby_withheld",
+   "file": "mobile/src/components/lobby/KeepOff.tsx",
+   "name": "onPress",
+   "does": "rpc",
+   "target": "set_lobby_withheld",
+   "area": "AREA-2"
+  },
+  {
+   "key": "mobile/src/features/archive/archiveImport.ts › upsertCounted › upsert ?",
+   "file": "mobile/src/features/archive/archiveImport.ts",
+   "name": "upsertCounted",
+   "does": "upsert",
+   "target": "?",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/features/archive/archiveImport.ts › upsertCounted › upsert ? #2",
+   "file": "mobile/src/features/archive/archiveImport.ts",
+   "name": "upsertCounted",
+   "does": "upsert",
+   "target": "?",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/features/archive/archiveImport.ts › importLists › upsert lists",
+   "file": "mobile/src/features/archive/archiveImport.ts",
+   "name": "importLists",
+   "does": "upsert",
+   "target": "lists",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/features/archive/archiveImport.ts › runJSONImport › upsert lists",
+   "file": "mobile/src/features/archive/archiveImport.ts",
+   "name": "runJSONImport",
+   "does": "upsert",
+   "target": "lists",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/features/archive/undoImport.ts › undoImport › delete list_items",
+   "file": "mobile/src/features/archive/undoImport.ts",
+   "name": "undoImport",
+   "does": "delete",
+   "target": "list_items",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/features/archive/undoImport.ts › undoImport › delete lists",
+   "file": "mobile/src/features/archive/undoImport.ts",
+   "name": "undoImport",
+   "does": "delete",
+   "target": "lists",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/features/archive/undoImport.ts › undoImport › delete logs",
+   "file": "mobile/src/features/archive/undoImport.ts",
+   "name": "undoImport",
+   "does": "delete",
+   "target": "logs",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/features/archive/undoImport.ts › undoImport › delete watchlists",
+   "file": "mobile/src/features/archive/undoImport.ts",
+   "name": "undoImport",
+   "does": "delete",
+   "target": "watchlists",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/features/archive/undoImport.ts › undoImport › delete physical_archive",
+   "file": "mobile/src/features/archive/undoImport.ts",
+   "name": "undoImport",
+   "does": "delete",
+   "target": "physical_archive",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/lib/endSession.ts › forgetOtherDevices › rpc forget_other_devices",
+   "file": "mobile/src/lib/endSession.ts",
+   "name": "forgetOtherDevices",
+   "does": "rpc",
+   "target": "forget_other_devices",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/lib/gateMetricsSink.ts › counted › rpc record_gate_event",
+   "file": "mobile/src/lib/gateMetricsSink.ts",
+   "name": "counted",
+   "does": "rpc",
+   "target": "record_gate_event",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/lib/pushNotifications.ts › storePushToken › rpc register_push_token",
+   "file": "mobile/src/lib/pushNotifications.ts",
+   "name": "storePushToken",
+   "does": "rpc",
+   "target": "register_push_token",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/lib/pushNotifications.ts › removePushToken › rpc forget_push_token",
+   "file": "mobile/src/lib/pushNotifications.ts",
+   "name": "removePushToken",
+   "does": "rpc",
+   "target": "forget_push_token",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/lib/pushNotifications.ts › removePushToken › delete push_tokens",
+   "file": "mobile/src/lib/pushNotifications.ts",
+   "name": "removePushToken",
+   "does": "delete",
+   "target": "push_tokens",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/lib/revenueCat.ts › reconcileRank › rpc relinquish_rank",
+   "file": "mobile/src/lib/revenueCat.ts",
+   "name": "reconcileRank",
+   "does": "rpc",
+   "target": "relinquish_rank",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/services/AuthService.ts › requestAccountDeletion › rpc request_account_deletion",
+   "file": "mobile/src/services/AuthService.ts",
+   "name": "requestAccountDeletion",
+   "does": "rpc",
+   "target": "request_account_deletion",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/services/AuthService.ts › requestAccountDeletion › rpc request_account_deletion #2",
+   "file": "mobile/src/services/AuthService.ts",
+   "name": "requestAccountDeletion",
+   "does": "rpc",
+   "target": "request_account_deletion",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/services/FollowRequestService.ts › accept › rpc accept_follow_request",
+   "file": "mobile/src/services/FollowRequestService.ts",
+   "name": "accept",
+   "does": "rpc",
+   "target": "accept_follow_request",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/services/FollowRequestService.ts › decline › rpc decline_follow_request",
+   "file": "mobile/src/services/FollowRequestService.ts",
+   "name": "decline",
+   "does": "rpc",
+   "target": "decline_follow_request",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/services/FollowRequestService.ts › declineAll › rpc decline_all_follow_requests",
+   "file": "mobile/src/services/FollowRequestService.ts",
+   "name": "declineAll",
+   "does": "rpc",
+   "target": "decline_all_follow_requests",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/services/InteractionService.ts › addEndorsement › insert interactions",
+   "file": "mobile/src/services/InteractionService.ts",
+   "name": "addEndorsement",
+   "does": "insert",
+   "target": "interactions",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/services/InteractionService.ts › query › delete interactions",
+   "file": "mobile/src/services/InteractionService.ts",
+   "name": "query",
+   "does": "delete",
+   "target": "interactions",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/services/KeptEdits.ts › write › update logs",
+   "file": "mobile/src/services/KeptEdits.ts",
+   "name": "write",
+   "does": "update",
+   "target": "logs",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/services/KeptEdits.ts › write › update logs #2",
+   "file": "mobile/src/services/KeptEdits.ts",
+   "name": "write",
+   "does": "update",
+   "target": "logs",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/services/KeptEdits.ts › write › update dispatch_posts",
+   "file": "mobile/src/services/KeptEdits.ts",
+   "name": "write",
+   "does": "update",
+   "target": "dispatch_posts",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/services/LogService.ts › addLogComment › upsert log_comments",
+   "file": "mobile/src/services/LogService.ts",
+   "name": "addLogComment",
+   "does": "upsert",
+   "target": "log_comments",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/services/LogService.ts › deleteLogComment › delete log_comments",
+   "file": "mobile/src/services/LogService.ts",
+   "name": "deleteLogComment",
+   "does": "delete",
+   "target": "log_comments",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/services/ModerationService.ts › insertBlock › upsert user_blocks",
+   "file": "mobile/src/services/ModerationService.ts",
+   "name": "insertBlock",
+   "does": "upsert",
+   "target": "user_blocks",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/services/ModerationService.ts › removeBlock › delete user_blocks",
+   "file": "mobile/src/services/ModerationService.ts",
+   "name": "removeBlock",
+   "does": "delete",
+   "target": "user_blocks",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/services/ModerationService.ts › resolveReportV2 › rpc resolve_moderation_report_v2",
+   "file": "mobile/src/services/ModerationService.ts",
+   "name": "resolveReportV2",
+   "does": "rpc",
+   "target": "resolve_moderation_report_v2",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/services/ModerationService.ts › bulkDismiss › rpc bulk_dismiss_reports",
+   "file": "mobile/src/services/ModerationService.ts",
+   "name": "bulkDismiss",
+   "does": "rpc",
+   "target": "bulk_dismiss_reports",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/services/ProfileDataService.ts › pingFilmSync › invoke sync-films",
+   "file": "mobile/src/services/ProfileDataService.ts",
+   "name": "pingFilmSync",
+   "does": "invoke",
+   "target": "sync-films",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/services/ProfileWriteService.ts › updateProfile › update profiles",
+   "file": "mobile/src/services/ProfileWriteService.ts",
+   "name": "updateProfile",
+   "does": "update",
+   "target": "profiles",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/services/ProfileWriteService.ts › updateProfile › rpc rename_my_handle",
+   "file": "mobile/src/services/ProfileWriteService.ts",
+   "name": "updateProfile",
+   "does": "rpc",
+   "target": "rename_my_handle",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/services/ProfileWriteService.ts › uploadAvatar › storage.upload avatars",
+   "file": "mobile/src/services/ProfileWriteService.ts",
+   "name": "uploadAvatar",
+   "does": "storage.upload",
+   "target": "avatars",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/services/ProfileWriteService.ts › purgeLegacyAvatars › storage.remove avatars",
+   "file": "mobile/src/services/ProfileWriteService.ts",
+   "name": "purgeLegacyAvatars",
+   "does": "storage.remove",
+   "target": "avatars",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/services/ShelfService.ts › fileOnShelf › upsert physical_archive",
+   "file": "mobile/src/services/ShelfService.ts",
+   "name": "fileOnShelf",
+   "does": "upsert",
+   "target": "physical_archive",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/services/ShelfService.ts › fileOnShelf › update physical_archive",
+   "file": "mobile/src/services/ShelfService.ts",
+   "name": "fileOnShelf",
+   "does": "update",
+   "target": "physical_archive",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/services/StackService.ts › deleteStackComment › delete list_comments",
+   "file": "mobile/src/services/StackService.ts",
+   "name": "deleteStackComment",
+   "does": "delete",
+   "target": "list_comments",
+   "area": "AREA-2"
+  },
+  {
+   "key": "mobile/src/services/StackService.ts › addStackComment › insert list_comments",
+   "file": "mobile/src/services/StackService.ts",
+   "name": "addStackComment",
+   "does": "insert",
+   "target": "list_comments",
+   "area": "AREA-2"
+  },
+  {
+   "key": "mobile/src/services/VaultService.ts › restoreNotes › upsert log_private_notes",
+   "file": "mobile/src/services/VaultService.ts",
+   "name": "restoreNotes",
+   "does": "upsert",
+   "target": "log_private_notes",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/services/VaultService.ts › addViewing › rpc log_viewing_add",
+   "file": "mobile/src/services/VaultService.ts",
+   "name": "addViewing",
+   "does": "rpc",
+   "target": "log_viewing_add",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/services/VaultService.ts › removeViewing › rpc log_viewing_remove",
+   "file": "mobile/src/services/VaultService.ts",
+   "name": "removeViewing",
+   "does": "rpc",
+   "target": "log_viewing_remove",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/stores/auth.ts › sendPendingPrefs › rpc update_my_preferences",
+   "file": "mobile/src/stores/auth.ts",
+   "name": "sendPendingPrefs",
+   "does": "rpc",
+   "target": "update_my_preferences",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/stores/auth.ts › signup › update profiles",
+   "file": "mobile/src/stores/auth.ts",
+   "name": "signup",
+   "does": "update",
+   "target": "profiles",
+   "area": "AREA-1"
+  },
+  {
+   "key": "mobile/src/stores/blockStore.ts › blockUser › upsert user_blocks",
+   "file": "mobile/src/stores/blockStore.ts",
+   "name": "blockUser",
+   "does": "upsert",
+   "target": "user_blocks",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/stores/blockStore.ts › unblockUser › delete user_blocks",
+   "file": "mobile/src/stores/blockStore.ts",
+   "name": "unblockUser",
+   "does": "delete",
+   "target": "user_blocks",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/stores/blockStore.ts › muteUser › upsert user_blocks",
+   "file": "mobile/src/stores/blockStore.ts",
+   "name": "muteUser",
+   "does": "upsert",
+   "target": "user_blocks",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/stores/blockStore.ts › unmuteUser › delete user_blocks",
+   "file": "mobile/src/stores/blockStore.ts",
+   "name": "unmuteUser",
+   "does": "delete",
+   "target": "user_blocks",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › file › insert dispatch_posts",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "file",
+   "does": "insert",
+   "target": "dispatch_posts",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › end › rpc end_filing",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "end",
+   "does": "rpc",
+   "target": "end_filing",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › certify › insert dispatch_certifications",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "certify",
+   "does": "insert",
+   "target": "dispatch_certifications",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › certify › delete dispatch_certifications",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "certify",
+   "does": "delete",
+   "target": "dispatch_certifications",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › save › insert dispatch_saves",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "save",
+   "does": "insert",
+   "target": "dispatch_saves",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › save › delete dispatch_saves",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "save",
+   "does": "delete",
+   "target": "dispatch_saves",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › vote › insert dispatch_votes",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "vote",
+   "does": "insert",
+   "target": "dispatch_votes",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › takeAnswer › update dispatch_posts",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "takeAnswer",
+   "does": "update",
+   "target": "dispatch_posts",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › addCritique › insert dispatch_comments",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "addCritique",
+   "does": "insert",
+   "target": "dispatch_comments",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › removeCritique › delete dispatch_comments",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "removeCritique",
+   "does": "delete",
+   "target": "dispatch_comments",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › certifyCritique › insert dispatch_certifications",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "certifyCritique",
+   "does": "insert",
+   "target": "dispatch_certifications",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/dispatch.ts › certifyCritique › delete dispatch_certifications",
+   "file": "mobile/src/stores/dispatch.ts",
+   "name": "certifyCritique",
+   "does": "delete",
+   "target": "dispatch_certifications",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/stores/domain/archiveSlice.ts › removeFromPhysicalArchive › delete physical_archive",
+   "file": "mobile/src/stores/domain/archiveSlice.ts",
+   "name": "removeFromPhysicalArchive",
+   "does": "delete",
+   "target": "physical_archive",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/stores/domain/archiveSlice.ts › updatePhysicalArchiveItem › update physical_archive",
+   "file": "mobile/src/stores/domain/archiveSlice.ts",
+   "name": "updatePhysicalArchiveItem",
+   "does": "update",
+   "target": "physical_archive",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/stores/domain/listSlice.ts › createList › rpc save_stack",
+   "file": "mobile/src/stores/domain/listSlice.ts",
+   "name": "createList",
+   "does": "rpc",
+   "target": "save_stack",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/stores/domain/listSlice.ts › updateList › rpc save_stack",
+   "file": "mobile/src/stores/domain/listSlice.ts",
+   "name": "updateList",
+   "does": "rpc",
+   "target": "save_stack",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/stores/domain/listSlice.ts › deleteList › rpc delete_list_cascade",
+   "file": "mobile/src/stores/domain/listSlice.ts",
+   "name": "deleteList",
+   "does": "rpc",
+   "target": "delete_list_cascade",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/stores/domain/listSlice.ts › addFilmToList › insert list_items",
+   "file": "mobile/src/stores/domain/listSlice.ts",
+   "name": "addFilmToList",
+   "does": "insert",
+   "target": "list_items",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/stores/domain/listSlice.ts › removeFilmFromList › delete list_items",
+   "file": "mobile/src/stores/domain/listSlice.ts",
+   "name": "removeFilmFromList",
+   "does": "delete",
+   "target": "list_items",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/stores/domain/logSlice/helpers/logOperations.ts › addLogOp › insert logs",
+   "file": "mobile/src/stores/domain/logSlice/helpers/logOperations.ts",
+   "name": "addLogOp",
+   "does": "insert",
+   "target": "logs",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/stores/domain/logSlice/helpers/logOperations.ts › updateLogOp › update logs",
+   "file": "mobile/src/stores/domain/logSlice/helpers/logOperations.ts",
+   "name": "updateLogOp",
+   "does": "update",
+   "target": "logs",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/stores/domain/logSlice/helpers/logOperations.ts › removeLogOp › delete logs",
+   "file": "mobile/src/stores/domain/logSlice/helpers/logOperations.ts",
+   "name": "removeLogOp",
+   "does": "delete",
+   "target": "logs",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/stores/domain/socialSlice.ts › followUser › insert interactions",
+   "file": "mobile/src/stores/domain/socialSlice.ts",
+   "name": "followUser",
+   "does": "insert",
+   "target": "interactions",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/stores/domain/socialSlice.ts › unfollowUser › delete interactions",
+   "file": "mobile/src/stores/domain/socialSlice.ts",
+   "name": "unfollowUser",
+   "does": "delete",
+   "target": "interactions",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/stores/domain/watchlistSlice.ts › dbOperation › insert watchlists",
+   "file": "mobile/src/stores/domain/watchlistSlice.ts",
+   "name": "dbOperation",
+   "does": "insert",
+   "target": "watchlists",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/stores/domain/watchlistSlice.ts › dbOperation › delete watchlists",
+   "file": "mobile/src/stores/domain/watchlistSlice.ts",
+   "name": "dbOperation",
+   "does": "delete",
+   "target": "watchlists",
+   "area": "AREA-3"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › sendMessage › upsert lounge_messages",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "sendMessage",
+   "does": "upsert",
+   "target": "lounge_messages",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › createLounge › rpc create_lounge",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "createLounge",
+   "does": "rpc",
+   "target": "create_lounge",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › setLoungeCover › rpc set_lounge_cover",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "setLoungeCover",
+   "does": "rpc",
+   "target": "set_lounge_cover",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › joinPublicLounge › rpc join_public_lounge",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "joinPublicLounge",
+   "does": "rpc",
+   "target": "join_public_lounge",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › requestMembership › rpc request_lounge_membership",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "requestMembership",
+   "does": "rpc",
+   "target": "request_lounge_membership",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › approveMember › rpc approve_lounge_member",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "approveMember",
+   "does": "rpc",
+   "target": "approve_lounge_member",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › declineMember › rpc decline_lounge_member",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "declineMember",
+   "does": "rpc",
+   "target": "decline_lounge_member",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › setMemberStatus › rpc set_lounge_member_status",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "setMemberStatus",
+   "does": "rpc",
+   "target": "set_lounge_member_status",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › removeMember › rpc remove_lounge_member",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "removeMember",
+   "does": "rpc",
+   "target": "remove_lounge_member",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › toggleReaction › delete lounge_message_reactions",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "toggleReaction",
+   "does": "delete",
+   "target": "lounge_message_reactions",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › toggleReaction › insert lounge_message_reactions",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "toggleReaction",
+   "does": "insert",
+   "target": "lounge_message_reactions",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › withdrawMessage › rpc withdraw_lounge_message",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "withdrawMessage",
+   "does": "rpc",
+   "target": "withdraw_lounge_message",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › retryMessage › upsert lounge_messages",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "retryMessage",
+   "does": "upsert",
+   "target": "lounge_messages",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › leaveLounge › delete lounge_members",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "leaveLounge",
+   "does": "delete",
+   "target": "lounge_members",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › deleteLounge › delete lounges",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "deleteLounge",
+   "does": "delete",
+   "target": "lounges",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › broadcastTyping › rpc send_salon_typing",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "broadcastTyping",
+   "does": "rpc",
+   "target": "send_salon_typing",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/lounge.ts › markRead › update lounge_members",
+   "file": "mobile/src/stores/lounge.ts",
+   "name": "markRead",
+   "does": "update",
+   "target": "lounge_members",
+   "area": "AREA-5"
+  },
+  {
+   "key": "mobile/src/stores/notificationStore.ts › markRead › update notifications",
+   "file": "mobile/src/stores/notificationStore.ts",
+   "name": "markRead",
+   "does": "update",
+   "target": "notifications",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/stores/notificationStore.ts › markAllRead › update notifications",
+   "file": "mobile/src/stores/notificationStore.ts",
+   "name": "markAllRead",
+   "does": "update",
+   "target": "notifications",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/stores/notificationStore.ts › dismiss › delete notifications",
+   "file": "mobile/src/stores/notificationStore.ts",
+   "name": "dismiss",
+   "does": "delete",
+   "target": "notifications",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/stores/notificationStore.ts › markGroupRead › update notifications",
+   "file": "mobile/src/stores/notificationStore.ts",
+   "name": "markGroupRead",
+   "does": "update",
+   "target": "notifications",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/stores/notificationStore.ts › dismissGroup › delete notifications",
+   "file": "mobile/src/stores/notificationStore.ts",
+   "name": "dismissGroup",
+   "does": "delete",
+   "target": "notifications",
+   "area": "AREA-6"
+  },
+  {
+   "key": "mobile/src/stores/reportStore.ts › submitReport › rpc submit_report",
+   "file": "mobile/src/stores/reportStore.ts",
+   "name": "submitReport",
+   "does": "rpc",
+   "target": "submit_report",
+   "area": "AREA-7"
+  },
+  {
+   "key": "mobile/src/utils/draftSync.ts › pushDraft › upsert member_drafts",
+   "file": "mobile/src/utils/draftSync.ts",
+   "name": "pushDraft",
+   "does": "upsert",
+   "target": "member_drafts",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/utils/draftSync.ts › dropDraft › delete member_drafts",
+   "file": "mobile/src/utils/draftSync.ts",
+   "name": "dropDraft",
+   "does": "delete",
+   "target": "member_drafts",
+   "area": "AREA-4"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › result › insert logs",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "result",
+   "does": "insert",
+   "target": "logs",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › deleteQuery › delete interactions",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "deleteQuery",
+   "does": "delete",
+   "target": "interactions",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › update_log › update logs",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "update_log",
+   "does": "update",
+   "target": "logs",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › remove_log › delete logs",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "remove_log",
+   "does": "delete",
+   "target": "logs",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › remove_log › delete logs #2",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "remove_log",
+   "does": "delete",
+   "target": "logs",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › add_log_comment › upsert log_comments",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "add_log_comment",
+   "does": "upsert",
+   "target": "log_comments",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › remove_log_comment › delete log_comments",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "remove_log_comment",
+   "does": "delete",
+   "target": "log_comments",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › update_profile › rpc update_my_preferences",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "update_profile",
+   "does": "rpc",
+   "target": "update_my_preferences",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › add_watchlist › insert watchlists",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "add_watchlist",
+   "does": "insert",
+   "target": "watchlists",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › remove_watchlist › delete watchlists",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "remove_watchlist",
+   "does": "delete",
+   "target": "watchlists",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › create_list › rpc save_stack",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "create_list",
+   "does": "rpc",
+   "target": "save_stack",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › delete_list › rpc delete_list_cascade",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "delete_list",
+   "does": "rpc",
+   "target": "delete_list_cascade",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › add_list_comment › upsert list_comments",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "add_list_comment",
+   "does": "upsert",
+   "target": "list_comments",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › remove_list_comment › delete list_comments",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "remove_list_comment",
+   "does": "delete",
+   "target": "list_comments",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › add_film_to_list › upsert list_items",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "add_film_to_list",
+   "does": "upsert",
+   "target": "list_items",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › remove_film_from_list › delete list_items",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "remove_film_from_list",
+   "does": "delete",
+   "target": "list_items",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › remove_film_from_list › upsert list_items",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "remove_film_from_list",
+   "does": "upsert",
+   "target": "list_items",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › add_list_items › upsert list_items",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "add_list_items",
+   "does": "upsert",
+   "target": "list_items",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › update_list › rpc save_stack",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "update_list",
+   "does": "rpc",
+   "target": "save_stack",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › restore_list_items › upsert list_items",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "restore_list_items",
+   "does": "upsert",
+   "target": "list_items",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › remove_archive › delete physical_archive",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "remove_archive",
+   "does": "delete",
+   "target": "physical_archive",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › update_archive › update physical_archive",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "update_archive",
+   "does": "update",
+   "target": "physical_archive",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › follow_user › upsert interactions",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "follow_user",
+   "does": "upsert",
+   "target": "interactions",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › follow_request_user › upsert interactions",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "follow_request_user",
+   "does": "upsert",
+   "target": "interactions",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › unfollow_user › delete interactions",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "unfollow_user",
+   "does": "delete",
+   "target": "interactions",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › send_lounge_message › insert lounge_messages",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "send_lounge_message",
+   "does": "insert",
+   "target": "lounge_messages",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › delete_lounge_message › rpc withdraw_lounge_message",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "delete_lounge_message",
+   "does": "rpc",
+   "target": "withdraw_lounge_message",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › withdraw_lounge_message › rpc withdraw_lounge_message",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "withdraw_lounge_message",
+   "does": "rpc",
+   "target": "withdraw_lounge_message",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › result › insert dispatch_dossiers",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "result",
+   "does": "insert",
+   "target": "dispatch_dossiers",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › update_dossier › update dispatch_dossiers",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "update_dossier",
+   "does": "update",
+   "target": "dispatch_dossiers",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › delete_dossier › delete dispatch_dossiers",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "delete_dossier",
+   "does": "delete",
+   "target": "dispatch_dossiers",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › result › insert dossier_comments",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "result",
+   "does": "insert",
+   "target": "dossier_comments",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › update_dossier_comment › update dossier_comments",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "update_dossier_comment",
+   "does": "update",
+   "target": "dossier_comments",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › delete_dossier_comment › delete dossier_comments",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "delete_dossier_comment",
+   "does": "delete",
+   "target": "dossier_comments",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › toggle_dossier_certify › rpc toggle_dossier_certify",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "toggle_dossier_certify",
+   "does": "rpc",
+   "target": "toggle_dossier_certify",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › result › insert dispatch_posts",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "result",
+   "does": "insert",
+   "target": "dispatch_posts",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › update_filing › update dispatch_posts",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "update_filing",
+   "does": "update",
+   "target": "dispatch_posts",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › end_filing › rpc end_filing",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "end_filing",
+   "does": "rpc",
+   "target": "end_filing",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › result › insert dispatch_comments",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "result",
+   "does": "insert",
+   "target": "dispatch_comments",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › update_critique › update dispatch_comments",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "update_critique",
+   "does": "update",
+   "target": "dispatch_comments",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › remove_critique › delete dispatch_comments",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "remove_critique",
+   "does": "delete",
+   "target": "dispatch_comments",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › certify_filing › insert dispatch_certifications",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "certify_filing",
+   "does": "insert",
+   "target": "dispatch_certifications",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › certify_filing › delete dispatch_certifications",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "certify_filing",
+   "does": "delete",
+   "target": "dispatch_certifications",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › certify_critique › insert dispatch_certifications",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "certify_critique",
+   "does": "insert",
+   "target": "dispatch_certifications",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › certify_critique › delete dispatch_certifications",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "certify_critique",
+   "does": "delete",
+   "target": "dispatch_certifications",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › cast_vote › insert dispatch_votes",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "cast_vote",
+   "does": "insert",
+   "target": "dispatch_votes",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › take_answer › update dispatch_posts",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "take_answer",
+   "does": "update",
+   "target": "dispatch_posts",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › save_filing › insert dispatch_saves",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "save_filing",
+   "does": "insert",
+   "target": "dispatch_saves",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › unsave_filing › delete dispatch_saves",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "unsave_filing",
+   "does": "delete",
+   "target": "dispatch_saves",
+   "area": "AREA-SHARED"
+  },
+  {
+   "key": "mobile/src/utils/mutationExecutor.ts › submit_report › rpc submit_report",
+   "file": "mobile/src/utils/mutationExecutor.ts",
+   "name": "submit_report",
+   "does": "rpc",
+   "target": "submit_report",
+   "area": "AREA-SHARED"
+  }
+ ]
+}
