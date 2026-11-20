@@ -6324,7 +6324,7 @@
     "class": "COPY-another-years-day-said-as-this-years",
     "mutant": "shape-salon-divider-without-its-year",
     "proof": "m5",
-    "commit": "357a1ee4a372d362f7852bba9dde046a9f158424",
+    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
     "verdict": "caught"
   },
   {
@@ -6689,6 +6689,48 @@
     "mutant": "shape-plant-push-unscanned",
     "proof": "m4",
     "commit": "e48613c91756d0c8b44a52739dff8698c9243d30",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-a-column-the-planner-never-counted",
+    "mutant": "shape-a-new-column-never-counted",
+    "proof": "m2",
+    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-a-column-the-planner-never-counted",
+    "mutant": "shape-a-fill-never-counted-again",
+    "proof": "m2",
+    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-a-column-the-planner-never-counted",
+    "mutant": "shape-lint-blind-to-a-fill",
+    "proof": "m1",
+    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
+    "verdict": "caught"
+  },
+  {
+    "class": "LAYOUT-a-reach-cut-by-the-card-it-stands-in",
+    "mutant": "shape-retry-grown-past-its-card",
+    "proof": "m1",
+    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
+    "verdict": "caught"
+  },
+  {
+    "class": "TOOL-a-measure-faults-what-the-phone-allows",
+    "mutant": "shape-reach-cut-at-the-scrollers-window",
+    "proof": "m1",
+    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
+    "verdict": "caught"
+  },
+  {
+    "class": "TOOL-a-measure-faults-what-the-phone-allows",
+    "mutant": "shape-under-asks-a-hidden-page",
+    "proof": "m2",
+    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
     "verdict": "caught"
   }
 ]

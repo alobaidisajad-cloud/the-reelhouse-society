@@ -4855,3 +4855,41 @@ classes:
       - { kind: static, file: src/utils/__tests__/hooks.guard.test.ts, test: "refuses plant branches pushed with any other ref, and leaves every other push to the code gate" }
     fix: "scripts/hooks/pre-push.cjs runs its checks side by side, each printed whole as it ends: the related tests and the readers as one jest run (jest-run.cjs), the rehearsals as a second beside it, the mutants in checkouts of their own (mutant-lanes.cjs) once the tests have run, a mutant's first run taken from the tests' own report on a clean tree (mutants.cjs --green); the seconds of each check printed and kept (mutants shape-mutants-before-the-tests-end, shape-green-from-a-dirty-tree, shape-green-from-another-test, shape-rehearsals-in-the-tests-run); a push of planted-mistakes branches alone (plant/*) runs only the secrets scan, the website freeze and the disclosure scan (scripts/hooks/disclosure.cjs), as CI runs the whole suite on them, and plant branches pushed with any other ref are refused (mutants shape-plant-push-with-main, shape-plant-push-unscanned)"
     places: [none]
+
+  - id: DB-a-column-the-planner-never-counted
+    title: "A migration added a column to a table that holds rows, or filled one, and gathered no statistics for it, so the planner guessed at it until something analyzed the table: round 14's withheld_at, empty on nearly every piece, was read as 0.5% of the logs, and the feed, a film's pages and search read every row for a page of twenty (the load lab's feed, 2.8 ms to 14.3 s)"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Load, 100,000 members 44713877936: seven reads over budget after round 14's train" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "asks each column added to, or filled in, a table that holds rows to be analyzed after it" }
+      - { kind: static, file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "can run on the repo as it is: every pending migration has its one rehearsal and passes the lint" }
+    fix: "each round 14 car that adds a column to a table that holds rows, or fills one, analyzes those columns before it ends (20261120_19, _20, _21, _24, _30, _31), so production has them the moment the car commits; migration-lint asks it of every transaction file, and the train's plan lints every pending car (mutants shape-a-new-column-never-counted, shape-a-fill-never-counted-again, shape-lint-blind-to-a-fill)"
+    places: [none]
+
+  - id: LAYOUT-a-reach-cut-by-the-card-it-stands-in
+    title: "A control grown past its own box to reach 48 stood last in a card that clips, and the card cut its reach: the member's record in Settings, unread, offered a TRY AGAIN a finger reached on 30pt of its 48, and the record's words stood on the card's very edge"
+    seriousness: layout
+    area: settings
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "the God-Tier matrix 44713878036, touch part 3: SMALL, reach 356x30, cut by a box 356x29" }
+    methods:
+      - { kind: running, file: src/components/moderation/__tests__/aVerdictIsReachedWithoutItsNotice.test.tsx, test: "a record that could not be read offers TRY AGAIN in a 48pt box of its own, inside the card that clips" }
+    fix: "VerdictRecord is inset from the card's edge as its heading is, and its TRY AGAIN stands in a 48pt box of its own, as wide as its words; the settings generator draws the record unread (settings-record-unread), measured by the touch check on every push (mutant shape-retry-grown-past-its-card)"
+    places: [none]
+
+  - id: TOOL-a-measure-faults-what-the-phone-allows
+    title: "The layout check called a fault what the phone does: a control past a scroller's window lost its halo along the scroll (the Darkroom's 48pt filter chips read 44, 24 findings), and words the app hides from every reader behind a sheet were judged covered by it (390 findings on the stack page with its critiques open)"
+    seriousness: code
+    area: tooling
+    status: OPEN
+    count: 2
+    source: { kind: ci, ref: "the God-Tier matrix 44713878036, touch part 1: 24 SMALL and 390 UNDER" }
+    methods:
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "past the window, a chip keeps its halo along the scroll; 2pt short is small, and past the scroll’s end is cut (fold)" }
+      - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same line on a page the app hides from every reader is not asked (scrollhidden)" }
+    fix: "layout.cjs bounds a reach along a scroll by where the scroll's content ends, not by the window, for any box that holds the scroller, so a control past the window keeps its whole halo that way and one whose halo runs past the content's end is still cut; UNDER asks nothing of words inside aria-hidden, as SMALL asks nothing of their controls (its self-test's cases fold and scrollhidden, each a test of its own in theMeasuringRulesSayNo) (mutants shape-reach-cut-at-the-scrollers-window, shape-under-asks-a-hidden-page)"
+    places: [none]

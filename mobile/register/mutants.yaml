@@ -8904,3 +8904,57 @@ mutants:
         find: "    { id: `disclosure@${local}`, label: `no message or test title of ${at} describes a hole`, cwd: ROOT, after: [], low: false, args: [join(__dirname, 'disclosure.cjs'), base, local] },\n"
         replace: ""
     proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "runs only what keeps it safe to publish: the secrets scan, the website freeze and the disclosure scan, never the code gate" }
+
+  - id: shape-a-new-column-never-counted
+    class: DB-a-column-the-planner-never-counted
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_31_a_withheld_piece_is_read_by_its_author_alone.sql
+        find: "ANALYZE public.logs (withheld_at), public.lists (withheld_at),"
+        replace: "ANALYZE public.lists (withheld_at),"
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "can run on the repo as it is: every pending migration has its one rehearsal and passes the lint" }
+
+  - id: shape-a-fill-never-counted-again
+    class: DB-a-column-the-planner-never-counted
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_20_a_hidden_members_words_stay_hidden.sql
+        find: "-- filter on it.\nANALYZE public.lounge_messages (carries_words_of);\n"
+        replace: "-- filter on it.\n"
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "can run on the repo as it is: every pending migration has its one rehearsal and passes the lint" }
+
+  - id: shape-lint-blind-to-a-fill
+    class: DB-a-column-the-planner-never-counted
+    source: shape
+    edits:
+      - file: scripts/migration-lint.cjs
+        find: "  if (!updated) return [];\n"
+        replace: "  if (updated || !updated) return [];\n"
+    proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "asks each column added to, or filled in, a table that holds rows to be analyzed after it" }
+
+  - id: shape-retry-grown-past-its-card
+    class: LAYOUT-a-reach-cut-by-the-card-it-stands-in
+    source: shape
+    edits:
+      - file: src/components/moderation/VerdictRecord.tsx
+        find: " what=\"read your record with the house\" style={st.retry} />"
+        replace: " what=\"read your record with the house\" />"
+    proof: { file: src/components/moderation/__tests__/aVerdictIsReachedWithoutItsNotice.test.tsx, test: "a record that could not be read offers TRY AGAIN in a 48pt box of its own, inside the card that clips" }
+
+  - id: shape-reach-cut-at-the-scrollers-window
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "          bottom: Math.max(loose.bottom, Math.min(x.bottom, ends(s.getBoundingClientRect().top, s.scrollHeight, r.bottom))) }\n"
+        replace: "          bottom: loose.bottom }\n"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "past the window, a chip keeps its halo along the scroll; 2pt short is small, and past the scroll’s end is cut (fold)" }
+
+  - id: shape-under-asks-a-hidden-page
+    class: TOOL-a-measure-faults-what-the-phone-allows
+    source: shape
+    edits:
+      - file: mockups/tools/layout.cjs
+        find: "e.closest('.vscroll') === s && !e.closest('[aria-hidden=\"true\"]'));"
+        replace: "e.closest('.vscroll') === s);"
+    proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same line on a page the app hides from every reader is not asked (scrollhidden)" }
