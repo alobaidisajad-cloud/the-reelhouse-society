@@ -8986,6 +8986,15 @@ mutants:
         replace: "  if (child.pid !== -1) return;"
     proof: { file: e2e/__tests__/runFlows.rehearsal.test.ts, test: "ends a run its test left running, with every process under it" }
 
+  - id: shape-one-file-a-pool-of-workers
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/mutants.cjs
+        find: "'-t', escapeRe(test), '--runInBand', "
+        replace: "'-t', escapeRe(test), "
+    proof: { file: src/utils/__tests__/everyMutantIsSound.guard.test.ts, test: "runs a mutant's test alone, by its title, in jest's own process, never a pool of workers for one file" }
+
   - id: shape-rehearsal-mutant-at-low-priority
     class: CI-push-check-past-the-machine
     source: shape

@@ -143,13 +143,20 @@ const atNormalPriority = (fn, at = os) => {
   try { return fn(); } finally { if (was !== null && was !== normal) { try { at.setPriority(0, was); } catch { /* left at normal */ } } }
 };
 
+/**
+ * jest's arguments for one named test in one file, run in jest's own process: a file jest last saw
+ * take over a second it otherwise runs in a pool of a worker per processor but one, eleven processes
+ * started on this machine for the one file, and two such runs a mutant.
+ */
+const testArgs = (file, test, out) => ['--runTestsByPath', file, '-t', escapeRe(test), '--runInBand', '--json', '--outputFile', out, '--silent'];
+
 /** One named test, run alone; its status, and jest's own words when it never ran. */
 const runTest = ({ file, test }) => {
   const dir = mkdtempSync(join(tmpdir(), 'mutant-'));
   const out = join(dir, 'report.json');
   try {
-    const run = () => spawnSync(process.execPath, [join(MOBILE, 'node_modules', 'jest', 'bin', 'jest.js'), '--runTestsByPath', file,
-      '-t', escapeRe(test), '--json', '--outputFile', out, '--silent'], { cwd: MOBILE, encoding: 'utf8', maxBuffer: 1e9 });
+    const run = () => spawnSync(process.execPath, [join(MOBILE, 'node_modules', 'jest', 'bin', 'jest.js'), ...testArgs(file, test, out)],
+      { cwd: MOBILE, encoding: 'utf8', maxBuffer: 1e9 });
     const r = REHEARSAL.test(file) ? atNormalPriority(run) : run();
     if (!existsSync(out)) return { status: 'missing', said: `${r.stderr}`.trim().split('\n').slice(-5).join(' / ') };
     const report = JSON.parse(readFileSync(out, 'utf8'));
@@ -658,5 +665,5 @@ if (require.main === module) {
 
 module.exports = {
   applyEdits, argumentsFault, atNormalPriority, changesHash, changesOf, verdictOf, gather, greenIn, hunksOf, lf, partOf, pathsOf, PLACED, privateDir, proofId, putBackLeftover,
-  compileFaults, readMutants, really, REHEARSAL, reverse, runOne, standsOn, statusIn, syntaxFaults, touchedSince, typesFrom, warmTypes, withLock,
+  compileFaults, readMutants, really, REHEARSAL, testArgs, reverse, runOne, standsOn, statusIn, syntaxFaults, touchedSince, typesFrom, warmTypes, withLock,
 };

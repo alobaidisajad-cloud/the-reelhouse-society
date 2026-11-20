@@ -37,6 +37,7 @@ const mutantsCjs = require('../../../scripts/mutants.cjs') as {
   changesHash: (changes: { file: string; after: string }[]) => string;
   typesFrom: (file: string, alive?: (pid: number) => boolean, pause?: number) => (m: { id: string }, changes: { file: string; after: string }[]) => string[] | null;
   warmTypes: (dir: string) => { atCommit: string[]; check: (changes: { file: string; path: string; before: string | null; after: string }[]) => string[]; holds: (changes: { file: string; before: string | null }[]) => boolean };
+  testArgs: (file: string, test: string, out: string) => string[];
   atNormalPriority: <T>(fn: () => T, at?: { getPriority: (pid: number) => number; setPriority: (pid: number, p: number) => void }) => T;
 };
 const RESULTS = JSON.parse(readFileSync(join(MOBILE, 'register', 'mutant-results.json'), 'utf8')) as Result[];
@@ -361,6 +362,12 @@ describe('the runner\'s own rules say NO', () => {
     // One the system will not raise runs as it is, never stopped for it.
     const stuck = { getPriority: () => PRIORITY_BELOW_NORMAL, setPriority: () => { throw new Error('EACCES'); } };
     expect(mutantsCjs.atNormalPriority(() => 'ran', stuck)).toBe('ran');
+  });
+
+  it('runs a mutant\'s test alone, by its title, in jest\'s own process, never a pool of workers for one file', () => {
+    const args = mutantsCjs.testArgs('src/a.test.ts', 'holds (a, b)', 'r.json');
+    expect([args.slice(0, 4), args.includes('--runInBand'), args.some((a) => /^(-w|--maxWorkers)/.test(a))])
+      .toEqual([['--runTestsByPath', 'src/a.test.ts', '-t', 'holds \\(a, b\\)'], true, false]);
   });
 
   it('a new shape is never planted over a file that stands', () => {
