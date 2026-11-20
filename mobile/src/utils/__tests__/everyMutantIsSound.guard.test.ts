@@ -73,6 +73,8 @@ const NOT_JUDGES: Record<string, string> = {
   'advisories.mjs': 'it judges the packages a build holds, not a run; its own tests plant known-vulnerable ones',
   'annotate.mjs': 'it prints a file as an annotation',
   'critical-path.mjs': 'it reports what each screen waited on and its phone time, judging nothing until the runs show each screen\'s own reads; its own tests plant every count',
+  'speed-record.mjs': 'it reports each screen against its floor, in the speed lab\'s summary; no run is failed by it until the member page\'s second round trip is closed, when it becomes a judge and is fed a bad log here; its own tests plant a held page, a page asked once and one over by a trip',
+  'explore.mjs': 'it drives the phone itself and reads the screens it reaches, judging no run\'s logs; its own tests plant every fault it names on reads and logs',
   'fault-proxy.mjs': 'it is the network between the app and the house, not a verdict; its own tests set every fault against a real house',
   'anon-key.mjs': 'it prints the local stack\'s key',
   'flow-history.mjs': 'it records each part\'s time from a finished run',

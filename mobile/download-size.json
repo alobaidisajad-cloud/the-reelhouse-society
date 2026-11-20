@@ -1,0 +1,6 @@
+{
+  "about": "What a member downloads, part by part (scripts/download-size.cjs): each part's bytes as CI last measured the Android release build of the Sealed E2E job (an x86_64 APK), and the ledger of every growth with the commit it was measured at and why. Empty until that job's first measure: the first --accept writes every part, with its reason, so no part ever stands without one. The store build is not this one: it is measured at launch (e2e/limits.json, downloadBytesStore), and no store number is written here before then.",
+  "tolerance": 0,
+  "parts": {},
+  "ledger": []
+}

@@ -11,7 +11,8 @@
  * can be counted exactly. From the lines the E2E build writes (`[e2e] request {at, ms}` in
  * src/lib/supabase.ts, `[e2e] screen.ready {ms}` in useScreenReady), for each opening: the
  * requests begun once it opened (20 ms before, the effect that opened it) and answered before it
- * was ready; the longest chain of them each begun after the last was answered (the round trips in
+ * was ready, each with how long its answer took (`answers`, the one round trip a floor allows,
+ * measured: e2e/speed-record.mjs); the longest chain of them each begun after the last was answered (the round trips in
  * a row); and the time from its last answer to ready (the phone's own: the thread, the commit,
  * the frame). Per screen: how often it opened, the most round trips in a row and the median, and
  * the median phone time, with the requests of its deepest opening. Where a screen marks the
@@ -81,7 +82,7 @@ export function openingsOf(lines) {
       after[s.name] = s.at - lastAnswer;
     }
     return [{
-      name, ms, trips: waited.length ? Math.max(...depth) : 0, paths: waited.map((r) => r.path),
+      name, ms, trips: waited.length ? Math.max(...depth) : 0, paths: waited.map((r) => r.path), answers: waited.map((r) => r.end - r.start),
       phone: Math.max(0, end - lastAnswer), stages: after,
     }];
   });

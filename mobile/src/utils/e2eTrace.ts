@@ -15,6 +15,9 @@ export const E2E_BUILD = ON;
 /** The speed lab's builds, and no other (LAB=1 beside E2E=1: app.config.js). */
 export const LAB_BUILD = ON && Constants.expoConfig?.extra?.lab === true;
 
+/** The speed lab's feel build, and no other (FEEL=1 beside LAB=1 and E2E=1: app.config.js). */
+export const FEEL_BUILD = LAB_BUILD && Constants.expoConfig?.extra?.feel === true;
+
 type Measured = { measureInWindow?: (done: (x: number, y: number, w: number, h: number) => void) => void };
 
 /** An onLayout writing where its view sits on screen (`${name}.at`); none outside the E2E build. */

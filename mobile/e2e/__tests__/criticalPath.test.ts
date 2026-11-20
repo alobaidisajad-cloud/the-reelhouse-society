@@ -29,19 +29,19 @@ function run(lines: string[], ...flags: string[]) {
   return { code: r.status, out: r.stdout };
 }
 const openings = (lines: string[]) =>
-  JSON.parse(run(lines, '--json').out) as { name: string; trips: number; paths: string[]; phone: number; stages: Record<string, number> }[];
+  JSON.parse(run(lines, '--json').out) as { name: string; trips: number; paths: string[]; answers: number[]; phone: number; stages: Record<string, number> }[];
 /** A stage of an opening, `at` ms past 08:32:10: a data mark (`film.data`) or a part drawn. */
 const stage = (name: string, at: number) => name.endsWith('.data')
   ? `11-08 ${clock(at)}  3891  4026 W ReactNativeJS: [e2e] ${name} {"id":1}`
   : `11-08 ${clock(at)}  3891  4026 W ReactNativeJS: [e2e] drawn {"name":"${name}"}`;
 
 it("counts none for a page drawn from what it holds, its time all the phone's", () => {
-  expect(openings([ready('log', 500, 120)])).toEqual([{ name: 'log', ms: 120, trips: 0, paths: [], phone: 120, stages: {} }]);
+  expect(openings([ready('log', 500, 120)])).toEqual([{ name: 'log', ms: 120, trips: 0, paths: [], answers: [], phone: 120, stages: {} }]);
 });
 
-it("counts one round trip, and the phone's time from its answer to ready", () => {
+it("counts one round trip, how long its answer took, and the phone's time from its answer to ready", () => {
   expect(openings([request('/rest/v1/dispatch_posts?select=id', 100, 300), ready('dispatch', 450, 400)])[0])
-    .toMatchObject({ trips: 1, paths: ['/rest/v1/dispatch_posts'], phone: 50 });
+    .toMatchObject({ trips: 1, paths: ['/rest/v1/dispatch_posts'], answers: [300], phone: 50 });
 });
 
 it('counts two in a row when one is asked only after another is answered', () => {

@@ -609,6 +609,25 @@ for (const [name, [, want]] of Object.entries(YCASES)) {
 }
 fs.rmSync(YDIR, { recursive: true, force: true });
 
+// align.cjs: NO to two edges or two baselines a point or two apart, nothing to ones that line up
+// exactly or stand clearly apart (an indent).
+const ADIR = fs.mkdtempSync(path.join(os.tmpdir(), 'align-selftest-'));
+const alignStacked = (shift) => box('padding:40px', T('font-size:14px;line-height:18px;display:block', 'THE PROGRAMME', 1) + T(`font-size:14px;line-height:18px;display:block;margin-left:${shift}px`, 'Tonight at nine', 1));
+const alignRow = (drop) => box('padding:40px', `<div style="display:flex;flex-direction:row;align-items:flex-start">${T('font-size:14px;line-height:18px', 'ROOM ONE', 1)}${T(`font-size:14px;line-height:18px;margin-left:16px;margin-top:${drop}px`, '9 PM', 1)}</div>`);
+const ACASES = { alignclean: [alignStacked(0) + alignRow(0), []], alignedge: [alignStacked(2), ['EDGE']], alignbase: [alignRow(2), ['BASELINE']], alignindent: [alignStacked(12), []] };
+for (const [name, [html]] of Object.entries(ACASES)) fs.writeFileSync(path.join(ADIR, `${name}.html`), html);
+const ajson = path.join(ADIR, 'align.json');
+const ar = spawnSync(process.execPath, [path.join(__dirname, 'align.cjs'), '--src', ADIR, '--passes', 'ios@1', '--json', ajson], { encoding: 'utf8' });
+const arep = fs.existsSync(ajson) ? JSON.parse(fs.readFileSync(ajson, 'utf8')) : null;
+if (!arep) console.error(`align.cjs wrote no report (exit ${ar.status}): ${`${ar.stderr}${ar.stdout}`.trim().split('\n').slice(-5).join('\n')}`);
+for (const [name, [, want]] of Object.entries(ACASES)) {
+  const got = arep ? arep.faults.filter((f) => f.page === name).map((f) => f.kind).sort() : ['NO REPORT'];
+  const ok = JSON.stringify(got) === JSON.stringify(want);
+  if (!ok) bad++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  ${name.padEnd(12)} align         want [${want}]  got [${got}]`);
+}
+fs.rmSync(ADIR, { recursive: true, force: true });
+
 // Both tools refuse to pass on nothing: no screen, an --only name with no file, and
 // (yoga-parity) a screen drawn without MOCKUPS_YOGA=1, which has no box to compare.
 const RDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'refuse-selftest-'));

@@ -25,6 +25,12 @@ const REVENUECAT_WEB_STUB = path.resolve(__dirname, 'src/lib/nativeOnly/revenuec
 const LUCIDE_DIR = `${path.sep}lucide-react-native${path.sep}`;
 /** Bundled once, as ES modules: a `require` of them would add their CommonJS copies. */
 const ONE_COPY = /^(zod|react-hook-form)(\/|$)/;
+/**
+ * The speed lab's feel build alone (FEEL=1, app.config.js): React Native's profiling renderer in
+ * place of its production one, so a Profiler times each commit (src/components/layout/LabFeelProbe.tsx).
+ */
+const FEEL = process.env.FEEL === '1' && process.env.LAB === '1' && process.env.E2E === '1';
+const RENDERER_SHIM = `${path.sep}Renderer${path.sep}shims${path.sep}ReactFabric.js`;
 
 const upstream = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
@@ -37,6 +43,9 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     // RevenueCat's web mode, which a phone build never runs (the stub says why).
     if (moduleName === '@revenuecat/purchases-js-hybrid-mappings') {
       return { type: 'sourceFile', filePath: REVENUECAT_WEB_STUB };
+    }
+    if (FEEL && moduleName === '../implementations/ReactFabric-prod' && context.originModulePath.endsWith(RENDERER_SHIM)) {
+      return { type: 'sourceFile', filePath: path.join(path.dirname(context.originModulePath), '..', 'implementations', 'ReactFabric-profiling.js') };
     }
   }
   if (ONE_COPY.test(moduleName)) {

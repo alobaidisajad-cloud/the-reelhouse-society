@@ -59,6 +59,24 @@ it('with LAB=1 beside E2E=1, extra.lab too (the lab\'s frame record); LAB=1 alon
   expect(withLab(() => withE2E(undefined, () => appConfig({ config: structuredClone(appJson) })))).toEqual(appJson);
 });
 
+const withFeel = <T,>(fn: () => T): T => {
+  const before = process.env.FEEL;
+  process.env.FEEL = '1';
+  try { return fn(); } finally {
+    if (before === undefined) delete process.env.FEEL;
+    else process.env.FEEL = before;
+  }
+};
+
+it('with FEEL=1 beside LAB=1 and E2E=1, extra.feel too (the feel probe); FEEL=1 without LAB, or without E2E, changes nothing', () => {
+  const lab = withLab(() => withE2E('1', () => appConfig({ config: structuredClone(appJson) })));
+  const feel = withFeel(() => withLab(() => withE2E('1', () => appConfig({ config: structuredClone(appJson) }))));
+  expect(feel).toEqual({ ...lab, extra: { ...(lab.extra as object), feel: true } });
+  const e2e = withE2E('1', () => appConfig({ config: structuredClone(appJson) }));
+  expect(withFeel(() => withE2E('1', () => appConfig({ config: structuredClone(appJson) })))).toEqual(e2e);
+  expect(withFeel(() => withLab(() => withE2E(undefined, () => appConfig({ config: structuredClone(appJson) }))))).toEqual(appJson);
+});
+
 it('only the speed lab builds with LAB=1, and the root mounts the frame record behind it alone', () => {
   const setting = universe('workflows').filter((p) => /^\s*LAB: '1'\s*$/m.test(readFileSync(p, 'utf8'))).map((p) => basename(p));
   expect(setting).toEqual(['speed-lab.yml']);

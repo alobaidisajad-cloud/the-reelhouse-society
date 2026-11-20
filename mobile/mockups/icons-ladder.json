@@ -1,0 +1,7 @@
+{
+  "about": "The sizes an icon may take and the band its drawn line must sit in (mockups/tools/icons.cjs).",
+  "sizes": [12, 14, 16, 18, 20, 24, 28, 32, 48],
+  "sizesWhy": "Even points from 12 to 20 for the icons that sit beside words (the type ladder in src/theme/theme.ts runs 10 to 32), then 24, 28, 32 and 48 for icons that stand alone. An odd size draws its 24-unit grid on half points, so its lines blur.",
+  "line": { "min": 1, "max": 1.5 },
+  "lineWhy": "The line a member sees is strokeWidth × size ÷ 24. Under 1pt a line drawn on the house's dark ground thins to a grey thread (a 12pt icon at 1.5 draws 0.75pt); over 1.5pt an icon outweighs the Courier and Special Elite words beside it. One band for every size keeps every icon the same weight to the eye."
+}

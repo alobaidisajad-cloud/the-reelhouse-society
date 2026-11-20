@@ -15,6 +15,9 @@
  *   · with LAB=1 as well (set by speed-lab.yml alone), extra.lab is true, which mounts the
  *     lab's frame record (src/components/layout/LabFrameLog.tsx); the other E2E builds are
  *     measured without it
+ *   · with FEEL=1 beside LAB=1 (the lab's feel build alone), extra.feel is true, which mounts the
+ *     feel probe (src/components/layout/LabFeelProbe.tsx), and Metro bundles React's profiling
+ *     renderer for it (metro.config.js)
  *
  * The development build (EAS's `development` profile, which EAS names in
  * EAS_BUILD_PROFILE) gets back the two things a development client lives by and
@@ -41,6 +44,6 @@ module.exports = ({ config }) => {
     ...config,
     updates: { ...config.updates, enabled: false },
     plugins: [...(config.plugins ?? []), './e2e/plugins/withCleartextTraffic'],
-    extra: { ...config.extra, e2e: true, ...(process.env.LAB === '1' ? { lab: true } : {}) },
+    extra: { ...config.extra, e2e: true, ...(process.env.LAB === '1' ? { lab: true, ...(process.env.FEEL === '1' ? { feel: true } : {}) } : {}) },
   };
 };

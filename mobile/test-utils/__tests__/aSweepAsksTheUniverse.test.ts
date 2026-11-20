@@ -49,6 +49,8 @@ const MAY_LIST: Record<string, string> = {
   'e2e/old-client-tree.mjs': 'the old client checkout it is making, emptied of all but the harness',
   'e2e/__tests__/flowScreens.test.ts': 'the folder its own run of flow-screens.mjs wrote',
   'scripts/bundle-size.js': 'the bundle an export just wrote',
+  'scripts/download-size.cjs': 'the export folder it is given, every file of which a member downloads',
+  'e2e/lab/feel.mjs': "the folder the speed lab's feel run wrote on the device's runner",
   'scripts/release-guard.cjs': 'the bundles an export wrote, in the folder it is given',
   'scripts/sentry-holds.cjs': "the maps an update's export wrote, and what a build left on the builder (Xcode's DerivedData and archives, Gradle's build folder)",
   'e2e/advisories.mjs': 'the source map an export just wrote, and the folders --roots hands it; the edge trees themselves come from the universe',

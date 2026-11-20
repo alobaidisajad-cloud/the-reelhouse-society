@@ -1,0 +1,19 @@
+-- The JS thread's own running time in each frame (e2e/lab/feel.mjs reads it): each frame is the
+-- span from one Choreographer#doFrame on the main thread to the next; the JS thread is React
+-- Native's (mqt_v_js, or mqt_js before the new architecture). A frame with no JS work is 0.
+WITH app AS (SELECT upid, pid FROM process WHERE name = 'com.reelhouse.society' ORDER BY upid DESC LIMIT 1),
+main AS (SELECT utid FROM thread JOIN app USING (upid) WHERE thread.tid = app.pid),
+js AS (SELECT utid FROM thread WHERE upid = (SELECT upid FROM app) AND (name = 'mqt_v_js' OR name = 'mqt_js')),
+frames AS (
+  SELECT s.ts AS start, LEAD(s.ts) OVER (ORDER BY s.ts) AS next
+  FROM slice s JOIN thread_track tt ON s.track_id = tt.id
+  WHERE tt.utid = (SELECT utid FROM main) AND s.name GLOB 'Choreographer#doFrame*' AND s.depth = 0
+)
+SELECT f.start AS frame_ts,
+       ROUND(COALESCE(SUM(MIN(ts.ts + ts.dur, f.next) - MAX(ts.ts, f.start)), 0) / 1e6, 2) AS js_ms
+FROM frames f
+LEFT JOIN thread_state ts
+  ON ts.utid IN (SELECT utid FROM js) AND ts.state = 'Running' AND ts.ts < f.next AND ts.ts + ts.dur > f.start
+WHERE f.next IS NOT NULL
+GROUP BY f.start
+ORDER BY f.start;

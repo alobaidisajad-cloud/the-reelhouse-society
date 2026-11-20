@@ -42,6 +42,7 @@ import { installGateMetricsSink } from '@/src/lib/gateMetricsSink';
 import { settleOwedSignOut } from '@/src/lib/endSession';
 import { PathTracker } from '@/src/components/layout/PathTracker';
 import { LabFrameLog } from '@/src/components/layout/LabFrameLog';
+import { FeelProfiler, feelTouch } from '@/src/components/layout/LabFeelProbe';
 import { LAB_BUILD } from '@/src/utils/e2eTrace';
 import { PreloaderGone } from '@/src/components/layout/E2ERouteMark';
 export { RouterErrorBoundary as ErrorBoundary };
@@ -159,7 +160,9 @@ export default function RootLayout() {
     <FloorGate onLayout={onLayoutReady}>
     <GlobalErrorBoundary>
       <SafeAreaProvider>
-        <GestureHandlerRootView style={styles.root} onLayout={onLayoutReady}>
+        {/* feelTouch and FeelProfiler: the lab's feel build alone (LabFeelProbe); in every other, nothing. */}
+        <GestureHandlerRootView style={styles.root} onLayout={onLayoutReady} onTouchStart={feelTouch}>
+        <FeelProfiler>
         <KeyboardRoom>
           <PersistQueryClientProvider
           client={queryClient}
@@ -225,6 +228,7 @@ export default function RootLayout() {
       <StandingNotice />
         <StatusBar style="light" />
         </KeyboardRoom>
+        </FeelProfiler>
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </GlobalErrorBoundary>

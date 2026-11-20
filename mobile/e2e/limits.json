@@ -1,0 +1,91 @@
+{
+  "about": "Every limit the app's look, feel and speed are held to, each a number with its reason and the tool that measures it (stage B of the audit). A limit is never loosened: where a measure of today exists (`today`), the limit is no looser than it (e2e/__tests__/limits.test.ts), and every limit is fixed for good at the code that enters the zero rounds. `pending-owner` marks the numbers held to the best app of its kind, which wait for the owner's test Google account on the emulator; `pending-lab` marks a measure whose first record comes from the speed lab's feel run (or, for the download, from the Sealed E2E job's build); `launch-time` marks a number only the launch build can give, with its trigger, never written before it. A limit kept in another file is named there (`in`), never copied.",
+  "measures": {
+    "tapResponse": {
+      "value": 16.7, "unit": "ms", "lowerIsBetter": true, "status": "set", "today": null,
+      "reason": "The physical floor: a tap is answered on the very next frame of a 60 Hz screen, 1000/60 ms after the touch. No app answers sooner; every frame later is a delay a member can feel.",
+      "tool": "e2e/lab/feel.mjs", "measuredBy": "src/components/layout/LabFeelProbe.tsx"
+    },
+    "layoutJumps": {
+      "value": 0, "unit": "moves", "lowerIsBetter": true, "status": "set", "today": null,
+      "reason": "The physical floor: nothing a member reads moves while no one touches the screen. One move is a jump.",
+      "tool": "e2e/lab/feel.mjs"
+    },
+    "jsFrameP95": {
+      "value": 8, "unit": "ms", "lowerIsBetter": true, "status": "set", "today": null,
+      "reason": "The app's own JavaScript work in a frame while scrolling, at the 95th percentile: half of a 60 Hz frame, leaving the other half to the UI thread's mount and the draw. Absolute, because it is the runner's real CPU, not its software GPU.",
+      "tool": "e2e/lab/feel.mjs", "measuredBy": "e2e/lab/sql/9-js-work-per-frame.pfsql"
+    },
+    "jsFrameWorst": {
+      "value": 16.7, "unit": "ms", "lowerIsBetter": true, "status": "set", "today": null,
+      "reason": "No frame of a scroll holds the JS thread for more than the whole frame (1000/60 ms): one that does drops the frame whatever the GPU.",
+      "tool": "e2e/lab/feel.mjs", "measuredBy": "e2e/lab/sql/9-js-work-per-frame.pfsql"
+    },
+    "commitScrolling": {
+      "value": 16.7, "unit": "ms", "lowerIsBetter": true, "status": "set", "today": null,
+      "reason": "A React commit while the list scrolls fits one frame (1000/60 ms): a longer one holds the JS thread past the frame the scroll needed it for.",
+      "tool": "e2e/lab/feel.mjs", "measuredBy": "src/components/layout/LabFeelProbe.tsx"
+    },
+    "commitLongest": {
+      "value": 50, "unit": "ms", "lowerIsBetter": true, "status": "set", "today": null,
+      "reason": "Any one React commit, opening a page included: RAIL (web.dev) calls a task over 50 ms long, since it delays the answer to the next touch past 100 ms.",
+      "tool": "e2e/lab/feel.mjs", "measuredBy": "src/components/layout/LabFeelProbe.tsx"
+    },
+    "tripsInARow": {
+      "value": 1, "unit": "round trips", "lowerIsBetter": true, "status": "set", "today": 2,
+      "reason": "A page at its floor waits on one round trip at most, none when it holds what it draws. Today the member page's deepest opening waits on 2 (Sealed E2E logs of 2026-11-08): over its floor.",
+      "tool": "e2e/speed-record.mjs"
+    },
+    "afterAnswer": {
+      "value": 16.7, "unit": "ms", "lowerIsBetter": true, "status": "set", "today": null,
+      "reason": "A page at its floor draws within one frame of its last answer (1000/60 ms); the time past it is the speed record's gap, which stage D closes screen by screen.",
+      "tool": "e2e/speed-record.mjs"
+    },
+    "screenReady": {
+      "in": "e2e/screen-ceilings.json", "status": "set",
+      "reason": "Each screen's opening, median and once, derived from its own recorded history by ceilingsFrom (e2e/screen-times.mjs): a ceiling only falls as the history does.",
+      "tool": "e2e/screen-times.mjs"
+    },
+    "frameBudget": {
+      "in": "e2e/lab/budget.json", "status": "set",
+      "reason": "Drawing time judged against a plain control page measured in the same run, because the lab's graphics are slow software (FRAME-BUDGET-DESIGN).",
+      "tool": "e2e/lab/scrolls.mjs"
+    },
+    "bundleBytes": {
+      "in": ".bundle-size.json", "status": "set",
+      "reason": "The JavaScript the phones get, a ratchet that grows only by a reason in a commit.",
+      "tool": "scripts/bundle-size.js"
+    },
+    "downloadBytes": {
+      "in": "download-size.json", "status": "pending-lab",
+      "reason": "What a member downloads, part by part: no byte without a reason, each growth in the ledger with its commit. Its first record is CI's measure of the Android release build in the Sealed E2E job (x86_64).",
+      "tool": "scripts/download-size.cjs"
+    },
+    "downloadBytesStore": {
+      "value": null, "unit": "bytes", "lowerIsBetter": true, "status": "launch-time", "today": null,
+      "trigger": "the launch build: the store's own AAB, its download per device as Play reports it",
+      "reason": "The store build is not the one CI builds, so its download is measured on the launch build itself, by the same parts, and never written before it exists.",
+      "tool": "scripts/download-size.cjs"
+    },
+    "coldStart": {
+      "value": null, "unit": "ms", "lowerIsBetter": true, "status": "pending-owner", "today": null,
+      "reason": "Held to the best app of its kind, measured on the same emulator signed into the owner's test Google account; where that cannot be measured, to the framework floor below.",
+      "tool": "e2e/cold-start.mjs"
+    },
+    "memory": {
+      "value": null, "unit": "MB", "lowerIsBetter": true, "status": "pending-owner", "today": null,
+      "reason": "Held to the best app of its kind on the same emulator; where that cannot be measured, to the framework floor below.",
+      "tool": "e2e/speed-record.mjs"
+    },
+    "imageWeight": {
+      "value": null, "unit": "bytes", "lowerIsBetter": true, "status": "pending-owner", "today": null,
+      "reason": "What opening a screen downloads, held to the best app of its kind on the same emulator.",
+      "tool": "e2e/lab/feel.mjs"
+    },
+    "frameworkFloor": {
+      "value": null, "unit": "ms", "lowerIsBetter": true, "status": "pending-lab", "today": null,
+      "reason": "An empty app built exactly as ours is (Expo SDK 57, the same config, e2e/lab/floor-app.mjs), its cold start and memory measured on the same emulator: what no tuning of ours can beat. A best app under it goes to the owner as a dated decision.",
+      "tool": "e2e/lab/floor-app.mjs"
+    }
+  }
+}

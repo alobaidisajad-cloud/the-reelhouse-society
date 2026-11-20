@@ -392,6 +392,22 @@ jobs:
           npx expo prebuild --platform android --no-install --clean > "$B" 2>&1 || fail "prebuild"
           (cd android && for i in 1 2 3 4; do ./gradlew --version --no-daemon --console=plain > /dev/null && break; [ $i -eq 4 ] && exit 1; sleep $((i * 30)); done) >> "$B" 2>&1 || fail "Gradle's own copy could not be fetched"
           for arm in A $LAB_SCROLL_ARMS; do build "$arm"; done
+          # The feel build: A as it is, with the feel probe and React's profiling renderer (FEEL=1,
+          # app.config.js and metro.config.js). Its app module built afresh, so neither the bundle
+          # nor the app's config is taken from A's build.
+          git checkout -- src app
+          rm -rf android/app/build
+          (cd android && FEEL=1 ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 -Pandroid.builder.sdkDownload=false --no-daemon --console=plain \
+              "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build F"
+          cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/apks/F.apk"
+          echo "built F: $(stat -c %s "$RUNNER_TEMP/apks/F.apk") bytes"
+          # The framework's floor: an empty app built as ours is (e2e/lab/floor-app.mjs).
+          node e2e/lab/floor-app.mjs write "$RUNNER_TEMP/floor" >> "$B" 2>&1 || fail "the floor app could not be written"
+          (cd "$RUNNER_TEMP/floor" && npm install --no-audit --no-fund && npx expo prebuild --platform android --no-install \
+              && cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain \
+              "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g") >> "$B" 2>&1 || fail "build the floor app"
+          cp "$RUNNER_TEMP/floor/android/app/build/outputs/apk/release/app-release.apk" "$RUNNER_TEMP/apks/floor.apk"
+          echo "built the floor app: $(stat -c %s "$RUNNER_TEMP/apks/floor.apk") bytes"
           git checkout -- src app
           pkill -f 'KotlinCompileDaemon|GradleDaemon' || true
 
@@ -486,7 +502,11 @@ jobs:
       - name: Every pending migration, applied
         run: node mobile/e2e/db/up-down-up.mjs
 
+      # With the route walk's rows too (a writer's essay in a series, an open salon): the explorer
+      # opens every route by its link, as the walk does (e2e/explore.mjs, readIds).
       - name: Seed the members
+        env:
+          E2E_SEED_WALK: '1'
         run: node mobile/e2e/db/seed.mjs
 
       - name: Fill the house the lab scrolls
@@ -590,6 +610,82 @@ jobs:
         with:
           name: speed-lab-films
           path: ${{ runner.temp }}/lab/films
+          if-no-files-found: ignore
+
+      # The feel of each busy screen (feel.sh) on the feel build: every tap's answer and every commit
+      # timed from inside the app, the screen read for anything that moves untouched, the JS thread's
+      # work per frame traced while scrolling; then the framework's floor, the empty app's starts.
+      - name: The feel of each busy screen, measured
+        if: ${{ !cancelled() }}
+        timeout-minutes: 40
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          heap-size: 576M
+          disable-animations: true
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: FLOOR_APK="$RUNNER_TEMP/apks/floor.apk" LAB_IDS="$RUNNER_TEMP/lab-ids.json" bash mobile/e2e/lab/feel.sh
+
+      # Perfetto's trace processor, fetched by its own launcher, which checks what it downloads.
+      - name: The feel, judged against the limits
+        if: ${{ !cancelled() }}
+        working-directory: mobile
+        run: |
+          set +e
+          F="$RUNNER_TEMP/lab/feel"
+          node e2e/scrub.mjs "$F" > /dev/null
+          curl -sSL -o "$RUNNER_TEMP/tp" https://get.perfetto.dev/trace_processor && chmod +x "$RUNNER_TEMP/tp"
+          for t in "$F"/*.pftrace; do
+            [ -s "$t" ] && "$RUNNER_TEMP/tp" --query-file e2e/lab/sql/9-js-work-per-frame.pfsql "$t" > "${t%.pftrace}.js.txt" 2>&1
+          done
+          node e2e/lab/feel.mjs "$F" > "$F/judged.txt" 2>&1
+          rc=$?
+          node e2e/lab/floor-app.mjs judge "$F/floor" > "$F/floor.json" 2>&1
+          # The speed record from the same run: each screen against its floor, the measured cold
+          # start and memory, the download's parts (A, the lab's x86_64 build) and the images.
+          node scripts/download-size.cjs --apk "$RUNNER_TEMP/apks/A.apk" --json "$F/download-size.json" > /dev/null 2>&1
+          node mockups/tools/image-weight.cjs --json "$F/image-weight.json" > /dev/null 2>&1
+          node e2e/speed-record.mjs "$F"/*.log --history e2e/screen-history.json --cold "$F/cold" --size "$F/download-size.json" --images "$F/image-weight.json" --md "$F/speed-record.md" > "$F/speed-record.txt" 2>&1
+          cat "$F/device.txt" "$F/judged.txt" "$F/floor.json" "$F/speed-record.txt" "$F/anomalies.txt"
+          { echo "### The feel of each busy screen, and the framework's floor"; echo '```'; cat "$F/device.txt" "$F/judged.txt" "$F/floor.json" "$F/anomalies.txt"; echo '```'; echo "### The speed record"; cat "$F/speed-record.md"; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+
+      - name: Keep the feel run
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: speed-lab-feel
+          path: ${{ runner.temp }}/lab/feel
+          if-no-files-found: ignore
+
+      # The explorer (e2e/explore.mjs): every route opened by its link as the signed-in member, then
+      # poked at random, its second half on the emulator's own bad network; crashes, screen-reader
+      # faults, overlaps and console errors named with the read that showed each.
+      - name: The explorer, every route poked at random
+        if: ${{ !cancelled() }}
+        timeout-minutes: 60
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          heap-size: 576M
+          disable-animations: true
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: bash mobile/e2e/lab/explore.sh
+
+      - name: Keep the explorer's run
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: speed-lab-explore
+          path: ${{ runner.temp }}/lab/explore
           if-no-files-found: ignore
 
       - name: The arms' screen, on A and each arm
