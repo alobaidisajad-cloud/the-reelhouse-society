@@ -42,9 +42,12 @@ async function main(argv) {
   writeFileSync(`${out}.files`, `${files.join('\n')}\n`);
   if (!files.length) { console.log('no test file to run'); return 0; }
   console.log(`${files.length} test files, ${workers} workers`);
+  process.chdir(MOBILE);
   const { runCLI } = require(join(MOBILE, 'node_modules', 'jest'));
   const { results } = await runCLI({
-    _: files.map((f) => join(MOBILE, f)), $0: 'jest', runTestsByPath: true, maxWorkers: workers,
+    // From mobile/, with forward slashes: jest also reads the list as a pattern, which a Windows path's
+    // backslashes make invalid.
+    _: files, $0: 'jest', runTestsByPath: true, maxWorkers: workers,
     testPathIgnorePatterns: ignored(MOBILE), json: true, outputFile: out,
   }, [MOBILE]);
   return results.success ? 0 : 1;
