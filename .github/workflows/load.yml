@@ -1,4 +1,6 @@
 name: 🏋️ Load — 100,000 members
+# A run the wake task started is named for the time it carries; any other keeps GitHub's own name.
+run-name: "${{ inputs.wake_night && format('Carried by the wake task: {0}', inputs.wake_night) || '' }}"
 
 # ── EVERY BUSY SCREEN'S READS, AGAINST A HOUSE OF 100,000 ──────────────────────
 # Production's exact shape (the committed snapshot, checked against production
@@ -26,9 +28,15 @@ on:
       - 'mobile/e2e/db/seal.sh'
       - '.github/workflows/load.yml'
   schedule:
-    - cron: '0 7 * * 1'
+    - cron: '47 7 * * 1'
   workflow_dispatch:
     inputs:
+      # A run the wake task (mobile/scripts/wake.mjs) starts for a time GitHub skipped: that time, as
+      # 2026-11-21T03:17Z. Empty in every other run.
+      wake_night:
+        type: string
+        required: false
+        default: ''
       # The house at the owner's scale (audit A-SCALE-PLAN): asked by hand until a run at it is green,
       # so its findings are read before they hold back a push. A whole number of hundreds of thousands.
       members:
@@ -215,10 +223,12 @@ jobs:
 
   # The schedule's heartbeat (WORKLIST P0.38): GitHub stops a schedule after 60 days without
   # activity and says nothing; a monitor outside GitHub (register/alert-rules.json) emails the
-  # owner when this check-in is late.
+  # owner when this check-in is late. Only this workflow's own schedule: a run another workflow
+  # calls it from has that workflow's. A run the wake task started for a time GitHub skipped
+  # (mobile/scripts/wake.mjs) is that time's run, once the time is checked as one of this schedule's.
   heartbeat:
     name: 💓 The schedule ran
-    if: github.event_name == 'schedule'
+    if: (github.event_name == 'schedule' && github.event.schedule == '47 7 * * 1') || inputs.wake_night
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -226,8 +236,14 @@ jobs:
         with:
           sparse-checkout: |
             mobile/scripts/heartbeat.mjs
+            mobile/scripts/wake.mjs
             mobile/register/alert-rules.json
           sparse-checkout-cone-mode: false
+      - name: The time the wake task carried, checked
+        if: inputs.wake_night
+        env:
+          WAKE_NIGHT: ${{ inputs.wake_night }}
+        run: node mobile/scripts/wake.mjs --verify load.yml "$WAKE_NIGHT"
       - name: Check in
         env:
           HEARTBEAT_CHECKIN_URL: ${{ secrets.HEARTBEAT_CHECKIN_URL }}

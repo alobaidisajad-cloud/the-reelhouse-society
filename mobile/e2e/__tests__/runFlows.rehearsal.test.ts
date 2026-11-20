@@ -81,8 +81,9 @@ case "$1" in
   shell)
     shift; cmd="$*"
     # adb hands the device what it reads on its own input, as the real one does: a loop that
-    # reads its lines from the same input loses the rest of them to the first command.
-    cat > /dev/null
+    # reads its lines from the same input loses the rest of them to the first command. Read to its
+    # end by bash itself, so the fake phone starts no process of its own for it.
+    while IFS= read -r _; do :; done
     # Every command, in the order the phone was asked, with Maestro's flows among them.
     echo "adb: $cmd" >> "$T/state/order"
     case "$cmd" in
@@ -137,7 +138,10 @@ echo "$*" >> "$T/state/calls"
 # the script must clear it before the next, or that one never starts its driver.
 [ -e "$HOME/.maestro/sessions" ] && echo "$*" >> "$T/state/stale-sessions"
 mkdir -p "$HOME/.maestro"; echo "MAESTRO_SESSION=1" > "$HOME/.maestro/sessions"
-say() { echo "$(date +'%m-%d %H:%M:%S.%3N')  $1  $(( $1 + 20 )) $2 $3: $4" >> "$T/device.log"; }
+# Each line stamped with the moment this attempt ran, read once: the clock asked for every line
+# started a process for each, and a flow says some forty.
+stamp=$(date +'%m-%d %H:%M:%S.%3N')
+say() { echo "$stamp  $1  $(( $1 + 20 )) $2 $3: $4" >> "$T/device.log"; }
 # The keyboard's letters while a field's tap left them up, its emoji panel after the emoji key, each
 # with the key Gboard names on it (?123, ABC); no keyboard at all otherwise.
 if [ "$1" = hierarchy ]; then
@@ -292,6 +296,8 @@ function rehearse(flows: string[], scenario: Record<string, string[]>, opts: { e
     HOME: T + '/home', RUNNER_TEMP: T + '/out', E2E_FLOWS: T + '/flows', MAESTRO_BIN: T + '/bin/maestro',
     E2E_MEMBER_EMAIL: 'e2e_member@e2e.test', E2E_MEMBER_PASSWORD: 'rehearsal-Pw_0123456789x', E2E_MEMBER_USERNAME: 'e2e_member',
     GITHUB_STEP_SUMMARY: T + '/summary.md', E2E_MOTION_SECONDS: '1',
+    // A fake phone's process is gone at once and its keyboard has no entrance to wait out.
+    E2E_STOP_SETTLE_SECONDS: '0', E2E_KEYBOARD_SETTLE_SECONDS: '0',
     E2E_RUNTIME_COPY: T + '/fixtures/phone-runtime.json',
     // No shard unless a scenario names one: then the run is the whole run.
     E2E_SHARD: '',

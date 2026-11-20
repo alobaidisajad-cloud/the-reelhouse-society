@@ -697,8 +697,21 @@ it('starts no Node child it does not wait for (CI-15)', () => {
     const whole = [...text.matchAll(/(?:(\w+)\s*=\s*require\(|import\s+(?:\*\s+as\s+)?(\w+)\s+from\s*)['"](?:node:)?child_process['"]/g)].map((m) => m[1] ?? m[2] ?? '');
     return taken.some((n) => ASYNC.includes(n)) || whole.filter(Boolean).some((w) => new RegExp(`\\b${w}\\.(${ASYNC.join('|')})\\s*\\(`).test(text));
   });
-  expect(starts.map((p) => relative(join(DIR, '..', '..'), p))).toEqual([]);
+  const named = starts.map((p) => relative(join(DIR, '..', '..'), p).split('\\').join('/'));
+  expect(named.filter((p) => !(p in SIDE_BY_SIDE))).toEqual([]);
+  expect(Object.keys(SIDE_BY_SIDE).filter((p) => !named.includes(p))).toEqual([]);
+  // Each waits for every child it starts: as many spawn( calls as children read to their close.
+  for (const p of named) {
+    const text = readFileSync(join(DIR, '..', '..', p), 'utf8');
+    expect([p, (text.match(/\bspawn\(/g) ?? []).length]).toEqual([p, (text.match(/\.on\('close'/g) ?? []).length]);
+  }
 });
+
+/** Scripts that start their children side by side, each child read to its close before the script ends; each with why. */
+const SIDE_BY_SIDE: Record<string, string> = {
+  'mobile/scripts/hooks/pre-push.cjs': 'the push check runs its checks side by side; runAll ends only once every check has closed',
+  'mobile/scripts/hooks/mutant-lanes.cjs': 'each lane runs its mutants side by side with the others; the script waits for every lane to close',
+};
 
 it('finds a background start the rule would let through, in a planted script', () => {
   expect(backgrounded('adb logcat > out.txt &\nstreamer=$!\ntrap \'kill $streamer\' EXIT')).toEqual([{ command: 'adb logcat', stopped: true }]);

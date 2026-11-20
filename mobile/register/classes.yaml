@@ -4773,4 +4773,85 @@ classes:
     methods:
       - { kind: running, file: app/__tests__/yourYearFillsItsWindow.test.tsx, test: "a window that changes width puts the pager back on the slide it was on" }
     fix: "the pager keeps the page it settled on and, once its pages have their new size (onContentSizeChange, never before: a scroll asked of the old size is cut short), is put back on it at the new width (mutant shape-year-pager-left-between-pages)"
+  - id: CI-schedule-skipped-unstarted
+    title: "GitHub starts a scheduled run late when Actions is busy, and drops it when busier still, so a night can pass with no run and no failure: every schedule sat on the hour or its half, the nightly was started six to eight hours late night after night, and nothing started a run GitHub skipped"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 6
+    source: { kind: ci, ref: "the nightly's scheduled runs, 2026-11-06 to 2026-11-19: each created between 09:26 and 11:20 UTC for its 03:00 schedule" }
+    methods:
+      - { kind: running, file: scripts/__tests__/wake.test.ts, test: "starts the run GitHub skipped, once, with its time" }
+      - { kind: running, file: scripts/__tests__/wake.test.ts, test: "one the wake task started for it, by its name; never one started by hand" }
+      - { kind: running, file: scripts/__tests__/wake.test.ts, test: "refuses any other" }
+      - { kind: static, file: src/utils/__tests__/heartbeatsAreKept.test.ts, test: "every schedule sits off the hour and its quarters, each at its own time" }
+      - { kind: static, file: src/utils/__tests__/heartbeatsAreKept.test.ts, test: "a run the wake task starts carries its time by input and by name, and the night's history reads such a night" }
+    fix: "every schedule moved off the hour and its quarters (register/alert-rules.json holds each); scripts/wake.mjs, the owner's computer's task, starts by workflow_dispatch any schedule's time two hours old that no run of that schedule and no run it started answers, with wake_night set to that time; the run is named for it (run-name), its heartbeat checks the time is one of the schedule's own (--verify) before it checks in, and the night's flake history reads such a night; a workflow GitHub turned off is the task's fault, and its own heartbeat says error (mutants shape-wake-never-starts, shape-wake-counts-a-hand-run, shape-wake-carries-any-time, shape-schedule-on-the-hour)"
+    places: [none]
+
+  - id: CI-heartbeat-from-a-callers-schedule
+    title: "A workflow another one calls takes its caller's event, so the Sealed E2E's and the database run's heartbeat jobs checked in whenever the nightly's schedule called them: a weekly schedule of either that GitHub stopped would never have been heard"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 2
+    source: { kind: running, ref: "stage B, the wake task: e2e.yml and db-integration.yml are called by nightly.yml, and their heartbeat jobs asked only whether the event was a schedule" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/heartbeatsAreKept.test.ts, test: "and each checks in, only when the schedule fired, by the monitor the rules name" }
+    fix: "each heartbeat job checks in only for its own schedule, by its own time (github.event.schedule), or for a time the wake task carried, checked first (mutant shape-heartbeat-takes-a-callers-schedule)"
+    places: [none]
+
+  - id: CI-split-by-count-not-time
+    title: "jest's --shard gave every part of CI's split runs the same number of test files, wherever the heavy ones fell: a capture part ran 26 to 30 minutes against its 30-minute limit and was cut at it twice, while another part ran 12"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 2
+    source: { kind: ci, ref: "God-Tier 44473860748 and 44541753447: Every screen the tests build, part 2 of 4, cancelled at 30 minutes" }
+    methods:
+      - { kind: running, file: test-utils/__tests__/weightedSequencer.test.ts, test: "balances where jest's own split by equal counts does not" }
+      - { kind: running, file: test-utils/__tests__/weightedSequencer.test.ts, test: "weighs each file as its table says, by its path under jest's root, and one the table does not hold as the table's median" }
+    fix: "test-utils/weightedSequencer.js splits a --shard run by each file's measured seconds (test-utils/test-weights.json: a captures table and a plain one), heaviest first to the lightest part, the same on every machine; each together-job prints its parts' seconds, warns when they are out of balance and keeps the table measured (scripts/test-weights.cjs) (mutant shape-split-weighs-nothing)"
+    places: [none]
+
+  - id: CI-fetches-what-the-job-never-uses
+    title: "The web job fetched all three of Playwright's browsers with their system libraries for a test that runs on the image's own Chrome, and on a cold cache both of its tries outlived their five minutes"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "God-Tier 44447946174 and 44510707456: Web Playwright Visual Regression, both tries of the browsers timed out" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/theWebTestFetchesNoBrowser.test.ts, test: "fetches no browser, and finds the image's Chrome before the test runs" }
+      - { kind: static, file: src/utils/__tests__/theWebTestFetchesNoBrowser.test.ts, test: "runs every project of the config on Chrome, the browser the image holds" }
+    fix: "the job fetches no browser: it finds the image's Google Chrome, which playwright.config.ts's every project runs on (mutant shape-web-job-fetches-browsers)"
+    places: [none]
+
+  - id: CI-build-reads-a-version-list
+    title: "expo-updates' bcutil asks for bcprov by a range, so any Android build whose cached listing was a day old asked Maven Central for its version list, and one blip there failed a whole E2E build"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Sealed E2E 44541753500: the build failed reading the version list of bcprov-jdk15to18" }
+    methods:
+      - { kind: static, file: plugins/__tests__/withPinnedDependencies.test.ts, test: "pins each range for every configuration of every project, and refuses any other range" }
+      - { kind: static, file: plugins/__tests__/withPinnedDependencies.test.ts, test: "pins bcprov to the version of the bcutil expo-updates names, which asks for that version's range" }
+    fix: "plugins/withPinnedDependencies.js pins each range in every configuration of every project to the version it resolves to, and Gradle's failOnDynamicVersions refuses any other range in the graph (mutants shape-a-range-left-unpinned, shape-pin-behind-expo-updates)"
+    places: [none]
+
+  - id: CI-push-check-one-stage-at-a-time
+    title: "The push check ran every stage one after another: the flow runner's rehearsal held one jest batch 52 to 89 minutes while the other workers stood idle, the related tests and the readers ran twice over where they met, and each mutant ran alone after everything, its test run twice: 2.3 hours a push, and a refused push cost all of it"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 3
+    source: { kind: running, ref: "the push checks of 2026-11-18 and 2026-11-19: 3127 s and 5332 s for the readers' batch with the rehearsal, 5714 s for 240 mutants one at a time" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
+      - { kind: running, file: src/utils/__tests__/hooks.guard.test.ts, test: "counts a mutant's test green only where that test, in its own file, passed" }
+      - { kind: static, file: src/utils/__tests__/hooks.guard.test.ts, test: "runs the readers and the related tests as one jest run, the rehearsals as a second, and every rehearsal there" }
+      - { kind: static, file: src/utils/__tests__/hooks.guard.test.ts, test: "runs only what keeps it safe to publish: the secrets scan, the website freeze and the disclosure scan, never the code gate" }
+      - { kind: static, file: src/utils/__tests__/hooks.guard.test.ts, test: "refuses plant branches pushed with any other ref, and leaves every other push to the code gate" }
+    fix: "scripts/hooks/pre-push.cjs runs its checks side by side, each printed whole as it ends: the related tests and the readers as one jest run (jest-run.cjs), the rehearsals as a second beside it, the mutants in checkouts of their own (mutant-lanes.cjs) once the tests have run, a mutant's first run taken from the tests' own report on a clean tree (mutants.cjs --green); the seconds of each check printed and kept (mutants shape-mutants-before-the-tests-end, shape-green-from-a-dirty-tree, shape-green-from-another-test, shape-rehearsals-in-the-tests-run); a push of planted-mistakes branches alone (plant/*) runs only the secrets scan, the website freeze and the disclosure scan (scripts/hooks/disclosure.cjs), as CI runs the whole suite on them, and plant branches pushed with any other ref are refused (mutants shape-plant-push-with-main, shape-plant-push-unscanned)"
     places: [none]

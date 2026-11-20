@@ -46,6 +46,7 @@ const MAY_LIST: Record<string, string> = {
   'e2e/lab/scrolls.mjs': "the folder the speed lab's scrolls wrote on the device's runner",
   'e2e/db/lab-seed.mjs': "the stand-in TMDB's recordings, which no universe sweeps: every film it holds with a poster",
   'scripts/flake-history.cjs': "the flow reports a night's Sealed E2E rounds wrote, downloaded for it",
+  'scripts/test-weights.cjs': "the records a split run's part kept, downloaded into that part's folder",
   'e2e/old-client-tree.mjs': 'the old client checkout it is making, emptied of all but the harness',
   'e2e/__tests__/flowScreens.test.ts': 'the folder its own run of flow-screens.mjs wrote',
   'scripts/bundle-size.js': 'the bundle an export just wrote',

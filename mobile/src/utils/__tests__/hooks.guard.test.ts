@@ -16,7 +16,13 @@ const ROOT = join(MOBILE, '..');
 const { mutantInPlace, refusalOf } = require('../../../scripts/hooks/pre-commit.cjs') as {
   mutantInPlace: (root: string) => string | null; refusalOf: (path: string, bytes: Buffer) => string | null;
 };
-const { basesOf, clearHookGitEnv, ignored, inBatches, lintTargets, readers, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
+type Check = { id: string; label: string; args: string[]; cwd: string; after: string[]; low: boolean };
+const { RUN_FLOWS, basesOf, checksFor, clearHookGitEnv, ignored, inBatches, lintTargets, plantChecks, pushKind, readers, runAll, workersFor } = require('../../../scripts/hooks/pre-push.cjs') as {
+  RUN_FLOWS: RegExp;
+  pushKind: (input: string) => { kind: string; plants: { local: string }[] };
+  plantChecks: (plants: { local: string }[], git: (...a: string[]) => string) => Check[];
+  checksFor: (o: object) => Check[];
+  runAll: (checks: Check[], logDir: string) => Promise<(Check & { code: number })[]>;
   basesOf: (input: string, git: (...a: string[]) => string) => string[];
   clearHookGitEnv: (env: NodeJS.ProcessEnv) => NodeJS.ProcessEnv;
   ignored: (mobile: string) => string[];
@@ -109,10 +115,75 @@ describe('before a push', () => {
     expect(batches.length).toBeGreaterThan(1);
     expect(batches.flat()).toEqual(list);
     expect(batches.filter((b) => b.join(' ').length > 6000)).toEqual([]);
-    const hook = readFileSync(join(ROOT, 'mobile', 'scripts', 'hooks', 'pre-push.cjs'), 'utf8');
-    expect(hook).toContain("for (const batch of inBatches(readers(MOBILE)))");
-    expect(hook).toContain("for (const batch of inBatches(code))");
-    expect(hook).toContain("for (const batch of inBatches(linted))");
+  });
+
+  describe('the checks it runs, side by side', () => {
+    const lists = { readers: 'R', rehearsals: 'H', related: 'C', testReport: 'T.json', rehearsalReport: 'H.json' };
+    const base = 'b'.repeat(40);
+    const plan = (over: object = {}) => checksFor({
+      bases: [base], touched: ['mobile/src/a.ts'], changed: ['src/a.ts'], files: { code: ['src/a.ts'], linted: ['src/a.ts'] },
+      workers: { tests: 6, rehearsals: 3 }, lanes: 4, lists, clean: true, ...over,
+    });
+    const byId = (checks: Check[], id: string) => checks.find((c) => c.id === id);
+
+    it('runs every check the serial push ran: the scripts, the counts, the comments, the types, lint, the tests and the mutants', () => {
+      expect(plan().map((c) => c.id)).toEqual([
+        `website-freeze.cjs@${base}`, `add-only.cjs@${base}`, `migration-lint.cjs@${base}`, `frozen-base@${base}`, 'frozen',
+        'comments', 'types', 'lint-1', 'rehearsals', 'tests', `mutants@${base}`]);
+    });
+
+    it('runs the readers and the related tests as one jest run, the rehearsals as a second, and every rehearsal there', () => {
+      const tests = byId(plan(), 'tests')!.args;
+      expect(tests.slice(tests.indexOf('--paths'))).toEqual(['--paths', 'R', '--related', 'C', '--leave', RUN_FLOWS.source]);
+      expect(byId(plan(), 'rehearsals')!.args.slice(-2)).toEqual(['--paths', 'H']);
+      expect(byId(plan({ files: { code: [], linted: [] }, changed: ['register/a.yaml'] }), 'tests')!.args).not.toContain('--related');
+      const there = readers(join(__dirname, '..', '..', '..')).filter((p) => /runFlows/.test(p));
+      expect(there.length).toBeGreaterThan(0);
+      expect(there.filter((p) => !RUN_FLOWS.test(p))).toEqual([]);
+      expect([RUN_FLOWS.test('e2e/__tests__/runFlows.rehearsal.test.ts'), RUN_FLOWS.test('e2e/__tests__/runFlows.variants.rehearsal.test.ts'), RUN_FLOWS.test('e2e/__tests__/flowHistory.test.ts')])
+        .toEqual([true, true, false]);
+    });
+
+    it('takes a mutant\'s first run from the tests only on a clean tree, after them, and in lanes of their own', () => {
+      const clean = byId(plan(), `mutants@${base}`)!;
+      expect([clean.after, clean.args.slice(-4)]).toEqual([['tests', 'rehearsals'], ['--lanes', '4', '--green', 'T.json,H.json']]);
+      const dirty = byId(plan({ clean: false }), `mutants@${base}`)!;
+      expect([dirty.after, dirty.args.includes('--green')]).toEqual([[], false]);
+    });
+
+    it('counts a mutant\'s test green only where that test, in its own file, passed', () => {
+      const { greenIn } = require('../../../scripts/mutants.cjs') as { greenIn: (r: object[], p: { file: string; test: string }) => boolean };
+      const report = { testResults: [
+        { name: '/x/mobile/src/a.test.ts', assertionResults: [{ title: 'holds', status: 'passed' }, { title: 'breaks', status: 'failed' }] },
+        { name: 'C:\\x\\mobile\\src\\b.test.ts', assertionResults: [{ title: 'other', status: 'passed' }] },
+      ] };
+      expect([
+        greenIn([report], { file: 'src/a.test.ts', test: 'holds' }), greenIn([report], { file: 'src/b.test.ts', test: 'other' }),
+        greenIn([report], { file: 'src/a.test.ts', test: 'breaks' }), greenIn([report], { file: 'src/b.test.ts', test: 'holds' }),
+        greenIn([], { file: 'src/a.test.ts', test: 'holds' }),
+      ]).toEqual([true, true, false, false, false]);
+    });
+
+    it('runs nothing of the app for a push that changes nothing in mobile/, but its scripts and mutants', () => {
+      expect(plan({ changed: [], files: { code: [], linted: [] }, touched: ['.github/workflows/x.yml'] }).map((c) => c.id))
+        .toEqual([`website-freeze.cjs@${base}`, `add-only.cjs@${base}`, `migration-lint.cjs@${base}`, `frozen-base@${base}`, `mutants@${base}`]);
+    });
+
+    it('starts each check once those it waits for have ended, and runs every check whatever another said', async () => {
+      const dir = mkdtempSync(join(tmpdir(), 'push-'));
+      try {
+        const node = (id: string, code: number, after: string[] = []) => ({ id, label: id, args: ['-e', `setTimeout(() => process.exit(${code}), 50)`], cwd: dir, after, low: false });
+        const order: string[] = [];
+        const log = jest.spyOn(console, 'log').mockImplementation((s: string) => { order.push(String(s)); });
+        const write = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
+        const results = await runAll([node('a', 1), node('b', 0, ['a']), node('c', 0)], dir);
+        log.mockRestore(); write.mockRestore();
+        expect(results.map((r: { id: string; code: number }) => [r.id, r.code])).toEqual([['a', 1], ['b', 0], ['c', 0]]);
+        expect(order.findIndex((l) => l.startsWith('→ a'))).toBeLessThan(order.findIndex((l) => l.startsWith('→ b')));
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
   });
 
   it('lints the changed code, and every file once lint\'s own rules change', () => {
@@ -130,6 +201,44 @@ describe('before a push', () => {
     expect(workersFor(64 * GB, 16)).toBe(15);
     expect(workersFor(1 * GB, 16)).toBe(1);
     expect(workersFor(0, 16)).toBe(1);
+  });
+});
+
+describe('a push of planted-mistakes branches (plant/*)', () => {
+  const sha = (c: string) => c.repeat(40);
+  const line = (ref: string, local = sha('a'), remote = sha('0')) => `refs/heads/${ref} ${local} refs/heads/${ref} ${remote}`;
+
+  it('runs only what keeps it safe to publish: the secrets scan, the website freeze and the disclosure scan, never the code gate', () => {
+    const push = pushKind([line('plant/p1'), line('plant/p2', sha('c'))].join('\n'));
+    expect([push.kind, push.plants.map((p) => p.local)]).toEqual(['plant', [sha('a'), sha('c')]]);
+    const checks = plantChecks(push.plants, () => `${sha('f')}\n`);
+    expect(checks.map((c) => c.id.split('@')[0])).toEqual(['secrets', 'website-freeze.cjs', 'disclosure', 'secrets', 'website-freeze.cjs', 'disclosure']);
+    expect(checks.filter((c) => /jest|tsc|eslint|mutant|frozen|comment-truth/.test(c.args.join(' ')))).toEqual([]);
+    expect(checks[0]!.args.slice(0, 3)).toEqual(['git', '--log-opts', `${sha('f')}..${sha('a')}`]);
+  });
+
+  it('refuses plant branches pushed with any other ref, and leaves every other push to the code gate', () => {
+    expect(pushKind([line('plant/p1'), line('main', sha('b'), sha('d'))].join('\n')).kind).toBe('mixed');
+    expect(pushKind(line('main', sha('b'), sha('d'))).kind).toBe('code');
+    expect(pushKind(line('plants/p1')).kind).toBe('code');
+    // A plant branch deleted after its round is a plant push with nothing to scan.
+    expect(pushKind(`(delete) ${sha('0')} refs/heads/plant/p1 ${sha('e')}`)).toEqual({ kind: 'plant', plants: [] });
+  });
+
+  it('the disclosure scan names a hole\'s words and the private register\'s, and passes plain words', () => {
+    const { findings, titlesAdded } = require('../../../scripts/hooks/disclosure.cjs') as {
+      findings: (t: { where: string; text: string }[], priv: string, pub: string) => string[];
+      titlesAdded: (diff: string) => { where: string; text: string }[];
+    };
+    const priv = 'the salon join reads every member list unasked';
+    const pub = 'every member list is drawn';
+    const said = findings([
+      { where: 'a', text: 'plant: a bypass of the gate' }, { where: 'b', text: 'plant: the salon join reads every member list' },
+      { where: 'c', text: 'plant: every member list is drawn again' }, { where: 'd', text: 'plant 7 of 22, round 15' },
+    ], priv, pub);
+    expect(said).toEqual(['a names a hole: "bypass"', 'b says four words of the private register: "the salon join reads"']);
+    expect(titlesAdded("+++ b/src/x.test.ts\n+it('leaks the password to a guest', () => {\n+const y = 1;\n+++ b/src/y.ts\n+it('not a test file')\n"))
+      .toEqual([{ where: 'src/x.test.ts: a test title', text: 'leaks the password to a guest' }]);
   });
 });
 

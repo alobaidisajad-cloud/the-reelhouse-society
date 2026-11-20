@@ -333,6 +333,7 @@
       "./plugins/withShrunkRelease",
       "./plugins/withHouseDialogs",
       "./plugins/withOneNdk",
+      "./plugins/withPinnedDependencies",
       "./plugins/withGwpAsanOff",
       "./plugins/withAssetStatements",
       "expo-font",

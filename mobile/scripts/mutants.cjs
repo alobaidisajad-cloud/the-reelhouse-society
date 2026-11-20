@@ -24,6 +24,9 @@
  *   node mobile/scripts/mutants.cjs --ids a,b        those named
  *   node mobile/scripts/mutants.cjs --results <file> also writes the count-only results (ids and verdicts, P0.39)
  *   node mobile/scripts/mutants.cjs --put-back       puts back what a stopped run left in place, and ends
+ *   node mobile/scripts/mutants.cjs --green <report>[,<report>]
+ *                                                    a mutant whose test a jest --json report of this same
+ *                                                    committed tree holds passing counts that as its first run
  *
  * Any other argument, or an option without its value, is refused before anything runs. Every
  * run first puts back what a stopped run left in place (the mutant in place, below).
@@ -32,7 +35,7 @@
  */
 const { createHash } = require('crypto');
 const { execFileSync, spawnSync } = require('child_process');
-const { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } = require('fs');
+const { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } = require('fs');
 const { Buffer } = require('buffer');
 const { tmpdir } = require('os');
 const { dirname, extname, join, relative } = require('path');
@@ -189,7 +192,7 @@ const putBackLeftover = (placed = PLACED) => {
 };
 
 /** The options and whether each takes a value. */
-const OPTIONS = { '--ids': true, '--changed': true, '--part': true, '--results': true, '--fresh': false, '--gather': true, '--out': true, '--put-back': false };
+const OPTIONS = { '--ids': true, '--changed': true, '--part': true, '--results': true, '--fresh': false, '--gather': true, '--out': true, '--put-back': false, '--green': true };
 
 /** What is wrong with these arguments, or null: an unknown one, or an option missing its value. */
 const argumentsFault = (argv) => {
@@ -275,13 +278,21 @@ const runJudge = (m) => {
   }
 };
 
-/** One mutant, by the kill rules: its verdict and why. */
-const runOne = (m) => {
+/**
+ * Whether these jest --json reports hold the named test passing, in its own file: a run of the same
+ * committed tree that already proved it green (the push's own jest run, scripts/hooks/pre-push.cjs).
+ */
+const greenIn = (reports, { file, test }) => reports.some((report) => (report.testResults ?? [])
+  .filter((r) => String(r.name).split('\\').join('/').endsWith(`/mobile/${file}`))
+  .some((r) => statusIn({ testResults: [r] }, test) === 'passed'));
+
+/** One mutant, by the kill rules: its verdict and why. `green` are reports that already ran its test green on this tree. */
+const runOne = (m, green = []) => {
   if (m.source === 'judge') return runJudge(m);
   const files = [...new Set([...(m.files ?? []), ...(m.edits ?? []).map((e) => e.file), ...(m.plant ?? []).map((p) => p.path)])];
   const changed = dirty(files);
   if (changed.length) return { verdict: 'invalid', why: `not as committed: ${changed.join(', ')}` };
-  const base = runTest(m.proof);
+  const base = greenIn(green, m.proof) ? { status: 'passed' } : runTest(m.proof);
   if (base.status !== 'passed') return { verdict: 'invalid', why: `its test was not green first (${base.status}) ${base.said ?? ''}`.trim() };
   const plan = changesOf(m);
   if (plan.notApplied) return { verdict: 'NOT-APPLIED', why: plan.notApplied };
@@ -377,6 +388,25 @@ const gather = (parts, mutants) => {
   return { results, faults };
 };
 
+/**
+ * `fn` run while this process alone holds the lock (a folder made only if none is there), waited for
+ * up to a minute; a lock older than that was left by a run that ended and is taken over.
+ */
+const withLock = (lock, fn, wait = 60_000) => {
+  const from = Date.now();
+  for (;;) {
+    try { mkdirSync(lock); break; } catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      let old = false;
+      try { old = Date.now() - statSync(lock).mtimeMs > wait; } catch { /* let go between the two looks: try again */ }
+      if (old) { rmSync(lock, { recursive: true, force: true }); continue; }
+      if (Date.now() - from > wait) throw new Error(`${lock} was held for a minute`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+    }
+  }
+  try { return fn(); } finally { rmSync(lock, { recursive: true, force: true }); }
+};
+
 /** The private folder of the main checkout, where the fuller record is kept (P0.54); null when there is none. */
 const privateDir = () => {
   try {
@@ -424,10 +454,12 @@ if (require.main === module) {
   // Ctrl+C ends the run after the mutant in hand is put back, never with it in.
   let stopping = false;
   process.on('SIGINT', () => { stopping = true; console.error('stopping once this mutant is put back'); });
+  // Reports of a jest run of this same tree: a mutant whose test they hold green skips its own first run.
+  const green = (arg('--green')?.split(',') ?? []).map((f) => JSON.parse(readFileSync(f, 'utf8')));
   for (const m of chosen) {
     if (stopping) break;
     const t0 = Date.now();
-    const { verdict, why } = runOne(m);
+    const { verdict, why } = runOne(m, green);
     console.log(`${verdict.padEnd(11)} ${m.private ? '(private)' : m.id}  ${m.private ? '' : m.class}  ${Math.round((Date.now() - t0) / 1000)}s${why && !m.private ? `  — ${why}` : ''}`);
     results.push({ class: m.class, mutant: m.id, proof: m.source === 'judge' ? 'judge' : proofId(m, classes), commit, verdict, private: !!m.private, why, m });
   }
@@ -445,9 +477,12 @@ if (require.main === module) {
     const dir = join(priv, 'mutants');
     mkdirSync(dir, { recursive: true });
     const file = join(dir, `${commit}.json`);
-    const had = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
     const full = results.map(({ m, ...r }) => ({ ...keep(r), source: m.source, test: m.proof ? `${m.proof.file}: ${m.proof.test}` : m.judge.run.slice(1, 2).join(''), why: r.why }));
-    writeFileSync(file, `${JSON.stringify([...had.filter((h) => !full.some((f) => f.mutant === h.mutant)), ...full], null, 2)}\n`);
+    // The push's mutant lanes (scripts/hooks/mutant-lanes.cjs) end side by side: one writer at a time.
+    withLock(`${file}.lock`, () => {
+      const had = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
+      writeFileSync(file, `${JSON.stringify([...had.filter((h) => !full.some((f) => f.mutant === h.mutant)), ...full], null, 2)}\n`);
+    });
   }
   const bad = results.filter((r) => r.verdict !== 'caught');
   console.log(`\n${results.length - bad.length} of ${results.length} caught`);
@@ -455,6 +490,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  applyEdits, argumentsFault, changesOf, gather, hunksOf, lf, partOf, pathsOf, PLACED, privateDir, proofId, putBackLeftover,
-  compileFaults, readMutants, really, reverse, runOne, standsOn, statusIn, touchedSince,
+  applyEdits, argumentsFault, changesOf, gather, greenIn, hunksOf, lf, partOf, pathsOf, PLACED, privateDir, proofId, putBackLeftover,
+  compileFaults, readMutants, really, reverse, runOne, standsOn, statusIn, touchedSince, withLock,
 };

@@ -100,7 +100,7 @@ mutants:
         find: "on:\n  push:\n    branches: [main]"
         replace: "on:\n  pull_request:\n    branches: [main]"
       - file: ../.github/workflows/load.yml
-        find: "  schedule:\n    - cron: '0 7 * * 1'\n"
+        find: "  schedule:\n    - cron: '47 7 * * 1'\n"
         replace: ""
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "runs every gate on a push to main or on a schedule, or names why not (CI-02)" }
 
@@ -1124,8 +1124,8 @@ mutants:
     source: shape
     edits:
       - file: ../.github/workflows/god_tier_ci.yml
-        find: "        id: install-13\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if bash \"$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh\"; then\n"
-        replace: "        id: install-13\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if false; then\n"
+        find: "        id: install-8\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if bash \"$GITHUB_WORKSPACE/mobile/scripts/kept-debs.sh\"; then\n"
+        replace: "        id: install-8\n        timeout-minutes: 5\n        continue-on-error: true\n        run: |\n          echo 'DPkg::Lock::Timeout \"240\";' | sudo tee /etc/apt/apt.conf.d/90-wait-for-the-lock > /dev/null\n          timeout 180 bash -c 'while pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null || pgrep -f unattended-upgr > /dev/null; do sleep 3; done' || true\n          { pgrep -x apt-get > /dev/null || pgrep -x apt > /dev/null || pgrep -x dpkg > /dev/null; } && { sudo pkill -x apt-get; sudo pkill -x apt; sudo pkill -x dpkg; sudo dpkg --configure -a > /dev/null 2>&1; } || true\n          grep -L -e ubuntu.com -e apt-mirrors /etc/apt/sources.list.d/* | xargs -r sudo rm -f\n          if false; then\n"
     proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every apt install waits for the lock a try cut short at its limit leaves held" }
 
   - id: shape-install-reads-every-source
@@ -7761,8 +7761,8 @@ mutants:
     source: shape
     edits:
       - file: ../.github/workflows/god_tier_ci.yml
-        find: "          key: apt-debs-ubuntu-24.04-${{ steps.image-13.outputs.version }}-playwright-all\n      - name: Playwright's browsers and their system libraries\n"
-        replace: "          key: apt-debs-ubuntu-24.04-playwright-all\n      - name: Playwright's browsers and their system libraries\n"
+        find: "          key: apt-debs-ubuntu-24.04-${{ steps.image-8.outputs.version }}-playwright-chromium\n      - name: Chromium for the measuring tools\n"
+        replace: "          key: apt-debs-ubuntu-24.04-playwright-chromium\n      - name: Chromium for the measuring tools\n"
     proof: { file: scripts/__tests__/keptDebs.test.ts, test: "every key the kept packages are cached under names the runner's image, restored and saved alike" }
 
   - id: shape-iphone-flow-never-given-again
@@ -8773,3 +8773,137 @@ mutants:
     proof:
       file: src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts
       test: "the proxy and the reader pace no address when none is vouched"
+  - id: shape-wake-never-starts
+    class: CI-schedule-skipped-unstarted
+    source: shape
+    edits:
+      - file: scripts/wake.mjs
+        find: "    await api.dispatch(workflow, { wake_night: slotName(at) });\n"
+        replace: ""
+    proof: { file: scripts/__tests__/wake.test.ts, test: "starts the run GitHub skipped, once, with its time" }
+
+  - id: shape-wake-counts-a-hand-run
+    class: CI-schedule-skipped-unstarted
+    source: shape
+    edits:
+      - file: scripts/wake.mjs
+        find: "|| run.display_title === wakeTitle(at);"
+        replace: "|| run.event === 'workflow_dispatch';"
+    proof: { file: scripts/__tests__/wake.test.ts, test: "one the wake task started for it, by its name; never one started by hand" }
+
+  - id: shape-wake-carries-any-time
+    class: CI-schedule-skipped-unstarted
+    source: shape
+    edits:
+      - file: scripts/wake.mjs
+        find: "  if (!slotsBetween(rule.cron, at, at).length) return `${text} is not a time of ${workflow}'s schedule (${rule.cron})`;\n"
+        replace: ""
+    proof: { file: scripts/__tests__/wake.test.ts, test: "refuses any other" }
+
+  - id: shape-schedule-on-the-hour
+    class: CI-schedule-skipped-unstarted
+    source: shape
+    edits:
+      - file: register/alert-rules.json
+        find: "\"cron\": \"17 3 * * *\""
+        replace: "\"cron\": \"0 3 * * *\""
+    proof: { file: src/utils/__tests__/heartbeatsAreKept.test.ts, test: "every schedule sits off the hour and its quarters, each at its own time" }
+
+  - id: shape-heartbeat-takes-a-callers-schedule
+    class: CI-heartbeat-from-a-callers-schedule
+    source: shape
+    edits:
+      - file: ../.github/workflows/e2e.yml
+        find: "    if: (github.event_name == 'schedule' && github.event.schedule == '53 6 * * 1') || inputs.wake_night\n"
+        replace: "    if: github.event_name == 'schedule' || inputs.wake_night\n"
+    proof: { file: src/utils/__tests__/heartbeatsAreKept.test.ts, test: "and each checks in, only when the schedule fired, by the monitor the rules name" }
+
+  - id: shape-split-weighs-nothing
+    class: CI-split-by-count-not-time
+    source: shape
+    edits:
+      - file: test-utils/weightedSequencer.js
+        find: "weight: typeof table[key] === 'number' && table[key] > 0 ? table[key] : fallback"
+        replace: "weight: fallback"
+    proof: { file: test-utils/__tests__/weightedSequencer.test.ts, test: "weighs each file as its table says, by its path under jest's root, and one the table does not hold as the table's median" }
+
+  - id: shape-web-job-fetches-browsers
+    class: CI-fetches-what-the-job-never-uses
+    source: shape
+    edits:
+      - file: ../.github/workflows/god_tier_ci.yml
+        find: "        run: google-chrome --version || {"
+        replace: "        run: npx playwright install --with-deps chromium && google-chrome --version || {"
+    proof: { file: src/utils/__tests__/theWebTestFetchesNoBrowser.test.ts, test: "fetches no browser, and finds the image's Chrome before the test runs" }
+
+  - id: shape-a-range-left-unpinned
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: plugins/withPinnedDependencies.js
+        find: "  '      failOnDynamicVersions()',\n"
+        replace: ""
+    proof: { file: plugins/__tests__/withPinnedDependencies.test.ts, test: "pins each range for every configuration of every project, and refuses any other range" }
+
+  - id: shape-pin-behind-expo-updates
+    class: CI-build-reads-a-version-list
+    source: shape
+    edits:
+      - file: plugins/withPinnedDependencies.js
+        find: "  'org.bouncycastle:bcprov-jdk15to18': '1.81',\n"
+        replace: "  'org.bouncycastle:bcprov-jdk15to18': '1.80',\n"
+    proof: { file: plugins/__tests__/withPinnedDependencies.test.ts, test: "pins bcprov to the version of the bcutil expo-updates names, which asks for that version's range" }
+
+  - id: shape-mutants-before-the-tests-end
+    class: CI-push-check-one-stage-at-a-time
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "      after: green.length ? ['tests', 'rehearsals'] : [],\n"
+        replace: "      after: [],\n"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
+
+  - id: shape-green-from-a-dirty-tree
+    class: CI-push-check-one-stage-at-a-time
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "const green = changed.length && clean ?"
+        replace: "const green = changed.length ?"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
+
+  - id: shape-green-from-another-test
+    class: CI-push-check-one-stage-at-a-time
+    source: shape
+    edits:
+      - file: scripts/mutants.cjs
+        find: "  .some((r) => statusIn({ testResults: [r] }, test) === 'passed'));"
+        replace: "  .some((r) => statusIn({ testResults: [r] }, test) !== 'failed'));"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "counts a mutant's test green only where that test, in its own file, passed" }
+
+  - id: shape-rehearsals-in-the-tests-run
+    class: CI-push-check-one-stage-at-a-time
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "        ...(files.code.length ? ['--related', lists.related] : []), '--leave', RUN_FLOWS.source],\n"
+        replace: "        ...(files.code.length ? ['--related', lists.related] : [])],\n"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "runs the readers and the related tests as one jest run, the rehearsals as a second, and every rehearsal there" }
+
+  - id: shape-plant-push-with-main
+    class: CI-push-check-one-stage-at-a-time
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "  const kind = !plants.length ? 'code' : plants.length === refs.length ? 'plant' : 'mixed';"
+        replace: "  const kind = !plants.length ? 'code' : 'plant';"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "refuses plant branches pushed with any other ref, and leaves every other push to the code gate" }
+
+  - id: shape-plant-push-unscanned
+    class: CI-push-check-one-stage-at-a-time
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "    { id: `disclosure@${local}`, label: `no message or test title of ${at} describes a hole`, cwd: ROOT, after: [], low: false, args: [join(__dirname, 'disclosure.cjs'), base, local] },\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "runs only what keeps it safe to publish: the secrets scan, the website freeze and the disclosure scan, never the code gate" }

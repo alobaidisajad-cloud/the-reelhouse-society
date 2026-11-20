@@ -290,6 +290,10 @@ Decisions, as of 2026-09-28:
 | `plugins/__tests__/withGwpAsanOff.test.ts` | The generated AndroidManifest.xml fixture, app.json's plugins and the installed React Native's version: a manifest and a version no render reaches. |
 | `src/utils/__tests__/theBatchReportIsAnswered.test.ts` | The latest batch report in the private folder: a record of the work, which no render reaches. |
 | `src/utils/__tests__/heartbeatsAreKept.test.ts` | The workflows' schedules and heartbeat jobs, and register/alert-rules.json: what GitHub runs, which no render reaches. |
+| `scripts/__tests__/wake.test.ts` | register/alert-rules.json's schedules, which the wake task reads: a schedule shape it cannot read is found here, not on the night it is needed. |
+| `test-utils/__tests__/weightedSequencer.test.ts` | jest.config.js's sequencer, the committed weights table, and jest records it writes and reads back in a temporary folder: how CI splits its runs, which no render reaches. |
+| `src/utils/__tests__/theWebTestFetchesNoBrowser.test.ts` | god_tier_ci.yml's web job and playwright.config.ts: what GitHub runs and the browser it runs on, which no render reaches. |
+| `plugins/__tests__/withPinnedDependencies.test.ts` | The generated root build.gradle fixture, app.json's plugins and expo-updates' own build.gradle: Gradle files no render reaches. |
 | `src/utils/__tests__/theMountOrderGuardIsInstalled.guard.test.ts` | The installed Reanimated's Android NativeProxy and the manifest's range: native code and a version no render reaches. |
 | `plugins/__tests__/withHouseDialogs.test.ts` | app.json's plugins: the dialog plugin is listed, so the build runs it. |
 | `src/utils/__tests__/edgeFunctionsKnowTheirCaller.test.ts` | The edge functions' entry files (sign-in-with-username, tmdb-proxy, fetch-rss) and both copies of _shared/callerAddress.js, comments stripped: how each paces its caller, and that the sign-in counts before any password and gives back what the house could not answer. Edge functions run in Deno, where no jest render reaches; callerAddress itself is run in this file, and the functions world (e2e/functions/suites.mjs) runs each. |

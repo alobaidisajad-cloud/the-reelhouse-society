@@ -1,4 +1,6 @@
 name: 🌙 Nightly
+# A run the wake task started is named for the time it carries; any other keeps GitHub's own name.
+run-name: "${{ inputs.wake_night && format('Carried by the wake task: {0}', inputs.wake_night) || '' }}"
 
 # ── WHAT CHANGES WHILE THE CODE STANDS STILL ────────────────────────────────────
 # Each night, with no push behind it. Advisories are published against packages
@@ -15,8 +17,15 @@ name: 🌙 Nightly
 
 on:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '17 3 * * *'
   workflow_dispatch:
+    inputs:
+      # A run the wake task (mobile/scripts/wake.mjs) starts for a time GitHub skipped: that time, as
+      # 2026-11-21T03:17Z. Empty in every other run.
+      wake_night:
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -418,14 +427,15 @@ jobs:
           name: jest-random
           path: ${{ runner.temp }}/jest
 
-      # The newest earlier scheduled night that kept a history.
+      # The newest earlier night that kept a history: a scheduled run, or one the wake task carried.
       - name: The last night's history
         id: previous
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow nightly.yml --event schedule --status completed \
-                        --limit 30 --json databaseId --jq '.[].databaseId'); do
+          for id in $(gh run list -R "$GITHUB_REPOSITORY" --workflow nightly.yml --status completed --limit 30 \
+                        --json databaseId,event,displayTitle \
+                        --jq '.[] | select(.event == "schedule" or (.displayTitle | startswith("Carried by the wake task: "))) | .databaseId'); do
             [ "$id" = "$GITHUB_RUN_ID" ] && continue
             if gh run download "$id" -R "$GITHUB_REPOSITORY" -n flake-history -D "$RUNNER_TEMP/previous" 2>/dev/null; then
               echo "file=$RUNNER_TEMP/previous/flake-history.json" >> "$GITHUB_OUTPUT"
@@ -458,10 +468,12 @@ jobs:
 
   # The schedule's heartbeat (WORKLIST P0.38): GitHub stops a schedule after 60 days without
   # activity and says nothing; a monitor outside GitHub (register/alert-rules.json) emails the
-  # owner when this check-in is late.
+  # owner when this check-in is late. Only this workflow's own schedule: a run another workflow
+  # calls it from has that workflow's. A run the wake task started for a time GitHub skipped
+  # (mobile/scripts/wake.mjs) is that time's run, once the time is checked as one of this schedule's.
   heartbeat:
     name: 💓 The schedule ran
-    if: github.event_name == 'schedule'
+    if: (github.event_name == 'schedule' && github.event.schedule == '17 3 * * *') || inputs.wake_night
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -469,8 +481,14 @@ jobs:
         with:
           sparse-checkout: |
             mobile/scripts/heartbeat.mjs
+            mobile/scripts/wake.mjs
             mobile/register/alert-rules.json
           sparse-checkout-cone-mode: false
+      - name: The time the wake task carried, checked
+        if: inputs.wake_night
+        env:
+          WAKE_NIGHT: ${{ inputs.wake_night }}
+        run: node mobile/scripts/wake.mjs --verify nightly.yml "$WAKE_NIGHT"
       - name: Check in
         env:
           HEARTBEAT_CHECKIN_URL: ${{ secrets.HEARTBEAT_CHECKIN_URL }}

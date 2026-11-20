@@ -20,12 +20,12 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const RULES = JSON.parse(readFileSync(join(HERE, '..', 'register', 'alert-rules.json'), 'utf8'));
 
-/** The check-in address for a monitor, from the secret's template; null without one. */
-export function checkinUrl(template, monitor) {
+/** The check-in address for a monitor, from the secret's template, saying ok or error; null without one. */
+export function checkinUrl(template, monitor, status = 'ok') {
   if (!template) return null;
   if (!template.includes('{monitor}')) throw new Error('HEARTBEAT_CHECKIN_URL must carry {monitor} where the monitor\'s slug goes');
   const url = new URL(template.replace('{monitor}', encodeURIComponent(monitor)));
-  url.searchParams.set('status', 'ok');
+  url.searchParams.set('status', status);
   return url.toString();
 }
 

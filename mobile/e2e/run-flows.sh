@@ -37,6 +37,10 @@ PKG=com.reelhouse.society
 FLOWS=${E2E_FLOWS:-mobile/.maestro}
 # How long the launch with animations on must stay alive (its rehearsal shortens it).
 MOTION_SECONDS=${E2E_MOTION_SECONDS:-15}
+# How long a launch waits after the old process is gone, and a measure after the keyboard came: a
+# real phone's pauses, which the rehearsal's fake phone has no need of (it sets both to 0).
+STOP_SETTLE_SECONDS=${E2E_STOP_SETTLE_SECONDS:-3}
+KEYBOARD_SETTLE_SECONDS=${E2E_KEYBOARD_SETTLE_SECONDS:-1}
 OUT=${RUNNER_TEMP:-/tmp}
 MAESTRO=${MAESTRO_BIN:-$HOME/.maestro/bin/maestro}
 # The shipped client's own crashes, for the crash gate and attempt.mjs; none for this app.
@@ -307,7 +311,7 @@ if [ "$LAUNCH" = yes ]; then
   timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
   timeout 20 adb shell pm clear "$PKG" > /dev/null 2>&1
   for _ in $(seq 1 20); do [ -z "$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')" ] && break; sleep 0.5; done
-  sleep 3
+  sleep "$STOP_SETTLE_SECONDS"
   timeout 20 adb logcat -c
   timeout 90 adb shell am start-activity -W -n "$PKG/.MainActivity" > "$OUT/motion/am.txt" 2>&1
   sleep "$MOTION_SECONDS"
@@ -346,7 +350,7 @@ fi
 # screen is.
 timeout 20 adb shell am force-stop "$PKG" > /dev/null 2>&1
 for _ in $(seq 1 20); do [ -z "$(timeout 20 adb shell pidof "$PKG" | tr -d '\r')" ] && break; sleep 0.5; done
-sleep 3
+sleep "$STOP_SETTLE_SECONDS"
 measured_from=$(( $(wc -l < "$OUT/logcat-stream.txt") + 1 ))
 echo "$measured_from" > "$OUT/motion/cold-from.txt"
 timeout 90 adb shell am start-activity -W -n "$PKG/.MainActivity" > "$OUT/motion/cold-am.txt" 2>&1
@@ -399,7 +403,7 @@ keys_off() {
 measure() {
   local panel=$1 at="$OUT/keyboard-room/$name.$1" said t bad=0
   local -a needs
-  sleep 1   # the keyboard's own entrance, so its frame is where it stops
+  sleep "$KEYBOARD_SETTLE_SECONDS"   # the keyboard's own entrance, so its frame is where it stops
   timeout 20 adb shell dumpsys window windows 2>/dev/null | tr -d '\r' > "$at.windows.txt"
   rm -rf "$HOME/.maestro/sessions"
   timeout 60 "$MAESTRO" hierarchy > "$at.json" 2>/dev/null
