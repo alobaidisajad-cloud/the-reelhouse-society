@@ -3,7 +3,6 @@
  * scripts/write-sites.cjs finds them, and nothing gone; and the finder finds each shape of write and no read.
  */
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import * as ts from 'typescript';
 
 type Site = { key: string; file: string; name: string; does: string; target: string; area: string | null };
