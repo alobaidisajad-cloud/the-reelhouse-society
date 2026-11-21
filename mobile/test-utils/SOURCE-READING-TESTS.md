@@ -196,6 +196,7 @@ Decisions, as of 2026-09-28:
 | `__tests__/notificationsMockCoverage.test.ts` | Every expo-notifications member the app calls, against the mock in jest.setup.ts. |
 | `__tests__/thePrivacyInventoryIsWhole.test.ts` | store/privacy-inventory.json against what it must hold whole: package.json's shipped packages, the schema snapshot's tables and columns that hold a member or a user agent, every outside address the app's code names, the privacy manifests the native packages ship, app.json's own manifest, and the store answers forms.cjs writes. Each is a list on disk no render reaches. |
 | `__tests__/tmdbMockCoverage.test.ts` | Every TMDB method the app calls, against the mock. |
+| `scripts/__tests__/everyJestRunRunsAsATest.test.ts` | Every script, tool and config file that starts jest through its API (`runCLI`), each to give the run NODE_ENV as jest's own command does first; jest-run.cjs's text, planted without it. Listed here so the push's own jest run runs it, where its NODE_ENV check is asked of that very run. |
 
 ## Contract
 
@@ -290,6 +291,7 @@ Decisions, as of 2026-09-28:
 | `plugins/__tests__/withGwpAsanOff.test.ts` | The generated AndroidManifest.xml fixture, app.json's plugins and the installed React Native's version: a manifest and a version no render reaches. |
 | `src/utils/__tests__/theBatchReportIsAnswered.test.ts` | The latest batch report in the private folder: a record of the work, which no render reaches. |
 | `src/utils/__tests__/heartbeatsAreKept.test.ts` | The workflows' schedules and heartbeat jobs, and register/alert-rules.json: what GitHub runs, which no render reaches. |
+| `scripts/__tests__/deferredActions.test.ts` | supabase/DEFERRED-ACTIONS.md, each entry held to a trigger the check can read, and planted records in a temporary folder: the file is a written record, which no render reaches. |
 | `scripts/__tests__/wake.test.ts` | register/alert-rules.json's schedules, which the wake task reads: a schedule shape it cannot read is found here, not on the night it is needed. |
 | `test-utils/__tests__/weightedSequencer.test.ts` | jest.config.js's sequencer, the committed weights table, and jest records it writes and reads back in a temporary folder: how CI splits its runs, which no render reaches. |
 | `src/utils/__tests__/theWebTestFetchesNoBrowser.test.ts` | god_tier_ci.yml's web job and playwright.config.ts: what GitHub runs and the browser it runs on, which no render reaches. |

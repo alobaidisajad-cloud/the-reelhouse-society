@@ -2086,3 +2086,4 @@ files of the reading map this one does not.
 | scripts/contracts-commit.cjs | — |  |
 | src/utils/__tests__/aReplayTellsWhatItMoved.test.ts | — |  |
 | scripts/hooks/verdicts.cjs | — |  |
+| scripts/__tests__/everyJestRunRunsAsATest.test.ts | — |  |

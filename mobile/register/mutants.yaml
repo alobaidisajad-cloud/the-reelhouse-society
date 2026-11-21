@@ -9129,3 +9129,12 @@ mutants:
         find: "e.closest('.vscroll') === s && !e.closest('[aria-hidden=\"true\"]'));"
         replace: "e.closest('.vscroll') === s);"
     proof: { file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same line on a page the app hides from every reader is not asked (scrollhidden)" }
+
+  - id: shape-jest-run-untold
+    class: CI-jest-started-without-its-environment
+    source: shape
+    edits:
+      - file: scripts/hooks/jest-run.cjs
+        find: "  asJestsBin(process.env);\n"
+        replace: ""
+    proof: { file: scripts/__tests__/everyJestRunRunsAsATest.test.ts, test: "every script that starts jest through its API gives the run jest's own environment first" }

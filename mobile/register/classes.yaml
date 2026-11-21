@@ -4924,3 +4924,18 @@ classes:
       - { kind: running, file: mockups/tools/__tests__/theMeasuringRulesSayNo.test.ts, test: "the same line on a page the app hides from every reader is not asked (scrollhidden)" }
     fix: "layout.cjs bounds a reach along a scroll by where the scroll's content ends, not by the window, for any box that holds the scroller, so a control past the window keeps its whole halo that way and one whose halo runs past the content's end is still cut; UNDER asks nothing of words inside aria-hidden, as SMALL asks nothing of their controls (its self-test's cases fold and scrollhidden, each a test of its own in theMeasuringRulesSayNo) (mutants shape-reach-cut-at-the-scrollers-window, shape-under-asks-a-hidden-page)"
     places: [none]
+
+  - id: CI-jest-started-without-its-environment
+    title: "A script started jest through its API (runCLI), which sets nothing, where jest's own command sets NODE_ENV to 'test': the push check's jest run had none, React Native took its device paths, and its Animated threw \"Unable to locate attached view\" for the tab bar a test renderer never attaches; aTabDrawsItsIconOnce and theLobbyIsTheTabsHome failed there at 1, 2 and 6 workers and passed under npx jest, read first as a leak between test files"
+    seriousness: code
+    area: ci
+    status: OPEN
+    count: 1
+    source: { kind: running, ref: "the push check's dry runs of 2026-11-20: the same two files failed in each of four runs, and failed run alone through jest-run.cjs too" }
+    methods:
+      - { kind: running, file: scripts/__tests__/everyJestRunRunsAsATest.test.ts, test: "runs with NODE_ENV test, as jest's own command sets it" }
+      - { kind: running, file: scripts/__tests__/everyJestRunRunsAsATest.test.ts, test: "gives a run NODE_ENV test when nothing set it, and keeps one that was set, as jest's own command does" }
+      - { kind: static, file: scripts/__tests__/everyJestRunRunsAsATest.test.ts, test: "every script that starts jest through its API gives the run jest's own environment first" }
+      - { kind: static, file: scripts/__tests__/everyJestRunRunsAsATest.test.ts, test: "can say NO: a start through the API with nothing before it is found, one after asJestsBin is not" }
+    fix: "jest-run.cjs gives its run NODE_ENV as jest-cli's bin/jest.js does (asJestsBin: 'test' when nothing set it) before runCLI, so its workers, and the mutant lanes that run through it, have it too; a sweep over every script, tool and config file refuses a runCLI with no asJestsBin(process.env) before it, and the sweep's file is a source reader, so the push's own run asks its NODE_ENV of itself (mutant shape-jest-run-untold)"
+    places: [none]

@@ -11,7 +11,7 @@
  * Stryker's sandbox inside the checkout left out as the push leaves them. --titles runs only the tests
  * whose name is one of those titles, or ends in one after its describe's (a mutant's proof is named by
  * its title). Writes jest's --json report to --out and the list it ran beside it (<out>.files). Exits
- * as jest does; 0 with nothing to run.
+ * as jest does; 0 with nothing to run. The run has NODE_ENV as jest's own command gives it (asJestsBin).
  */
 const { execFileSync } = require('child_process');
 const { readFileSync, writeFileSync } = require('fs');
@@ -34,6 +34,17 @@ const relatedTo = (changed) => inBatches(changed).flatMap((batch) => JSON.parse(
 const toRun = (named, related, leave) => [...new Set([...named, ...related].map(fromMobile))]
   .filter((p) => !(leave && leave.test(p))).sort();
 
+/**
+ * The environment jest's own command gives a run: NODE_ENV 'test' when nothing set it (the jest
+ * command jest-cli ships). runCLI is not that command and sets nothing, and its workers take this process's
+ * environment. Without it React Native takes its device paths: its Animated throws "Unable to locate
+ * attached view" for a view the test renderer never attaches, where under 'test' it carries on.
+ */
+const asJestsBin = (env) => {
+  if (env.NODE_ENV == null) env.NODE_ENV = 'test';
+  return env;
+};
+
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** jest's -t for every test whose full name is one of these titles, or ends in one after its describe's. */
 const titlesPattern = (titles) => `(?:^| )(?:${titles.map(escapeRe).join('|')})$`;
@@ -50,6 +61,7 @@ async function main(argv) {
   if (!files.length || (flag('--titles') && !titles.length)) { console.log('no test to run'); return 0; }
   console.log(`${files.length} test files, ${workers} workers${titles.length ? `, ${titles.length} tests by title` : ''}`);
   process.chdir(MOBILE);
+  asJestsBin(process.env);
   const { runCLI } = require(join(MOBILE, 'node_modules', 'jest'));
   const { results } = await runCLI({
     // From mobile/, with forward slashes: jest also reads the list as a pattern, which a Windows path's
@@ -64,4 +76,4 @@ if (require.main === module) {
   main(process.argv.slice(2)).then((code) => process.exit(code), (e) => { console.error(e); process.exit(1); });
 }
 
-module.exports = { fromMobile, titlesPattern, toRun };
+module.exports = { asJestsBin, fromMobile, titlesPattern, toRun };
