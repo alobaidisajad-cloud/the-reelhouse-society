@@ -1109,7 +1109,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-room-answer-unrecorded",
     "proof": "m11",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
     "verdict": "caught"
   },
   {
@@ -5834,7 +5834,7 @@
     "class": "SPEED-read-waits-on-a-read-it-needs-not",
     "mutant": "shape-projector-waits-on-a-walk",
     "proof": "m5",
-    "commit": "424c7d7b94da97e1e81c1134c7cbac0bd5ab2aca",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
     "verdict": "caught"
   },
   {
@@ -6834,92 +6834,92 @@
   {
     "class": "DB-a-column-the-planner-never-counted",
     "mutant": "shape-a-new-column-never-counted",
-    "proof": "m1",
-    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
+    "proof": "m2",
+    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
     "verdict": "caught"
   },
   {
     "class": "DB-a-column-the-planner-never-counted",
     "mutant": "shape-a-fill-never-counted-again",
-    "proof": "m1",
-    "commit": "7f71b2acfd8081934fa816bb9cbcfbc93f977de6",
+    "proof": "m2",
+    "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
     "verdict": "caught"
   },
   {
     "class": "DB-a-count-that-starts-nowhere",
     "mutant": "shape-a-count-from-nowhere",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
     "class": "DB-the-rule-asked-twice-a-row",
     "mutant": "shape-the-faces-ask-the-rule-twice",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
     "class": "DB-the-rule-asked-twice-a-row",
     "mutant": "shape-the-stacks-ask-the-file-twice",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-asked-of-every-follow",
     "mutant": "shape-the-feed-asks-each-follow",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-folded-into-every-row",
     "mutant": "shape-the-last-words-ask-each-row",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
     "class": "DB-the-caller-met-after-the-rules",
     "mutant": "shape-the-feed-meets-every-mark",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-hashes-a-whole-table",
     "mutant": "shape-the-critiques-hash-every-filing",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-asks-one-test-twice",
     "mutant": "shape-the-follows-rule-asks-twice",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
     "class": "DB-a-rule-asks-of-a-key-not-held",
     "mutant": "shape-the-marks-ask-of-no-piece",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
     "class": "DB-the-same-rows-read-twice",
     "mutant": "shape-the-counts-read-twice",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
     "class": "DB-words-read-past-a-row-rule",
     "mutant": "shape-the-search-reads-as-the-caller",
     "proof": "m1",
-    "commit": "e9a8b99c69112a51534b8ff5994b07597468b446",
+    "commit": "b90155058dd0d8a9963e511390235f9ae920987c",
     "verdict": "caught"
   },
   {
@@ -7550,6 +7550,139 @@
     "mutant": "shape-the-lab-members-unlisted",
     "proof": "m2",
     "commit": "1daa352aa905ac7080f3f2dc4b5d2a5c961b1503",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-the-circle-first-read-untokened",
+    "proof": "m6",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-the-circle-next-page-untokened",
+    "proof": "m7",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-a-room-read-untokened",
+    "proof": "m8",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-a-room-next-page-untokened",
+    "proof": "m9",
+    "commit": "efe12706bb93b7afeb8e39ab5579485eb3c2f78b",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-a-room-failure-untokened",
+    "proof": "m10",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-the-file-spinner-let-down-by-a-member-left",
+    "proof": "m11",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-the-profile-reread-untokened",
+    "proof": "m12",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-a-profile-change-unmarked",
+    "proof": "m13",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-the-rank-history-untokened",
+    "proof": "m14",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-the-blocks-older-sync-laid",
+    "proof": "m15",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-the-blocks-act-unheard",
+    "proof": "m16",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-finder-a-reducer-unseen",
+    "proof": "m4",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-finder-any-flag-let-down",
+    "proof": "m4",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-finder-any-signal-a-check",
+    "proof": "m4",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-finder-a-key-entry-no-token",
+    "proof": "m5",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-finder-a-wait-in-the-other-arm",
+    "proof": "m5",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "LATE-an-answer-over-a-newer-state",
+    "mutant": "shape-finder-a-wait-that-leaves",
+    "proof": "m5",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "EXIT-work-past-its-screen",
+    "mutant": "shape-settings-refusal-kept-nowhere",
+    "proof": "m7",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
+    "verdict": "caught"
+  },
+  {
+    "class": "EXIT-work-past-its-screen",
+    "mutant": "shape-settings-filed-draft-kept",
+    "proof": "m8",
+    "commit": "df0f200f23c32044ff8822fc5e4252d4fa21e9e4",
     "verdict": "caught"
   }
 ]
