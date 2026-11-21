@@ -43,7 +43,6 @@ UNKN:
   - NAV-a-stranger-at-a-members-door
   - READ-a-search-cut-at-a-fixed-count
 EXIT:
-  - EXIT-work-past-its-screen
   - UI-a-sheet-with-no-way-out
   - UI-a-modal-over-a-falling-modal
   - NAV-a-leave-asked-after-it-was-decided

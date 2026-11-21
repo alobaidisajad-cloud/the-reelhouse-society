@@ -40,6 +40,7 @@ import { logger } from '@/src/utils/logger';
 import { instantOf } from '@/src/utils/instant';
 import type { PaperFilm } from '@/src/components/dispatch/paper/PaperPost';
 import type { ProfileFormData } from '@/src/hooks/useEditProfile';
+import type { SettingsFormData } from '@/src/schemas/settings';
 
 /** Everything a member leaves unfinished shares this, so one sweep clears it. */
 export const DRAFT_PREFIX = 'reelhouse_draft_';
@@ -49,8 +50,9 @@ export const DRAFT_PREFIX = 'reelhouse_draft_';
  * per filing and one per post — and the scope rides at the end of the key so the
  * member's prefix still sweeps them. `profile` is Edit Profile's amendments, not yet saved.
  * `appeal` is a member's one appeal of a verdict, scoped by the verdict (round 14).
+ * `settings` is Settings' amendments while they are filed, kept for the member's return if refused.
  */
-export type DraftKind = 'dossier' | 'log' | 'edit' | 'critique' | 'ballot' | 'stack' | 'profile' | 'salon' | 'appeal';
+export type DraftKind = 'dossier' | 'log' | 'edit' | 'critique' | 'ballot' | 'stack' | 'profile' | 'salon' | 'appeal' | 'settings';
 
 /** How many scoped drafts of one kind a member keeps. See `evictOldest`. */
 export const SCOPED_KEPT = 3;
@@ -129,6 +131,15 @@ export interface StackDraft {
 }
 
 /**
+ * Settings' amendments on their way: the whole form as filed, and once the house refused them, what
+ * the member was told. Settings can be left while they are filed; refused after, they open with it.
+ */
+export interface SettingsDraft {
+  form?: SettingsFormData;
+  refused?: string;
+}
+
+/**
  * What each kind of draft holds. A draft is read and written through its kind alone, so the two
  * can never disagree about its shape: a reader typed apart from its writer read back half of it.
  */
@@ -142,6 +153,7 @@ export interface DraftShapes {
   profile: ProfileFormData;
   salon: WordsDraft;
   appeal: WordsDraft;
+  settings: SettingsDraft;
 }
 
 /**

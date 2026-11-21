@@ -1511,7 +1511,7 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useProfileData.ts
-        find: "      if (isMounted.current && uid === targetUserIdRef.current) setTabAnswered((a) => ({ ...a, [tab]: true }));\n"
+        find: "      if (current()) setTabAnswered((a) => ({ ...a, [tab]: true }));\n"
         replace: ""
     proof: { file: src/hooks/__tests__/aRoomSaysItCouldNotBeRead.test.tsx, test: "a room is answered once its read comes back, not when it is asked, and not by a failed one" }
 
@@ -7689,8 +7689,8 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useProfileData.ts
-        find: "          ProfileDataService.fetchHighestRated(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),\n        ]);\n"
-        replace: "          ProfileDataService.fetchHighestRated(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),\n          ProfileDataService.fetchCalendarData(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),\n        ]);\n"
+        find: "          ProfileDataService.fetchHighestRated(state.targetUser, held.signal),\n        ]);\n"
+        replace: "          ProfileDataService.fetchHighestRated(state.targetUser, held.signal),\n          ProfileDataService.fetchCalendarData(state.targetUser, held.signal),\n        ]);\n"
     proof: { file: src/hooks/__tests__/theProjectorDrawsOnTheHousesThreeReads.test.tsx, test: "an Auteur's projector draws once the house's three summaries answer" }
 
   - id: shape-summary-failure-taken-as-none
@@ -9996,3 +9996,173 @@ mutants:
         find: "  WHILE private.member_grams_fill(5000) <> 'complete' LOOP"
         replace: "  WHILE false LOOP"
     proof: { file: e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts, test: "each seed laying a source with its triggers off makes every kept table of it again" }
+  - id: shape-the-circle-first-read-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: app/(modals)/social-modal.tsx
+        find: "readSocial().then((read) => { if (mine === readGen.current) showRead(read); }"
+        replace: "readSocial().then((read) => { showRead(read); }"
+    proof: { file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "a first read asked again after the wait ran long: the older answer, landing last, is dropped" }
+
+  - id: shape-the-circle-next-page-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: app/(modals)/social-modal.tsx
+        find: "if (!isMounted.current || mine !== readGen.current) return;"
+        replace: "if (!isMounted.current) return;"
+    proof: { file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "a next page asked of one circle is not laid under another read since" }
+
+  - id: shape-a-room-read-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "const current = () => isMounted.current && uid === targetUserIdRef.current && _roomAbortRef.current[room] === held;"
+        replace: "const current = () => isMounted.current && uid === targetUserIdRef.current;"
+    proof: { file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "a room's first read, answering after a search in it, is not laid over the search" }
+
+  - id: shape-a-room-next-page-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "if (uid !== targetUserIdRef.current || _roomAbortRef.current['watchlist'] !== held) return;"
+        replace: "if (uid !== targetUserIdRef.current) return;"
+    proof: { file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "a next page of the last search is not joined to the new one, nor does it end the new one's wait" }
+
+  - id: shape-a-room-failure-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "if (isMounted.current && uid === targetUserIdRef.current && _roomAbortRef.current[tab] === controller) setTabFailed((f) => ({ ...f, ['watchlist']: true }));"
+        replace: "if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, ['watchlist']: true }));"
+    proof: { file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "a search's failure, answering after a newer search began, is not said over it" }
+
+  - id: shape-the-file-spinner-let-down-by-a-member-left
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: "else void fetchUserData().finally(() => { if (!gone) dispatch("
+        replace: "else void fetchUserData().finally(() => { if (gone || !gone) dispatch("
+    proof: { file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "the file's spinner stands for the next member while the last one's read lets go" }
+
+  - id: shape-the-profile-reread-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "if (mine !== profileTurns) return profileRead(get().user);"
+        replace: ""
+    proof: { file: src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts, test: "of two reads of the profile, the older answering last is not laid over the newer" }
+
+  - id: shape-a-profile-change-unmarked
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "profileTurns += 1;"
+        replace: ""
+    proof: { file: src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts, test: "a read asked before a change made here does not undo the change" }
+
+  - id: shape-the-rank-history-untokened
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "if (!memberUnchanged(userId) || mine !== rankHistoryReads) return;"
+        replace: "if (!memberUnchanged(userId)) return;"
+    proof: { file: src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts, test: "the rank history: an older answer landing last does not put back what a newer one laid" }
+
+  - id: shape-the-blocks-older-sync-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/blockStore.ts
+        find: "if (mine !== blockSyncs) return;"
+        replace: ""
+    proof: { file: src/stores/__tests__/aBlockSyncAskedBeforeIsNotLaidOver.test.ts, test: "of two reads, the older answering last is not laid over the newer" }
+
+  - id: shape-the-blocks-act-unheard
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/blockStore.ts
+        find: "if (actsBefore !== blockActs) return;"
+        replace: ""
+    proof: { file: src/stores/__tests__/aBlockSyncAskedBeforeIsNotLaidOver.test.ts, test: "a read asked before a block made here does not draw the member blocked again" }
+
+  - id: shape-finder-a-reducer-unseen
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "|| reducers.has(t) ? m : null"
+        replace: "? m : null"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write; a busy flag let down without its own mark is not let off" }
+
+  - id: shape-finder-any-flag-let-down
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "return block.statements.some((s) => s.getEnd() <= w.getStart() && raised.has(markOf(s, 'false') ?? ''));"
+        replace: "return true;"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write; a busy flag let down without its own mark is not let off" }
+
+  - id: shape-finder-any-signal-a-check
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "const cancelledByTheNext = (signal: string): boolean => {"
+        replace: "const cancelledByTheNext = (signal: string): boolean => { if (signal) return true;"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write; a busy flag let down without its own mark is not let off" }
+
+  - id: shape-finder-a-key-entry-no-token
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "if (ts.isElementAccessExpression(e) && ts.isPropertyAccessExpression(e.expression) && e.expression.name.text === 'current') return from.includes(e.expression.expression.getText(sf));"
+        replace: ""
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a ref's entry for its key, a keeper's latest, and a busy flag let down with its own mark" }
+
+  - id: shape-finder-a-wait-in-the-other-arm
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: test-utils/afterAwait.js
+        find: "return !!x && !!y && x !== y;"
+        replace: "return false;"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a ref's entry for its key, a keeper's latest, and a busy flag let down with its own mark" }
+
+  - id: shape-finder-a-wait-that-leaves
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: test-utils/afterAwait.js
+        find: "if (ts.isReturnStatement(n) || ts.isThrowStatement(n)) return !(node.getStart() >= n.getStart() && node.getEnd() <= n.getEnd());"
+        replace: ""
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a ref's entry for its key, a keeper's latest, and a busy flag let down with its own mark" }
+
+  - id: shape-settings-refusal-kept-nowhere
+    class: EXIT-work-past-its-screen
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "writeDraft(me, 'settings', { form: data, refused: saidOfAFailure(err, 'Your last amendments could not be filed.') });"
+        replace: "writeDraft(me, 'settings', { form: data });"
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "refused after leaving: the return opens with the changes unsent, and the refusal said" }
+
+  - id: shape-settings-filed-draft-kept
+    class: EXIT-work-past-its-screen
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsScreen.tsx
+        find: "clearDraft(me, 'settings');"
+        replace: ""
+    proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "filed after leaving: the return opens on the house's settings, the draft gone" }

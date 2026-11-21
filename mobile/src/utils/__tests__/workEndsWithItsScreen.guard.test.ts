@@ -44,12 +44,10 @@ const LIVES_WITH_THE_APP: Record<string, string> = {
 };
 
 /**
- * A hit whose cure changes what a member sees, so the cure is a design call, put to the owner and
- * not made here. Each names what was asked.
+ * A hit whose cure changes what a member sees, so the cure is a design call, put to the lead and
+ * not made here. Each names what was asked; none is waiting.
  */
-const A_DESIGN_CALL_ASKED: Record<string, string> = {
-  'src/features/settings/SettingsScreen.tsx': 'the filing (preferences and profile) can be left while it is on its way, as review round 10 approved; a refusal after the member left is said, but the amendments are kept nowhere. Holding the exits (useHoldWhileSending) or keeping a draft changes the screen: asked of the owner (stage C, kinds EXIT)',
-};
+const A_DESIGN_CALL_ASKED: Record<string, string> = {};
 
 const EFFECTS =/^(React\.)?(useEffect|useLayoutEffect|useInsertionEffect|useFocusEffect)$/;
 const calleeText = (c: ts.CallExpression) => c.expression.getText();

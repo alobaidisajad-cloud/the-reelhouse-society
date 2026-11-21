@@ -5260,7 +5260,10 @@ classes:
       - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "4: no busy row is one id let go after the wait" }
       - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "5: every press on words goes through onePress" }
       - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "6: every draft is typed by its kind" }
-    sweep: { read: [appCode], found: 24, fixed: 21, judged: 2, commit: aeb2e85c, finder: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, result: "workEndsWithItsScreen over app/, src/hooks, src/components, src/features, src/providers (and every app file for rules 2 and 6), stage C: 7 walks after a wait found and fixed (reset-password's back, the stack page's two backs, the new salon's walk in, the essay desk's \"still here\", the second key's \"below\", the resend's countdown); 14 drafts read typed apart from their writes, fixed (memberDrafts DraftShapes); 1 hold over a filing on its way (Settings) put to the owner as a design call; the root layout and AppBootstrapper judged as living with the app" }
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "refused after leaving: the return opens with the changes unsent, and the refusal said" }
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "filed after leaving: the return opens on the house's settings, the draft gone" }
+      - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "a draft discarded at the way out does not come back" }
+    sweep: { read: [appCode], found: 24, fixed: 22, judged: 2, commit: e2249d97, finder: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, result: "workEndsWithItsScreen over app/, src/hooks, src/components, src/features, src/providers (and every app file for rules 2 and 6), stage C: 7 walks after a wait found and fixed (reset-password's back, the stack page's two backs, the new salon's walk in, the essay desk's \"still here\", the second key's \"below\", the resend's countdown); 14 drafts read typed apart from their writes, fixed (memberDrafts DraftShapes); 1 filing on its way that could be left (Settings) fixed by the lead's call: its amendments kept as a draft until the house answers, refused after the member left they open with the refusal said; the root layout and AppBootstrapper judged as living with the app" }
     places: [none]
 
   - id: LIB-a-library-known-only-by-its-mock
@@ -5290,6 +5293,19 @@ classes:
       - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: every re-asked read writes only what is still the read asked" }
       - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "2: no page is asked by its count" }
       - { kind: running, file: src/features/settings/__tests__/anExportIsWhole.test.ts, test: "a row removed between two pages moves nothing: the next page still begins after the last row read" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a reducer's dispatch is a write; a busy flag let down without its own mark is not let off" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: and passes a ref's entry for its key, a keeper's latest, and a busy flag let down with its own mark" }
+      - { kind: running, file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "a first read asked again after the wait ran long: the older answer, landing last, is dropped" }
+      - { kind: running, file: app/(modals)/__tests__/social-modal.telemetry.test.tsx, test: "a next page asked of one circle is not laid under another read since" }
+      - { kind: running, file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "a room's first read, answering after a search in it, is not laid over the search" }
+      - { kind: running, file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "a next page of the last search is not joined to the new one, nor does it end the new one's wait" }
+      - { kind: running, file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "a search's failure, answering after a newer search began, is not said over it" }
+      - { kind: running, file: src/hooks/__tests__/aReadIsStoppedOnlyByWhatMakesItStale.test.tsx, test: "the file's spinner stands for the next member while the last one's read lets go" }
+      - { kind: running, file: src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts, test: "of two reads of the profile, the older answering last is not laid over the newer" }
+      - { kind: running, file: src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts, test: "a read asked before a change made here does not undo the change" }
+      - { kind: running, file: src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts, test: "the rank history: an older answer landing last does not put back what a newer one laid" }
+      - { kind: running, file: src/stores/__tests__/aBlockSyncAskedBeforeIsNotLaidOver.test.ts, test: "of two reads, the older answering last is not laid over the newer" }
+      - { kind: running, file: src/stores/__tests__/aBlockSyncAskedBeforeIsNotLaidOver.test.ts, test: "a read asked before a block made here does not draw the member blocked again" }
     sweep: { read: [appCode], found: 27, fixed: 4, judged: 1, commit: aeb2e85c, finder: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, result: "anAnswerIsStillTheOneAsked over app/, src/stores, src/hooks, src/components, src/features, src/providers, and every app file for pages (stage C): 23 re-asked reads with no token found, 2 fixed (the push permission's re-read, the essay's part), 1 judged, 20 still to fix (listed in the test); 4 pages asked by their count found, 2 fixed (the export, the import's stack read), 2 still to fix (a stack's films, a filing's critiques)" }
     places: [none]
 
