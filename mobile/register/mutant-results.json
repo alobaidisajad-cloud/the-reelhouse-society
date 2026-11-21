@@ -479,7 +479,7 @@
     "class": "COPY-count-before-plural",
     "mutant": "shape-seats-uncounted",
     "proof": "m1",
-    "commit": "eed955898ac349a698c8fc42ea03541cca655fb6",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -969,7 +969,7 @@
     "class": "UI-unknown-mark-drawn-as-off",
     "mutant": "shape-dock-unknown-pressable",
     "proof": "m2",
-    "commit": "10d141d0c4612992e9065e3f4d6b7a5308b0b749",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -3258,7 +3258,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-foot-counts-past-the-house",
     "proof": "m78",
-    "commit": "55401cf62a4530966efed861f4774bd6e1a4b00b",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -3664,14 +3664,14 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-request-shown-as-follow",
     "proof": "m70",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-door-counts-the-hidden",
     "proof": "m79",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4168,21 +4168,21 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-unknown-count-said-zero",
     "proof": "m42",
-    "commit": "61275ecf092c62bb4a2788cb082b1ff6b39140e6",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-unreached-tab-counted",
     "proof": "m43",
-    "commit": "61275ecf092c62bb4a2788cb082b1ff6b39140e6",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-salon-counts-its-roster",
     "proof": "m47",
-    "commit": "61275ecf092c62bb4a2788cb082b1ff6b39140e6",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4476,7 +4476,7 @@
     "class": "COPY-a-refusal-told-as-anothers",
     "mutant": "shape-standing-blamed-on-the-author",
     "proof": "m1",
-    "commit": "0ce58b7a1c288d1cca32150f506e72f8302b1eb5",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4490,7 +4490,7 @@
     "class": "COPY-a-refusal-told-as-anothers",
     "mutant": "shape-ban-said-as-a-connection",
     "proof": "m3",
-    "commit": "fb3ca184756e26e2dd9c2bf8fb4d6475373ae204",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4553,7 +4553,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-archive-counted-from-its-rows",
     "proof": "m49",
-    "commit": "0ce58b7a1c288d1cca32150f506e72f8302b1eb5",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4595,7 +4595,7 @@
     "class": "COPY-a-refusal-undone-unsaid",
     "mutant": "shape-read-all-refusal-unsaid",
     "proof": "m8",
-    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4651,21 +4651,21 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-visitor-foot-drawn-as-a-members",
     "proof": "m81",
-    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-guest-told-their-rows-as-the-count",
     "proof": "m50",
-    "commit": "01d7362cd5c3d9e98ab7e8e6bedc3aecb7bd8785",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-guest-offered-step-out",
     "proof": "m50",
-    "commit": "0bce9845b8ec01c2c9bc8b706290e524094c6c54",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4735,7 +4735,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-bulk-dismissal-counts-the-selected",
     "proof": "m62",
-    "commit": "fb3ca184756e26e2dd9c2bf8fb4d6475373ae204",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4770,14 +4770,14 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-follow-filed-as-request-shown-following",
     "proof": "m73",
-    "commit": "fb3ca184756e26e2dd9c2bf8fb4d6475373ae204",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-follow-filed-as-request-counted",
     "proof": "m76",
-    "commit": "fb3ca184756e26e2dd9c2bf8fb4d6475373ae204",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4847,14 +4847,14 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-open-ballot-counted-as-none",
     "proof": "m54",
-    "commit": "fb3ca184756e26e2dd9c2bf8fb4d6475373ae204",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-cast-ballot-count-unread",
     "proof": "m57",
-    "commit": "fb3ca184756e26e2dd9c2bf8fb4d6475373ae204",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4903,7 +4903,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-archive-critiques-counted-for-every-reader",
     "proof": "m84",
-    "commit": "fb3ca184756e26e2dd9c2bf8fb4d6475373ae204",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -4931,7 +4931,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-door-days-past-their-measure",
     "proof": "m87",
-    "commit": "fb3ca184756e26e2dd9c2bf8fb4d6475373ae204",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
@@ -5127,7 +5127,7 @@
     "class": "UI-read-drawn-as-empty",
     "mutant": "shape-search-count-said-as-a-total",
     "proof": "m67",
-    "commit": "0bce9845b8ec01c2c9bc8b706290e524094c6c54",
+    "commit": "4868baafe07892695a5364d41fc14a13d2e86feb",
     "verdict": "caught"
   },
   {
