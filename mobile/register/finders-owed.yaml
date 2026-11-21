@@ -8,6 +8,7 @@ TOLD:
   - COPY-one-failure-said-twice
   - COPY-a-refusal-undone-unsaid
 LATE:
+  - LATE-an-answer-over-a-newer-state
   - READ-a-page-ordered-by-a-key-rows-share
   - WRITE-words-let-go-unsent
   - READ-an-answer-drawn-under-an-order-left
@@ -42,6 +43,7 @@ UNKN:
   - NAV-a-stranger-at-a-members-door
   - READ-a-search-cut-at-a-fixed-count
 EXIT:
+  - EXIT-work-past-its-screen
   - UI-a-sheet-with-no-way-out
   - UI-a-modal-over-a-falling-modal
   - NAV-a-leave-asked-after-it-was-decided
