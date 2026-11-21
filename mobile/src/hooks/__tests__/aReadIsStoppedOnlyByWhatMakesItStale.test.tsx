@@ -148,7 +148,7 @@ describe('an answer already on its way when a newer read began is not laid', () 
     await act(async () => { more = result.current.loadMoreWatchlist(); });
     await act(async () => { read = result.current.refreshTabWithFilters('watchlist', { search: 'city', sort: 'default', decade: null }); });
     await act(async () => { pages.calls[1]!.answer({ items: [{ id: 9, title: 'Gilda' }], nextCursor: null }); await more; });
-    expect(result.current.isLoadingMore.watchlist).toBe(true);
+    expect([result.current.watchlist, result.current.isLoadingMore.watchlist]).toEqual([[{ id: 1, title: 'Laura' }], true]);
     await act(async () => { pages.calls[2]!.answer({ items: [{ id: 2, title: 'Night and the City' }], nextCursor: null }); await read; });
     expect([result.current.watchlist, result.current.isLoadingMore.watchlist]).toEqual([[{ id: 2, title: 'Night and the City' }], false]);
   });
