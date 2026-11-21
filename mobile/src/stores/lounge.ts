@@ -739,6 +739,18 @@ export const loungesAtStart = () => ({
  */
 const _readRoomsHere = new Map<string, number>();
 
+/**
+ * The corridor's reads, numbered (it is read every thirty seconds while open, and again on each
+ * return): an older read landing after a newer one is not laid over it. And each room's first read,
+ * numbered by room: a room read again (left and entered, or asked again from its TRY AGAIN) answers
+ * for itself, and an older page of it, first or next, is dropped. They only rise: a sign-out raises
+ * them, so a read still out for the member who left never matches the next one's.
+ */
+let _corridorReads = 0;
+const _roomReads = new Map<string, number>();
+/** A room's latest read's number: 0 before any. */
+const roomRead = (loungeId: string): number => _roomReads.get(loungeId) ?? 0;
+
 export const useLoungeStore = create<LoungeState>()((set, get) => ({
   ...loungesAtStart(),
 
@@ -752,6 +764,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       if (kept.length > 0) set({ lounges: kept });
     }
     set({ loungesLoading: true });
+    const mine = ++_corridorReads;
     const askedAt = monotonicNow();
     try {
       // The corridor in one trip (get_lounge_list, 20261109_02): the member's seats, the newest
@@ -841,14 +854,14 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       }));
 
       // Left mid-flight — see sessionGuard. Writing here would repopulate a store
-      // the logout reset has already cleared.
-      if (!memberUnchanged(startedAs)) return;
+      // the logout reset has already cleared. Read again since: the newer read answers.
+      if (!memberUnchanged(startedAs) || mine !== _corridorReads) return;
       set({ lounges: enriched, loungesFailed: false, loungesLoading: false, loungesRead: true });
       keepPage('lounges', user.id, enriched);
     } catch (err) {
       if (__DEV__) console.warn('[Lounge] fetchLounges failed:', err);
-      // Their failed read is not the next member's.
-      if (!memberUnchanged(startedAs)) return;
+      // Their failed read is not the next member's, nor an older read's failure the newer's.
+      if (!memberUnchanged(startedAs) || mine !== _corridorReads) return;
       // Said by the screen that asked, not here: the Lounge polls every thirty
       // seconds while open, and a toast here would be a toast every thirty
       // seconds for as long as the signal is gone.
@@ -892,6 +905,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const kept = (_keptRooms.get(loungeId) ?? []).filter((m) => !hiddenHere(m));
     _keptRooms.delete(loungeId);
     if (serverHeld(kept).length > 0) {
+      // Drawn from what was kept and caught up from it: a whole read of the room still out is older.
+      _roomReads.set(loungeId, (_roomReads.get(loungeId) ?? 0) + 1);
       set({ currentLoungeId: loungeId, currentMessages: kept, messagesLoading: false, messagesFailed: false });
       return get().catchUpMessages(loungeId);
     }
@@ -906,6 +921,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     }));
     // Words heard after this moment are kept over the answer, which was read before them.
     const heardFrom = _heardSeq;
+    // This room's read: one asked again since answers for itself.
+    const mine = (_roomReads.get(loungeId) ?? 0) + 1;
+    _roomReads.set(loungeId, mine);
     let failed = false;
     try {
       // The cursor's own order (loadMoreMessages): created_at alone leaves a burst's order to
@@ -953,8 +971,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
                 created_at: houseIso(),
             } as unknown as LoungeMessage);
         }
-        // Only for the member who asked: the queued messages stitched in are theirs.
-        if (!memberUnchanged(startedAs)) return;
+        // Only for the member who asked: the queued messages stitched in are theirs. And only the
+        // room's latest read: an older one, landing after, would lay words read before it.
+        if (!memberUnchanged(startedAs) || mine !== _roomReads.get(loungeId)) return;
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // Only if this room is still the open one: a slower fetch for a room left
         // behind would put its words under the new room's name.
@@ -982,8 +1001,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       failed = true;
     }
     if (!memberUnchanged(startedAs)) return;
-    // A stale fetch must not lower the spinner of the room now open, nor say it failed.
-    if (get().currentLoungeId !== loungeId) return;
+    // A stale fetch must not lower the spinner of the room now open, nor say it failed: another
+    // room's, or this room's read asked again since, which lowers it itself.
+    if (get().currentLoungeId !== loungeId || mine !== _roomReads.get(loungeId)) return;
     // A room with nothing to show says so itself (the salon's transcript, with TRY AGAIN);
     // over words it kept, the toast says the new ones could not come.
     if (failed && get().currentMessages.length > 0) reelToast.error('Could not load messages — check your connection.');
@@ -1000,6 +1020,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     // The oldest message is at index 0 because fetchMessages reverses the chronological array
     const oldestMessage = current[0];
     if (oldestMessage.id.startsWith('optimistic')) return; // Safety
+    // Under the room's read it continues: the room read again meanwhile, this page is of the old one.
+    const mine = roomRead(loungeId);
 
     try {
       // A (created_at, id) cursor, with the same two keys in the order: created_at alone
@@ -1022,7 +1044,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
         // Prepend older messages (filter blocked/muted)
         const filteredOlder = olderMessages.filter(m => !hiddenHere(m));
-        if (!memberUnchanged(startedAs)) return;
+        if (!memberUnchanged(startedAs) || mine !== roomRead(loungeId)) return;
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
         // Into the LIVE list, not `current` (read before the await), which would erase what
         // arrived over realtime during the scroll; and only into this room.
@@ -1082,6 +1104,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         const newest = messagesOf(data as unknown as LoungeMessageRow[], myId);
         if (!memberUnchanged(startedAs)) return;
         keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));
+        // The room begins again from its newest: an older page still out would leave a hole above it.
+        _roomReads.set(loungeId, (_roomReads.get(loungeId) ?? 0) + 1);
         set((s) => {
           if (s.currentLoungeId !== loungeId) return s;
           const fromHouse = new Set(serverHeld(s.currentMessages).map((m) => m.id));
@@ -2124,6 +2148,9 @@ registerStoreReset(() => {
     _lastSendAt.clear();
     _keptRooms.clear();
     _readRoomsHere.clear();
+    // Raised, never set back to 0: a read still out is the last member's.
+    _corridorReads += 1;
+    for (const [id, n] of _roomReads) _roomReads.set(id, n + 1);
     _readBackIn = null;
     _heardSeq = 0;
     _heardLive.clear();

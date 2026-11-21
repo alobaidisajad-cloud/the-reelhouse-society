@@ -410,7 +410,7 @@ function StackDetailScreen({ id }: { id: string }) {
     if (!list || readingMore.current || films.length >= (list.filmCount ?? 0)) return;
     readingMore.current = true;
     try {
-      const page = await StackService.getStackItemsPage(id, films.length);
+      const page = await StackService.getStackItemsPage(id, films[films.length - 1]?.id ?? null);
       const held = new Set(films.map((f) => f.id));
       setLater((was) => ({ after: list.films, films: [...(was.after === list.films ? was.films : []), ...page.filter((f) => !held.has(f.id))] }));
     } catch (e) {

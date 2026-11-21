@@ -2834,10 +2834,10 @@ classes:
     methods:
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique of the member's own, set at the top, does not move the next page past a row" }
       - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a row the house sent and the parser dropped still stands in the order: the next page follows it" }
-      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique withdrawn from a page read moves the next page back one, so none is skipped" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique withdrawn from a page read leaves the next page beginning after the same last row" }
       - { kind: running, file: src/hooks/__tests__/aNextPageStartsAfterTheLastRowRead.test.tsx, test: "a filing withdrawn while the member reads does not make the next page skip the one after the page" }
       - { kind: running, file: src/hooks/__tests__/aNextPageStartsAfterTheLastRowRead.test.tsx, test: "a filing filed while the member reads does not draw one already on screen a second time" }
-    fix: "the next page begins at the rows the house has sent, less those withdrawn since (critiquesRead); too few asks a row twice, which the merge drops (mutants shape-next-page-from-rows-held, shape-withdrawn-row-still-counted); a member's room and a film's Dispatch archive page after the last row read, never at an offset (mutant shape-room-next-page-from-the-top)"
+    fix: "the next page begins after the last row the house sent, by its place in the order (critiquesAfter: its certifications, when it was filed, its id), never by a count of rows, so neither the member's own critique nor one withdrawn moves it; a row the parser drops still places it (mutant shape-next-page-from-rows-held); a member's room and a film's Dispatch archive page after the last row read, never at an offset (mutant shape-room-next-page-from-the-top)"
     places: [none]
 
   - id: WRITE-a-failure-put-back-by-a-read
@@ -5306,6 +5306,28 @@ classes:
       - { kind: running, file: src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts, test: "the rank history: an older answer landing last does not put back what a newer one laid" }
       - { kind: running, file: src/stores/__tests__/aBlockSyncAskedBeforeIsNotLaidOver.test.ts, test: "of two reads, the older answering last is not laid over the newer" }
       - { kind: running, file: src/stores/__tests__/aBlockSyncAskedBeforeIsNotLaidOver.test.ts, test: "a read asked before a block made here does not draw the member blocked again" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a write laid thing by thing passes only when each thing the member acted on since the ask is skipped, the moment taken before the wait" }
+      - { kind: running, file: src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts, test: "a film taken out of the stack while the first page was held: the next page still begins at the film after the last drawn" }
+      - { kind: running, file: src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts, test: "pages a stack whose films are unranked and added together, every film once and in its order" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "continues after the last row it was sent, and keeps both pages" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "under CERTIFIED, the next page begins after the last row on all three of its places: its count, when, its id" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a first page asked again in the same order: the older answer, landing last, is not drawn" }
+      - { kind: running, file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a next page of a read since asked again is not joined to the new first page, and its spinner is let down" }
+      - { kind: running, file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "of two reads of a filing, the older answering last is not laid over the newer" }
+      - { kind: running, file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a filing read asked before the member amends it does not put the old words back" }
+      - { kind: running, file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "of two reads of a ballot’s count, the older answering last is not laid over the newer" }
+      - { kind: running, file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a read of the member’s marks asked before they take a certification back does not draw the heart again" }
+      - { kind: running, file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a certification taken back and waiting in the queue is not undone by a read the house answers before it" }
+      - { kind: running, file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a critique’s mark read before the member takes its certification back does not draw the heart again" }
+      - { kind: running, file: src/stores/__tests__/interactionSlice.test.ts, test: "a read asked before the member takes a heart back does not draw it again" }
+      - { kind: running, file: src/stores/__tests__/interactionSlice.test.ts, test: "a stack’s read asked before the member takes its heart back does not draw it again" }
+      - { kind: running, file: src/stores/__tests__/interactionSlice.test.ts, test: "of two reads, the older answering last is not laid over the newer" }
+      - { kind: running, file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "of two reads of the corridor, the older answering last is not laid over the newer" }
+      - { kind: running, file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "of two whole reads of a room, the older answering last does not take away a word the newer holds" }
+      - { kind: running, file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "a next page asked before the room was read again from what it kept is not joined to it" }
+      - { kind: running, file: src/stores/__tests__/aNoteWrittenWhileTheVaultIsReadStays.test.ts, test: "a note saved while the record’s notes are read again is not taken away by the answer" }
+      - { kind: running, file: src/stores/__tests__/aNoteWrittenWhileTheVaultIsReadStays.test.ts, test: "a note taken back while the record’s notes are read again does not come back" }
+      - { kind: static, file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a read raising its own mark for one key, and leaving while that key's mark is up, is one at a time; without the leave it is not" }
     sweep: { read: [appCode], found: 32, fixed: 15, judged: 1, commit: 7dc9d5b1, finder: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, result: "anAnswerIsStillTheOneAsked over app/, src/stores, src/hooks, src/components, src/features, src/providers, and every app file for pages (stage C): 23 re-asked reads with no token found, 8 fixed (the push permission's re-read, the essay's part, the circle sheet, a member's room read and filtered read, the profile read again, the rank history, the block list), 1 judged, 1 no defect once the finder knew a busy flag let down with its own mark (the door's next page), 12 still to fix (listed in the test); the finder taught a reducer's dispatch, a room's switch and a signal the next read cancels found 5 more in the member's file (four next pages, the file's spinner), all fixed; 4 pages asked by their count found, 2 fixed (the export, the import's stack read), 2 still to fix (a stack's films, a filing's critiques)" }
     places: [none]
 

@@ -33,6 +33,10 @@
  *
  * Its `auth.mfa` is the account's second factors (`mfa: { code, factors, level }`),
  * refusing what the auth server refuses (mfaFake, below).
+ *
+ * An answer can be held back (`hold()`), as a slow network holds it: each read and rpc answers what
+ * the house held at the moment it was ASKED, and lands only when the test lets it go (`release()`,
+ * oldest first, or `release('newest')`), so a test can land an older answer after a newer one.
  */
 import { fitsAnOverload, PENDING_SQL, readColumns, readComputedFields, readForeignKeys, readFunctions, SNAPSHOT_SQL, topLevel, type Column, type ForeignKey } from './schema';
 
@@ -63,7 +67,7 @@ export interface Query extends PromiseLike<Answer> {
 /** One row's answer: supabase-js hands back the builder still, so a read may be given its signal after. */
 // Optional in the type, so a test that stands its own answer in for one row still may.
 export type OneRow = Promise<Answer> & { abortSignal?(signal: AbortSignal): Promise<Answer> };
-const oneRow = (answer: Answer): OneRow => {
+const oneRow = (answer: Answer | Promise<Answer>): OneRow => {
   const p = Promise.resolve(answer) as OneRow;
   p.abortSignal = () => p;
   return p;
@@ -320,6 +324,14 @@ export function supabaseFake(options: Options = {}) {
   }
   const compute: Compute = (fn, row) => options.computed?.[fn]?.(row);
   const asked: Ask[] = [];
+  // Answers held back while `holding`: each settled when asked, let go in the order the test says.
+  let holding = false;
+  const heldBack: (() => void)[] = [];
+  const later = <T,>(answer: () => T): Promise<T> => {
+    const settled = answer();
+    if (!holding) return Promise.resolve(settled);
+    return new Promise<T>((res) => { heldBack.push(() => res(settled)); });
+  };
 
   const settle = (ask: Ask) => {
     const failure = options.fail?.[ask.table];
@@ -351,8 +363,10 @@ export function supabaseFake(options: Options = {}) {
         rows = hit;
       }
     }
+    // A null where Postgres puts one with no NULLS clause: above every value, so last going up and first going down.
+    const above = (a: unknown, b: unknown) => (a === b ? 0 : a == null ? 1 : b == null ? -1 : (a as number) > (b as number) ? 1 : (a as number) < (b as number) ? -1 : 0);
     for (const [col, ascending] of [...ask.order].reverse()) {
-      rows = [...rows].sort((a, b) => ((a[col] as number) > (b[col] as number) ? 1 : (a[col] as number) < (b[col] as number) ? -1 : 0) * (ascending ? 1 : -1));
+      rows = [...rows].sort((a, b) => above(a[col], b[col]) * (ascending ? 1 : -1));
     }
     const count = ask.count ? rows.length : null;
     if (ask.range) rows = rows.slice(ask.range[0], ask.range[1] + 1);
@@ -406,10 +420,10 @@ export function supabaseFake(options: Options = {}) {
       upsert: write('upsert'),
       update: (values) => write('update')(values),
       delete: () => { ask.op = 'delete'; return chain; },
-      single: () => { ask.one = 'single'; return oneRow(settle(ask)); },
-      maybeSingle: () => { ask.one = 'maybeSingle'; return oneRow(settle(ask)); },
+      single: () => { ask.one = 'single'; return oneRow(later(() => settle(ask))); },
+      maybeSingle: () => { ask.one = 'maybeSingle'; return oneRow(later(() => settle(ask))); },
       then: (res, rej) => {
-        try { return Promise.resolve(settle(ask)).then(res, rej); } catch (e) { return Promise.reject(e).then(res, rej); }
+        try { return later(() => settle(ask)).then(res, rej); } catch (e) { return Promise.reject(e).then(res, rej); }
       },
     };
     return chain;
@@ -429,9 +443,11 @@ export function supabaseFake(options: Options = {}) {
     }
     if (!(fn in (options.rpc ?? {}))) throw new Error(`supabaseFake: the test never said what ${fn} answers`);
     const written = options.rpc?.[fn];
-    const out = typeof written === 'function' ? (written as (a: Row) => unknown)(args) : written;
-    if (out && typeof out === 'object' && 'error' in (out as object)) return Promise.resolve({ data: null, error: (out as { error: Failure }).error });
-    return Promise.resolve({ data: out ?? null, error: null });
+    return later(() => {
+      const out = typeof written === 'function' ? (written as (a: Row) => unknown)(args) : written;
+      if (out && typeof out === 'object' && 'error' in (out as object)) return { data: null, error: (out as { error: Failure }).error };
+      return { data: out ?? null, error: null };
+    });
   };
 
   const getSession = () => {
@@ -447,5 +463,15 @@ export function supabaseFake(options: Options = {}) {
     rows: (table: string) => tables.get(table) ?? [],
     /** The second factors as the calls left them: every call asked, the factors, the session's level. */
     mfa: { asked: second.asked, factors: second.factors, level: second.level },
+    /** From now on every answer waits, as the house held it when asked, until it is let go. */
+    hold: () => { holding = true; },
+    /** How many answers wait. */
+    held: () => heldBack.length,
+    /** Every answer waiting let go, oldest first or newest first; answers asked after this land at once. */
+    release: (order: 'oldest' | 'newest' = 'oldest') => {
+      holding = false;
+      const going = heldBack.splice(0);
+      for (const go of order === 'newest' ? going.reverse() : going) go();
+    },
   };
 }

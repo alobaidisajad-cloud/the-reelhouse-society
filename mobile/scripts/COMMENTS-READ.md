@@ -2134,3 +2134,8 @@ files of the reading map this one does not.
 | e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts | — |  |
 | src/stores/__tests__/aBlockSyncAskedBeforeIsNotLaidOver.test.ts | — |  |
 | src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts | — |  |
+| src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts | — |  |
+| src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts | — |  |
+| test-utils/postgrestFilter.ts | — |  |
+| src/stores/__tests__/aNoteWrittenWhileTheVaultIsReadStays.test.ts | — |  |
+| src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts | — |  |

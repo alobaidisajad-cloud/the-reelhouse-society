@@ -3276,13 +3276,6 @@
     "verdict": "caught"
   },
   {
-    "class": "READ-a-page-begun-past-its-row",
-    "mutant": "shape-withdrawn-row-still-counted",
-    "proof": "m3",
-    "commit": "ec22079f00f66bb86a9bba5a5d3d629cb8fc5c4d",
-    "verdict": "caught"
-  },
-  {
     "class": "WRITE-a-failure-put-back-by-a-read",
     "mutant": "shape-leave-put-back-by-a-read",
     "proof": "m2",

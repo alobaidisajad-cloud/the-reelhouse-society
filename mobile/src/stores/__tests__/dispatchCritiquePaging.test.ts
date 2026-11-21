@@ -11,8 +11,8 @@
  * fetched 50 and the footer promised 30. Both now come from COMMENT_PAGE_SIZE.
  *
  * What is held here:
- *   · the first read asks for exactly COMMENT_PAGE_SIZE, from zero
- *   · the second continues from where the first stopped, and does not repeat it
+ *   · the first read asks for exactly COMMENT_PAGE_SIZE, from the top
+ *   · the second begins after the last row the first was sent, by its place, never by a count
  *   · a full page means "maybe more"; a short one means the end
  *   · CERTIFIED is ordered by the SERVER, with a tiebreaker, not on the device
  *   · changing the order starts again from the first page
@@ -20,8 +20,10 @@
  */
 import { useDispatch } from '../dispatch';
 import { COMMENT_PAGE_SIZE } from '../dispatchTypes';
+import { keysetAfter } from '../../utils/keysetCursor';
 
-interface Ask { order: [string, unknown][]; range: [number, number] | null; eq: Record<string, unknown>; }
+/** One read of a page: its order, the row it begins after (`or`), and how many it asks for. */
+interface Ask { order: [string, unknown][]; or: string | null; limit: number | null; eq: Record<string, unknown>; }
 let mockAsks: Ask[] = [];
 /** Each read's answer, in turn: rows, a failure, or a promise of either (an answer held back). */
 let mockRows: (unknown[] | Error | Promise<unknown[] | Error>)[] = [];
@@ -29,7 +31,7 @@ let mockRows: (unknown[] | Error | Promise<unknown[] | Error>)[] = [];
 jest.mock('../../lib/supabase', () => ({
   supabase: {
     from: () => {
-      const ask: Ask = { order: [], range: null, eq: {} };
+      const ask: Ask = { order: [], or: null, limit: null, eq: {} };
       mockAsks.push(ask);
       const chain: Record<string, unknown> = {};
       const self = () => chain;
@@ -45,8 +47,9 @@ jest.mock('../../lib/supabase', () => ({
         return del;
       };
       chain.order = (k: string, o: unknown) => { ask.order.push([k, o]); return self(); };
-      chain.range = (a: number, b: number) => {
-        ask.range = [a, b];
+      chain.or = (f: string) => { ask.or = f; return self(); };
+      chain.limit = (n: number) => {
+        ask.limit = n;
         const result = Promise.resolve(mockRows.shift() ?? []).then((page) => (page instanceof Error ? { data: null, error: page } : { data: page, error: null }));
         // The store wraps every read in `withAbortSignal`, which calls
         // `.abortSignal(signal)` on the builder. A mock that returns a bare
@@ -88,17 +91,30 @@ beforeEach(() => {
   mockRows = [];
   useDispatch.setState({
     critiques: {}, critiquesLoading: {}, critiquesLoadingMore: {},
-    critiquesHasMore: {}, critiquesRead: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(),
+    critiquesHasMore: {}, critiquesAfter: {}, critiquesOrder: {}, certifiedCritiqueIds: new Set(),
   });
 });
+
+const reads = () => mockAsks.filter((a) => a.limit !== null);
+/** The filter a page after row `n` carries, in each order. */
+const afterNewest = (n: number) => keysetAfter([
+  { column: 'created_at', direction: 'desc', value: row(n).created_at },
+  { column: 'id', direction: 'desc', value: row(n).id },
+]);
+const afterCertified = (n: number, certs = 0) => keysetAfter([
+  { column: 'certify_count', direction: 'desc', value: certs },
+  { column: 'created_at', direction: 'desc', value: row(n).created_at },
+  { column: 'id', direction: 'desc', value: row(n).id },
+]);
 
 describe('paging a filing’s critiques', () => {
   it('asks for exactly one page, from the beginning', async () => {
     mockRows = [fullPage(0)];
     await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
 
-    const read = mockAsks.find((a) => a.range);
-    expect(read?.range).toEqual([0, COMMENT_PAGE_SIZE - 1]);
+    const read = reads()[0];
+    expect(read?.limit).toBe(COMMENT_PAGE_SIZE);
+    expect(read?.or).toBeNull();
     expect(read?.eq.post_id).toBe('p1');
     expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE);
   });
@@ -123,17 +139,23 @@ describe('paging a filing’s critiques', () => {
     expect(useDispatch.getState().critiquesHasMore.p1).toBe(true);
   });
 
-  it('continues from where it stopped, and keeps both pages', async () => {
+  it('continues after the last row it was sent, and keeps both pages', async () => {
     mockRows = [fullPage(0), fullPage(COMMENT_PAGE_SIZE)];
     await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
     await useDispatch.getState().loadMoreCritiques('p1');
 
-    const ranges = mockAsks.filter((a) => a.range).map((a) => a.range);
-    expect(ranges).toEqual([
-      [0, COMMENT_PAGE_SIZE - 1],
-      [COMMENT_PAGE_SIZE, COMMENT_PAGE_SIZE * 2 - 1],
+    expect(reads().map((a) => [a.or, a.limit])).toEqual([
+      [null, COMMENT_PAGE_SIZE],
+      [afterNewest(COMMENT_PAGE_SIZE - 1), COMMENT_PAGE_SIZE],
     ]);
     expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE * 2);
+  });
+
+  it('under CERTIFIED, the next page begins after the last row on all three of its places: its count, when, its id', async () => {
+    mockRows = [Array.from({ length: COMMENT_PAGE_SIZE }, (_, i) => row(i, 3)), fullPage(COMMENT_PAGE_SIZE)];
+    await useDispatch.getState().fetchCritiques('p1', 'CERTIFIED');
+    await useDispatch.getState().loadMoreCritiques('p1');
+    expect(reads()[1]?.or).toBe(afterCertified(COMMENT_PAGE_SIZE - 1, 3));
   });
 
   it("a critique of the member's own, set at the top, does not move the next page past a row", async () => {
@@ -144,25 +166,24 @@ describe('paging a filing’s critiques', () => {
     await useDispatch.getState().addCritique('p1', 'Mine, just now.');
     expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE + 1);
     await useDispatch.getState().loadMoreCritiques('p1');
-    const ranges = mockAsks.filter((a) => a.range).map((a) => a.range);
-    expect(ranges[1]).toEqual([COMMENT_PAGE_SIZE, COMMENT_PAGE_SIZE * 2 - 1]);
+    expect(reads()[1]?.or).toBe(afterCertified(COMMENT_PAGE_SIZE - 1));
   });
 
   it('a row the house sent and the parser dropped still stands in the order: the next page follows it', async () => {
-    mockRows = [[...fullPage(0).slice(1), { id: null, body: 7 }], fullPage(COMMENT_PAGE_SIZE)];
+    const page = fullPage(0);
+    mockRows = [[...page.slice(0, -1), { ...page[page.length - 1], body: 7 }], fullPage(COMMENT_PAGE_SIZE)];
     await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE - 1);
     await useDispatch.getState().loadMoreCritiques('p1');
-    const ranges = mockAsks.filter((a) => a.range).map((a) => a.range);
-    expect(ranges[1]).toEqual([COMMENT_PAGE_SIZE, COMMENT_PAGE_SIZE * 2 - 1]);
+    expect(reads()[1]?.or).toBe(afterNewest(COMMENT_PAGE_SIZE - 1));
   });
 
-  it('a critique withdrawn from a page read moves the next page back one, so none is skipped', async () => {
-    mockRows = [fullPage(0), fullPage(COMMENT_PAGE_SIZE - 1)];
+  it('a critique withdrawn from a page read leaves the next page beginning after the same last row', async () => {
+    mockRows = [fullPage(0), fullPage(COMMENT_PAGE_SIZE)];
     await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
     await useDispatch.getState().removeCritique('c3', 'p1');
     await useDispatch.getState().loadMoreCritiques('p1');
-    const ranges = mockAsks.filter((a) => a.range).map((a) => a.range);
-    expect(ranges[1]).toEqual([COMMENT_PAGE_SIZE - 1, COMMENT_PAGE_SIZE * 2 - 2]);
+    expect(reads()[1]?.or).toBe(afterNewest(COMMENT_PAGE_SIZE - 1));
   });
 
   it('does not add a critique it is already holding', async () => {
@@ -180,18 +201,18 @@ describe('paging a filing’s critiques', () => {
   it('will not ask again when the server has said there is no more', async () => {
     mockRows = [[row(1)]];
     await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
-    const before = mockAsks.filter((a) => a.range).length;
+    const before = reads().length;
 
     await useDispatch.getState().loadMoreCritiques('p1');
-    expect(mockAsks.filter((a) => a.range).length).toBe(before);
+    expect(reads().length).toBe(before);
   });
 
   it('orders CERTIFIED on the server, with a tiebreaker', async () => {
     mockRows = [fullPage(0)];
     await useDispatch.getState().fetchCritiques('p1', 'CERTIFIED');
 
-    const read = mockAsks.find((a) => a.range)!;
-    expect(read.order.map(([k]) => k)).toEqual(['certify_count', 'created_at']);
+    const read = reads()[0]!;
+    expect(read.order.map(([k]) => k)).toEqual(['certify_count', 'created_at', 'id']);
     // Without the second key, two critiques on the same count could swap between
     // pages — which shows one twice and hides another entirely.
     expect(read.order.every(([, o]) => (o as { ascending: boolean }).ascending === false)).toBe(true);
@@ -204,8 +225,7 @@ describe('paging a filing’s critiques', () => {
     expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE * 2);
 
     await useDispatch.getState().fetchCritiques('p1', 'CERTIFIED');
-    const ranges = mockAsks.filter((a) => a.range).map((a) => a.range);
-    expect(ranges[ranges.length - 1]).toEqual([0, COMMENT_PAGE_SIZE - 1]);
+    expect(reads()[reads().length - 1]?.or).toBeNull();
     // The old order's rows are gone, not merged underneath the new label.
     expect(useDispatch.getState().critiques.p1).toHaveLength(COMMENT_PAGE_SIZE);
     expect(useDispatch.getState().critiquesOrder.p1).toBe('CERTIFIED');
@@ -220,8 +240,7 @@ describe('the number the footer prints', () => {
     const printed = require('@/src/components/dispatch/paper/paperMetrics').COMMENT_PAGE_SIZE;
     mockRows = [fullPage(0)];
     await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
-    const [from, to] = mockAsks.find((a) => a.range)!.range!;
-    expect(printed).toBe(to - from + 1);
+    expect(printed).toBe(reads()[0]!.limit);
   });
 });
 
@@ -259,5 +278,30 @@ describe('a page of critiques that could not be read', () => {
     answerNewest([row(1), row(2)]);
     await first;
     expect(useDispatch.getState().critiques.p1?.map((c) => c.id)).toEqual(['c7', 'c8']);
+  });
+
+  it('a first page asked again in the same order: the older answer, landing last, is not drawn', async () => {
+    // A notice read the filing again while its first read was still out.
+    let answerOlder: (rows: unknown[]) => void = () => {};
+    mockRows = [new Promise<unknown[]>((res) => { answerOlder = res; }), [row(7), row(8)]];
+    const first = useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    answerOlder([row(1)]);
+    await first;
+    expect(useDispatch.getState().critiques.p1?.map((c) => c.id)).toEqual(['c7', 'c8']);
+    expect(useDispatch.getState().critiquesLoading.p1).toBe(false);
+  });
+
+  it('a next page of a read since asked again is not joined to the new first page, and its spinner is let down', async () => {
+    let answerMore: (rows: unknown[]) => void = () => {};
+    mockRows = [fullPage(0), new Promise<unknown[]>((res) => { answerMore = res; }), [row(900), row(901)]];
+    await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    const more = useDispatch.getState().loadMoreCritiques('p1');
+    expect(useDispatch.getState().critiquesLoadingMore.p1).toBe(true);
+    await useDispatch.getState().fetchCritiques('p1', 'NEWEST');
+    expect(useDispatch.getState().critiquesLoadingMore.p1).toBe(false);
+    answerMore(fullPage(COMMENT_PAGE_SIZE));
+    await more;
+    expect(useDispatch.getState().critiques.p1?.map((c) => c.id)).toEqual(['c900', 'c901']);
   });
 });

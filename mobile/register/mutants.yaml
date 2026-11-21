@@ -1808,7 +1808,7 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "      for (const c of critiques) known.add(c.id);\n"
+        find: "        known.add(c.id);\n"
         replace: ""
     proof: { file: src/stores/__tests__/aCritiqueMarkIsReadBeforeItIsDrawn.test.ts, test: "answered, knows each critique asked about: certified or not" }
 
@@ -2639,8 +2639,8 @@ mutants:
     source: shape
     edits:
       - file: src/services/StackService.ts
-        find: "      .order('film_id', { ascending: true })\n      .range(offset"
-        replace: "      .range(offset"
+        find: "      .order('film_id', { ascending: true })\n      .limit(STACK_ITEMS_LIMIT);"
+        replace: "      .limit(STACK_ITEMS_LIMIT);"
     proof: { file: src/utils/__tests__/aPageEndsOnAKeyNoTwoRowsShare.guard.test.ts, test: "ends every paged read of the app on a key no two of its rows share" }
 
   - id: shape-paper-kept-never-drawn
@@ -4315,18 +4315,9 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "    const from = st0.critiquesRead[postId] ?? (st0.critiques[postId] ?? []).length;"
-        replace: "    const from = (st0.critiques[postId] ?? []).length;"
-    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique of the member's own, set at the top, does not move the next page past a row" }
-
-  - id: shape-withdrawn-row-still-counted
-    class: READ-a-page-begun-past-its-row
-    source: shape
-    edits:
-      - file: src/stores/dispatch.ts
-        find: "      critiquesRead: { ...st.critiquesRead, [postId]: Math.max(0, (st.critiquesRead[postId] ?? 0) - 1) },"
-        replace: "      critiquesRead: st.critiquesRead,"
-    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a critique withdrawn from a page read moves the next page back one, so none is skipped" }
+        find: "    const lastKey = lastKeyOf(data ?? []);"
+        replace: "    const lastKey = lastKeyOf(critiques.map((c) => ({ id: c.id, created_at: c.createdAt, certify_count: c.certifyCount })));"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a row the house sent and the parser dropped still stands in the order: the next page follows it" }
 
   - id: shape-leave-put-back-by-a-read
     class: WRITE-a-failure-put-back-by-a-read
@@ -10166,3 +10157,219 @@ mutants:
         find: "clearDraft(me, 'settings');"
         replace: ""
     proof: { file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "filed after leaving: the return opens on the house's settings, the draft gone" }
+
+  - id: shape-stack-page-from-the-top
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/services/StackService.ts
+        find: "    if (after) q = q.or(after);\n"
+        replace: ""
+    proof: { file: src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts, test: "a film taken out of the stack while the first page was held: the next page still begins at the film after the last drawn" }
+
+  - id: shape-keyset-unranked-never-beyond
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/keysetCursor.ts
+        find: "    return nullable ? [`${column}.gt.${v}`, `${column}.is.null`] : [`${column}.gt.${v}`];"
+        replace: "    return [`${column}.gt.${v}`];"
+    proof: { file: src/services/__tests__/aStackPageBeginsAfterItsLastFilm.test.ts, test: "pages a stack whose films are unranked and added together, every film once and in its order" }
+
+  - id: shape-critique-page-from-the-top
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (beyond) q = q.or(beyond);\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "continues after the last row it was sent, and keeps both pages" }
+
+  - id: shape-certified-page-keyed-on-two
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "  return order === 'CERTIFIED' ? [{ column: 'certify_count', direction: 'desc', value: after.certifyCount }, ...newest] : newest;"
+        replace: "  return newest;"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "under CERTIFIED, the next page begins after the last row on all three of its places: its count, when, its id" }
+
+  - id: shape-older-critique-read-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    if (!memberUnchanged(startedAs) || readNo !== critiqueReads.get(postId)) return;\n\n    const { critiques } = parseCritiqueRows(data ?? []);"
+        replace: "    if (!memberUnchanged(startedAs)) return;\n\n    const { critiques } = parseCritiqueRows(data ?? []);"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a first page asked again in the same order: the older answer, landing last, is not drawn" }
+
+  - id: shape-replaced-read-leaves-more-spinning
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      critiquesLoadingMore: { ...st.critiquesLoadingMore, [postId]: false },\n      critiquesOrder"
+        replace: "      critiquesOrder"
+    proof: { file: src/stores/__tests__/dispatchCritiquePaging.test.ts, test: "a next page of a read since asked again is not joined to the new first page, and its spinner is let down" }
+
+  - id: shape-older-filing-read-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (mine !== filingReads.get(id) || actedSince('filing', id, askedAt)"
+        replace: "      if (actedSince('filing', id, askedAt)"
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "of two reads of a filing, the older answering last is not laid over the newer" }
+
+  - id: shape-filing-read-over-an-amend
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (mine !== filingReads.get(id) || actedSince('filing', id, askedAt) || "
+        replace: "      if (mine !== filingReads.get(id) || "
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a filing read asked before the member amends it does not put the old words back" }
+
+  - id: shape-older-tally-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "      if (!memberUnchanged(startedAs) || mine !== tallyReads.get(id)) return;"
+        replace: "      if (!memberUnchanged(startedAs)) return;"
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "of two reads of a ballot’s count, the older answering last is not laid over the newer" }
+
+  - id: shape-mark-read-over-an-uncertify
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "        if (!certs.error && !actedSince('filingCertify', id, askedAt)) {"
+        replace: "        if (!certs.error) {"
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a read of the member’s marks asked before they take a certification back does not draw the heart again" }
+
+  - id: shape-paper-act-kept-out-of-the-ledger
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "  const acts = beginActs(marks);"
+        replace: "  const acts = beginActs([]);"
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a read of the member’s marks asked before they take a certification back does not draw the heart again" }
+
+  - id: shape-queued-mark-read-over
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    return !!mark && mark[0] === kind && mark[1] === id;"
+        replace: "    return false;"
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a certification taken back and waiting in the queue is not undone by a read the house answers before it" }
+
+  - id: shape-critique-mark-read-over-a-certify
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "        if (actedSince('critiqueCertify', c.id, askedAt)) continue;\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/anOlderPaperReadIsNotLaidOver.test.ts, test: "a critique’s mark read before the member takes its certification back does not draw the heart again" }
+
+  - id: shape-finder-per-thing-moment-unasked
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "if (at && ts.isIdentifier(at) && (takenAt.get(at.text) ?? Infinity) <= since) found = true;"
+        replace: "if (at) found = true;"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a write laid thing by thing passes only when each thing the member acted on since the ask is skipped, the moment taken before the wait" }
+
+  - id: shape-heart-read-over-a-take-back
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/domain/interactionSlice.ts
+        find: "if (i.type === 'endorse' && !tappedSince('certify', i.targetId, askedAt) && !queued.has(i.targetId)) idx[i.targetId] = i;"
+        replace: "if (i.type === 'endorse') idx[i.targetId] = i;"
+    proof: { file: src/stores/__tests__/interactionSlice.test.ts, test: "a read asked before the member takes a heart back does not draw it again" }
+
+  - id: shape-stack-heart-read-over-a-take-back
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/domain/interactionSlice.ts
+        find: "newListEndorsements.forEach(i => { if (!tappedSince('certify', i.targetId, askedAt) && !queued.has(i.targetId)) idx[i.targetId] = i; });"
+        replace: "newListEndorsements.forEach(i => { idx[i.targetId] = i; });"
+    proof: { file: src/stores/__tests__/interactionSlice.test.ts, test: "a stack’s read asked before the member takes its heart back does not draw it again" }
+
+  - id: shape-older-heart-read-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/domain/interactionSlice.ts
+        find: "        if (!stillSignedIn(user.id) || mine !== logEndorseReads) return;"
+        replace: "        if (!stillSignedIn(user.id)) return;"
+    proof: { file: src/stores/__tests__/interactionSlice.test.ts, test: "of two reads, the older answering last is not laid over the newer" }
+
+  - id: shape-older-corridor-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      if (!memberUnchanged(startedAs) || mine !== _corridorReads) return;\n      set({ lounges: enriched"
+        replace: "      if (!memberUnchanged(startedAs)) return;\n      set({ lounges: enriched"
+    proof: { file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "of two reads of the corridor, the older answering last is not laid over the newer" }
+
+  - id: shape-older-room-read-laid
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "        if (!memberUnchanged(startedAs) || mine !== _roomReads.get(loungeId)) return;\n        keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));\n        // Only if this room"
+        replace: "        if (!memberUnchanged(startedAs)) return;\n        keepReactionRows(loungeId, reactionRowsOf(data as unknown as LoungeMessageRow[]));\n        // Only if this room"
+    proof: { file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "of two whole reads of a room, the older answering last does not take away a word the newer holds" }
+
+  - id: shape-older-page-joined-to-a-new-read
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "        const filteredOlder = olderMessages.filter(m => !hiddenHere(m));\n        if (!memberUnchanged(startedAs) || mine !== roomRead(loungeId)) return;"
+        replace: "        const filteredOlder = olderMessages.filter(m => !hiddenHere(m));\n        if (!memberUnchanged(startedAs)) return;"
+    proof: { file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "a next page asked before the room was read again from what it kept is not joined to it" }
+
+  - id: shape-kept-room-drawn-unnumbered
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      _roomReads.set(loungeId, (_roomReads.get(loungeId) ?? 0) + 1);\n      set({ currentLoungeId: loungeId, currentMessages: kept"
+        replace: "      set({ currentLoungeId: loungeId, currentMessages: kept"
+    proof: { file: src/stores/__tests__/anOlderSalonReadIsNotLaidOver.test.ts, test: "a next page asked before the room was read again from what it kept is not joined to it" }
+
+  - id: shape-note-read-over-a-save
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/vaultStore.ts
+        find: "              if (notesLog[viewingId] === logId && !writtenSince(viewingId)) {"
+        replace: "              if (notesLog[viewingId] === logId) {"
+    proof: { file: src/stores/__tests__/aNoteWrittenWhileTheVaultIsReadStays.test.ts, test: "a note saved while the record’s notes are read again is not taken away by the answer" }
+
+  - id: shape-note-read-over-a-take-back
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/stores/vaultStore.ts
+        find: "              if (writtenSince(row.viewing_id)) continue;\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/aNoteWrittenWhileTheVaultIsReadStays.test.ts, test: "a note taken back while the record’s notes are read again does not come back" }
+
+  - id: shape-finder-key-mark-unseen
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts
+        find: "    for (const m of t.matchAll(/(\\w+):\\s*\\{\\s*\\.\\.\\.\\w+\\.\\1\\s*,\\s*\\[\\w+\\]:\\s*true\\s*\\}/g)) raised.add(m[1] ?? '');\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: a read raising its own mark for one key, and leaving while that key's mark is up, is one at a time; without the leave it is not" }

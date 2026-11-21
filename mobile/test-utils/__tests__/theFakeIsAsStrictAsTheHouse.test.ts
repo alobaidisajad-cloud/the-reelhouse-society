@@ -107,6 +107,40 @@ describe('it answers as PostgREST answers', () => {
   });
 });
 
+describe('its order puts a null where Postgres puts it', () => {
+  it('last going up, first going down', async () => {
+    const rated = [log(1), { ...log(2), rating: null }, log(3)];
+    const { client } = supabaseFake({ rows: { logs: rated } });
+    const up = await client.from('logs').select('film_id').order('rating', { ascending: true });
+    const down = await client.from('logs').select('film_id').order('rating', { ascending: false });
+    expect([up.data.map((r: { film_id: number }) => r.film_id), down.data.map((r: { film_id: number }) => r.film_id)]).toEqual([[1, 3, 2], [2, 3, 1]]);
+  });
+});
+
+describe('an answer held back, as a slow network holds it', () => {
+  it('answers what the house held when asked, and lands only when let go, newest first if asked', async () => {
+    const fake = supabaseFake({ rows: { logs: [log(1)] }, rpc: { get_email_by_username: 'a@b.test' } });
+    fake.hold();
+    const landed: string[] = [];
+    const older = fake.client.from('logs').select('film_title').then((r: { data: { film_title: string }[] }) => { landed.push(`older ${r.data.length}`); });
+    // Written while held: the house holds it at once, its own answer waits with the rest.
+    const wrote = fake.client.from('logs').insert(log(2)).then(() => undefined);
+    const newer = fake.client.from('logs').select('film_title').then((r: { data: { film_title: string }[] }) => { landed.push(`newer ${r.data.length}`); });
+    const one = fake.client.from('logs').select('film_title').eq('film_id', 1).maybeSingle();
+    const asked = fake.client.rpc('get_email_by_username', { lookup_username: 'x' });
+    await Promise.resolve();
+    expect([landed, fake.held()]).toEqual([[], 5]);
+    fake.release('newest');
+    await Promise.all([older, newer, wrote]);
+    expect(landed).toEqual(['newer 2', 'older 1']);
+    await expect(one).resolves.toMatchObject({ data: { film_title: 'Film 1' } });
+    await expect(asked).resolves.toEqual({ data: 'a@b.test', error: null });
+    // Let go, the next answer lands at once.
+    await expect(fake.client.from('logs').select('id')).resolves.toMatchObject({ error: null });
+    expect(fake.held()).toBe(0);
+  });
+});
+
 describe('its embeds are resolved as PostgREST resolves them', () => {
   const ROOM = '33333333-3333-4333-8333-333333333333';
   const M1 = '44444444-4444-4444-8444-444444444441';

@@ -1300,13 +1300,14 @@ describe('a stack past its first page (P4.9)', () => {
   it('is drawn whole as it is scrolled: the 501st film after the 500, in rank order, read once', async () => {
     const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
     StackService.getStackItemsPage.mockResolvedValueOnce([{ id: 501, title: 'Film 501', poster_path: null }]);
-    const first = Array.from({ length: 500 }, (_, i) => ({ id: i + 1, title: `Film ${i + 1}`, poster_path: null }));
+    const first = Array.from({ length: 500 }, (_, i) => ({ id: 1001 + i, title: `Film ${i + 1}`, poster_path: null }));
     const r = mount({ films: first, filmCount: 501 });
     await act(async () => {});
     expect(r.getByText(/FIRST 500/)).toBeTruthy();
 
     await act(async () => { await mockEndReached?.(); });
-    expect(StackService.getStackItemsPage.mock.calls).toEqual([[STACK_ID, 500]]);
+    // Asked after the last film drawn, by that film: never by a count of films.
+    expect(StackService.getStackItemsPage.mock.calls).toEqual([[STACK_ID, first[first.length - 1]!.id]]);
     expect(r.queryByText(/FIRST/)).toBeNull();
     const drawn = JSON.stringify(r.toJSON());
     expect(drawn.indexOf('Film 500')).toBeLessThan(drawn.indexOf('Film 501'));
