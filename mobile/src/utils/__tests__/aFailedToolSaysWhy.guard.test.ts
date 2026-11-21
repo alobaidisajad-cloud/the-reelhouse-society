@@ -32,6 +32,7 @@ const QUIET: Record<string, { count: number; why: string }> = {
   'mobile/scripts/comment-truth.js': { count: 1, why: '`git check-ignore -q` answers by its exit alone: 0 ignored, 1 not' },
   'mobile/scripts/install-hooks.cjs': { count: 2, why: 'outside a git checkout there are no hooks to install, and a worktree with no hooks path set has none to unset' },
   'mobile/test-utils/universe.js': { count: 1, why: 'a folder that is not a checkout ignores nothing' },
+  'mobile/scripts/hooks/verdicts.cjs': { count: 1, why: 'a folder that is no repository has no git list: its own files are walked instead' },
 };
 
 type Run = { file: string; fn: string; args: string; kept: string | null; statement: boolean };

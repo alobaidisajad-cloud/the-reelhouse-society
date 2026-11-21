@@ -6870,7 +6870,7 @@
     "class": "CI-jest-started-without-its-environment",
     "mutant": "shape-jest-run-untold",
     "proof": "m3",
-    "commit": "a60a04581b86f6a1168e616a7abce6db948b44ea",
+    "commit": "6a7e453abcf64a2fec97b7f1d04a1cf06f23b9f0",
     "verdict": "caught"
   }
 ]

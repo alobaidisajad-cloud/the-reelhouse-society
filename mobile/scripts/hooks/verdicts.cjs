@@ -21,6 +21,7 @@ const { execFileSync } = require('child_process');
 const { createHash } = require('crypto');
 const { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } = require('fs');
 const { dirname, join, normalize, relative, resolve, sep } = require('path');
+const { stripComments } = require('../../test-utils/stripComments');
 
 const MOBILE = join(__dirname, '..', '..');
 const ROOT = join(MOBILE, '..');
@@ -37,10 +38,10 @@ const fromRoot = (abs, root = ROOT) => relative(root, abs).split(sep).join('/');
  */
 const CODE = /\.(?:[cm]?js|jsx|tsx?|sh)$/i;
 
-/** A file's code with its comments taken out: `//` and block comments, or a shell's `#` to the line's end. */
+/** A file's code with its comments taken out: by the house's one parser for code, or a shell's `#` to the line's end. */
 const uncommented = (text, file) => (/\.sh$/i.test(file)
   ? text.split('\n').map((l) => l.replace(/(^|\s)#.*$/, '$1')).join('\n')
-  : text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1'));
+  : stripComments(text, file));
 const EXT = 'mjs|cjs|js|jsx|ts|tsx|sh|json|yaml|yml|tsv|txt|md|toml|png|xml|dex';
 /** The extensions node and jest try for an import without one, and the index they try in a folder. */
 const TRIES = ['', '.ts', '.tsx', '.js', '.jsx', '.cjs', '.mjs', '.json', '/index.ts', '/index.tsx', '/index.js'];
