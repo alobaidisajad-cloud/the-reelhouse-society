@@ -12,10 +12,13 @@
  *   const mockHeld = heldClient(mockHouse.client);
  *   jest.mock('@/src/lib/supabase', () => ({ get supabase() { return mockHeld.client; } }));
  *   await mockHeld.release('profiles');   // the oldest answer waiting from that table
+ *
+ * An rpc answers at once unless it is named in `rpcs`; a named one is held under its own name, as a
+ * table's answers are: heldClient(client, { rpcs: ['get_my_follows'] }), then release('get_my_follows').
  */
 type Waiting = { table: string; go: () => void };
 
-export function heldClient<C extends { from: (table: string) => unknown }>(client: C) {
+export function heldClient<C extends { from: (table: string) => unknown }>(client: C, options: { rpcs?: string[] } = {}) {
   const waiting: Waiting[] = [];
 
   /** Worked out now, handed back on release. */
@@ -50,6 +53,10 @@ export function heldClient<C extends { from: (table: string) => unknown }>(clien
   const held = new Proxy(client, {
     get(target, key) {
       if (key === 'from') return (table: string) => wrap(table, target.from(table) as object);
+      if (key === 'rpc' && options.rpcs?.length) {
+        const rpc = (target as Record<PropertyKey, unknown>).rpc as (fn: string, args?: object) => PromiseLike<unknown>;
+        return (fn: string, args?: object) => (options.rpcs?.includes(fn) ? hold(fn, rpc(fn, args)) : rpc(fn, args));
+      }
       return (target as Record<PropertyKey, unknown>)[key];
     },
   }) as C;

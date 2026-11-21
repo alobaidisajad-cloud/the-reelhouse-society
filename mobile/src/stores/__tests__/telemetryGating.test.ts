@@ -18,7 +18,6 @@
  */
 import { useFilmStore } from '../films';
 import { clearAllMutexes, runWithMutex } from '../domain/helpers/promiseMutex';
-import { expectSwallowedTypeError } from '@/src/test-support/swallowedTypeError';
 import { captureError } from '@/src/lib/sentry';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { followUser, unfollowUser, hydrateFollowing } from '../domain/socialSlice';
@@ -553,15 +552,8 @@ describe('the last two store paths', () => {
     });
 
     it('hydrateFollowing reports an unexpected shape from the server', async () => {
-        // Malformed payload => a TypeError inside the try, which is precisely
-        // the "Unexpected error" this catch was labelled for.
-        //
-        // The TypeError is this test's instrument, not an accident, so it is
-        // declared. Without the declaration the mock-gap trap fails the test,
-        // which is right: everywhere else, a swallowed TypeError means a mock
-        // dropped an export and the test proved nothing.
-        expectSwallowedTypeError('feeds a non-array payload to prove the catch reports it');
-        mockDbData = 'not-an-array';
+        // An answer that is not a follow list is reported, never held as one.
+        mockDbData = 'not-a-follow-list';
         await hydrateFollowing();
         expect(captureError).toHaveBeenCalledWith(
             expect.anything(), expect.objectContaining({ scope: 'socialSlice.hydrateFollowing' }),

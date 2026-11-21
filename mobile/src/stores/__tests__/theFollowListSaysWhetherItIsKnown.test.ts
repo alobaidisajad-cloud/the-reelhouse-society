@@ -12,7 +12,6 @@ import { hydrateFollowing } from '../domain/socialSlice';
 import { resetAllStores } from '../resetAllStores';
 
 const ANNA = '11111111-1111-4111-8111-111111111111';
-const ORSON = '22222222-2222-4222-8222-222222222222';
 let mockHouse = supabaseFake({ rows: {} });
 jest.mock('../../lib/supabase', () => ({ get supabase() { return mockHouse.client; } }));
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: { id: '11111111-1111-4111-8111-111111111111' } }) } }));
@@ -20,15 +19,8 @@ jest.mock('../../lib/sentry', () => ({ captureError: jest.fn() }));
 jest.mock('../../lib/queryClient', () => ({ queryClient: { invalidateQueries: jest.fn(), clear: jest.fn() } }));
 jest.mock('../../utils/offlineQueue', () => ({ getOfflineQueue: () => [], enqueueMutation: jest.fn(() => true) }));
 
-const follows = (who: { id: string; username: string }[]) => supabaseFake({
-  rows: {
-    interactions: who.map((p, i) => ({
-      id: `33333333-3333-4333-8333-33333333333${i}`, user_id: ANNA, target_user_id: p.id, type: 'follow', created_at: `2026-10-0${i + 1}T00:00:00Z`,
-    })),
-    profiles: who,
-  },
-});
-const unreachable = () => supabaseFake({ fail: { interactions: { code: '', message: 'Network request failed' } } });
+const follows = (handles: string[]) => supabaseFake({ rpc: { get_my_follows: { following: handles, requested: [] } } });
+const unreachable = () => supabaseFake({ rpc: { get_my_follows: { error: { code: '', message: 'Network request failed' } } } });
 const known = () => useSocialStore.getState().followingKnown;
 
 beforeEach(() => {
@@ -46,13 +38,13 @@ it('a read that fails leaves a list never held unread no longer, but failed; a r
   mockHouse = unreachable();
   await hydrateFollowing();
   expect(known()).toBe('failed');
-  mockHouse = follows([{ id: ORSON, username: 'orson' }]);
+  mockHouse = follows(['orson']);
   await hydrateFollowing();
   expect({ known: known(), following: useSocialStore.getState().following }).toEqual({ known: 'held', following: ['orson'] });
 });
 
 it('a list held stays held when a later read fails', async () => {
-  mockHouse = follows([{ id: ORSON, username: 'orson' }]);
+  mockHouse = follows(['orson']);
   await hydrateFollowing();
   mockHouse = unreachable();
   await hydrateFollowing();

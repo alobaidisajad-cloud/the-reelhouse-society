@@ -472,7 +472,6 @@
     "mobile/src/stores/__tests__/socialSlice.unfollow.test.ts": 1,
     "mobile/src/stores/__tests__/telemetryGating.test.ts": 1,
     "mobile/src/stores/__tests__/theBoardSaysWhenItCouldNotBeRead.test.tsx": 1,
-    "mobile/src/stores/__tests__/theCursorCarriesATiebreaker.test.ts": 1,
     "mobile/src/stores/__tests__/theFollowListIsReadOnce.test.ts": 1,
     "mobile/src/stores/__tests__/theHouseSaysWhy.test.ts": 1,
     "mobile/src/stores/__tests__/theLiveWireKnowsTheRoom.test.ts": 1,

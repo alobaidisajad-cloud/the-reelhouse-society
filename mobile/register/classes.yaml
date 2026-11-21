@@ -591,7 +591,7 @@ classes:
     seriousness: behaviour
     area: tests
     status: OPEN
-    count: 124
+    count: 123
     source: { kind: history, ref: "the salon roster read a missing column for three months under green tests (a-mock-accepts-any-column); P0.63" }
     methods:
       - { kind: running, file: test-utils/__tests__/theFakeIsAsStrictAsTheHouse.test.ts, test: "a column the table does not have, in a select, a filter or an order" }

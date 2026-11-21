@@ -4,7 +4,7 @@
  *
  * A member's cold start asked for the whole list twice — the bootstrapper as the
  * remembered member was restored, and sign-in as the session was confirmed —
- * every page of it each time. And a read that was still running when the member
+ * the whole list each time. And a read that was still running when the member
  * signed out, or switched to another account, wrote its list into whoever was
  * signed in when it finished.
  */
@@ -15,22 +15,17 @@ const ANNA = '11111111-1111-4111-8111-111111111111';
 const BEN = '22222222-2222-4222-8222-222222222222';
 let mockUser: { id: string } | null = { id: ANNA };
 
-/** Each read waits here until the test answers it. */
-let pending: ((rows: unknown[]) => void)[] = [];
-const chain = () => {
-  const c: Record<string, unknown> = {};
-  const self = () => c;
-  for (const f of ['select', 'eq', 'in', 'order', 'limit', 'or'] as const) c[f] = () => self();
-  c.then = (res: (v: unknown) => unknown) =>
-    new Promise<unknown[]>((answer) => { pending.push(answer); }).then((rows) => res({ data: rows, error: null }));
-  return c;
-};
+/** Each read waits here until the test answers it with the handles followed. */
+let pending: ((handles: string[]) => void)[] = [];
+const followList = () =>
+  new Promise<string[]>((answer) => { pending.push(answer); })
+    .then((handles) => ({ data: { following: handles, requested: [] }, error: null }));
 /** Lets a read that was just asked for reach the server. */
 const started = () => new Promise((r) => setTimeout(r, 0));
-const answerAll = async (rows: unknown[]) => {
+const answerAll = async (handles: string[]) => {
   const now = pending;
   pending = [];
-  now.forEach((a) => a(rows));
+  now.forEach((a) => a(handles));
   await new Promise((r) => setTimeout(r, 0));
 };
 
@@ -38,7 +33,7 @@ const mockSetFollowing = jest.fn();
 const mockSetRequested = jest.fn();
 const mockPersist = jest.fn();
 
-jest.mock('../../lib/supabase', () => ({ supabase: { from: () => chain() } }));
+jest.mock('../../lib/supabase', () => ({ supabase: { rpc: () => followList() } }));
 jest.mock('../auth', () => ({ useAuthStore: { getState: () => ({ user: mockUser }) } }));
 jest.mock('../followStore', () => ({
   useSocialStore: {
@@ -49,11 +44,6 @@ jest.mock('../followStore', () => ({
 jest.mock('../../lib/sentry', () => ({ captureError: jest.fn() }));
 jest.mock('../../lib/queryClient', () => ({ queryClient: { invalidateQueries: jest.fn() } }));
 jest.mock('../../utils/offlineQueue', () => ({ getOfflineQueue: () => [], enqueueMutation: jest.fn(() => true) }));
-
-const row = (name: string) => ({
-  id: `r-${name}`, target_user_id: `t-${name}`, created_at: '2026-10-08T00:00:00.000Z', type: 'follow',
-  profiles: { username: name },
-});
 
 beforeEach(async () => {
   mockUser = { id: ANNA };
@@ -68,7 +58,7 @@ it('asked twice while the first read runs, reads once — and both callers get i
   expect(second).toBe(first);
   await started();
   expect(pending).toHaveLength(1);
-  await answerAll([row('agnes')]);
+  await answerAll(['agnes']);
   await Promise.all([first, second]);
   expect(mockSetFollowing).toHaveBeenCalledTimes(1);
   expect(mockSetFollowing).toHaveBeenCalledWith(['agnes']);
@@ -77,13 +67,13 @@ it('asked twice while the first read runs, reads once — and both callers get i
 it('asked again after the read is done, reads again', async () => {
   const first = hydrateFollowing();
   await started();
-  await answerAll([row('agnes')]);
+  await answerAll(['agnes']);
   await first;
   const again = hydrateFollowing();
   expect(again).not.toBe(first);
   await started();
   expect(pending).toHaveLength(1);
-  await answerAll([row('agnes'), row('varda')]);
+  await answerAll(['agnes', 'varda']);
   await again;
   expect(mockSetFollowing).toHaveBeenLastCalledWith(['agnes', 'varda']);
 });
@@ -97,9 +87,9 @@ it('a read that finishes after its member switched accounts writes nothing — a
   expect(pending).toHaveLength(2);
   const [forAnna, forBen] = pending;
   pending = [];
-  forBen([row('kiarostami')]);
+  forBen(['kiarostami']);
   await bens;
-  forAnna([row('agnes')]);
+  forAnna(['agnes']);
   await annas;
   expect(mockSetFollowing).toHaveBeenCalledTimes(1);
   expect(mockSetFollowing).toHaveBeenCalledWith(['kiarostami']);
@@ -115,9 +105,9 @@ it('a read that outlives a sign-out writes nothing, even when the same member si
   await started();
   const [old, fresh] = pending;
   pending = [];
-  fresh([row('agnes'), row('varda')]);
+  fresh(['agnes', 'varda']);
   await after;
-  old([row('agnes')]);
+  old(['agnes']);
   await before;
   expect(mockSetFollowing).toHaveBeenCalledTimes(1);
   expect(mockSetFollowing).toHaveBeenCalledWith(['agnes', 'varda']);

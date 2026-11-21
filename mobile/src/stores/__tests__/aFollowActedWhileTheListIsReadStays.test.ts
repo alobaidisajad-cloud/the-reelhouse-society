@@ -41,7 +41,17 @@ let mockMade = 0;
 
 const where = (ask: Ask) => (r: Row) => ask.filters.every(([op, col, val]) =>
   op === 'eq' ? r[col] === val : op === 'in' ? (val as unknown[]).includes(r[col]) : true);
+/** The member's follow list as get_my_follows answers it from the house's rows, in the order made. */
+const handleOf: Record<string, string> = { [KANE]: 'kane', [AGNES]: 'agnes' };
+const listOf = (member: string) => {
+  const mine = (type: string) => mockFollows
+    .filter((r) => r.user_id === member && r.type === type)
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
+    .map((r) => handleOf[r.target_user_id as string]);
+  return { following: mine('follow'), requested: mine('follow_request') };
+};
 const mockHouse = supabaseFake({
+  rpc: { get_my_follows: () => listOf(useAuthStore.getState().user?.id ?? '') },
   rows: {
     profiles: [
       { id: KANE, username: 'kane', is_social_private: true },
@@ -68,7 +78,7 @@ const mockHouse = supabaseFake({
   },
 });
 // Every answer is worked out when it is asked (the house as it stood then) and held until let go.
-const mockHeld = heldClient(mockHouse.client);
+const mockHeld = heldClient(mockHouse.client, { rpcs: ['get_my_follows'] });
 jest.mock('../../lib/supabase', () => ({ get supabase() { return mockHeld.client; } }));
 
 const follow = (who: string, target: string, type: 'follow' | 'follow_request'): Row => {
@@ -82,17 +92,17 @@ const turns = async () => { for (let i = 0; i < 20; i++) await Promise.resolve()
 const askTheList = async () => {
   const read = hydrateFollowing();
   await turns();
-  expect(mockHeld.count('interactions')).toBe(1);
+  expect(mockHeld.count('get_my_follows')).toBe(1);
   // Inside an object: an async function handing back the promise itself would wait on it.
   return { read };
 };
-/** The follow list's read let go: the oldest answer waiting on interactions. */
+/** The follow list's read let go: the oldest answer waiting on get_my_follows. */
 const answerTheList = async (read: Promise<void>) => {
-  await mockHeld.release('interactions', 0);
+  await mockHeld.release('get_my_follows', 0);
   await read;
 };
 /** An act's answers let go one by one until it has landed, the `behind` answers older than it kept waiting. */
-const land = async (act: Promise<boolean>, behind = 1): Promise<boolean> => {
+const land = async (act: Promise<boolean>, behind = 0): Promise<boolean> => {
   let done = false;
   const out = act.then((v) => { done = true; return v; });
   for (let i = 0; i < 6 && !done; i++) {
@@ -174,7 +184,7 @@ it('once a read asked after the follow landed has answered, the list is what the
 
 it('a member unfollowed as @AGNES is gone from a read that answers @agnes: the handle\'s case does not matter', async () => {
   // Followed as the screen spelled it, before any read was out.
-  expect(await land(followUser('AGNES', { id: AGNES, isPrivate: false }), 0)).toBe(true);
+  expect(await land(followUser('AGNES', { id: AGNES, isPrivate: false }))).toBe(true);
   clock += 1_000;
   const { read } = await askTheList();                      // asked: the house spells her agnes
   clock += 1;
@@ -190,7 +200,7 @@ it('a sign-out forgets the acts on their way: the next member\'s list is read as
   const withdrawn = unfollowUser('kane');
   await mockHeld.release('profiles');                       // the withdrawal asked, its answer still on its way
   await turns();
-  expect(mockHeld.count('interactions')).toBe(2);
+  expect(mockHeld.count('interactions')).toBe(1);
   await answerTheList(read);
   expect(shown()).toEqual({ following: [], requested: [] });
 
@@ -200,7 +210,7 @@ it('a sign-out forgets the acts on their way: the next member\'s list is read as
   clock += 1;
   const next = hydrateFollowing();
   await turns();
-  await mockHeld.release('interactions', 1);                // the next member's read, ahead of the old withdrawal
+  await mockHeld.release('get_my_follows');                 // the next member's read, ahead of the old withdrawal
   await next;
   expect(shown()).toEqual({ following: [], requested: ['kane'] });
 

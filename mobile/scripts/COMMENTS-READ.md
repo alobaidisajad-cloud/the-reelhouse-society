@@ -1141,7 +1141,6 @@ files of the reading map this one does not.
 | src/stores/__tests__/staleWriteGuard.test.ts | 2026-11-18 | edited: the reset leaves every open room through its close, the salons' channels cleared; edited: the salon left through its whole way out (leave); edited: a store that registers a reset, wherever it lives, read as code |
 | src/stores/__tests__/telemetryGating.test.ts | 2026-11-17 | edited: a genuine failure is a 23514, a 42501 being a refusal; edited: the query client’s setQueriesData in its mock; edited: a film already on the stack stays, said as nothing wrong; edited: expects the fixed report line, its values after it (P4.44); |
 | src/stores/__tests__/theBoardSaysWhenItCouldNotBeRead.test.tsx | — |  |
-| src/stores/__tests__/theCursorCarriesATiebreaker.test.ts | — |  |
 | src/stores/__tests__/theFollowListIsReadOnce.test.ts | 2026-10-08 | written: one read per member; a read that outlived its member writes nothing |
 | src/stores/__tests__/theFollowListSaysWhetherItIsKnown.test.ts | 2026-10-23 | the follow list unread, held once read (of nobody too), failed when its read fails and was never held, held through a later failure, unread again at sign-out (P0.112) |
 | src/stores/__tests__/theHouseSaysWhy.test.ts | 2026-11-07 | edited: the forward clock (waits.ts) follows the test's own clock past a wait; edited: a reaction whose answer was lost is read back; read whole: reads source through readCode; no regex stripper |
@@ -2117,3 +2116,4 @@ files of the reading map this one does not.
 | e2e/load/plan-shape.cjs | — |  |
 | src/stores/__tests__/theBellCountsToAThousand.test.ts | — |  |
 | src/utils/__tests__/wordsLeaveOnlyVeiled.guard.test.ts | — |  |
+| src/stores/__tests__/theFollowListIsOneTrip.test.ts | — |  |

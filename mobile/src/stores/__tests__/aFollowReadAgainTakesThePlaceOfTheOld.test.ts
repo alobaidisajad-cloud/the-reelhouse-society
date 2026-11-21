@@ -20,10 +20,19 @@ const KANE = '33333333-3333-4333-8333-333333333333';
 
 let mockHouse = supabaseFake();
 let mockHeld = heldClient(mockHouse.client);
+/** The member's follow list as get_my_follows answers it from the house's rows as they stand when asked. */
+const listOf = () => ({
+  following: mockHouse.rows('interactions')
+    .filter((r) => r.user_id === ME.id && r.type === 'follow')
+    .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
+    .map((r) => mockHouse.rows('profiles').find((p) => p.id === r.target_user_id)?.username),
+  requested: [],
+});
 jest.mock('../../lib/supabase', () => ({ get supabase() { return mockHeld.client; } }));
 
 beforeEach(() => {
   mockHouse = supabaseFake({
+    rpc: { get_my_follows: listOf },
     rows: {
       profiles: [{ id: AGNES, username: 'agnes' }, { id: KANE, username: 'kane' }],
       interactions: [
@@ -32,7 +41,7 @@ beforeEach(() => {
       ],
     },
   });
-  mockHeld = heldClient(mockHouse.client);
+  mockHeld = heldClient(mockHouse.client, { rpcs: ['get_my_follows'] });
   useAuthStore.setState({ user: ME, isAuthenticated: true } as never);
   useSocialStore.getState().setFollowing([]);
 });
@@ -43,20 +52,20 @@ it('a read asked again replaces the running one, whose late answer lands nowhere
   // Joined, as a cold start's second ask is: one read.
   void hydrateFollowing();
   for (let i = 0; i < 20; i++) await Promise.resolve();
-  expect(mockHeld.count('interactions')).toBe(1);
+  expect(mockHeld.count('get_my_follows')).toBe(1);
 
   // The block lands in the house (sever_follows_on_block), after the first read was answered there.
   await mockHouse.client.from('interactions').delete().eq('target_user_id', KANE);
   const again = hydrateFollowing({ again: true });
   for (let i = 0; i < 20; i++) await Promise.resolve();
-  expect(mockHeld.count('interactions')).toBe(2);
+  expect(mockHeld.count('get_my_follows')).toBe(2);
 
   // The fresh read answers first: the follow is gone.
-  await mockHeld.release('interactions', 1);
+  await mockHeld.release('get_my_follows', 1);
   await again;
   expect(useSocialStore.getState().following).toEqual(['agnes']);
   // The old read answers late with the list from before the block: it changes nothing.
-  await mockHeld.release('interactions', 0);
+  await mockHeld.release('get_my_follows', 0);
   await first;
   expect(useSocialStore.getState().following).toEqual(['agnes']);
 });

@@ -98,6 +98,10 @@
       "signature": "get_moderation_history_for_users(p_user_ids uuid[], p_per_user integer)"
     },
     {
+      "name": "get_my_follows",
+      "signature": "get_my_follows()"
+    },
+    {
       "name": "get_my_verdict",
       "signature": "get_my_verdict(p_action_id uuid)"
     },

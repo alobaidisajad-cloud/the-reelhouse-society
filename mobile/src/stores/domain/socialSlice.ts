@@ -469,20 +469,13 @@ export async function unfollowUser(targetUsername: string): Promise<boolean> {
   }
 }
 
-// Pages follow the last row seen: an index range each, never an offset's rescan.
-const HYDRATE_PAGE_SIZE = 1000;
-// A stop for a loop that never ends: past 10,000 follows the list is kept as it was.
-const MAX_HYDRATE_PAGES = 10;
-
-const HydrateRowSchema = z.object({
-  id: z.string(),
-  target_user_id: z.string(),
-  created_at: z.string(),
-  type: z.string(),
-  profiles: z.union([
-    z.object({ username: z.string() }),
-    z.array(z.object({ username: z.string() })),
-  ]).nullable(),
+/**
+ * The follow list as get_my_follows answers it, in one trip: the handles the member follows and the
+ * handles they asked to follow, each in the order made.
+ */
+const FollowListSchema = z.object({
+  following: z.array(z.string()),
+  requested: z.array(z.string()),
 });
 
 /**
@@ -490,8 +483,8 @@ const HydrateRowSchema = z.object({
  * and which read it is.
  *
  * A cold start asks twice — the bootstrapper as the remembered member is
- * restored, and sign-in as the session is confirmed — and each read is every
- * page of the list. The second joins the first. Keyed by member, so a read for
+ * restored, and sign-in as the session is confirmed — and each read is the
+ * whole list. The second joins the first. Keyed by member, so a read for
  * one member is never handed to another; and a read commits only while it is
  * still that member's current read and that member is still signed in, so a
  * read that outlived a sign-out, or a switch to another account, lands nowhere.
@@ -525,80 +518,26 @@ async function readFollowing(userId: string, current: () => boolean): Promise<vo
   };
   const askedAt = monotonicNow();
   try {
-    const allUsernames: string[] = [];
-    const allRequested: string[] = [];
-    let cursor: { at: string; id: string } | null = null;
-    let hasMore = true;
-    let pageCount = 0;
-
-    while (hasMore) {
-      // Past the cap the list is only part-read, and a part is not the list.
-      if (pageCount >= MAX_HYDRATE_PAGES) {
-        logger.warn('[socialSlice.hydrateFollowing] more follows than one read holds: kept the list as it was', MAX_HYDRATE_PAGES * HYDRATE_PAGE_SIZE);
-        captureError(new Error('follow list past the hydrate cap'), { scope: 'socialSlice.hydrateFollowing', pages: pageCount });
-        unread();
-        return;
-      }
-      // The cursor is (created_at, id), never the time alone: rows sharing the
-      // boundary's time (a batch write, where Postgres freezes now()) would be
-      // skipped for good.
-      let query = supabase
-        .from('interactions')
-        .select('id, target_user_id, created_at, type, profiles!interactions_target_user_id_fkey(username)')
-        .eq('user_id', userId)
-        .in('type', ['follow', 'follow_request'])
-        .order('created_at', { ascending: true })
-        .order('id', { ascending: true })
-        .limit(HYDRATE_PAGE_SIZE);
-
-      if (cursor) {
-        query = query.or(
-          `created_at.gt.${cursor.at},and(created_at.eq.${cursor.at},id.gt.${cursor.id})`,
-        );
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        // Unread is not empty: supabase-js hands back any failure, offline too, as
-        // `error`, and saving what was read so far would unfollow the rest.
-        logger.warn('[socialSlice.hydrateFollowing] could not read the follow list:', error.message);
-        if (!isNetworkError(error)) captureError(error, { scope: 'socialSlice.hydrateFollowing' });
-        unread();
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      data.forEach(row => {
-          const parsed = HydrateRowSchema.safeParse(row);
-          if (!parsed.success) {
-            logger.warn('[socialSlice.hydrateFollowing] Invalid row skipped:', parsed.error.message);
-            return;
-          }
-          const profile = Array.isArray(parsed.data.profiles) ? parsed.data.profiles[0] : parsed.data.profiles;
-          if (profile?.username) {
-            if (parsed.data.type === 'follow_request') {
-              allRequested.push(profile.username);
-            } else {
-              allUsernames.push(profile.username);
-            }
-          }
-      });
-
-      // Both halves from the page's last row, as the order above sorts them.
-      const last = data[data.length - 1] as { created_at: string; id: string };
-      cursor = { at: last.created_at, id: last.id };
-      hasMore = data.length === HYDRATE_PAGE_SIZE;
-      pageCount++;
+    // The whole list in one trip, as the member's own rules read it (get_my_follows).
+    const { data, error } = await supabase.rpc('get_my_follows');
+    if (error) {
+      // Unread is not empty: supabase-js hands back any failure, offline too, as `error`, and
+      // saving nothing as the list would unfollow everyone.
+      logger.warn('[socialSlice.hydrateFollowing] could not read the follow list:', error.message);
+      if (!isNetworkError(error)) captureError(error, { scope: 'socialSlice.hydrateFollowing' });
+      unread();
+      return;
+    }
+    const parsed = FollowListSchema.safeParse(data);
+    if (!parsed.success) {
+      captureError(new Error('follow list answered out of shape'), { scope: 'socialSlice.hydrateFollowing' });
+      unread();
+      return;
     }
 
     // Read for a member who has since gone, or by a read since replaced: not theirs to write.
     if (!current()) return;
-    commitHydratedGraph(userId, allUsernames, allRequested, askedAt);
+    commitHydratedGraph(userId, parsed.data.following, parsed.data.requested, askedAt);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.warn('[socialSlice.hydrateFollowing] Unexpected error:', msg);
