@@ -9448,8 +9448,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "      else if (paced) reelToast.error(paced);\n      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error('Could not take a seat."
-        replace: "      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error('Could not take a seat."
+        find: "      else if (paced) reelToast.error(paced);\n      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error(saidOfAFailure(e, 'Could not take a seat."
+        replace: "      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error(saidOfAFailure(e, 'Could not take a seat."
     proof: { file: src/stores/__tests__/aSalonWritePastThePaceIsSaid.test.ts, test: "a seat taken or asked for past the pace says so, with the day's wait, never the connection" }
 
   - id: shape-a-critique-leaves-its-notice
