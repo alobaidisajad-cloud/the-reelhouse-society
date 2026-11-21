@@ -85,6 +85,66 @@ describe('the sequencer, as jest calls it', () => {
   });
 });
 
+describe('every part has a generator to draw the screens it measures', () => {
+  // Worktrees in this checkout hold copies of the tests; the hooks' own pattern leaves them out.
+  const { ignored } = require('../../scripts/hooks/pre-push.cjs') as { ignored: (mobile: string) => string[] };
+  const S = Sequencer as typeof Sequencer & { isGenerator: (key: string) => boolean; readTable: (kind: string) => Record<string, number> };
+  type Test = { path: string; context: { config: { rootDir: string } } };
+  let tests: Test[] = [];
+  /** How many parts each split run of god_tier_ci.yml reads together (ciWorkflows.guard holds each equal to its matrix). */
+  const PARTS = [...readFileSync(join(MOBILE, '..', '.github', 'workflows', 'god_tier_ci.yml'), 'utf8')
+    .matchAll(/How many parts (native-unit-tests|captures) runs[^\n]*\r?\n\s*PARTS: (\d+)/g)].map((m) => ({ job: m[1], count: Number(m[2]) }));
+  /** The parts with no generator, numbered from 1. */
+  const undrawn = (parts: string[][]) => parts.flatMap((p, i) => (p.some(S.isGenerator) ? [] : [i + 1]));
+  const keyOf = (t: { path: string }) => t.path.slice(MOBILE.length + 1).split('\\').join('/');
+
+  beforeAll(() => {
+    const run = spawnSync(process.execPath, [require.resolve('jest/bin/jest'), '--listTests', '--json', '--testPathIgnorePatterns', ...ignored(MOBILE)],
+      { cwd: MOBILE, encoding: 'utf8', maxBuffer: 1e8, timeout: 150_000 });
+    tests = (JSON.parse(run.stdout.slice(run.stdout.indexOf('['))) as string[]).map((path) => ({ path, context: { config: { rootDir: MOBILE } } }));
+  }, 160_000);
+
+  it('reads the real list and both split runs: a check of nothing proves nothing', () => {
+    expect(tests.length).toBeGreaterThan(1000);
+    expect(tests.filter((t) => S.isGenerator(keyOf(t))).length).toBeGreaterThan(20);
+    expect(PARTS.map((p) => p.job).sort()).toEqual(['captures', 'native-unit-tests']);
+  });
+
+  it('in jest\'s own list, with the committed weights, every part of each split holds a generator, and every file is in one part', () => {
+    const was = process.env.MOCKUPS_CAPTURE;
+    try {
+      for (const { job, count } of PARTS) {
+        process.env.MOCKUPS_CAPTURE = job === 'captures' ? '1' : '0';
+        const sequencer = new Sequencer();
+        const parts = Array.from({ length: count }, (_, i) => sequencer.shard(tests, { shardIndex: i + 1, shardCount: count }).map(keyOf));
+        expect({ job, undrawn: undrawn(parts) }).toEqual({ job, undrawn: [] });
+        expect(parts.flat().sort()).toEqual(tests.map(keyOf).sort());
+      }
+    } finally {
+      if (was === undefined) delete process.env.MOCKUPS_CAPTURE; else process.env.MOCKUPS_CAPTURE = was;
+    }
+  });
+
+  it('can say NO: a file heavier than all the rest together takes a part alone when the generators are not placed first', () => {
+    const items = Sequencer.weighed(tests, S.readTable('captures'));
+    const heaviest = items.find((i) => !S.isGenerator(i.key))!;
+    const planted = items.map((i) => (i === heaviest ? { ...i, weight: items.reduce((s, x) => s + x.weight, 0) } : i));
+    // The split as it is without the generators first: every file heaviest first to the lightest part.
+    const alone = (list: Item[], count: number) => {
+      const parts: Part[] = Array.from({ length: count }, () => ({ load: 0, items: [] }));
+      for (const item of [...list].sort((a, b) => b.weight - a.weight || (a.key < b.key ? -1 : 1))) {
+        const lightest = parts.reduce((low, p) => (p.load < low.load ? p : low));
+        lightest.items.push(item);
+        lightest.load += item.weight;
+      }
+      return parts;
+    };
+    const keys = (parts: Part[]) => parts.map((p) => p.items.map((i) => i.key));
+    expect(undrawn(keys(alone(planted, 4)))).toEqual([1]);
+    expect(undrawn(keys(Sequencer.split(planted, 4)))).toEqual([]);
+  });
+});
+
 describe('the weights, from the runs\' records', () => {
   const record = (files: [string, number][]) => ({ testResults: files.map(([f, s]) => ({ name: join(MOBILE, f), startTime: 1000, endTime: 1000 + s * 1000 })) });
 

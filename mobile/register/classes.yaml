@@ -5099,3 +5099,29 @@ classes:
     fix: "Each case reads relative to the house: H-A2 (a block closes a file) takes what each reader saw of member 1 before it planted and asks one more; H-A2 (a follow across a block) counts the admin's expected rows as the house holds them. CI's made-up house (e2e/db/rehearsal-seed.sql) now gives its first three members in good standing a grown share, so a rehearsal that reads a borrowed member as empty fails in DB security, before any train: both old rehearsals fail on it and pass on the seed as it was"
     sweep: { read: [rehearsals], found: 2, fixed: 2, judged: 0, commit: e2249d97, finder: e2e/db/rehearsals.mjs, result: "every rehearsal the universe names (118) run on the grown seed with every pending car applied, and the whole pending train (95 steps, each car rehearsed with the train and applied) run on a house whose first members hold films, follows and salons: 2 found (cars 03 and 04), 2 fixed; the 4 that fail locally fail the same on the seed as it was (the local server has no cron or storage)" }
     places: [none]
+
+  - id: CI-a-run-writes-into-the-checkout-it-sweeps
+    title: "A CI jest run wrote its record into mobile/, and the next jest run of the same job read it as source: Native Jest's UTC run left jest-UTC.json beside the code, and in each of the five other zones noControlCharacters.guard found a U+200B in it"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "God-Tier 44927851374: Native Jest, part 1 of 4, in every time zone, jest-UTC.json:1 U+200b in every zone but UTC" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every jest run writes its records, coverage and logs under $RUNNER_TEMP, never into the checkout its later runs read" }
+      - { kind: static, file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "can say NO: a record, coverage or a log a jest run writes into the checkout is found, and one under $RUNNER_TEMP is not" }
+    fix: "every jest run in the workflows writes its --json record, its coverage and its log under $RUNNER_TEMP (the split runs' records, coverage and measured controls in $RUNNER_TEMP/jest-part and captures-part, kept from there in the same layout), and ciWorkflows.guard refuses a jest command whose --outputFile, --coverageDirectory (or --coverage with none), redirect or tee lands anywhere else, a variable read as its step sets it. test-utils/universe.js still reads an untracked file: a planted mutant and a person's work not yet added are untracked too (mutants shape-a-record-written-into-the-checkout, shape-a-log-teed-into-the-checkout, shape-coverage-left-in-the-checkout)"
+    places: [none]
+
+  - id: CI-a-split-part-draws-nothing
+    title: "The capture split by measured seconds gave a part one file heavier than all the others together, and nothing else: part 1 of Every screen the tests build held only the flow runner's rehearsal, drew no screen, and its measuring found no screen to measure"
+    seriousness: behaviour
+    area: ci
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "God-Tier 44927851374: Every screen the tests build, part 1 of 4, no screen to measure in mockups/out/captured" }
+    methods:
+      - { kind: running, file: test-utils/__tests__/weightedSequencer.test.ts, test: "in jest's own list, with the committed weights, every part of each split holds a generator, and every file is in one part" }
+      - { kind: running, file: test-utils/__tests__/weightedSequencer.test.ts, test: "can say NO: a file heavier than all the rest together takes a part alone when the generators are not placed first" }
+    fix: "test-utils/weightedSequencer.js places the generators (the zz-*.gen tests) first, heaviest first to the lightest part, so the first of them go one to each part, and then the rest the same way; a test splits jest's own list by the committed weights for both split runs, at the part counts god_tier_ci.yml reads, and refuses a part with no generator (mutant shape-split-takes-the-generators-last)"
+    places: [none]

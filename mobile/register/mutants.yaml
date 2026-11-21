@@ -9341,3 +9341,39 @@ mutants:
         find: "    if (after !== null) q = q.gt(key, after);\n"
         replace: ""
     proof: { file: src/features/settings/__tests__/anExportIsWhole.test.ts, test: "a row removed between two pages moves nothing: the next page still begins after the last row read" }
+
+  - id: shape-a-record-written-into-the-checkout
+    class: CI-a-run-writes-into-the-checkout-it-sweeps
+    source: shape
+    edits:
+      - file: ../.github/workflows/god_tier_ci.yml
+        find: '--json --outputFile="$RUNNER_TEMP/jest-part/jest-UTC.json"'
+        replace: "--json --outputFile=jest-UTC.json"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every jest run writes its records, coverage and logs under $RUNNER_TEMP, never into the checkout its later runs read" }
+
+  - id: shape-a-log-teed-into-the-checkout
+    class: CI-a-run-writes-into-the-checkout-it-sweeps
+    source: shape
+    edits:
+      - file: ../.github/workflows/god_tier_ci.yml
+        find: '2>&1 | tee "$RUNNER_TEMP/jest-UTC-output.txt"'
+        replace: "2>&1 | tee jest-output.txt"
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every jest run writes its records, coverage and logs under $RUNNER_TEMP, never into the checkout its later runs read" }
+
+  - id: shape-coverage-left-in-the-checkout
+    class: CI-a-run-writes-into-the-checkout-it-sweeps
+    source: shape
+    edits:
+      - file: ../.github/workflows/god_tier_ci.yml
+        find: ' --coverageDirectory="$RUNNER_TEMP/jest-part/coverage"'
+        replace: ""
+    proof: { file: src/utils/__tests__/ciWorkflows.guard.test.ts, test: "every jest run writes its records, coverage and logs under $RUNNER_TEMP, never into the checkout its later runs read" }
+
+  - id: shape-split-takes-the-generators-last
+    class: CI-a-split-part-draws-nothing
+    source: shape
+    edits:
+      - file: test-utils/weightedSequencer.js
+        find: "const order = [...items.filter((i) => isGenerator(i.key)).sort(byWeight), ...items.filter((i) => !isGenerator(i.key)).sort(byWeight)];"
+        replace: "const order = [...items].sort(byWeight);"
+    proof: { file: test-utils/__tests__/weightedSequencer.test.ts, test: "can say NO: a file heavier than all the rest together takes a part alone when the generators are not placed first" }

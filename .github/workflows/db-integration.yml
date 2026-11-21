@@ -448,10 +448,10 @@ jobs:
           key=$(node e2e/anon-key.mjs) || { echo "$key"; exit 1; }
           set +e
           CONTRACT_SUPABASE_URL=http://127.0.0.1:54321 CONTRACT_SUPABASE_ANON_KEY="$key" \
-            npx jest --ci --testPathPattern '\.contract\.test\.tsx?$' --json --outputFile=contracts.json > contracts-output.txt 2>&1
+            npx jest --ci --testPathPattern '\.contract\.test\.tsx?$' --json --outputFile="$RUNNER_TEMP/contracts.json" > "$RUNNER_TEMP/contracts-output.txt" 2>&1
           rc=$?
-          tail -n 30 contracts-output.txt
-          node scripts/contracts-ran.cjs contracts.json || exit 1
+          tail -n 30 "$RUNNER_TEMP/contracts-output.txt"
+          node scripts/contracts-ran.cjs "$RUNNER_TEMP/contracts.json" || exit 1
           exit $rc
 
       # The app's own stores, unmocked, against the sealed copy, as a member (WORKLIST P4.32):
@@ -468,18 +468,18 @@ jobs:
           lay() { psql "$db" -X -q -v ON_ERROR_STOP=1 -v reader="$SEALED_READER_ID" -v poster="$SEALED_POSTER_ID" -v lounge="$SEALED_LOUNGE_ID" -f e2e/sealed/world.sql > /dev/null; }
           lay || exit 1
           set +e
-          npx jest --ci --testPathPattern '\.sealed\.test\.tsx?$' --json --outputFile=sealed.json > sealed-output.txt 2>&1
+          npx jest --ci --testPathPattern '\.sealed\.test\.tsx?$' --json --outputFile="$RUNNER_TEMP/sealed.json" > "$RUNNER_TEMP/sealed-output.txt" 2>&1
           rc=$?
-          tail -n 30 sealed-output.txt
-          node scripts/contracts-ran.cjs sealed.json --sealed || exit 1
+          tail -n 30 "$RUNNER_TEMP/sealed-output.txt"
+          node scripts/contracts-ran.cjs "$RUNNER_TEMP/sealed.json" --sealed || exit 1
           [ "$rc" -eq 0 ] || exit "$rc"
           psql "$db" -X -q -v ON_ERROR_STOP=1 -c 'DROP TRIGGER a_read_is_dated_by_the_house ON public.lounge_members' || exit 1
           lay || exit 1
-          npx jest --ci --testPathPattern '\.sealed\.test\.tsx?$' > sealed-without.txt 2>&1
+          npx jest --ci --testPathPattern '\.sealed\.test\.tsx?$' > "$RUNNER_TEMP/sealed-without.txt" 2>&1
           without=$?
-          tail -n 30 sealed-without.txt
+          tail -n 30 "$RUNNER_TEMP/sealed-without.txt"
           [ "$without" -ne 0 ] || { echo "::error title=Sealed tests::the run passed without the trigger it proves"; exit 1; }
-          grep -q "● .* › the seat is read as of the house's now" sealed-without.txt || { echo "::error title=Sealed tests::without the trigger the run failed, but not where the trigger is read"; exit 1; }
+          grep -q "● .* › the seat is read as of the house's now" "$RUNNER_TEMP/sealed-without.txt" || { echo "::error title=Sealed tests::without the trigger the run failed, but not where the trigger is read"; exit 1; }
           echo "without the trigger, the run said no, where it must"
 
   # The schedule's heartbeat (WORKLIST P0.38): GitHub stops a schedule after 60 days without

@@ -32,6 +32,8 @@
  * 12. A function copied into a local stack brings what it imports: the same step
  *    copies its tree's _shared, and every other folder of that tree it imports, to
  *    the same place. Without them the CLI cannot bundle it, and the stack stops.
+ * 13. A jest run writes its record, its coverage and its log under $RUNNER_TEMP:
+ *    the checkout is what every guard of a later jest run reads as source.
  *
  * Parsed as YAML, not matched as text: the rules are about the structure.
  */
@@ -407,7 +409,8 @@ it('production is asked by the nightly contracts alone, and every contract run i
   expect(asksProduction.map(({ file, job }) => `${file} › ${job}`)).toEqual(['nightly.yml › contracts']);
   const runsContracts = steps.filter(({ s }) => /\\\.contract\\\.test/.test(s.run ?? ''));
   expect(runsContracts.map(({ file, job }) => `${file} › ${job}`).sort()).toEqual(['db-integration.yml › contracts', 'nightly.yml › contracts']);
-  expect(runsContracts.filter(({ s }) => !/node scripts\/contracts-ran\.cjs contracts\.json \|\| exit 1/.test(s.run ?? ''))).toEqual([]);
+  expect(runsContracts.filter(({ s }) => !/--outputFile="\$RUNNER_TEMP\/contracts\.json"/.test(s.run ?? '')
+    || !/node scripts\/contracts-ran\.cjs "\$RUNNER_TEMP\/contracts\.json" \|\| exit 1/.test(s.run ?? ''))).toEqual([]);
   // Production is asked the questions of the code its schema matches (scripts/contracts-commit.cjs),
   // checked out before anything is installed or run, and every answer is printed whole.
   const nightly = (workflows.find((w) => w.file === 'nightly.yml')!.wf.jobs.contracts?.steps ?? []) as (RunStep & { with?: Record<string, unknown> })[];
@@ -416,7 +419,7 @@ it('production is asked by the nightly contracts alone, and every contract run i
   expect(nightly[0]?.with?.['fetch-depth']).toBe(0);
   expect(nightly.slice(0, chosen).filter((s) => s.run || (s.uses && actionOf(s.uses) !== 'actions/checkout'))).toEqual([]);
   const asked = nightly.find((s) => /\\\.contract\\\.test/.test(s.run ?? ''))?.run ?? '';
-  expect(asked).toMatch(/^\s*cat contracts-output\.txt$/m);
+  expect(asked).toMatch(/^\s*cat "\$RUNNER_TEMP\/contracts-output\.txt"$/m);
   expect(asked).not.toMatch(/\b(tail|head)\b/);
   // A sealed test writes: it runs in the sealed copy's job alone, its address the runner's own,
   // proven not to have skipped and proven able to fail.
@@ -424,7 +427,8 @@ it('production is asked by the nightly contracts alone, and every contract run i
   expect(runsSealed.map(({ file, job }) => `${file} › ${job}`)).toEqual(['db-integration.yml › contracts']);
   const sealedRun = runsSealed.map(({ s }) => s.run ?? '').join('\n');
   expect(sealedRun).toMatch(/SEALED_SUPABASE_URL=http:\/\/127\.0\.0\.1:54321\n/);
-  expect(sealedRun).toMatch(/node scripts\/contracts-ran\.cjs sealed\.json --sealed \|\| exit 1/);
+  expect(sealedRun).toMatch(/--outputFile="\$RUNNER_TEMP\/sealed\.json"/);
+  expect(sealedRun).toMatch(/node scripts\/contracts-ran\.cjs "\$RUNNER_TEMP\/sealed\.json" --sealed \|\| exit 1/);
   expect(sealedRun).toMatch(/\[ "\$without" -ne 0 \] \|\| \{/);
   expect(sealedRun).not.toMatch(/secrets\./);
 });
@@ -556,7 +560,7 @@ function splitFaults(wf: Workflow, zones: { ZONES: string[]; recordOf: (tz: stri
   const covered = steps.find((s) => /--coverage\b/.test(s.run ?? ''));
   const tz = String(covered?.env?.TZ ?? '');
   if (!zones.ZONES.includes(tz)) faults.push(`the coverage run's zone (${tz || 'none'}) is not one of test-timezones.js's`);
-  if (!covered?.run?.includes(`--outputFile=${zones.recordOf(tz)}`)) faults.push(`the coverage run does not write ${zones.recordOf(tz)}`);
+  if (!covered?.run?.includes(`--outputFile="$RUNNER_TEMP/jest-part/${zones.recordOf(tz)}"`)) faults.push(`the coverage run does not write ${zones.recordOf(tz)}`);
   const others = steps.find((s) => /test-timezones\.js'\)/.test(s.run ?? '') && /TZ="\$tz"( JEST_OUTSIDE_UTC=1)? npx jest/.test(s.run ?? ''));
   if (!others?.run?.includes(`t.ZONES.filter((z) => z !== '${tz}')`)) faults.push(`no step runs every zone of test-timezones.js but the coverage run's (${tz})`);
   // Outside UTC, the tooling's tests are left out: its code runs on CI's UTC machines alone.
@@ -591,9 +595,68 @@ it('runs jest and the captures in parts, each read together by a job that reads 
     'the coverage run does not write jest-Europe-Paris.json',
     "no step runs every zone of test-timezones.js but the coverage run's (Europe/Paris)",
   ]);
-  expect(splitFaults(planted('npx jest --ci --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \\\n            --json --outputFile=capture-run.json',
-    'npx jest --ci --maxWorkers=2 \\\n            --json --outputFile=capture-run.json'), zones)).toEqual(['a jest run in captures is not its part of the matrix']);
+  expect(splitFaults(planted('npx jest --ci --maxWorkers=2 --shard=${{ matrix.part }}/${{ strategy.job-total }} \\\n            --json --outputFile="$RUNNER_TEMP/captures-part/capture-run.json"',
+    'npx jest --ci --maxWorkers=2 \\\n            --json --outputFile="$RUNNER_TEMP/captures-part/capture-run.json"'), zones)).toEqual(['a jest run in captures is not its part of the matrix']);
   expect(splitFaults(planted('t.ZONES.map(t.recordOf)', "['jest-UTC.json']"), zones)).toEqual(['jest-together does not read a record for every zone of test-timezones.js']);
+});
+
+/** The runner's own temp folder, outside the checkout, as a step names it. */
+const RUNNER_TEMP = /^(\$RUNNER_TEMP|\$\{RUNNER_TEMP\}|\$\{\{ runner\.temp \}\})\//;
+const unquote = (s: string) => s.replace(/^["']/, '').replace(/["']$/, '');
+/** A run step's commands, each continued line joined to the one before it. */
+const commandsOf = (run: string) => run.split(/\\\r?\n[ \t]*/).join(' ').split(/\r?\n/);
+/** The commands of a run step that start jest. */
+const jestCommands = (run: string) => commandsOf(run).filter((c) => /\bnpx jest\b|\bjest\/bin\/jest/.test(c));
+const TARGET = String.raw`("[^"]*"|'[^']*'|[^\s|;&<>]+)`;
+
+/**
+ * Each thing a run step's jest commands write inside the checkout, in words: a record (--outputFile),
+ * coverage (--coverageDirectory, or --coverage with none, which writes coverage/ beside the code), or
+ * the run's output sent to a file (a redirect, a tee). A variable stands for what the step sets it to.
+ * The checkout is where every guard of a later jest run reads its source.
+ */
+function writesIntoTheCheckout(run: string): string[] {
+  const vars = new Map<string, string>();
+  for (const [, name = '', value = ''] of commandsOf(run).join('\n').matchAll(/^\s*(\w+)=("[^"]*"|\S+)\s*$/gm)) vars.set(name, unquote(value));
+  const placeOf = (target: string) => {
+    const t = unquote(target);
+    const [, name = ''] = /^\$\{?(\w+)\}?$/.exec(t) ?? [];
+    return vars.get(name) ?? t;
+  };
+  const inside = (target: string) => { const p = placeOf(target); return p !== '/dev/null' && !RUNNER_TEMP.test(p); };
+  const faults: string[] = [];
+  for (const c of jestCommands(run)) {
+    for (const [, flag = '', to = ''] of c.matchAll(new RegExp(String.raw`--(outputFile|coverageDirectory)[= ]${TARGET}`, 'g'))) if (inside(to)) faults.push(`--${flag} ${placeOf(to)}`);
+    if (/--coverage(=true)?(?=\s|$)/.test(c) && !/--coverageDirectory\b/.test(c)) faults.push('--coverage with no --coverageDirectory: coverage/');
+    for (const [, to = ''] of c.matchAll(new RegExp(String.raw`(?:^|[\s\d])>>?\s*${TARGET}`, 'g'))) if (inside(to)) faults.push(`> ${placeOf(to)}`);
+    for (const [, to = ''] of c.matchAll(new RegExp(String.raw`\btee\s+(?:-a\s+)?${TARGET}`, 'g'))) if (inside(to)) faults.push(`tee ${placeOf(to)}`);
+  }
+  return faults;
+}
+
+it('every jest run writes its records, coverage and logs under $RUNNER_TEMP, never into the checkout its later runs read', () => {
+  const steps = workflows.flatMap((w) => Object.entries(w.wf.jobs).flatMap(([job, j]) => (j.steps ?? [])
+    .filter((s) => typeof s.run === 'string').map((s) => ({ at: `${w.file} › ${job} › ${s.name ?? s.run!.split('\n')[0]}`, run: s.run! }))));
+  // A sweep of nothing proves nothing: the split runs, the contracts, the sealed runs and the night's run are all read.
+  expect(steps.flatMap((s) => jestCommands(s.run)).filter((c) => /--outputFile/.test(c)).length).toBeGreaterThanOrEqual(7);
+  expect(steps.flatMap((s) => writesIntoTheCheckout(s.run).map((f) => `${s.at}: ${f}`))).toEqual([]);
+});
+
+it('can say NO: a record, coverage or a log a jest run writes into the checkout is found, and one under $RUNNER_TEMP is not', () => {
+  expect(writesIntoTheCheckout('npx jest --ci --json --outputFile=jest-UTC.json\n')).toEqual(['--outputFile jest-UTC.json']);
+  expect(writesIntoTheCheckout('npx jest --ci \\\n  --coverage --coverageReporters=json --json --outputFile="$RUNNER_TEMP/a.json"\n'))
+    .toEqual(['--coverage with no --coverageDirectory: coverage/']);
+  expect(writesIntoTheCheckout('npx jest --coverage --coverageDirectory=coverage --outputFile "$RUNNER_TEMP/a.json"\n')).toEqual(['--coverageDirectory coverage']);
+  expect(writesIntoTheCheckout('npx jest --ci > run.txt 2>&1\n')).toEqual(['> run.txt']);
+  expect(writesIntoTheCheckout('npx jest --ci 2>&1 | tee jest-output.txt\n')).toEqual(['tee jest-output.txt']);
+  expect(writesIntoTheCheckout('record=jest-Asia-Tokyo.json\nTZ="$tz" npx jest --outputFile="$record" > /dev/null 2>&1\n')).toEqual(['--outputFile jest-Asia-Tokyo.json']);
+  expect(writesIntoTheCheckout([
+    'record="$RUNNER_TEMP/jest-part/$name"',
+    'TZ="$tz" npx jest --ci --outputFile="$record" > "$RUNNER_TEMP/log.txt" 2>&1',
+    'npx jest --coverage --coverageDirectory="${{ runner.temp }}/c" --json --outputFile=${RUNNER_TEMP}/b.json 2>&1 | tee "$RUNNER_TEMP/o.txt"',
+    'npx jest --listTests --json > "$RUNNER_TEMP/all-tests.json"',
+    'echo done > done.txt',
+  ].join('\n'))).toEqual([]);
 });
 
 it('known-vulnerable packages: every push judges the phone, and the nightly judges the website and the functions too', () => {
