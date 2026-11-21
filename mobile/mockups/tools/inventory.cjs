@@ -20,7 +20,7 @@
  *   mode      normal, largest (the platform's largest text: iOS 3.1, Android 2), arabic (the
  *             member's words in Arabic, read right to left)
  * A cell's result (the results file, mockups/audit by default) is { picture, rubric } — the path
- * of its picture, which must exist, and its score on the finish rubric (audit/final/FINISH-RUBRIC.md)
+ * of its picture, which must exist, and its score on the finish rubric (kept with the audit's private records)
  * — or { moved } naming the steps that carry it to the owner's own phone check, where the iPhone
  * table says the checks cannot reach. Anything less is blank. The check is red until stage D fills
  * every cell.
