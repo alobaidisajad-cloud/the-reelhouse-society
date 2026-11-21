@@ -288,14 +288,14 @@ SELECT pg_temp.rh_case('its mark stands, and search, the feed, the counts (the o
   || ((SELECT log_count FROM public.films WHERE id = 990001101) = (SELECT film_logs FROM hb10_before))::text);
 -- The following feed asks of each follow that the member is there and not hidden, which is
 -- can_view_user_data for a member one follows: a private file the follow opens, a mute it does not.
-UPDATE public.profiles SET is_social_private = true WHERE id = pg_temp.hb10_m(2);
+UPDATE public.profiles SET is_social_private = true WHERE id = (SELECT pg_temp.hb10_m(2));
 SELECT pg_temp.rh_case('2''s file closed, 1, who follows 2, still has the log in their feed', '1',
   pg_temp.hb10_as(1, format('SELECT count(*)::text FROM public.get_following_feed_auth_cursor(40) WHERE id = %L', pg_temp.hb10_id('log'))));
 INSERT INTO public.user_blocks (blocker_id, blocked_id, type) VALUES (pg_temp.hb10_m(1), pg_temp.hb10_m(2), 'mute');
 SELECT pg_temp.rh_case('and once 1 mutes 2, not', '0',
   pg_temp.hb10_as(1, format('SELECT count(*)::text FROM public.get_following_feed_auth_cursor(40) WHERE id = %L', pg_temp.hb10_id('log'))));
-DELETE FROM public.user_blocks WHERE blocker_id = pg_temp.hb10_m(1) AND blocked_id = pg_temp.hb10_m(2);
-UPDATE public.profiles SET is_social_private = false WHERE id = pg_temp.hb10_m(2);
+DELETE FROM public.user_blocks WHERE blocker_id = (SELECT pg_temp.hb10_m(1)) AND blocked_id = (SELECT pg_temp.hb10_m(2));
+UPDATE public.profiles SET is_social_private = false WHERE id = (SELECT pg_temp.hb10_m(2));
 SELECT pg_temp.rh_case('2 is told it stands again, whole', 'true',
   (position('stands again where it was, whole' in pg_temp.hb10_as(2, format('SELECT message FROM public.notifications WHERE user_id = auth.uid() AND title = ''Your Appeal Was Heard'' AND metadata ->> ''mod_action_id'' = %L', pg_temp.hb10_id('V log')))) > 0)::text);
 SELECT pg_temp.rh_case('and 2''s verdict says it was put back, after the register is gone', 'true|false',
