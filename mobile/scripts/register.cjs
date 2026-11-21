@@ -37,6 +37,70 @@ const readPrivate = () => {
   return existsSync(file) ? yaml.parse(readFileSync(file, 'utf8')) : null;
 };
 
+/** The sixteen kinds of mistake the review rounds fell into, and R (the register's own work) for a class no kind holds. */
+const KINDS = ['FIX', 'TOLD', 'LATE', 'COPY', 'PROT', 'UNKN', 'EXIT', 'LIB', 'ABUSE', 'MOD', 'EDGE', 'A11Y', 'SPEED', 'SIDE', 'SESS', 'DATE', 'R'];
+
+/**
+ * Whether a test's source, or a local module it loads, reads a whole universe of the app's files
+ * (test-utils/universe) or production's schema: what makes a static method a finder rather than
+ * a test of one screen.
+ */
+const READS_THE_UNIVERSE = /\bfiles\(\s*\[?\s*'/;
+const READS_THE_SCHEMA = /\b(SNAPSHOT_SQL|PENDING_SQL|houseFunctions|live-schema\.sql)\b/;
+const readsTheWholeApp = (source) => (/universe/.test(source) && READS_THE_UNIVERSE.test(source)) || READS_THE_SCHEMA.test(source);
+
+/**
+ * A class found twice is a kind, not an accident: it carries a static method that is a finder
+ * over the whole app, and a sweep record (what it read, what it found, and the commit it ran at).
+ * `isFinder(file)` says whether a method file reads the whole app; `owed` names the classes not
+ * yet holding it, each with the kind that owes its finder.
+ */
+const finderFaultsOf = (c, isFinder, owed) => {
+  if (c.open_in_production || !Number.isInteger(c.count) || c.count < 2) return [];
+  const f = [];
+  const statics = (c.methods ?? []).filter((m) => m.kind === 'static');
+  if (!statics.some((m) => isFinder(m.file))) f.push('a static method that is a finder over the whole app (it reads the universe or the schema)');
+  const s = c.sweep;
+  if (!s) f.push('a sweep record');
+  else {
+    if (!Array.isArray(s.read) || !s.read.length) f.push('the sweep\'s read: the universes or the schema it read');
+    for (const k of ['found', 'fixed', 'judged']) if (!Number.isInteger(s[k]) || s[k] < 0) f.push(`the sweep's ${k}`);
+    if (Number.isInteger(s.found) && Number.isInteger(s.fixed) && Number.isInteger(s.judged) && s.fixed + s.judged !== s.found) {
+      f.push('a sweep whose hits are each fixed or judged (fixed + judged = found)');
+    }
+    if (!/^[0-9a-f]{8,40}$/.test(s.commit ?? '')) f.push('the commit the sweep ran at');
+  }
+  if (!f.length) return owed.has(c.id) ? ['holds its finder and sweep, so it comes off finders-owed.yaml'] : [];
+  return owed.has(c.id) ? [] : f;
+};
+
+/** finders-owed.yaml: each kind, and the classes found twice whose finder it still owes. */
+const readOwed = () => {
+  const file = join(REGISTER, 'finders-owed.yaml');
+  return existsSync(file) ? yaml.parse(readFileSync(file, 'utf8')) ?? {} : {};
+};
+
+/** What is wrong with the owed list itself: a kind it does not know, a class not there, not found twice, or named twice. */
+const owedFaultsOf = (classes, owed) => {
+  const f = [];
+  const byId = new Map(classes.map((c) => [c.id, c]));
+  const seen = new Set();
+  for (const [kind, ids] of Object.entries(owed)) {
+    if (!KINDS.includes(kind)) f.push(`${kind}: a kind from ${KINDS.join(', ')}`);
+    for (const id of ids ?? []) {
+      const c = byId.get(id);
+      if (!c) f.push(`${kind}: ${id} is no class in the register`);
+      else if (c.open_in_production || !(c.count >= 2)) f.push(`${kind}: ${id} is not a class found twice, so it owes no finder`);
+      if (seen.has(id)) f.push(`${kind}: ${id} is named twice`);
+      seen.add(id);
+    }
+  }
+  return f;
+};
+
+/** Every class id finders-owed.yaml names. */
+const owedIds = (owed) => new Set(Object.values(owed).flatMap((ids) => ids ?? []));
+
 /** What is wrong with a class as its status claims ([] when nothing). */
 const faultsOf = (c, testTitles) => {
   const f = [];
@@ -126,4 +190,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { CLOSED_REASONS, faultsOf, readCommitted, readPrivate, render };
+module.exports = { CLOSED_REASONS, KINDS, faultsOf, finderFaultsOf, owedFaultsOf, owedIds, readCommitted, readOwed, readPrivate, readsTheWholeApp, render };

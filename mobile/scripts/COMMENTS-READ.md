@@ -2094,3 +2094,4 @@ files of the reading map this one does not.
 | src/lib/__tests__/realtimeIsAsTheAppReadsIt.test.ts | — |  |
 | src/utils/__tests__/aLibraryIsKnownByMoreThanItsMock.guard.test.ts | — |  |
 | src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts | — |  |
+| register/finders-owed.yaml | — |  |
