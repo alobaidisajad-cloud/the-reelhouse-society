@@ -99,9 +99,6 @@ SESS:
   - STATE-a-choice-kept-past-sign-out
   - AUTH-a-recovery-left-open
   - AUTH-a-member-signed-in-over-another
-DATE:
-  - RUNTIME-an-instant-read-by-the-engine
-  - TIME-a-day-judged-on-the-houses-clock
 R:
   - E2E-keyboard-covers-the-field
   - NAV-launch-link-overridden

@@ -2095,3 +2095,5 @@ files of the reading map this one does not.
 | src/utils/__tests__/aLibraryIsKnownByMoreThanItsMock.guard.test.ts | — |  |
 | src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts | — |  |
 | register/finders-owed.yaml | — |  |
+| src/utils/__tests__/aDayIsReadOnItsOwnCalendar.guard.test.ts | — |  |
+| test-utils/houseFunctions.ts | — |  |
