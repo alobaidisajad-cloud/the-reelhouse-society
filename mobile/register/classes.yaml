@@ -5088,3 +5088,14 @@ classes:
       - { kind: running, file: src/features/settings/__tests__/anExportIsWhole.test.ts, test: "a row removed between two pages moves nothing: the next page still begins after the last row read" }
     sweep: { read: [appCode], found: 27, fixed: 4, judged: 1, commit: aeb2e85c, finder: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, result: "anAnswerIsStillTheOneAsked over app/, src/stores, src/hooks, src/components, src/features, src/providers, and every app file for pages (stage C): 23 re-asked reads with no token found, 2 fixed (the push permission's re-read, the essay's part), 1 judged, 20 still to fix (listed in the test); 4 pages asked by their count found, 2 fixed (the export, the import's stack read), 2 still to fix (a stack's films, a filing's critiques)" }
     places: [none]
+
+  - id: REHEARSE-a-borrowed-member-read-as-empty
+    title: "A production rehearsal borrows the house's first members and counts their file as only what it planted, so it holds on a small made-up house and refuses the train on a grown one, where those members already keep films, salons and follows"
+    seriousness: serious
+    area: [database]
+    status: OPEN
+    count: 2
+    source: { kind: ci, ref: "the 500k Load on d030851b (run 44927879241): car 20261120_03's rehearsal read the first member's Watchlist as 16 and their logs as 34 where it planted one; run on every pending car locally, car 20261120_04's read the blocker's salons as 2" }
+    fix: "Each case reads relative to the house: H-A2 (a block closes a file) takes what each reader saw of member 1 before it planted and asks one more; H-A2 (a follow across a block) counts the admin's expected rows as the house holds them. CI's made-up house (e2e/db/rehearsal-seed.sql) now gives its first three members in good standing a grown share, so a rehearsal that reads a borrowed member as empty fails in DB security, before any train: both old rehearsals fail on it and pass on the seed as it was"
+    sweep: { read: [rehearsals], found: 2, fixed: 2, judged: 0, commit: e2249d97, finder: e2e/db/rehearsals.mjs, result: "every rehearsal the universe names (118) run on the grown seed with every pending car applied, and the whole pending train (95 steps, each car rehearsed with the train and applied) run on a house whose first members hold films, follows and salons: 2 found (cars 03 and 04), 2 fixed; the 4 that fail locally fail the same on the seed as it was (the local server has no cron or storage)" }
+    places: [none]

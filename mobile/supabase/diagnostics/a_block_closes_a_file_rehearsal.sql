@@ -44,8 +44,8 @@ DELETE FROM public.interaction_budget WHERE user_id IN (SELECT id FROM rehearsal
 DELETE FROM public.interaction_churn WHERE user_id IN (SELECT id FROM rehearsal_members);
 -- ── H-A2 rehearsal · a file is closed across a block, and open as before everywhere else (review round 14) ──
 -- Run inside the round's rehearsal transaction, after rehearsal_kit.sql and the train (pg_temp.rh_case,
--- rolled back with the rest), with its rehearsal_members (n = 1..4). Member 1 is an open member with a
--- film on their Watchlist, one in their Vault and one logged, who follows member 3 and is followed by
+-- rolled back with the rest), with its rehearsal_members (n = 1..4). Member 1 is an open member given a
+-- film on their Watchlist, one in their Vault and one logged (beside any they held), who follows member 3 and is followed by
 -- member 3, and then blocks member 2. Member 4 is private, followed by member 3.
 -- As member 2 (blocked): member 1's file is closed (can_view_user_data false); member 1's Watchlist and
 -- Vault read nothing; every count of member 1 is 0, the follows' too; the statistics, the fingerprint,
@@ -92,18 +92,43 @@ SELECT s.id, m.id, x.status
 DELETE FROM public.interactions
  WHERE user_id IN (SELECT id FROM rehearsal_members) AND target_user_id IN (SELECT id FROM rehearsal_members);
 UPDATE public.profiles SET is_social_private = false WHERE id IN (SELECT id FROM rehearsal_members);
-INSERT INTO public.watchlists (user_id, film_id, film_title)
-VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 990690, 'rh H-A2 watchlist film');
-INSERT INTO public.physical_archive (user_id, film_id, film_title)
-VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 990691, 'rh H-A2 vault film');
-INSERT INTO public.logs (user_id, film_id, film_title, watched_date, rating)
-VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 990692, 'rh H-A2 logged film', '2026-01-02', 4);
 INSERT INTO public.interactions (user_id, target_user_id, type)
 VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), (SELECT id FROM rehearsal_members WHERE n = 3), 'follow'),
        ((SELECT id FROM rehearsal_members WHERE n = 3), (SELECT id FROM rehearsal_members WHERE n = 1), 'follow'),
        ((SELECT id FROM rehearsal_members WHERE n = 3), (SELECT id FROM rehearsal_members WHERE n = 4), 'follow');
 -- Member 4 turns private after member 3 followed them (a follow asked of a private member is a request).
 UPDATE public.profiles SET is_social_private = true WHERE id = (SELECT id FROM rehearsal_members WHERE n = 4);
+-- Member 1 is borrowed from the house and may already hold films (the house's first members hold many):
+-- what each reader sees of member 1's file before the planted rows, so each reads exactly one more after.
+CREATE TEMP TABLE ha2_before (who text, k text, v bigint, PRIMARY KEY (who, k)) ON COMMIT DROP;
+GRANT ALL ON ha2_before TO anon, authenticated;
+CREATE FUNCTION pg_temp.ha2_seen(p_who text) RETURNS void LANGUAGE plpgsql AS $$
+DECLARE
+  v_of uuid := (SELECT id FROM rehearsal_members WHERE n = 1);
+BEGIN
+  INSERT INTO ha2_before VALUES
+    (p_who, 'watchlist', (SELECT count(*) FROM public.watchlists WHERE user_id = v_of)),
+    (p_who, 'vault', (SELECT count(*) FROM public.physical_archive WHERE user_id = v_of)),
+    (p_who, 'logs', (SELECT count(*) FROM public.logs WHERE user_id = v_of));
+END $$;
+GRANT EXECUTE ON FUNCTION pg_temp.ha2_seen(text) TO anon, authenticated;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 1), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT pg_temp.ha2_seen('self');
+SELECT set_config('request.jwt.claims', json_build_object('sub', (SELECT id FROM rehearsal_members WHERE n = 3), 'role', 'authenticated')::text, true) AS done \gset rh_
+SELECT pg_temp.ha2_seen('bystander of 1');
+RESET ROLE;
+SET LOCAL ROLE anon;
+SELECT set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true) AS done \gset rh_
+SELECT pg_temp.ha2_seen('visitor of 1');
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
+INSERT INTO public.watchlists (user_id, film_id, film_title)
+VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 990690, 'rh H-A2 watchlist film');
+INSERT INTO public.physical_archive (user_id, film_id, film_title)
+VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 990691, 'rh H-A2 vault film');
+INSERT INTO public.logs (user_id, film_id, film_title, watched_date, rating)
+VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), 990692, 'rh H-A2 logged film', '2026-01-02', 4);
 INSERT INTO public.user_blocks (blocker_id, blocked_id, type)
 VALUES ((SELECT id FROM rehearsal_members WHERE n = 1), (SELECT id FROM rehearsal_members WHERE n = 2), 'block');
 
@@ -148,6 +173,8 @@ RESET ROLE;
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
 
 CREATE FUNCTION pg_temp.ha2(p_who text, p_k text) RETURNS text LANGUAGE sql AS $$ SELECT v FROM ha2_got WHERE who = p_who AND k = p_k $$;
+-- What a reader saw of member 1 before, and one more: the row planted.
+CREATE FUNCTION pg_temp.ha2_one_more(p_who text, p_k text) RETURNS text LANGUAGE sql AS $$ SELECT (v + 1)::text FROM ha2_before WHERE who = p_who AND k = p_k $$;
 CREATE FUNCTION pg_temp.ha2_count(p_who text, p_k text) RETURNS text LANGUAGE sql AS $$ SELECT pg_temp.ha2(p_who, 'counts')::json ->> p_k $$;
 
 -- Across a block, member 2 reads member 1's file as a stranger reads a private one.
@@ -168,10 +195,11 @@ SELECT pg_temp.rh_case('the blocker finds the blocked member''s file closed', 'f
 SELECT pg_temp.rh_case('and its figures forbidden', 'forbidden,forbidden,forbidden,forbidden',
   concat_ws(',', pg_temp.ha2('blocker of 2', 'analytics'), pg_temp.ha2('blocker of 2', 'taste'), pg_temp.ha2('blocker of 2', 'honours'), pg_temp.ha2('blocker of 2', 'match'))) AS done \gset rh_
 -- Everywhere else, as before.
-SELECT pg_temp.rh_case('a member''s own file is whole', 'true,1,1,1', concat_ws(',', pg_temp.ha2('self', 'open'), pg_temp.ha2('self', 'watchlist'), pg_temp.ha2('self', 'vault'), pg_temp.ha2('self', 'logs'))) AS done \gset rh_
+SELECT pg_temp.rh_case('a member''s own file is whole', concat_ws(',', 'true', pg_temp.ha2_one_more('self', 'watchlist'), pg_temp.ha2_one_more('self', 'vault'), pg_temp.ha2_one_more('self', 'logs')), concat_ws(',', pg_temp.ha2('self', 'open'), pg_temp.ha2('self', 'watchlist'), pg_temp.ha2('self', 'vault'), pg_temp.ha2('self', 'logs'))) AS done \gset rh_
 SELECT pg_temp.rh_case('and every figure of it answered', 'answered,answered,answered',
   concat_ws(',', pg_temp.ha2('self', 'analytics'), pg_temp.ha2('self', 'taste'), pg_temp.ha2('self', 'honours'))) AS done \gset rh_
-SELECT pg_temp.rh_case('a member with no block reads the open file', 'true,1,1,1',
+SELECT pg_temp.rh_case('a member with no block reads the open file',
+  concat_ws(',', 'true', pg_temp.ha2_one_more('bystander of 1', 'watchlist'), pg_temp.ha2_one_more('bystander of 1', 'vault'), pg_temp.ha2_one_more('bystander of 1', 'logs')),
   concat_ws(',', pg_temp.ha2('bystander of 1', 'open'), pg_temp.ha2('bystander of 1', 'watchlist'), pg_temp.ha2('bystander of 1', 'vault'), pg_temp.ha2('bystander of 1', 'logs'))) AS done \gset rh_
 SELECT pg_temp.rh_case('with its counts', 'true',
   (pg_temp.ha2_count('bystander of 1', 'watchlist_count')::int >= 1 AND pg_temp.ha2_count('bystander of 1', 'vault_count')::int >= 1
@@ -182,7 +210,7 @@ SELECT pg_temp.rh_case('and every figure answered', 'answered,answered,answered,
 SELECT pg_temp.rh_case('no block stands between member 3 and either end', 'true', pg_temp.ha2('bystander of 1', 'row with 3')) AS done \gset rh_
 SELECT pg_temp.rh_case('a private file is open to its follower', 'true', pg_temp.ha2('follower of 4', 'open')) AS done \gset rh_
 SELECT pg_temp.rh_case('and closed to a member who does not follow', 'false', pg_temp.ha2('blocked of 4', 'open')) AS done \gset rh_
-SELECT pg_temp.rh_case('a visitor reads the open file', 'true,1,true',
+SELECT pg_temp.rh_case('a visitor reads the open file', concat_ws(',', 'true', pg_temp.ha2_one_more('visitor of 1', 'watchlist'), 'true'),
   concat_ws(',', pg_temp.ha2('visitor of 1', 'open'), pg_temp.ha2('visitor of 1', 'watchlist'), pg_temp.ha2('visitor of 1', 'row with 3'))) AS done \gset rh_
 -- No member or visitor may ask either test directly: the API serves only public, where the one name
 -- left is the house's, and asking it is refused.

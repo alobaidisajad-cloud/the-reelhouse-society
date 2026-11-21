@@ -15,6 +15,8 @@
 --   follows, certifications, critiques, a stack of four films, a public salon
 --     with a host and two seated members who have spoken, and filings by four
 --     writers, a ballot among them
+--   the first three members in good standing (ada, cleo, dov) holding a grown
+--     house's share: films kept and seen, salons, follows of each other
 -- Everything is dated weeks ago, so nothing here is marked "today" or "this
 -- week" on the Lobby's clock.
 \set ON_ERROR_STOP 1
@@ -162,5 +164,37 @@ VALUES (pg_temp.m('dov'), 'system', 'Welcome to the Society.', '2026-03-20');
 INSERT INTO public.reports (reporter_id, content_type, content_id, reason, status, target_user_id, created_at)
 SELECT pg_temp.m('finn'), 'log', l.id::text, 'spam', 'pending', pg_temp.m('gus'), '2026-03-21'
   FROM public.logs l WHERE l.user_id = pg_temp.m('gus');
+
+-- ── the house's first members hold what a grown house's first members hold ──
+-- Production's first members, and the 500k load house's, keep Watchlists, Vaults, logs, salons and
+-- follows of their own, and a rehearsal that borrows the first members by when they joined meets
+-- them so. A case that counted a borrowed member's file as only what it planted held here and failed
+-- on the 500k house (round 14, car 03): the first three members in good standing hold a share here.
+INSERT INTO public.watchlists (user_id, film_id, film_title, created_at)
+SELECT pg_temp.m(w.who), 5800 + g, 'A film kept for later, ' || g, '2026-02-01'::timestamptz + g * interval '1 hour'
+  FROM (VALUES ('ada'), ('cleo'), ('dov')) AS w(who), generate_series(1, 15) g;
+INSERT INTO public.physical_archive (user_id, film_id, film_title, created_at)
+SELECT pg_temp.m(w.who), 5900 + g, 'A copy on the shelf, ' || g, '2026-02-01'::timestamptz + g * interval '1 hour'
+  FROM (VALUES ('ada'), ('cleo'), ('dov')) AS w(who), generate_series(1, 4) g;
+INSERT INTO public.logs (user_id, film_id, film_title, rating, watched_date, status, created_at)
+SELECT pg_temp.m(w.who), 5700 + g, 'A film seen long ago, ' || g, 1 + g % 5, '2026-01-10'::date + g, 'watched',
+       '2026-01-10'::timestamptz + g * interval '1 day'
+  FROM (VALUES ('ada'), ('cleo'), ('dov')) AS w(who), generate_series(1, 12) g;
+INSERT INTO public.interactions (user_id, target_user_id, type, created_at)
+SELECT pg_temp.m(a.who), pg_temp.m(b.who), 'follow', '2026-02-20'
+  FROM (VALUES ('ada'), ('cleo'), ('dov')) AS a(who), (VALUES ('ada'), ('cleo'), ('dov')) AS b(who)
+ WHERE a.who <> b.who
+ON CONFLICT DO NOTHING;
+INSERT INTO public.lounges (id, name, description, creator_id, is_private, created_at)
+VALUES ('5eed0000-0000-4000-8000-0000000001a2', 'The First Room', 'Where the house began.', pg_temp.m('ada'), false, '2026-02-21'),
+       ('5eed0000-0000-4000-8000-0000000001a3', 'The Back Row', NULL, pg_temp.m('dov'), false, '2026-02-21');
+INSERT INTO public.lounge_members (lounge_id, user_id, status, joined_at, last_read_at)
+SELECT r.id::uuid, pg_temp.m(w.who), 'approved', '2026-02-21', '2026-02-21'
+  FROM (VALUES ('5eed0000-0000-4000-8000-0000000001a2'), ('5eed0000-0000-4000-8000-0000000001a3')) AS r(id),
+       (VALUES ('ada'), ('cleo'), ('dov')) AS w(who)
+ON CONFLICT DO NOTHING;
+INSERT INTO public.lounge_messages (lounge_id, user_id, content, created_at)
+VALUES ('5eed0000-0000-4000-8000-0000000001a2', pg_temp.m('cleo'), 'The first word in the first room.', '2026-02-22'),
+       ('5eed0000-0000-4000-8000-0000000001a3', pg_temp.m('ada'),  'Sit anywhere.', '2026-02-22');
 
 COMMIT;

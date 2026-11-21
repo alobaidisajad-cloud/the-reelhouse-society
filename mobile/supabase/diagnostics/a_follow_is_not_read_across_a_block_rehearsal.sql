@@ -218,8 +218,13 @@ SELECT count(pg_temp.rh_case('the blocker reads the blocked member''s ' || k || 
 -- (The old dossier and certification: as before while members may read the old tables; refused to
 -- every member, an admin too, once H-B10.locks takes them, the house's own functions reading them as the house.)
 SELECT pg_temp.rh_case('an admin the blocker blocked still reads the blocker''s row, salon, reaction, dossier and certification (a roster is its salon''s alone), as before',
-  '1,1,1,' || pg_temp.ha2n_may('public.dispatch_dossiers_legacy', '1') || ','
-    || pg_temp.ha2n_may('public.dossier_certifications_legacy', '1'),
+  -- Member 1 is borrowed from the house and may hold salons, reactions and dossiers of their own: the
+  -- admin reads all the house holds of them, counted here as the house.
+  concat_ws(',', '1',
+    (SELECT count(*) FROM public.lounges WHERE creator_id = (SELECT id FROM rehearsal_members WHERE n = 1)),
+    (SELECT count(*) FROM public.lounge_message_reactions WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1)),
+    pg_temp.ha2n_may('public.dispatch_dossiers_legacy', (SELECT count(*) FROM public.dispatch_dossiers_legacy WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1))::text),
+    pg_temp.ha2n_may('public.dossier_certifications_legacy', (SELECT count(*) FROM public.dossier_certifications_legacy WHERE user_id = (SELECT id FROM rehearsal_members WHERE n = 1))::text)),
   concat_ws(',', jsonb_array_length(pg_temp.ha2n('admin of 1', 'profile by id')::jsonb),
             split_part(pg_temp.ha2n('admin of 1', 'rows'), ',', 6),
             split_part(pg_temp.ha2n('admin of 1', 'rows'), ',', 8), split_part(pg_temp.ha2n('admin of 1', 'rows'), ',', 9),

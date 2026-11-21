@@ -93,6 +93,7 @@ SESS:
   - AUTH-a-recovery-left-open
   - AUTH-a-member-signed-in-over-another
 R:
+  - REHEARSE-a-borrowed-member-read-as-empty
   - E2E-keyboard-covers-the-field
   - NAV-launch-link-overridden
   - RN-props-before-mount
