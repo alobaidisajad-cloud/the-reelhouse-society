@@ -556,6 +556,8 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
     setRosterFailed(false);
     setPending(false);
     setMembers([]);
+    // The door was the last room's: open over this one, it said no one was there before its roster was read.
+    setDoorOpen(false);
     setNotFound(false);
     setLoadFailed(false);
     setLocalLounge(null);
@@ -638,7 +640,8 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
   // says). The roster counts them only for one who reads it whole, the seated and the host: a muted
   // or banned reader is given their own row alone, and read "1 MEMBER" in a full salon; and the
   // banned and muted were counted as seated (review round 7).
-  const seated = (isApproved && members.filter(m => m.status === 'approved').length) || activeLounge?.member_count || 0;
+  // Neither known, the count is said not at all: a salon always holds its host, so "0 MEMBERS" is never true.
+  const seated: number | null = (isApproved && members.filter(m => m.status === 'approved').length) || (typeof activeLounge?.member_count === 'number' ? activeLounge.member_count : null);
 
   // A request just sent stands in only until the roster shows it: from then the roster says, and a
   // host's decline is the door to ask again, never "your request is with the host" for ever.
@@ -851,9 +854,11 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
             <Text style={s.headerTitle} numberOfLines={1}>{struckRoom(activeLounge.name)}</Text>
           </PressableScale>
           <View style={s.headerMeta}>
-            <Text style={s.headerMetaText} numberOfLines={1}>
-              {counted(seated, 'MEMBER', 'MEMBERS')}
-            </Text>
+            {seated !== null ? (
+              <Text style={s.headerMetaText} numberOfLines={1}>
+                {counted(seated, 'MEMBER', 'MEMBERS')}
+              </Text>
+            ) : null}
             {/* THE HOUSE PULSE — the ember glows only when the room truly breathes */}
             {presentCount >= 2 && (
               <>
@@ -1164,7 +1169,7 @@ function LoungeRoomScreen({ id, toTheDoor }: { id: string; toTheDoor: boolean })
 // ════════════════════════════════════════════════════════════
 export function GateView({ gate, lounge, memberCount, onRequest, onRetry, pending, seatAsked = 0 }: {
   gate: RoomGate;
-  lounge: LoungeRoom; memberCount: number; onRequest: () => void; onRetry: () => void; pending: boolean;
+  lounge: LoungeRoom; memberCount: number | null; onRequest: () => void; onRetry: () => void; pending: boolean;
   /** Counts each request for a seat the house took: a screen reader is moved onto the words that say so. */
   seatAsked?: number;
 }) {
@@ -1185,7 +1190,7 @@ export function GateView({ gate, lounge, memberCount, onRequest, onRetry, pendin
         <Text style={s.gatePrivateLabel}>PRIVATE SALON</Text>
       </View>
       {!!lounge.description && <Text style={s.gateDesc}>{struck(lounge.description)}</Text>}
-      <Text style={s.gateMembers}>{counted(memberCount, 'member', 'members')} behind the door</Text>
+      {memberCount !== null ? <Text style={s.gateMembers}>{counted(memberCount, 'member', 'members')} behind the door</Text> : null}
 
       {gate === 'request' && (
         <>

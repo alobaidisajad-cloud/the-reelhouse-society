@@ -9,6 +9,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { GateView } from '@/app/lounge/[id]';
+import { JoinedLoungeCard } from '@/src/components/lounge/JoinedLoungeCard';
 import { PublicLoungeCard } from '@/src/components/lounge/PublicLoungeCard';
 import type { LoungeRoom } from '@/src/stores/lounge';
 import { supabaseFake } from '@/test-utils/supabaseFake';
@@ -46,5 +47,29 @@ describe.each([
     );
     expect(r.getByText(door)).toBeTruthy();
     expect(r.queryByText(LIMIT)).toBeNull();
+  });
+});
+
+// member_count may be null at the house. Read as 0, every place said "0 MEMBERS" of a salon that
+// always holds at least its host: a count nobody gave, drawn as a fact.
+describe('a salon whose count the house did not give', () => {
+  const unknown = { ...room(1), member_count: null as unknown as number };
+  const ZERO = /\b0 MEMBERS?\b/i;
+
+  it('the corridor card says no count, drawn or spoken', () => {
+    const r = render(<PublicLoungeCard lounge={unknown} first seated />);
+    expect(r.queryByText(ZERO, { includeHiddenElements: true })).toBeNull();
+    expect(r.getByRole('button').props.accessibilityLabel as string).not.toMatch(ZERO);
+  });
+
+  it('a salon of the member\'s own says no count, drawn or spoken', () => {
+    const r = render(<JoinedLoungeCard lounge={{ ...unknown, membership_status: 'approved' } as LoungeRoom} width={200} />);
+    expect(r.queryByText(/^0$/, { includeHiddenElements: true })).toBeNull();
+    expect(r.getByRole('button').props.accessibilityLabel as string).not.toMatch(ZERO);
+  });
+
+  it('the door says no count', () => {
+    const r = render(<GateView gate="request" lounge={{ ...unknown, is_private: true }} memberCount={null} onRequest={jest.fn()} onRetry={jest.fn()} pending={false} />);
+    expect(r.queryByText(/behind the door/)).toBeNull();
   });
 });

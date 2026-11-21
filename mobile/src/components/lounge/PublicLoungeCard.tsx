@@ -82,7 +82,8 @@ export const PublicLoungeCard = React.memo(({ lounge: room, first, seated, onRep
   const lastWord = useTimeAgo(lounge.last_message_at ?? null);
   const verb = verbFor(lounge.is_private, seated);
   const roped = !seated && lounge.is_private;
-  const members = counted(lounge.member_count || 0, 'MEMBER', 'MEMBERS');
+  // A count the house did not give is said not at all: a salon always holds its host, so "0 MEMBERS" is never true.
+  const members = typeof lounge.member_count === 'number' ? counted(lounge.member_count, 'MEMBER', 'MEMBERS') : null;
   // The last word stands beside the name while the name's longest word still fits beside it; else under it.
   const column = useColumnWidth();
   const scale = useTextScale();
@@ -103,7 +104,7 @@ export const PublicLoungeCard = React.memo(({ lounge: room, first, seated, onRep
         accessibilityRole="button"
         accessibilityLabel={[`${SAID[verb]}: ${saidStruck(lounge.name)}`,
           lastWord ? `last word ${lastWord.toLowerCase()}` : null,
-          saidStruck(lounge.description) || null, members.toLowerCase(), lounge.is_private ? 'private' : null].filter(Boolean).join(', ')}
+          saidStruck(lounge.description) || null, members?.toLowerCase() ?? null, lounge.is_private ? 'private' : null].filter(Boolean).join(', ')}
         accessibilityActions={report ? [{ name: 'report', label: 'Report this salon' }] : undefined}
         onAccessibilityAction={report ? (e) => { if (e.nativeEvent.actionName === 'report') report(); } : undefined}>
         {coverUrl ? (
@@ -119,10 +120,12 @@ export const PublicLoungeCard = React.memo(({ lounge: room, first, seated, onRep
           </View>
           {lounge.description ? <Text style={s.what} {...scaledTextProps} numberOfLines={2}>{lounge.description}</Text> : null}
           <View style={s.meta}>
-            <View style={s.fact}>
-              <Users size={12} color={colors.bone} />
-              <Text style={s.factWord} {...scaledTextProps}>{members}</Text>
-            </View>
+            {members ? (
+              <View style={s.fact}>
+                <Users size={12} color={colors.bone} />
+                <Text style={s.factWord} {...scaledTextProps}>{members}</Text>
+              </View>
+            ) : null}
             {lounge.is_private ? (
               <View style={s.fact}>
                 <KeyRound size={12} color={colors.bone} />

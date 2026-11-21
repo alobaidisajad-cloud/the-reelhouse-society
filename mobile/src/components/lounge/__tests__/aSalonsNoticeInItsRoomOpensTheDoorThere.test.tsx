@@ -132,3 +132,26 @@ it('a seated member whose roster could not be read hands the settings their seat
   expect([mockSettings.standing, mockSettings.rosterFailed]).toEqual(['approved', false]);
   await r.unmount();
 });
+
+// The screen is reused across rooms. The door stood open over the next room, whose roster was not
+// yet read: "No one's at the door." of a room nobody had asked about, to a member who may not host it.
+it('a door open in one room is shut when the screen moves to another, before that room is read', async () => {
+  const OTHER = { ...ROOM, id: '00000000-0000-4000-b200-000000000002', name: 'The Balcony' };
+  mockHouse = supabaseFake({ rows: { lounges: [ROOM, OTHER] } });
+  mockRoster = [...(mockRoster ?? []), WAITING];
+  const r = await open(HOST);
+  noteCurrentPath(`/lounge/${ROOM_ID}`);
+  await act(async () => { await openNoticeFromPush('n1'); });
+  await settle();
+  expect(r.getByText('At the Door')).toBeTruthy();
+
+  // The next room's roster has not answered.
+  useLoungeStore.setState({ fetchMembers: () => new Promise(() => {}) });
+  useLocalSearchParams.mockReturnValue({ id: OTHER.id });
+  r.rerender(<LoungeRoomScreen />);
+  await settle();
+  expect(r.queryByText('At the Door')).toBeNull();
+  expect(r.queryByText('No one’s at the door.')).toBeNull();
+  expect(r.queryByText("No one's at the door.")).toBeNull();
+  await r.unmount();
+});

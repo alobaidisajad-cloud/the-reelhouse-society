@@ -298,7 +298,7 @@ export const PaperBallot = memo(function PaperBallot({
               // said on a closed ballot and on the option already marked.
               accessibilityLabel={
                 showPercent
-                  ? `Option ${i + 1} of ${options.length}. ${named}. ${pct[i]} percent, ${counted(o.votes ?? 0, 'ballot', 'ballots')}.${marked ? ' Your mark.' : ''}`
+                  ? `Option ${i + 1} of ${options.length}. ${named}. ${pct[i]} percent, ${counted(o.votes, 'ballot', 'ballots')}.${marked ? ' Your mark.' : ''}`
                   : `Option ${i + 1} of ${options.length}. ${named}.${marked ? ' Your mark.' : voteReading ? ' Reading your mark.' : locked ? '' : ' Mark this.'}`
               }
             >

@@ -2099,3 +2099,4 @@ files of the reading map this one does not.
 | test-utils/houseFunctions.ts | — |  |
 | src/utils/__tests__/aDayOnItsBoundaryIsItsOwn.test.ts | — |  |
 | test-utils/dayBoundaries.ts | — |  |
+| src/utils/__tests__/anEmptyRoomIsDrawnOnlyFromAnAnswer.guard.test.ts | — |  |

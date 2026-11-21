@@ -23,6 +23,7 @@ LATE:
   - READ-a-later-page-failing-in-silence
   - AUTH-a-sign-out-undone-by-a-late-answer
 COPY:
+  - DATA-edit-sealed-over-an-unread-record
   - UI-notice-opens-elsewhere
   - STATE-a-request-held-after-its-answer
   - WRITE-a-sent-message-taken-off-the-screen
@@ -39,13 +40,7 @@ PROT:
   - DATA-a-spoiler-quoted-in-the-clear
 UNKN:
   - DATA-unknown-block-offered-as-none
-  - UI-unknown-mark-drawn-as-off
-  - UI-read-drawn-as-empty
-  - DATA-edit-sealed-over-an-unread-record
   - NAV-a-stranger-at-a-members-door
-  - READ-a-foot-counting-what-it-cannot-read
-  - UI-a-guess-drawn-as-the-answer
-  - COPY-an-unknown-said-as-a-count
   - READ-a-search-cut-at-a-fixed-count
 EXIT:
   - UI-a-sheet-with-no-way-out

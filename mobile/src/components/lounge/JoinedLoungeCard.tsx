@@ -41,7 +41,8 @@ export const JoinedLoungeCard = React.memo(({ lounge: room, width }: { lounge: L
   const nameRoom = { minHeight: NAME.line * 2 * useLineScale() };
   // get_lounge_unread_counts stops counting at UNREAD_COUNTED_TO, so a count there means at least that.
   const unreadSpoken = unread >= UNREAD_COUNTED_TO ? `more than ${UNREAD_COUNTED_TO - 1}` : `${unread}`;
-  const members = lounge.member_count || 0;
+  // A count the house did not give is said not at all: a salon always holds its host, so "0 members" is never true.
+  const members = typeof lounge.member_count === 'number' ? lounge.member_count : null;
   const news = isAwaiting ? 'awaiting the host'
     : atDoor > 0 ? `${atDoor} at your door`
       : unread > 0 ? counted(unread, 'new dispatch', 'new dispatches', () => unreadSpoken) : null;
@@ -52,7 +53,7 @@ export const JoinedLoungeCard = React.memo(({ lounge: room, width }: { lounge: L
       // Everything the card draws, said: the name, its privacy, the last word, the news, the seats.
       accessibilityLabel={[`Enter salon ${saidStruck(lounge.name)}`, lounge.is_private ? 'private' : null,
         lastWord ? `last word ${lastWord.toLowerCase()}` : null, news,
-        `${members} ${members === 1 ? 'member' : 'members'}`].filter(Boolean).join(', ')}>
+        members === null ? null : `${members} ${members === 1 ? 'member' : 'members'}`].filter(Boolean).join(', ')}>
       <View style={s.cover}>
         <RemoteImage uri={coverUrl} style={StyleSheet.absoluteFill} contentFit="cover" placeholder={{ blurhash: SEPIA_HASH }} transition={300}
           fallback={<View style={s.noCover}><FilmIcon size={22} color={colors.tarnishDeep} strokeWidth={1.5} /></View>} />
@@ -82,7 +83,7 @@ export const JoinedLoungeCard = React.memo(({ lounge: room, width }: { lounge: L
             </View>
           ) : null}
         </View>
-        <View style={s.faces}><MemberFaceStack faces={lounge.memberFaces} totalCount={members} /></View>
+        <View style={s.faces}><MemberFaceStack faces={lounge.memberFaces} totalCount={members ?? undefined} /></View>
       </View>
     </PressableScale>
   );

@@ -1428,6 +1428,7 @@ classes:
     count: 8
     source: { kind: reviewer, ref: "study of the Dispatch's opening for P0.112: the marks collapsed unread into false (Set.has, ?? null)" }
     methods:
+      - { kind: static, file: src/utils/__tests__/anEmptyRoomIsDrawnOnlyFromAnAnswer.guard.test.ts, test: "draws no empty room, and says no nothing, before the read has answered, but where judged" }
       - { kind: running, file: src/components/dispatch/__tests__/aMarkUnreadIsNotOff.test.tsx, test: "unread: neither pressable nor marked, each said to be reading; read: the member's, and pressable" }
       - { kind: running, file: src/components/dispatch/__tests__/aMarkUnreadIsNotOff.test.tsx, test: "unread: neither pressable nor marked, each said to be reading; read: the member's" }
       - { kind: running, file: src/components/dispatch/__tests__/theBallotAndTheCount.test.tsx, test: "locks its options and says it is reading, marking none; once read, invites the mark" }
@@ -1445,6 +1446,7 @@ classes:
       - { kind: running, file: src/stores/__tests__/aCritiqueMarkIsReadBeforeItIsDrawn.test.ts, test: "answered, knows each critique asked about: certified or not" }
       - { kind: running, file: src/stores/__tests__/aCritiqueMarkIsReadBeforeItIsDrawn.test.ts, test: "failed, knows none of them: unknown, never \"not certified\"" }
     fix: "the store knows, per kind, which marks its reads answered (marksKnown); the card's stamps, the reader's dock and the ballot draw an unread mark as the stamp's outline before its ink (UNINKED, boxUnread), unpressed and said to be reading (mutants shape-stamp-unknown-pressable, shape-dock-unknown-pressable, shape-ballot-unknown-open, shape-failed-mark-known, shape-reader-unknown-default, shape-row-unknown-never). A stack's and a log's read say whether the member's own certification was answered (certifiedKnown); drawn from the phone, the heart is uninked, its count unknown, and a press asks the house again instead of filing (mutants shape-stack-heart-filed-blind, shape-log-heart-filed-blind). A member's file knows whether they follow once the follow list is read whole (followKnown); until then its button is hollow, says READING or ASK AGAIN, and asks for the list instead of following, and a private member's rooms are retrieved, never sealed (mutants shape-follow-filed-blind, shape-sealed-while-unknown). The Dispatch knows which critiques' certifications its read answered (critiqueMarksKnown, and a critique filed here); an unread one's heart is uninked, said to be reading, and not pressable (mutants shape-critique-heart-pressable-unread, shape-critique-mark-never-known)"
+    sweep: { read: [appCode], found: 0, fixed: 0, judged: 0, commit: 7c57c2b2, finder: src/utils/__tests__/anEmptyRoomIsDrawnOnlyFromAnAnswer.guard.test.ts, result: "no mark drawn as off from a value not read" }
     places: [none]
 
   - id: DATA-saved-page-from-held-ids
@@ -1515,13 +1517,14 @@ classes:
     places: [emulator]
 
   - id: UI-read-drawn-as-empty
-    title: "A list said it was empty while its read was still out, or before it began: a salon's 'be the first to break the silence', a film's 'be the first voice' over critiques on their way, 'IMPORT YOUR ARCHIVE' to a member on a new phone, 'nothing under that name' before a search's rows came (and never said of a visitor's that found none), 'no one's at the door' under a count of the waiting, 'no open salons' and 'no seat yet' before the salons were asked for, 'your orbit is quiet' to members who follow people, 'the docket is clear' for a frame"
+    title: "The unknown drawn as a fact: a list said it was empty, a count said 0, words said there was nothing, while the read they spoke for was still out, failed, refused or never asked (folded in: a count nobody had, a guess drawn as the answer, a foot counting what it could not read, a count past its measure)"
     seriousness: behaviour
     area: states
     status: OPEN
-    count: 15
+    count: 28
     source: { kind: reviewer, ref: "P0.112: the salon's transcript, then a sweep of every empty state in app/ and src/ (42 sites, 10 wrong)" }
     methods:
+      - { kind: static, file: src/utils/__tests__/anEmptyRoomIsDrawnOnlyFromAnAnswer.guard.test.ts, test: "draws no empty room, and says no nothing, before the read has answered, but where judged" }
       - { kind: running, file: src/components/lounge/__tests__/theRoomSaysWhenItCouldNotBeReached.test.tsx, test: "while its words are on their way: reading, never \"be the first\"" }
       - { kind: running, file: src/components/film/__tests__/zz-film.gen.test.tsx, test: "while the critiques are still coming, sets down no section at all: no invitation, nothing to leap up the page" }
       - { kind: running, file: src/components/film/__tests__/whatTheFilmPageCouldNotRead.test.tsx, test: "says the critiques are unread while the page is drawn from the warm catalogue, and read once they come" }
@@ -1563,7 +1566,54 @@ classes:
       - { kind: running, file: src/components/profile/__tests__/aRecordUnreadIsSaid.test.tsx, test: "TRY AGAIN says it is asking until the summary answers" }
       - { kind: running, file: src/components/profile/__tests__/aRunIsNeverCountedFromAPart.test.ts, test: "is unknown when no count of the record answered: never a run counted from what is held" }
       - { kind: running, file: src/components/profile/__tests__/aRunIsNeverCountedFromAPart.test.ts, test: "is unknown when only part of the record is held: never a run counted short from the first page" }
-    fix: "each empty state is said only once its read has answered: the salon's transcript reads its own flags; the film page's critiques are unread while it is drawn from the warm catalogue (isPlaceholderData) and the section is set down only once they come; the stack's critiques sheet reads while the query is pending; the corridor and the share sheet read until the salons answered once (loungesRead); the door remembers which search it answered (answeredFor); the member's file knows a room's read answered (tabAnswered) and which filters its rows answer (answeredFilters, searchAnswered), a superseded search landing nothing; the follow list says whether it is known (followingKnown); the dockets are rebuilt during the render that brings their read (mutants shape-transcript-empty-while-reading, shape-film-invites-while-reading, shape-film-reading-never, shape-stack-critiques-empty-while-reading, shape-corridor-empty-before-read, shape-share-empty-before-read, shape-door-empty-before-read, shape-own-room-empty-before-answer, shape-search-empty-before-answer, shape-search-answered-never-said, shape-room-answer-unrecorded, shape-search-overtaken-lands, shape-answers-outlive-member, shape-own-logs-never-answered, shape-orbit-quiet-unread, shape-orbit-quiet-failed, shape-follows-never-held, shape-follows-never-failed, shape-follows-held-after-sign-out, shape-docket-copied-after-paint); a filing's critiques that could not be read are said at their foot, first page or next, with TRY AGAIN, never a blank under a MORE that did nothing (critiquesFailed) (mutant shape-critique-failure-unsaid); round 6: a stack’s critiques that could not be read stay said so when a critique is filed; the Tribunal’s URGENT is rebuilt from the answer held, never \"The docket is clear\" over waiting cases, and a failed pull says so (mutants shape-one-critique-taken-for-the-list, shape-urgent-emptied-on-return, shape-urgent-emptied-on-pull, shape-urgent-pull-fails-unsaid); the settings of a salon judge the seat by the standing the room acts on, never the roster rows alone: a seated member before the roster is read is told it is being read, after a failed read that it could not be, with TRY AGAIN, and is offered STEP OUT; a standing not yet known is never told it is a guest (mutant shape-unread-roster-said-kept-from-the-seated); round 13: the house's summary that could not be read is kept unread and the Projector says THE RECORD COULD NOT BE READ with TRY AGAIN, which asks the summary alone and says ASKING… until it answers; the run is counted over the records held only against a count the house answered on this read (mutants shape-summary-failure-taken-as-none, shape-run-counted-from-a-part, shape-run-counted-with-no-count, shape-retry-reads-the-whole-file, shape-retry-unsaid-while-asking)"
+      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a source that could not be asked: the count line says NOT REACHED, never 0 RESULTS, and its tab says so" }
+      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a search that failed: the count line says NOT REACHED, and every tab says not reached" }
+      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "while the search is out, a tab is named without a count" }
+      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a seated member is told the seated alone: the banned, the muted and the waiting are not counted" }
+      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "the host is told the seated alone too" }
+      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a muted member, whose roster holds their own row alone, is told the house’s count, never \"1 MEMBER\"" }
+      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a banned member reading the public room is told the house’s count, never \"1 MEMBER\"" }
+      - { kind: running, file: src/hooks/__tests__/theArchiveSearchIsCountedByTheHouse.test.tsx, test: "each film found carries the house’s count of its filings, the most-filed first, and a film past the newest rows is found" }
+      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a guest with no seat is told the salon’s count and that the roster is kept for those seated, and is offered no STEP OUT" }
+      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a reader at the door (pending) is told the salon’s count, drawn no rows, and may step out of the row they hold" }
+      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a banned reader is told the salon’s count, drawn not even their own row, and offered no STEP OUT" }
+      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "the host and the seated, muted too, see the roster whole, never told it is kept; a guest beside them is" }
+      - { kind: running, file: src/components/dispatch/__tests__/anOpenBallotPrintsNoCountItDoesNotKnow.test.tsx, test: "marked, with its count not yet known, says the ballot is cast and prints no number" }
+      - { kind: running, file: src/components/dispatch/__tests__/anOpenBallotPrintsNoCountItDoesNotKnow.test.tsx, test: "marked, with the running count read, draws it" }
+      - { kind: running, file: src/components/dispatch/__tests__/anOpenBallotPrintsNoCountItDoesNotKnow.test.tsx, test: "unmarked, invites the mark as before" }
+      - { kind: running, file: src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts, test: "a vote that lands reads the running count, with the member’s own ballot in it" }
+      - { kind: running, file: src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts, test: "a ballot opened that the member voted in reads its count" }
+      - { kind: running, file: src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts, test: "a ballot opened that the member has not voted in asks for no count" }
+      - { kind: running, file: src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts, test: "a count the house does not give stays unknown, never a 0" }
+      - { kind: running, file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "counts both cases when the house closed both" }
+      - { kind: running, file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "counts one, and says the other was judged by another moderator, when the house closed only one; both leave the docket" }
+      - { kind: running, file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "says both were judged by another moderator when the house closed none; both leave the docket" }
+      - { kind: running, file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "states no number when the answer holds no count" }
+      - { kind: running, file: src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx, test: "dismisses many, and says how many the house closed" }
+      - { kind: running, file: src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx, test: "gives no count when the answer is not one, so no number is said that the house did not give" }
+      - { kind: running, file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "a head names its section and its own count, \"20+\" while more remain" }
+      - { kind: running, file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "there is one number a section: no count line totals the sampler beside the badges" }
+      - { kind: running, file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "a head opens its section, where every row read so far is shown" }
+      - { kind: running, file: src/stores/__tests__/aRequestIsShownAsARequest.test.ts, test: "with nothing known, shows nothing until the house says the member is private, then a request" }
+      - { kind: running, file: src/stores/__tests__/aRequestIsShownAsARequest.test.ts, test: "a private member’s file says so: a request is shown at once, never a follow" }
+      - { kind: running, file: src/stores/__tests__/aRequestIsShownAsARequest.test.ts, test: "an open member’s file shows the follow at once" }
+      - { kind: running, file: src/stores/__tests__/aFollowTheHouseFiledAsARequestReadsRequested.test.ts, test: "FOLLOW on a member who turned private while their file was open reads REQUESTED, as the house filed it" }
+      - { kind: running, file: src/stores/__tests__/aFollowTheHouseFiledAsARequestReadsRequested.test.ts, test: "a request already standing at their door reads REQUESTED, though their file read them open" }
+      - { kind: running, file: src/stores/__tests__/aFollowTheHouseFiledAsARequestReadsRequested.test.ts, test: "FOLLOW on an open member reads FOLLOWING, as before" }
+      - { kind: running, file: src/hooks/__tests__/aFollowFiledAsARequestCountsNoOne.test.tsx, test: "a follow the house filed as a request counts no one, and the file knows the member is private now" }
+      - { kind: running, file: src/hooks/__tests__/aFollowFiledAsARequestCountsNoOne.test.tsx, test: "a follow of an open member counts one, as before" }
+      - { kind: running, file: src/components/dispatch/__tests__/aFailedCritiqueReadIsSaid.test.tsx, test: "ends when the house has sent its last page, though its count holds critiques this member may not read" }
+      - { kind: running, file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "counts no request from a member blocked or muted, as the door offers none" }
+      - { kind: running, file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "with nobody hidden, the count asks for every request" }
+      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "are told the critiques are read by members, and SIGN IN TO READ THEM asks them in; a member reads them as before" }
+      - { kind: running, file: src/components/dispatch/paper/__tests__/theCritiquesAreReadByMembers.test.tsx, test: "says THE CRITIQUES ARE READ BY MEMBERS, and offers no page of critiques they cannot read" }
+      - { kind: running, file: src/components/dispatch/paper/__tests__/theCritiquesAreReadByMembers.test.tsx, test: "is said even while a read is out or one failed: a visitor is given none to wait for or ask again" }
+      - { kind: running, file: src/services/__tests__/aRecordsCritiquesAreTheReaders.test.ts, test: "a member's archive card counts the critiques they may read, as the record's page does" }
+      - { kind: running, file: src/services/__tests__/aRecordsCritiquesAreTheReaders.test.ts, test: "and so does the record's own read, for a member" }
+      - { kind: running, file: src/services/__tests__/aRecordsCritiquesAreTheReaders.test.ts, test: "a row read without the reader's count keeps the kept one" }
+      - { kind: running, file: src/components/dispatch/__tests__/theDoorIsShown.test.tsx, test: "caps the days a member at what is needed: a year in the house reads 2 OF 2" }
+    fix: "each empty state is said only once its read has answered: the salon's transcript reads its own flags; the film page's critiques are unread while it is drawn from the warm catalogue (isPlaceholderData) and the section is set down only once they come; the stack's critiques sheet reads while the query is pending; the corridor and the share sheet read until the salons answered once (loungesRead); the door remembers which search it answered (answeredFor); the member's file knows a room's read answered (tabAnswered) and which filters its rows answer (answeredFilters, searchAnswered), a superseded search landing nothing; the follow list says whether it is known (followingKnown); the dockets are rebuilt during the render that brings their read (mutants shape-transcript-empty-while-reading, shape-film-invites-while-reading, shape-film-reading-never, shape-stack-critiques-empty-while-reading, shape-corridor-empty-before-read, shape-share-empty-before-read, shape-door-empty-before-read, shape-own-room-empty-before-answer, shape-search-empty-before-answer, shape-search-answered-never-said, shape-room-answer-unrecorded, shape-search-overtaken-lands, shape-answers-outlive-member, shape-own-logs-never-answered, shape-orbit-quiet-unread, shape-orbit-quiet-failed, shape-follows-never-held, shape-follows-never-failed, shape-follows-held-after-sign-out, shape-docket-copied-after-paint); a filing's critiques that could not be read are said at their foot, first page or next, with TRY AGAIN, never a blank under a MORE that did nothing (critiquesFailed) (mutant shape-critique-failure-unsaid); round 6: a stack’s critiques that could not be read stay said so when a critique is filed; the Tribunal’s URGENT is rebuilt from the answer held, never \"The docket is clear\" over waiting cases, and a failed pull says so (mutants shape-one-critique-taken-for-the-list, shape-urgent-emptied-on-return, shape-urgent-emptied-on-pull, shape-urgent-pull-fails-unsaid); the settings of a salon judge the seat by the standing the room acts on, never the roster rows alone: a seated member before the roster is read is told it is being read, after a failed read that it could not be, with TRY AGAIN, and is offered STEP OUT; a standing not yet known is never told it is a guest (mutant shape-unread-roster-said-kept-from-the-seated); round 13: the house's summary that could not be read is kept unread and the Projector says THE RECORD COULD NOT BE READ with TRY AGAIN, which asks the summary alone and says ASKING… until it answers; the run is counted over the records held only against a count the house answered on this read (mutants shape-summary-failure-taken-as-none, shape-run-counted-from-a-part, shape-run-counted-with-no-count, shape-retry-reads-the-whole-file, shape-retry-unsaid-while-asking); and, folded in: a count is said only once it is known (NOT REACHED, a tab named without one while asked), and the salon counts the seated as the house does, from the roster only for one who reads it whole (mutants shape-unknown-count-said-zero, shape-unreached-tab-counted, shape-salon-counts-its-roster); the archive's film search is counted by the house, the hidden left out (mutant shape-archive-counted-from-its-rows); the salon sheet draws the roster only for the host and the seated, muted too; anyone else is told the salon's own count and \"The roster is kept for those seated.\", and offered STEP OUT only of a row they hold (mutants shape-guest-told-their-rows-as-the-count, shape-guest-offered-step-out); an open ballot marked by the member draws the running count the house gives a voter (ballot_tally, 20261117_01), read when the vote lands and when a ballot they voted in opens; until it is read the ballot says YOUR BALLOT IS CAST and prints no number, never 0 BALLOTS CAST (mutants shape-open-ballot-counted-as-none, shape-cast-ballot-count-unread); a bulk dismissal says the cases the house closed, never the number selected, and the ones another moderator judged meanwhile apart; with no count in the answer no number is said (mutant shape-bulk-dismissal-counts-the-selected); the search says one number for each section, its own: exact once the source has no more, N+ while it holds a next page, drawn and spoken; ALL is a sampler, each section under a head that carries its count and opens its tab, with no count line beside the badges (mutant shape-search-count-said-as-a-total); and, folded in: followUser shows a request or a follow only when it is known which (the member's file says), and with nothing known shows nothing until the house answers (mutant shape-request-shown-as-follow); FOLLOW reads back the row the house filed: a follow filed as a request (the member turned private while their file was open), or a request already standing, reads REQUESTED, the handle known private, the follower count left as it was (mutants shape-follow-filed-as-request-shown-following, shape-follow-filed-as-request-counted); and, folded in: the foot ends on the house's own word that no page follows (critiquesHasMore), counting against every critique read (mutant shape-foot-counts-past-the-house); the door's count leaves out the members the door leaves out (mutant shape-door-counts-the-hidden); a filing's critiques foot tells a visitor THE CRITIQUES ARE READ BY MEMBERS / SIGN IN TO READ THEM, never an end or a MORE under critiques the house does not send them (mutant shape-visitor-foot-drawn-as-a-members); a record's critique count on a card and in a film's Log Archive is the reader's own (critiques_seen, a computed field of logs: log_counts' number less the critiques of members the reader hides, 20261117_01, the feed functions too), as the record's page counts them (mutant shape-archive-critiques-counted-for-every-reader); and, folded in: the door caps the days at what is needed, as it caps the films: 2 OF 2 (useDoor; mutant shape-door-days-past-their-measure)"
+    sweep: { read: [appCode], found: 17, fixed: 7, judged: 10, commit: 7c57c2b2, finder: src/utils/__tests__/anEmptyRoomIsDrawnOnlyFromAnAnswer.guard.test.ts, result: "17 sites: 7 fixed (a door left open over the next room's unread roster; a salon's member count the house did not give said as 0 on the corridor card, a member's own salon card, its face stack and the room's header and door; two counts' dead fallbacks to 0 taken out), 10 judged in the finder" }
     places: [none]
 
   - id: TEST-sweep-blind-to-a-handed-on-read
@@ -2745,27 +2795,6 @@ classes:
       - { kind: running, file: src/stores/__tests__/everyStoreStartsAgain.guard.test.ts, test: "the notices' reading flags come down, so the next member's first read runs" }
     fix: "each store is made from, and reset to, one list of its starting values (noticesAtStart, loungesAtStart, as films and the Dispatch were); every store with a reset is soiled whole and asked back by one real resetAllStores, found by sweeping the code (mutants shape-notices-reset-by-hand, shape-salons-reset-by-hand)"
     places: [none]
-
-  - id: READ-a-foot-counting-what-it-cannot-read
-    title: "A filing's critiques offered \"N MORE\" by the house's count of every critique, while the rows came under the block policy: with a hidden member's critique among them the foot never ended, and MORE pressed asked nothing; and the Notices door's banner counted requests from members muted or blocked, while the door itself, filtered, said nobody was there"
-    seriousness: behaviour
-    area: dispatch
-    status: OPEN
-    count: 4
-    source: { kind: reviewer, ref: "review round 3, every feature, 2026-11-15" }
-    methods:
-      - { kind: running, file: src/components/dispatch/__tests__/aFailedCritiqueReadIsSaid.test.tsx, test: "ends when the house has sent its last page, though its count holds critiques this member may not read" }
-      - { kind: running, file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "counts no request from a member blocked or muted, as the door offers none" }
-      - { kind: running, file: src/components/profile/__tests__/theDoorSaysWhatItCouldNotRead.test.tsx, test: "with nobody hidden, the count asks for every request" }
-      - { kind: running, file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "are told the critiques are read by members, and SIGN IN TO READ THEM asks them in; a member reads them as before" }
-      - { kind: running, file: src/components/dispatch/paper/__tests__/theCritiquesAreReadByMembers.test.tsx, test: "says THE CRITIQUES ARE READ BY MEMBERS, and offers no page of critiques they cannot read" }
-      - { kind: running, file: src/components/dispatch/paper/__tests__/theCritiquesAreReadByMembers.test.tsx, test: "is said even while a read is out or one failed: a visitor is given none to wait for or ask again" }
-      - { kind: running, file: src/services/__tests__/aRecordsCritiquesAreTheReaders.test.ts, test: "a member's archive card counts the critiques they may read, as the record's page does" }
-      - { kind: running, file: src/services/__tests__/aRecordsCritiquesAreTheReaders.test.ts, test: "and so does the record's own read, for a member" }
-      - { kind: running, file: src/services/__tests__/aRecordsCritiquesAreTheReaders.test.ts, test: "a row read without the reader's count keeps the kept one" }
-    fix: "the foot ends on the house's own word that no page follows (critiquesHasMore), counting against every critique read (mutant shape-foot-counts-past-the-house); the door's count leaves out the members the door leaves out (mutant shape-door-counts-the-hidden); a filing's critiques foot tells a visitor THE CRITIQUES ARE READ BY MEMBERS / SIGN IN TO READ THEM, never an end or a MORE under critiques the house does not send them (mutant shape-visitor-foot-drawn-as-a-members); a record's critique count on a card and in a film's Log Archive is the reader's own (critiques_seen, a computed field of logs: log_counts' number less the critiques of members the reader hides, 20261117_01, the feed functions too), as the record's page counts them (mutant shape-archive-critiques-counted-for-every-reader)"
-    places: [none]
-
   - id: READ-a-page-begun-past-its-row
     title: "The next page of a filing's critiques began at the rows HELD, which counted the member's own new critique (set at the top whatever the order): under CERTIFIED, where it sorts below, the next page began one past the true next row and skipped it; a critique withdrawn from a page read did the same"
     seriousness: behaviour
@@ -3081,26 +3110,6 @@ classes:
       - { kind: running, file: src/stores/__tests__/aFollowReadAgainTakesThePlaceOfTheOld.test.ts, test: "a read asked again replaces the running one, whose late answer lands nowhere" }
     fix: "a block that lands reads the follow list again, a fresh read in place of any running (hydrateFollowing again; mutants shape-block-keeps-the-follow, shape-follow-reread-joins-the-old)"
     places: [none]
-
-  - id: UI-a-guess-drawn-as-the-answer
-    title: "A guess drawn as the answer before the house was asked: following a private member nobody had looked up showed FOLLOWING, unsealing their file for a moment, which read it as an empty archive and stayed stuck reading once they admitted the member"
-    seriousness: behaviour
-    area: profile
-    status: OPEN
-    count: 2
-    source: { kind: reviewer, ref: "review round 5, every feature, 2026-11-16" }
-    methods:
-      - { kind: running, file: src/stores/__tests__/aRequestIsShownAsARequest.test.ts, test: "with nothing known, shows nothing until the house says the member is private, then a request" }
-      - { kind: running, file: src/stores/__tests__/aRequestIsShownAsARequest.test.ts, test: "a private member’s file says so: a request is shown at once, never a follow" }
-      - { kind: running, file: src/stores/__tests__/aRequestIsShownAsARequest.test.ts, test: "an open member’s file shows the follow at once" }
-      - { kind: running, file: src/stores/__tests__/aFollowTheHouseFiledAsARequestReadsRequested.test.ts, test: "FOLLOW on a member who turned private while their file was open reads REQUESTED, as the house filed it" }
-      - { kind: running, file: src/stores/__tests__/aFollowTheHouseFiledAsARequestReadsRequested.test.ts, test: "a request already standing at their door reads REQUESTED, though their file read them open" }
-      - { kind: running, file: src/stores/__tests__/aFollowTheHouseFiledAsARequestReadsRequested.test.ts, test: "FOLLOW on an open member reads FOLLOWING, as before" }
-      - { kind: running, file: src/hooks/__tests__/aFollowFiledAsARequestCountsNoOne.test.tsx, test: "a follow the house filed as a request counts no one, and the file knows the member is private now" }
-      - { kind: running, file: src/hooks/__tests__/aFollowFiledAsARequestCountsNoOne.test.tsx, test: "a follow of an open member counts one, as before" }
-    fix: "followUser shows a request or a follow only when it is known which (the member's file says), and with nothing known shows nothing until the house answers (mutant shape-request-shown-as-follow); FOLLOW reads back the row the house filed: a follow filed as a request (the member turned private while their file was open), or a request already standing, reads REQUESTED, the handle known private, the follower count left as it was (mutants shape-follow-filed-as-request-shown-following, shape-follow-filed-as-request-counted)"
-    places: [none]
-
   - id: UI-a-second-tap-dropped-unsaid
     title: "A second tap dropped without a word: at the Notices door, ADMIT or DECLINE on one request while another was being answered gave its haptic and did nothing, the row undimmed"
     seriousness: behaviour
@@ -3463,46 +3472,6 @@ classes:
       - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "opens the curator's file once for a double tap, and again for a tap a moment later" }
     fix: "a removal on its way turns a second press away and says it is busy (REMOVING…, DELETING…), and a failed one gives the press back (mutants shape-removal-pressed-twice, shape-removal-press-not-busy, shape-failed-removal-keeps-the-press); each request at the door is held on its own until it leaves, a seal and a removal of one record never race, and a pressed name or link acts once a press (mutants shape-door-answer-frees-the-row, shape-reseal-over-a-removal, shape-removal-over-a-reseal, shape-curator-opened-twice)"
     places: [none]
-
-  - id: COPY-an-unknown-said-as-a-count
-    title: "A count said that nobody had: the search said \"0 RESULTS\" above \"could not be reached\" and told screen readers \"0 results\" for a source it never asked; a salon's header counted the roster rows its reader could read, \"1 MEMBER\" to a muted member in a full salon"
-    seriousness: behaviour
-    area: search
-    status: OPEN
-    count: 6
-    source: { kind: reviewer, ref: "review round 7, every feature, 2026-11-16" }
-    methods:
-      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a source that could not be asked: the count line says NOT REACHED, never 0 RESULTS, and its tab says so" }
-      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a search that failed: the count line says NOT REACHED, and every tab says not reached" }
-      - { kind: running, file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "while the search is out, a tab is named without a count" }
-      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a seated member is told the seated alone: the banned, the muted and the waiting are not counted" }
-      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "the host is told the seated alone too" }
-      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a muted member, whose roster holds their own row alone, is told the house’s count, never \"1 MEMBER\"" }
-      - { kind: running, file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a banned member reading the public room is told the house’s count, never \"1 MEMBER\"" }
-      - { kind: running, file: src/hooks/__tests__/theArchiveSearchIsCountedByTheHouse.test.tsx, test: "each film found carries the house’s count of its filings, the most-filed first, and a film past the newest rows is found" }
-      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a guest with no seat is told the salon’s count and that the roster is kept for those seated, and is offered no STEP OUT" }
-      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a reader at the door (pending) is told the salon’s count, drawn no rows, and may step out of the row they hold" }
-      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a banned reader is told the salon’s count, drawn not even their own row, and offered no STEP OUT" }
-      - { kind: running, file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "the host and the seated, muted too, see the roster whole, never told it is kept; a guest beside them is" }
-      - { kind: running, file: src/components/dispatch/__tests__/anOpenBallotPrintsNoCountItDoesNotKnow.test.tsx, test: "marked, with its count not yet known, says the ballot is cast and prints no number" }
-      - { kind: running, file: src/components/dispatch/__tests__/anOpenBallotPrintsNoCountItDoesNotKnow.test.tsx, test: "marked, with the running count read, draws it" }
-      - { kind: running, file: src/components/dispatch/__tests__/anOpenBallotPrintsNoCountItDoesNotKnow.test.tsx, test: "unmarked, invites the mark as before" }
-      - { kind: running, file: src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts, test: "a vote that lands reads the running count, with the member’s own ballot in it" }
-      - { kind: running, file: src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts, test: "a ballot opened that the member voted in reads its count" }
-      - { kind: running, file: src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts, test: "a ballot opened that the member has not voted in asks for no count" }
-      - { kind: running, file: src/stores/__tests__/anOpenBallotIsCountedForItsVoters.test.ts, test: "a count the house does not give stays unknown, never a 0" }
-      - { kind: running, file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "counts both cases when the house closed both" }
-      - { kind: running, file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "counts one, and says the other was judged by another moderator, when the house closed only one; both leave the docket" }
-      - { kind: running, file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "says both were judged by another moderator when the house closed none; both leave the docket" }
-      - { kind: running, file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "states no number when the answer holds no count" }
-      - { kind: running, file: src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx, test: "dismisses many, and says how many the house closed" }
-      - { kind: running, file: src/services/__tests__/theTribunalReadsTheWholeRecord.test.tsx, test: "gives no count when the answer is not one, so no number is said that the house did not give" }
-      - { kind: running, file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "a head names its section and its own count, \"20+\" while more remain" }
-      - { kind: running, file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "there is one number a section: no count line totals the sampler beside the badges" }
-      - { kind: running, file: app/(modals)/__tests__/theSearchShowsOneCountAndTheWayOn.test.tsx, test: "a head opens its section, where every row read so far is shown" }
-    fix: "a count is said only once it is known (NOT REACHED, a tab named without one while asked), and the salon counts the seated as the house does, from the roster only for one who reads it whole (mutants shape-unknown-count-said-zero, shape-unreached-tab-counted, shape-salon-counts-its-roster); the archive's film search is counted by the house, the hidden left out (mutant shape-archive-counted-from-its-rows); the salon sheet draws the roster only for the host and the seated, muted too; anyone else is told the salon's own count and \"The roster is kept for those seated.\", and offered STEP OUT only of a row they hold (mutants shape-guest-told-their-rows-as-the-count, shape-guest-offered-step-out); an open ballot marked by the member draws the running count the house gives a voter (ballot_tally, 20261117_01), read when the vote lands and when a ballot they voted in opens; until it is read the ballot says YOUR BALLOT IS CAST and prints no number, never 0 BALLOTS CAST (mutants shape-open-ballot-counted-as-none, shape-cast-ballot-count-unread); a bulk dismissal says the cases the house closed, never the number selected, and the ones another moderator judged meanwhile apart; with no count in the answer no number is said (mutant shape-bulk-dismissal-counts-the-selected); the search says one number for each section, its own: exact once the source has no more, N+ while it holds a next page, drawn and spoken; ALL is a sampler, each section under a head that carries its count and opens its tab, with no count line beside the badges (mutant shape-search-count-said-as-a-total)"
-    places: [none]
-
   - id: COPY-a-refusal-unsaid-once-the-screen-closed
     title: "A refusal said only while its screen stood: ADMIT, DECLINE or DECLINE ALL refused after the Notices board was closed said nothing, the badge kept low, and the petitioner silently back at the next opening"
     seriousness: behaviour
@@ -3677,19 +3646,6 @@ classes:
     fix: "the house gives its newest run whole (current_run: its nights and its last night, 20261117_01) and the phone judges it on its own calendar, standing while its last night is the member's yesterday or later and ending at the member's own midnight while the file is open (houseRunOf, runStillStanding; mutant shape-run-judged-on-the-houses-day); round 14: a removed piece's appeal deadline was printed as a UTC date with no hour, already past for a member west of UTC when the piece was deleted: every surface says the one instant it is kept until, in the member's own day and hour, the notice too (rehearsal a_removed_piece_waits_for_its_appeal_rehearsal.sql) (mutant shape-appeal-day-said-without-its-hour)"
     sweep: { read: [appCode, snapshot, migrations], found: 15, fixed: 0, judged: 15, commit: 14ff13d3, finder: src/utils/__tests__/aDayIsReadOnItsOwnCalendar.guard.test.ts, result: "3 app sites and 12 house functions, each judged in the finder with why its day is the right one" }
     places: [none]
-
-  - id: COPY-a-count-past-its-measure
-    title: "A count printed past the measure it is read against: a member of a year's standing who still needed films read DAYS A MEMBER 412 OF 2 at the Dispatch's door, which reads as an error"
-    seriousness: behaviour
-    area: dispatch
-    status: OPEN
-    count: 1
-    source: { kind: reviewer, ref: "review round 11, every feature, 2026-11-17" }
-    methods:
-      - { kind: running, file: src/components/dispatch/__tests__/theDoorIsShown.test.tsx, test: "caps the days a member at what is needed: a year in the house reads 2 OF 2" }
-    fix: "the door caps the days at what is needed, as it caps the films: 2 OF 2 (useDoor; mutant shape-door-days-past-their-measure)"
-    places: [none]
-
   - id: UI-a-control-lost-inside-one-stop
     title: "A control drawn inside an accessible element, which iOS reads as one stop and never enters, was lost to VoiceOver however well it was named: each Tribunal case card was one dimmed button holding its nine verdicts, the accused and the evidence, so no case could be judged; a stack row hid its Remove, a notice row its Dismiss, and the taken-up line its START CLEAN"
     seriousness: behaviour

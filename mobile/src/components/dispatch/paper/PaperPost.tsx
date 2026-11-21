@@ -604,8 +604,8 @@ export const PaperPost = memo(function PaperPost({
             onPress={onCritique}
             accessibilityRole="button"
             accessibilityLabel={
-              (commentCount ?? 0) > 0
-                ? `Critique. ${counted(commentCount ?? 0, 'critique remains', 'critiques remain')} under this filing`
+              commentCount !== undefined && commentCount > 0
+                ? `Critique. ${counted(commentCount, 'critique remains', 'critiques remain')} under this filing`
                 : 'Critique'
             }>
             <MarkFigure iconSize={16} count={commentCount} style={p.actionLabel}>

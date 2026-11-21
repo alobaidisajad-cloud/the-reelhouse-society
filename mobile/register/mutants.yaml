@@ -688,8 +688,8 @@ mutants:
     source: shape
     edits:
       - file: src/components/lounge/PublicLoungeCard.tsx
-        find: "  const members = counted(lounge.member_count || 0, 'MEMBER', 'MEMBERS');"
-        replace: "  const members = `${lounge.member_count || 0} MEMBERS`;"
+        find: "  const members = typeof lounge.member_count === 'number' ? counted(lounge.member_count, 'MEMBER', 'MEMBERS') : null;"
+        replace: "  const members = typeof lounge.member_count === 'number' ? `${lounge.member_count} MEMBERS` : null;"
     proof: { file: src/utils/__tests__/aCountSaysItsWord.guard.test.ts, test: "prints no count before its word but through counted(), or one that can never be one" }
 
   - id: shape-reader-undocked
@@ -4293,7 +4293,7 @@ mutants:
     proof: { file: src/stores/__tests__/everyStoreStartsAgain.guard.test.ts, test: "src/stores/lounge.ts puts back every value it holds" }
 
   - id: shape-foot-counts-past-the-house
-    class: READ-a-foot-counting-what-it-cannot-read
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/components/dispatch/paper/PaperCritiques.tsx
@@ -4818,7 +4818,7 @@ mutants:
     proof: { file: src/stores/__tests__/aFollowReadAgainTakesThePlaceOfTheOld.test.ts, test: "a read asked again replaces the running one, whose late answer lands nowhere" }
 
   - id: shape-request-shown-as-follow
-    class: UI-a-guess-drawn-as-the-answer
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/stores/domain/socialSlice.ts
@@ -4827,7 +4827,7 @@ mutants:
     proof: { file: src/stores/__tests__/aRequestIsShownAsARequest.test.ts, test: "with nothing known, shows nothing until the house says the member is private, then a request" }
 
   - id: shape-door-counts-the-hidden
-    class: READ-a-foot-counting-what-it-cannot-read
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/services/FollowRequestService.ts
@@ -5465,7 +5465,7 @@ mutants:
     proof: { file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a removal that fails gives the press back: it reads REMOVE IT again, and a second press asks again" }
 
   - id: shape-unknown-count-said-zero
-    class: COPY-an-unknown-said-as-a-count
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: app/(modals)/search-modal.tsx
@@ -5474,7 +5474,7 @@ mutants:
     proof: { file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a source that could not be asked: the count line says NOT REACHED, never 0 RESULTS, and its tab says so" }
 
   - id: shape-unreached-tab-counted
-    class: COPY-an-unknown-said-as-a-count
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: app/(modals)/search-modal.tsx
@@ -5483,12 +5483,12 @@ mutants:
     proof: { file: src/hooks/__tests__/theSearchFindsWhatWasAskedFor.test.tsx, test: "a search that failed: the count line says NOT REACHED, and every tab says not reached" }
 
   - id: shape-salon-counts-its-roster
-    class: COPY-an-unknown-said-as-a-count
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: app/lounge/[id].tsx
-        find: "  const seated = (isApproved && members.filter(m => m.status === 'approved').length) || activeLounge?.member_count || 0;"
-        replace: "  const seated = members.filter(m => m.status !== 'pending').length || activeLounge?.member_count || 0;"
+        find: "  const seated: number | null = (isApproved && members.filter(m => m.status === 'approved').length) || (typeof activeLounge?.member_count === 'number' ? activeLounge.member_count : null);"
+        replace: "  const seated: number | null = members.filter(m => m.status !== 'pending').length || (typeof activeLounge?.member_count === 'number' ? activeLounge.member_count : null);"
     proof: { file: src/components/lounge/__tests__/theHeaderCountsTheSeated.test.tsx, test: "a muted member, whose roster holds their own row alone, is told the house’s count, never \"1 MEMBER\"" }
 
   - id: shape-offline-delete-page-read-again
@@ -5960,7 +5960,7 @@ mutants:
     proof: { file: src/hooks/__tests__/aNextPageStartsAfterTheLastRowRead.test.tsx, test: "a filing withdrawn while the member reads does not make the next page skip the one after the page" }
 
   - id: shape-archive-counted-from-its-rows
-    class: COPY-an-unknown-said-as-a-count
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/hooks/useDispatchArchive.ts
@@ -6086,7 +6086,7 @@ mutants:
     proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "their mark on a ballot asks them in, and casts nothing" }
 
   - id: shape-visitor-foot-drawn-as-a-members
-    class: READ-a-foot-counting-what-it-cannot-read
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: app/dispatch/[id].tsx
@@ -6095,7 +6095,7 @@ mutants:
     proof: { file: src/components/dispatch/__tests__/readerScreen.test.tsx, test: "are told the critiques are read by members, and SIGN IN TO READ THEM asks them in; a member reads them as before" }
 
   - id: shape-guest-told-their-rows-as-the-count
-    class: COPY-an-unknown-said-as-a-count
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/components/lounge/LoungeSettingsPanel.tsx
@@ -6104,7 +6104,7 @@ mutants:
     proof: { file: src/components/lounge/__tests__/theRosterIsKeptForThoseSeated.test.tsx, test: "a guest with no seat is told the salon’s count and that the roster is kept for those seated, and is offered no STEP OUT" }
 
   - id: shape-guest-offered-step-out
-    class: COPY-an-unknown-said-as-a-count
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/components/lounge/LoungeSettingsPanel.tsx
@@ -6194,7 +6194,7 @@ mutants:
     proof: { file: app/(admin)/__tests__/aVerdictOnACaseThatMovedOnIsTold.test.tsx, test: "leaves the docket when its dismissal is refused as already judged, and says so in plain words" }
 
   - id: shape-bulk-dismissal-counts-the-selected
-    class: COPY-an-unknown-said-as-a-count
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: app/(admin)/tribunal.tsx
@@ -6239,7 +6239,7 @@ mutants:
     proof: { file: src/stores/__tests__/aReactionTakenBackLeavesTheCount.test.ts, test: "a reaction read with the room, taken back by its member, leaves the count at once" }
 
   - id: shape-follow-filed-as-request-shown-following
-    class: UI-a-guess-drawn-as-the-answer
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/stores/domain/socialSlice.ts
@@ -6248,7 +6248,7 @@ mutants:
     proof: { file: src/stores/__tests__/aFollowTheHouseFiledAsARequestReadsRequested.test.ts, test: "FOLLOW on a member who turned private while their file was open reads REQUESTED, as the house filed it" }
 
   - id: shape-follow-filed-as-request-counted
-    class: UI-a-guess-drawn-as-the-answer
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/hooks/useProfileController.ts
@@ -6338,7 +6338,7 @@ mutants:
     proof: { file: src/hooks/__tests__/aMemberFileFollowsTheirRename.test.tsx, test: "a link to a member who renamed since moves the route to the handle they hold now" }
 
   - id: shape-open-ballot-counted-as-none
-    class: COPY-an-unknown-said-as-a-count
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/components/dispatch/paper/PaperBallot.tsx
@@ -6347,7 +6347,7 @@ mutants:
     proof: { file: src/components/dispatch/__tests__/anOpenBallotPrintsNoCountItDoesNotKnow.test.tsx, test: "marked, with its count not yet known, says the ballot is cast and prints no number" }
 
   - id: shape-cast-ballot-count-unread
-    class: COPY-an-unknown-said-as-a-count
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/stores/dispatch.ts
@@ -6410,7 +6410,7 @@ mutants:
     proof: { file: src/features/profile/__tests__/aRenameIsWhatTheHouseKept.test.tsx, test: "a rename the house kept is the handle the phone holds, and the handle given up is handed over" }
 
   - id: shape-archive-critiques-counted-for-every-reader
-    class: READ-a-foot-counting-what-it-cannot-read
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/services/logCounts.ts
@@ -6446,7 +6446,7 @@ mutants:
     proof: { file: src/utils/__tests__/aGroupCountsMembersNotNotices.test.ts, test: "one member who certified, took it back and certified again, and another, are two members" }
 
   - id: shape-door-days-past-their-measure
-    class: COPY-a-count-past-its-measure
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: src/hooks/useDoor.ts
@@ -6698,7 +6698,7 @@ mutants:
     proof: { file: src/hooks/__tests__/theSearchReadsPastItsFirstPage.test.tsx, test: "the records: twenty shown, more said, and the next twenty asked from the last one shown" }
 
   - id: shape-search-count-said-as-a-total
-    class: COPY-an-unknown-said-as-a-count
+    class: UI-read-drawn-as-empty
     source: shape
     edits:
       - file: app/(modals)/search-modal.tsx

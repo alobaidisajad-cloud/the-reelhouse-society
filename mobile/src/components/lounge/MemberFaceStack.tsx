@@ -56,12 +56,14 @@ export const MemberFaceStack = React.memo(function MemberFaceStack({
 }) {
   const { shown, overflowLabel } = buildFaceStackModel(faces, totalCount);
 
+  // No faces and no count from the house: nothing known to draw, never a "0".
+  if (shown.length === 0 && typeof totalCount !== 'number') return null;
   // No faces available → the plain count, same footprint.
   if (shown.length === 0) {
     return (
       <View style={s.row}>
         <Users size={11} color={colors.fog} strokeWidth={1.5} />
-        <Text style={s.count} numberOfLines={1}>{totalCount ?? 0}</Text>
+        <Text style={s.count} numberOfLines={1}>{totalCount}</Text>
         {isPrivate && <Lock size={10} color={colors.sepia} strokeWidth={1.5} style={s.lock} />}
       </View>
     );
