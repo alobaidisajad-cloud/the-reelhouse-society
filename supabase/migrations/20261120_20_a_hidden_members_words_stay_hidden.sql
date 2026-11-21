@@ -119,16 +119,31 @@ CREATE OR REPLACE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(loung
   )
   SELECT
     r.lounge_id,
+    -- A room read before is counted from that moment alone: its index (lounge_messages_room_newest)
+    -- starts there, so only the messages since are read, each from its row to ask whose words it
+    -- carries. One test asking "never read, or since" could start nowhere, and read every message the
+    -- room holds (291 ms for a member in 200 rooms of the load house). A room never read: all of it.
     CASE WHEN r.readable THEN (
-      SELECT count(*) FROM (
-        SELECT 1 FROM public.lounge_messages m
-         WHERE m.lounge_id = r.lounge_id
-           AND m.user_id <> me.id
-           AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)
-           AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
-           AND NOT COALESCE(m.carries_words_of && me.hidden, false)
-         LIMIT 100
-      ) unread
+      CASE WHEN r.last_read_at IS NULL THEN (
+        SELECT count(*) FROM (
+          SELECT 1 FROM public.lounge_messages m
+           WHERE m.lounge_id = r.lounge_id
+             AND m.user_id <> me.id
+             AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+             AND NOT COALESCE(m.carries_words_of && me.hidden, false)
+           LIMIT 100
+        ) unread
+      ) ELSE (
+        SELECT count(*) FROM (
+          SELECT 1 FROM public.lounge_messages m
+           WHERE m.lounge_id = r.lounge_id
+             AND m.created_at > r.last_read_at
+             AND m.user_id <> me.id
+             AND NOT COALESCE(m.user_id = ANY (me.hidden), false)
+             AND NOT COALESCE(m.carries_words_of && me.hidden, false)
+           LIMIT 100
+        ) unread
+      ) END
     ) ELSE 0 END AS unread_count,
     -- The last word the member can read: one from a member they hid moved the card to the front
     -- and said "LAST WORD 1M AGO" over a room with nothing new in it (review round 8); one carrying

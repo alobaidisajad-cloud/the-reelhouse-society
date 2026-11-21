@@ -6,6 +6,9 @@
 --      they now are, and the six functions members run as themselves call private.* (review round 14).
 --   2. public.hidden_authors() and public.is_hidden_by() stay for the house's own functions, with no
 --      grant to a member or the visitor (review round 14).
+--   3. The house's one function that asked the rule seat by seat (get_salon_member_faces) asks it once,
+--      and search_members runs as the house, hiding whom the rule hides itself, so the profiles rule of
+--      20261120_04 leaves its words their indexes (the load lab, round 14's train).
 --   First of the round: every later car's rule or member-run function calls private.*. Functions and
 --   a schema only; the functions are moved, not copied, so no table or rule is touched.
 -- Undo: mobile/supabase/migrations-down/20261120_02_no_member_asks_who_blocked_them.sql
@@ -29,7 +32,8 @@ SET LOCAL statement_timeout = '30s';
 --      each rule still runs as the member reading;
 --   2. the six functions members run as themselves that call either (critiques_seen,
 --      dispatch_archive_films, get_community_feed_auth_cursor, get_lobby, get_lounge_list,
---      search_members) call private.* instead, each otherwise as it stands;
+--      search_members) call private.* instead, each otherwise as it stands, search_members now as the
+--      house; and get_salon_member_faces, the house's own, asks private.* once a call, not each seat;
 --   3. public.hidden_authors() and public.is_hidden_by() stay, each asking private.*, for the house's
 --      own functions that call them by that name (each runs as the house), with no grant to a member
 --      or the visitor: the API answers a member who asks for either that it may not.
@@ -335,10 +339,50 @@ CREATE OR REPLACE FUNCTION public.get_lounge_list() RETURNS jsonb
   )
 $$;
 
--- add-only (3): it only fixes: search_members asks private.* for who is hidden, every answer as before; replayed as the members themselves (H-A5 rehearsal)
+-- The house's own function that asked the rule of every seat it read: it asks private.* once, for
+-- the array, and tests each seat against it (is_hidden_by(_, x) is x in hidden_authors()). The
+-- public name asks private.* in its turn, two calls a seat: the corridor's faces of a member in 200
+-- rooms took 141 ms on the load house, where the array takes a test a seat.
+-- add-only (3): it only fixes: a salon's first three faces as before, none a member hidden from the reader, the rule asked once a call; replayed as the members themselves (H-A5 rehearsal)
+CREATE OR REPLACE FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[])
+  RETURNS TABLE(lounge_id uuid, username text, avatar_url text, rn integer)
+  LANGUAGE sql STABLE SECURITY DEFINER
+  SET search_path TO 'public', 'pg_temp'
+  AS $$
+  WITH reader AS (SELECT private.hidden_authors() AS hidden)
+  SELECT r.id, f.username, f.avatar_url, f.rn::integer
+  FROM reader
+  CROSS JOIN (SELECT DISTINCT x.id FROM unnest(p_lounge_ids) AS x(id)) r
+  CROSS JOIN LATERAL (
+    SELECT first3.username, first3.avatar_url,
+           row_number() OVER (ORDER BY first3.joined_at, first3.user_id) AS rn
+    FROM (
+      SELECT lm.user_id, lm.joined_at, p.username, p.avatar_url
+      FROM public.lounge_members lm
+      JOIN public.profiles p ON p.id = lm.user_id
+      WHERE lm.lounge_id = r.id
+        AND lm.status = 'approved'
+        AND p.username IS NOT NULL
+        AND NOT COALESCE(lm.user_id = ANY (reader.hidden), false)
+      ORDER BY lm.joined_at ASC, lm.user_id ASC
+      LIMIT 3
+    ) first3
+  ) f
+  WHERE EXISTS (SELECT 1 FROM public.lounge_members me
+                WHERE me.lounge_id = r.id AND me.user_id = auth.uid() AND me.status = 'approved')
+     OR auth.uid() = (SELECT l.creator_id FROM public.lounges l WHERE l.id = r.id)
+  ORDER BY r.id, f.rn;
+$$;
+
+-- As the house (SECURITY DEFINER), leaving out whom the rule hides itself (v_hidden, below): the
+-- profiles rule that hides a blocker from the member blocked (20261120_04) is the same rule or less
+-- (none of an admin's), and a row rule kept the words from their indexes: ILIKE and lower() may
+-- not be asked of a row before the rule has passed it, so every handle was read (172 ms on the load
+-- house for a handle few share). Every answer as before, to every member and the visitor.
+-- add-only (3): it only fixes: search_members asks private.* for who is hidden, and finds the words by their indexes, every answer as before; replayed as the members themselves (H-A5 and H-A2.locks rehearsals)
 CREATE OR REPLACE FUNCTION public.search_members(p_pattern text, p_handles_only boolean DEFAULT false, p_cursor_closeness integer DEFAULT NULL::integer, p_cursor_username text DEFAULT NULL::text, p_limit integer DEFAULT 20)
 RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)
-    LANGUAGE plpgsql STABLE
+    LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
 DECLARE

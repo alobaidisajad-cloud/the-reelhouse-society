@@ -217,6 +217,36 @@ CREATE OR REPLACE FUNCTION public.get_lounge_list() RETURNS jsonb
   )
 $$;
 
+-- The house's own, as 20261111_04 made it: asking public.is_hidden_by of each seat.
+CREATE OR REPLACE FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[])
+  RETURNS TABLE(lounge_id uuid, username text, avatar_url text, rn integer)
+  LANGUAGE sql STABLE SECURITY DEFINER
+  SET search_path TO 'public', 'pg_temp'
+  AS $$
+  SELECT r.id, f.username, f.avatar_url, f.rn::integer
+  FROM (SELECT DISTINCT x.id FROM unnest(p_lounge_ids) AS x(id)) r
+  CROSS JOIN LATERAL (
+    SELECT first3.username, first3.avatar_url,
+           row_number() OVER (ORDER BY first3.joined_at, first3.user_id) AS rn
+    FROM (
+      SELECT lm.user_id, lm.joined_at, p.username, p.avatar_url
+      FROM public.lounge_members lm
+      JOIN public.profiles p ON p.id = lm.user_id
+      WHERE lm.lounge_id = r.id
+        AND lm.status = 'approved'
+        AND p.username IS NOT NULL
+        AND NOT public.is_hidden_by(auth.uid(), lm.user_id)
+      ORDER BY lm.joined_at ASC, lm.user_id ASC
+      LIMIT 3
+    ) first3
+  ) f
+  WHERE EXISTS (SELECT 1 FROM public.lounge_members me
+                WHERE me.lounge_id = r.id AND me.user_id = auth.uid() AND me.status = 'approved')
+     OR auth.uid() = (SELECT l.creator_id FROM public.lounges l WHERE l.id = r.id)
+  ORDER BY r.id, f.rn;
+$$;
+
+-- search_members as it stood, as the caller.
 CREATE OR REPLACE FUNCTION public.search_members(p_pattern text, p_handles_only boolean DEFAULT false, p_cursor_closeness integer DEFAULT NULL::integer, p_cursor_username text DEFAULT NULL::text, p_limit integer DEFAULT 20)
 RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)
     LANGUAGE plpgsql STABLE
