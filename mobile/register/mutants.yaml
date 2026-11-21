@@ -9651,6 +9651,9 @@ mutants:
       - file: ../supabase/migrations/20261122_06_a_stacks_count_is_read_as_its_stack_is.sql
         find: "                   AND NOT COALESCE(l.user_id = ANY ((SELECT ids FROM hidden)::uuid[]), false)\n                   AND private.can_view_user_data(l.user_id)))\n"
         replace: "                   ))\n"
+      - file: ../supabase/migrations/20261122_06_a_stacks_count_is_read_as_its_stack_is.sql
+        find: "  WITH hidden AS MATERIALIZED (SELECT private.hidden_authors() AS ids)\n"
+        replace: ""
     proof: { file: src/utils/__tests__/aDefinerReadKeepsTheReadersRules.guard.test.ts, test: "names the hiding rule and the withheld rule in each that reads members' words, or is judged why it need not" }
 
   - id: shape-a-function-unasked-across-a-block
