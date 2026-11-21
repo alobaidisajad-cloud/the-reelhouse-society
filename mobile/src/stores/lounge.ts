@@ -1051,35 +1051,24 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const newestHeld = held.reduce((a, b) => (before(a, b) >= 0 ? a : b));
     const oldestHeld = held.reduce((a, b) => (before(a, b) <= 0 ? a : b));
 
-    const fresh: LoungeMessage[] = [];
-    // The reaction rows each page carries, kept once the answer is this member's.
-    const heard: ReactionRow[] = [];
-    let cursor = { created_at: newestHeld.created_at, id: newestHeld.id };
-    let whole = true;
     try {
-      // Page after page from the newest held, on the same (created_at, id) cursor loadMoreMessages
-      // pages back with, until a short page; past the window, the rest is not chased.
-      for (let page = 0; page < MESSAGE_WINDOW / MESSAGE_PAGE; page++) {
-        const { data, error } = await supabase
-          .from('lounge_messages')
-          .select(MESSAGE_COLUMNS)
-          .eq('lounge_id', loungeId)
-          .or(`created_at.gt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.gt.${cursor.id})`)
-          .order('created_at', { ascending: true })
-          .order('id', { ascending: true })
-          .limit(MESSAGE_PAGE);
-        if (error) return;
-        const rows = (data ?? []) as unknown as LoungeMessageRow[];
-        // messagesOf takes a page newest first, as every other read has it.
-        fresh.push(...messagesOf([...rows].reverse(), myId));
-        heard.push(...reactionRowsOf(rows));
-        if (rows.length < MESSAGE_PAGE) { whole = true; break; }
-        whole = false;
-        const last = rows.at(-1);
-        if (!last) break;
-        cursor = { created_at: last.created_at, id: last.id };
-      }
-      if (!whole) {
+      // What is newer than the newest held, in one read, on the same (created_at, id) cursor
+      // loadMoreMessages pages back with; past the window, the rest is not chased.
+      const { data: newer, error: newerError } = await supabase
+        .from('lounge_messages')
+        .select(MESSAGE_COLUMNS)
+        .eq('lounge_id', loungeId)
+        .or(`created_at.gt.${newestHeld.created_at},and(created_at.eq.${newestHeld.created_at},id.gt.${newestHeld.id})`)
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .limit(MESSAGE_WINDOW);
+      if (newerError) return;
+      const rows = (newer ?? []) as unknown as LoungeMessageRow[];
+      // messagesOf takes a page newest first, as every other read has it.
+      const fresh = messagesOf([...rows].reverse(), myId);
+      // The reaction rows the read carries, kept once the answer is this member's.
+      const heard = reactionRowsOf(rows);
+      if (rows.length === MESSAGE_WINDOW) {
         // More was missed than the room holds: it is read again from its newest, and only this
         // phone's own words (sending, failed, queued) are kept.
         const { data, error } = await supabase

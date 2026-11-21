@@ -4,8 +4,8 @@
  * Every read of an open room again (on return to the app, on its channel coming back, on the
  * not-live interval) replaced what it held: a failed bubble was erased with its words, the
  * older pages the member had scrolled up to went, and a read that failed raised "Could not load
- * messages" each time. Now it reads only what is newer than the newest message held, page after
- * page, and merges it in; the held ones are read again light (withdrawn, gone, their reactions).
+ * messages" each time. Now it reads only what is newer than the newest message held, in one
+ * read, and merges it in; the held ones are read again light (withdrawn, gone, their reactions).
  * Nothing is tried offline, and no failure is toasted.
  */
 import { onlineManager } from '@tanstack/react-query';
@@ -132,4 +132,13 @@ it('more missed than the room holds: read again from its newest, the member’s 
   const got = ids();
   expect(got.filter((id) => id !== FAILED.id)).toEqual(Array.from({ length: 100 }, (_, i) => idOf(800 + i)));
   expect(got).toContain(FAILED.id);
+});
+
+it('what is newer than the newest held comes in one read, however much of the window it fills', async () => {
+  open(Array.from({ length: 50 }, (_, i) => held(i)));
+  mockHouse = house(Array.from({ length: 400 }, (_, i) => row(i)));
+  await useLoungeStore.getState().catchUpMessages(ROOM);
+  expect(ids()).toEqual(Array.from({ length: 400 }, (_, i) => idOf(i)));
+  // One trip for the 350 missed, never a page waiting on the page before it.
+  expect(mockHouse.asked.filter((a) => a.table === 'lounge_messages' && a.ors?.length)).toHaveLength(1);
 });
