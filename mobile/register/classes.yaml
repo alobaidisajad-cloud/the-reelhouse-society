@@ -2463,13 +2463,10 @@ classes:
     count: 3
     source: { kind: reviewer, ref: "review round 1, the profile and settings, 2026-11-14" }
     methods:
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "3: no hold offers Discard over a save in flight, and work on its way is held or kept" }
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "3: Discard offered over a save in flight, and in-flight work neither held nor kept" }
       - { kind: running, file: src/features/settings/__tests__/theSignOutNamesWhatItErases.test.tsx, test: "signed out with an edit unsaved, leaves for the door without asking to keep it" }
       - { kind: static, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "the erasure removes the rows, the session AND the device" }
       - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "while the preferences are on their way SAVE is not lit and a way out does not ask to discard them" }
       - { kind: running, file: src/features/settings/__tests__/settings.redesign.test.tsx, test: "a preferences save refused lights SAVE again, and a way out asks before the changes go" }
-    sweep: "workEndsWithItsScreen rule 3 over app/, src/hooks, src/components, src/features, src/providers (stage C, kinds EXIT): 1 found, Settings, whose filing can be left on its way (the cure changes the screen: asked of the owner)"
     fix: "signing out and the erasure set where they leave for first, and the leave is taken once the unsaved-edit guard has let go (leavingTo) (mutant shape-leave-asked-after-sign-out); Settings counts the whole filing, preferences included, as saving: SAVE is not lit and no way out asks \"Discard changes?\" of changes already on their way (mutant shape-settings-save-lit-over-preferences)"
     places: [none]
 
@@ -2948,8 +2945,6 @@ classes:
     count: 7
     source: { kind: reviewer, ref: "review round 4, navigation, 2026-11-15" }
     methods:
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "2: Android's back is heard in useBackCloses alone, only while its screen is in front" }
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "2: Android's back heard outside useBackCloses" }
       - { kind: running, file: src/components/log/__tests__/theLogSheetGoesBackAStep.test.tsx, test: "Android's back on a film goes back to the search, and the sheet stays open" }
       - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "Android's back is BACK: to the forms, the sheet still open" }
       - { kind: running, file: src/components/dispatch/__tests__/aDeskLeavesAsItCame.test.tsx, test: "Android's back is BACK: to the forms, the ballot kept" }
@@ -2958,7 +2953,6 @@ classes:
       - { kind: running, file: src/components/log/__tests__/logSearchEngine.test.tsx, test: "the search kept above it is drawn as kept, and each change goes back up" }
       - { kind: running, file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "with a film open, it returns to the search with the words kept, never out of the Archive; with no film it is not taken" }
       - { kind: running, file: src/hooks/__tests__/backClosesTheOverlay.test.tsx, test: "back on the page above does not close the overlay hidden beneath it" }
-    sweep: "workEndsWithItsScreen rule 2 over every app file (stage C, kinds EXIT): back is heard in useBackCloses alone, focus-scoped; 0 found"
     fix: "Android's back on a step is its on-screen back (useBackCloses): the Log sheet's film back to its search, a desk back to the choice of form; an amend has no form to choose and goes back to its filing; the Log sheet keeps its search's words across a film (mutants shape-log-android-back-closes, shape-desk-android-back-closes, shape-amend-back-to-the-forms, shape-log-search-forgotten); Android's back in the Archive takes the page's own two steps (mutant shape-archive-back-leaves); an overlay on a screen covered by another takes no back press (mutant shape-covered-overlay-takes-back)"
     places: [none]
 
@@ -3444,9 +3438,6 @@ classes:
       - { kind: running, file: src/hooks/__tests__/theSealLeavesWithTheScreen.test.tsx, test: "a removal walks back while the sheet is there, and walks nobody back once the member has left" }
       - { kind: running, file: src/features/profile/__tests__/aSaveOnItsWayIsNotLost.test.tsx, test: "a save that lands after the member left walks nobody back" }
       - { kind: running, file: app/__tests__/aRecoveryLeftEndsItsSession.test.tsx, test: "walks the member home while they are on the screen, and nobody once they have left it" }
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "1: no walk, timer or pointed words after a wait outlives its screen" }
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "1: a walk, a timer or words that point at the screen, after a wait with no check after it" }
-    sweep: "workEndsWithItsScreen over app/, src/hooks, src/components, src/features, src/providers (stage C, kinds EXIT): 7 walks after a wait with no check found and fixed (reset-password's back, the stack page's two backs, the new salon's push, the essay desk's \"still here\", the second key's \"below\", the resend's countdown); the root layout and AppBootstrapper judged as living with the app"
     fix: "a screen left before its answer walks no one anywhere once it comes (the session it confirmed is still kept) (mutants shape-link-walks-after-leaving); an essay filed after its desk was swiped away walks no one (mutant shape-essay-walks-after-leaving); the log sheet's seal and removal, Edit Profile's save and the reset password's walk home move no one once the screen is gone (mutants shape-seal-walks-after-leaving, shape-removal-walks-after-leaving, shape-profile-walks-after-leaving, shape-reset-walks-after-leaving)"
     places: [none]
 
@@ -3458,10 +3449,6 @@ classes:
     count: 2
     source: { kind: reviewer, ref: "review round 7, every feature, 2026-11-16" }
     methods:
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "4: no busy row is one id let go after the wait" }
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "4: one id held busy across a wait" }
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "5: every press on words goes through onePress" }
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "5: words pressed with no onePress" }
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while a viewing is being removed, its press reads REMOVING…, busy, and neither it nor CANCEL can be pressed" }
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while the whole log is being deleted, CONFIRM DELETE reads DELETING…, busy, and a second press deletes nothing more" }
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "a removal that fails gives the press back: it reads REMOVE IT again, and a second press asks again" }
@@ -3473,7 +3460,6 @@ classes:
       - { kind: running, file: src/components/log/__tests__/aDeleteSaysWhatItTakes.test.tsx, test: "while a viewing is being removed, RESEAL is held: said disabled, and a press seals nothing" }
       - { kind: running, file: src/utils/__tests__/aPressOnWordsActsOnce.test.ts, test: "a second tap on the same words within 400 ms does nothing" }
       - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "opens the curator's file once for a double tap, and again for a tap a moment later" }
-    sweep: "workEndsWithItsScreen rules 4 and 5 over app/, src/hooks, src/components, src/features, src/providers (stage C, kinds EXIT): 0 found (the share sheet and the data vault hold one act at a time)"
     fix: "a removal on its way turns a second press away and says it is busy (REMOVING…, DELETING…), and a failed one gives the press back (mutants shape-removal-pressed-twice, shape-removal-press-not-busy, shape-failed-removal-keeps-the-press); each request at the door is held on its own until it leaves, a seal and a removal of one record never race, and a pressed name or link acts once a press (mutants shape-door-answer-frees-the-row, shape-reseal-over-a-removal, shape-removal-over-a-reseal, shape-curator-opened-twice)"
     places: [none]
 
@@ -3599,8 +3585,6 @@ classes:
     count: 1
     source: { kind: reviewer, ref: "review round 10, every feature, 2026-11-17" }
     methods:
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "6: every draft is typed by its kind" }
-      - { kind: static, file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "6: a draft read with a type of its own" }
       - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "a review marked CONTAINS SPOILERS, left unsent, comes back marked when the phone reopens the sheet, and is sealed veiled" }
       - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "the launch that reopens the sheet brings back the whole form: the walk-out and its reason, the day, the company, the format, the autopsy and the page" }
       - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "the sheet opened on the film brings back its whole form" }
@@ -3608,7 +3592,6 @@ classes:
       - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "a film logged since its draft was kept opens as a rewatch, its spoiler mark still on" }
       - { kind: running, file: src/hooks/__tests__/aDraftComesBackAsItWasLeft.test.tsx, test: "a film whose record was withdrawn since its draft was kept opens as a first viewing, its spoiler mark still on" }
       - { kind: running, file: src/hooks/__tests__/aRefusedSealKeepsTheWholeForm.test.tsx, test: "a seal refused puts the draft back with its spoiler mark, and the sheet reopened shows it marked" }
-    sweep: "workEndsWithItsScreen rule 6 over every app file (stage C, kinds EXIT): 14 reads typed apart from their writes found; memberDrafts types each kind (DraftShapes) and every caller reads and writes through it"
     fix: "the draft keeps the whole form, its spoiler mark above all, and takes it all up at every restore (takeUpForm), and a seal refused puts the whole form back; WATCHED and REWATCHED stay the film's own (mutants shape-draft-taken-up-without-its-spoiler, shape-refused-seal-keeps-a-part)"
     places: [none]
 

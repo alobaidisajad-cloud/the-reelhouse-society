@@ -9239,7 +9239,7 @@ mutants:
     proof: { file: scripts/__tests__/everyJestRunRunsAsATest.test.ts, test: "every script that starts jest through its API gives the run jest's own environment first" }
 
   - id: shape-walk-after-a-wait-unasked
-    class: NAV-a-walk-onward-after-the-member-left
+    class: EXIT-work-past-its-screen
     source: shape
     edits:
       - file: app/stacks/[id].tsx
@@ -9248,7 +9248,7 @@ mutants:
     proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "1: no walk, timer or pointed words after a wait outlives its screen" }
 
   - id: shape-countdown-after-the-screen
-    class: NAV-a-walk-onward-after-the-member-left
+    class: EXIT-work-past-its-screen
     source: shape
     edits:
       - file: src/hooks/useAuthFlow.ts
@@ -9257,7 +9257,7 @@ mutants:
     proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "1: no walk, timer or pointed words after a wait outlives its screen" }
 
   - id: shape-back-heard-beside-its-hook
-    class: NAV-a-back-that-skips-or-strays
+    class: EXIT-work-past-its-screen
     source: shape
     plant:
       - path: src/hooks/useMutantBack.ts
@@ -9265,7 +9265,7 @@ mutants:
     proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "2: Android's back is heard in useBackCloses alone, only while its screen is in front" }
 
   - id: shape-discard-over-a-desk-sending
-    class: NAV-a-leave-asked-after-it-was-decided
+    class: EXIT-work-past-its-screen
     source: shape
     edits:
       - file: src/components/dispatch/ComposeDesks.tsx
@@ -9274,7 +9274,7 @@ mutants:
     proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "3: no hold offers Discard over a save in flight, and work on its way is held or kept" }
 
   - id: shape-busy-row-held-as-one-id
-    class: WRITE-a-second-tap-that-acts-again
+    class: EXIT-work-past-its-screen
     source: shape
     plant:
       - path: src/components/MutantDoorRow.tsx
@@ -9282,7 +9282,7 @@ mutants:
     proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "4: no busy row is one id let go after the wait" }
 
   - id: shape-words-pressed-without-one-press
-    class: WRITE-a-second-tap-that-acts-again
+    class: EXIT-work-past-its-screen
     source: shape
     edits:
       - file: app/stacks/[id].tsx
@@ -9291,7 +9291,7 @@ mutants:
     proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "5: every press on words goes through onePress" }
 
   - id: shape-draft-read-typed-apart
-    class: WRITE-a-draft-kept-in-part
+    class: EXIT-work-past-its-screen
     source: shape
     edits:
       - file: src/hooks/useKeptWords.ts
