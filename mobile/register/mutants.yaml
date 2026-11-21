@@ -8856,8 +8856,8 @@ mutants:
     source: shape
     edits:
       - file: scripts/hooks/pre-push.cjs
-        find: "      after: [...(green.length ? ['tests'] : []), ...warmFirst],\n"
-        replace: "      after: [...warmFirst],\n"
+        find: "      after: [...(greenOf().length ? ['tests'] : []), ...warmFirst(base)],\n"
+        replace: "      after: [...warmFirst(base)],\n"
     proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
 
   - id: shape-green-from-a-dirty-tree
@@ -8865,8 +8865,8 @@ mutants:
     source: shape
     edits:
       - file: scripts/hooks/pre-push.cjs
-        find: "const green = changed.length && clean ?"
-        replace: "const green = changed.length ?"
+        find: "const greenOf = () => (changed.length && clean ?"
+        replace: "const greenOf = () => (changed.length ?"
     proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
 
   - id: shape-green-from-another-test
@@ -8919,17 +8919,17 @@ mutants:
     source: shape
     edits:
       - file: scripts/hooks/pre-push.cjs
-        find: "  const room = warmEarly ? { cpu: after.cpu - COST.warm.cpu, mem: after.mem - COST.warm.mem } : after;"
-        replace: "  const room = after;"
-    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "sizes the jest workers and the lanes to the cap beside the rehearsals, the warm checker beside the tests only where it fits, each at least one" }
+        find: "  const room = warmEarly ? { cpu: cap.cpu - COST.warm.cpu, mem: cap.mem - COST.warm.mem } : cap;"
+        replace: "  const room = cap;"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "sizes the jest workers and the lanes to the cap, the warm checker beside the tests only where it fits, the rehearsals the whole cap, each at least one" }
 
   - id: shape-rehearsal-mutants-beside-the-rehearsals
     class: CI-push-check-past-the-machine
     source: shape
     edits:
       - file: scripts/hooks/pre-push.cjs
-        find: "      after: ['rehearsals', ...warmFirst],\n"
-        replace: "      after: [...warmFirst],\n"
+        find: "      after: ['rehearsals', ...warmFirst(base)],\n"
+        replace: "      after: [...warmFirst(base)],\n"
     proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
 
   - id: shape-lane-without-the-root-modules
@@ -8994,6 +8994,15 @@ mutants:
         find: "'-t', escapeRe(test), '--runInBand', "
         replace: "'-t', escapeRe(test), "
     proof: { file: src/utils/__tests__/everyMutantIsSound.guard.test.ts, test: "runs a mutant's test alone, by its title, in jest's own process, never a pool of workers for one file" }
+
+  - id: shape-rehearsals-beside-the-rest
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "low: false, cost: sizes.whole,"
+        replace: "low: false, cost: costOf('script'),"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
 
   - id: shape-rehearsal-mutant-at-low-priority
     class: CI-push-check-past-the-machine

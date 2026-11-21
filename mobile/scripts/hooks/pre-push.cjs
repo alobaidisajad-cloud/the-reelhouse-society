@@ -19,8 +19,8 @@
  * fit beside the checks running. The cap is measured when the push starts: the logical processors
  * but one, and the memory free then but a reserve. The tests run as one jest run (jest-run.cjs:
  * the related tests and the readers once each, the list handed over whole). The flow runner's
- * rehearsals (RUN_FLOWS) run as a jest run of their own, one whole run at a time, at normal priority
- * with every other check below it, so their clocks are never starved. The
+ * rehearsals (RUN_FLOWS) run as a jest run of their own, one whole run at a time, alone and last, at
+ * normal priority, so their clocks are never starved. The
  * mutants run in checkouts of their own (mutant-lanes.cjs), so no mutant is ever written into the
  * files the tests read, their type checks answered by one warm checker, which checks the commit's
  * own types too. Each check's seconds, and when it started, are printed as a table at the end and
@@ -82,10 +82,8 @@ const GB = 1024 ** 3;
  * push's own machine (12 logical processors, 16 GB) with the whole process tree's working set sampled:
  * tsc over tsconfig.json 31 s and 2.21 GB; comment-truth 118 s and 0.75 GB; the frozen counts (its tsc
  * and its typed eslint at once) 93 s and 3.41 GB; eslint on three files 0.36 GB; the warm type checker
- * 2.6 GB built and 2.8 GB after thirty mutants, run under a 3.5 GB heap; the rehearsals' jest run and
- * its worker 165 MB with their bash beside, about half a processor (three rehearsals alone raised the
- * machine's load by none it could measure over its idle). A jest worker restarts past 400 MB of heap
- * (jest.config.js).
+ * 2.6 GB built and 2.8 GB after thirty mutants, run under a 3.5 GB heap. A jest worker restarts past
+ * 400 MB of heap (jest.config.js). The rehearsals take the whole cap (sizesFor).
  */
 const COST = {
   script: { cpu: 1, mem: 0.2 * GB },
@@ -95,7 +93,6 @@ const COST = {
   lint: { cpu: 1, mem: 0.8 * GB },
   warm: { cpu: 1, mem: 3.2 * GB },
   worker: { cpu: 1, mem: 0.6 * GB },
-  rehearsal: { cpu: 0.5, mem: 0.45 * GB },
   lane: { cpu: 1, mem: 0.7 * GB },
 };
 
@@ -112,21 +109,20 @@ const capOf = ({ cores, freeBytes }) => ({ cpu: Math.max(1, cores - 1), mem: Mat
 const fitting = (left, cost, most) => Math.max(1, Math.min(most, Math.floor(left.cpu / cost.cpu), Math.floor(left.mem / cost.mem)));
 
 /**
- * The jest workers and the mutant lanes the cap allows, and where the warm checker runs. The rehearsals
- * take their share first and run whole, one test at a time, as their file is written to: two of them
- * side by side each took half as long again (one alone 137 s, two together 211 s each), against a
- * 300 s limit, as Git Bash starts each of their many processes the slower the more start at once. The
- * warm checker runs beside the tests when it needs no more than half of what the rehearsals leave
- * (`warmEarly`), else after them, and the tests' workers take what is left. The lanes start once the
- * tests have ended, beside the rehearsals or the one lane of the mutants a rehearsal proves, so they
- * take what a rehearsal leaves. Each is at least one: what does not fit beside the rest, runAll runs
- * after it.
+ * The jest workers and the mutant lanes the cap allows, where the warm checker runs, and what a
+ * rehearsal holds (`whole`). The rehearsals run alone, the whole cap theirs, one test at a time as
+ * their file is written to: Git Bash starts each of their many processes the slower the more else runs,
+ * whatever its priority. Measured on the push's machine: one test 137 s alone and 132 s beside one jest
+ * worker, but 181 s beside two, and the slowest, 226 s beside one, ran out of its 300 s beside two; two
+ * rehearsals side by side took 211 s each. The warm checker runs beside the tests when it needs no more
+ * than half the cap (`warmEarly`), else after them; the tests' workers take what is left, and the lanes,
+ * which start once the tests have ended, the whole cap. Each is at least one: what does not fit beside
+ * the rest, runAll runs after it.
  */
-const sizesFor = (cap, { rehearsals, mutants }) => {
-  const after = rehearsals ? { cpu: cap.cpu - COST.rehearsal.cpu, mem: cap.mem - COST.rehearsal.mem } : cap;
-  const warmEarly = mutants > 0 && COST.warm.mem <= after.mem / 2 && COST.warm.cpu <= after.cpu / 2;
-  const room = warmEarly ? { cpu: after.cpu - COST.warm.cpu, mem: after.mem - COST.warm.mem } : after;
-  return { tests: fitting(room, COST.worker, cap.cpu), lanes: fitting(after, COST.lane, cap.cpu), warmEarly };
+const sizesFor = (cap, { mutants }) => {
+  const warmEarly = mutants > 0 && COST.warm.mem <= cap.mem / 2 && COST.warm.cpu <= cap.cpu / 2;
+  const room = warmEarly ? { cpu: cap.cpu - COST.warm.cpu, mem: cap.mem - COST.warm.mem } : cap;
+  return { tests: fitting(room, COST.worker, cap.cpu), lanes: fitting(cap, COST.lane, cap.cpu), warmEarly, whole: cap };
 };
 
 /** A check's cost: what its kind takes, times how many of it run (jest's workers, the parts, the lanes). */
@@ -225,18 +221,12 @@ const plantChecks = (plants, git) => plants.flatMap(({ local }) => {
  * The checks for these bases and changes, each { id, label, args (node's), cwd, after, low, cost }:
  * `after` names the checks it waits for, `low` runs it below normal priority (its children inherit
  * it), `cost` what it takes at its peak. Their order is the order they start in when the cap is
- * short: the rehearsals first (long, and on the clock), the tests (the warm checker before them when
- * it fits beside them, else after), then the rest, and the mutants last.
+ * short: the tests (the warm checker before them when it fits beside them, else after), the rest, the
+ * mutants, and last the rehearsals and the mutants a rehearsal proves, each alone.
  */
 const checksFor = ({ bases, touched, changed, files, sizes, lists, clean, mutants }) => {
   const checks = [];
   const add = (c) => checks.push({ after: [], cwd: MOBILE, low: true, cost: costOf('script'), ...c });
-  if (changed.length) {
-    add({
-      id: 'rehearsals', label: 'the flow runner\'s rehearsals', low: false, cost: costOf('rehearsal'),
-      args: [join(__dirname, 'jest-run.cjs'), '--workers', '1', '--out', lists.rehearsalReport, '--paths', lists.rehearsals],
-    });
-  }
   // The warm checker: the types of the commit, then each mutant's type check, which the lanes read as they come.
   const warm = () => add({ id: 'mutant-types', label: 'types, and the mutants\' type checks, by the warm checker', cost: costOf('warm'),
     args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', bases[0], '--lanes', String(sizes.lanes), '--types-out', lists.types] });
@@ -266,22 +256,30 @@ const checksFor = ({ bases, touched, changed, files, sizes, lists, clean, mutant
     args: [bin('eslint', 'bin', 'eslint.js'), '--max-warnings=0', '--no-warn-ignored', ...batch],
   }));
   // On a tree the tests found green, a mutant's first run is theirs (clean: nothing uncommitted they read).
-  // A mutant proved by a rehearsal runs whole rehearsals: one lane of its own, once the rehearsals have
-  // ended, so no two ever run at once; every other mutant in the lanes beside, once the tests have.
+  // The lanes start once the warm checker has answered: no lane ever runs tsc beside it.
+  const greenOf = () => (changed.length && clean ? ['--green', `${lists.testReport},${lists.rehearsalReport}`] : []);
+  const typesOf = (base) => (mutants && base === bases[0] ? ['--types-from', lists.types] : []);
+  const warmFirst = (base) => (typesOf(base).length ? ['mutant-types'] : []);
   for (const base of bases) {
-    const green = changed.length && clean ? ['--green', `${lists.testReport},${lists.rehearsalReport}`] : [];
-    const types = mutants && base === bases[0] ? ['--types-from', lists.types] : [];
-    // The lanes start once the warm checker has answered: no lane ever runs tsc beside it.
-    const warmFirst = types.length ? ['mutant-types'] : [];
-    add({
-      id: `mutant-rehearsals@${base}`, label: `the mutants a rehearsal proves, standing on what changed from ${base.slice(0, 8)}`, cost: costOf('rehearsal'),
-      args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', base, '--lanes', '1', '--rehearsals', 'only', ...green, ...types],
-      after: ['rehearsals', ...warmFirst],
-    });
     add({
       id: `mutants@${base}`, label: `the mutants standing on what changed from ${base.slice(0, 8)}`, cost: costOf('lane', sizes.lanes),
-      args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', base, '--lanes', String(sizes.lanes), '--rehearsals', 'none', ...green, ...types],
-      after: [...(green.length ? ['tests'] : []), ...warmFirst],
+      args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', base, '--lanes', String(sizes.lanes), '--rehearsals', 'none', ...greenOf(), ...typesOf(base)],
+      after: [...(greenOf().length ? ['tests'] : []), ...warmFirst(base)],
+    });
+  }
+  // The rehearsals alone, the whole cap theirs, and then the mutants a rehearsal proves, in one lane,
+  // alone too: no other check, and never a second rehearsal, beside a rehearsal's clock.
+  if (changed.length) {
+    add({
+      id: 'rehearsals', label: 'the flow runner\'s rehearsals, alone', low: false, cost: sizes.whole,
+      args: [join(__dirname, 'jest-run.cjs'), '--workers', '1', '--out', lists.rehearsalReport, '--paths', lists.rehearsals],
+    });
+  }
+  for (const base of bases) {
+    add({
+      id: `mutant-rehearsals@${base}`, label: `the mutants a rehearsal proves, standing on what changed from ${base.slice(0, 8)}, alone`, cost: sizes.whole,
+      args: [join(__dirname, 'mutant-lanes.cjs'), '--changed', base, '--lanes', '1', '--rehearsals', 'only', ...greenOf(), ...typesOf(base)],
+      after: ['rehearsals', ...warmFirst(base)],
     });
   }
   return checks;
@@ -399,7 +397,7 @@ function main() {
   const mutants = bases.length ? touchedSince(bases[0], readMutants()).length : 0;
   const at = machine();
   const cap = capOf(at);
-  const sizes = sizesFor(cap, { rehearsals: changed.length > 0 && rehearsals.length > 0, mutants });
+  const sizes = sizesFor(cap, { mutants });
   console.log(`the machine: ${at.cores} logical processors, ${(at.freeBytes / GB).toFixed(1)} of ${(at.totalBytes / GB).toFixed(1)} GB free; `
     + `the cap: ${cap.cpu} processors, ${(cap.mem / GB).toFixed(1)} GB; ${sizes.tests} jest workers, ${sizes.lanes} mutant lanes, `
     + `${mutants} mutants, the warm checker ${sizes.warmEarly ? 'beside the tests' : 'after them'}`);

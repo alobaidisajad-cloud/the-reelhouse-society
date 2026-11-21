@@ -19,7 +19,7 @@ const { mutantInPlace, refusalOf } = require('../../../scripts/hooks/pre-commit.
 type Cost = { cpu: number; mem: number };
 type Check = { id: string; label: string; args: string[]; cwd: string; after: string[]; low: boolean; cost?: Cost };
 type Ran = Check & { code: number; from: number; to: number };
-type Sizes = { parts: number; tests: number; lanes: number; warmEarly: boolean };
+type Sizes = { tests: number; lanes: number; warmEarly: boolean; whole: Cost };
 const { COST, RUN_FLOWS, basesOf, capOf, checksFor, clearHookGitEnv, dryRunInput, ignored, inBatches, lintTargets, peakOf, plantChecks, pushKind, readers, runAll, sizesFor } = require('../../../scripts/hooks/pre-push.cjs') as {
   COST: Record<string, Cost>;
   RUN_FLOWS: RegExp;
@@ -36,7 +36,7 @@ const { COST, RUN_FLOWS, basesOf, capOf, checksFor, clearHookGitEnv, dryRunInput
   lintTargets: (changed: string[], tracked: string[]) => string[];
   peakOf: (results: Ran[]) => Cost;
   readers: (mobile: string) => string[];
-  sizesFor: (cap: Cost, o: { rehearsals: boolean; mutants: number }) => Sizes;
+  sizesFor: (cap: Cost, o: { mutants: number }) => Sizes;
 };
 const jestRun = require('../../../scripts/hooks/jest-run.cjs') as { titlesPattern: (titles: string[]) => string };
 const lanes = require('../../../scripts/hooks/mutant-lanes.cjs') as {
@@ -137,21 +137,21 @@ describe('before a push', () => {
     const base = 'b'.repeat(40);
     const plan = (over: object = {}) => checksFor({
       bases: [base], touched: ['mobile/src/a.ts'], changed: ['src/a.ts'], files: { code: ['src/a.ts'], linted: ['src/a.ts'] },
-      sizes: { tests: 6, lanes: 4, warmEarly: true }, lists, clean: true, mutants: 3, ...over,
+      sizes: { tests: 6, lanes: 4, warmEarly: true, whole: { cpu: 11, mem: 8 } }, lists, clean: true, mutants: 3, ...over,
     });
     const byId = (checks: Check[], id: string) => checks.find((c) => c.id === id);
     const scripts = [`website-freeze.cjs@${base}`, `add-only.cjs@${base}`, `migration-lint.cjs@${base}`, `frozen-base@${base}`];
-    const lanes = [`mutant-rehearsals@${base}`, `mutants@${base}`];
+    const lanes = [`mutants@${base}`, 'rehearsals', `mutant-rehearsals@${base}`];
 
     it('runs every check the serial push ran: the scripts, the counts, the comments, the types, lint, the tests and the mutants', () => {
       // The warm checker checks the commit's types, beside the tests where it fits, after them where not.
-      expect(plan().map((c) => c.id)).toEqual(['rehearsals', 'mutant-types', 'tests', ...scripts, 'frozen', 'comments', 'lint-1', ...lanes]);
-      expect(plan({ sizes: { tests: 6, lanes: 4, warmEarly: false } }).map((c) => c.id))
-        .toEqual(['rehearsals', 'tests', 'mutant-types', ...scripts, 'frozen', 'comments', 'lint-1', ...lanes]);
+      expect(plan().map((c) => c.id)).toEqual(['mutant-types', 'tests', ...scripts, 'frozen', 'comments', 'lint-1', ...lanes]);
+      expect(plan({ sizes: { tests: 6, lanes: 4, warmEarly: false, whole: { cpu: 11, mem: 8 } } }).map((c) => c.id))
+        .toEqual(['tests', 'mutant-types', ...scripts, 'frozen', 'comments', 'lint-1', ...lanes]);
       // No mutant standing on the change: tsc checks the types, and the lanes ask nothing of a warm checker.
       const none = plan({ mutants: 0 });
-      expect(none.map((c) => c.id)).toEqual(['rehearsals', 'tests', ...scripts, 'frozen', 'comments', 'types', 'lint-1', ...lanes]);
-      expect(lanes.map((id) => byId(none, id)!.args.includes('--types-from'))).toEqual([false, false]);
+      expect(none.map((c) => c.id)).toEqual(['tests', ...scripts, 'frozen', 'comments', 'types', 'lint-1', ...lanes]);
+      expect([`mutants@${base}`, `mutant-rehearsals@${base}`].map((id) => byId(none, id)!.args.includes('--types-from'))).toEqual([false, false]);
     });
 
     it('runs the readers and the related tests as one jest run, the rehearsals as a second, and every rehearsal there', () => {
@@ -173,10 +173,12 @@ describe('before a push', () => {
       const dirty = byId(plan({ clean: false }), `mutants@${base}`)!;
       expect([dirty.after, dirty.args.includes('--green')]).toEqual([['mutant-types'], false]);
       expect(byId(plan({ clean: false, mutants: 0 }), `mutants@${base}`)!.after).toEqual([]);
-      // A mutant a rehearsal proves: one lane of its own, only once the rehearsals have ended, clean or not.
+      // A mutant a rehearsal proves: one lane of its own, only once the rehearsals have ended, clean or not;
+      // the rehearsals and those mutants each hold the whole cap, so nothing runs beside a rehearsal's clock.
       for (const at of [plan(), plan({ clean: false })]) {
         const r = byId(at, `mutant-rehearsals@${base}`)!;
         expect([r.after, r.args.slice(r.args.indexOf('--lanes'), r.args.indexOf('--lanes') + 4)]).toEqual([['rehearsals', 'mutant-types'], ['--lanes', '1', '--rehearsals', 'only']]);
+        expect([byId(at, 'rehearsals')!.cost, r.cost]).toEqual([{ cpu: 11, mem: 8 }, { cpu: 11, mem: 8 }]);
       }
     });
 
@@ -195,7 +197,7 @@ describe('before a push', () => {
 
     it('runs nothing of the app for a push that changes nothing in mobile/, but its scripts and mutants', () => {
       expect(plan({ changed: [], files: { code: [], linted: [] }, touched: ['.github/workflows/x.yml'] }).map((c) => c.id))
-        .toEqual(['mutant-types', ...scripts, ...lanes]);
+        .toEqual(['mutant-types', ...scripts, `mutants@${base}`, `mutant-rehearsals@${base}`]);
     });
 
     it('starts each check once those it waits for have ended, and runs every check whatever another said', async () => {
@@ -229,25 +231,24 @@ describe('before a push', () => {
     expect(capOf({ cores: 1, freeBytes: 0 })).toEqual({ cpu: 1, mem: 0 });
   });
 
-  it('sizes the jest workers and the lanes to the cap beside the rehearsals, the warm checker beside the tests only where it fits, each at least one', () => {
-    const roomy = sizesFor({ cpu: 11, mem: 24 * GB }, { rehearsals: true, mutants: 10 });
-    expect([roomy.tests, roomy.lanes, roomy.warmEarly]).toEqual([9, 10, true]);
-    // What runs at once fits the cap: the rehearsals, the warm checker where it runs beside the tests,
-    // and the workers; the lanes beside the rehearsals, after the tests.
+  it('sizes the jest workers and the lanes to the cap, the warm checker beside the tests only where it fits, the rehearsals the whole cap, each at least one', () => {
+    const roomy = sizesFor({ cpu: 11, mem: 24 * GB }, { mutants: 10 });
+    expect([roomy.tests, roomy.lanes, roomy.warmEarly, roomy.whole]).toEqual([10, 11, true, { cpu: 11, mem: 24 * GB }]);
+    // What runs at once fits the cap: the warm checker where it runs beside the tests, and the workers;
+    // the lanes after the tests.
     for (const cap of [{ cpu: 11, mem: 24 * GB }, { cpu: 11, mem: 9 * GB }, { cpu: 5, mem: 12 * GB }, { cpu: 11, mem: 3.5 * GB }]) {
-      const s = sizesFor(cap, { rehearsals: true, mutants: 10 });
+      const s = sizesFor(cap, { mutants: 10 });
       const warm = s.warmEarly ? COST.warm! : { cpu: 0, mem: 0 };
-      const r = COST.rehearsal!;
-      const beside = { cpu: r.cpu + warm.cpu + s.tests * COST.worker!.cpu, mem: r.mem + warm.mem + s.tests * COST.worker!.mem };
-      expect([cap, beside.cpu <= cap.cpu, beside.mem <= cap.mem, r.mem + s.lanes * COST.lane!.mem <= cap.mem, r.cpu + s.lanes <= cap.cpu])
+      const beside = { cpu: warm.cpu + s.tests * COST.worker!.cpu, mem: warm.mem + s.tests * COST.worker!.mem };
+      expect([cap, beside.cpu <= cap.cpu, beside.mem <= cap.mem, s.lanes * COST.lane!.mem <= cap.mem, s.lanes <= cap.cpu])
         .toEqual([cap, true, true, true, true]);
     }
     // A small machine: the warm checker after the tests, so the tests keep their workers.
-    const small = sizesFor({ cpu: 11, mem: 3.5 * GB }, { rehearsals: true, mutants: 10 });
-    expect([small.tests, small.lanes, small.warmEarly]).toEqual([5, 4, false]);
-    const tight = sizesFor({ cpu: 11, mem: 0.5 * GB }, { rehearsals: true, mutants: 10 });
+    const small = sizesFor({ cpu: 11, mem: 3.5 * GB }, { mutants: 10 });
+    expect([small.tests, small.lanes, small.warmEarly]).toEqual([5, 5, false]);
+    const tight = sizesFor({ cpu: 11, mem: 0.5 * GB }, { mutants: 10 });
     expect([tight.tests, tight.lanes]).toEqual([1, 1]);
-    expect(sizesFor({ cpu: 11, mem: 24 * GB }, { rehearsals: false, mutants: 0 })).toEqual({ tests: 11, lanes: 11, warmEarly: false });
+    expect(sizesFor({ cpu: 11, mem: 24 * GB }, { mutants: 0 })).toEqual({ tests: 11, lanes: 11, warmEarly: false, whole: { cpu: 11, mem: 24 * GB } });
   });
 
   it('never holds more than the cap at once, starts checks in their order, and runs one larger than the cap alone, holding none back', async () => {
