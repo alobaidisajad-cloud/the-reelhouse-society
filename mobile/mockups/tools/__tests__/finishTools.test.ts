@@ -92,7 +92,17 @@ describe('transitions.cjs', () => {
 });
 
 describe('align.cjs', () => {
-  const text = (left: number, top: number, extra: Partial<{ right: number; baseline: number; align: string }> = {}) =>
+  it('loads where no browser is installed, as in CI\'s jest job: the harness is opened by its run alone', () => {
+    // In a node of its own, where playwright cannot be found (jest's registry already holds this file's own load).
+    const loadsWithoutABrowser = (tool: string) => spawnSync(process.execPath, ['-e', [
+      "const M = require('module'); const r = M._resolveFilename;",
+      "M._resolveFilename = function (q, ...a) { if (/[\\\\/]node_modules[\\\\/]playwright$|^playwright$/.test(q)) throw new Error('no playwright here'); return r.call(this, q, ...a); };",
+      `require(${JSON.stringify(join(TOOLS, tool))}); console.log('LOADED');`,
+    ].join('\n')], { encoding: 'utf8' }).stdout.trim();
+    expect(loadsWithoutABrowser('align.cjs')).toBe('LOADED');
+    expect(loadsWithoutABrowser('harness.cjs')).toBe('');
+  });
+  const text =(left: number, top: number, extra: Partial<{ right: number; baseline: number; align: string }> = {}) =>
     ({ left, right: extra.right ?? left + 80, top, bottom: top + 18, baseline: extra.baseline ?? top + 14, align: extra.align ?? 'left', site: 'src/x/Card.tsx:3', said: 'words' });
   it('catches two stacked edges 2pt apart, and a row\'s baselines 2pt apart', () => {
     expect(align.nearMisses([text(20, 100), text(22, 120)]).map((f: { kind: string; by: string }) => [f.kind, f.by])).toEqual([['EDGE', 'left edges 2.0pt apart']]);

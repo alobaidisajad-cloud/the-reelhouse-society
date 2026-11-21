@@ -5125,3 +5125,23 @@ classes:
       - { kind: running, file: test-utils/__tests__/weightedSequencer.test.ts, test: "can say NO: a file heavier than all the rest together takes a part alone when the generators are not placed first" }
     fix: "test-utils/weightedSequencer.js places the generators (the zz-*.gen tests) first, heaviest first to the lightest part, so the first of them go one to each part, and then the rest the same way; a test splits jest's own list by the committed weights for both split runs, at the part counts god_tier_ci.yml reads, and refuses a part with no generator (mutant shape-split-takes-the-generators-last)"
     places: [none]
+
+  - id: CI-a-plain-reader-loads-the-browser
+    title: "A measuring tool opens the browser harness when it is loaded, so a test of its plain arithmetic fails wherever no browser is installed (CI's jest job), and every part that holds it fails"
+    seriousness: code
+    area: release
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "god_tier_ci on d030851b (run 44927851374), Native Jest parts 2 and 3: finishTools.test.ts could not find the root node_modules/playwright from mockups/tools/harness.cjs, through align.cjs" }
+    fix: "align.cjs opens the harness inside main alone; finishTools proves it in a node of its own where playwright cannot be found: align loads, the harness does not (fails on the old align)"
+    places: [none]
+
+  - id: CI-a-copy-on-linux-read-as-outside-itself
+    title: "The coverage check took any POSIX path that was not a git-bash drive path as outside the copy, so on Linux, where the copy itself is /tmp/cov-..., a shell inside the copy voided the record"
+    seriousness: code
+    area: release
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "god_tier_ci on d030851b (run 44927851374), Native Jest part 3: coverage.test.ts 'but not the findings file it was given' read 'named /tmp/cov-5GMSHe'" }
+    fix: "coverage.cjs judges a POSIX path by whether it is inside the copy alone; a test with the copy at a Linux path holds a shell inside it clean and one naming a path beside it outside (fails on the old rule)"
+    places: [none]

@@ -393,6 +393,7 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/schema/live-extensions.sql | — |  |
 | mobile/supabase/schema/live-outside-public.sql | — |  |
 | mobile/supabase/schema/live-schema.sql | — |  |
+| mobile/test-utils/afterAwait.d.ts | — |  |
 | mobile/test-utils/react-native-testing-library.d.ts | — |  |
 | mobile/test-utils/stripComments.d.ts | — |  |
 | mobile/test-utils/universe.d.ts | — |  |
@@ -486,6 +487,7 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/migrations-down/20261120_30_a_removed_piece_is_kept_whole.sql | — |  |
 | mobile/supabase/migrations-down/20261120_31_a_withheld_piece_is_read_by_its_author_alone.sql | — |  |
 | mobile/supabase/migrations-down/20261120_32_a_removed_piece_waits_for_its_appeal.sql | — |  |
+| mobile/test-utils/libraries.json | — |  |
 | mobile/test-utils/test-weights.json | — |  |
 | supabase/functions/_shared/callerAddress.js | — |  |
 | supabase/migrations/20261120_00_a_members_sign_in_doors_are_kept.sql | — |  |

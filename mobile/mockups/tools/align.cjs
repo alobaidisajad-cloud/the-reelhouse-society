@@ -19,7 +19,9 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { chromium, open, screens, shrinkToFit, MOBILE } = require('./harness.cjs');
+// The harness (and the browser it carries) is opened by main alone: the readers above it are plain
+// arithmetic, read by their tests where no browser is installed (CI's jest job).
+const harness = () => require('./harness.cjs');
 const { ratchet } = require('./source.cjs');
 
 /** At or under this the phone's own pixel snapping can move an edge: not a fault. */
@@ -89,7 +91,8 @@ function nearMisses(texts, { snap = SNAP, near = NEAR, gap = NEAR_GAP } = {}) {
 const say = (t) => `"${t.said}"${t.site ? ` [${t.site}]` : ''}`;
 
 async function main(argv) {
-  const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
+  const { chromium, open, screens, shrinkToFit, MOBILE } = harness();
+  const opt =(k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
   const src = path.resolve(opt('--src', path.join(MOBILE, 'mockups', 'out', 'screens')));
   const width = Number(opt('--width', '390'));
   const passes = opt('--passes', 'ios@1').split(',').map((p) => { const [platform, f] = p.split('@'); return { platform, factor: Number(f) }; });

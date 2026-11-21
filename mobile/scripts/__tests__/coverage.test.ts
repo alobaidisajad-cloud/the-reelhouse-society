@@ -121,6 +121,15 @@ describe('a touch outside the copy voids the record', () => {
     expect(voids({ name: 'WebFetch', input: { url: 'https://example.com' }, result: '' })).toContain('network');
     expect(voids({ name: 'Edit', input: { file_path: join(copy, 'mobile/src/b.ts'), old_string: 'b1', new_string: 'b0' }, result: 'ok' })).toContain('changed the copy');
   });
+  it('a copy on Linux is its own POSIX path: a shell inside it is clean, one naming a path beside it is not', () => {
+    const linux = '/tmp/cov-on-linux';
+    const outside = (command: string) => cov.check({
+      logText: logOf([{ name: 'Bash', input: { command }, cwd: linux, result: '' }]),
+      scope: scope({}, { copy: linux }),
+    }).outside.map((o: { why: string }) => o.why);
+    expect(outside(`cd ${linux} && cat ${linux}/mobile/src/a.ts`)).toEqual([]);
+    expect(outside(`cd ${linux} && cat /tmp/cov-beside/notes.md`)).toEqual(['named /tmp/cov-beside/notes.md']);
+  });
   it('but not the findings file it was given, nor a long answer saved where the tool said', () => {
     const findings = 'C:/rounds/R15/findings/A10.jsonl';
     const savedAt = 'D:\\elsewhere\\.claude\\projects\\p\\s\\tool-results\\x.txt';

@@ -152,7 +152,8 @@ function outsideOf(calls, copy, { allowWrite = [] } = {}) {
       for (const m of cmd.matchAll(ABS_POSIX)) {
         const p = m[1];
         if (ALLOWED_POSIX.has(p)) continue;
-        if (!/^\/[a-zA-Z](\/|$)/.test(p) || !inside(p, copy)) flag(c, `named ${p}`);
+        // A POSIX path is the copy's own only inside it: a git-bash /c/... on Windows, /tmp/... where the copy is on Linux.
+        if (!inside(p, copy)) flag(c, `named ${p}`);
       }
     } else {
       flag(c, 'a tool the check does not know');
