@@ -30,7 +30,6 @@
     {"id":"ADV-023","lint":"auth_rls_initplan","key":"auth_rls_init_plan_public_error_logs_authed_insert_error_logs","class":"EXT-DB-03"},
     {"id":"ADV-024","lint":"auth_rls_initplan","key":"auth_rls_init_plan_public_error_logs_Users can view own errors","class":"EXT-DB-03"},
     {"id":"ADV-025","lint":"auth_rls_initplan","key":"auth_rls_init_plan_public_interactions_interactions_endorse_gate","class":"EXT-DB-03"},
-    {"id":"ADV-026","lint":"auth_rls_initplan","key":"auth_rls_init_plan_public_interactions_interactions_select_authorized","class":"EXT-DB-03"},
     {"id":"ADV-027","lint":"auth_rls_initplan","key":"auth_rls_init_plan_public_interactions_Users can delete their own interactions","class":"EXT-DB-03"},
     {"id":"ADV-028","lint":"auth_rls_initplan","key":"auth_rls_init_plan_public_interactions_Users can insert their own interactions","class":"EXT-DB-03"},
     {"id":"ADV-029","lint":"auth_rls_initplan","key":"auth_rls_init_plan_public_interactions_Users can manage their interactions.","class":"EXT-DB-03"},
