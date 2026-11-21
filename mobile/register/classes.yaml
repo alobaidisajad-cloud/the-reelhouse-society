@@ -2121,7 +2121,7 @@ classes:
       - { kind: running, file: src/utils/__tests__/aDateIsSaidInTheHouseVoice.test.ts, test: "is no calendar date past its month’s length, and is said as it came" }
       - { kind: running, file: src/features/archive/__tests__/archiveImport.test.ts, test: "reads a month written as a word, either way round, by itself and not the engine" }
     fix: "instantOf hands no text to the engine: the house's instant, a day alone and the HTTP Date header are read field by field, each field held to its range, and any other text names no instant; fifty places that made a Date from text (new Date(created_at): salon messages sorted, notices grouped) read through dateOf, and a guard finds any other by the type checker; a calendar date holds to its month's length; the archive import reads a month written as a word itself, where it asked the engine; the suites run on Node and on the phone's Hermes"
-    sweep: { read: [appCode], found: 0, fixed: 0, judged: 0, commit: afcd347b, finder: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, result: "no text handed to the engine to read as a date outside instant.ts" }
+    sweep: { read: [appCode], found: 0, fixed: 0, judged: 0, commit: 14ff13d3, finder: src/utils/__tests__/anInstantIsReadByTheHouse.guard.test.ts, result: "no text handed to the engine to read as a date outside instant.ts" }
     places: [none]
 
   - id: UI-notice-opens-elsewhere
@@ -3675,7 +3675,7 @@ classes:
       - { kind: running, file: src/components/profile/__tests__/aRunIsJudgedOnTheMembersOwnDay.test.ts, test: "stands from the last night to the night after it, and no later" }
       - { kind: running, file: src/components/moderation/__tests__/aMemberReadsTheVerdictWholeAndAppealsOnce.test.tsx, test: "the day to appeal by is said in the member’s own day and hour" }
     fix: "the house gives its newest run whole (current_run: its nights and its last night, 20261117_01) and the phone judges it on its own calendar, standing while its last night is the member's yesterday or later and ending at the member's own midnight while the file is open (houseRunOf, runStillStanding; mutant shape-run-judged-on-the-houses-day); round 14: a removed piece's appeal deadline was printed as a UTC date with no hour, already past for a member west of UTC when the piece was deleted: every surface says the one instant it is kept until, in the member's own day and hour, the notice too (rehearsal a_removed_piece_waits_for_its_appeal_rehearsal.sql) (mutant shape-appeal-day-said-without-its-hour)"
-    sweep: { read: [appCode, snapshot, migrations], found: 15, fixed: 0, judged: 15, commit: afcd347b, finder: src/utils/__tests__/aDayIsReadOnItsOwnCalendar.guard.test.ts, result: "3 app sites and 12 house functions, each judged in the finder with why its day is the right one" }
+    sweep: { read: [appCode, snapshot, migrations], found: 15, fixed: 0, judged: 15, commit: 14ff13d3, finder: src/utils/__tests__/aDayIsReadOnItsOwnCalendar.guard.test.ts, result: "3 app sites and 12 house functions, each judged in the finder with why its day is the right one" }
     places: [none]
 
   - id: COPY-a-count-past-its-measure
@@ -4664,7 +4664,7 @@ classes:
       - { kind: running, file: src/components/profile/__tests__/aLogIsFiledUnderTheMonthItWasMade.test.ts, test: "a watched date is its own calendar day, whatever the zone" }
       - { kind: running, file: src/components/profile/__tests__/aLogIsFiledUnderTheMonthItWasMade.test.ts, test: "another key is read the same way, and nothing readable stands under January 1970" }
     fix: "the stub's date is made in watchedLabel.ts from the calendar date's own parts (dateParts), its year compared with the member's clock's, and the film page hands the stub nothing else; the rooms' months come from one groupByMonth (profileComputed.ts), a watched date its own calendar day and a moment read on the member's clock; both tests run in six zones (npm run test:tz). The mutant runner reads its host's zone alone, where neither defect shows east of UTC, so each mutant puts back a read that fails in any zone: the film page's own year read from a Date, and a log's month read from its making before its watched date (mutants shape-watched-year-read-from-a-date, shape-month-read-from-the-logging-moment)"
-    sweep: { read: [appCode, snapshot, migrations], found: 15, fixed: 0, judged: 15, commit: afcd347b, finder: src/utils/__tests__/aDayIsReadOnItsOwnCalendar.guard.test.ts, result: "3 app sites and 12 house functions, each judged in the finder with why its day is the right one" }
+    sweep: { read: [appCode, snapshot, migrations], found: 15, fixed: 0, judged: 15, commit: 14ff13d3, finder: src/utils/__tests__/aDayIsReadOnItsOwnCalendar.guard.test.ts, result: "3 app sites and 12 house functions, each judged in the finder with why its day is the right one" }
     places: [none]
 
   - id: COPY-another-years-day-said-as-this-years
@@ -4687,7 +4687,7 @@ classes:
       - { kind: running, file: src/components/dispatch/__tests__/feedScreen.test.tsx, test: "a filing of another year is divided under its day and its year, on the paper and the saved page" }
       - { kind: static, file: src/hooks/__tests__/everyDrawnTimeReadsTheClock.guard.test.ts, test: "reads the time where a screen is drawn only where the register says, as many times as it says" }
     fix: "formatDateMonthDayInYear (timeAgo.ts) adds the year to a day of any year but the reader's, comparing an instant's local parts or a calendar date's own with the clock's year; the salon's divider and the essay's byline read it through useClock, so the year appears as the year turns, and the share card, read outside the house in any year after, always carries its year (formatDate); dayLabel takes this year, which the Dispatch reads from its own day (useToday, at noon) where it draws, never a new Date() off the clock (mutants shape-another-year-said-without-its-year, shape-salon-divider-without-its-year, shape-essay-byline-without-its-year, shape-essay-card-without-its-year, shape-feed-day-without-its-year, shape-feed-year-read-off-the-clock)"
-    sweep: { read: [appCode, snapshot, migrations], found: 15, fixed: 0, judged: 15, commit: afcd347b, finder: src/utils/__tests__/aDayIsReadOnItsOwnCalendar.guard.test.ts, result: "3 app sites and 12 house functions, each judged in the finder with why its day is the right one" }
+    sweep: { read: [appCode, snapshot, migrations], found: 15, fixed: 0, judged: 15, commit: 14ff13d3, finder: src/utils/__tests__/aDayIsReadOnItsOwnCalendar.guard.test.ts, result: "3 app sites and 12 house functions, each judged in the finder with why its day is the right one" }
     places: [none]
 
   - id: COPY-a-sum-written-as-no-ledger-writes-it
