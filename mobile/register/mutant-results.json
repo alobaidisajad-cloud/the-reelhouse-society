@@ -6839,6 +6839,27 @@
     "verdict": "caught"
   },
   {
+    "class": "DB-a-count-that-starts-nowhere",
+    "mutant": "shape-a-count-from-nowhere",
+    "proof": "m1",
+    "commit": "bc58113ebf13c495f9bff722ea84210c2d42bce0",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-the-rule-asked-twice-a-row",
+    "mutant": "shape-the-faces-ask-the-rule-twice",
+    "proof": "m1",
+    "commit": "bc58113ebf13c495f9bff722ea84210c2d42bce0",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-words-read-past-a-row-rule",
+    "mutant": "shape-the-search-reads-as-the-caller",
+    "proof": "m1",
+    "commit": "bc58113ebf13c495f9bff722ea84210c2d42bce0",
+    "verdict": "caught"
+  },
+  {
     "class": "DB-a-column-the-planner-never-counted",
     "mutant": "shape-lint-blind-to-a-fill",
     "proof": "m1",
