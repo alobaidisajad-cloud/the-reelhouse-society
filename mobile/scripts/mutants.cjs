@@ -30,6 +30,7 @@
  *   node mobile/scripts/mutants.cjs --types-out <file> --ids a,b
  *                                                    the warm checker: each one's type check in memory, a
  *                                                    line each to <file>, nothing written to the checkout
+ *   node mobile/scripts/mutants.cjs --rerun          every one run, none taken from a kept verdict (mutantState)
  *   node mobile/scripts/mutants.cjs --types-from <file>
  *                                                    a mutant's type check taken from those lines where they
  *                                                    were made from its very bytes; tsc's own otherwise
@@ -321,7 +322,7 @@ const putBackLeftover = (placed = PLACED) => {
 /** The options and whether each takes a value. */
 const OPTIONS = {
   '--ids': true, '--changed': true, '--part': true, '--results': true, '--fresh': false, '--gather': true, '--out': true, '--put-back': false, '--green': true,
-  '--types-out': true, '--types-from': true,
+  '--types-out': true, '--types-from': true, '--rerun': false,
 };
 
 /** What is wrong with these arguments, or null: an unknown one, or an option missing its value. */
@@ -500,6 +501,25 @@ const pathsOf = (m) => [
   ...(m.judge ? [m.judge.run[1], `${m.judge.from}/`] : []),
 ].map((p) => p.split('\\').join('/'));
 
+/**
+ * The bytes a mutant's verdict stands on, and their key (scripts/hooks/verdicts.cjs): its own entry,
+ * the files it changes, its proof or its judge and the judge's logs, every file those read to the end,
+ * what every test runs under, and this runner. A kept `caught` is taken again only on this very key.
+ */
+const mutantState = (m, root = ROOT, tools = null) => {
+  const v = require('./hooks/verdicts.cjs');
+  const fromRoot = (p) => relative(root, join(root, 'mobile', p)).split('\\').join('/');
+  const folder = (p) => (existsSync(join(root, 'mobile', p)) ? readdirSync(join(root, 'mobile', p), { recursive: true }).map(String)
+    .filter((f) => statSync(join(root, 'mobile', p, f)).isFile()).map((f) => fromRoot(`${p}${f.split('\\').join('/')}`)) : []);
+  const paths = pathsOf(m);
+  const seeds = paths.filter((p) => !p.endsWith('/')).map(fromRoot);
+  const inputs = [...new Set([...v.inputsOf([...seeds, ...v.UNDER], { root }), ...paths.filter((p) => p.endsWith('/')).flatMap(folder), 'mobile/scripts/mutants.cjs'])]
+    .filter((p) => existsSync(join(root, p))).sort();
+  const hashes = { ...v.hashesOf(inputs, root), [`register/mutants.yaml#${m.id}`]: hash(JSON.stringify({ ...m, private: undefined })) };
+  const used = tools ?? v.toolsNow();
+  return { inputs, hashes, tools: used, key: v.keyOf(hashes, used) };
+};
+
 /** Whether a changed path (from mobile/) is one a mutant stands on: the path itself, or one under its folder. */
 const standsOn = (m, changed) => pathsOf(m).some((p) => (p.endsWith('/') ? changed.startsWith(p) : changed === p));
 
@@ -629,10 +649,19 @@ if (require.main === module) {
   const green = (arg('--green')?.split(',') ?? []).map((f) => JSON.parse(readFileSync(f, 'utf8')));
   // A warm checker's answers, taken only where made from the same bytes (typesFrom).
   const types = arg('--types-from') ? typesFrom(arg('--types-from')) : null;
+  // A mutant's kept `caught`, taken where every byte it stands on is as it was (mutantState); --rerun runs every one.
+  const verdicts = require('./hooks/verdicts.cjs');
+  const book = verdicts.bookFile('mutants');
+  const tools = verdicts.toolsNow();
   for (const m of chosen) {
     if (stopping) break;
     const t0 = Date.now();
-    const { verdict, why } = runOne(m, green, types);
+    const state = mutantState(m, ROOT, tools);
+    const kept = argv.includes('--rerun') ? null : verdicts.lookup(verdicts.readBook(book), m.id, state.key);
+    const { verdict, why } = kept ? { verdict: 'caught', why: verdicts.whyValid(m.id, kept) } : runOne(m, green, types);
+    if (!kept) {
+      withLock(`${book}.lock`, () => verdicts.writeBook(book, verdicts.remember(verdicts.readBook(book), m.id, { ...state, verdict, commit })));
+    }
     console.log(`${verdict.padEnd(11)} ${m.private ? '(private)' : m.id}  ${m.private ? '' : m.class}  ${Math.round((Date.now() - t0) / 1000)}s${why && !m.private ? `  — ${why}` : ''}`);
     results.push({ class: m.class, mutant: m.id, proof: m.source === 'judge' ? 'judge' : proofId(m, classes), commit, verdict, private: !!m.private, why, m });
   }
@@ -665,5 +694,5 @@ if (require.main === module) {
 
 module.exports = {
   applyEdits, argumentsFault, atNormalPriority, changesHash, changesOf, verdictOf, gather, greenIn, hunksOf, lf, partOf, pathsOf, PLACED, privateDir, proofId, putBackLeftover,
-  compileFaults, readMutants, really, REHEARSAL, testArgs, reverse, runOne, standsOn, statusIn, syntaxFaults, touchedSince, typesFrom, warmTypes, withLock,
+  compileFaults, mutantState, readMutants, really, REHEARSAL, testArgs, reverse, runOne, standsOn, statusIn, syntaxFaults, touchedSince, typesFrom, warmTypes, withLock,
 };

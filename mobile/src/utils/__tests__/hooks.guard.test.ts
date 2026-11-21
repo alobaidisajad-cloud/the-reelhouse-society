@@ -429,3 +429,130 @@ it('is installed by prepare, from tracked files, and the dead husky hooks are go
   const ci = readFileSync(join(ROOT, '.github/workflows/god_tier_ci.yml'), 'utf8');
   expect(ci).toContain('node mobile/scripts/hooks-ran.cjs "$BEFORE"');
 });
+
+describe('a check\'s last green verdict, kept between pushes (verdicts.cjs)', () => {
+  type State = { inputs: string[]; hashes: Record<string, string>; tools: { node: string; bash: string }; key: string };
+  const v = require('../../../scripts/hooks/verdicts.cjs') as {
+    inputsOf: (seeds: string[], o?: { root?: string }) => string[];
+    rehearsalInputs: (rehearsals: string[], root?: string) => string[];
+    uncommented: (text: string, file: string) => string;
+    hashesOf: (inputs: string[], root?: string) => Record<string, string>;
+    keyOf: (hashes: Record<string, string>, tools: object) => string;
+    lookup: (book: object, id: string, key: string) => object | null;
+    remember: (book: Record<string, unknown>, id: string, s: object) => Record<string, unknown>;
+    whyValid: (id: string, kept: object) => string;
+    ENGINE: string[];
+  };
+  const { mutantState } = require('../../../scripts/mutants.cjs') as { mutantState: (m: object, root: string, tools: object) => State };
+  const tools = { node: 'v24', bash: 'GNU bash 5.2' };
+  const tree = (files: Record<string, string>) => {
+    const root = mkdtempSync(join(tmpdir(), 'verdict-tree-'));
+    for (const [p, text] of Object.entries(files)) { mkdirSync(join(root, p, '..'), { recursive: true }); writeFileSync(join(root, p), text); }
+    return root;
+  };
+  // A runner script, the scripts it sources and runs, the modules they import, the data they read, a
+  // test of it reaching the app by its root, and names that are no input: one in a comment, one in data.
+  const files = {
+    'mobile/e2e/run.sh': '#!/bin/bash\n# not read: e2e/commented.mjs\n. "$(dirname "$0")/helper.sh"\nnode mobile/e2e/judge.mjs "$OUT"\n',
+    'mobile/e2e/helper.sh': 'say() { echo "$1"; }\n',
+    'mobile/e2e/judge.mjs': "import { read } from './lib';\nconst fs = require('fs');\nfs.readFileSync(join(__dirname, 'fixtures', 'limits.json'));\n",
+    'mobile/e2e/lib.mjs': 'export const read = 1; // see e2e/commented.mjs\n',
+    'mobile/e2e/fixtures/limits.json': '{ "next": "e2e/listed.mjs" }\n',
+    'mobile/e2e/commented.mjs': 'export {};\n',
+    'mobile/e2e/listed.mjs': 'export {};\n',
+    'mobile/e2e/__tests__/run.test.ts': "import { x } from '@/src/x';\nconst SCRIPT = join(__dirname, '..', 'run.sh');\n",
+    'mobile/src/x.ts': 'export const x = 1;\n',
+    'mobile/src/unused.ts': 'export const y = 2;\n',
+  };
+
+  it('finds every file a check reads from the files themselves: what a script sources and runs, what a module imports and joins, what a test reaches by the app\'s root', () => {
+    const root = tree(files);
+    try {
+      expect(v.inputsOf(['mobile/e2e/__tests__/run.test.ts'], { root })).toEqual([
+        'mobile/e2e/__tests__/run.test.ts', 'mobile/e2e/fixtures/limits.json', 'mobile/e2e/helper.sh', 'mobile/e2e/judge.mjs', 'mobile/e2e/lib.mjs',
+        'mobile/e2e/run.sh', 'mobile/src/x.ts',
+      ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('leaves out of the rehearsals\' inputs no file a script or module of them names: every file of a name found nowhere else is among them', () => {
+    const inputs = v.rehearsalInputs(['e2e/__tests__/runFlows.rehearsal.test.ts'], ROOT);
+    expect(inputs).toEqual(expect.arrayContaining(['mobile/e2e/run-flows.sh', 'mobile/e2e/no-keyboard.sh', 'mobile/e2e/no-error-dialogs.sh', 'mobile/e2e/app-crashes.mjs',
+      'mobile/e2e/attempt.mjs', 'mobile/e2e/screen-ceilings.json', 'mobile/e2e/__tests__/runFlows.rehearsal.test.ts', 'mobile/jest.setup.ts',
+      'mobile/test-utils/timerCheckingEnvironment.js', 'mobile/package-lock.json', ...v.ENGINE]));
+    const { execFileSync } = require('child_process') as typeof import('child_process');
+    const tracked = execFileSync('git', ['ls-files', 'mobile'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean);
+    const owners = new Map<string, string[]>();
+    for (const t of tracked) { const n = basename(t); owners.set(n, [...(owners.get(n) ?? []), t]); }
+    // The engine is kept whole, each file hashed; what it imports decides which checks run, not what they find.
+    const code = inputs.filter((p) => /\.(?:[cm]?js|jsx|tsx?|sh)$/.test(p) && !v.ENGINE.includes(p));
+    const left = code.flatMap((p) => [...v.uncommented(readFileSync(join(ROOT, p), 'utf8'), p).matchAll(/[\w-][\w.-]*\.(?:mjs|cjs|js|jsx|ts|tsx|sh|json|yaml|yml|tsv|txt)\b/g)]
+      .map((m) => owners.get(m[0])).filter((o) => o?.length === 1 && !inputs.includes(o[0]!)).map((o) => `${o![0]} <- ${p}`));
+    expect([...new Set(left)]).toEqual([]);
+  });
+
+  it('takes a kept green verdict only on the very key it was earned with: a byte changed, or a tool, runs the check again, and a red one is never kept', () => {
+    const root = tree(files);
+    try {
+      const inputs = v.inputsOf(['mobile/e2e/run.sh'], { root });
+      const state = (t = tools) => { const hashes = v.hashesOf(inputs, root); return { hashes, tools: t, key: v.keyOf(hashes, t) }; };
+      const book: Record<string, unknown> = {};
+      const first = state();
+      v.remember(book, 'rehearsals', { ...first, verdict: 'passed', commit: 'c'.repeat(40) });
+      expect(v.lookup(book, 'rehearsals', state().key)).not.toBeNull();
+      expect(v.whyValid('the rehearsals', v.lookup(book, 'rehearsals', first.key)!)).toMatch(/^the rehearsals: passed at cccccccc .* every one of its 5 inputs is byte for byte as it was then .*: not run again$/);
+      writeFileSync(join(root, 'mobile/e2e/lib.mjs'), 'export const read = 2;\n');
+      expect(v.lookup(book, 'rehearsals', state().key)).toBeNull();
+      writeFileSync(join(root, 'mobile/e2e/lib.mjs'), files['mobile/e2e/lib.mjs']);
+      expect([v.lookup(book, 'rehearsals', state().key) !== null, v.lookup(book, 'rehearsals', state({ ...tools, bash: 'GNU bash 5.3' }).key)]).toEqual([true, null]);
+      v.remember(book, 'rehearsals', { ...first, verdict: 'failed', commit: 'd'.repeat(40) });
+      expect([v.lookup(book, 'rehearsals', first.key), book.rehearsals]).toEqual([null, undefined]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('plans the rehearsals from their kept verdict only when it stands, checked again as it runs, and runs them otherwise', () => {
+    const plan = (reuse: boolean) => checksFor({
+      bases: ['b'.repeat(40)], touched: ['mobile/src/a.ts'], changed: ['src/a.ts'], files: { code: ['src/a.ts'], linted: ['src/a.ts'] },
+      sizes: { tests: 6, lanes: 4, warmEarly: true, whole: { cpu: 11, mem: 8 } }, mutants: 0, clean: true, reuse,
+      lists: { readers: 'R', rehearsals: 'H', related: 'C', testReport: 'T.json', rehearsalReport: 'H.json', types: 'Y.jsonl' },
+    }).find((c) => c.id === 'rehearsals')!;
+    expect([basename(plan(true).args[0]!), plan(true).args.slice(1)]).toEqual(['verdicts.cjs', ['--reuse', 'H', '--out', 'H.json']]);
+    expect([basename(plan(false).args[0]!), plan(false).cost]).toEqual(['jest-run.cjs', { cpu: 11, mem: 8 }]);
+  });
+
+  it('keys a mutant\'s verdict on its entry, the file it changes, its proof, every file they import, what tests run under, and the runner', () => {
+    const root = tree({
+      ...files,
+      'mobile/src/a.ts': "import { x } from './x';\nexport const a = x;\n",
+      'mobile/src/__tests__/a.test.ts': "import { a } from '../a';\nimport { h } from '../../test-utils/h';\n",
+      'mobile/test-utils/h.ts': 'export const h = 1;\n',
+      'mobile/scripts/mutants.cjs': '// the runner\n',
+      'mobile/jest.config.js': "module.exports = { setupFiles: ['./jest.setup.ts'] };\n",
+      'mobile/jest.setup.ts': 'export {};\n',
+    });
+    try {
+      const m = { id: 'shape-a', class: 'X-y', source: 'shape', edits: [{ file: 'src/a.ts', find: 'x;', replace: '1;' }], proof: { file: 'src/__tests__/a.test.ts', test: 't' } };
+      const key = () => mutantState(m, root, tools).key;
+      expect(mutantState(m, root, tools).inputs).toEqual(['mobile/jest.config.js', 'mobile/jest.setup.ts', 'mobile/scripts/mutants.cjs', 'mobile/src/__tests__/a.test.ts', 'mobile/src/a.ts',
+        'mobile/src/x.ts', 'mobile/test-utils/h.ts']);
+      const was = key();
+      const changes: [string, string][] = [['mobile/src/a.ts', 'export const a = 2;\n'], ['mobile/src/__tests__/a.test.ts', 'export {};\n'], ['mobile/src/x.ts', 'export const x = 3;\n'],
+        ['mobile/test-utils/h.ts', 'export const h = 4;\n'], ['mobile/scripts/mutants.cjs', '// another runner\n'], ['mobile/jest.setup.ts', 'export const s = 1;\n']];
+      const keys = changes.map(([p, text]) => {
+        const before = readFileSync(join(root, p), 'utf8');
+        writeFileSync(join(root, p), text);
+        const k = key();
+        writeFileSync(join(root, p), before);
+        return [p, k === was];
+      });
+      expect(keys).toEqual(changes.map(([p]) => [p, false]));
+      expect([key() === was, mutantState({ ...m, edits: [{ file: 'src/a.ts', find: 'x;', replace: '2;' }] }, root, tools).key === was]).toEqual([true, false]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});

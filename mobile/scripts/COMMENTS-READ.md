@@ -2085,3 +2085,4 @@ files of the reading map this one does not.
 | scripts/__tests__/contractsCommit.test.ts | — |  |
 | scripts/contracts-commit.cjs | — |  |
 | src/utils/__tests__/aReplayTellsWhatItMoved.test.ts | — |  |
+| scripts/hooks/verdicts.cjs | — |  |

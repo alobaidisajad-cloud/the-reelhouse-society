@@ -20,7 +20,8 @@
  * but one, and the memory free then but a reserve. The tests run as one jest run (jest-run.cjs:
  * the related tests and the readers once each, the list handed over whole). The flow runner's
  * rehearsals (RUN_FLOWS) run as a jest run of their own, one whole run at a time, alone and last, at
- * normal priority, so their clocks are never starved. The
+ * normal priority, so their clocks are never starved; their last green verdict stands instead where
+ * every input they read is byte for byte what earned it (verdicts.cjs). The
  * mutants run in checkouts of their own (mutant-lanes.cjs), so no mutant is ever written into the
  * files the tests read, their type checks answered by one warm checker, which checks the commit's
  * own types too. Each check's seconds, and when it started, are printed as a table at the end and
@@ -224,7 +225,7 @@ const plantChecks = (plants, git) => plants.flatMap(({ local }) => {
  * short: the tests (the warm checker before them when it fits beside them, else after), the rest, the
  * mutants, and last the rehearsals and the mutants a rehearsal proves, each alone.
  */
-const checksFor = ({ bases, touched, changed, files, sizes, lists, clean, mutants }) => {
+const checksFor = ({ bases, touched, changed, files, sizes, lists, clean, mutants, reuse = false }) => {
   const checks = [];
   const add = (c) => checks.push({ after: [], cwd: MOBILE, low: true, cost: costOf('script'), ...c });
   // The warm checker: the types of the commit, then each mutant's type check, which the lanes read as they come.
@@ -269,7 +270,12 @@ const checksFor = ({ bases, touched, changed, files, sizes, lists, clean, mutant
   }
   // The rehearsals alone, the whole cap theirs, and then the mutants a rehearsal proves, in one lane,
   // alone too: no other check, and never a second rehearsal, beside a rehearsal's clock.
-  if (changed.length) {
+  // Their last green verdict stands where every input they read is byte for byte what earned it
+  // (verdicts.cjs, which says so, and checks it again as it runs); they run otherwise.
+  if (changed.length && reuse) {
+    add({ id: 'rehearsals', label: 'the flow runner\'s rehearsals, from their last green run on the very same inputs',
+      args: [join(__dirname, 'verdicts.cjs'), '--reuse', lists.rehearsals, '--out', lists.rehearsalReport] });
+  } else if (changed.length) {
     add({
       id: 'rehearsals', label: 'the flow runner\'s rehearsals, alone', low: false, cost: sizes.whole,
       args: [join(__dirname, 'jest-run.cjs'), '--workers', '1', '--out', lists.rehearsalReport, '--paths', lists.rehearsals],
@@ -352,6 +358,20 @@ const peakOf = (results) => {
 const table = (results, total) => ['| check | started at s | seconds | verdict |', '|---|---|---|---|',
   ...results.map((r) => `| ${r.label} | ${Math.round((r.from ?? 0) / 1000)} | ${r.seconds} | ${r.code === 0 ? 'passed' : 'FAILED'} |`), `| the whole push check | | ${total} | |`].join('\n');
 
+/**
+ * The rehearsals' verdict kept after a run: green, with its inputs and report, only while the inputs
+ * are still the ones the run began on (`began`, their key); red, any green kept before forgotten.
+ */
+const keepRehearsals = (verdicts, rehearsals, began, green, report, commit) => {
+  const file = verdicts.bookFile('rehearsals');
+  const book = verdicts.readBook(file);
+  const now = verdicts.rehearsalState(rehearsals);
+  if (green && now.key !== began) { console.log('the rehearsals passed, but their inputs changed while they ran: their verdict is not kept'); return; }
+  verdicts.remember(book, 'rehearsals', { ...now, verdict: green ? 'passed' : 'failed', commit });
+  if (green) writeFileSync(join(verdicts.verdictsDir(), verdicts.REHEARSAL_REPORT), readFileSync(report));
+  verdicts.writeBook(file, book);
+};
+
 /** The push check, as git's hook runs it: the refs on stdin, or --dry-run's own line. */
 function main() {
   clearHookGitEnv(process.env);
@@ -414,7 +434,11 @@ function main() {
   writeFileSync(lists.rehearsals, `${rehearsals.join('\n')}\n`);
   writeFileSync(lists.related, `${code.join('\n')}\n`);
   const clean = git('status', '--porcelain', '--untracked-files=no').trim() === '';
-  const checks = checksFor({ bases, touched, changed, files, sizes, lists, clean, mutants });
+  // The rehearsals' inputs as the push begins: their last green verdict is taken where these are its own.
+  const verdicts = require('./verdicts.cjs');
+  const rehearsed = changed.length && rehearsals.length ? verdicts.rehearsalState(rehearsals) : null;
+  const reuse = !!rehearsed && !!verdicts.lookup(verdicts.readBook(verdicts.bookFile('rehearsals')), 'rehearsals', rehearsed.key);
+  const checks = checksFor({ bases, touched, changed, files, sizes, lists, clean, mutants, reuse });
   if (plan) {
     for (const c of checks) console.log(`${c.id}\t${c.label}\t${c.args.slice(1).join(' ')}`);
     process.exit(faults.length ? 1 : 0);
@@ -428,6 +452,9 @@ function main() {
     const file = join(keep, `${checkout}.json`);
     const had = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
     writeFileSync(file, `${JSON.stringify([...had.slice(-19), { at: new Date().toISOString(), total, cap, checks: results.map((r) => ({ label: r.label, from: r.from, seconds: r.seconds, code: r.code })) }], null, 1)}\n`);
+    // A green run of the rehearsals is kept with its inputs, where they are still those it began on; a red one forgets.
+    const ran = results.find((r) => r.id === 'rehearsals');
+    if (rehearsed && ran && !reuse) keepRehearsals(verdicts, rehearsals, rehearsed.key, ran.code === 0, lists.rehearsalReport, git('rev-parse', 'HEAD').trim());
     faults.push(...results.filter((r) => r.code !== 0).map((r) => r.label));
     if (faults.length) { console.error(`\nPush refused: ${faults.join('; ')}`); process.exit(1); }
   }, (e) => { console.error(`\nPush refused: the push check itself failed: ${e.message}`); process.exit(1); });

@@ -32,6 +32,8 @@ const MAY_LIST: Record<string, string> = {
   'e2e/db/verify-writes.mjs': 'the flows folder its workflow names, as Maestro reads it: the files directly in it',
   'src/utils/__tests__/everyCheckRuns.guard.test.ts': 'a workflow GitHub never reads can sit in any folder: git’s list of every file in the repo, outside any universe',
   'scripts/commit.cjs': 'asks git whether each path it is given is tracked; it lists no folder',
+  'src/utils/__tests__/hooks.guard.test.ts': "git's list of the app's files, for the one file of a name the rehearsals' code names, as verdicts.cjs finds it",
+  'scripts/hooks/verdicts.cjs': "git's list of every file, for the one file of a name a check's code names, ignored ones among them; a folder's own files where it is no repository (a test's tree)",
   'scripts/mutants.cjs': "a judge's fixture folder is its logs, every file of them; and the folder of parts a night's runs downloaded",
   'src/utils/__tests__/theBatchReportIsAnswered.test.ts': 'the batch reports in the private folder, outside the repository and so outside any universe',
   'src/utils/__tests__/everyMutantIsSound.guard.test.ts': "asks git which files in the judges' fixture folders it ignores: a log no other checkout would have",

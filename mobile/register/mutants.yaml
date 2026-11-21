@@ -9004,6 +9004,69 @@ mutants:
         replace: "low: false, cost: costOf('script'),"
     proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a mutant's first run from the tests only on a clean tree, after them, and in lanes of their own" }
 
+  - id: shape-verdict-inputs-follow-no-import
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/verdicts.cjs
+        find: "    const hit = TRIES.map((t) => base + t).find(isFile);\n    take(hit);"
+        replace: "    const hit = TRIES.map((t) => base + t).find(isFile);\n    void hit;"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "finds every file a check reads from the files themselves: what a script sources and runs, what a module imports and joins, what a test reaches by the app's root" }
+
+  - id: shape-verdict-inputs-blind-to-a-sourced-script
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/verdicts.cjs
+        find: "    take(join(here, p));\n    const only = named?.get(p);\n    if (only && only.length === 1) take(join(root, only[0]));"
+        replace: "    void p;"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "finds every file a check reads from the files themselves: what a script sources and runs, what a module imports and joins, what a test reaches by the app's root" }
+
+  - id: shape-verdict-inputs-miss-a-unique-name
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/verdicts.cjs
+        find: "    if (only && only.length === 1) take(join(root, only[0]));"
+        replace: "    void only;"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "leaves out of the rehearsals' inputs no file a script or module of them names: every file of a name found nowhere else is among them" }
+
+  - id: shape-verdict-key-without-bytes
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/verdicts.cjs
+        find: "hashes: Object.keys(hashes).sort().map((p) => [p, hashes[p]])"
+        replace: "hashes: Object.keys(hashes).sort().map((p) => [p])"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a kept green verdict only on the very key it was earned with: a byte changed, or a tool, runs the check again, and a red one is never kept" }
+
+  - id: shape-verdict-keeps-a-red
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/verdicts.cjs
+        find: "  if (!GREEN.has(verdict)) { delete book[id]; return book; }"
+        replace: "  if (!GREEN.has(verdict) && verdict === 'never') { delete book[id]; return book; }"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "takes a kept green verdict only on the very key it was earned with: a byte changed, or a tool, runs the check again, and a red one is never kept" }
+
+  - id: shape-mutant-key-without-the-runner
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/mutants.cjs
+        find: ".flatMap(folder), 'mobile/scripts/mutants.cjs'])]"
+        replace: ".flatMap(folder)])]"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "keys a mutant's verdict on its entry, the file it changes, its proof, every file they import, what tests run under, and the runner" }
+
+  - id: shape-rehearsals-never-reused
+    class: CI-push-check-past-the-machine
+    source: shape
+    edits:
+      - file: scripts/hooks/pre-push.cjs
+        find: "  if (changed.length && reuse) {"
+        replace: "  if (changed.length && reuse === 'never') {"
+    proof: { file: src/utils/__tests__/hooks.guard.test.ts, test: "plans the rehearsals from their kept verdict only when it stands, checked again as it runs, and runs them otherwise" }
+
   - id: shape-rehearsal-mutant-at-low-priority
     class: CI-push-check-past-the-machine
     source: shape
