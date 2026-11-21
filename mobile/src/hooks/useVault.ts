@@ -1,3 +1,4 @@
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState } from 'react-native';
 import { useVaultStore } from '@/src/stores/vaultStore';
@@ -81,8 +82,8 @@ export function useVault(logId: string | null | undefined, isOwner: boolean) {
                 // both platforms, so there is nothing to say a second time.
                 const { queuedOffline } = await dropNote(logId, target.viewingId);
                 reelToast(queuedOffline ? 'Note removed offline. Will sync when connected.' : 'Note removed.');
-              } catch {
-                reelToast.error('The note could not be removed. Try again.');
+              } catch (e) {
+                reelToast.error(saidOfAFailure(e, 'The note could not be removed.'));
               }
             })();
           },

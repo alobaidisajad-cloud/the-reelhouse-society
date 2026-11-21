@@ -1,3 +1,4 @@
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import { houseIso } from '@/src/lib/houseClock';
 import { monotonicNow } from '@/src/lib/waits';
 import { logger } from '@/src/utils/logger';
@@ -580,7 +581,7 @@ export const useNotificationStore = create<NotificationState>()(
             // (review round 10).
             if (stillSignedIn(startedAs)) {
                 set((state) => unreadAgain(state, new Set(previousState.filter((n) => !n.read && !((readHere.get(n.id) ?? Infinity) < Infinity)).map((n) => n.id))));
-                reelToast.error('The notices could not be marked read. Try again.');
+                reelToast.error(saidOfAFailure(e, 'The notices could not be marked read.'));
             }
         }
     },
@@ -614,7 +615,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Rolled back only while still signed in, as in markRead: this notice, put back, and said.
             if (stillSignedIn(startedAs)) {
                 set((state) => putBack(state, previousState.filter((n) => n.id === id)));
-                reelToast.error('The notice could not be dismissed. Try again.');
+                reelToast.error(saidOfAFailure(e, 'The notice could not be dismissed.'));
             }
         }
     },
@@ -694,7 +695,7 @@ export const useNotificationStore = create<NotificationState>()(
             // See markRead: the group, put back.
             if (stillSignedIn(startedAs)) {
                 set((state) => putBack(state, previousState.filter((n) => ids.includes(n.id))));
-                reelToast.error('The notices could not be dismissed. Try again.');
+                reelToast.error(saidOfAFailure(e, 'The notices could not be dismissed.'));
             }
         }
     },

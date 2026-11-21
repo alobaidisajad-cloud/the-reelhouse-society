@@ -32,6 +32,6 @@ it('the film it lands on is the one it opens', async () => {
   const onSelect = jest.fn();
   const r = render(<WatchlistRoulette visible watchlist={[queue[0]]} onClose={jest.fn()} onSelect={onSelect} />);
   await act(async () => { await fireEvent.press(r.getByLabelText('Consult the oracle — pick a film from your watchlist')); });
-  await act(async () => { await fireEvent.press(r.getByLabelText('See The Matrix')); });
+  await act(async () => { await fireEvent.press(r.getByLabelText('See The Matrix, 1999')); });
   expect(onSelect).toHaveBeenCalledWith(603);
 });

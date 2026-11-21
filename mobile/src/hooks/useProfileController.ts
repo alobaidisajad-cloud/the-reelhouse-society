@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useEffectEvent, useMemo, useRef } from 'react';
 import { useNavigation } from 'expo-router';
 import { P, useRouteParams } from '@/src/utils/routeParams';
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import { useIsFocused } from "expo-router/react-navigation";
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useAuthStore } from '@/src/stores/auth';
@@ -362,9 +363,9 @@ export function useProfileController(usernameOverride?: string) {
     } catch (err) {
       // The store says why on every failure it catches; this one it did not.
       logger.warn('[Profile] follow failed:', err);
-      reelToast.error(isRequested
-        ? `The request to @${handle} could not be withdrawn. Please try again.`
-        : `Could not ${leaving ? 'unfollow' : 'follow'} @${handle}. Please try again.`);
+      reelToast.error(saidOfAFailure(err, isRequested
+        ? `The request to @${handle} could not be withdrawn.`
+        : `Could not ${leaving ? 'unfollow' : 'follow'} @${handle}.`));
     }
     // A follow the house filed as a request (the member turned private while their file was open):
     // the count follows the house, not the screen's guess, and the file is known private now

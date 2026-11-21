@@ -6,7 +6,6 @@ TOLD:
   - UI-failure-three-looks
   - COPY-said-before-it-was-true
   - COPY-one-failure-said-twice
-  - COPY-a-refusal-told-as-anothers
   - COPY-a-refusal-undone-unsaid
 LATE:
   - READ-a-page-ordered-by-a-key-rows-share
@@ -75,9 +74,6 @@ MOD:
   - MOD-a-removal-that-cannot-be-undone
 EDGE:
   - TOOL-a-measure-faults-what-the-phone-allows
-A11Y:
-  - UI-shown-but-not-said
-  - COPY-count-before-plural
 SPEED:
   - DB-lookup-without-index
   - SPEED-page-waits-for-the-members-marks

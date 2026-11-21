@@ -19,6 +19,7 @@ import { FORMAT_META, shelfRank } from '@/src/constants/formats';
 import { r, posterColumns, countLabel } from './roomStyles';
 import { scrollEndAbove, useColumnWidth } from '@/src/components/layout/navMetrics';
 import { UNSPOKEN } from '@/src/components/dispatch/paper/paperMetrics';
+import { saidFilm } from '@/src/utils/saidFilm';
 import { RoomChip, RoomChipDivider, RoomRail, RoomSearch, RoomRetrieving, RoomUnreachable, RoomEmpty, RoomFoot, RoomLoadMore, RoomMoreFailed } from './RoomParts';
 
 /**
@@ -120,7 +121,7 @@ const VaultCase = React.memo(function VaultCase({
       haptic
       accessibilityRole="button"
       accessibilityLabel={[
-        vaultItem.title ?? 'Untitled film',
+        saidFilm(vaultItem.title ?? 'Untitled film', vaultItem.year),
         FORMAT_META[format]?.label ?? format,
         spokenCondition(vaultItem.condition),
       ].filter(Boolean).join(', ')}

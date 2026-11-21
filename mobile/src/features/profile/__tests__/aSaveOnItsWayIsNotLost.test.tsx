@@ -129,7 +129,7 @@ it('a save refused after the member left is said by a toast; refused while they 
   await left.hook.unmount();
   await gone.refuse(new Error('network down'));
   await left.done();
-  expect(mockToast.error).toHaveBeenCalledWith('Your profile could not be saved. Try again.');
+  expect(mockToast.error).toHaveBeenCalledWith('Your profile could not be saved. Check your connection and try again.');
   expect(back).not.toHaveBeenCalled();
 });
 

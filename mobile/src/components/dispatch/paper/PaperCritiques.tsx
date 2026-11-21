@@ -25,6 +25,7 @@ import { MarkFigure, certifyLabel, critiqueLabel } from '@/src/components/MarkFi
 import { saidStruck, useStruck } from '@/src/components/StruckWords';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { WithheldBanner } from '@/src/components/moderation/WithheldBanner';
+import { saidFilm } from '@/src/utils/saidFilm';
 
 export interface Critique {
   id: string;
@@ -242,7 +243,7 @@ export const PaperCritiqueRow = memo(function PaperCritiqueRow({
             <PressableScale room
               style={{ paddingVertical: 8 }} hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }} haptic="medium"
               onPress={onTake}
-              accessibilityRole="button" accessibilityLabel={`Take this one${c.film?.title ? `, ${c.film.title},` : ''} as your answer`}
+              accessibilityRole="button" accessibilityLabel={`Take this one${c.film?.title ? `, ${saidFilm(c.film.title, c.film.year)},` : ''} as your answer`}
             >
               <Text style={[p.commentMeta, { marginTop: 0, color: colors.sepia, letterSpacing: 1.6 }]} {...scaledTextProps}>
                 TAKE THIS ONE

@@ -1,3 +1,4 @@
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -448,8 +449,8 @@ export function useEditProfile() {
         form.setError('username', { type: 'manual', message: said });
         return;
       }
-      if (!mountedRef.current) reelToast.error('Your profile could not be saved. Try again.');
-      setSubmitError(err instanceof Error ? err : new Error('Failed to update profile. Please try again.'));
+      if (!mountedRef.current) reelToast.error(saidOfAFailure(err, 'Your profile could not be saved.'));
+      setSubmitError(err instanceof Error ? err : new Error(saidOfAFailure(err, 'Failed to update profile.')));
     } finally {
       setSaving(false);
     }

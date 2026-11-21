@@ -248,9 +248,9 @@ describe('the house says why', () => {
       const share = src.slice(src.indexOf('const handleShareToLounge'), src.indexOf('}, [user?.id, mode,'));
       // Tripwire: the slice must be the real handler, or both checks pass on ''.
       expect(share).toMatch(/await sendMessage\(/);
-      const lines = [...share.matchAll(/reelToast\.error\('Failed to share\. Try again\.'\)/g)];
+      const lines = [...share.matchAll(/reelToast\.error\(saidOfAFailure\(err, 'Failed to share\.'\)\)/g)];
       expect(lines).toHaveLength(1);
-      expect(share.slice(share.indexOf('} catch (err)'))).toMatch(/Failed to share\. Try again\./);
+      expect(share.slice(share.indexOf('} catch (err)'))).toMatch(/saidOfAFailure\(err, 'Failed to share\.'\)/);
     });
 
     it('and every other caller of sendMessage already stays quiet on false', () => {

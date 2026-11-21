@@ -1,3 +1,4 @@
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { InColumn, InWindow } from '@/src/components/layout/InColumn';
@@ -179,7 +180,7 @@ export function SettingsScreen() {
         const raw = (e as { message?: unknown } | null)?.message;
         setOtpError(typeof raw === 'string' && raw
           ? mapAuthError(raw).message
-          : 'The code could not be sent. Check your connection and try again.');
+          : saidOfAFailure(e, 'The code could not be sent.'));
       }
       return false;
     } finally {
@@ -211,8 +212,8 @@ export function SettingsScreen() {
   const completeAccountDeletion = useCallback(async (): Promise<void> => {
     try {
       await AuthService.requestAccountDeletion(eraseWritingRef.current);
-    } catch {
-      reelToast.error(`Account deletion failed. Try again, or write to ${SUPPORT_EMAIL} and we will do it for you.`);
+    } catch (e) {
+      reelToast.error(`${saidOfAFailure(e, 'Account deletion failed.')} Or write to ${SUPPORT_EMAIL} and we will do it for you.`);
       return;
     }
     // Whose account closed, read before logout() clears it.

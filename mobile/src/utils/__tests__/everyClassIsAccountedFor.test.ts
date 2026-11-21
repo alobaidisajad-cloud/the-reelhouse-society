@@ -171,6 +171,7 @@ describe('the rules say NO', () => {
   it('to a method file that reads one screen: only a file that reads the universe or the schema is a finder', () => {
     expect(readsTheWholeApp("import { files } from '@/test-utils/universe';\nconst roots = files('appCode');")).toBe(true);
     expect(readsTheWholeApp("const { files } = require('../test-utils/universe');\nfiles(['appCode', 'routes']);")).toBe(true);
+    expect(readsTheWholeApp("import { files as universe } from '@/test-utils/universe';\nconst code = universe('appCode');")).toBe(true);
     expect(readsTheWholeApp("import { PENDING_SQL } from '@/test-utils/schema';")).toBe(true);
     expect(readsTheWholeApp("const screen = readFileSync(join(__dirname, '..', 'tribunal.tsx'), 'utf8');")).toBe(false);
     expect(readsTheWholeApp("render(<StackDetail />); expect(screen.getByText('x')).toBeTruthy();")).toBe(false);

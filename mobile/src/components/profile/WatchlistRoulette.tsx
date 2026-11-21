@@ -28,6 +28,7 @@ import { ToastHost } from '@/src/components/ToastHost';
 import { CentredCard } from '@/src/components/layout/CentredCard';
 import { EDGE_LIT } from '@/src/theme/light';
 import { Arrive } from '@/src/components/Arrive';
+import { saidFilm } from '@/src/utils/saidFilm';
 import { useIgnition } from '@/src/hooks/useArrival';
 
 interface RouletteFilm {
@@ -266,7 +267,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                 {/* eslint-disable-next-line react/no-unescaped-entities */}
                                 <Text {...scaledTextProps} style={s.resultReason}>"{reason}"</Text>
                                 <View style={s.verdictActions}>
-                                    <PressableScale style={s.seeFilmBtn} onPress={handleSelect} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="medium" accessibilityRole="button" accessibilityLabel={`See ${result.title ?? result.name}`}>
+                                    <PressableScale style={s.seeFilmBtn} onPress={handleSelect} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="medium" accessibilityRole="button" accessibilityLabel={`See ${saidFilm(result.title ?? result.name ?? 'the film', result.year)}`}>
                                         <Text {...scaledTextProps} style={s.seeFilmText}>{'SEE THE FILM →'}</Text>
                                     </PressableScale>
                                     <PressableScale style={s.rerollBtn} onPress={spin} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic accessibilityRole="button" accessibilityLabel="Re-roll the Oracle">

@@ -1,4 +1,5 @@
  
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import { useShallow } from 'zustand/react/shallow';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
@@ -863,7 +864,7 @@ export function useLogFlow() {
                         ? 'This record can no longer be amended.'
                     : isChangedSince(err)
                         ? LOG_CHANGED_SINCE
-                        : 'The record could not be sealed. Try again.'
+                        : saidOfAFailure(err, 'The record could not be sealed.')
             );
             setSubmitting(false);
         }
@@ -894,7 +895,7 @@ export function useLogFlow() {
             setDeleting(false);
             reelToast.error(whole ? 'Failed to delete log.'
                 : err instanceof Error && err.message === VIEWING_NEEDS_CONNECTION ? VIEWING_NEEDS_CONNECTION
-                : 'The viewing could not be removed. Try again.');
+                : saidOfAFailure(err, 'The viewing could not be removed.'));
         }
     };
 

@@ -1,3 +1,4 @@
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import { nav } from '@/src/utils/typedRouter';
 import { FlashList } from '@shopify/flash-list';
 import { NOT_ANCHORED } from '@/src/components/layout/CinematicFlashList';
@@ -350,7 +351,7 @@ export default function SocialModal() {
             logger.debug('[SocialModal] Share failed:', err);
             addBreadcrumb('socialModal.share failed', 'telemetry');
             if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.share', mode, loungeId });
-            reelToast.error('Failed to share. Try again.');
+            reelToast.error(saidOfAFailure(err, 'Failed to share.'));
         } finally {
             if (isMounted.current) setSharingTo(null);
         }

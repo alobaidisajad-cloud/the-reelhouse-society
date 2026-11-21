@@ -1,3 +1,4 @@
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import * as Crypto from 'expo-crypto';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { create } from 'zustand';
@@ -1422,7 +1423,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return loungeId;
     } catch (e) {
       logger.error('[LoungeStore.createLounge] Unhandled error:', e);
-      reelToast.error('Could not create lounge. Check your connection and try again.');
+      reelToast.error(saidOfAFailure(e, 'Could not create lounge.'));
       _lastCreateAt = -Infinity;
       return null;
     }
@@ -1479,7 +1480,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         reelToast.error(SALON_GONE_SAID);
       } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);
       else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
-        reelToast.error('Could not take a seat. Check your connection and try again.');
+        reelToast.error(saidOfAFailure(e, 'Could not take a seat.'));
       }
       return false;
     }
@@ -1504,7 +1505,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         reelToast.error(SALON_GONE_SAID);
       } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);
       else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
-        reelToast.error('Could not send your request. Check your connection and try again.');
+        reelToast.error(saidOfAFailure(e, 'Could not send your request.'));
       }
       return 'error';
     }
@@ -1785,7 +1786,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
     if (error || !removed || removed.length === 0) {
       if (!memberUnchanged(startedAs)) return false;
-      reelToast.error('Failed to leave — please try again.');
+      reelToast.error(saidOfAFailure(error, 'Failed to leave.'));
       // The seat is still theirs: put back as it was, then read. A read that fails (no signal,
       // the usual reason a leave fails) kept the room drawn as left under the toast.
       if (seated) set(s => ({ lounges: s.lounges.map(l => (l.id === loungeId ? seated : l)) }));

@@ -7,6 +7,7 @@
  * every edition at once, takes back the notice that told its author, and keeps
  * it from being chosen again. The wall is read again, and the next piece hangs.
  */
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import React, { memo, useCallback, useState } from 'react';
 import { Alert, StyleSheet } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -45,8 +46,8 @@ export const KeepOff = memo(function KeepOff({ kind, id, what, room, lines = [KE
             TactileEngine.warn();
             await queryClient.invalidateQueries({ queryKey: WALL_KEY });
             reelToast.success(`Kept off the Lobby.`);
-          } catch {
-            reelToast.error(`Could not keep it off — check your connection.`);
+          } catch (e) {
+            reelToast.error(saidOfAFailure(e, 'Could not keep it off.'));
           } finally {
             setBusy(false);
           }

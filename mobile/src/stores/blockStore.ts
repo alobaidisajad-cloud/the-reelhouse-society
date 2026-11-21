@@ -15,6 +15,7 @@
  *   • React Query cache invalidation on block/mute changes
  *   • Haptic feedback and reelToast confirmations on all mutations
  */
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { create } from 'zustand';
 import { wallMayHaveChanged } from '../components/lobby/wallRead';
@@ -170,7 +171,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
 
       logger.error('[BlockStore] blockUser failed:', err);
       captureError(err, { action: 'blockUser' });
-      reelToast.error('Failed to block user. Try again.');
+      reelToast.error(saidOfAFailure(err, 'Failed to block user.'));
     }
   },
 
@@ -227,7 +228,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
 
       logger.error('[BlockStore] unblockUser failed:', err);
       captureError(err, { action: 'unblockUser' });
-      reelToast.error('Failed to unblock user. Try again.');
+      reelToast.error(saidOfAFailure(err, 'Failed to unblock user.'));
     }
   },
 
@@ -299,7 +300,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
 
       logger.error('[BlockStore] muteUser failed:', err);
       captureError(err, { action: 'muteUser' });
-      reelToast.error('Failed to mute user. Try again.');
+      reelToast.error(saidOfAFailure(err, 'Failed to mute user.'));
     }
   },
 
@@ -356,7 +357,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
 
       logger.error('[BlockStore] unmuteUser failed:', err);
       captureError(err, { action: 'unmuteUser' });
-      reelToast.error('Failed to unmute user. Try again.');
+      reelToast.error(saidOfAFailure(err, 'Failed to unmute user.'));
     }
   },
 

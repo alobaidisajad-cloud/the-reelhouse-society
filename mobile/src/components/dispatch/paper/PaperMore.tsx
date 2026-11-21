@@ -35,6 +35,7 @@ import { Arrive } from '@/src/components/Arrive';
 import { useModalTop, usePushedHeaderTop } from '@/src/components/layout/navMetrics';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
 import { useStruck } from '@/src/components/StruckWords';
+import { saidFilm } from '@/src/utils/saidFilm';
 
 /* ═══ THE PICKER ══════════════════════════════════════════════════════════════
  * The brass ＋ opens this: five forms, each in its own ink, so the colour code is
@@ -365,7 +366,7 @@ export const ArchiveFilm = memo(function ArchiveFilm({
       hitSlop={null}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${film.title}. ${counted(filings, 'filing', 'filings')}`}
+      accessibilityLabel={`${saidFilm(film.title, film.year)}. ${counted(filings, 'filing', 'filings')}`}
     >
       <View style={m.archivePlate}>
         <RemoteImage uri={film.posterPath} style={p.plateArt} contentFit="cover" fallback={<PosterMark style={p.plateArt} size={12} ground={false} />} />

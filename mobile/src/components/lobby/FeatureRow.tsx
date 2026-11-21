@@ -27,6 +27,7 @@ import { BILL_ALL_H, BILL_GAP, BILL_HEAD_LINE, SHEET_FOOT, SNIPE_H, SNIPE_REACH,
 import { BILL, ONE_SHEET, STATES } from './words';
 import type { FeatureSheet } from './wallRead';
 import { counted } from '@/src/utils/counted';
+import { saidFilm } from '@/src/utils/saidFilm';
 
 const SHADE = 'rgba(6,5,4,';
 /**
@@ -86,7 +87,7 @@ export const FeatureRow = memo(function FeatureRow({ plan, sheet, bill, dark, on
             onPress={() => nav.push(`/film/${film.id}`)}
             haptic="selection"
             accessibilityRole="link"
-            accessibilityLabel={`${film.title ?? film.name ?? 'A film'}. Open the film.`}
+            accessibilityLabel={`${saidFilm(film.title ?? film.name ?? 'A film', film.release_date)}. Open the film.`}
           >
             <RemoteImage uri={tmdb.poster(film.poster_path, 'w185')} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition="top" transition={150} accessible={false} fallback={<PosterMark style={StyleSheet.absoluteFill} size={16} ground={false} />} />
           </PressableScale>

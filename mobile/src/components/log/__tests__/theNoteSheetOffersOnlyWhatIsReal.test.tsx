@@ -160,7 +160,7 @@ describe('removing, through the page', () => {
     await act(async () => result.current.confirmRemove());
     const remove = (spy.mock.calls[0][2] as any[]).find(b => b.text === 'Remove');
     await act(async () => { remove.onPress(); });
-    expect(mockToast.error).toHaveBeenCalledWith('The note could not be removed. Try again.');
+    expect(mockToast.error).toHaveBeenCalledWith('The note could not be removed.');
     expect(mockToast).not.toHaveBeenCalled();
   });
 

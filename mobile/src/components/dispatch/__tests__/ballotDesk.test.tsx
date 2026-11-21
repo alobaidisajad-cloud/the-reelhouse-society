@@ -239,7 +239,7 @@ describe('the ballot desk', () => {
     try {
       const r = render(<ComposeBallotScreen />);
       expect(r.getByDisplayValue('Best of 1927?')).toBeTruthy();
-      expect([r.getByText('METROPOLIS'), r.getByLabelText('Remove Metropolis')].every(Boolean)).toBe(true);
+      expect([r.getByText('METROPOLIS'), r.getByLabelText('Remove Metropolis, 1927')].every(Boolean)).toBe(true);
       expect(r.getByLabelText('Closes in 2 days').props.accessibilityState?.selected).toBe(true);
     } finally {
       clearDraft('u1', 'ballot');

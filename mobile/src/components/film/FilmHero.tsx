@@ -19,6 +19,7 @@ import type { TMDBMovieDetail } from '@/src/lib/tmdb';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { EDGE_LIT } from '@/src/theme/light';
 import { softBreak } from '@/src/utils/softBreak';
+import { saidFilm } from '@/src/utils/saidFilm';
 
 const POSTER_W = 140;
 const POSTER_H = POSTER_W * 1.5;
@@ -95,7 +96,7 @@ export const FilmHero = memo(function FilmHero({
       {/* Poster */}
       <View style={styles.posterWrap}>
         <Animated.View style={[styles.posterGlow, posterGlowStyle]} />
-        <RemoteImage uri={tmdb.poster(film.poster_path, 'w342')} style={styles.poster} placeholder={{ blurhash: SEPIA_HASH }} transition={300} accessibilityLabel={`${film.title} movie poster`} fallback={<View style={[styles.poster, styles.posterPlaceholder]}>
+        <RemoteImage uri={tmdb.poster(film.poster_path, 'w342')} style={styles.poster} placeholder={{ blurhash: SEPIA_HASH }} transition={300} accessibilityLabel={`${saidFilm(film.title, film.release_date)} movie poster`} fallback={<View style={[styles.poster, styles.posterPlaceholder]}>
             <Text style={styles.posterPlaceholderText}>NO POSTER</Text>
           </View>} />
         <View style={styles.scanlines} />

@@ -12,6 +12,7 @@
  *   • Optional block toggle delegates to BlockStore
  *   • Haptic + toast feedback for all outcome states
  */
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import { supabase } from '@/src/lib/supabase';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { ReportPayloadSchema, type ReportPayload, type ReportResult } from '@/src/types/moderation';
@@ -155,7 +156,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
       return { status: 'submitted' };
     } catch (err) {
       logger.error('[ReportStore] submitReport failed:', err);
-      reelToast.error('Unable to file report. Please try again.');
+      reelToast.error(saidOfAFailure(err, 'Unable to file report.'));
       return { status: 'error', message: err instanceof Error ? err.message : 'Unknown error' };
     } finally {
       set({ isSubmitting: false });

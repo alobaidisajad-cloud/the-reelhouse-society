@@ -80,7 +80,7 @@ it('READ ALL refused: the notices are unread again, and the member is told it di
   await all;
   expect(board()).toEqual([[N1, false], [N2, false], [N3, false]]);
   expect(bell()).toBe(3);
-  expect(toast.error.mock.calls).toEqual([['The notices could not be marked read. Try again.']]);
+  expect(toast.error.mock.calls).toEqual([['The notices could not be marked read. The house did not allow it.']]);
 });
 
 it("a notice's X refused: the notice comes back, and the member is told it was not dismissed; one taken says nothing", async () => {
@@ -97,7 +97,7 @@ it("a notice's X refused: the notice comes back, and the member is told it was n
   await mockHeld.release('notifications');
   await gone;
   expect(board()).toEqual([[N1, false], [N2, false]]);
-  expect(toast.error.mock.calls).toEqual([['The notice could not be dismissed. Try again.']]);
+  expect(toast.error.mock.calls).toEqual([['The notice could not be dismissed. The house did not allow it.']]);
 });
 
 it("a group's X refused: the group comes back, and the member is told they were not dismissed", async () => {
@@ -106,7 +106,7 @@ it("a group's X refused: the group comes back, and the member is told they were 
   await mockHeld.release('notifications');
   await gone;
   expect(board()).toEqual([[N1, false], [N2, false], [N3, false]]);
-  expect(toast.error.mock.calls).toEqual([['The notices could not be dismissed. Try again.']]);
+  expect(toast.error.mock.calls).toEqual([['The notices could not be dismissed. The house did not allow it.']]);
 });
 
 it('a notice opened while READ ALL was on its way stays read when READ ALL is refused; the rest are unread again', async () => {
@@ -120,5 +120,5 @@ it('a notice opened while READ ALL was on its way stays read when READ ALL is re
 
   expect(board()).toEqual([[N1, false], [N2, true], [N3, false]]);
   expect(bell()).toBe(2);
-  expect(toast.error.mock.calls).toEqual([['The notices could not be marked read. Try again.']]);
+  expect(toast.error.mock.calls).toEqual([['The notices could not be marked read. The house did not allow it.']]);
 });

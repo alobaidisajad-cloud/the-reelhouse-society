@@ -133,7 +133,7 @@ describe('leaveLounge', () => {
 
     expect(await useLoungeStore.getState().leaveLounge(L1)).toBe(false);
 
-    expect(mockToastError).toHaveBeenCalledWith('Failed to leave — please try again.');
+    expect(mockToastError).toHaveBeenCalledWith('Failed to leave. Check your connection and try again.');
     expect(useLoungeStore.getState().lounges).toEqual([joined]);
   });
 

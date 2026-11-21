@@ -5883,8 +5883,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "      } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);\n      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error('Could not take a seat."
-        replace: "      } else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error('Could not take a seat."
+        find: "      } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);\n      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error(saidOfAFailure(e, 'Could not take a seat."
+        replace: "      } else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error(saidOfAFailure(e, 'Could not take a seat."
     proof: { file: src/stores/__tests__/aBannedMemberIsToldTheDoorIsClosed.test.ts, test: "a banned member taking a seat is told the host has closed the salon to them, not to check their connection" }
 
   - id: shape-delivered-message-still-sending
@@ -6018,7 +6018,7 @@ mutants:
     source: shape
     edits:
       - file: src/stores/notificationStore.ts
-        find: "                reelToast.error('The notices could not be marked read. Try again.');\n"
+        find: "                reelToast.error(saidOfAFailure(e, 'The notices could not be marked read.'));\n"
         replace: ""
     proof: { file: src/stores/__tests__/aNoticeUndoneIsSaid.test.ts, test: "READ ALL refused: the notices are unread again, and the member is told it did not take; one taken says nothing" }
 

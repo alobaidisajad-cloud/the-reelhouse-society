@@ -45,7 +45,7 @@ const KINDS = ['FIX', 'TOLD', 'LATE', 'COPY', 'PROT', 'UNKN', 'EXIT', 'LIB', 'AB
  * (test-utils/universe) or production's schema: what makes a static method a finder rather than
  * a test of one screen.
  */
-const READS_THE_UNIVERSE = /\bfiles\(\s*\[?\s*'/;
+const READS_THE_UNIVERSE = /\b(files|universe)\(\s*\[?\s*'/;
 const READS_THE_SCHEMA = /\b(SNAPSHOT_SQL|PENDING_SQL|houseFunctions|live-schema\.sql)\b/;
 const readsTheWholeApp = (source) => (/universe/.test(source) && READS_THE_UNIVERSE.test(source)) || READS_THE_SCHEMA.test(source);
 

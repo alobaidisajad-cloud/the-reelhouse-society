@@ -166,7 +166,7 @@ describe('a record that did not file says one true thing', () => {
   it('"could not be sealed" for any other failure — once', async () => {
     mockAddLog.mockRejectedValue(new Error('permission denied'));
     await file();
-    expect(errors()).toEqual(['The record could not be sealed. Try again.']);
+    expect(errors()).toEqual(['The record could not be sealed.']);
     expect(api!.sealed).toBe(false);
     await beat();
     await idle();

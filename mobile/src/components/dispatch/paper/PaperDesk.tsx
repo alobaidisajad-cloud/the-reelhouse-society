@@ -40,6 +40,7 @@ import { EDGE_LIT } from '@/src/theme/light';
 import { PaperEmpty } from './PaperFrame';
 import { useModalTop } from '@/src/components/layout/navMetrics';
 import { counted } from '@/src/utils/counted';
+import { saidFilm } from '@/src/utils/saidFilm';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
 
 /**
@@ -247,7 +248,7 @@ export const BallotDesk = memo(function BallotDesk({
                       <PressableScale touch="destructive" hitSlop={{ top: 4, bottom: 4, left: 8, right: 0 }} haptic
                         onPress={onRemove && (() => onRemove(i))} disabled={!onRemove}
                         accessibilityRole="button" accessibilityState={{ disabled: !onRemove }}
-                        accessibilityLabel={`Remove ${o.title}`}>
+                        accessibilityLabel={`Remove ${saidFilm(o.title, o.year)}`}>
                         <X size={13} strokeWidth={2} color={colors.fog} />
                       </PressableScale>
                     </>

@@ -187,7 +187,7 @@ describe('a removal on its way is not asked for twice', () => {
     expect(r.getByText('REMOVING…')).toBeTruthy();
 
     await act(async () => { removal.fail(new Error('permission denied for table logs')); });
-    expect(said).toHaveBeenCalledWith('The viewing could not be removed. Try again.');
+    expect(said).toHaveBeenCalledWith('The viewing could not be removed.');
     expect(r.getByText('REMOVE IT')).toBeTruthy();
     expect(r.getByLabelText(REMOVE_IT).props.accessibilityState).toMatchObject({ disabled: false, busy: false });
     expect(back).not.toHaveBeenCalled();

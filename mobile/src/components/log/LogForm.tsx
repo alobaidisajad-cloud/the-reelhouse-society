@@ -1,3 +1,4 @@
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { RemoteImage, PosterMark } from '@/src/components/Picture';
 import { View, ScrollView, Alert } from 'react-native';
@@ -483,8 +484,8 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                                                 try {
                                                                     const res = await removeVaultNote();
                                                                     if (res) reelToast(res.queuedOffline ? 'Note removed offline. Will sync when connected.' : 'Note removed.');
-                                                                } catch {
-                                                                    reelToast.error('The note could not be removed. Try again.');
+                                                                } catch (e) {
+                                                                    reelToast.error(saidOfAFailure(e, 'The note could not be removed.'));
                                                                 }
                                                             })();
                                                         },

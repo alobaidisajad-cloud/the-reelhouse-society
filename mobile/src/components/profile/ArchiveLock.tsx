@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { Text } from '@/src/components/text';
+import { SaidText } from '@/src/components/SaidText';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { colors, fonts } from '@/src/theme/theme';
 import { PresenceView } from '@/src/components/motion/Presence';
@@ -101,7 +102,7 @@ export default function ArchiveLock({ onUnlocked, inline = false }: { onUnlocked
             style={inline ? styles.inline : styles.container}>
             <Text {...scaledTextProps} style={styles.title}>RESTRICTED ACCESS</Text>
             <Text {...scaledTextProps} style={styles.subtitle}>Authenticate to view your private archive.</Text>
-            {error ? <Text {...scaledTextProps} style={styles.error}>{error}</Text> : null}
+            {error ? <SaidText {...scaledTextProps} style={styles.error}>{error}</SaidText> : null}
             <PressableScale style={styles.button} onPress={authenticate} hitSlop={{ top: 15, bottom: 9, left: 15, right: 15 }} accessibilityRole="button" accessibilityLabel="Authenticate to open your Archive">
                 <Text {...scaledTextProps} style={styles.btnText}>AUTHENTICATE</Text>
             </PressableScale>
@@ -130,7 +131,7 @@ export function ArchiveLockedLine({ onUnlocked }: { onUnlocked: () => void }) {
     return (
         <View style={styles.line}>
             <Text {...scaledTextProps} style={styles.lineText}>{"Your recent films are behind your Archive's lock."}</Text>
-            {error ? <Text {...scaledTextProps} style={styles.error}>{error}</Text> : null}
+            {error ? <SaidText {...scaledTextProps} style={styles.error}>{error}</SaidText> : null}
             <PressableScale style={styles.button} onPress={open} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} accessibilityRole="button" accessibilityLabel="Authenticate to open your Archive">
                 <Text {...scaledTextProps} style={styles.btnText}>AUTHENTICATE</Text>
             </PressableScale>

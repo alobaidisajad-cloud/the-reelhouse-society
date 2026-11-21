@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, InteractionManager } from 'react-native';
 import { Text } from '@/src/components/text';
+import { SaidText } from '@/src/components/SaidText';
 import { useRouter } from 'expo-router';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { nav } from '@/src/utils/typedRouter';
@@ -232,7 +233,8 @@ export default function AuthCallbackScreen() {
               </View>
               <Text style={[s.eyebrow, { color: colors.crimsonInk }]}>VERIFICATION FAILED</Text>
               <Text style={s.title}>Link Expired{'\n'}or Invalid</Text>
-              <Text style={s.body}>{errorMsg}</Text>
+              {/* Drawn in place of the wait, with the member's focus still where it was: said as it appears. */}
+              <SaidText style={s.body}>{errorMsg}</SaidText>
 
               {/* Dynamic Rescue Options based on type */}
               <View style={{ marginTop: 28, width: '100%', gap: 12 }}>

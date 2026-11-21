@@ -1,3 +1,4 @@
+import { saidOfAFailure } from '@/src/utils/saidOfARefusal';
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/src/lib/supabase';
@@ -298,7 +299,7 @@ export function useAuthFlow() {
       }, 1000);
     } catch (err: unknown) {
       const raw = messageOf(err);
-      reelToast.error(raw ? mapAuthError(raw).message : 'The telegraph line is disrupted. Try again.');
+      reelToast.error(raw ? mapAuthError(raw).message : saidOfAFailure(err, 'The telegraph line is disrupted.'));
     } finally {
       if (isMounted.current) setResending(false);
     }
@@ -364,7 +365,7 @@ export function useAuthFlow() {
       setForgotSent(true);
     } catch (err: unknown) {
       const raw = messageOf(err);
-      reelToast.error(raw ? mapAuthError(raw).message : 'The telegraph line is down. Try again.');
+      reelToast.error(raw ? mapAuthError(raw).message : saidOfAFailure(err, 'The telegraph line is down.'));
     } finally {
       if (isMounted.current) setForgotLoading(false);
     }

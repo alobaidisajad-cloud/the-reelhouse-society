@@ -45,7 +45,8 @@ it('is said, and the count goes back to what it was', async () => {
   useSocialStore.setState({ followingKnown: 'held' });
   const { result } = await renderHook(() => useProfileController());
   await act(async () => { await result.current.toggleFollow(); });
-  expect(reelToast.error).toHaveBeenCalledWith('Could not follow @ana. Please try again.');
+  // Neither the network nor a refusal by rule: the act alone, never "try again" over what trying would not mend.
+  expect(reelToast.error).toHaveBeenCalledWith('Could not follow @ana.');
   expect(mockTarget.followers_count).toBe(4);
   expect(result.current.followLoading).toBe(false);
 });

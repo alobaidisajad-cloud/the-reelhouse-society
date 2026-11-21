@@ -59,7 +59,7 @@ it('a seat or a request refused for another reason still says to check the conne
   await useLoungeStore.getState().requestMembership(SALON);
   expect(said()).toEqual([
     'The host has closed this salon to you.',
-    'Could not take a seat. Check your connection and try again.',
-    'Could not send your request. Check your connection and try again.',
+    'Could not take a seat.',
+    'Could not send your request.',
   ]);
 });

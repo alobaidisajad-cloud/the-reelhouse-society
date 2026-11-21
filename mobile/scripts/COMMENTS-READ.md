@@ -2100,3 +2100,7 @@ files of the reading map this one does not.
 | src/utils/__tests__/aDayOnItsBoundaryIsItsOwn.test.ts | — |  |
 | test-utils/dayBoundaries.ts | — |  |
 | src/utils/__tests__/anEmptyRoomIsDrawnOnlyFromAnAnswer.guard.test.ts | — |  |
+| src/utils/__tests__/aFailureIsSaidByItsCause.test.ts | — |  |
+| src/utils/__tests__/aRefusalIsNeverToldAsTheConnection.guard.test.ts | — |  |
+| src/utils/__tests__/aWordThatAppearsIsSaid.guard.test.ts | — |  |
+| src/utils/saidFilm.ts | — |  |
