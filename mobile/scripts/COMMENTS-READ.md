@@ -2097,3 +2097,5 @@ files of the reading map this one does not.
 | register/finders-owed.yaml | — |  |
 | src/utils/__tests__/aDayIsReadOnItsOwnCalendar.guard.test.ts | — |  |
 | test-utils/houseFunctions.ts | — |  |
+| src/utils/__tests__/aDayOnItsBoundaryIsItsOwn.test.ts | — |  |
+| test-utils/dayBoundaries.ts | — |  |
