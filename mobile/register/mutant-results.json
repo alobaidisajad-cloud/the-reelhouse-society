@@ -6770,6 +6770,55 @@
   },
   {
     "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-verdict-inputs-follow-no-import",
+    "proof": "m16",
+    "commit": "dbf4f2d613469adff1e8245474cd358edd3e556b",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-verdict-inputs-blind-to-a-sourced-script",
+    "proof": "m16",
+    "commit": "dbf4f2d613469adff1e8245474cd358edd3e556b",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-verdict-inputs-miss-a-unique-name",
+    "proof": "m17",
+    "commit": "dbf4f2d613469adff1e8245474cd358edd3e556b",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-verdict-key-without-bytes",
+    "proof": "m18",
+    "commit": "dbf4f2d613469adff1e8245474cd358edd3e556b",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-verdict-keeps-a-red",
+    "proof": "m18",
+    "commit": "dbf4f2d613469adff1e8245474cd358edd3e556b",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-mutant-key-without-the-runner",
+    "proof": "m20",
+    "commit": "dbf4f2d613469adff1e8245474cd358edd3e556b",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
+    "mutant": "shape-rehearsals-never-reused",
+    "proof": "m19",
+    "commit": "dbf4f2d613469adff1e8245474cd358edd3e556b",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-push-check-past-the-machine",
     "mutant": "shape-rehearsal-mutant-at-low-priority",
     "proof": "m13",
     "commit": "964718eee674c6ba97f0dccc3538091d9ad059fa",
