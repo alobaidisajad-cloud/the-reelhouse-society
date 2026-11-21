@@ -332,6 +332,9 @@ describe('#64 · every per-member cache on disk is erased', () => {
      */
     expect(authSrc).toMatch(/clearHandleHistory\(\)/);
     expect(authSrc).toMatch(/clearRequestedHandle\(\)/);
+    // The last import's receipt is the same shape (a key with no id, the member in its payload): its
+    // module said it went at sign-out, and nothing called its eraser there (the kinds pass, kind 15).
+    expect(authSrc).toMatch(/clearReceipt\(\)/);
   });
 
   it('and DELETING an account takes everything of the closed member and the install\'s own, and only another member\'s kept work stays', () => {

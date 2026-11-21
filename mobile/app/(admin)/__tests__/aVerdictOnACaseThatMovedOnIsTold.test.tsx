@@ -175,6 +175,25 @@ describe('a case another moderator already judged', () => {
   });
 });
 
+describe('a case about the moderator (the kinds pass: who may judge a case)', () => {
+  it('stays on the docket when the house refuses its verdict as OWN_CASE, and says another moderator must judge it', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    const r = renderTribunal();
+    await waitFor(() => expect(r.getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy());
+    mockResolveReportV2.mockRejectedValueOnce({ code: '42501', message: 'OWN_CASE', details: null, hint: null });
+
+    await act(async () => { await fireEvent.press(firstOf(r.getAllByLabelText('Dismiss report'))); });
+    const dismiss = lastAlertButtons(alertSpy).find((b) => b.text === 'Dismiss');
+    expect(dismiss).toBeDefined();
+    await act(async () => { dismiss!.onPress!(); });
+
+    await waitFor(() => expect(reelToast.error).toHaveBeenCalledWith('This case is about you: another moderator must judge it.'));
+    expect(r.getByText('HATE SPEECH IN FILM REVIEW')).toBeTruthy();
+    expect(reelToast).not.toHaveBeenCalledWith('Already judged by another moderator.');
+    alertSpy.mockRestore();
+  });
+});
+
 describe('a piece its author already deleted', () => {
   it('is not offered for removal once its evidence reads destroyed; the case can still be dismissed or judged', async () => {
     mockGetPendingReports.mockResolvedValue({ rows: [CASE], total: 1 });

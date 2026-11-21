@@ -160,6 +160,21 @@ describe('a bulk dismissal says what the house closed', () => {
     expect(r.queryByText('SPAM DISPATCH FLOODING')).toBeNull();
   });
 
+  it('leaves a case about the moderator on the docket, for another moderator, and says so (the kinds pass)', async () => {
+    // The house leaves a case about its moderator pending (bulk_dismiss_reports, 20261122_03): it is
+    // never counted as judged by another, and never leaves the docket as if it were settled.
+    const OWN = { ...OTHER_CASE, target_user_id: mockAuthStore.user.id, target_user: { id: mockAuthStore.user.id, username: 'tribunal_admin', warning_count: 0 } };
+    mockGetPendingReports.mockResolvedValue({ rows: [CASE, OWN], total: 2 });
+    mockBulkDismiss.mockResolvedValue(1);
+    const r = renderTribunal();
+    await dismissBoth(r, alertSpy);
+
+    await waitFor(() => expect(reelToast).toHaveBeenCalledWith('1 report(s) dismissed. 1 about you, left for another moderator.'));
+    expect(reelToast).not.toHaveBeenCalledWith('1 report(s) dismissed. 1 already judged by another moderator.');
+    await waitFor(() => expect(r.queryByText('HATE SPEECH IN FILM REVIEW')).toBeNull());
+    expect(r.queryByText('SPAM DISPATCH FLOODING')).toBeTruthy();
+  });
+
   it('states no number when the answer holds no count', async () => {
     mockBulkDismiss.mockResolvedValue(null);
     const r = renderTribunal();

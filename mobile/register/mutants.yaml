@@ -5883,8 +5883,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "      } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);\n      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error(saidOfAFailure(e, 'Could not take a seat."
-        replace: "      } else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error(saidOfAFailure(e, 'Could not take a seat."
+        find: "      } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);\n      else if (paced) reelToast.error(paced);\n      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error(saidOfAFailure(e, 'Could not take a seat."
+        replace: "      } else if (paced) reelToast.error(paced);\n      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error(saidOfAFailure(e, 'Could not take a seat."
     proof: { file: src/stores/__tests__/aBannedMemberIsToldTheDoorIsClosed.test.ts, test: "a banned member taking a seat is told the host has closed the salon to them, not to check their connection" }
 
   - id: shape-delivered-message-still-sending
@@ -6932,8 +6932,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/dispatch.ts
-        find: "    await writeOnline(keyOf(queued), online);"
-        replace: "    await writeOnline(null, online);"
+        find: "    await writeOnline(keyOf(queued), () => atTheHousesPace(online));"
+        replace: "    await writeOnline(null, () => atTheHousesPace(online));"
     proof:
       file: src/stores/__tests__/aFilingMarkLandedLetsTheQueuedOneGo.test.ts
       test: a withdrawal that lands online lets go the certification still queued, so it is never made again
@@ -7864,8 +7864,8 @@ mutants:
     source: shape
     edits:
       - file: src/utils/housePace.ts
-        find: "    if (isTheDaysCeiling(e)) return"
-        replace: "    if (isTheDaysCeiling(e) && pace.seconds > 60) return"
+        find: "    if (isTheDaysCeiling(e)) return `You have filed"
+        replace: "    if (isTheDaysCeiling(e) && pace.seconds > 60) return `You have filed"
     proof:
       file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts
       test: "the day's ceiling met a minute before midnight is still the day's, never a pace"
@@ -9385,3 +9385,189 @@ mutants:
         find: ".eq('id', id).is('pushed_at', null).gte("
         replace: ".eq('id', id).gte("
     proof: { file: src/utils/__tests__/aPushIsTheHousesOwn.guard.test.ts, test: "claims the notice from the house once, while fresh, and pushes the row it claimed" }
+=======
+
+  - id: shape-a-members-write-left-unpaced
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261122_01_every_members_write_is_paced.sql
+        find: "CREATE OR REPLACE TRIGGER zz_a_write_is_paced\n  BEFORE INSERT ON public.lists\n"
+        replace: "CREATE OR REPLACE TRIGGER zz_a_write_is_paced\n  BEFORE UPDATE ON public.lists\n"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "paces every table a member may insert into, or judges why no script can repeat it without end" }
+
+  - id: shape-the-critique-pace-taken-off
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    # Round 14's own instance put back: the critique pace taken off a record's critiques.
+    edits:
+      - file: ../supabase/migrations/20261120_08_critiques_are_paced_as_a_person_writes.sql
+        find: "CREATE OR REPLACE TRIGGER zz_a_critique_is_paced\n  BEFORE INSERT ON public.log_comments\n"
+        replace: "CREATE OR REPLACE TRIGGER zz_a_critique_is_paced\n  BEFORE UPDATE ON public.log_comments\n"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "paces every table a member may insert into, or judges why no script can repeat it without end" }
+
+  - id: shape-a-caller-written-address-in-another-function
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    # Round 14's sign-in instance, in a function the old check, which read three named files, never read.
+    edits:
+      - file: supabase/functions/fetch-rss/index.ts
+        find: "  const caller = callerAddress(req.headers);\n"
+        replace: "  const caller = callerAddress(req.headers);\n  const written = req.headers.get('x-forwarded-for');\n  void written;\n"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "reads no caller-written address in any edge function but through the vouched-address helper" }
+
+  - id: shape-the-pace-finder-takes-anything-for-a-pace
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts
+        find: "const PACES = /"
+        replace: "const PACES = /.|"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "find a table a member may write with no pace, and none once a pace trigger or a counting rule stands" }
+
+  - id: shape-a-paced-act-undone-as-a-refusal
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/stores/dispatch.ts
+        find: "    if (isNetworkError(e) || isRateLimited(e)) {\n      enqueueMutation(queued);"
+        replace: "    if (isNetworkError(e)) {\n      enqueueMutation(queued);"
+    proof: { file: src/stores/__tests__/dispatchGuards.test.ts, test: "keeps a certification, a save and a vote for later: never undone, reported or said as a refusal" }
+
+  - id: shape-a-held-filing-said-as-the-wire
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/utils/dispatchFiledSaid.ts
+        find: "  if (filed?.paced) return 'Filed. It goes out once the house takes more.';\n"
+        replace: ""
+    proof: { file: src/stores/__tests__/dispatchGuards.test.ts, test: "keeps a filing to go once the house takes more, and the desk says that, never the wire" }
+
+  - id: shape-a-seat-past-the-pace-said-as-the-connection
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: src/stores/lounge.ts
+        find: "      else if (paced) reelToast.error(paced);\n      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error('Could not take a seat."
+        replace: "      else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {\n        reelToast.error('Could not take a seat."
+    proof: { file: src/stores/__tests__/aSalonWritePastThePaceIsSaid.test.ts, test: "a seat taken or asked for past the pace says so, with the day's wait, never the connection" }
+
+  - id: shape-a-critique-leaves-its-notice
+    class: DB-a-notice-left-when-its-cause-is-undone
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261122_02_a_critique_takes_its_notice.sql
+        find: "  AFTER DELETE ON public.log_comments\n"
+        replace: "  AFTER DELETE ON public.logs\n"
+    proof: { file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "lists every notice writer with what takes its notice back, or why it stands, and what tells it once" }
+
+  - id: shape-the-notice-finder-reads-no-shared-call
+    class: DB-a-notice-left-when-its-cause-is-undone
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts
+        find: " || /\\bdispatch_notify\\s*\\(/.test(body);"
+        replace: ";"
+    proof: { file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "find every notice writer, and a take-back only where its trigger stands on the cause and deletes notices" }
+
+  - id: shape-the-seat-count-read-before-its-lock
+    class: DB-a-count-taken-before-its-lock
+    source: shape
+    # Round 13's instance put back: the salon's seats counted with no lock on the salon.
+    edits:
+      - file: supabase/schema/live-schema.sql
+        find: "  PERFORM 1 FROM public.lounges WHERE id = v_lounge FOR NO KEY UPDATE;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "reads every count it sets from count(*) under its row's lock" }
+
+  - id: shape-the-count-finder-takes-one-way-for-two
+    class: DB-a-count-taken-before-its-lock
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts
+        find: "filter(([, signs]) => signs.size < 2)"
+        replace: "filter(([, signs]) => signs.size < 1)"
+    proof: { file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "find a count that only climbs, and none once some trigger takes one from it" }
+
+  - id: shape-the-receipt-left-at-sign-out
+    class: STATE-a-session-leaves-what-it-kept
+    source: shape
+    edits:
+      - file: src/stores/auth.ts
+        find: "    clearReceipt();\n"
+        replace: ""
+    proof: { file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts, test: "a member's is taken at their sign-out, kept apart from the next member and erased with a closed account, each where its entry says" }
+
+  - id: shape-a-key-written-unlisted
+    class: STATE-a-session-leaves-what-it-kept
+    source: shape
+    edits:
+      - file: src/utils/lastTab.ts
+        find: "try { storage.set(LAST_TAB_KEY, JSON.stringify(value)); }"
+        replace: "try { storage.set(LAST_TAB_KEY, JSON.stringify(value)); storage.set('last_member_seen', String(value.at)); }"
+    proof: { file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts, test: "is in the inventory, and no entry stands for a key no longer written" }
+
+  - id: shape-the-session-finder-reads-no-sensitive-write
+    class: STATE-a-session-leaves-what-it-kept
+    source: shape
+    edits:
+      - file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts
+        find: "|\\bsetSensitive\\s*\\(\\s*([^,)]+)/g;"
+        replace: "/g;"
+    proof: { file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts, test: "read a key as written: a literal, a constant, a call, a template to its first ${, and a persisted store's name" }
+
+  - id: shape-a-definer-count-reads-past-the-rules
+    class: DB-rule-kept-on-one-path
+    source: shape
+    # Round 8's and round 9's shape (a salon's last word, a member's follower count): a count run as
+    # the house over members' words, with neither the hiding nor the withholding rule.
+    plant:
+      - path: ../supabase/migrations/20261122_99_a_count_past_the_rules.sql
+        text: "SET LOCAL lock_timeout = '2s';\nSET LOCAL statement_timeout = '30s';\nCREATE FUNCTION public.critique_tally(p_post uuid) RETURNS bigint\n    LANGUAGE sql STABLE SECURITY DEFINER\n    SET search_path TO 'public', 'pg_temp'\n    AS $$ SELECT count(*) FROM public.dispatch_comments c WHERE c.post_id = p_post $$;\nGRANT ALL ON FUNCTION public.critique_tally(p_post uuid) TO authenticated;\n"
+    proof: { file: src/utils/__tests__/aDefinerReadKeepsTheReadersRules.guard.test.ts, test: "names the hiding rule and the withheld rule in each that reads members' words, or is judged why it need not" }
+
+  - id: shape-the-definer-finder-takes-any-word-for-the-rule
+    class: DB-rule-kept-on-one-path
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aDefinerReadKeepsTheReadersRules.guard.test.ts
+        find: "const WITHHOLDING = /"
+        replace: "const WITHHOLDING = /.|"
+    proof: { file: src/utils/__tests__/aDefinerReadKeepsTheReadersRules.guard.test.ts, test: "says no to a definer read of members' words that names neither rule, and yes once it names both" }
+
+  - id: shape-a-moderator-judges-their-own-case
+    class: MOD-a-judge-hears-their-own-case
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "  if (code === '42501' && message === 'OWN_CASE') return 'OWN_CASE';\n"
+        replace: ""
+    proof: { file: app/(admin)/__tests__/aVerdictOnACaseThatMovedOnIsTold.test.tsx, test: "stays on the docket when the house refuses its verdict as OWN_CASE, and says another moderator must judge it" }
+
+  - id: shape-a-moderator-sweeps-their-own-case
+    class: MOD-a-judge-hears-their-own-case
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "      const settled = reportIds.filter((id) => !own.has(id));\n"
+        replace: "      const settled = reportIds.filter((id) => own.has(id) || !own.has(id));\n"
+    proof: { file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "leaves a case about the moderator on the docket, for another moderator, and says so (the kinds pass)" }
+
+  - id: shape-the-lifecycle-reads-no-standing
+    class: MOD-a-judge-hears-their-own-case
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aVerdictFollowsItsLifecycle.guard.test.ts
+        find: "\\b(?:suspended_until|is_banned|warning_count)\\s*=/i],"
+        replace: "\\bnever_a_column\\s*=/i],"
+    proof: { file: src/utils/__tests__/aVerdictFollowsItsLifecycle.guard.test.ts, test: "find each function that moves a moderation state, and none that only reads one" }
+
+  - id: shape-the-lock-screen-left-lit
+    class: STATE-a-session-leaves-what-it-kept
+    source: shape
+    # Round 13's instance put back: a sign-out leaves the member's delivered notices on the lock screen.
+    edits:
+      - file: src/lib/pushNotifications.ts
+        find: "  try { await Notifications.dismissAllNotificationsAsync(); } catch (e) { logger.warn('[Push] the delivered notices were not cleared:', e); }\n"
+        replace: ""
+    proof: { file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts, test: "what a session leaves beside the phone's storage is taken at a sign-out here and at one elsewhere" }

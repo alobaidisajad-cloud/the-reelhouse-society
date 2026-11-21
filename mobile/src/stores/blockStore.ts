@@ -30,6 +30,7 @@ import { storage, setSensitive } from './mmkv-storage';
 import { registerStoreReset } from './resetAllStores';
 import { stillSignedIn } from './domain/helpers/sessionGuard';
 import { hydrateFollowing } from './domain/socialSlice';
+import { isRateLimited, writePaceSaid } from '../utils/housePace';
 
 // ── MMKV Key ────────────────────────────────────────────────────────────────
 const MMKV_KEY = (userId: string) => `reelhouse_blocks_${userId}`;
@@ -170,8 +171,9 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       }
 
       logger.error('[BlockStore] blockUser failed:', err);
-      captureError(err, { action: 'blockUser' });
-      reelToast.error(saidOfAFailure(err, 'Failed to block user.'));
+      // Past the house's pace for blocks (check_write_pace): an answer, said with its wait.
+      if (!isRateLimited(err)) captureError(err, { action: 'blockUser' });
+      reelToast.error(writePaceSaid(err, 'blocks') ?? saidOfAFailure(err, 'Failed to block user.'));
     }
   },
 
@@ -299,8 +301,9 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       }
 
       logger.error('[BlockStore] muteUser failed:', err);
-      captureError(err, { action: 'muteUser' });
-      reelToast.error(saidOfAFailure(err, 'Failed to mute user.'));
+      // Past the house's pace for blocks and mutes (check_write_pace): an answer, said with its wait.
+      if (!isRateLimited(err)) captureError(err, { action: 'muteUser' });
+      reelToast.error(writePaceSaid(err, 'mutes') ?? saidOfAFailure(err, 'Failed to mute user.'));
     }
   },
 

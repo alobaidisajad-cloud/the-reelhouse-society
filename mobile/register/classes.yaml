@@ -1276,7 +1276,14 @@ classes:
     status: OPEN
     count: 15
     source: { kind: reviewer, ref: "P0.48 part 2 follow-up (car 07), 2026-10-15/16" }
+    sweep:
+      finder: src/utils/__tests__/aDefinerReadKeepsTheReadersRules.guard.test.ts
+      read: "every SECURITY DEFINER function a member may run, as the house will hold it (live-schema.sql and every pending migration, through test-utils/house.js), that reads a table of members' words or acts (records, stacks, critiques, filings, salon messages, marks, watchlists, shelves, viewings)"
+      found: "none unkept: every such function names the hiding rule and, where its table can hold a withheld piece, withheld_at; 23 judged (the caller's own rows alone, a request made to the caller, a total that names no one, a report keeping the words as reported, the withholding rule itself); the staff's own functions read every piece by design"
+      proofs: "planted text in the guard; a definer count of critiques that names neither rule planted (shape-a-definer-count-reads-past-the-rules); green on the house; the finder weakened (shape-the-definer-finder-takes-any-word-for-the-rule)"
     methods:
+      - { kind: static, file: src/utils/__tests__/aDefinerReadKeepsTheReadersRules.guard.test.ts, test: "says no to a definer read of members' words that names neither rule, and yes once it names both" }
+      - { kind: static, file: src/utils/__tests__/aDefinerReadKeepsTheReadersRules.guard.test.ts, test: "names the hiding rule and the withheld rule in each that reads members' words, or is judged why it need not" }
       - { kind: running, file: src/services/__tests__/aRefusedRenameKeepsWhatWasSaved.test.ts, test: "a handle held by another in other capitals is taken at the press, as the house judges it; an underscore is a letter" }
       - { kind: running, file: src/stores/__tests__/aBlockerIsNeverNamedAtTheTypewriter.test.ts, test: "names a member the house shows the reader, and never one who blocked them" }
       - { kind: running, file: src/stores/__tests__/aBlockerIsNeverNamedAtTheTypewriter.test.ts, test: "names no one when the house could not be asked" }
@@ -3975,9 +3982,60 @@ classes:
     source:
       kind: reviewer
       ref: review round 13, races and the queue, 2026-11-18
+    methods:
+      - { kind: static, file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "find a count read from count(*) before its row is locked, and none once it is" }
+      - { kind: static, file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "reads every count it sets from count(*) under its row's lock" }
+      - { kind: static, file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "find a count that only climbs, and none once some trigger takes one from it" }
+      - { kind: static, file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "takes from every count a trigger adds to, on the same table" }
+    sweep:
+      finder: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts
+      read: "every trigger function the house will hold (live-schema.sql and every pending migration, through test-utils/house.js): each count set from count(*), each count moved by one, by UPDATE, upsert or the row's own NEW"
+      found: "none: recount_lounge_members locks before it counts; handle_privacy_switch counts the rows its own UPDATE changed (exact); every count moved up is moved down somewhere (log_counts, dispatch counts, follow counts)"
+      proofs: "planted text in the guard; round 13's instance put back (shape-the-seat-count-read-before-its-lock); green on the house; the finder weakened (shape-the-count-finder-takes-one-way-for-two)"
     fix: "recount_lounge_members holds the salon FOR NO KEY UPDATE in a statement of its own and counts its approved seats in the next (a fresh snapshot after the other seat committed; compatible with every foreign-key check's FOR KEY SHARE, so no deadlock and no word waits on a seat); the one-time repair does the same one salon at a time (H-A4; proved with two sessions on the local PostgreSQL in both orders: the old function 1 of 2, FOR UPDATE a deadlock, this 2 of 2; the old repair 1 of 2, this 2 of 2). SQL alone: its rehearsal (rehearsals.mjs --without) fails without it"
     places:
       - none
+
+  - id: DB-a-notice-left-when-its-cause-is-undone
+    title: "A house trigger wrote a notice when a member acted, and nothing took it back when the act was undone: a critique deleted left its notice under the bell for good, a door to words that were gone, and a critique, delete, critique loop left one more each time (a follow, a certification and a salon request were each given their take-back one review at a time)"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 3
+    source: { kind: reviewer, ref: "stage C, the kinds pass (kind 14), 2026-11-22: aNoticeIsToldOnceAndTakenBack's first sweep" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "find every notice writer, and a take-back only where its trigger stands on the cause and deletes notices" }
+      - { kind: static, file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "lists every notice writer with what takes its notice back, or why it stands, and what tells it once" }
+      - { kind: static, file: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts, test: "passes every notice through the one gate: refused from a member its reader hid, and hidden on read" }
+    fix: "20261122_02: each critique's notice names its critique (metadata comment_id, as a filing's critique notice already did), and a_critique_takes_its_notice, after a critique on a record, a stack or a filing is deleted, deletes the notices naming it; a notice written before it named its critique goes with its member's last critique on that piece; the notices already orphaned are taken by the car (rehearsal a_critique_takes_its_notice_rehearsal.sql; mutant shape-a-critique-leaves-its-notice)"
+    sweep:
+      finder: src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts
+      read: "every function the house will hold that writes a notice (an insert into notifications or a call of dispatch_notify): 19 writers, each with its trigger tables, and every trigger that deletes notices"
+      found: "3 writers with no take-back (notify_on_log_comment, notify_on_list_comment, dispatch_notify_critique), fixed by 20261122_02; 16 judged: 6 taken back by their own triggers (follows, requests, certifications, the answer, the privacy switch, salon requests), 10 records of the house or of an act that stands (verdicts, lifts, appeals, admissions, acceptances, ballot closes, the Lobby's edition, pieces given back, the two legacy writers no member writes)"
+      proofs: "planted text in the guard; red without the car (the three critique writers); green with it; the finder weakened (shape-the-notice-finder-reads-no-shared-call)"
+    places: [none]
+
+  - id: STATE-a-session-leaves-what-it-kept
+    title: "What a member's session kept on the phone (a key in its storage, the push token, the delivered notices, the error reporter's member) outlived the session that made it, because nothing listed it: the last import's receipt (the rows it made, for UNDO) stayed after the member signed out, though its module said it went at sign-out; a signed-out phone still pushed and kept its notices on the lock screen, and a closed account erased another member's kept work, each found alone (AUTH-a-signed-out-phone-still-pushed, STATE-a-members-notices-left-on-the-lock-screen, DATA-a-closed-account-erases-anothers-work)"
+    seriousness: behaviour
+    area: auth
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "stage C, the kinds pass (kind 15), 2026-11-22: whatASessionLeavesHasItsEnd's first sweep" }
+    methods:
+      - { kind: static, file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts, test: "read a key as written: a literal, a constant, a call, a template to its first ${, and a persisted store's name" }
+      - { kind: static, file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts, test: "say no to a new key written with no entry, and to an end its file does not hold" }
+      - { kind: static, file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts, test: "is in the inventory, and no entry stands for a key no longer written" }
+      - { kind: static, file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts, test: "a member's is taken at their sign-out, kept apart from the next member and erased with a closed account, each where its entry says" }
+      - { kind: static, file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts, test: "what a session leaves beside the phone's storage is taken at a sign-out here and at one elsewhere" }
+      - { kind: static, file: src/stores/__tests__/logoutLeavesNoTrace.guard.test.ts, test: "the Dispatch draft is erased BY THE LOGOUT, not only by its own module" }
+    fix: "the sign-out (auth.ts) takes the last import's receipt with the member's other keys (clearReceipt); every key the app writes is in the inventory by its file, the phone's own or the member's with where its sign-out, a switch and a closed account take it (mutants shape-the-receipt-left-at-sign-out, shape-a-key-written-unlisted)"
+    sweep:
+      finder: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts
+      read: "every file of the app (universe appCode): every write by storage.set, setSensitive, kv.set, SecureStore and AsyncStorage, and every persisted store's name; and beside them the push token at the house, the delivered notices and badge, the error reporter's member, the session"
+      found: "44 keys by file: 15 the phone's own, 29 the member's; 1 with no end at sign-out (undoImport's receipt), fixed; the existing logout sweep (logoutLeavesNoTrace) read templated keys only, so a constant key holding a member's rows passed it"
+      proofs: "planted text in the test; red without the fix (the receipt's sign-out end, shape-the-receipt-left-at-sign-out); round 13's instance put back (shape-the-lock-screen-left-lit); green with it; a new key planted (shape-a-key-written-unlisted); the finder weakened (shape-the-session-finder-reads-no-sensitive-write)"
+    places: [none]
 
   - id: AUTH-a-signed-out-phone-still-pushed
     title: "A phone whose session ended without its own sign-out (\"Sign out of every other device\", a refused refresh, a session found gone at launch) kept its push token, and its lock screen went on showing the member's notices: the removal ran under the row's policy and needed the session it no longer had, and the house sent to every token its member held"
@@ -4323,9 +4381,21 @@ classes:
     seriousness: serious
     area: security
     status: OPEN
-    count: 5
+    count: 19
     source: { kind: reviewer, ref: "review round 14, the attacker, 2026-11-18" }
     methods:
+      - { kind: static, file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "find a table a member may write with no pace, and none once a pace trigger or a counting rule stands" }
+      - { kind: static, file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "paces every table a member may insert into, or judges why no script can repeat it without end" }
+      - { kind: static, file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "runs no member-run function that writes where no pace stands, unless it paces itself or is judged" }
+      - { kind: static, file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "has every pace seen to refuse: a rehearsal runs each pace's function" }
+      - { kind: static, file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "reads no caller-written address in any edge function but through the vouched-address helper" }
+      - { kind: static, file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "lets no member-written row name another member on the caller's word" }
+      - { kind: static, file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "answers of blocks only through functions judged to answer of the caller's own" }
+      - { kind: running, file: src/stores/__tests__/dispatchGuards.test.ts, test: "keeps a certification, a save and a vote for later: never undone, reported or said as a refusal" }
+      - { kind: running, file: src/stores/__tests__/dispatchGuards.test.ts, test: "keeps a filing to go once the house takes more, and the desk says that, never the wire" }
+      - { kind: running, file: src/stores/__tests__/aSalonWritePastThePaceIsSaid.test.ts, test: "a salon opened past the pace says the pace and how long, never that it failed" }
+      - { kind: running, file: src/stores/__tests__/aSalonWritePastThePaceIsSaid.test.ts, test: "a seat taken or asked for past the pace says so, with the day's wait, never the connection" }
+      - { kind: running, file: src/utils/__tests__/theHousesPaceIsWaitedNotSaid.test.ts, test: "the member's pace, and the day's ceiling to the house's midnight, each with the kind of write" }
       - { kind: running, file: src/services/__tests__/aCritiqueWaitsOnTheHousesPace.test.ts, test: "asked to wait a moment, waits and is filed" }
       - { kind: running, file: src/services/__tests__/aCritiqueWaitsOnTheHousesPace.test.ts, test: "asked to wait an hour on that record, hands the wait to the page" }
       - { kind: running, file: src/services/__tests__/aCritiqueWaitsOnTheHousesPace.test.ts, test: "asked to wait the day out, hands the wait to the page" }
@@ -4342,7 +4412,12 @@ classes:
       - { kind: running, file: src/stores/__tests__/aSalonsDayHasACeiling.test.ts, test: "a word past the day's thousand says how long until the house takes more, and stays in the room, failed, with its words" }
       - { kind: running, file: src/utils/__tests__/wordsRefusedForTheRankAreKept.test.ts, test: "is held in its room with its words, failed, the wait said once, never sent again on its own" }
       - { kind: running, file: src/utils/__tests__/wordsRefusedForTheRankAreKept.test.ts, test: "the member's own retry, asked again, sends it" }
-    fix: "check_critique_pace asks each critique on a record, a stack or a filing (a room of 30, one more every 20 seconds, 500 a day, 20 within an hour on one piece) and refuses past it with RH429 and the seconds to wait, the day's ceiling with its own DETAIL ('day'), so one met a minute before midnight is still said as the day's; a member's critiques push another member's phone once an hour (critique_to:<recipient> in certifications_pushed), every notice still written under the bell; analytics_events_daily_ceiling and lounge_messages_daily_ceiling hold each member to a thousand a day, counted in one row each (analytics_budget, salon_budget), never by reading the rows back, and a batch past it refused whole (rehearsals a_members_room_to_critique_is_kept_rehearsal.sql, a_critique_buzzes_a_phone_once_rehearsal.sql, critiques_are_paced_as_a_person_writes_rehearsal.sql, a_members_events_are_counted_by_the_day_rehearsal.sql, the_events_have_a_days_ceiling_rehearsal.sql, a_members_events_are_held_to_the_ceiling_rehearsal.sql, a_members_salon_messages_are_counted_by_the_day_rehearsal.sql, the_salons_have_a_days_ceiling_rehearsal.sql, a_members_salon_messages_are_held_to_the_ceiling_rehearsal.sql); the phone waits a moment's pace and files the critique, and says a longer wait as what it is, the words kept in the box (critiquePaceSaid: the piece's hour, the day's critiques, the member's pace); a salon message past the day's ceiling stays in its room, failed, its wait said once, sent live or from the queue (mutants shape-critique-filed-without-the-pace, shape-critique-pace-unsaid-on-a-record, shape-days-ceiling-said-as-a-pace, shape-salon-day-unsaid, shape-salon-day-left-sending)"
+    fix: "check_critique_pace asks each critique on a record, a stack or a filing (a room of 30, one more every 20 seconds, 500 a day, 20 within an hour on one piece) and refuses past it with RH429 and the seconds to wait, the day's ceiling with its own DETAIL ('day'), so one met a minute before midnight is still said as the day's; a member's critiques push another member's phone once an hour (critique_to:<recipient> in certifications_pushed), every notice still written under the bell; analytics_events_daily_ceiling and lounge_messages_daily_ceiling hold each member to a thousand a day, counted in one row each (analytics_budget, salon_budget), never by reading the rows back, and a batch past it refused whole (rehearsals a_members_room_to_critique_is_kept_rehearsal.sql, a_critique_buzzes_a_phone_once_rehearsal.sql, critiques_are_paced_as_a_person_writes_rehearsal.sql, a_members_events_are_counted_by_the_day_rehearsal.sql, the_events_have_a_days_ceiling_rehearsal.sql, a_members_events_are_held_to_the_ceiling_rehearsal.sql, a_members_salon_messages_are_counted_by_the_day_rehearsal.sql, the_salons_have_a_days_ceiling_rehearsal.sql, a_members_salon_messages_are_held_to_the_ceiling_rehearsal.sql); the phone waits a moment's pace and files the critique, and says a longer wait as what it is, the words kept in the box (critiquePaceSaid: the piece's hour, the day's critiques, the member's pace); a salon message past the day's ceiling stays in its room, failed, its wait said once, sent live or from the queue (mutants shape-critique-filed-without-the-pace, shape-critique-pace-unsaid-on-a-record, shape-days-ceiling-said-as-a-pace, shape-salon-day-unsaid, shape-salon-day-left-sending); and, from the kinds pass, check_write_pace (20261122_01) paces every other table a member may insert into (stacks and their films, filings, salons, seats, reactions, certifications, saves, votes, blocks, watchlist and shelf entries, drafts, push addresses), rooms set past an archive import, RH429 with its wait, the house's writes and a row sent again uncounted (rehearsal every_members_write_is_paced_rehearsal.sql); the phone waits a moment's pace, keeps a Dispatch act or a filing for later past a longer one, and says a salon, a seat, a reaction, a stack or a block past it as what it is (writePaceSaid, filedSaid; mutants shape-a-paced-act-undone-as-a-refusal, shape-a-held-filing-said-as-the-wire, shape-a-seat-past-the-pace-said-as-the-connection)"
+    sweep:
+      finder: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts
+      read: "the house as production will hold it (supabase/schema/live-schema.sql and every pending migration, through test-utils/house.js): every table with a member's INSERT grant and a rule that lets a row in, every function a member may run that adds rows, every column of a member-written row that names a member, every function a member may run that reads blocks; and every edge function in both trees (universe functions)"
+      found: "13 tables a member could insert into with no pace (lists, list_items, dispatch_posts, dispatch_certifications, dispatch_saves, dispatch_votes, lounges, lounge_message_reactions, user_blocks, watchlists, physical_archive, member_drafts, push_subscriptions) and 4 functions writing where no pace stood (create_lounge, join_public_lounge, save_stack, toggle_dossier_certify), which led to a 14th table (lounge_members, a seat); all 14 paced by 20261122_01. Judged: log_private_notes and viewing_notes_removed (one a viewing, records paced); 8 writer functions bounded by their causes; user_blocks.blocked_id; get_user_blocks"
+      proofs: "planted text in the guard; the past instances put back (shape-the-critique-pace-taken-off, shape-a-caller-written-address-in-another-function); green on the house with the car, red without it (the 13 tables and 4 functions above); the finder weakened (shape-the-pace-finder-takes-anything-for-a-pace)"
     places: [none]
 
   - id: SEC-a-card-that-speaks-for-another
@@ -4490,9 +4565,19 @@ classes:
     seriousness: serious
     area: moderation
     status: OPEN
-    count: 2
-    source: { kind: reviewer, ref: "review round 14, moderation, 2026-11-18" }
+    count: 3
+    source: { kind: reviewer, ref: "review round 14, moderation, 2026-11-18; the third, the first verdict itself, found by the kinds pass's lifecycle (stage C, kind 10), 2026-11-22" }
+    sweep:
+      finder: src/utils/__tests__/aVerdictFollowsItsLifecycle.guard.test.ts
+      read: "every function the house will hold that writes a moderation state (a report's status, a verdict, an appeal, a lift, a warning, a member's standing, a withheld piece), through test-utils/house.js, against the lifecycle written in the guard: 9 transitions, each actor allowed and refused with its rehearsal or attack-matrix case"
+      found: "1: a moderator could judge, or bulk-dismiss, a case about themselves (resolve_moderation_report_v2 and bulk_dismiss_reports asked no who-may-judge rule), fixed by 20261122_03; every other transition and actor proven by an existing case"
+      proofs: "planted text in the guard; red with the own-case proof missing (its rehearsal taken away); the rehearsal red without the car (6 of 10 cases); green with both; mutants shape-a-moderator-judges-their-own-case, shape-a-moderator-sweeps-their-own-case, shape-the-lifecycle-reads-no-standing"
     methods:
+      - { kind: static, file: src/utils/__tests__/aVerdictFollowsItsLifecycle.guard.test.ts, test: "find each function that moves a moderation state, and none that only reads one" }
+      - { kind: static, file: src/utils/__tests__/aVerdictFollowsItsLifecycle.guard.test.ts, test: "moves every moderation state only by a transition the lifecycle writes" }
+      - { kind: static, file: src/utils/__tests__/aVerdictFollowsItsLifecycle.guard.test.ts, test: "proves every transition for each actor allowed and each refused, where it says" }
+      - { kind: running, file: app/(admin)/__tests__/aVerdictOnACaseThatMovedOnIsTold.test.tsx, test: "stays on the docket when the house refuses its verdict as OWN_CASE, and says another moderator must judge it" }
+      - { kind: running, file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "leaves a case about the moderator on the docket, for another moderator, and says so (the kinds pass)" }
       - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "the moderator who gave the verdict is told they may not hear it, and offered nothing to press" }
       - { kind: running, file: src/components/admin/__tests__/anAppealIsHeardByAnotherModerator.test.tsx, test: "a moderator is offered no hearing of an appeal of a verdict about themselves, as the house refuses it" }
       - { kind: running, file: src/components/admin/__tests__/aBanIsLiftedByAnAdmin.test.tsx, test: "an admin under a sanction of their own is offered no lift of it: another admin must, as the house refuses it" }

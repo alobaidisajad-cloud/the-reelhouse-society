@@ -82,27 +82,35 @@ function chargeLabel(reason: string): string {
 
 /**
  * A verdict the house refused because the case moved on (P0002, told apart by its word): judged
- * by another moderator meanwhile, or a REMOVE CONTENT on a piece already deleted. Null for any
- * other failure.
+ * by another moderator meanwhile, or a REMOVE CONTENT on a piece already deleted; or because the
+ * case is about this moderator (42501, OWN_CASE: another moderator judges it). Null for any other
+ * failure.
  */
-function verdictRefusal(err: unknown): 'ALREADY_JUDGED' | 'PIECE_GONE' | null {
+function verdictRefusal(err: unknown): 'ALREADY_JUDGED' | 'PIECE_GONE' | 'OWN_CASE' | null {
   if (!err || typeof err !== 'object') return null;
   const { code, message } = err as { code?: unknown; message?: unknown };
+  if (code === '42501' && message === 'OWN_CASE') return 'OWN_CASE';
   if (code !== 'P0002') return null;
   return message === 'ALREADY_JUDGED' || message === 'PIECE_GONE' ? message : null;
 }
+
+/** What a moderator is told of a case about themselves, which another moderator judges. */
+const OWN_CASE_SAID ='This case is about you: another moderator must judge it.';
 
 /**
  * What a bulk dismissal says: the cases the house closed, never the number selected. A case
  * another moderator judged meanwhile is not closed again (the house closes only pending cases),
  * and is told apart. With no count in the answer, no number is said.
  */
-function bulkDismissedWords(asked: number, closed: number | null): string {
-  if (closed === null) return 'Cases dismissed.';
-  if (closed === 0) return 'Already judged by another moderator.';
+function bulkDismissedWords(asked: number, closed: number | null, own = 0): string {
+  // A case about the moderator is never dismissed by them: it stays, for another moderator.
+  const left = own > 0 ? ` ${own} about you, left for another moderator.` : '';
+  if (asked === 0) return left.trim();
+  if (closed === null) return `Cases dismissed.${left}`;
+  if (closed === 0) return `Already judged by another moderator.${left}`;
   const judged = asked - closed;
-  if (judged <= 0) return `${closed} report(s) dismissed.`;
-  return `${closed} report(s) dismissed. ${judged} already judged by another moderator.`;
+  if (judged <= 0) return `${closed} report(s) dismissed.${left}`;
+  return `${closed} report(s) dismissed. ${judged} already judged by another moderator.${left}`;
 }
 
 type EnforcementAction = 'warn' | 'suspend' | 'ban' | 'permanent_exile' | 'delete_content';
@@ -704,6 +712,11 @@ function TribunalScreen() {
         reelToast.error('The piece is already gone. Dismiss the case, or judge the member.');
         return;
       }
+      // A case about this moderator: it stays on the docket, for another moderator.
+      if (refused === 'OWN_CASE') {
+        reelToast.error(OWN_CASE_SAID);
+        return;
+      }
       const msg = err instanceof Error ? err.message : 'The Tribunal directive could not be executed.';
       reelToast.error(msg);
     },
@@ -715,16 +728,19 @@ function TribunalScreen() {
     mutationFn: (reportIds: string[]) =>
       ModerationService.bulkDismiss(reportIds, user!.id, 'Bulk dismissed by Tribunal admin'),
     onSuccess: (closed, reportIds) => {
-      // Every case named is settled now: closed by this call, or judged by another moderator
-      // before it (the house closes only pending ones). All leave the docket; the toast counts
-      // only what this call closed (review round 11).
-      leaveTheDocket(reportIds);
+      // Every case named is settled now, closed by this call or judged by another moderator before
+      // it (the house closes only pending ones), but a case about this moderator, which the house
+      // leaves pending for another: those stay, and the rest leave the docket. The toast counts only
+      // what this call closed (review round 11).
+      const own = new Set([...pendingItems, ...priorityItems].filter((r) => r.target_user_id && r.target_user_id === user?.id).map((r) => r.id));
+      const settled = reportIds.filter((id) => !own.has(id));
+      leaveTheDocket(settled);
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'priority'] });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'moderation-history'] });
       void queryClient.invalidateQueries({ queryKey: ['admin', 'tribunal-waiting'] });
       TactileEngine.success();
-      reelToast(bulkDismissedWords(reportIds.length, closed));
+      reelToast(bulkDismissedWords(settled.length, closed, reportIds.length - settled.length));
       setSelectedReports(new Set());
       setMultiSelectMode(false);
     },

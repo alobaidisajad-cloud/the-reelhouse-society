@@ -96,6 +96,20 @@ function isTheDaysCeiling(e: unknown): boolean {
 }
 
 /**
+ * The sentence for any other write the house asked to wait for (check_write_pace: stacks, salons,
+ * seats, reactions, blocks, shelf and watchlist entries), or null for any other failure. Each kind is
+ * paced far past what a person does, so a person seldom hears it; when they do it says what it is and
+ * how long, never a lost connection. `what` is the plural the member was making ("salons", "seats").
+ */
+export function writePaceSaid(e: unknown, what: string): string | null {
+    const pace = rateLimitOf(e);
+    if (!pace) return null;
+    const wait = waitInWords(pace.seconds);
+    if (isTheDaysCeiling(e)) return `The house takes no more ${what} from you today. More in ${wait}.`;
+    return `The house takes no more ${what} from you for ${wait}.`;
+}
+
+/**
  * The sentence for a salon message the house asked to wait for (lounge_messages_daily_ceiling, round
  * 14: a thousand a day, to the house's midnight), or null for any other failure. The message stays in
  * the room, failed, for the member to send again.

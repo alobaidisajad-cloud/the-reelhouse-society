@@ -49,6 +49,7 @@ import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { TakenUpLine } from '@/src/components/TakenUpLine';
 import { useAskBeforeLeaving } from '@/src/hooks/useAskBeforeLeaving';
 import { SEARCH_MAX } from '@/src/constants/inputLimits';
+import { writePaceSaid } from '@/src/utils/housePace';
 
 // At module scope: made inside the component, it would be a new type, and remount, each render.
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
@@ -570,7 +571,9 @@ export default function ListModal() {
                 });
                 return;
             }
-            reelToast.error(e instanceof Error && e.message === STACK_CHANGED_SINCE ? STACK_CHANGED_SINCE : 'The stack could not be saved — nothing was changed.');
+            // Past the house's pace for stacks or their films (check_write_pace): said as that, with its wait.
+            const paced = writePaceSaid(e, 'stacks');
+            reelToast.error(paced ?? (e instanceof Error && e.message === STACK_CHANGED_SINCE ? STACK_CHANGED_SINCE : 'The stack could not be saved — nothing was changed.'));
             if (isMounted.current) setSaving(false);
         }
     };

@@ -2106,3 +2106,12 @@ files of the reading map this one does not.
 | src/utils/saidFilm.ts | — |  |
 | test-utils/__tests__/house.test.ts | — |  |
 | test-utils/house.js | — |  |
+| src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts | — |  |
+| src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts | — |  |
+| src/stores/__tests__/aSalonWritePastThePaceIsSaid.test.ts | — |  |
+| src/utils/__tests__/aNoticeIsToldOnceAndTakenBack.guard.test.ts | — |  |
+| src/utils/__tests__/aDefinerReadKeepsTheReadersRules.guard.test.ts | — |  |
+| src/utils/__tests__/aVerdictFollowsItsLifecycle.guard.test.ts | — |  |
+| src/utils/dispatchFiledSaid.ts | — |  |
+| e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts | — |  |
+| e2e/load/plan-shape.cjs | — |  |

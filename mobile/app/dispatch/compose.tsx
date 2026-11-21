@@ -54,6 +54,7 @@ import { excerptFor } from '@/src/components/dispatch/excerpt';
 // Every text here takes a ceiling: React Native's own default scales without one.
 import { scaledTextProps, deckLabelProps } from '@/src/constants/textScaling';
 import { useDispatch } from '@/src/stores/dispatch';
+import { filedSaid } from '@/src/utils/dispatchFiledSaid';
 import type { Filing, FilingKind } from '@/src/stores/dispatchTypes';
 import { TryAgainLine } from '@/src/components/TryAgain';
 import { EDGE_LIT } from '@/src/theme/light';
@@ -760,7 +761,7 @@ function ComposeDossierScreen() {
                 });
                 // Deleted only once the write is accepted: nothing goes before there is a row.
                 if (filed) { finished.current = true; clearDraft(user?.id, 'dossier'); void dropDraft(user?.id, 'dossier'); }
-                reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Essay filed');
+                reelToast.success(filedSaid(filed, 'Essay filed'));
             }
             // An amend goes back to the essay it amended; a filing, to the Dispatch the member
             // came from (dismissed to, never replaced: a replace built a second tab app over the first).

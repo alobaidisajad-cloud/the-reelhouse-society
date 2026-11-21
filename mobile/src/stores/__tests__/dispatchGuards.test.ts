@@ -15,7 +15,7 @@
 import { useDispatch } from '../dispatch';
 import type { Filing } from '../dispatchTypes';
 
-let mockOutcome: 'ok' | 'refused' | 'offline' = 'ok';
+let mockOutcome: 'ok' | 'refused' | 'offline' | 'paced' = 'ok';
 let mockRow: Record<string, unknown> | null = null;
 let mockViewer: Record<string, unknown[]> = {};
 /** When set, the member's marks are answered only once it settles: a read still on its way. */
@@ -33,6 +33,8 @@ const networkError = () => Object.assign(new TypeError('Network request failed')
 const answer = () => {
   if (mockOutcome === 'offline') return Promise.reject(networkError());
   if (mockOutcome === 'refused') return Promise.resolve(REFUSED);
+  // The house's pace with a wait longer than the phone waits (check_write_pace): an hour.
+  if (mockOutcome === 'paced') return Promise.resolve({ data: null, error: { code: 'RH429', message: 'RATE_LIMITED', details: 'member', hint: '3600' } });
   return Promise.resolve({ data: [], error: null });
 };
 
@@ -537,6 +539,40 @@ describe('the session guard, where a rollback would ADD something', () => {
  * the outer guard stops it — which left the whole body of every rollback dark.
  * These are the tests that run it.
  */
+describe('an act past the house\'s pace (check_write_pace)', () => {
+  const settle = () => new Promise((r) => setTimeout(r, 0));
+
+  it('keeps a certification, a save and a vote for later: never undone, reported or said as a refusal', async () => {
+    const toast = require('../../utils/reelToast').default;
+    const { captureError } = require('../../lib/sentry');
+    toast.error.mockClear();
+    captureError.mockClear();
+    mockOutcome = 'paced';
+    reset({ filings: [filing({ certifyCount: 10, kind: 'ballot', options: ['a', 'b'] as never })] });
+    useDispatch.getState().certify('f1', true);
+    useDispatch.getState().save('f1', true);
+    useDispatch.getState().vote('f1', 1);
+    await settle();
+    expect(mockQueued.map((m) => m.type).sort()).toEqual(['cast_vote', 'certify_filing', 'save_filing']);
+    expect(useDispatch.getState().certifiedIds.has('f1')).toBe(true);
+    expect(useDispatch.getState().savedIds.has('f1')).toBe(true);
+    expect(useDispatch.getState().filings.map((f) => f.certifyCount)).toEqual([11]);
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(captureError).not.toHaveBeenCalled();
+  });
+
+  it('keeps a filing to go once the house takes more, and the desk says that, never the wire', async () => {
+    const { filedSaid } = require('../../utils/dispatchFiledSaid');
+    mockOutcome = 'paced';
+    const filed = await useDispatch.getState().file({ kind: 'take', body: 'A take past the pace.' } as never);
+    expect(filed).toMatchObject({ offline: true, paced: true });
+    expect(mockQueued.map((m) => m.type)).toEqual(['add_filing']);
+    expect(filedSaid(filed, 'Filed')).toBe('Filed. It goes out once the house takes more.');
+    expect(filedSaid({ id: 'x', offline: true }, 'Filed')).toBe('Filed. It goes out when the wire is back.');
+    expect(filedSaid({ id: 'x' }, 'Filed')).toBe('Filed');
+  });
+});
+
 describe('an act the house refuses, with the member still here', () => {
   const refused = (over: Record<string, unknown> = {}) => {
     mockOutcome = 'refused';

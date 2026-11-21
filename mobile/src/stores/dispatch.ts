@@ -35,7 +35,7 @@ import { e2eTrace } from '../utils/e2eTrace';
 import { logger } from '../utils/logger';
 import { wasOf } from '../utils/keepWhatChangedSince';
 import { keepPage, keptPage } from '../utils/keptPages';
-import { atTheHousesPace } from '../utils/housePace';
+import { atTheHousesPace, isRateLimited } from '../utils/housePace';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
 import { keyOf, writeOnline } from '../utils/oneWritePerThing';
@@ -216,7 +216,11 @@ export interface DispatchState {
   /** This member's marks on filings the store did not fetch (a room's own page). */
   loadMarks: (filings: Filing[]) => Promise<void>;
 
-  file: (draft: FilingDraft) => Promise<{ id: string; offline?: boolean } | null>;
+  /**
+   * Files a draft. `offline`: kept to go when the wire is back; `paced`: kept because the house asked
+   * for a longer wait than a send waits (check_write_pace), to go once it takes more (filedSaid).
+   */
+  file: (draft: FilingDraft) => Promise<{ id: string; offline?: boolean; paced?: boolean } | null>;
   amend: (id: string, updates: FilingUpdate) => Promise<void | { offline: boolean }>;
   end: (id: string) => Promise<void | { offline: boolean }>;
 
@@ -679,19 +683,24 @@ export const useDispatch = create<DispatchState>((set, get) => ({
     const row = toInsertRow(id, user.id, user.username ?? '', clean, now);
 
     try {
-      const { error } = await supabase.from('dispatch_posts').insert([row]);
-      if (error) throw error;
+      // At the house's pace (check_write_pace): a moment's wait is waited and the filing sent again.
+      await atTheHousesPace(async () => {
+        const { error } = await supabase.from('dispatch_posts').insert([row]);
+        if (error) throw error;
+      });
       return { id };
     } catch (e) {
       // Neither queued as the next member nor taken off their page.
       if (!memberUnchanged(startedAs)) throw e;
-      if (isNetworkError(e)) {
+      // A longer wait is kept as the wire's loss is: it goes once the house takes more.
+      const paced = isRateLimited(e);
+      if (isNetworkError(e) || paced) {
         if (enqueueMutation({ type: 'add_filing', payload: { _tempId: id, ...row } })) {
           set((st) => ({ unsent: [optimistic, ...st.unsent.filter((f) => f.id !== id)] }));
           flushOfflineQueue();
           // Said by the desk that filed it (`offline`): said here too, the toast bus queued the copy
           // and the member heard it twice (review round 10).
-          return { id, offline: true };
+          return paced ? { id, offline: true, paced: true } : { id, offline: true };
         }
       }
       set((st) => ({ filings: st.filings.filter((f) => f.id !== id) }));
@@ -1264,13 +1273,16 @@ async function writeThrough(
     // Through the one door of the thing it sets (writeOnline, keyed by what the queue would carry):
     // a certification, save or answer of it still queued, older than this act, is let go once this
     // lands, never sent after it (round 13). A vote or an end has no key and goes as it is.
-    await writeOnline(keyOf(queued), online);
+    // At the house's pace (check_write_pace): a moment's wait is waited and the act sent again.
+    await writeOnline(keyOf(queued), () => atTheHousesPace(online));
   } catch (e) {
     // After a logout the store is already clear: undoing would write the last member's
     // counts back into it (and to disk), and queueing would send the act as the next
     // member. Their whole store is gone, a stronger undo.
     if (!memberUnchanged(startedAs)) return;
-    if (isNetworkError(e)) {
+    // A longer wait is kept in the queue, sent once the wait is over, as with no signal: never
+    // undone, reported or said as a refusal.
+    if (isNetworkError(e) || isRateLimited(e)) {
       enqueueMutation(queued);
       flushOfflineQueue();
       return;

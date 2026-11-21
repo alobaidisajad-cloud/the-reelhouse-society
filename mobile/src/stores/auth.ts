@@ -4,6 +4,7 @@ import { forgetCache, queryClient } from '../lib/queryClient';
 import { identifyUser, logoutRevenueCat } from '../lib/revenueCat';
 import { rememberRequestedHandle, clearRequestedHandle } from '../utils/handleNotice';
 import { clearHandleHistory } from '../utils/handleHistory';
+import { clearReceipt } from '../features/archive/undoImport';
 import { clearAllDrafts, countDrafts } from '../utils/memberDrafts';
 import { keptAfterSignOutElsewhere, keptFromBefore } from '../utils/keptOnThisPhone';
 import { captureAuthRefusal, captureError, setSentryUser } from '../lib/sentry';
@@ -744,6 +745,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // Their old handles and the one they asked for: never left on another's phone.
     clearHandleHistory();
     clearRequestedHandle();
+    // Their last import's receipt (the rows it made, for UNDO): never left for the next member's phone.
+    clearReceipt();
     // Again after the network's steps: a read that answered meanwhile held a write of the cache.
     forgetCache();
     storage.delete('nitrate_memory_feed');

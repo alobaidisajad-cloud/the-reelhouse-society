@@ -40,6 +40,7 @@ import { hourLabel } from '@/src/components/dispatch/dayLabel';
 import { useAuthStore } from '@/src/stores/auth';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { useDispatch } from '@/src/stores/dispatch';
+import { filedSaid } from '@/src/utils/dispatchFiledSaid';
 import { paperTierOf, type BallotOption } from '@/src/stores/dispatchTypes';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
@@ -201,7 +202,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
           }
           : null,
       });
-      reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Filed');
+      reelToast.success(filedSaid(filed, 'Filed'));
       setDone('filed');
     } catch {
       // "Still here", not "kept": this desk keeps no draft, so said only while the desk stands.
@@ -360,7 +361,7 @@ export function ComposeBallotScreen() {
       });
       unkept.current = null;
       clearDraft(userId, 'ballot'); // only once the house has it
-      reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'The ballot is open');
+      reelToast.success(filedSaid(filed, 'The ballot is open'));
       setFiledBallot(true);
     } catch (e) {
       // Reached by link without the rank: the house says why, and the way to it.

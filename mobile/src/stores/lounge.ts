@@ -14,7 +14,7 @@ import { LoungeMessagePayloadSchema } from '../services/LoungeService';
 import { logger } from '../utils/logger';
 import { buildSearchPattern } from '../utils/searchPattern';
 import { isNetworkError } from '../utils/networkError';
-import { salonPaceSaid } from '../utils/housePace';
+import { salonPaceSaid, writePaceSaid } from '../utils/housePace';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue, letHeldGo, sendHeldAgain } from '../utils/offlineQueue';
 import { stillHeld } from './offlineQueueStore';
 import reelToast from '../utils/reelToast';
@@ -1395,7 +1395,10 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         // Set before the call, so a second tap can't create twice; a failure releases it.
         _lastCreateAt = -Infinity;
         // A rank the house no longer sees (it lapsed since the screen asked) gets its door.
-        if (!showTierDoor(error, { returnTo: '/lounge' })) reelToast.error('Failed to create lounge.');
+        // Past the house's pace for salons (check_write_pace): said as that, with its wait.
+        const paced = writePaceSaid(error, 'salons');
+        if (paced) reelToast.error(paced);
+        else if (!showTierDoor(error, { returnTo: '/lounge' })) reelToast.error('Failed to create lounge.');
         return null;
       }
 
@@ -1473,12 +1476,15 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return true;
     } catch (e) {
       logger.error('[LoungeStore.joinPublicLounge] failed:', e);
+      // Past the house's pace for seats (check_write_pace): said as that, with its wait.
+      const paced = writePaceSaid(e, 'seats');
       // A seat refused for the rank is its door, never "check your connection"; one refused for a ban
       // says so; and one in a salon dissolved meanwhile says that, and the room lets it go.
       if (salonGoneHere(e)) {
         if (memberUnchanged(startedAs)) hearRoomGone(loungeId);
         reelToast.error(SALON_GONE_SAID);
       } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);
+      else if (paced) reelToast.error(paced);
       else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
         reelToast.error(saidOfAFailure(e, 'Could not take a seat.'));
       }
@@ -1500,10 +1506,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       return 'requested';
     } catch (e) {
       logger.error('[LoungeStore.requestMembership] failed:', e);
+      // Past the house's pace for seats (check_write_pace): said as that, with its wait.
+      const paced = writePaceSaid(e, 'seats');
       if (salonGoneHere(e)) {
         if (memberUnchanged(startedAs)) hearRoomGone(loungeId);
         reelToast.error(SALON_GONE_SAID);
       } else if (bannedHere(e)) reelToast.error(BANNED_FROM_SALON);
+      else if (paced) reelToast.error(paced);
       else if (!showTierDoor(e, { returnTo: `/lounge/${loungeId}` })) {
         reelToast.error(saidOfAFailure(e, 'Could not send your request.'));
       }
@@ -1643,8 +1652,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           m.id === messageId ? { ...m, reactions: applyReactionDelta(m.reactions, reaction, (wasMine ? 1 : -1) as 1 | -1, wasMine) } : m
         ),
       }));
-      // A rank refusal is told why; any other failure reverts in silence.
-      showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` });
+      // Past the house's pace for reactions (check_write_pace), and a rank refusal, are told why;
+      // any other failure reverts in silence.
+      const paced = writePaceSaid(e, 'reactions');
+      if (paced) reelToast.error(paced);
+      else showTierDoor(e, { returnTo: `/lounge/${msg.lounge_id}` });
     }
   },
 

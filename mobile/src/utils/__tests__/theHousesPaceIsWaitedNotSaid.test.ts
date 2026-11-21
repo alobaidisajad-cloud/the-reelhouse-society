@@ -7,7 +7,7 @@
  * only what a script does, says how long, and the phone waits that long and goes on. A wait longer
  * than the phone waits is handed back, for the caller to keep the write queued.
  */
-import { atTheHousesPace, critiquePaceSaid, isRateLimited, PACE_WAIT_MAX_MS, rateLimitOf, salonPaceSaid } from '../housePace';
+import { atTheHousesPace, critiquePaceSaid, isRateLimited, PACE_WAIT_MAX_MS, rateLimitOf, salonPaceSaid, writePaceSaid } from '../housePace';
 import { isTransientError } from '../networkError';
 
 const paced = (hint: string, details = 'member') => ({ code: 'RH429', message: 'RATE_LIMITED', hint, details });
@@ -128,6 +128,20 @@ describe('a salon message the house asks to wait for, said as the day\'s (round 
   it('nothing for any other failure', () => {
     for (const other of [{ code: '42501', message: 'refused' }, new Error('Network request failed'), null]) {
       expect(salonPaceSaid(other)).toBeNull();
+    }
+  });
+});
+
+describe('any other write the house asks to wait for, said with its wait (check_write_pace)', () => {
+  it('the member\'s pace, and the day\'s ceiling to the house\'s midnight, each with the kind of write', () => {
+    expect(writePaceSaid(paced('3600'), 'salons')).toBe('The house takes no more salons from you for an hour.');
+    expect(writePaceSaid(paced('10'), 'seats')).toBe('The house takes no more seats from you for 10 seconds.');
+    expect(writePaceSaid(paced('32400', 'day'), 'stacks')).toBe('The house takes no more stacks from you today. More in 9 hours.');
+  });
+
+  it('nothing for any other failure, so the caller says that one as it is', () => {
+    for (const other of [{ code: '42501', message: 'refused' }, new Error('Network request failed'), null]) {
+      expect(writePaceSaid(other, 'salons')).toBeNull();
     }
   });
 });

@@ -16,6 +16,7 @@ import reelToast from '../../utils/reelToast';
 import { sanitizeInput } from '../../utils/sanitizeInput';
 import { useAuthStore } from '../auth';
 import { stillSignedIn } from './helpers/sessionGuard';
+import { isRateLimited, writePaceSaid } from '../../utils/housePace';
 import { dateOf } from '@/src/utils/instant';
 
 /**
@@ -336,7 +337,8 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             // Changed elsewhere since it was read: an answer, not a fault. The stack is read again,
             // not waited for: the member is told now, and its page shows it as it is when it arrives.
             if (changedSince) void queryClient.invalidateQueries({ queryKey: ['stack', listId] });
-            if (!isNetworkError(e) && !changedSince && !gone) captureError(e, { scope: 'listSlice.updateList' });
+            // The house's pace (check_write_pace) is an answer too, said by the sheet with its wait.
+            if (!isNetworkError(e) && !changedSince && !gone && !isRateLimited(e)) captureError(e, { scope: 'listSlice.updateList' });
             // A throw skips the check in the try: neither queued nor undone once they have left.
             if (!stillSignedIn(user.id)) return;
             if (gone) {
@@ -464,7 +466,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             if (error && error.code !== '23505') throw error;
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
         } catch (e: unknown) {
-            if (!isNetworkError(e)) captureError(e, { scope: 'listSlice.addFilmToList' });
+            if (!isNetworkError(e) && !isRateLimited(e)) captureError(e, { scope: 'listSlice.addFilmToList' });
             // A throw skips the check in the try: neither queued nor undone once they have left.
             if (!stillSignedIn(startedAs)) return;
             if (isNetworkError(e)) {
@@ -485,7 +487,8 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             set((state) => ({
                 lists: state.lists.map((l) => l.id === listId ? { ...l, films: l.films.filter(f => f.id !== film.id) } : l),
             }));
-            reelToast.error('Failed to add film to stack.');
+            // Past the house's pace for a stack's films (check_write_pace): said as that, with its wait.
+            reelToast.error(writePaceSaid(e, 'films on stacks') ?? 'Failed to add film to stack.');
         }
     },
 
