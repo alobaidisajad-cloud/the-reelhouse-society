@@ -4914,16 +4914,94 @@ classes:
     places: [none]
 
   - id: DB-the-rule-asked-twice-a-row
-    title: "A function asked the hiding rule of each row through its public name, is_hidden_by, which round 14 made a name asking private.is_hidden_by in its turn, two calls a row: a salon's first three faces, read for a member in 200 rooms, took 141 ms where they took 23 (the load lab's corridor)"
+    title: "A function asked a rule through its public name (is_hidden_by, can_view_user_data, hidden_authors), which round 14 made a name asking private.* in its turn, two calls with their own settings where one is the rule: a salon's first three faces, read for a member in 200 rooms, took 141 ms where they took 23, and the following feed of a member who follows 2,025 asked can_view_user_data so of each follow (15 ms to 41 ms)"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 2
+    source: { kind: ci, ref: "Load, 100,000 members 44890074955 and 44898739955: the corridor of a member in 200 rooms over budget, its faces 141 ms; the following feed of a member who follows 2,025 at 41 ms" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks each rule where it lives: no function asks hidden_authors, is_hidden_by or can_view_user_data by its public name, two calls where one is the rule" }
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to a rule asked by its public name, and yes to private.* and to the public names' own bodies" }
+    fix: "get_salon_member_faces (20261120_02) asks private.hidden_authors() once a call and tests each seat against the array, every face as before (its rehearsal shows the member blocked no face of the blocker and the host every face, and finds no function in the house asking the public name); every other house function asks private.* (20261120_02, _03, _32; audience_allows, ballot_tally, get_marks_ledger and get_taste_match re-pointed there, their undos restoring them); the guard refuses the public names in every function as production will hold it (mutants shape-the-faces-ask-the-rule-twice, shape-the-feed-asks-the-file-twice)"
+    places: [none]
+
+  - id: DB-a-rule-folded-into-every-row
+    title: "hidden_authors() written plain in a CTE or a subquery the planner folds into the read was asked again for every row the read met: a salon's last words for the corridor of one member (3.3 ms to 12 ms) and a member's counts (the load lab)"
     seriousness: behaviour
     area: database
     status: OPEN
     count: 1
-    source: { kind: ci, ref: "Load, 100,000 members 44890074955: the corridor of a member in 200 rooms over budget, its faces 141 ms" }
+    source: { kind: ci, ref: "Load, 100,000 members 44898739955: the corridor of one member, its last words 22 ms for 50 rooms; a member's counts, 25 follows asked of at 7 ms" }
     methods:
-      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks the hiding rule where it lives: no function asks it by its public name, two calls a row" }
-      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to the hiding rule asked by its public name, and yes to private.* and to its own body" }
-    fix: "get_salon_member_faces (20261120_02) asks private.hidden_authors() once a call and tests each seat against the array, every face as before (its rehearsal shows the member blocked no face of the blocker and the host every face, and finds no function in the house asking the public name); the guard refuses the public name in every function as production will hold it (mutant shape-the-faces-ask-the-rule-twice)"
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks hidden_authors() once a read, as an InitPlan, never plain where the planner folds it into every row" }
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to hidden_authors() asked plain, which a folded CTE asks once a row, and yes to it as an InitPlan" }
+    fix: "every function asks (SELECT private.hidden_authors()), an InitPlan, once a read (20261120_02, _03, _20, _32), every answer as before; the guard refuses a plain call in every function as production will hold it (mutant shape-the-last-words-ask-each-row)"
+    places: [none]
+
+  - id: DB-the-caller-met-after-the-rules
+    title: "A function run as the caller compared a row with auth.uid() itself, which the planner holds too dear to ask before the row rules: the house feed's \"certified\" test had the marks' rules (each end's file, the block, the withheld piece) asked of every mark of each log for the one mark the caller made (2.8 ms to 8 ms)"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Load, 100,000 members 44898739955: the house feed, its marks read 1,781 buffers for 40 logs" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "compares a row with the caller as (SELECT auth.uid()) in every function run as the caller, so the row rules meet only the caller's rows" }
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to a row compared with auth.uid() itself as the caller, and yes to (SELECT auth.uid()) and to the house" }
+    fix: "get_community_feed_auth_cursor (20261120_02, _32), member_viewings (_32) and get_moderation_history_for_users (_27) compare with (SELECT auth.uid()), an InitPlan, cheap and leakproof, so it is asked first and by the index; the guard refuses auth.uid() itself in a comparison in every function run as the caller (mutant shape-the-feed-meets-every-mark)"
+    places: [none]
+
+  - id: DB-a-rule-hashes-a-whole-table
+    title: "A row rule asked another table by EXISTS, and the planner hashed every row of that table the reader may read for a page: a critique's rule read all 40,000 filings (16 ms) for the hot post's page of 30 critiques (0.1 ms to 11 ms)"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Load, 100,000 members 44898739955: the hot post's critiques, a hashed Seq Scan of dispatch_posts" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "writes no rule that asks EXISTS of another table: each asks by its key" }
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to a rule asking EXISTS of another table, and yes to a scalar subquery by its key" }
+    fix: "critiques_block (20261120_31) asks the critique's filing by its key, a scalar subquery of one row under the filings' own rules, the same answer; the guard refuses EXISTS in every rule a pending car writes (mutant shape-the-critiques-hash-every-filing)"
+    places: [none]
+
+  - id: DB-a-rule-asks-one-test-twice
+    title: "A row rule asked the same test of the same column twice on one path: round 14's follows rule asked each end's file in \"(both open) or (either open and no block)\", up to five calls a row where three answer, and of a mark's empty end too"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Load, 100,000 members 44898739955: followers of the celebrity, 0.4 ms to 1.5 ms" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "writes no rule that asks one test of one column twice on a path" }
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to a rule asking one test of one column twice on a path, and yes to a test in each branch of a CASE" }
+    fix: "interactions_select_authorized (20261120_04) asks the first end's file, then the other end's or the block, as CASE, each once, the reader's id once a statement; the same answer on every path (the attack matrix and the H-A2 rehearsals); the guard refuses a test asked twice on one path in every rule a pending car writes (mutant shape-the-follows-rule-asks-twice)"
+    places: [none]
+
+  - id: DB-a-rule-asks-of-a-key-not-held
+    title: "A row rule asked a house function of a key the row does not hold: the marks' withheld rule asked whether a stack was withheld for every mark of a log (no stack named), and the follows rule asked a mark's empty member end whether its file was open, a call each a row that can only answer no"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Load, 100,000 members 44898739955: the house feed's marks, read through both rules" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "writes no rule that asks a test of a key the row may not hold" }
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to a rule asking a test of a key the row may not hold, and yes when it asks first that the key is there" }
+    fix: "interactions_withheld_marks (20261120_31) and interactions_select_authorized (_04) ask first that the key is there; a piece of no id is never withheld and a file of no member never open, so every answer is as before; the guard asks it of every rule a pending car writes (mutant shape-the-marks-ask-of-no-piece)"
+    places: [none]
+
+  - id: DB-the-same-rows-read-twice
+    title: "A function read the same rows twice for two counts, and round 14's withheld column, which their index lacks, sent both reads to the table: a member's counts read the whale's 10,000 logs twice (3.9 ms to 10.7 ms)"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Load, 100,000 members 44898739955: the counts of the whale, two Index Scans of 10,000 logs" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "reads a member's records once for their counts" }
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "count the reads of a table, FROM and JOIN alike" }
+    fix: "get_profile_counts (20261120_32) reads the member's logs once for both counts (count and count FILTER), each question of the caller once a call; every count as before (the H-A2 and H-B10 rehearsals); the guard holds it to one read (mutant shape-the-counts-read-twice)"
     places: [none]
 
   - id: DB-words-read-past-a-row-rule

@@ -6842,21 +6842,70 @@
     "class": "DB-a-count-that-starts-nowhere",
     "mutant": "shape-a-count-from-nowhere",
     "proof": "m1",
-    "commit": "bc58113ebf13c495f9bff722ea84210c2d42bce0",
+    "commit": "d27128289955bb72a5f8c9fc3faddca56a0cfa47",
     "verdict": "caught"
   },
   {
     "class": "DB-the-rule-asked-twice-a-row",
     "mutant": "shape-the-faces-ask-the-rule-twice",
     "proof": "m1",
-    "commit": "bc58113ebf13c495f9bff722ea84210c2d42bce0",
+    "commit": "d27128289955bb72a5f8c9fc3faddca56a0cfa47",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-the-rule-asked-twice-a-row",
+    "mutant": "shape-the-feed-asks-the-file-twice",
+    "proof": "m1",
+    "commit": "d27128289955bb72a5f8c9fc3faddca56a0cfa47",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-a-rule-folded-into-every-row",
+    "mutant": "shape-the-last-words-ask-each-row",
+    "proof": "m1",
+    "commit": "d27128289955bb72a5f8c9fc3faddca56a0cfa47",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-the-caller-met-after-the-rules",
+    "mutant": "shape-the-feed-meets-every-mark",
+    "proof": "m1",
+    "commit": "d27128289955bb72a5f8c9fc3faddca56a0cfa47",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-a-rule-hashes-a-whole-table",
+    "mutant": "shape-the-critiques-hash-every-filing",
+    "proof": "m1",
+    "commit": "d27128289955bb72a5f8c9fc3faddca56a0cfa47",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-a-rule-asks-one-test-twice",
+    "mutant": "shape-the-follows-rule-asks-twice",
+    "proof": "m1",
+    "commit": "d27128289955bb72a5f8c9fc3faddca56a0cfa47",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-a-rule-asks-of-a-key-not-held",
+    "mutant": "shape-the-marks-ask-of-no-piece",
+    "proof": "m1",
+    "commit": "d27128289955bb72a5f8c9fc3faddca56a0cfa47",
+    "verdict": "caught"
+  },
+  {
+    "class": "DB-the-same-rows-read-twice",
+    "mutant": "shape-the-counts-read-twice",
+    "proof": "m1",
+    "commit": "d27128289955bb72a5f8c9fc3faddca56a0cfa47",
     "verdict": "caught"
   },
   {
     "class": "DB-words-read-past-a-row-rule",
     "mutant": "shape-the-search-reads-as-the-caller",
     "proof": "m1",
-    "commit": "bc58113ebf13c495f9bff722ea84210c2d42bce0",
+    "commit": "d27128289955bb72a5f8c9fc3faddca56a0cfa47",
     "verdict": "caught"
   },
   {

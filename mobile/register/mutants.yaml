@@ -9110,7 +9110,70 @@ mutants:
       - file: ../supabase/migrations/20261120_02_no_member_asks_who_blocked_them.sql
         find: "        AND NOT COALESCE(lm.user_id = ANY (reader.hidden), false)\n"
         replace: "        AND NOT public.is_hidden_by(auth.uid(), lm.user_id)\n"
-    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks the hiding rule where it lives: no function asks it by its public name, two calls a row" }
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks each rule where it lives: no function asks hidden_authors, is_hidden_by or can_view_user_data by its public name, two calls where one is the rule" }
+
+  - id: shape-the-feed-asks-the-file-twice
+    class: DB-the-rule-asked-twice-a-row
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_32_a_removed_piece_waits_for_its_appeal.sql
+        find: "       AND private.can_view_user_data(i.target_user_id)\n"
+        replace: "       AND public.can_view_user_data(i.target_user_id)\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks each rule where it lives: no function asks hidden_authors, is_hidden_by or can_view_user_data by its public name, two calls where one is the rule" }
+
+  - id: shape-the-last-words-ask-each-row
+    class: DB-a-rule-folded-into-every-row
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_20_a_hidden_members_words_stay_hidden.sql
+        find: "  WITH me AS (SELECT auth.uid() AS id, (SELECT private.hidden_authors()) AS hidden)\n  SELECT l.id, newest.created_at\n"
+        replace: "  WITH me AS (SELECT auth.uid() AS id, private.hidden_authors() AS hidden)\n  SELECT l.id, newest.created_at\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks hidden_authors() once a read, as an InitPlan, never plain where the planner folds it into every row" }
+
+  - id: shape-the-feed-meets-every-mark
+    class: DB-the-caller-met-after-the-rules
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_32_a_removed_piece_waits_for_its_appeal.sql
+        find: "    (auth.uid() IS NOT NULL AND EXISTS (\n      SELECT 1 FROM interactions im\n       WHERE im.target_log_id = l.id AND im.user_id = (SELECT auth.uid()) AND im.type = 'endorse_log'\n"
+        replace: "    (auth.uid() IS NOT NULL AND EXISTS (\n      SELECT 1 FROM interactions im\n       WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "compares a row with the caller as (SELECT auth.uid()) in every function run as the caller, so the row rules meet only the caller's rows" }
+
+  - id: shape-the-critiques-hash-every-filing
+    class: DB-a-rule-hashes-a-whole-table
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_31_a_withheld_piece_is_read_by_its_author_alone.sql
+        find: "     AND ((post_id IS NULL) OR COALESCE(( SELECT true AS readable FROM public.dispatch_posts p WHERE (p.id = dispatch_comments.post_id)), false)));\n"
+        replace: "     AND ((post_id IS NULL) OR (EXISTS ( SELECT 1 FROM public.dispatch_posts p WHERE (p.id = dispatch_comments.post_id)))));\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "writes no rule that asks EXISTS of another table: each asks by its key" }
+
+  - id: shape-the-follows-rule-asks-twice
+    class: DB-a-rule-asks-one-test-twice
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_04_a_follow_is_not_read_across_a_block.sql
+        find: "              AND CASE WHEN private.can_view_user_data(user_id)\n                       THEN (((target_user_id IS NOT NULL) AND private.can_view_user_data(target_user_id))\n                             OR private.no_block_stands_with(user_id, target_user_id))\n                       ELSE ((target_user_id IS NOT NULL) AND private.can_view_user_data(target_user_id)\n                             AND private.no_block_stands_with(user_id, target_user_id))\n                  END)));\n"
+        replace: "              AND ((private.can_view_user_data(user_id) AND private.can_view_user_data(target_user_id))\n                   OR ((private.can_view_user_data(user_id) OR private.can_view_user_data(target_user_id))\n                       AND private.no_block_stands_with(user_id, target_user_id))))));\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "writes no rule that asks one test of one column twice on a path" }
+
+  - id: shape-the-marks-ask-of-no-piece
+    class: DB-a-rule-asks-of-a-key-not-held
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_31_a_withheld_piece_is_read_by_its_author_alone.sql
+        find: "           AND (NOT ((target_list_id IS NOT NULL) AND private.a_withheld_piece_holds_it('list'::text, target_list_id))))));\n"
+        replace: "           AND (NOT private.a_withheld_piece_holds_it('list'::text, target_list_id)))));\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "writes no rule that asks a test of a key the row may not hold" }
+
+  - id: shape-the-counts-read-twice
+    class: DB-the-same-rows-read-twice
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_32_a_removed_piece_waits_for_its_appeal.sql
+        find: "    'logs_count',      CASE WHEN me.open THEN mine.logs ELSE 0 END,\n"
+        replace: "    'logs_count',      CASE WHEN me.open THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id AND (withheld_at IS NULL OR user_id = me.id)) ELSE 0 END,\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "reads a member's records once for their counts" }
 
   - id: shape-the-search-reads-as-the-caller
     class: DB-words-read-past-a-row-rule

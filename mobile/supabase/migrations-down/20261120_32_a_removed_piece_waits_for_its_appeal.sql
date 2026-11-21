@@ -288,18 +288,19 @@ CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS jso
     SET search_path TO 'public', 'pg_temp'
     AS $$
   SELECT json_build_object(
-    'logs_count',      CASE WHEN public.can_view_user_data(p_user_id)
+    -- Each question of the caller asked once a call (an InitPlan each), never once a row.
+    'logs_count',      CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id) ELSE 0 END,
-    'ledger_count',    CASE WHEN public.can_view_user_data(p_user_id)
+    'ledger_count',    CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id
                                     AND (rating > 0 OR COALESCE(review, '') <> '')) ELSE 0 END,
-    'watchlist_count', CASE WHEN public.can_view_user_data(p_user_id)
+    'watchlist_count', CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM watchlists WHERE user_id = p_user_id) ELSE 0 END,
-    'vault_count',     CASE WHEN public.can_view_user_data(p_user_id)
+    'vault_count',     CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM physical_archive WHERE user_id = p_user_id) ELSE 0 END,
-    'lists_count',     CASE WHEN public.can_view_user_data(p_user_id)
+    'lists_count',     CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM lists WHERE user_id = p_user_id
-                                    AND (is_private = false OR user_id = auth.uid())) ELSE 0 END,
+                                    AND (is_private = false OR user_id = (SELECT auth.uid()))) ELSE 0 END,
     -- Across a block the follows rule shows none of the member's follows, so none are counted.
     'followers_count', CASE WHEN me.across THEN 0 ELSE
                          (SELECT COUNT(*) FROM interactions i WHERE i.target_user_id = p_user_id AND i.type = 'follow'
@@ -308,9 +309,10 @@ CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS jso
                          (SELECT COUNT(*) FROM interactions i WHERE i.user_id = p_user_id AND i.type = 'follow'
                             AND NOT COALESCE(i.target_user_id = ANY (me.hidden), false)) END
   )
-  FROM (SELECT public.hidden_authors() AS hidden,
-               COALESCE(auth.uid() IS DISTINCT FROM p_user_id
-                        AND public.a_block_stands_between(auth.uid(), p_user_id), false) AS across) me;
+  FROM (SELECT (SELECT private.hidden_authors()) AS hidden,
+               (SELECT private.can_view_user_data(p_user_id)) AS open,
+               (SELECT COALESCE(auth.uid() IS DISTINCT FROM p_user_id
+                        AND public.a_block_stands_between(auth.uid(), p_user_id), false)) AS across) me;
 $$;
 
 -- As live-schema left it.
@@ -1689,7 +1691,7 @@ CREATE OR REPLACE FUNCTION public.get_community_feed_auth_cursor(p_limit integer
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT private.hidden_authors() AS hidden)
+  WITH me AS (SELECT (SELECT private.hidden_authors()) AS hidden)
   SELECT
     l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
     l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
@@ -1705,7 +1707,7 @@ CREATE OR REPLACE FUNCTION public.get_community_feed_auth_cursor(p_limit integer
     END AS critique_count,
     (auth.uid() IS NOT NULL AND EXISTS (
       SELECT 1 FROM interactions im
-       WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
+       WHERE im.target_log_id = l.id AND im.user_id = (SELECT auth.uid()) AND im.type = 'endorse_log'
     )) AS certified,
     l.alt_poster, l.physical_media
   FROM logs l
