@@ -51,6 +51,7 @@ DELETE FROM public.salon_budget WHERE user_id IN (SELECT id FROM rehearsal_membe
 --   the house names member 2 on each reply and card, whatever 3 sent, and no one on the plain word;
 --   member 1 blocks 2: 1 reads 3's plain word alone, and the salon's unread count and last word say so;
 --   member 4, who hid no one, reads every one; 3, who mutes 2, still reads their own;
+--   1 and 4 read the salon midway, then never: each is told what came after the read, then all of it;
 --   2 blocks 4: 4 no longer reads 3's messages carrying 2's words either;
 --   a reply laid unnamed, as one written before the house named them, is named by the piece's one pass.
 SELECT set_config('request.jwt.claims', '', true) AS done \gset rh_
@@ -167,6 +168,30 @@ DO $$ BEGIN
     pg_temp.hb3_told(4));
   PERFORM pg_temp.rh_case('3, who muted 2, still reads their own', 'plain,reply,log card,stack card,essay card,forged',
     pg_temp.hb3_reads(3));
+END $$;
+
+-- The count starts at the member's last read: 4 read the salon between 3's card of 2's log and the
+-- card of 2's stack, then never read it at all; 1, who blocked 2, read it at the same moment. (A read
+-- is dated by the house as it is written, so each seat is laid again with the moment it holds.)
+CREATE FUNCTION pg_temp.hb3_read_at(p_at timestamptz) RETURNS void LANGUAGE sql AS $$
+  DELETE FROM public.lounge_members
+   WHERE lounge_id = (SELECT id FROM hb3_ids WHERE what = 'salon') AND user_id IN (SELECT id FROM rehearsal_members WHERE n IN (1, 4));
+  INSERT INTO public.lounge_members (lounge_id, user_id, status, last_read_at)
+  SELECT (SELECT id FROM hb3_ids WHERE what = 'salon'), id, 'approved', p_at FROM rehearsal_members WHERE n IN (1, 4);
+$$;
+SELECT pg_temp.hb3_read_at(now() - interval '5 minutes 30 seconds') AS done \gset rh_
+DO $$ BEGIN
+  PERFORM pg_temp.rh_case('a member who read the salon since is told only what came after', '3 unread, last word forged, directory forged',
+    pg_temp.hb3_told(4));
+  PERFORM pg_temp.rh_case('and one who blocked 2, of what came after, none that carries 2''s words', '0 unread, last word plain, directory plain',
+    pg_temp.hb3_told(1));
+END $$;
+SELECT pg_temp.hb3_read_at(NULL) AS done \gset rh_
+DO $$ BEGIN
+  PERFORM pg_temp.rh_case('a member who never read the salon is told every message', '7 unread, last word forged, directory forged',
+    pg_temp.hb3_told(4));
+  PERFORM pg_temp.rh_case('and one who blocked 2, every one but those that carry 2''s words', '1 unread, last word plain, directory plain',
+    pg_temp.hb3_told(1));
 END $$;
 
 -- 2 blocks 4: a member blocked by 2 no longer reads 2's words in 3's messages.

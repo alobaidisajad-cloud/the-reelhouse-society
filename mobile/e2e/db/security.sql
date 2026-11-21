@@ -64,18 +64,26 @@ DO $$ DECLARE n bigint; BEGIN
   IF n <> 0 THEN RAISE EXCEPTION 'FAIL: a visitor can see a private member''s log (got %)', n; END IF;
   n := (SELECT count(*) FROM public.logs WHERE id = 'dead0000-0000-4000-8000-0000000000f1');
   IF n <> 0 THEN RAISE EXCEPTION 'FAIL: a visitor can see a log whose author has no profile (got %)', n; END IF;
-  IF public.can_view_user_data('dead0000-0000-4000-8000-00000000dead') THEN
+  -- The test the read rules ask, where they ask it (private, which the API never serves): the
+  -- visitor may run it, so the rules that call it show a public member's work, and none of a missing one.
+  IF private.can_view_user_data('dead0000-0000-4000-8000-00000000dead') THEN
     RAISE EXCEPTION 'FAIL: can_view_user_data says a missing profile is viewable';
   END IF;
-  IF NOT public.can_view_user_data('a11ce000-0000-4000-8000-000000000001') THEN
+  IF NOT private.can_view_user_data('a11ce000-0000-4000-8000-000000000001') THEN
     RAISE EXCEPTION 'FAIL: can_view_user_data says a public member is not viewable';
   END IF;
+  -- Its public name, which the API serves, is the house's alone: no visitor or member may call it.
+  BEGIN
+    PERFORM public.can_view_user_data('a11ce000-0000-4000-8000-000000000001');
+    RAISE EXCEPTION 'FAIL: a visitor may call public.can_view_user_data';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
   BEGIN
     PERFORM count(*) FROM public.notifications;
     RAISE EXCEPTION 'FAIL: a visitor can read notifications';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
-  RAISE NOTICE 'PASS: a visitor sees a public log, not a private one, not one with no profile, and no notice';
+  RAISE NOTICE 'PASS: a visitor sees a public log, not a private one, not one with no profile, and no notice; the rules'' test answers them, its public name refuses them';
 END $$;
 ROLLBACK TO SAVEPOINT c;
 RELEASE SAVEPOINT c;
@@ -89,10 +97,15 @@ DO $$ DECLARE n bigint; BEGIN
   IF n <> 0 THEN RAISE EXCEPTION 'FAIL: a stranger can see a private member''s log (got %)', n; END IF;
   n := (SELECT count(*) FROM public.logs WHERE id = 'dead0000-0000-4000-8000-0000000000f1');
   IF n <> 0 THEN RAISE EXCEPTION 'FAIL: a member can see a log whose author has no profile (got %)', n; END IF;
-  IF public.can_view_user_data('dead0000-0000-4000-8000-00000000dead') THEN
+  IF private.can_view_user_data('dead0000-0000-4000-8000-00000000dead') THEN
     RAISE EXCEPTION 'FAIL: can_view_user_data says a missing profile is viewable, to a member';
   END IF;
-  RAISE NOTICE 'PASS: a stranger cannot see a private log, nor one with no profile';
+  BEGIN
+    PERFORM public.can_view_user_data('b0b00000-0000-4000-8000-000000000002');
+    RAISE EXCEPTION 'FAIL: a member may call public.can_view_user_data';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  RAISE NOTICE 'PASS: a stranger cannot see a private log, nor one with no profile, nor call the public name of the rules'' test';
 END $$;
 ROLLBACK TO SAVEPOINT c;
 RELEASE SAVEPOINT c;

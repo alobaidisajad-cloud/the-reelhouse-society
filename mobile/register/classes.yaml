@@ -4900,6 +4900,45 @@ classes:
     fix: "each round 14 car that adds a column to a table that holds rows, or fills one, analyzes those columns before it ends (20261120_19, _20, _21, _24, _30, _31), so production has them the moment the car commits; migration-lint asks it of every transaction file, and the train's plan lints every pending car (mutants shape-a-new-column-never-counted, shape-a-fill-never-counted-again, shape-lint-blind-to-a-fill)"
     places: [none]
 
+  - id: DB-a-count-that-starts-nowhere
+    title: "A count from a member's last read asked \"never read, or since\" in one test, so the index could not start at the read and every row of the room was read: round 14's unread count, which also asks each message whose words it carries (a column its index does not hold), read every message of a member's 200 rooms from its row (the load lab's unread count, 13.8 ms to 291 ms, and the salon corridor with it)"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Load, 100,000 members 44890074955: the unread count and the corridor of a member in 200 rooms over budget after round 14's cars" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "counts from a reading moment by the index: no count asks \"never read, or since\" of a joined row in one test" }
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to a count that asks \"never read, or since\" of a joined row in one test, and yes to two counts" }
+    fix: "get_lounge_unread_counts (20261120_20) counts a room read before from that moment alone, by lounge_messages_room_newest, and a room never read whole, each count as before (its rehearsal tells a member who read midway only what came after, and one who never read every message); the guard refuses the one-test shape in every function as production will hold it (mutant shape-a-count-from-nowhere)"
+    places: [none]
+
+  - id: DB-the-rule-asked-twice-a-row
+    title: "A function asked the hiding rule of each row through its public name, is_hidden_by, which round 14 made a name asking private.is_hidden_by in its turn, two calls a row: a salon's first three faces, read for a member in 200 rooms, took 141 ms where they took 23 (the load lab's corridor)"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Load, 100,000 members 44890074955: the corridor of a member in 200 rooms over budget, its faces 141 ms" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks the hiding rule where it lives: no function asks it by its public name, two calls a row" }
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to the hiding rule asked by its public name, and yes to private.* and to its own body" }
+    fix: "get_salon_member_faces (20261120_02) asks private.hidden_authors() once a call and tests each seat against the array, every face as before (its rehearsal shows the member blocked no face of the blocker and the host every face, and finds no function in the house asking the public name); the guard refuses the public name in every function as production will hold it (mutant shape-the-faces-ask-the-rule-twice)"
+    places: [none]
+
+  - id: DB-words-read-past-a-row-rule
+    title: "A member's search ran as the caller over profiles, which round 14 gave a restrictive row rule: ILIKE and lower() may not see a row before the rule has passed it, so the words lost their indexes and every member was read (the load lab's search for a handle few share, 2.3 ms to 172 ms)"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Load, 100,000 members 44890074955: search_members for a handle few share over budget after round 14's cars" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "finds members by the words of a handle or a name only as the house, past the profiles rule that would take their indexes" }
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to members found by words as the caller, and yes as the house" }
+    fix: "search_members (20261120_02) runs as the house, as search_logs and search_stacks do, leaving out whom the rule hides itself: hidden_authors() is the profiles rule's members or more (none of an admin's), so every answer is as before (its rehearsal and the attack matrix find the blocker hidden from the member blocked, and found by another); the guard holds every function that finds members by words to SECURITY DEFINER (mutant shape-the-search-reads-as-the-caller)"
+    places: [none]
+
   - id: LAYOUT-a-reach-cut-by-the-card-it-stands-in
     title: "A control grown past its own box to reach 48 stood last in a card that clips, and the card cut its reach: the member's record in Settings, unread, offered a TRY AGAIN a finger reached on 30pt of its 48, and the record's words stood on the card's very edge"
     seriousness: layout

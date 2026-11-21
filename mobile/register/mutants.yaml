@@ -9094,6 +9094,33 @@ mutants:
         replace: "-- filter on it.\n"
     proof: { file: src/utils/__tests__/migrationSafety.guard.test.ts, test: "can run on the repo as it is: every pending migration has its one rehearsal and passes the lint" }
 
+  - id: shape-a-count-from-nowhere
+    class: DB-a-count-that-starts-nowhere
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_20_a_hidden_members_words_stay_hidden.sql
+        find: "             AND m.created_at > r.last_read_at\n"
+        replace: "             AND (r.last_read_at IS NULL OR m.created_at > r.last_read_at)\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "counts from a reading moment by the index: no count asks \"never read, or since\" of a joined row in one test" }
+
+  - id: shape-the-faces-ask-the-rule-twice
+    class: DB-the-rule-asked-twice-a-row
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_02_no_member_asks_who_blocked_them.sql
+        find: "        AND NOT COALESCE(lm.user_id = ANY (reader.hidden), false)\n"
+        replace: "        AND NOT public.is_hidden_by(auth.uid(), lm.user_id)\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks the hiding rule where it lives: no function asks it by its public name, two calls a row" }
+
+  - id: shape-the-search-reads-as-the-caller
+    class: DB-words-read-past-a-row-rule
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_02_no_member_asks_who_blocked_them.sql
+        find: "RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)\n    LANGUAGE plpgsql STABLE SECURITY DEFINER\n"
+        replace: "RETURNS TABLE(id uuid, username text, avatar_url text, role text, closeness integer)\n    LANGUAGE plpgsql STABLE\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "finds members by the words of a handle or a name only as the house, past the profiles rule that would take their indexes" }
+
   - id: shape-lint-blind-to-a-fill
     class: DB-a-column-the-planner-never-counted
     source: shape
