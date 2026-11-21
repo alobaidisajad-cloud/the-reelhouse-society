@@ -630,10 +630,14 @@ CREATE OR REPLACE FUNCTION public.get_following_feed_auth_cursor(p_limit integer
   followed AS (
     SELECT i.target_user_id AS author
       FROM public.interactions i
-     WHERE i.user_id = auth.uid()
+     WHERE i.user_id = (SELECT auth.uid())
        AND i.type = 'follow'
        AND NOT COALESCE(i.target_user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
-       AND private.can_view_user_data(i.target_user_id)
+       -- can_view_user_data of a member the reader follows, asked here as one join, not a call a
+       -- follow: their profile is there (the follow itself opens a private file), and no block
+       -- stands either way, which the test above already holds (hidden_authors() names every
+       -- member the reader blocked and every member who blocked them).
+       AND EXISTS (SELECT 1 FROM public.profiles fp WHERE fp.id = i.target_user_id)
   ),
   page AS (
     SELECT r.id, r.created_at

@@ -23,13 +23,32 @@
  *   - a row rule a pending migration writes asks another table by its key, never EXISTS (the planner
  *     may hash the whole table under its own rules: 40,000 filings for a page of 30 critiques); asks
  *     each test of each column once on any path; and asks no test of a key the row does not hold;
- *   - a member's counts read their records once.
+ *   - a member's counts read their records once, and the following feed asks no call of a member's
+ *     file for each follow (the follow and the hiding test already hold its answer).
  * The rules are checked on planted text first, so each is seen to say no.
  */
 import { SNAPSHOT_SQL, PENDING_SQL, closingOf } from '@/test-utils/schema';
 
-/** One function as written: its header (everything before its body) and its body. */
+/** One function as written: its header (everything before its body) and its body, its comments taken out. */
 type Definition = { name: string; header: string; body: string };
+
+/** SQL with its line comments taken out, a quoted string's text kept whole. */
+function uncommented(sql: string): string {
+  let out = '';
+  let quoted = false;
+  for (let i = 0; i < sql.length; i++) {
+    const c = sql[i];
+    if (c === '\'') quoted = !quoted;
+    if (!quoted && c === '-' && sql[i + 1] === '-') {
+      const end = sql.indexOf('\n', i);
+      if (end < 0) break;
+      i = end - 1;
+      continue;
+    }
+    out += c;
+  }
+  return out;
+}
 
 /**
  * The functions a text leaves standing, by schema-qualified name, in its order: each CREATE replaces
@@ -49,7 +68,7 @@ function standing(sql: string): Map<string, Definition> {
     const start = o.index + o[0].length;
     const end = sql.indexOf(o[1] ?? '$$', start);
     if (end < 0) continue;
-    out.set(name, { name, header: sql.slice(m.index, o.index), body: sql.slice(start, end) });
+    out.set(name, { name, header: sql.slice(m.index, o.index), body: uncommented(sql.slice(start, end)) });
     head.lastIndex = end;
   }
   return out;
@@ -133,6 +152,10 @@ describe('the rules, on planted text', () => {
     expect([...fns.keys()]).toEqual(['public.a']);
     expect(fns.get('public.a')?.body).toBe(' SELECT 2 ');
     expect(DEFINER.test(fns.get('public.a')?.header ?? '')).toBe(true);
+  });
+
+  it('read a body without its comments, a quoted string\'s dashes kept', () => {
+    expect(standing(fn('public.c', '', "\n  -- is_hidden_by() named in words\n  SELECT 'a -- b'\n")).get('public.c')?.body).toBe("\n  \n  SELECT 'a -- b'\n");
   });
 
   it('read each rule a text writes, its USING clause whole', () => {
@@ -249,6 +272,12 @@ describe('every function as production will hold it, and every rule the pending 
 
   it('writes no rule that asks a test of a key the row may not hold', () => {
     expect(keysAskedUnheld(pendingRules)).toEqual([]);
+  });
+
+  it('asks no call of a member\'s file for each follow in the following feed: the read already holds its answer', () => {
+    const feed = fns.get('public.get_following_feed_auth_cursor')?.body ?? '';
+    expect(feed).toMatch(/hidden_authors\(\)/);
+    expect(feed).not.toMatch(/can_view_user_data\s*\(/);
   });
 
   it('reads a member\'s records once for their counts', () => {

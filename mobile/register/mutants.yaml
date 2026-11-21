@@ -9112,14 +9112,23 @@ mutants:
         replace: "        AND NOT public.is_hidden_by(auth.uid(), lm.user_id)\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks each rule where it lives: no function asks hidden_authors, is_hidden_by or can_view_user_data by its public name, two calls where one is the rule" }
 
-  - id: shape-the-feed-asks-the-file-twice
+  - id: shape-the-stacks-ask-the-file-twice
     class: DB-the-rule-asked-twice-a-row
     source: shape
     edits:
       - file: ../supabase/migrations/20261120_32_a_removed_piece_waits_for_its_appeal.sql
-        find: "       AND private.can_view_user_data(i.target_user_id)\n"
-        replace: "       AND public.can_view_user_data(i.target_user_id)\n"
+        find: "        AND private.can_view_user_data(l.user_id)\n"
+        replace: "        AND public.can_view_user_data(l.user_id)\n"
     proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks each rule where it lives: no function asks hidden_authors, is_hidden_by or can_view_user_data by its public name, two calls where one is the rule" }
+
+  - id: shape-the-feed-asks-each-follow
+    class: DB-a-rule-asked-of-every-follow
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261120_32_a_removed_piece_waits_for_its_appeal.sql
+        find: "       AND EXISTS (SELECT 1 FROM public.profiles fp WHERE fp.id = i.target_user_id)\n"
+        replace: "       AND private.can_view_user_data(i.target_user_id)\n"
+    proof: { file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks no call of a member's file for each follow in the following feed: the read already holds its answer" }
 
   - id: shape-the-last-words-ask-each-row
     class: DB-a-rule-folded-into-every-row

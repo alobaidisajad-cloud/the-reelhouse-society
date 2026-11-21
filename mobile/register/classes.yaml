@@ -4923,7 +4923,19 @@ classes:
     methods:
       - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks each rule where it lives: no function asks hidden_authors, is_hidden_by or can_view_user_data by its public name, two calls where one is the rule" }
       - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "say no to a rule asked by its public name, and yes to private.* and to the public names' own bodies" }
-    fix: "get_salon_member_faces (20261120_02) asks private.hidden_authors() once a call and tests each seat against the array, every face as before (its rehearsal shows the member blocked no face of the blocker and the host every face, and finds no function in the house asking the public name); every other house function asks private.* (20261120_02, _03, _32; audience_allows, ballot_tally, get_marks_ledger and get_taste_match re-pointed there, their undos restoring them); the guard refuses the public names in every function as production will hold it (mutants shape-the-faces-ask-the-rule-twice, shape-the-feed-asks-the-file-twice)"
+    fix: "get_salon_member_faces (20261120_02) asks private.hidden_authors() once a call and tests each seat against the array, every face as before (its rehearsal shows the member blocked no face of the blocker and the host every face, and finds no function in the house asking the public name); every other house function asks private.* (20261120_02, _03, _32; audience_allows, ballot_tally, get_marks_ledger and get_taste_match re-pointed there, their undos restoring them); the guard refuses the public names in every function as production will hold it (mutants shape-the-faces-ask-the-rule-twice, shape-the-stacks-ask-the-file-twice)"
+    places: [none]
+
+  - id: DB-a-rule-asked-of-every-follow
+    title: "The following feed asked can_view_user_data, a call with its own settings and, since round 14, a block test of its own, of each of a member's follows, where the read already held the answer: the follow opens a private file, and its hiding test names every block either way (the member who follows 2,025, 15 ms to 41 ms)"
+    seriousness: behaviour
+    area: database
+    status: OPEN
+    count: 1
+    source: { kind: ci, ref: "Load, 100,000 members 44901874631: the following feed of a member who follows 2,025, 2,025 calls at 97 microseconds each" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts, test: "asks no call of a member's file for each follow in the following feed: the read already holds its answer" }
+    fix: "get_following_feed_auth_cursor (20261120_32) asks, of each follow, that the member's profile is there (a join), beside its hiding test, which holds every block either way: the same authors as can_view_user_data gave (the H-A2 and H-B10 rehearsals); the guard refuses the call there (mutant shape-the-feed-asks-each-follow)"
     places: [none]
 
   - id: DB-a-rule-folded-into-every-row
