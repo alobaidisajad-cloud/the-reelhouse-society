@@ -7033,5 +7033,33 @@
     "proof": "m3",
     "commit": "aeb2e85c0493f7de734366f06aa65844f1c8206e",
     "verdict": "caught"
+  },
+  {
+    "class": "CI-a-run-writes-into-the-checkout-it-sweeps",
+    "mutant": "shape-a-record-written-into-the-checkout",
+    "proof": "m1",
+    "commit": "0cf96ae20b2632741b1fde5a7b7949b72953cfd1",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-a-run-writes-into-the-checkout-it-sweeps",
+    "mutant": "shape-a-log-teed-into-the-checkout",
+    "proof": "m1",
+    "commit": "0cf96ae20b2632741b1fde5a7b7949b72953cfd1",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-a-run-writes-into-the-checkout-it-sweeps",
+    "mutant": "shape-coverage-left-in-the-checkout",
+    "proof": "m1",
+    "commit": "0cf96ae20b2632741b1fde5a7b7949b72953cfd1",
+    "verdict": "caught"
+  },
+  {
+    "class": "CI-a-split-part-draws-nothing",
+    "mutant": "shape-split-takes-the-generators-last",
+    "proof": "m2",
+    "commit": "0cf96ae20b2632741b1fde5a7b7949b72953cfd1",
+    "verdict": "caught"
   }
 ]
