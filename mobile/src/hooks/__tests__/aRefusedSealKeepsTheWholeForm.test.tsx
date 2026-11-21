@@ -32,7 +32,7 @@ it('a seal refused puts the draft back with its spoiler mark, and the sheet reop
   await act(async () => { h.result.current.setIsSpoiler(true); });
   await act(async () => { await h.result.current.handleLog(); });
   await act(async () => { await h.unmount(); });
-  expect(readDraft<{ isSpoiler?: boolean }>(ME, 'log', '603')?.data?.isSpoiler).toBe(true);
+  expect(readDraft(ME, 'log', '603')?.data?.isSpoiler).toBe(true);
   const back = await renderHook(() => useLogFlow());
   await waitFor(() => expect(back.result.current.film?.id).toBe(603));
   expect(back.result.current.isSpoiler).toBe(true);

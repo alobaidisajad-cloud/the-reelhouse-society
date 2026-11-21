@@ -8,20 +8,20 @@
  * house refused are put back with setWords, so the member never types them twice.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { clearDraft, readDraft, writeDraft, type DraftKind } from '@/src/utils/memberDrafts';
+import { clearDraft, readDraft, writeDraft, type WordsKind } from '@/src/utils/memberDrafts';
 import { useAuthStore } from '@/src/stores/auth';
 
 /** How long the box rests before its words are kept: a keystroke is not a write. */
 export const KEPT_WORDS_REST_MS = 1000;
 
-export function useKeptWords(memberId: string | null | undefined, kind: DraftKind, scope: string | null | undefined) {
+export function useKeptWords(memberId: string | null | undefined, kind: WordsKind, scope: string | null | undefined) {
   const place = memberId && scope ? `${memberId}:${kind}:${scope}` : null;
   const [words, setWords] = useState('');
   // Taken up as it renders, once per place: another log or room opens on its own words or none.
   const [takenFor, setTakenFor] = useState<string | null>(null);
   if (place && takenFor !== place) {
     setTakenFor(place);
-    setWords(readDraft<{ body?: string }>(memberId, kind, scope ?? undefined)?.data.body ?? '');
+    setWords(readDraft(memberId, kind, scope ?? undefined)?.data.body ?? '');
   }
 
   // The words are kept once they rest, and at once if the screen goes, or the place changes, before

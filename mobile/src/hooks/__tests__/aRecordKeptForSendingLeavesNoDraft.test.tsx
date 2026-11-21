@@ -52,5 +52,5 @@ it('a seal refused puts the words back on the phone, as the form still holds the
   const { result } = await renderHook(() => useLogFlow());
   await waitFor(() => expect(result.current.film?.id).toBe(603));
   await act(async () => { await result.current.handleLog(); });
-  expect(readDraft<typeof DRAFT>(ME, 'log')?.data).toEqual(expect.objectContaining({ filmId: 603, review: 'Still the best.', rating: 4 }));
+  expect(readDraft(ME, 'log')?.data).toEqual(expect.objectContaining({ filmId: 603, review: 'Still the best.', rating: 4 }));
 });

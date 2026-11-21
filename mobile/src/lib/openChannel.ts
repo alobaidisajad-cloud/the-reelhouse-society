@@ -1,12 +1,14 @@
 /**
  * openChannel — a live channel opened under a name it was just closed under waits for that close.
  *
- * realtime-js hands back the channel already holding a topic (RealtimeClient.channel), and a channel
- * being left keeps its topic until the house answers the leave; subscribe() joins only a closed one.
- * A salon joined again in the same render (a seat taken, a mute, a seat lost) was handed its channel
- * on the way out: nothing joined, no status came, and the room heard nothing while it said it was
- * live (review round 9). The notices' channel, closed for one member and opened for the next, is
- * the same shape.
+ * realtime-js hands back the channel already holding a topic (RealtimeClient.channel), and
+ * subscribe() joins only a closed one. A salon joined again in the same render (a seat taken, a mute,
+ * a seat lost) handed a channel still on its way out was never joined: no status came, and the room
+ * heard nothing while it said it was live (review round 9). The notices' channel, closed for one
+ * member and opened for the next, is the same shape. So each open waits for the topic's last leave
+ * to be answered, whichever way the library answers one: the version shipped closes the channel and
+ * answers its leave at once, the leave going out on the socket before the next join
+ * (realtimeIsAsTheAppReadsIt.test.ts runs it whole).
  *
  * Two holders of one topic at once (two copies of one salon on the stack) share ONE channel: the
  * second is never handed to `open`, which would add listeners to a channel already joined (realtime-js
@@ -16,7 +18,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
-/** Each topic's last leave, until the house has answered it. */
+/** Each topic's last leave, until it is answered. */
 const leaving = new Map<string, Promise<void>>();
 
 /** Each topic's open channel, and how many holders are listening on it. */

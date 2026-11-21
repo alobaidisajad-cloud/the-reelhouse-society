@@ -152,7 +152,7 @@ describe('the queue after a send', () => {
     await flushOfflineQueue();
 
     expect(executeMutation.mock.calls.map(([m]) => (m as QueuedMutation).id)).toEqual(['log', 'take']);
-    expect(readDraft<{ body: string }>(ME, 'critique', 'p')?.data.body).toBe('Kept.');
+    expect(readDraft(ME, 'critique', 'p')?.data.body).toBe('Kept.');
     expect(toast).toHaveBeenCalledWith('A piece of writing made offline was over a day old: it is back where it was written, unsent.');
     expect(toast.error).toHaveBeenCalledWith('A change made offline was over a day old, and not sent.');
     expect(getOfflineQueue()).toEqual([]);
@@ -164,7 +164,7 @@ describe('the queue after a send', () => {
 
     await flushOfflineQueue();
 
-    expect(readDraft<{ body: string }>(ME, 'critique', 'log:L')?.data.body).toBe('Newer.\n\nOlder.');
+    expect(readDraft(ME, 'critique', 'log:L')?.data.body).toBe('Newer.\n\nOlder.');
     expect(executeMutation).not.toHaveBeenCalled();
   });
 
@@ -177,7 +177,7 @@ describe('the queue after a send', () => {
     await flushOfflineQueue();
 
     expect(executeMutation).not.toHaveBeenCalled();
-    expect([readDraft<{ body: string }>(ME, 'salon', 'R')?.data.body, readDraft<{ body: string }>(ME, 'critique', 'stack:S')?.data.body]).toEqual(['Said late.', 'On the stack.']);
+    expect([readDraft(ME, 'salon', 'R')?.data.body, readDraft(ME, 'critique', 'stack:S')?.data.body]).toEqual(['Said late.', 'On the stack.']);
     expect(toast).toHaveBeenCalledWith('2 pieces of writing made offline were over a day old: each is back where it was written, unsent.');
     expect(getOfflineQueue()).toEqual([]);
   });

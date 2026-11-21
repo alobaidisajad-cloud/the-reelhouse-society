@@ -213,7 +213,8 @@ export default function ResetPasswordScreen() {
               storage.delete('recovery_pending');
               await endSessionHere();
             }
-            nav.back(); // the Lobby when there is nothing to go back to
+            // Ending the session can take the member elsewhere first: a back then would leave that page.
+            if (mountedRef.current) nav.back(); // the Lobby when there is nothing to go back to
           }}
           hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
           haptic="light"

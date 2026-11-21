@@ -65,7 +65,7 @@ it('another film may be chosen over it, and the record still waits for its own',
   const { result } = await renderHook(() => useLogFlow());
   await act(async () => { result.current.selectFilm({ id: 550, title: 'The Seventh Seal' }); });
   expect([result.current.film?.id, result.current.review, result.current.rating]).toEqual([550, '', 0]);
-  expect(readDraft<typeof MATRIX>(ME, 'log', '603')?.data ?? readDraft<typeof MATRIX>(ME, 'log')?.data)
+  expect(readDraft(ME, 'log', '603')?.data ?? readDraft(ME, 'log')?.data)
     .toEqual(expect.objectContaining({ filmId: 603, review: 'Still the best.' }));
 });
 

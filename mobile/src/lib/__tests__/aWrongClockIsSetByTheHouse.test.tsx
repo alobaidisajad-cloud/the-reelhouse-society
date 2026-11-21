@@ -133,13 +133,13 @@ describe('two phones, an hour off the house each way', () => {
   it('finds the copy written last the newer, wherever it was written', () => {
     // Phone A, an hour ahead, writes at ten by the house.
     phoneHears(HOUR, HOUSE);
-    writeDraft('me', 'dossier', { body: 'first' });
-    const a = readDraft<{ body: string }>('me', 'dossier')?.savedAt;
+    writeDraft('me', 'dossier', { content: 'first' });
+    const a = readDraft('me', 'dossier')?.savedAt;
     // Phone B, an hour behind, writes half an hour later by the house.
     __forgetTheHouse();
     phoneHears(-HOUR, HOUSE + 30 * MINUTE);
-    writeDraft('me', 'dossier', { body: 'second' });
-    const b = readDraft<{ body: string }>('me', 'dossier')?.savedAt;
+    writeDraft('me', 'dossier', { content: 'second' });
+    const b = readDraft('me', 'dossier')?.savedAt;
     // On phone A, B's copy is the newer one and is put to the member, not overwritten.
     expect(whichCopy(a, b)).toBe('ask');
     expect(whichCopy(b, a)).toBe('local');

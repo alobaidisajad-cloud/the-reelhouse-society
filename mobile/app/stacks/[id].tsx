@@ -74,6 +74,7 @@ import { useLeavesWhenHidden } from '@/src/hooks/useLeavesWhenHidden';
 import { useReadAgainWhenToldHere } from '@/src/hooks/useReadAgainWhenToldHere';
 import { stackCritiques } from '@/src/components/critique/stackCritiques';
 import { onePress } from '@/src/utils/onePress';
+import { useStillHere } from '@/src/hooks/useStillHere';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
@@ -240,6 +241,7 @@ function StackDetailScreen({ id }: { id: string }) {
   // The chrome's lower edge: the critiques hang from it, and the pull's spinner shows below it.
   const navBottom = headerTop + STACK_NAV_ROW;
   const queryClient = useQueryClient();
+  const stillHere = useStillHere();
   
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -730,7 +732,8 @@ function StackDetailScreen({ id }: { id: string }) {
           void queryClient.invalidateQueries({ queryKey: ['feed', 'stacks'] });
           wallMayHaveChanged();
           reelToast.error('This stack is no longer in the house.');
-          nav.back();
+          // Only from its own page: left while the critique was filed, a back would leave another.
+          if (stillHere()) nav.back();
           return;
         }
         // The house's pace (round 14): said with the wait it named, the words kept in the box.
@@ -746,7 +749,7 @@ function StackDetailScreen({ id }: { id: string }) {
     } finally {
       setSubmittingComment(false);
     }
-  }, [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount, letGoOfComment, setCommentText]);
+  }, [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount, letGoOfComment, setCommentText, stillHere]);
 
   /**
    * Take back one's own critique, once the member has said yes (CritiqueRow
@@ -818,7 +821,7 @@ function StackDetailScreen({ id }: { id: string }) {
               queryClient.removeQueries({ queryKey: ['stack', id] });
               queryClient.invalidateQueries({ queryKey: ['feed', 'stacks'] });
               TactileEngine.warn();
-              nav.back();
+              if (stillHere()) nav.back();
              
             } catch (err: unknown) {
               logger.debug('[Stack] Delete failed:', err);
@@ -830,7 +833,7 @@ function StackDetailScreen({ id }: { id: string }) {
         },
       ]
     );
-  }, [id, deleteList, queryClient]);
+  }, [id, deleteList, queryClient, stillHere]);
 
   const handlePressFilm = useCallback((filmId: number) => {
     TactileEngine.selection();

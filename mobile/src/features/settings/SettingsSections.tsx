@@ -606,10 +606,13 @@ function PushPermissionNotice() {
 
   React.useEffect(() => {
     isMountedRef.current = true;
+    // Each read is asked again on every return to the app: only the latest one asked is drawn.
+    let asked = 0;
     const read = () => {
+      const mine = ++asked;
       getPushPermissionState()
-        .then(s => { if (isMountedRef.current) setState(s); })
-        .catch(() => { if (isMountedRef.current) setState('unavailable'); });
+        .then(s => { if (isMountedRef.current && mine === asked) setState(s); })
+        .catch(() => { if (isMountedRef.current && mine === asked) setState('unavailable'); });
     };
     read();
     // Asked again on the way back from the phone's settings (OPEN SYSTEM SETTINGS): read once,

@@ -53,6 +53,7 @@ import Animated from 'react-native-reanimated';
 import { UnderSheet } from '@/src/components/layout/UnderSheet';
 import { nav } from '@/src/utils/typedRouter';
 import { useAskBeforeLeaving, useHoldWhileSending } from '@/src/hooks/useAskBeforeLeaving';
+import { useStillHere } from '@/src/hooks/useStillHere';
 import { TakenUpLine } from '@/src/components/TakenUpLine';
 
 /** The hour the filing will carry: from the shared clock, the desk is drawn again only when the hour turns. */
@@ -111,6 +112,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   const [spoiler, setSpoiler] = useState(() => !!existing?.spoilerLabel);
   const [finding, setFinding] = useState(false);
   const [sending, setSending] = useState(false);
+  const stillHere = useStillHere();
   /** Filed or amended: the desk is leaving, and asks nothing on its way out. */
   const [done, setDone] = useState<'filed' | 'amended' | null>(null);
 
@@ -202,12 +204,12 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
       reelToast.success(filed?.offline ? 'Filed. It goes out when the wire is back.' : 'Filed');
       setDone('filed');
     } catch {
-      // "Still here", not "kept": this desk keeps no draft.
-      reelToast.error('It did not go. Your words are still here.');
+      // "Still here", not "kept": this desk keeps no draft, so said only while the desk stands.
+      reelToast.error(stillHere() ? 'It did not go. Your words are still here.' : 'It did not go.');
     } finally {
       setSending(false);
     }
-  }, [ready, sending, kind, body, spoiler, film, filmId, source, amending, editId]);
+  }, [ready, sending, kind, body, spoiler, film, filmId, source, amending, editId, stillHere]);
 
   // Sent back by the hook above; this render is the one frame before it lands.
   if (!me) return null;
@@ -280,11 +282,7 @@ export function ComposeBallotScreen() {
   const [draftFor, setDraftFor] = useState<string | null>(null);
   if (userId && draftFor !== userId) {
     setDraftFor(userId);
-    const held = readDraft<{
-      question?: string;
-      slots?: ({ film: PaperFilm; id: number } | null)[];
-      closes?: string;
-    }>(userId, 'ballot');
+    const held = readDraft(userId, 'ballot');
     // Said, as every writing room says a draft it took up, with the way to a clean desk.
     if (held && (held.data.question || held.data.slots?.some(Boolean))) setTakenUpAt(held.savedAt ?? '');
     if (held?.data.question) setQuestion(held.data.question);

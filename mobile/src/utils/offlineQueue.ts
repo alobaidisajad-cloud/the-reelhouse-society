@@ -29,7 +29,7 @@ import reelToast from './reelToast';
 import { e2eTrace } from './e2eTrace';
 import { isSuspensionRefusal } from './refusedForStanding';
 import { asTierRefusal } from './tierRefusal';
-import { readDraft, writeDraft, type DraftKind } from './memberDrafts';
+import { readDraft, writeDraft, type WordsKind } from './memberDrafts';
 import { counted } from './counted';
 import { queryClient } from '../lib/queryClient';
 import { settleDelivered } from '../stores/markCounts';
@@ -123,10 +123,10 @@ const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
  * under its filing, a critique under a log or a stack, a salon message in its room. A take keeps
  * no box (a take is a sentence): it has none here, and is sent whatever its age.
  */
-function boxOf(m: QueuedMutation): { kind: DraftKind; scope: string; words: string } | null {
+function boxOf(m: QueuedMutation): { kind: WordsKind; scope: string; words: string } | null {
     const p = m.payload as Record<string, unknown>;
     const str = (k: string) => (typeof p[k] === 'string' && p[k] ? (p[k] as string) : null);
-    const at = (kind: DraftKind, scope: string | null, words: string | null) => (scope && words ? { kind, scope, words } : null);
+    const at = (kind: WordsKind, scope: string | null, words: string | null) => (scope && words ? { kind, scope, words } : null);
     if (m.type === 'add_critique') return at('critique', str('post_id'), str('body'));
     if (m.type === 'add_log_comment') return at('critique', str('log_id') && `log:${str('log_id')}`, str('body'));
     if (m.type === 'add_list_comment') return at('critique', str('list_id') && `stack:${str('list_id')}`, str('content'));
@@ -141,7 +141,7 @@ function boxOf(m: QueuedMutation): { kind: DraftKind; scope: string; words: stri
 function giveBack(m: QueuedMutation): boolean {
     const box = boxOf(m);
     if (!box || !m.owner) return false;
-    const there = readDraft<{ body?: string }>(m.owner, box.kind, box.scope)?.data.body?.trim() ?? '';
+    const there = readDraft(m.owner, box.kind, box.scope)?.data.body?.trim() ?? '';
     const body = there && there !== box.words ? `${there}\n\n${box.words}` : box.words;
     return writeDraft(m.owner, box.kind, { body }, box.scope);
 }

@@ -38,7 +38,7 @@ it('keeps film A\'s draft when the sheet opens on film B and stands empty', asyn
   await openOnB();
   jest.useFakeTimers();
   await act(async () => { jest.advanceTimersByTime(1500); });
-  expect(readDraft<typeof A>(ME, 'log')?.data).toMatchObject({ filmId: 603, review: 'Still the best.', privateNotes: 'Saw it with Dad.' });
+  expect(readDraft(ME, 'log')?.data).toMatchObject({ filmId: 603, review: 'Still the best.', privateNotes: 'Saw it with Dad.' });
 });
 
 it('keeps film A\'s draft in its own place when film B is written, and opens each on its own', async () => {
@@ -48,8 +48,8 @@ it('keeps film A\'s draft in its own place when film B is written, and opens eac
   jest.useFakeTimers();
   await act(async () => { b.result.current.setReview('Death plays chess.'); });
   await act(async () => { jest.advanceTimersByTime(1500); });
-  expect(readDraft<typeof A>(ME, 'log', '603')?.data).toMatchObject({ review: 'Still the best.', rating: 4 });
-  expect(readDraft<typeof A>(ME, 'log', '550')?.data).toMatchObject({ review: 'Death plays chess.' });
+  expect(readDraft(ME, 'log', '603')?.data).toMatchObject({ review: 'Still the best.', rating: 4 });
+  expect(readDraft(ME, 'log', '550')?.data).toMatchObject({ review: 'Death plays chess.' });
   await act(async () => { await b.unmount(); });
   jest.useRealTimers();
 
@@ -67,7 +67,7 @@ it('keeps the words at once when the sheet goes before they rest, and keeps none
   const b = await openOnB();
   await act(async () => { b.result.current.setReview('Written, then closed.'); });
   await act(async () => { await b.unmount(); });
-  expect(readDraft<typeof A>(ME, 'log', '550')?.data).toMatchObject({ review: 'Written, then closed.' });
+  expect(readDraft(ME, 'log', '550')?.data).toMatchObject({ review: 'Written, then closed.' });
 
   // Sealed, then closed at once: the record is sealed, and no draft of it is left to reopen.
   for (const scope of [undefined, '550']) clearDraft(ME, 'log', scope);
@@ -95,11 +95,11 @@ it('picking another film keeps the first film\'s words for it, and opens the sec
   expect(h.result.current.film?.id).toBe(550);
   expect(h.result.current.review).toBe('Death plays chess.');
   expect(h.result.current.rating).toBe(3);
-  expect(readDraft<typeof A>(ME, 'log', '603')?.data).toMatchObject({ review: 'Red pill.' });
+  expect(readDraft(ME, 'log', '603')?.data).toMatchObject({ review: 'Red pill.' });
 
   jest.useFakeTimers();
   await act(async () => { jest.advanceTimersByTime(1500); });
-  expect(readDraft<typeof A>(ME, 'log', '550')?.data).toMatchObject({ review: 'Death plays chess.' });
+  expect(readDraft(ME, 'log', '550')?.data).toMatchObject({ review: 'Death plays chess.' });
 
   // A film with no draft opens on an empty form, not on the last film's words.
   await act(async () => { h.result.current.selectFilm({ id: 238, title: 'Casablanca' } as never); });

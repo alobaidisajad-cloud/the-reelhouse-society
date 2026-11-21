@@ -9237,3 +9237,107 @@ mutants:
         find: "  asJestsBin(process.env);\n"
         replace: ""
     proof: { file: scripts/__tests__/everyJestRunRunsAsATest.test.ts, test: "every script that starts jest through its API gives the run jest's own environment first" }
+
+  - id: shape-walk-after-a-wait-unasked
+    class: NAV-a-walk-onward-after-the-member-left
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "              TactileEngine.warn();\n              if (stillHere()) nav.back();"
+        replace: "              TactileEngine.warn();\n              nav.back();"
+    proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "1: no walk, timer or pointed words after a wait outlives its screen" }
+
+  - id: shape-countdown-after-the-screen
+    class: NAV-a-walk-onward-after-the-member-left
+    source: shape
+    edits:
+      - file: src/hooks/useAuthFlow.ts
+        find: "      if (!isMounted.current) return;\n      setResendCooldown(60);"
+        replace: "      setResendCooldown(60);"
+    proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "1: no walk, timer or pointed words after a wait outlives its screen" }
+
+  - id: shape-back-heard-beside-its-hook
+    class: NAV-a-back-that-skips-or-strays
+    source: shape
+    plant:
+      - path: src/hooks/useMutantBack.ts
+        text: "import { useEffect } from 'react';\nimport { BackHandler } from 'react-native';\n\nexport function useMutantBack(close: () => void): void {\n  useEffect(() => {\n    const sub = BackHandler.addEventListener('hardwareBackPress', () => { close(); return true; });\n    return () => sub.remove();\n  }, [close]);\n}\n"
+    proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "2: Android's back is heard in useBackCloses alone, only while its screen is in front" }
+
+  - id: shape-discard-over-a-desk-sending
+    class: NAV-a-leave-asked-after-it-was-decided
+    source: shape
+    edits:
+      - file: src/components/dispatch/ComposeDesks.tsx
+        find: "  const unsaved = !done && !sending && (amending"
+        replace: "  const unsaved = !done && (amending"
+    proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "3: no hold offers Discard over a save in flight, and work on its way is held or kept" }
+
+  - id: shape-busy-row-held-as-one-id
+    class: WRITE-a-second-tap-that-acts-again
+    source: shape
+    plant:
+      - path: src/components/MutantDoorRow.tsx
+        text: "import { useState } from 'react';\n\nexport function MutantDoorRow({ admit }: { admit: (id: string) => Promise<void> }) {\n  const [busyId, setBusyId] = useState<string | null>(null);\n  const press = async (id: string) => {\n    setBusyId(id);\n    await admit(id);\n    setBusyId(null);\n  };\n  return busyId ? null : press;\n}\n"
+    proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "4: no busy row is one id let go after the wait" }
+
+  - id: shape-words-pressed-without-one-press
+    class: WRITE-a-second-tap-that-acts-again
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "onPress={() => onePress(`curator:${list.user}`, () => handlePressProfile(list.user))}"
+        replace: "onPress={() => handlePressProfile(list.user)}"
+    proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "5: every press on words goes through onePress" }
+
+  - id: shape-draft-read-typed-apart
+    class: WRITE-a-draft-kept-in-part
+    source: shape
+    edits:
+      - file: src/hooks/useKeptWords.ts
+        find: "readDraft(memberId, kind, scope ?? undefined)"
+        replace: "readDraft<WordsKind>(memberId, kind, scope ?? undefined)"
+    proof: { file: src/utils/__tests__/workEndsWithItsScreen.guard.test.ts, test: "6: every draft is typed by its kind" }
+
+  - id: shape-mock-of-an-unnamed-package
+    class: LIB-a-library-known-only-by-its-mock
+    source: shape
+    plant:
+      - path: src/utils/__tests__/mutantUnnamedMock.test.ts
+        text: "jest.mock('expo-keep-awake', () => ({ activateKeepAwakeAsync: jest.fn() }));\n\nit('stands a package in that nothing names', () => {\n  expect(true).toBe(true);\n});\n"
+    proof: { file: src/utils/__tests__/aLibraryIsKnownByMoreThanItsMock.guard.test.ts, test: "every package a test mocks or the app imports is named with where its real behaviour is met, and every row is true" }
+
+  - id: shape-a-library-row-dropped
+    class: LIB-a-library-known-only-by-its-mock
+    source: shape
+    edits:
+      - file: test-utils/libraries.json
+        find: "    \"zod\": [{ \"how\": \"runs\" }],\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aLibraryIsKnownByMoreThanItsMock.guard.test.ts, test: "every package a test mocks or the app imports is named with where its real behaviour is met, and every row is true" }
+
+  - id: shape-a-re-read-drawn-unasked
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/features/settings/SettingsSections.tsx
+        find: ".then(s => { if (isMountedRef.current && mine === asked) setState(s); })"
+        replace: ".then(s => { if (isMountedRef.current) setState(s); })"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "1: every re-asked read writes only what is still the read asked" }
+
+  - id: shape-a-page-asked-by-its-count
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    plant:
+      - path: src/services/MutantPagedByCount.ts
+        text: "import { supabase } from '@/src/lib/supabase';\n\nexport async function mutantPage(from: number) {\n  return supabase.from('logs').select('id').order('id').range(from, from + 49);\n}\n"
+    proof: { file: src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts, test: "2: no page is asked by its count" }
+
+  - id: shape-an-export-paged-by-count
+    class: LATE-an-answer-over-a-newer-state
+    source: shape
+    edits:
+      - file: src/features/settings/readAllRows.ts
+        find: "    if (after !== null) q = q.gt(key, after);\n"
+        replace: ""
+    proof: { file: src/features/settings/__tests__/anExportIsWhole.test.ts, test: "a row removed between two pages moves nothing: the next page still begins after the last row read" }

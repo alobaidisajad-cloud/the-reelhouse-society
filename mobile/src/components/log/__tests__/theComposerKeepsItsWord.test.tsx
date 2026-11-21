@@ -156,7 +156,7 @@ describe('every control the composer owns is there, by name', () => {
     (useLocalSearchParams as jest.Mock).mockReturnValue({ editLogId: '00000015-0000-4000-8000-000000000015' });
     const edit = await renderHook(() => useLogFlow());
     await act(async () => { edit.result.current.discardDraft(); });
-    expect(readDraft<{ review: string }>(USER, 'log')?.data.review).toBe('Half a review of In the Mood for Love.');
+    expect(readDraft(USER, 'log')?.data.review).toBe('Half a review of In the Mood for Love.');
     await edit.unmount();
 
     // …while the new record's own discard, on its film, does clear it.

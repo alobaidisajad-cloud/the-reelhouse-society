@@ -43,14 +43,14 @@ describe('an amend is kept, and kept APART', () => {
     writeDraft(ANA, 'dossier', { title: 'Unfinished', content: 'Elsewhere.' });
     writeDraft(ANA, 'edit', { title: 'A rewrite', content: 'Second version.' }, 'filing-1');
 
-    expect(readDraft<{ title: string }>(ANA, 'dossier')?.data.title).toBe('Unfinished');
-    expect(readDraft<{ title: string }>(ANA, 'edit', 'filing-1')?.data.title).toBe('A rewrite');
+    expect(readDraft(ANA, 'dossier')?.data.title).toBe('Unfinished');
+    expect(readDraft(ANA, 'edit', 'filing-1')?.data.title).toBe('A rewrite');
   });
 
   it('keeps one per filing, so going back to the first finds it', () => {
     writeDraft(ANA, 'edit', { content: 'rewrite of A' }, 'A');
     writeDraft(ANA, 'edit', { content: 'rewrite of B' }, 'B');
-    expect(readDraft<{ content: string }>(ANA, 'edit', 'A')?.data.content).toBe('rewrite of A');
+    expect(readDraft(ANA, 'edit', 'A')?.data.content).toBe('rewrite of A');
   });
 
   it('is bounded — the oldest goes once there are more than it keeps', () => {
@@ -82,8 +82,8 @@ describe('a critique is kept per filing', () => {
     writeDraft(ANA, 'critique', { body: 'On Ozu.' }, 'post-1');
     writeDraft(ANA, 'critique', { body: 'On Tarkovsky.' }, 'post-2');
 
-    expect(readDraft<{ body: string }>(ANA, 'critique', 'post-1')?.data.body).toBe('On Ozu.');
-    expect(readDraft<{ body: string }>(ANA, 'critique', 'post-2')?.data.body).toBe('On Tarkovsky.');
+    expect(readDraft(ANA, 'critique', 'post-1')?.data.body).toBe('On Ozu.');
+    expect(readDraft(ANA, 'critique', 'post-2')?.data.body).toBe('On Tarkovsky.');
     // And a filing with nothing written under it has nothing to restore.
     expect(readDraft(ANA, 'critique', 'post-3')).toBeNull();
   });
@@ -96,7 +96,7 @@ describe('a ballot is kept, and its deadline cannot go stale', () => {
       slots: [{ film: { title: 'Stalker' }, id: 1 }, null],
       closes: '2 DAYS',
     });
-    const held = readDraft<{ closes: string; slots: unknown[] }>(ANA, 'ballot');
+    const held = readDraft(ANA, 'ballot');
 
     /**
      * `2 DAYS`, not a timestamp — and that is the whole reason this is safe to

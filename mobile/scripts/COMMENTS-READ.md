@@ -2088,3 +2088,9 @@ files of the reading map this one does not.
 | scripts/hooks/verdicts.cjs | — |  |
 | scripts/__tests__/everyJestRunRunsAsATest.test.ts | — |  |
 | src/utils/__tests__/aBusyReadKeepsItsIndex.guard.test.ts | — |  |
+| src/hooks/useStillHere.ts | — |  |
+| src/utils/__tests__/workEndsWithItsScreen.guard.test.ts | — |  |
+| test-utils/afterAwait.js | — |  |
+| src/lib/__tests__/realtimeIsAsTheAppReadsIt.test.ts | — |  |
+| src/utils/__tests__/aLibraryIsKnownByMoreThanItsMock.guard.test.ts | — |  |
+| src/utils/__tests__/anAnswerIsStillTheOneAsked.guard.test.ts | — |  |

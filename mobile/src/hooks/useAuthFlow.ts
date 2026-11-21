@@ -284,6 +284,8 @@ export function useAuthFlow() {
       // The house answers alike for an address already confirmed (on another phone, say) and sends
       // it nothing, so the toast promises a link only to one still waiting (round 11).
       reelToast.success(RESENT_SAID);
+      // The wait is the screen's: started after it left, nothing would ever clear it.
+      if (!isMounted.current) return;
       setResendCooldown(60);
       cooldownRef.current = setInterval(() => {
         setResendCooldown(prev => {

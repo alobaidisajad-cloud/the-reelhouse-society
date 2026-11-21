@@ -38,6 +38,8 @@ import { houseIso } from '@/src/lib/houseClock';
 import { storage, isStorageEncrypted } from '@/src/stores/mmkv-storage';
 import { logger } from '@/src/utils/logger';
 import { instantOf } from '@/src/utils/instant';
+import type { PaperFilm } from '@/src/components/dispatch/paper/PaperPost';
+import type { ProfileFormData } from '@/src/hooks/useEditProfile';
 
 /** Everything a member leaves unfinished shares this, so one sweep clears it. */
 export const DRAFT_PREFIX = 'reelhouse_draft_';
@@ -93,6 +95,55 @@ export interface DossierDraft {
   series?: { id: string; title: string; part: number } | null;
 }
 
+/** A draft of words alone: a critique, a message to a salon, an appeal. */
+export interface WordsDraft {
+  body?: string;
+}
+
+/** The kinds that keep words alone. */
+export type WordsKind = 'critique' | 'salon' | 'appeal';
+
+/** An amendment to a filed essay: its words, the film and series staying as filed. */
+export interface EditDraft {
+  title?: string;
+  content?: string;
+}
+
+/** The log sheet's draft: its film, words and stars, and the rest of the form beside them. */
+export type LogDraft = { filmId?: unknown; review?: string; rating?: number; privateNotes?: string } & Record<string, unknown>;
+
+/** A ballot being drawn up: its question, its films by slot, its closing day. */
+export interface BallotDraft {
+  question?: string;
+  slots?: ({ film: PaperFilm; id: number } | null)[];
+  closes?: string;
+}
+
+/** A stack being made, whole: what it is called, how it is kept, and its films in order. */
+export interface StackDraft {
+  title?: string;
+  description?: string;
+  isPrivate?: boolean;
+  isRanked?: boolean;
+  films?: { id: number; title: string; poster_path?: string | null }[];
+}
+
+/**
+ * What each kind of draft holds. A draft is read and written through its kind alone, so the two
+ * can never disagree about its shape: a reader typed apart from its writer read back half of it.
+ */
+export interface DraftShapes {
+  dossier: DossierDraft;
+  log: LogDraft;
+  edit: EditDraft;
+  critique: WordsDraft;
+  ballot: BallotDraft;
+  stack: StackDraft;
+  profile: ProfileFormData;
+  salon: WordsDraft;
+  appeal: WordsDraft;
+}
+
 /**
  * Was there something here that could not be read?
  *
@@ -127,9 +178,10 @@ export function unreadableDraftFound(
  * delete after a successful filing throws, the room reopens holding an essay the
  * member has already published and offers to file it again.
  */
-export function readDraft<T>(
-  userId: string | null | undefined, kind: DraftKind, scope?: string,
-): { data: T; savedAt?: string } | null {
+export function readDraft<K extends DraftKind>(
+  userId: string | null | undefined, kind: K, scope?: string,
+): { data: DraftShapes[K]; savedAt?: string } | null {
+  type T = DraftShapes[K];
   if (!userId) return null;
   const key = draftKey(userId, kind, scope);
   const raw = safeGet(key);
@@ -154,9 +206,10 @@ export function readDraft<T>(
   }
 }
 
-export function writeDraft<T>(
-  userId: string | null | undefined, kind: DraftKind, data: T, scope?: string,
+export function writeDraft<K extends DraftKind>(
+  userId: string | null | undefined, kind: K, data: DraftShapes[K], scope?: string,
 ): boolean {
+  type T = DraftShapes[K];
   if (!userId) return false;
   // A draft is the member's own writing, private notes among it: on a phone
   // whose keystore failed, kept off the disk like everything else they wrote

@@ -102,7 +102,7 @@ describe.each([
     executeMutation.mockRejectedValue(refusal);
     await flushOfflineQueue();
     expect(getOfflineQueue()).toEqual([]);
-    expect(readDraft<{ body: string }>(ME, 'critique', boxed.scope)?.data.body).toBe('Kept words.');
+    expect(readDraft(ME, 'critique', boxed.scope)?.data.body).toBe('Kept words.');
     expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/the house did not take is back where it was written, unsent\.$/));
   });
 });
@@ -127,7 +127,7 @@ describe('a moment\'s failure, five times over', () => {
 
   it('puts a critique back in its draft, and the toast says where', async () => {
     await failingFiveTimes(stored('c', 'add_critique', { post_id: 'P', user_id: ME, body: 'A critique.' }));
-    expect(readDraft<{ body: string }>(ME, 'critique', 'P')?.data.body).toBe('A critique.');
+    expect(readDraft(ME, 'critique', 'P')?.data.body).toBe('A critique.');
     expect(toast.error).toHaveBeenCalledWith('A critique the house did not take is back where it was written, unsent.');
   });
 

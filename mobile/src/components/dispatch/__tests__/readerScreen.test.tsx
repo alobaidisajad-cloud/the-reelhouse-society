@@ -432,7 +432,7 @@ describe('the reader', () => {
     await act(async () => { await fireEvent.press(r.getByLabelText('Write a critique')); });
     await act(async () => { await fireEvent.changeText(r.getByLabelText('Your critique'), 'Written, then gone.'); });
     await act(async () => { r.unmount(); });
-    expect(readDraft<{ body: string }>('u1', 'critique', '00000017-0000-4000-8000-000000000017')?.data.body).toBe('Written, then gone.');
+    expect(readDraft('u1', 'critique', '00000017-0000-4000-8000-000000000017')?.data.body).toBe('Written, then gone.');
   });
 
   it('puts the composer away on Android\'s back, before the page is left', async () => {

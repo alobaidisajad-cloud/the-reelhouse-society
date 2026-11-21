@@ -24,6 +24,7 @@ import { ToastHost } from '@/src/components/ToastHost';
 import { MAX_LENGTHS, sanitizeInput } from '@/src/utils/sanitizeInput';
 import { scaledTextProps, displayTextProps } from '@/src/constants/textScaling';
 import { overlayTop, useSheetBottom } from '@/src/components/layout/navMetrics';
+import { useStillHere } from '@/src/hooks/useStillHere';
 
 export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
 
@@ -36,6 +37,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
   /** Founding a PRIVATE room is the Auteur's; being admitted to one is not. */
   const privateRoom = useClearance('private-rooms', '/lounge');
   const wasSuccessRef = useRef(false);
+  const stillHere = useStillHere();
   /**
    * The room's id, made once and sent with every tap until a room is made: an answer lost on
    * the way back, and a tap again, finds the room the first made (create_lounge), never a second.
@@ -72,7 +74,8 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
     if (id) {
       wasSuccessRef.current = true;
       onClose();
-      nav.push(`/lounge/${id}`);
+      // Into the room only from the sheet that founded it: left meanwhile, the room waits in the corridor.
+      if (stillHere()) nav.push(`/lounge/${id}`);
     } else {
       setCreating(false);
     }

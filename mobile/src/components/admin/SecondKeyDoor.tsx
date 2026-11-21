@@ -28,6 +28,7 @@ import { digitsOf, groupedSecret, isWhole, KEY_DIGITS } from '@/src/utils/second
 import { isAuthenticatorKey } from '@/src/utils/outsideValues';
 import { nav } from '@/src/utils/typedRouter';
 import reelToast from '@/src/utils/reelToast';
+import { useStillHere } from '@/src/hooks/useStillHere';
 
 /** What a refused code says. */
 export const REFUSED: Record<CodeRefusal, string> = {
@@ -158,6 +159,7 @@ function Register({ stale, enrol, give }: {
   const [key, setKey] = useState<NewKey | null>(null);
   const [making, setMaking] = useState(false);
   const [refused, setRefused] = useState(false);
+  const stillHere = useStillHere();
   const make = async () => {
     setMaking(true);
     setRefused(false);
@@ -179,7 +181,8 @@ function Register({ stale, enrol, give }: {
   const open = async () => {
     // The phone is handed only an authenticator's key: never another address in its place.
     const opened = isAuthenticatorKey(key.uri) && await Linking.openURL(key.uri).then(() => true, () => false);
-    if (!opened) reelToast.info('No authenticator on this phone took the key: type it by hand below.');
+    // The field it points to is on this page: said only while the page stands.
+    if (!opened && stillHere()) reelToast.info('No authenticator on this phone took the key: type it by hand below.');
   };
   const copy = async () => {
     await Clipboard.setStringAsync(key.secret);

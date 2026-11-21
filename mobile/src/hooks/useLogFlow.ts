@@ -16,7 +16,7 @@ import { maybeRequestReview } from '@/src/utils/requestReview';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 import TactileEngine from '@/src/utils/TactileEngine';
 import {
-  adoptLegacyDrafts, clearDraft, readDraft, writeDraft,
+  adoptLegacyDrafts, clearDraft, readDraft, writeDraft, type LogDraft,
 } from '@/src/utils/memberDrafts';
 import { P, useRouteParams } from '@/src/utils/routeParams';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -174,7 +174,6 @@ const NO_SUCH_LOG = 'no-such-log';
  * on no film takes up. A single draft for every film was cleared by the next film's empty form:
  * opening the sheet on film B lost film A's unsent review, rating and private note.
  */
-type LogDraft = { filmId?: unknown; review?: string; rating?: number; privateNotes?: string } & Record<string, unknown>;
 
 /** The record a member began and did not send, offered at the head of the search. */
 export interface WaitingDraft {
@@ -237,7 +236,7 @@ function editFormKey(f: EditForm): string {
 function keepLogDraft(userId: string | undefined, draft: LogDraft & { filmId: unknown }): void {
   // The latest is another film's, kept only there (written before drafts were per film): it is
   // given its own film's place before this film takes the latest's.
-  const prev = readDraft<LogDraft>(userId, 'log')?.data;
+  const prev = readDraft(userId, 'log')?.data;
   if (prev?.filmId != null && String(prev.filmId) !== String(draft.filmId) && !readDraft(userId, 'log', String(prev.filmId))) {
     writeDraft(userId, 'log', prev, String(prev.filmId));
   }
@@ -247,14 +246,14 @@ function keepLogDraft(userId: string | undefined, draft: LogDraft & { filmId: un
 /** This film's draft gone, and the latest with it only if it is this film's. */
 function dropLogDraft(userId: string | undefined, filmId: unknown): void {
   if (filmId != null) clearDraft(userId, 'log', String(filmId));
-  const latest = readDraft<LogDraft>(userId, 'log');
+  const latest = readDraft(userId, 'log');
   if (latest && (filmId == null || String(latest.data?.filmId) === String(filmId))) clearDraft(userId, 'log');
 }
 /** A film's own draft: its own, or the latest when that is the film's (kept before drafts were per film). */
 function logDraftFor(userId: string | undefined, filmId: unknown): LogDraft | null {
-  const own = readDraft<LogDraft>(userId, 'log', String(filmId))?.data;
+  const own = readDraft(userId, 'log', String(filmId))?.data;
   if (own) return own;
-  const latest = readDraft<LogDraft>(userId, 'log')?.data;
+  const latest = readDraft(userId, 'log')?.data;
   return latest && String(latest.filmId) === String(filmId) ? latest : null;
 }
 
@@ -607,7 +606,7 @@ export function useLogFlow() {
     if (!editLogId && draftFor !== (user?.id ?? '')) {
         setDraftFor(user?.id ?? '');
         adoptLegacyDrafts(user?.id);
-        const held = readDraft<Record<string, unknown>>(user?.id, 'log');
+        const held = readDraft(user?.id, 'log');
         if (held) {
             try {
                 const parsed = held.data as any;
@@ -773,7 +772,7 @@ export function useLogFlow() {
 
     // The record left unsent, read as the search opens (and each time it is come back to).
     const waitingDraft = useMemo(
-        () => (editLogId || step !== 0 ? null : waitingDraftOf(readDraft<LogDraft>(user?.id, 'log')?.data)),
+        () => (editLogId || step !== 0 ? null : waitingDraftOf(readDraft(user?.id, 'log')?.data)),
         [editLogId, step, user?.id],
     );
 

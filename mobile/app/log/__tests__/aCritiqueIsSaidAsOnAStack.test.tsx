@@ -162,7 +162,7 @@ describe('a record deleted while the critique was written (round 11)', () => {
     expect(r.queryByLabelText('Write a critique on this log')).toBeNull();
     // The words are not lost: kept in the box's draft as the page goes.
     r.unmount();
-    expect(readDraft<{ body?: string }>(ME, 'critique', `log:${LOG_ID}`)?.data.body).toBe('A third look.');
+    expect(readDraft(ME, 'critique', `log:${LOG_ID}`)?.data.body).toBe('A third look.');
   });
 });
 

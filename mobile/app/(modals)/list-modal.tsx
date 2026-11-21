@@ -283,7 +283,7 @@ export default function ListModal() {
     const [takenUp, setTakenUp] = useState<{ at: string; as: string } | null>(null);
     if (!params.editId && me && draftFor !== me) {
         setDraftFor(me);
-        const held = readDraft<{ title?: string; description?: string; isPrivate?: boolean; isRanked?: boolean; films?: ListFilm[] }>(me, 'stack');
+        const held = readDraft(me, 'stack');
         const kept = held?.data;
         const was = {
             title: kept?.title || '', description: kept?.description || '',

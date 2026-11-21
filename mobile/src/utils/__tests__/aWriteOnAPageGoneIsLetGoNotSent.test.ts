@@ -124,7 +124,7 @@ it('a critique the house refuses for another reason is still given back to its b
   put([ON_A_RECORD]);
   await flushOfflineQueue();
   expect(letTheRecordGo).not.toHaveBeenCalled();
-  expect(readDraft<{ body: string }>(ME, 'critique', `log:${LOG}`)?.data.body).toBe(ON_A_RECORD.payload.body);
+  expect(readDraft(ME, 'critique', `log:${LOG}`)?.data.body).toBe(ON_A_RECORD.payload.body);
 });
 
 it('a stack amended offline and deleted elsewhere is said to be let go, and never said to have updated the archive', async () => {

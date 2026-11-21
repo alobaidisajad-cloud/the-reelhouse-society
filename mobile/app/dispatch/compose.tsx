@@ -419,7 +419,7 @@ function ComposeDossierScreen() {
     if (!edit && draftFor !== (user?.id ?? '')) {
         setDraftFor(user?.id ?? '');
         adoptLegacyDrafts(user?.id);
-        const held = readDraft<DossierDraft>(user?.id, 'dossier');
+        const held = readDraft(user?.id, 'dossier');
         const d = held?.data;
         if (!d) {
             // readDraft clears a draft it cannot parse; the room says so, or it seems to forget.
@@ -450,9 +450,12 @@ function ComposeDossierScreen() {
      */
     useEffect(() => {
         if (!partToAsk) return;
+        // Asked again for another series or member: the older answer is let go.
+        let overtaken = false;
         void freshPartFor(user?.id, partToAsk).then((part) => {
-            if (part != null) setSeries((s) => (s && s.id === partToAsk ? { ...s, part } : s));
+            if (!overtaken && part != null) setSeries((s) => (s && s.id === partToAsk ? { ...s, part } : s));
         });
+        return () => { overtaken = true; };
     }, [partToAsk, user?.id]);
 
     /**
@@ -564,7 +567,7 @@ function ComposeDossierScreen() {
     const [amendFor, setAmendFor] = useState<string | null>(null);
     if (amendKey && user?.id && edit && amendFor !== amendKey) {
         setAmendFor(amendKey);
-        const held = readDraft<{ title?: string; content?: string }>(user.id, 'edit', edit);
+        const held = readDraft(user.id, 'edit', edit);
         if (held?.data) {
             if (held.data.title) setTitle(held.data.title);
             if (held.data.content) setContent(held.data.content);

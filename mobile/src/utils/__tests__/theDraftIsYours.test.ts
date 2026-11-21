@@ -74,14 +74,14 @@ describe('unfinished work belongs to the member who wrote it', () => {
     expect(readDraft(DAN, 'log')).toBeNull();
 
     // And the reverse, so this is not passing against an empty store.
-    expect(readDraft<{ privateNotes: string }>(ANA, 'log')?.data.privateNotes)
+    expect(readDraft(ANA, 'log')?.data.privateNotes)
       .toBe('Nobody else’s business.');
   });
 
   it('THE LEAK: logging out takes ALL of it, by sweep and not by a list', () => {
     writeDraft(ANA, 'dossier', { title: 'a', content: 'b' });
     writeDraft(ANA, 'log', { review: 'c', privateNotes: 'd' });
-    writeDraft(ANA, 'edit', { body: 'e' }, 'filing-1');
+    writeDraft(ANA, 'edit', { content: 'e' }, 'filing-1');
     writeDraft(ANA, 'critique', { body: 'f' }, 'post-1');
     // A kind that does not exist yet, written by hand — the whole point of a
     // prefix sweep is that it goes too.
@@ -97,14 +97,14 @@ describe('unfinished work belongs to the member who wrote it', () => {
 
   it('reads back what was written, with the time it was written', () => {
     writeDraft(ANA, 'dossier', { title: 'x', content: 'y' });
-    const held = readDraft<{ title: string }>(ANA, 'dossier');
+    const held = readDraft(ANA, 'dossier');
     expect(held?.data.title).toBe('x');
     expect(Number.isNaN(Date.parse(held!.savedAt!))).toBe(false);
   });
 
   it('reads a bare payload written before there were envelopes', () => {
     mockStore.set(draftKey(ANA, 'dossier'), JSON.stringify({ title: 'Older', content: 'Still theirs.' }));
-    expect(readDraft<{ title: string }>(ANA, 'dossier')?.data.title).toBe('Older');
+    expect(readDraft(ANA, 'dossier')?.data.title).toBe('Older');
   });
 });
 
@@ -123,8 +123,8 @@ describe('the four keys written before any of this', () => {
 
     adoptLegacyDrafts(ANA);
 
-    expect(readDraft<{ title: string }>(ANA, 'dossier')?.data.title).toBe('Half Written');
-    expect(readDraft<{ privateNotes: string }>(ANA, 'log')?.data.privateNotes).toBe('Mine.');
+    expect(readDraft(ANA, 'dossier')?.data.title).toBe('Half Written');
+    expect(readDraft(ANA, 'log')?.data.privateNotes).toBe('Mine.');
     // The decision is made once per device: the old keys are gone either way.
     for (const k of __LEGACY_KEYS) expect(mockStore.has(k)).toBe(false);
   });
@@ -182,7 +182,7 @@ describe('the four keys written before any of this', () => {
 
     adoptLegacyDrafts(ANA);
 
-    expect(readDraft<{ title: string }>(ANA, 'dossier')?.data.title).toBe('Newer');
+    expect(readDraft(ANA, 'dossier')?.data.title).toBe('Newer');
   });
 
   it('keeps the old key when the adoption itself fails, so it can be tried again', () => {
@@ -201,11 +201,11 @@ describe('scoped drafts are bounded by eviction, not by one slot', () => {
   it('keeps several, so returning to the first one finds it', () => {
     // One slot per kind looks tidy and silently eats the rewrite of essay A the
     // moment you open essay B — which is the fault all of this exists to fix.
-    writeDraft(ANA, 'edit', { body: 'A' }, 'filing-A');
-    writeDraft(ANA, 'edit', { body: 'B' }, 'filing-B');
+    writeDraft(ANA, 'edit', { content: 'A' }, 'filing-A');
+    writeDraft(ANA, 'edit', { content: 'B' }, 'filing-B');
 
-    expect(readDraft<{ body: string }>(ANA, 'edit', 'filing-A')?.data.body).toBe('A');
-    expect(readDraft<{ body: string }>(ANA, 'edit', 'filing-B')?.data.body).toBe('B');
+    expect(readDraft(ANA, 'edit', 'filing-A')?.data.content).toBe('A');
+    expect(readDraft(ANA, 'edit', 'filing-B')?.data.content).toBe('B');
   });
 
   it('evicts the OLDEST once there are more than it keeps', () => {

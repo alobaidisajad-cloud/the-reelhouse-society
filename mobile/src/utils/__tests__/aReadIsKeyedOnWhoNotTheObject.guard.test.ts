@@ -19,7 +19,7 @@ const JUDGED: Record<string, string> = {
   'app/log/[id].tsx [queryClient, id, user, updateComments]': 'a press handler (delete a critique): re-created, never run by itself',
   'app/person/[id].tsx [user, canShare, openShare, person, personId]': 'a press handler (share to a salon)',
   'app/stacks/[id].tsx [user, id, isCertified, certifyKnown, rereadStack, toggleListEndorse, isCertifying, queryClient]': 'a press handler (certify)',
-  'app/stacks/[id].tsx [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount, letGoOfComment, setCommentText]': 'a press handler (file a critique)',
+  'app/stacks/[id].tsx [commentText, submittingComment, user, id, queryClient, bumpCritiqueCount, letGoOfComment, setCommentText, stillHere]': 'a press handler (file a critique)',
   'app/stacks/[id].tsx [user, id, queryClient, bumpCritiqueCount]': 'a press handler (delete a critique)',
   'app/year-in-cinema.tsx [currentIndex, width, slideHeight, slideTop, stats, slides, user, edge, thisYear]': 'a slide drawer: it draws the member\'s name, reads nothing',
   'src/components/moderation/ReportSheet.tsx [selectedReason, user, submitReport, contentId, contentType, details, blockToggle, targetUserId, onDismiss, refuse]': 'a press handler (send the report)',

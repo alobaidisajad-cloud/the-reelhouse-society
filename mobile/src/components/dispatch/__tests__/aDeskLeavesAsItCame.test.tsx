@@ -218,7 +218,7 @@ describe('the ballot desk', () => {
     const r = render(<ComposeBallotScreen />);
     await type(r.getByLabelText('Your question'), 'Which Ozu?');
     r.unmount();
-    expect(readDraft<{ question: string }>('u1', 'ballot')?.data.question).toBe('Which Ozu?');
+    expect(readDraft('u1', 'ballot')?.data.question).toBe('Which Ozu?');
   });
 
   it("Android's back is BACK: to the forms, the ballot kept", async () => {

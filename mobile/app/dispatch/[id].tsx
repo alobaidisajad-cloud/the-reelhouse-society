@@ -155,7 +155,7 @@ function FilingReader({ id }: { id: string }) {
   const [draftFor, setDraftFor] = useState<string | null>(null);
   if (draftKey && me?.id && draftFor !== draftKey) {
     setDraftFor(draftKey);
-    const kept = readDraft<{ body?: string }>(me.id, 'critique', id)?.data.body ?? '';
+    const kept = readDraft(me.id, 'critique', id)?.data.body ?? '';
     setDraft(kept);
     setComposing(!!kept);
   }

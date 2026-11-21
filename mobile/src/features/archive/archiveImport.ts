@@ -1147,23 +1147,28 @@ const ITEM_PAGE = 1000;
  * placements, and — far worse — films the member already owned would be absent
  * from preExistingFilmIds and therefore look like rows this import created,
  * which would let UNDO delete their own films. Returns null if any page errors,
- * so callers can fail safe instead of acting on a partial answer.
+ * so callers can fail safe instead of acting on a partial answer. Each page is
+ * the films after the last one read (a film is in a stack once): paged by count,
+ * a film taken out meanwhile shifted the next page, and a film was missed.
  */
 async function fetchAllListItems(
   listId: string,
 ): Promise<{ film_id: unknown; rank_position: unknown }[] | null> {
   const all: { film_id: unknown; rank_position: unknown }[] = [];
-  for (let from = 0; ; from += ITEM_PAGE) {
-    const { data, error } = await supabase
+  let after: unknown = null;
+  for (;;) {
+    let q = supabase
       .from('list_items')
       .select('film_id, rank_position')
-      .eq('list_id', listId)
-      .order('film_id', { ascending: true })
-      .range(from, from + ITEM_PAGE - 1);
+      .eq('list_id', listId);
+    if (after !== null) q = q.gt('film_id', after);
+    const { data, error } = await q.order('film_id', { ascending: true }).limit(ITEM_PAGE);
     if (error) return null;
     const page = data ?? [];
     all.push(...page);
     if (page.length < ITEM_PAGE) return all;
+    after = page[page.length - 1]?.film_id ?? null;
+    if (after === null) return null;
   }
 }
 

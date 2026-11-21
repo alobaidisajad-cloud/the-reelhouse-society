@@ -3,13 +3,14 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * A salon's channel is left and joined again in the same moment when the member takes a seat (the
  * reader's channel goes, the seated one comes), is muted, or loses a seat. realtime-js hands back
- * the channel already holding the topic, and one being left keeps the topic until the house
- * answers the leave; subscribe() joins only a closed channel. So the seat taken was handed the
- * channel on its way out: nothing joined, no status came, no presence was shared, and nothing
- * said in the room reached the member while it said it was live.
+ * the channel already holding the topic, and subscribe() joins only a closed channel. A seat taken
+ * that was handed the channel on its way out joined nothing: no status came, no presence was
+ * shared, and nothing said in the room reached the member while it said it was live.
  *
- * Here the realtime client is as realtime-js is in that: a topic's channel is handed back while it
- * is still held, joins only when closed, and is let go when its leave is answered.
+ * Here the realtime client is the harder of the two ways a leave can be answered: a topic's channel
+ * is handed back while it is still held, joins only when closed, and keeps its topic until its leave
+ * is answered. The version shipped closes the channel and answers its leave at once
+ * (realtimeIsAsTheAppReadsIt.test.ts runs it whole); the room must hear either way.
  */
 import { supabaseFake } from '@/test-utils/supabaseFake';
 import { useLoungeStore } from '../lounge';

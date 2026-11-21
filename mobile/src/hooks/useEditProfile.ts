@@ -51,7 +51,7 @@ export const editProfileSchema = z.object({
   links: z.array(linkSchema).max(MAX_LINKS, `At most ${MAX_LINKS} links.`).default([]),
 });
 
-type ProfileFormData = z.infer<typeof editProfileSchema>;
+export type ProfileFormData = z.infer<typeof editProfileSchema>;
 
 // Parse both legacy Record structures and modern Array structures
 // to guarantee 0% data loss when editing profiles.
@@ -208,7 +208,7 @@ export function useEditProfile() {
   // here (a launch reopens this room within the half hour, lastRoom.ts). Undefined: nothing was
   // taken up; null: taken up from a draft kept with no time. Read once, as the room opens.
   const [opened] = useState(() => {
-    const held = user ? readDraft<ProfileFormData>(user.id, 'profile') : null;
+    const held = user ? readDraft(user.id, 'profile') : null;
     return held && !sameAmendments(held.data, storedOf(user)) ? { kept: amendmentsOf(held.data), savedAt: held.savedAt ?? null } : null;
   });
   const [takenUpAt, setTakenUpAt] = useState<string | null | undefined>(opened ? opened.savedAt : undefined);
