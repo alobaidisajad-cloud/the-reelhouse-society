@@ -2132,3 +2132,5 @@ files of the reading map this one does not.
 | test-utils/__tests__/aTestReadsAClockItHasSet.test.ts | — |  |
 | test-utils/onlyTheDate.ts | — |  |
 | e2e/__tests__/aRowACarLaysReachesEveryCopy.test.ts | — |  |
+| src/stores/__tests__/aBlockSyncAskedBeforeIsNotLaidOver.test.ts | — |  |
+| src/stores/__tests__/anOlderProfileReadIsNotLaidOver.test.ts | — |  |

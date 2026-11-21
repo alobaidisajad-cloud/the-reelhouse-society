@@ -116,6 +116,69 @@ it('a new search still cancels the more-rows read of the last one, so its rows n
   expect(result.current.watchlist).toEqual([{ id: 2, title: 'Night and the City' }]);
 });
 
+/** A read whose answer is already on its way: its cancel comes too late to stop it. */
+function unstoppable<T>() {
+  const calls: { answer: (v: T) => void }[] = [];
+  const fn = jest.fn(() => new Promise<T>((resolve) => { calls.push({ answer: resolve }); }));
+  return { fn, calls };
+}
+
+describe('an answer already on its way when a newer read began is not laid', () => {
+  it('a room\'s first read, answering after a search in it, is not laid over the search', async () => {
+    const reads = unstoppable<{ items: unknown[]; nextCursor: null }>();
+    mockService.fetchOtherUserWatchlist = reads.fn;
+    const result = await openFile();
+    let room: Promise<void> | undefined;
+    let search: Promise<void> | undefined;
+    await act(async () => { room = result.current.loadTabData('watchlist'); });
+    await act(async () => { search = result.current.refreshTabWithFilters('watchlist', { search: 'city', sort: 'default', decade: null }); });
+    await act(async () => { reads.calls[1]!.answer({ items: [{ id: 2, title: 'Night and the City' }], nextCursor: null }); await search; });
+    await act(async () => { reads.calls[0]!.answer({ items: [{ id: 1, title: 'Laura' }], nextCursor: null }); await room; });
+    expect(result.current.watchlist).toEqual([{ id: 2, title: 'Night and the City' }]);
+  });
+
+  it('a next page of the last search is not joined to the new one, nor does it end the new one\'s wait', async () => {
+    const pages = unstoppable<{ items: unknown[]; nextCursor: string | null }>();
+    mockService.fetchOtherUserWatchlist = pages.fn;
+    const result = await openFile();
+    let read: Promise<void> | undefined;
+    await act(async () => { read = result.current.refreshTabWithFilters('watchlist', { search: 'noir', sort: 'default', decade: null }); });
+    await act(async () => { pages.calls[0]!.answer({ items: [{ id: 1, title: 'Laura' }], nextCursor: 'c1' }); await read; });
+    let more: Promise<unknown> | undefined;
+    await act(async () => { more = result.current.loadMoreWatchlist(); });
+    await act(async () => { read = result.current.refreshTabWithFilters('watchlist', { search: 'city', sort: 'default', decade: null }); });
+    await act(async () => { pages.calls[1]!.answer({ items: [{ id: 9, title: 'Gilda' }], nextCursor: null }); await more; });
+    expect(result.current.isLoadingMore.watchlist).toBe(true);
+    await act(async () => { pages.calls[2]!.answer({ items: [{ id: 2, title: 'Night and the City' }], nextCursor: null }); await read; });
+    expect([result.current.watchlist, result.current.isLoadingMore.watchlist]).toEqual([[{ id: 2, title: 'Night and the City' }], false]);
+  });
+
+  it('a search\'s failure, answering after a newer search began, is not said over it', async () => {
+    const calls: { fail: () => void; answer: (v: unknown) => void }[] = [];
+    mockService.fetchOtherUserWatchlist = jest.fn(() => new Promise((resolve, reject) => { calls.push({ fail: () => reject(new Error('timeout')), answer: resolve }); }));
+    const result = await openFile();
+    let first: Promise<void> | undefined;
+    let second: Promise<void> | undefined;
+    await act(async () => { first = result.current.refreshTabWithFilters('watchlist', { search: 'noir', sort: 'default', decade: null }); });
+    await act(async () => { second = result.current.refreshTabWithFilters('watchlist', { search: 'city', sort: 'default', decade: null }); });
+    await act(async () => { calls[1]!.answer({ items: [{ id: 2, title: 'Night and the City' }], nextCursor: null }); await second; });
+    await act(async () => { calls[0]!.fail(); await first; });
+    expect(result.current.tabFailed.watchlist).toBeFalsy();
+  });
+
+  it('the file\'s spinner stands for the next member while the last one\'s read lets go', async () => {
+    const files = held<typeof MEMBER>();
+    mockService.fetchProfile = files.fn;
+    const r = await renderHook((p: { username: string }) => useProfileData({ username: p.username, isSelf: false, isFollowing: false, activeTab: null as never }), { initialProps: { username: 'vesper' } });
+    await act(async () => { await r.rerender({ username: 'gilda' }); });
+    expect(files.calls[0]!.signal?.aborted).toBe(true);
+    await act(async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); });
+    expect(r.result.current.loading).toBe(true);
+    await act(async () => { files.calls[1]!.answer({ ...MEMBER, id: 'u10', username: 'gilda' }); });
+    await waitFor(() => expect(r.result.current.loading).toBe(false));
+  });
+});
+
 it('and leaving the member cancels every read still out', async () => {
   const analytics = held<unknown>();
   mockService.fetchProfileAnalytics = analytics.fn;

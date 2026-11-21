@@ -90,11 +90,41 @@ function ownNodes(fn, pick) {
  * Where the last wait before `pos` ends, in this function's own body: an await, or for a tail the
  * start of its body. -1 when nothing waits before it.
  */
-function lastWaitBefore(body, pos) {
-  if (!body.waits) body.waits = ownNodes(body.fn, (n) => (ts.isAwaitExpression(n) || (ts.isForOfStatement(n) && n.awaitModifier) ? n.getEnd() : null));
-  const before = body.waits.filter((w) => w <= pos);
+function lastWaitBefore(body, pos, node) {
+  if (!body.waits) body.waits = ownNodes(body.fn, (n) => (ts.isAwaitExpression(n) || (ts.isForOfStatement(n) && n.awaitModifier) ? n : null));
+  const before = body.waits.filter((w) => w.getEnd() <= pos && !(node && (otherBranch(w, node) || leavesFirst(w, node)))).map((w) => w.getEnd());
   if (before.length) return Math.max(...before);
   return body.tail ? body.fn.body.getStart() : -1;
+}
+
+/** The arm of an if, or of a `?:`, that a node stands in: 'then', 'else', or null below another. */
+function armOf(parent, child) {
+  if (ts.isIfStatement(parent)) return child === parent.thenStatement ? 'then' : child === parent.elseStatement ? 'else' : null;
+  if (ts.isConditionalExpression(parent)) return child === parent.whenTrue ? 'then' : child === parent.whenFalse ? 'else' : null;
+  return null;
+}
+
+/** A wait inside a return (or throw) that does not hold the node: the run that waits there leaves. */
+function leavesFirst(w, node) {
+  for (let n = w.parent; n && !isFn(n); n = n.parent) {
+    if (ts.isReturnStatement(n) || ts.isThrowStatement(n)) return !(node.getStart() >= n.getStart() && node.getEnd() <= n.getEnd());
+  }
+  return false;
+}
+
+/** Two nodes in opposite arms of one if (or `?:`): a run that passes one never passes the other. */
+function otherBranch(a, b) {
+  const path = new Map();
+  for (let n = a; n && n.parent; n = n.parent) path.set(n.parent, n);
+  for (let n = b; n && n.parent; n = n.parent) {
+    const viaA = path.get(n.parent);
+    if (viaA) {
+      const x = armOf(n.parent, viaA);
+      const y = armOf(n.parent, n);
+      return !!x && !!y && x !== y;
+    }
+  }
+  return false;
 }
 
 const strip = (e) => { while (e && ts.isParenthesizedExpression(e)) e = e.expression; return e; };

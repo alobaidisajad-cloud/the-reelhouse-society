@@ -306,8 +306,13 @@ export function profileReducer(state: ProfileState, action: ProfileAction): Prof
  * 'main' (the logs below the rooms).
  */
 type RoomSwitches = { current: Record<string, AbortController> };
-function roomSignal(rooms: RoomSwitches, key: string): AbortSignal {
-  return (rooms.current[key] ??= new AbortController()).signal;
+/**
+ * The room's switch as it stands, made if it has none. A read laid only while the room still holds
+ * it (`rooms.current[key] === held`) is the room's latest: a filtered read since restarted it, and
+ * leaving the member cleared it.
+ */
+function roomController(rooms: RoomSwitches, key: string): AbortController {
+  return (rooms.current[key] ??= new AbortController());
 }
 /** Cancels what the room still has out (an older search, its more rows) and starts again. */
 function restartRoom(rooms: RoomSwitches, key: string): AbortController {
@@ -551,6 +556,10 @@ export function useProfileData({
     if (!canAccessTierTab(tab)) return;
 
     const uid = state.targetUser.id;
+    const room = tab === 'projector' || tab === 'passport' ? 'analytics' : tab;
+    const held = roomController(_roomAbortRef, room);
+    /** Still this room's read, of this member: no filtered read restarted the room meanwhile. */
+    const current = () => isMounted.current && uid === targetUserIdRef.current && _roomAbortRef.current[room] === held;
     setTabFailed((f) => (f[tab] ? { ...f, [tab]: false } : f));
     try {
       if (tab === 'watchlist' && (!state.tabDataLoaded.watchlist || forceRefresh)) {
@@ -558,8 +567,8 @@ export function useProfileData({
         if (isSelf) {
           if (!(await fetchWatchlist())) throw new Error('The watchlist could not be read');
         } else {
-          const result = await ProfileDataService.fetchOtherUserWatchlist(uid, undefined, undefined, roomSignal(_roomAbortRef, 'watchlist'), state.activeFilters.watchlist);
-          if (uid !== targetUserIdRef.current) return;
+          const result = await ProfileDataService.fetchOtherUserWatchlist(uid, undefined, undefined, held.signal, state.activeFilters.watchlist);
+          if (!current()) return;
           dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor });
         }
       } else if (tab === 'physical' && (!state.tabDataLoaded.physical || forceRefresh)) {
@@ -567,8 +576,8 @@ export function useProfileData({
         if (isSelf) {
           if (!(await fetchPhysicalArchive())) throw new Error('The shelf could not be read');
         } else {
-          const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, undefined, undefined, roomSignal(_roomAbortRef, 'physical'), state.activeFilters.physical);
-          if (uid !== targetUserIdRef.current) return;
+          const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, undefined, undefined, held.signal, state.activeFilters.physical);
+          if (!current()) return;
           dispatch({ type: 'SET_VAULT_PAGE', items: result.items, cursor: result.nextCursor });
         }
       } else if (tab === 'lists' && (!state.tabDataLoaded.lists || forceRefresh)) {
@@ -576,8 +585,8 @@ export function useProfileData({
         if (isSelf) {
           if (!(await fetchLists())) throw new Error('The stacks could not be read');
         } else {
-          const result = await ProfileDataService.fetchOtherUserLists(uid, undefined, undefined, roomSignal(_roomAbortRef, 'lists'), state.activeFilters.lists);
-          if (uid !== targetUserIdRef.current) return;
+          const result = await ProfileDataService.fetchOtherUserLists(uid, undefined, undefined, held.signal, state.activeFilters.lists);
+          if (!current()) return;
           dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor });
         }
       } else if ((tab === 'projector' || tab === 'passport') && (!state.tabDataLoaded.analytics || forceRefresh)) {
@@ -586,16 +595,16 @@ export function useProfileData({
         // The member's whole history is never walked for it (ten serial pages of a thousand for a long
         // record, its rows feeding only a fallback the summary leaves unused): the run is the house's.
         const [serverAnalyticsPayload, tastePayload, highestRated] = await Promise.all([
-          ProfileDataService.fetchProfileAnalytics(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),
+          ProfileDataService.fetchProfileAnalytics(state.targetUser, held.signal),
           // Replaces dozens of TMDB round trips from the phone with one call.
-          ProfileDataService.fetchTasteProfile(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),
-          ProfileDataService.fetchHighestRated(state.targetUser, roomSignal(_roomAbortRef, 'analytics')),
+          ProfileDataService.fetchTasteProfile(state.targetUser, held.signal),
+          ProfileDataService.fetchHighestRated(state.targetUser, held.signal),
         ]);
         // "Something changed — read whatever is outstanding." Fire and forget:
         // nothing on screen waits, and the function drains the whole backlog,
         // so a lost ping costs nothing.
         ProfileDataService.pingFilmSync();
-        if (!isMounted.current || uid !== targetUserIdRef.current) return;
+        if (!current()) return;
         if (serverAnalyticsPayload) {
           dispatch({ type: 'SET_SERVER_ANALYTICS', payload: serverAnalyticsPayload });
         }
@@ -607,20 +616,20 @@ export function useProfileData({
         // Always its own read — a row a day over the 52 weeks the grid draws.
         // The Projector's logs are not the member's year: for another member
         // below the Auteur rank it reads none.
-        const calData = await ProfileDataService.fetchCalendarData(state.targetUser, roomSignal(_roomAbortRef, 'calendar'));
-        if (!isMounted.current || uid !== targetUserIdRef.current) return;
+        const calData = await ProfileDataService.fetchCalendarData(state.targetUser, held.signal);
+        if (!current()) return;
         dispatch({ type: 'SET_CALENDAR_DATA', payload: calData });
       } else {
         return;
       }
-      if (isMounted.current && uid === targetUserIdRef.current) setTabAnswered((a) => ({ ...a, [tab]: true }));
+      if (current()) setTabAnswered((a) => ({ ...a, [tab]: true }));
     } catch (err: unknown) {
         if (err instanceof Error && err.name === 'AbortError') return;
         // Log in both dev and prod — routes to Sentry breadcrumbs in production
         logger.warn('[ProfileFetch] loadTabData error:', err);
         // Revert the loaded state so the user can try again — and say so: the
-        // room stood at "RETRIEVING" for as long as the member stayed.
-        if (isMounted.current) {
+        // room stood at "RETRIEVING" for as long as the member stayed. Not for a read a newer one replaced.
+        if (current()) {
           setTabFailed((f) => ({ ...f, [tab]: true }));
           if (tab === 'projector' || tab === 'passport') {
             dispatch({ type: 'SET_TAB_LOADED', tabs: { analytics: false } });
@@ -669,11 +678,13 @@ export function useProfileData({
     if (!canAccessData()) return;
     const uid = state.targetUser.id;
     dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: true });
+    const tabLiteral = activeTab === 'archive' ? 'archive' : activeTab === 'ledger' ? 'ledger' : 'main';
+    const held = roomController(_roomAbortRef, tabLiteral);
     try {
       const activeLogFilters = activeTab === 'archive' ? state.activeFilters.archive : activeTab === 'ledger' ? state.activeFilters.ledger : undefined;
-      const tabLiteral = activeTab === 'archive' ? 'archive' : activeTab === 'ledger' ? 'ledger' : 'main';
-      const result = await ProfileDataService.fetchOtherUserLogs(uid, 50, targetCursor ?? undefined, roomSignal(_roomAbortRef, tabLiteral), activeLogFilters);
-      if (uid !== targetUserIdRef.current) return;
+      const result = await ProfileDataService.fetchOtherUserLogs(uid, 50, targetCursor ?? undefined, held.signal, activeLogFilters);
+      // A filtered read since restarted the room: this page belongs to the list it replaced.
+      if (uid !== targetUserIdRef.current || _roomAbortRef.current[tabLiteral] !== held) return;
       dispatch({ type: 'SET_LOGS_PAGE', tab: tabLiteral, items: result.items, cursor: result.nextCursor, append: true });
       noteMore('logs', true);
     } catch (err) {
@@ -681,7 +692,8 @@ export function useProfileData({
         logger.warn('[ProfileFetch] loadMoreLogs error:', err);
         return noteMore('logs', false);
     } finally {
-      if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: false });
+      // The filtered read that restarted the room holds its own spinner.
+      if (isMounted.current && _roomAbortRef.current[tabLiteral] === held) dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelf, fetchLogs, noteMore, state.hasMoreArchiveLogs, state.hasMoreLedgerLogs, state.hasMoreMainLogs, state.isLoadingMore.logs_main, state.isLoadingMore.logs_archive, state.isLoadingMore.logs_ledger, state.targetUser, state.archiveLogsCursor, state.ledgerLogsCursor, state.mainLogsCursor, state.activeFilters.ledger, state.activeFilters.archive, activeTab]);
@@ -692,9 +704,11 @@ export function useProfileData({
     if (!canAccessData()) return;
     const uid = state.targetUser.id;
     dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: true });
+    const held = roomController(_roomAbortRef, 'watchlist');
     try {
-      const result = await ProfileDataService.fetchOtherUserWatchlist(uid, 50, state.watchlistCursor ?? undefined, roomSignal(_roomAbortRef, 'watchlist'), state.activeFilters.watchlist);
-      if (uid !== targetUserIdRef.current) return;
+      const result = await ProfileDataService.fetchOtherUserWatchlist(uid, 50, state.watchlistCursor ?? undefined, held.signal, state.activeFilters.watchlist);
+      // A filtered read since restarted the room: this page belongs to the list it replaced.
+      if (uid !== targetUserIdRef.current || _roomAbortRef.current['watchlist'] !== held) return;
       dispatch({ type: 'SET_WATCHLIST_PAGE', items: result.items, cursor: result.nextCursor, append: true });
       noteMore('watchlist', true);
     } catch (err) {
@@ -702,7 +716,8 @@ export function useProfileData({
         logger.warn('[ProfileFetch] loadMoreWatchlist error:', err);
         return noteMore('watchlist', false);
     } finally {
-      if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: false });
+      // The filtered read that restarted the room holds its own spinner.
+      if (isMounted.current && _roomAbortRef.current['watchlist'] === held) dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelf, fetchWatchlist, noteMore, state.hasMoreWatchlist, state.isLoadingMore.watchlist, state.targetUser, state.watchlistCursor, state.activeFilters.watchlist]);
@@ -716,9 +731,11 @@ export function useProfileData({
     if (!canAccessTierTab('physical')) return;
     const uid = state.targetUser.id;
     dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: true });
+    const held = roomController(_roomAbortRef, 'physical');
     try {
-      const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, 50, state.vaultCursor ?? undefined, roomSignal(_roomAbortRef, 'physical'), state.activeFilters.physical);
-      if (uid !== targetUserIdRef.current) return;
+      const result = await ProfileDataService.fetchOtherUserVault(state.targetUser, 50, state.vaultCursor ?? undefined, held.signal, state.activeFilters.physical);
+      // A filtered read since restarted the room: this page belongs to the list it replaced.
+      if (uid !== targetUserIdRef.current || _roomAbortRef.current['physical'] !== held) return;
       dispatch({ type: 'SET_VAULT_PAGE', items: result.items, cursor: result.nextCursor, append: true });
       noteMore('vault', true);
     } catch (err) {
@@ -726,7 +743,8 @@ export function useProfileData({
         logger.warn('[ProfileFetch] loadMoreVault error:', err);
         return noteMore('vault', false);
     } finally {
-      if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: false });
+      // The filtered read that restarted the room holds its own spinner.
+      if (isMounted.current && _roomAbortRef.current['physical'] === held) dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelf, fetchPhysicalArchive, noteMore, state.hasMoreVault, state.isLoadingMore.vault, state.targetUser, state.vaultCursor, state.activeFilters.physical]);
@@ -737,9 +755,11 @@ export function useProfileData({
     if (!canAccessData()) return;
     const uid = state.targetUser.id;
     dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: true });
+    const held = roomController(_roomAbortRef, 'lists');
     try {
-      const result = await ProfileDataService.fetchOtherUserLists(uid, 50, state.listsCursor ?? undefined, roomSignal(_roomAbortRef, 'lists'), state.activeFilters.lists);
-      if (uid !== targetUserIdRef.current) return;
+      const result = await ProfileDataService.fetchOtherUserLists(uid, 50, state.listsCursor ?? undefined, held.signal, state.activeFilters.lists);
+      // A filtered read since restarted the room: this page belongs to the list it replaced.
+      if (uid !== targetUserIdRef.current || _roomAbortRef.current['lists'] !== held) return;
       dispatch({ type: 'SET_LISTS_PAGE', items: result.items, cursor: result.nextCursor, append: true });
       noteMore('lists', true);
     } catch (err) {
@@ -747,7 +767,8 @@ export function useProfileData({
         logger.warn('[ProfileFetch] loadMoreLists error:', err);
         return noteMore('lists', false);
     } finally {
-      if (isMounted.current) dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: false });
+      // The filtered read that restarted the room holds its own spinner.
+      if (isMounted.current && _roomAbortRef.current['lists'] === held) dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: false });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelf, fetchLists, noteMore, state.hasMoreLists, state.isLoadingMore.lists, state.targetUser, state.listsCursor]);
@@ -797,10 +818,13 @@ export function useProfileData({
   }
 
   useEffect(() => {
+    let gone = false;
     if (seededSelf) void fetchUserData(); // silent background refresh — no spinner; errors don't render
-    else void fetchUserData().finally(() => dispatch({ type: 'SET_LOADING', payload: false }));
+    // Not for a member left: the next member's spinner stands until their own read answers.
+    else void fetchUserData().finally(() => { if (!gone) dispatch({ type: 'SET_LOADING', payload: false }); });
     // Leaving the member (or the screen) cancels every read still out.
     return () => {
+      gone = true;
       _fetchAbortRef.current?.abort();
       for (const c of Object.values(_roomAbortRef.current)) c.abort();
       _roomAbortRef.current = {};
@@ -847,7 +871,7 @@ export function useProfileData({
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters logs error:', err);
-        if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, [tab]: true }));
+        if (isMounted.current && uid === targetUserIdRef.current && _roomAbortRef.current[tab] === controller) setTabFailed((f) => ({ ...f, [tab]: true }));
       } finally {
         if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: lockKey, value: false });
       }
@@ -862,7 +886,7 @@ export function useProfileData({
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters watchlist error:', err);
-        if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, ['watchlist']: true }));
+        if (isMounted.current && uid === targetUserIdRef.current && _roomAbortRef.current[tab] === controller) setTabFailed((f) => ({ ...f, ['watchlist']: true }));
       } finally {
         if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: 'watchlist', value: false });
       }
@@ -877,7 +901,7 @@ export function useProfileData({
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters vault error:', err);
-        if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, ['physical']: true }));
+        if (isMounted.current && uid === targetUserIdRef.current && _roomAbortRef.current[tab] === controller) setTabFailed((f) => ({ ...f, ['physical']: true }));
       } finally {
         if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: 'vault', value: false });
       }
@@ -892,7 +916,7 @@ export function useProfileData({
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         logger.warn('[ProfileFetch] refreshTabWithFilters lists error:', err);
-        if (isMounted.current && uid === targetUserIdRef.current) setTabFailed((f) => ({ ...f, lists: true }));
+        if (isMounted.current && uid === targetUserIdRef.current && _roomAbortRef.current[tab] === controller) setTabFailed((f) => ({ ...f, lists: true }));
       } finally {
         if (isMounted.current && _roomAbortRef.current[tab] === controller) dispatch({ type: 'SET_LOADING_MORE', key: 'lists', value: false });
       }

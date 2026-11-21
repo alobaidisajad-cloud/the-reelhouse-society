@@ -239,6 +239,7 @@ export default function SocialModal() {
         } else if (read) {
             setLounges(read.lounges);
         }
+        setLoadingMore(false);
         setLoading(false);
     }, []);
 
@@ -256,6 +257,17 @@ export default function SocialModal() {
         }
     }, [mode]);
 
+    /**
+     * Each read of the first page takes the next number. An answer whose number is no longer the
+     * latest is dropped (a second read asked while the first was out, the circle changed), and so
+     * is a next page begun before it.
+     */
+    const readGen = useRef(0);
+    const readFirstPage = useCallback(() => {
+        const mine = ++readGen.current;
+        readSocial().then((read) => { if (mine === readGen.current) showRead(read); }, (err) => { if (mine === readGen.current) showFailure(err); });
+    }, [readSocial, showRead, showFailure]);
+
     useEffect(() => {
         if (!valid) {
             InteractionManager.runAfterInteractions(() => {
@@ -266,19 +278,20 @@ export default function SocialModal() {
 
         // Roped: the salons are not read, for a sheet that will not offer them.
         if (roped) return;
-        let live = true;
-        readSocial().then((read) => { if (live) showRead(read); }, (err) => { if (live) showFailure(err); });
-        return () => { live = false; };
-    }, [valid, roped, readSocial, showRead, showFailure]);
+        readFirstPage();
+        // Asked again, or left: an answer still out is no longer the one asked.
+        return () => { readGen.current += 1; };
+    }, [valid, roped, readFirstPage]);
 
     /** The next page of followers or following, appended; a failed one is said at the foot. */
     const loadMore = useCallback(async () => {
         if (!cursor || loadingMore || (mode !== 'followers' && mode !== 'following')) return;
+        const mine = readGen.current;
         setLoadingMore(true);
         setMoreFailed(false);
         try {
             const result = await ProfileService.getSocialConnections(params.userId!, mode, { cursor });
-            if (!isMounted.current) return;
+            if (!isMounted.current || mine !== readGen.current) return;
             setProfiles((prev) => {
                 const seen = new Set(prev.map((p) => p.id));
                 return [...prev, ...(result.profiles || []).filter((p) => !seen.has(p.id))];
@@ -287,9 +300,10 @@ export default function SocialModal() {
         } catch (err) {
             logger.debug('[SocialModal] More failed:', err);
             if (!isNetworkError(err)) captureError(err, { scope: 'socialModal.loadMore', mode });
-            if (isMounted.current) setMoreFailed(true);
+            if (isMounted.current && mine === readGen.current) setMoreFailed(true);
         } finally {
-            if (isMounted.current) setLoadingMore(false);
+            // A first page read since has laid its own foot.
+            if (isMounted.current && mine === readGen.current) setLoadingMore(false);
         }
     }, [cursor, loadingMore, mode, params.userId]);
 
@@ -422,8 +436,8 @@ export default function SocialModal() {
         setTimedOut(false);
         setLoading(true);
         setFailed(false);
-        readSocial().then(showRead, showFailure);
-    }, [readSocial, showRead, showFailure]);
+        readFirstPage();
+    }, [readFirstPage]);
 
     return (
         <HouseBlur intensity={90} tint="dark" style={styles.container}>
