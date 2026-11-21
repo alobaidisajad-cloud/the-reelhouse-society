@@ -34,7 +34,8 @@ const mockHouse = supabaseFake({
         for (const r of hit) Object.assign(r, ask.values?.[0] ?? {});
         return [];
       }
-      if (!ask.head) mockPages.push(hit.map((r) => [r.id, r.is_read]));
+      // A page of the board; the bell's own read (its unread ids, to a thousand) is no page.
+      if (!ask.head && !ask.filters.some(([op, col]) => op === 'eq' && col === 'is_read')) mockPages.push(hit.map((r) => [r.id, r.is_read]));
       return hit.map((r) => ({ ...r }));
     },
   },

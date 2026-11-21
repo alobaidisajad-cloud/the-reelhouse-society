@@ -162,6 +162,8 @@ export interface NotificationState {
     forgetNoticesFrom: (hidden: ReadonlySet<string>) => void;
     /** Derived O(1) counter — updated on every mutation */
     _unreadCount: number;
+    /** The house counted to a thousand and there were more (notices_page): the count is a floor, said as "a thousand or more". */
+    _unreadMore: boolean;
     /** Keyset paging: whether there is more, and the last row's `created_at|id`. */
     _hasMore: boolean;
     _cursor: string | null;
@@ -186,6 +188,7 @@ export const noticesAtStart = () => ({
     _fetching: false,
     _fetchingMore: false,
     _unreadCount: 0,
+    _unreadMore: false,
     noticesHeard: 0,
     noticesLive: true,
     _hasMore: true,
@@ -266,7 +269,16 @@ const heardHere = new Map<string, number>();
 let _fetchAgain = false;
 
 /** notices_page's answer: the board's newest rows, and the unread count, from one moment. */
-const BoardSchema = z.object({ rows: z.array(z.unknown()), unread: z.number().int().min(0) });
+const BoardSchema = z.object({ rows: z.array(z.unknown()), unread: z.number().int().min(0), unread_more: z.boolean().optional() });
+
+/** The bell counts a member's unread notices to this many, and says whether there are more (20261122_04). */
+const UNREAD_CAP = 1000;
+
+/** What the bell says aloud: the count under a thousand, "a thousand or more" past it, never a number it did not read. */
+export function unreadSaid(count: number, more: boolean): string {
+    if (count <= 0) return 'Notices';
+    return more ? 'Notices, a thousand or more unread' : `Notices, ${count} unread`;
+}
 type Failed = { message: string } | null;
 
 /**
@@ -275,7 +287,7 @@ type Failed = { message: string } | null;
  * other, and the bell counted a notice the board did not hold (or missed one it did). A house
  * without the form yet (its migration not applied: PGRST202) is read as before, in two reads.
  */
-async function readBoard(userId: string): Promise<{ data: unknown[] | null; error: Failed; unread: { count: number | null; error: Failed } }> {
+async function readBoard(userId: string): Promise<{ data: unknown[] | null; error: Failed; unread: { count: number | null; more: boolean; error: Failed } }> {
     let page: { data: unknown; error: { code?: string; message: string } | null } | null = null;
     try {
         page = await supabase.rpc('notices_page', { p_limit: PAGE_SIZE });
@@ -284,13 +296,13 @@ async function readBoard(userId: string): Promise<{ data: unknown[] | null; erro
         page = null;
     }
     if (page && page.error?.code !== 'PGRST202') {
-        if (page.error) return { data: null, error: page.error, unread: { count: null, error: page.error } };
+        if (page.error) return { data: null, error: page.error, unread: { count: null, more: false, error: page.error } };
         const board = BoardSchema.safeParse(page.data);
         if (!board.success) {
             const malformed = { message: `notices_page answered malformed: ${board.error.message}` };
-            return { data: null, error: malformed, unread: { count: null, error: malformed } };
+            return { data: null, error: malformed, unread: { count: null, more: false, error: malformed } };
         }
-        return { data: board.data.rows, error: null, unread: { count: board.data.unread, error: null } };
+        return { data: board.data.rows, error: null, unread: { count: board.data.unread, more: board.data.unread_more ?? false, error: null } };
     }
     const [{ data, error }, unreadRes] = await Promise.all([
         supabase
@@ -300,13 +312,17 @@ async function readBoard(userId: string): Promise<{ data: unknown[] | null; erro
             .order('created_at', { ascending: false })
             .order('id', { ascending: false })
             .limit(PAGE_SIZE),
+        // A thousand unread ids at most (the API's own ceiling), never a count of every unread notice:
+        // a read that grows with a member's audience grows with the house. A full thousand is a floor.
         supabase
             .from('notifications')
-            .select('id', { count: 'exact', head: true })
+            .select('id')
             .eq('user_id', userId)
-            .eq('is_read', false),
+            .eq('is_read', false)
+            .limit(UNREAD_CAP),
     ]);
-    return { data: data as unknown[] | null, error, unread: { count: unreadRes.count, error: unreadRes.error } };
+    const held = unreadRes.error ? null : (unreadRes.data ?? []).length;
+    return { data: data as unknown[] | null, error, unread: { count: held, more: (held ?? 0) >= UNREAD_CAP, error: unreadRes.error } };
 }
 
 export const useNotificationStore = create<NotificationState>()(
@@ -382,6 +398,8 @@ export const useNotificationStore = create<NotificationState>()(
                 notifications: shown,
                 // The server's count; the page's only as a fallback.
                 _unreadCount: unreadRes.error || allReadSince ? shown.filter(n => !n.read).length : Math.max(0, (unreadRes.count ?? 0) - answeredUnread) + heardUnread,
+                // At the house's thousand the count is a floor, said as "a thousand or more".
+                _unreadMore: !unreadRes.error && !allReadSince && unreadRes.more,
                 // Did the SERVER send a full page (not: how many rows survived)?
                 _hasMore: !!cursor && data.length >= PAGE_SIZE,
                 _cursor: cursor,
@@ -560,6 +578,7 @@ export const useNotificationStore = create<NotificationState>()(
         set((state) => ({
             notifications: state.notifications.map((n) => ({ ...n, read: true })),
             _unreadCount: 0,
+            _unreadMore: false,
         }));
         const allReadBefore = allReadAt;
         allReadAt = Infinity;
@@ -859,6 +878,7 @@ export const useNotificationStore = create<NotificationState>()(
             partialize: (state) => ({
                 notifications: state.notifications,
                 _unreadCount: state._unreadCount,
+                _unreadMore: state._unreadMore,
                 _hasMore: state._hasMore,
                 _cursor: state._cursor,
             }),

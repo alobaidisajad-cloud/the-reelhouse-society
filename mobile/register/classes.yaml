@@ -3712,7 +3712,14 @@ classes:
     status: OPEN
     count: 2
     source: { kind: reviewer, ref: "review round 12, every feature, 2026-11-18" }
+    sweep:
+      finder: src/utils/__tests__/wordsLeaveOnlyVeiled.guard.test.ts
+      read: "every file of the app (universe appCode): every place words leave it (Share.share, Sharing.shareAsync, the clipboard), and whether its file passes them through the house's one veil (sharedWords, filingShareLine, filingShareOpening)"
+      found: "none unveiled: 15 places in 9 files, 2 files through the veil, 7 judged to carry no words a reader may not read (the log's picture veiled by NitrateFileCard's sharedWords, the member's own figures and data, a salon message already on the reader's screen, the moderator's own secret, the support address)"
+      proofs: "planted text in the guard (a new place, a veil taken away); a new share planted in the film's folder (shape-a-share-planted-unjudged); green on the app; the finder weakened (shape-the-veil-finder-takes-any-call-for-the-veil)"
     methods:
+      - { kind: static, file: src/utils/__tests__/wordsLeaveOnlyVeiled.guard.test.ts, test: "says no to a new place, and to a file judged veiled that no longer veils" }
+      - { kind: static, file: src/utils/__tests__/wordsLeaveOnlyVeiled.guard.test.ts, test: "passes the words through the house's one veil, or carries none a reader may not read, each judged" }
       - { kind: running, file: src/hooks/__tests__/aSpoilerIsNeverQuotedInSearch.test.tsx, test: "is never quoted to another member: the row says it holds spoilers" }
       - { kind: running, file: src/hooks/__tests__/aSpoilerIsNeverQuotedInSearch.test.tsx, test: "nor when the record was abandoned: the reason stays, the words do not" }
       - { kind: running, file: src/hooks/__tests__/aSpoilerIsNeverQuotedInSearch.test.tsx, test: "is quoted to its own author, whose words they are" }
@@ -4013,6 +4020,23 @@ classes:
       read: "every function the house will hold that writes a notice (an insert into notifications or a call of dispatch_notify): 19 writers, each with its trigger tables, and every trigger that deletes notices"
       found: "3 writers with no take-back (notify_on_log_comment, notify_on_list_comment, dispatch_notify_critique), fixed by 20261122_02; 16 judged: 6 taken back by their own triggers (follows, requests, certifications, the answer, the privacy switch, salon requests), 10 records of the house or of an act that stands (verdicts, lifts, appeals, admissions, acceptances, ballot closes, the Lobby's edition, pieces given back, the two legacy writers no member writes)"
       proofs: "planted text in the guard; red without the car (the three critique writers); green with it; the finder weakened (shape-the-notice-finder-reads-no-shared-call)"
+    places: [none]
+
+  - id: SPEED-a-read-that-grows-with-the-house
+    title: "A busy read was held to a timing at 100,000 members alone, so a read that walks rows in proportion to the house passed it and would die at a million: round 14's house feed went from 2.8 ms to 14 s on statistics alone, and nothing judged how many rows a read reads as the house grows"
+    seriousness: behaviour
+    area: speed
+    status: OPEN
+    count: 1
+    source: { kind: reviewer, ref: "stage C, the kinds pass (kind 13), 2026-11-22; owner 2026-11-21: fastest now, at 500,000 and at millions" }
+    methods:
+      - { kind: running, file: src/stores/__tests__/theBellCountsToAThousand.test.ts, test: "holds the house's count to a thousand, and that there are more" }
+      - { kind: running, file: src/stores/__tests__/theBellCountsToAThousand.test.ts, test: "asks a house without the one read for a thousand unread ids, never a count of all: a full thousand is a floor" }
+      - { kind: running, file: src/stores/__tests__/theBellCountsToAThousand.test.ts, test: "says the count aloud under a thousand, and past it \"a thousand or more\"" }
+      - { kind: static, file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says no to a growing table read whole, however few rows it keeps" }
+      - { kind: static, file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says no to a read past its bound, the default or its probe's own, over every statement a function ran" }
+      - { kind: static, file: e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts, test: "says no to a read whose rows grew with the house between two sizes, and yes to one that stayed" }
+    fix: "e2e/load/plan-shape.cjs judges each busy read's plans (every statement inside it, through auto_explain) by the rows it reads of the tables that grow with the house: no growing table read whole past 1,000 rows, all within its bound (20,000, or its probe's own with why), and, measured at two sizes, no read whose rows grow with the house; probe.mjs fails the Load run on any. The first read it refused: the board's unread count read every unread notice of the member (the load house's celebrity, 50,000 at each open); 20261122_04 counts to a thousand and says whether there are more, and the phone holds it as a floor, said \"a thousand or more\" (rehearsal the_bell_counts_to_a_thousand_rehearsal.sql; mutants shape-the-bell-counts-every-unread-notice, shape-the-bell-says-a-floor-as-a-number)"
     places: [none]
 
   - id: STATE-a-session-leaves-what-it-kept

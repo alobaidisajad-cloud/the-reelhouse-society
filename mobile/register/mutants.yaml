@@ -9562,6 +9562,42 @@ mutants:
         replace: "\\bnever_a_column\\s*=/i],"
     proof: { file: src/utils/__tests__/aVerdictFollowsItsLifecycle.guard.test.ts, test: "find each function that moves a moderation state, and none that only reads one" }
 
+  - id: shape-the-veil-finder-takes-any-call-for-the-veil
+    class: DATA-a-spoiler-quoted-in-the-clear
+    source: shape
+    edits:
+      - file: src/utils/__tests__/wordsLeaveOnlyVeiled.guard.test.ts
+        find: "const VEIL = /\\b(?:sharedWords|filingShareLine|filingShareOpening)\\s*\\(/;"
+        replace: "const VEIL = /\\b\\w+\\s*\\(/;"
+    proof: { file: src/utils/__tests__/wordsLeaveOnlyVeiled.guard.test.ts, test: "says no to a new place, and to a file judged veiled that no longer veils" }
+
+  - id: shape-a-share-planted-unjudged
+    class: DATA-a-spoiler-quoted-in-the-clear
+    source: shape
+    # A new place words leave, planted where the film's pages live: unjudged, it fails the sweep.
+    plant:
+      - path: src/components/film/shareTheReviewPlainly.ts
+        text: "import { Share } from 'react-native';\n\n/** Shares a review as written. */\nexport async function shareTheReviewPlainly(review: string): Promise<void> {\n  await Share.share({ message: review });\n}\n"
+    proof: { file: src/utils/__tests__/wordsLeaveOnlyVeiled.guard.test.ts, test: "passes the words through the house's one veil, or carries none a reader may not read, each judged" }
+
+  - id: shape-the-bell-counts-every-unread-notice
+    class: SPEED-a-read-that-grows-with-the-house
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "            .select('id')\n            .eq('user_id', userId)\n            .eq('is_read', false)\n            .limit(UNREAD_CAP),\n"
+        replace: "            .select('id', { count: 'exact', head: true })\n            .eq('user_id', userId)\n            .eq('is_read', false)\n            .limit(UNREAD_CAP),\n"
+    proof: { file: src/stores/__tests__/theBellCountsToAThousand.test.ts, test: "asks a house without the one read for a thousand unread ids, never a count of all: a full thousand is a floor" }
+
+  - id: shape-the-bell-says-a-floor-as-a-number
+    class: SPEED-a-read-that-grows-with-the-house
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "                _unreadMore: !unreadRes.error && !allReadSince && unreadRes.more,\n"
+        replace: "                _unreadMore: false,\n"
+    proof: { file: src/stores/__tests__/theBellCountsToAThousand.test.ts, test: "holds the house's count to a thousand, and that there are more" }
+
   - id: shape-the-lock-screen-left-lit
     class: STATE-a-session-leaves-what-it-kept
     source: shape

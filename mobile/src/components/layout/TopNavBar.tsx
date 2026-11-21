@@ -21,7 +21,7 @@ import {
   reportTopBarHeight,
   useTopBarPadding,
 } from '@/src/components/layout/navMetrics';
-import { useNotificationStore } from '@/src/stores/notificationStore';
+import { unreadSaid, useNotificationStore } from '@/src/stores/notificationStore';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedBlurView = Animated.createAnimatedComponent(HouseBlur);
@@ -92,7 +92,8 @@ export const TopNavBar = memo(function TopNavBar() {
   // The dot says there is something new; a screen reader was told only
   // "Notices". It hears the count the dot stands for.
   const unread = useNotificationStore((s) => s._unreadCount);
-  const noticesLabel = unread > 0 ? `Notices, ${unread} unread` : 'Notices';
+  const unreadMore = useNotificationStore((s) => s._unreadMore);
+  const noticesLabel = unreadSaid(unread, unreadMore);
   const insets = useSafeAreaInsets();
   const topPadding = useTopBarPadding();
   const router = useRouter();

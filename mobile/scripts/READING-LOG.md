@@ -508,3 +508,6 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/diagnostics/a_judge_never_rules_on_their_own_case_rehearsal.sql | — |  |
 | mobile/supabase/migrations-down/20261122_03_a_judge_never_rules_on_their_own_case.sql | — |  |
 | supabase/migrations/20261122_03_a_judge_never_rules_on_their_own_case.sql | — |  |
+| mobile/supabase/diagnostics/the_bell_counts_to_a_thousand_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261122_04_the_bell_counts_to_a_thousand.sql | — |  |
+| supabase/migrations/20261122_04_the_bell_counts_to_a_thousand.sql | — |  |

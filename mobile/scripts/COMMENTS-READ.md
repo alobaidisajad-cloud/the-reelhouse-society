@@ -2115,3 +2115,5 @@ files of the reading map this one does not.
 | src/utils/dispatchFiledSaid.ts | — |  |
 | e2e/__tests__/aBusyReadStaysTheSizeOfItsAnswer.test.ts | — |  |
 | e2e/load/plan-shape.cjs | — |  |
+| src/stores/__tests__/theBellCountsToAThousand.test.ts | — |  |
+| src/utils/__tests__/wordsLeaveOnlyVeiled.guard.test.ts | — |  |
