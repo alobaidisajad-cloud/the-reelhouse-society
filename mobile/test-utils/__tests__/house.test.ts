@@ -55,10 +55,11 @@ describe('the house reader, on planted text', () => {
 describe('the house as production will hold it', () => {
   const h = read();
 
-  it('reads the snapshot and every pending migration: a pending car\'s trigger, rule and closed function among them', () => {
+  it('reads the snapshot and every pending migration: a pending car\'s trigger, rule, dropped rule and closed function among them', () => {
     expect(h.functions.size).toBeGreaterThan(150);
     expect(triggersOn(h, 'log_comments').some((t) => t.fn === 'public.check_critique_pace' && t.events.includes('INSERT'))).toBe(true);
-    expect(h.policies.has('logs_insert_rate_limit on public.logs')).toBe(true);
+    expect(h.policies.has('profiles_hide_from_the_blocked on public.profiles')).toBe(true);
+    expect(h.policies.has('logs_insert_rate_limit on public.logs')).toBe(false);
     expect(membersRun(h, 'public.check_critique_pace')).toBe(false);
     expect(membersRun(h, 'public.get_lobby')).toBe(true);
   });
