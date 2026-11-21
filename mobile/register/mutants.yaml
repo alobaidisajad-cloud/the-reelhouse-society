@@ -6198,7 +6198,7 @@ mutants:
     source: shape
     edits:
       - file: app/(admin)/tribunal.tsx
-        find: "      reelToast(bulkDismissedWords(reportIds.length, closed));"
+        find: "      reelToast(bulkDismissedWords(settled.length, closed, reportIds.length - settled.length));"
         replace: "      reelToast(`${selectedReports.size} report(s) dismissed.`);"
     proof: { file: app/(admin)/__tests__/aBulkDismissalCountsWhatTheHouseClosed.test.tsx, test: "counts one, and says the other was judged by another moderator, when the house closed only one; both leave the docket" }
 
