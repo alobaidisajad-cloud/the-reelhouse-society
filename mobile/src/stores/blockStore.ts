@@ -501,5 +501,9 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
 
 // ── Register cleanup handler for centralized logout ──────────────────────────
 registerStoreReset((previousUserId) => {
+  // Raised, never set back to 0 (a number handed out before could then match one handed out
+  // after): a sync still out, or one asked before an act, was the member's who left.
+  blockSyncs += 1;
+  blockActs += 1;
   useBlockStore.getState().clearOnLogout(previousUserId);
 });
