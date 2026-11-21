@@ -2,6 +2,34 @@
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
+-- The house's own functions as production holds them, asking public.can_view_user_data.
+CREATE OR REPLACE FUNCTION public.audience_allows(p_actor uuid, p_owner uuid, p_pref text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT CASE
+    WHEN p_owner IS NULL THEN TRUE
+    WHEN auth.uid() = p_owner THEN TRUE
+    WHEN public.a_block_stands_between(auth.uid(), p_owner) THEN FALSE
+    WHEN NOT public.can_view_user_data(p_owner) THEN FALSE
+    WHEN COALESCE(p_pref, 'everyone') = 'everyone' THEN TRUE
+    WHEN COALESCE(p_pref, 'everyone') = 'nobody' THEN FALSE
+    ELSE EXISTS (SELECT 1 FROM public.interactions
+                 WHERE type = 'follow' AND user_id = auth.uid() AND target_user_id = p_owner)
+  END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_taste_match(p_user_id uuid) RETURNS jsonb
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT CASE
+    WHEN auth.uid() IS NULL OR NOT public.can_view_user_data(p_user_id)
+      THEN '{"error": "forbidden"}'::jsonb
+    ELSE jsonb_build_object('mine', public.taste_shape(auth.uid()), 'theirs', public.taste_shape(p_user_id))
+  END;
+$$;
+
 -- ── H-A2 undone · can_view_user_data back in public as 20261116_01 left it; no_block_stands_with gone ──
 --   The follows rule is put back first (H-A2.locks.down.sql). The house's alias goes, and the test
 --   moves back whole (the read rules follow it), with its old body and grants. The schema private goes

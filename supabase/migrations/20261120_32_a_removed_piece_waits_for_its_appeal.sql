@@ -7,6 +7,9 @@
 --   2. Kept whole for 30 days, or until an appeal filed within them is heard; upheld or unappealed, it is
 --      deleted as before (expire_withheld_pieces, hourly); overturned, everything returns as it was
 --      (review round 14).
+--   3. Every function here asks the rules where they live (private.*), who is hidden once a call, and the
+--      caller as (SELECT auth.uid()); a member's counts read their records once (the load lab, round 14's
+--      train).
 --   Functions (some first made by 20261120_03, 20261120_02, 20261120_23, 20261120_24 and 20261120_27,
 --   each built on as that car left it) and the hourly job; no table is locked. The register is
 --   20261120_30's, the columns and rules 20261120_31'.
@@ -573,8 +576,8 @@ CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search te
         AND l.is_private = false
         -- a stack the house withholds is on no shelf (H-B10)
         AND l.withheld_at IS NULL
-        AND NOT COALESCE(l.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
-        AND public.can_view_user_data(l.user_id)
+        AND NOT COALESCE(l.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
+        AND private.can_view_user_data(l.user_id)
         AND (p_filter_following = false OR EXISTS (
               SELECT 1 FROM interactions i
                WHERE i.target_user_id = l.user_id AND i.user_id = auth.uid() AND i.type = 'follow'))
@@ -585,8 +588,8 @@ CREATE OR REPLACE FUNCTION public.get_filtered_stacks_auth_cursor_v2(p_search te
     -- Read in the order it was kept (newest first), each asked only as it is reached.
     (SELECT m.id, m.created_at
        FROM matched m
-      WHERE NOT COALESCE(m.user_id = ANY ((SELECT hidden_authors())::uuid[]), false)
-        AND public.can_view_user_data(m.user_id)
+      WHERE NOT COALESCE(m.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
+        AND private.can_view_user_data(m.user_id)
         AND (p_filter_following = false OR EXISTS (
               SELECT 1 FROM interactions i
                WHERE i.target_user_id = m.user_id AND i.user_id = auth.uid() AND i.type = 'follow'))
@@ -623,14 +626,14 @@ CREATE OR REPLACE FUNCTION public.get_following_feed_auth_cursor(p_limit integer
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT public.hidden_authors() AS hidden),
+  WITH me AS (SELECT (SELECT private.hidden_authors()) AS hidden),
   followed AS (
     SELECT i.target_user_id AS author
       FROM public.interactions i
      WHERE i.user_id = auth.uid()
        AND i.type = 'follow'
-       AND NOT COALESCE(i.target_user_id = ANY ((SELECT public.hidden_authors())::uuid[]), false)
-       AND public.can_view_user_data(i.target_user_id)
+       AND NOT COALESCE(i.target_user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
+       AND private.can_view_user_data(i.target_user_id)
   ),
   page AS (
     SELECT r.id, r.created_at
@@ -666,7 +669,7 @@ CREATE OR REPLACE FUNCTION public.get_following_feed_auth_cursor(p_limit integer
     END AS critique_count,
     EXISTS (
       SELECT 1 FROM public.interactions im
-       WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
+       WHERE im.target_log_id = l.id AND im.user_id = (SELECT auth.uid()) AND im.type = 'endorse_log'
     ) AS certified,
     l.alt_poster, l.physical_media
   FROM page pg
@@ -684,21 +687,18 @@ CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS jso
     SET search_path TO 'public', 'pg_temp'
     AS $$
   SELECT json_build_object(
-    -- A piece the house withholds is counted for its author alone (H-B10).
-    'logs_count',      CASE WHEN public.can_view_user_data(p_user_id)
-                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id
-                                    AND (withheld_at IS NULL OR user_id = auth.uid())) ELSE 0 END,
-    'ledger_count',    CASE WHEN public.can_view_user_data(p_user_id)
-                            THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id
-                                    AND (withheld_at IS NULL OR user_id = auth.uid())
-                                    AND (rating > 0 OR COALESCE(review, '') <> '')) ELSE 0 END,
-    'watchlist_count', CASE WHEN public.can_view_user_data(p_user_id)
+    -- A piece the house withholds is counted for its author alone (H-B10). The member's records are
+    -- read once for both of their counts, and each question of the caller is asked once a call (an
+    -- InitPlan each), never once a row.
+    'logs_count',      CASE WHEN me.open THEN mine.logs ELSE 0 END,
+    'ledger_count',    CASE WHEN me.open THEN mine.ledger ELSE 0 END,
+    'watchlist_count', CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM watchlists WHERE user_id = p_user_id) ELSE 0 END,
-    'vault_count',     CASE WHEN public.can_view_user_data(p_user_id)
+    'vault_count',     CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM physical_archive WHERE user_id = p_user_id) ELSE 0 END,
-    'lists_count',     CASE WHEN public.can_view_user_data(p_user_id)
+    'lists_count',     CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM lists WHERE user_id = p_user_id
-                                    AND ((is_private = false AND withheld_at IS NULL) OR user_id = auth.uid())) ELSE 0 END,
+                                    AND ((is_private = false AND withheld_at IS NULL) OR user_id = me.id)) ELSE 0 END,
     -- Across a block the follows rule shows none of the member's follows, so none are counted.
     'followers_count', CASE WHEN me.across THEN 0 ELSE
                          (SELECT COUNT(*) FROM interactions i WHERE i.target_user_id = p_user_id AND i.type = 'follow'
@@ -707,9 +707,15 @@ CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS jso
                          (SELECT COUNT(*) FROM interactions i WHERE i.user_id = p_user_id AND i.type = 'follow'
                             AND NOT COALESCE(i.target_user_id = ANY (me.hidden), false)) END
   )
-  FROM (SELECT public.hidden_authors() AS hidden,
-               COALESCE(auth.uid() IS DISTINCT FROM p_user_id
-                        AND public.a_block_stands_between(auth.uid(), p_user_id), false) AS across) me;
+  FROM (SELECT (SELECT auth.uid()) AS id,
+               (SELECT private.hidden_authors()) AS hidden,
+               (SELECT private.can_view_user_data(p_user_id)) AS open,
+               (SELECT COALESCE(auth.uid() IS DISTINCT FROM p_user_id
+                        AND public.a_block_stands_between(auth.uid(), p_user_id), false)) AS across) me
+  CROSS JOIN LATERAL (
+    SELECT count(*) AS logs, count(*) FILTER (WHERE rating > 0 OR COALESCE(review, '') <> '') AS ledger
+      FROM logs WHERE me.open AND user_id = p_user_id AND (withheld_at IS NULL OR user_id = me.id)
+  ) mine;
 $$;
 
 -- As live-schema left it, but a withheld log counts in a member’s figures for its author alone (H-B10).
@@ -719,7 +725,7 @@ CREATE OR REPLACE FUNCTION public.get_public_profile_analytics(p_user_id uuid) R
     SET search_path TO 'public', 'pg_temp'
     AS $_$
   SELECT CASE
-    WHEN auth.uid() IS NULL OR NOT public.can_view_user_data(p_user_id)
+    WHEN auth.uid() IS NULL OR NOT private.can_view_user_data(p_user_id)
       THEN '{"error": "forbidden"}'::jsonb
     ELSE (
       WITH user_logs AS MATERIALIZED (
@@ -821,7 +827,7 @@ CREATE OR REPLACE FUNCTION public.get_taste_profile(p_user_id uuid) RETURNS json
 DECLARE
   result JSON;
 BEGIN
-  IF NOT public.can_view_user_data(p_user_id) THEN
+  IF NOT private.can_view_user_data(p_user_id) THEN
     RETURN json_build_object('error', 'forbidden');
   END IF;
 
@@ -921,7 +927,7 @@ DECLARE
   v_months JSON := '[]'::json;
 BEGIN
   -- The check the other two functions already had. This one had none.
-  IF NOT public.can_view_user_data(p_user_id) THEN
+  IF NOT private.can_view_user_data(p_user_id) THEN
     RETURN json_build_object('error', 'forbidden');
   END IF;
 
@@ -1644,7 +1650,7 @@ BEGIN
   IF COALESCE(p_pattern, '') = '' THEN
     RETURN;
   END IF;
-  v_hidden := COALESCE((SELECT public.hidden_authors()), '{}'::uuid[]);
+  v_hidden := COALESCE((SELECT private.hidden_authors()), '{}'::uuid[]);
 
   -- 1. The members the handle finds.
   IF v_handle IS NOT NULL THEN
@@ -1669,7 +1675,7 @@ BEGIN
                   OR (v_many AND EXISTS (SELECT 1 FROM public.profiles pa
                                           WHERE pa.id = r.user_id AND pa.username ILIKE v_handle ESCAPE '\')))
              AND NOT (r.user_id = ANY (v_hidden))
-             AND (r.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR public.can_view_user_data(r.user_id))
+             AND (r.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR private.can_view_user_data(r.user_id))
            ORDER BY r.created_at DESC, r.id DESC
            LIMIT v_limit) w;
   IF COALESCE(cardinality(v_page), 0) >= v_limit THEN
@@ -1696,7 +1702,7 @@ BEGIN
               JOIN public.profiles p ON p.id = m.user_id
              WHERE (m.created_at, m.id) < (v_at, v_id)
                AND NOT (m.user_id = ANY (v_hidden))
-               AND (m.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR public.can_view_user_data(m.user_id))
+               AND (m.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR private.can_view_user_data(m.user_id))
              ORDER BY m.created_at DESC, m.id DESC
              LIMIT v_limit) w;
   ELSE
@@ -1714,7 +1720,7 @@ BEGIN
                     OR l.user_id = ANY (v_authors)
                     OR (v_many AND p.username ILIKE v_handle ESCAPE '\'))
                AND NOT (l.user_id = ANY (v_hidden))
-               AND (l.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR public.can_view_user_data(l.user_id))
+               AND (l.user_id = v_me OR NOT COALESCE(p.is_social_private, false) OR private.can_view_user_data(l.user_id))
              ORDER BY (l.created_at + interval '0 seconds') DESC, l.id DESC
              LIMIT v_limit) w;
   END IF;
@@ -1753,7 +1759,7 @@ BEGIN
   IF COALESCE(p_pattern, '') = '' THEN
     RETURN;
   END IF;
-  v_hidden := COALESCE((SELECT public.hidden_authors()), '{}'::uuid[]);
+  v_hidden := COALESCE((SELECT private.hidden_authors()), '{}'::uuid[]);
 
   -- 1. Counted by the trigram indexes, to 1,000.
   IF v_pieces THEN
@@ -1779,7 +1785,7 @@ BEGIN
              WHERE NOT (m.user_id = ANY (v_hidden))
                AND (m.user_id = v_me
                     OR (p.id IS NOT NULL AND NOT COALESCE(p.is_social_private, false))
-                    OR public.can_view_user_data(m.user_id))
+                    OR private.can_view_user_data(m.user_id))
              ORDER BY m.created_at DESC, m.id DESC
              LIMIT v_limit) w;
   ELSE
@@ -1794,7 +1800,7 @@ BEGIN
                AND NOT (l.user_id = ANY (v_hidden))
                AND (l.user_id = v_me
                     OR (p.id IS NOT NULL AND NOT COALESCE(p.is_social_private, false))
-                    OR public.can_view_user_data(l.user_id))
+                    OR private.can_view_user_data(l.user_id))
              ORDER BY l.created_at DESC, l.id DESC
              LIMIT v_limit) w;
   END IF;
@@ -2117,7 +2123,7 @@ RETURNS TABLE(log_id uuid, viewing_id uuid, film_id integer, day date, rating nu
   SELECT l.id, l.viewing_id, l.film_id, l.watched_date, l.rating
     FROM public.logs l
    WHERE l.user_id = p_user_id
-     AND (l.withheld_at IS NULL OR l.user_id = auth.uid())  -- withheld: its author's alone (H-B10)
+     AND (l.withheld_at IS NULL OR l.user_id = (SELECT auth.uid()))  -- withheld: its author's alone (H-B10)
   UNION ALL
   SELECT l.id,
          CASE WHEN pg_input_is_valid(e->>'viewingId', 'uuid') THEN (e->>'viewingId')::uuid END,
@@ -2130,7 +2136,7 @@ RETURNS TABLE(log_id uuid, viewing_id uuid, film_id integer, day date, rating nu
    CROSS JOIN LATERAL jsonb_array_elements(
            CASE WHEN jsonb_typeof(l.viewing_history) = 'array' THEN l.viewing_history ELSE '[]'::jsonb END) AS e
    WHERE l.user_id = p_user_id
-     AND (l.withheld_at IS NULL OR l.user_id = auth.uid())  -- withheld: its author's alone (H-B10)
+     AND (l.withheld_at IS NULL OR l.user_id = (SELECT auth.uid()))  -- withheld: its author's alone (H-B10)
      AND jsonb_typeof(e) = 'object';
 $$;
 
@@ -2140,7 +2146,7 @@ CREATE OR REPLACE FUNCTION public.get_community_feed_auth_cursor(p_limit integer
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT private.hidden_authors() AS hidden)
+  WITH me AS (SELECT (SELECT private.hidden_authors()) AS hidden)
   SELECT
     l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
     l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
@@ -2157,7 +2163,7 @@ CREATE OR REPLACE FUNCTION public.get_community_feed_auth_cursor(p_limit integer
     END AS critique_count,
     (auth.uid() IS NOT NULL AND EXISTS (
       SELECT 1 FROM interactions im
-       WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
+       WHERE im.target_log_id = l.id AND im.user_id = (SELECT auth.uid()) AND im.type = 'endorse_log'
     )) AS certified,
     l.alt_poster, l.physical_media
   FROM logs l

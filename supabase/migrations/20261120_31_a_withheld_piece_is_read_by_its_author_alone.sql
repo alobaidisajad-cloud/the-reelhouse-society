@@ -10,6 +10,8 @@
 --   4. The old Dispatch's tables are read by no member, and a page's picture held as evidence is never
 --      deleted by its member (avatars_held_as_evidence, made only where the train's role rules
 --      storage.objects, as production's postgres does) (review round 14).
+--   5. A critique's rule asks its filing by its key, and the marks' rule asks no piece a mark does not
+--      name (the load lab, round 14's train).
 --   After 20261120_19 (the salon's rule is widened again from it) and 20261120_30, before 20261120_32
 --   (which writes the columns). Every column is empty, so each rule reads as before until a piece is
 --   withheld; each table is held only for the instant its catalogue changes, to the end of this car.
@@ -159,21 +161,23 @@ ALTER POLICY list_comments_hide_blocked ON public.list_comments
      AND ((withheld_at IS NULL) OR (user_id = ( SELECT auth.uid() AS uid)))
      AND (NOT private.a_withheld_piece_holds_it('list'::text, list_id)));
 -- As the live schema has it, a withheld critique left out too, and a critique of a filing the reader
--- cannot read (withheld, or by one hidden from them) with its filing.
+-- cannot read (withheld, or by one hidden from them) with its filing. The filing is asked by its key, one
+-- row: as EXISTS, the planner hashed every filing the reader may read (40,000, 16 ms) for a page of 30.
 -- add-only (3): it only fixes: every critique of a filing read as before but one withheld, or under a filing withheld replayed as the members themselves (H-B10.locks and H-B10 rehearsals)
 ALTER POLICY critiques_block ON public.dispatch_comments
   USING ((NOT COALESCE((user_id = ANY (( SELECT private.hidden_authors() AS hidden_authors)::uuid[])), false))
      AND ((withheld_at IS NULL) OR (user_id = ( SELECT auth.uid() AS uid)))
-     AND ((post_id IS NULL) OR (EXISTS ( SELECT 1 FROM public.dispatch_posts p WHERE (p.id = dispatch_comments.post_id)))));
+     AND ((post_id IS NULL) OR COALESCE(( SELECT true AS readable FROM public.dispatch_posts p WHERE (p.id = dispatch_comments.post_id)), false)));
 -- A mark on a withheld log or stack goes with its piece: read by the piece's author alone meanwhile.
 -- Restrictive, beside the marks' one reading rule (interactions_select_authorized, which it narrows only).
+-- A piece a mark does not name is not asked of (no piece of no id is withheld).
 -- add-only (1): no shipped client uses it: a rule this piece makes, dropped first only so the piece runs again (TestFlight build 41 and the website checked)
 DROP POLICY IF EXISTS interactions_withheld_marks ON public.interactions;
 -- add-only (3): it only fixes: every interaction read as before but a mark on a piece the house withholds, read by its author alone replayed as the members themselves (H-B10.locks and H-B10 rehearsals)
 CREATE POLICY interactions_withheld_marks ON public.interactions AS RESTRICTIVE FOR SELECT TO authenticated, anon
   USING (((type <> ALL (ARRAY['endorse_log'::text, 'endorse_list'::text]))
-       OR ((NOT private.a_withheld_piece_holds_it('log'::text, target_log_id))
-           AND (NOT private.a_withheld_piece_holds_it('list'::text, target_list_id)))));
+       OR ((NOT ((target_log_id IS NOT NULL) AND private.a_withheld_piece_holds_it('log'::text, target_log_id)))
+           AND (NOT ((target_list_id IS NOT NULL) AND private.a_withheld_piece_holds_it('list'::text, target_list_id))))));
 
 -- A critique the house withholds takes no certification meanwhile, as its filing does not: the critique is
 -- asked as the certifier reads it (withheld, or of a filing they cannot read, it is not theirs to mark).

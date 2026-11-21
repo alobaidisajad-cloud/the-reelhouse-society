@@ -9,6 +9,9 @@
 --      never serves (private), public.can_view_user_data staying for the house alone (review round 14).
 --   3. The seats a block stands between today are let go once, here, as a new block's are (review
 --      round 14).
+--   4. The house's functions that asked the test by its public name (audience_allows, get_taste_match,
+--      get_profile_counts) ask private.can_view_user_data, and each question of a member's counts is
+--      asked once a call (the load lab, round 14's train).
 --   Functions and the one-time pass (row locks on those seats alone); no table is locked whole. The
 --   rules that read private.* are the car 20261120_04, the follows' index 20261120_05.
 -- Undo: mobile/supabase/migrations-down/20261120_03_a_block_closes_a_file.sql
@@ -140,18 +143,19 @@ CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS jso
     SET search_path TO 'public', 'pg_temp'
     AS $$
   SELECT json_build_object(
-    'logs_count',      CASE WHEN public.can_view_user_data(p_user_id)
+    -- Each question of the caller asked once a call (an InitPlan each), never once a row.
+    'logs_count',      CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id) ELSE 0 END,
-    'ledger_count',    CASE WHEN public.can_view_user_data(p_user_id)
+    'ledger_count',    CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM logs WHERE user_id = p_user_id
                                     AND (rating > 0 OR COALESCE(review, '') <> '')) ELSE 0 END,
-    'watchlist_count', CASE WHEN public.can_view_user_data(p_user_id)
+    'watchlist_count', CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM watchlists WHERE user_id = p_user_id) ELSE 0 END,
-    'vault_count',     CASE WHEN public.can_view_user_data(p_user_id)
+    'vault_count',     CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM physical_archive WHERE user_id = p_user_id) ELSE 0 END,
-    'lists_count',     CASE WHEN public.can_view_user_data(p_user_id)
+    'lists_count',     CASE WHEN me.open
                             THEN (SELECT COUNT(*) FROM lists WHERE user_id = p_user_id
-                                    AND (is_private = false OR user_id = auth.uid())) ELSE 0 END,
+                                    AND (is_private = false OR user_id = (SELECT auth.uid()))) ELSE 0 END,
     -- Across a block the follows rule shows none of the member's follows, so none are counted.
     'followers_count', CASE WHEN me.across THEN 0 ELSE
                          (SELECT COUNT(*) FROM interactions i WHERE i.target_user_id = p_user_id AND i.type = 'follow'
@@ -160,9 +164,10 @@ CREATE OR REPLACE FUNCTION public.get_profile_counts(p_user_id uuid) RETURNS jso
                          (SELECT COUNT(*) FROM interactions i WHERE i.user_id = p_user_id AND i.type = 'follow'
                             AND NOT COALESCE(i.target_user_id = ANY (me.hidden), false)) END
   )
-  FROM (SELECT public.hidden_authors() AS hidden,
-               COALESCE(auth.uid() IS DISTINCT FROM p_user_id
-                        AND public.a_block_stands_between(auth.uid(), p_user_id), false) AS across) me;
+  FROM (SELECT (SELECT private.hidden_authors()) AS hidden,
+               (SELECT private.can_view_user_data(p_user_id)) AS open,
+               (SELECT COALESCE(auth.uid() IS DISTINCT FROM p_user_id
+                        AND public.a_block_stands_between(auth.uid(), p_user_id), false)) AS across) me;
 $$;
 
 -- ── A member who was blocked meets the blocker as no one (review round 14) ──────────────────────────
@@ -234,3 +239,34 @@ DELETE FROM public.lounge_members m
    AND m.status IN ('approved', 'muted', 'pending')
    AND ((m.user_id = b.blocked_id AND l.creator_id = b.blocker_id)
      OR (m.user_id = b.blocker_id AND l.creator_id = b.blocked_id));
+
+-- The house's own functions that asked the rule by its public name (two calls, each with its own
+-- settings, where one is the rule): each asks private.can_view_user_data, otherwise as production holds it.
+-- add-only (3): it only fixes: audience_allows asks private.can_view_user_data where the rule lives, one call where the public name made two, every answer as before; replayed as the members themselves
+CREATE OR REPLACE FUNCTION public.audience_allows(p_actor uuid, p_owner uuid, p_pref text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT CASE
+    WHEN p_owner IS NULL THEN TRUE
+    WHEN auth.uid() = p_owner THEN TRUE
+    WHEN public.a_block_stands_between(auth.uid(), p_owner) THEN FALSE
+    WHEN NOT private.can_view_user_data(p_owner) THEN FALSE
+    WHEN COALESCE(p_pref, 'everyone') = 'everyone' THEN TRUE
+    WHEN COALESCE(p_pref, 'everyone') = 'nobody' THEN FALSE
+    ELSE EXISTS (SELECT 1 FROM public.interactions
+                 WHERE type = 'follow' AND user_id = auth.uid() AND target_user_id = p_owner)
+  END;
+$$;
+
+-- add-only (3): it only fixes: get_taste_match asks private.can_view_user_data where the rule lives, one call where the public name made two, every answer as before; replayed as the members themselves
+CREATE OR REPLACE FUNCTION public.get_taste_match(p_user_id uuid) RETURNS jsonb
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT CASE
+    WHEN auth.uid() IS NULL OR NOT private.can_view_user_data(p_user_id)
+      THEN '{"error": "forbidden"}'::jsonb
+    ELSE jsonb_build_object('mine', public.taste_shape(auth.uid()), 'theirs', public.taste_shape(p_user_id))
+  END;
+$$;

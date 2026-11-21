@@ -2,6 +2,63 @@
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
 
+-- The house's own functions as production holds them, asking public.hidden_authors.
+CREATE OR REPLACE FUNCTION public.ballot_tally(p_post uuid) RETURNS jsonb
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT CASE WHEN EXISTS (
+      SELECT 1 FROM public.dispatch_posts p
+       WHERE p.id = p_post
+         AND p.kind = 'ballot'
+         AND p.is_published AND p.withheld_at IS NULL AND p.ended_at IS NULL
+         AND NOT COALESCE(p.user_id = ANY ((SELECT public.hidden_authors())::uuid[]), false)
+         -- Voted in, or closed: until then the result is not the reader's to see.
+         AND (p.closes_at <= now()
+              OR EXISTS (SELECT 1 FROM public.dispatch_votes v
+                          WHERE v.post_id = p.id AND v.user_id = auth.uid())))
+    THEN (
+      -- sum(t.n), not count(*): `t` is one row per option, as freeze_closed_ballots counts.
+      SELECT jsonb_build_object(
+               'total', COALESCE(sum(t.n), 0),
+               'counts', COALESCE(jsonb_object_agg(t.option_index, t.n)
+                                  FILTER (WHERE t.option_index IS NOT NULL), '{}'::jsonb))
+        FROM (SELECT option_index, count(*) AS n FROM public.dispatch_votes
+               WHERE post_id = p_post GROUP BY option_index) t)
+  END
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_marks_ledger() RETURNS json
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  WITH me AS MATERIALIZED (
+    -- The member asking, and whether the logs' read rule would hide their own rows from them.
+    SELECT (SELECT auth.uid()) AS id,
+           COALESCE((SELECT auth.uid()) = ANY ((SELECT public.hidden_authors())::uuid[]), false) AS hidden
+  )
+  SELECT json_build_object(
+    -- One pass over the member's logs; every column is gathered in the same order, so the i-th of each
+    -- is the same log.
+    'logs', (SELECT json_build_object(
+               'id', COALESCE(array_agg(l.id), '{}'),
+               'film_id', COALESCE(array_agg(l.film_id), '{}'),
+               'film_title', COALESCE(array_agg(l.film_title), '{}'),
+               'poster_path', COALESCE(array_agg(l.poster_path), '{}'),
+               'year', COALESCE(array_agg(l.year), '{}'),
+               'status', COALESCE(array_agg(l.status), '{}'),
+               'rating', COALESCE(array_agg(l.rating), '{}'),
+               'view_count', COALESCE(array_agg(l.view_count), '{}'),
+               'watched_date', COALESCE(array_agg(l.watched_date), '{}'))
+               FROM public.logs l
+              WHERE l.user_id = me.id AND NOT me.hidden),
+    'saved', (SELECT to_json(COALESCE(array_agg(w.film_id), '{}'))
+                FROM public.watchlists w
+               WHERE w.user_id = me.id AND NOT me.hidden))
+    FROM me
+   WHERE me.id IS NOT NULL;
+$$;
+
 -- ── H-A5 undone · hidden_authors and is_hidden_by back in public, open to every member again ──
 -- The six callers as they stood, asking public.*.
 

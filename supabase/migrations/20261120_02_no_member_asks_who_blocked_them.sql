@@ -8,7 +8,8 @@
 --      grant to a member or the visitor (review round 14).
 --   3. The house's one function that asked the rule seat by seat (get_salon_member_faces) asks it once,
 --      and search_members runs as the house, hiding whom the rule hides itself, so the profiles rule of
---      20261120_04 leaves its words their indexes (the load lab, round 14's train).
+--      20261120_04 leaves its words their indexes; ballot_tally and get_marks_ledger ask private.*, and
+--      every function here asks who is hidden once a call (the load lab, round 14's train).
 --   First of the round: every later car's rule or member-run function calls private.*. Functions and
 --   a schema only; the functions are moved, not copied, so no table or rule is touched.
 -- Undo: mobile/supabase/migrations-down/20261120_02_no_member_asks_who_blocked_them.sql
@@ -127,7 +128,7 @@ CREATE OR REPLACE FUNCTION public.critiques_seen(l public.logs) RETURNS integer
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT private.hidden_authors() AS hidden)
+  WITH me AS (SELECT (SELECT private.hidden_authors()) AS hidden)
   SELECT CASE
     WHEN COALESCE(cardinality(me.hidden), 0) = 0
       THEN COALESCE((SELECT c.critique_count FROM public.log_counts c WHERE c.log_id = l.id), 0)
@@ -143,7 +144,7 @@ CREATE OR REPLACE FUNCTION public.dispatch_archive_films(p_pattern text)
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT private.hidden_authors() AS hidden),
+  WITH me AS (SELECT (SELECT private.hidden_authors()) AS hidden),
   hits AS (
     SELECT p.subject_id, p.subject_title, p.subject_sub, p.subject_image, p.created_at, p.id
       FROM public.dispatch_posts p CROSS JOIN me
@@ -175,7 +176,7 @@ CREATE OR REPLACE FUNCTION public.get_community_feed_auth_cursor(p_limit integer
     LANGUAGE sql STABLE
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT private.hidden_authors() AS hidden)
+  WITH me AS (SELECT (SELECT private.hidden_authors()) AS hidden)
   SELECT
     l.id, l.film_id, l.film_title, l.poster_path, l.rating, l.review,
     l.drop_cap, l.status, l.abandoned_reason, l.created_at, l.year,
@@ -191,7 +192,7 @@ CREATE OR REPLACE FUNCTION public.get_community_feed_auth_cursor(p_limit integer
     END AS critique_count,
     (auth.uid() IS NOT NULL AND EXISTS (
       SELECT 1 FROM interactions im
-       WHERE im.target_log_id = l.id AND im.user_id = auth.uid() AND im.type = 'endorse_log'
+       WHERE im.target_log_id = l.id AND im.user_id = (SELECT auth.uid()) AND im.type = 'endorse_log'
     )) AS certified,
     l.alt_poster, l.physical_media
   FROM logs l
@@ -349,7 +350,7 @@ CREATE OR REPLACE FUNCTION public.get_salon_member_faces(p_lounge_ids uuid[])
   LANGUAGE sql STABLE SECURITY DEFINER
   SET search_path TO 'public', 'pg_temp'
   AS $$
-  WITH reader AS (SELECT private.hidden_authors() AS hidden)
+  WITH reader AS (SELECT (SELECT private.hidden_authors()) AS hidden)
   SELECT r.id, f.username, f.avatar_url, f.rn::integer
   FROM reader
   CROSS JOIN (SELECT DISTINCT x.id FROM unnest(p_lounge_ids) AS x(id)) r
@@ -477,4 +478,64 @@ BEGIN
     v_not := v_not || ' AND NOT COALESCE(' || v_tests[v_tier + 1] || ', false)';
   END LOOP;
 END;
+$$;
+
+-- The house's own functions that asked the rule by its public name (two calls, each with its own
+-- settings, where one is the rule): each asks private.hidden_authors, otherwise as production holds it.
+-- add-only (3): it only fixes: ballot_tally asks private.hidden_authors where the rule lives, one call where the public name made two, every answer as before; replayed as the members themselves
+CREATE OR REPLACE FUNCTION public.ballot_tally(p_post uuid) RETURNS jsonb
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  SELECT CASE WHEN EXISTS (
+      SELECT 1 FROM public.dispatch_posts p
+       WHERE p.id = p_post
+         AND p.kind = 'ballot'
+         AND p.is_published AND p.withheld_at IS NULL AND p.ended_at IS NULL
+         AND NOT COALESCE(p.user_id = ANY ((SELECT private.hidden_authors())::uuid[]), false)
+         -- Voted in, or closed: until then the result is not the reader's to see.
+         AND (p.closes_at <= now()
+              OR EXISTS (SELECT 1 FROM public.dispatch_votes v
+                          WHERE v.post_id = p.id AND v.user_id = auth.uid())))
+    THEN (
+      -- sum(t.n), not count(*): `t` is one row per option, as freeze_closed_ballots counts.
+      SELECT jsonb_build_object(
+               'total', COALESCE(sum(t.n), 0),
+               'counts', COALESCE(jsonb_object_agg(t.option_index, t.n)
+                                  FILTER (WHERE t.option_index IS NOT NULL), '{}'::jsonb))
+        FROM (SELECT option_index, count(*) AS n FROM public.dispatch_votes
+               WHERE post_id = p_post GROUP BY option_index) t)
+  END
+$$;
+
+-- add-only (3): it only fixes: get_marks_ledger asks private.hidden_authors where the rule lives, one call where the public name made two, every answer as before; replayed as the members themselves
+CREATE OR REPLACE FUNCTION public.get_marks_ledger() RETURNS json
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public', 'pg_temp'
+    AS $$
+  WITH me AS MATERIALIZED (
+    -- The member asking, and whether the logs' read rule would hide their own rows from them.
+    SELECT (SELECT auth.uid()) AS id,
+           COALESCE((SELECT auth.uid()) = ANY ((SELECT private.hidden_authors())::uuid[]), false) AS hidden
+  )
+  SELECT json_build_object(
+    -- One pass over the member's logs; every column is gathered in the same order, so the i-th of each
+    -- is the same log.
+    'logs', (SELECT json_build_object(
+               'id', COALESCE(array_agg(l.id), '{}'),
+               'film_id', COALESCE(array_agg(l.film_id), '{}'),
+               'film_title', COALESCE(array_agg(l.film_title), '{}'),
+               'poster_path', COALESCE(array_agg(l.poster_path), '{}'),
+               'year', COALESCE(array_agg(l.year), '{}'),
+               'status', COALESCE(array_agg(l.status), '{}'),
+               'rating', COALESCE(array_agg(l.rating), '{}'),
+               'view_count', COALESCE(array_agg(l.view_count), '{}'),
+               'watched_date', COALESCE(array_agg(l.watched_date), '{}'))
+               FROM public.logs l
+              WHERE l.user_id = me.id AND NOT me.hidden),
+    'saved', (SELECT to_json(COALESCE(array_agg(w.film_id), '{}'))
+                FROM public.watchlists w
+               WHERE w.user_id = me.id AND NOT me.hidden))
+    FROM me
+   WHERE me.id IS NOT NULL;
 $$;

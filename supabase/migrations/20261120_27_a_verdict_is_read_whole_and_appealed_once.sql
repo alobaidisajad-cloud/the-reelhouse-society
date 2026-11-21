@@ -423,7 +423,7 @@ CREATE FUNCTION public.get_moderation_history_for_users(p_user_ids uuid[], p_per
     WHERE m.target_user_id = ANY(COALESCE(p_user_ids, ARRAY[]::uuid[]))
       AND EXISTS (
         SELECT 1 FROM public.profiles p
-        WHERE p.id = auth.uid() AND p.role = 'admin'
+        WHERE p.id = (SELECT auth.uid()) AND p.role = 'admin'
       )
   ) r
   WHERE r.rn <= LEAST(GREATEST(COALESCE(p_per_user, 5), 0), 20)

@@ -6,6 +6,8 @@
 --      stands with either end, on the functions of 20261120_03 (review round 14).
 --   2. To the member blocked, the blocker's profile, salons, seats, reactions and old dossiers are rows
 --      that do not exist: one restrictive rule on each table (review round 14).
+--   3. The follows rule asks each of its tests once a row, the reader's id once a statement (the load
+--      lab, round 14's train).
 --   Alone, so interactions, profiles, lounges, lounge_members, lounge_message_reactions and the two
 --   old dossier tables are each held only for the instant its rule changes, to the end of this car.
 -- Undo: mobile/supabase/migrations-down/20261120_04_a_follow_is_not_read_across_a_block.sql
@@ -23,13 +25,19 @@ SET LOCAL statement_timeout = '30s';
 --   and a request stays its two members' alone, as before. The rule names the tests where they live
 --   (private): public.can_view_user_data is the house's alone, and no member may run it.
 
+--   Each test is asked once a row, in the one order that answers: the reader's id once a statement (an
+--   InitPlan); the first end's file; then the other end's (a mark on a log or stack has none: no file
+--   is open there, so it is not asked) or the block. As "(both open) or (either open and no block)".
 -- add-only (3): it only fixes: the reads replayed as the members themselves, every follow as before and none with a member across a block at either end (H-A2.locks rehearsal)
 ALTER POLICY interactions_select_authorized ON public.interactions
-  USING (((auth.uid() = user_id) OR (auth.uid() = target_user_id)
+  USING (((( SELECT auth.uid() AS uid) = user_id) OR (( SELECT auth.uid() AS uid) = target_user_id)
           OR ((type <> 'follow_request'::text)
-              AND ((private.can_view_user_data(user_id) AND private.can_view_user_data(target_user_id))
-                   OR ((private.can_view_user_data(user_id) OR private.can_view_user_data(target_user_id))
-                       AND private.no_block_stands_with(user_id, target_user_id))))));
+              AND CASE WHEN private.can_view_user_data(user_id)
+                       THEN (((target_user_id IS NOT NULL) AND private.can_view_user_data(target_user_id))
+                             OR private.no_block_stands_with(user_id, target_user_id))
+                       ELSE ((target_user_id IS NOT NULL) AND private.can_view_user_data(target_user_id)
+                             AND private.no_block_stands_with(user_id, target_user_id))
+                  END)));
 
 -- ── The blocker is no one to the member they blocked (review round 14) ──────────────────────────────
 --   To the member blocked, the blocker's profile row, salons, seats, reactions and old

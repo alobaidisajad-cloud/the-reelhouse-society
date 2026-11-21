@@ -6,6 +6,8 @@
 --      salon's unread count and last word leave out such a message as they leave out a hidden member's
 --      own (review round 14).
 --   2. The messages already written are named once, here (review round 14).
+--   3. The unread count reads a room from the member's last read, and both reads ask who is hidden
+--      once a call (the load lab, round 14's train).
 --   Functions and the one-time pass, which writes only the replies and cards that carry another's
 --   words; no table is locked whole. The column and rule are 20261120_19's.
 -- Undo: mobile/supabase/migrations-down/20261120_20_a_hidden_members_words_stay_hidden.sql
@@ -110,7 +112,7 @@ CREATE OR REPLACE FUNCTION public.get_lounge_unread_counts() RETURNS TABLE(loung
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT auth.uid() AS id, public.hidden_authors() AS hidden),
+  WITH me AS (SELECT auth.uid() AS id, (SELECT private.hidden_authors()) AS hidden),
   rooms AS (
     SELECT lm.lounge_id, lm.last_read_at, (NOT l.is_private OR lm.status IN ('approved', 'muted')) AS readable
       FROM me
@@ -165,7 +167,7 @@ CREATE OR REPLACE FUNCTION public.get_salon_last_words(p_lounge_ids uuid[]) RETU
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
     AS $$
-  WITH me AS (SELECT auth.uid() AS id, public.hidden_authors() AS hidden)
+  WITH me AS (SELECT auth.uid() AS id, (SELECT private.hidden_authors()) AS hidden)
   SELECT l.id, newest.created_at
     FROM me
     JOIN public.lounges l ON l.id = ANY (p_lounge_ids[1:100])
