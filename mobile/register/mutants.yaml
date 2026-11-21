@@ -1223,8 +1223,8 @@ mutants:
     source: shape
     edits:
       - file: src/stores/lounge.ts
-        find: "        .select(MESSAGE_COLUMNS)\n        .eq('lounge_id', loungeId)\n        .or("
-        replace: "        .select(MESSAGE_COLUMNS.split(', lounge_message_reactions')[0])\n        .eq('lounge_id', loungeId)\n        .or("
+        find: "        .select(MESSAGE_COLUMNS)\n        .eq('lounge_id', loungeId)\n        .or(`created_at.lt."
+        replace: "        .select(MESSAGE_COLUMNS.split(', lounge_message_reactions')[0])\n        .eq('lounge_id', loungeId)\n        .or(`created_at.lt."
     proof: { file: src/stores/__tests__/aRoomHoldsOnlyItsOwnWords.test.ts, test: "a page read on scrolling up brings its reactions too" }
 
   - id: shape-first-page-unordered-by-id
@@ -9673,3 +9673,35 @@ mutants:
         find: "!['BK', 'BY'].every((who)"
         replace: "!['BK', 'BY'].some((who)"
     proof: { file: e2e/__tests__/attack.test.ts, test: "asks every function across a block both ways, or says why its answer holds no other member" }
+
+  - id: past-the-follow-list-walked-page-by-page
+    class: SPEED-a-launch-read-walks-page-by-page
+    source: past
+    commit: ad0fffe7
+    files: [src/stores/domain/socialSlice.ts]
+    proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "walks no read of the house page by page at launch, and every walk away from it is judged" }
+
+  - id: past-a-salon-caught-up-page-by-page
+    class: SPEED-a-launch-read-walks-page-by-page
+    source: past
+    commit: d5dd8891
+    files: [src/stores/lounge.ts]
+    proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "walks no read of the house page by page at launch, and every walk away from it is judged" }
+
+  - id: shape-the-walk-finder-reads-no-while
+    class: SPEED-a-launch-read-walks-page-by-page
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts
+        find: "ts.isForInStatement(n) || ts.isWhileStatement(n) || ts.isDoStatement(n);"
+        replace: "ts.isForInStatement(n) || ts.isDoStatement(n);"
+    proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "says NO to a loop that awaits a read of the house, built in place or held and awaited" }
+
+  - id: shape-the-walk-finder-follows-no-import
+    class: SPEED-a-launch-read-walks-page-by-page
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts
+        find: "    return p.imports.flatMap((f) => (byFile.get(f)?.units ?? []).filter((u) => u.name === name));\n"
+        replace: "    return [];\n"
+    proof: { file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "knows a walk launch reaches through the functions it calls, and one only a screen opens" }

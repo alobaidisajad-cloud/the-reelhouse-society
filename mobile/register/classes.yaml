@@ -4040,6 +4040,29 @@ classes:
     fix: "e2e/load/plan-shape.cjs judges each busy read's plans (every statement inside it, through auto_explain) by the rows it reads of the tables that grow with the house: no growing table read whole past 1,000 rows, all within its bound (20,000, or its probe's own with why), and, measured at two sizes, no read whose rows grow with the house; probe.mjs fails the Load run on any. The first read it refused: the board's unread count read every unread notice of the member (the load house's celebrity, 50,000 at each open); 20261122_04 counts to a thousand and says whether there are more, and the phone holds it as a floor, said \"a thousand or more\" (rehearsal the_bell_counts_to_a_thousand_rehearsal.sql; mutants shape-the-bell-counts-every-unread-notice, shape-the-bell-says-a-floor-as-a-number)"
     places: [none]
 
+  - id: SPEED-a-launch-read-walks-page-by-page
+    title: "A read of the house walked its rows a page at a time, each page waiting on the last: at launch the follow list was read a thousand at a time, five trips for a member who follows 5,000 and never held whole past 10,000; a salon's catch-up read what it missed a hundred at a time, four trips for 350 words"
+    seriousness: behaviour
+    area: speed
+    status: OPEN
+    count: 2
+    source: { kind: reviewer, ref: "stage C, the kinds pass (kind 13), 2026-11-22: a serial page walk at launch (readFollowing)" }
+    methods:
+      - { kind: static, file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "walks no read of the house page by page at launch, and every walk away from it is judged" }
+      - { kind: static, file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "says NO to a loop that awaits a read of the house, built in place or held and awaited" }
+      - { kind: static, file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "says NO to a loop that awaits a function that reads the house, in its own file or one it imports" }
+      - { kind: static, file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "says nothing of a loop that waits on nothing, writes alone, or picks a value" }
+      - { kind: static, file: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts, test: "knows a walk launch reaches through the functions it calls, and one only a screen opens" }
+      - { kind: running, file: src/stores/__tests__/theFollowListIsOneTrip.test.ts, test: "reads the whole list, past ten thousand, in one call and nothing else" }
+      - { kind: running, file: src/stores/__tests__/aSalonCatchesUpWithoutLosingAWord.test.ts, test: "what is newer than the newest held comes in one read, however much of the window it fills" }
+    fix: "the follow list is one read, get_my_follows (20261122_09, rehearsal the_follow_list_in_one_trip_rehearsal.sql), held whole however long (mutant past-the-follow-list-walked-page-by-page); a salon's catch-up reads its window in one trip (mutant past-a-salon-caught-up-page-by-page). A finder over every app file's syntax tree lists each loop that awaits a read of the house, itself or through a function it calls, and whether launch reaches it through the functions each launch file calls in its own file and the files it imports; a walk launch reaches fails unless it is no page walk (mutants shape-the-walk-finder-reads-no-while, shape-the-walk-finder-follows-no-import)"
+    sweep:
+      finder: src/utils/__tests__/aLaunchReadIsOneTrip.guard.test.ts
+      read: "every file of the app (universe appCode): every for, for-of, for-in, while and do loop that awaits, its reads of the house (a select on a chain that writes nothing, an rpc, or a call to a function that makes one), and the launch's reach from the bootstrapper, the root layout, the auth event's answer and the store's sign-in, sign-up and restore"
+      found: "11 walks: 3 reached by launch, 8 away from it. At launch: the follow list (readFollowing), fixed; the marks ledger (one read, once more only when a write overlapped it) and the offline queue's send (once more only when asked meanwhile), judged no page walk. Away: the salon's catch-up, fixed; a purchase's rank watch (five reads, 2.5 s apart), a linked stack made whole for editing, the archive import (three), the export and the Year in Cinema, judged with what opens each"
+      proofs: "planted text in the test; the follow list's page loop put back (past-the-follow-list-walked-page-by-page) and the catch-up's (past-a-salon-caught-up-page-by-page), each named; green with both fixed; the finder weakened two ways (shape-the-walk-finder-reads-no-while, shape-the-walk-finder-follows-no-import)"
+    places: [none]
+
   - id: STATE-a-session-leaves-what-it-kept
     title: "What a member's session kept on the phone (a key in its storage, the push token, the delivered notices, the error reporter's member) outlived the session that made it, because nothing listed it: the last import's receipt (the rows it made, for UNDO) stayed after the member signed out, though its module said it went at sign-out; a signed-out phone still pushed and kept its notices on the lock screen, and a closed account erased another member's kept work, each found alone (AUTH-a-signed-out-phone-still-pushed, STATE-a-members-notices-left-on-the-lock-screen, DATA-a-closed-account-erases-anothers-work)"
     seriousness: behaviour
