@@ -708,6 +708,17 @@
         "result": "position('{ref:logs}' in $1::text) > 0 AND position('{ref:logs@V}' in $1::text) = 0 AND position('{ref:logs@P}' in $1::text) = 0 AND position('{ref:logs@BK}' in $1::text) = 0" },
       { "name": "never the marks of a member across a block", "as": "members", "expect": "ok", "call": "public.get_marks_ledger()", "result": "position('{ref:logs@BK}' in $1::text) = 0 AND position('{ref:logs@BY}' in $1::text) = 0" }
     ] },
+    "get_my_follows": { "why": "The caller's own follow list in one read, for the phone at launch: whom they follow and whom they asked to follow, never another member's list; a visitor has none.", "cases": [
+      { "name": "one's own follow, never another member's", "as": "members", "expect": "ok",
+        "lay": { "interactions": { "id": "{new}", "user_id": "{uid@X1}", "target_user_id": "{uid@V}", "type": "follow" } },
+        "call": "public.get_my_follows()", "result": "($1->0->'following' ? '{username@V}') = ('{owner}' = '{uid@X1}')" },
+      { "name": "one's own request, never another member's", "as": "members", "expect": "ok",
+        "lay": { "interactions": { "id": "{new}", "user_id": "{uid@X1}", "target_user_id": "{uid@V}", "type": "follow_request" } },
+        "call": "public.get_my_follows()", "result": "($1->0->'requested' ? '{username@V}') = ('{owner}' = '{uid@X1}')" },
+      { "name": "never a follow across a block", "as": "members", "expect": "ok", "call": "public.get_my_follows()",
+        "result": "NOT ($1->0->'following' ?| ARRAY['{username@BK}', '{username@BY}']) AND NOT ($1->0->'requested' ?| ARRAY['{username@BK}', '{username@BY}'])" },
+      { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.get_my_follows()" }
+    ] },
     "get_moderation_history_for_users": { "why": "The house's record of its acts, for admins.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "an open member's", "as": "all", "expect": { "ok": "all" },
         "call": "public.get_moderation_history_for_users(ARRAY['{uid@V}']::uuid[], 5)",
