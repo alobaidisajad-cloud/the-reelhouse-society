@@ -6865,5 +6865,12 @@
     "proof": "m2",
     "commit": "759265fb00d2a5f92e6d39fa08a690e9a0fd5f19",
     "verdict": "caught"
+  },
+  {
+    "class": "CI-jest-started-without-its-environment",
+    "mutant": "shape-jest-run-untold",
+    "proof": "m3",
+    "commit": "a60a04581b86f6a1168e616a7abce6db948b44ea",
+    "verdict": "caught"
   }
 ]
