@@ -78,9 +78,11 @@ jest.mock('@/src/stores/auth', () => ({
 }));
 jest.mock('@/src/stores/notificationStore', () => ({
   useNotificationStore: (sel?: (s: unknown) => unknown) => {
-    const state = { unreadCount: 3, notifications: [] };
+    const state = { unreadCount: 3, _unreadCount: 3, _unreadMore: false, notifications: [] };
     return sel ? sel(state) : state;
   },
+  // The bell's words, as the store says them.
+  unreadSaid: jest.requireActual('@/src/stores/notificationStore').unreadSaid,
 }));
 jest.mock('react-native-safe-area-context', () => {
   const R = require('react');

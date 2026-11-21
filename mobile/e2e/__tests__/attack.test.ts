@@ -67,6 +67,7 @@ type Answers = {
   functions: { unjudged: string[]; gone: string[]; count: number };
   verdict: { total: number; killed: { id: string; by: string }[]; notApplied: string[]; living: string[]; stale: string[] };
   passes: boolean[];
+  across: string[]; acrossPlanted: string[][]; paced: string[];
 };
 
 const answers: Answers = (() => {
@@ -132,6 +133,23 @@ const answers: Answers = (() => {
         return [a.mutantsPass(true, clean), a.mutantsPass(false, clean), a.mutantsPass(true, { ...clean, notApplied: ['x'] }),
           a.mutantsPass(true, { ...clean, living: ['x'] }), a.mutantsPass(true, { ...clean, stale: ['x'] })];
       })(),
+      across: a.unaskedAcrossBlocks(matrix),
+      acrossPlanted: (() => {
+        const k = (call, more = {}) => ({ name: 'n', as: 'members', expect: 'ok', call, result: 'true', ...more });
+        const one = (cases, more = {}) => a.unaskedAcrossBlocks({ functions: { f: { why: 'w', cases, ...more } } });
+        return [
+          one([k("f('{uid@BK}')"), k("f('{uid@BY}')")]),
+          one([k("f('{uid@BK}')")]),
+          one([k("f('{uid@BK}')"), k("f('{uid@BY}')", { as: ['visitor'] })]),
+          one([k("f('{uid@BK}')"), k("f('{uid@BY}')", { result: undefined })]),
+          one([k("f('{uid@BK}')"), k("f('{uid@BY}')", { result: undefined, expect: 'error' })]),
+          one([k('f()')], { blocks: 'answers of the caller alone' }),
+        ];
+      })(),
+      paced: (() => {
+        const c = a.plan({ tables: {}, probes: [{ name: 'p', table: 't', as: ['free'], kind: 'insert', row: { id: '{new}' }, expect: 'refused', refusedWith: 'RH429' }] })[0];
+        return [a.judge(c, 'RH429 RATE_LIMITED'), a.judge(c, '42501 new row violates row-level security policy'), a.judge(c, 'rows:1')];
+      })(),
       columns: a.columnsOf(fs.readFileSync(${JSON.stringify(SNAPSHOT)}, 'utf8').replace(/\\r/g, '')).interactions,
       dated: [a.dated('interactions', { id: 'x' }, { interactions: ['id', 'created_at'] }).created_at,
         a.dated('interactions', { created_at: 'mine' }, { interactions: ['created_at'] }).created_at,
@@ -167,6 +185,17 @@ describe('the written table covers every relation a client can name', () => {
     expect(Object.entries(matrix.functions as Record<string, { why?: string }>).filter(([, f]) => !f.why).map(([n]) => n)).toEqual([]);
     // A mutant judged to change nothing says why, in a sentence that names the lock or the reason.
     expect(Object.entries(matrix.mutantsJudged as Record<string, string>).filter(([, why]) => why.length < 40).map(([id]) => id)).toEqual([]);
+  });
+
+  it('asks every function across a block both ways, or says why its answer holds no other member', () => {
+    expect(answers.across).toEqual([]);
+    // Both sides asked passes; one side, a visitor's case, or a case with no rule on its answer does not;
+    // a refusal is a rule; a judged function passes.
+    expect(answers.acrossPlanted).toEqual([[], ['f'], ['f'], ['f'], [], []]);
+  });
+
+  it("holds a pace's probe to the pace's own refusal, never another rule's", () => {
+    expect(answers.paced).toEqual(['refused', 'refused otherwise', 'ok']);
   });
 
   it("asks the avatars bucket's table and each live channel, not only public's tables", () => {

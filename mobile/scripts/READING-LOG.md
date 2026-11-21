@@ -511,3 +511,11 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/diagnostics/the_bell_counts_to_a_thousand_rehearsal.sql | — |  |
 | mobile/supabase/migrations-down/20261122_04_the_bell_counts_to_a_thousand.sql | — |  |
 | supabase/migrations/20261122_04_the_bell_counts_to_a_thousand.sql | — |  |
+| mobile/supabase/diagnostics/a_new_row_is_dated_by_the_house_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/a_stacks_count_is_read_as_its_stack_is_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261122_05_a_new_row_is_dated_by_the_house.sql | — |  |
+| mobile/supabase/migrations-down/20261122_06_a_stacks_count_is_read_as_its_stack_is.sql | — |  |
+| mobile/test-utils/afterAwait.d.ts | — |  |
+| mobile/test-utils/libraries.json | — |  |
+| supabase/migrations/20261122_05_a_new_row_is_dated_by_the_house.sql | — |  |
+| supabase/migrations/20261122_06_a_stacks_count_is_read_as_its_stack_is.sql | — |  |

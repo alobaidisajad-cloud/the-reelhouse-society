@@ -21,7 +21,7 @@
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { read, membersRun, triggersOn, type House } from '@/test-utils/house';
+import { read, houseText, membersRun, triggersOn, type House } from '@/test-utils/house';
 import { files, rel } from '@/test-utils/universe';
 import { stripComments } from '@/test-utils/readCode';
 
@@ -93,6 +93,29 @@ export function columnHeld(h: House, table: string, column: string): 'bound' | '
   if (setters.some((b) => new RegExp(String.raw`\bNEW\.${column}\s*:=`, 'i').test(b))) return 'set';
   return null;
 }
+
+/**
+ * How the house dates a member's new row of a table: 'now' (the moment it lands, whatever the member
+ * wrote), 'not_after' (a past date kept, none after now), or null (the member's own word). Read from the
+ * table's BEFORE INSERT triggers: a_new_row_is_dated and its mode, or a body that sets created_at to now().
+ */
+export function datedBy(h: House, table: string): 'now' | 'not_after' | null {
+  const before = triggersOn(h, table).filter((t) => t.timing === 'BEFORE' && t.events.includes('INSERT'));
+  const modes = before.map((t) => {
+    const body = h.functions.get(t.fn)?.body ?? '';
+    if (/\bNEW\.created_at\s*:=\s*now\(\)/i.test(body)) return 'now';
+    if (/jsonb_build_object\('created_at'/.test(body)) return /'not_after'/.test(t.fnArgs) ? 'not_after' : /'now'/.test(t.fnArgs) ? 'now' : null;
+    return null;
+  });
+  return modes.includes('now') ? 'now' : modes.includes('not_after') ? 'not_after' : null;
+}
+
+/** Whether a pace's text counts a table's rows by their created_at within a window (now() less an interval). */
+export const countsByDate = (text: string): boolean => /\bcreated_at\s*>\s*(?:now\(\)|v_now|clock_timestamp\(\))\s*-/i.test(text)
+  || /rate_limit_check\s*\(/i.test(text);
+
+/** Tables a member inserts into whose created_at the house leaves to the member, each with why it orders and counts nothing anyone else reads. */
+const OWN_DATE: Record<string, string> = {};
 
 /** The address headers a caller writes, which only the vouched-address helper may read. */
 const CALLER_HEADERS = /x-forwarded-for|cf-connecting-ip|x-real-ip|true-client-ip|x-client-ip|forwarded['"]/i;
@@ -177,6 +200,20 @@ describe('the rules, on planted text', () => {
     expect(columnHeld(read(`${sql}CREATE POLICY loose ON public.t FOR INSERT TO authenticated WITH CHECK (true);\n`), 'public.t', 'user_id')).toBe(null);
   });
 
+  it('find a row the member dates, and none once the house dates it; and a pace counting by a date the member writes', () => {
+    const dated = (trigger = '') => read(`CREATE TABLE public.d (\n    id uuid,\n    created_at timestamp with time zone DEFAULT now()\n);\n${trigger}`);
+    const fn = "CREATE FUNCTION public.a_new_row_is_dated() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW := jsonb_populate_record(NEW, jsonb_build_object('created_at', now())); RETURN NEW; END $$;\n";
+    expect(datedBy(dated(), 'public.d')).toBe(null);
+    expect(datedBy(dated(`${fn}CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.d FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');\n`), 'public.d')).toBe('now');
+    expect(datedBy(dated(`${fn}CREATE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.d FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('not_after');\n`), 'public.d')).toBe('not_after');
+    // On updates only, it dates no new row.
+    expect(datedBy(dated(`${fn}CREATE TRIGGER a_new_row_is_dated BEFORE UPDATE ON public.d FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');\n`), 'public.d')).toBe(null);
+    expect(datedBy(dated("CREATE FUNCTION public.s() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.created_at := now(); RETURN NEW; END $$;\nCREATE TRIGGER s BEFORE INSERT ON public.d FOR EACH ROW EXECUTE FUNCTION public.s();\n"), 'public.d')).toBe('now');
+    expect(countsByDate("SELECT count(*) FROM public.logs WHERE user_id = auth.uid() AND created_at > now() - interval '1440 minutes'")).toBe(true);
+    expect(countsByDate("public.rate_limit_check('logs'::text, 'user_id'::text, 20000, 1440)")).toBe(true);
+    expect(countsByDate('INSERT INTO public.write_budget AS b (user_id, kind) VALUES (v_member, v_kind)')).toBe(false);
+  });
+
   it('find a caller-written address read outside the helper', () => {
     expect(CALLER_HEADERS.test("const ip = req.headers.get('x-forwarded-for')?.split(',')[0]")).toBe(true);
     expect(CALLER_HEADERS.test("req.headers.get('X-Real-IP')")).toBe(true);
@@ -206,6 +243,33 @@ describe('every write a member can repeat, in the house as production will hold 
     const unseen = tables.flatMap((t) => triggersOn(h, t).filter((x) => pacedBy(h, t).includes(x.name))
       .map((x) => x.fn.replace(/^public\./, '')).filter((fn) => !rehearsals.includes(fn) && !matrix.includes(fn)).map((fn) => `${t}: ${fn}`));
     expect(unseen).toEqual([]);
+  });
+
+  it('has every pace written past by an attack probe, as a member, and refused by the pace itself', () => {
+    const matrix = JSON.parse(readFileSync(join(__dirname, '..', '..', '..', 'e2e', 'db', 'attack', 'matrix.json'), 'utf8')) as
+      { probes: { table: string; expect: string; why: string; refusedWith?: string; as: string[] }[] };
+    const unprobed = tables.flatMap((t) => triggersOn(h, t).filter((x) => pacedBy(h, t).includes(x.name)).map((x) => x.fn.replace(/^public\./, ''))
+      .filter((fn) => !matrix.probes.some((p) => `public.${p.table}` === t && p.expect === 'refused' && p.why.includes(fn) && p.as.some((a) => a !== 'visitor')
+        && (fn !== 'check_write_pace' || p.refusedWith === 'RH429')))
+      .map((fn) => `${t}: ${fn}`));
+    expect(unprobed).toEqual([]);
+  });
+
+  it('dates every member\'s new row by the house, or judges why the member\'s own date orders and counts nothing another reads', () => {
+    const { text } = houseText();
+    const withDate = tables.filter((t) => new RegExp(String.raw`CREATE TABLE ${t.replace('.', String.raw`\.`)} \([^;]*?\n\s+created_at timestamp`).test(text));
+    expect(withDate).toEqual(expect.arrayContaining(['public.log_comments', 'public.logs', 'public.lounge_messages']));
+    const undated = withDate.filter((t) => !datedBy(h, t) && !(t in OWN_DATE));
+    const stale = Object.keys(OWN_DATE).filter((t) => !withDate.includes(t) || datedBy(h, t));
+    expect({ undated, stale }).toEqual({ undated: [], stale: [] });
+  });
+
+  it('counts no pace by a date the member may write', () => {
+    const fooled = tables.flatMap((t) => [
+      ...triggersOn(h, t).filter((x) => pacedBy(h, t).includes(x.name)).map((x) => ({ name: x.fn, text: h.functions.get(x.fn)?.body ?? '' })),
+      ...[...h.policies.values()].filter((p) => p.table === t && pacedBy(h, t).includes(p.name)).map((p) => ({ name: p.name, text: p.check ?? '' })),
+    ].filter((p) => countsByDate(p.text) && datedBy(h, t) !== 'now').map((p) => `${t}: ${p.name}`));
+    expect(fooled).toEqual([]);
   });
 
   it('runs no member-run function that writes where no pace stands, unless it paces itself or is judged', () => {

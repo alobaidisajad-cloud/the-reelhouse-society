@@ -9607,3 +9607,66 @@ mutants:
         find: "  try { await Notifications.dismissAllNotificationsAsync(); } catch (e) { logger.warn('[Push] the delivered notices were not cleared:', e); }\n"
         replace: ""
     proof: { file: src/lib/__tests__/whatASessionLeavesHasItsEnd.test.ts, test: "what a session leaves beside the phone's storage is taken at a sign-out here and at one elsewhere" }
+
+  - id: shape-a-critique-dated-by-its-writer
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261122_05_a_new_row_is_dated_by_the_house.sql
+        find: "CREATE OR REPLACE TRIGGER a_new_row_is_dated BEFORE INSERT ON public.log_comments FOR EACH ROW EXECUTE FUNCTION public.a_new_row_is_dated('now');\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "dates every member's new row by the house, or judges why the member's own date orders and counts nothing another reads" }
+
+  - id: shape-a-pace-counted-by-the-writers-date
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261122_05_a_new_row_is_dated_by_the_house.sql
+        find: "DROP POLICY IF EXISTS logs_insert_rate_limit ON public.logs;\n"
+        replace: ""
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "counts no pace by a date the member may write" }
+
+  - id: shape-a-pace-probe-refused-by-any-rule
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: e2e/db/attack/matrix.json
+        find: "\"expect\":\"refused\",\"refusedWith\":\"RH429\",\"why\":\"A member logs 50,000 films"
+        replace: "\"expect\":\"refused\",\"why\":\"A member logs 50,000 films"
+    proof: { file: src/utils/__tests__/aMemberWriteHasItsPace.guard.test.ts, test: "has every pace written past by an attack probe, as a member, and refused by the pace itself" }
+
+  - id: shape-the-pace-probe-finder-takes-any-refusal
+    class: SEC-a-write-a-script-repeats-without-end
+    source: shape
+    edits:
+      - file: e2e/db/attack/attack.mjs
+        find: "  if (c.refusedWith) return got.startsWith(`${c.refusedWith} `) ? 'refused' : 'refused otherwise';\n"
+        replace: ""
+    proof: { file: e2e/__tests__/attack.test.ts, test: "holds a pace's probe to the pace's own refusal, never another rule's" }
+
+  - id: shape-a-stacks-count-read-past-its-stack
+    class: DB-rule-kept-on-one-path
+    source: shape
+    edits:
+      - file: ../supabase/migrations/20261122_06_a_stacks_count_is_read_as_its_stack_is.sql
+        find: "                   AND NOT COALESCE(l.user_id = ANY ((SELECT ids FROM hidden)::uuid[]), false)\n                   AND private.can_view_user_data(l.user_id)))\n"
+        replace: "                   ))\n"
+    proof: { file: src/utils/__tests__/aDefinerReadKeepsTheReadersRules.guard.test.ts, test: "names the hiding rule and the withheld rule in each that reads members' words, or is judged why it need not" }
+
+  - id: shape-a-function-unasked-across-a-block
+    class: DB-rule-kept-on-one-path
+    source: shape
+    edits:
+      - file: e2e/db/attack/matrix.json
+        find: "\"tier_weight\": { \"why\": \"A word in, a number out.\", \"blocks\": \"reads no member: its answer is made from what it is given, or the house's own lists\", "
+        replace: "\"tier_weight\": { \"why\": \"A word in, a number out.\", "
+    proof: { file: e2e/__tests__/attack.test.ts, test: "asks every function across a block both ways, or says why its answer holds no other member" }
+
+  - id: shape-the-block-finder-takes-one-side
+    class: DB-rule-kept-on-one-path
+    source: shape
+    edits:
+      - file: e2e/db/attack/attack.mjs
+        find: "!['BK', 'BY'].every((who)"
+        replace: "!['BK', 'BY'].some((who)"
+    proof: { file: e2e/__tests__/attack.test.ts, test: "asks every function across a block both ways, or says why its answer holds no other member" }

@@ -525,7 +525,7 @@
     }
   },
   "functions": {
-    "accept_follow_request": { "why": "A member accepts only a request made to them.", "cases": [
+    "accept_follow_request": { "why": "A member accepts only a request made to them.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "a request to another stays theirs", "as": "all", "expect": { "ok": "all" },
         "lay": { "interactions": { "id": "{new}", "user_id": "{uid@X1}", "target_user_id": "{uid@V}", "type": "follow_request" } },
         "call": "public.accept_follow_request('{uid@X1}')", "result": "$1 = '[false]'",
@@ -535,7 +535,7 @@
         "call": "public.accept_follow_request('{uid@X1}')", "result": "$1 = '[true]'",
         "then": "EXISTS (SELECT 1 FROM public.interactions WHERE id = '{new}' AND type = 'follow')" }
     ] },
-    "approve_lounge_member": { "why": "Only a salon's host admits.", "cases": [
+    "approve_lounge_member": { "why": "Only a salon's host admits.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "a stranger admits no one", "as": "all", "expect": "error",
         "lay": { "lounge_members": { "id": "{new}", "lounge_id": "{ref:lounges@V}", "user_id": "{uid@X1}", "status": "pending" } },
         "call": "public.approve_lounge_member('{ref:lounges@V}', '{uid@X1}')" },
@@ -548,16 +548,20 @@
       { "name": "a private member's work", "as": "all", "expect": { "ok": "all" },
         "call": "public.audience_allows('{owner}', '{uid@P}', 'everyone')", "result": "$1 = '[false]'" },
       { "name": "an open member's work", "as": "members", "expect": "ok",
-        "call": "public.audience_allows('{owner}', '{uid@V}', 'everyone')", "result": "$1 = '[true]'" }
+        "call": "public.audience_allows('{owner}', '{uid@V}', 'everyone')", "result": "$1 = '[true]'" },
+      { "name": "a member the caller blocked", "as": "members", "expect": "ok", "call": "public.audience_allows('{owner}', '{uid@BK}', 'everyone')", "result": "$1 = '[false]'" },
+      { "name": "a member who blocked the caller", "as": "members", "expect": "ok", "call": "public.audience_allows('{owner}', '{uid@BY}', 'everyone')", "result": "$1 = '[false]'" }
     ] },
     "ballot_tally": { "why": "An open ballot's count is a voter's alone: a member who has not voted in it reads nothing, one who has reads the count with their own ballot in it; a visitor never asks.", "cases": [
       { "name": "an open ballot one has not voted in", "as": "all", "expect": { "ok": "all" },
         "call": "public.ballot_tally('{ref:dispatch_posts@V}')", "result": "$1 = '[null]'" },
       { "name": "an open ballot one has voted in", "as": "members", "expect": "ok",
         "lay": { "dispatch_votes": { "id": "{new}", "post_id": "{ref:dispatch_posts@V}", "user_id": "{owner}", "option_index": 1 } },
-        "call": "public.ballot_tally('{ref:dispatch_posts@V}')", "result": "($1->0->>'total')::int >= 1 AND ($1->0->'counts'->>'1')::int >= 1" }
+        "call": "public.ballot_tally('{ref:dispatch_posts@V}')", "result": "($1->0->>'total')::int >= 1 AND ($1->0->'counts'->>'1')::int >= 1" },
+      { "name": "the ballot of a member the caller blocked, a vote of the caller's laid in it", "as": "members", "expect": "ok", "lay": {"dispatch_votes": {"id": "{new}", "post_id": "{ref:dispatch_posts@BK}", "user_id": "{owner}", "option_index": 1}},"call": "public.ballot_tally('{ref:dispatch_posts@BK}')", "result": "$1 = '[null]'" },
+      { "name": "the ballot of a member who blocked the caller, a vote of the caller's laid in it", "as": "members", "expect": "ok", "lay": {"dispatch_votes": {"id": "{new}", "post_id": "{ref:dispatch_posts@BY}", "user_id": "{owner}", "option_index": 1}},"call": "public.ballot_tally('{ref:dispatch_posts@BY}')", "result": "$1 = '[null]'" }
     ] },
-    "bulk_dismiss_reports": { "why": "The house's: an admin alone dismisses reports.", "cases": [
+    "bulk_dismiss_reports": { "why": "The house's: an admin alone dismisses reports.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "dismissing another's report", "as": "all", "expect": { "ok": "admin" },
         "call": "public.bulk_dismiss_reports(ARRAY['{ref:reports@V}']::uuid[], '{admin}', 'rh')",
         "then": "(SELECT status FROM public.reports WHERE id = '{ref:reports@V}') = 'resolved'" }
@@ -565,27 +569,35 @@
     "calendar_days": { "why": "A file's films by day, counted as its logs are read: a private member's only by its readers.", "cases": [
       { "name": "a private member's", "as": "all", "expect": "ok", "call": "public.calendar_days('{uid@P}')",
         "result": "jsonb_array_length($1) = 0" },
-      { "name": "an open member's", "as": "all", "expect": "ok", "call": "public.calendar_days('{uid@V}')" }
+      { "name": "an open member's", "as": "all", "expect": "ok", "call": "public.calendar_days('{uid@V}')" },
+      { "name": "a member the caller blocked", "as": "members", "expect": "ok", "call": "public.calendar_days('{uid@BK}')", "result": "$1 = '[]'" },
+      { "name": "a member who blocked the caller", "as": "members", "expect": "ok", "call": "public.calendar_days('{uid@BY}')", "result": "$1 = '[]'" }
     ] },
     "can_annotate_list": { "why": "A gate of comments: answers for the caller alone, and never a private stack.", "cases": [
       { "name": "an open member's private stack", "as": "all", "expect": { "ok": "all" },
         "call": "public.can_annotate_list('{owner}', '{ref:lists@V#2}')", "result": "$1 = '[false]'" },
       { "name": "an open member's open stack", "as": "members", "expect": "ok",
-        "call": "public.can_annotate_list('{owner}', '{ref:lists@V}')", "result": "$1 = '[true]'" }
+        "call": "public.can_annotate_list('{owner}', '{ref:lists@V}')", "result": "$1 = '[true]'" },
+      { "name": "the open stack of a member the caller blocked", "as": "members", "expect": "ok", "call": "public.can_annotate_list('{owner}', '{ref:lists@BK}')", "result": "$1 = '[false]'" },
+      { "name": "the open stack of a member who blocked the caller", "as": "members", "expect": "ok", "call": "public.can_annotate_list('{owner}', '{ref:lists@BY}')", "result": "$1 = '[false]'" }
     ] },
     "can_annotate_log": { "why": "A gate of comments: a private member's log answers only its readers.", "cases": [
       { "name": "a private member's log", "as": "all", "expect": { "ok": "all" },
         "call": "public.can_annotate_log('{owner}', '{ref:logs@P}')", "result": "$1 = '[false]'" },
       { "name": "an open member's log", "as": "members", "expect": "ok",
-        "call": "public.can_annotate_log('{owner}', '{ref:logs@V}')", "result": "$1 = '[true]'" }
+        "call": "public.can_annotate_log('{owner}', '{ref:logs@V}')", "result": "$1 = '[true]'" },
+      { "name": "the log of a member the caller blocked", "as": "members", "expect": "ok", "call": "public.can_annotate_log('{owner}', '{ref:logs@BK}')", "result": "$1 = '[false]'" },
+      { "name": "the log of a member who blocked the caller", "as": "members", "expect": "ok", "call": "public.can_annotate_log('{owner}', '{ref:logs@BY}')", "result": "$1 = '[false]'" }
     ] },
     "can_endorse_content": { "why": "A gate of certifications: a private member's log answers only its readers.", "cases": [
       { "name": "a private member's log", "as": "all", "expect": { "ok": "all" },
         "call": "public.can_endorse_content('{owner}', 'endorse_log', '{ref:logs@P}', NULL)", "result": "$1 = '[false]'" },
       { "name": "an open member's log", "as": "members", "expect": "ok",
-        "call": "public.can_endorse_content('{owner}', 'endorse_log', '{ref:logs@V}', NULL)", "result": "$1 = '[true]'" }
+        "call": "public.can_endorse_content('{owner}', 'endorse_log', '{ref:logs@V}', NULL)", "result": "$1 = '[true]'" },
+      { "name": "the log of a member the caller blocked", "as": "members", "expect": "ok", "call": "public.can_endorse_content('{owner}', 'endorse_log', '{ref:logs@BK}', NULL)", "result": "$1 = '[false]'" },
+      { "name": "the log of a member who blocked the caller", "as": "members", "expect": "ok", "call": "public.can_endorse_content('{owner}', 'endorse_log', '{ref:logs@BY}', NULL)", "result": "$1 = '[false]'" }
     ] },
-    "create_lounge": { "why": "Opening a salon is an Archivist feature, a private one an Auteur's; a ban silences.", "cases": [
+    "create_lounge": { "why": "Opening a salon is an Archivist feature, a private one an Auteur's; a ban silences.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "an open salon", "as": "all", "expect": { "ok": "rank1" }, "call": "public.create_lounge('rh salon', 'rh', false)" },
       { "name": "a private salon", "as": "all", "expect": { "ok": "rank2" }, "call": "public.create_lounge('rh salon', 'rh', true)" },
       { "name": "an open salon, with the id its form made", "as": "all", "expect": { "ok": "rank1" },
@@ -598,26 +610,27 @@
     "critiques_seen": { "why": "A log's critiques as its reader may read them, counted under the caller's own rules: a log the caller cannot read counts none, whatever row is handed in. A member's alone: a visitor hides no one, and reads log_counts' count.", "cases": [
       { "name": "an open member's log", "as": "members", "expect": "ok", "call": "public.critiques_seen((SELECT l FROM public.logs l WHERE l.id = '{ref:logs@V}'))", "result": "($1->>0)::int >= 0" },
       { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.critiques_seen(jsonb_populate_record(NULL::public.logs, jsonb_build_object('id', '{ref:logs@V}')))" },
-      { "name": "the log of one who blocked the caller, named by its id alone", "as": "members", "expect": "ok", "call": "public.critiques_seen(jsonb_populate_record(NULL::public.logs, jsonb_build_object('id', '{ref:logs@BY}')))", "result": "$1 = '[0]'" }
+      { "name": "the log of one who blocked the caller, named by its id alone", "as": "members", "expect": "ok", "call": "public.critiques_seen(jsonb_populate_record(NULL::public.logs, jsonb_build_object('id', '{ref:logs@BY}')))", "result": "$1 = '[0]'" },
+      { "name": "the log of one the caller blocked, named by its id alone", "as": "members", "expect": "ok", "call": "public.critiques_seen(jsonb_populate_record(NULL::public.logs, jsonb_build_object('id', '{ref:logs@BK}')))", "result": "$1 = '[0]'" }
     ] },
-    "decline_all_follow_requests": { "why": "A member declines only the requests made to them.", "cases": [
+    "decline_all_follow_requests": { "why": "A member declines only the requests made to them.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "another's requests stay", "as": "all", "expect": { "ok": "all" },
         "lay": { "interactions": { "id": "{new}", "user_id": "{uid@X1}", "target_user_id": "{uid@V}", "type": "follow_request" } },
         "call": "public.decline_all_follow_requests()",
         "then": "EXISTS (SELECT 1 FROM public.interactions WHERE id = '{new}')" }
     ] },
-    "decline_follow_request": { "why": "A member declines only a request made to them.", "cases": [
+    "decline_follow_request": { "why": "A member declines only a request made to them.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "a request to another stays", "as": "all", "expect": { "ok": "all" },
         "lay": { "interactions": { "id": "{new}", "user_id": "{uid@X1}", "target_user_id": "{uid@V}", "type": "follow_request" } },
         "call": "public.decline_follow_request('{uid@X1}')",
         "then": "EXISTS (SELECT 1 FROM public.interactions WHERE id = '{new}')" }
     ] },
-    "decline_lounge_member": { "why": "Only a salon's host declines.", "cases": [
+    "decline_lounge_member": { "why": "Only a salon's host declines.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "a stranger declines no one", "as": "all", "expect": "error",
         "lay": { "lounge_members": { "id": "{new}", "lounge_id": "{ref:lounges@V}", "user_id": "{uid@X1}", "status": "pending" } },
         "call": "public.decline_lounge_member('{ref:lounges@V}', '{uid@X1}')" }
     ] },
-    "delete_list_cascade": { "why": "A stack is taken down by its owner alone.", "cases": [
+    "delete_list_cascade": { "why": "A stack is taken down by its owner alone.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "another's stack", "as": "all", "expect": "error", "call": "public.delete_list_cascade('{ref:lists@V}')" },
       { "name": "one's own", "as": "all", "expect": { "ok": "all" }, "call": "public.delete_list_cascade('{ref:lists}')",
         "then": "NOT EXISTS (SELECT 1 FROM public.lists WHERE id = '{ref:lists}')" }
@@ -626,15 +639,19 @@
       { "name": "a film filed by a member one has hidden", "as": "all", "expect": "ok",
         "lay": { "dispatch_posts": { "id": "{new}", "kind": "take", "user_id": "{uid@BK}", "author_username": "", "body": "rh archive", "is_published": true, "subject_kind": "film", "subject_id": 424242, "subject_title": "rh archive film" } },
         "call": "public.dispatch_archive_films('rh archive film')",
-        "result": "(position('rh archive film' in $1::text) > 0) = ('{owner}' = '{uid@X2}')" }
+        "result": "(position('rh archive film' in $1::text) > 0) = ('{owner}' = '{uid@X2}')" },
+      { "name": "a film filed by a member who blocked the caller", "as": "all", "expect": "ok", "lay": {"dispatch_posts": {"id": "{new}", "kind": "take", "user_id": "{uid@BY}", "author_username": "", "body": "rh archive", "is_published": true,"subject_kind": "film", "subject_id": 424242,"subject_title": "rh archive film"}},"call": "public.dispatch_archive_films('rh archive film')", "result": "(position('rh archive film' in $1::text) > 0) = ('{owner}' = '{uid@X2}')" }
     ] },
-    "dispatch_door": { "why": "The caller's own way to the Dispatch's door.", "cases": [
+    "dispatch_door": { "why": "The caller's own way to the Dispatch's door.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "asked", "as": "all", "expect": "ok", "call": "public.dispatch_door()" }
     ] },
     "dispatch_room_totals": { "why": "A member's published filings, as public as they are.", "cases": [
-      { "name": "a private member's", "as": "all", "expect": "ok", "call": "public.dispatch_room_totals('{uid@P}')" }
+      { "name": "a private member's", "as": "all", "expect": "ok", "call": "public.dispatch_room_totals('{uid@P}')" },
+      { "name": "an open member's, counted", "as": "members", "expect": "ok", "call": "public.dispatch_room_totals('{uid@V}')", "result": "($1->0->>'filed')::int > 0" },
+      { "name": "a member the caller blocked", "as": "members", "expect": "ok", "call": "public.dispatch_room_totals('{uid@BK}')", "result": "($1->0->>'filed')::int = 0 AND ($1->0->>'certified')::int = 0" },
+      { "name": "a member who blocked the caller", "as": "members", "expect": "ok", "call": "public.dispatch_room_totals('{uid@BY}')", "result": "($1->0->>'filed')::int = 0 AND ($1->0->>'certified')::int = 0" }
     ] },
-    "end_filing": { "why": "A filing is ended by its author, or by the house.", "cases": [
+    "end_filing": { "why": "A filing is ended by its author, or by the house.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "another's, as its author", "as": "all", "expect": "error", "call": "public.end_filing('{ref:dispatch_posts@V}', 'author')" },
       { "name": "another's, as the house", "as": "all", "expect": { "ok": "admin" }, "call": "public.end_filing('{ref:dispatch_posts@V}', 'house')",
         "then": "(SELECT ended_at IS NOT NULL FROM public.dispatch_posts WHERE id = '{ref:dispatch_posts@V}')" },
@@ -649,20 +666,23 @@
       { "name": "the first page", "as": "all", "expect": "ok", "call": "public.get_filtered_stacks_auth_cursor_v2('', false, 200, NULL, NULL, 4)",
         "result": "position('{ref:lists@P}' in $1::text) = 0 AND position('{ref:lists@V#2}' in $1::text) = 0 AND (position('{ref:lists@BK}' in $1::text) = 0 OR '{owner}' = '{uid@X2}') AND (position('{ref:lists@BY}' in $1::text) = 0 OR '{owner}' = '{uid@X2}')" }
     ] },
-    "get_following_feed_auth_cursor": { "why": "The logs of those the caller follows, and no one else's.", "cases": [
+    "get_following_feed_auth_cursor": { "why": "The logs of those the caller follows, and no one else's.", "blocks": "reads the logs of those the caller follows, and no follow stands across a block: a block ends both members' follows, and the house refuses one made across it (its own lay is refused, \"A block stands between these members\")", "cases": [
       { "name": "the first page", "as": "all", "expect": "ok", "call": "public.get_following_feed_auth_cursor(200, NULL, NULL)",
         "result": "position('{ref:logs@P}' in $1::text) = 0 AND position('{ref:logs@V}' in $1::text) = 0" }
     ] },
     "get_lobby": { "why": "The wall, for members: never a private member's or a blocked one's work.", "cases": [
       { "name": "read", "as": "all", "expect": { "ok": "all" }, "call": "public.get_lobby()",
-        "result": "position('{ref:logs@P}' in $1::text) = 0 AND position('{ref:logs@BK}' in $1::text) = 0" }
+        "result": "position('{ref:logs@P}' in $1::text) = 0 AND position('{ref:logs@BK}' in $1::text) = 0" },
+      { "name": "the work of a member who blocked the caller", "as": "members", "expect": "ok", "call": "public.get_lobby()", "result": "position('{ref:logs@BY}' in $1::text) = 0" }
     ] },
-    "dispatch_post_words": { "why": "A text's words, counted as the app counts them, for a member's own filing as it is written: it reads nothing but the text it is given, and only a member writes a filing.", "cases": [
+    "dispatch_post_words": { "why": "A text's words, counted as the app counts them, for a member's own filing as it is written: it reads nothing but the text it is given, and only a member writes a filing.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "a text of three words", "as": "members", "expect": "ok", "call": "public.dispatch_post_words('one two  three')",
         "result": "($1->>0)::int = 3" },
       { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.dispatch_post_words('one two  three')" }
     ] },
     "get_lounge_list": { "why": "The Lounge's corridor in one call, each piece under the rule it is read under alone: a salon's faces only to its seats and its host, and only to a member.", "cases": [
+      { "name": "the salon of a member the caller blocked, the caller seated in it: never their face", "as": "members", "expect": "ok", "lay": {"lounge_members": {"id": "{new}", "lounge_id": "{ref:lounges@BK}", "user_id": "{owner}", "status": "approved"}},"call": "public.get_lounge_list()", "result": "position('{username@BK}' in ($1->0->'faces')::text) = 0" },
+      { "name": "the salon of a member who blocked the caller, the caller seated in it: never the salon, nor its host's face", "as": ["free", "lapsed", "archivist", "auteur", "founding", "banned"],"expect": "ok", "lay": {"lounge_members": {"id": "{new}", "lounge_id": "{ref:lounges@BY}", "user_id": "{owner}", "status": "approved"}},"call": "public.get_lounge_list()", "result": "NOT EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE($1->0->'joined', '[]') || COALESCE($1->0->'newest', '[]') || COALESCE($1->0->'hosted', '[]')) e WHERE e->>'id' = '{ref:lounges@BY}') AND position('{username@BY}' in $1::text) = 0" },
       { "name": "a member with no seat in the private salon", "as": ["V"], "expect": "ok", "call": "public.get_lounge_list()",
         "result": "$1->0 ? 'newest' AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1->0->'faces') e WHERE e->>'lounge_id' = '{ref:lounges@P}') AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1->0->'pending') e WHERE e->>'lounge_id' = '{ref:lounges@P}')" },
       { "name": "the private salon's own host", "as": ["P"], "expect": "ok", "call": "public.get_lounge_list()",
@@ -672,40 +692,46 @@
     "notices_page": { "why": "The caller's own newest notices and their unread count, from one moment: never another member's.", "cases": [
       { "name": "one's own board", "as": "members", "expect": "ok", "call": "public.notices_page(30)",
         "result": "NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1 -> 0 -> 'rows') e WHERE e->>'user_id' <> '{owner}') AND jsonb_array_length($1 -> 0 -> 'rows') > 0 AND ($1 -> 0 ->> 'unread') IS NOT NULL" },
-      { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.notices_page(30)" }
+      { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.notices_page(30)" },
+      { "name": "a notice from a member the caller blocked, written before the block", "as": "members", "expect": "ok", "lay": {"notifications": {"id": "{new}", "user_id": "{owner}", "type": "system", "message": "rh notice across", "from_user_id": "{uid@BK}"}},"call": "public.notices_page(30)", "result": "position('{new}' in $1::text) = 0" },
+      { "name": "a notice from a member who blocked the caller, written before the block", "as": "members", "expect": "ok", "lay": {"notifications": {"id": "{new}", "user_id": "{owner}", "type": "system", "message": "rh notice across", "from_user_id": "{uid@BY}"}},"call": "public.notices_page(30)", "result": "position('{new}' in $1::text) = 0" }
     ] },
     "get_lounge_unread_counts": { "why": "The caller's own salons' unread counts.", "cases": [
+      { "name": "an open salon the caller sits in, its host's words unread: counted", "as": "members", "expect": "ok", "lay": {"lounge_members": {"id": "{new}", "lounge_id": "{ref:lounges@V}", "user_id": "{owner}", "status": "approved", "last_read_at": "2001-01-01"}},"call": "public.get_lounge_unread_counts()", "result": "EXISTS (SELECT 1 FROM jsonb_array_elements($1) e WHERE e->>'lounge_id' = '{ref:lounges@V}' AND (e->>'unread_count')::int > 0)" },
+      { "name": "the salon of a member the caller blocked, their words unread by the caller seated in it: never counted", "as": "members", "expect": "ok", "lay": {"lounge_members": {"id": "{new}", "lounge_id": "{ref:lounges@BK}", "user_id": "{owner}", "status": "approved", "last_read_at": "2001-01-01"}},"call": "public.get_lounge_unread_counts()", "result": "NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1) e WHERE e->>'lounge_id' = '{ref:lounges@BK}' AND (e->>'unread_count')::int > 0)" },
+      { "name": "the salon of a member who blocked the caller, their words unread by the caller seated in it: never counted", "as": "members", "expect": "ok", "lay": {"lounge_members": {"id": "{new}", "lounge_id": "{ref:lounges@BY}", "user_id": "{owner}", "status": "approved", "last_read_at": "2001-01-01"}},"call": "public.get_lounge_unread_counts()", "result": "NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1) e WHERE e->>'lounge_id' = '{ref:lounges@BY}' AND (e->>'unread_count')::int > 0)" },
       { "name": "read", "as": "all", "expect": { "ok": "all" }, "call": "public.get_lounge_unread_counts()",
         "result": "NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1) e WHERE e->>'lounge_id' <> '{ref:lounges}')" }
     ] },
     "get_marks_ledger": { "why": "The caller's own marks, every film they logged and keep, in one read: never another member's; a visitor has none.", "cases": [
       { "name": "read", "as": "all", "expect": { "ok": "all" }, "call": "public.get_marks_ledger()",
-        "result": "position('{ref:logs}' in $1::text) > 0 AND position('{ref:logs@V}' in $1::text) = 0 AND position('{ref:logs@P}' in $1::text) = 0 AND position('{ref:logs@BK}' in $1::text) = 0" }
+        "result": "position('{ref:logs}' in $1::text) > 0 AND position('{ref:logs@V}' in $1::text) = 0 AND position('{ref:logs@P}' in $1::text) = 0 AND position('{ref:logs@BK}' in $1::text) = 0" },
+      { "name": "never the marks of a member across a block", "as": "members", "expect": "ok", "call": "public.get_marks_ledger()", "result": "position('{ref:logs@BK}' in $1::text) = 0 AND position('{ref:logs@BY}' in $1::text) = 0" }
     ] },
-    "get_moderation_history_for_users": { "why": "The house's record of its acts, for admins.", "cases": [
+    "get_moderation_history_for_users": { "why": "The house's record of its acts, for admins.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "an open member's", "as": "all", "expect": { "ok": "all" },
         "call": "public.get_moderation_history_for_users(ARRAY['{uid@V}']::uuid[], 5)",
         "result": "CASE WHEN '{owner}' = '{admin}' THEN jsonb_array_length($1) > 0 ELSE $1 = '[]' END" }
     ] },
-    "get_my_withheld_pieces": { "why": "A member's own pieces the house withholds, so their pages mark them: never another's.", "cases": [
+    "get_my_withheld_pieces": { "why": "A member's own pieces the house withholds, so their pages mark them: never another's.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "another member's withheld piece is never told", "as": "members", "expect": "ok",
         "call": "public.get_my_withheld_pieces()", "result": "$1->0 = '[]'" },
       { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.get_my_withheld_pieces()" }
     ] },
-    "get_my_verdict": { "why": "A member reads a verdict of the house's on themselves alone, whole.", "cases": [
+    "get_my_verdict": { "why": "A member reads a verdict of the house's on themselves alone, whole.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "a verdict on another member", "as": "all", "expect": "error", "call": "public.get_my_verdict('{ref:mod_actions@V}')" },
       { "name": "a verdict on oneself", "as": "members", "expect": "ok",
         "lay": { "mod_actions": { "id": "{new}", "target_user_id": "{owner}", "admin_id": "{uid@X1}", "action": "warn", "reason": "rh the reason" } },
         "call": "public.get_my_verdict('{new}')", "result": "$1->0->>'id' = '{new}' AND $1->0->>'reason' = 'rh the reason'" }
     ] },
-    "get_my_verdicts": { "why": "A member's own record of verdicts, newest first: never another's.", "cases": [
+    "get_my_verdicts": { "why": "A member's own record of verdicts, newest first: never another's.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "one's own verdicts, never another member's", "as": "members", "expect": "ok",
         "lay": { "mod_actions": { "id": "{new}", "target_user_id": "{owner}", "admin_id": "{uid@X1}", "action": "warn", "reason": "rh mine" } },
         "call": "public.get_my_verdicts(NULL, NULL, 50)",
         "result": "$1->0 @> jsonb_build_array(jsonb_build_object('id', '{new}')) AND NOT ($1->0 @> jsonb_build_array(jsonb_build_object('id', '{ref:mod_actions@V}')))" },
       { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.get_my_verdicts(NULL, NULL, 50)" }
     ] },
-    "file_appeal": { "why": "A member appeals a verdict on themselves alone, once; a silenced member too.", "cases": [
+    "file_appeal": { "why": "A member appeals a verdict on themselves alone, once; a silenced member too.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "a verdict on another member", "as": "all", "expect": "error", "call": "public.file_appeal('{ref:mod_actions@V}', 'rh an appeal')" },
       { "name": "a verdict on oneself", "as": "members", "expect": "ok",
         "lay": { "mod_actions": { "id": "{new}", "target_user_id": "{owner}", "admin_id": "{uid@X1}", "action": "warn", "reason": "rh" } },
@@ -715,10 +741,10 @@
         "lay": { "mod_actions": { "id": "{new}", "target_user_id": "{owner}", "admin_id": "{uid@X1}", "action": "warn", "reason": "rh", "appeal": "rh", "appeal_filed_at": "2026-01-01", "appeal_status": "pending" } },
         "call": "public.file_appeal('{new}', 'rh again')" }
     ] },
-    "get_pending_appeals": { "why": "The appeals waiting, for admins.", "cases": [
+    "get_pending_appeals": { "why": "The appeals waiting, for admins.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "read", "as": "all", "expect": { "ok": "admin" }, "call": "public.get_pending_appeals(NULL, NULL, 20)" }
     ] },
-    "judge_appeal": { "why": "The house's: an admin hears an appeal, never of a verdict of their own.", "cases": [
+    "judge_appeal": { "why": "The house's: an admin hears an appeal, never of a verdict of their own.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "an appeal of another moderator's verdict", "as": "all", "expect": { "ok": "admin" },
         "lay": { "mod_actions": { "id": "{new}", "target_user_id": "{uid@V}", "admin_id": "{uid@X1}", "action": "warn", "reason": "rh", "appeal": "rh", "appeal_filed_at": "2026-01-01", "appeal_status": "pending" } },
         "call": "public.judge_appeal('{new}', 'upheld', 'rh heard')",
@@ -730,20 +756,20 @@
         "lay": { "mod_actions": { "id": "{new}", "target_user_id": "{admin}", "admin_id": "{uid@X1}", "action": "warn", "reason": "rh", "appeal": "rh", "appeal_filed_at": "2026-01-01", "appeal_status": "pending" } },
         "call": "public.judge_appeal('{new}', 'overturned', 'rh mine')" }
     ] },
-    "tribunal_waiting": { "why": "The Tribunal door's count, for admins.", "cases": [
+    "tribunal_waiting": { "why": "The Tribunal door's count, for admins.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "read", "as": "all", "expect": { "ok": "admin" }, "call": "public.tribunal_waiting()" }
     ] },
-    "lift_sanction": { "why": "The house's: an admin lifts a ban or a suspension.", "cases": [
+    "lift_sanction": { "why": "The house's: an admin lifts a ban or a suspension.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "a banned member", "as": "all", "expect": { "ok": "admin" },
         "call": "public.lift_sanction('{uid@banned}', 'rh lifted')",
         "then": "(SELECT is_banned FROM public.profiles WHERE id = '{uid@banned}') = false" },
       { "name": "one's own sanction", "as": "all", "expect": "error", "call": "public.lift_sanction('{owner}', 'rh mine')" }
     ] },
-    "get_sanctioned_members": { "why": "The members under a ban or a suspension, for admins.", "cases": [
+    "get_sanctioned_members": { "why": "The members under a ban or a suspension, for admins.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "read", "as": "all", "expect": { "ok": "admin" }, "call": "public.get_sanctioned_members(NULL, NULL, 30)",
         "result": "CASE WHEN '{owner}' = '{admin}' THEN $1->0 @> jsonb_build_array(jsonb_build_object('id', '{uid@banned}')) ELSE true END" }
     ] },
-    "get_priority_reports": { "why": "The queue of reports, for admins.", "cases": [
+    "get_priority_reports": { "why": "The queue of reports, for admins.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "read", "as": "all", "expect": { "ok": "admin" }, "call": "public.get_priority_reports(20, NULL, NULL, NULL)" }
     ] },
     "get_profile_counts": { "why": "A file's counts: a private member's only to its readers (followers counted for all).", "cases": [
@@ -752,7 +778,8 @@
       { "name": "an open member's", "as": "all", "expect": "ok", "call": "public.get_profile_counts('{uid@V}')",
         "result": "($1->0->>'logs_count')::int > 0" },
       { "name": "a member's across a block, follows too", "as": "members", "expect": "ok", "call": "public.get_profile_counts('{uid@BY}')",
-        "result": "($1->0->>'logs_count')::int = 0 AND ($1->0->>'watchlist_count')::int = 0 AND ($1->0->>'followers_count')::int = 0 AND ($1->0->>'following_count')::int = 0" }
+        "result": "($1->0->>'logs_count')::int = 0 AND ($1->0->>'watchlist_count')::int = 0 AND ($1->0->>'followers_count')::int = 0 AND ($1->0->>'following_count')::int = 0" },
+      { "name": "a member the caller blocked, follows too", "as": "members", "expect": "ok", "call": "public.get_profile_counts('{uid@BK}')", "result": "($1->0->>'logs_count')::int = 0 AND ($1->0->>'watchlist_count')::int = 0 AND ($1->0->>'followers_count')::int = 0 AND ($1->0->>'following_count')::int = 0" }
     ] },
     "get_public_profile_analytics": { "why": "A file's figures: a member reads a private one's only as its follower.", "cases": [
       { "name": "a private member's", "as": "all", "expect": "ok", "call": "public.get_public_profile_analytics('{uid@P}')",
@@ -760,9 +787,10 @@
       { "name": "an open member's", "as": "members", "expect": "ok", "call": "public.get_public_profile_analytics('{uid@V}')",
         "result": "NOT ($1->0 ? 'error')" },
       { "name": "a member's across a block", "as": "members", "expect": "ok", "call": "public.get_public_profile_analytics('{uid@BY}')",
-        "result": "$1->0->>'error' = 'forbidden'" }
+        "result": "$1->0->>'error' = 'forbidden'" },
+      { "name": "a member the caller blocked", "as": "members", "expect": "ok", "call": "public.get_public_profile_analytics('{uid@BK}')", "result": "$1->0->>'error' = 'forbidden'" }
     ] },
-    "get_report_evidence": { "why": "A report's content, for admins.", "cases": [
+    "get_report_evidence": { "why": "A report's content, for admins.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "an open member's report", "as": "all", "expect": { "ok": "admin" }, "call": "public.get_report_evidence('{ref:reports@V}')" }
     ] },
     "get_salon_last_words": { "why": "When each salon last spoke, for the Lounge's directory: a time and its salon, never the words, and only to a member.", "cases": [
@@ -770,13 +798,20 @@
         "call": "public.get_salon_last_words(ARRAY['{ref:lounges@V}', '{ref:lounges@P}']::uuid[])",
         "result": "NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1) e WHERE e->>'lounge_id' NOT IN ('{ref:lounges@V}', '{ref:lounges@P}') OR (SELECT count(*) FROM jsonb_object_keys(e)) <> 2)" },
       { "name": "a visitor", "as": ["visitor"], "expect": "error",
-        "call": "public.get_salon_last_words(ARRAY['{ref:lounges@V}']::uuid[])" }
+        "call": "public.get_salon_last_words(ARRAY['{ref:lounges@V}']::uuid[])" },
+      { "name": "the open salon of a member the caller blocked", "as": "members", "expect": "ok", "call": "public.get_salon_last_words(ARRAY['{ref:lounges@BK}']::uuid[])", "result": "$1 = '[]'" },
+      { "name": "the open salon of a member who blocked the caller", "as": "members", "expect": "ok", "call": "public.get_salon_last_words(ARRAY['{ref:lounges@BY}']::uuid[])", "result": "$1 = '[]'" }
     ] },
     "get_salon_member_faces": { "why": "A salon's faces, for its seats.", "cases": [
       { "name": "a private salon the caller does not sit in", "as": "all", "expect": "ok",
         "call": "public.get_salon_member_faces(ARRAY['{ref:lounges@P}']::uuid[])", "result": "$1 = '[]'" },
       { "name": "the private salon's own host", "as": ["P"], "expect": "ok",
-        "call": "public.get_salon_member_faces(ARRAY['{ref:lounges@P}']::uuid[])", "result": "jsonb_array_length($1) > 0" }
+        "call": "public.get_salon_member_faces(ARRAY['{ref:lounges@P}']::uuid[])", "result": "jsonb_array_length($1) > 0" },
+      { "name": "an open salon the caller sits in: its host among the faces", "as": "members", "expect": "ok", "lay": {"lounge_members": {"id": "{new}", "lounge_id": "{ref:lounges@V}", "user_id": "{owner}", "status": "approved"}},"call": "public.get_salon_member_faces(ARRAY['{ref:lounges@V}']::uuid[])", "result": "position('{username@V}' in $1::text) > 0" },
+      { "name": "the salon of a member the caller blocked, the caller seated in it", "as": "members", "expect": "ok", "lay": {"lounge_members": {"id": "{new}", "lounge_id": "{ref:lounges@BK}", "user_id": "{owner}", "status": "approved"}},"call": "public.get_salon_member_faces(ARRAY['{ref:lounges@BK}']::uuid[])", "result": "position('{username@BK}' in $1::text) = 0" },
+      { "name": "the salon of a member who blocked the caller, the caller seated in it", "as": ["free", "lapsed", "archivist", "auteur", "founding", "banned"],"expect": "ok", "lay": {"lounge_members": {"id": "{new}", "lounge_id": "{ref:lounges@BY}", "user_id": "{owner}", "status": "approved"}},"call": "public.get_salon_member_faces(ARRAY['{ref:lounges@BY}']::uuid[])", "result": "position('{username@BY}' in $1::text) = 0" },
+      { "name": "the salon of a member the caller blocked, the caller seated in it", "as": "members", "expect": "ok", "lay": {"lounge_members": {"id": "{new}", "lounge_id": "{ref:lounges@BK}", "user_id": "{owner}", "status": "approved"}},"call": "public.get_salon_member_faces(ARRAY['{ref:lounges@BK}']::uuid[])", "result": "position('{uid@BK}' in $1::text) = 0" },
+      { "name": "the salon of a member who blocked the caller, the caller seated in it", "as": "members", "expect": "ok", "lay": {"lounge_members": {"id": "{new}", "lounge_id": "{ref:lounges@BY}", "user_id": "{owner}", "status": "approved"}},"call": "public.get_salon_member_faces(ARRAY['{ref:lounges@BY}']::uuid[])", "result": "position('{uid@BY}' in $1::text) = 0" }
     ] },
     "get_taste_match": { "why": "Two files' taste: a private member's only to its readers.", "cases": [
       { "name": "a private member's", "as": "all", "expect": { "ok": "all" }, "call": "public.get_taste_match('{uid@P}')",
@@ -784,7 +819,8 @@
       { "name": "an open member's", "as": "members", "expect": "ok", "call": "public.get_taste_match('{uid@V}')",
         "result": "NOT ($1->0 ? 'error')" },
       { "name": "a member's across a block", "as": "members", "expect": "ok", "call": "public.get_taste_match('{uid@BY}')",
-        "result": "$1->0->>'error' = 'forbidden'" }
+        "result": "$1->0->>'error' = 'forbidden'" },
+      { "name": "a member the caller blocked", "as": "members", "expect": "ok", "call": "public.get_taste_match('{uid@BK}')", "result": "$1->0->>'error' = 'forbidden'" }
     ] },
     "get_taste_profile": { "why": "A file's taste: a private member's only to its readers.", "cases": [
       { "name": "a private member's", "as": "all", "expect": { "ok": "all" }, "call": "public.get_taste_profile('{uid@P}')",
@@ -792,7 +828,8 @@
       { "name": "an open member's", "as": "members", "expect": "ok", "call": "public.get_taste_profile('{uid@V}')",
         "result": "NOT ($1->0 ? 'error')" },
       { "name": "a member's across a block", "as": "members", "expect": "ok", "call": "public.get_taste_profile('{uid@BY}')",
-        "result": "$1->0->>'error' = 'forbidden'" }
+        "result": "$1->0->>'error' = 'forbidden'" },
+      { "name": "a member the caller blocked", "as": "members", "expect": "ok", "call": "public.get_taste_profile('{uid@BK}')", "result": "$1->0->>'error' = 'forbidden'" }
     ] },
     "get_user_analytics": { "why": "A file's analytics: a private member's only to its readers.", "cases": [
       { "name": "a private member's", "as": "all", "expect": { "ok": "all" }, "call": "public.get_user_analytics('{uid@P}')",
@@ -800,85 +837,94 @@
       { "name": "an open member's", "as": "members", "expect": "ok", "call": "public.get_user_analytics('{uid@V}')",
         "result": "NOT ($1->0 ? 'error')" },
       { "name": "a member's across a block", "as": "members", "expect": "ok", "call": "public.get_user_analytics('{uid@BY}')",
-        "result": "$1->0->>'error' = 'forbidden'" }
+        "result": "$1->0->>'error' = 'forbidden'" },
+      { "name": "a member the caller blocked", "as": "members", "expect": "ok", "call": "public.get_user_analytics('{uid@BK}')", "result": "$1->0->>'error' = 'forbidden'" }
     ] },
     "get_user_blocks": { "why": "The caller's own blocks, whatever member it is asked for.", "cases": [
       { "name": "asked for another", "as": "all", "expect": { "ok": "all" }, "call": "public.get_user_blocks('{uid@V}')",
-        "result": "jsonb_array_length($1) = 2 AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1) e WHERE e->>'blocked_id' NOT IN ('{peer2}', '{uid@BK}'))" }
+        "result": "jsonb_array_length($1) = 2 AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements($1) e WHERE e->>'blocked_id' NOT IN ('{peer2}', '{uid@BK}'))" },
+      { "name": "never who blocked the caller", "as": "members", "expect": "ok", "call": "public.get_user_blocks('{owner}')", "result": "position('{uid@BK}' in $1::text) > 0 AND position('{uid@BY}' in $1::text) = 0" }
     ] },
-    "handle_is_unwelcome": { "why": "Whether a handle may be taken: names no one.", "cases": [
+    "handle_is_unwelcome": { "why": "Whether a handle may be taken: names no one.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "asked", "as": "all", "expect": "ok", "call": "public.handle_is_unwelcome('rh_handle')" }
     ] },
-    "has_tier_at_least": { "why": "The caller's own rank.", "cases": [
+    "has_tier_at_least": { "why": "The caller's own rank.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "a ranked caller", "as": ["archivist", "auteur", "founding", "banned"], "expect": "ok", "call": "public.has_tier_at_least(1)", "result": "$1 = '[true]'" },
       { "name": "an unranked caller", "as": ["free", "lapsed", "admin"], "expect": "ok", "call": "public.has_tier_at_least(1)", "result": "$1 = '[false]'" },
       { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.has_tier_at_least(1)" }
     ] },
-    "increment_dossier_views": { "why": "An old build's call, which does nothing now.", "cases": [
+    "increment_dossier_views": { "why": "An old build's call, which does nothing now.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "called", "as": "all", "expect": "ok", "call": "public.increment_dossier_views('{ref:dispatch_posts@V}')" }
     ] },
-    "is_lounge_member_or_host": { "why": "Whether the caller sits in a salon.", "cases": [
+    "is_lounge_member_or_host": { "why": "Whether the caller sits in a salon.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "a private salon of another", "as": "all", "expect": "ok", "call": "public.is_lounge_member_or_host('{ref:lounges@P}')", "result": "$1 = '[false]'" },
       { "name": "one's own", "as": "members", "expect": "ok", "call": "public.is_lounge_member_or_host('{ref:lounges}')", "result": "$1 = '[true]'" }
     ] },
-    "is_user_not_banned": { "why": "The caller's own standing.", "cases": [
+    "is_user_not_banned": { "why": "The caller's own standing.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "a banned caller", "as": ["banned"], "expect": "ok", "call": "public.is_user_not_banned()", "result": "$1 = '[false]'" },
       { "name": "any other", "as": ["visitor", "free", "lapsed", "archivist", "auteur", "founding", "admin"], "expect": "ok", "call": "public.is_user_not_banned()", "result": "$1 = '[true]'" }
     ] },
-    "join_public_lounge": { "why": "An open salon is joined by a member of the Lounge (an Archivist feature) in good standing; a private one only on request.", "cases": [
+    "join_public_lounge": { "why": "An open salon is joined by a member of the Lounge (an Archivist feature) in good standing; a private one only on request.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "an open salon", "as": "all", "expect": { "ok": "rank1" }, "call": "public.join_public_lounge('{ref:lounges@V}')",
         "then": "EXISTS (SELECT 1 FROM public.lounge_members WHERE lounge_id = '{ref:lounges@V}' AND user_id = '{owner}' AND status = 'approved')" },
       { "name": "a private salon", "as": "all", "expect": "error", "call": "public.join_public_lounge('{ref:lounges@P}')" }
     ] },
-    "like_escape": { "why": "Text in, text out.", "cases": [
+    "like_escape": { "why": "Text in, text out.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "called", "as": "all", "expect": "ok", "call": "public.like_escape('50%_off')" }
     ] },
     "list_certify_count": { "why": "A stack's certifications: a private stack's only to its owner.", "cases": [
-      { "name": "a private stack", "as": "all", "expect": "ok", "call": "public.list_certify_count('{ref:lists@V#2}')", "result": "$1 = '[0]'" }
+      { "name": "a private stack", "as": "all", "expect": "ok", "call": "public.list_certify_count('{ref:lists@V#2}')", "result": "$1 = '[0]'" },
+      { "name": "an open stack certified, counted", "as": "members", "expect": "ok", "lay": {"interactions": {"id": "{new}", "user_id": "{uid@X1}", "target_list_id": "{ref:lists@V}", "type": "endorse_list"}},"call": "public.list_certify_count('{ref:lists@V}')", "result": "$1 = '[1]'" },
+      { "name": "the certified stack of a member the caller blocked", "as": "members", "expect": "ok", "lay": {"interactions": {"id": "{new}", "user_id": "{uid@X1}", "target_list_id": "{ref:lists@BK}", "type": "endorse_list"}},"call": "public.list_certify_count('{ref:lists@BK}')", "result": "$1 = '[0]'" },
+      { "name": "the certified stack of a member who blocked the caller", "as": "members", "expect": "ok", "lay": {"interactions": {"id": "{new}", "user_id": "{uid@X1}", "target_list_id": "{ref:lists@BY}", "type": "endorse_list"}},"call": "public.list_certify_count('{ref:lists@BY}')", "result": "$1 = '[0]'" }
     ] },
     "list_certify_counts": { "why": "Stacks' certifications: a private stack's only to its owner.", "cases": [
       { "name": "a private stack", "as": "all", "expect": "ok", "call": "public.list_certify_counts(ARRAY['{ref:lists@V#2}']::uuid[])",
-        "result": "($1->0->>'certify_count')::int = 0" }
+        "result": "($1->0->>'certify_count')::int = 0" },
+      { "name": "the certified stack of a member the caller blocked", "as": "members", "expect": "ok", "lay": {"interactions": {"id": "{new}", "user_id": "{uid@X1}", "target_list_id": "{ref:lists@BK}", "type": "endorse_list"}},"call": "public.list_certify_counts(ARRAY['{ref:lists@BK}']::uuid[])", "result": "COALESCE(($1->0->>'certify_count')::int, 0) = 0" },
+      { "name": "the certified stack of a member who blocked the caller", "as": "members", "expect": "ok", "lay": {"interactions": {"id": "{new}", "user_id": "{uid@X1}", "target_list_id": "{ref:lists@BY}", "type": "endorse_list"}},"call": "public.list_certify_counts(ARRAY['{ref:lists@BY}']::uuid[])", "result": "COALESCE(($1->0->>'certify_count')::int, 0) = 0" }
     ] },
-    "log_viewing_add": { "why": "A rewatch is added to one's own log alone.", "cases": [
+    "log_viewing_add": { "why": "A rewatch is added to one's own log alone.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "another's log", "as": "all", "expect": "error", "call": "public.log_viewing_add('{ref:logs@V}', '{new}', '{}')" },
       { "name": "one's own", "as": "all", "expect": { "ok": "unbanned" }, "call": "public.log_viewing_add('{ref:logs}', '{new}', '{}')",
         "then": "EXISTS (SELECT 1 FROM public.viewings WHERE viewing_id = '{new}')" }
     ] },
-    "log_viewing_remove": { "why": "A rewatch is removed from one's own log alone.", "cases": [
+    "log_viewing_remove": { "why": "A rewatch is removed from one's own log alone.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "another's log", "as": "all", "expect": { "ok": "all" }, "call": "public.log_viewing_remove('{ref:logs@V}', '{ref:viewings@V}')",
         "then": "EXISTS (SELECT 1 FROM public.viewings WHERE viewing_id = '{ref:viewings@V}')" }
     ] },
-    "may_file": { "why": "The caller's own way to the Dispatch.", "cases": [
+    "may_file": { "why": "The caller's own way to the Dispatch.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "asked", "as": "all", "expect": "ok", "call": "public.may_file()" }
     ] },
     "member_viewings": { "why": "A file's viewings, each on its day, read as its logs are: a private member's only by its readers.", "cases": [
       { "name": "a private member's", "as": "all", "expect": "ok", "call": "public.member_viewings('{uid@P}')",
         "result": "jsonb_array_length($1) = 0" },
-      { "name": "an open member's", "as": "all", "expect": "ok", "call": "public.member_viewings('{uid@V}')" }
+      { "name": "an open member's", "as": "all", "expect": "ok", "call": "public.member_viewings('{uid@V}')" },
+      { "name": "a member the caller blocked", "as": "members", "expect": "ok", "call": "public.member_viewings('{uid@BK}')", "result": "$1 = '[]'" },
+      { "name": "a member who blocked the caller", "as": "members", "expect": "ok", "call": "public.member_viewings('{uid@BY}')", "result": "$1 = '[]'" }
     ] },
-    "my_entitlement_source": { "why": "The caller's own rank's source.", "cases": [
+    "my_entitlement_source": { "why": "The caller's own rank's source.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "a lapsed member's", "as": ["lapsed"], "expect": "ok", "call": "public.my_entitlement_source()", "result": "$1 = '[\"revenuecat\"]'" },
       { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.my_entitlement_source()" }
     ] },
-    "normalize_viewing_history": { "why": "JSON in, JSON out.", "cases": [
+    "normalize_viewing_history": { "why": "JSON in, JSON out.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "called", "as": "members", "expect": "ok", "call": "public.normalize_viewing_history('[]', 0)" }
     ] },
-    "profile_tier_weight": { "why": "Words in, a number out.", "cases": [
+    "profile_tier_weight": { "why": "Words in, a number out.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "called", "as": "all", "expect": "ok", "call": "public.profile_tier_weight('free', 'free', true)", "result": "$1 = '[3]'" }
     ] },
-    "public_prefs": { "why": "JSON in, the public part out.", "cases": [
+    "public_prefs": { "why": "JSON in, the public part out.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "called", "as": "all", "expect": "ok", "call": "public.public_prefs('{}')" }
     ] },
-    "rate_limit_check": { "why": "The logs' daily limit, counting the caller's own rows; no other table.", "cases": [
+    "rate_limit_check": { "why": "The logs' daily limit, counting the caller's own rows; no other table.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "the logs", "as": "members", "expect": "ok", "call": "public.rate_limit_check('logs', 'user_id', 20000, 1440)", "result": "$1 = '[true]'" },
       { "name": "another table", "as": "members", "expect": "error", "call": "public.rate_limit_check('profiles', 'id', 1, 1)" }
     ] },
-    "record_gate_event": { "why": "A count of a door's use, naming no one: a member's, once a day per counter; a stranger with the anon key counts nothing.", "cases": [
+    "record_gate_event": { "why": "A count of a door's use, naming no one: a member's, once a day per counter; a stranger with the anon key counts nothing.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "counted", "as": "members", "expect": "ok", "call": "public.record_gate_event('gate_tapped', 'rh')" },
       { "name": "a visitor's is refused", "as": ["visitor"], "expect": "error", "call": "public.record_gate_event('rank_purchased', 'rh')" }
     ] },
-    "forget_push_token": { "why": "A phone forgets its own token, signed in or not: the token is the proof (only the phone holds it), named with the member it was registered to, so a phone registered since to another member keeps theirs.", "cases": [
+    "forget_push_token": { "why": "A phone forgets its own token, signed in or not: the token is the proof (only the phone holds it), named with the member it was registered to, so a phone registered since to another member keeps theirs.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "a phone's own token, named with its member", "as": "all", "expect": "ok",
         "lay": { "push_tokens": { "id": "{new}", "user_id": "{owner}", "token": "rh-forget-{owner}", "platform": "ios" } },
         "call": "public.forget_push_token('rh-forget-{owner}', '{owner}')",
@@ -888,50 +934,50 @@
         "call": "public.forget_push_token('rh-forget2-{owner}', '{uid@V}')",
         "then": "EXISTS (SELECT 1 FROM public.push_tokens WHERE token = 'rh-forget2-{owner}' AND user_id = '{owner}')" }
     ] },
-    "forget_other_devices": { "why": "Signed out of every other device, a member's other phones' tokens go; this phone's stays, and no one else's is touched.", "cases": [
+    "forget_other_devices": { "why": "Signed out of every other device, a member's other phones' tokens go; this phone's stays, and no one else's is touched.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "one's own other phones", "as": "all", "expect": { "ok": "all" },
         "lay": { "push_tokens": { "id": "{new}", "user_id": "{owner}", "token": "rh-other-{owner}", "platform": "android" } },
         "call": "public.forget_other_devices('rh-keep-{owner}')",
         "then": "NOT EXISTS (SELECT 1 FROM public.push_tokens WHERE token = 'rh-other-{owner}')" }
     ] },
-    "register_push_token": { "why": "A device is registered to the member signed in on it.", "cases": [
+    "register_push_token": { "why": "A device is registered to the member signed in on it.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "a device", "as": "all", "expect": { "ok": "all" }, "call": "public.register_push_token('rh-token-{owner}', 'ios')",
         "then": "EXISTS (SELECT 1 FROM public.push_tokens WHERE token = 'rh-token-{owner}' AND user_id = '{owner}')" }
     ] },
-    "relinquish_rank": { "why": "The caller's own rank.", "cases": [
+    "relinquish_rank": { "why": "The caller's own rank.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "asked", "as": "all", "expect": { "ok": "all" }, "call": "public.relinquish_rank()" }
     ] },
-    "remove_lounge_member": { "why": "Only a salon's host removes a seat.", "cases": [
+    "remove_lounge_member": { "why": "Only a salon's host removes a seat.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "a stranger removes no one", "as": "all", "expect": "error", "call": "public.remove_lounge_member('{ref:lounges@V}', '{uid@V}')" }
     ] },
-    "rename_my_handle": { "why": "A member in good standing renames themselves, and no one else.", "cases": [
+    "rename_my_handle": { "why": "A member in good standing renames themselves, and no one else.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "one's own handle", "as": "all", "expect": { "ok": "unbanned" }, "call": "public.rename_my_handle('{username}_r')",
         "then": "(SELECT username FROM public.profiles WHERE id = '{owner}') = '{username}_r' AND (SELECT username FROM public.profiles WHERE id = '{uid@V}') = '{username@V}'" }
     ] },
-    "request_account_deletion": { "why": "A member closes their own account, and no other.", "cases": [
+    "request_account_deletion": { "why": "A member closes their own account, and no other.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "closed", "as": "all", "expect": { "ok": "all" }, "call": "public.request_account_deletion()",
         "then": "NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '{owner}') AND EXISTS (SELECT 1 FROM auth.users WHERE id = '{uid@V}')" },
       { "name": "closed, their words erased with it", "as": "all", "expect": { "ok": "all" }, "call": "public.request_account_deletion(true)",
         "then": "NOT EXISTS (SELECT 1 FROM auth.users WHERE id = '{owner}') AND EXISTS (SELECT 1 FROM auth.users WHERE id = '{uid@V}')" }
     ] },
-    "request_lounge_membership": { "why": "A member of the Lounge (an Archivist feature) in good standing asks to enter a salon for themselves.", "cases": [
+    "request_lounge_membership": { "why": "A member of the Lounge (an Archivist feature) in good standing asks to enter a salon for themselves.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "a private salon", "as": "all", "expect": { "ok": "rank1" }, "call": "public.request_lounge_membership('{ref:lounges@P}')",
         "then": "EXISTS (SELECT 1 FROM public.lounge_members WHERE lounge_id = '{ref:lounges@P}' AND user_id = '{owner}' AND status = 'pending')" }
     ] },
-    "resolve_moderation_report_v2": { "why": "The house's: an admin alone resolves a report.", "cases": [
+    "resolve_moderation_report_v2": { "why": "The house's: an admin alone resolves a report.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "another's report", "as": "all", "expect": { "ok": "admin" },
         "call": "public.resolve_moderation_report_v2('{ref:reports@V}', 'dismiss', '{admin}', 'rh')",
         "then": "(SELECT status FROM public.reports WHERE id = '{ref:reports@V}') = 'resolved'" }
     ] },
-    "salon_channel_readable": { "why": "Whether the caller may hear a salon's channel.", "cases": [
+    "salon_channel_readable": { "why": "Whether the caller may hear a salon's channel.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "a private salon of another", "as": "members", "expect": "ok", "call": "public.salon_channel_readable('lounge-{ref:lounges@P}')", "result": "$1 = '[false]'" },
       { "name": "an open salon", "as": "members", "expect": "ok", "call": "public.salon_channel_readable('lounge-{ref:lounges@V}')", "result": "$1 = '[true]'" }
     ] },
-    "salon_channel_seated": { "why": "Whether the caller sits in a salon's channel.", "cases": [
+    "salon_channel_seated": { "why": "Whether the caller sits in a salon's channel.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "an open salon of another", "as": "members", "expect": "ok", "call": "public.salon_channel_seated('lounge-{ref:lounges@V}')", "result": "$1 = '[false]'" },
       { "name": "one's own", "as": "members", "expect": "ok", "call": "public.salon_channel_seated('lounge-{ref:lounges}')", "result": "$1 = '[true]'" }
     ] },
-    "save_stack": { "why": "A stack is saved by its owner alone.", "cases": [
+    "save_stack": { "why": "A stack is saved by its owner alone.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "another's stack", "as": "all", "expect": "error", "call": "public.save_stack('{ref:lists@V}', 'rh changed')" }
     ] },
     "search_logs": { "why": "The house-wide search's records: one's own, never a private member's to a stranger, nor a hidden author's to a member.", "cases": [
@@ -948,64 +994,67 @@
       { "name": "two letters, every stack walked", "as": "all", "expect": "ok", "call": "public.search_stacks('rh', NULL, NULL, 51)",
         "result": "position('{ref:lists}' in $1::text) > 0 AND position('{ref:lists#2}' in $1::text) = 0 AND position('{ref:lists@P}' in $1::text) = 0 AND (position('{ref:lists@BK}' in $1::text) = 0 OR '{owner}' = '{uid@X2}') AND (position('{ref:lists@BY}' in $1::text) = 0 OR '{owner}' = '{uid@X2}')" }
     ] },
-    "send_salon_typing": { "why": "Typing is sent only from a seat.", "cases": [
+    "send_salon_typing": { "why": "Typing is sent only from a seat.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "a private salon of another", "as": "all", "expect": { "ok": "all" }, "call": "public.send_salon_typing('{ref:lounges@P}')", "result": "$1 = '[false]'" }
     ] },
-    "set_lobby_withheld": { "why": "The house's: an admin alone keeps work off the wall.", "cases": [
+    "set_lobby_withheld": { "why": "The house's: an admin alone keeps work off the wall.", "blocks": "the house's staff's: a block is between members, and a moderator reads every member's case", "cases": [
       { "name": "a member's log", "as": "all", "expect": { "ok": "admin" }, "call": "public.set_lobby_withheld('log', '{ref:logs@V}', true)",
         "then": "EXISTS (SELECT 1 FROM public.lobby_withheld WHERE target_id = '{ref:logs@V}' AND kind = 'log')" }
     ] },
-    "set_lounge_cover": { "why": "A salon's cover is set by its host alone.", "cases": [
+    "set_lounge_cover": { "why": "A salon's cover is set by its host alone.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "another's salon", "as": "all", "expect": "error", "call": "public.set_lounge_cover('{ref:lounges@V}', '/rh.jpg')" },
       { "name": "one's own", "as": "all", "expect": { "ok": "unbanned" }, "call": "public.set_lounge_cover('{ref:lounges}', '/rh.jpg')",
         "then": "(SELECT cover_image FROM public.lounges WHERE id = '{ref:lounges}') = '/rh.jpg'" }
     ] },
-    "set_lounge_member_status": { "why": "Only a salon's host mutes or bans a seat.", "cases": [
+    "set_lounge_member_status": { "why": "Only a salon's host mutes or bans a seat.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "a stranger sanctions no one", "as": "all", "expect": "error", "call": "public.set_lounge_member_status('{ref:lounges@V}', '{uid@X1}', 'banned')" }
     ] },
-    "submit_report": { "why": "A report is filed under its own reporter, whatever id is sent.", "cases": [
+    "submit_report": { "why": "A report is filed under its own reporter, whatever id is sent.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "a report naming another as its reporter", "as": "all", "expect": { "ok": "all" },
         "call": "public.submit_report('{uid@V}', '{ref:logs@X2}', 'log', 'spam')",
         "then": "EXISTS (SELECT 1 FROM public.reports WHERE content_id = '{ref:logs@X2}' AND reporter_id = '{owner}') AND NOT EXISTS (SELECT 1 FROM public.reports WHERE content_id = '{ref:logs@X2}' AND reporter_id = '{uid@V}')" }
     ] },
-    "tier_weight": { "why": "A word in, a number out.", "cases": [
+    "tier_weight": { "why": "A word in, a number out.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "called", "as": "all", "expect": "ok", "call": "public.tier_weight('auteur')", "result": "$1 = '[2]'" }
     ] },
     "toggle_dossier_certify": { "why": "A certification of an open post, by a member in good standing, never across a block.", "cases": [
       { "name": "an open member's post", "as": "all", "expect": { "ok": "unbanned" }, "call": "public.toggle_dossier_certify('{ref:dispatch_posts@V}')" },
-      { "name": "a post of one the caller blocked", "as": "all", "expect": "error", "call": "public.toggle_dossier_certify('{ref:dispatch_posts@BK}')" }
+      { "name": "a post of one the caller blocked", "as": "all", "expect": "error", "call": "public.toggle_dossier_certify('{ref:dispatch_posts@BK}')" },
+      { "name": "a post of one who blocked the caller", "as": "all", "expect": "error", "call": "public.toggle_dossier_certify('{ref:dispatch_posts@BY}')" }
     ] },
-    "update_my_preferences": { "why": "A member's own preferences, and no one else's.", "cases": [
+    "update_my_preferences": { "why": "A member's own preferences, and no one else's.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "set", "as": "all", "expect": { "ok": "all" }, "call": "public.update_my_preferences('{\"rh_attack\": 1}')",
         "then": "(SELECT preferences ? 'rh_attack' FROM public.profiles WHERE id = '{owner}') AND (SELECT preferences ? 'rh_attack' FROM public.profiles WHERE id = '{uid@V}') IS NOT TRUE" }
     ] },
-    "viewing_fields": { "why": "The house's list of a viewing's fields.", "cases": [
+    "viewing_fields": { "why": "The house's list of a viewing's fields.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "called", "as": "members", "expect": "ok", "call": "public.viewing_fields()" }
     ] },
-    "viewing_fields_uncovered": { "why": "The house's list of a log's fields no viewing keeps.", "cases": [
+    "viewing_fields_uncovered": { "why": "The house's list of a log's fields no viewing keeps.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "called", "as": "members", "expect": "ok", "call": "public.viewing_fields_uncovered()" }
     ] },
-    "viewing_set_list": { "why": "The house's list of a viewing's columns.", "cases": [
+    "viewing_set_list": { "why": "The house's list of a viewing's columns.", "blocks": "reads no member: its answer is made from what it is given, or the house's own lists", "cases": [
       { "name": "called", "as": "members", "expect": "ok", "call": "public.viewing_set_list()" }
     ] },
-    "viewing_note_remove": { "why": "A Vault note is removed by its writer alone.", "cases": [
+    "viewing_note_remove": { "why": "A Vault note is removed by its writer alone.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "another's note", "as": "all", "expect": { "ok": "all" }, "call": "public.viewing_note_remove('{ref:viewings@V}')",
         "then": "EXISTS (SELECT 1 FROM public.log_private_notes WHERE viewing_id = '{ref:viewings@V}')" },
       { "name": "another's note, with the moment it was written", "as": "all", "expect": { "ok": "all" }, "call": "public.viewing_note_remove('{ref:viewings@V}', now())",
         "then": "EXISTS (SELECT 1 FROM public.log_private_notes WHERE viewing_id = '{ref:viewings@V}')" }
     ] },
-    "viewing_note_set": { "why": "A Vault note is written on one's own viewing alone.", "cases": [
+    "viewing_note_set": { "why": "A Vault note is written on one's own viewing alone.", "blocks": "answers of the caller's own alone: no other member's rows, words or counts are in its answer", "cases": [
       { "name": "another's viewing", "as": "all", "expect": "error", "call": "public.viewing_note_set('{ref:logs@V}', '{ref:viewings@V}', 'rh forged')" },
       { "name": "another's viewing, with the moment it was written", "as": "all", "expect": "error", "call": "public.viewing_note_set('{ref:logs@V}', '{ref:viewings@V}', 'rh forged', now())" }
     ] },
-    "withdraw_lounge_message": { "why": "A message is withdrawn by its writer or its salon's host.", "cases": [
+    "withdraw_lounge_message": { "why": "A message is withdrawn by its writer or its salon's host.", "blocks": "a write whose answer holds no member's words or counts: who may act across a block is the table's rule, tried by the grid", "cases": [
       { "name": "another's message in another's salon", "as": "all", "expect": "error", "call": "public.withdraw_lounge_message('{ref:lounge_messages@V}')" }
     ] },
     "year_viewings": { "why": "A member's year of viewings, read as their logs are: a private member's only by its readers, and by members alone.", "cases": [
       { "name": "a private member's", "as": "members", "expect": "ok", "call": "public.year_viewings('{uid@P}', 2026)",
         "result": "jsonb_array_length($1) = 0" },
       { "name": "an open member's", "as": "members", "expect": "ok", "call": "public.year_viewings('{uid@V}', 2026)" },
-      { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.year_viewings('{uid@V}', 2026)" }
+      { "name": "a visitor", "as": ["visitor"], "expect": "error", "call": "public.year_viewings('{uid@V}', 2026)" },
+      { "name": "a member the caller blocked", "as": "members", "expect": "ok", "call": "public.year_viewings('{uid@BK}', 2026)", "result": "$1 = '[]'" },
+      { "name": "a member who blocked the caller", "as": "members", "expect": "ok", "call": "public.year_viewings('{uid@BY}', 2026)", "result": "$1 = '[]'" }
     ] }
   },
   "channels": [
@@ -1089,22 +1138,20 @@
     "trigger profiles \"tr_protect_privileged_profile_fields\" dropped": "A second lock: profiles' column grants refuse every privileged field first; 'grant profiles update whole, its field guards dropped' is killed.",
     "trigger dispatch_comments \"refuse_across_a_block\" dropped": "A second lock on a member's own path: posts_block hides a blocked author's filing, so critiques_open_post refuses first; the trigger holds the house's paths, which write as the house.",
     "trigger logs \"a_keep_viewings\" dropped": "The Vault's viewings, kept whole through a log's edits: held by the_vault_rehearsal, not by this run's tries.",
-    "trigger logs \"a_register_viewings_insert\" dropped": "The Vault's viewings, registered as a log is made: held by the_vault_rehearsal, not by this run's tries.",
-    "policy public.logs \"logs_insert_rate_limit\" dropped": "A day's 20,000 logs: no try lays that many; rate_limit_check's own rehearsal (20261015_07) holds the count.",
-    "trigger logs \"tr_log_insert_ceiling\" dropped": "A day's 20,000 logs: no try lays that many; the same ceiling as logs_insert_rate_limit."
+    "trigger logs \"a_register_viewings_insert\" dropped": "The Vault's viewings, registered as a log is made: held by the_vault_rehearsal, not by this run's tries."
   },
   "probes": [
     {"name":"a private member who opens their file lets in those who asked","table":"profiles","as":["P"],"kind":"update","lay":{"interactions":{"id":"{new}","user_id":"{uid@X1}","target_user_id":"{owner}","type":"follow_request"}},"id":"{owner}","set":{"is_social_private":false},"then":"EXISTS (SELECT 1 FROM public.interactions WHERE id = '{new}' AND type = 'follow')","expect":"ok","why":"Going open turns every waiting request into a follow (handle_privacy_switch): no one is left asking at an open door."},
     {"name":"a second follow a moment after the first lands","table":"interactions","as":["free","auteur"],"kind":"insert","lay":{"interactions":{"id":"{id#9}","user_id":"{owner}","target_user_id":"{uid@X2}","type":"follow","created_at":"now"}},"row":{"id":"{new}","user_id":"{owner}","target_user_id":"{uid@V}","type":"follow"},"expect":"ok","why":"A member's follows and certifications a moment apart both land: the house paces only what a script does (check_interaction_rate_limit, round 13)."},
-    {"name":"a member with no room left to act is refused","table":"interactions","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.interaction_budget (user_id, tokens, refilled_at, day, follows, certs, swept_at) VALUES ('{owner}', 0, now(), (now() AT TIME ZONE 'UTC')::date, 0, 0, now()) ON CONFLICT (user_id) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","user_id":"{owner}","target_user_id":"{uid@V}","type":"follow"},"expect":"refused","why":"A member's room to act holds 120 and comes back one every 2 seconds: a script is held to 30 a minute (check_interaction_rate_limit, RH429)."},
-    {"name":"a fourth follow of one member within the hour is refused","table":"interactions","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.interaction_churn (user_id, target, since, n) VALUES ('{owner}', 'member:{uid@V}', now(), 3) ON CONFLICT (user_id, target) DO UPDATE SET since = now(), n = 3","row":{"id":"{new}","user_id":"{owner}","target_user_id":"{uid@V}","type":"follow"},"expect":"refused","why":"Follow, unfollow, follow again: a member is followed at most three times an hour by one member, against notice floods (check_interaction_rate_limit, RH429)."},
+    {"name":"a member with no room left to act is refused","table":"interactions","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.interaction_budget (user_id, tokens, refilled_at, day, follows, certs, swept_at) VALUES ('{owner}', 0, now(), (now() AT TIME ZONE 'UTC')::date, 0, 0, now()) ON CONFLICT (user_id) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","user_id":"{owner}","target_user_id":"{uid@V}","type":"follow"},"expect":"refused","refusedWith":"RH429","why":"A member's room to act holds 120 and comes back one every 2 seconds: a script is held to 30 a minute (check_interaction_rate_limit, RH429)."},
+    {"name":"a fourth follow of one member within the hour is refused","table":"interactions","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.interaction_churn (user_id, target, since, n) VALUES ('{owner}', 'member:{uid@V}', now(), 3) ON CONFLICT (user_id, target) DO UPDATE SET since = now(), n = 3","row":{"id":"{new}","user_id":"{owner}","target_user_id":"{uid@V}","type":"follow"},"expect":"refused","refusedWith":"RH429","why":"Follow, unfollow, follow again: a member is followed at most three times an hour by one member, against notice floods (check_interaction_rate_limit, RH429)."},
     {"name":"a member's 201st error report of a day is refused","table":"error_logs","as":["free"],"kind":"insert","laySql":"INSERT INTO public.error_logs (user_id, error_type, error_message, created_at) SELECT '{owner}', 'rh', 'rh', now() FROM generate_series(1, 200)","row":{"id":"{new}","user_id":"{owner}","error_type":"rh","error_message":"rh"},"expect":"refused","why":"A member's error reports are kept to 200 a day (error_logs_daily_ceiling, 20261015_07)."},
-    {"name":"a member with no room left to critique is refused","table":"log_comments","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.critique_budget (user_id, tokens, refilled_at, day, n, swept_at) VALUES ('{owner}', 0, now(), (now() AT TIME ZONE 'UTC')::date, 0, now()) ON CONFLICT (user_id) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","log_id":"{ref:logs@V}","user_id":"{owner}","username":"{username}","body":"rh critique"},"expect":"refused","why":"A member's room to critique holds 30 and comes back one every 20 seconds: a script is held to 180 an hour, against notice floods (check_critique_pace, RH429)."},
-    {"name":"a twenty-first critique of one stack within the hour is refused","table":"list_comments","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.interaction_churn (user_id, target, since, n) VALUES ('{owner}', 'critique:list:{ref:lists@V}', now(), 20) ON CONFLICT (user_id, target) DO UPDATE SET since = now(), n = 20","row":{"id":"{new}","list_id":"{ref:lists@V}","user_id":"{owner}","content":"rh critique"},"expect":"refused","why":"Critique, delete, critique again: a piece takes at most twenty critiques an hour from one member, against notice floods (check_critique_pace, RH429)."},
-    {"name":"a member at the day's 500 critiques is refused","table":"dispatch_comments","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.critique_budget (user_id, tokens, refilled_at, day, n, swept_at) VALUES ('{owner}', 30, now(), (now() AT TIME ZONE 'UTC')::date, 500, now()) ON CONFLICT (user_id) DO UPDATE SET tokens = 30, refilled_at = now(), day = (now() AT TIME ZONE 'UTC')::date, n = 500","row":{"id":"{new}","post_id":"{ref:dispatch_posts@V}","user_id":"{owner}","author_username":"{username}","body":"rh critique"},"expect":"refused","why":"A member files at most 500 critiques in the house's day (check_critique_pace, RH429)."},
-    {"name":"a member with no room left to make stacks is refused","table":"lists","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'stack', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","user_id":"{owner}","title":"rh paced stack","is_private":false},"expect":"refused","why":"A member's room to make stacks holds 500 (a whole archive imported) and comes back one every 10 seconds, 2,000 a day: a script is held at the pace a person never meets (check_write_pace, RH429)."},
-    {"name":"a member at the day's 2,000 certifications of filings is refused","table":"dispatch_certifications","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'certification', 120, now(), (now() AT TIME ZONE 'UTC')::date, 2000) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 120, refilled_at = now(), day = (now() AT TIME ZONE 'UTC')::date, n = 2000","row":{"id":"{new}","user_id":"{owner}","post_id":"{ref:dispatch_posts@V}"},"expect":"refused","why":"Certify, take back, certify again: a member certifies at most 2,000 filings and critiques in the house's day, each a notice, against notice floods (check_write_pace, RH429)."},
-    {"name":"a member's 1,001st analytics event of a day is refused","table":"analytics_events","as":["free"],"kind":"insert","laySql":"INSERT INTO public.analytics_budget (user_id, day, n) VALUES ('{owner}', (now() AT TIME ZONE 'UTC')::date, 1000) ON CONFLICT (user_id) DO UPDATE SET day = (now() AT TIME ZONE 'UTC')::date, n = 1000","row":{"id":"{new}","user_id":"{owner}","event_name":"rh"},"expect":"refused","why":"A member's analytics events are kept to 1,000 a day, as error reports to 200 (analytics_events_daily_ceiling, RH429)."},
+    {"name":"a member with no room left to critique is refused","table":"log_comments","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.critique_budget (user_id, tokens, refilled_at, day, n, swept_at) VALUES ('{owner}', 0, now(), (now() AT TIME ZONE 'UTC')::date, 0, now()) ON CONFLICT (user_id) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","log_id":"{ref:logs@V}","user_id":"{owner}","username":"{username}","body":"rh critique"},"expect":"refused","refusedWith":"RH429","why":"A member's room to critique holds 30 and comes back one every 20 seconds: a script is held to 180 an hour, against notice floods (check_critique_pace, RH429)."},
+    {"name":"a twenty-first critique of one stack within the hour is refused","table":"list_comments","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.interaction_churn (user_id, target, since, n) VALUES ('{owner}', 'critique:list:{ref:lists@V}', now(), 20) ON CONFLICT (user_id, target) DO UPDATE SET since = now(), n = 20","row":{"id":"{new}","list_id":"{ref:lists@V}","user_id":"{owner}","content":"rh critique"},"expect":"refused","refusedWith":"RH429","why":"Critique, delete, critique again: a piece takes at most twenty critiques an hour from one member, against notice floods (check_critique_pace, RH429)."},
+    {"name":"a member at the day's 500 critiques is refused","table":"dispatch_comments","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.critique_budget (user_id, tokens, refilled_at, day, n, swept_at) VALUES ('{owner}', 30, now(), (now() AT TIME ZONE 'UTC')::date, 500, now()) ON CONFLICT (user_id) DO UPDATE SET tokens = 30, refilled_at = now(), day = (now() AT TIME ZONE 'UTC')::date, n = 500","row":{"id":"{new}","post_id":"{ref:dispatch_posts@V}","user_id":"{owner}","author_username":"{username}","body":"rh critique"},"expect":"refused","refusedWith":"RH429","why":"A member files at most 500 critiques in the house's day (check_critique_pace, RH429)."},
+    {"name":"a member with no room left to make stacks is refused","table":"lists","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'stack', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","user_id":"{owner}","title":"rh paced stack","is_private":false},"expect":"refused","refusedWith":"RH429","why":"A member's room to make stacks holds 500 (a whole archive imported) and comes back one every 10 seconds, 2,000 a day: a script is held at the pace a person never meets (check_write_pace, RH429)."},
+    {"name":"a member at the day's 2,000 certifications of filings is refused","table":"dispatch_certifications","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'certification', 120, now(), (now() AT TIME ZONE 'UTC')::date, 2000) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 120, refilled_at = now(), day = (now() AT TIME ZONE 'UTC')::date, n = 2000","row":{"id":"{new}","user_id":"{owner}","post_id":"{ref:dispatch_posts@V}"},"expect":"refused","refusedWith":"RH429","why":"Certify, take back, certify again: a member certifies at most 2,000 filings and critiques in the house's day, each a notice, against notice floods (check_write_pace, RH429)."},
+    {"name":"a member's 1,001st analytics event of a day is refused","table":"analytics_events","as":["free"],"kind":"insert","laySql":"INSERT INTO public.analytics_budget (user_id, day, n) VALUES ('{owner}', (now() AT TIME ZONE 'UTC')::date, 1000) ON CONFLICT (user_id) DO UPDATE SET day = (now() AT TIME ZONE 'UTC')::date, n = 1000","row":{"id":"{new}","user_id":"{owner}","event_name":"rh"},"expect":"refused","refusedWith":"RH429","why":"A member's analytics events are kept to 1,000 a day, as error reports to 200 (analytics_events_daily_ceiling, RH429)."},
     {"name":"a muted member does not unmute themselves","table":"lounge_members","as":["free","auteur"],"kind":"update","lay":{"lounge_members":{"id":"{new}","lounge_id":"{ref:lounges@V}","user_id":"{owner}","status":"muted"}},"id":"{new}","set":{"status":"approved"},"expect":"refused","why":"A seat's standing in a salon is its host's to set."},
     {"name":"a seated member moves their own reading place","table":"lounge_members","as":["free"],"kind":"update","lay":{"lounge_members":{"id":"{new}","lounge_id":"{ref:lounges@V}","user_id":"{owner}","status":"muted","last_read_at":"2001-01-01"}},"id":"{new}","set":{"last_read_at":"now"},"expect":"ok","why":"The control beside the case above."},
     {"name":"turning a salon private is an Auteur feature","table":"lounges","as":["archivist"],"kind":"update","id":"{ref:lounges}","set":{"is_private":true},"expect":"refused","why":"A private salon is an Auteur feature, made or turned."},
@@ -1235,6 +1282,18 @@
       "lay": { "id": "{new}", "user_id": "{uid@X1}", "target_user_id": "{uid@P}", "type": "follow_request" },
       "expect": "seen",
       "why": "The control beside the probe above: the member asked sees the request."
-    }
+    },
+    {"name":"a member with no room left to file is refused","table":"dispatch_posts","as":["auteur","founding"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'filing', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","kind":"take","user_id":"{owner}","author_username":"{username}","body":"rh paced take","is_published":true},"expect":"refused","refusedWith":"RH429","why":"A member files ten at once and one more each six minutes, fifty a day: a script never floods the paper (check_write_pace, RH429)."},
+    {"name":"a member with no room left to save filings is refused","table":"dispatch_saves","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'save', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"user_id":"{owner}","post_id":"{ref:dispatch_posts@X1}"},"expect":"refused","refusedWith":"RH429","why":"A member saves 300 filings at once and one more each second, 3,000 a day (check_write_pace, RH429)."},
+    {"name":"a member with no room left to vote is refused","table":"dispatch_votes","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'vote', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","post_id":"{ref:dispatch_posts@X1}","user_id":"{owner}","option_index":0},"expect":"refused","refusedWith":"RH429","why":"A member votes in 120 ballots at once and one more each second, 2,000 a day (check_write_pace, RH429)."},
+    {"name":"a member with no room left to fill stacks is refused","table":"list_items","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'stack_entry', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","list_id":"{ref:lists}","film_id":990681,"film_title":"rh paced film"},"expect":"refused","refusedWith":"RH429","why":"A member puts 20,000 films in stacks at once (a whole archive imported) and ten more each second, 100,000 a day (check_write_pace, RH429)."},
+    {"name":"a member with no room left to log films is refused","table":"logs","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'record', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","user_id":"{owner}","film_id":990681,"film_title":"rh paced film","watched_date":"2019-06-01","created_at":"2019-06-01"},"expect":"refused","refusedWith":"RH429","why":"A member logs 50,000 films at once (the largest archive imported) and ten more each second, 100,000 a day; a record dated in the past is counted as any other (check_write_pace, RH429)."},
+    {"name":"a member with no room left to react is refused","table":"lounge_message_reactions","as":["archivist","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'reaction', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","message_id":"{ref:lounge_messages}","lounge_id":"{ref:lounges}","user_id":"{owner}","reaction":"adored"},"expect":"refused","refusedWith":"RH429","why":"A member reacts 120 times at once and once more each two seconds, 2,000 a day (check_write_pace, RH429)."},
+    {"name":"a member with no room left to open salons is refused","table":"lounges","as":["archivist","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'salon', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","name":"rh paced salon","creator_id":"{owner}","is_private":false},"expect":"refused","refusedWith":"RH429","why":"A member opens five salons at once and one more each hour, twenty a day (check_write_pace, RH429)."},
+    {"name":"a member with no room left to keep drafts is refused","table":"member_drafts","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'draft', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"user_id":"{owner}","kind":"edit","scope":"rh paced","payload":{},"saved_at":"2026-01-01"},"expect":"refused","refusedWith":"RH429","why":"A member keeps 300 new drafts at once and one more each second, 5,000 a day (check_write_pace, RH429)."},
+    {"name":"a member with no room left to shelve films is refused","table":"physical_archive","as":["archivist","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'shelf_entry', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","user_id":"{owner}","film_id":990681,"film_title":"rh paced film"},"expect":"refused","refusedWith":"RH429","why":"A member shelves 2,000 films at once and two more each second, 10,000 a day (check_write_pace, RH429)."},
+    {"name":"a member with no room left to add push addresses is refused","table":"push_subscriptions","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'push_address', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","user_id":"{owner}","endpoint":"https://rh.test/paced/{owner}","p256dh":"rh","auth":"rh"},"expect":"refused","refusedWith":"RH429","why":"A member adds twenty push addresses at once and one more each minute, a hundred a day (check_write_pace, RH429)."},
+    {"name":"a member with no room left to block is refused","table":"user_blocks","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'block', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","blocker_id":"{owner}","blocked_id":"{peer}","type":"mute"},"expect":"refused","refusedWith":"RH429","why":"A member blocks or mutes a hundred at once and one more each second, 1,000 a day (check_write_pace, RH429)."},
+    {"name":"a member with no room left to fill the watchlist is refused","table":"watchlists","as":["free","auteur"],"kind":"insert","laySql":"INSERT INTO public.write_budget (user_id, kind, tokens, refilled_at, day, n) VALUES ('{owner}', 'watchlist_entry', 0, now(), (now() AT TIME ZONE 'UTC')::date, 1) ON CONFLICT (user_id, kind) DO UPDATE SET tokens = 0, refilled_at = now()","row":{"id":"{new}","user_id":"{owner}","film_id":990681,"film_title":"rh paced film"},"expect":"refused","refusedWith":"RH429","why":"A member adds 20,000 films to the watchlist at once (a whole archive imported) and ten more each second, 100,000 a day (check_write_pace, RH429)."}
   ]
 }

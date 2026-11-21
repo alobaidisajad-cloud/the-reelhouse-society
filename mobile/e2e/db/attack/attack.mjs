@@ -290,6 +290,8 @@ export const plan = (matrix, columns = {}) => {
       const newId = uuidOf('probe', p.name);
       const ctx = { table: p.table, owner: actor === 'visitor' ? 'X2' : actor, newId };
       const c = { label: `probe: ${p.name} (${actor})`, table: p.table, action: p.kind, actor, target: 'probe', expect: p.expect };
+      // A pace's probe is refused by the pace itself (its SQLSTATE), never by another rule on the way.
+      if (p.refusedWith) c.refusedWith = p.refusedWith;
       // What the house lays first: rows of its own (lay), or many at once (laySql).
       const lays = [
         ...(p.lay && p.kind !== 'read' ? Object.entries(p.lay).map(([t, row]) => insertSql(t, dated(t, fill(row, ctx), columns))) : []),
@@ -370,6 +372,19 @@ export const callableFunctions = (sql) => {
   return [...new Set([...sql.matchAll(/^GRANT (?:ALL|EXECUTE) ON FUNCTION public\.(\w+)\(.*\) TO (?:anon|authenticated);$/gm)]
     .map((m) => m[1]).filter((f) => !triggers.has(f)))].sort();
 };
+
+/**
+ * The functions never asked across a block: no case, called by a member, that reads both the member
+ * every actor blocked (BK) and the one who blocked every actor (BY) with a rule on the answer (a result,
+ * an effect, or a refusal), and no
+ * `blocks` saying why the answer holds no other member's rows, words or counts. A count, a statistic,
+ * a taste match or a notice read past the hiding rule is found here, not by a reader of the app.
+ */
+export const unaskedAcrossBlocks = (matrix) => Object.entries(matrix.functions ?? {})
+  .filter(([, spec]) => !spec.blocks && !['BK', 'BY'].every((who) => spec.cases.some((k) =>
+    (k.result || k.then || k.expect === 'error') && actorsOf(k.as).some((a) => a !== 'visitor')
+    && JSON.stringify([k.call, k.lay ?? null, k.result ?? null, k.then ?? null]).includes(`@${who}`))))
+  .map(([fn]) => fn).sort();
 
 /** The setting: the members, every specimen, and the logs that let each member file. */
 export const setting = (matrix, columns = {}) => {
@@ -584,6 +599,7 @@ export const judge = (c, got) => {
     if (c.action === 'update' || c.action === 'delete') return { true: 'ok', false: 'refused' }[rows[2]] ?? 'broken';
     return rows[2] === undefined ? 'ok' : `ok then:${rows[2]}`;
   }
+  if (c.refusedWith) return got.startsWith(`${c.refusedWith} `) ? 'refused' : 'refused otherwise';
   // A data error means the rules let the row through and the specimen is wrong: never a refusal,
   // unless the table's own trigger refuses with that code (refusedAs).
   return c.anyError || !/^2[23]/.test(got) || (c.refusedAs ?? []).includes(got.slice(0, 5)) ? 'refused' : 'broken';

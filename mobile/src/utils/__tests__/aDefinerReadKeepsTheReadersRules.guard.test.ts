@@ -69,8 +69,6 @@ const JUDGED: Record<string, string> = {
   'public.end_filing: hiding': `${OWN}, or ${STAFF}`,
   'public.end_filing: withheld': `${OWN}, or ${STAFF}`,
   'public.get_marks_ledger: withheld': `${OWN}: the caller's own marks, a withheld record of theirs still theirs to see`,
-  'public.list_certify_count: hiding': 'a total of a stack\'s certifications, naming no one, as a record\'s certify_count is (log_counts)',
-  'public.list_certify_counts: hiding': 'as list_certify_count, for many stacks',
   'public.request_account_deletion: hiding': `${OWN}: the closing member's own words`,
   'public.request_account_deletion: withheld': `${OWN}: the closing member's own words, withheld or not`,
   'public.submit_report: hiding': 'a report is made of words the reporter saw; it reads the piece reported to keep its words as reported, and returns none of them',
