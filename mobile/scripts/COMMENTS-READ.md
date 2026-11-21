@@ -2104,3 +2104,5 @@ files of the reading map this one does not.
 | src/utils/__tests__/aRefusalIsNeverToldAsTheConnection.guard.test.ts | — |  |
 | src/utils/__tests__/aWordThatAppearsIsSaid.guard.test.ts | — |  |
 | src/utils/saidFilm.ts | — |  |
+| test-utils/__tests__/house.test.ts | — |  |
+| test-utils/house.js | — |  |
