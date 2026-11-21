@@ -70,6 +70,9 @@ describe('a salon whose count the house did not give', () => {
 
   it('the door says no count', () => {
     const r = render(<GateView gate="request" lounge={{ ...unknown, is_private: true }} memberCount={null} onRequest={jest.fn()} onRetry={jest.fn()} pending={false} />);
+    // The door is drawn (its name, its ask), and only its count is missing.
+    expect(r.getByText('PRIVATE SALON')).toBeTruthy();
+    expect(r.getByText('REQUEST A SEAT')).toBeTruthy();
     expect(r.queryByText(/behind the door/)).toBeNull();
   });
 });
