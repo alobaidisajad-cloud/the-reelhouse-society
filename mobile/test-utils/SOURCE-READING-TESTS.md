@@ -395,7 +395,6 @@ Decisions, as of 2026-09-28:
 | `mockups/paper/__tests__/zz-paper.gen.test.tsx` | Poster art and fixture JSON for its drawings. |
 | `scripts/__tests__/mergeCoverage.test.ts` | The coverage summaries jest and merge-coverage.cjs write for a small project it makes in a temporary folder: their numbers are the thing compared. |
 | `src/utils/__tests__/aHandleIsJudgedByItsWords.test.ts` | The handle filter's word lists in the database migration and the live schema, and the website's copy of the rule: one rule in three places, which no render reaches. Behaviour: the same file's cases, and `a_handle_is_judged_by_its_words_rehearsal.sql` on production. |
-| `src/utils/__tests__/aMembersWordsAreCleaned.test.ts` | Every text column a member can write, read from the snapshot's grants, is cleaned by its table's trigger or named with its reason: a column added later is a place the cleaning does not reach until someone remembers it. Behaviour: `a_members_words_are_cleaned_rehearsal.sql` on production. |
 | `src/utils/__tests__/theDatabaseCleansAsTheAppDoes.test.ts` | The corpus file holds every case with cleanForStorage's own answer; the database is held to the same answers by the sealed E2E (verify-cleaning.mjs). |
 | `src/utils/__tests__/websiteFreeze.guard.test.ts` | The website freeze's CI step and Dependabot's paused website entry. |
 | `src/theme/__tests__/everyStyleIsRead.guard.test.ts` | Every key of every StyleSheet is read somewhere in the app: a style nobody draws renders nothing, so no render can find it. |
