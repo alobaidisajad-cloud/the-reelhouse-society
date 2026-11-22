@@ -35,8 +35,8 @@ const NOT_WORDS: Record<string, string[]> = {
   'one of a fixed set, held by a CHECK': [
     'dispatch_posts.kind', 'dispatch_posts.subject_kind', 'dispatch_posts.ended_by', 'interactions.type', 'logs.format',
     'logs.physical_media', 'logs.status', 'lounge_members.status', 'lounge_message_reactions.reaction', 'lounge_messages.type',
-    'member_drafts.kind', 'member_drafts.scope', 'mod_actions.action', 'notifications.type', 'physical_archive.formats',
-    'push_tokens.platform', 'user_blocks.type',
+    'member_drafts.kind', 'member_drafts.scope', 'mod_actions.action', 'mod_actions.appeal_status', 'notifications.type',
+    'physical_archive.formats', 'push_tokens.platform', 'user_blocks.type',
   ],
   'a film\'s title or year, as TMDB gives it': [
     'logs.film_title', 'logs.year', 'list_items.film_title', 'lounge_messages.film_title', 'physical_archive.film_title',
@@ -55,6 +55,7 @@ const NOT_WORDS: Record<string, string[]> = {
     'dispatch_posts.frozen_totals', 'logs.autopsy', 'lounge_messages.metadata', 'mod_actions.content_snapshot',
   ],
   'a draft, cleaned when it is filed': ['member_drafts.payload'],
+  'cleaned by the one function that writes it (file_appeal, clean_member_text), no row rule letting a member write it': ['mod_actions.appeal'],
 };
 
 /** Each table's text-like columns and their types. */

@@ -37,7 +37,7 @@
       "what": "What a member writes and keeps: logs, reviews, critiques, Dispatch posts and essays, comments, stacks and lists, their shelf of physical copies, private notes, drafts, their bio, and what they import from a file they choose.",
       "purpose": "The member's own record of films, kept for as long as the account exists and read by the members they choose.",
       "linked": true, "required": false, "clients": ["app", "website"],
-      "kept": ["public.logs", "public.lists", "public.list_comments", "public.log_comments", "public.log_private_notes", "public.dispatch_posts", "public.dispatch_comments", "public.dispatch_dossiers_legacy", "public.dossier_comments_legacy", "public.member_drafts", "public.physical_archive", "public.watchlists", "public.profiles", "public.viewing_notes_removed"],
+      "kept": ["public.logs", "public.lists", "public.list_comments", "public.log_comments", "public.log_private_notes", "public.dispatch_posts", "public.dispatch_comments", "public.dispatch_dossiers_legacy", "public.dossier_comments_legacy", "public.member_drafts", "public.physical_archive", "public.watchlists", "public.profiles", "public.viewing_notes_removed", "public.critique_budget"],
       "sentTo": ["supabase"],
       "apple": { "type": "Other User Content", "purposes": ["App Functionality"] },
       "play": { "type": "App activity: Other user-generated content", "purposes": ["App functionality"] }
@@ -46,7 +46,7 @@
       "what": "Messages and reactions a member sends in a salon, and the salons they found or join.",
       "purpose": "Read by the salon's members.",
       "linked": true, "required": false, "clients": ["app", "website"],
-      "kept": ["public.lounges", "public.lounge_members", "public.lounge_messages", "public.lounge_message_reactions", "public.salon_typing_sent"],
+      "kept": ["public.lounges", "public.lounge_members", "public.lounge_messages", "public.lounge_message_reactions", "public.salon_typing_sent", "public.salon_budget"],
       "sentTo": ["supabase"],
       "apple": { "type": "Other User Content", "purposes": ["App Functionality"] },
       "play": { "type": "Messages: Other in-app messages", "purposes": ["App functionality"] }
@@ -101,10 +101,10 @@
       "play": { "type": "App activity: In-app search history", "purposes": ["App functionality"] }
     },
     "sign-in-records": {
-      "what": "The IP address and browser or app name (user agent) of each sign-in and session, kept by Supabase Auth.",
+      "what": "The IP address and browser or app name (user agent) of each sign-in and session, kept by Supabase Auth; and, for a sign-in by handle, the wrong passwords counted per address for a day and a hash of each phone the member signed in on, kept by the house.",
       "purpose": "The account's security: sessions, and seeing a sign-in that was not the member's.",
       "linked": true, "required": true, "clients": ["app", "website"],
-      "kept": ["auth.sessions", "auth.audit_log_entries"], "sentTo": ["supabase"],
+      "kept": ["auth.sessions", "auth.audit_log_entries", "public.sign_in_doors", "public.sign_in_handles", "public.sign_in_devices"], "sentTo": ["supabase"],
       "apple": { "type": "Other Data Types", "purposes": ["App Functionality"] },
       "play": { "type": "Device or other IDs", "purposes": ["Fraud prevention, security, and compliance"] }
     },
@@ -112,7 +112,7 @@
       "what": "What the house's moderators decide about a member: warnings, sanctions in a salon, actions taken, and a piece withheld from the Lobby.",
       "purpose": "Keeping the house's rules, and a member's right to know why.",
       "linked": true, "required": false, "clients": ["app", "website"],
-      "kept": ["public.mod_actions", "public.warnings", "public.lounge_sanctions", "public.reports", "public.lobby_withheld", "public.lobby_editions"],
+      "kept": ["public.mod_actions", "public.warnings", "public.lounge_sanctions", "public.reports", "public.lobby_withheld", "public.lobby_editions", "public.withheld_pieces"],
       "sentTo": ["supabase"],
       "apple": null, "play": null,
       "whyNoForm": "Made by the house about a member, not collected from them; named in the Privacy Policy."
@@ -136,7 +136,7 @@
       "what": "Which pages a signed-in member opens on the website.",
       "purpose": "Knowing which of the website's pages are read.",
       "linked": true, "required": true, "clients": ["website"],
-      "kept": ["public.analytics_events"], "sentTo": ["supabase"],
+      "kept": ["public.analytics_events", "public.analytics_budget"], "sentTo": ["supabase"],
       "apple": null, "play": null, "whyNoForm": "The website's alone; the store forms are the app's."
     },
     "website-analytics": {
@@ -250,8 +250,10 @@
     "auth.sessions": { "data": ["sign-in-records"], "kind": "record" },
     "auth.audit_log_entries": { "data": ["sign-in-records"], "kind": "record" },
     "storage.objects": { "data": ["portrait"], "kind": "own" },
+    "public.analytics_budget": { "data": ["website-visits"], "kind": "record" },
     "public.analytics_events": { "data": ["website-visits"], "kind": "record" },
     "public.certifications_pushed": { "data": ["actions"], "kind": "record" },
+    "public.critique_budget": { "data": ["writing"], "kind": "record" },
     "public.dispatch_certifications": { "data": ["actions"], "kind": "own" },
     "public.dispatch_comments": { "data": ["writing"], "kind": "own" },
     "public.dispatch_dossiers_legacy": { "data": ["writing"], "kind": "own" },
@@ -285,15 +287,20 @@
     "public.push_tokens": { "data": ["push-token"], "kind": "record" },
     "public.rank_grants": { "data": ["purchases"], "kind": "record" },
     "public.reports": { "data": ["actions", "moderation"], "kind": "record" },
+    "public.salon_budget": { "data": ["salon-messages"], "kind": "record" },
     "public.salon_typing_sent": { "data": ["salon-messages"], "kind": "record" },
+    "public.sign_in_devices": { "data": ["sign-in-records"], "kind": "record" },
+    "public.sign_in_doors": { "data": ["sign-in-records"], "kind": "record" },
+    "public.sign_in_handles": { "data": ["sign-in-records"], "kind": "record" },
     "public.user_blocks": { "data": ["actions"], "kind": "own" },
     "public.viewing_notes_removed": { "data": ["writing"], "kind": "record" },
     "public.warnings": { "data": ["moderation"], "kind": "record" },
-    "public.watchlists": { "data": ["writing"], "kind": "own" }
+    "public.watchlists": { "data": ["writing"], "kind": "own" },
+    "public.withheld_pieces": { "data": ["moderation"], "kind": "record" }
   },
   "memberColumnsWithoutKey": {
     "why": "Columns that hold a member's id with no foreign key to say so (WORKLIST P3.6), and the id columns named like them that hold something else.",
-    "members": ["error_logs.user_id", "lobby_editions.author_id", "lobby_withheld.withheld_by", "reports.resolved_by", "viewing_notes_removed.user_id"],
+    "members": ["error_logs.user_id", "lobby_editions.author_id", "lobby_withheld.withheld_by", "mod_actions.appeal_judged_by", "mod_actions.lifted_by", "reports.resolved_by", "viewing_notes_removed.user_id", "withheld_pieces.author_id"],
     "notMembers": {
       "interactions.target_log_id": "a log's id",
       "interactions.target_list_id": "a stack's id",

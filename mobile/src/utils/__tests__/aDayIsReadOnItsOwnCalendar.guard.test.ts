@@ -195,8 +195,13 @@ describe('a day is read on its own calendar', () => {
 
   it('reads the house as production will hold it: a pending migration replaces the snapshot\'s function', () => {
     const fns = houseFunctions();
-    // get_user_analytics is the snapshot's, replaced by a pending migration; each name is held once per list of types.
-    expect(fns.find((f) => f.name === 'get_user_analytics')?.from).toBe('pending');
+    // A name a pending migration makes is read from it, every other from the snapshot (none pending,
+    // all of them); each name is held once per list of types.
+    const madePending = new Set([...PENDING_SQL().matchAll(/CREATE (?:OR REPLACE )?FUNCTION (?:public\.)?"?(\w+)"?\s*\(/gi)]
+      .map((m) => (m[1] ?? '').toLowerCase()));
+    expect(fns.filter((f) => f.from === 'pending' && !madePending.has(f.name)).map((f) => f.name)).toEqual([]);
+    expect([...madePending].filter((n) => fns.some((f) => f.name === n) && !fns.some((f) => f.name === n && f.from === 'pending'))).toEqual([]);
+    expect(fns.find((f) => f.name === 'get_user_analytics')?.from).toBe(madePending.has('get_user_analytics') ? 'pending' : 'snapshot');
     expect(fns.find((f) => f.name === 'log_viewing_add')?.from).toBe('snapshot');
     const keys = fns.map((f) => `${f.name}(${f.types})`);
     expect(keys.filter((k, i) => keys.indexOf(k) !== i)).toEqual([]);
