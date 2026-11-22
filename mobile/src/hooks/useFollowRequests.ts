@@ -24,8 +24,9 @@ export async function refreshFollowRequestCount(): Promise<void> {
   // The members the door leaves out (blocked or muted) are left out of its count too.
   const { blocked, muted } = useBlockStore.getState();
   const n = await FollowRequestService.count(myId, [...blocked, ...muted]);
-  // A count that could not be read leaves the last one standing.
-  if (n !== null) useSocialStore.getState().setPendingRequestCount(n);
+  // A count that could not be read leaves the last one standing; one read for a member who has
+  // signed out since is never laid on whoever is here now.
+  if (n !== null && stillSignedIn(myId)) useSocialStore.getState().setPendingRequestCount(n);
 }
 
 export function useFollowRequests(enabled: boolean) {
@@ -178,8 +179,8 @@ export function useFollowRequests(enabled: boolean) {
     const ok = answer !== 'failed';
     busy.current.delete(req.requesterId);
     // Answered: the house took its notice, and the bell lets it go too, whether or not the door
-    // is still open.
-    if (ok) useNotificationStore.getState().forgetRequestNotices(req.requesterId);
+    // is still open. Never the next member's bell: theirs holds their own requests.
+    if (ok && stillSignedIn(me)) useNotificationStore.getState().forgetRequestNotices(req.requesterId);
     if (answer === 'admitted' && stillSignedIn(me)) TactileEngine.success();
     // The request was no longer there (withdrawn meanwhile, or taken by a block): no one was
     // admitted, and the member is told so rather than left believing they were (review round 11).
@@ -211,7 +212,7 @@ export function useFollowRequests(enabled: boolean) {
     hasMoreRef.current = false;
     setHasMore(false);
     const n = await FollowRequestService.declineAll();
-    if (n >= 0) useNotificationStore.getState().forgetRequestNotices(null);
+    if (n >= 0 && stillSignedIn(me)) useNotificationStore.getState().forgetRequestNotices(null);
     // Said, and counted again, though the door was closed meanwhile (as one answer is, above).
     if (n < 0 && stillSignedIn(me)) {
       reelToast.error("Couldn't clear the queue. Try again.");

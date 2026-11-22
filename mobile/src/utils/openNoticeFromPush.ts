@@ -15,6 +15,8 @@
  */
 import { InteractionManager } from 'react-native';
 import { useNotificationStore } from '@/src/stores/notificationStore';
+import { useAuthStore } from '@/src/stores/auth';
+import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { noticeRoute } from '@/src/utils/noticeRoute';
 import { openOrTellHere } from '@/src/utils/pageInFront';
 
@@ -22,8 +24,10 @@ export const NOTICES_SHEET = '/notifications-modal';
 
 export async function openNoticeFromPush(notificationId: string): Promise<string> {
   const store = useNotificationStore.getState();
+  // The member on the phone at the tap: the notice is marked read in their name alone.
+  const tappedBy = useAuthStore.getState().user?.id;
   const notice = await store.getNotice(notificationId);
-  if (notice && !notice.read) void store.markRead(notice.id);
+  if (notice && !notice.read && stillSignedIn(tappedBy)) void store.markRead(notice.id);
   const route = (notice && noticeRoute(notice)) || NOTICES_SHEET;
   // The page it is about already in front (the notices sheet open, the film on screen, the salon
   // whatever its door): a second copy is never stacked on it, and the page is told, so it reads

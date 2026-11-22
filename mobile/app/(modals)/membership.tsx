@@ -26,6 +26,7 @@ import {
 } from '@/src/components/layout/navMetrics';
 import { ChevronLeft } from 'lucide-react-native';
 import { useAuthStore } from '@/src/stores/auth';
+import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -297,6 +298,9 @@ export default function MembershipScreen() {
       // The member's explicit billing choice rides through to a STRICT package
       // match — a monthly pick can never silently charge the annual price.
       const entitlement = await purchaseTier(tier as ReelHouseTier, billing);
+      // Bought for the member who asked: signed out meanwhile, or another signed in, their rank
+      // reaches the house by the store, and nothing of it is laid on, or said to, whoever is here now.
+      if (!stillSignedIn(user.id)) return;
       if (entitlement?.isActive) {
         lastCheckoutRef.current = monotonicNow();
         // The far end of the funnel. `reason` is the door that sent them, so
@@ -349,6 +353,8 @@ export default function MembershipScreen() {
       setIsRedirecting(true);
 
       const entitlement = await purchaseTier('founding');
+      // As above: nothing of another member's purchase is laid on whoever is here now.
+      if (!stillSignedIn(user.id)) return;
       if (entitlement?.isActive) {
         lastCheckoutRef.current = monotonicNow();
         reelToast.success('Welcome to the Founding Board.');

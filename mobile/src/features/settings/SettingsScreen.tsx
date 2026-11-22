@@ -24,6 +24,7 @@ import {
 } from 'lucide-react-native';
 
 import { useAuthStore } from '@/src/stores/auth';
+import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { profileRead } from '@/src/utils/profileRead';
 import { useSettingsStore } from '@/src/stores/settings';
 import { supabase } from '@/src/lib/supabase';
@@ -337,6 +338,7 @@ export function SettingsScreen() {
     }
   };
   const fileAmendmentsNow = async (data: SettingsFormData): Promise<'saved' | 'kept'> => {
+    const asked = useAuthStore.getState().user?.id;
     const { is_social_private, preferences } = amendments(data);
     // Changed from what the form opened with, not from the profile's copy: a key the profile never
     // held reads as its default on the form, and sent unasked it put back what another phone set.
@@ -347,6 +349,9 @@ export function SettingsScreen() {
     // the phone, its "changes reverted" stood over the preferences the phone was keeping to send.
     const visibilityChanged = is_social_private !== !!useAuthStore.getState().user?.is_social_private;
     if (visibilityChanged) await updateUserMutation({ is_social_private });
+    // Signed out while the visibility was filed, or another member signed in: the rest is never filed
+    // in the name of whoever is here now. It waits in the member's own draft (fileAmendments), unsaid.
+    if (!stillSignedIn(asked)) throw new Error('Signed out while the amendments were filed.');
     let filed: 'saved' | 'kept' = 'saved';
     if (Object.keys(changed).length > 0) {
       try {

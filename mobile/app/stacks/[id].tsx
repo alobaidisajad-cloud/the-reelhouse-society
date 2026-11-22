@@ -30,6 +30,7 @@ import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { tmdb } from '@/src/lib/tmdb';
 import { STACK_COMMENT_PAGE, StackService } from '@/src/services/StackService';
 import { useAuthStore } from '@/src/stores/auth';
+import { stillSignedIn } from '@/src/stores/domain/helpers/sessionGuard';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useListStore } from '@/src/stores/films';
 import { tellMarks } from '@/src/stores/tellMarks';
@@ -705,8 +706,9 @@ function StackDetailScreen({ id }: { id: string }) {
       void offerWord('critique', user.id);
 
     } catch (err: unknown) {
-      // Kept for the network's return; one the phone had no room to keep comes off the page.
-      if (isNetworkError(err) && enqueueMutation({
+      // Kept for the network's return; one the phone had no room to keep comes off the page, and
+      // one whose member has signed out meanwhile is never queued in whoever's name is here now.
+      if (isNetworkError(err) && stillSignedIn(user.id) && enqueueMutation({
         type: 'add_list_comment',
         payload: { id: commentId, list_id: id, user_id: user.id, content }
       })) {
@@ -777,7 +779,8 @@ function StackDetailScreen({ id }: { id: string }) {
     try {
       await StackService.deleteStackComment(commentId, user.id);
     } catch (err: unknown) {
-      if (isNetworkError(err)) {
+      // Queued only in the name of the member who took it back, never of whoever signed in since.
+      if (isNetworkError(err) && stillSignedIn(user.id)) {
         if (enqueueMutation({ type: 'remove_list_comment', payload: { comment_id: commentId, user_id: user.id } })) {
           flushOfflineQueue();
           reelToast('Removed offline. Will sync when connected.');

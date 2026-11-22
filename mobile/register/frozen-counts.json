@@ -284,7 +284,6 @@
     "mobile/src/stores/__tests__/logoutLeavesNoTrace.guard.test.ts": 3,
     "mobile/src/stores/__tests__/lounge.test.ts": 13,
     "mobile/src/stores/__tests__/notificationCap.test.ts": 3,
-    "mobile/src/stores/__tests__/staleWriteGuard.test.ts": 8,
     "mobile/src/stores/__tests__/theFollowListIsReadOnce.test.ts": 4,
     "mobile/src/stores/__tests__/theHouseSaysWhy.test.ts": 2,
     "mobile/src/stores/__tests__/theLiveWireKnowsTheRoom.test.ts": 2,
