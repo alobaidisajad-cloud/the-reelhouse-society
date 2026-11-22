@@ -144,8 +144,8 @@ jest.mock('@/src/components/layout/CinematicFlashList', () => {
   // page's foot run past the screen with nothing to scroll it.
   const { ScrollView } = require('react-native');
   const render = (c: React.ReactNode) => (typeof c === 'function' ? React.createElement(c as never) : c);
-  return { CinematicFlashList: ({ ListHeaderComponent, ListEmptyComponent, data, renderItem, refreshControl, onEndReached }: {
-    ListHeaderComponent?: React.ReactNode; ListEmptyComponent?: React.ReactNode;
+  return { CinematicFlashList: ({ ListHeaderComponent, ListFooterComponent, ListEmptyComponent, data, renderItem, refreshControl, onEndReached }: {
+    ListHeaderComponent?: React.ReactNode; ListFooterComponent?: React.ReactNode; ListEmptyComponent?: React.ReactNode;
     data?: unknown[]; renderItem?: (a: { item: unknown; index: number }) => React.ReactNode;
     refreshControl?: unknown; onEndReached?: () => Promise<void>;
   }) => (mockRefresh = refreshControl as never, mockEndReached = onEndReached ?? null, React.createElement(ScrollView, null,
@@ -153,6 +153,7 @@ jest.mock('@/src/components/layout/CinematicFlashList', () => {
     // Every row rendered, so the index is tested as drawn.
     ...(data ?? []).map((item, index) =>
       React.createElement(React.Fragment, { key: index }, renderItem ? renderItem({ item, index }) : null)),
+    render(ListFooterComponent),
     (data ?? []).length === 0 ? render(ListEmptyComponent) : null)) };
 });
 /** Whether the salon list was opened: sharing a stack into a salon is speaking there. */
@@ -1319,6 +1320,31 @@ describe('a stack past its first page (P4.9)', () => {
   // It draws all 501 rows (the list stand-in renders every one): 1.4 s alone, past 5 s under the
   // whole suite's eight workers.
   }, 20_000);
+
+  it('a later page that could not be read is said at the foot, the grid asks no more as it is scrolled, and TRY AGAIN asks again', async () => {
+    const { StackService } = jest.requireMock('@/src/services/StackService') as { StackService: { getStackItemsPage: jest.Mock } };
+    StackService.getStackItemsPage.mockReset();
+    StackService.getStackItemsPage
+      .mockRejectedValueOnce(new TypeError('Network request failed'))
+      .mockResolvedValueOnce([{ id: 4, title: 'Film 4', poster_path: null }]);
+    const first = [1, 2, 3].map((n) => ({ id: n, title: `Film ${n}`, poster_path: null }));
+    const r = mount({ films: first, filmCount: 4 });
+    await act(async () => {});
+
+    await act(async () => { await mockEndReached?.(); });
+    expect(StackService.getStackItemsPage).toHaveBeenCalledTimes(1);
+    // Said, and never a grid that ends as though whole: its size still says FIRST 3.
+    expect(r.getByText('The rest could not be reached.')).toBeTruthy();
+    expect(r.getByText(/FIRST 3/)).toBeTruthy();
+    // Scrolling to the end asks nothing more.
+    expect(mockEndReached).toBeNull();
+
+    await act(async () => { await fireEvent.press(r.getByLabelText('Try again: ask for the rest')); });
+    expect(StackService.getStackItemsPage).toHaveBeenCalledTimes(2);
+    expect(r.getByText('Film 4')).toBeTruthy();
+    expect(r.queryByText('The rest could not be reached.')).toBeNull();
+    expect(r.queryByText(/FIRST/)).toBeNull();
+  });
 });
 
 describe('a stack opened from the Reel’s card draws what the card held, at once (P4.53)', () => {

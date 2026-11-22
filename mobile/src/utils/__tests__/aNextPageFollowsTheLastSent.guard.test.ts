@@ -97,12 +97,8 @@ const SAID_BY: Record<string, string> = {
   'src/components/reels/ReelsStackList.tsx': 'app/(tabs)/reels.tsx',
 };
 
-/**
- * Found by this sweep and not yet fixed: each owned by stage C (kind LATE). The list only shrinks.
- * A stack's films past its first page: a page that fails is logged alone, the grid ends as though
- * whole, and every scroll asks again; its foot is a look change, drawn for the lead first.
- */
-const STILL_TO_FIX: string[] = ['app/stacks/[id].tsx'];
+/** Found by this sweep and not yet fixed. The list only shrinks, and is empty. */
+const STILL_TO_FIX: string[] = [];
 
 describe('each rule says no to its planted shape', () => {
   it('1: a page number stepped back, by a setter, an assignment or a decrement', () => {
@@ -136,6 +132,9 @@ describe('each rule says no to its planted shape', () => {
       .toEqual(['app/(tabs)/darkroom.tsx:1']);
     expect(pagesJudgedByRowsKept('src/services/FeedService.ts', 'const items = rows.flatMap(parseRow); return { items, hasMore: items.length === FEED_PAGE };'))
       .toEqual(['src/services/FeedService.ts:1']);
+    // A stack's films past its first page: a failed page was logged alone.
+    expect(laterPagesUnsaid('app/stacks/[id].tsx', `try { await StackService.getStackItemsPage(id, last); } catch (e) { logger.warn('[stacks] reading more films failed', e); }
+      <CinematicFlashList onEndReached={() => { void readMoreFilms(); }} />`)).toEqual(['app/stacks/[id].tsx']);
   });
 });
 
