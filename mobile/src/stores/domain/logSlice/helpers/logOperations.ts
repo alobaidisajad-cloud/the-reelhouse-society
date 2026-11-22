@@ -574,46 +574,6 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
         }
     }
 
-export const unmarkWatchedOp = async (set: SetState, get: GetState, filmId: number) => {
-    const startedAs = useAuthStore.getState().user?.id ?? null;
-    const existingLog = get().logs.find(l => l.filmId === filmId);
-        if (!existingLog) return;
-
-        // Unmarking deletes the whole record, so the Vault is ASKED for notes; an
-        // unreachable Vault means "there may be one", and the record stays.
-        const vault = useVaultStore.getState();
-        if (!vault.isLoaded(existingLog.id)) await vault.loadForLog(existingLog.id);
-        // A record is deleted only by the member who asked.
-        if (!stillSignedIn(startedAs)) return;
-        const after = useVaultStore.getState();
-        // ANY viewing's note: every one goes with the record.
-        const mayHoldANote = after.isUnreachable(existingLog.id)
-            || Object.entries(after.notesLog).some(([v, logId]) => logId === existingLog.id && !!after.notes[v]?.trim());
-
-        if (
-            existingLog.rating > 0 ||
-            !!existingLog.review?.trim() ||
-            mayHoldANote ||
-            (existingLog.physicalMedia && existingLog.physicalMedia !== 'None') || 
-            !!existingLog.autopsy || 
-            !!existingLog.watchedWith?.trim() ||
-            !!existingLog.abandonedReason?.trim() ||
-            !!existingLog.altPoster ||
-            !!existingLog.editorialHeader?.trim() ||
-            !!existingLog.pullQuote?.trim() ||
-            !!existingLog.videoUrl?.trim() ||
-            existingLog.dropCap ||
-            existingLog.isAutopsied ||
-            (existingLog.viewCount && existingLog.viewCount > 1) ||
-            (Array.isArray(existingLog.viewingHistory) && existingLog.viewingHistory.length > 0)
-        ) return;
-        try {
-            await get().removeLog(existingLog.id);
-        } catch {
-            // Error already toasted by removeLog
-        }
-};
-
 export const getCinephileStatsOp = (set: SetState, get: GetState, overrideCount?: number) => {
     const logs = get().logs;
         const count = overrideCount ?? logs.length;

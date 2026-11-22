@@ -66,6 +66,8 @@ jest.mock('@/src/stores/dispatch', () => ({
       // so the mock has to offer both.
       filings: mockHeld ? [mockHeld] : [],
       opened: mockHeld ? { [String(mockHeld.id)]: mockHeld } : {},
+      // Held in neither, the filing is read from the house: here, it is never answered.
+      hydrate: () => new Promise(() => {}),
     }),
   },
 }));
@@ -479,12 +481,14 @@ describe('a desk opened on a filing that already exists', () => {
     expect((mockAmended[0].updates as Record<string, unknown>).source).toBe('Cahiers du Cinéma');
   });
 
-  it('still says FILE IT when there is nothing to amend', () => {
-    // The control. `?edit=` pointing at a filing the store does not hold must
-    // not silently turn a new filing into an amendment of nothing.
+  it('an amend of a filing the store does not hold stays an amend, unlit until it is read', () => {
+    // `?edit=` pointing at a filing the store does not hold is read from the house
+    // (anAmendLinkReadsItsFiling): never a new filing, never an amendment of nothing.
     mockHeld = null;
-    const { getByText } = render(<ComposeShortScreen kind="take" />);
-    expect(getByText('FILE IT')).toBeTruthy();
+    const { getByText, queryByText } = render(<ComposeShortScreen kind="take" />);
+    expect(getByText('AMEND IT')).toBeTruthy();
+    expect(queryByText('FILE IT')).toBeNull();
+    expect(getByText('READING THE TAKE AS FILED…')).toBeTruthy();
   });
 });
 

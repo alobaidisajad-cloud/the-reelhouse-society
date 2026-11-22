@@ -2143,3 +2143,6 @@ files of the reading map this one does not.
 | src/utils/__tests__/aChangeReachesEveryHolder.guard.test.ts | — |  |
 | src/utils/__tests__/aQueuedWriteReadsItsPageAgain.test.ts | — |  |
 | src/utils/__tests__/aNoticeOpensWhatItIsAbout.guard.test.ts | — |  |
+| src/components/dispatch/__tests__/anAmendLinkReadsItsFiling.test.tsx | — |  |
+| src/stores/__tests__/aRecordsFilmIsFoundPastThePages.test.ts | — |  |
+| src/utils/__tests__/aRecordIsFoundPastItsPages.guard.test.ts | — |  |

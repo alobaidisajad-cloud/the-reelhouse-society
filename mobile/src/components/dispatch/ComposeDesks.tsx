@@ -41,7 +41,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { clearDraft, readDraft, writeDraft } from '@/src/utils/memberDrafts';
 import { useDispatch } from '@/src/stores/dispatch';
 import { filedSaid } from '@/src/utils/dispatchFiledSaid';
-import { paperTierOf, type BallotOption } from '@/src/stores/dispatchTypes';
+import { paperTierOf, type BallotOption, type Filing } from '@/src/stores/dispatchTypes';
 import { MAX_LENGTHS } from '@/src/utils/sanitizeInput';
 import reelToast from '@/src/utils/reelToast';
 import { FILING_CHANGED_SINCE, isChangedSince } from '@/src/utils/keepWhatChangedSince';
@@ -82,6 +82,15 @@ function useMe() {
 /** `?edit=<id>`: an amend, by its filing's id (routeParams, P4.4). */
 const DESK_PARAMS = { edit: P.uuid };
 
+/** Where an amend's filing is: in hand, being read, out of reach, or not one this member may amend. */
+type AmendRead = 'held' | 'reading' | 'unreachable' | 'gone';
+
+/** A filing this desk may amend: the member's own, of the desk's kind. */
+function isMineToAmend(f: Filing | null | undefined, kind: string): f is Filing {
+  const me = useAuthStore.getState().user?.id;
+  return !!f && !!me && f.authorId === me && f.kind === kind;
+}
+
 export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire' }) {
   const me = useMe();
   const edge = useBottomEdge();
@@ -92,10 +101,10 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   /**
    * From the store the reader already filled, read ONCE: it only seeds the
    * `useState`s below, and a subscription would re-render the desk mid-typing.
-   * Not found: `amending` is false and the desk files a new filing, never an
-   * empty amendment.
+   * The reader holds only its pages and the filings opened by address: a link
+   * to an older filing finds it in neither, and it is read from the house.
    */
-  const existing = useMemo(
+  const held = useMemo(
     () => {
       if (!editId) return null;
       const s = useDispatch.getState();
@@ -103,7 +112,13 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
     },
     [editId],
   );
-  const amending = !!editId && !!existing;
+  const [existing, setExisting] = useState<Filing | null>(() => (isMineToAmend(held, kind) ? held : null));
+  /**
+   * The filing to amend, until it is in hand. An amend link is always an amend: it never
+   * files a new filing, and nothing is written over a filing the desk has not read.
+   */
+  const [amendRead, setAmendRead] = useState<AmendRead>(() => (!editId || existing ? 'held' : held ? 'gone' : 'reading'));
+  const amending = !!editId;
 
   const [body, setBody] = useState(() => (existing?.body ?? ''));
   /** A wire's source, as the member types it (never the film's title). */
@@ -114,6 +129,31 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
   const [finding, setFinding] = useState(false);
   const [sending, setSending] = useState(false);
   const stillHere = useStillHere();
+
+  /** The filing to amend, read from the house when the reader does not hold it. */
+  const readFiled = useCallback(() => {
+    if (!editId) return;
+    setAmendRead('reading');
+    void useDispatch.getState().hydrate(editId).then((got) => {
+      if (!stillHere()) return;
+      if (got === 'unreachable') { setAmendRead('unreachable'); return; }
+      // Gone, or not this member's filing of this kind: nothing here may be written over it.
+      if (!isMineToAmend(got, kind)) { setAmendRead('gone'); return; }
+      setExisting(got);
+      setBody(got.body);
+      setSource(got.source ?? '');
+      setFilm(got.film ?? null);
+      setFilmId(got.subjectId ?? null);
+      setSpoiler(!!got.spoilerLabel);
+      setAmendRead('held');
+    });
+  }, [editId, kind, stillHere]);
+  const readAtOpen = useRef(amendRead === 'reading');
+  useEffect(() => {
+    if (!readAtOpen.current) return;
+    readAtOpen.current = false;
+    readFiled();
+  }, [readFiled]);
   /** Filed or amended: the desk is leaving, and asks nothing on its way out. */
   const [done, setDone] = useState<'filed' | 'amended' | null>(null);
 
@@ -160,7 +200,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
 
   /** A wire needs its source (the `wire_source` CHECK): FILE IT stays unlit till then. */
   const ready = body.trim().length > 0 && remaining >= 0
-    && (kind !== 'wire' || source.trim().length > 0);
+    && (kind !== 'wire' || source.trim().length > 0) && amendRead === 'held';
 
   const onFile = useCallback(async () => {
     if (!ready || sending) return;
@@ -231,6 +271,7 @@ export function ComposeShortScreen({ kind }: { kind: 'take' | 'seeking' | 'wire'
           ready={ready}
           sending={sending}
           amending={amending}
+          reading={amendRead === 'held' ? null : { state: amendRead, onReadAgain: readFiled }}
           source={source}
           onSource={kind === 'wire' ? setSource : undefined}
           onBody={setBody}
