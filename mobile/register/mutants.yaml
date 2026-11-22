@@ -10661,3 +10661,30 @@ mutants:
         find: "      if (ts.isCatchClause(m)) return m.block;\n"
         replace: ""
     proof: { file: src/utils/__tests__/aFailureUndoesOnlyItsOwnAct.guard.test.ts, test: "2: a change made before the wait, on failure only read again; never when the failure takes its own change back" }
+
+  - id: shape-stack-rest-fails-unsaid
+    class: READ-a-later-page-failing-in-silence
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "      logger.warn('[stacks] reading more films failed', e);\n      setMoreFailedFor(list.films);"
+        replace: "      logger.warn('[stacks] reading more films failed', e);"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a later page that could not be read is said at the foot, the grid asks no more as it is scrolled, and TRY AGAIN asks again" }
+
+  - id: shape-stack-asks-every-scroll
+    class: READ-a-later-page-failing-in-silence
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "onEndReached={moreFailed ? undefined : () => { void readMoreFilms(); }}"
+        replace: "onEndReached={() => { void readMoreFilms(); }}"
+    proof: { file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a later page that could not be read is said at the foot, the grid asks no more as it is scrolled, and TRY AGAIN asks again" }
+
+  - id: shape-later-page-failure-unseen
+    class: READ-a-later-page-failing-in-silence
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts
+        find: "const SAYS_A_LATER_PAGE_FAILED = /\\b(?:\\w*MoreFailed|moreFailed\\w*|isFetchNextPageError|\\w*NextFailed)\\b/;"
+        replace: "const SAYS_A_LATER_PAGE_FAILED = /\\b(?:\\w*MoreFailed|moreFailed\\w*|isFetchNextPageError|\\w*NextFailed|readMore\\w*)\\b/;"
+    proof: { file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "finds the instances it was made for, put back" }

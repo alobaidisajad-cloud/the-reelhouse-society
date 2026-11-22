@@ -11,7 +11,6 @@ LATE:
   - WRITE-words-let-go-unsent
   - STATE-an-unsent-write-left-off-a-redrawn-page
   - STATE-pages-read-past-the-first-dropped
-  - READ-a-later-page-failing-in-silence
 COPY:
 PROT:
   - DB-rule-kept-on-one-path

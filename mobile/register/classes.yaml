@@ -3484,7 +3484,12 @@ classes:
     methods:
       - { kind: running, file: src/components/dispatch/__tests__/archiveScreen.test.tsx, test: "says the rest of the film could not be reached, asks again only when the member does, and then reads it" }
       - { kind: running, file: src/stores/__tests__/aRefreshUnderANextPageLeavesTheFootFree.test.ts, test: "a pull to refresh while the next page is on its way leaves no foot spinning, and the next page is asked again" }
-    fix: "a later page that fails says the rest could not be reached, with a way to ask again, and is asked again only then (mutants shape-archive-rest-fails-unsaid, shape-archive-asks-every-scroll); the paper read again under a next page leaves no foot spinning and pages again (mutant shape-foot-left-spinning)"
+      - { kind: running, file: app/stacks/__tests__/stack-detail.redesign.test.tsx, test: "a later page that could not be read is said at the foot, the grid asks no more as it is scrolled, and TRY AGAIN asks again" }
+      - { kind: static, file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "3: a list that asks its next page as it scrolls, with no failure said" }
+      - { kind: static, file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "finds the instances it was made for, put back" }
+      - { kind: static, file: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, test: "3: every list that asks its next page says when it could not be read" }
+    sweep: { read: [appCode], found: 1, fixed: 1, judged: 0, commit: 28aea8de, finder: src/utils/__tests__/aNextPageFollowsTheLastSent.guard.test.ts, result: "every app file with a list that asks its next page as it is scrolled (onEndReached) read for a failure state of its own or its query's: 1 found and fixed, a stack's later films failed in silence; the two Reel lists are handed their foot by the Reel screen, which says it; the stack page as it was, put back, is found" }
+    fix: "a later page that fails says the rest could not be reached, with a way to ask again, and is asked again only then (mutants shape-archive-rest-fails-unsaid, shape-archive-asks-every-scroll); the paper read again under a next page leaves no foot spinning and pages again (mutant shape-foot-left-spinning); stage C: a stack's later films that fail are said at the grid's foot with the shared TryAgainLine, and the grid asks again only when TRY AGAIN is pressed (mutants shape-stack-rest-fails-unsaid, shape-stack-asks-every-scroll)"
     places: [none]
 
   - id: AUTH-a-sign-out-undone-by-a-late-answer
