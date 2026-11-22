@@ -8069,5 +8069,26 @@
     "proof": "m3",
     "commit": "afd30f2f9bfc11def5073f86d73f23bd7a117d75",
     "verdict": "caught"
+  },
+  {
+    "class": "READ-a-later-page-failing-in-silence",
+    "mutant": "shape-stack-rest-fails-unsaid",
+    "proof": "m3",
+    "commit": "76ae077f6f5a7a4c3b5a55b3fa8da0bb6102f325",
+    "verdict": "caught"
+  },
+  {
+    "class": "READ-a-later-page-failing-in-silence",
+    "mutant": "shape-stack-asks-every-scroll",
+    "proof": "m3",
+    "commit": "76ae077f6f5a7a4c3b5a55b3fa8da0bb6102f325",
+    "verdict": "caught"
+  },
+  {
+    "class": "READ-a-later-page-failing-in-silence",
+    "mutant": "shape-later-page-failure-unseen",
+    "proof": "m5",
+    "commit": "76ae077f6f5a7a4c3b5a55b3fa8da0bb6102f325",
+    "verdict": "caught"
   }
 ]
