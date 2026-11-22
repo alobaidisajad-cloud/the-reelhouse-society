@@ -523,3 +523,12 @@ record taken from the reader's own work log, or "—" for a file never read.
 | mobile/supabase/migrations-down/20261122_25_a_new_row_is_dated_by_the_house.sql | — |  |
 | supabase/migrations/20261122_24_every_members_write_is_paced.sql | — |  |
 | supabase/migrations/20261122_25_a_new_row_is_dated_by_the_house.sql | — |  |
+| mobile/supabase/diagnostics/a_ballots_votes_are_counted_as_they_are_cast_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/the_ballots_to_close_are_found_at_once_rehearsal.sql | — |  |
+| mobile/supabase/diagnostics/the_reels_stack_search_reads_its_page_by_id_rehearsal.sql | — |  |
+| mobile/supabase/migrations-down/20261122_26_the_reels_stack_search_reads_its_page_by_id.sql | — |  |
+| mobile/supabase/migrations-down/20261122_27_a_ballots_votes_are_counted_as_they_are_cast.sql | — |  |
+| mobile/supabase/migrations-down/20261122_28_the_ballots_to_close_are_found_at_once.sql | — |  |
+| supabase/migrations/20261122_26_the_reels_stack_search_reads_its_page_by_id.sql | — |  |
+| supabase/migrations/20261122_27_a_ballots_votes_are_counted_as_they_are_cast.sql | — |  |
+| supabase/migrations/20261122_28_the_ballots_to_close_are_found_at_once.sql | — |  |
