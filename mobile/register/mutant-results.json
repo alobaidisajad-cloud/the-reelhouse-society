@@ -7376,5 +7376,12 @@
     "proof": "m10",
     "commit": "a9f135454470c6072126141f2da047944d437680",
     "verdict": "caught"
+  },
+  {
+    "class": "SPEED-a-read-that-grows-with-the-house",
+    "mutant": "shape-a-bitmaps-gathering-not-counted",
+    "proof": "m11",
+    "commit": "d46a607319f3239da96b15b285a202256846c1a4",
+    "verdict": "caught"
   }
 ]
