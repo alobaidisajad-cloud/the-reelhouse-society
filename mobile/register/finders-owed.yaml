@@ -16,7 +16,6 @@ LATE:
   - WRITE-a-rollback-that-undoes-another-write
   - STATE-pages-read-past-the-first-dropped
   - READ-a-later-page-failing-in-silence
-  - AUTH-a-sign-out-undone-by-a-late-answer
 COPY:
 PROT:
   - DB-rule-kept-on-one-path

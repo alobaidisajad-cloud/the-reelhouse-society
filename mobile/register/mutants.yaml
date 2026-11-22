@@ -4441,8 +4441,8 @@ mutants:
     source: shape
     edits:
       - file: src/features/settings/SettingsScreen.tsx
-        find: "    if (visibilityChanged) await updateUserMutation({ is_social_private });\n    let filed"
-        replace: "    let filed"
+        find: "    if (visibilityChanged) await updateUserMutation({ is_social_private });\n"
+        replace: ""
       - file: src/features/settings/SettingsScreen.tsx
         find: "    return filed;\n  };\n  const filedSaid"
         replace: "    if (visibilityChanged) await updateUserMutation({ is_social_private });\n    return filed;\n  };\n  const filedSaid"
@@ -5290,7 +5290,7 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useFollowRequests.ts
-        find: "    if (ok) useNotificationStore.getState().forgetRequestNotices(req.requesterId);"
+        find: "    if (ok && stillSignedIn(me)) useNotificationStore.getState().forgetRequestNotices(req.requesterId);"
         replace: ""
     proof: { file: src/hooks/__tests__/anAnsweredRequestLeavesTheBell.test.tsx, test: "admitting a member takes their request off the board and the bell, and leaves their other notices" }
 
@@ -5299,7 +5299,7 @@ mutants:
     source: shape
     edits:
       - file: src/hooks/useFollowRequests.ts
-        find: "    if (n >= 0) useNotificationStore.getState().forgetRequestNotices(null);"
+        find: "    if (n >= 0 && stillSignedIn(me)) useNotificationStore.getState().forgetRequestNotices(null);"
         replace: ""
     proof: { file: src/hooks/__tests__/anAnsweredRequestLeavesTheBell.test.tsx, test: "declining all takes every request off the board and the bell" }
 
@@ -7179,7 +7179,7 @@ mutants:
     source: shape
     edits:
       - file: src/lib/endSession.ts
-        find: "      try { setSensitive(OTHERS_OWED_KEY, member); } catch { /* asked again at the next \"sign out every other device\" */ }\n"
+        find: "      try { setSensitive(OTHERS_OWED_KEY, asked); } catch { /* asked again at the next \"sign out every other device\" */ }\n"
         replace: ""
     proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a forget of the other phones’ tokens that failed is owed, and asked again, under this phone’s session" }
 
@@ -10553,3 +10553,66 @@ mutants:
         find: "          out.add(`${file}#${nameOf(p)}:sending`);\n"
         replace: ""
     proof: { file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts, test: "to a flag lowered in no finally, a message marked sending, each named nowhere; a way gone; a name gone" }
+
+  - id: shape-late-registration-kept-for-the-departed
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/lib/pushNotifications.ts
+        find: "    if (!stillSignedIn(userId)) {"
+        replace: "    if (!stillSignedIn(userId) && !token) {"
+    proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a registration answered after the member signed out is forgotten again, kept by nothing, and an owed forget stays owed" }
+
+  - id: shape-others-forget-owed-in-the-next-name
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/lib/endSession.ts
+        find: "    if (asked && stillSignedIn(asked)) {"
+        replace: "    if (asked) {"
+    proof: { file: src/lib/__tests__/aPhoneSignedOutStopsHearingTheMember.test.ts, test: "a forget of the other phones’ tokens refused after another member signed in is owed in no one’s name" }
+
+  - id: shape-rank-queued-as-whoever-is-here
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/lib/revenueCat.ts
+        find: "    if (!stillSignedIn(account.toLowerCase())) return;"
+        replace: ""
+    proof: { file: src/lib/__tests__/aRankBoughtOfflineIsKept.test.ts, test: "signed out while the store answered, or another member signed in: nothing is queued as whoever is here" }
+
+  - id: shape-tapped-notice-read-as-whoever-is-here
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/utils/openNoticeFromPush.ts
+        find: "  if (notice && !notice.read && stillSignedIn(tappedBy)) void store.markRead(notice.id);"
+        replace: "  if (notice && !notice.read) void store.markRead(notice.id);"
+    proof: { file: src/utils/__tests__/theTappedNoticeOpensIt.test.ts, test: "a notice read for a member who signed out while it was read is marked read in no one’s name" }
+
+  - id: shape-stack-critique-queued-as-whoever-is-here
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: app/stacks/[id].tsx
+        find: "      if (isNetworkError(err) && stillSignedIn(user.id) && enqueueMutation({"
+        replace: "      if (isNetworkError(err) && enqueueMutation({"
+    proof: { file: src/stores/__tests__/staleWriteGuard.test.ts, test: "EVERY write after a wait, in the whole app, is checked after its own last wait — enumerated" }
+
+  - id: shape-stale-guard-blind-to-the-phone
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: src/stores/__tests__/staleWriteGuard.test.ts
+        find: "  if (ts.isIdentifier(on) && on.text === 'storage' && act === 'set') return 'storage.set(';"
+        replace: ""
+    proof: { file: src/stores/__tests__/staleWriteGuard.test.ts, test: "a write after a wait with no check, a check before the wait, or a check in another handler" }
+
+  - id: shape-a-wait-in-a-leaving-arm-reaches-on
+    class: AUTH-a-sign-out-undone-by-a-late-answer
+    source: shape
+    edits:
+      - file: test-utils/afterAwait.js
+        find: " || leavesItsArm(w, node)))"
+        replace: "))"
+    proof: { file: src/stores/__tests__/staleWriteGuard.test.ts, test: "a wait in an arm that leaves does not reach past it; one in a try whose finally holds the write does" }

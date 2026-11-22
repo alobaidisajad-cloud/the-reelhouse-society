@@ -3370,7 +3370,7 @@
     "class": "COPY-said-before-it-was-true",
     "mutant": "shape-visibility-filed-after-kept-preferences",
     "proof": "m7",
-    "commit": "f5c7d143d0612cc2dd0ab99bc9b70397a19aa517",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
     "verdict": "caught"
   },
   {
@@ -4028,14 +4028,14 @@
     "class": "STATE-one-screen-changed-another-printing-the-old",
     "mutant": "shape-answered-request-on-the-bell",
     "proof": "m11",
-    "commit": "bd1396a5a5a594385db930585d2854053a74d144",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
     "verdict": "caught"
   },
   {
     "class": "STATE-one-screen-changed-another-printing-the-old",
     "mutant": "shape-declined-all-on-the-bell",
     "proof": "m12",
-    "commit": "bd1396a5a5a594385db930585d2854053a74d144",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
     "verdict": "caught"
   },
   {
@@ -5442,7 +5442,7 @@
     "class": "AUTH-a-signed-out-phone-still-pushed",
     "mutant": "shape-others-forget-not-owed",
     "proof": "m6",
-    "commit": "424c7d7b94da97e1e81c1134c7cbac0bd5ab2aca",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
     "verdict": "caught"
   },
   {
@@ -7984,6 +7984,55 @@
     "mutant": "shape-sending-mark-unread",
     "proof": "m6",
     "commit": "986cc5e29eb181887ad389dd7f7b3af24567d58b",
+    "verdict": "caught"
+  },
+  {
+    "class": "AUTH-a-sign-out-undone-by-a-late-answer",
+    "mutant": "shape-late-registration-kept-for-the-departed",
+    "proof": "m3",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
+    "verdict": "caught"
+  },
+  {
+    "class": "AUTH-a-sign-out-undone-by-a-late-answer",
+    "mutant": "shape-others-forget-owed-in-the-next-name",
+    "proof": "m4",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
+    "verdict": "caught"
+  },
+  {
+    "class": "AUTH-a-sign-out-undone-by-a-late-answer",
+    "mutant": "shape-rank-queued-as-whoever-is-here",
+    "proof": "m5",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
+    "verdict": "caught"
+  },
+  {
+    "class": "AUTH-a-sign-out-undone-by-a-late-answer",
+    "mutant": "shape-tapped-notice-read-as-whoever-is-here",
+    "proof": "m6",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
+    "verdict": "caught"
+  },
+  {
+    "class": "AUTH-a-sign-out-undone-by-a-late-answer",
+    "mutant": "shape-stack-critique-queued-as-whoever-is-here",
+    "proof": "m10",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
+    "verdict": "caught"
+  },
+  {
+    "class": "AUTH-a-sign-out-undone-by-a-late-answer",
+    "mutant": "shape-stale-guard-blind-to-the-phone",
+    "proof": "m7",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
+    "verdict": "caught"
+  },
+  {
+    "class": "AUTH-a-sign-out-undone-by-a-late-answer",
+    "mutant": "shape-a-wait-in-a-leaving-arm-reaches-on",
+    "proof": "m9",
+    "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
     "verdict": "caught"
   }
 ]
