@@ -8034,5 +8034,40 @@
     "proof": "m9",
     "commit": "59976e0a0bfa9209b96cade1b9efc6bd5d72ba48",
     "verdict": "caught"
+  },
+  {
+    "class": "READ-the-next-page-asks-an-old-one",
+    "mutant": "shape-a-page-setter-stepping-back-unseen",
+    "proof": "m3",
+    "commit": "afd30f2f9bfc11def5073f86d73f23bd7a117d75",
+    "verdict": "caught"
+  },
+  {
+    "class": "READ-a-page-judged-by-the-rows-kept",
+    "mutant": "shape-a-page-judged-by-a-parse-unseen",
+    "proof": "m6",
+    "commit": "afd30f2f9bfc11def5073f86d73f23bd7a117d75",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-rollback-that-undoes-another-write",
+    "mutant": "shape-a-screens-copy-put-back-unseen",
+    "proof": "m9",
+    "commit": "afd30f2f9bfc11def5073f86d73f23bd7a117d75",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-rollback-that-undoes-another-write",
+    "mutant": "shape-door-cleared-puts-back-the-whole-copy",
+    "proof": "m11",
+    "commit": "afd30f2f9bfc11def5073f86d73f23bd7a117d75",
+    "verdict": "caught"
+  },
+  {
+    "class": "WRITE-a-failure-put-back-by-a-read",
+    "mutant": "shape-a-catch-that-only-reads-unseen",
+    "proof": "m3",
+    "commit": "afd30f2f9bfc11def5073f86d73f23bd7a117d75",
+    "verdict": "caught"
   }
 ]
