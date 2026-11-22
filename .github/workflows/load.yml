@@ -212,7 +212,19 @@ jobs:
           # budget too: what a speed batch studies (audit A-SCALE-PLAN).
           LOAD_MEMBERS: ${{ inputs.members || '100000' }}
           LOAD_PLAN_SLOWEST: '6'
+          # The rows each read read of the tables that grow with the house, kept below: a run at
+          # another size is judged against them (LOAD_SHAPE_AGAINST, e2e/load/plan-shape.cjs).
+          LOAD_SHAPE_OUT: ${{ runner.temp }}/shape-rows.json
         run: node mobile/e2e/load/probe.mjs
+
+      - name: Keep the rows each read read
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: load-shape-rows-${{ inputs.members || '100000' }}
+          path: ${{ runner.temp }}/shape-rows.json
+          if-no-files-found: ignore
+          retention-days: 30
 
       # The lock report goes with the train: the user reads it before applying.
       - name: Keep the train's lock report

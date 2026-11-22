@@ -15,7 +15,8 @@
  * it refuses any database but the runner's own.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { BOUND, readOf, rowsAtSizes, shapeFaults } from './plan-shape.cjs';
 
 const DB = process.env.LOAD_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 if (!/@(127\.0\.0\.1|localhost):/.test(DB)) {
@@ -41,6 +42,9 @@ const PROBES = [
   // The launch: every film the whale has logged and kept, in one trip (get_marks_ledger), as the phone
   // reads it at each start.
   { screen: 'Launch', what: 'the marks ledger, of the whale', as: WHALE, sql: 'SELECT public.get_marks_ledger()' },
+  // Whom the member follows and has asked to follow, in one trip (get_my_follows), as the phone reads it at
+  // each start: of the member who follows 2,000.
+  { screen: 'Launch', what: 'the follow list, of a member who follows 2,000', as: mid(4), sql: 'SELECT public.get_my_follows()' },
   // The Lobby
   { screen: 'Lobby', what: 'the day\'s wall (get_lobby)', as: MEMBER, sql: 'SELECT public.get_lobby()' },
   // The Reel
@@ -127,8 +131,9 @@ const PROBES = [
   // Notices
   { screen: 'Notices', what: 'the celebrity\'s first page', as: CELEBRITY,
     sql: `SELECT id, type, message, is_read, created_at FROM public.notifications WHERE user_id = '${CELEBRITY}' ORDER BY created_at DESC, id DESC LIMIT 30` },
-  { screen: 'Notices', what: 'the celebrity\'s unread count', as: CELEBRITY,
-    sql: `SELECT count(*) FROM public.notifications WHERE user_id = '${CELEBRITY}' AND is_read = false` },
+  // The board and its bell in one read, as the phone asks it (notices_page): its count read to a thousand
+  // (20261122_04), so the celebrity's 50,000 unread are never all read.
+  { screen: 'Notices', what: 'the celebrity\'s board and bell (notices_page)', as: CELEBRITY, sql: 'SELECT public.notices_page(30)' },
   // Search: the house-wide search's three house sources, as the phone asks each (a page of 21), for a
   // word few hold and for one many hold. A word in no review or stack ("tarkovsky") is the rare word's
   // worst case: every reader of the trigram indexes, none of the walk.
@@ -173,6 +178,27 @@ function plan(p) {
 }
 
 /**
+ * Every statement's plan of one run of a read, as JSON: the read's own (EXPLAIN ANALYZE) and, through
+ * auto_explain, each statement a function inside it ran; for its shape (plan-shape.cjs).
+ */
+function plansOf(p) {
+  const inner = "LOAD 'auto_explain'; SET auto_explain.log_min_duration = 0; SET auto_explain.log_analyze = on; SET auto_explain.log_timing = off; SET auto_explain.log_nested_statements = on; SET auto_explain.log_format = 'json'; SET client_min_messages = log;";
+  const sql = `${inner}\nBEGIN; SET LOCAL statement_timeout = '60s'; SET LOCAL ROLE authenticated; SELECT set_config('request.jwt.claims', '${claims(p.as)}', true);\nEXPLAIN (ANALYZE, TIMING OFF, FORMAT JSON) ${p.sql};\nROLLBACK;`;
+  const r = spawnSync('psql', [DB, '-X', '-q', '-t', '-A', '-c', sql], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  const plans = [];
+  const own = (r.stdout || '').slice((r.stdout || '').indexOf('['));
+  try { plans.push(...JSON.parse(own.slice(0, own.lastIndexOf(']') + 1))); } catch { /* the read's own plan unread: its statements below still count */ }
+  for (const block of (r.stderr || '').split(/^LOG:\s+duration: /m).slice(1)) {
+    const at = block.indexOf('{');
+    try {
+      const one = JSON.parse(block.slice(at, block.lastIndexOf('}') + 1));
+      if (!/^\s*(LOAD|BEGIN|EXPLAIN|SELECT set_config|SET )/i.test(one['Query Text'] ?? '')) plans.push(one);
+    } catch { /* not a plan */ }
+  }
+  return plans;
+}
+
+/**
  * auto_explain's JSON, one LOG per statement the read ran: the slowest
  * statement inside a function, as a compact tree (an annotation holds about
  * 4,000 characters, and a plan in text with its query beside it does not fit).
@@ -199,6 +225,8 @@ function slowestInside(log) {
 }
 
 const rows = [];
+/** Each read's rows read of the growing tables, by its name: kept (LOAD_SHAPE_OUT) to judge against another size. */
+const readRows = {};
 /** Each read's median, for the slowest's plans below. */
 const medians = [];
 let over = 0;
@@ -208,10 +236,16 @@ for (const p of PROBES) {
     const t = time(p);
     const median = t[2];
     medians.push({ p, median });
-    const ok = median <= budget;
+    // Its shape: what it reads of tables that grow with the house, within its bound, and no table read whole.
+    const plans = plansOf(p);
+    const grown = readOf(plans).grown;
+    readRows[`${p.screen} · ${p.what}`] = grown;
+    const faults = shapeFaults(plans, p.rows ?? BOUND);
+    const ok = median <= budget && !faults.length;
     if (!ok) over++;
-    rows.push(`| ${p.screen} | ${p.what} | ${median.toFixed(1)} | ${t[4].toFixed(1)} | ${budget} | ${ok ? '✓' : '✗ OVER'} |`);
-    console.log(`${ok ? '✓' : '✗'} ${p.screen} · ${p.what}: median ${median.toFixed(1)} ms, worst ${t[4].toFixed(1)} ms (budget ${budget})`);
+    rows.push(`| ${p.screen} | ${p.what} | ${median.toFixed(1)} | ${t[4].toFixed(1)} | ${budget} | ${grown} | ${ok ? '✓' : faults.length ? '✗ SHAPE' : '✗ OVER'} |`);
+    console.log(`${ok ? '✓' : '✗'} ${p.screen} · ${p.what}: median ${median.toFixed(1)} ms, worst ${t[4].toFixed(1)} ms (budget ${budget}), ${grown} rows read of the growing tables`);
+    for (const f of faults) console.log(`::error title=Load — ${p.screen}: ${p.what}::${escape(f)}`);
     if (!ok) {
       // the plan rides in the annotation: a run's logs need a signed-in reader, its annotations do not
       const shown = plan(p);
@@ -221,7 +255,7 @@ for (const p of PROBES) {
     }
   } catch (e) {
     over++;
-    rows.push(`| ${p.screen} | ${p.what} | — | — | ${budget} | ✗ FAILED |`);
+    rows.push(`| ${p.screen} | ${p.what} | — | — | ${budget} | — | ✗ FAILED |`);
     console.log(`::error title=Load — ${p.screen}: ${p.what}::${String(e.stderr || e.message).split('\n').slice(0, 4).join(' ⏎ ')}`);
   }
 }
@@ -267,8 +301,17 @@ if (PROPOSED_STACKS) {
   if (differ) { over++; console.log(`::error title=Load — the stacks search as proposed::answers otherwise than today's in ${differ} case(s)`); }
 }
 
+// The rows each read read, kept for a run at another size (LOAD_SHAPE_OUT); and, given the rows a run at
+// a smaller house read (LOAD_SHAPE_AGAINST), every read whose rows grew with the house fails.
+if (process.env.LOAD_SHAPE_OUT) writeFileSync(process.env.LOAD_SHAPE_OUT, JSON.stringify(readRows, null, 1));
+if (process.env.LOAD_SHAPE_AGAINST) {
+  const grew = rowsAtSizes(JSON.parse(readFileSync(process.env.LOAD_SHAPE_AGAINST, 'utf8')), readRows);
+  for (const g of grew) { over++; console.log(`::error title=Load — a read that grows with the house::${escape(g)}`); }
+  console.log(grew.length ? `\n${grew.length} read(s) grew with the house` : '\nno read grew with the house');
+}
+
 const members = Number(process.env.LOAD_MEMBERS ?? 100000).toLocaleString('en-US');
-const table = ['| Screen | Read | Median ms | Worst ms | Budget | |', '|---|---|---|---|---|---|', ...rows].join('\n');
+const table = ['| Screen | Read | Median ms | Worst ms | Budget | Rows read | |', '|---|---|---|---|---|---|---|', ...rows].join('\n');
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Load: ${members} members\n\n${table}\n`);
 console.log(`\n${PROBES.length - over} of ${PROBES.length} within budget`);
 process.exit(over ? 1 : 0);
