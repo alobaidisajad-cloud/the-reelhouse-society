@@ -7929,5 +7929,33 @@
     "proof": "m19",
     "commit": "a8dea9a7a6c8587d2ebe4813df830c47e4aa4f13",
     "verdict": "caught"
+  },
+  {
+    "class": "DATA-edit-sealed-over-an-unread-record",
+    "mutant": "shape-amend-link-files-new",
+    "proof": "m10",
+    "commit": "7ba4adb7bd252e9f91a58c586190fe2d47cb766f",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-edit-sealed-over-an-unread-record",
+    "mutant": "shape-amend-desk-drawn-unread",
+    "proof": "m11",
+    "commit": "7ba4adb7bd252e9f91a58c586190fe2d47cb766f",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-edit-sealed-over-an-unread-record",
+    "mutant": "shape-records-film-pages-only",
+    "proof": "m12",
+    "commit": "7ba4adb7bd252e9f91a58c586190fe2d47cb766f",
+    "verdict": "caught"
+  },
+  {
+    "class": "DATA-edit-sealed-over-an-unread-record",
+    "mutant": "shape-lookup-way-trusted",
+    "proof": "m8",
+    "commit": "7ba4adb7bd252e9f91a58c586190fe2d47cb766f",
+    "verdict": "caught"
   }
 ]
