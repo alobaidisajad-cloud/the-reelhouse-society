@@ -7864,7 +7864,7 @@
     "class": "COPY-a-change-that-misses-a-holder",
     "mutant": "shape-gone-filing-kept-on-lists",
     "proof": "m9",
-    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
+    "commit": "d5dce1b1bf6ea9d95aed4e18026fbed200bbe87d",
     "verdict": "caught"
   },
   {
@@ -7885,7 +7885,7 @@
     "class": "COPY-a-change-that-misses-a-holder",
     "mutant": "shape-given-again-never-heard",
     "proof": "m11",
-    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
+    "commit": "d5dce1b1bf6ea9d95aed4e18026fbed200bbe87d",
     "verdict": "caught"
   },
   {
