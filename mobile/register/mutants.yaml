@@ -1592,8 +1592,8 @@ mutants:
     source: shape
     edits:
       - file: app/(admin)/tribunal.tsx
-        find: "  if (priorityData && priorityData !== priorityFrom) {\n    setPriorityFrom(priorityData);\n    setPriorityItems(priorityData as unknown as TribunalReport[]);\n    setHasMorePriority(priorityData.length >= 20);\n  }\n"
-        replace: "  React.useEffect(() => {\n    if (priorityData) {\n      setPriorityFrom(priorityData);\n      setPriorityItems(priorityData as unknown as TribunalReport[]);\n      setHasMorePriority(priorityData.length >= 20);\n    }\n  }, [priorityData]);\n"
+        find: "  if (priorityData && priorityData !== priorityFrom) {\n    setPriorityFrom(priorityData);\n    setPriorityItems(priorityData);\n    setHasMorePriority(moreMayFollow(priorityData, PRIORITY_PAGE));\n  }\n"
+        replace: "  React.useEffect(() => {\n    if (priorityData) {\n      setPriorityFrom(priorityData);\n      setPriorityItems(priorityData);\n      setHasMorePriority(moreMayFollow(priorityData, PRIORITY_PAGE));\n    }\n  }, [priorityData]);\n"
     proof: { file: app/(admin)/__tests__/tribunalNeverLiesEmpty.guard.test.ts, test: "rebuilds each docket from its read during the render that brings it, never an effect after" }
 
   - id: shape-sweep-blind-to-handed-on
@@ -10532,8 +10532,8 @@ mutants:
     source: shape
     edits:
       - file: app/(modals)/notifications-modal.tsx
-        find: "    try { await fetchNotifications(); } finally { setRefreshing(false); }"
-        replace: "    await fetchNotifications();\n    setRefreshing(false);"
+        find: "    try { await fetchNotifications({ fromTop: true }); } finally { setRefreshing(false); }"
+        replace: "    await fetchNotifications({ fromTop: true });\n    setRefreshing(false);"
     proof: { file: src/utils/__tests__/aMarkInFlightEndsWithItsAnswer.guard.test.ts, test: "ends with its answer: lowered in a finally, or named with what ends it" }
 
   - id: shape-sent-again-marked-on-screen-alone
@@ -10823,3 +10823,93 @@ mutants:
         find: "  return new RegExp(k.by).test(body);"
         replace: "  return true;"
     proof: { file: src/utils/__tests__/aListReadAgainKeepsItsLaterPages.guard.test.ts, test: "finds the instances it was made for, put back" }
+
+  - id: shape-tribunal-docket-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "queryFn: () => readPendingAsFar(pendingAsFar.current),"
+        replace: "queryFn: () => readPendingAsFar(REPORTS_PAGE_SIZE),"
+    proof: { file: app/(admin)/__tests__/theDocketsReadAgainKeepTheirLaterPages.test.tsx, test: "THE DOCKET: a verdict reads the docket again as far as the moderator had read, not its first page alone" }
+
+  - id: shape-tribunal-docket-forgets-how-far
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "  useEffect(() => { pendingAsFar.current = Math.max(REPORTS_PAGE_SIZE, pendingItems.length); }, [pendingItems.length]);\n"
+        replace: ""
+    proof: { file: app/(admin)/__tests__/theDocketsReadAgainKeepTheirLaterPages.test.tsx, test: "THE DOCKET: a verdict reads the docket again as far as the moderator had read, not its first page alone" }
+
+  - id: shape-tribunal-urgent-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: app/(admin)/tribunal.tsx
+        find: "priorityCursorOf, priorityAsFar.current, PRIORITY_PAGE)"
+        replace: "priorityCursorOf, PRIORITY_PAGE, PRIORITY_PAGE)"
+    proof: { file: app/(admin)/__tests__/theDocketsReadAgainKeepTheirLaterPages.test.tsx, test: "URGENT: a verdict reads the queue again as far as the moderator had read, not its first page alone" }
+
+  - id: shape-member-file-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/hooks/useProfileData.ts
+        find: ", logsAsFar.current);"
+        replace: ", LOGS_PAGE);"
+    proof: { file: src/hooks/__tests__/aMemberFileReadAgainKeepsItsLaterPages.test.tsx, test: "come back to after its read went stale, the file keeps the logs read past its first page" }
+
+  - id: shape-own-logs-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/stores/domain/logSlice/helpers/logOperations.ts
+        find: "readOnAsFar(readPage, Math.max(PAGE_SIZE, state.logs.length))"
+        replace: "readOnAsFar(readPage, PAGE_SIZE)"
+    proof: { file: src/stores/domain/__tests__/theOwnLogsReadAgainKeepTheirLaterPages.test.ts, test: "read again from the top, the logs come back as far as the member had read them, as the house holds them" }
+
+  - id: shape-read-on-as-far-stops-at-one-read
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/utils/readAsFar.ts
+        find: "if (got.nextCursor === null || items.length >= want ||"
+        replace: "if (got.nextCursor === null || items.length >= 0 ||"
+    proof: { file: src/utils/__tests__/readAsFar.test.ts, test: "reads as far as was held, each read no larger than the most one read asks, and hands on the cursor past it" }
+
+  - id: shape-board-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "Math.min(LOCAL_NOTIFICATION_CAP, Math.max(PAGE_SIZE, state.notifications.length))"
+        replace: "PAGE_SIZE"
+    proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "read again (the app come back to), the board keeps the notices read past its first page, as the house holds them" }
+
+  - id: shape-board-read-past-one-read-dropped
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "while (data && !error && lastRead === asked && data.length < want) {"
+        replace: "while (data && !error && lastRead === asked && data.length < 0) {"
+    proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "read past the most one read of the board asks, it is read on from the first read’s last row" }
+
+  - id: shape-board-cut-short-on-a-failed-page
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "if (older.error || !older.data) { error = older.error ?? { message: 'an older page answered nothing' }; data = null; break; }"
+        replace: "if (older.error || !older.data) break;"
+    proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "a page past the first that cannot be read leaves the board as it was, said as not read" }
+
+  - id: shape-board-pull-reads-as-far
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/stores/notificationStore.ts
+        find: "const want = how?.fromTop ? PAGE_SIZE :"
+        replace: "const want = how?.fromTop === undefined ? PAGE_SIZE :"
+    proof: { file: src/stores/__tests__/theBoardReadAgainKeepsItsLaterPages.test.ts, test: "a pull asks for the newest: the board is read from its top" }
