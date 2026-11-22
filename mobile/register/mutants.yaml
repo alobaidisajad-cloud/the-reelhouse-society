@@ -10760,3 +10760,66 @@ mutants:
         find: "    if (MACHINERY.has(file)) continue;\n"
         replace: ""
     proof: { file: src/utils/__tests__/everyQueuedWriteIsReadBack.guard.test.ts, test: "says no to a type queued that nothing reads back, and yes to each way of reading one" }
+
+  - id: shape-sanctions-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/components/admin/SanctionsList.tsx
+        find: "}), asFar.current, PAGE)"
+        replace: "}), PAGE, PAGE)"
+    proof: { file: src/components/admin/__tests__/aDocketReadAgainKeepsItsLaterPages.test.tsx, test: "SANCTIONS: a member lifted reads the list again as far as the admin had read, not its first page alone" }
+
+  - id: shape-appeals-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/components/admin/AppealsDocket.tsx
+        find: "}), asFar.current, PAGE)"
+        replace: "}), PAGE, PAGE)"
+    proof: { file: src/components/admin/__tests__/aDocketReadAgainKeepsItsLaterPages.test.tsx, test: "APPEALS: read again after a hearing, the docket keeps the appeals read past its first page" }
+
+  - id: shape-record-read-again-from-the-top
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/components/moderation/VerdictRecord.tsx
+        find: "}), asFar.current, PAGE)"
+        replace: "}), PAGE, PAGE)"
+    proof: { file: src/components/admin/__tests__/aDocketReadAgainKeepsItsLaterPages.test.tsx, test: "A MEMBER’S RECORD: read again after an appeal is filed, the record keeps the verdicts read past its first page" }
+
+  - id: shape-docket-forgets-how-far
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/components/admin/AppealsDocket.tsx
+        find: "  useEffect(() => { asFar.current = Math.max(PAGE, items.length); }, [items.length]);\n"
+        replace: ""
+    proof: { file: src/components/admin/__tests__/aDocketReadAgainKeepsItsLaterPages.test.tsx, test: "APPEALS: read again after a hearing, the docket keeps the appeals read past its first page" }
+
+  - id: shape-read-as-far-stops-at-one-page
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/utils/readAsFar.ts
+        find: "if (got.length < page || rows.length >= want ||"
+        replace: "if (got.length < page || rows.length >= 0 ||"
+    proof: { file: src/utils/__tests__/readAsFar.test.ts, test: "reads page after page until as many rows as were held, and no further" }
+
+  - id: shape-pages-finder-takes-a-choice-as-kept
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aListReadAgainKeepsItsLaterPages.guard.test.ts
+        find: "else if (branches(v, w).some((b) => !emptied(b) && !fromOld(b, w, sf)))"
+        replace: "else if (branches(v, w).every((b) => !emptied(b) && !fromOld(b, w, sf)))"
+    proof: { file: src/utils/__tests__/aListReadAgainKeepsItsLaterPages.guard.test.ts, test: "follows a first page through its names, its sort and dedupe, and each side of a choice" }
+
+  - id: shape-pages-finder-trusts-a-keep
+    class: STATE-pages-read-past-the-first-dropped
+    source: shape
+    edits:
+      - file: src/utils/__tests__/aListReadAgainKeepsItsLaterPages.guard.test.ts
+        find: "  return new RegExp(k.by).test(body);"
+        replace: "  return true;"
+    proof: { file: src/utils/__tests__/aListReadAgainKeepsItsLaterPages.guard.test.ts, test: "finds the instances it was made for, put back" }
