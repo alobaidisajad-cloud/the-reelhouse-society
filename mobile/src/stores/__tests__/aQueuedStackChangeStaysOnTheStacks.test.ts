@@ -58,5 +58,5 @@ it('a film list set by a queued edit, then a film added after it, stands in the 
   ];
   answering([STACK]);
   await useFilmStore.getState().fetchLists();
-  expect(useFilmStore.getState().lists[0].films.map((f) => f.id)).toEqual([2, 1, 3]);
+  expect(useFilmStore.getState().lists[0]?.films.map((f) => f.id)).toEqual([2, 1, 3]);
 });

@@ -222,7 +222,7 @@ describe('the whole app', () => {
 
   it('every write the app queues is read back by what draws it, or judged', () => {
     const hits = unreadQueuedWrites(APP, TYPES);
-    expect(hits.filter((h) => !(h.split(' ')[0] in JUDGED))).toEqual([]);
+    expect(hits.filter((h) => !(h.slice(0, h.indexOf(' ')) in JUDGED))).toEqual([]);
     // Each judged type is still one the app queues and nothing reads back.
     for (const t of Object.keys(JUDGED)) expect([t, hits.some((h) => h.startsWith(`${t} `))]).toEqual([t, true]);
   });
