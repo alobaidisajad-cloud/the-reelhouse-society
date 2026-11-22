@@ -296,13 +296,12 @@ const KEEPS: Record<string, { by: string; why: string }> = {
   'src/components/admin/AppealsDocket.tsx items in AppealsDocket': { by: 'readAsFar\\(.*asFar\\.current', why: 'read again as far as the moderator had read (readAsFar)' },
   'src/components/moderation/VerdictRecord.tsx items in VerdictRecord': { by: 'readAsFar\\(.*asFar\\.current', why: 'read again as far as the member had read (readAsFar)' },
   'src/stores/lounge.ts currentMessages in subscribeToLounge': { by: '_readBackIn', why: 'the cap keeps every word of a room read back past its window' },
+  'app/(admin)/tribunal.tsx pendingItems in TribunalScreen': { by: 'readPendingAsFar\\(pendingAsFar\\.current\\)', why: 'read again as far as the moderator had read (readAsFar)' },
+  'app/(admin)/tribunal.tsx priorityItems in TribunalScreen': { by: 'readAsFar\\(readPriority, priorityCursorOf, priorityAsFar\\.current', why: 'read again as far as the moderator had read (readAsFar)' },
 };
 
 /** Found and not yet mended: each comes off as it is fixed. */
 const STILL_TO_FIX: string[] = [
-  // Read again after a verdict (its queries asked again): the dockets go back to their first page.
-  'app/(admin)/tribunal.tsx pendingItems in TribunalScreen',
-  'app/(admin)/tribunal.tsx priorityItems in TribunalScreen',
   // A profile come back to after its read went stale reads its logs again from the first page
   // (USER_DATA_LOADED for another member's, fetchLogs for the member's own).
   'src/hooks/useProfileData.ts archiveLogs in profileReducer',

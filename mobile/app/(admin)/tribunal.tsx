@@ -19,13 +19,14 @@ import {
     Trash2,
     X,
 } from 'lucide-react-native';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '@/src/components/text';
 import { Presence, PresenceView } from '@/src/components/motion/Presence';
 
 import PressableScale from '@/src/components/PressableScale';
-import { ModerationService, PriorityCursor, ReportEvidence } from '@/src/services/ModerationService';
+import { ModerationService, PriorityCursor, REPORTS_PAGE_SIZE, ReportEvidence } from '@/src/services/ModerationService';
+import { moreMayFollow, readAsFar } from '@/src/utils/readAsFar';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts, radii, spacing } from '@/src/theme/theme';
 import { UNREADY } from '@/src/theme/unready';
@@ -111,6 +112,33 @@ function bulkDismissedWords(asked: number, closed: number | null, own = 0): stri
   const judged = asked - closed;
   if (judged <= 0) return `${closed} report(s) dismissed.${left}`;
   return `${closed} report(s) dismissed. ${judged} already judged by another moderator.${left}`;
+}
+
+/** The priority queue's page: the most cases a read of it asks for. */
+const PRIORITY_PAGE = 20;
+
+/** Where the priority queue reads on from: past its last case, in the house's own order. */
+const priorityCursorOf = (last: TribunalReport): PriorityCursor => ({
+  report_count: Number(last.report_count ?? 1),
+  created_at: last.created_at,
+  id: last.id,
+});
+
+const readPriority = async (after: PriorityCursor | undefined, size: number) =>
+  (await ModerationService.getPriorityQueue(size, after)) as unknown as TribunalReport[];
+
+/**
+ * The pending docket read as far as `want` cases, with the house's exact count from its first page.
+ * Its pages meet on their boundary case (asked from it, not past it): each case is held once.
+ */
+async function readPendingAsFar(want: number) {
+  const first = { total: null as number | null };
+  const rows = await readAsFar<TribunalReport, string>(async (after) => {
+    const page = await ModerationService.getPendingReports(after);
+    if (after === undefined) first.total = page.total;
+    return page.rows as unknown as TribunalReport[];
+  }, (last) => last.created_at, want, REPORTS_PAGE_SIZE, (r) => r.id);
+  return { rows, total: first.total };
 }
 
 type EnforcementAction = 'warn' | 'suspend' | 'ban' | 'permanent_exile' | 'delete_content';
@@ -478,7 +506,7 @@ function TribunalScreen() {
 
   // ── Priority queue pagination state ────────────────────────────────────
   // No cursor state: the load-more cursor is derived from the last loaded
-  // item, and page 1 mirrors the live query (see the sync effect below) so a
+  // item, and the live query rebuilds the docket as far as it was read (see below), so a
   // verdict's refetch always rebuilds a fresh docket — same pattern as pending.
   const [priorityItems, setPriorityItems] = useState<TribunalReport[]>([]);
   const [hasMorePriority, setHasMorePriority] = useState(true);
@@ -490,6 +518,10 @@ function TribunalScreen() {
   // ── Summoned evidence, per case ─────────────────────────────────────────
   const [evidence, setEvidence] = useState<Record<string, { loading: boolean; data?: ReportEvidence }>>({});
 
+  // How far each docket has been read: a verdict's read again reads this far, not page one alone.
+  const pendingAsFar = useRef(REPORTS_PAGE_SIZE);
+  const priorityAsFar = useRef(PRIORITY_PAGE);
+
   const {
     data: pendingPage,
     isLoading,
@@ -499,18 +531,20 @@ function TribunalScreen() {
     isError: pendingFailed,
   } = useQuery({
     queryKey: ['admin', 'reports', 'pending'],
-    queryFn: () => ModerationService.getPendingReports(),
+    queryFn: () => readPendingAsFar(pendingAsFar.current),
     enabled: user?.role === 'admin',
   });
 
-  // First page (and every refetch after a verdict) resets the docket — during the render that
-  // brings it, not in an effect after: the frame between painted the answer as an empty docket.
+  // The read (and every read again after a verdict) rebuilds the docket as far as it was read —
+  // during the render that brings it, not in an effect after: the frame between painted the answer
+  // as an empty docket.
   const [pendingFrom, setPendingFrom] = useState<typeof pendingPage>(undefined);
   if (pendingPage && pendingPage !== pendingFrom) {
     setPendingFrom(pendingPage);
-    setPendingItems(pendingPage.rows as unknown as TribunalReport[]);
+    setPendingItems(pendingPage.rows);
     setPendingTotal(pendingPage.total ?? pendingPage.rows.length);
   }
+  useEffect(() => { pendingAsFar.current = Math.max(REPORTS_PAGE_SIZE, pendingItems.length); }, [pendingItems.length]);
 
   // ── Load more for the pending docket (keyset on created_at) ────────────
   const loadMorePendingMutation = useMutation({
@@ -558,22 +592,23 @@ function TribunalScreen() {
     isError: priorityFailed,
   } = useQuery({
     queryKey: ['admin', 'reports', 'priority'],
-    queryFn: () => ModerationService.getPriorityQueue(20),
+    queryFn: () => readAsFar(readPriority, priorityCursorOf, priorityAsFar.current, PRIORITY_PAGE),
     enabled: user?.role === 'admin' && activeView === 'priority',
   });
 
-  // Page 1 is the live query: whenever priorityData changes (initial load, a
-  // verdict's invalidation, manual refresh) it rebuilds the docket. Load-more
-  // appends via a mutation that never touches priorityData, so accumulated
-  // pages survive — but a refetch (including resolving the last case → []) is
-  // always reflected, never stale. Rebuilt during the render that brings it, as the pending
-  // docket is: never a frame of an empty docket over an answered read.
+  // The live query, read as far as the docket was read: whenever priorityData changes (initial
+  // load, a verdict's invalidation, manual refresh) it rebuilds the docket. Load-more appends via a
+  // mutation that never touches priorityData, and the next read again reads that far — so a
+  // refetch (including resolving the last case → []) is always reflected, never stale. Rebuilt
+  // during the render that brings it, as the pending docket is: never a frame of an empty docket
+  // over an answered read.
   const [priorityFrom, setPriorityFrom] = useState<typeof priorityData>(undefined);
   if (priorityData && priorityData !== priorityFrom) {
     setPriorityFrom(priorityData);
-    setPriorityItems(priorityData as unknown as TribunalReport[]);
-    setHasMorePriority(priorityData.length >= 20);
+    setPriorityItems(priorityData);
+    setHasMorePriority(moreMayFollow(priorityData, PRIORITY_PAGE));
   }
+  useEffect(() => { priorityAsFar.current = Math.max(PRIORITY_PAGE, priorityItems.length); }, [priorityItems.length]);
 
   // ── Enforcement records for the WHOLE docket, in one query ──────────────────
   // Keyed on the accumulated ids, not on page one. The docket grows by appending
@@ -622,15 +657,14 @@ function TribunalScreen() {
 
   // ── Load More for priority queue (compound keyset — matches RPC order) ──
   const loadMoreMutation = useMutation({
-    mutationFn: (cursor: PriorityCursor) => ModerationService.getPriorityQueue(20, cursor),
-    onSuccess: (data) => {
-      const rows = data as unknown as TribunalReport[];
+    mutationFn: (cursor: PriorityCursor) => readPriority(cursor, PRIORITY_PAGE),
+    onSuccess: (rows) => {
       if (rows.length > 0) {
         setPriorityItems((prev) => {
           const seen = new Set(prev.map(r => r.id));
           return [...prev, ...rows.filter(r => !seen.has(r.id))];
         });
-        setHasMorePriority(rows.length >= 20);
+        setHasMorePriority(rows.length >= PRIORITY_PAGE);
       } else {
         setHasMorePriority(false);
       }
@@ -643,12 +677,7 @@ function TribunalScreen() {
 
   const handleLoadMore = useCallback(() => {
     if (priorityItems.length === 0 || loadMoreMutation.isPending) return;
-    const last = priorityItems[priorityItems.length - 1];
-    loadMoreMutation.mutate({
-      report_count: Number(last.report_count ?? 1),
-      created_at: last.created_at,
-      id: last.id,
-    });
+    loadMoreMutation.mutate(priorityCursorOf(priorityItems[priorityItems.length - 1]));
   }, [priorityItems, loadMoreMutation]);
 
   // A judged case leaves both dockets at once. The read again of page one rebuilds a docket only
