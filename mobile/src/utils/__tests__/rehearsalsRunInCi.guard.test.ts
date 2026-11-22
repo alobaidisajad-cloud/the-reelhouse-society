@@ -72,8 +72,28 @@ const faultsOf = (sql: string, applied: Set<string>) => {
   }
   // A helper is volatile and never leakproof: as a filter's value it is called once per row, the
   // index unused and the row rules run on every row (30 s on 100,000 members, P0.6's lock lab).
-  for (const m of sql.matchAll(/\b(?:where|and|or|on)\s+[\w.]+\s*(?:=|<>|!=)\s*(pg_temp\.\w+)\(/gi)) {
+  // (A left side that is itself a helper's value compares two values, not a row: it is left alone.)
+  for (const m of sql.matchAll(/\b(?:where|and|or|on)\s+(?:(?!pg_temp\.)[^=;\n])+?\s*(?:=|<>|!=)\s*(pg_temp\.\w+)\(/gi)) {
     faults.push(`a row picked by ${m[1]}() itself, read on every row: pick it by (SELECT ${m[1]}(…))`);
+  }
+  // The same in a list: IN (pg_temp.f('a'), pg_temp.f('b')) is asked once per row for each value (car 32's
+  // rehearsal, 30 s on 500,000 members, load 44973119713). Each value of the list is read at its own depth.
+  for (const m of sql.matchAll(/\bIN\s*\(/gi)) {
+    let depth = 1;
+    let i = (m.index ?? 0) + m[0].length;
+    let item = '';
+    const items: string[] = [];
+    for (; i < sql.length && depth > 0; i++) {
+      const c = sql[i];
+      if (c === '(') depth++;
+      if (c === ')') depth--;
+      if (depth === 0 || (depth === 1 && c === ',')) { items.push(item.trim()); item = ''; continue; }
+      item += c;
+    }
+    for (const it of items) {
+      const bare = /^(pg_temp\.\w+)\(/.exec(it);
+      if (bare) faults.push(`a row picked by ${bare[1]}() itself, read on every row: pick it by (SELECT ${bare[1]}(…))`);
+    }
   }
   return faults;
 };
@@ -127,6 +147,12 @@ describe('every rehearsal', () => {
     const reads = (sql: string) => faultsOf(sql, applied).filter((f) => f.startsWith('a row picked by'));
     expect(reads(planted)).toEqual(['a row picked by pg_temp.c() itself, read on every row: pick it by (SELECT pg_temp.c(…))']);
     expect(reads(planted.replace("pg_temp.c('L1')", "(SELECT pg_temp.c('L1'))"))).toEqual([]);
+    // In a list, and with a left side that is no bare column (car 32's rehearsal, load 44973119713).
+    const listed = GOOD.replace('SAVEPOINT c;', "SELECT id FROM public.lounge_messages WHERE id IN ((SELECT pg_temp.c('a')), pg_temp.c('b'));\nSAVEPOINT c;");
+    expect(reads(listed)).toEqual(['a row picked by pg_temp.c() itself, read on every row: pick it by (SELECT pg_temp.c(…))']);
+    expect(reads(listed.replace("pg_temp.c('b'))", "(SELECT pg_temp.c('b')))"))).toEqual([]);
+    const cast = GOOD.replace('SAVEPOINT c;', "SELECT 1 FROM t WHERE (e ->> 'piece_id')::uuid = pg_temp.c('L1');\nSAVEPOINT c;");
+    expect(reads(cast)).toEqual(['a row picked by pg_temp.c() itself, read on every row: pick it by (SELECT pg_temp.c(…))']);
     expect(rehearsals.flatMap((f) => reads(read(join(DIAGNOSTICS, f))).map((x) => `${f}: ${x}`))).toEqual([]);
   });
 

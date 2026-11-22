@@ -178,7 +178,7 @@ SELECT pg_temp.hb10_write('reply to stack card', 1, format('INSERT INTO public.l
   pg_temp.hb10_id('salon'), pg_temp.hb10_m(1), pg_temp.hb10_id('stack card'))) AS done \gset rh_
 CREATE TEMP TABLE hb10_cards_before ON COMMIT DROP AS
   SELECT id, content, metadata, film_title, film_poster, reply_to_content FROM public.lounge_messages
-   WHERE id IN (pg_temp.hb10_id('card'), pg_temp.hb10_id('stack card'), pg_temp.hb10_id('reply to stack card'));
+   WHERE id IN ((SELECT pg_temp.hb10_id('card')), (SELECT pg_temp.hb10_id('stack card')), (SELECT pg_temp.hb10_id('reply to stack card')));
 
 -- What stands before: the counts and readers as they read.
 CREATE TEMP TABLE hb10_before ON COMMIT DROP AS SELECT
@@ -261,7 +261,7 @@ SELECT pg_temp.rh_case('2 is told which of their pieces are withheld, by which v
   (SELECT e ->> 'kind' || '|' || ((e ->> 'verdict_id')::uuid = pg_temp.hb10_id('V log'))::text || '|'
           || ((e ->> 'appeal_by')::timestamptz > now() + interval '29 days')::text || '|' || (e ->> 'appealed')
      FROM jsonb_array_elements(pg_temp.hb10_as(2, 'SELECT public.get_my_withheld_pieces()::text')::jsonb) e
-    WHERE (e ->> 'piece_id')::uuid = pg_temp.hb10_id('log')));
+    WHERE (e ->> 'piece_id')::uuid = (SELECT pg_temp.hb10_id('log'))));
 SELECT pg_temp.rh_case('2 is told of all eight; 1 of none', '8|0',
   (jsonb_array_length(pg_temp.hb10_as(2, 'SELECT public.get_my_withheld_pieces()::text')::jsonb))::text || '|'
   || (jsonb_array_length(pg_temp.hb10_as(1, 'SELECT public.get_my_withheld_pieces()::text')::jsonb))::text);
@@ -350,7 +350,7 @@ SELECT pg_temp.rh_case('the job, holding it after the appeal, leaves it withheld
   || (SELECT count(*)::text FROM public.dispatch_comments WHERE id = (SELECT pg_temp.hb10_id('filing critique of 2')) AND withheld_at IS NOT NULL));
 SELECT pg_temp.rh_case('3 upholds it', 'done', pg_temp.hb10_hear('filing critique of 2', 'upheld'));
 UPDATE public.withheld_pieces SET delete_after = now() - interval '1 minute'
- WHERE mod_action_id IN (pg_temp.hb10_id('V filing'), pg_temp.hb10_id('V second critique of 2'));
+ WHERE mod_action_id IN ((SELECT pg_temp.hb10_id('V filing')), (SELECT pg_temp.hb10_id('V second critique of 2')));
 SELECT pg_temp.rh_case('the hourly job deletes the two', '2', public.expire_withheld_pieces()::text);
 SELECT pg_temp.rh_case('the filing is ended by the house, emptied, as REMOVE CONTENT ended one', 'house||given back',
   (SELECT ended_by || '|' || coalesce(title, '') || '|' || CASE WHEN withheld_at IS NULL THEN 'given back' ELSE 'withheld' END FROM public.dispatch_posts WHERE id = (SELECT pg_temp.hb10_id('filing'))));
