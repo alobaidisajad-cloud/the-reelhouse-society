@@ -20,7 +20,7 @@ SET LOCAL statement_timeout = '30s';
 -- year 0, a digit not from 0 to 9), may be dated by the day the log was made, which member_viewings reads on the session's
 -- clock: so it holds the months of the day before and the day after that day in UTC too, every clock
 -- within a day of UTC. More keys than viewings, never fewer: a read by them keeps only what it asks.
--- add-only (1): no shipped client uses it: a function this car makes for an index, called by no client
+-- add-only (1): no shipped client uses it: a function this car makes for an index, in private, which the API never serves: TestFlight build 41 and the website cannot call it
 CREATE OR REPLACE FUNCTION private.viewing_months(p_user uuid, p_history jsonb, p_created timestamptz) RETURNS text[]
     LANGUAGE sql IMMUTABLE PARALLEL SAFE
     SET search_path TO 'pg_catalog', 'pg_temp'
@@ -43,7 +43,7 @@ CREATE OR REPLACE FUNCTION private.viewing_months(p_user uuid, p_history jsonb, 
 $$;
 
 -- The keys of a member's span of days, first to last: one for each month the span touches.
--- add-only (1): no shipped client uses it: a function this car makes for the reads of a span, called by no client
+-- add-only (1): no shipped client uses it: a function this car makes for the reads of a span, in private, which the API never serves: TestFlight build 41 and the website cannot call it
 CREATE OR REPLACE FUNCTION private.viewing_months_between(p_user uuid, p_first date, p_last date) RETURNS text[]
     LANGUAGE sql IMMUTABLE PARALLEL SAFE
     SET search_path TO 'pg_catalog', 'pg_temp'
@@ -54,6 +54,6 @@ CREATE OR REPLACE FUNCTION private.viewing_months_between(p_user uuid, p_first d
   );
 $$;
 
--- Read inside the members' own reads (as the member) and by the index: never served by the API.
+-- add-only (1): no shipped client uses it: two functions this car makes, read inside the members' own reads (as the member) and by the index, in private, which the API never serves: TestFlight build 41 and the website cannot call them
 REVOKE ALL ON FUNCTION private.viewing_months(uuid, jsonb, timestamptz), private.viewing_months_between(uuid, date, date) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION private.viewing_months(uuid, jsonb, timestamptz), private.viewing_months_between(uuid, date, date) TO anon, authenticated, service_role;

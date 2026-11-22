@@ -21,7 +21,7 @@ SET LOCAL statement_timeout = '30s';
 -- caller may read. With the house's rights, as the index is read only by a read the logs' read rules do
 -- not stand in front of (a member's own rules are asked of every row before a test the planner cannot
 -- prove harmless, and the index's test is one).
--- add-only (1): no shipped client uses it: a function this car makes for the reads of a span, called by no client
+-- add-only (1): no shipped client uses it: a function this car makes for the reads of a span, in private, which the API never serves: TestFlight build 41 and the website cannot call it
 CREATE OR REPLACE FUNCTION private.logs_seen_again_in(p_user_id uuid, p_first date, p_last date) RETURNS uuid[]
     LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'
@@ -37,7 +37,7 @@ $$;
 -- that cannot be read as a date falling back to the day the record was made; a withheld record its
 -- author's alone), with each record's film: read by the span, as many rows as it holds. Its rights are
 -- the caller's: a record the caller may not read gives no viewing.
--- add-only (1): no shipped client uses it: a function this car makes for the calendar and the year, called by no client
+-- add-only (1): no shipped client uses it: a function this car makes for the calendar and the year, in private, which the API never serves: TestFlight build 41 and the website cannot call it
 CREATE OR REPLACE FUNCTION private.viewings_between(p_user_id uuid, p_first date, p_last date)
 RETURNS TABLE(log_id uuid, viewing_id uuid, film_id integer, film_title text, poster_path text, rating numeric, day date)
     LANGUAGE sql STABLE
@@ -66,7 +66,7 @@ RETURNS TABLE(log_id uuid, viewing_id uuid, film_id integer, film_title text, po
      AND h.day BETWEEN p_first AND p_last;
 $$;
 
--- Read inside the members' own reads, as the member: never served by the API.
+-- add-only (1): no shipped client uses it: two functions this car makes, read inside the members' own reads (as the member), in private, which the API never serves: TestFlight build 41 and the website cannot call them
 REVOKE ALL ON FUNCTION private.logs_seen_again_in(uuid, date, date), private.viewings_between(uuid, date, date) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION private.logs_seen_again_in(uuid, date, date), private.viewings_between(uuid, date, date) TO anon, authenticated, service_role;
 
