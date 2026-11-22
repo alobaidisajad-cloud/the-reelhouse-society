@@ -3825,7 +3825,7 @@
     "class": "DATA-a-hidden-member-drawn-on",
     "mutant": "shape-series-stands-for-a-hidden-author",
     "proof": "m13",
-    "commit": "bd1396a5a5a594385db930585d2854053a74d144",
+    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
     "verdict": "caught"
   },
   {
@@ -7844,6 +7844,69 @@
     "mutant": "shape-finder-key-mark-unseen",
     "proof": "m38",
     "commit": "b388ea72e419a0a3694493a825f579bce73ecb0d",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-change-that-misses-a-holder",
+    "mutant": "shape-queued-send-reads-no-page-again",
+    "proof": "m7",
+    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-change-that-misses-a-holder",
+    "mutant": "shape-queued-stack-page-left-unread",
+    "proof": "m2",
+    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-change-that-misses-a-holder",
+    "mutant": "shape-gone-filing-kept-on-lists",
+    "proof": "m9",
+    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-change-that-misses-a-holder",
+    "mutant": "shape-series-deaf-to-acts",
+    "proof": "m13",
+    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-change-that-misses-a-holder",
+    "mutant": "shape-room-keeps-a-gone-filing",
+    "proof": "m16",
+    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-change-that-misses-a-holder",
+    "mutant": "shape-given-again-never-heard",
+    "proof": "m11",
+    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-change-that-misses-a-holder",
+    "mutant": "shape-holder-trusted-by-its-name",
+    "proof": "m4",
+    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-change-that-misses-a-holder",
+    "mutant": "shape-twin-read-in-its-catch",
+    "proof": "m5",
+    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
+    "verdict": "caught"
+  },
+  {
+    "class": "COPY-a-change-that-misses-a-holder",
+    "mutant": "shape-channel-trusted-unpublished",
+    "proof": "m6",
+    "commit": "0315c51ec8ccc4a376db4a29bb9d52744e145abb",
     "verdict": "caught"
   }
 ]
